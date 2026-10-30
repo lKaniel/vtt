@@ -26,7 +26,7 @@ on, shared live between players.
 
 ### Combat (phase 3)
 
-- **Creatures.** A token with `"monster": "goblin-warrior"` uses that SRD stat
+- **Creatures.** A token with `"monster": "goblin"` uses that SRD stat
   block; a character gets AC, attacks and proficiency from its `stats`, level
   and equipped gear. Players see their own sheets and only a health state
   (hurt, bloodied, down) for everyone else.
@@ -40,8 +40,10 @@ on, shared live between players.
   immunities, and posts the result in chat.
 - **Character sheet (C).** Abilities, AC, HP, attacks and inventory; tick
   _equipped_ to change weapons or armor.
-- **SRD 5.2 content.** All weapons, armor and some gear, plus ten starter
-  monsters, in `packages/shared/content/srd/`.
+- **Both editions.** Worlds play 2014 rules by default (`"rules"` in
+  `world.json`), and any character can opt into 2024 rules with
+  `"stats": { "rules": "2024" }`. Monsters come from SRD 5.1 or 5.2 to match;
+  weapons, armor and gear are shared. All in `packages/shared/content/srd/`.
 
 ## Run it
 

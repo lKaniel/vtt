@@ -51,7 +51,7 @@ describe('crossCheck', () => {
     };
     const issues = crossCheck(world, new Map(), new Map([['orc', token]]), combat);
     expect(issues.map((i) => i.message)).toEqual([
-      'unknown monster "orc-warlord"',
+      'unknown monster "orc-warlord" in the 2014 rules',
       'unknown item "lightsaber"',
       'unknown token "ghost" in the initiative order',
     ]);

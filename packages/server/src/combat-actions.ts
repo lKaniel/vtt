@@ -8,7 +8,8 @@ import {
   nextTurn,
   resolveCreature,
   rollAttack,
-  srd,
+  editionOf,
+  srdFor,
   startCombat,
   tokenDistance,
   type AttackLog,
@@ -143,16 +144,20 @@ export class CombatActions {
   private readonly turnInfo: TurnInfo = (id) => {
     const token = this.store.tokens.get(id);
     if (!token) return undefined;
-    const sheet = resolveCreature(token, srd);
+    const sheet = this.sheetOf(token);
     return { speed: token.speed, active: !sheet || sheet.hp > 0 };
   };
 
   private fighter(id: string): Fighter {
     const token = this.store.tokens.get(id);
     if (!token) throw new Refusal('No such token');
-    const sheet = resolveCreature(token, srd);
+    const sheet = this.sheetOf(token);
     if (!sheet) throw new Refusal(`${token.name} has no stats`);
     return { token, sheet };
+  }
+
+  private sheetOf(token: Token): Creature | undefined {
+    return resolveCreature(token, srdFor(editionOf(token, this.store.world)));
   }
 
   private requireCombat(): Combat {

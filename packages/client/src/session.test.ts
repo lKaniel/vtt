@@ -47,7 +47,7 @@ const token = (id: string, x = 50, y = 50): Token => ({
 function welcome(tokens: Token[] = [token('hero')]): ServerMessage {
   return {
     t: 'welcome',
-    world: { name: 'Test', gridSize: 100, chunkSize: 1000, start: [0, 0], darkness: 0, vision: true },
+    world: { name: 'Test', gridSize: 100, chunkSize: 1000, start: [0, 0], darkness: 0, vision: true, rules: '2014' },
     you: { id: 'ana', name: 'Ana', role: 'player', color: '#f00' },
     tokens,
     chat: [],

@@ -2,9 +2,10 @@ import { basename } from 'node:path';
 import {
   ChunkSchema,
   CombatSchema,
+  editionOf,
   chunkRect,
   parseChunkKey,
-  srd,
+  srdFor,
   TokenSchema,
   WorldSchema,
   type Chunk,
@@ -128,7 +129,7 @@ export function crossCheck(
 ): Issue[] {
   const players = new Set(world.players.map((p) => p.id));
   const out: Issue[] = [];
-  for (const t of tokens.values()) out.push(...tokenIssues(t, players));
+  for (const t of tokens.values()) out.push(...tokenIssues(t, players, world));
   for (const [key, chunk] of chunks) out.push(...misplacedItems(key, chunk, world.chunkSize));
   for (const e of combat?.order ?? []) {
     if (!tokens.has(e.token)) {
@@ -139,10 +140,12 @@ export function crossCheck(
 }
 
 /** References from a token to players and SRD content that don't exist. */
-function tokenIssues(t: Token, players: Set<string>): Issue[] {
+function tokenIssues(t: Token, players: Set<string>, world: World): Issue[] {
+  const edition = editionOf(t, world);
+  const srd = srdFor(edition);
   const messages = [
     ...[...t.controllers, ...(t.visibleTo ?? [])].filter((c) => !players.has(c)).map((c) => `unknown player "${c}"`),
-    ...(t.monster && !srd.monsters.has(t.monster) ? [`unknown monster "${t.monster}"`] : []),
+    ...(t.monster && !srd.monsters.has(t.monster) ? [`unknown monster "${t.monster}" in the ${edition} rules`] : []),
     ...(t.inventory ?? []).filter((e) => !srd.items.has(e.item)).map((e) => `unknown item "${e.item}"`),
   ];
   return messages.map((message) => ({ file: `tokens/${t.id}.json`, message }));

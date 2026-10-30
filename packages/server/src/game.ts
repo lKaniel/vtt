@@ -6,7 +6,8 @@ import {
   findPath,
   PointSchema,
   roll,
-  srd,
+  editionOf,
+  srdFor,
   viewToken,
   type ChatMessage,
   type Player,
@@ -149,7 +150,7 @@ export class Game {
   }
 
   private view(token: Token, player: Player) {
-    return viewToken(token, player, srd);
+    return viewToken(token, player, srdFor(editionOf(token, this.store.world)));
   }
 
   private handle(c: Client, msg: ClientMessage): void {

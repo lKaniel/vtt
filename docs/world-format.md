@@ -105,14 +105,21 @@ wall's midpoint). The checker warns when one is in the wrong file.
 ## Creatures: stats, monsters and gear
 
 A token with `monster` or `stats` is a creature: it gets a hit point bar, can
-attack and joins fights. Monster and item ids come from the SRD 5.2 content
-in `packages/shared/content/srd/` (`monsters.json`, `items.json`).
+attack and joins fights. Monster and item ids come from the SRD content in
+`packages/shared/content/srd/`.
+
+**Rules edition.** `world.json` has `"rules": "2014"` (the default) or
+`"2024"`. Monsters come from SRD 5.1 (`monsters-5.1.json`) under 2014 rules
+and SRD 5.2 (`monsters-5.2.json`) under 2024 rules; the weapon and armor list
+(`items.json`) is shared. A character can play by the other edition, e.g. a
+2024 class in a 2014 game, with `"stats": { "rules": "2024" }`; that token's
+monster id and rules then come from that edition.
 
 A monster uses the stat block as is. Anything in `stats` overrides it, and
 `hp` tracks damage (leave it out for an unhurt creature):
 
 ```json
-{ "id": "goblin-1", "name": "Goblin", "x": 2850, "y": 1650, "monster": "goblin-warrior", "hp": 4 }
+{ "id": "goblin-1", "name": "Goblin", "x": 2850, "y": 1650, "monster": "goblin", "hp": 4 }
 ```
 
 A character is built from `stats` and the gear it has equipped. AC comes from

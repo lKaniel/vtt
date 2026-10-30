@@ -5,6 +5,10 @@ import { z } from 'zod';
 
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digits and dashes');
 
+/** Which rules a world or character follows: 2014 (SRD 5.1) or 2024 (SRD 5.2). */
+export const EditionSchema = z.enum(['2014', '2024']);
+export type Edition = z.infer<typeof EditionSchema>;
+
 export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const;
 export type Ability = (typeof ABILITIES)[number];
 
@@ -114,6 +118,8 @@ export type Monster = z.infer<typeof MonsterSchema>;
 
 /** Stats written on a token. Each one overrides the monster's or the computed value. */
 export const StatsSchema = z.object({
+  /** Follow the other edition's rules than the world, e.g. a 2024 class in a 2014 game. */
+  rules: EditionSchema.optional(),
   level: z.number().int().min(1).max(20).optional(),
   class: z.string().optional(),
   abilities: AbilitiesSchema.partial().optional(),

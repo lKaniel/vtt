@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { InventoryEntrySchema, StatsSchema } from './stats-schema.ts';
+import { EditionSchema, InventoryEntrySchema, StatsSchema } from './stats-schema.ts';
 
 // Every file in a world folder is described here. The checker, the server and
 // the docs in docs/world-format.md all follow these schemas.
@@ -27,6 +27,8 @@ export const WorldSchema = z.object({
   start: PointSchema.default([0, 0]),
   /** How dark unlit areas are: 0 is full daylight, 1 is pitch black. */
   darkness: z.number().min(0).max(1).default(0),
+  /** Rules edition: "2014" (SRD 5.1) or "2024" (SRD 5.2). Characters can override it. */
+  rules: EditionSchema.default('2014'),
   /** When true, players only see what their tokens can see. */
   vision: z.boolean().default(true),
   players: z.array(PlayerSchema).min(1),

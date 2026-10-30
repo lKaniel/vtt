@@ -27,7 +27,11 @@ you add maps, place tokens, and prepare encounters.
 - Combat rules: `creature.ts` (stats from monster/gear), `attack.ts` (rolls,
   damage, range), `combat.ts` (initiative, turns). The server applies them
   in `combat-actions.ts`; a rule violation throws `Refusal`.
-- Bundled content is SRD 5.2 (CC-BY-4.0) only; anything else is the user's
+- Rules editions: the world plays `rules` ("2014" default, SRD 5.1) and a
+  character can opt into the other with `stats.rules`. Look content up with
+  `srdFor(editionOf(token, world))`; edition-specific rules (class features,
+  weapon mastery) must branch on that edition, never assume one.
+- Bundled content is SRD 5.1 and 5.2 (CC-BY-4.0) only; anything else is the user's
   own homebrew and stays out of the repo.
 - Red-green always: write the failing test first, run it and see it fail,
   then write the code that makes it pass.

@@ -27,7 +27,7 @@ beforeEach(async () => {
       inventory: [{ item: 'longsword', equipped: true }, { item: 'dagger' }],
     }),
   );
-  store.setToken(TokenSchema.parse({ ...store.tokens.get('goblin'), x: 250, y: 150, monster: 'goblin-warrior' }));
+  store.setToken(TokenSchema.parse({ ...store.tokens.get('goblin'), x: 250, y: 150, monster: 'goblin' }));
 });
 
 afterEach(async () => {
@@ -120,12 +120,12 @@ describe('turns', () => {
 describe('attacking', () => {
   it('rolls to hit, deals damage, logs it in chat and spends the action', () => {
     const { ana } = fight();
-    // d20 of 11 + 5 hits AC 15; 1d8 rolls 4, +3.
-    dice = [d20(11), 0.4];
+    // d20 of 11 + 5 hits AC 15; 1d8 rolls 1, +3.
+    dice = [d20(11), 0];
     ana.receive({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Longsword' });
     expect(store.tokens.get('goblin')!.hp).toBe(3);
     const [log] = ana.take('chat');
-    expect(log!.message.attack).toMatchObject({ attacker: 'Hero', target: 'Goblin', hit: true, damage: 7 });
+    expect(log!.message.attack).toMatchObject({ attacker: 'Hero', target: 'Goblin', hit: true, damage: 4 });
     expect(store.combat!.left.action).toBe(false);
     ana.receive({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Longsword' });
     expect(ana.take('error')[0]!.message).toMatch(/already used/);
@@ -133,7 +133,7 @@ describe('attacking', () => {
 
   it('tells players only how hurt an enemy looks', () => {
     const { ana } = fight();
-    dice = [d20(11), 0.4];
+    dice = [d20(11), 0];
     ana.receive({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Longsword' });
     const goblin = ana.sent.find((m) => m.t === 'token' && m.token.id === 'goblin');
     expect(goblin).toMatchObject({ token: { health: 'bloodied' } });

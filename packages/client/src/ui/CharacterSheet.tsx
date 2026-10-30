@@ -1,4 +1,4 @@
-import { ABILITIES, abilityMod, srd, type TokenView } from '@vtt/shared';
+import { ABILITIES, abilityMod, srdFor, type TokenView } from '@vtt/shared';
 import type { Session } from '../session.ts';
 import { describeAttack } from './Hotbar.tsx';
 
@@ -62,7 +62,8 @@ function Inventory({ session, token }: Readonly<{ session: Session; token: Token
       <h4>Inventory</h4>
       <ul className="sheet-list">
         {items.map((e, i) => {
-          const item = srd.items.get(e.item);
+          // Weapons and armor are the same in both editions.
+          const item = srdFor('2014').items.get(e.item);
           const wearable = item?.type === 'weapon' || item?.type === 'armor';
           return (
             <li key={`${e.item}-${i}`} className="item">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { healthOf, srd, TokenSchema, viewToken, type Player } from './index.ts';
+import { healthOf, srdFor, TokenSchema, viewToken, type Player } from './index.ts';
 
 const gm: Player = { id: 'gm', name: 'GM', role: 'gm', color: '#fff' };
 const ana: Player = { id: 'ana', name: 'Ana', role: 'player', color: '#fff' };
@@ -23,12 +23,12 @@ describe('healthOf', () => {
 
 describe('viewToken', () => {
   it('gives the GM and controllers the full sheet', () => {
-    expect(viewToken(goblin, gm, srd).sheet).toMatchObject({ hp: 4, maxHp: 10 });
-    expect(viewToken(hero, ana, srd).sheet?.attacks[0]?.name).toBe('Dagger');
+    expect(viewToken(goblin, gm, srdFor('2024')).sheet).toMatchObject({ hp: 4, maxHp: 10 });
+    expect(viewToken(hero, ana, srdFor('2024')).sheet?.attacks[0]?.name).toBe('Dagger');
   });
 
   it('hides stats from other players and tells them only how hurt it looks', () => {
-    const seen = viewToken(goblin, ana, srd);
+    const seen = viewToken(goblin, ana, srdFor('2024'));
     expect(seen.sheet).toBeUndefined();
     expect(seen.health).toBe('bloodied');
     expect(seen).not.toHaveProperty('monster');
@@ -38,6 +38,6 @@ describe('viewToken', () => {
 
   it('adds nothing to tokens without stats', () => {
     const tree = TokenSchema.parse({ id: 'tree', name: 'Tree', x: 0, y: 0 });
-    expect(viewToken(tree, ana, srd)).toEqual(tree);
+    expect(viewToken(tree, ana, srdFor('2024'))).toEqual(tree);
   });
 });
