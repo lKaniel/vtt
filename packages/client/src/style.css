@@ -1425,8 +1425,8 @@ h4 {
   border-image: url('/art/ui/panel-large.webp') 110 fill / 38px stretch;
 }
 .chat.frame {
-  padding: 4px 14px 26px;
-  border-image: url('/art/ui/log-panel.webp') 110 50 120 fill / 34px 16px 38px stretch;
+  padding: 6px 32px 40px;
+  border-image: url('/art/ui/log-panel.webp') 125 100 115 fill / 38px 30px 35px stretch;
 }
 .chat.frame.closed {
   padding-bottom: 14px;
