@@ -11,6 +11,7 @@ export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onS
         <button onClick={onStart} title="Roll initiative for every creature with stats on screen">
           Start combat
         </button>
+        <RestButtons session={session} />
       </div>
     ) : null;
   }
@@ -41,5 +42,20 @@ export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onS
         </button>
       )}
     </div>
+  );
+}
+
+/** GM: the whole party takes a short or long rest. */
+function RestButtons({ session }: Readonly<{ session: Session }>) {
+  const party = () => [...session.tokens.values()].filter((t) => t.controllers.length > 0 && t.sheet).map((t) => t.id);
+  return (
+    <>
+      <button className="small" title="Party takes a short rest" onClick={() => session.rest(party(), 'short')}>
+        Short rest
+      </button>
+      <button className="small" title="Party takes a long rest" onClick={() => session.rest(party(), 'long')}>
+        Long rest
+      </button>
+    </>
   );
 }

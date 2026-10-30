@@ -299,6 +299,9 @@ export class MapView {
     if (!drag || drag.panning || drag.button !== 0) return;
     // Clicking the ground with an attack ready puts it away instead of walking.
     if (this.session.armed) return this.session.arm(undefined);
+    const aiming = this.session.aiming;
+    if (aiming?.mode === 'point') return this.session.castAt(this.screenToWorld(e.global.x, e.global.y));
+    if (aiming) return this.session.aim(undefined);
     const selected = this.session.selected;
     if (selected) this.session.move(selected, this.screenToWorld(e.global.x, e.global.y));
   }
@@ -312,7 +315,9 @@ export class MapView {
     }
     const ctx = { gridSize: world.gridSize, walls: this.allWalls(), zoom: this.zoom, force };
     const attack = token.sheet?.attacks.find((a) => a.name === this.session.armed);
-    if (attack) this.preview.showAttack(token, this.hoverPoint, attack, ctx);
+    const aiming = this.session.aiming;
+    if (aiming) this.preview.showSpell(token, this.hoverPoint, aiming, ctx);
+    else if (attack) this.preview.showAttack(token, this.hoverPoint, attack, ctx);
     else this.preview.show(token, this.hoverPoint, { ...ctx, budget: this.session.movementLeft(token.id) });
   }
 }

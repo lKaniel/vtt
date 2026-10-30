@@ -1,4 +1,4 @@
-import type { Combat, ServerMessage, Token } from '@vtt/shared';
+import { srdFor, type Combat, type ServerMessage, type Token } from '@vtt/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Session } from './session.ts';
 
@@ -205,6 +205,84 @@ describe('Session', () => {
       session.arm('Longsword');
       session.select(undefined);
       expect(session.armed).toBeUndefined();
+    });
+
+    describe('spells', () => {
+      const wizard = () => ({
+        ...token('hero'),
+        sheet: {
+          caster: {
+            level: 5,
+            spells: [srdFor('2014').spells.get('magic-missile')!, srdFor('2014').spells.get('fireball')!],
+          },
+        } as never,
+      });
+
+      beforeEach(() => {
+        ws.receive({ t: 'token', token: wizard() });
+        session.select('hero');
+      });
+
+      it('aims a spell at creatures and casts once enough are picked', () => {
+        session.aim('magic-missile', 1);
+        expect(session.aiming).toMatchObject({ need: 3 });
+        session.pickTarget('goblin');
+        session.pickTarget('goblin');
+        expect(ws.sent.at(-1)).not.toMatchObject({ t: 'cast' });
+        session.pickTarget('orc');
+        expect(ws.sent.at(-1)).toEqual({
+          t: 'cast',
+          caster: 'hero',
+          spell: 'magic-missile',
+          slot: 1,
+          targets: ['goblin', 'goblin', 'orc'],
+        });
+        expect(session.aiming).toBeUndefined();
+      });
+
+      it('casts with fewer targets on confirm', () => {
+        session.aim('magic-missile', 1);
+        session.pickTarget('goblin');
+        session.confirmCast();
+        expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', targets: ['goblin'] });
+      });
+
+      it('casts an area spell at the clicked point', () => {
+        session.aim('fireball', 3);
+        session.castAt([250, 150]);
+        expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'fireball', point: [250, 150] });
+      });
+
+      it('summons what the player chose', () => {
+        const familiar = srdFor('2014').spells.get('find-familiar')!;
+        ws.receive({
+          t: 'token',
+          token: { ...wizard(), sheet: { caster: { level: 5, spells: [familiar] } } as never },
+        });
+        session.aim('find-familiar', 1);
+        session.chooseSummon('owl');
+        session.castAt([150, 50]);
+        expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'find-familiar', summon: 'owl', point: [150, 50] });
+      });
+
+      it('puts away a readied attack when aiming a spell, and the other way round', () => {
+        session.arm('Longsword');
+        session.aim('fireball', 3);
+        expect(session.armed).toBeUndefined();
+        session.arm('Longsword');
+        expect(session.aiming).toBeUndefined();
+      });
+    });
+
+    it('sends features, rests and dropped concentration', () => {
+      session.useFeature('hero', 'second-wind');
+      expect(ws.sent.at(-1)).toEqual({ t: 'feature', token: 'hero', feature: 'second-wind' });
+      session.rest(['hero'], 'long');
+      expect(ws.sent.at(-1)).toEqual({ t: 'rest', tokens: ['hero'], kind: 'long' });
+      session.dropConcentration('hero');
+      expect(ws.sent.at(-1)).toEqual({ t: 'dropConcentration', token: 'hero' });
+      session.removeEffect('hero', 'bless-wiz');
+      expect(ws.sent.at(-1)).toEqual({ t: 'removeEffect', token: 'hero', effect: 'bless-wiz' });
     });
 
     it('picks the creatures on screen for a new fight', () => {

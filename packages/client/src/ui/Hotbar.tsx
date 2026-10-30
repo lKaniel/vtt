@@ -1,5 +1,6 @@
 import type { Attack, TokenView } from '@vtt/shared';
 import type { Session } from '../session.ts';
+import { SpellBar } from './SpellBar.tsx';
 
 const SLOTS = 8;
 
@@ -21,6 +22,7 @@ export function Hotbar({ session, onSheet }: Readonly<{ session: Session; onShee
               </button>
             )}
           </div>
+          <SpellBar session={session} token={token} />
           <div className="hotbar-slots">
             {Array.from({ length: SLOTS }, (_, i) => (
               <AttackSlot key={i} session={session} attack={token.sheet?.attacks[i]} hotkey={i + 1} />
@@ -40,6 +42,10 @@ export function Hotbar({ session, onSheet }: Readonly<{ session: Session; onShee
 
 function hint(session: Session, token: TokenView | undefined): string {
   if (session.armed) return `Click a target for ${session.armed} · Esc or click the ground to cancel`;
+  const aiming = session.aiming;
+  if (aiming?.mode === 'point') return `Click where ${aiming.spell.name} goes · Esc to cancel`;
+  if (aiming)
+    return `Click ${aiming.need - aiming.picks.length} more target(s) for ${aiming.spell.name} · Esc to cancel`;
   if (!token) return 'Click one of your tokens to select it · Drag to pan · Wheel to zoom';
   return 'Click the ground to walk · 1-8 to attack · Esc to deselect · Drag to pan · Wheel to zoom';
 }
