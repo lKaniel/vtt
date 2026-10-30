@@ -207,9 +207,14 @@ function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenVi
   const mine = session.isMyTurn() && (session.turnToken()?.id === token.id || !!combat.side[token.id]);
   return (
     <div className="ab-end">
-      <button className="end-turn" disabled={!mine} onClick={() => session.endTurn()} title="End turn (Space)">
-        <span>{mine ? 'End' : 'Wait'}</span>
-        <span>{mine ? 'turn' : ''}</span>
+      <button
+        className="end-turn"
+        disabled={!mine}
+        onClick={() => session.endTurn()}
+        title={mine ? 'End turn (Space)' : 'Waiting for your turn'}
+        aria-label={mine ? 'End turn' : 'Waiting for your turn'}
+      >
+        <Glyph glyph="hourglass" size={38} />
       </button>
     </div>
   );

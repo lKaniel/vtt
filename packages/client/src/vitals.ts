@@ -1,6 +1,6 @@
 import type { EffectTemplate, Health, TokenView } from '@vtt/shared';
 
-// Health bars, effect tones and portrait initials for the party, turn order and sheet.
+// Health bars and effect tones for the party, turn order and sheet.
 
 export interface HpBar {
   percent: number;
@@ -48,11 +48,4 @@ export function effectTone(e: EffectTemplate): 'helpful' | 'harmful' {
     !!e.advantageAgainst ||
     !!e.disadvantage;
   return harmful ? 'harmful' : 'helpful';
-}
-
-/** "Bram Stoutbeard" → "BS", "Orrin" → "Or". */
-export function initials(name: string): string {
-  const words = name.split(/\s+/).filter((w) => /^\p{L}/u.test(w));
-  if (words.length >= 2) return (words[0]![0]! + words[1]![0]!).toUpperCase();
-  return name.slice(0, 2);
 }

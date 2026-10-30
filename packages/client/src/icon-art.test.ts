@@ -1,6 +1,6 @@
 import { srdFor, type Attack, type FeatureSheet, type TokenView } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
-import { attackArt, featureArt, itemArt, spellArt, tokenBaseArt } from './icon-art.ts';
+import { attackArt, diceArt, featureArt, itemArt, portraitOf, spellArt, tokenBaseArt } from './icon-art.ts';
 
 const spell = (id: string) => srdFor('2014').spells.get(id)!;
 const attack = (kind: Attack['kind']): Attack => ({
@@ -40,5 +40,15 @@ describe('painted icon art', () => {
     expect(tokenBaseArt(party, false)).toBe('/art/ui/token-base-ally.webp');
     expect(tokenBaseArt(monster, false)).toBe('/art/ui/token-base-foe.webp');
     expect(tokenBaseArt(party, true)).toBe('/art/ui/token-base-selected.webp');
+  });
+
+  it('paints each die, with percentile dice shown as a d10', () => {
+    expect(diceArt('d20')).toBe('/art/icons/dice/d20.webp');
+    expect(diceArt('d100')).toBe('/art/icons/dice/d10.webp');
+  });
+
+  it("shows a token's own picture, or a hooded stranger when it has none", () => {
+    expect(portraitOf({ img: '/assets/orrin.png' } as TokenView)).toBe('/assets/orrin.png');
+    expect(portraitOf({} as TokenView)).toBe('/art/ui/portrait-default.svg');
   });
 });

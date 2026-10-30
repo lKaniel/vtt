@@ -1,20 +1,12 @@
 import type { TokenView } from '@vtt/shared';
 import { effectIcon } from '../icons.ts';
-import { effectTone, hpBar, initials } from '../vitals.ts';
+import { portraitOf } from '../icon-art.ts';
+import { effectTone, hpBar } from '../vitals.ts';
 import { IconFace } from './Icon.tsx';
 
-/** A framed face: the token's image, or its initials on its colour. */
+/** A framed face: the token's picture, or the default hooded stranger. */
 export function Face({ token, className = '' }: Readonly<{ token: TokenView; className?: string }>) {
-  const style = token.img
-    ? { backgroundImage: `url(${token.img})` }
-    : {
-        background: `radial-gradient(circle at 35% 30%, ${token.color}, color-mix(in srgb, ${token.color} 35%, #000))`,
-      };
-  return (
-    <span className={`face ${className}`} style={style}>
-      {!token.img && <span className="face-initials">{initials(token.name)}</span>}
-    </span>
-  );
+  return <span className={`face ${className}`} style={{ backgroundImage: `url(${portraitOf(token)})` }} />;
 }
 
 export function HpBar({ token, showLabel = true }: Readonly<{ token: TokenView; showLabel?: boolean }>) {

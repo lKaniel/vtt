@@ -14,6 +14,15 @@ const line = {
 const hole = { fill: 'rgba(10, 8, 6, 0.75)' } as const;
 
 const GLYPHS: Record<Glyph, ReactElement> = {
+  hourglass: (
+    <>
+      <path d="M5 2h14v2h-1.5c0 4-2.5 5.6-4 8 1.5 2.4 4 4 4 8H19v2H5v-2h1.5c0-4 2.5-5.6 4-8-1.5-2.4-4-4-4-8H5z" />
+      <path
+        {...hole}
+        d="M8.6 4h6.8c-.2 2.6-1.8 4-3.4 6-1.6-2-3.2-3.4-3.4-6zM9 20c.4-2.2 1.6-3.4 3-4.6 1.4 1.2 2.6 2.4 3 4.6z"
+      />
+    </>
+  ),
   sword: (
     <>
       <path d="M20.5 3.5 21 7.5 11 17.5 6.5 13 16.5 3z" />

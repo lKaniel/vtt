@@ -1,6 +1,7 @@
 import type { AttackLog, ChatMessage, DiceTerm, SpellLog } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '../session.ts';
+import { diceArt } from '../icon-art.ts';
 import { targetText } from '../spell-text.ts';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
@@ -39,8 +40,9 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
       </div>
       <div className="dice">
         {QUICK_DICE.map((d) => (
-          <button key={d} onClick={() => session.say(`/r 1${d}`)}>
-            {d}
+          <button key={d} onClick={() => session.say(`/r 1${d}`)} title={`Roll 1${d}`}>
+            <img src={diceArt(d)} alt="" draggable={false} />
+            <span>{d}</span>
           </button>
         ))}
       </div>

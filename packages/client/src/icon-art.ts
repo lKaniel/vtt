@@ -25,3 +25,9 @@ export function tokenBaseArt(token: TokenView, selected: boolean): string {
   if (selected) return '/art/ui/token-base-selected.webp';
   return token.controllers.length > 0 ? '/art/ui/token-base-ally.webp' : '/art/ui/token-base-foe.webp';
 }
+
+/** A painted die for the quick-roll buttons; there is no d100, so it borrows the d10. */
+export const diceArt = (die: string) => `/art/icons/dice/${die === 'd100' ? 'd10' : die}.webp`;
+
+/** A token's own picture, or a hooded stranger for creatures without one. */
+export const portraitOf = (token: TokenView) => token.img ?? '/art/ui/portrait-default.svg';

@@ -1,6 +1,6 @@
 import type { Effect, TokenView } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
-import { effectTone, hpBar, initials } from './vitals.ts';
+import { effectTone, hpBar } from './vitals.ts';
 
 const token = (t: Partial<TokenView>): TokenView => ({
   id: 'a',
@@ -46,13 +46,5 @@ describe('effects', () => {
     expect(effectTone(effect({ speed: -10 }))).toBe('harmful');
     expect(effectTone(effect({ attackBonus: '1d4' }))).toBe('helpful');
     expect(effectTone(effect({ ac: 5 }))).toBe('helpful');
-  });
-});
-
-describe('initials', () => {
-  it('takes the first letter of the first two words', () => {
-    expect(initials('Bram Stoutbeard')).toBe('BS');
-    expect(initials('Orrin')).toBe('Or');
-    expect(initials('goblin warrior 2')).toBe('GW');
   });
 });

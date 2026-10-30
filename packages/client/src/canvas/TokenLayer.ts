@@ -1,6 +1,6 @@
 import { currentTurn, type Health, type Point, type TokenView } from '@vtt/shared';
 import { Assets, Container, Graphics, Sprite as PixiSprite, Text, type Texture } from 'pixi.js';
-import { tokenBaseArt } from '../icon-art.ts';
+import { portraitOf, tokenBaseArt } from '../icon-art.ts';
 import type { Session } from '../session.ts';
 import type { Viewer } from './Vision.ts';
 
@@ -20,6 +20,9 @@ interface Sprite {
   root: Container;
   /** The painted ring under the disc. */
   base: PixiSprite;
+  /** The token's picture, cut to a circle inside the rim. */
+  face: PixiSprite;
+  faceMask: Graphics;
   disc: Graphics;
   /** Hit point bar and markers drawn over the disc. */
   status: Graphics;
@@ -40,8 +43,13 @@ export class TokenLayer {
     const view = this.views.get(token.id) ?? this.create(token);
     if (view.route.length === 0) view.root.position.set(token.x, token.y);
     const r = token.size * (this.session.world?.gridSize ?? 100) * DISC;
-    drawBase(view.base, tokenBaseArt(token, this.session.selected === token.id), r);
+    showTexture(view.base, tokenBaseArt(token, this.session.selected === token.id), r * BASE);
     drawDisc(view.disc.clear(), token, r, this.ringColor(token));
+    view.faceMask
+      .clear()
+      .circle(0, 0, r - 2)
+      .fill(0xffffff);
+    showTexture(view.face, portraitOf(token), r * 2);
     drawStatus(view.status.clear(), token, r);
     drawEffects(view.status, token, r);
     const notes = [token.hidden && 'hidden', token.visibleTo && 'illusion'].filter(Boolean);
@@ -113,6 +121,10 @@ export class TokenLayer {
     const base = new PixiSprite();
     base.anchor.set(0.5);
     const disc = new Graphics();
+    const face = new PixiSprite();
+    face.anchor.set(0.5);
+    const faceMask = new Graphics();
+    face.mask = faceMask;
     const status = new Graphics();
     const label = new Text({
       text: '',
@@ -125,7 +137,7 @@ export class TokenLayer {
       },
     });
     label.anchor.set(0.5, 0);
-    root.addChild(base, disc, status, label);
+    root.addChild(base, disc, face, faceMask, status, label);
     root.eventMode = 'static';
     root.cursor = 'pointer';
     root.on('pointerdown', (e) => {
@@ -137,19 +149,19 @@ export class TokenLayer {
       else if (this.session.canControl(t)) this.session.select(t.id);
     });
     this.container.addChild(root);
-    const view = { root, base, disc, status, label, route: [] };
+    const view = { root, base, disc, face, faceMask, status, label, route: [] };
     this.views.set(token.id, view);
     return view;
   }
 }
 
-/** Shows the base ring once its texture has loaded; switching rings keeps the old one until then. */
-function drawBase(base: PixiSprite, url: string, r: number): void {
-  base.label = url;
+/** Shows a picture once it has loaded; switching pictures keeps the old one until then. */
+function showTexture(sprite: PixiSprite, url: string, size: number): void {
+  sprite.label = url;
   void Assets.load<Texture>(url).then((texture) => {
-    if (base.destroyed || base.label !== url) return;
-    base.texture = texture;
-    base.setSize(r * BASE);
+    if (sprite.destroyed || sprite.label !== url) return;
+    sprite.texture = texture;
+    sprite.setSize(size);
   });
 }
 

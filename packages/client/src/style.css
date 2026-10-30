@@ -256,12 +256,6 @@ h4 {
     inset 0 0 12px rgba(0, 0, 0, 0.7),
     0 2px 6px rgba(0, 0, 0, 0.6);
 }
-.face-initials {
-  font-family: var(--display);
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-}
 
 .hpbar {
   position: relative;
@@ -1421,7 +1415,7 @@ h4 {
   content: none;
 }
 .sheet.frame {
-  padding: 30px 36px 34px;
+  padding: 46px 50px 44px;
   border-image: url('/art/ui/panel-large.webp') 110 fill / 38px stretch;
 }
 .chat.frame {
@@ -1436,18 +1430,24 @@ h4 {
   border-bottom: 0;
 }
 .member {
-  padding: 8px 10px;
+  padding: 10px 14px;
 }
 .turn-order.idle {
-  padding: 10px 14px;
+  padding: 12px 18px;
+}
+.topbar.frame {
+  padding: 8px 18px;
+}
+.aiming.frame {
+  padding: 10px 18px;
 }
 
 .tip {
-  padding: 22px 20px 18px;
+  padding: 30px 24px 22px;
   background: none;
   border: 0;
   border-radius: 0;
-  border-image: url('/art/ui/tooltip.webp') 70 60 60 fill / 22px 18px 18px stretch;
+  border-image: url('/art/ui/tooltip.webp') 80 50 50 fill / 24px 15px 15px stretch;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
 }
 
@@ -1814,7 +1814,7 @@ h4 {
 .ab-end {
   position: absolute;
   top: 112px;
-  right: 21px;
+  right: 9px;
   width: auto;
 }
 .end-turn {
@@ -1855,4 +1855,71 @@ h4 {
 .ab-name,
 .member-name {
   font-size: 15px;
+}
+
+/* The log's title is engraved into the gold plaque at the top of its frame. */
+.chat-head {
+  position: relative;
+  justify-content: center;
+  height: 30px;
+  padding: 0 28px;
+}
+.chat-head .close {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+}
+.chat.frame:not(.closed) .chat-head {
+  margin-top: -2px;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  color: #2b1d0b;
+  text-shadow:
+    0 1px 0 rgba(255, 238, 200, 0.45),
+    0 -1px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Quick rolls: Kaniel's painted dice, labelled underneath. */
+.dice {
+  border-top: 0;
+}
+.dice button {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 0;
+  font-family: var(--body);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  background: none;
+  border: 0;
+}
+.dice button img {
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7));
+  transition: transform 0.15s;
+}
+.dice button:hover {
+  color: var(--gold-bright);
+}
+.dice button:hover img {
+  transform: translateY(-2px) rotate(-8deg);
+  filter: drop-shadow(0 0 6px rgba(232, 211, 166, 0.5));
+}
+/* End turn is an hourglass engraved into the medallion. */
+.end-turn {
+  place-items: center;
+  color: #3a2709;
+}
+.end-turn .glyph {
+  filter: drop-shadow(0 1px 0 rgba(255, 238, 200, 0.55));
+}
+.end-turn:disabled {
+  color: #7d7262;
+}
+.end-turn:disabled .glyph {
+  filter: drop-shadow(0 1px 1px #000);
 }
