@@ -1,4 +1,4 @@
-import type { FeatureSheet, Spell, SpellTargetLog, TokenView } from '@vtt/shared';
+import type { Spell, SpellTargetLog, TokenView } from '@vtt/shared';
 
 // Words for spells and features: tooltips, chat lines and preview labels.
 
@@ -10,17 +10,6 @@ export function lowestSlot(token: TokenView, spell: Spell): number | undefined {
   const left = token.sheet?.caster?.left ?? [];
   const i = left.findIndex((n, idx) => idx + 1 >= spell.level && n > 0);
   return i < 0 ? undefined : i + 1;
-}
-
-function rangeText(feet: number): string {
-  if (feet === 0) return 'self';
-  return feet === 5 ? 'touch' : `${feet} ft`;
-}
-
-export function describeSpell(s: Spell): string {
-  const level = s.level ? `${ORDINAL[s.level]}-level ${s.school}` : `${s.school} cantrip`;
-  const auto = s.automated ? '' : ' · not automated, the GM applies it';
-  return `${s.name}: ${level}, ${s.castingTime}, ${rangeText(s.range)}, ${s.duration}${auto}\n\n${s.description}`;
 }
 
 function attackText(r: SpellTargetLog): string {
@@ -48,11 +37,6 @@ export function targetText(r: SpellTargetLog): string {
     r.effect ?? '',
   ];
   return `${r.target}: ${parts.filter(Boolean).join(' · ') || 'affected'}`;
-}
-
-export function featureTitle(f: FeatureSheet): string {
-  const uses = f.max === undefined ? '' : ` (${f.left}/${f.max})`;
-  return `${f.name}${uses}: ${f.description}`;
 }
 
 /** "Bless · 1/3 · 25 ft", with a warning when out of range or blocked. */

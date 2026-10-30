@@ -9,6 +9,11 @@ const WALK_SPEED = 900;
 const DISC = 0.42;
 /** Ring around the token whose turn it is. */
 const TURN_COLOR = '#f0c040';
+/** Halo around the selected token. */
+const SELECTED_COLOR = '#f2d38a';
+/** Rims of party members and of everyone else. */
+const ALLY_RIM = '#c9a45c';
+const OTHER_RIM = '#5a2620';
 
 interface Sprite {
   root: Container;
@@ -32,11 +37,8 @@ export class TokenLayer {
     const view = this.views.get(token.id) ?? this.create(token);
     if (view.route.length === 0) view.root.position.set(token.x, token.y);
     const r = token.size * (this.session.world?.gridSize ?? 100) * DISC;
-    view.disc
-      .clear()
-      .circle(0, 0, r)
-      .fill(token.color)
-      .stroke({ width: this.session.selected === token.id ? 8 : 4, color: this.ringColor(token) });
+    drawDisc(view.disc.clear(), token, r, this.ringColor(token));
+    if (this.session.selected === token.id) view.disc.circle(0, 0, r + 9).stroke({ width: 3, color: SELECTED_COLOR });
     drawStatus(view.status.clear(), token, r);
     drawEffects(view.status, token, r);
     const notes = [token.hidden && 'hidden', token.visibleTo && 'illusion'].filter(Boolean);
@@ -96,11 +98,11 @@ export class TokenLayer {
   }
 
   private ringColor(token: TokenView): string {
-    if (this.session.selected === token.id) return '#ffffff';
     const combat = this.session.combat;
     if (combat && currentTurn(combat) === token.id) return TURN_COLOR;
     const you = this.session.you;
-    return you && token.controllers.includes(you.id) ? you.color : '#111111';
+    if (you && token.controllers.includes(you.id)) return you.color;
+    return token.controllers.length > 0 ? ALLY_RIM : OTHER_RIM;
   }
 
   private create(token: TokenView): Sprite {
@@ -109,7 +111,13 @@ export class TokenLayer {
     const status = new Graphics();
     const label = new Text({
       text: '',
-      style: { fill: 0xffffff, fontSize: 22, stroke: { color: 0x000000, width: 4 } },
+      style: {
+        fill: 0xf2e3c0,
+        fontFamily: 'Cinzel, Georgia, serif',
+        fontSize: 20,
+        fontWeight: '600',
+        stroke: { color: 0x000000, width: 5 },
+      },
     });
     label.anchor.set(0.5, 0);
     root.addChild(disc, status, label);
@@ -128,6 +136,15 @@ export class TokenLayer {
     this.views.set(token.id, view);
     return view;
   }
+}
+
+/** A shadow on the ground, the disc with a soft highlight, and a rim in the token's ring colour. */
+function drawDisc(g: Graphics, token: TokenView, r: number, rim: string): void {
+  g.ellipse(0, r * 0.12, r * 1.08, r * 1.02).fill({ color: 0x000000, alpha: 0.45 });
+  g.circle(0, 0, r).fill(token.color);
+  g.circle(-r * 0.22, -r * 0.25, r * 0.6).fill({ color: 0xffffff, alpha: 0.12 });
+  g.circle(0, 0, r).stroke({ width: 5, color: rim });
+  g.circle(0, 0, r + 3).stroke({ width: 1.5, color: 0x000000, alpha: 0.8 });
 }
 
 /** How full the hit point bar looks for tokens whose exact hit points are secret. */
