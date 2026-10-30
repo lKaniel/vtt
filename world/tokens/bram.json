@@ -8,5 +8,43 @@
   "light": {
     "bright": 20,
     "dim": 20
-  }
+  },
+  "stats": {
+    "class": "Fighter",
+    "level": 3,
+    "maxHp": 28,
+    "abilities": {
+      "str": 16,
+      "dex": 12,
+      "con": 14,
+      "int": 10,
+      "wis": 12,
+      "cha": 8
+    }
+  },
+  "inventory": [
+    {
+      "item": "longsword",
+      "equipped": true
+    },
+    {
+      "item": "shield",
+      "equipped": true
+    },
+    {
+      "item": "chain-mail",
+      "equipped": true
+    },
+    {
+      "item": "light-crossbow"
+    },
+    {
+      "item": "torch",
+      "qty": 3
+    },
+    {
+      "item": "potion-of-healing",
+      "qty": 2
+    }
+  ]
 }

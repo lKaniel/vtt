@@ -74,6 +74,8 @@ export class MapView {
     host.appendChild(this.app.canvas);
     this.camera.addChild(this.chunks.ground, this.grid, this.chunks.walls, this.tokens.container);
     this.overhead.addChild(this.preview.container);
+    // Previews are drawn over tokens; clicks must still reach the tokens below.
+    this.overhead.eventMode = 'none';
     this.vision = new Vision(this.app, this.session);
     this.app.stage.addChild(this.camera, ...this.vision.sprites, this.overhead);
     this.listenToInput();
@@ -153,6 +155,14 @@ export class MapView {
         this.tokens.redrawAll();
         this.updatePreview(true);
       }),
+      s.on('combat', () => {
+        this.tokens.redrawAll();
+        this.updatePreview(true);
+      }),
+      s.on('armed', () => {
+        this.tokens.redrawAll();
+        this.updatePreview(true);
+      }),
       s.on('focus', (p) => {
         this.center = [...p];
         this.dirty = true;
@@ -201,6 +211,7 @@ export class MapView {
       layer.scale.set(this.zoom);
       layer.position.set(width / 2 - this.center[0] * this.zoom, height / 2 - this.center[1] * this.zoom);
     }
+    this.session.viewRect = this.visibleRect();
     this.requestChunks();
     this.drawGrid();
     this.tokens.showLabels(this.zoom >= LOD.labels);
@@ -286,6 +297,8 @@ export class MapView {
     const drag = this.drag;
     this.drag = undefined;
     if (!drag || drag.panning || drag.button !== 0) return;
+    // Clicking the ground with an attack ready puts it away instead of walking.
+    if (this.session.armed) return this.session.arm(undefined);
     const selected = this.session.selected;
     if (selected) this.session.move(selected, this.screenToWorld(e.global.x, e.global.y));
   }
@@ -297,11 +310,9 @@ export class MapView {
       this.preview.clear();
       return;
     }
-    this.preview.show(token, this.hoverPoint, {
-      gridSize: world.gridSize,
-      walls: this.allWalls(),
-      zoom: this.zoom,
-      force,
-    });
+    const ctx = { gridSize: world.gridSize, walls: this.allWalls(), zoom: this.zoom, force };
+    const attack = token.sheet?.attacks.find((a) => a.name === this.session.armed);
+    if (attack) this.preview.showAttack(token, this.hoverPoint, attack, ctx);
+    else this.preview.show(token, this.hoverPoint, { ...ctx, budget: this.session.movementLeft(token.id) });
   }
 }

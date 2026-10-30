@@ -1,4 +1,4 @@
-import type { ServerMessage, Token } from '@vtt/shared';
+import type { Combat, ServerMessage, Token } from '@vtt/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Session } from './session.ts';
 
@@ -51,8 +51,19 @@ function welcome(tokens: Token[] = [token('hero')]): ServerMessage {
     you: { id: 'ana', name: 'Ana', role: 'player', color: '#f00' },
     tokens,
     chat: [],
+    combat: null,
   };
 }
+
+const fight = (turn: number, move = 30): Combat => ({
+  round: 1,
+  turn,
+  order: [
+    { token: 'goblin', initiative: 15 },
+    { token: 'hero', initiative: 10 },
+  ],
+  left: { move, action: true, bonus: true },
+});
 
 let session: Session;
 let ws: FakeWebSocket;
@@ -151,5 +162,72 @@ describe('Session', () => {
     session.on('focus', focus);
     session.focus([10, 20]);
     expect(focus).toHaveBeenCalledWith([10, 20]);
+  });
+
+  describe('in combat', () => {
+    beforeEach(() => {
+      ws.receive(welcome([token('hero'), { ...token('goblin', 150), controllers: [] }]));
+    });
+
+    it('knows whose turn it is and how far each token may walk', () => {
+      ws.receive({ t: 'combat', combat: fight(0) });
+      expect(session.combat?.round).toBe(1);
+      expect(session.turnToken()?.id).toBe('goblin');
+      expect(session.isMyTurn()).toBe(false);
+      expect(session.movementLeft('hero')).toBe(0);
+      ws.receive({ t: 'combat', combat: fight(1, 20) });
+      expect(session.isMyTurn()).toBe(true);
+      expect(session.movementLeft('hero')).toBe(20);
+      ws.receive({ t: 'combat', combat: null });
+      expect(session.movementLeft('hero')).toBe(Infinity);
+    });
+
+    it('selects and finds your creature when its turn starts', () => {
+      const focus = vi.fn();
+      session.on('focus', focus);
+      ws.receive({ t: 'combat', combat: fight(1) });
+      expect(session.selected).toBe('hero');
+      expect(focus).toHaveBeenCalledWith([50, 50]);
+    });
+
+    it('arms an attack, then fires it at the clicked target', () => {
+      session.select('hero');
+      session.arm('Longsword');
+      expect(session.armed).toBe('Longsword');
+      session.attack('goblin');
+      expect(ws.sent.at(-1)).toEqual({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Longsword' });
+      expect(session.armed).toBeUndefined();
+    });
+
+    it('drops the armed attack when the selection changes', () => {
+      session.select('hero');
+      session.arm('Longsword');
+      session.select(undefined);
+      expect(session.armed).toBeUndefined();
+    });
+
+    it('picks the creatures on screen for a new fight', () => {
+      const sheet = { hp: 5, maxHp: 5 } as never;
+      ws.receive({ t: 'token', token: { ...token('hero'), sheet } });
+      ws.receive({ t: 'token', token: { ...token('goblin', 150), controllers: [], health: 'hurt' } });
+      ws.receive({ t: 'token', token: { ...token('far', 5000), health: 'unhurt' } });
+      ws.receive({ t: 'token', token: { ...token('lurker', 250), hidden: true, health: 'unhurt' } });
+      ws.receive({ t: 'token', token: token('barrel', 350) });
+      session.viewRect = { x: 0, y: 0, w: 1000, h: 1000 };
+      expect(session.fightersInView()).toEqual(['hero', 'goblin']);
+    });
+
+    it('sends turn, combat and equipment requests', () => {
+      session.endTurn();
+      session.startCombat(['hero', 'goblin']);
+      session.endCombat();
+      session.equip('hero', 2, true);
+      expect(ws.sent.slice(-4)).toEqual([
+        { t: 'endTurn' },
+        { t: 'combatStart', tokens: ['hero', 'goblin'] },
+        { t: 'combatEnd' },
+        { t: 'equip', token: 'hero', item: 2, equipped: true },
+      ]);
+    });
   });
 });

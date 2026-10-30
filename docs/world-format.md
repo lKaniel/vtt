@@ -9,6 +9,7 @@ world/
   world.json          settings and players
   chunks/<cx>_<cy>.json   map content, one file per chunk
   tokens/<id>.json    one file per token
+  combat.json         the fight in progress, if any
   assets/             images referenced by tiles and tokens
 ```
 
@@ -100,3 +101,75 @@ wall's midpoint). The checker warns when one is in the wrong file.
 | `controllers` | Player ids who may move it. The GM always can.                      |
 | `hidden`      | `true` = only the GM sees it.                                       |
 | `visibleTo`   | If set, only these players (and the GM) see it. Used for illusions. |
+
+## Creatures: stats, monsters and gear
+
+A token with `monster` or `stats` is a creature: it gets a hit point bar, can
+attack and joins fights. Monster and item ids come from the SRD 5.2 content
+in `packages/shared/content/srd/` (`monsters.json`, `items.json`).
+
+A monster uses the stat block as is. Anything in `stats` overrides it, and
+`hp` tracks damage (leave it out for an unhurt creature):
+
+```json
+{ "id": "goblin-1", "name": "Goblin", "x": 2850, "y": 1650, "monster": "goblin-warrior", "hp": 4 }
+```
+
+A character is built from `stats` and the gear it has equipped. AC comes from
+worn armor and shield, attacks from equipped weapons (finesse weapons use the
+better of STR and DEX, ranged weapons DEX), proficiency from `level`:
+
+```json
+{
+  "id": "bram",
+  "name": "Bram",
+  "x": 650,
+  "y": 650,
+  "controllers": ["player2"],
+  "stats": {
+    "class": "Fighter",
+    "level": 3,
+    "maxHp": 28,
+    "abilities": { "str": 16, "dex": 12, "con": 14, "int": 10, "wis": 12, "cha": 8 }
+  },
+  "inventory": [
+    { "item": "longsword", "equipped": true },
+    { "item": "chain-mail", "equipped": true },
+    { "item": "shield", "equipped": true },
+    { "item": "potion-of-healing", "qty": 2 }
+  ]
+}
+```
+
+| `stats` field                                  | Meaning                                                                                                                                              |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `level`                                        | Character level, sets proficiency.                                                                                                                   |
+| `class`                                        | Shown on the character sheet.                                                                                                                        |
+| `abilities`                                    | `str dex con int wis cha` scores; missing ones are 10 (or the monster's).                                                                            |
+| `maxHp`                                        | Hit point maximum.                                                                                                                                   |
+| `ac`, `proficiency`                            | Override the computed values.                                                                                                                        |
+| `attacks`                                      | Extra attacks: `{ "name", "kind": "melee"\|"ranged", "toHit", "reach" or "range": [normal, long], "damage": [{ "dice": "1d6+2", "type": "fire" }] }` |
+| `resistances`, `immunities`, `vulnerabilities` | Damage types, e.g. `["fire"]`.                                                                                                                       |
+
+Players only receive the stats of tokens they control. For everyone else
+they're told how hurt the creature looks (unhurt, hurt, bloodied, down).
+
+## combat.json
+
+Written by the server while a fight is on, deleted when it ends. You can write
+it to set up an encounter that starts mid-fight:
+
+```json
+{
+  "round": 1,
+  "turn": 0,
+  "order": [
+    { "token": "goblin-1", "initiative": 17 },
+    { "token": "bram", "initiative": 12 }
+  ],
+  "left": { "move": 30, "action": true, "bonus": true }
+}
+```
+
+`turn` is the index in `order` of the creature acting now; `left` is what it
+has left this turn (feet of movement, action, bonus action).

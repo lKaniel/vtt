@@ -1,4 +1,4 @@
-import type { ChatMessage, DiceTerm } from '@vtt/shared';
+import type { AttackLog, ChatMessage, DiceTerm } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '../session.ts';
 
@@ -51,6 +51,7 @@ function Message({ m }: Readonly<{ m: ChatMessage }>) {
         {m.gmOnly && <span className="muted"> (to GM)</span>}
       </span>
       {m.text && <span className="msg-text">{m.text}</span>}
+      {m.attack && <AttackLine a={m.attack} />}
       {m.roll && (
         <span className="roll">
           <span className="muted">{m.roll.formula}</span>
@@ -63,6 +64,43 @@ function Message({ m }: Readonly<{ m: ChatMessage }>) {
         </span>
       )}
     </div>
+  );
+}
+
+function verdict(a: AttackLog): { cls: string; text: string } {
+  if (a.crit) return { cls: 'crit', text: 'Critical hit!' };
+  return a.hit ? { cls: 'hit', text: 'Hit' } : { cls: 'miss', text: 'Miss' };
+}
+
+/** "Hero → Goblin, Longsword: [14] + 5 = 19. Hit: 7 slashing." */
+function AttackLine({ a }: Readonly<{ a: AttackLog }>) {
+  const v = verdict(a);
+  return (
+    <span className="attack-log">
+      <span className="msg-text">
+        {a.attacker} → {a.target}, {a.attack}
+      </span>
+      <span className="roll">
+        <span className="roll-terms">
+          {a.d20.terms.map((t, i) => (
+            <Term key={i} t={t} first={i === 0} />
+          ))}
+        </span>
+        <span className="roll-total">{a.d20.total}</span>
+        <span className={v.cls}>{v.text}</span>
+      </span>
+      {a.hit && (
+        <span className="msg-text">
+          {a.parts.map((p) => `${p.dealt} ${p.type}`).join(' + ')} damage
+          {a.parts.some((p) => p.dealt !== p.roll.total) && <span className="muted"> (adjusted)</span>}
+        </span>
+      )}
+      {a.notes.map((n) => (
+        <span key={n} className="muted">
+          {n}
+        </span>
+      ))}
+    </span>
   );
 }
 
