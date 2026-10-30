@@ -46,7 +46,7 @@ export class WorldStore extends EventEmitter<StoreEvents> {
 
   async load(): Promise<void> {
     const result = parseFile({ kind: 'world' }, await readFile(join(this.dir, 'world.json'), 'utf8'));
-    if (!result.file || result.file.kind !== 'world') {
+    if (result.file?.kind !== 'world') {
       throw new Error(`world.json is invalid:\n  ${result.errors.join('\n  ')}`);
     }
     this.world = result.file.data;
@@ -67,11 +67,14 @@ export class WorldStore extends EventEmitter<StoreEvents> {
   watch(): void {
     this.watcher = watch(this.dir, { recursive: true }, (_event, filename) => {
       if (!filename) return;
-      const rel = filename.toString().split('\\').join('/');
+      const rel = filename.split('\\').join('/');
       if (!classify(rel)) return;
       // Editors often write a file in several steps; wait for it to settle.
       clearTimeout(this.pending.get(rel));
-      this.pending.set(rel, setTimeout(() => void this.onFileChanged(rel), 80));
+      this.pending.set(
+        rel,
+        setTimeout(() => void this.onFileChanged(rel), 80),
+      );
     });
   }
 

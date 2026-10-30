@@ -1,4 +1,4 @@
-import { segmentsIntersect } from './geometry.ts';
+import { segmentsIntersect, wallsInRect } from './geometry.ts';
 import type { Light, Point, Token, Wall } from './schema.ts';
 
 // Line of sight and lighting. The server uses line-of-sight checks to decide
@@ -30,8 +30,14 @@ export function tokenLights(tokens: Iterable<Token>): LightSource[] {
   return out;
 }
 
+interface Ray {
+  origin: Point;
+  dx: number;
+  dy: number;
+}
+
 /** Nearest hit of the ray origin + t*dir (t > 0) on segment a-b, as t. */
-function rayHit(origin: Point, dx: number, dy: number, a: Point, b: Point): number | null {
+function rayHit({ origin, dx, dy }: Ray, a: Point, b: Point): number | null {
   const ex = b[0] - a[0];
   const ey = b[1] - a[1];
   const den = dx * ey - dy * ex;
@@ -50,14 +56,7 @@ function rayHit(origin: Point, dx: number, dy: number, a: Point, b: Point): numb
  */
 export function visibilityPolygon(origin: Point, radius: number, walls: readonly Wall[]): number[] {
   const [ox, oy] = origin;
-  const near = walls.filter((w) => {
-    if (!blocksSight(w)) return false;
-    // Skip walls entirely outside the circle's bounding box.
-    return (
-      Math.max(w.a[0], w.b[0]) >= ox - radius && Math.min(w.a[0], w.b[0]) <= ox + radius &&
-      Math.max(w.a[1], w.b[1]) >= oy - radius && Math.min(w.a[1], w.b[1]) <= oy + radius
-    );
-  });
+  const near = wallsInRect(walls, { x: ox - radius, y: oy - radius, w: 2 * radius, h: 2 * radius }).filter(blocksSight);
   const angles: number[] = [];
   const RING = 64;
   for (let i = 0; i < RING; i++) angles.push((i / RING) * Math.PI * 2 - Math.PI);
@@ -74,7 +73,7 @@ export function visibilityPolygon(origin: Point, radius: number, walls: readonly
     const dy = Math.sin(angle);
     let best = radius;
     for (const w of near) {
-      const t = rayHit(origin, dx, dy, w.a, w.b);
+      const t = rayHit({ origin, dx, dy }, w.a, w.b);
       if (t !== null && t < best) best = t;
     }
     out.push(ox + dx * best, oy + dy * best);
@@ -85,7 +84,10 @@ export function visibilityPolygon(origin: Point, radius: number, walls: readonly
 export function pointInPolygon(p: Point, poly: readonly number[]): boolean {
   let inside = false;
   for (let i = 0, j = poly.length - 2; i < poly.length; j = i, i += 2) {
-    const xi = poly[i]!, yi = poly[i + 1]!, xj = poly[j]!, yj = poly[j + 1]!;
+    const xi = poly[i]!,
+      yi = poly[i + 1]!,
+      xj = poly[j]!,
+      yj = poly[j + 1]!;
     if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) inside = !inside;
   }
   return inside;

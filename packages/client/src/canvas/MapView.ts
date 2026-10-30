@@ -1,33 +1,29 @@
-import { chunkKey, findPath, snapToGrid, type Chunk, type Point, type Token, type Wall } from '@vtt/shared';
-import { Application, Assets, Container, CullerPlugin, extensions, Graphics, Sprite, Text, type FederatedPointerEvent } from 'pixi.js';
+import { chunkKey, type Point, type Rect, type Wall } from '@vtt/shared';
+import { Application, Container, CullerPlugin, extensions, Graphics, type FederatedPointerEvent } from 'pixi.js';
 import type { Session } from '../session.ts';
-import { Vision, type Viewer } from './Vision.ts';
+import { ChunkLayer } from './ChunkLayer.ts';
+import { PathPreview } from './PathPreview.ts';
+import { TokenLayer } from './TokenLayer.ts';
+import { Vision } from './Vision.ts';
 
 extensions.add(CullerPlugin);
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 3;
+const WHEEL_ZOOM_SPEED = 0.0015;
 /** Below these zoom levels the matching detail is skipped, so a zoomed-out map stays cheap. */
 const LOD = { grid: 0.35, labels: 0.45, doors: 0.25 };
 /** Extra chunks loaded around the screen, so panning doesn't show holes. */
 const CHUNK_MARGIN = 1;
-/** Token walking speed when animating a move, pixels per second. */
-const WALK_SPEED = 900;
+/** Beyond this many chunks across, keep what's loaded instead of asking for more. */
+const MAX_CHUNK_SPAN = 24;
 const DRAG_THRESHOLD = 5;
 
-const DOOR_COLORS = { closed: 0xd08a3a, open: 0x7ac06a, locked: 0xd04a4a } as const;
-
-interface ChunkView {
-  ground: Container;
-  walls: Container;
-}
-
-interface TokenView {
-  root: Container;
-  disc: Graphics;
-  label: Text;
-  /** Remaining points of an animated move. */
-  route: Point[];
+interface Drag {
+  start: Point;
+  last: Point;
+  panning: boolean;
+  button: number;
 }
 
 /**
@@ -40,75 +36,121 @@ export class MapView {
   private camera = new Container();
   /** Drawn above darkness and fog, with the same transform as the camera. */
   private overhead = new Container();
+  private grid = new Graphics();
+  private chunks: ChunkLayer;
+  private tokens: TokenLayer;
+  private preview = new PathPreview();
   private vision?: Vision;
-  private visionDirty = true;
-  private wasWalking = false;
-  private groundLayer = new Container();
-  private gridLayer = new Graphics();
-  private wallLayer = new Container();
-  private tokenLayer = new Container();
-  private pathLayer = new Graphics();
-  private pathLabel = new Text({ text: '', style: { fill: 0xffffff, fontSize: 28, fontWeight: '600', stroke: { color: 0x000000, width: 5 } } });
-  private chunkViews = new Map<string, ChunkView>();
-  private tokenViews = new Map<string, TokenView>();
 
   /** World point at the centre of the screen. */
   private center: Point = [0, 0];
   private zoom = 0.6;
   private dirty = true;
-  private drag?: { start: Point; last: Point; panning: boolean; button: number };
-  private hoverSquare?: string;
+  private visionDirty = true;
+  private wasWalking = false;
+  private viewId = '';
+  private drag?: Drag;
   private hoverPoint?: Point;
   private unsubscribe: (() => void)[] = [];
   private destroyed = false;
 
-  constructor(private session: Session) {}
+  constructor(private session: Session) {
+    this.chunks = new ChunkLayer(session);
+    this.tokens = new TokenLayer(session);
+  }
 
   async init(host: HTMLElement): Promise<void> {
-    await this.app.init({ resizeTo: host, background: 0x1b1d22, antialias: true, autoDensity: true, resolution: devicePixelRatio });
-    if (this.destroyed) return this.app.destroy(true);
+    await this.app.init({
+      resizeTo: host,
+      background: 0x1b1d22,
+      antialias: true,
+      autoDensity: true,
+      resolution: devicePixelRatio,
+    });
+    if (this.destroyed) {
+      this.app.destroy(true);
+      return;
+    }
     host.appendChild(this.app.canvas);
-    this.camera.addChild(this.groundLayer, this.gridLayer, this.wallLayer, this.tokenLayer);
-    this.overhead.addChild(this.pathLayer, this.pathLabel);
+    this.camera.addChild(this.chunks.ground, this.grid, this.chunks.walls, this.tokens.container);
+    this.overhead.addChild(this.preview.container);
     this.vision = new Vision(this.app, this.session);
     this.app.stage.addChild(this.camera, ...this.vision.sprites, this.overhead);
-    this.app.stage.eventMode = 'static';
-    this.app.stage.hitArea = this.app.screen;
-    this.pathLabel.anchor.set(0.5, 1.4);
+    this.listenToInput();
+    this.listenToSession();
+    this.app.ticker.add((t) => {
+      this.tick(t.deltaMS / 1000);
+    });
+    this.tokens.redrawAll();
+  }
 
-    this.app.stage.on('pointerdown', (e) => this.onPointerDown(e));
-    this.app.stage.on('globalpointermove', (e) => this.onPointerMove(e));
-    this.app.stage.on('pointerup', (e) => this.onPointerUp(e));
-    this.app.stage.on('pointerupoutside', () => (this.drag = undefined));
+  destroy(): void {
+    this.destroyed = true;
+    for (const off of this.unsubscribe) off();
+    this.vision?.destroy();
+    if ((this.app.renderer as unknown) !== undefined) {
+      this.app.canvas.removeEventListener('wheel', this.onWheel);
+      this.app.destroy(true, { children: true });
+    }
+  }
+
+  private listenToInput(): void {
+    const stage = this.app.stage;
+    stage.eventMode = 'static';
+    stage.hitArea = this.app.screen;
+    stage.on('pointerdown', (e) => {
+      this.onPointerDown(e);
+    });
+    stage.on('globalpointermove', (e) => {
+      this.onPointerMove(e);
+    });
+    stage.on('pointerup', (e) => {
+      this.onPointerUp(e);
+    });
+    stage.on('pointerupoutside', () => {
+      this.drag = undefined;
+    });
     this.app.canvas.addEventListener('wheel', this.onWheel, { passive: false });
-    this.app.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    this.app.canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
     this.app.renderer.on('resize', () => {
       this.vision?.resize();
       this.dirty = true;
     });
-    this.app.ticker.add((t) => this.tick(t.deltaMS / 1000));
+  }
 
+  private listenToSession(): void {
     const s = this.session;
+    const visionChanged = () => {
+      this.visionDirty = true;
+    };
     this.unsubscribe.push(
       s.on('welcome', () => {
-        if (s.world && !this.viewId) this.center = [...s.world.start];
-        this.vision?.loadExplored();
-        for (const key of [...this.chunkViews.keys()]) this.removeChunk(key);
-        this.dirty = true;
+        this.onWelcome();
       }),
-      s.on('chunk', (key) => this.drawChunk(key)),
-      s.on('chunkGone', (key) => this.removeChunk(key)),
+      s.on('chunk', (key) => {
+        const chunk = s.chunks.get(key);
+        if (chunk) this.chunks.draw(key, chunk);
+        this.wallsChanged();
+      }),
+      s.on('chunkGone', (key) => {
+        if (this.chunks.remove(key)) this.wallsChanged();
+      }),
       s.on('token', (t) => {
-        this.drawToken(t);
-        this.visionDirty = true;
+        this.tokens.draw(t);
+        visionChanged();
       }),
       s.on('tokenGone', (id) => {
-        this.removeToken(id);
-        this.visionDirty = true;
+        this.tokens.remove(id);
+        visionChanged();
       }),
-      s.on('moved', (id, path) => this.animate(id, path)),
+      s.on('moved', (id, path) => {
+        this.tokens.walk(id, path);
+        this.updatePreview(true);
+      }),
       s.on('select', () => {
-        for (const t of s.tokens.values()) this.drawToken(t);
+        this.tokens.redrawAll();
         this.updatePreview(true);
       }),
       s.on('focus', (p) => {
@@ -116,49 +158,43 @@ export class MapView {
         this.dirty = true;
       }),
     );
-    for (const t of s.tokens.values()) this.drawToken(t);
   }
 
-  destroy(): void {
-    this.destroyed = true;
-    for (const off of this.unsubscribe) off();
-    this.vision?.destroy();
-    if (this.app.renderer) {
-      this.app.canvas.removeEventListener('wheel', this.onWheel);
-      this.app.destroy(true, { children: true });
-    }
+  private onWelcome(): void {
+    const world = this.session.world;
+    if (world && !this.viewId) this.center = [...world.start];
+    this.vision?.loadExplored();
+    for (const key of this.chunks.keys) this.chunks.remove(key);
+    this.wallsChanged();
   }
 
-  // Camera ------------------------------------------------------------------
-
-  private screenToWorld(x: number, y: number): Point {
-    const { width, height } = this.app.screen;
-    return [this.center[0] + (x - width / 2) / this.zoom, this.center[1] + (y - height / 2) / this.zoom];
-  }
-
-  private onWheel = (e: WheelEvent): void => {
-    e.preventDefault();
-    const rect = this.app.canvas.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
-    const before = this.screenToWorld(sx, sy);
-    this.zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, this.zoom * Math.exp(-e.deltaY * 0.0015)));
-    const after = this.screenToWorld(sx, sy);
-    this.center = [this.center[0] + before[0] - after[0], this.center[1] + before[1] - after[1]];
+  private wallsChanged(): void {
+    this.vision?.wallsChanged();
+    this.visionDirty = true;
     this.dirty = true;
-  };
+    this.updatePreview(true);
+  }
+
+  private allWalls(): Wall[] {
+    return [...this.session.chunks.values()].flatMap((c) => c.walls);
+  }
+
+  // Frame -------------------------------------------------------------------
 
   private tick(dt: number): void {
-    const walking = this.animateTokens(dt);
+    const walking = this.tokens.animate(dt);
     if (!this.session.world) return;
     // One more render after a walk ends, to mark what the token now sees as explored.
     const stopped = this.wasWalking && !walking;
     this.wasWalking = walking;
     if (this.dirty || this.visionDirty || walking || stopped) {
       this.visionDirty = false;
-      this.vision?.render({ center: this.center, zoom: this.zoom }, this.allWalls(), this.viewers(), !walking);
+      this.vision?.render({ center: this.center, zoom: this.zoom }, this.allWalls(), this.tokens.viewers(), !walking);
     }
-    if (!this.dirty) return;
+    if (this.dirty) this.applyCamera();
+  }
+
+  private applyCamera(): void {
     this.dirty = false;
     const { width, height } = this.app.screen;
     for (const layer of [this.camera, this.overhead]) {
@@ -167,14 +203,16 @@ export class MapView {
     }
     this.requestChunks();
     this.drawGrid();
-    const showLabels = this.zoom >= LOD.labels;
-    for (const v of this.tokenViews.values()) v.label.visible = showLabels;
-    for (const v of this.chunkViews.values()) {
-      for (const child of v.walls.children) if (child.label === 'door') child.visible = this.zoom >= LOD.doors;
-    }
+    this.tokens.showLabels(this.zoom >= LOD.labels);
+    this.chunks.showDoors(this.zoom >= LOD.doors);
   }
 
-  private visibleRect() {
+  private screenToWorld(x: number, y: number): Point {
+    const { width, height } = this.app.screen;
+    return [this.center[0] + (x - width / 2) / this.zoom, this.center[1] + (y - height / 2) / this.zoom];
+  }
+
+  private visibleRect(): Rect {
     const [x0, y0] = this.screenToWorld(0, 0);
     const [x1, y1] = this.screenToWorld(this.app.screen.width, this.app.screen.height);
     return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
@@ -183,211 +221,42 @@ export class MapView {
   private requestChunks(): void {
     const size = this.session.world!.chunkSize;
     const r = this.visibleRect();
-    const keys: string[] = [];
     const cx0 = Math.floor(r.x / size) - CHUNK_MARGIN;
     const cy0 = Math.floor(r.y / size) - CHUNK_MARGIN;
     const cx1 = Math.floor((r.x + r.w) / size) + CHUNK_MARGIN;
     const cy1 = Math.floor((r.y + r.h) / size) + CHUNK_MARGIN;
-    // Very far out we'd ask for hundreds of chunks; keep what's loaded instead.
-    if (Math.max(cx1 - cx0, cy1 - cy0) > 24) return;
+    if (Math.max(cx1 - cx0, cy1 - cy0) > MAX_CHUNK_SPAN) return;
+    const keys: string[] = [];
     for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) keys.push(chunkKey(cx, cy));
     const id = keys.join(' ');
     if (id === this.viewId) return;
     this.viewId = id;
     this.session.setView(keys);
   }
-  private viewId = '';
 
   private drawGrid(): void {
-    const g = this.gridLayer;
-    g.clear();
+    const g = this.grid.clear();
     if (this.zoom < LOD.grid) return;
     const size = this.session.world!.gridSize;
     const r = this.visibleRect();
-    const x0 = Math.floor(r.x / size) * size;
-    const y0 = Math.floor(r.y / size) * size;
-    for (let x = x0; x <= r.x + r.w; x += size) g.moveTo(x, r.y).lineTo(x, r.y + r.h);
-    for (let y = y0; y <= r.y + r.h; y += size) g.moveTo(r.x, y).lineTo(r.x + r.w, y);
+    for (let x = Math.floor(r.x / size) * size; x <= r.x + r.w; x += size) g.moveTo(x, r.y).lineTo(x, r.y + r.h);
+    for (let y = Math.floor(r.y / size) * size; y <= r.y + r.h; y += size) g.moveTo(r.x, y).lineTo(r.x + r.w, y);
     g.stroke({ width: 1 / this.zoom, color: 0x000000, alpha: 0.18 });
   }
 
-  // Chunks ------------------------------------------------------------------
-
-  private drawChunk(key: string): void {
-    const chunk = this.session.chunks.get(key);
-    if (!chunk) return;
-    this.removeChunk(key);
-    this.vision?.wallsChanged();
-    this.visionDirty = true;
-    const view: ChunkView = { ground: new Container(), walls: new Container() };
-    view.ground.cullable = true;
-    view.walls.cullable = true;
-    this.drawTiles(view.ground, chunk);
-    this.drawWalls(view.walls, key, chunk.walls);
-    this.groundLayer.addChild(view.ground);
-    this.wallLayer.addChild(view.walls);
-    this.chunkViews.set(key, view);
-    this.dirty = true;
-    this.updatePreview(true);
-  }
-
-  private removeChunk(key: string): void {
-    const v = this.chunkViews.get(key);
-    if (!v) return;
-    v.ground.destroy({ children: true });
-    v.walls.destroy({ children: true });
-    this.chunkViews.delete(key);
-    this.vision?.wallsChanged();
-    this.visionDirty = true;
-  }
-
-  private drawTiles(into: Container, chunk: Chunk): void {
-    const rects = new Graphics();
-    into.addChild(rects);
-    for (const tile of chunk.tiles) {
-      if (tile.kind === 'rect') {
-        rects.rect(tile.x, tile.y, tile.w, tile.h).fill(tile.color);
-        continue;
-      }
-      const sprite = new Sprite();
-      sprite.position.set(tile.x, tile.y);
-      into.addChild(sprite);
-      Assets.load(`/assets/${tile.src}`)
-        .then((texture) => {
-          if (sprite.destroyed) return;
-          sprite.texture = texture;
-          sprite.width = tile.w;
-          sprite.height = tile.h;
-        })
-        .catch(() => console.warn(`Missing image assets/${tile.src}`));
-    }
-  }
-
-  private drawWalls(into: Container, key: string, walls: Wall[]): void {
-    const lines = new Graphics();
-    into.addChild(lines);
-    for (const w of walls) {
-      if (w.door) continue;
-      lines.moveTo(...w.a).lineTo(...w.b);
-    }
-    lines.stroke({ width: 10, color: 0x111111, cap: 'round' });
-    const isGm = this.session.you?.role === 'gm';
-    for (const w of walls) {
-      if (!w.door) continue;
-      const color = DOOR_COLORS[w.door];
-      const door = new Graphics();
-      door.label = 'door';
-      door.moveTo(...w.a).lineTo(...w.b).stroke({ width: w.door === 'open' ? 4 : 10, color, alpha: w.door === 'open' ? 0.6 : 1 });
-      const mid: Point = [(w.a[0] + w.b[0]) / 2, (w.a[1] + w.b[1]) / 2];
-      door.circle(mid[0], mid[1], 16).fill({ color: 0x1b1d22, alpha: 0.85 }).stroke({ width: 4, color });
-      door.eventMode = 'static';
-      door.cursor = 'pointer';
-      door.on('pointertap', (e) => {
-        e.stopPropagation();
-        // Shift-click lets the GM lock or unlock.
-        if (isGm && e.shiftKey) this.session.setDoor(key, w.id, w.door === 'locked' ? 'closed' : 'locked');
-        else if (w.door === 'locked') this.session.showError('The door is locked');
-        else this.session.setDoor(key, w.id, w.door === 'open' ? 'closed' : 'open');
-      });
-      door.on('pointerdown', (e) => e.stopPropagation());
-      into.addChild(door);
-    }
-  }
-
-  private allWalls(): Wall[] {
-    const out: Wall[] = [];
-    for (const c of this.session.chunks.values()) out.push(...c.walls);
-    return out;
-  }
-
-  // Tokens ------------------------------------------------------------------
-
-  private drawToken(token: Token): void {
-    const g = this.session.world?.gridSize ?? 100;
-    let view = this.tokenViews.get(token.id);
-    if (!view) {
-      const root = new Container();
-      const disc = new Graphics();
-      const label = new Text({ text: '', style: { fill: 0xffffff, fontSize: 22, stroke: { color: 0x000000, width: 4 } } });
-      label.anchor.set(0.5, 0);
-      root.addChild(disc, label);
-      root.eventMode = 'static';
-      root.cursor = 'pointer';
-      root.on('pointerdown', (e) => {
-        e.stopPropagation();
-        const t = this.session.tokens.get(token.id);
-        if (t && this.session.canControl(t)) this.session.select(t.id);
-      });
-      root.position.set(token.x, token.y);
-      this.tokenLayer.addChild(root);
-      view = { root, disc, label, route: [] };
-      this.tokenViews.set(token.id, view);
-    }
-    if (view.route.length === 0) view.root.position.set(token.x, token.y);
-    const r = token.size * g * 0.42;
-    const selected = this.session.selected === token.id;
-    const mine = this.session.you && token.controllers.includes(this.session.you.id);
-    view.disc
-      .clear()
-      .circle(0, 0, r)
-      .fill(token.color)
-      .stroke({ width: selected ? 8 : 4, color: selected ? 0xffffff : mine ? this.session.you!.color : 0x111111 });
-    const notes = [token.hidden && 'hidden', token.visibleTo && 'illusion'].filter(Boolean);
-    view.label.text = notes.length ? `${token.name} (${notes.join(', ')})` : token.name;
-    view.label.position.set(0, r + 4);
-    view.label.visible = this.zoom >= LOD.labels;
-    view.root.alpha = token.hidden ? 0.5 : 1;
-  }
-
-  private removeToken(id: string): void {
-    this.tokenViews.get(id)?.root.destroy({ children: true });
-    this.tokenViews.delete(id);
-  }
-
-  private animate(id: string, path: Point[]): void {
-    const view = this.tokenViews.get(id);
-    if (!view) return;
-    view.route = path.slice(1);
-    this.updatePreview(true);
-  }
-
-  /** Your tokens, which see for you, where they're drawn right now. The GM has none. */
-  private viewers(): Viewer[] {
-    const you = this.session.you;
-    if (!you || you.role === 'gm') return [];
-    const out: Viewer[] = [];
-    for (const t of this.session.tokens.values()) {
-      const view = this.tokenViews.get(t.id);
-      if (view && t.controllers.includes(you.id)) out.push({ token: t, at: [view.root.x, view.root.y] });
-    }
-    return out;
-  }
-
-  /** Moves walking tokens along their routes; true while any token is walking. */
-  private animateTokens(dt: number): boolean {
-    let walking = false;
-    for (const v of this.tokenViews.values()) {
-      if (v.route.length > 0) walking = true;
-      let budget = WALK_SPEED * dt;
-      while (budget > 0 && v.route.length > 0) {
-        const [tx, ty] = v.route[0]!;
-        const dx = tx - v.root.x;
-        const dy = ty - v.root.y;
-        const d = Math.hypot(dx, dy);
-        if (d <= budget) {
-          v.root.position.set(tx, ty);
-          v.route.shift();
-          budget -= d;
-        } else {
-          v.root.position.set(v.root.x + (dx / d) * budget, v.root.y + (dy / d) * budget);
-          budget = 0;
-        }
-      }
-    }
-    return walking;
-  }
-
   // Input -------------------------------------------------------------------
+
+  private onWheel = (e: WheelEvent): void => {
+    e.preventDefault();
+    const rect = this.app.canvas.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const before = this.screenToWorld(sx, sy);
+    this.zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, this.zoom * Math.exp(-e.deltaY * WHEEL_ZOOM_SPEED)));
+    const after = this.screenToWorld(sx, sy);
+    this.center = [this.center[0] + before[0] - after[0], this.center[1] + before[1] - after[1]];
+    this.dirty = true;
+  };
 
   private onPointerDown(e: FederatedPointerEvent): void {
     const p: Point = [e.global.x, e.global.y];
@@ -396,64 +265,43 @@ export class MapView {
 
   private onPointerMove(e: FederatedPointerEvent): void {
     const p: Point = [e.global.x, e.global.y];
-    if (this.drag) {
-      if (!this.drag.panning && Math.hypot(p[0] - this.drag.start[0], p[1] - this.drag.start[1]) > DRAG_THRESHOLD) {
-        this.drag.panning = true;
-      }
-      if (this.drag.panning) {
-        this.center = [
-          this.center[0] - (p[0] - this.drag.last[0]) / this.zoom,
-          this.center[1] - (p[1] - this.drag.last[1]) / this.zoom,
-        ];
-        this.dirty = true;
-      }
-      this.drag.last = p;
-    }
+    if (this.drag) this.dragTo(this.drag, p);
     this.hoverPoint = this.screenToWorld(p[0], p[1]);
     this.updatePreview(false);
+  }
+
+  private dragTo(drag: Drag, p: Point): void {
+    if (Math.hypot(p[0] - drag.start[0], p[1] - drag.start[1]) > DRAG_THRESHOLD) drag.panning = true;
+    if (drag.panning) {
+      this.center = [
+        this.center[0] - (p[0] - drag.last[0]) / this.zoom,
+        this.center[1] - (p[1] - drag.last[1]) / this.zoom,
+      ];
+      this.dirty = true;
+    }
+    drag.last = p;
   }
 
   private onPointerUp(e: FederatedPointerEvent): void {
     const drag = this.drag;
     this.drag = undefined;
     if (!drag || drag.panning || drag.button !== 0) return;
-    const token = this.session.selected ? this.session.tokens.get(this.session.selected) : undefined;
-    if (!token) return;
-    this.session.move(token.id, this.screenToWorld(e.global.x, e.global.y));
+    const selected = this.session.selected;
+    if (selected) this.session.move(selected, this.screenToWorld(e.global.x, e.global.y));
   }
 
-  /** Shows the path the selected token would walk to the hovered square. */
   private updatePreview(force: boolean): void {
     const world = this.session.world;
     const token = this.session.selected ? this.session.tokens.get(this.session.selected) : undefined;
-    const g = this.pathLayer;
     if (!world || !token || !this.hoverPoint || this.drag?.panning) {
-      g.clear();
-      this.pathLabel.text = '';
-      this.hoverSquare = undefined;
+      this.preview.clear();
       return;
     }
-    const target = snapToGrid(this.hoverPoint, world.gridSize);
-    const square = `${target[0]},${target[1]}:${token.x},${token.y}`;
-    if (!force && square === this.hoverSquare) return;
-    this.hoverSquare = square;
-    g.clear();
-    this.pathLabel.text = '';
-    const path = findPath([token.x, token.y], target, this.allWalls(), { gridSize: world.gridSize });
-    if (!path) {
-      g.circle(target[0], target[1], world.gridSize * 0.3).stroke({ width: 6, color: 0xd04a4a });
-      return;
-    }
-    if (path.points.length < 2) return;
-    const color = path.feet > token.speed ? 0xff8060 : 0xffffff;
-    g.moveTo(...path.points[0]!);
-    for (const p of path.points.slice(1)) g.lineTo(...p);
-    g.stroke({ width: 6, color, alpha: 0.8, cap: 'round', join: 'round' });
-    for (const p of path.points.slice(1, -1)) g.circle(p[0], p[1], 6).fill({ color, alpha: 0.8 });
-    g.circle(target[0], target[1], world.gridSize * 0.3).stroke({ width: 6, color });
-    this.pathLabel.text = `${path.feet} ft`;
-    this.pathLabel.style.fill = color;
-    this.pathLabel.position.set(target[0], target[1] - world.gridSize * 0.3);
-    this.pathLabel.scale.set(Math.max(1, 0.8 / this.zoom));
+    this.preview.show(token, this.hoverPoint, {
+      gridSize: world.gridSize,
+      walls: this.allWalls(),
+      zoom: this.zoom,
+      force,
+    });
   }
 }

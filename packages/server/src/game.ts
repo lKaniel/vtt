@@ -12,7 +12,7 @@ import {
   type ServerMessage,
   type WorldInfo,
 } from '@vtt/shared';
-import type { WebSocket } from 'ws';
+import type { RawData, WebSocket } from 'ws';
 import { z } from 'zod';
 import type { WorldStore } from './world-store.ts';
 
@@ -32,7 +32,10 @@ interface Client {
   visible: Set<string>;
 }
 
+type ClientMessage = z.infer<typeof ClientMessageSchema>;
+
 const CHAT_HISTORY = 200;
+const ROLL_COMMANDS = new Set(['/r', '/roll', '/gmr']);
 /** How far a path search may wander past the start-goal box, in squares. */
 const PATH_MARGIN = 12;
 
@@ -52,7 +55,8 @@ export class Game {
       this.refreshAll();
     });
     store.on('chunkGone', (key) => {
-      for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk: { tiles: [], walls: [], lights: [] } });
+      for (const c of this.clients)
+        if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk: { tiles: [], walls: [], lights: [] } });
       this.refreshAll();
     });
     store.on('token', (token, path) => this.refreshAll(token.id, path));
@@ -80,14 +84,9 @@ export class Game {
       chat: this.chat.filter((m) => !m.gmOnly || player.role === 'gm'),
     });
     ws.on('message', (data) => {
-      let parsed;
-      try {
-        parsed = ClientMessageSchema.safeParse(JSON.parse(data.toString()));
-      } catch {
-        return this.fail(client, 'Bad message');
-      }
-      if (!parsed.success) return this.fail(client, 'Bad message');
-      this.handle(client, parsed.data);
+      const msg = parseClientMessage(data);
+      if (msg) this.handle(client, msg);
+      else this.fail(client, 'Bad message');
     });
     ws.on('close', () => this.clients.delete(client));
     console.log(`[game] ${player.name} joined`);
@@ -108,79 +107,86 @@ export class Game {
   private refreshAll(changed?: string, path?: Point[]): void {
     for (const c of this.clients) {
       const before = c.visible;
-      const after = this.visibleTo(c.player);
-      c.visible = after;
-      for (const id of before) if (!after.has(id)) this.send(c, { t: 'tokenGone', id });
-      for (const id of after) {
-        const token = this.store.tokens.get(id)!;
-        if (!before.has(id)) this.send(c, { t: 'token', token });
-        else if (id === changed) this.send(c, path ? { t: 'moved', id, path } : { t: 'token', token });
-      }
+      c.visible = this.visibleTo(c.player);
+      for (const msg of this.visibilityChanges(before, c.visible, changed, path)) this.send(c, msg);
     }
   }
 
-  private handle(c: Client, msg: z.infer<typeof ClientMessageSchema>): void {
+  private visibilityChanges(
+    before: Set<string>,
+    after: Set<string>,
+    changed?: string,
+    path?: Point[],
+  ): ServerMessage[] {
+    const out: ServerMessage[] = [];
+    for (const id of before) if (!after.has(id)) out.push({ t: 'tokenGone', id });
+    for (const id of after) {
+      const token = this.store.tokens.get(id)!;
+      if (!before.has(id)) out.push({ t: 'token', token });
+      else if (id === changed) out.push(path ? { t: 'moved', id, path } : { t: 'token', token });
+    }
+    return out;
+  }
+
+  private handle(c: Client, msg: ClientMessage): void {
     switch (msg.t) {
-      case 'view': {
-        const next = new Set(msg.chunks);
-        for (const key of next) {
-          if (c.chunks.has(key)) continue;
-          // Empty chunks are sent too, so the client knows the area is loaded.
-          const chunk = this.store.chunks.get(key) ?? { tiles: [], walls: [], lights: [] };
-          this.send(c, { t: 'chunk', key, chunk });
-        }
-        c.chunks = next;
-        return;
-      }
-      case 'move': {
-        const token = this.store.tokens.get(msg.token);
-        if (!token || !c.visible.has(token.id)) return this.fail(c, 'No such token');
-        if (!canControlToken(token, c.player)) return this.fail(c, `You don't control ${token.name}`);
-        const g = this.store.world.gridSize;
-        const m = PATH_MARGIN * g;
-        const walls = this.store.wallsIn({
-          x: Math.min(token.x, msg.to[0]) - m,
-          y: Math.min(token.y, msg.to[1]) - m,
-          w: Math.abs(token.x - msg.to[0]) + 2 * m,
-          h: Math.abs(token.y - msg.to[1]) + 2 * m,
-        });
-        const path = findPath([token.x, token.y], msg.to, walls, { gridSize: g, margin: PATH_MARGIN });
-        if (!path) return this.fail(c, `${token.name} can't get there`);
-        if (path.points.length < 2) return;
-        const [x, y] = path.points.at(-1)!;
-        this.store.setToken({ ...token, x, y }, path.points);
-        return;
-      }
-      case 'door': {
-        const chunk = this.store.chunks.get(msg.chunk);
-        const wall = chunk?.walls.find((w) => w.id === msg.wall);
-        if (!chunk || !wall?.door) return this.fail(c, 'No such door');
-        if (c.player.role !== 'gm' && (wall.door === 'locked' || msg.state === 'locked')) {
-          return this.fail(c, 'The door is locked');
-        }
-        const walls = chunk.walls.map((w) => (w === wall ? { ...w, door: msg.state } : w));
-        this.store.setChunk(msg.chunk, { ...chunk, walls });
-        return;
-      }
+      case 'view':
+        return this.onView(c, msg.chunks);
+      case 'move':
+        return this.onMove(c, msg.token, msg.to);
+      case 'door':
+        return this.onDoor(c, msg);
       case 'chat':
         return this.onChat(c, msg.text.trim());
     }
   }
 
+  private onView(c: Client, chunks: string[]): void {
+    const next = new Set(chunks);
+    for (const key of next) {
+      if (c.chunks.has(key)) continue;
+      // Empty chunks are sent too, so the client knows the area is loaded.
+      const chunk = this.store.chunks.get(key) ?? { tiles: [], walls: [], lights: [] };
+      this.send(c, { t: 'chunk', key, chunk });
+    }
+    c.chunks = next;
+  }
+
+  private onMove(c: Client, id: string, to: Point): void {
+    const token = this.store.tokens.get(id);
+    if (!token || !c.visible.has(token.id)) return this.fail(c, 'No such token');
+    if (!canControlToken(token, c.player)) return this.fail(c, `You don't control ${token.name}`);
+    const g = this.store.world.gridSize;
+    const m = PATH_MARGIN * g;
+    const walls = this.store.wallsIn({
+      x: Math.min(token.x, to[0]) - m,
+      y: Math.min(token.y, to[1]) - m,
+      w: Math.abs(token.x - to[0]) + 2 * m,
+      h: Math.abs(token.y - to[1]) + 2 * m,
+    });
+    const path = findPath([token.x, token.y], to, walls, { gridSize: g, margin: PATH_MARGIN });
+    if (!path) return this.fail(c, `${token.name} can't get there`);
+    const [x, y] = path.points.at(-1)!;
+    if (path.points.length > 1) this.store.setToken({ ...token, x, y }, path.points);
+  }
+
+  private onDoor(c: Client, msg: Extract<ClientMessage, { t: 'door' }>): void {
+    const chunk = this.store.chunks.get(msg.chunk);
+    const wall = chunk?.walls.find((w) => w.id === msg.wall);
+    if (!chunk || !wall?.door) return this.fail(c, 'No such door');
+    const touchesLock = wall.door === 'locked' || msg.state === 'locked';
+    if (touchesLock && c.player.role !== 'gm') return this.fail(c, 'The door is locked');
+    const walls = chunk.walls.map((w) => (w === wall ? { ...w, door: msg.state } : w));
+    this.store.setChunk(msg.chunk, { ...chunk, walls });
+  }
+
   private onChat(c: Client, text: string): void {
-    const cmd = /^\/(r|roll|gmr)\s+(.+)$/i.exec(text);
-    const base = { id: randomUUID(), time: Date.now(), from: c.player.name, color: c.player.color };
+    if (!text) return;
     let message: ChatMessage;
-    if (cmd) {
-      try {
-        message = { ...base, roll: roll(cmd[2]!), gmOnly: cmd[1]!.toLowerCase() === 'gmr' || undefined };
-      } catch (e) {
-        return this.fail(c, (e as Error).message);
-      }
-    } else if (text) {
-      message = { ...base, text };
-    } else {
-      return;
+    try {
+      message = this.chatMessage(c.player, text);
+    } catch (e) {
+      return this.fail(c, (e as Error).message);
     }
     this.chat.push(message);
     if (this.chat.length > CHAT_HISTORY) this.chat.shift();
@@ -190,11 +196,31 @@ export class Game {
     }
   }
 
+  /** Plain text, or a roll for "/r 1d20+5", "/roll ..." and the GM-only "/gmr ...". Throws on a bad formula. */
+  private chatMessage(player: Player, text: string): ChatMessage {
+    const base = { id: randomUUID(), time: Date.now(), from: player.name, color: player.color };
+    const space = text.indexOf(' ');
+    const command = space > 0 ? text.slice(0, space).toLowerCase() : '';
+    if (!ROLL_COMMANDS.has(command)) return { ...base, text };
+    return { ...base, roll: roll(text.slice(space + 1)), gmOnly: command === '/gmr' || undefined };
+  }
+
   private fail(c: Client, message: string): void {
     this.send(c, { t: 'error', message });
   }
 
   private send(c: Client, msg: ServerMessage): void {
     if (c.ws.readyState === c.ws.OPEN) c.ws.send(JSON.stringify(msg));
+  }
+}
+
+function parseClientMessage(data: RawData): ClientMessage | undefined {
+  const buffer = Array.isArray(data) ? Buffer.concat(data) : Buffer.from(data as ArrayBuffer);
+  const text = buffer.toString('utf8');
+  try {
+    const parsed = ClientMessageSchema.safeParse(JSON.parse(text));
+    return parsed.success ? parsed.data : undefined;
+  } catch {
+    return undefined;
   }
 }

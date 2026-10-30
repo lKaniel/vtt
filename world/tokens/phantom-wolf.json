@@ -5,7 +5,5 @@
   "y": 1050,
   "color": "#9090c0",
   "size": 1,
-  "visibleTo": [
-    "player2"
-  ]
+  "visibleTo": ["player2"]
 }

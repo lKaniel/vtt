@@ -1,6 +1,18 @@
-import type { Chunk, ChatMessage, ClientMessage, DoorState, Player, Point, ServerMessage, Token, WorldInfo } from '@vtt/shared';
+import type {
+  Chunk,
+  ChatMessage,
+  ClientMessage,
+  DoorState,
+  Player,
+  Point,
+  ServerMessage,
+  Token,
+  WorldInfo,
+} from '@vtt/shared';
 
 type Status = 'connecting' | 'open' | 'closed';
+
+const CHAT_HISTORY = 200;
 
 export interface SessionEvents {
   /** Anything the UI shows changed. */
@@ -40,10 +52,12 @@ export class Session {
   constructor(readonly playerId: string) {}
 
   on<K extends keyof SessionEvents>(event: K, fn: SessionEvents[K]): () => void {
-    let set = this.listeners.get(event);
-    if (!set) this.listeners.set(event, (set = new Set()));
+    const set = this.listeners.get(event) ?? new Set();
+    this.listeners.set(event, set);
     set.add(fn);
-    return () => void set.delete(fn);
+    return () => {
+      set.delete(fn);
+    };
   }
 
   private emit<K extends keyof SessionEvents>(event: K, ...args: Parameters<SessionEvents[K]>): void {
@@ -127,51 +141,65 @@ export class Session {
   }
 
   private receive(msg: ServerMessage): void {
+    if (this.apply(msg)) this.changed();
+  }
+
+  /** Applies one server message; true when the UI should re-render. */
+  private apply(msg: ServerMessage): boolean {
     switch (msg.t) {
-      case 'welcome': {
-        this.status = 'open';
-        this.world = msg.world;
-        this.you = msg.you;
-        for (const id of [...this.tokens.keys()]) this.emit('tokenGone', id);
-        this.tokens.clear();
-        for (const t of msg.tokens) this.tokens.set(t.id, t);
-        this.chat = msg.chat;
-        // A reconnect starts from scratch: ask for the chunks again.
-        this.chunks.clear();
-        this.emit('welcome');
-        for (const t of msg.tokens) this.emit('token', t);
-        if (this.view.length) this.send({ t: 'view', chunks: this.view });
-        break;
-      }
+      case 'welcome':
+        this.onWelcome(msg);
+        return true;
       case 'chunk':
-        if (!this.view.includes(msg.key)) return;
+        if (!this.view.includes(msg.key)) return false;
         this.chunks.set(msg.key, msg.chunk);
         this.emit('chunk', msg.key);
-        return;
+        return false;
       case 'token':
         this.tokens.set(msg.token.id, msg.token);
         this.emit('token', msg.token);
-        break;
+        return true;
       case 'tokenGone':
-        if (!this.tokens.delete(msg.id)) return;
-        if (this.selected === msg.id) this.select(undefined);
-        this.emit('tokenGone', msg.id);
-        break;
-      case 'moved': {
-        const t = this.tokens.get(msg.id);
-        const end = msg.path.at(-1);
-        if (!t || !end) return;
-        this.tokens.set(msg.id, { ...t, x: end[0], y: end[1] });
-        this.emit('moved', msg.id, msg.path);
-        break;
-      }
+        return this.onTokenGone(msg.id);
+      case 'moved':
+        return this.onMoved(msg.id, msg.path);
       case 'chat':
-        this.chat = [...this.chat, msg.message].slice(-200);
-        break;
+        this.chat = [...this.chat, msg.message].slice(-CHAT_HISTORY);
+        return true;
       case 'error':
         this.showError(msg.message);
-        return;
+        return false;
     }
-    this.changed();
+  }
+
+  private onWelcome(msg: Extract<ServerMessage, { t: 'welcome' }>): void {
+    this.status = 'open';
+    this.world = msg.world;
+    this.you = msg.you;
+    for (const id of this.tokens.keys()) this.emit('tokenGone', id);
+    this.tokens.clear();
+    for (const t of msg.tokens) this.tokens.set(t.id, t);
+    this.chat = msg.chat;
+    // A reconnect starts from scratch: ask for the chunks again.
+    this.chunks.clear();
+    this.emit('welcome');
+    for (const t of msg.tokens) this.emit('token', t);
+    if (this.view.length) this.send({ t: 'view', chunks: this.view });
+  }
+
+  private onTokenGone(id: string): boolean {
+    if (!this.tokens.delete(id)) return false;
+    if (this.selected === id) this.select(undefined);
+    this.emit('tokenGone', id);
+    return true;
+  }
+
+  private onMoved(id: string, path: Point[]): boolean {
+    const t = this.tokens.get(id);
+    const end = path.at(-1);
+    if (!t || !end) return false;
+    this.tokens.set(id, { ...t, x: end[0], y: end[1] });
+    this.emit('moved', id, path);
+    return true;
   }
 }

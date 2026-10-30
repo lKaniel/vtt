@@ -6,7 +6,7 @@ import { Hotbar } from './Hotbar.tsx';
 import { PartyBar } from './PartyBar.tsx';
 import { useSession } from './useSession.ts';
 
-export function GameScreen({ playerId, onLeave }: { playerId: string; onLeave: () => void }) {
+export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; onLeave: () => void }>) {
   const [session] = useState(() => new Session(playerId));
   const host = useRef<HTMLDivElement>(null);
   useSession(session);
@@ -36,7 +36,9 @@ export function GameScreen({ playerId, onLeave }: { playerId: string; onLeave: (
       <div className="map" ref={host} />
       <header className="topbar">
         <strong>{session.world?.name ?? 'Connecting…'}</strong>
-        <span className={`status status-${session.status}`}>{session.status === 'open' ? 'connected' : session.status}</span>
+        <span className={`status status-${session.status}`}>
+          {session.status === 'open' ? 'connected' : session.status}
+        </span>
         <span className="you" style={{ color: session.you?.color }}>
           {session.you?.name}
         </span>
@@ -52,14 +54,20 @@ export function GameScreen({ playerId, onLeave }: { playerId: string; onLeave: (
   );
 }
 
-function Toast({ session }: { session: ReturnType<typeof useSession> }) {
-  const [, force] = useState(0);
+const TOAST_MS = 3000;
+
+function Toast({ session }: Readonly<{ session: Session }>) {
+  const [dismissed, setDismissed] = useState<number>();
   const error = session.error;
   useEffect(() => {
     if (!error) return;
-    const t = setTimeout(() => force((n) => n + 1), 3000);
-    return () => clearTimeout(t);
+    const t = setTimeout(() => {
+      setDismissed(error.at);
+    }, TOAST_MS);
+    return () => {
+      clearTimeout(t);
+    };
   }, [error]);
-  if (!error || Date.now() - error.at > 3000) return null;
+  if (!error || dismissed === error.at) return null;
   return <div className="toast">{error.message}</div>;
 }

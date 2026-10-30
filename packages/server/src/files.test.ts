@@ -19,7 +19,9 @@ describe('parseFile', () => {
   });
 
   it('explains what is wrong', () => {
-    expect(parseFile({ kind: 'token', id: 'bram' }, '{"id":"bob","name":"Bob","x":0,"y":0}').errors[0]).toMatch(/match the file name/);
+    expect(parseFile({ kind: 'token', id: 'bram' }, '{"id":"bob","name":"Bob","x":0,"y":0}').errors[0]).toMatch(
+      /match the file name/,
+    );
     expect(parseFile({ kind: 'chunk', key: 'nope' }, '{}').errors[0]).toMatch(/<cx>_<cy>/);
     expect(parseFile({ kind: 'world' }, '{ broken').errors[0]).toMatch(/invalid JSON/);
     expect(

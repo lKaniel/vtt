@@ -1,0 +1,29 @@
+{
+  // Code health checks, run with `pnpm quality`. See https://fallow.tools/docs
+  "$schema": "./node_modules/fallow/schema.json",
+  "workspaces": { "patterns": ["packages/*"] },
+  "duplicates": { "minOccurrences": 2 },
+  "health": {
+    // Same ceilings as ESLint's complexity rules, so both tools agree.
+    "maxCyclomatic": 12,
+    "maxCognitive": 12,
+    "maxUnitSize": 60,
+    // Real CRAP scores (complexity x missing tests) from `vitest --coverage`.
+    "coverage": "coverage/coverage-final.json",
+    "maxCrap": 30,
+    "thresholdOverrides": [
+      {
+        // Pixi and React drawing code is checked in the browser, not in unit
+        // tests, so untested-risk (CRAP) doesn't apply. The cyclomatic and
+        // cognitive limits above still do. Keep game logic out of these
+        // folders: it belongs in packages/shared, where it gets tested.
+        "files": ["packages/client/src/canvas/**", "packages/client/src/ui/**"],
+        "maxCrap": 160,
+      },
+    ],
+  },
+  "rules": {
+    "unused-dependencies": "error",
+    "unused-dev-dependencies": "error",
+  },
+}

@@ -21,4 +21,12 @@ you add maps, place tokens, and prepare encounters.
   client can preview them with the same code. Don't duplicate them.
 - The server is authoritative: clients send intents, the server validates
   and broadcasts each player's filtered view (`canSeeToken`).
-- Before committing: `pnpm test && pnpm typecheck && pnpm check-world`.
+- Red-green always: write the failing test first, run it and see it fail,
+  then write the code that makes it pass.
+- Keep functions small and flat: ESLint and fallow enforce complexity 12,
+  nesting depth 3, 4 params, 80-line functions. Split code rather than
+  disabling a rule; a suppression needs a `--` reason.
+- Before committing: `pnpm check` (format, lint, typecheck, tests with
+  coverage, fallow, check-world). `pnpm format` fixes formatting.
+- Version control is jj (colocated with git): `jj describe`, `jj new`,
+  `jj bookmark set <name>`, `jj git push`. Don't run mutating git commands.

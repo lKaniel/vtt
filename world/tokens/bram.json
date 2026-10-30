@@ -4,9 +4,7 @@
   "x": 650,
   "y": 650,
   "color": "#c0603a",
-  "controllers": [
-    "player2"
-  ],
+  "controllers": ["player2"],
   "light": {
     "bright": 20,
     "dim": 20

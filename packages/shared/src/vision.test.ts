@@ -24,7 +24,11 @@ describe('tokensVisibleTo', () => {
   const hero = TokenSchema.parse({ id: 'hero', name: 'Hero', x: 50, y: 50, controllers: ['p1'] });
   const ally = TokenSchema.parse({ id: 'ally', name: 'Ally', x: 5050, y: 50, controllers: ['p2'] });
   const orc = (x: number, y: number) => TokenSchema.parse({ id: 'orc', name: 'Orc', x, y });
-  const ctx = (darkness: number, walls: Wall[] = [], lights: { x: number; y: number; bright: number; dim: number }[] = []) => ({
+  const ctx = (
+    darkness: number,
+    walls: Wall[] = [],
+    lights: { x: number; y: number; bright: number; dim: number }[] = [],
+  ) => ({
     world: { darkness, vision: true, gridSize: G },
     lights,
     wallsBetween: (_a: Point, _b: Point) => walls,

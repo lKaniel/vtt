@@ -26,31 +26,24 @@ export interface SightContext {
  * that token's darkvision.
  */
 export function tokensVisibleTo(player: Player, tokens: readonly Token[], ctx: SightContext): Set<string> {
-  const out = new Set<string>();
   const viewers = tokens.filter((t) => t.controllers.includes(player.id));
-  const g = ctx.world.gridSize;
-  const clear = (a: Point, b: Point) => hasLineOfSight(a, b, ctx.wallsBetween(a, b));
-  for (const t of tokens) {
-    if (!canSeeToken(t, player)) continue;
-    if (player.role === 'gm' || !ctx.world.vision || t.controllers.length > 0) {
-      out.add(t.id);
-      continue;
-    }
-    const p: Point = [t.x, t.y];
-    let lit: boolean | undefined;
-    const isLit = () =>
-      (lit ??=
-        ctx.world.darkness < 0.5 ||
-        ctx.lights.some(
-          (l) => Math.hypot(l.x - p[0], l.y - p[1]) <= feetToPx(l.bright + l.dim, g) && clear([l.x, l.y], p),
-        ));
-    for (const v of viewers) {
-      const inDarkvision = Math.hypot(v.x - p[0], v.y - p[1]) <= feetToPx(v.darkvision, g);
-      if ((inDarkvision || isLit()) && clear([v.x, v.y], p)) {
-        out.add(t.id);
-        break;
-      }
-    }
-  }
-  return out;
+  const seesAll = player.role === 'gm' || !ctx.world.vision;
+  const ids = tokens
+    .filter((t) => canSeeToken(t, player))
+    .filter((t) => seesAll || t.controllers.length > 0 || isSpotted(t, viewers, ctx))
+    .map((t) => t.id);
+  return new Set(ids);
+}
+
+/** Whether any viewer has a clear line to `token` and it's lit or within their darkvision. */
+function isSpotted(token: Token, viewers: readonly Token[], ctx: SightContext): boolean {
+  const p: Point = [token.x, token.y];
+  const clear = (from: Point) => hasLineOfSight(from, p, ctx.wallsBetween(from, p));
+  const within = (from: Point, feet: number) =>
+    Math.hypot(from[0] - p[0], from[1] - p[1]) <= feetToPx(feet, ctx.world.gridSize);
+  let lit: boolean | undefined;
+  const isLit = () =>
+    (lit ??=
+      ctx.world.darkness < 0.5 || ctx.lights.some((l) => within([l.x, l.y], l.bright + l.dim) && clear([l.x, l.y])));
+  return viewers.some((v) => (within([v.x, v.y], v.darkvision) || isLit()) && clear([v.x, v.y]));
 }

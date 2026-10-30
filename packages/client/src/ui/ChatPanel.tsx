@@ -4,7 +4,7 @@ import type { Session } from '../session.ts';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
-export function ChatPanel({ session }: { session: Session }) {
+export function ChatPanel({ session }: Readonly<{ session: Session }>) {
   const [text, setText] = useState('');
   const list = useRef<HTMLDivElement>(null);
 
@@ -12,7 +12,7 @@ export function ChatPanel({ session }: { session: Session }) {
     list.current?.scrollTo({ top: list.current.scrollHeight });
   }, [session.chat.length]);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
     session.say(text);
@@ -22,7 +22,9 @@ export function ChatPanel({ session }: { session: Session }) {
   return (
     <aside className="chat">
       <div className="chat-list" ref={list}>
-        {session.chat.length === 0 && <p className="muted">Type to chat. Roll with /r 1d20+5, or /gmr for a GM-only roll.</p>}
+        {session.chat.length === 0 && (
+          <p className="muted">Type to chat. Roll with /r 1d20+5, or /gmr for a GM-only roll.</p>
+        )}
         {session.chat.map((m) => (
           <Message key={m.id} m={m} />
         ))}
@@ -41,7 +43,7 @@ export function ChatPanel({ session }: { session: Session }) {
   );
 }
 
-function Message({ m }: { m: ChatMessage }) {
+function Message({ m }: Readonly<{ m: ChatMessage }>) {
   return (
     <div className="msg">
       <span className="msg-from" style={{ color: m.color }}>
@@ -64,8 +66,13 @@ function Message({ m }: { m: ChatMessage }) {
   );
 }
 
-function Term({ t, first }: { t: DiceTerm; first: boolean }) {
-  const sign = t.sign < 0 ? ' − ' : first ? '' : ' + ';
+function signText(t: DiceTerm, first: boolean): string {
+  if (t.sign < 0) return ' − ';
+  return first ? '' : ' + ';
+}
+
+function Term({ t, first }: Readonly<{ t: DiceTerm; first: boolean }>) {
+  const sign = signText(t, first);
   if (t.rolls.length === 0) return <>{`${sign}${t.value}`}</>;
   return (
     <>
