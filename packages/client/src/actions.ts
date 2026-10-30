@@ -1,4 +1,5 @@
 import type { Attack, FeatureSheet, Spell, TokenView, TurnBudget } from '@vtt/shared';
+import { attackArt, featureArt, spellArt } from './icon-art.ts';
 import { attackIcon, featureIcon, spellIcon, type Icon } from './icons.ts';
 import { lowestSlot } from './spell-text.ts';
 
@@ -29,7 +30,7 @@ function attackTiles(token: TokenView): ActionTile[] {
   return (token.sheet?.attacks ?? []).map((attack) => ({
     kind: 'attack',
     name: attack.name,
-    icon: attackIcon(attack),
+    icon: { ...attackIcon(attack), art: attackArt(attack) },
     spent: false,
     attack,
   }));
@@ -41,7 +42,14 @@ function spellTiles(token: TokenView): ActionTile[] {
   );
   return spells.map((spell) => {
     const slot = lowestSlot(token, spell);
-    return { kind: 'spell', name: spell.name, icon: spellIcon(spell), spent: slot === undefined, spell, slot };
+    return {
+      kind: 'spell',
+      name: spell.name,
+      icon: { ...spellIcon(spell), art: spellArt(spell) },
+      spent: slot === undefined,
+      spell,
+      slot,
+    };
   });
 }
 
@@ -51,7 +59,7 @@ function featureTiles(token: TokenView): ActionTile[] {
     .map((feature) => ({
       kind: 'feature',
       name: feature.name,
-      icon: featureIcon(feature),
+      icon: { ...featureIcon(feature), art: featureArt(feature) },
       spent: feature.left === 0,
       feature,
       ...(feature.max === undefined ? {} : { uses: `${feature.left}/${feature.max}` }),

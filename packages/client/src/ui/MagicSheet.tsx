@@ -1,4 +1,5 @@
 import type { TokenView } from '@vtt/shared';
+import { spellArt } from '../icon-art.ts';
 import { effectIcon, spellIcon } from '../icons.ts';
 import type { Session } from '../session.ts';
 import { ORDINAL } from '../spell-text.ts';
@@ -79,7 +80,7 @@ function Spells({ token }: Readonly<{ token: TokenView }>) {
               .filter((s) => s.level === level)
               .map((s) => (
                 <span key={s.id} className="bag-slot" tabIndex={0} aria-label={s.name}>
-                  <IconFace icon={spellIcon(s)} size={24} />
+                  <IconFace icon={{ ...spellIcon(s), art: spellArt(s) }} size={24} />
                   <TipCard tip={spellTip(s)} />
                 </span>
               ))}

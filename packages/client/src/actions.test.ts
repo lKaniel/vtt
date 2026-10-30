@@ -76,6 +76,13 @@ describe('action bar tiles', () => {
     expect(keys.slice(8, 11)).toEqual(['9', '0', undefined]);
   });
 
+  it('uses painted art where there is some', () => {
+    const [attack, bolt, , , rage] = actionTiles(wizard());
+    expect(attack!.icon.art).toBe('/art/icons/actions/melee-attack.webp');
+    expect(bolt!.icon.art).toBe('/art/icons/spells/fire-bolt.webp');
+    expect(rage!.icon.art).toBe('/art/icons/features/rage.webp');
+  });
+
   it('filters by tab', () => {
     const tiles = actionTiles(wizard());
     expect(filterTiles(tiles, 'all')).toHaveLength(5);

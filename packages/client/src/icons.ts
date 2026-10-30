@@ -36,6 +36,8 @@ type SchoolTint = 'abjuration' | 'divination' | 'enchantment' | 'illusion' | 'ne
 export interface Icon {
   glyph: Glyph;
   tint: Tint;
+  /** A painted icon to show instead of the glyph, from icon-art.ts. */
+  art?: string;
 }
 
 const DAMAGE_GLYPH: Record<DamageType, Glyph> = {

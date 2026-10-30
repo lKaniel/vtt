@@ -149,6 +149,13 @@ export function Glyph({ glyph, size = 24 }: Readonly<{ glyph: Glyph; size?: numb
 
 /** A glyph on a tinted, glowing disc: the face of an action tile or effect badge. */
 export function IconFace({ icon, size }: Readonly<{ icon: IconSpec; size?: number }>) {
+  if (icon.art) {
+    return (
+      <span className={`icon-face painted tint-${icon.tint}`}>
+        <img src={icon.art} alt="" draggable={false} />
+      </span>
+    );
+  }
   return (
     <span className={`icon-face tint-${icon.tint}`}>
       <Glyph glyph={icon.glyph} size={size} />
