@@ -62,7 +62,8 @@ const fight = (turn: number, move = 30): Combat => ({
     { token: 'goblin', initiative: 15 },
     { token: 'hero', initiative: 10 },
   ],
-  left: { move, action: true, bonus: true },
+  left: { move, action: true, bonus: true, attacks: 0, used: [] },
+  side: {},
 });
 
 let session: Session;

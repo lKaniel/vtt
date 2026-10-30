@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { currentTurn, leaveCombat, nextTurn, startCombat, type Combat, type Rng } from './index.ts';
+import { currentTurn, joinCombat, leaveCombat, nextTurn, startCombat, type Combat, type Rng } from './index.ts';
 
 /** An rng that returns the given d20 faces in order. */
 function d20s(...faces: number[]): Rng {
@@ -32,9 +32,12 @@ describe('nextTurn', () => {
   const start = (): Combat => startCombat(fighters, d20s(10, 15, 9));
 
   it('passes the turn on, refreshing movement and actions', () => {
-    const c = nextTurn({ ...start(), left: { move: 0, action: false, bonus: false } }, everyone);
+    const c = nextTurn(
+      { ...start(), left: { move: 0, action: false, bonus: false, attacks: 1, used: ['x'] } },
+      everyone,
+    );
     expect(currentTurn(c)).toBe('wolf');
-    expect(c.left).toEqual({ move: 40, action: true, bonus: true });
+    expect(c.left).toEqual({ move: 40, action: true, bonus: true, attacks: 0, used: [] });
   });
 
   it('starts a new round after the last creature', () => {
@@ -60,5 +63,14 @@ describe('leaveCombat', () => {
     const c = leaveCombat(startCombat(fighters, d20s(10, 15, 9)), 'goblin', everyone);
     expect(currentTurn(c)).toBe('wolf');
     expect(c.left.move).toBe(40);
+  });
+});
+
+describe('joinCombat', () => {
+  it('puts summons right after their caster, keeping whose turn it is', () => {
+    const c = nextTurn(startCombat(fighters, d20s(10, 15, 9)), everyone);
+    const after = joinCombat(c, 'goblin', ['owl']);
+    expect(after.order.map((e) => e.token)).toEqual(['goblin', 'owl', 'wolf', 'hero']);
+    expect(currentTurn(after)).toBe('wolf');
   });
 });

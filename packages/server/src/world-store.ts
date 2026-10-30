@@ -120,6 +120,13 @@ export class WorldStore extends EventEmitter<StoreEvents> {
     this.write(`tokens/${token.id}.json`, token);
   }
 
+  /** Deletes a token and its file (a summon that vanished). */
+  removeToken(id: string): void {
+    if (!this.tokens.delete(id)) return;
+    this.emit('tokenGone', id);
+    this.remove(`tokens/${id}.json`);
+  }
+
   setChunk(key: string, chunk: Chunk): void {
     this.chunks.set(key, chunk);
     this.emit('chunk', key, chunk);

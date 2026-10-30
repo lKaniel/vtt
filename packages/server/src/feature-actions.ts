@@ -1,0 +1,58 @@
+import { featureProblem, removeEffects, rest, useFeature, type Player } from '@vtt/shared';
+import { Refusal, requireGm, type Cost, type Table } from './table.ts';
+
+/** Class features, rests, and ending effects by hand. */
+export class FeatureActions {
+  constructor(private table: Table) {}
+
+  private get store() {
+    return this.table.store;
+  }
+
+  use(player: Player, id: string, featureId: string): void {
+    const { token, sheet } = this.table.actor(player, id);
+    const problem = featureProblem(sheet, featureId);
+    if (problem) throw new Refusal(`${token.name} ${problem}`);
+    const feature = sheet.features.find((f) => f.id === featureId)!;
+    const cost: Cost = feature.action ?? 'free';
+    this.table.check(token, cost);
+    const out = useFeature(token, sheet, featureId, this.table.rng);
+    this.table.pay(token, cost);
+    this.store.setToken({ ...out.token, x: token.x, y: token.y });
+    const left = this.table.budget(token);
+    if (out.grantAction && left) this.table.setBudget(token, { ...left, action: true });
+    const detail = out.healed !== undefined ? ` and regains ${out.healed} HP` : '';
+    this.table.note(`${token.name} uses ${feature.name}${detail}`);
+  }
+
+  rest(player: Player, ids: readonly string[], kind: 'short' | 'long'): void {
+    requireGm(player);
+    for (const id of ids) {
+      const { token, sheet } = this.table.fighter(id);
+      if (kind === 'long' && token.concentration) this.table.endConcentration(id);
+      this.store.setToken(rest(this.store.tokens.get(id)!, sheet, kind));
+    }
+    const who = ids.length === 1 ? 'A creature takes' : String(ids.length) + ' creatures take';
+    this.table.note(`${who} a ${kind} rest`);
+  }
+
+  dropConcentration(player: Player, id: string): void {
+    const token = this.store.tokens.get(id);
+    if (!token || !this.canManage(player, id)) throw new Refusal('No such token');
+    if (!token.concentration) throw new Refusal(`${token.name} isn't concentrating on anything`);
+    this.table.note(`${token.name} stops concentrating on ${token.concentration.name}`);
+    this.table.endConcentration(id);
+  }
+
+  removeEffect(player: Player, id: string, effect: string): void {
+    requireGm(player);
+    const token = this.store.tokens.get(id);
+    if (!token) throw new Refusal('No such token');
+    this.store.setToken(removeEffects(token, new Set([effect])));
+  }
+
+  private canManage(player: Player, id: string): boolean {
+    const token = this.store.tokens.get(id);
+    return player.role === 'gm' || !!token?.controllers.includes(player.id);
+  }
+}

@@ -19,7 +19,10 @@ import {
 } from '@vtt/shared';
 import type { RawData, WebSocket } from 'ws';
 import { z } from 'zod';
-import { CombatActions, Refusal } from './combat-actions.ts';
+import { CombatActions } from './combat-actions.ts';
+import { FeatureActions } from './feature-actions.ts';
+import { SpellActions } from './spell-actions.ts';
+import { Refusal, Table } from './table.ts';
 import type { WorldStore } from './world-store.ts';
 
 const ClientMessageSchema = z.discriminatedUnion('t', [
@@ -32,6 +35,19 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('endTurn') }),
   z.object({ t: z.literal('attack'), attacker: z.string(), target: z.string(), attack: z.string() }),
   z.object({ t: z.literal('equip'), token: z.string(), item: z.number().int().nonnegative(), equipped: z.boolean() }),
+  z.object({
+    t: z.literal('cast'),
+    caster: z.string(),
+    spell: z.string(),
+    slot: z.number().int().min(0).max(9),
+    targets: z.array(z.string()).max(20),
+    point: PointSchema.optional(),
+    summon: z.string().optional(),
+  }),
+  z.object({ t: z.literal('feature'), token: z.string(), feature: z.string() }),
+  z.object({ t: z.literal('dropConcentration'), token: z.string() }),
+  z.object({ t: z.literal('removeEffect'), token: z.string(), effect: z.string() }),
+  z.object({ t: z.literal('rest'), tokens: z.array(z.string()).min(1).max(100), kind: z.enum(['short', 'long']) }),
 ]);
 
 interface Client {
@@ -59,15 +75,17 @@ export class Game {
   private clients = new Set<Client>();
   private chat: ChatMessage[] = [];
   private combat: CombatActions;
+  private spells: SpellActions;
+  private features: FeatureActions;
 
   constructor(
     private store: WorldStore,
     { rng = Math.random }: { rng?: Rng } = {},
   ) {
-    this.combat = new CombatActions(store, rng, {
-      attack: (attack) => this.narrate({ attack }),
-      note: (text) => this.narrate({ text }),
-    });
+    const table = new Table(store, rng, (text) => this.narrate({ text }));
+    this.combat = new CombatActions(table, (attack) => this.narrate({ attack }));
+    this.spells = new SpellActions(table, (spell) => this.narrate({ spell }));
+    this.features = new FeatureActions(table);
     store.on('chunk', (key, chunk) => {
       for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
       // A door or a light changed: what everyone can see may have too.
@@ -182,6 +200,26 @@ export class Game {
         return this.combat.attack(c.player, (id) => c.visible.has(id), msg);
       case 'equip':
         return this.combat.equip(c.player, msg.token, msg.item, msg.equipped);
+      default:
+        return this.dispatchMagic(c, msg);
+    }
+  }
+
+  /** Spells, features, effects and rests. */
+  private dispatchMagic(c: Client, msg: ClientMessage): void {
+    switch (msg.t) {
+      case 'cast':
+        return this.spells.cast(c.player, (id) => c.visible.has(id), msg);
+      case 'feature':
+        return this.features.use(c.player, msg.token, msg.feature);
+      case 'dropConcentration':
+        return this.features.dropConcentration(c.player, msg.token);
+      case 'removeEffect':
+        return this.features.removeEffect(c.player, msg.token, msg.effect);
+      case 'rest':
+        return this.features.rest(c.player, msg.tokens, msg.kind);
+      default:
+        return undefined;
     }
   }
 
@@ -212,8 +250,8 @@ export class Game {
     if (!path) return this.fail(c, `${token.name} can't get there`);
     const [x, y] = path.points.at(-1)!;
     if (path.points.length < 2) return;
-    this.combat.move(token, path.feet);
-    this.store.setToken({ ...token, x, y }, path.points);
+    const walker = this.combat.move(token, path.feet);
+    this.store.setToken({ ...walker, x, y }, path.points);
   }
 
   private onDoor(c: Client, msg: Extract<ClientMessage, { t: 'door' }>): void {
@@ -257,7 +295,7 @@ export class Game {
   }
 
   /** A message from the game itself: initiative, attack results. */
-  private narrate(content: Pick<ChatMessage, 'text' | 'attack'>): void {
+  private narrate(content: Pick<ChatMessage, 'text' | 'attack' | 'spell'>): void {
     this.post({ id: randomUUID(), time: Date.now(), from: 'Combat', color: '#c8b48a', ...content });
   }
 

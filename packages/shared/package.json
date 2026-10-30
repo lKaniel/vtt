@@ -7,7 +7,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "import-srd": "node --experimental-strip-types scripts/import-srd.ts"
   },
   "dependencies": {
     "zod": "^4.6.7"

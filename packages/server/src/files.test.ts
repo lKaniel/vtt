@@ -33,6 +33,14 @@ describe('parseFile', () => {
 });
 
 describe('crossCheck', () => {
+  it('reports spells the edition does not have', () => {
+    const world = WorldSchema.parse({ name: 'w', players: [{ id: 'gm', name: 'GM', role: 'gm' }] });
+    const token = TokenSchema.parse({ id: 'w', name: 'W', x: 0, y: 0, stats: { spells: ['fireball', 'chaos-bolt'] } });
+    expect(crossCheck(world, new Map(), new Map([['w', token]])).map((i) => i.message)).toEqual([
+      'unknown spell "chaos-bolt" in the 2014 rules',
+    ]);
+  });
+
   it('reports unknown monsters, items and combatants', () => {
     const world = WorldSchema.parse({ name: 'w', players: [{ id: 'gm', name: 'GM', role: 'gm' }] });
     const token = TokenSchema.parse({
@@ -47,7 +55,8 @@ describe('crossCheck', () => {
       round: 1,
       turn: 0,
       order: [{ token: 'ghost', initiative: 3 }],
-      left: { move: 30, action: true, bonus: true },
+      left: { move: 30, action: true, bonus: true, attacks: 0, used: [] },
+      side: {},
     };
     const issues = crossCheck(world, new Map(), new Map([['orc', token]]), combat);
     expect(issues.map((i) => i.message)).toEqual([
