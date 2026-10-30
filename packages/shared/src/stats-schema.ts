@@ -109,10 +109,15 @@ export const MonsterSchema = z.object({
   speed: z.number().nonnegative().default(30),
   darkvision: z.number().nonnegative().default(0),
   abilities: AbilitiesSchema,
+  /** Creature type, e.g. "humanoid" or "beast". */
+  type: z.string().optional(),
   /** Challenge rating, e.g. 0.25 for CR 1/4. */
   cr: z.number().nonnegative(),
+  /** Saving throws the monster is proficient in. */
+  saves: z.array(z.enum(ABILITIES)).default([]),
   attacks: z.array(AttackSchema).default([]),
   ...defenses,
+  conditionImmunities: z.array(z.string()).default([]),
 });
 export type Monster = z.infer<typeof MonsterSchema>;
 

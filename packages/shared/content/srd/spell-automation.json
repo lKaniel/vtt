@@ -1,0 +1,217 @@
+{
+  "$comment": "Hand-written automation merged over spells-5.1.json (2014) and spells-5.2.json (2024) at load. Each spell id maps to fields for both editions and/or for one edition.",
+  "bane": {
+    "both": {
+      "targets": 3
+    }
+  },
+  "bless": {
+    "both": {
+      "targets": 3,
+      "upcast": {
+        "targets": 1
+      }
+    }
+  },
+  "conjure-animals": {
+    "2014": {
+      "targets": 0,
+      "summon": {
+        "options": [
+          {
+            "monster": "brown-bear",
+            "count": 2
+          },
+          {
+            "monster": "dire-wolf",
+            "count": 2
+          },
+          {
+            "monster": "black-bear",
+            "count": 4
+          },
+          {
+            "monster": "wolf",
+            "count": 8
+          }
+        ],
+        "turn": "own"
+      },
+      "automated": true
+    }
+  },
+  "eldritch-blast": {
+    "both": {
+      "beams": 1,
+      "cantrip": "beams",
+      "damage": [
+        {
+          "dice": "1d10",
+          "type": "force"
+        }
+      ]
+    }
+  },
+  "faerie-fire": {
+    "both": {
+      "effect": {
+        "name": "Faerie Fire",
+        "advantageAgainst": true
+      }
+    }
+  },
+  "find-familiar": {
+    "both": {
+      "targets": 0,
+      "summon": {
+        "options": [
+          {
+            "monster": "bat"
+          },
+          {
+            "monster": "cat"
+          },
+          {
+            "monster": "crab"
+          },
+          {
+            "monster": "frog"
+          },
+          {
+            "monster": "hawk"
+          },
+          {
+            "monster": "lizard"
+          },
+          {
+            "monster": "octopus"
+          },
+          {
+            "monster": "owl"
+          },
+          {
+            "monster": "rat"
+          },
+          {
+            "monster": "raven"
+          },
+          {
+            "monster": "spider"
+          },
+          {
+            "monster": "weasel"
+          }
+        ],
+        "turn": "own"
+      },
+      "automated": true
+    }
+  },
+  "guiding-bolt": {
+    "both": {
+      "effect": {
+        "name": "Guiding Bolt",
+        "advantageAgainst": true,
+        "once": true,
+        "rounds": 1
+      }
+    }
+  },
+  "hold-person": {
+    "both": {
+      "creatureTypes": ["humanoid"],
+      "upcast": {
+        "targets": 1
+      },
+      "effect": {
+        "conditions": ["paralyzed"],
+        "repeatSave": true
+      }
+    }
+  },
+  "invisibility": {
+    "both": {
+      "upcast": {
+        "targets": 1
+      },
+      "effect": {
+        "conditions": ["invisible"],
+        "endsOnAttack": true
+      }
+    }
+  },
+  "magic-missile": {
+    "both": {
+      "beams": 3,
+      "autoHit": true,
+      "damage": [
+        {
+          "dice": "1d4+1",
+          "type": "force"
+        }
+      ],
+      "upcast": {
+        "beams": 1
+      },
+      "automated": true
+    }
+  },
+  "misty-step": {
+    "both": {
+      "teleport": 30,
+      "automated": true
+    }
+  },
+  "ray-of-frost": {
+    "both": {
+      "effect": {
+        "name": "Ray of Frost",
+        "speed": -10,
+        "rounds": 1
+      }
+    }
+  },
+  "scorching-ray": {
+    "both": {
+      "beams": 3,
+      "attack": "ranged",
+      "damage": [
+        {
+          "dice": "2d6",
+          "type": "fire"
+        }
+      ],
+      "upcast": {
+        "beams": 1
+      },
+      "automated": true
+    }
+  },
+  "shield": {
+    "both": {
+      "effect": {
+        "name": "Shield",
+        "ac": 5,
+        "rounds": 1
+      }
+    }
+  },
+  "sleep": {
+    "2024": {
+      "effect": {
+        "conditions": ["incapacitated"],
+        "repeatSave": true
+      }
+    }
+  },
+  "vicious-mockery": {
+    "both": {
+      "effect": {
+        "name": "Vicious Mockery",
+        "disadvantage": true,
+        "once": true,
+        "rounds": 1
+      }
+    }
+  }
+}
