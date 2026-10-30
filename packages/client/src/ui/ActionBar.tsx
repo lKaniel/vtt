@@ -9,7 +9,7 @@ import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 import { TipCard } from './Tip.tsx';
 
-const MIN_TILES = 20;
+const MIN_TILES = 12;
 
 const TAB_GLYPH: Record<Tab, GlyphName> = { all: 'star', attacks: 'sword', spells: 'flame', features: 'fist' };
 const TAB_LABEL: Record<Tab, string> = {
@@ -42,28 +42,47 @@ export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onS
     <footer className="actionbar-wrap">
       <div className="hint">{hint(session, token)}</div>
       {token && <AimingControls session={session} token={token} />}
-      {token && (
-        <div className="actionbar frame">
-          <Who token={token} onSheet={onSheet} />
-          <Center session={session} token={token} />
-          <EndTurn session={session} token={token} />
-        </div>
-      )}
+      {token && <Bar session={session} token={token} onSheet={onSheet} />}
     </footer>
   );
 }
 
-function Who({ token, onSheet }: Readonly<{ token: TokenView; onSheet: () => void }>) {
+/** A strip of name, health, tabs and resources over the painted base that holds the tiles. */
+function Bar({ session, token, onSheet }: Readonly<{ session: Session; token: TokenView; onSheet: () => void }>) {
+  const [tab, setTab] = useState<Tab>('all');
+  const budget = budgetOf(session, token);
+  return (
+    <div className="actionbar">
+      <div className="ab-top">
+        <Who token={token} />
+        <Tabs tab={tab} onTab={setTab} />
+        <Resources token={token} budget={budget} />
+      </div>
+      <div className="ab-base">
+        <Portrait token={token} onSheet={onSheet} />
+        <Grid session={session} token={token} tab={tab} budget={budget} />
+        <EndTurn session={session} token={token} />
+      </div>
+    </div>
+  );
+}
+
+function Portrait({ token, onSheet }: Readonly<{ token: TokenView; onSheet: () => void }>) {
+  return (
+    <button className="ab-portrait" onClick={onSheet} title="Character sheet (C)" disabled={!token.sheet}>
+      <Face token={token} />
+      {token.sheet && (
+        <span className="ab-ac" title="Armor class">
+          {token.sheet.ac}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function Who({ token }: Readonly<{ token: TokenView }>) {
   return (
     <div className="ab-who">
-      <button className="ab-portrait" onClick={onSheet} title="Character sheet (C)" disabled={!token.sheet}>
-        <Face token={token} />
-        {token.sheet && (
-          <span className="ab-ac" title="Armor class">
-            {token.sheet.ac}
-          </span>
-        )}
-      </button>
       <div className="ab-name">{token.name}</div>
       <HpBar token={token} />
       <EffectBadges token={token} />
@@ -71,38 +90,40 @@ function Who({ token, onSheet }: Readonly<{ token: TokenView; onSheet: () => voi
   );
 }
 
-function Center({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
-  const [tab, setTab] = useState<Tab>('all');
-  const tiles = actionTiles(token);
-  const shown = filterTiles(tiles, tab);
-  const budget = budgetOf(session, token);
+function Tabs({ tab, onTab }: Readonly<{ tab: Tab; onTab: (tab: Tab) => void }>) {
   return (
-    <div className="ab-center">
-      <Resources token={token} budget={budget} />
-      <div className="ab-body">
-        <div className="ab-tabs" role="tablist">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              role="tab"
-              aria-selected={t === tab}
-              className={t === tab ? 'ab-tab on' : 'ab-tab'}
-              title={TAB_LABEL[t]}
-              onClick={() => setTab(t)}
-            >
-              <Glyph glyph={TAB_GLYPH[t]} size={14} />
-            </button>
-          ))}
-        </div>
-        <div className="ab-grid">
-          {shown.map((tile) => (
-            <Tile key={`${tile.kind}-${tile.name}`} session={session} token={token} tile={tile} budget={budget} />
-          ))}
-          {Array.from({ length: Math.max(0, MIN_TILES - shown.length) }, (_, i) => (
-            <span key={`empty-${i}`} className="tile empty" />
-          ))}
-        </div>
-      </div>
+    <div className="ab-tabs" role="tablist">
+      {TABS.map((t) => (
+        <button
+          key={t}
+          role="tab"
+          aria-selected={t === tab}
+          className={t === tab ? 'ab-tab on' : 'ab-tab'}
+          title={TAB_LABEL[t]}
+          onClick={() => onTab(t)}
+        >
+          <Glyph glyph={TAB_GLYPH[t]} size={14} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Grid({
+  session,
+  token,
+  tab,
+  budget,
+}: Readonly<{ session: Session; token: TokenView; tab: Tab; budget: TurnBudget | undefined }>) {
+  const shown = filterTiles(actionTiles(token), tab);
+  return (
+    <div className="ab-grid">
+      {shown.map((tile) => (
+        <Tile key={`${tile.kind}-${tile.name}`} session={session} token={token} tile={tile} budget={budget} />
+      ))}
+      {Array.from({ length: Math.max(0, MIN_TILES - shown.length) }, (_, i) => (
+        <span key={`empty-${i}`} className="tile empty" />
+      ))}
     </div>
   );
 }

@@ -723,10 +723,6 @@ h4 {
   width: 100%;
 }
 
-.ab-center {
-  display: grid;
-  gap: 8px;
-}
 .ab-resources {
   display: flex;
   gap: 10px;
@@ -805,10 +801,6 @@ h4 {
   outline: 1px solid #34465f;
 }
 
-.ab-body {
-  display: flex;
-  gap: 6px;
-}
 .ab-tabs {
   display: flex;
   flex-direction: column;
@@ -1424,10 +1416,6 @@ h4 {
 .frame::after {
   content: none;
 }
-.actionbar.frame {
-  padding: 16px 18px;
-  border-image: url('/art/ui/panel-large.webp') 110 fill / 30px stretch;
-}
 .sheet.frame {
   padding: 30px 36px 34px;
   border-image: url('/art/ui/panel-large.webp') 110 fill / 38px stretch;
@@ -1541,17 +1529,6 @@ h4 {
 .turns {
   gap: 12px;
   padding: 14px 8px 8px;
-}
-.ab-portrait .face::after {
-  inset: -14px;
-  background-image: url('/art/ui/portrait-ring.webp');
-}
-.ab-portrait:not(:disabled):hover .face::after {
-  filter: brightness(1.25);
-}
-.ab-who {
-  gap: 8px;
-  padding-top: 6px;
 }
 .ab-ac {
   right: -14px;
@@ -1740,4 +1717,84 @@ h4 {
 .join {
   position: relative;
   z-index: 0;
+}
+
+/* The painted action bar: portrait in the left ring, tiles in the tray,
+   end turn on the right ring. Only the tray stretches, so the rings keep
+   their shape; the tabs filter the single row of tiles. */
+.actionbar {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  border-radius: 0;
+}
+.ab-top {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-self: start;
+  margin: 0 0 -10px 150px;
+  padding: 5px 14px;
+  background: rgba(10, 8, 6, 0.82);
+  border: 1px solid var(--gold-dim);
+  border-radius: 8px 8px 0 0;
+}
+.ab-who {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: auto;
+}
+.ab-who .hpbar {
+  width: 130px;
+}
+.ab-tabs {
+  flex-direction: row;
+}
+.ab-resources {
+  height: auto;
+  padding-left: 0;
+}
+.ab-base {
+  display: grid;
+  grid-template-columns: 187px minmax(0, auto) 114px;
+  align-items: center;
+  height: 184px;
+  border-image: url('/art/ui/actionbar-base.webp') 0 119 0 195 fill / 0 114px 0 187px stretch;
+}
+.ab-portrait {
+  justify-self: start;
+  margin: 0 0 0 46px;
+}
+.ab-portrait .face {
+  width: 98px;
+  height: 98px;
+  border-radius: 50%;
+}
+.ab-portrait:not(:disabled):hover .face {
+  filter: brightness(1.15);
+}
+.ab-ac {
+  right: -10px;
+  bottom: -6px;
+}
+.ab-grid {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: 52px;
+  grid-template-rows: 52px;
+  margin: 0 6px;
+}
+.ab-end {
+  width: auto;
+  justify-self: center;
+  margin-left: -6px;
+}
+.end-turn {
+  width: 80px;
+  height: 80px;
+  font-size: 12px;
+}
+.actionbar-wrap {
+  width: max-content;
 }
