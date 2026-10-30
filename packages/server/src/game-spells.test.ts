@@ -120,6 +120,19 @@ describe('casting spells', () => {
     expect(errors(ana)[0]).toMatch(/no 1st-level slots left/);
   });
 
+  it('says a creature is down once, however many darts hit it', () => {
+    const ana = join_('ana');
+    dice = Array<number>(6).fill(face(4, 4));
+    ana.receive({
+      t: 'cast',
+      caster: 'hero',
+      spell: 'magic-missile',
+      slot: 1,
+      targets: ['goblin', 'goblin', 'goblin'],
+    });
+    expect(spellLogs(ana)[0]!.notes).toEqual(['Goblin is down']);
+  });
+
   it('catches everyone in a fireball’s area, the caster too if they stand in it', () => {
     const ana = join_('ana');
     // 8d6 of 1s = 8; everyone fails their save.

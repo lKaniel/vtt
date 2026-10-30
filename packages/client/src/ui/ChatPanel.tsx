@@ -109,7 +109,7 @@ function AttackLine({ a }: Readonly<{ a: AttackLog }>) {
 /** "Wiz casts Fireball (3rd level)", then a line per target. */
 function SpellLine({ s }: Readonly<{ s: SpellLog }>) {
   return (
-    <span className="attack-log">
+    <span className="attack-log spell-log">
       <span className="msg-text">
         {s.caster} casts {s.spell}
         {s.slot > 0 && <span className="muted"> (level {s.slot} slot)</span>}

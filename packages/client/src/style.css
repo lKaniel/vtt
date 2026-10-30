@@ -476,6 +476,12 @@ button {
 
 /* Spells and features ------------------------------------------------------ */
 
+.spell-log {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .spellbar {
   display: flex;
   flex-direction: column;

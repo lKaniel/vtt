@@ -250,7 +250,8 @@ export class SpellActions {
     const notes: string[] = [];
     if (summoned.length) notes.push(`${summoned.map((t) => t.name).join(', ')} appear`);
     if (!spell.automated) notes.push('not automated: the GM applies it');
-    for (const r of outcome.results) if (r.damage > 0 && r.hp <= 0) notes.push(`${name(r.target)} is down`);
+    const down = new Set(outcome.results.filter((r) => r.damage > 0 && r.hp <= 0).map((r) => r.target));
+    for (const id of down) notes.push(`${name(id)} is down`);
     this.logSpell({
       caster: caster.token.name,
       spell: spell.name,
