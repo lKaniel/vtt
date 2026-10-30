@@ -1813,13 +1813,13 @@ h4 {
 }
 .ab-end {
   position: absolute;
-  top: 112px;
-  right: 9px;
+  top: 115px;
+  right: 3px;
   width: auto;
 }
 .end-turn {
-  width: 96px;
-  height: 96px;
+  width: 88px;
+  height: 88px;
   font-size: 13px;
 }
 .actionbar-wrap {
