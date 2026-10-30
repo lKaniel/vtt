@@ -1,6 +1,6 @@
-import { srdFor, type Attack, type FeatureSheet } from '@vtt/shared';
+import { srdFor, type Attack, type FeatureSheet, type TokenView } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
-import { attackArt, featureArt, spellArt } from './icon-art.ts';
+import { attackArt, featureArt, itemArt, spellArt, tokenBaseArt } from './icon-art.ts';
 
 const spell = (id: string) => srdFor('2014').spells.get(id)!;
 const attack = (kind: Attack['kind']): Attack => ({
@@ -10,6 +10,7 @@ const attack = (kind: Attack['kind']): Attack => ({
   damage: [{ dice: '1', type: 'slashing' }],
 });
 const feature = (id: string) => ({ id }) as FeatureSheet;
+const item = (id: string) => srdFor('2014').items.get(id);
 
 describe('painted icon art', () => {
   it('finds a spell painting by id', () => {
@@ -25,5 +26,19 @@ describe('painted icon art', () => {
   it('finds class features by id', () => {
     expect(featureArt(feature('second-wind'))).toBe('/art/icons/features/second-wind.webp');
     expect(featureArt(feature('arcane-recovery'))).toBeUndefined();
+  });
+
+  it('finds weapons, armour and gear by item id', () => {
+    expect(itemArt(item('longsword'))).toBe('/art/icons/items/longsword.webp');
+    expect(itemArt(item('potion-of-healing'))).toBe('/art/icons/items/potion-of-healing.webp');
+    expect(itemArt(undefined)).toBeUndefined();
+  });
+
+  it('stands party tokens on blue bases, others on red, and the selected one on gold', () => {
+    const party = { controllers: ['p1'] } as TokenView;
+    const monster = { controllers: [] as string[] } as TokenView;
+    expect(tokenBaseArt(party, false)).toBe('/art/ui/token-base-ally.webp');
+    expect(tokenBaseArt(monster, false)).toBe('/art/ui/token-base-foe.webp');
+    expect(tokenBaseArt(party, true)).toBe('/art/ui/token-base-selected.webp');
   });
 });

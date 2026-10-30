@@ -1,5 +1,6 @@
 import { currentTurn, type Health, type Point, type TokenView } from '@vtt/shared';
-import { Container, Graphics, Text } from 'pixi.js';
+import { Assets, Container, Graphics, Sprite as PixiSprite, Text, type Texture } from 'pixi.js';
+import { tokenBaseArt } from '../icon-art.ts';
 import type { Session } from '../session.ts';
 import type { Viewer } from './Vision.ts';
 
@@ -9,14 +10,16 @@ const WALK_SPEED = 900;
 const DISC = 0.42;
 /** Ring around the token whose turn it is. */
 const TURN_COLOR = '#f0c040';
-/** Halo around the selected token. */
-const SELECTED_COLOR = '#f2d38a';
+/** Painted base ring diameter as a multiple of the disc radius. */
+const BASE = 2.85;
 /** Rims of party members and of everyone else. */
 const ALLY_RIM = '#c9a45c';
 const OTHER_RIM = '#5a2620';
 
 interface Sprite {
   root: Container;
+  /** The painted ring under the disc. */
+  base: PixiSprite;
   disc: Graphics;
   /** Hit point bar and markers drawn over the disc. */
   status: Graphics;
@@ -37,8 +40,8 @@ export class TokenLayer {
     const view = this.views.get(token.id) ?? this.create(token);
     if (view.route.length === 0) view.root.position.set(token.x, token.y);
     const r = token.size * (this.session.world?.gridSize ?? 100) * DISC;
+    drawBase(view.base, tokenBaseArt(token, this.session.selected === token.id), r);
     drawDisc(view.disc.clear(), token, r, this.ringColor(token));
-    if (this.session.selected === token.id) view.disc.circle(0, 0, r + 9).stroke({ width: 3, color: SELECTED_COLOR });
     drawStatus(view.status.clear(), token, r);
     drawEffects(view.status, token, r);
     const notes = [token.hidden && 'hidden', token.visibleTo && 'illusion'].filter(Boolean);
@@ -107,6 +110,8 @@ export class TokenLayer {
 
   private create(token: TokenView): Sprite {
     const root = new Container();
+    const base = new PixiSprite();
+    base.anchor.set(0.5);
     const disc = new Graphics();
     const status = new Graphics();
     const label = new Text({
@@ -120,7 +125,7 @@ export class TokenLayer {
       },
     });
     label.anchor.set(0.5, 0);
-    root.addChild(disc, status, label);
+    root.addChild(base, disc, status, label);
     root.eventMode = 'static';
     root.cursor = 'pointer';
     root.on('pointerdown', (e) => {
@@ -132,10 +137,20 @@ export class TokenLayer {
       else if (this.session.canControl(t)) this.session.select(t.id);
     });
     this.container.addChild(root);
-    const view = { root, disc, status, label, route: [] };
+    const view = { root, base, disc, status, label, route: [] };
     this.views.set(token.id, view);
     return view;
   }
+}
+
+/** Shows the base ring once its texture has loaded; switching rings keeps the old one until then. */
+function drawBase(base: PixiSprite, url: string, r: number): void {
+  base.label = url;
+  void Assets.load<Texture>(url).then((texture) => {
+    if (base.destroyed || base.label !== url) return;
+    base.texture = texture;
+    base.setSize(r * BASE);
+  });
 }
 
 /** A shadow on the ground, the disc with a soft highlight, and a rim in the token's ring colour. */

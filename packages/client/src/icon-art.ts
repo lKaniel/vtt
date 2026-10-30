@@ -1,4 +1,4 @@
-import type { Attack, FeatureSheet, Spell } from '@vtt/shared';
+import type { Attack, FeatureSheet, Item, Spell, TokenView } from '@vtt/shared';
 import manifest from './icon-art.json';
 
 // Painted icons in public/art/icons, listed in icon-art.json. Anything
@@ -18,3 +18,10 @@ export const spellArt = (spell: Spell) => art('spells', spell.id);
 export const featureArt = (feature: FeatureSheet) => art('features', feature.id);
 export const attackArt = (attack: Attack) =>
   art('actions', attack.kind === 'ranged' ? 'ranged-attack' : 'melee-attack');
+export const itemArt = (item: Item | undefined) => (item ? art('items', item.id) : undefined);
+
+/** The painted ring a token stands on: gold when selected, blue for the party, red for the rest. */
+export function tokenBaseArt(token: TokenView, selected: boolean): string {
+  if (selected) return '/art/ui/token-base-selected.webp';
+  return token.controllers.length > 0 ? '/art/ui/token-base-ally.webp' : '/art/ui/token-base-foe.webp';
+}

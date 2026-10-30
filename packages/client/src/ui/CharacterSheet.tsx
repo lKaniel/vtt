@@ -1,5 +1,6 @@
 import { ABILITIES, abilityMod, srdFor, type TokenView } from '@vtt/shared';
 import { useState } from 'react';
+import { itemArt } from '../icon-art.ts';
 import { itemIcon } from '../icons.ts';
 import type { Session } from '../session.ts';
 import { attackTip, itemTip } from '../tooltip.ts';
@@ -152,7 +153,7 @@ function BagItem({
       disabled={!item || item.type === 'gear'}
       onClick={() => onEquip(!entry.equipped)}
     >
-      <IconFace icon={itemIcon(item)} size={24} />
+      <IconFace icon={{ ...itemIcon(item), art: itemArt(item) }} size={24} />
       {entry.qty > 1 && <span className="bag-qty">{entry.qty}</span>}
       <TipCard tip={itemTip(item, entry.item, entry.equipped)} />
     </button>
