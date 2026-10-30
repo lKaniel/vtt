@@ -1,11 +1,14 @@
 import { basename } from 'node:path';
 import {
   ChunkSchema,
+  CombatSchema,
   chunkRect,
   parseChunkKey,
+  srd,
   TokenSchema,
   WorldSchema,
   type Chunk,
+  type Combat,
   type Token,
   type World,
 } from '@vtt/shared';
@@ -17,14 +20,17 @@ import type { z } from 'zod';
 export type WorldFile =
   | { kind: 'world'; data: World }
   | { kind: 'chunk'; key: string; data: Chunk }
-  | { kind: 'token'; id: string; data: Token };
+  | { kind: 'token'; id: string; data: Token }
+  | { kind: 'combat'; data: Combat };
 
-export type FileKind = { kind: 'world' } | { kind: 'chunk'; key: string } | { kind: 'token'; id: string };
+export type FileKind =
+  { kind: 'world' } | { kind: 'combat' } | { kind: 'chunk'; key: string } | { kind: 'token'; id: string };
 
 /** Classifies a path relative to the world folder, or null for files we ignore. */
 export function classify(rel: string): FileKind | null {
   const parts = rel.split(/[\\/]/);
   if (parts.length === 1 && parts[0] === 'world.json') return { kind: 'world' };
+  if (parts.length === 1 && parts[0] === 'combat.json') return { kind: 'combat' };
   if (parts.length !== 2 || !parts[1]!.endsWith('.json')) return null;
   const name = basename(parts[1]!, '.json');
   if (parts[0] === 'chunks') return { kind: 'chunk', key: name };
@@ -55,6 +61,8 @@ export function parseFile(kind: FileKind, text: string): ParseResult {
       return parseChunk(kind.key, json);
     case 'token':
       return parseToken(kind.id, json);
+    case 'combat':
+      return parseCombat(json);
   }
 }
 
@@ -99,6 +107,12 @@ function parseToken(id: string, json: unknown): ParseResult {
   return { file: { kind: 'token', id, data: r.data }, errors: [] };
 }
 
+function parseCombat(json: unknown): ParseResult {
+  const r = CombatSchema.safeParse(json);
+  if (!r.success) return { errors: formatIssues(r.error) };
+  return { file: { kind: 'combat', data: r.data }, errors: [] };
+}
+
 export interface Issue {
   file: string;
   message: string;
@@ -106,16 +120,32 @@ export interface Issue {
 }
 
 /** Problems that need the whole world, e.g. a token controlled by an unknown player. */
-export function crossCheck(world: World, chunks: Map<string, Chunk>, tokens: Map<string, Token>): Issue[] {
+export function crossCheck(
+  world: World,
+  chunks: Map<string, Chunk>,
+  tokens: Map<string, Token>,
+  combat?: Combat,
+): Issue[] {
   const players = new Set(world.players.map((p) => p.id));
   const out: Issue[] = [];
-  for (const t of tokens.values()) {
-    for (const c of [...t.controllers, ...(t.visibleTo ?? [])]) {
-      if (!players.has(c)) out.push({ file: `tokens/${t.id}.json`, message: `unknown player "${c}"` });
+  for (const t of tokens.values()) out.push(...tokenIssues(t, players));
+  for (const [key, chunk] of chunks) out.push(...misplacedItems(key, chunk, world.chunkSize));
+  for (const e of combat?.order ?? []) {
+    if (!tokens.has(e.token)) {
+      out.push({ file: 'combat.json', message: `unknown token "${e.token}" in the initiative order` });
     }
   }
-  for (const [key, chunk] of chunks) out.push(...misplacedItems(key, chunk, world.chunkSize));
   return out;
+}
+
+/** References from a token to players and SRD content that don't exist. */
+function tokenIssues(t: Token, players: Set<string>): Issue[] {
+  const messages = [
+    ...[...t.controllers, ...(t.visibleTo ?? [])].filter((c) => !players.has(c)).map((c) => `unknown player "${c}"`),
+    ...(t.monster && !srd.monsters.has(t.monster) ? [`unknown monster "${t.monster}"`] : []),
+    ...(t.inventory ?? []).filter((e) => !srd.items.has(e.item)).map((e) => `unknown item "${e.item}"`),
+  ];
+  return messages.map((message) => ({ file: `tokens/${t.id}.json`, message }));
 }
 
 /** Items whose anchor point lies outside the chunk file they're stored in. */
