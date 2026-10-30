@@ -6,5 +6,9 @@
   "color": "#c0603a",
   "controllers": [
     "player2"
-  ]
+  ],
+  "light": {
+    "bright": 20,
+    "dim": 20
+  }
 }

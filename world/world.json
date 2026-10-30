@@ -6,6 +6,7 @@
     1000,
     900
   ],
+  "darkness": 0.85,
   "players": [
     {
       "id": "gm",

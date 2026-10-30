@@ -69,7 +69,7 @@ export function parseFile(kind: FileKind, text: string): ParseResult {
       if (!r.success) return { errors: formatIssues(r.error) };
       const errors: string[] = [];
       const ids = new Set<string>();
-      for (const item of [...r.data.tiles, ...r.data.walls]) {
+      for (const item of [...r.data.tiles, ...r.data.walls, ...r.data.lights]) {
         if (ids.has(item.id)) errors.push(`duplicate id "${item.id}" in this chunk`);
         ids.add(item.id);
       }
@@ -110,6 +110,9 @@ export function crossCheck(world: World, chunks: Map<string, Chunk>, tokens: Map
       const mx = (w.a[0] + w.b[0]) / 2;
       const my = (w.a[1] + w.b[1]) / 2;
       if (!inside(mx, my)) out.push({ file: `chunks/${key}.json`, message: `wall "${w.id}" has its midpoint outside this chunk`, warning: true });
+    }
+    for (const l of chunk.lights) {
+      if (!inside(l.x, l.y)) out.push({ file: `chunks/${key}.json`, message: `light "${l.id}" is outside this chunk`, warning: true });
     }
     for (const t of chunk.tiles) {
       if (!inside(t.x, t.y)) out.push({ file: `chunks/${key}.json`, message: `tile "${t.id}" starts outside this chunk`, warning: true });

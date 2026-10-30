@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import {
   canControlToken,
-  canSeeToken,
   DoorStateSchema,
+  tokensVisibleTo,
   findPath,
   PointSchema,
   roll,
   type ChatMessage,
   type Player,
+  type Point,
   type ServerMessage,
   type WorldInfo,
 } from '@vtt/shared';
@@ -27,6 +28,8 @@ interface Client {
   player: Player;
   /** Chunks this client is looking at. */
   chunks: Set<string>;
+  /** Tokens this client currently knows about. */
+  visible: Set<string>;
 }
 
 const CHAT_HISTORY = 200;
@@ -45,20 +48,15 @@ export class Game {
   constructor(private store: WorldStore) {
     store.on('chunk', (key, chunk) => {
       for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
+      // A door or a light changed: what everyone can see may have too.
+      this.refreshAll();
     });
     store.on('chunkGone', (key) => {
-      for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk: { tiles: [], walls: [] } });
+      for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk: { tiles: [], walls: [], lights: [] } });
+      this.refreshAll();
     });
-    store.on('token', (token, path) => {
-      for (const c of this.clients) {
-        if (!canSeeToken(token, c.player)) this.send(c, { t: 'tokenGone', id: token.id });
-        else if (path) this.send(c, { t: 'moved', id: token.id, path });
-        else this.send(c, { t: 'token', token });
-      }
-    });
-    store.on('tokenGone', (id) => {
-      for (const c of this.clients) this.send(c, { t: 'tokenGone', id });
-    });
+    store.on('token', (token, path) => this.refreshAll(token.id, path));
+    store.on('tokenGone', () => this.refreshAll());
     store.on('world', () => {
       // Player list or grid changes need a fresh start on every client.
       for (const c of this.clients) c.ws.close(4000, 'world settings changed');
@@ -70,7 +68,7 @@ export class Game {
   }
 
   connect(ws: WebSocket, player: Player): void {
-    const client: Client = { ws, player, chunks: new Set() };
+    const client: Client = { ws, player, chunks: new Set(), visible: this.visibleTo(player) };
     this.clients.add(client);
     const { players: _players, ...world } = this.store.world;
     const info: WorldInfo = world;
@@ -78,7 +76,7 @@ export class Game {
       t: 'welcome',
       world: info,
       you: player,
-      tokens: [...this.store.tokens.values()].filter((t) => canSeeToken(t, player)),
+      tokens: [...client.visible].map((id) => this.store.tokens.get(id)!),
       chat: this.chat.filter((m) => !m.gmOnly || player.role === 'gm'),
     });
     ws.on('message', (data) => {
@@ -95,21 +93,48 @@ export class Game {
     console.log(`[game] ${player.name} joined`);
   }
 
+  private visibleTo(player: Player): Set<string> {
+    return tokensVisibleTo(player, [...this.store.tokens.values()], {
+      world: this.store.world,
+      lights: this.store.lights(),
+      wallsBetween: (a, b) => this.store.wallsBetween(a, b),
+    });
+  }
+
+  /**
+   * Recomputes what each client may see and sends the difference. `changed`
+   * is a token whose data changed; `path` is set when it walked.
+   */
+  private refreshAll(changed?: string, path?: Point[]): void {
+    for (const c of this.clients) {
+      const before = c.visible;
+      const after = this.visibleTo(c.player);
+      c.visible = after;
+      for (const id of before) if (!after.has(id)) this.send(c, { t: 'tokenGone', id });
+      for (const id of after) {
+        const token = this.store.tokens.get(id)!;
+        if (!before.has(id)) this.send(c, { t: 'token', token });
+        else if (id === changed) this.send(c, path ? { t: 'moved', id, path } : { t: 'token', token });
+      }
+    }
+  }
+
   private handle(c: Client, msg: z.infer<typeof ClientMessageSchema>): void {
     switch (msg.t) {
       case 'view': {
         const next = new Set(msg.chunks);
         for (const key of next) {
           if (c.chunks.has(key)) continue;
-          const chunk = this.store.chunks.get(key);
-          if (chunk) this.send(c, { t: 'chunk', key, chunk });
+          // Empty chunks are sent too, so the client knows the area is loaded.
+          const chunk = this.store.chunks.get(key) ?? { tiles: [], walls: [], lights: [] };
+          this.send(c, { t: 'chunk', key, chunk });
         }
         c.chunks = next;
         return;
       }
       case 'move': {
         const token = this.store.tokens.get(msg.token);
-        if (!token || !canSeeToken(token, c.player)) return this.fail(c, 'No such token');
+        if (!token || !c.visible.has(token.id)) return this.fail(c, 'No such token');
         if (!canControlToken(token, c.player)) return this.fail(c, `You don't control ${token.name}`);
         const g = this.store.world.gridSize;
         const m = PATH_MARGIN * g;

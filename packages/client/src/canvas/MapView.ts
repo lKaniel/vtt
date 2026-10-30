@@ -1,6 +1,7 @@
 import { chunkKey, findPath, snapToGrid, type Chunk, type Point, type Token, type Wall } from '@vtt/shared';
 import { Application, Assets, Container, CullerPlugin, extensions, Graphics, Sprite, Text, type FederatedPointerEvent } from 'pixi.js';
 import type { Session } from '../session.ts';
+import { Vision, type Viewer } from './Vision.ts';
 
 extensions.add(CullerPlugin);
 
@@ -37,6 +38,11 @@ interface TokenView {
 export class MapView {
   readonly app = new Application();
   private camera = new Container();
+  /** Drawn above darkness and fog, with the same transform as the camera. */
+  private overhead = new Container();
+  private vision?: Vision;
+  private visionDirty = true;
+  private wasWalking = false;
   private groundLayer = new Container();
   private gridLayer = new Graphics();
   private wallLayer = new Container();
@@ -62,8 +68,10 @@ export class MapView {
     await this.app.init({ resizeTo: host, background: 0x1b1d22, antialias: true, autoDensity: true, resolution: devicePixelRatio });
     if (this.destroyed) return this.app.destroy(true);
     host.appendChild(this.app.canvas);
-    this.camera.addChild(this.groundLayer, this.gridLayer, this.wallLayer, this.pathLayer, this.tokenLayer, this.pathLabel);
-    this.app.stage.addChild(this.camera);
+    this.camera.addChild(this.groundLayer, this.gridLayer, this.wallLayer, this.tokenLayer);
+    this.overhead.addChild(this.pathLayer, this.pathLabel);
+    this.vision = new Vision(this.app, this.session);
+    this.app.stage.addChild(this.camera, ...this.vision.sprites, this.overhead);
     this.app.stage.eventMode = 'static';
     this.app.stage.hitArea = this.app.screen;
     this.pathLabel.anchor.set(0.5, 1.4);
@@ -74,20 +82,30 @@ export class MapView {
     this.app.stage.on('pointerupoutside', () => (this.drag = undefined));
     this.app.canvas.addEventListener('wheel', this.onWheel, { passive: false });
     this.app.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-    this.app.renderer.on('resize', () => (this.dirty = true));
+    this.app.renderer.on('resize', () => {
+      this.vision?.resize();
+      this.dirty = true;
+    });
     this.app.ticker.add((t) => this.tick(t.deltaMS / 1000));
 
     const s = this.session;
     this.unsubscribe.push(
       s.on('welcome', () => {
         if (s.world && !this.viewId) this.center = [...s.world.start];
+        this.vision?.loadExplored();
         for (const key of [...this.chunkViews.keys()]) this.removeChunk(key);
         this.dirty = true;
       }),
       s.on('chunk', (key) => this.drawChunk(key)),
       s.on('chunkGone', (key) => this.removeChunk(key)),
-      s.on('token', (t) => this.drawToken(t)),
-      s.on('tokenGone', (id) => this.removeToken(id)),
+      s.on('token', (t) => {
+        this.drawToken(t);
+        this.visionDirty = true;
+      }),
+      s.on('tokenGone', (id) => {
+        this.removeToken(id);
+        this.visionDirty = true;
+      }),
       s.on('moved', (id, path) => this.animate(id, path)),
       s.on('select', () => {
         for (const t of s.tokens.values()) this.drawToken(t);
@@ -104,6 +122,7 @@ export class MapView {
   destroy(): void {
     this.destroyed = true;
     for (const off of this.unsubscribe) off();
+    this.vision?.destroy();
     if (this.app.renderer) {
       this.app.canvas.removeEventListener('wheel', this.onWheel);
       this.app.destroy(true, { children: true });
@@ -130,12 +149,22 @@ export class MapView {
   };
 
   private tick(dt: number): void {
-    this.animateTokens(dt);
-    if (!this.dirty || !this.session.world) return;
+    const walking = this.animateTokens(dt);
+    if (!this.session.world) return;
+    // One more render after a walk ends, to mark what the token now sees as explored.
+    const stopped = this.wasWalking && !walking;
+    this.wasWalking = walking;
+    if (this.dirty || this.visionDirty || walking || stopped) {
+      this.visionDirty = false;
+      this.vision?.render({ center: this.center, zoom: this.zoom }, this.allWalls(), this.viewers(), !walking);
+    }
+    if (!this.dirty) return;
     this.dirty = false;
     const { width, height } = this.app.screen;
-    this.camera.scale.set(this.zoom);
-    this.camera.position.set(width / 2 - this.center[0] * this.zoom, height / 2 - this.center[1] * this.zoom);
+    for (const layer of [this.camera, this.overhead]) {
+      layer.scale.set(this.zoom);
+      layer.position.set(width / 2 - this.center[0] * this.zoom, height / 2 - this.center[1] * this.zoom);
+    }
     this.requestChunks();
     this.drawGrid();
     const showLabels = this.zoom >= LOD.labels;
@@ -188,6 +217,8 @@ export class MapView {
     const chunk = this.session.chunks.get(key);
     if (!chunk) return;
     this.removeChunk(key);
+    this.vision?.wallsChanged();
+    this.visionDirty = true;
     const view: ChunkView = { ground: new Container(), walls: new Container() };
     view.ground.cullable = true;
     view.walls.cullable = true;
@@ -206,6 +237,8 @@ export class MapView {
     v.ground.destroy({ children: true });
     v.walls.destroy({ children: true });
     this.chunkViews.delete(key);
+    this.vision?.wallsChanged();
+    this.visionDirty = true;
   }
 
   private drawTiles(into: Container, chunk: Chunk): void {
@@ -318,8 +351,23 @@ export class MapView {
     this.updatePreview(true);
   }
 
-  private animateTokens(dt: number): void {
+  /** Your tokens, which see for you, where they're drawn right now. The GM has none. */
+  private viewers(): Viewer[] {
+    const you = this.session.you;
+    if (!you || you.role === 'gm') return [];
+    const out: Viewer[] = [];
+    for (const t of this.session.tokens.values()) {
+      const view = this.tokenViews.get(t.id);
+      if (view && t.controllers.includes(you.id)) out.push({ token: t, at: [view.root.x, view.root.y] });
+    }
+    return out;
+  }
+
+  /** Moves walking tokens along their routes; true while any token is walking. */
+  private animateTokens(dt: number): boolean {
+    let walking = false;
     for (const v of this.tokenViews.values()) {
+      if (v.route.length > 0) walking = true;
       let budget = WALK_SPEED * dt;
       while (budget > 0 && v.route.length > 0) {
         const [tx, ty] = v.route[0]!;
@@ -336,6 +384,7 @@ export class MapView {
         }
       }
     }
+    return walking;
   }
 
   // Input -------------------------------------------------------------------
