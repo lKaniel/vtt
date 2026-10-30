@@ -6,3 +6,8 @@ export * from './dice.ts';
 export * from './permissions.ts';
 export * from './vision.ts';
 export * from './protocol.ts';
+export * from './stats-schema.ts';
+export * from './content.ts';
+export * from './creature.ts';
+export * from './attack.ts';
+export * from './combat.ts';

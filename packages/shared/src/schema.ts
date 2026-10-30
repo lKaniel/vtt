@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { InventoryEntrySchema, StatsSchema } from './stats-schema.ts';
 
 // Every file in a world folder is described here. The checker, the server and
 // the docs in docs/world-format.md all follow these schemas.
@@ -93,5 +94,12 @@ export const TokenSchema = z.object({
   hidden: z.boolean().default(false),
   /** When set, only these players (and the GM) see the token. Used by illusions. */
   visibleTo: z.array(id).optional(),
+  /** SRD monster id whose stat block this token uses, e.g. "goblin-warrior". */
+  monster: id.optional(),
+  /** Character stats, or overrides for the monster's stat block. */
+  stats: StatsSchema.optional(),
+  /** Current hit points; missing means unhurt. */
+  hp: z.number().int().optional(),
+  inventory: z.array(InventoryEntrySchema).optional(),
 });
 export type Token = z.infer<typeof TokenSchema>;

@@ -1,0 +1,377 @@
+[
+  {
+    "id": "goblin-warrior",
+    "name": "Goblin Warrior",
+    "ac": 15,
+    "hp": 10,
+    "darkvision": 60,
+    "abilities": {
+      "str": 8,
+      "dex": 15,
+      "con": 10,
+      "int": 10,
+      "wis": 8,
+      "cha": 8
+    },
+    "cr": 0.25,
+    "attacks": [
+      {
+        "name": "Scimitar",
+        "kind": "melee",
+        "toHit": 4,
+        "reach": 5,
+        "damage": [
+          {
+            "dice": "1d6+2",
+            "type": "slashing"
+          }
+        ]
+      },
+      {
+        "name": "Shortbow",
+        "kind": "ranged",
+        "toHit": 4,
+        "range": [80, 320],
+        "damage": [
+          {
+            "dice": "1d6+2",
+            "type": "piercing"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "wolf",
+    "name": "Wolf",
+    "ac": 12,
+    "hp": 11,
+    "speed": 40,
+    "darkvision": 60,
+    "abilities": {
+      "str": 14,
+      "dex": 15,
+      "con": 12,
+      "int": 3,
+      "wis": 12,
+      "cha": 6
+    },
+    "cr": 0.25,
+    "attacks": [
+      {
+        "name": "Bite",
+        "kind": "melee",
+        "toHit": 4,
+        "reach": 5,
+        "damage": [
+          {
+            "dice": "1d6+2",
+            "type": "piercing"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "skeleton",
+    "name": "Skeleton",
+    "ac": 14,
+    "hp": 13,
+    "darkvision": 60,
+    "abilities": {
+      "str": 10,
+      "dex": 16,
+      "con": 15,
+      "int": 6,
+      "wis": 8,
+      "cha": 5
+    },
+    "cr": 0.25,
+    "vulnerabilities": ["bludgeoning"],
+    "immunities": ["poison"],
+    "attacks": [
+      {
+        "name": "Shortsword",
+        "kind": "melee",
+        "toHit": 5,
+        "reach": 5,
+        "damage": [
+          {
+            "dice": "1d6+3",
+            "type": "piercing"
+          }
+        ]
+      },
+      {
+        "name": "Shortbow",
+        "kind": "ranged",
+        "toHit": 5,
+        "range": [80, 320],
+        "damage": [
+          {
+            "dice": "1d6+3",
+            "type": "piercing"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "zombie",
+    "name": "Zombie",
+    "ac": 8,
+    "hp": 15,
+    "speed": 20,
+    "darkvision": 60,
+    "abilities": {
+      "str": 13,
+      "dex": 6,
+      "con": 16,
+      "int": 3,
+      "wis": 6,
+      "cha": 5
+    },
+    "cr": 0.25,
+    "immunities": ["poison"],
+    "attacks": [
+      {
+        "name": "Slam",
+        "kind": "melee",
+        "toHit": 3,
+        "reach": 5,
+        "damage": [
+          {
+            "dice": "1d8+1",
+            "type": "bludgeoning"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "bandit",
+    "name": "Bandit",
+    "ac": 12,
+    "hp": 11,
+    "abilities": {
+      "str": 11,
+      "dex": 12,
+      "con": 12,
+      "int": 10,
+      "wis": 10,
+      "cha": 10
+    },
+    "cr": 0.125,
+    "attacks": [
+      {
+        "name": "Scimitar",
+        "kind": "melee",
+        "toHit": 3,
+        "reach": 5,
+        "damage": [
+          {
+            "dice": "1d6+1",
+            "type": "slashing"
+          }
+        ]
+      },
+      {
+        "name": "Light Crossbow",
+        "kind": "ranged",
+        "toHit": 3,
+        "range": [80, 320],
+        "damage": [
+          {
+            "dice": "1d8+1",
+            "type": "piercing"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "guard",
+    "name": "Guard",
+    "ac": 16,
+    "hp": 11,
+    "abilities": {
+      "str": 13,
+      "dex": 12,
+      "con": 12,
+      "int": 10,
+      "wis": 11,
+      "cha": 10
+    },
+    "cr": 0.125,
+    "attacks": [
+      {
+        "name": "Spear",
+        "kind": "melee",
+        "toHit": 3,
+        "reach": 5,
+        "damage": [
+          {
+            "dice": "1d6+1",
+            "type": "piercing"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cultist",
+    "name": "Cultist",
+    "ac": 12,
+    "hp": 9,
+    "abilities": {
+      "str": 11,
+      "dex": 12,
+      "con": 10,
+      "int": 10,
+      "wis": 11,
+      "cha": 10
+    },
+    "cr": 0.125,
+    "attacks": [
+      {
+        "name": "Ritual Sickle",
+        "kind": "melee",
+        "toHit": 3,
+        "reach": 5,
+        "damage": [
+          {
+            "dice": "1d4+1",
+            "type": "slashing"
+          },
+          {
+            "dice": "1",
+            "type": "necrotic"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "brown-bear",
+    "name": "Brown Bear",
+    "size": 2,
+    "ac": 11,
+    "hp": 22,
+    "speed": 40,
+    "darkvision": 60,
+    "abilities": {
+      "str": 17,
+      "dex": 12,
+      "con": 15,
+      "int": 2,
+      "wis": 13,
+      "cha": 7
+    },
+    "cr": 1,
+    "attacks": [
+      {
+        "name": "Bite",
+        "kind": "melee",
+        "toHit": 5,
+        "reach": 5,
+        "damage": [
+          {
+            "dice": "1d8+3",
+            "type": "piercing"
+          }
+        ]
+      },
+      {
+        "name": "Claw",
+        "kind": "melee",
+        "toHit": 5,
+        "reach": 5,
+        "damage": [
+          {
+            "dice": "1d4+3",
+            "type": "slashing"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "giant-spider",
+    "name": "Giant Spider",
+    "size": 2,
+    "ac": 14,
+    "hp": 26,
+    "darkvision": 60,
+    "abilities": {
+      "str": 14,
+      "dex": 16,
+      "con": 12,
+      "int": 2,
+      "wis": 11,
+      "cha": 4
+    },
+    "cr": 1,
+    "attacks": [
+      {
+        "name": "Bite",
+        "kind": "melee",
+        "toHit": 5,
+        "reach": 5,
+        "damage": [
+          {
+            "dice": "1d8+3",
+            "type": "piercing"
+          },
+          {
+            "dice": "2d6",
+            "type": "poison"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ogre",
+    "name": "Ogre",
+    "size": 2,
+    "ac": 11,
+    "hp": 68,
+    "speed": 40,
+    "darkvision": 60,
+    "abilities": {
+      "str": 19,
+      "dex": 8,
+      "con": 16,
+      "int": 5,
+      "wis": 7,
+      "cha": 7
+    },
+    "cr": 2,
+    "attacks": [
+      {
+        "name": "Greatclub",
+        "kind": "melee",
+        "toHit": 6,
+        "reach": 5,
+        "damage": [
+          {
+            "dice": "2d8+4",
+            "type": "bludgeoning"
+          }
+        ]
+      },
+      {
+        "name": "Javelin",
+        "kind": "ranged",
+        "toHit": 6,
+        "range": [30, 120],
+        "damage": [
+          {
+            "dice": "2d6+4",
+            "type": "piercing"
+          }
+        ]
+      }
+    ]
+  }
+]
