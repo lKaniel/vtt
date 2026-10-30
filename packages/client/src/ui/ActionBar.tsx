@@ -47,7 +47,7 @@ export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onS
   );
 }
 
-/** A strip of name, health, tabs and resources over the painted base that holds the tiles. */
+/** Name, health and resources float over the painted base; its tray holds the tabs and tiles. */
 function Bar({ session, token, onSheet }: Readonly<{ session: Session; token: TokenView; onSheet: () => void }>) {
   const [tab, setTab] = useState<Tab>('all');
   const budget = budgetOf(session, token);
@@ -55,12 +55,14 @@ function Bar({ session, token, onSheet }: Readonly<{ session: Session; token: To
     <div className="actionbar">
       <div className="ab-top">
         <Who token={token} />
-        <Tabs tab={tab} onTab={setTab} />
         <Resources token={token} budget={budget} />
       </div>
       <div className="ab-base">
         <Portrait token={token} onSheet={onSheet} />
-        <Grid session={session} token={token} tab={tab} budget={budget} />
+        <div className="ab-tray">
+          <Tabs tab={tab} onTab={setTab} />
+          <Grid session={session} token={token} tab={tab} budget={budget} />
+        </div>
         <EndTurn session={session} token={token} />
       </div>
     </div>

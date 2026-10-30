@@ -1730,30 +1730,49 @@ h4 {
 }
 .ab-top {
   display: flex;
-  gap: 14px;
-  align-items: center;
-  justify-self: start;
-  margin: 0 0 -10px 150px;
-  padding: 5px 14px;
-  background: rgba(10, 8, 6, 0.82);
-  border: 1px solid var(--gold-dim);
-  border-radius: 8px 8px 0 0;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin: 0 120px -4px 190px;
+  text-shadow: 0 1px 3px #000;
 }
 .ab-who {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
   width: auto;
 }
-.ab-who .hpbar {
-  width: 130px;
+.ab-name {
+  font-size: 15px;
 }
-.ab-tabs {
-  flex-direction: row;
+.ab-who .hpbar {
+  width: 170px;
+  height: 16px;
 }
 .ab-resources {
   height: auto;
-  padding-left: 0;
+  padding: 0 0 2px;
+}
+.ab-tray {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 6px 0 2px;
+}
+.ab-tabs {
+  display: grid;
+  grid-template-columns: 26px 26px;
+  gap: 4px;
+}
+.ab-tab {
+  width: 26px;
+  height: 26px;
+  background: url('/art/ui/slot-frame.webp') center / 100% 100% no-repeat;
+  border: 0;
+  border-radius: 0;
+}
+.ab-tab.on {
+  background-image: url('/art/ui/slot-frame-active.webp');
 }
 .ab-base {
   display: grid;
@@ -1783,7 +1802,6 @@ h4 {
   grid-auto-flow: column;
   grid-auto-columns: 52px;
   grid-template-rows: 52px;
-  margin: 0 6px;
 }
 .ab-end {
   width: auto;
@@ -1797,4 +1815,5 @@ h4 {
 }
 .actionbar-wrap {
   width: max-content;
+  gap: 14px;
 }
