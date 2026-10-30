@@ -2,26 +2,30 @@
    modern CRPG. Every colour is a token here so a theme can swap them. */
 
 :root {
-  --ink: #0d0a08;
-  --panel-top: #221b15;
-  --panel-bottom: #120e0b;
-  --panel-glass: rgba(18, 14, 11, 0.88);
-  --gold: #c9a45c;
-  --gold-bright: #f2d38a;
-  --gold-dim: #6b5532;
-  --line: #3a2e20;
-  --text: #ece2cc;
-  --muted: #a2947b;
-  --good: #5fbf5a;
-  --warn: #e0a33a;
-  --bad: #c8443a;
-  --action: #4fc25a;
-  --bonus: #f08a2c;
-  --reaction: #b07de8;
-  --move: #e8c64a;
-  --slot: #4f8de8;
-  --display: 'Cinzel', 'Trajan Pro', Georgia, serif;
-  --body: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
+  /* Taken from the painted frames: blackened iron, worn bronze trim and
+     parchment highlights. */
+  --ink: #0b0a09;
+  --panel-top: #24221e;
+  --panel-bottom: #12110f;
+  --panel-glass: rgba(18, 17, 15, 0.9);
+  --gold: #a88a5e;
+  --gold-bright: #e8d3a6;
+  --gold-dim: #5e4d36;
+  --line: #34302a;
+  --text: #e6dcc8;
+  --muted: #9b9182;
+  --good: #6fa86a;
+  --warn: #c98f3a;
+  --bad: #b5413a;
+  --action: #5fae4f;
+  --bonus: #d9822b;
+  --reaction: #a07ad6;
+  --move: #d4b25a;
+  --slot: #5b8fd6;
+  --display: 'IM Fell English SC', 'Trajan Pro', Georgia, serif;
+  --body: 'Alegreya', Georgia, serif;
+  /* The display face has a single weight; never fake a bold one. */
+  font-synthesis-weight: none;
   color-scheme: dark;
   font-family: var(--body);
   color: var(--text);
@@ -59,13 +63,13 @@ h4 {
 .frame {
   position: relative;
   background:
-    radial-gradient(120% 80% at 50% 0%, rgba(201, 164, 92, 0.08), transparent 60%),
+    radial-gradient(120% 80% at 50% 0%, rgba(168, 138, 94, 0.08), transparent 60%),
     linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
   border: 1px solid var(--gold-dim);
   border-radius: 6px;
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.7),
-    inset 0 0 0 3px rgba(201, 164, 92, 0.12),
+    inset 0 0 0 3px rgba(168, 138, 94, 0.12),
     0 10px 30px rgba(0, 0, 0, 0.6);
 }
 /* Gold diamonds on the top corners. */
@@ -101,7 +105,7 @@ h4 {
 }
 .btn:hover {
   border-color: var(--gold);
-  color: #fff3d0;
+  color: #f6ead0;
 }
 .btn.small {
   padding: 3px 10px;
@@ -507,7 +511,7 @@ h4 {
 }
 .member.selected {
   border-color: var(--gold);
-  box-shadow: 0 0 12px rgba(242, 211, 138, 0.25);
+  box-shadow: 0 0 12px rgba(232, 211, 166, 0.25);
 }
 .member.acting .member-face {
   border-color: var(--gold-bright);
@@ -765,7 +769,7 @@ h4 {
 .res-move-fill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: linear-gradient(180deg, #ffe58a, var(--move) 50%, #8c6d10);
+  background: linear-gradient(180deg, #f0d68e, var(--move) 50%, #7a5f1c);
   transition: width 0.3s;
 }
 .res-move-label {
@@ -851,7 +855,7 @@ h4 {
   border-color: var(--gold-bright);
   box-shadow:
     inset 0 0 0 1px #000,
-    0 0 10px rgba(242, 211, 138, 0.45);
+    0 0 10px rgba(232, 211, 166, 0.45);
 }
 .tile.active {
   border-color: var(--gold-bright);
@@ -927,7 +931,7 @@ h4 {
   border-radius: 50%;
   box-shadow:
     0 0 0 2px var(--gold-dim),
-    0 0 18px rgba(242, 211, 138, 0.45);
+    0 0 18px rgba(232, 211, 166, 0.45);
 }
 .end-turn:hover:not(:disabled) {
   filter: brightness(1.12);
@@ -1085,7 +1089,7 @@ h4 {
 }
 .sheet-tabs button.on {
   color: var(--gold-bright);
-  background: rgba(201, 164, 92, 0.1);
+  background: rgba(168, 138, 94, 0.1);
   border-color: var(--gold-dim);
 }
 .rows {
@@ -1639,7 +1643,7 @@ h4 {
   background: url('/art/ui/end-turn.webp') center / contain no-repeat;
   border: 0;
   box-shadow: none;
-  filter: drop-shadow(0 0 10px rgba(242, 211, 138, 0.35));
+  filter: drop-shadow(0 0 10px rgba(232, 211, 166, 0.35));
 }
 .end-turn:disabled {
   color: #c9b48a;
@@ -1821,4 +1825,34 @@ h4 {
 .actionbar-wrap {
   width: max-content;
   gap: 4px;
+}
+
+/* Numbers: the display face has old-style digits that read badly at a
+   glance, so figures use the body face with lining numerals. */
+:root {
+  font-variant-numeric: lining-nums;
+}
+.ability-mod,
+.ability-score,
+.stat strong,
+.round-number,
+.ab-ac,
+.tile-key,
+.tile-level,
+.res-slots-level,
+.end-turn {
+  font-family: var(--body);
+  font-weight: 700;
+  font-variant-numeric: lining-nums;
+}
+.end-turn {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 15px;
+}
+.world-name,
+.chat-head,
+.ab-name,
+.member-name {
+  font-size: 15px;
 }

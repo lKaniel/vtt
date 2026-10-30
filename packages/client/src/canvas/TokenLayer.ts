@@ -9,11 +9,11 @@ const WALK_SPEED = 900;
 /** Token disc radius as a share of its size in pixels. */
 const DISC = 0.42;
 /** Ring around the token whose turn it is. */
-const TURN_COLOR = '#f0c040';
+const TURN_COLOR = '#e8c070';
 /** Painted base ring diameter as a multiple of the disc radius. */
 const BASE = 2.85;
 /** Rims of party members and of everyone else. */
-const ALLY_RIM = '#c9a45c';
+const ALLY_RIM = '#a88a5e';
 const OTHER_RIM = '#5a2620';
 
 interface Sprite {
@@ -118,9 +118,9 @@ export class TokenLayer {
       text: '',
       style: {
         fill: 0xf2e3c0,
-        fontFamily: 'Cinzel, Georgia, serif',
+        fontFamily: '"IM Fell English SC", Georgia, serif',
         fontSize: 20,
-        fontWeight: '600',
+        fontWeight: '400',
         stroke: { color: 0x000000, width: 5 },
       },
     });

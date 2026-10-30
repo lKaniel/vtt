@@ -50,10 +50,10 @@ importers:
 
   packages/client:
     dependencies:
-      '@fontsource/alegreya-sans':
+      '@fontsource/alegreya':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource/cinzel':
+      '@fontsource/im-fell-english-sc':
         specifier: ^5.3.0
         version: 5.3.0
       '@vtt/shared':
@@ -421,11 +421,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@fontsource/alegreya-sans@5.3.0':
-    resolution: {integrity: sha512-Uf0RbuwzhSS3NQrBFcRzEUm7TxDQW3qdAbQ6JIOhsIW6V+YN2dqlR99lhfEE38R3GHgMCMJBzqSp7aJxhNXSOw==}
+  '@fontsource/alegreya@5.3.0':
+    resolution: {integrity: sha512-YCsp9dHYfMNdggXxinMMS0nkGlZkzs2MvPL7qPVjSO4DM1uJ29hmKEdTC/fBP+2K4Aa+4Z44JuOQz05eDcvNJA==}
 
-  '@fontsource/cinzel@5.3.0':
-    resolution: {integrity: sha512-KEOYTsrRppW0uRIPWBDPrQgunCS6f8u4nzZxYRBfo9SCknKojLYjK7B0ZoVmJhyVLefz271ZQRF9EOpHZlfhRw==}
+  '@fontsource/im-fell-english-sc@5.3.0':
+    resolution: {integrity: sha512-jKnCJ22tgVwxWVs1YQ/GCWmP60ulVq49IJZ7c0wgv0MXHe8T8LPbl0sOteYLOkCURW5+ZKwFiLNU2h/l9fHgrg==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -1823,9 +1823,9 @@ snapshots:
   '@fallow-cli/win32-x64-msvc@3.37.0':
     optional: true
 
-  '@fontsource/alegreya-sans@5.3.0': {}
+  '@fontsource/alegreya@5.3.0': {}
 
-  '@fontsource/cinzel@5.3.0': {}
+  '@fontsource/im-fell-english-sc@5.3.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:
