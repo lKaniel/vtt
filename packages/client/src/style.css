@@ -1719,21 +1719,51 @@ h4 {
   z-index: 0;
 }
 
-/* The painted action bar: portrait in the left ring, tiles in the tray,
-   end turn on the right ring. Only the tray stretches, so the rings keep
-   their shape; the tabs filter the single row of tiles. */
+/* The painted action bar, cut into caps, a centre crest and a plain strip
+   that stretches between them, so nothing ornate is ever distorted. The
+   portrait sits in the left ring, end turn in the right, the rest in the tray. */
 .actionbar {
-  display: grid;
-  gap: 0;
+  position: relative;
+  display: block;
+  height: 320px;
   padding: 0;
   border-radius: 0;
+  background:
+    url('/art/ui/actionbar-center.webp') center top / auto 100% no-repeat,
+    url('/art/ui/actionbar-left.webp') left top / auto 100% no-repeat,
+    url('/art/ui/actionbar-right.webp') right top / auto 100% no-repeat,
+    url('/art/ui/actionbar-fill.webp') 170px 0 / calc(100% - 274px) 100% no-repeat;
+}
+.ab-portrait {
+  position: absolute;
+  top: 117px;
+  left: 49px;
+}
+.ab-portrait .face {
+  width: 80px;
+  height: 80px;
+  font-size: 24px;
+  border-radius: 50%;
+}
+.ab-portrait:not(:disabled):hover .face {
+  filter: brightness(1.15);
+}
+.ab-ac {
+  right: -12px;
+  bottom: -10px;
+}
+.ab-tray {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  height: 100%;
+  padding: 62px 123px 66px 190px;
 }
 .ab-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   gap: 24px;
-  margin: 0 120px -4px 190px;
   text-shadow: 0 1px 3px #000;
 }
 .ab-who {
@@ -1751,22 +1781,21 @@ h4 {
 }
 .ab-resources {
   height: auto;
-  padding: 0 0 2px;
+  padding: 0;
 }
-.ab-tray {
+.ab-body {
   display: flex;
   gap: 8px;
-  align-items: center;
-  margin: 0 6px 0 2px;
 }
 .ab-tabs {
   display: grid;
-  grid-template-columns: 26px 26px;
-  gap: 4px;
+  grid-auto-rows: 30px;
+  gap: 6px;
+  align-content: center;
 }
 .ab-tab {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   background: url('/art/ui/slot-frame.webp') center / 100% 100% no-repeat;
   border: 0;
   border-radius: 0;
@@ -1774,46 +1803,22 @@ h4 {
 .ab-tab.on {
   background-image: url('/art/ui/slot-frame-active.webp');
 }
-.ab-base {
-  display: grid;
-  grid-template-columns: 187px minmax(0, auto) 114px;
-  align-items: center;
-  height: 184px;
-  border-image: url('/art/ui/actionbar-base.webp') 0 119 0 195 fill / 0 114px 0 187px stretch;
-}
-.ab-portrait {
-  justify-self: start;
-  margin: 0 0 0 46px;
-}
-.ab-portrait .face {
-  width: 98px;
-  height: 98px;
-  border-radius: 50%;
-}
-.ab-portrait:not(:disabled):hover .face {
-  filter: brightness(1.15);
-}
-.ab-ac {
-  right: -10px;
-  bottom: -6px;
-}
 .ab-grid {
-  grid-template-columns: none;
-  grid-auto-flow: column;
-  grid-auto-columns: 52px;
-  grid-template-rows: 52px;
+  grid-template-columns: repeat(10, 54px);
+  grid-auto-rows: 54px;
 }
 .ab-end {
+  position: absolute;
+  top: 112px;
+  right: 21px;
   width: auto;
-  justify-self: center;
-  margin-left: -6px;
 }
 .end-turn {
-  width: 80px;
-  height: 80px;
-  font-size: 12px;
+  width: 96px;
+  height: 96px;
+  font-size: 13px;
 }
 .actionbar-wrap {
   width: max-content;
-  gap: 14px;
+  gap: 4px;
 }

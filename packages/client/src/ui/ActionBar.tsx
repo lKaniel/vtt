@@ -9,7 +9,7 @@ import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 import { TipCard } from './Tip.tsx';
 
-const MIN_TILES = 12;
+const MIN_TILES = 30;
 
 const TAB_GLYPH: Record<Tab, GlyphName> = { all: 'star', attacks: 'sword', spells: 'flame', features: 'fist' };
 const TAB_LABEL: Record<Tab, string> = {
@@ -47,24 +47,24 @@ export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onS
   );
 }
 
-/** Name, health and resources float over the painted base; its tray holds the tabs and tiles. */
+/** The painted bar: portrait in the left ring, end turn in the right one, everything else in the tray. */
 function Bar({ session, token, onSheet }: Readonly<{ session: Session; token: TokenView; onSheet: () => void }>) {
   const [tab, setTab] = useState<Tab>('all');
   const budget = budgetOf(session, token);
   return (
     <div className="actionbar">
-      <div className="ab-top">
-        <Who token={token} />
-        <Resources token={token} budget={budget} />
-      </div>
-      <div className="ab-base">
-        <Portrait token={token} onSheet={onSheet} />
-        <div className="ab-tray">
+      <Portrait token={token} onSheet={onSheet} />
+      <div className="ab-tray">
+        <div className="ab-top">
+          <Who token={token} />
+          <Resources token={token} budget={budget} />
+        </div>
+        <div className="ab-body">
           <Tabs tab={tab} onTab={setTab} />
           <Grid session={session} token={token} tab={tab} budget={budget} />
         </div>
-        <EndTurn session={session} token={token} />
       </div>
+      <EndTurn session={session} token={token} />
     </div>
   );
 }
