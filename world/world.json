@@ -1,0 +1,29 @@
+{
+  "name": "Example: the crossroads",
+  "gridSize": 100,
+  "chunkSize": 2000,
+  "start": [
+    1000,
+    900
+  ],
+  "players": [
+    {
+      "id": "gm",
+      "name": "GM",
+      "role": "gm",
+      "color": "#e0b040"
+    },
+    {
+      "id": "player1",
+      "name": "Player 1",
+      "role": "player",
+      "color": "#5a9be0"
+    },
+    {
+      "id": "player2",
+      "name": "Player 2",
+      "role": "player",
+      "color": "#5ac08a"
+    }
+  ]
+}

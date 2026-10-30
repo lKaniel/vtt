@@ -1,0 +1,11 @@
+{
+  "id": "phantom-wolf",
+  "name": "Phantom wolf",
+  "x": 1550,
+  "y": 1050,
+  "color": "#9090c0",
+  "size": 1,
+  "visibleTo": [
+    "player2"
+  ]
+}
