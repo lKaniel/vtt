@@ -1,7 +1,13 @@
 import type { Content } from './content.ts';
+import { casterSheet, classOf, featureSheets, levelValue, type CasterSheet, type FeatureSheet } from './classes.ts';
+import { abilityMod, proficiencyForLevel } from './creature-math.ts';
+import type { Affected } from './effects.ts';
 import type { Token } from './schema.ts';
+import type { Class, Condition } from './spell-schema.ts';
 import {
+  ABILITIES,
   AbilitiesSchema,
+  type Ability,
   type Abilities,
   type Armor,
   type Attack,
@@ -12,27 +18,31 @@ import {
   type Weapon,
 } from './stats-schema.ts';
 
-/** A token's game statistics, with everything derived from its gear worked out. */
-export interface Creature {
+/** A token's game statistics, with everything derived from its gear, class and effects worked out. */
+export interface Creature extends Affected {
   abilities: Abilities;
   proficiency: number;
   ac: number;
   hp: number;
   maxHp: number;
+  /** Walking speed in feet after effects; 0 while held in place. */
+  speed: number;
   /** Initiative bonus (the dexterity modifier). */
   initiative: number;
   attacks: Attack[];
   resistances: DamageType[];
   immunities: DamageType[];
   vulnerabilities: DamageType[];
-}
-
-export function abilityMod(score: number): number {
-  return Math.floor((score - 10) / 2);
-}
-
-export function proficiencyForLevel(level: number): number {
-  return 2 + Math.floor((level - 1) / 4);
+  /** Creature type, e.g. "humanoid"; characters count as humanoid. */
+  type: string;
+  /** Attacks per Attack action (extra attack). */
+  attacksPerAction: number;
+  /** Sneak attack dice, e.g. "2d6", for rogues. */
+  sneakAttack?: string;
+  /** Weapons' mastery properties apply (2024 martial classes). */
+  weaponMastery: boolean;
+  caster?: CasterSheet;
+  features: FeatureSheet[];
 }
 
 /** Proficiency bonus by challenge rating. */
@@ -48,19 +58,85 @@ export function resolveCreature(token: Token, content: Content): Creature | unde
   const monster = token.monster ? content.monsters.get(token.monster) : undefined;
   if (token.monster ? !monster : !token.stats) return undefined;
   const stats = token.stats ?? {};
+  const cls = classOf(token, content);
   const abilities = AbilitiesSchema.parse({ ...monster?.abilities, ...stats.abilities });
   const proficiency = defaultProficiency(stats, monster);
   const gear = equippedItems(token, content);
-  const { maxHp, ac } = fixedNumbers(stats, monster);
-  return {
+  const { maxHp, ac } = fixedNumbers(stats, monster, classHp(cls, stats, abilities));
+  const base: Creature = {
     abilities,
     proficiency,
     ac: ac ?? armorClass(abilities, gear.armor),
     hp: Math.min(token.hp ?? maxHp, maxHp),
     maxHp,
+    speed: token.speed,
     initiative: abilityMod(abilities.dex),
     attacks: creatureAttacks(stats, monster, gear.weapons, { abilities, proficiency }),
     ...defenses(stats, monster),
+    ...kindAndSaves(monster, cls, { abilities, proficiency }),
+    ...effectParts(token),
+    ...classParts(token, cls),
+    caster: casterSheet(token, { abilities, proficiency }, content),
+    features: featureSheets(token, cls),
+  };
+  return applyEffects(base);
+}
+
+/** Creature type (characters are humanoid) and saving throws, proficient ones from the class or stat block. */
+function kindAndSaves(
+  monster: Monster | undefined,
+  cls: Class | undefined,
+  { abilities, proficiency }: { abilities: Abilities; proficiency: number },
+): Pick<Creature, 'type' | 'saves'> {
+  const proficient = cls?.saves ?? monster?.saves ?? [];
+  return { type: monster?.type ?? 'humanoid', saves: saveBonuses(abilities, proficiency, proficient) };
+}
+
+function effectParts(token: Token): Pick<Creature, 'effects' | 'conditions'> {
+  const effects = token.effects ?? [];
+  return { effects, conditions: [...new Set(effects.flatMap((e) => e.conditions ?? []))] };
+}
+
+function classParts(
+  token: Token,
+  cls: Class | undefined,
+): Pick<Creature, 'attacksPerAction' | 'sneakAttack' | 'weaponMastery'> {
+  const level = token.stats?.level ?? 1;
+  return {
+    attacksPerAction: Math.max(1, levelValue(cls?.attacks ?? [], level)),
+    sneakAttack: cls?.sneakAttack ? `${Math.ceil(level / 2)}d6` : undefined,
+    weaponMastery: cls?.weaponMastery ?? false,
+  };
+}
+
+function saveBonuses(
+  abilities: Abilities,
+  proficiency: number,
+  proficient: readonly Ability[],
+): Record<Ability, number> {
+  const entries = ABILITIES.map((a) => [a, abilityMod(abilities[a]) + (proficient.includes(a) ? proficiency : 0)]);
+  return Object.fromEntries(entries) as Record<Ability, number>;
+}
+
+/** Max hit points from the class: a full hit die at 1st level, the average after, plus Con each level. */
+function classHp(cls: Class | undefined, stats: Stats, abilities: Abilities): number | undefined {
+  if (!cls || !stats.level) return undefined;
+  const con = abilityMod(abilities.con);
+  return Math.max(1, cls.hitDie + con + (stats.level - 1) * (cls.hitDie / 2 + 1 + con));
+}
+
+const HELD: readonly Condition[] = ['grappled', 'paralyzed', 'petrified', 'restrained', 'stunned', 'unconscious'];
+
+/** AC, speed and resistances changed by spells and features. */
+function applyEffects(c: Creature): Creature {
+  const effects = c.effects;
+  const sum = (key: 'ac' | 'speed') => effects.reduce((n, e) => n + (e[key] ?? 0), 0);
+  const held = c.conditions.some((x) => HELD.includes(x));
+  return {
+    ...c,
+    ac: c.ac + sum('ac'),
+    speed: held ? 0 : Math.max(0, c.speed + sum('speed')),
+    resistances: [...new Set([...c.resistances, ...effects.flatMap((e) => e.resistances ?? [])])],
   };
 }
 
@@ -83,8 +159,8 @@ function defenses(stats: Stats, monster: Monster | undefined): Pick<Creature, De
 type DefenseKey = 'resistances' | 'immunities' | 'vulnerabilities';
 
 /** Max HP and AC as written on the token or in the stat block; AC may be left to the armor. */
-function fixedNumbers(stats: Stats, monster: Monster | undefined): { maxHp: number; ac?: number } {
-  return { maxHp: stats.maxHp ?? monster?.hp ?? 1, ac: stats.ac ?? monster?.ac };
+function fixedNumbers(stats: Stats, monster: Monster | undefined, classHp?: number): { maxHp: number; ac?: number } {
+  return { maxHp: stats.maxHp ?? monster?.hp ?? classHp ?? 1, ac: stats.ac ?? monster?.ac };
 }
 
 function defaultProficiency(stats: Stats, monster: Monster | undefined): number {
@@ -115,16 +191,15 @@ export function armorClass(abilities: Abilities, armor: readonly Armor[]): numbe
 }
 
 /** Finesse weapons use the better of str and dex, ranged weapons dex, the rest str. */
-function attackAbility(weapon: Weapon, abilities: Abilities): number {
-  const str = abilityMod(abilities.str);
-  const dex = abilityMod(abilities.dex);
-  if (weapon.properties.includes('finesse')) return Math.max(str, dex);
-  return weapon.kind === 'ranged' ? dex : str;
+function attackAbility(weapon: Weapon, abilities: Abilities): Ability {
+  if (weapon.properties.includes('finesse')) return abilities.dex > abilities.str ? 'dex' : 'str';
+  return weapon.kind === 'ranged' ? 'dex' : 'str';
 }
 
 /** Assumes proficiency with every weapon until class proficiencies arrive. */
 export function weaponAttack(weapon: Weapon, abilities: Abilities, proficiency: number): Attack {
-  const mod = attackAbility(weapon, abilities);
+  const ability = attackAbility(weapon, abilities);
+  const mod = abilityMod(abilities[ability]);
   const reach = weapon.properties.includes('reach') ? 10 : 5;
   const where = weapon.kind === 'melee' ? { reach } : { range: weapon.range ?? [80, 320] };
   return {
@@ -133,6 +208,7 @@ export function weaponAttack(weapon: Weapon, abilities: Abilities, proficiency: 
     toHit: mod + proficiency,
     ...where,
     damage: [{ dice: withModifier(weapon.damage.dice, mod), type: weapon.damage.type }],
+    weapon: { ability, properties: weapon.properties, mastery: weapon.mastery },
   };
 }
 

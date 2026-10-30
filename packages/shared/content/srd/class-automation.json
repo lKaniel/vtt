@@ -51,9 +51,30 @@
       }
     }
   },
-  "bard": { "both": { "spellcasting": { "ability": "cha", "progression": "full" } } },
-  "cleric": { "both": { "spellcasting": { "ability": "wis", "progression": "full" } } },
-  "druid": { "both": { "spellcasting": { "ability": "wis", "progression": "full" } } },
+  "bard": {
+    "both": {
+      "spellcasting": {
+        "ability": "cha",
+        "progression": "full"
+      }
+    }
+  },
+  "cleric": {
+    "both": {
+      "spellcasting": {
+        "ability": "wis",
+        "progression": "full"
+      }
+    }
+  },
+  "druid": {
+    "both": {
+      "spellcasting": {
+        "ability": "wis",
+        "progression": "full"
+      }
+    }
+  },
   "fighter": {
     "both": {
       "attacks": [
@@ -62,7 +83,10 @@
         [20, 4]
       ],
       "features": {
-        "second-wind": { "action": "bonus", "heal": "1d10+level" },
+        "second-wind": {
+          "action": "bonus",
+          "heal": "1d10+level"
+        },
         "action-surge": {
           "action": "free",
           "grantAction": true,
@@ -74,7 +98,14 @@
         }
       }
     },
-    "2014": { "features": { "second-wind": { "uses": [[1, 1]], "recharge": "short" } } },
+    "2014": {
+      "features": {
+        "second-wind": {
+          "uses": [[1, 1]],
+          "recharge": "short"
+        }
+      }
+    },
     "2024": {
       "weaponMastery": true,
       "features": {
@@ -89,17 +120,79 @@
       }
     }
   },
-  "monk": { "both": { "attacks": [[5, 2]] } },
+  "monk": {
+    "both": {
+      "attacks": [[5, 2]]
+    }
+  },
   "paladin": {
-    "both": { "attacks": [[5, 2]], "spellcasting": { "ability": "cha", "progression": "half" } },
-    "2024": { "weaponMastery": true }
+    "both": {
+      "attacks": [[5, 2]],
+      "spellcasting": {
+        "ability": "cha",
+        "progression": "half"
+      }
+    },
+    "2024": {
+      "weaponMastery": true
+    },
+    "2014": {
+      "spellcasting": {
+        "ability": "cha",
+        "progression": "half",
+        "from": 2
+      }
+    }
   },
   "ranger": {
-    "both": { "attacks": [[5, 2]], "spellcasting": { "ability": "wis", "progression": "half" } },
-    "2024": { "weaponMastery": true }
+    "both": {
+      "attacks": [[5, 2]],
+      "spellcasting": {
+        "ability": "wis",
+        "progression": "half"
+      }
+    },
+    "2024": {
+      "weaponMastery": true
+    },
+    "2014": {
+      "spellcasting": {
+        "ability": "wis",
+        "progression": "half",
+        "from": 2
+      }
+    }
   },
-  "rogue": { "both": { "sneakAttack": true }, "2024": { "weaponMastery": true } },
-  "sorcerer": { "both": { "spellcasting": { "ability": "cha", "progression": "full" } } },
-  "warlock": { "both": { "spellcasting": { "ability": "cha", "progression": "pact" } } },
-  "wizard": { "both": { "spellcasting": { "ability": "int", "progression": "full" } } }
+  "rogue": {
+    "both": {
+      "sneakAttack": true
+    },
+    "2024": {
+      "weaponMastery": true
+    }
+  },
+  "sorcerer": {
+    "both": {
+      "spellcasting": {
+        "ability": "cha",
+        "progression": "full"
+      }
+    }
+  },
+  "warlock": {
+    "both": {
+      "spellcasting": {
+        "ability": "cha",
+        "progression": "pact"
+      }
+    }
+  },
+  "wizard": {
+    "both": {
+      "spellcasting": {
+        "ability": "int",
+        "progression": "full"
+      }
+    }
+  }
 }

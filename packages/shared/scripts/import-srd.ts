@@ -36,7 +36,8 @@ const bare = (ref: string) => ref.slice(ref.indexOf('.') + 1);
 const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
 const num = (v: unknown) => (typeof v === 'number' ? v : undefined);
 const list = (v: unknown) => (Array.isArray(v) ? (v as string[]) : []);
-const formula = (v: unknown) => (typeof v === 'string' || typeof v === 'number' ? String(v).replace(/\s+/g, '') : undefined);
+const formula = (v: unknown) =>
+  typeof v === 'string' || typeof v === 'number' ? String(v).replace(/\s+/g, '') : undefined;
 
 function ofType(pack: Pack, type: string): Entry[] {
   return [...pack.entries.values()].filter((e) => e.type === type);

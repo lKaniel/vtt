@@ -37,11 +37,19 @@ const target = (over: Partial<Creature> = {}): Creature => ({
   ac: 15,
   hp: 20,
   maxHp: 20,
+  speed: 30,
   initiative: 0,
   attacks: [],
   resistances: [],
   immunities: [],
   vulnerabilities: [],
+  type: 'humanoid',
+  attacksPerAction: 1,
+  weaponMastery: false,
+  features: [],
+  effects: [],
+  conditions: [],
+  saves: { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 },
   ...over,
 });
 
@@ -75,6 +83,28 @@ describe('rollAttack', () => {
     expect(rollAttack(sword, target(), { advantage: true }, d20s(3, 12)).natural).toBe(12);
     expect(rollAttack(sword, target(), { disadvantage: true }, d20s(3, 12)).natural).toBe(3);
     expect(rollAttack(sword, target(), { advantage: true, disadvantage: true }, d20s(3, 12)).natural).toBe(3);
+  });
+});
+
+describe('rollAttack with effects', () => {
+  it('adds bonus dice like bless to the roll', () => {
+    // d20 of 9, +5, and the d4 also reads the next value: a 1.
+    const r = rollAttack(sword, target(), { bonus: ['1d4'] }, d20s(9));
+    expect(r).toMatchObject({ total: 15, hit: true });
+  });
+
+  it('turns a hit into a crit when the target is helpless', () => {
+    expect(rollAttack(sword, target(), { autoCrit: true }, d20s(12))).toMatchObject({ hit: true, crit: true });
+    expect(rollAttack(sword, target(), { autoCrit: true }, d20s(2))).toMatchObject({ hit: false, crit: false });
+  });
+
+  it('rolls extra damage on a hit, doubled on a crit', () => {
+    const extra = [{ dice: '1d6', type: 'piercing' as const }];
+    expect(rollAttack(sword, target(), { extraDamage: extra }, d20s(12)).damage.map((d) => d.roll.formula)).toEqual([
+      '1d8+3',
+      '1d6',
+    ]);
+    expect(rollAttack(sword, target(), { extraDamage: extra }, d20s(20)).damage[1]!.roll.formula).toBe('2d6');
   });
 });
 

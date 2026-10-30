@@ -45,7 +45,11 @@ describe('SRD content', () => {
     ]);
     expect(fighter24.weaponMastery).toBe(true);
     expect(fighter14.weaponMastery).toBeUndefined();
-    expect(srdFor('2024').classes.get('wizard')?.spellcasting).toEqual({ ability: 'int', progression: 'full' });
+    expect(srdFor('2024').classes.get('wizard')?.spellcasting).toEqual({
+      ability: 'int',
+      progression: 'full',
+      from: 1,
+    });
   });
 
   it('has the whole SRD bestiary', () => {

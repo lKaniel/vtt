@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EffectSchema } from './spell-schema.ts';
 import { EditionSchema, InventoryEntrySchema, StatsSchema } from './stats-schema.ts';
 
 // Every file in a world folder is described here. The checker, the server and
@@ -103,5 +104,22 @@ export const TokenSchema = z.object({
   /** Current hit points; missing means unhurt. */
   hp: z.number().int().optional(),
   inventory: z.array(InventoryEntrySchema).optional(),
+  /** Spells, conditions and features currently affecting the token. */
+  effects: z.array(EffectSchema).optional(),
+  /** The spell this creature is concentrating on. */
+  concentration: z.object({ spell: id, name: z.string() }).optional(),
+  /** Spell slots and feature uses spent since the last rest. */
+  spent: z
+    .object({
+      /** Slots used per spell level, index 0 for 1st level. */
+      slots: z.array(z.number().int().nonnegative()).optional(),
+      /** Uses per feature id. */
+      uses: z.record(z.string(), z.number().int().nonnegative()).optional(),
+    })
+    .optional(),
+  /** Set on creatures a spell or feature brought in; they vanish when it ends. */
+  summon: z.object({ by: id, spell: id, concentration: z.boolean().default(false) }).optional(),
+  /** Acts on this token's turn instead of its own (summons, companions). */
+  leader: id.optional(),
 });
 export type Token = z.infer<typeof TokenSchema>;

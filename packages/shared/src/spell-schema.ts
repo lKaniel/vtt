@@ -187,6 +187,8 @@ export const SpellcastingSchema = z.object({
   ability: AbilitySchema,
   /** Slot progression: full casters, half casters (paladin, ranger) or a warlock's pact magic. */
   progression: z.enum(['full', 'half', 'pact']),
+  /** Class level spellcasting starts at (2 for 2014 paladins and rangers). */
+  from: z.number().int().min(1).default(1),
 });
 export type Spellcasting = z.infer<typeof SpellcastingSchema>;
 

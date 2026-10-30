@@ -1,10 +1,17 @@
 import type { Creature } from './creature.ts';
 import { roll, type Rng, type Roll } from './dice.ts';
-import type { Attack, DamageType } from './stats-schema.ts';
+import { d20Formula } from './effects.ts';
+import type { Attack, Damage, DamageType } from './stats-schema.ts';
 
 export interface AttackOptions {
   advantage?: boolean;
   disadvantage?: boolean;
+  /** Dice added to the d20, e.g. "1d4" for bless. */
+  bonus?: readonly string[];
+  /** A hit is a critical hit (the target is paralyzed or unconscious and within 5 ft). */
+  autoCrit?: boolean;
+  /** Damage added on a hit: sneak attack, rage. */
+  extraDamage?: readonly Damage[];
 }
 
 export interface AttackRoll {
@@ -33,22 +40,14 @@ function doubleTerm(term: string): string {
   return `${m[1]}${2 * count}d${m[3]}`;
 }
 
-function d20Formula(toHit: number, opts: AttackOptions): string {
-  let die = '1d20';
-  if (opts.advantage && !opts.disadvantage) die = '2d20kh1';
-  if (opts.disadvantage && !opts.advantage) die = '2d20kl1';
-  return toHit < 0 ? `${die}${toHit}` : `${die}+${toHit}`;
-}
-
 /** Rolls an attack against a target: a 20 always hits and crits, a 1 always misses. */
 export function rollAttack(attack: Attack, target: Creature, opts: AttackOptions, rng: Rng = Math.random): AttackRoll {
-  const d20 = roll(d20Formula(attack.toHit, opts), rng);
+  const d20 = roll(d20Formula(attack.toHit, opts.bonus ?? [], opts), rng);
   const natural = d20.terms[0]!.value;
-  const crit = natural === 20;
-  const hit = crit || (natural !== 1 && d20.total >= target.ac);
-  const damage = hit
-    ? attack.damage.map((d) => ({ roll: roll(crit ? critDice(d.dice) : d.dice, rng), type: d.type }))
-    : [];
+  const hit = natural === 20 || (natural !== 1 && d20.total >= target.ac);
+  const crit = natural === 20 || (hit && !!opts.autoCrit);
+  const parts = [...attack.damage, ...(opts.extraDamage ?? [])];
+  const damage = hit ? parts.map((d) => ({ roll: roll(crit ? critDice(d.dice) : d.dice, rng), type: d.type })) : [];
   return { d20, natural, total: d20.total, hit, crit, damage };
 }
 
