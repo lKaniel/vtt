@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { MapView } from '../canvas/MapView.ts';
 import { Session } from '../session.ts';
+import { CharacterSheet } from './CharacterSheet.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { Hotbar } from './Hotbar.tsx';
 import { PartyBar } from './PartyBar.tsx';
+import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
 
 export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; onLeave: () => void }>) {
   const [session] = useState(() => new Session(playerId));
+  const [sheetOpen, setSheetOpen] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   useSession(session);
 
@@ -25,7 +28,9 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') session.select(undefined);
+      if (e.target instanceof HTMLInputElement) return;
+      if (e.key === 'c') setSheetOpen((open) => !open);
+      else handleGameKey(session, e);
     };
     addEventListener('keydown', onKey);
     return () => removeEventListener('keydown', onKey);
@@ -46,12 +51,32 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
           Change seat
         </button>
       </header>
+      <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />
       <PartyBar session={session} />
-      <Hotbar session={session} />
+      <Hotbar session={session} onSheet={() => setSheetOpen((open) => !open)} />
+      {sheetOpen && <CharacterSheet session={session} onClose={() => setSheetOpen(false)} />}
       <ChatPanel session={session} />
       <Toast session={session} />
     </div>
   );
+}
+
+/** Esc backs out, 1-8 ready an attack, Space ends your turn. */
+function handleGameKey(session: Session, e: KeyboardEvent): void {
+  if (e.key === 'Escape') {
+    if (session.armed) session.arm(undefined);
+    else session.select(undefined);
+    return;
+  }
+  if (e.key === ' ' && session.isMyTurn()) {
+    e.preventDefault();
+    session.endTurn();
+    return;
+  }
+  const slot = Number(e.key) - 1;
+  const token = session.selected ? session.tokens.get(session.selected) : undefined;
+  const attack = Number.isInteger(slot) ? token?.sheet?.attacks[slot] : undefined;
+  if (attack) session.arm(session.armed === attack.name ? undefined : attack.name);
 }
 
 const TOAST_MS = 3000;

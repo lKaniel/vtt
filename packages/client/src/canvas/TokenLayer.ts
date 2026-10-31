@@ -1,4 +1,4 @@
-import type { Point, Token } from '@vtt/shared';
+import { currentTurn, type Health, type Point, type TokenView } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
 import type { Session } from '../session.ts';
 import type { Viewer } from './Vision.ts';
@@ -7,10 +7,14 @@ import type { Viewer } from './Vision.ts';
 const WALK_SPEED = 900;
 /** Token disc radius as a share of its size in pixels. */
 const DISC = 0.42;
+/** Ring around the token whose turn it is. */
+const TURN_COLOR = '#f0c040';
 
-interface TokenView {
+interface Sprite {
   root: Container;
   disc: Graphics;
+  /** Hit point bar and markers drawn over the disc. */
+  status: Graphics;
   label: Text;
   /** Remaining points of an animated move. */
   route: Point[];
@@ -19,12 +23,12 @@ interface TokenView {
 /** Draws tokens and animates them along the paths they walk. */
 export class TokenLayer {
   readonly container = new Container();
-  private views = new Map<string, TokenView>();
+  private views = new Map<string, Sprite>();
   private labelsVisible = true;
 
   constructor(private session: Session) {}
 
-  draw(token: Token): void {
+  draw(token: TokenView): void {
     const view = this.views.get(token.id) ?? this.create(token);
     if (view.route.length === 0) view.root.position.set(token.x, token.y);
     const r = token.size * (this.session.world?.gridSize ?? 100) * DISC;
@@ -33,11 +37,13 @@ export class TokenLayer {
       .circle(0, 0, r)
       .fill(token.color)
       .stroke({ width: this.session.selected === token.id ? 8 : 4, color: this.ringColor(token) });
+    drawStatus(view.status.clear(), token, r);
     const notes = [token.hidden && 'hidden', token.visibleTo && 'illusion'].filter(Boolean);
     view.label.text = notes.length ? `${token.name} (${notes.join(', ')})` : token.name;
     view.label.position.set(0, r + 4);
     view.label.visible = this.labelsVisible;
     view.root.alpha = token.hidden ? 0.5 : 1;
+    view.root.cursor = this.isTarget(token) ? 'crosshair' : 'pointer';
   }
 
   redrawAll(): void {
@@ -82,37 +88,73 @@ export class TokenLayer {
     return walking;
   }
 
-  private ringColor(token: Token): string {
+  /** Clicking this token would fire the armed attack at it. */
+  private isTarget(token: TokenView): boolean {
+    return !!this.session.armed && this.session.selected !== token.id;
+  }
+
+  private ringColor(token: TokenView): string {
     if (this.session.selected === token.id) return '#ffffff';
+    const combat = this.session.combat;
+    if (combat && currentTurn(combat) === token.id) return TURN_COLOR;
     const you = this.session.you;
     return you && token.controllers.includes(you.id) ? you.color : '#111111';
   }
 
-  private create(token: Token): TokenView {
+  private create(token: TokenView): Sprite {
     const root = new Container();
     const disc = new Graphics();
+    const status = new Graphics();
     const label = new Text({
       text: '',
       style: { fill: 0xffffff, fontSize: 22, stroke: { color: 0x000000, width: 4 } },
     });
     label.anchor.set(0.5, 0);
-    root.addChild(disc, label);
+    root.addChild(disc, status, label);
     root.eventMode = 'static';
     root.cursor = 'pointer';
     root.on('pointerdown', (e) => {
       e.stopPropagation();
       const t = this.session.tokens.get(token.id);
-      if (t && this.session.canControl(t)) this.session.select(t.id);
+      if (!t) return;
+      if (this.isTarget(t)) this.session.attack(t.id);
+      else if (this.session.canControl(t)) this.session.select(t.id);
     });
     this.container.addChild(root);
-    const view = { root, disc, label, route: [] };
+    const view = { root, disc, status, label, route: [] };
     this.views.set(token.id, view);
     return view;
   }
 }
 
+/** How full the hit point bar looks for tokens whose exact hit points are secret. */
+const HEALTH_SHARE: Record<Health, number> = { unhurt: 1, hurt: 0.75, bloodied: 0.4, down: 0 };
+
+function hpShare(token: TokenView): number | undefined {
+  if (token.sheet) return token.sheet.maxHp ? token.sheet.hp / token.sheet.maxHp : 0;
+  return token.health ? HEALTH_SHARE[token.health] : undefined;
+}
+
+/** A hit point bar under the disc, and a cross over creatures that are down. */
+function drawStatus(g: Graphics, token: TokenView, r: number): void {
+  const share = hpShare(token);
+  if (share === undefined) return;
+  const w = r * 1.6;
+  const y = r * 0.55;
+  g.rect(-w / 2, y, w, 10).fill({ color: 0x000000, alpha: 0.7 });
+  g.rect(-w / 2, y, w * Math.max(0, share), 10).fill(barColor(share));
+  if (share > 0) return;
+  const c = r * 0.5;
+  g.moveTo(-c, -c).lineTo(c, c).moveTo(c, -c).lineTo(-c, c).stroke({ width: 8, color: 0x000000, alpha: 0.8 });
+}
+
+function barColor(share: number): number {
+  if (share > 0.5) return 0x4caf50;
+  return share > 0.25 ? 0xe0a030 : 0xd04a4a;
+}
+
 /** Moves a token up to `distance` pixels along its route. */
-function step(v: TokenView, distance: number): void {
+function step(v: Sprite, distance: number): void {
   let budget = distance;
   while (budget > 0 && v.route.length > 0) {
     const [tx, ty] = v.route[0]!;

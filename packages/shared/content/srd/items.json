@@ -1,0 +1,706 @@
+[
+  {
+    "id": "club",
+    "type": "weapon",
+    "name": "Club",
+    "category": "simple",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d4",
+      "type": "bludgeoning"
+    },
+    "properties": ["light"],
+    "mastery": "slow",
+    "weight": 2
+  },
+  {
+    "id": "dagger",
+    "type": "weapon",
+    "name": "Dagger",
+    "category": "simple",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d4",
+      "type": "piercing"
+    },
+    "properties": ["finesse", "light", "thrown"],
+    "range": [20, 60],
+    "mastery": "nick",
+    "weight": 1
+  },
+  {
+    "id": "greatclub",
+    "type": "weapon",
+    "name": "Greatclub",
+    "category": "simple",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "bludgeoning"
+    },
+    "properties": ["two-handed"],
+    "mastery": "push",
+    "weight": 10
+  },
+  {
+    "id": "handaxe",
+    "type": "weapon",
+    "name": "Handaxe",
+    "category": "simple",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "slashing"
+    },
+    "properties": ["light", "thrown"],
+    "range": [20, 60],
+    "mastery": "vex",
+    "weight": 2
+  },
+  {
+    "id": "javelin",
+    "type": "weapon",
+    "name": "Javelin",
+    "category": "simple",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "piercing"
+    },
+    "properties": ["thrown"],
+    "range": [30, 120],
+    "mastery": "slow",
+    "weight": 2
+  },
+  {
+    "id": "light-hammer",
+    "type": "weapon",
+    "name": "Light Hammer",
+    "category": "simple",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d4",
+      "type": "bludgeoning"
+    },
+    "properties": ["light", "thrown"],
+    "range": [20, 60],
+    "mastery": "nick",
+    "weight": 2
+  },
+  {
+    "id": "mace",
+    "type": "weapon",
+    "name": "Mace",
+    "category": "simple",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "bludgeoning"
+    },
+    "properties": [],
+    "mastery": "sap",
+    "weight": 4
+  },
+  {
+    "id": "quarterstaff",
+    "type": "weapon",
+    "name": "Quarterstaff",
+    "category": "simple",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "bludgeoning"
+    },
+    "properties": ["versatile"],
+    "versatile": "1d8",
+    "mastery": "topple",
+    "weight": 4
+  },
+  {
+    "id": "sickle",
+    "type": "weapon",
+    "name": "Sickle",
+    "category": "simple",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d4",
+      "type": "slashing"
+    },
+    "properties": ["light"],
+    "mastery": "nick",
+    "weight": 2
+  },
+  {
+    "id": "spear",
+    "type": "weapon",
+    "name": "Spear",
+    "category": "simple",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "piercing"
+    },
+    "properties": ["thrown", "versatile"],
+    "range": [20, 60],
+    "versatile": "1d8",
+    "mastery": "sap",
+    "weight": 3
+  },
+  {
+    "id": "dart",
+    "type": "weapon",
+    "name": "Dart",
+    "category": "simple",
+    "kind": "ranged",
+    "damage": {
+      "dice": "1d4",
+      "type": "piercing"
+    },
+    "properties": ["finesse", "thrown"],
+    "range": [20, 60],
+    "mastery": "vex",
+    "weight": 0.25
+  },
+  {
+    "id": "light-crossbow",
+    "type": "weapon",
+    "name": "Light Crossbow",
+    "category": "simple",
+    "kind": "ranged",
+    "damage": {
+      "dice": "1d8",
+      "type": "piercing"
+    },
+    "properties": ["ammunition", "loading", "two-handed"],
+    "range": [80, 320],
+    "mastery": "slow",
+    "weight": 5
+  },
+  {
+    "id": "shortbow",
+    "type": "weapon",
+    "name": "Shortbow",
+    "category": "simple",
+    "kind": "ranged",
+    "damage": {
+      "dice": "1d6",
+      "type": "piercing"
+    },
+    "properties": ["ammunition", "two-handed"],
+    "range": [80, 320],
+    "mastery": "vex",
+    "weight": 2
+  },
+  {
+    "id": "sling",
+    "type": "weapon",
+    "name": "Sling",
+    "category": "simple",
+    "kind": "ranged",
+    "damage": {
+      "dice": "1d4",
+      "type": "bludgeoning"
+    },
+    "properties": ["ammunition"],
+    "range": [30, 120],
+    "mastery": "slow",
+    "weight": 0
+  },
+  {
+    "id": "battleaxe",
+    "type": "weapon",
+    "name": "Battleaxe",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "slashing"
+    },
+    "properties": ["versatile"],
+    "versatile": "1d10",
+    "mastery": "topple",
+    "weight": 4
+  },
+  {
+    "id": "flail",
+    "type": "weapon",
+    "name": "Flail",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "bludgeoning"
+    },
+    "properties": [],
+    "mastery": "sap",
+    "weight": 2
+  },
+  {
+    "id": "glaive",
+    "type": "weapon",
+    "name": "Glaive",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d10",
+      "type": "slashing"
+    },
+    "properties": ["heavy", "reach", "two-handed"],
+    "mastery": "graze",
+    "weight": 6
+  },
+  {
+    "id": "greataxe",
+    "type": "weapon",
+    "name": "Greataxe",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d12",
+      "type": "slashing"
+    },
+    "properties": ["heavy", "two-handed"],
+    "mastery": "cleave",
+    "weight": 7
+  },
+  {
+    "id": "greatsword",
+    "type": "weapon",
+    "name": "Greatsword",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "2d6",
+      "type": "slashing"
+    },
+    "properties": ["heavy", "two-handed"],
+    "mastery": "graze",
+    "weight": 6
+  },
+  {
+    "id": "halberd",
+    "type": "weapon",
+    "name": "Halberd",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d10",
+      "type": "slashing"
+    },
+    "properties": ["heavy", "reach", "two-handed"],
+    "mastery": "cleave",
+    "weight": 6
+  },
+  {
+    "id": "lance",
+    "type": "weapon",
+    "name": "Lance",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d10",
+      "type": "piercing"
+    },
+    "properties": ["heavy", "reach", "two-handed"],
+    "mastery": "topple",
+    "weight": 6
+  },
+  {
+    "id": "longsword",
+    "type": "weapon",
+    "name": "Longsword",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "slashing"
+    },
+    "properties": ["versatile"],
+    "versatile": "1d10",
+    "mastery": "sap",
+    "weight": 3
+  },
+  {
+    "id": "maul",
+    "type": "weapon",
+    "name": "Maul",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "2d6",
+      "type": "bludgeoning"
+    },
+    "properties": ["heavy", "two-handed"],
+    "mastery": "topple",
+    "weight": 10
+  },
+  {
+    "id": "morningstar",
+    "type": "weapon",
+    "name": "Morningstar",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "piercing"
+    },
+    "properties": [],
+    "mastery": "sap",
+    "weight": 4
+  },
+  {
+    "id": "pike",
+    "type": "weapon",
+    "name": "Pike",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d10",
+      "type": "piercing"
+    },
+    "properties": ["heavy", "reach", "two-handed"],
+    "mastery": "push",
+    "weight": 18
+  },
+  {
+    "id": "rapier",
+    "type": "weapon",
+    "name": "Rapier",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "piercing"
+    },
+    "properties": ["finesse"],
+    "mastery": "vex",
+    "weight": 2
+  },
+  {
+    "id": "scimitar",
+    "type": "weapon",
+    "name": "Scimitar",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "slashing"
+    },
+    "properties": ["finesse", "light"],
+    "mastery": "nick",
+    "weight": 3
+  },
+  {
+    "id": "shortsword",
+    "type": "weapon",
+    "name": "Shortsword",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "piercing"
+    },
+    "properties": ["finesse", "light"],
+    "mastery": "vex",
+    "weight": 2
+  },
+  {
+    "id": "trident",
+    "type": "weapon",
+    "name": "Trident",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "piercing"
+    },
+    "properties": ["thrown", "versatile"],
+    "range": [20, 60],
+    "versatile": "1d10",
+    "mastery": "topple",
+    "weight": 4
+  },
+  {
+    "id": "warhammer",
+    "type": "weapon",
+    "name": "Warhammer",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "bludgeoning"
+    },
+    "properties": ["versatile"],
+    "versatile": "1d10",
+    "mastery": "push",
+    "weight": 5
+  },
+  {
+    "id": "war-pick",
+    "type": "weapon",
+    "name": "War Pick",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "piercing"
+    },
+    "properties": ["versatile"],
+    "versatile": "1d10",
+    "mastery": "sap",
+    "weight": 2
+  },
+  {
+    "id": "whip",
+    "type": "weapon",
+    "name": "Whip",
+    "category": "martial",
+    "kind": "melee",
+    "damage": {
+      "dice": "1d4",
+      "type": "slashing"
+    },
+    "properties": ["finesse", "reach"],
+    "mastery": "slow",
+    "weight": 3
+  },
+  {
+    "id": "blowgun",
+    "type": "weapon",
+    "name": "Blowgun",
+    "category": "martial",
+    "kind": "ranged",
+    "damage": {
+      "dice": "1",
+      "type": "piercing"
+    },
+    "properties": ["ammunition", "loading"],
+    "range": [25, 100],
+    "mastery": "vex",
+    "weight": 1
+  },
+  {
+    "id": "hand-crossbow",
+    "type": "weapon",
+    "name": "Hand Crossbow",
+    "category": "martial",
+    "kind": "ranged",
+    "damage": {
+      "dice": "1d6",
+      "type": "piercing"
+    },
+    "properties": ["ammunition", "light", "loading"],
+    "range": [30, 120],
+    "mastery": "vex",
+    "weight": 3
+  },
+  {
+    "id": "heavy-crossbow",
+    "type": "weapon",
+    "name": "Heavy Crossbow",
+    "category": "martial",
+    "kind": "ranged",
+    "damage": {
+      "dice": "1d10",
+      "type": "piercing"
+    },
+    "properties": ["ammunition", "heavy", "loading", "two-handed"],
+    "range": [100, 400],
+    "mastery": "push",
+    "weight": 18
+  },
+  {
+    "id": "longbow",
+    "type": "weapon",
+    "name": "Longbow",
+    "category": "martial",
+    "kind": "ranged",
+    "damage": {
+      "dice": "1d8",
+      "type": "piercing"
+    },
+    "properties": ["ammunition", "heavy", "two-handed"],
+    "range": [150, 600],
+    "mastery": "slow",
+    "weight": 2
+  },
+  {
+    "id": "musket",
+    "type": "weapon",
+    "name": "Musket",
+    "category": "martial",
+    "kind": "ranged",
+    "damage": {
+      "dice": "1d12",
+      "type": "piercing"
+    },
+    "properties": ["ammunition", "loading", "two-handed"],
+    "range": [40, 120],
+    "mastery": "slow",
+    "weight": 10
+  },
+  {
+    "id": "pistol",
+    "type": "weapon",
+    "name": "Pistol",
+    "category": "martial",
+    "kind": "ranged",
+    "damage": {
+      "dice": "1d10",
+      "type": "piercing"
+    },
+    "properties": ["ammunition", "loading"],
+    "range": [30, 90],
+    "mastery": "vex",
+    "weight": 3
+  },
+  {
+    "id": "padded",
+    "type": "armor",
+    "name": "Padded Armor",
+    "category": "light",
+    "ac": 11,
+    "stealthDisadvantage": true,
+    "weight": 8
+  },
+  {
+    "id": "leather",
+    "type": "armor",
+    "name": "Leather Armor",
+    "category": "light",
+    "ac": 11,
+    "weight": 10
+  },
+  {
+    "id": "studded-leather",
+    "type": "armor",
+    "name": "Studded Leather Armor",
+    "category": "light",
+    "ac": 12,
+    "weight": 13
+  },
+  {
+    "id": "hide",
+    "type": "armor",
+    "name": "Hide Armor",
+    "category": "medium",
+    "ac": 12,
+    "weight": 12
+  },
+  {
+    "id": "chain-shirt",
+    "type": "armor",
+    "name": "Chain Shirt",
+    "category": "medium",
+    "ac": 13,
+    "weight": 20
+  },
+  {
+    "id": "scale-mail",
+    "type": "armor",
+    "name": "Scale Mail",
+    "category": "medium",
+    "ac": 14,
+    "stealthDisadvantage": true,
+    "weight": 45
+  },
+  {
+    "id": "breastplate",
+    "type": "armor",
+    "name": "Breastplate",
+    "category": "medium",
+    "ac": 14,
+    "weight": 20
+  },
+  {
+    "id": "half-plate",
+    "type": "armor",
+    "name": "Half Plate Armor",
+    "category": "medium",
+    "ac": 15,
+    "stealthDisadvantage": true,
+    "weight": 40
+  },
+  {
+    "id": "ring-mail",
+    "type": "armor",
+    "name": "Ring Mail",
+    "category": "heavy",
+    "ac": 14,
+    "stealthDisadvantage": true,
+    "weight": 40
+  },
+  {
+    "id": "chain-mail",
+    "type": "armor",
+    "name": "Chain Mail",
+    "category": "heavy",
+    "ac": 16,
+    "strength": 13,
+    "stealthDisadvantage": true,
+    "weight": 55
+  },
+  {
+    "id": "splint",
+    "type": "armor",
+    "name": "Splint Armor",
+    "category": "heavy",
+    "ac": 17,
+    "strength": 15,
+    "stealthDisadvantage": true,
+    "weight": 60
+  },
+  {
+    "id": "plate",
+    "type": "armor",
+    "name": "Plate Armor",
+    "category": "heavy",
+    "ac": 18,
+    "strength": 15,
+    "stealthDisadvantage": true,
+    "weight": 65
+  },
+  {
+    "id": "shield",
+    "type": "armor",
+    "name": "Shield",
+    "category": "shield",
+    "ac": 2,
+    "weight": 6
+  },
+  {
+    "id": "torch",
+    "type": "gear",
+    "name": "Torch",
+    "description": "Bright light 20 ft, dim 20 ft more, for 1 hour.",
+    "weight": 1
+  },
+  {
+    "id": "rope",
+    "type": "gear",
+    "name": "Rope",
+    "description": "50 feet of hempen rope.",
+    "weight": 5
+  },
+  {
+    "id": "healer-s-kit",
+    "type": "gear",
+    "name": "Healer's Kit",
+    "description": "Ten uses: stabilize a creature at 0 HP.",
+    "weight": 3
+  },
+  {
+    "id": "potion-of-healing",
+    "type": "gear",
+    "name": "Potion of Healing",
+    "description": "Regain 2d4+2 hit points.",
+    "weight": 0.5
+  },
+  {
+    "id": "thieves-tools",
+    "type": "gear",
+    "name": "Thieves' Tools",
+    "description": "Pick locks and disarm traps.",
+    "weight": 1
+  }
+]

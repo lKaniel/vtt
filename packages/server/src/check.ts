@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
-import type { Chunk, Token, World } from '@vtt/shared';
+import type { Chunk, Combat, Token, World } from '@vtt/shared';
 import { classify, crossCheck, parseFile, type Issue } from './files.ts';
 import { worldDirFromArgs } from './paths.ts';
 
@@ -10,6 +10,7 @@ import { worldDirFromArgs } from './paths.ts';
 const dir = worldDirFromArgs();
 const issues: Issue[] = [];
 let world: World | undefined;
+let combat: Combat | undefined;
 const chunks = new Map<string, Chunk>();
 const tokens = new Map<string, Token>();
 
@@ -21,7 +22,13 @@ async function walk(sub: string): Promise<string[]> {
   }
 }
 
-const files = ['world.json', ...(await walk('chunks')), ...(await walk('tokens'))];
+const hasCombat = (await readdir(dir)).includes('combat.json');
+const files = [
+  'world.json',
+  ...(hasCombat ? ['combat.json'] : []),
+  ...(await walk('chunks')),
+  ...(await walk('tokens')),
+];
 for (const rel of files) {
   const kind = classify(rel);
   if (!kind) {
@@ -40,8 +47,9 @@ for (const rel of files) {
   if (file?.kind === 'world') world = file.data;
   if (file?.kind === 'chunk') chunks.set(file.key, file.data);
   if (file?.kind === 'token') tokens.set(file.id, file.data);
+  if (file?.kind === 'combat') combat = file.data;
 }
-if (world) issues.push(...crossCheck(world, chunks, tokens));
+if (world) issues.push(...crossCheck(world, chunks, tokens, combat));
 
 const errors = issues.filter((i) => !i.warning);
 for (const i of issues) console.log(`${i.warning ? 'warning' : 'error  '} ${i.file}: ${i.message}`);

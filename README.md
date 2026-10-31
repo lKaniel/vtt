@@ -24,6 +24,27 @@ on, shared live between players.
 - **Live file editing.** Edit any file in `world/` and every client updates
   within a moment. `pnpm check-world` validates the folder.
 
+### Combat (phase 3)
+
+- **Creatures.** A token with `"monster": "goblin"` uses that SRD stat
+  block; a character gets AC, attacks and proficiency from its `stats`, level
+  and equipped gear. Players see their own sheets and only a health state
+  (hurt, bloodied, down) for everyone else.
+- **Initiative and turns.** The GM's _Start combat_ rolls initiative for every
+  creature on screen. Only the creature whose turn it is can move, within
+  what's left of its speed (the path preview shows `feet / left`). Space or
+  _End turn_ passes the turn; creatures at 0 HP are skipped.
+- **Attacks.** Press 1-8 or click a hotbar slot, hover a target to see range
+  (long range shows disadvantage), click to attack. The server rolls to hit
+  against AC, crits on a 20, applies resistances, vulnerabilities and
+  immunities, and posts the result in chat.
+- **Character sheet (C).** Abilities, AC, HP, attacks and inventory; tick
+  _equipped_ to change weapons or armor.
+- **Both editions.** Worlds play 2014 rules by default (`"rules"` in
+  `world.json`), and any character can opt into 2024 rules with
+  `"stats": { "rules": "2024" }`. Monsters come from SRD 5.1 or 5.2 to match;
+  weapons, armor and gear are shared. All in `packages/shared/content/srd/`.
+
 ## Run it
 
 Needs Node 22+ and pnpm.

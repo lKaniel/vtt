@@ -1,13 +1,17 @@
-import type {
-  Chunk,
-  ChatMessage,
-  ClientMessage,
-  DoorState,
-  Player,
-  Point,
-  ServerMessage,
-  Token,
-  WorldInfo,
+import {
+  currentTurn,
+  type Chunk,
+  type ChatMessage,
+  type ClientMessage,
+  type Combat,
+  type DoorState,
+  type Player,
+  type Point,
+  type Rect,
+  type ServerMessage,
+  type Token,
+  type TokenView,
+  type WorldInfo,
 } from '@vtt/shared';
 
 type Status = 'connecting' | 'open' | 'closed';
@@ -24,6 +28,10 @@ export interface SessionEvents {
   tokenGone: (id: string) => void;
   moved: (id: string, path: Point[]) => void;
   select: (id: string | undefined) => void;
+  /** The fight started, ended or moved on. */
+  combat: () => void;
+  /** An attack was readied or put away. */
+  armed: () => void;
   focus: (point: Point) => void;
 }
 
@@ -35,11 +43,17 @@ export class Session {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
-  readonly tokens = new Map<string, Token>();
+  readonly tokens = new Map<string, TokenView>();
   readonly chunks = new Map<string, Chunk>();
   chat: ChatMessage[] = [];
   selected?: string;
+  /** The fight in progress, if any. */
+  combat: Combat | null = null;
+  /** The attack the selected token will make on the next token clicked. */
+  armed?: string;
   error?: { message: string; at: number };
+  /** The part of the world on screen, kept up to date by the map. */
+  viewRect?: Rect;
   /** Bumped on every change; React re-renders on it. */
   version = 0;
 
@@ -123,8 +137,64 @@ export class Session {
   select(id: string | undefined): void {
     if (this.selected === id) return;
     this.selected = id;
+    if (this.armed) this.arm(undefined);
     this.emit('select', id);
     this.changed();
+  }
+
+  /** Readies an attack of the selected token; the next token clicked is the target. */
+  arm(attack: string | undefined): void {
+    this.armed = attack;
+    this.emit('armed');
+    this.changed();
+  }
+
+  attack(target: string): void {
+    if (!this.selected || !this.armed) return;
+    this.send({ t: 'attack', attacker: this.selected, target, attack: this.armed });
+    this.arm(undefined);
+  }
+
+  endTurn(): void {
+    this.send({ t: 'endTurn' });
+  }
+
+  startCombat(tokens: string[]): void {
+    this.send({ t: 'combatStart', tokens });
+  }
+
+  endCombat(): void {
+    this.send({ t: 'combatEnd' });
+  }
+
+  equip(token: string, item: number, equipped: boolean): void {
+    this.send({ t: 'equip', token, item, equipped });
+  }
+
+  /** Visible creatures (tokens with stats) on screen: who joins a fight the GM starts. */
+  fightersInView(): string[] {
+    const r = this.viewRect;
+    if (!r) return [];
+    const inView = (t: TokenView) => t.x >= r.x && t.x <= r.x + r.w && t.y >= r.y && t.y <= r.y + r.h;
+    return [...this.tokens.values()].filter((t) => (t.sheet ?? t.health) && !t.hidden && inView(t)).map((t) => t.id);
+  }
+
+  /** The token whose turn it is in the fight. */
+  turnToken(): TokenView | undefined {
+    const id = this.combat ? currentTurn(this.combat) : undefined;
+    return id ? this.tokens.get(id) : undefined;
+  }
+
+  isMyTurn(): boolean {
+    const token = this.turnToken();
+    return !!token && this.canControl(token);
+  }
+
+  /** Feet the token may still walk: unlimited outside a fight, nothing when it's not its turn. */
+  movementLeft(id: string): number {
+    const combat = this.combat;
+    if (!combat?.order.some((e) => e.token === id)) return Infinity;
+    return currentTurn(combat) === id ? combat.left.move : 0;
   }
 
   focus(point: Point): void {
@@ -166,10 +236,25 @@ export class Session {
       case 'chat':
         this.chat = [...this.chat, msg.message].slice(-CHAT_HISTORY);
         return true;
+      case 'combat':
+        this.onCombat(msg.combat);
+        return true;
       case 'error':
         this.showError(msg.message);
         return false;
     }
+  }
+
+  /** When one of your creatures' turns starts, select it and bring it into view. */
+  private onCombat(combat: Combat | null): void {
+    const before = this.combat ? `${this.combat.round}:${currentTurn(this.combat)}` : '';
+    this.combat = combat;
+    this.emit('combat');
+    const token = this.turnToken();
+    if (!combat || !token || !this.canControl(token)) return;
+    if (before === `${combat.round}:${token.id}`) return;
+    this.select(token.id);
+    this.focus([token.x, token.y]);
   }
 
   private onWelcome(msg: Extract<ServerMessage, { t: 'welcome' }>): void {
@@ -180,6 +265,7 @@ export class Session {
     this.tokens.clear();
     for (const t of msg.tokens) this.tokens.set(t.id, t);
     this.chat = msg.chat;
+    this.combat = msg.combat;
     // A reconnect starts from scratch: ask for the chunks again.
     this.chunks.clear();
     this.emit('welcome');

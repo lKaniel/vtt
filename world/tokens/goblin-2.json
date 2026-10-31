@@ -4,5 +4,6 @@
   "x": 3250,
   "y": 1450,
   "color": "#4a7a30",
-  "hidden": true
+  "hidden": true,
+  "monster": "goblin"
 }

@@ -6,14 +6,20 @@ import {
   findPath,
   PointSchema,
   roll,
+  editionOf,
+  srdFor,
+  viewToken,
   type ChatMessage,
   type Player,
   type Point,
+  type Rng,
   type ServerMessage,
+  type Token,
   type WorldInfo,
 } from '@vtt/shared';
 import type { RawData, WebSocket } from 'ws';
 import { z } from 'zod';
+import { CombatActions, Refusal } from './combat-actions.ts';
 import type { WorldStore } from './world-store.ts';
 
 const ClientMessageSchema = z.discriminatedUnion('t', [
@@ -21,6 +27,11 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('move'), token: z.string(), to: PointSchema }),
   z.object({ t: z.literal('door'), chunk: z.string(), wall: z.string(), state: DoorStateSchema }),
   z.object({ t: z.literal('chat'), text: z.string().min(1).max(2000) }),
+  z.object({ t: z.literal('combatStart'), tokens: z.array(z.string()).min(1).max(100) }),
+  z.object({ t: z.literal('combatEnd') }),
+  z.object({ t: z.literal('endTurn') }),
+  z.object({ t: z.literal('attack'), attacker: z.string(), target: z.string(), attack: z.string() }),
+  z.object({ t: z.literal('equip'), token: z.string(), item: z.number().int().nonnegative(), equipped: z.boolean() }),
 ]);
 
 interface Client {
@@ -47,8 +58,16 @@ const PATH_MARGIN = 12;
 export class Game {
   private clients = new Set<Client>();
   private chat: ChatMessage[] = [];
+  private combat: CombatActions;
 
-  constructor(private store: WorldStore) {
+  constructor(
+    private store: WorldStore,
+    { rng = Math.random }: { rng?: Rng } = {},
+  ) {
+    this.combat = new CombatActions(store, rng, {
+      attack: (attack) => this.narrate({ attack }),
+      note: (text) => this.narrate({ text }),
+    });
     store.on('chunk', (key, chunk) => {
       for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
       // A door or a light changed: what everyone can see may have too.
@@ -60,7 +79,13 @@ export class Game {
       this.refreshAll();
     });
     store.on('token', (token, path) => this.refreshAll(token.id, path));
-    store.on('tokenGone', () => this.refreshAll());
+    store.on('tokenGone', (id) => {
+      this.combat.forget(id);
+      this.refreshAll();
+    });
+    store.on('combat', (combat) => {
+      for (const c of this.clients) this.send(c, { t: 'combat', combat: combat ?? null });
+    });
     store.on('world', () => {
       // Player list or grid changes need a fresh start on every client.
       for (const c of this.clients) c.ws.close(4000, 'world settings changed');
@@ -80,8 +105,9 @@ export class Game {
       t: 'welcome',
       world: info,
       you: player,
-      tokens: [...client.visible].map((id) => this.store.tokens.get(id)!),
+      tokens: [...client.visible].map((id) => this.view(this.store.tokens.get(id)!, player)),
       chat: this.chat.filter((m) => !m.gmOnly || player.role === 'gm'),
+      combat: this.store.combat ?? null,
     });
     ws.on('message', (data) => {
       const msg = parseClientMessage(data);
@@ -108,27 +134,35 @@ export class Game {
     for (const c of this.clients) {
       const before = c.visible;
       c.visible = this.visibleTo(c.player);
-      for (const msg of this.visibilityChanges(before, c.visible, changed, path)) this.send(c, msg);
+      for (const msg of this.visibilityChanges(c, before, changed, path)) this.send(c, msg);
     }
   }
 
-  private visibilityChanges(
-    before: Set<string>,
-    after: Set<string>,
-    changed?: string,
-    path?: Point[],
-  ): ServerMessage[] {
+  private visibilityChanges(c: Client, before: Set<string>, changed?: string, path?: Point[]): ServerMessage[] {
     const out: ServerMessage[] = [];
-    for (const id of before) if (!after.has(id)) out.push({ t: 'tokenGone', id });
-    for (const id of after) {
-      const token = this.store.tokens.get(id)!;
+    for (const id of before) if (!c.visible.has(id)) out.push({ t: 'tokenGone', id });
+    for (const id of c.visible) {
+      const token = this.view(this.store.tokens.get(id)!, c.player);
       if (!before.has(id)) out.push({ t: 'token', token });
       else if (id === changed) out.push(path ? { t: 'moved', id, path } : { t: 'token', token });
     }
     return out;
   }
 
+  private view(token: Token, player: Player) {
+    return viewToken(token, player, srdFor(editionOf(token, this.store.world)));
+  }
+
   private handle(c: Client, msg: ClientMessage): void {
+    try {
+      this.dispatch(c, msg);
+    } catch (e) {
+      if (!(e instanceof Refusal)) throw e;
+      this.fail(c, e.message);
+    }
+  }
+
+  private dispatch(c: Client, msg: ClientMessage): void {
     switch (msg.t) {
       case 'view':
         return this.onView(c, msg.chunks);
@@ -138,6 +172,16 @@ export class Game {
         return this.onDoor(c, msg);
       case 'chat':
         return this.onChat(c, msg.text.trim());
+      case 'combatStart':
+        return this.combat.start(c.player, msg.tokens);
+      case 'combatEnd':
+        return this.combat.end(c.player);
+      case 'endTurn':
+        return this.combat.endTurn(c.player);
+      case 'attack':
+        return this.combat.attack(c.player, (id) => c.visible.has(id), msg);
+      case 'equip':
+        return this.combat.equip(c.player, msg.token, msg.item, msg.equipped);
     }
   }
 
@@ -167,7 +211,9 @@ export class Game {
     const path = findPath([token.x, token.y], to, walls, { gridSize: g, margin: PATH_MARGIN });
     if (!path) return this.fail(c, `${token.name} can't get there`);
     const [x, y] = path.points.at(-1)!;
-    if (path.points.length > 1) this.store.setToken({ ...token, x, y }, path.points);
+    if (path.points.length < 2) return;
+    this.combat.move(token, path.feet);
+    this.store.setToken({ ...token, x, y }, path.points);
   }
 
   private onDoor(c: Client, msg: Extract<ClientMessage, { t: 'door' }>): void {
@@ -188,10 +234,15 @@ export class Game {
     } catch (e) {
       return this.fail(c, (e as Error).message);
     }
+    this.post(message, c);
+  }
+
+  /** Adds a message to the log and sends it to everyone allowed to read it. */
+  private post(message: ChatMessage, sender?: Client): void {
     this.chat.push(message);
     if (this.chat.length > CHAT_HISTORY) this.chat.shift();
     for (const other of this.clients) {
-      if (message.gmOnly && other.player.role !== 'gm' && other !== c) continue;
+      if (message.gmOnly && other.player.role !== 'gm' && other !== sender) continue;
       this.send(other, { t: 'chat', message });
     }
   }
@@ -203,6 +254,11 @@ export class Game {
     const command = space > 0 ? text.slice(0, space).toLowerCase() : '';
     if (!ROLL_COMMANDS.has(command)) return { ...base, text };
     return { ...base, roll: roll(text.slice(space + 1)), gmOnly: command === '/gmr' || undefined };
+  }
+
+  /** A message from the game itself: initiative, attack results. */
+  private narrate(content: Pick<ChatMessage, 'text' | 'attack'>): void {
+    this.post({ id: randomUUID(), time: Date.now(), from: 'Combat', color: '#c8b48a', ...content });
   }
 
   private fail(c: Client, message: string): void {

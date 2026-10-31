@@ -1,11 +1,12 @@
 import { EventEmitter } from 'node:events';
 import { watch, type FSWatcher } from 'node:fs';
-import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import {
   chunksInRect,
   tokenLights,
   type Chunk,
+  type Combat,
   type LightSource,
   type Point,
   type Rect,
@@ -22,6 +23,7 @@ interface StoreEvents {
   /** `path` is set when the token walked there inside the game. */
   token: [Token, Point[] | undefined];
   tokenGone: [string];
+  combat: [Combat | undefined];
 }
 
 /**
@@ -33,6 +35,8 @@ export class WorldStore extends EventEmitter<StoreEvents> {
   world!: World;
   readonly chunks = new Map<string, Chunk>();
   readonly tokens = new Map<string, Token>();
+  /** The fight in progress, from combat.json. */
+  combat?: Combat;
 
   /** Text we last wrote per file, so our own writes don't echo back as edits. */
   private written = new Map<string, string>();
@@ -58,7 +62,8 @@ export class WorldStore extends EventEmitter<StoreEvents> {
         if (kind) await this.loadFile(rel, kind, false);
       }
     }
-    for (const issue of crossCheck(this.world, this.chunks, this.tokens)) {
+    await this.loadOptional('combat.json', { kind: 'combat' });
+    for (const issue of crossCheck(this.world, this.chunks, this.tokens, this.combat)) {
       console.warn(`[world] ${issue.file}: ${issue.message}`);
     }
     console.log(`[world] loaded "${this.world.name}": ${this.chunks.size} chunks, ${this.tokens.size} tokens`);
@@ -121,6 +126,21 @@ export class WorldStore extends EventEmitter<StoreEvents> {
     this.write(`chunks/${key}.json`, chunk);
   }
 
+  setCombat(combat: Combat | undefined): void {
+    this.combat = combat;
+    this.emit('combat', combat);
+    if (combat) this.write('combat.json', combat);
+    else this.remove('combat.json');
+  }
+
+  private async loadOptional(rel: string, kind: FileKind): Promise<void> {
+    try {
+      await this.loadFile(rel, kind, false);
+    } catch {
+      // The file doesn't exist: nothing to load.
+    }
+  }
+
   private async onFileChanged(rel: string): Promise<void> {
     this.pending.delete(rel);
     const kind = classify(rel)!;
@@ -131,6 +151,7 @@ export class WorldStore extends EventEmitter<StoreEvents> {
       this.written.delete(rel);
       if (kind.kind === 'chunk' && this.chunks.delete(kind.key)) this.emit('chunkGone', kind.key);
       if (kind.kind === 'token' && this.tokens.delete(kind.id)) this.emit('tokenGone', kind.id);
+      if (kind.kind === 'combat' && this.combat) this.setCombat(undefined);
       return;
     }
     if (this.written.get(rel) === text) return;
@@ -162,6 +183,10 @@ export class WorldStore extends EventEmitter<StoreEvents> {
         this.tokens.set(file.id, file.data);
         if (live) this.emit('token', file.data, undefined);
         break;
+      case 'combat':
+        this.combat = file.data;
+        if (live) this.emit('combat', file.data);
+        break;
     }
   }
 
@@ -170,15 +195,24 @@ export class WorldStore extends EventEmitter<StoreEvents> {
     const text = `${JSON.stringify(data, null, 2)}\n`;
     this.written.set(rel, text);
     const path = join(this.dir, rel);
+    this.queue(rel, async () => {
+      await mkdir(dirname(path), { recursive: true });
+      const tmp = `${path}.${process.pid}.tmp`;
+      await writeFile(tmp, text);
+      await rename(tmp, path);
+    });
+  }
+
+  private remove(rel: string): void {
+    this.written.delete(rel);
+    this.queue(rel, () => rm(join(this.dir, rel), { force: true }));
+  }
+
+  private queue(rel: string, job: () => Promise<void>): void {
     const prev = this.writeQueue.get(rel) ?? Promise.resolve();
     const next = prev
-      .then(async () => {
-        await mkdir(dirname(path), { recursive: true });
-        const tmp = `${path}.${process.pid}.tmp`;
-        await writeFile(tmp, text);
-        await rename(tmp, path);
-      })
-      .catch((e: unknown) => console.error(`[world] failed to write ${relative(this.dir, path)}:`, e));
+      .then(job)
+      .catch((e: unknown) => console.error(`[world] failed to update ${relative(this.dir, join(this.dir, rel))}:`, e));
     this.writeQueue.set(rel, next);
   }
 

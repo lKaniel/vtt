@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { classify, parseFile } from './files.ts';
+import { TokenSchema, WorldSchema } from '@vtt/shared';
+import { classify, crossCheck, parseFile } from './files.ts';
 
 describe('classify', () => {
   it('recognises world files and ignores the rest', () => {
     expect(classify('world.json')).toEqual({ kind: 'world' });
     expect(classify('chunks/-1_0.json')).toEqual({ kind: 'chunk', key: '-1_0' });
     expect(classify('tokens/bram.json')).toEqual({ kind: 'token', id: 'bram' });
+    expect(classify('combat.json')).toEqual({ kind: 'combat' });
     expect(classify('tokens/bram.json.123.tmp')).toBeNull();
     expect(classify('assets/map.png')).toBeNull();
   });
@@ -27,5 +29,31 @@ describe('parseFile', () => {
     expect(
       parseFile({ kind: 'world' }, '{"name":"x","players":[{"id":"a","name":"A","role":"player"}]}').errors,
     ).toContain('at least one player needs role "gm"');
+  });
+});
+
+describe('crossCheck', () => {
+  it('reports unknown monsters, items and combatants', () => {
+    const world = WorldSchema.parse({ name: 'w', players: [{ id: 'gm', name: 'GM', role: 'gm' }] });
+    const token = TokenSchema.parse({
+      id: 'orc',
+      name: 'Orc',
+      x: 0,
+      y: 0,
+      monster: 'orc-warlord',
+      inventory: [{ item: 'greataxe' }, { item: 'lightsaber' }],
+    });
+    const combat = {
+      round: 1,
+      turn: 0,
+      order: [{ token: 'ghost', initiative: 3 }],
+      left: { move: 30, action: true, bonus: true },
+    };
+    const issues = crossCheck(world, new Map(), new Map([['orc', token]]), combat);
+    expect(issues.map((i) => i.message)).toEqual([
+      'unknown monster "orc-warlord" in the 2014 rules',
+      'unknown item "lightsaber"',
+      'unknown token "ghost" in the initiative order',
+    ]);
   });
 });

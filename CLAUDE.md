@@ -12,6 +12,9 @@ you add maps, place tokens, and prepare encounters.
   chunk file for where it starts: chunk `floor(x / chunkSize)_floor(y / chunkSize)`.
 - Always run `pnpm check-world` after editing and fix every error.
 - Hidden enemies for an encounter: `"hidden": true`, the GM reveals them.
+- Creatures: `"monster": "<srd id>"` for a stat block, or `stats` + `inventory`
+  for a character (see "Creatures" in the format doc). Monster and item ids
+  are in `packages/shared/content/srd/`; `check-world` flags unknown ones.
 - Keep ids lowercase with dashes, unique per chunk (tiles, walls) or per world (tokens).
 
 ## Code
@@ -20,7 +23,16 @@ you add maps, place tokens, and prepare encounters.
 - Rules and geometry live in `shared` so the server can enforce them and the
   client can preview them with the same code. Don't duplicate them.
 - The server is authoritative: clients send intents, the server validates
-  and broadcasts each player's filtered view (`canSeeToken`).
+  and broadcasts each player's filtered view (`canSeeToken`, `viewToken`).
+- Combat rules: `creature.ts` (stats from monster/gear), `attack.ts` (rolls,
+  damage, range), `combat.ts` (initiative, turns). The server applies them
+  in `combat-actions.ts`; a rule violation throws `Refusal`.
+- Rules editions: the world plays `rules` ("2014" default, SRD 5.1) and a
+  character can opt into the other with `stats.rules`. Look content up with
+  `srdFor(editionOf(token, world))`; edition-specific rules (class features,
+  weapon mastery) must branch on that edition, never assume one.
+- Bundled content is SRD 5.1 and 5.2 (CC-BY-4.0) only; anything else is the user's
+  own homebrew and stays out of the repo.
 - Red-green always: write the failing test first, run it and see it fail,
   then write the code that makes it pass.
 - Keep functions small and flat: ESLint and fallow enforce complexity 12,
