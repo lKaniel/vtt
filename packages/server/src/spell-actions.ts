@@ -83,16 +83,11 @@ export class SpellActions {
   /** Spends the slot, ends invisibility and starts concentrating. */
   private begin(caster: Fighter, spell: Spell, slot: number): void {
     if (spell.concentration && caster.token.concentration) this.table.endConcentration(caster.token.id);
+    this.table.spendSlot(caster.token.id, slot);
     const token = this.store.tokens.get(caster.token.id)!;
-    const slots = [...(token.spent?.slots ?? [])];
-    if (slot > 0) {
-      while (slots.length < slot) slots.push(0);
-      slots[slot - 1]! += 1;
-    }
     const effects = token.effects?.filter((e) => !e.endsOnAttack);
     this.store.setToken({
       ...token,
-      spent: slot > 0 ? { ...token.spent, slots } : token.spent,
       effects: effects?.length ? effects : undefined,
       concentration: spell.concentration ? { spell: spell.id, name: spell.name } : token.concentration,
     });

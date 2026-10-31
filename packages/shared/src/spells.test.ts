@@ -206,4 +206,47 @@ describe('resolveCast', () => {
       expect(out.results[0]!.effect).toMatchObject({ conditions: ['prone', 'incapacitated'], saveOnDamage: true });
     }
   });
+
+  it('puts divine favor on the caster as damage for their weapon hits, without hurting them', () => {
+    const paladin = TokenSchema.parse({ ...wizard, stats: { class: 'paladin', level: 5, abilities: { cha: 16 } } });
+    const out = resolveCast(
+      { spell: spell('divine-favor'), slot: 1, caster: side(paladin), targets: [side(paladin)], gridSize: 100 },
+      () => 0.5,
+    );
+    expect(out.results[0]).toMatchObject({ target: 'wiz', damage: 0 });
+    expect(out.results[0]!.effect).toMatchObject({
+      hitDamage: [{ dice: '1d4', type: 'radiant' }],
+      concentration: true,
+    });
+  });
+
+  it("marks the target with hunter's mark: extra damage only from the caster", () => {
+    const out = resolveCast(
+      {
+        spell: spell('hunters-mark', '2024'),
+        slot: 1,
+        caster: side(wizard, '2024'),
+        targets: [side(goblin('g'))],
+        gridSize: 100,
+      },
+      () => 0.5,
+    );
+    expect(out.results[0]).toMatchObject({ damage: 0 });
+    expect(out.results[0]!.effect).toMatchObject({ onlyFor: 'wiz', markDamage: [{ dice: '1d6', type: 'force' }] });
+  });
+
+  it('adds a hex to the caster’s spell attacks against the hexed creature', () => {
+    const hexed = goblin('g');
+    const marked = TokenSchema.parse({
+      ...hexed,
+      effects: [{ id: 'hex-wiz', name: 'Hex', onlyFor: 'wiz', markDamage: [{ dice: '1d6', type: 'necrotic' }] }],
+    });
+    // d20 of 15 hits; fire bolt 2d10 (wizard level 5) of 1s, hex 1d6 of 3.
+    const rng = rngOf([face(15, 20), face(1, 10), face(1, 10), face(3, 6)]);
+    const out = resolveCast(
+      { spell: spell('fire-bolt'), slot: 0, caster: side(wizard), targets: [side(marked)], gridSize: 100 },
+      rng,
+    );
+    expect(out.results[0]!.parts.map((p) => `${p.roll.total} ${p.type}`)).toEqual(['2 fire', '3 necrotic']);
+  });
 });

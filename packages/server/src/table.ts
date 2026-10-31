@@ -145,6 +145,16 @@ export class Table {
     this.setBudget(token, next);
   }
 
+  /** Marks one spell slot of level `slot` as spent. */
+  spendSlot(id: string, slot: number): void {
+    const token = this.store.tokens.get(id);
+    if (!token || slot < 1) return;
+    const slots = [...(token.spent?.slots ?? [])];
+    while (slots.length < slot) slots.push(0);
+    slots[slot - 1]! += 1;
+    this.store.setToken({ ...token, spent: { ...token.spent, slots } });
+  }
+
   // ---- Consequences ------------------------------------------------------
 
   /** Ends effects that did their one job (guiding bolt's advantage, a vexing hit). */

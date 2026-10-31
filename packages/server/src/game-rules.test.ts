@@ -1,0 +1,180 @@
+// Rules automation on top of spells and attacks: temporary hit points, items, riders.
+import { TokenSchema, type Token } from '@vtt/shared';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { Game } from './game.ts';
+import { FakeSocket, makeWorld } from './test/fixtures.ts';
+import { WorldStore } from './world-store.ts';
+
+let store: WorldStore;
+let game: Game;
+/** What the next random numbers will be; 0.5 once they run out. */
+let dice: number[];
+
+/** The rng value that rolls `n` on a die with `sides` sides. */
+const face = (n: number, sides = 20) => (n - 1) / sides + 0.001;
+
+function put(data: object): void {
+  store.setToken(TokenSchema.parse(data));
+}
+
+beforeEach(async () => {
+  store = new WorldStore(await makeWorld());
+  await store.load();
+  dice = [];
+  game = new Game(store, { rng: () => dice.shift() ?? 0.5 });
+  // A 5th-level wizard (Ana's) and a 5th-level fighter (Bo's) in the room, goblins in the corners.
+  put({
+    ...store.tokens.get('hero'),
+    id: 'hero',
+    name: 'Wiz',
+    x: 50,
+    y: 50,
+    darkvision: 60,
+    stats: {
+      class: 'wizard',
+      level: 5,
+      maxHp: 30,
+      abilities: { int: 18, dex: 14, con: 14 },
+      spells: [
+        'fire-bolt',
+        'magic-missile',
+        'thunderwave',
+        'fireball',
+        'hold-person',
+        'misty-step',
+        'find-familiar',
+        'conjure-animals',
+      ],
+    },
+  });
+  put({
+    id: 'bo',
+    name: 'Fighter',
+    x: 50,
+    y: 250,
+    controllers: ['bo'],
+    darkvision: 60,
+    stats: { class: 'fighter', level: 5, maxHp: 40, abilities: { str: 16 } },
+    inventory: [{ item: 'longsword', equipped: true }],
+  });
+  put({ ...store.tokens.get('goblin'), x: 250, y: 50, monster: 'goblin' });
+  put({ id: 'goblin2', name: 'Goblin 2', x: 250, y: 250, monster: 'goblin' });
+});
+
+afterEach(async () => {
+  await store.flush();
+});
+
+function join_(playerId: string): FakeSocket {
+  const ws = new FakeSocket();
+  game.connect(ws.asWebSocket, game.findPlayer(playerId)!);
+  ws.take('welcome');
+  return ws;
+}
+
+/** Starts a fight in the order given. */
+function fight(order: string[]): { ana: FakeSocket; bo: FakeSocket; gm: FakeSocket } {
+  const ana = join_('ana');
+  const bo = join_('bo');
+  const gm = join_('gm');
+  dice = order.map((_, i) => face(20 - 5 * i));
+  gm.receive({ t: 'combatStart', tokens: order });
+  for (const ws of [ana, bo, gm]) ws.sent = [];
+  return { ana, bo, gm };
+}
+
+const tok = (id: string): Token => store.tokens.get(id)!;
+const spellLogs = (ws: FakeSocket) => ws.take('chat').flatMap((m) => (m.message.spell ? [m.message.spell] : []));
+const errors = (ws: FakeSocket) => ws.take('error').map((m) => m.message);
+
+describe('temporary hit points, drains and items', () => {
+  const learn = (...spells: string[]) =>
+    store.setToken({
+      ...tok('hero'),
+      stats: { ...tok('hero').stats, spells: [...tok('hero').stats!.spells!, ...spells] },
+    });
+
+  it('gives temporary hit points with false life and loses them first', () => {
+    learn('false-life');
+    const ana = join_('ana');
+    dice = [face(4, 4)];
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'false-life', slot: 1, targets: [] });
+    expect(tok('hero').tempHp).toBe(8);
+    dice = Array<number>(3).fill(face(1, 4));
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'magic-missile', slot: 1, targets: ['hero', 'hero', 'hero'] });
+    expect(tok('hero').tempHp).toBe(2);
+    expect(tok('hero').hp).toBeUndefined();
+  });
+
+  it('heals the caster from a vampiric touch', () => {
+    learn('vampiric-touch');
+    store.setToken({ ...tok('hero'), hp: 10 });
+    store.setToken({ ...tok('goblin'), x: 150, y: 50 });
+    const ana = join_('ana');
+    // d20 of 19 hits; 3d6 of 2s = 6 necrotic, the goblin has 7 hp, the caster regains 3.
+    dice = [face(19), face(2, 6), face(2, 6), face(2, 6)];
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'vampiric-touch', slot: 3, targets: ['goblin'] });
+    expect(tok('goblin').hp).toBe(1);
+    expect(tok('hero').hp).toBe(13);
+    expect(spellLogs(ana)[0]!.notes).toContain('Wiz regains 3 HP');
+  });
+
+  it('wakes a sleeping creature when it takes damage', () => {
+    const asleep = { id: 'sleep-hero', name: 'Sleep', conditions: ['unconscious' as const], endsOnDamage: true };
+    store.setToken({ ...tok('goblin'), effects: [asleep] });
+    const ana = join_('ana');
+    dice = [face(15), face(1, 10)];
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'fire-bolt', slot: 0, targets: ['goblin'] });
+    expect(tok('goblin').effects).toBeUndefined();
+  });
+
+  it('drinks a potion of healing from the inventory: an action in 2014', () => {
+    store.setToken({
+      ...tok('bo'),
+      hp: 10,
+      inventory: [...tok('bo').inventory!, { item: 'potion-of-healing', equipped: false, qty: 2 }],
+    });
+    const { bo } = fight(['bo', 'hero', 'goblin', 'goblin2']);
+    dice = [face(4, 4), face(4, 4)];
+    bo.receive({ t: 'useItem', token: 'bo', item: 'potion-of-healing' });
+    expect(tok('bo').hp).toBe(20);
+    expect(tok('bo').inventory?.at(-1)).toMatchObject({ item: 'potion-of-healing', qty: 1 });
+    expect(store.combat!.left.action).toBe(false);
+    bo.receive({ t: 'useItem', token: 'bo', item: 'rope' });
+    expect(errors(bo)[0]).toMatch(/doesn't carry/);
+  });
+});
+
+describe('riders on hits', () => {
+  const paladin = () =>
+    store.setToken({
+      ...tok('bo'),
+      stats: { class: 'paladin', level: 5, maxHp: 40, abilities: { str: 16, cha: 14 }, spells: ['divine-favor'] },
+    });
+
+  it('smites on a melee hit, spending the slot only when it lands (2014 paladin)', () => {
+    paladin();
+    store.setToken({ ...tok('goblin2'), x: 150, y: 250 });
+    const { bo } = fight(['bo', 'hero', 'goblin', 'goblin2']);
+    dice = [face(2)];
+    bo.receive({ t: 'attack', attacker: 'bo', target: 'goblin2', attack: 'Longsword', smite: 1 });
+    expect(tok('bo').spent).toBeUndefined();
+    dice = [face(15), face(1, 8), face(2, 8), face(2, 8)];
+    bo.receive({ t: 'attack', attacker: 'bo', target: 'goblin2', attack: 'Longsword', smite: 1 });
+    expect(tok('bo').spent?.slots).toEqual([1]);
+    expect(tok('goblin2').hp).toBe(0);
+    bo.receive({ t: 'attack', attacker: 'bo', target: 'goblin', attack: 'Longsword', smite: 3 });
+    expect(errors(bo)[0]).toMatch(/no 3rd-level slots/);
+  });
+
+  it('adds divine favor to the paladin’s weapon hits', () => {
+    paladin();
+    store.setToken({ ...tok('goblin2'), x: 150, y: 250 });
+    const { bo } = fight(['bo', 'hero', 'goblin', 'goblin2']);
+    bo.receive({ t: 'cast', caster: 'bo', spell: 'divine-favor', slot: 1, targets: [] });
+    expect(tok('bo').hp).toBeUndefined();
+    dice = [face(15), face(1, 8), face(3, 4)];
+    bo.receive({ t: 'attack', attacker: 'bo', target: 'goblin2', attack: 'Longsword' });
+    expect(tok('goblin2').hp).toBe(7 - (1 + 3) - 3);
+  });
+});

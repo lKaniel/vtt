@@ -211,6 +211,16 @@ describe('Session', () => {
       expect(session.armed).toBeUndefined();
     });
 
+    it('smites with a chosen slot on the armed attack, then forgets the choice', () => {
+      session.select('hero');
+      session.arm('Longsword');
+      session.setSmite(2);
+      session.attack('goblin');
+      expect(ws.sent.at(-1)).toMatchObject({ t: 'attack', attack: 'Longsword', smite: 2 });
+      session.arm('Longsword');
+      expect(session.smite).toBeUndefined();
+    });
+
     it('drops the armed attack when the selection changes', () => {
       session.select('hero');
       session.arm('Longsword');

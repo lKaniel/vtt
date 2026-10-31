@@ -27,7 +27,9 @@ or `"2024"`:
 - `spell-automation.json`: per spell id, effects (bless, hold person),
   beams (scorching ray), summons (find familiar), teleports (misty step), `push` in feet
   (thunderwave; negative pulls), `tempHp` (false life), `hpPool` (2014 sleep),
-  `drain` (vampiric touch), and a `gmNote` for the part the GM still does by
+  `drain` (vampiric touch), `rider` (`"self"`: the damage rides on the
+  caster's weapon hits, like divine favor and smites; `"mark"`: on the
+  caster's attacks against the target, like hunter's mark and hex), and a `gmNote` for the part the GM still does by
   hand. `null` takes away a generated field; `"automated": false` makes the
   chat say the GM applies the spell.
 - `class-automation.json`: per class id, spellcasting and features with

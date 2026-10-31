@@ -195,7 +195,10 @@ edit it too:
 Effect modifiers: `conditions` (e.g. `["prone"]`, `["paralyzed"]`),
 `attackBonus` and `saveBonus` (dice like `"1d4"` or `"-1d4"`), `ac`, `speed`,
 `resistances`, `advantage`, `disadvantage`, `advantageAgainst`,
-`disadvantageAgainst`, `meleeDamage`, `saveAdvantage`, `immobile` (speed 0). Lifetime: `rounds`
+`disadvantageAgainst`, `meleeDamage`, `saveAdvantage`, `immobile` (speed 0),
+`hitDamage` (added to the bearer's weapon hits, e.g. divine favor), `markDamage`
+(added when `onlyFor` hits the bearer, e.g. hunter's mark; a damage `type` of
+`"weapon"` takes the attack's type), `weaponBonus` (magic weapon). Lifetime: `rounds`
 counts down at the start of the `source` creature's turn; `once` ends it the
 first time it changes an attack; `repeatSave` with `save: { "ability", "dc" }`
 lets the bearer save again at the end of each of its turns; `endsOnAttack`

@@ -18,7 +18,7 @@ const doesSomething = (s: Spell) =>
 describe.each(EDITIONS)('automated %s spells', (edition) => {
   it('never damage or save against their own caster', () => {
     const selfHarm = automated(edition)
-      .filter((s) => s.targets === 0 && !s.area && (s.damage.length > 0 || s.save))
+      .filter((s) => s.targets === 0 && !s.area && !s.rider && (s.damage.length > 0 || s.save))
       .filter((s) => !HURTS_CASTER_ON_PURPOSE.has(s.id))
       .map((s) => s.id);
     expect(selfHarm).toEqual([]);

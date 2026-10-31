@@ -64,6 +64,8 @@ export class Session {
   combat: Combat | null = null;
   /** The attack the selected token will make on the next token clicked. */
   armed?: string;
+  /** Slot level to Divine Smite with on the armed attack. */
+  smite?: number;
   /** The spell the selected token is aiming, and what it has picked so far. */
   aiming?: Aiming;
   error?: { message: string; at: number };
@@ -168,6 +170,7 @@ export class Session {
   /** Readies an attack of the selected token; the next token clicked is the target. */
   arm(attack: string | undefined): void {
     this.armed = attack;
+    this.smite = undefined;
     this.aiming = undefined;
     this.emit('armed');
     this.changed();
@@ -243,9 +246,16 @@ export class Session {
     this.send({ t: 'removeEffect', token, effect });
   }
 
+  /** Spends a slot of this level on Divine Smite if the armed attack hits; undefined for no smite. */
+  setSmite(slot: number | undefined): void {
+    this.smite = slot;
+    this.changed();
+  }
+
   attack(target: string): void {
     if (!this.selected || !this.armed) return;
-    this.send({ t: 'attack', attacker: this.selected, target, attack: this.armed });
+    const smite = this.smite ? { smite: this.smite } : {};
+    this.send({ t: 'attack', attacker: this.selected, target, attack: this.armed, ...smite });
     this.arm(undefined);
   }
 

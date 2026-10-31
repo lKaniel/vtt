@@ -88,7 +88,8 @@ export type ClientMessage =
   | { t: 'combatStart'; tokens: string[] }
   | { t: 'combatEnd' }
   | { t: 'endTurn' }
-  | { t: 'attack'; attacker: string; target: string; attack: string }
+  /** `smite`: spend a slot of this level on Divine Smite if the attack hits (2014 paladin). */
+  | { t: 'attack'; attacker: string; target: string; attack: string; smite?: number }
   /** `item` is the index in the token's inventory. */
   | { t: 'equip'; token: string; item: number; equipped: boolean }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */

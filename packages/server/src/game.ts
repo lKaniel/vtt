@@ -35,7 +35,13 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('combatStart'), tokens: z.array(z.string()).min(1).max(100) }),
   z.object({ t: z.literal('combatEnd') }),
   z.object({ t: z.literal('endTurn') }),
-  z.object({ t: z.literal('attack'), attacker: z.string(), target: z.string(), attack: z.string() }),
+  z.object({
+    t: z.literal('attack'),
+    attacker: z.string(),
+    target: z.string(),
+    attack: z.string(),
+    smite: z.number().int().min(1).max(9).optional(),
+  }),
   z.object({ t: z.literal('equip'), token: z.string(), item: z.number().int().nonnegative(), equipped: z.boolean() }),
   z.object({
     t: z.literal('cast'),

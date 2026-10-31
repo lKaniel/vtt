@@ -28,6 +28,10 @@ export const ConditionSchema = z.enum([
 ]);
 export type Condition = z.infer<typeof ConditionSchema>;
 
+/** Extra damage an effect adds to hits; "weapon" takes the type of the attack it rides on. */
+export const RiderDamageSchema = z.object({ dice, type: z.union([DamageTypeSchema, z.literal('weapon')]) });
+export type RiderDamage = z.infer<typeof RiderDamageSchema>;
+
 /** What an effect changes about the creature that has it. */
 const modifiers = {
   conditions: z.array(ConditionSchema).optional(),
@@ -49,6 +53,12 @@ const modifiers = {
   meleeDamage: z.number().int().optional(),
   /** Saving throws the bearer makes with advantage. */
   saveAdvantage: z.array(AbilitySchema).optional(),
+  /** Damage the bearer adds to its weapon hits (divine favor; with `once`, a smite). */
+  hitDamage: z.array(RiderDamageSchema).optional(),
+  /** Damage `onlyFor` adds when it hits the bearer with an attack (hunter's mark, hex). */
+  markDamage: z.array(RiderDamageSchema).optional(),
+  /** Added to the bearer's weapon attack and damage rolls (magic weapon). */
+  weaponBonus: z.number().int().optional(),
   /** The bearer's speed is 0 (hypnotic pattern). */
   immobile: z.boolean().optional(),
 };
@@ -169,6 +179,14 @@ export const SpellSchema = z.object({
   teleport: z.number().positive().optional(),
   /** Feet each creature hit (or failing its save) is moved: positive pushes away from the caster, negative pulls closer. */
   push: z.number().int().optional(),
+  /**
+   * The damage isn't dealt on casting but rides on later hits: "self" on the
+   * caster's weapon hits (divine favor, smites), "mark" on the caster's attacks
+   * against the target (hunter's mark, hex).
+   */
+  rider: z.enum(['self', 'mark']).optional(),
+  /** Rider damage takes the type of the weapon it rides on (2014 hunter's mark). */
+  weaponType: z.boolean().optional(),
   /** Only creatures of these types are affected (hold person: humanoid). */
   creatureTypes: z.array(z.string()).optional(),
   /** false when the engine only shows the text: the GM applies it by hand. */

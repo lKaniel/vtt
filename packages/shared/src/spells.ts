@@ -1,6 +1,7 @@
 import { applyDamage, critDice, tokenDistance } from './attack.ts';
 import type { Creature } from './creature.ts';
 import { abilityMod } from './creature-math.ts';
+import { markDamage } from './riders.ts';
 import { roll, type Rng, type Roll } from './dice.ts';
 import { attackModifiers, d20Formula, rollSave, type SaveRoll, type UsedEffect } from './effects.ts';
 import type { Token } from './schema.ts';
@@ -155,10 +156,18 @@ function dealt(target: Creature, rolls: { roll: Roll; type: DamageType }[], half
   return { parts, hp, damage: each.reduce((s, d) => s + d, 0), ...(tempHp !== target.tempHp && { tempHp }) };
 }
 
+/** A rider spell's damage, carried by its effect instead of dealt now. */
+function riderOf({ spell, caster }: Cast): Partial<Effect> | undefined {
+  const damage = spell.damage.map((d) => ({ ...d, type: spell.weaponType ? ('weapon' as const) : d.type }));
+  if (spell.rider === 'self') return { hitDamage: damage };
+  if (spell.rider === 'mark') return { markDamage: damage, onlyFor: caster.token.id };
+  return undefined;
+}
+
 function effectFor(cast: Cast): Effect | undefined {
   const { spell, caster, dc } = cast;
-  if (!spell.effect) return undefined;
-  const { repeatSave, saveOnDamage, ...template } = spell.effect;
+  if (!spell.effect && !spell.rider) return undefined;
+  const { repeatSave, saveOnDamage, ...template } = { ...spell.effect, ...riderOf(cast) };
   return {
     ...template,
     id: `${spell.id}-${caster.token.id}`,
@@ -194,14 +203,24 @@ function landing(cast: Cast, target: CastSide, used: UsedEffect[]) {
   return { attack, save, landed, half };
 }
 
-function oneTarget(cast: Cast, target: CastSide, used: UsedEffect[]): CastResult {
+/** Results that need no attack or save: the wrong kind of creature, healing, temporary hit points, riders. */
+function unrolled(cast: Cast, target: CastSide, base: Base): CastResult | undefined {
   const { spell } = cast;
-  const base = { target: target.token.id, damage: 0, parts: [], hp: target.sheet.hp };
   if (spell.creatureTypes && !spell.creatureTypes.includes(target.sheet.type)) return { ...base, immune: true };
   if (spell.heal) return heal(cast, target, base);
   if (spell.tempHp) return shield(cast, target, base);
+  if (spell.rider) return { ...base, effect: effectFor(cast) };
+  return undefined;
+}
+
+function oneTarget(cast: Cast, target: CastSide, used: UsedEffect[]): CastResult {
+  const { spell } = cast;
+  const base = { target: target.token.id, damage: 0, parts: [], hp: target.sheet.hp };
+  const early = unrolled(cast, target, base);
+  if (early) return early;
   const { attack, save, landed, half } = landing(cast, target, used);
-  const rolls = cast.shared ?? rollDamage(spell.damage, attack?.crit === true, cast.rng);
+  const marks = attack ? markDamage(target.sheet, cast.caster.token.id, spell.damage[0]?.type ?? 'force') : [];
+  const rolls = cast.shared ?? rollDamage([...spell.damage, ...marks], attack?.crit === true, cast.rng);
   const damaged = landed || half ? dealt(target.sheet, rolls, half) : undefined;
   return {
     ...base,
@@ -213,7 +232,9 @@ function oneTarget(cast: Cast, target: CastSide, used: UsedEffect[]): CastResult
   };
 }
 
-function heal(cast: Cast, target: CastSide, base: Pick<CastResult, 'target' | 'damage' | 'parts' | 'hp'>): CastResult {
+type Base = Pick<CastResult, 'target' | 'damage' | 'parts' | 'hp'>;
+
+function heal(cast: Cast, target: CastSide, base: Base): CastResult {
   const healing = roll(cast.spell.heal!, cast.rng).total + (cast.spell.healMod ? cast.mod : 0);
   const hp = Math.min(target.sheet.maxHp, target.sheet.hp + Math.max(0, healing));
   return { ...base, healed: hp - target.sheet.hp, hp, effect: effectFor(cast) };
@@ -267,7 +288,8 @@ export function resolveCast(input: CastInput, rng: Rng = Math.random): CastOutco
     gridSize,
     rng,
   };
-  if (!cast.spell.attack && cast.spell.beams === 1) cast.shared = rollDamage(cast.spell.damage, false, rng);
+  if (!cast.spell.attack && cast.spell.beams === 1 && !cast.spell.rider)
+    cast.shared = rollDamage(cast.spell.damage, false, rng);
   const reached = pooled(cast, input.targets);
   const hp = new Map<string, Pick<Creature, 'hp' | 'tempHp'>>();
   const used: UsedEffect[] = [];

@@ -18,6 +18,7 @@ import type { Glyph as GlyphName } from '../icons.ts';
 import type { Session } from '../session.ts';
 import type { Aiming } from '../targeting.ts';
 import { ORDINAL } from '../spell-text.ts';
+import { SmiteControls } from './SmiteControls.tsx';
 import { attackTip, featureTip, itemTip, spellTip } from '../tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
@@ -75,6 +76,7 @@ export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onS
     <footer className="actionbar-wrap">
       <div className="hint">{hint(session, token)}</div>
       {token && <AimingControls session={session} token={token} />}
+      {token && <SmiteControls session={session} token={token} />}
       {token && <Bar session={session} token={token} onSheet={onSheet} />}
     </footer>
   );

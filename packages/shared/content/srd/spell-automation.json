@@ -45,7 +45,12 @@
   },
   "branding-smite": {
     "2014": {
-      "automated": false
+      "automated": true,
+      "rider": "self",
+      "effect": {
+        "once": true
+      },
+      "gmNote": "The target also sheds light and can’t be invisible."
     }
   },
   "calm-emotions": {
@@ -117,7 +122,35 @@
   },
   "divine-favor": {
     "2014": {
-      "automated": false
+      "automated": true
+    },
+    "both": {
+      "rider": "self",
+      "damage": [
+        {
+          "dice": "1d4",
+          "type": "radiant"
+        }
+      ],
+      "automated": true
+    }
+  },
+  "divine-smite": {
+    "2024": {
+      "targets": 1,
+      "range": 5,
+      "autoHit": true,
+      "damage": [
+        {
+          "dice": "2d8",
+          "type": "radiant"
+        }
+      ],
+      "upcast": {
+        "damage": "1d8"
+      },
+      "automated": true,
+      "gmNote": "Cast right after a melee hit; 1d8 more against fiends and undead."
     }
   },
   "divine-word": {
@@ -144,7 +177,10 @@
   },
   "ensnaring-strike": {
     "2024": {
-      "automated": false
+      "automated": true,
+      "targets": 1,
+      "range": 5,
+      "gmNote": "Cast right after a weapon hit. The restrained target takes 1d6 piercing at the start of each of its turns and can use its action to escape (Athletics vs your DC)."
     }
   },
   "enthrall": {
@@ -256,6 +292,19 @@
       "automated": false
     }
   },
+  "hex": {
+    "2024": {
+      "rider": "mark",
+      "damage": [
+        {
+          "dice": "1d6",
+          "type": "necrotic"
+        }
+      ],
+      "automated": true,
+      "gmNote": "The target also has disadvantage on checks with the ability you chose. When it drops, move the hex: cast it again without a slot."
+    }
+  },
   "hideous-laughter": {
     "both": {
       "effect": {
@@ -275,6 +324,30 @@
         "conditions": ["paralyzed"],
         "repeatSave": true
       }
+    }
+  },
+  "hunters-mark": {
+    "2014": {
+      "damage": [
+        {
+          "dice": "1d6",
+          "type": "force"
+        }
+      ],
+      "weaponType": true
+    },
+    "2024": {
+      "damage": [
+        {
+          "dice": "1d6",
+          "type": "force"
+        }
+      ]
+    },
+    "both": {
+      "rider": "mark",
+      "automated": true,
+      "gmNote": "When the target drops, move the mark with a bonus action: cast it again without a slot."
     }
   },
   "hypnotic-pattern": {
@@ -337,6 +410,15 @@
         "beams": 1
       },
       "automated": true
+    }
+  },
+  "magic-weapon": {
+    "both": {
+      "effect": {
+        "weaponBonus": 1
+      },
+      "automated": true,
+      "gmNote": "A higher slot gives a bigger bonus: +2 or +3, adjust the effect by hand."
     }
   },
   "mass-suggestion": {
@@ -447,6 +529,24 @@
   "scrying": {
     "both": {
       "automated": false
+    }
+  },
+  "searing-smite": {
+    "2024": {
+      "targets": 1,
+      "range": 5,
+      "autoHit": true,
+      "damage": [
+        {
+          "dice": "1d6",
+          "type": "fire"
+        }
+      ],
+      "upcast": {
+        "damage": "1d6"
+      },
+      "automated": true,
+      "gmNote": "Cast right after a melee hit. The target burns for 1d6 fire at the start of each of its turns until it makes a Con save."
     }
   },
   "seeming": {
