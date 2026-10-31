@@ -25,6 +25,11 @@ describe('health bars', () => {
     expect(hpBar(token({ sheet: sheet(-3, 20) }))).toEqual({ percent: 0, tone: 'down', label: '0/20' });
   });
 
+  it('adds temporary hit points to the label', () => {
+    const shielded = { ...sheet(15, 20), tempHp: 8 } as TokenView['sheet'];
+    expect(hpBar(token({ sheet: shielded }))).toMatchObject({ percent: 75, label: '15/20 +8' });
+  });
+
   it('estimates from how hurt it looks otherwise', () => {
     expect(hpBar(token({ health: 'bloodied' }))).toEqual({ percent: 35, tone: 'bloodied', label: 'Bloodied' });
     expect(hpBar(token({ health: 'unhurt' }))).toMatchObject({ percent: 100 });

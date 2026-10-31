@@ -7,6 +7,7 @@ import {
   leaveCombat,
   nextTurn,
   resolveWeaponAttack,
+  smiteProblem,
   startCombat,
   tickEffects,
   tokenDistance,
@@ -21,6 +22,7 @@ export interface AttackRequest {
   attacker: string;
   target: string;
   attack: string;
+  smite?: number;
 }
 
 /**
@@ -32,6 +34,7 @@ export class CombatActions {
   constructor(
     private table: Table,
     private logAttack: (log: AttackLog) => void,
+    private turnStarted: (id: string) => void = () => undefined,
   ) {}
 
   private get store() {
@@ -86,6 +89,7 @@ export class CombatActions {
       const after = tickEffects(t, id);
       if (after !== t) this.store.setToken(after);
     }
+    this.turnStarted(id);
   }
 
   /** Checks that `token` may walk `feet` now, and spends the movement in a fight. Standing up costs half its speed. */
@@ -109,6 +113,8 @@ export class CombatActions {
     const target = this.table.fighter(req.target);
     const attack = attacker.sheet.attacks.find((a) => a.name === req.attack);
     if (!attack) throw new Refusal(`${attacker.token.name} has no attack called ${req.attack}`);
+    const smiting = req.smite && smiteProblem(attacker.sheet, attack, req.smite);
+    if (smiting) throw new Refusal(`${attacker.token.name} ${smiting}`);
     this.table.check(attacker.token, 'attack');
     const feet = tokenDistance(attacker.token, target.token, this.store.world.gridSize);
     const range = attackRange(attack, feet);
@@ -126,11 +132,13 @@ export class CombatActions {
         gridSize: this.store.world.gridSize,
         allyNearTarget: this.allyNear(attacker.token, target.token),
         sneakUsed,
+        smite: req.smite,
       },
       this.table.rng,
     );
     this.table.pay(attacker.token, 'attack', attacker.sheet.attacksPerAction);
     if (outcome.sneak) this.markUsed(attacker.token, 'sneak-attack');
+    if (outcome.smote) this.table.spendSlot(attacker.token.id, req.smite!);
     this.table.useUp(outcome.used);
     this.applyOutcome(attacker, target, outcome, { range, name: attack.name, kind: attack.kind });
   }
@@ -163,9 +171,9 @@ export class CombatActions {
     const parts = result.damage.map((d) => ({ amount: d.roll.total, type: d.type }));
     if (outcome.graze) parts.push(outcome.graze);
     const fresh = this.table.fighter(target.token.id);
-    const { dealt, hp } = applyDamage(fresh.sheet, parts);
+    const { dealt, hp, tempHp } = applyDamage(fresh.sheet, parts);
     const total = dealt.reduce((sum, d) => sum + d, 0);
-    if (total > 0) this.table.hurt(fresh.token, hp, total);
+    if (total > 0) this.table.hurt(fresh.token, { hp, tempHp }, total);
     this.addEffects(target.token.id, outcome);
     const notes = [...outcome.notes];
     if (range === 'long') notes.push('long range: disadvantage');

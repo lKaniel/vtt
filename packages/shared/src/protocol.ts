@@ -88,7 +88,8 @@ export type ClientMessage =
   | { t: 'combatStart'; tokens: string[] }
   | { t: 'combatEnd' }
   | { t: 'endTurn' }
-  | { t: 'attack'; attacker: string; target: string; attack: string }
+  /** `smite`: spend a slot of this level on Divine Smite if the attack hits (2014 paladin). */
+  | { t: 'attack'; attacker: string; target: string; attack: string; smite?: number }
   /** `item` is the index in the token's inventory. */
   | { t: 'equip'; token: string; item: number; equipped: boolean }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
@@ -99,11 +100,16 @@ export type ClientMessage =
       slot: number;
       /** Cast without spending a slot. */
       free?: boolean;
+      /** Use a lasting spell again, e.g. attack with the spiritual weapon. */
+      repeat?: boolean;
       targets: string[];
       point?: Point;
       summon?: string;
     }
-  | { t: 'feature'; token: string; feature: string }
+  /** `targets` and `point` aim features used like spells (bardic inspiration, turn undead). */
+  | { t: 'feature'; token: string; feature: string; targets?: string[]; point?: Point }
+  /** Use one of an item the token carries, by item id (drink a potion). */
+  | { t: 'useItem'; token: string; item: string }
   | { t: 'dropConcentration'; token: string }
   /** GM: end one effect on a token. */
   | { t: 'removeEffect'; token: string; effect: string }

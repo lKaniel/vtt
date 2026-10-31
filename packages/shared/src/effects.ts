@@ -180,3 +180,22 @@ export function dropConcentration(tokens: readonly Token[], caster: string): { c
   }
   return { changed, removed };
 }
+
+/** Ends what damage ends (sleep) and repeats saves damage allows, with advantage (hideous laughter). */
+export function afterDamage(token: Token, sheet: Affected, rng: Rng = Math.random): { token: Token; notes: string[] } {
+  const notes: string[] = [];
+  const ended = new Set<string>();
+  for (const e of token.effects ?? []) {
+    if (e.endsOnDamage) {
+      ended.add(e.id);
+      notes.push(`${token.name} wakes from ${e.name}`);
+    } else if (e.saveOnDamage && e.save) {
+      const mods = saveModifiers(sheet, e.save.ability);
+      const result = roll(d20Formula(sheet.saves[e.save.ability], mods.bonus, { ...mods, advantage: true }), rng);
+      if (result.total < e.save.dc) continue;
+      ended.add(e.id);
+      notes.push(`${token.name} shakes off ${e.name} (${result.total} vs DC ${e.save.dc})`);
+    }
+  }
+  return { token: removeEffects(token, ended), notes };
+}

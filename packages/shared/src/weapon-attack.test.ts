@@ -4,6 +4,7 @@ import { resolveCreature } from './creature.ts';
 import { TokenSchema, type Token } from './schema.ts';
 import type { Edition } from './stats-schema.ts';
 import { resolveWeaponAttack } from './weapon-attack.ts';
+import { smiteProblem } from './riders.ts';
 
 const pc = (cls: string, rules: Edition, data: object = {}) =>
   TokenSchema.parse({
@@ -20,7 +21,11 @@ const side = (t: Token) => ({ token: t, sheet: resolveCreature(t, srdFor(t.stats
 const face = (n: number, sides: number) => (n - 1) / sides + 0.001;
 const rngOf = (values: number[]) => () => values.shift() ?? 0.001;
 
-function attack(attacker: Token, target: Token, opts: { name: string; rng: number[]; allyNear?: boolean }) {
+function attack(
+  attacker: Token,
+  target: Token,
+  opts: { name: string; rng: number[]; allyNear?: boolean; smite?: number },
+) {
   const a = side(attacker);
   return resolveWeaponAttack(
     {
@@ -31,6 +36,7 @@ function attack(attacker: Token, target: Token, opts: { name: string; rng: numbe
       gridSize: 100,
       allyNearTarget: opts.allyNear ?? false,
       sneakUsed: false,
+      smite: opts.smite,
     },
     rngOf(opts.rng),
   );
@@ -116,5 +122,95 @@ describe('resolveWeaponAttack', () => {
       expect(out.targetEffects[0]).toMatchObject({ name: 'Prone', conditions: ['prone'] });
       expect(out.notes).toContain('Ogre is knocked prone');
     });
+  });
+});
+
+describe('riders on weapon hits', () => {
+  const fighter = (data: object = {}) =>
+    pc('fighter', '2014', { inventory: [{ item: 'longsword', equipped: true }], ...data });
+  const formulas = (out: ReturnType<typeof attack>) => out.roll.damage.map((d) => `${d.roll.formula} ${d.type}`);
+
+  it('adds damage from an effect on the attacker to every hit (divine favor)', () => {
+    const favored = fighter({
+      effects: [{ id: 'df', name: 'Divine Favor', hitDamage: [{ dice: '1d4', type: 'radiant' }] }],
+    });
+    const out = attack(favored, ogre(), { name: 'Longsword', rng: [face(15, 20)] });
+    expect(formulas(out)).toEqual(['1d8+3 slashing', '1d4 radiant']);
+    expect(out.used).toEqual([]);
+  });
+
+  it('spends a one-hit rider on the first hit only (branding smite)', () => {
+    const smiting = {
+      id: 'bs',
+      name: 'Branding Smite',
+      once: true,
+      hitDamage: [{ dice: '2d6', type: 'radiant' as const }],
+    };
+    const miss = attack(fighter({ effects: [smiting] }), ogre(), { name: 'Longsword', rng: [face(2, 20)] });
+    expect(miss.used).toEqual([]);
+    const hit = attack(fighter({ effects: [smiting] }), ogre(), { name: 'Longsword', rng: [face(15, 20)] });
+    expect(formulas(hit)).toContain('2d6 radiant');
+    expect(hit.used).toEqual([{ token: 'pc', effect: 'bs' }]);
+  });
+
+  it("adds a mark's damage only for the creature that marked it, in the weapon's type when untyped", () => {
+    const mark = {
+      id: 'hm',
+      name: "Hunter's Mark",
+      onlyFor: 'pc',
+      markDamage: [{ dice: '1d6', type: 'weapon' as const }],
+    };
+    const marked = ogre({ effects: [mark] });
+    expect(formulas(attack(fighter(), marked, { name: 'Longsword', rng: [face(15, 20)] }))).toEqual([
+      '1d8+3 slashing',
+      '1d6 slashing',
+    ]);
+    const other = fighter({ id: 'other' });
+    expect(formulas(attack(other, marked, { name: 'Longsword', rng: [face(15, 20)] }))).toEqual(['1d8+3 slashing']);
+  });
+
+  it('adds a magic weapon bonus to the attack and the damage', () => {
+    const out = attack(fighter({ effects: [{ id: 'mw', name: 'Magic Weapon', weaponBonus: 1 }] }), ogre(), {
+      name: 'Longsword',
+      rng: [face(10, 20)],
+    });
+    expect(out.roll.total).toBe(10 + 5 + 1);
+    expect(formulas(out)[0]).toBe('1d8+3+1 slashing');
+  });
+
+  it('smites with a spell slot: 2d8 radiant plus 1d8 per level above 1st, up to 5d8 (2014 paladin)', () => {
+    const paladin = pc('paladin', '2014', { inventory: [{ item: 'longsword', equipped: true }] });
+    expect(formulas(attack(paladin, ogre(), { name: 'Longsword', rng: [face(15, 20)], smite: 2 }))).toContain(
+      '3d8 radiant',
+    );
+    expect(formulas(attack(paladin, ogre(), { name: 'Longsword', rng: [face(15, 20)], smite: 5 }))).toContain(
+      '5d8 radiant',
+    );
+    const zombie = TokenSchema.parse({ id: 'z', name: 'Zombie', x: 150, y: 50, monster: 'zombie' });
+    const out = attack(paladin, zombie, { name: 'Longsword', rng: [face(15, 20)], smite: 1 });
+    expect(formulas(out)).toContain('3d8 radiant');
+    expect(out.smote).toBe(true);
+    expect(attack(paladin, ogre(), { name: 'Longsword', rng: [face(2, 20)], smite: 1 }).smote).toBe(false);
+  });
+});
+
+describe('smiteProblem', () => {
+  const sheet = (t: Token) => side(t).sheet;
+  const sword = (t: Token) => sheet(t).attacks.find((a) => a.name === 'Longsword')!;
+
+  it('needs the Divine Smite feature, a melee weapon and a slot left', () => {
+    const paladin = pc('paladin', '2014', { inventory: [{ item: 'longsword', equipped: true }] });
+    expect(smiteProblem(sheet(paladin), sword(paladin), 1)).toBeUndefined();
+    expect(smiteProblem(sheet(paladin), sword(paladin), 2)).toMatch(/no 2nd-level slots/);
+    const fighter = pc('fighter', '2014', { inventory: [{ item: 'longsword', equipped: true }] });
+    expect(smiteProblem(sheet(fighter), sword(fighter), 1)).toMatch(/can't smite/);
+    const archer = pc('paladin', '2014', { inventory: [{ item: 'longbow', equipped: true }] });
+    expect(
+      smiteProblem(
+        sheet(archer),
+        sheet(archer).attacks.find((a) => a.name === 'Longbow')!,
+        1,
+      ),
+    ).toMatch(/melee/);
   });
 });

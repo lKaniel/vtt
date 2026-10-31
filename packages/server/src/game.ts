@@ -26,7 +26,9 @@ import { z } from 'zod';
 import { CombatActions } from './combat-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
+import { castFeature } from './feature-casting.ts';
 import { SpellActions } from './spell-actions.ts';
+import { Zones } from './zones.ts';
 import { Refusal, Table } from './table.ts';
 import type { WorldStore } from './world-store.ts';
 
@@ -38,7 +40,13 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('combatStart'), tokens: z.array(z.string()).min(1).max(100) }),
   z.object({ t: z.literal('combatEnd') }),
   z.object({ t: z.literal('endTurn') }),
-  z.object({ t: z.literal('attack'), attacker: z.string(), target: z.string(), attack: z.string() }),
+  z.object({
+    t: z.literal('attack'),
+    attacker: z.string(),
+    target: z.string(),
+    attack: z.string(),
+    smite: z.number().int().min(1).max(9).optional(),
+  }),
   z.object({ t: z.literal('equip'), token: z.string(), item: z.number().int().nonnegative(), equipped: z.boolean() }),
   z.object({
     t: z.literal('cast'),
@@ -46,11 +54,19 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     spell: z.string(),
     slot: z.number().int().min(0).max(9),
     free: z.boolean().optional(),
+    repeat: z.boolean().optional(),
     targets: z.array(z.string()).max(20),
     point: PointSchema.optional(),
     summon: z.string().optional(),
   }),
-  z.object({ t: z.literal('feature'), token: z.string(), feature: z.string() }),
+  z.object({
+    t: z.literal('feature'),
+    token: z.string(),
+    feature: z.string(),
+    targets: z.array(z.string()).max(20).optional(),
+    point: PointSchema.optional(),
+  }),
+  z.object({ t: z.literal('useItem'), token: z.string(), item: z.string() }),
   z.object({ t: z.literal('dropConcentration'), token: z.string() }),
   z.object({ t: z.literal('removeEffect'), token: z.string(), effect: z.string() }),
   z.object({ t: z.literal('rest'), tokens: z.array(z.string()).min(1).max(100), kind: z.enum(['short', 'long']) }),
@@ -101,7 +117,9 @@ export class Game {
   private clients = new Set<Client>();
   private chat: ChatMessage[] = [];
   private combat: CombatActions;
-  private spells: SpellActions;
+  readonly spells: SpellActions;
+  readonly table: Table;
+  private zones: Zones;
   private features: FeatureActions;
   private gm: GmActions;
   /** world.json minus the seats, to tell a role change from a new grid. */
@@ -112,8 +130,14 @@ export class Game {
     { rng = Math.random }: { rng?: Rng } = {},
   ) {
     const table = new Table(store, rng, (text) => this.narrate({ text }));
-    this.combat = new CombatActions(table, (attack) => this.narrate({ attack }));
+    this.table = table;
     this.spells = new SpellActions(table, (spell) => this.narrate({ spell }));
+    this.zones = new Zones(table, this.spells);
+    this.combat = new CombatActions(
+      table,
+      (attack) => this.narrate({ attack }),
+      (id) => this.zones.turnStarted(id),
+    );
     this.features = new FeatureActions(table);
     this.gm = new GmActions(table);
     this.settings = worldSettings(store.world);
@@ -293,7 +317,9 @@ export class Game {
       case 'cast':
         return this.spells.cast(c.player, (id) => c.visible.has(id), msg);
       case 'feature':
-        return this.features.use(c.player, msg.token, msg.feature);
+        return this.useFeature(c, msg);
+      case 'useItem':
+        return this.features.useItem(c.player, msg.token, msg.item);
       case 'dropConcentration':
         return this.features.dropConcentration(c.player, msg.token);
       case 'removeEffect':
@@ -303,6 +329,14 @@ export class Game {
       default:
         return this.dispatchGm(c, msg);
     }
+  }
+
+  /** Features aimed like spells go through the spell rules; the rest act on their user. */
+  private useFeature(c: Client, msg: Extract<ClientMessage, { t: 'feature' }>): void {
+    if (this.features.aimed(msg.token, msg.feature)) {
+      return castFeature(this, c.player, (id) => c.visible.has(id), msg);
+    }
+    this.features.use(c.player, msg.token, msg.feature);
   }
 
   private onView(c: Client, chunks: string[]): void {
@@ -334,6 +368,7 @@ export class Game {
     if (path.points.length < 2) return;
     const walker = this.combat.move(token, path.feet);
     this.store.setToken({ ...walker, x, y }, path.points);
+    this.zones.moved(token.id, path.points);
   }
 
   private onHotbar(c: Client, id: string, slots: (string | null)[]): void {

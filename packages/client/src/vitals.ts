@@ -26,7 +26,7 @@ export function hpBar(token: TokenView): HpBar | undefined {
     return {
       percent: Math.round((hp / sheet.maxHp) * 100),
       tone: toneOf(hp, sheet.maxHp),
-      label: `${hp}/${sheet.maxHp}`,
+      label: sheet.tempHp ? `${hp}/${sheet.maxHp} +${sheet.tempHp}` : `${hp}/${sheet.maxHp}`,
     };
   }
   if (!token.health) return undefined;

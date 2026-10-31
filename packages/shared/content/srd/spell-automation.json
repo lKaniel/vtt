@@ -1,8 +1,23 @@
 {
   "$comment": "Hand-written automation merged over spells-5.1.json (2014) and spells-5.2.json (2024) at load. Each spell id maps to fields for both editions and/or for one edition.",
+  "animal-messenger": {
+    "both": {
+      "automated": false
+    }
+  },
   "bane": {
     "both": {
       "targets": 3
+    }
+  },
+  "banishment": {
+    "both": {
+      "automated": false
+    }
+  },
+  "bestow-curse": {
+    "both": {
+      "automated": false
     }
   },
   "bless": {
@@ -11,6 +26,68 @@
       "upcast": {
         "targets": 1
       }
+    }
+  },
+  "blindness-deafness": {
+    "both": {
+      "effect": {
+        "name": "Blinded",
+        "conditions": ["blinded"],
+        "repeatSave": true
+      },
+      "gmNote": "Deafened instead, if the caster chose that."
+    },
+    "2014": {
+      "upcast": {
+        "targets": 1
+      }
+    }
+  },
+  "branding-smite": {
+    "2014": {
+      "automated": true,
+      "rider": "self",
+      "effect": {
+        "once": true
+      },
+      "gmNote": "The target also sheds light and can’t be invisible."
+    }
+  },
+  "call-lightning": {
+    "both": {
+      "repeat": "action"
+    },
+    "2014": {
+      "save": {
+        "ability": "dex",
+        "onSave": "half"
+      }
+    },
+    "2024": {
+      "area": {
+        "shape": "sphere",
+        "size": 5
+      }
+    }
+  },
+  "calm-emotions": {
+    "both": {
+      "automated": false
+    }
+  },
+  "command": {
+    "both": {
+      "automated": false
+    }
+  },
+  "compulsion": {
+    "both": {
+      "automated": false
+    }
+  },
+  "confusion": {
+    "both": {
+      "automated": false
     }
   },
   "conjure-animals": {
@@ -40,6 +117,64 @@
       "automated": true
     }
   },
+  "contact-other-plane": {
+    "both": {
+      "automated": false
+    }
+  },
+  "contagion": {
+    "both": {
+      "automated": false
+    }
+  },
+  "counterspell": {
+    "2024": {
+      "automated": false
+    }
+  },
+  "dispel-evil-and-good": {
+    "both": {
+      "automated": false
+    }
+  },
+  "divine-favor": {
+    "2014": {
+      "automated": true
+    },
+    "both": {
+      "rider": "self",
+      "damage": [
+        {
+          "dice": "1d4",
+          "type": "radiant"
+        }
+      ],
+      "automated": true
+    }
+  },
+  "divine-smite": {
+    "2024": {
+      "targets": 1,
+      "range": 5,
+      "autoHit": true,
+      "damage": [
+        {
+          "dice": "2d8",
+          "type": "radiant"
+        }
+      ],
+      "upcast": {
+        "damage": "1d8"
+      },
+      "automated": true,
+      "gmNote": "Cast right after a melee hit; 1d8 more against fiends and undead."
+    }
+  },
+  "divine-word": {
+    "both": {
+      "automated": false
+    }
+  },
   "eldritch-blast": {
     "both": {
       "beams": 1,
@@ -52,12 +187,51 @@
       ]
     }
   },
+  "enlarge-reduce": {
+    "both": {
+      "automated": false
+    }
+  },
+  "ensnaring-strike": {
+    "2024": {
+      "automated": true,
+      "targets": 1,
+      "range": 5,
+      "gmNote": "Cast right after a weapon hit. The restrained target takes 1d6 piercing at the start of each of its turns and can use its action to escape (Athletics vs your DC)."
+    }
+  },
+  "enthrall": {
+    "both": {
+      "automated": false
+    }
+  },
+  "eyebite": {
+    "both": {
+      "automated": false
+    }
+  },
   "faerie-fire": {
     "both": {
       "effect": {
         "name": "Faerie Fire",
         "advantageAgainst": true
       }
+    }
+  },
+  "false-life": {
+    "2014": {
+      "heal": null,
+      "tempHp": "1d4+4",
+      "upcast": {
+        "tempHp": 5
+      }
+    },
+    "2024": {
+      "tempHp": "2d4+4",
+      "upcast": {
+        "tempHp": 5
+      },
+      "automated": true
     }
   },
   "find-familiar": {
@@ -107,6 +281,33 @@
       "automated": true
     }
   },
+  "flaming-sphere": {
+    "both": {
+      "targets": 1,
+      "range": 60,
+      "save": {
+        "ability": "dex",
+        "onSave": "half"
+      },
+      "damage": [
+        {
+          "dice": "2d6",
+          "type": "fire"
+        }
+      ],
+      "upcast": {
+        "damage": "1d6"
+      },
+      "repeat": "bonus",
+      "automated": true,
+      "gmNote": "Creatures that end their turn within 5 ft of the sphere take its damage too."
+    }
+  },
+  "guardian-of-faith": {
+    "both": {
+      "automated": false
+    }
+  },
   "guiding-bolt": {
     "both": {
       "effect": {
@@ -114,6 +315,41 @@
         "advantageAgainst": true,
         "once": true,
         "rounds": 1
+      }
+    }
+  },
+  "gust-of-wind": {
+    "2024": {
+      "push": 15
+    },
+    "2014": {
+      "push": 15
+    }
+  },
+  "hallow": {
+    "both": {
+      "automated": false
+    }
+  },
+  "hex": {
+    "2024": {
+      "rider": "mark",
+      "damage": [
+        {
+          "dice": "1d6",
+          "type": "necrotic"
+        }
+      ],
+      "automated": true,
+      "gmNote": "The target also has disadvantage on checks with the ability you chose. When it drops, move the hex: cast it again without a slot."
+    }
+  },
+  "hideous-laughter": {
+    "both": {
+      "effect": {
+        "conditions": ["prone", "incapacitated"],
+        "repeatSave": true,
+        "saveOnDamage": true
       }
     }
   },
@@ -129,6 +365,50 @@
       }
     }
   },
+  "hunters-mark": {
+    "2014": {
+      "damage": [
+        {
+          "dice": "1d6",
+          "type": "force"
+        }
+      ],
+      "weaponType": true
+    },
+    "2024": {
+      "damage": [
+        {
+          "dice": "1d6",
+          "type": "force"
+        }
+      ]
+    },
+    "both": {
+      "rider": "mark",
+      "automated": true,
+      "gmNote": "When the target drops, move the mark with a bonus action: cast it again without a slot."
+    }
+  },
+  "hypnotic-pattern": {
+    "2014": {
+      "area": {
+        "shape": "cube",
+        "size": 30
+      }
+    },
+    "both": {
+      "effect": {
+        "conditions": ["charmed", "incapacitated"],
+        "immobile": true,
+        "endsOnDamage": true
+      }
+    }
+  },
+  "imprisonment": {
+    "both": {
+      "automated": false
+    }
+  },
   "invisibility": {
     "both": {
       "upcast": {
@@ -138,6 +418,21 @@
         "conditions": ["invisible"],
         "endsOnAttack": true
       }
+    }
+  },
+  "light": {
+    "both": {
+      "automated": false
+    }
+  },
+  "magic-circle": {
+    "both": {
+      "automated": false
+    }
+  },
+  "magic-jar": {
+    "both": {
+      "automated": false
     }
   },
   "magic-missile": {
@@ -156,10 +451,86 @@
       "automated": true
     }
   },
+  "magic-weapon": {
+    "both": {
+      "effect": {
+        "weaponBonus": 1
+      },
+      "automated": true,
+      "gmNote": "A higher slot gives a bigger bonus: +2 or +3, adjust the effect by hand."
+    }
+  },
+  "mass-suggestion": {
+    "both": {
+      "automated": false
+    }
+  },
   "misty-step": {
     "both": {
       "teleport": 30,
       "automated": true
+    }
+  },
+  "moonbeam": {
+    "both": {
+      "zone": {},
+      "gmNote": "Moving the beam is up to the GM for now."
+    },
+    "2014": {
+      "zone": {
+        "onCast": false
+      }
+    }
+  },
+  "phantasmal-force": {
+    "both": {
+      "automated": false
+    }
+  },
+  "planar-binding": {
+    "both": {
+      "automated": false
+    }
+  },
+  "plane-shift": {
+    "both": {
+      "automated": false
+    }
+  },
+  "polymorph": {
+    "both": {
+      "automated": false
+    }
+  },
+  "prismatic-spray": {
+    "both": {
+      "automated": false
+    }
+  },
+  "produce-flame": {
+    "2014": {
+      "targets": 1,
+      "range": 30
+    },
+    "2024": {
+      "targets": 1,
+      "range": 60,
+      "castingTime": "action",
+      "attack": "ranged",
+      "damage": [
+        {
+          "dice": "1d8",
+          "type": "fire"
+        }
+      ],
+      "cantrip": "dice",
+      "automated": true,
+      "gmNote": "Conjuring the flame is a bonus action; this conjures and hurls it at once."
+    }
+  },
+  "ray-of-enfeeblement": {
+    "both": {
+      "automated": false
     }
   },
   "ray-of-frost": {
@@ -169,6 +540,24 @@
         "speed": -10,
         "rounds": 1
       }
+    }
+  },
+  "regenerate": {
+    "both": {
+      "effect": {
+        "name": "Regenerating"
+      },
+      "gmNote": "It regains 1 HP at the start of each of its turns, and severed limbs regrow."
+    }
+  },
+  "resilient-sphere": {
+    "both": {
+      "automated": false
+    }
+  },
+  "reverse-gravity": {
+    "both": {
+      "automated": false
     }
   },
   "scorching-ray": {
@@ -187,6 +576,34 @@
       "automated": true
     }
   },
+  "scrying": {
+    "both": {
+      "automated": false
+    }
+  },
+  "searing-smite": {
+    "2024": {
+      "targets": 1,
+      "range": 5,
+      "autoHit": true,
+      "damage": [
+        {
+          "dice": "1d6",
+          "type": "fire"
+        }
+      ],
+      "upcast": {
+        "damage": "1d6"
+      },
+      "automated": true,
+      "gmNote": "Cast right after a melee hit. The target burns for 1d6 fire at the start of each of its turns until it makes a Con save."
+    }
+  },
+  "seeming": {
+    "both": {
+      "automated": false
+    }
+  },
   "shield": {
     "both": {
       "effect": {
@@ -200,8 +617,84 @@
     "2024": {
       "effect": {
         "conditions": ["incapacitated"],
-        "repeatSave": true
+        "repeatSave": true,
+        "worsens": ["unconscious"],
+        "endsOnDamage": true
       }
+    },
+    "2014": {
+      "hpPool": "5d8",
+      "upcast": {
+        "hpPool": "2d8"
+      },
+      "effect": {
+        "conditions": ["unconscious"],
+        "endsOnDamage": true
+      },
+      "automated": true
+    }
+  },
+  "spirit-guardians": {
+    "2014": {
+      "area": {
+        "shape": "emanation",
+        "size": 15
+      },
+      "zone": {
+        "spares": "allies",
+        "onCast": false
+      }
+    },
+    "both": {
+      "automated": true,
+      "zone": {
+        "spares": "allies"
+      },
+      "gmNote": "Enemies move at half speed inside it."
+    }
+  },
+  "spiritual-weapon": {
+    "both": {
+      "repeat": "bonus"
+    }
+  },
+  "stinking-cloud": {
+    "both": {
+      "automated": false
+    }
+  },
+  "suggestion": {
+    "both": {
+      "automated": false
+    }
+  },
+  "thunderwave": {
+    "both": {
+      "push": 10
+    }
+  },
+  "true-polymorph": {
+    "both": {
+      "automated": false
+    }
+  },
+  "vampiric-touch": {
+    "both": {
+      "targets": 1,
+      "range": 5,
+      "attack": "melee",
+      "damage": [
+        {
+          "dice": "3d6",
+          "type": "necrotic"
+        }
+      ],
+      "upcast": {
+        "damage": "1d6"
+      },
+      "drain": true,
+      "automated": true,
+      "repeat": "action"
     }
   },
   "vicious-mockery": {
@@ -214,14 +707,9 @@
       }
     }
   },
-  "thunderwave": {
+  "zone-of-truth": {
     "both": {
-      "push": 10
-    }
-  },
-  "gust-of-wind": {
-    "2024": {
-      "push": 15
+      "automated": false
     }
   }
 }

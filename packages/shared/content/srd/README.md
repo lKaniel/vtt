@@ -8,7 +8,9 @@
 - `classes-5.1.json`, `classes-5.2.json`: the SRD classes, their features by
   level and spellcasting tables.
 - `items.json`: weapons, armor and gear, shared by both editions (weapon
-  masteries only apply under the 2024 rules).
+  masteries only apply under the 2024 rules). Gear with `use` can be used from
+  the action bar: `{ "heal": "2d4+2", "potion": true }` (a potion is an action
+  in 2014, a bonus action in 2024).
 
 Monsters, spells and classes are converted from the `@opencharacter/5e-srd-5.1`
 and `@opencharacter/5e-srd-5.2` npm packages (also CC-BY-4.0):
@@ -24,7 +26,15 @@ or `"2024"`:
 
 - `spell-automation.json`: per spell id, effects (bless, hold person),
   beams (scorching ray), summons (find familiar), teleports (misty step), `push` in feet
-  (thunderwave; negative pulls).
+  (thunderwave; negative pulls), `tempHp` (false life), `hpPool` (2014 sleep),
+  `drain` (vampiric touch), `rider` (`"self"`: the damage rides on the
+  caster's weapon hits, like divine favor and smites; `"mark"`: on the
+  caster's attacks against the target, like hunter's mark and hex), `zone`
+  (`{ "spares": "allies", "onCast": false }`: the area lasts and hits
+  creatures that start their turn in it or enter it), `repeat` (`"action"` or
+  `"bonus"`: used again on later turns without a slot), and a `gmNote` for the part the GM still does by
+  hand. `null` takes away a generated field; `"automated": false` makes the
+  chat say the GM applies the spell.
 - `class-automation.json`: per class id, spellcasting and features with
   uses, actions and effects (second wind, rage, sneak attack, weapon mastery).
 

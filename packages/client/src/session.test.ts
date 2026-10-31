@@ -211,6 +211,16 @@ describe('Session', () => {
       expect(session.armed).toBeUndefined();
     });
 
+    it('smites with a chosen slot on the armed attack, then forgets the choice', () => {
+      session.select('hero');
+      session.arm('Longsword');
+      session.setSmite(2);
+      session.attack('goblin');
+      expect(ws.sent.at(-1)).toMatchObject({ t: 'attack', attack: 'Longsword', smite: 2 });
+      session.arm('Longsword');
+      expect(session.smite).toBeUndefined();
+    });
+
     it('drops the armed attack when the selection changes', () => {
       session.select('hero');
       session.arm('Longsword');
@@ -222,6 +232,7 @@ describe('Session', () => {
       const wizard = () => ({
         ...token('hero'),
         sheet: {
+          effects: [],
           caster: {
             level: 5,
             spells: [srdFor('2014').spells.get('magic-missile')!, srdFor('2014').spells.get('fireball')!],
@@ -251,6 +262,27 @@ describe('Session', () => {
         expect(session.aiming).toBeUndefined();
       });
 
+      it('aims a feature like a spell and uses it on the picked creature', () => {
+        const inspiration = {
+          id: 'bardic-inspiration',
+          name: 'Bardic Inspiration',
+          level: 1,
+          recharge: 'long',
+          action: 'bonus',
+          spell: { targets: 1, range: 60 },
+        };
+        ws.receive({ t: 'token', token: { ...wizard(), sheet: { features: [inspiration] } as never } });
+        session.aimFeature('bardic-inspiration');
+        expect(session.aiming).toMatchObject({ mode: 'creatures', need: 1, feature: 'bardic-inspiration' });
+        session.pickTarget('orc');
+        expect(ws.sent.at(-1)).toEqual({
+          t: 'feature',
+          token: 'hero',
+          feature: 'bardic-inspiration',
+          targets: ['orc'],
+        });
+      });
+
       it('casts with fewer targets on confirm', () => {
         session.aim('magic-missile', 1);
         session.pickTarget('goblin');
@@ -268,7 +300,7 @@ describe('Session', () => {
         const familiar = srdFor('2014').spells.get('find-familiar')!;
         ws.receive({
           t: 'token',
-          token: { ...wizard(), sheet: { caster: { level: 5, spells: [familiar] } } as never },
+          token: { ...wizard(), sheet: { caster: { level: 5, spells: [familiar] }, effects: [] } as never },
         });
         session.aim('find-familiar', 1);
         session.chooseSummon('owl');

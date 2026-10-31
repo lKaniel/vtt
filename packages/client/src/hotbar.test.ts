@@ -10,6 +10,7 @@ import {
   floatTransform,
   landTransform,
 } from './hotbar.ts';
+import { costOf } from './actions.ts';
 
 const spell = (id: string) => srdFor('2014').spells.get(id)!;
 const staff: Attack = { name: 'Quarterstaff', kind: 'melee', toHit: 1, damage: [{ dice: '1d6', type: 'bludgeoning' }] };
@@ -40,6 +41,17 @@ function wizard(hotbar?: (string | null)[]): TokenView {
 }
 
 const refs = (t: TokenView) => hotbarTiles(t).map((tile) => (tile ? tileRef(tile) : null));
+
+describe('items on the hotbar', () => {
+  const potionTile = (t: TokenView) =>
+    hotbarTiles(t).find((tile) => tile && tileRef(tile) === 'item:potion-of-healing')!;
+
+  it('costs an action to drink a potion in 2014 and a bonus action in 2024', () => {
+    const t = wizard(['item:potion-of-healing']);
+    expect(costOf(potionTile({ ...t, sheet: { ...t.sheet!, edition: '2014' } }))).toBe('action');
+    expect(costOf(potionTile({ ...t, sheet: { ...t.sheet!, edition: '2024' } }))).toBe('bonus');
+  });
+});
 
 describe('the hotbar', () => {
   it('lays everything out in order when nothing was arranged, padded to the bar size', () => {

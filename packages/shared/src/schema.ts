@@ -115,6 +115,8 @@ export const TokenSchema = z.object({
   stats: StatsSchema.optional(),
   /** Current hit points; missing means unhurt. */
   hp: z.number().int().optional(),
+  /** Temporary hit points: lost first, and don't stack. */
+  tempHp: z.number().int().positive().optional(),
   inventory: z.array(InventoryEntrySchema).optional(),
   /** Spells, conditions and features currently affecting the token. */
   effects: z.array(EffectSchema).optional(),

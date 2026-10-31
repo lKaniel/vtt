@@ -17,6 +17,23 @@
             [9, 3],
             [16, 4]
           ]
+        },
+        "unarmored-defense": {
+          "unarmoredAc": "con"
+        },
+        "danger-sense": {
+          "passive": {
+            "saveAdvantage": ["dex"]
+          }
+        },
+        "reckless-attack": {
+          "action": "free",
+          "effect": {
+            "name": "Reckless",
+            "advantage": true,
+            "advantageAgainst": true,
+            "rounds": 1
+          }
         }
       }
     },
@@ -56,6 +73,31 @@
       "spellcasting": {
         "ability": "cha",
         "progression": "full"
+      },
+      "features": {
+        "bardic-inspiration": {
+          "action": "bonus",
+          "usesAbility": "cha",
+          "recharge": "long",
+          "shortRestFrom": 5,
+          "die": [
+            [1, 6],
+            [5, 8],
+            [10, 10],
+            [15, 12]
+          ],
+          "spell": {
+            "targets": 1,
+            "range": 60,
+            "rounds": 100,
+            "effect": {
+              "name": "Bardic Inspiration",
+              "attackBonus": "1d{die}",
+              "saveBonus": "1d{die}",
+              "once": true
+            }
+          }
+        }
       }
     }
   },
@@ -64,6 +106,67 @@
       "spellcasting": {
         "ability": "wis",
         "progression": "full"
+      }
+    },
+    "2014": {
+      "features": {
+        "channel-divinity": {
+          "uses": [
+            [2, 1],
+            [6, 2],
+            [18, 3]
+          ],
+          "recharge": "short"
+        },
+        "turn-undead": {
+          "action": "action",
+          "usesFrom": "channel-divinity",
+          "spell": {
+            "area": {
+              "shape": "emanation",
+              "size": 30
+            },
+            "save": {
+              "ability": "wis"
+            },
+            "creatureTypes": ["undead"],
+            "rounds": 10,
+            "effect": {
+              "name": "Turned",
+              "conditions": ["frightened"],
+              "endsOnDamage": true
+            }
+          }
+        }
+      }
+    },
+    "2024": {
+      "features": {
+        "channel-divinity": {
+          "action": "action",
+          "uses": [
+            [2, 2],
+            [6, 3],
+            [18, 4]
+          ],
+          "recharge": "short-one",
+          "spell": {
+            "area": {
+              "shape": "emanation",
+              "size": 30
+            },
+            "save": {
+              "ability": "wis"
+            },
+            "creatureTypes": ["undead"],
+            "rounds": 10,
+            "effect": {
+              "name": "Turned",
+              "conditions": ["frightened", "incapacitated"],
+              "endsOnDamage": true
+            }
+          }
+        }
       }
     }
   },
@@ -122,7 +225,13 @@
   },
   "monk": {
     "both": {
-      "attacks": [[5, 2]]
+      "attacks": [[5, 2]],
+      "features": {
+        "unarmored-defense": {
+          "unarmoredAc": "wis",
+          "unarmoredShield": false
+        }
+      }
     }
   },
   "paladin": {
@@ -131,16 +240,37 @@
       "spellcasting": {
         "ability": "cha",
         "progression": "half"
+      },
+      "features": {
+        "lay-on-hands": {
+          "poolPerLevel": 5,
+          "recharge": "long",
+          "healPool": true,
+          "spell": {
+            "targets": 1,
+            "range": 5
+          }
+        }
       }
     },
     "2024": {
-      "weaponMastery": true
+      "weaponMastery": true,
+      "features": {
+        "lay-on-hands": {
+          "action": "bonus"
+        }
+      }
     },
     "2014": {
       "spellcasting": {
         "ability": "cha",
         "progression": "half",
         "from": 2
+      },
+      "features": {
+        "lay-on-hands": {
+          "action": "action"
+        }
       }
     }
   },
@@ -165,7 +295,12 @@
   },
   "rogue": {
     "both": {
-      "sneakAttack": true
+      "sneakAttack": true,
+      "features": {
+        "cunning-action": {
+          "bonusActions": ["dash", "disengage"]
+        }
+      }
     },
     "2024": {
       "weaponMastery": true

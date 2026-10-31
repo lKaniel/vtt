@@ -101,7 +101,20 @@ export const ItemSchema = z.discriminatedUnion('type', [
     strength: z.number().int().optional(),
     stealthDisadvantage: z.boolean().default(false),
   }),
-  z.object({ type: z.literal('gear'), ...itemBase, description: z.string().optional() }),
+  z.object({
+    type: z.literal('gear'),
+    ...itemBase,
+    description: z.string().optional(),
+    /** What using it does; items without it can't be used from the action bar. */
+    use: z
+      .object({
+        /** Hit points regained, e.g. "2d4+2". */
+        heal: z.string().optional(),
+        /** A potion: drinking it is an action in 2014 and a bonus action in 2024. */
+        potion: z.boolean().default(false),
+      })
+      .optional(),
+  }),
 ]);
 export type Item = z.infer<typeof ItemSchema>;
 export type Weapon = Extract<Item, { type: 'weapon' }>;

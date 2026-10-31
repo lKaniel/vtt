@@ -29,6 +29,6 @@ export function viewToken(token: Token, player: Player, content: Content): Token
   const art = token.monster ? content.monsters.get(token.monster)?.img : undefined;
   const look = art ? { art } : {};
   if (canObserveToken(token, player)) return { ...token, ...look, sheet };
-  const { monster: _m, stats: _s, hp: _h, inventory: _i, ...visible } = token;
+  const { monster: _m, stats: _s, hp: _h, tempHp: _t, inventory: _i, ...visible } = token;
   return { ...visible, ...look, health: healthOf(sheet.hp, sheet.maxHp) };
 }

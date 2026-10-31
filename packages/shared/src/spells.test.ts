@@ -141,4 +141,112 @@ describe('resolveCast', () => {
     expect(out.results[0]).toMatchObject({ immune: true });
     expect(out.results[0]!.effect).toBeUndefined();
   });
+
+  it('gives temporary hit points instead of healing (false life)', () => {
+    const rng = rngOf([face(2, 4)]);
+    const out = resolveCast(
+      { spell: spell('false-life'), slot: 2, caster: side(wizard), targets: [side(wizard)], gridSize: 100 },
+      rng,
+    );
+    expect(out.results[0]!.tempHp).toBe(2 + 4 + 5);
+    expect(out.results[0]!.healed).toBeUndefined();
+  });
+
+  it('keeps the higher of old and new temporary hit points', () => {
+    const tough = TokenSchema.parse({ ...wizard, tempHp: 30 });
+    const out = resolveCast(
+      { spell: spell('false-life'), slot: 1, caster: side(tough), targets: [side(tough)], gridSize: 100 },
+      () => 0,
+    );
+    expect(out.results[0]!.tempHp).toBe(30);
+  });
+
+  it('heals the caster for half the necrotic damage (vampiric touch)', () => {
+    const hurt = TokenSchema.parse({ ...wizard, hp: 10 });
+    const ogre = side(TokenSchema.parse({ id: 'o', name: 'Ogre', x: 150, y: 50, monster: 'ogre' }));
+    // d20 of 18 hits; 3d6 of 6, 6, 5 = 17 necrotic, the caster regains 8.
+    const rng = rngOf([face(18, 20), face(6, 6), face(6, 6), face(5, 6)]);
+    const out = resolveCast(
+      { spell: spell('vampiric-touch'), slot: 3, caster: side(hurt), targets: [ogre], gridSize: 100 },
+      rng,
+    );
+    expect(out.results[0]).toMatchObject({ target: 'o', damage: 17 });
+    expect(out.drained).toBe(8);
+  });
+
+  it('puts the weakest creatures to sleep first, as far as the hit point pool goes (2014 sleep)', () => {
+    const weak = side(TokenSchema.parse({ id: 'w', name: 'Weak', x: 450, y: 50, monster: 'goblin', hp: 3 }));
+    const strong = side(TokenSchema.parse({ id: 's', name: 'Strong', x: 550, y: 50, monster: 'ogre' }));
+    const mid = side(TokenSchema.parse({ id: 'm', name: 'Mid', x: 450, y: 150, monster: 'goblin' }));
+    // 5d8 of 2s = 10: the 3-hp goblin and the 7-hp goblin sleep, the ogre doesn't.
+    const out = resolveCast(
+      { spell: spell('sleep'), slot: 1, caster: side(wizard), targets: [strong, mid, weak], gridSize: 100 },
+      rngOf(Array<number>(5).fill(face(2, 8))),
+    );
+    const slept = out.results.filter((r) => r.effect).map((r) => r.target);
+    expect(slept).toEqual(['m', 'w']);
+    expect(out.results.find((r) => r.target === 'w')!.effect).toMatchObject({
+      conditions: ['unconscious'],
+      endsOnDamage: true,
+    });
+  });
+
+  it('knocks a laughing creature prone and incapacitated (hideous laughter)', () => {
+    for (const edition of ['2014', '2024'] as const) {
+      const out = resolveCast(
+        {
+          spell: spell('hideous-laughter', edition),
+          slot: 1,
+          caster: side(wizard, edition),
+          targets: [side(TokenSchema.parse({ id: 'g', name: 'G', x: 450, y: 50, stats: { level: 1 } }), edition)],
+          gridSize: 100,
+        },
+        rngOf([face(1, 20)]),
+      );
+      expect(out.results[0]!.effect).toMatchObject({ conditions: ['prone', 'incapacitated'], saveOnDamage: true });
+    }
+  });
+
+  it('puts divine favor on the caster as damage for their weapon hits, without hurting them', () => {
+    const paladin = TokenSchema.parse({ ...wizard, stats: { class: 'paladin', level: 5, abilities: { cha: 16 } } });
+    const out = resolveCast(
+      { spell: spell('divine-favor'), slot: 1, caster: side(paladin), targets: [side(paladin)], gridSize: 100 },
+      () => 0.5,
+    );
+    expect(out.results[0]).toMatchObject({ target: 'wiz', damage: 0 });
+    expect(out.results[0]!.effect).toMatchObject({
+      hitDamage: [{ dice: '1d4', type: 'radiant' }],
+      concentration: true,
+    });
+  });
+
+  it("marks the target with hunter's mark: extra damage only from the caster", () => {
+    const out = resolveCast(
+      {
+        spell: spell('hunters-mark', '2024'),
+        slot: 1,
+        caster: side(wizard, '2024'),
+        targets: [side(goblin('g'))],
+        gridSize: 100,
+      },
+      () => 0.5,
+    );
+    expect(out.results[0]).toMatchObject({ damage: 0 });
+    expect(out.results[0]!.effect).toMatchObject({ onlyFor: 'wiz', markDamage: [{ dice: '1d6', type: 'force' }] });
+  });
+
+  it('adds a hex to the caster’s spell attacks against the hexed creature', () => {
+    const hexed = goblin('g');
+    const marked = TokenSchema.parse({
+      ...hexed,
+      effects: [{ id: 'hex-wiz', name: 'Hex', onlyFor: 'wiz', markDamage: [{ dice: '1d6', type: 'necrotic' }] }],
+    });
+    // d20 of 15 hits; fire bolt 2d10 (wizard level 5) of 1s, hex 1d6 of 3.
+    const rng = rngOf([face(15, 20), face(1, 10), face(1, 10), face(3, 6)]);
+    const out = resolveCast(
+      { spell: spell('fire-bolt'), slot: 0, caster: side(wizard), targets: [side(marked)], gridSize: 100 },
+      rng,
+    );
+    expect(out.results[0]!.parts.map((p) => `${p.roll.total} ${p.type}`)).toEqual(['2 fire', '3 necrotic']);
+  });
 });

@@ -2,6 +2,7 @@ import {
   canControlToken,
   canEditToken,
   currentTurn,
+  featureSpell,
   isGm,
   type Actor,
   type Chunk,
@@ -21,7 +22,7 @@ import {
 } from '@vtt/shared';
 
 import { dropMessage, type DragPayload } from './drops.ts';
-import { aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
+import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
 
@@ -68,6 +69,8 @@ export class Session {
   combat: Combat | null = null;
   /** The attack the selected token will make on the next token clicked. */
   armed?: string;
+  /** Slot level to Divine Smite with on the armed attack. */
+  smite?: number;
   /** The spell the selected token is aiming, and what it has picked so far. */
   aiming?: Aiming;
   error?: { message: string; at: number };
@@ -172,6 +175,7 @@ export class Session {
   /** Readies an attack of the selected token; the next token clicked is the target. */
   arm(attack: string | undefined): void {
     this.armed = attack;
+    this.smite = undefined;
     this.aiming = undefined;
     this.emit('armed');
     this.changed();
@@ -179,10 +183,20 @@ export class Session {
 
   /** Readies a spell of the selected token with a slot, or for free; self spells go off at once. */
   aim(spellId: string | undefined, slot = 0, free = false): void {
-    const caster = this.selected ? this.tokens.get(this.selected)?.sheet?.caster : undefined;
-    const spell = caster?.spells.find((s) => s.id === spellId);
+    const sheet = this.selected ? this.tokens.get(this.selected)?.sheet : undefined;
     this.armed = undefined;
-    this.aiming = spell && { ...aimSpell(spell, slot, caster!.level), ...(free && { free }) };
+    this.aiming = aimFor(sheet, spellId, { slot, free });
+    if (this.aiming?.mode === 'self') return this.confirmCast();
+    this.emit('armed');
+    this.changed();
+  }
+
+  /** Readies a feature of the selected token that's aimed like a spell; one without targets goes off at once. */
+  aimFeature(featureId: string | undefined): void {
+    const token = this.selected ? this.tokens.get(this.selected) : undefined;
+    const feature = token?.sheet?.features.find((f) => f.id === featureId);
+    this.armed = undefined;
+    this.aiming = feature && { ...aimSpell(featureSpell(feature), 0, token?.stats?.level ?? 1), feature: feature.id };
     if (this.aiming?.mode === 'self') return this.confirmCast();
     this.emit('armed');
     this.changed();
@@ -230,6 +244,11 @@ export class Session {
     this.send({ t: 'feature', token, feature });
   }
 
+  /** Uses one of an item the token carries (drinks a potion). */
+  useItem(token: string, item: string): void {
+    this.send({ t: 'useItem', token, item });
+  }
+
   rest(tokens: string[], kind: 'short' | 'long'): void {
     this.send({ t: 'rest', tokens, kind });
   }
@@ -242,9 +261,16 @@ export class Session {
     this.send({ t: 'removeEffect', token, effect });
   }
 
+  /** Spends a slot of this level on Divine Smite if the armed attack hits; undefined for no smite. */
+  setSmite(slot: number | undefined): void {
+    this.smite = slot;
+    this.changed();
+  }
+
   attack(target: string): void {
     if (!this.selected || !this.armed) return;
-    this.send({ t: 'attack', attacker: this.selected, target, attack: this.armed });
+    const smite = this.smite ? { smite: this.smite } : {};
+    this.send({ t: 'attack', attacker: this.selected, target, attack: this.armed, ...smite });
     this.arm(undefined);
   }
 

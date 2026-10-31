@@ -1,6 +1,6 @@
 import { srdFor } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
-import { aimSpell, castMessage, needsClearPath, pick } from './targeting.ts';
+import { aimFor, aimSpell, castMessage, needsClearPath, pick } from './targeting.ts';
 
 const spell = (id: string) => srdFor('2014').spells.get(id)!;
 
@@ -67,5 +67,22 @@ describe('needsClearPath', () => {
     expect(needsClearPath(spell('burning-hands'))).toBe(false);
     expect(needsClearPath(spell('fireball'))).toBe(true);
     expect(needsClearPath(spell('fire-bolt'))).toBe(true);
+  });
+});
+
+describe('using a lasting spell again', () => {
+  it('aims a spell that is going with its own slot, as a repeat (spiritual weapon)', () => {
+    const weapon = srdFor('2014').spells.get('spiritual-weapon')!;
+    const going = { id: 'sw', name: 'Spiritual Weapon', repeat: { spell: 'spiritual-weapon', slot: 3 } };
+    const sheet = { caster: { level: 5, spells: [weapon] }, effects: [going] } as never;
+    const aiming = aimFor(sheet, 'spiritual-weapon', { slot: 2, free: false })!;
+    expect(castMessage('hero', { ...aiming, picks: ['orc'] })).toMatchObject({
+      slot: 3,
+      repeat: true,
+      targets: ['orc'],
+    });
+    expect(aimFor({ ...(sheet as object), effects: [] }, 'spiritual-weapon', { slot: 2, free: false })).toMatchObject({
+      slot: 2,
+    });
   });
 });
