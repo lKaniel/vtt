@@ -210,6 +210,8 @@ export class TokenLayer {
     root.eventMode = 'static';
     root.cursor = 'pointer';
     root.on('pointerdown', (e) => {
+      // Right and middle clicks go through to the map: panning, or cancelling an action.
+      if (e.button !== 0) return;
       e.stopPropagation();
       const t = this.session.tokens.get(token.id);
       if (!t) return;

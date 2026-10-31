@@ -276,6 +276,24 @@ describe('Session', () => {
         expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'find-familiar', summon: 'owl', point: [150, 50] });
       });
 
+      it('casts for free when asked, keeping the choice when the slot changes', () => {
+        session.aim('fireball', 3);
+        session.setFreeCast(true);
+        session.aim('fireball', 4, session.aiming?.free);
+        session.castAt([250, 150]);
+        expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'fireball', slot: 4, free: true });
+      });
+
+      it('cancels an aimed spell or readied attack, and says whether there was one', () => {
+        session.aim('fireball', 3);
+        expect(session.cancelAction()).toBe(true);
+        expect(session.aiming).toBeUndefined();
+        session.arm('Longsword');
+        expect(session.cancelAction()).toBe(true);
+        expect(session.armed).toBeUndefined();
+        expect(session.cancelAction()).toBe(false);
+      });
+
       it('puts away a readied attack when aiming a spell, and the other way round', () => {
         session.arm('Longsword');
         session.aim('fireball', 3);

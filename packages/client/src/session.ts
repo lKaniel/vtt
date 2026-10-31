@@ -173,15 +173,28 @@ export class Session {
     this.changed();
   }
 
-  /** Readies a spell of the selected token with a slot; self spells go off at once. */
-  aim(spellId: string | undefined, slot = 0): void {
+  /** Readies a spell of the selected token with a slot, or for free; self spells go off at once. */
+  aim(spellId: string | undefined, slot = 0, free = false): void {
     const caster = this.selected ? this.tokens.get(this.selected)?.sheet?.caster : undefined;
     const spell = caster?.spells.find((s) => s.id === spellId);
     this.armed = undefined;
-    this.aiming = spell && aimSpell(spell, slot, caster!.level);
+    this.aiming = spell && { ...aimSpell(spell, slot, caster!.level), ...(free && { free }) };
     if (this.aiming?.mode === 'self') return this.confirmCast();
     this.emit('armed');
     this.changed();
+  }
+
+  /** Casts the aimed spell without spending a slot, or with one again. */
+  setFreeCast(free: boolean): void {
+    if (this.aiming) this.aiming = { ...this.aiming, free };
+    this.changed();
+  }
+
+  /** Puts away an aimed spell or readied attack; false if there was none. */
+  cancelAction(): boolean {
+    if (!this.armed && !this.aiming) return false;
+    this.arm(undefined);
+    return true;
   }
 
   /** Changes what the aimed summoning spell brings. */

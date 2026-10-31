@@ -327,7 +327,7 @@ export class MapView {
       if (far) drag.moved = true;
       return;
     }
-    if (far) drag.panning = true;
+    if (far) drag.panning = drag.moved = true;
     if (drag.panning) {
       this.center = [
         this.center[0] - (p[0] - drag.last[0]) / this.zoom,
@@ -345,14 +345,24 @@ export class MapView {
       if (drag.moved) this.session.move(drag.token, this.screenToWorld(e.global.x, e.global.y));
       return;
     }
+    // A right click that didn't pan cancels an aimed spell or readied attack.
+    if (drag?.button === 2 && !drag.moved) {
+      this.session.cancelAction();
+      return;
+    }
     if (!drag || drag.panning || drag.button !== 0) return;
+    this.clickGround(this.screenToWorld(e.global.x, e.global.y));
+  }
+
+  /** A left click on the map: casts an aimed area spell, puts away an action, or walks. */
+  private clickGround(p: Point): void {
     // Clicking the ground with an attack ready puts it away instead of walking.
     if (this.session.armed) return this.session.arm(undefined);
     const aiming = this.session.aiming;
-    if (aiming?.mode === 'point') return this.session.castAt(this.screenToWorld(e.global.x, e.global.y));
+    if (aiming?.mode === 'point') return this.session.castAt(p);
     if (aiming) return this.session.aim(undefined);
     const selected = this.session.selected;
-    if (selected) this.session.move(selected, this.screenToWorld(e.global.x, e.global.y));
+    if (selected) this.session.move(selected, p);
   }
 
   private updatePreview(force: boolean): void {

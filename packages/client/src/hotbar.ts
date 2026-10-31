@@ -87,9 +87,70 @@ export function removeFromHotbar(slots: Slots, at: number): Slots {
 export const TILE_DRAG = 'application/x-vtt-tile';
 export type TileDrag = { ref: string } | { from: number };
 
+type Size = [number, number];
+type Box = Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>;
+
+/** Where a lifted tile sits: centred on the cursor and a little larger. */
+export function floatTransform([x, y]: [number, number], [w, h]: Size, scale: number): string {
+  return `translate(${x - w / 2}px, ${y - h / 2}px) scale(${scale})`;
+}
+
+/** Where a dropped tile lands: centred in its slot at its own size. */
+export function landTransform(slot: Box, [w, h]: Size): string {
+  return `translate(${slot.left + (slot.width - w) / 2}px, ${slot.top + (slot.height - h) / 2}px) scale(1)`;
+}
+
+const LIFT = 1.15;
+const LAND_MS = 140;
+// The browser's own drag picture is a faint snapshot (tooltip and all); a blank one hides it.
+const BLANK =
+  typeof Image === 'undefined'
+    ? undefined
+    : Object.assign(new Image(), {
+        src: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      });
+let landing: Box | undefined;
+
+/** Call from a drop target: the tile in the air flies into this element before it goes. */
+export function landOn(el: Element): void {
+  landing = el.getBoundingClientRect();
+}
+
+/** A copy of the dragged element that follows the cursor until the drag ends. */
+function lift(e: React.DragEvent): void {
+  const source = e.currentTarget as HTMLElement;
+  const { width, height } = source.getBoundingClientRect();
+  const size: Size = [width, height];
+  const float = source.cloneNode(true) as HTMLElement;
+  for (const tip of float.querySelectorAll('.tip')) tip.remove();
+  float.className += ' drag-float';
+  float.style.width = `${width}px`;
+  float.style.height = `${height}px`;
+  float.style.transform = floatTransform([e.clientX, e.clientY], size, LIFT);
+  if (BLANK) e.dataTransfer.setDragImage(BLANK, 0, 0);
+  const follow = (ev: DragEvent) => {
+    float.style.transform = floatTransform([ev.clientX, ev.clientY], size, LIFT);
+  };
+  document.addEventListener('dragover', follow);
+  setTimeout(() => {
+    document.body.append(float);
+    source.classList.add('drag-source');
+  });
+  const end = () => {
+    document.removeEventListener('dragover', follow);
+    source.classList.remove('drag-source');
+    if (landing) float.style.transform = landTransform(landing, size);
+    float.classList.add(landing ? 'landing' : 'vanishing');
+    landing = undefined;
+    setTimeout(() => float.remove(), LAND_MS);
+  };
+  document.addEventListener('dragend', end, { once: true });
+}
+
 export function dragTile(e: React.DragEvent, payload: TileDrag): void {
   e.dataTransfer.setData(TILE_DRAG, JSON.stringify(payload));
   e.dataTransfer.effectAllowed = 'move';
+  lift(e);
   // While a tile is in the air the sheet fades and lets drops through to the bar under it.
   // Changing the page during dragstart cancels the drag, so wait a moment.
   setTimeout(() => document.body.classList.add('dragging-tile'));

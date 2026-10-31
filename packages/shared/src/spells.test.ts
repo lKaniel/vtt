@@ -48,6 +48,12 @@ describe('castProblem', () => {
     expect(castProblem({ spell: spell('magic-missile'), slot: 1, sheet })).toBeUndefined();
     expect(castProblem({ spell: spell('fire-bolt'), slot: 0, sheet })).toBeUndefined();
   });
+
+  it("casts for free without a slot left, at any level from the spell's own up to 9th", () => {
+    expect(castProblem({ spell: spell('magic-missile'), slot: 4, sheet, free: true })).toBeUndefined();
+    expect(castProblem({ spell: spell('magic-missile'), slot: 0, sheet, free: true })).toMatch(/slot/);
+    expect(castProblem({ spell: spell('fireball'), slot: 3, sheet, free: true })).toMatch(/doesn't know/);
+  });
 });
 
 describe('resolveCast', () => {

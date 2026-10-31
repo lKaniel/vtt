@@ -54,6 +54,14 @@ describe('aiming a spell', () => {
   });
 });
 
+describe('casting for free', () => {
+  it('tells the server not to spend a slot', () => {
+    const aiming = { ...aimSpell(spell('magic-missile'), 2, 5), free: true };
+    expect(castMessage('wiz', aiming)).toMatchObject({ slot: 2, free: true });
+    expect(castMessage('wiz', aimSpell(spell('magic-missile'), 1, 5))).not.toHaveProperty('free');
+  });
+});
+
 describe('needsClearPath', () => {
   it('skips the line check for areas that start at the caster, whose point only sets a direction', () => {
     expect(needsClearPath(spell('burning-hands'))).toBe(false);

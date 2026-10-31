@@ -1,6 +1,15 @@
 import { srdFor, type Attack, type TokenView } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
-import { HOTBAR_SIZE, hotbarTiles, moveOnHotbar, placeOnHotbar, removeFromHotbar, tileRef } from './hotbar.ts';
+import {
+  HOTBAR_SIZE,
+  hotbarTiles,
+  moveOnHotbar,
+  placeOnHotbar,
+  removeFromHotbar,
+  tileRef,
+  floatTransform,
+  landTransform,
+} from './hotbar.ts';
 
 const spell = (id: string) => srdFor('2014').spells.get(id)!;
 const staff: Attack = { name: 'Quarterstaff', kind: 'melee', toHit: 1, damage: [{ dice: '1d6', type: 'bludgeoning' }] };
@@ -69,5 +78,14 @@ describe('the hotbar', () => {
     expect(moved[1]).toBeNull();
     expect(moved[6]).toBe('spell:fire-bolt');
     expect(removeFromHotbar(slots, 0)[0]).toBeNull();
+  });
+});
+
+describe('a tile in the air', () => {
+  it('centres on the cursor, lifted, and lands square on its slot', () => {
+    expect(floatTransform([100, 50], [40, 40], 1.15)).toBe('translate(80px, 30px) scale(1.15)');
+    expect(landTransform({ left: 300, top: 600, width: 40, height: 40 }, [40, 40])).toBe(
+      'translate(300px, 600px) scale(1)',
+    );
   });
 });

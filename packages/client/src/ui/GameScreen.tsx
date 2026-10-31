@@ -3,7 +3,7 @@ import { MapView } from '../canvas/MapView.ts';
 import { hotbarTiles } from '../hotbar.ts';
 import { Session } from '../session.ts';
 import { stepTarget } from '../stepping.ts';
-import { activateTile, ActionBar } from './ActionBar.tsx';
+import { activateTile, ActionBar, canActivate } from './ActionBar.tsx';
 import { CharacterSheet } from './CharacterSheet.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { PartyBar } from './PartyBar.tsx';
@@ -111,7 +111,7 @@ function handleGameKey(session: Session, e: KeyboardEvent): void {
   }
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
   const tile = token && hotbarTiles(token).find((t) => t?.hotkey === e.key);
-  if (token && tile && !tile.spent) activateTile(session, token, tile);
+  if (token && tile && canActivate(tile)) activateTile(session, token, tile);
 }
 
 const TOAST_MS = 3000;
