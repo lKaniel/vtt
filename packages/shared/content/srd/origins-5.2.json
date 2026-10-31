@@ -1,0 +1,2557 @@
+{
+  "species": [
+    {
+      "id": "dragonborn",
+      "name": "Dragonborn",
+      "description": "**Creature Type:** Humanoid\n\n**Size:** Medium (about 5–7 feet tall)\n\n**Speed:** 30 feet\n\nAs a Dragonborn, you have these special traits.\n\n***Draconic Ancestry.*** Your lineage stems from a dragon progenitor. Choose the kind of dragon from the Draconic Ancestors table. Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance.\n\n| Dragon | Damage Type |\n| --- | --- |\n| Black | Acid |\n| Blue | Lightning |\n| Brass | Fire |\n| Bronze | Lightning |\n| Copper | Acid |\n| Gold | Fire |\n| Green | Poison |\n| Red | Fire |\n| Silver | Cold |\n| White | Cold |\n\n***Breath Weapon.*** When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of magical energy in either a 15-foot Cone or a 30-foot Line that is 5 feet wide (choose the shape each time). Each creature in that area must make a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency Bonus). On a failed save, a creature takes 1d10 damage of the type determined by your Draconic Ancestry trait. On a successful save, a creature takes half as much damage. This damage increases by 1d10 when you reach character levels 5 (2d10), 11 (3d10), and 17 (4d10).\n\nYou can use this Breath Weapon a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.\n\n***Damage Resistance.*** You have Resistance to the damage type determined by your Draconic Ancestry trait.\n\n***Darkvision.*** You have Darkvision with a range of 60 feet.\n\n***Draconic Flight.*** When you reach character level 5, you can channel draconic magic to give yourself temporary flight. As a Bonus Action, you sprout spectral wings on your back that last for 10 minutes or until you retract the wings (no action required) or have the Incapacitated condition. During that time, you have a Fly Speed equal to your Speed. Your wings appear to be made of the same energy as your Breath Weapon. Once you use this trait, you can’t use it again until you finish a Long Rest.",
+      "traits": [
+        {
+          "name": "Draconic Ancestry",
+          "description": "Your lineage stems from a dragon progenitor. Choose the kind of dragon from the Draconic Ancestors table. Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance.\n\n| Dragon | Damage Type |\n| --- | --- |\n| Black | Acid |\n| Blue | Lightning |\n| Brass | Fire |\n| Bronze | Lightning |\n| Copper | Acid |\n| Gold | Fire |\n| Green | Poison |\n| Red | Fire |\n| Silver | Cold |\n| White | Cold |"
+        },
+        {
+          "name": "Breath Weapon",
+          "description": "When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of magical energy in either a 15-foot Cone or a 30-foot Line that is 5 feet wide (choose the shape each time). Each creature in that area must make a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency Bonus). On a failed save, a creature takes 1d10 damage of the type determined by your Draconic Ancestry trait. On a successful save, a creature takes half as much damage. This damage increases by 1d10 when you reach character levels 5 (2d10), 11 (3d10), and 17 (4d10).\n\nYou can use this Breath Weapon a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest."
+        },
+        {
+          "name": "Damage Resistance",
+          "description": "You have Resistance to the damage type determined by your Draconic Ancestry trait."
+        },
+        {
+          "name": "Darkvision",
+          "description": "You have Darkvision with a range of 60 feet."
+        },
+        {
+          "name": "Draconic Flight",
+          "description": "When you reach character level 5, you can channel draconic magic to give yourself temporary flight. As a Bonus Action, you sprout spectral wings on your back that last for 10 minutes or until you retract the wings (no action required) or have the Incapacitated condition. During that time, you have a Fly Speed equal to your Speed. Your wings appear to be made of the same energy as your Breath Weapon. Once you use this trait, you can’t use it again until you finish a Long Rest."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 30,
+      "darkvision": 60,
+      "bonuses": {},
+      "subspecies": [
+        {
+          "id": "black-dragon",
+          "name": "Black Dragon",
+          "description": "| Dragon | Damage Type |\n| --- | --- |\n| Black | Acid |",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "blue-dragon",
+          "name": "Blue Dragon",
+          "description": "| Dragon | Damage Type |\n| --- | --- |\n| Blue | Lightning |",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "brass-dragon",
+          "name": "Brass Dragon",
+          "description": "| Dragon | Damage Type |\n| --- | --- |\n| Brass | Fire |",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "bronze-dragon",
+          "name": "Bronze Dragon",
+          "description": "| Dragon | Damage Type |\n| --- | --- |\n| Bronze | Lightning |",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "copper-dragon",
+          "name": "Copper Dragon",
+          "description": "| Dragon | Damage Type |\n| --- | --- |\n| Copper | Acid |",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "gold-dragon",
+          "name": "Gold Dragon",
+          "description": "| Dragon | Damage Type |\n| --- | --- |\n| Gold | Fire |",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "green-dragon",
+          "name": "Green Dragon",
+          "description": "| Dragon | Damage Type |\n| --- | --- |\n| Green | Poison |",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "red-dragon",
+          "name": "Red Dragon",
+          "description": "| Dragon | Damage Type |\n| --- | --- |\n| Red | Fire |",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "silver-dragon",
+          "name": "Silver Dragon",
+          "description": "| Dragon | Damage Type |\n| --- | --- |\n| Silver | Cold |",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "white-dragon",
+          "name": "White Dragon",
+          "description": "| Dragon | Damage Type |\n| --- | --- |\n| White | Cold |",
+          "bonuses": {},
+          "traits": []
+        }
+      ]
+    },
+    {
+      "id": "dwarf",
+      "name": "Dwarf",
+      "description": "**Creature Type:** Humanoid\n\n**Size:** Medium (about 4–5 feet tall)\n\n**Speed:** 30 feet\n\nAs a Dwarf, you have these special traits.\n\n***Darkvision.*** You have Darkvision with a range of 120 feet.\n\n***Dwarven Resilience.*** You have Resistance to Poison damage. You also have Advantage on saving throws you make to avoid or end the Poisoned condition.\n\n***Dwarven Toughness.*** Your Hit Point maximum increases by 1, and it increases by 1 again whenever you gain a level.\n\n***Stonecunning.*** As a Bonus Action, you gain Tremorsense with a range of 60 feet for 10 minutes. You must be on a stone surface or touching a stone surface to use this Tremorsense. The stone can be natural or worked.\n\nYou can use this Bonus Action a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You have Darkvision with a range of 120 feet."
+        },
+        {
+          "name": "Dwarven Resilience",
+          "description": "You have Resistance to Poison damage. You also have Advantage on saving throws you make to avoid or end the Poisoned condition."
+        },
+        {
+          "name": "Dwarven Toughness",
+          "description": "Your Hit Point maximum increases by 1, and it increases by 1 again whenever you gain a level."
+        },
+        {
+          "name": "Stonecunning",
+          "description": "As a Bonus Action, you gain Tremorsense with a range of 60 feet for 10 minutes. You must be on a stone surface or touching a stone surface to use this Tremorsense. The stone can be natural or worked.\n\nYou can use this Bonus Action a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 30,
+      "darkvision": 120,
+      "bonuses": {},
+      "subspecies": []
+    },
+    {
+      "id": "elf",
+      "name": "Elf",
+      "description": "**Creature Type:** Humanoid\n\n**Size:** Medium (about 5–6 feet tall)\n\n**Speed:** 30 feet\n\nAs an Elf, you have these special traits.\n\n***Darkvision.*** You have Darkvision with a range of 60 feet.\n\n***Elven Lineage.*** You are part of a lineage that grants you supernatural abilities. Choose a lineage from the Elven Lineages table. You gain the level 1 benefit of that lineage.\n\nWhen you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.\n\nIntelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage).\n\n| Lineage | Level 1 | Level 3 | Level 5 |\n| --- | --- | --- | --- |\n| Drow | The range of your Darkvision increases to 120 feet. You also know the Dancing Lights cantrip. | Faerie Fire | Darkness |\n| High Elf | You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list. | Detect Magic | Misty Step |\n| Wood Elf | Your Speed increases to 35 feet. You also know the Druidcraft cantrip. | Longstrider | Pass without Trace |\n\n***Fey Ancestry.*** You have Advantage on saving throws you make to avoid or end the Charmed condition.\n\n***Keen Senses.*** You have proficiency in the Insight, Perception, or Survival skill.\n\n***Trance.*** You don’t need to sleep, and magic can’t put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you retain consciousness.",
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You have Darkvision with a range of 60 feet."
+        },
+        {
+          "name": "Elven Lineage",
+          "description": "You are part of a lineage that grants you supernatural abilities. Choose a lineage from the Elven Lineages table. You gain the level 1 benefit of that lineage.\n\nWhen you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.\n\nIntelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage).\n\n| Lineage | Level 1 | Level 3 | Level 5 |\n| --- | --- | --- | --- |\n| Drow | The range of your Darkvision increases to 120 feet. You also know the Dancing Lights cantrip. | Faerie Fire | Darkness |\n| High Elf | You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list. | Detect Magic | Misty Step |\n| Wood Elf | Your Speed increases to 35 feet. You also know the Druidcraft cantrip. | Longstrider | Pass without Trace |"
+        },
+        {
+          "name": "Fey Ancestry",
+          "description": "You have Advantage on saving throws you make to avoid or end the Charmed condition."
+        },
+        {
+          "name": "Keen Senses",
+          "description": "You have proficiency in the Insight, Perception, or Survival skill."
+        },
+        {
+          "name": "Trance",
+          "description": "You don’t need to sleep, and magic can’t put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you retain consciousness."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 30,
+      "darkvision": 60,
+      "bonuses": {},
+      "subspecies": [
+        {
+          "id": "drow",
+          "name": "Drow",
+          "description": "***Level 1.*** The range of your Darkvision increases to 120 feet. You also know the Dancing Lights cantrip.\n\n***Level 3.*** Faerie Fire\n\n***Level 5.*** Darkness",
+          "bonuses": {},
+          "traits": [],
+          "darkvision": 120
+        },
+        {
+          "id": "high-elf",
+          "name": "High Elf",
+          "description": "***Level 1.*** You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list.\n\n***Level 3.*** Detect Magic\n\n***Level 5.*** Misty Step",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "wood-elf",
+          "name": "Wood Elf",
+          "description": "***Level 1.*** Your Speed increases to 35 feet. You also know the Druidcraft cantrip.\n\n***Level 3.*** Longstrider\n\n***Level 5.*** Pass without Trace",
+          "bonuses": {},
+          "traits": []
+        }
+      ]
+    },
+    {
+      "id": "gnome",
+      "name": "Gnome",
+      "description": "**Creature Type:** Humanoid\n\n**Size:** Small (about 3–4 feet tall)\n\n**Speed:** 30 feet\n\nAs a Gnome, you have these special traits.\n\n***Darkvision.*** You have Darkvision with a range of 60 feet.\n\n***Gnomish Cunning.*** You have Advantage on Intelligence, Wisdom, and Charisma saving throws.\n\n***Gnomish Lineage.*** You are part of a lineage that grants you supernatural abilities. Choose one of the following options; whichever one you choose, Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage):\n\n***Forest Gnome.*** You know the Minor Illusion cantrip. You also always have the Speak with Animals spell prepared. You can cast it without a spell slot a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell.\n\n***Rock Gnome.*** You know the Mending and Prestidigitation cantrips. In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP), such as a toy, fire starter, or music box. When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that effect whenever you or another creature takes a Bonus Action to activate it with a touch. If the chosen effect has options within it, you choose one of those options for the device when you create it. For example, if you choose the spell’s ignite-extinguish effect, you determine whether the device ignites or extinguishes fire; the device doesn’t do both. You can have three such devices in existence at a time, and each falls apart 8 hours after its creation or when you dismantle it with a touch as a Utilize action.",
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You have Darkvision with a range of 60 feet."
+        },
+        {
+          "name": "Gnomish Cunning",
+          "description": "You have Advantage on Intelligence, Wisdom, and Charisma saving throws."
+        },
+        {
+          "name": "Gnomish Lineage",
+          "description": "You are part of a lineage that grants you supernatural abilities. Choose one of the following options; whichever one you choose, Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage):\n\n***Forest Gnome.*** You know the Minor Illusion cantrip. You also always have the Speak with Animals spell prepared. You can cast it without a spell slot a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell.\n\n***Rock Gnome.*** You know the Mending and Prestidigitation cantrips. In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP), such as a toy, fire starter, or music box. When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that effect whenever you or another creature takes a Bonus Action to activate it with a touch. If the chosen effect has options within it, you choose one of those options for the device when you create it. For example, if you choose the spell’s ignite-extinguish effect, you determine whether the device ignites or extinguishes fire; the device doesn’t do both. You can have three such devices in existence at a time, and each falls apart 8 hours after its creation or when you dismantle it with a touch as a Utilize action."
+        }
+      ],
+      "sizes": ["small"],
+      "speed": 30,
+      "darkvision": 60,
+      "bonuses": {},
+      "subspecies": [
+        {
+          "id": "forest-gnome",
+          "name": "Forest Gnome",
+          "description": "You know the Minor Illusion cantrip. You also always have the Speak with Animals spell prepared. You can cast it without a spell slot a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell.",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "rock-gnome",
+          "name": "Rock Gnome",
+          "description": "You know the Mending and Prestidigitation cantrips. In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP), such as a toy, fire starter, or music box. When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that effect whenever you or another creature takes a Bonus Action to activate it with a touch. If the chosen effect has options within it, you choose one of those options for the device when you create it. For example, if you choose the spell’s ignite-extinguish effect, you determine whether the device ignites or extinguishes fire; the device doesn’t do both. You can have three such devices in existence at a time, and each falls apart 8 hours after its creation or when you dismantle it with a touch as a Utilize action.",
+          "bonuses": {},
+          "traits": []
+        }
+      ]
+    },
+    {
+      "id": "goliath",
+      "name": "Goliath",
+      "description": "**Creature Type:** Humanoid\n\n**Size:** Medium (about 7–8 feet tall)\n\n**Speed:** 35 feet\n\nAs a Goliath, you have these special traits.\n\n***Giant Ancestry.*** You are descended from Giants. Choose one of the following benefits—a supernatural boon from your ancestry; you can use the chosen benefit a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest:\n\n***Cloud’s Jaunt (Cloud Giant).*** As a Bonus Action, you magically teleport up to 30 feet to an unoccupied space you can see.\n\n***Fire’s Burn (Fire Giant).*** When you hit a target with an attack roll and deal damage to it, you can also deal 1d10 Fire damage to that target.\n\n***Frost’s Chill (Frost Giant).*** When you hit a target with an attack roll and deal damage to it, you can also deal 1d6 Cold damage to that target and reduce its Speed by 10 feet until the start of your next turn.\n\n***Hill’s Tumble (Hill Giant).*** When you hit a Large or smaller creature with an attack roll and deal damage to it, you can give that target the Prone condition.\n\n***Stone’s Endurance (Stone Giant).*** When you take damage, you can take a Reaction to roll 1d12. Add your Constitution modifier to the number rolled and reduce the damage by that total.\n\n***Storm’s Thunder (Storm Giant).*** When you take damage from a creature within 60 feet of you, you can take a Reaction to deal 1d8 Thunder damage to that creature.\n\n***Large Form.*** Starting at character level 5, you can change your size to Large as a Bonus Action if you’re in a big enough space. This transformation lasts for 10 minutes or until you end it (no action required). For that duration, you have Advantage on Strength checks, and your Speed increases by 10 feet. Once you use this trait, you can’t use it again until you finish a Long Rest.\n\n***Powerful Build.*** You have Advantage on any ability check you make to end the Grappled condition. You also count as one size larger when determining your carrying capacity.",
+      "traits": [
+        {
+          "name": "Giant Ancestry",
+          "description": "You are descended from Giants. Choose one of the following benefits—a supernatural boon from your ancestry; you can use the chosen benefit a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest:\n\n***Cloud’s Jaunt (Cloud Giant).*** As a Bonus Action, you magically teleport up to 30 feet to an unoccupied space you can see.\n\n***Fire’s Burn (Fire Giant).*** When you hit a target with an attack roll and deal damage to it, you can also deal 1d10 Fire damage to that target.\n\n***Frost’s Chill (Frost Giant).*** When you hit a target with an attack roll and deal damage to it, you can also deal 1d6 Cold damage to that target and reduce its Speed by 10 feet until the start of your next turn.\n\n***Hill’s Tumble (Hill Giant).*** When you hit a Large or smaller creature with an attack roll and deal damage to it, you can give that target the Prone condition.\n\n***Stone’s Endurance (Stone Giant).*** When you take damage, you can take a Reaction to roll 1d12. Add your Constitution modifier to the number rolled and reduce the damage by that total.\n\n***Storm’s Thunder (Storm Giant).*** When you take damage from a creature within 60 feet of you, you can take a Reaction to deal 1d8 Thunder damage to that creature."
+        },
+        {
+          "name": "Large Form",
+          "description": "Starting at character level 5, you can change your size to Large as a Bonus Action if you’re in a big enough space. This transformation lasts for 10 minutes or until you end it (no action required). For that duration, you have Advantage on Strength checks, and your Speed increases by 10 feet. Once you use this trait, you can’t use it again until you finish a Long Rest."
+        },
+        {
+          "name": "Powerful Build",
+          "description": "You have Advantage on any ability check you make to end the Grappled condition. You also count as one size larger when determining your carrying capacity."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 35,
+      "darkvision": 0,
+      "bonuses": {},
+      "subspecies": [
+        {
+          "id": "cloud-giant",
+          "name": "Cloud Giant",
+          "description": "***Cloud’s Jaunt (Cloud Giant).*** As a Bonus Action, you magically teleport up to 30 feet to an unoccupied space you can see.",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "fire-giant",
+          "name": "Fire Giant",
+          "description": "***Fire’s Burn (Fire Giant).*** When you hit a target with an attack roll and deal damage to it, you can also deal 1d10 Fire damage to that target.",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "frost-giant",
+          "name": "Frost Giant",
+          "description": "***Frost’s Chill (Frost Giant).*** When you hit a target with an attack roll and deal damage to it, you can also deal 1d6 Cold damage to that target and reduce its Speed by 10 feet until the start of your next turn.",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "hill-giant",
+          "name": "Hill Giant",
+          "description": "***Hill’s Tumble (Hill Giant).*** When you hit a Large or smaller creature with an attack roll and deal damage to it, you can give that target the Prone condition.",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "stone-giant",
+          "name": "Stone Giant",
+          "description": "***Stone’s Endurance (Stone Giant).*** When you take damage, you can take a Reaction to roll 1d12. Add your Constitution modifier to the number rolled and reduce the damage by that total.",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "storm-giant",
+          "name": "Storm Giant",
+          "description": "***Storm’s Thunder (Storm Giant).*** When you take damage from a creature within 60 feet of you, you can take a Reaction to deal 1d8 Thunder damage to that creature.",
+          "bonuses": {},
+          "traits": []
+        }
+      ]
+    },
+    {
+      "id": "halfling",
+      "name": "Halfling",
+      "description": "**Creature Type:** Humanoid\n\n**Size:** Small (about 2–3 feet tall)\n\n**Speed:** 30 feet\n\nAs a Halfling, you have these special traits.\n\n***Brave.*** You have Advantage on saving throws you make to avoid or end the Frightened condition.\n\n***Halfling Nimbleness.*** You can move through the space of any creature that is a size larger than you, but you can’t stop in the same space.\n\n***Luck.*** When you roll a 1 on the d20 of a D20 Test, you can reroll the die, and you must use the new roll.\n\n***Naturally Stealthy.*** You can take the Hide action even when you are obscured only by a creature that is at least one size larger than you.",
+      "traits": [
+        {
+          "name": "Brave",
+          "description": "You have Advantage on saving throws you make to avoid or end the Frightened condition."
+        },
+        {
+          "name": "Halfling Nimbleness",
+          "description": "You can move through the space of any creature that is a size larger than you, but you can’t stop in the same space."
+        },
+        {
+          "name": "Luck",
+          "description": "When you roll a 1 on the d20 of a D20 Test, you can reroll the die, and you must use the new roll."
+        },
+        {
+          "name": "Naturally Stealthy",
+          "description": "You can take the Hide action even when you are obscured only by a creature that is at least one size larger than you."
+        }
+      ],
+      "sizes": ["small"],
+      "speed": 30,
+      "darkvision": 0,
+      "bonuses": {},
+      "subspecies": []
+    },
+    {
+      "id": "human",
+      "name": "Human",
+      "description": "**Creature Type:** Humanoid\n\n**Size:** Medium (about 4–7 feet tall) or Small (about 2–4 feet tall), chosen when you select this species\n\n**Speed:** 30 feet\n\nAs a Human, you have these special traits.\n\n***Resourceful.*** You gain Heroic Inspiration whenever you finish a Long Rest.\n\n***Skillful.*** You gain proficiency in one skill of your choice.\n\n***Versatile.*** You gain an Origin feat of your choice. Skilled is recommended.",
+      "traits": [
+        {
+          "name": "Resourceful",
+          "description": "You gain Heroic Inspiration whenever you finish a Long Rest."
+        },
+        {
+          "name": "Skillful",
+          "description": "You gain proficiency in one skill of your choice."
+        },
+        {
+          "name": "Versatile",
+          "description": "You gain an Origin feat of your choice. Skilled is recommended."
+        }
+      ],
+      "sizes": ["small", "medium"],
+      "speed": 30,
+      "darkvision": 0,
+      "bonuses": {},
+      "subspecies": []
+    },
+    {
+      "id": "orc",
+      "name": "Orc",
+      "description": "**Creature Type:** Humanoid\n\n**Size:** Medium (about 6–7 feet tall)\n\n**Speed:** 30 feet\n\nAs an Orc, you have these special traits.\n\n***Adrenaline Rush.*** You can take the Dash action as a Bonus Action. When you do so, you gain a number of Temporary Hit Points equal to your Proficiency Bonus.\n\nYou can use this trait a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Short or Long Rest.\n\n***Darkvision.*** You have Darkvision with a range of 120 feet.\n\n***Relentless Endurance.*** When you are reduced to 0 Hit Points but not killed outright, you can drop to 1 Hit Point instead. Once you use this trait, you can’t do so again until you finish a Long Rest.",
+      "traits": [
+        {
+          "name": "Adrenaline Rush",
+          "description": "You can take the Dash action as a Bonus Action. When you do so, you gain a number of Temporary Hit Points equal to your Proficiency Bonus.\n\nYou can use this trait a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Short or Long Rest."
+        },
+        {
+          "name": "Darkvision",
+          "description": "You have Darkvision with a range of 120 feet."
+        },
+        {
+          "name": "Relentless Endurance",
+          "description": "When you are reduced to 0 Hit Points but not killed outright, you can drop to 1 Hit Point instead. Once you use this trait, you can’t do so again until you finish a Long Rest."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 30,
+      "darkvision": 120,
+      "bonuses": {},
+      "subspecies": []
+    },
+    {
+      "id": "tiefling",
+      "name": "Tiefling",
+      "description": "**Creature Type:** Humanoid\n\n**Size:** Medium (about 4–7 feet tall) or Small (about 3–4 feet tall), chosen when you select this species\n\n**Speed:** 30 feet\n\nAs a Tiefling, you have the following special traits.\n\n***Darkvision.*** You have Darkvision with a range of 60 feet.\n\n***Fiendish Legacy.*** You are the recipient of a legacy that grants you supernatural abilities. Choose a legacy from the Fiendish Legacies table. You gain the level 1 benefit of the chosen legacy.\n\nWhen you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.\n\nIntelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the legacy).\n\n| Legacy | Level 1 | Level 3 | Level 5 |\n| --- | --- | --- | --- |\n| Abyssal | You have Resistance to Poison damage. You also know the Poison Spray cantrip. | Ray of Sickness | Hold Person |\n| Chthonic | You have Resistance to Necrotic damage. You also know the Chill Touch cantrip. | False Life | Ray of Enfeeblement |\n| Infernal | You have Resistance to Fire damage. You also know the Fire Bolt cantrip. | Hellish Rebuke | Darkness |\n\n***Otherworldly Presence.*** You know the Thaumaturgy cantrip. When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy trait.",
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You have Darkvision with a range of 60 feet."
+        },
+        {
+          "name": "Fiendish Legacy",
+          "description": "You are the recipient of a legacy that grants you supernatural abilities. Choose a legacy from the Fiendish Legacies table. You gain the level 1 benefit of the chosen legacy.\n\nWhen you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.\n\nIntelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the legacy).\n\n| Legacy | Level 1 | Level 3 | Level 5 |\n| --- | --- | --- | --- |\n| Abyssal | You have Resistance to Poison damage. You also know the Poison Spray cantrip. | Ray of Sickness | Hold Person |\n| Chthonic | You have Resistance to Necrotic damage. You also know the Chill Touch cantrip. | False Life | Ray of Enfeeblement |\n| Infernal | You have Resistance to Fire damage. You also know the Fire Bolt cantrip. | Hellish Rebuke | Darkness |"
+        },
+        {
+          "name": "Otherworldly Presence",
+          "description": "You know the Thaumaturgy cantrip. When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy trait."
+        }
+      ],
+      "sizes": ["small", "medium"],
+      "speed": 30,
+      "darkvision": 60,
+      "bonuses": {},
+      "subspecies": [
+        {
+          "id": "abyssal",
+          "name": "Abyssal",
+          "description": "***Level 1.*** You have Resistance to Poison damage. You also know the Poison Spray cantrip.\n\n***Level 3.*** Ray of Sickness\n\n***Level 5.*** Hold Person",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "chthonic",
+          "name": "Chthonic",
+          "description": "***Level 1.*** You have Resistance to Necrotic damage. You also know the Chill Touch cantrip.\n\n***Level 3.*** False Life\n\n***Level 5.*** Ray of Enfeeblement",
+          "bonuses": {},
+          "traits": []
+        },
+        {
+          "id": "infernal",
+          "name": "Infernal",
+          "description": "***Level 1.*** You have Resistance to Fire damage. You also know the Fire Bolt cantrip.\n\n***Level 3.*** Hellish Rebuke\n\n***Level 5.*** Darkness",
+          "bonuses": {},
+          "traits": []
+        }
+      ]
+    }
+  ],
+  "backgrounds": [
+    {
+      "id": "acolyte",
+      "name": "Acolyte",
+      "description": "**Ability Scores:** Intelligence, Wisdom, Charisma\n\n**Feat:** Magic Initiate (Cleric)\n\n**Skill Proficiencies:** Insight and Religion\n\n**Tool Proficiency:** Calligrapher’s Supplies\n\n**Equipment:** Choose A or B: (A) Calligrapher’s Supplies, Book (prayers), Holy Symbol, Parchment (10 sheets), Robe, 8 GP; or (B) 50 GP",
+      "skills": ["insight", "religion"],
+      "abilities": ["int", "wis", "cha"],
+      "feat": {
+        "name": "Magic Initiate",
+        "description": "Origin Feat\n\nYou gain the following benefits.\n\n***Two Cantrips.*** You learn two cantrips of your choice from the Cleric, Druid, or Wizard spell list. Intelligence, Wisdom, or Charisma is your spellcasting ability for this feat’s spells (choose when you select this feat).\n\n***Level 1 Spell.*** Choose a level 1 spell from the same list you selected for this feat’s cantrips. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have.\n\n***Spell Change.*** Whenever you gain a new level, you can replace one of the spells you chose for this feat with a different spell of the same level from the chosen spell list.\n\n***Repeatable.*** You can take this feat more than once, but you must choose a different spell list each time."
+      },
+      "kit": [
+        {
+          "id": "acolyte",
+          "prompt": "Acolyte: (A) Calligrapher's Supplies, Book (prayers), Holy Symbol, Parchment (10 sheets), Robe, and 8 GP; or (B) 50 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Calligrapher's Supplies, Book, Parchment ×10, Robe, 8 gp",
+              "items": [
+                {
+                  "item": "calligraphers-supplies",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "book",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "parchment",
+                  "qty": 10,
+                  "equipped": false
+                },
+                {
+                  "item": "robe",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 8,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 50 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 50,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "acolyteHolySymbol",
+          "prompt": "Which Holy Symbol?",
+          "when": {
+            "step": "acolyte",
+            "option": "a"
+          },
+          "options": [
+            {
+              "id": "amulet",
+              "label": "Amulet",
+              "items": [
+                {
+                  "item": "amulet",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "emblem",
+              "label": "Emblem",
+              "items": [
+                {
+                  "item": "emblem",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "reliquary",
+              "label": "Reliquary",
+              "items": [
+                {
+                  "item": "reliquary",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "criminal",
+      "name": "Criminal",
+      "description": "**Ability Scores:** Dexterity, Constitution, Intelligence\n\n**Feat:** Alert\n\n**Skill Proficiencies:** Sleight of Hand and Stealth\n\n**Tool Proficiency:** Thieves’ Tools\n\n**Equipment:** Choose A or B: (A) 2 Daggers, Thieves’ Tools, Crowbar, 2 Pouches, Traveler’s Clothes, 16 GP; or (B) 50 GP",
+      "skills": ["sleight-of-hand", "stealth"],
+      "abilities": ["dex", "con", "int"],
+      "feat": {
+        "name": "Alert",
+        "description": "Origin Feat\n\nYou gain the following benefits.\n\n***Initiative Proficiency.*** When you roll Initiative, you can add your Proficiency Bonus to the roll.\n\n***Initiative Swap.*** Immediately after you roll Initiative, you can swap your Initiative with the Initiative of one willing ally in the same combat. You can’t make this swap if you or the ally has the Incapacitated condition."
+      },
+      "kit": [
+        {
+          "id": "criminal",
+          "prompt": "Criminal: (A) 2 Daggers, Thieves' Tools, Crowbar, 2 Pouches, Traveler's Clothes, and 16 GP; or (B) 50 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Dagger ×2, Thieves' Tools, Crowbar, Pouch ×2, Traveler's Clothes, 16 gp",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 2,
+                  "equipped": true
+                },
+                {
+                  "item": "thieves-tools",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "crowbar",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "pouch",
+                  "qty": 2,
+                  "equipped": false
+                },
+                {
+                  "item": "travelers-clothes",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 16,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 50 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 50,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sage",
+      "name": "Sage",
+      "description": "**Ability Scores:** Constitution, Intelligence, Wisdom\n\n**Feat:** Magic Initiate (Wizard)\n\n**Skill Proficiencies:** Arcana and History\n\n**Tool Proficiency:** Calligrapher’s Supplies\n\n**Equipment:** Choose A or B: (A) Quarterstaff, Calligrapher’s Supplies, Book (history), Parchment (8 sheets), Robe, 8 GP; or (B) 50 GP",
+      "skills": ["arcana", "history"],
+      "abilities": ["con", "int", "wis"],
+      "feat": {
+        "name": "Magic Initiate",
+        "description": "Origin Feat\n\nYou gain the following benefits.\n\n***Two Cantrips.*** You learn two cantrips of your choice from the Cleric, Druid, or Wizard spell list. Intelligence, Wisdom, or Charisma is your spellcasting ability for this feat’s spells (choose when you select this feat).\n\n***Level 1 Spell.*** Choose a level 1 spell from the same list you selected for this feat’s cantrips. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have.\n\n***Spell Change.*** Whenever you gain a new level, you can replace one of the spells you chose for this feat with a different spell of the same level from the chosen spell list.\n\n***Repeatable.*** You can take this feat more than once, but you must choose a different spell list each time."
+      },
+      "kit": [
+        {
+          "id": "sage",
+          "prompt": "Sage: (A) Quarterstaff, Calligrapher's Supplies, Book (history), Parchment (8 sheets), Robe, and 8 GP; or (B) 50 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Quarterstaff, Calligrapher's Supplies, Book, Parchment ×8, Robe, 8 gp",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "calligraphers-supplies",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "book",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "parchment",
+                  "qty": 8,
+                  "equipped": false
+                },
+                {
+                  "item": "robe",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 8,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 50 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 50,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "soldier",
+      "name": "Soldier",
+      "description": "**Ability Scores:** Strength, Dexterity, Constitution\n\n**Feat:** Savage Attacker\n\n**Skill Proficiencies:** Athletics and Intimidation\n\n**Tool Proficiency:** Choose one kind of Gaming Set\n\n**Equipment:** Choose A or B: (A) Spear, Shortbow, 20 Arrows, Gaming Set (same as above), Healer’s Kit, Quiver, Traveler’s Clothes, 14 GP; or (B) 50 GP",
+      "skills": ["athletics", "intimidation"],
+      "abilities": ["str", "dex", "con"],
+      "feat": {
+        "name": "Savage Attacker",
+        "description": "Origin Feat\n\nYou’ve trained to deal particularly damaging strikes. Once per turn when you hit a target with a weapon, you can roll the weapon’s damage dice twice and use either roll against the target."
+      },
+      "kit": [
+        {
+          "id": "soldier",
+          "prompt": "Soldier: (A) Spear, Shortbow, 20 Arrows, Gaming Set (the one you're proficient with), Healer's Kit, Quiver, Traveler's Clothes, and 14 GP; or (B) 50 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Spear, Shortbow, Arrows ×20, Healer's Kit, Quiver, Traveler's Clothes, 14 gp",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "arrows",
+                  "qty": 20,
+                  "equipped": false
+                },
+                {
+                  "item": "healer-s-kit",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "quiver",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "travelers-clothes",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 14,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 50 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 50,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "soldierGamingSet",
+          "prompt": "Which Gaming Set (the one you chose for your tool proficiency)?",
+          "when": {
+            "step": "soldier",
+            "option": "a"
+          },
+          "options": [
+            {
+              "id": "dice",
+              "label": "Dice",
+              "items": [
+                {
+                  "item": "dice",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "dragonchess",
+              "label": "Dragonchess",
+              "items": [
+                {
+                  "item": "dragonchess",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "playing-cards",
+              "label": "Playing Cards",
+              "items": [
+                {
+                  "item": "playing-cards",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "three-dragon-ante",
+              "label": "Three-Dragon Ante",
+              "items": [
+                {
+                  "item": "three-dragon-ante",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "classes": [
+    {
+      "id": "barbarian",
+      "skills": {
+        "pick": 2,
+        "from": ["animal-handling", "athletics", "intimidation", "nature", "perception", "survival"]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "path-of-the-berserker",
+          "name": "Path of the Berserker",
+          "description": "**Channel Rage into Violent Fury**\n\nBarbarians who walk the Path of the Berserker direct their Rage primarily toward violence. Their path is one of untrammeled fury, and they thrill in the chaos of battle as they allow their Rage to seize and empower them."
+        }
+      ],
+      "kit": [
+        {
+          "id": "barbarian",
+          "prompt": "Barbarian: (A) Greataxe, 4 Handaxes, Explorer's Pack, and 15 GP; or (B) 75 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Greataxe, Handaxe ×4, Explorer's Pack, 15 gp",
+              "items": [
+                {
+                  "item": "greataxe",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "handaxe",
+                  "qty": 4,
+                  "equipped": true
+                },
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 15,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 75 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 75,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bard",
+      "skills": {
+        "pick": 3,
+        "from": [
+          "acrobatics",
+          "animal-handling",
+          "arcana",
+          "athletics",
+          "deception",
+          "history",
+          "insight",
+          "intimidation",
+          "investigation",
+          "medicine",
+          "nature",
+          "perception",
+          "performance",
+          "persuasion",
+          "religion",
+          "sleight-of-hand",
+          "stealth",
+          "survival"
+        ]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "college-of-lore",
+          "name": "College of Lore",
+          "description": "***Plumb the Depths of Magical Knowledge***\n\nBards of the College of Lore collect spells and secrets from diverse sources, such as scholarly tomes, mystical rites, and peasant tales. The college's members gather in libraries and universities to share their lore with one another. They also meet at festivals or affairs of state, where they can expose corruption, unravel lies, and poke fun at self-important figures of authority."
+        }
+      ],
+      "kit": [
+        {
+          "id": "bard",
+          "prompt": "Bard: (A) Leather Armor, 2 Daggers, Musical Instrument of your choice, Entertainer's Pack, and 19 GP; or (B) 90 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Leather Armor, Dagger ×2, Entertainer's Pack, 19 gp",
+              "items": [
+                {
+                  "item": "leather",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "dagger",
+                  "qty": 2,
+                  "equipped": true
+                },
+                {
+                  "item": "entertainers-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 19,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 90 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 90,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bardInstrument",
+          "prompt": "Which Musical Instrument?",
+          "when": {
+            "step": "bard",
+            "option": "a"
+          },
+          "options": [
+            {
+              "id": "bagpipes",
+              "label": "Bagpipes",
+              "items": [
+                {
+                  "item": "bagpipes",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "drum",
+              "label": "Drum",
+              "items": [
+                {
+                  "item": "drum",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "dulcimer",
+              "label": "Dulcimer",
+              "items": [
+                {
+                  "item": "dulcimer",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "flute",
+              "label": "Flute",
+              "items": [
+                {
+                  "item": "flute",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "horn",
+              "label": "Horn",
+              "items": [
+                {
+                  "item": "horn",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "lute",
+              "label": "Lute",
+              "items": [
+                {
+                  "item": "lute",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "lyre",
+              "label": "Lyre",
+              "items": [
+                {
+                  "item": "lyre",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "pan-flute",
+              "label": "Pan Flute",
+              "items": [
+                {
+                  "item": "pan-flute",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "shawm",
+              "label": "Shawm",
+              "items": [
+                {
+                  "item": "shawm",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "viol",
+              "label": "Viol",
+              "items": [
+                {
+                  "item": "viol",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cleric",
+      "skills": {
+        "pick": 2,
+        "from": ["history", "insight", "medicine", "persuasion", "religion"]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "life-domain",
+          "name": "Life Domain",
+          "description": "***Soothe the Hurts of the World***\n\nThe Life Domain focuses on the positive energy that helps sustain all life in the multiverse. Clerics who tap into this domain are masters of healing, using that life force to cure many hurts.\n\nExistence itself relies on the positive energy associated with this domain, so a Cleric of almost any religious tradition might choose it. This domain is particularly associated with agricultural deities, gods of healing or endurance, and gods of home and community. Religious orders of healing also seek the magic of this domain."
+        }
+      ],
+      "kit": [
+        {
+          "id": "cleric",
+          "prompt": "Cleric: (A) Chain Shirt, Shield, Mace, Holy Symbol, Priest's Pack, and 7 GP; or (B) 110 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Chain Shirt, Shield, Mace, Priest's Pack, 7 gp",
+              "items": [
+                {
+                  "item": "chain-shirt",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "shield",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "priests-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 7,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 110 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 110,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "clericHolySymbol",
+          "prompt": "Which Holy Symbol?",
+          "when": {
+            "step": "cleric",
+            "option": "a"
+          },
+          "options": [
+            {
+              "id": "amulet",
+              "label": "Amulet",
+              "items": [
+                {
+                  "item": "amulet",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "emblem",
+              "label": "Emblem",
+              "items": [
+                {
+                  "item": "emblem",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "reliquary",
+              "label": "Reliquary",
+              "items": [
+                {
+                  "item": "reliquary",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "druid",
+      "skills": {
+        "pick": 2,
+        "from": ["animal-handling", "arcana", "insight", "medicine", "nature", "perception", "religion", "survival"]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "circle-of-the-land",
+          "name": "Circle of the Land",
+          "description": "***Celebrate Connection to the Natural World***\n\nThe Circle of the Land comprises mystics and sages who safeguard ancient knowledge and rites. These Druids meet within sacred circles of trees or standing stones to whisper primal secrets in Druidic. The circle's wisest members preside as the chief priests of their communities."
+        }
+      ],
+      "kit": [
+        {
+          "id": "druid",
+          "prompt": "Druid: (A) Leather Armor, Shield, Sickle, Druidic Focus (Quarterstaff), Explorer's Pack, Herbalism Kit, and 9 GP; or (B) 50 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Leather Armor, Shield, Sickle, Quarterstaff, Explorer's Pack, Herbalism Kit, 9 gp",
+              "items": [
+                {
+                  "item": "leather",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "shield",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "herbalism-kit",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 9,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 50 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 50,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fighter",
+      "skills": {
+        "pick": 2,
+        "from": [
+          "acrobatics",
+          "animal-handling",
+          "athletics",
+          "history",
+          "insight",
+          "intimidation",
+          "persuasion",
+          "perception",
+          "survival"
+        ]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "champion",
+          "name": "Champion",
+          "description": "**Pursue Physical Excellence in Combat**\n\nA Champion focuses on the development of martial prowess in a relentless pursuit of victory. Champions combine rigorous training with physical excellence to deal devastating blows, withstand peril, and garner glory. Whether in athletic contests or bloody battle, Champions strive for the crown of the victor."
+        }
+      ],
+      "kit": [
+        {
+          "id": "fighter",
+          "prompt": "Fighter: (A) Chain Mail, Greatsword, Flail, 8 Javelins, Dungeoneer's Pack, and 4 GP; (B) Studded Leather Armor, Scimitar, Shortsword, Longbow, 20 Arrows, Quiver, Dungeoneer's Pack, and 11 GP; or (C) 155 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Chain Mail, Greatsword, Flail, Javelin ×8, Dungeoneer's Pack, 4 gp",
+              "items": [
+                {
+                  "item": "chain-mail",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "greatsword",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "flail",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "javelin",
+                  "qty": 8,
+                  "equipped": true
+                },
+                {
+                  "item": "dungeoneers-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 4,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: Studded Leather Armor, Scimitar, Shortsword, Longbow, Arrows ×20, Quiver, Dungeoneer's Pack, 11 gp",
+              "items": [
+                {
+                  "item": "studded-leather",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "scimitar",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "shortsword",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "longbow",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "arrows",
+                  "qty": 20,
+                  "equipped": false
+                },
+                {
+                  "item": "quiver",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "dungeoneers-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 11,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "c",
+              "label": "C: 155 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 155,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "monk",
+      "skills": {
+        "pick": 2,
+        "from": ["acrobatics", "athletics", "history", "insight", "religion", "stealth"]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "warrior-of-the-open-hand",
+          "name": "Warrior of the Open Hand",
+          "description": "**Master Unarmed Combat Techniques**\n\nWarriors of the Open Hand are masters of unarmed combat. They learn techniques to push and trip their opponents and manipulate their own energy to protect themselves from harm."
+        }
+      ],
+      "kit": [
+        {
+          "id": "monk",
+          "prompt": "Monk: (A) Spear, 5 Daggers, Artisan's Tools or Musical Instrument chosen for the tool proficiency, Explorer's Pack, and 11 GP; or (B) 50 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Spear, Dagger ×5, Explorer's Pack, 11 gp",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "dagger",
+                  "qty": 5,
+                  "equipped": true
+                },
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 11,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 50 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 50,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "monkTool",
+          "prompt": "Which tool (the one you chose for your tool proficiency)?",
+          "when": {
+            "step": "monk",
+            "option": "a"
+          },
+          "options": [
+            {
+              "id": "alchemists-supplies",
+              "label": "Alchemist's Supplies",
+              "items": [
+                {
+                  "item": "alchemists-supplies",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "bagpipes",
+              "label": "Bagpipes",
+              "items": [
+                {
+                  "item": "bagpipes",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "brewers-supplies",
+              "label": "Brewer's Supplies",
+              "items": [
+                {
+                  "item": "brewers-supplies",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "calligraphers-supplies",
+              "label": "Calligrapher's Supplies",
+              "items": [
+                {
+                  "item": "calligraphers-supplies",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "carpenters-tools",
+              "label": "Carpenter's Tools",
+              "items": [
+                {
+                  "item": "carpenters-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "cartographers-tools",
+              "label": "Cartographer's Tools",
+              "items": [
+                {
+                  "item": "cartographers-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "cobblers-tools",
+              "label": "Cobbler's Tools",
+              "items": [
+                {
+                  "item": "cobblers-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "cooks-utensils",
+              "label": "Cook's Utensils",
+              "items": [
+                {
+                  "item": "cooks-utensils",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "drum",
+              "label": "Drum",
+              "items": [
+                {
+                  "item": "drum",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "dulcimer",
+              "label": "Dulcimer",
+              "items": [
+                {
+                  "item": "dulcimer",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "flute",
+              "label": "Flute",
+              "items": [
+                {
+                  "item": "flute",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "glassblowers-tools",
+              "label": "Glassblower's Tools",
+              "items": [
+                {
+                  "item": "glassblowers-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "horn",
+              "label": "Horn",
+              "items": [
+                {
+                  "item": "horn",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "jewelers-tools",
+              "label": "Jeweler's Tools",
+              "items": [
+                {
+                  "item": "jewelers-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "leatherworkers-tools",
+              "label": "Leatherworker's Tools",
+              "items": [
+                {
+                  "item": "leatherworkers-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "lute",
+              "label": "Lute",
+              "items": [
+                {
+                  "item": "lute",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "lyre",
+              "label": "Lyre",
+              "items": [
+                {
+                  "item": "lyre",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "masons-tools",
+              "label": "Mason's Tools",
+              "items": [
+                {
+                  "item": "masons-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "painters-supplies",
+              "label": "Painter's Supplies",
+              "items": [
+                {
+                  "item": "painters-supplies",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "pan-flute",
+              "label": "Pan Flute",
+              "items": [
+                {
+                  "item": "pan-flute",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "potters-tools",
+              "label": "Potter's Tools",
+              "items": [
+                {
+                  "item": "potters-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "shawm",
+              "label": "Shawm",
+              "items": [
+                {
+                  "item": "shawm",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "smiths-tools",
+              "label": "Smith's Tools",
+              "items": [
+                {
+                  "item": "smiths-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "tinkers-tools",
+              "label": "Tinker's Tools",
+              "items": [
+                {
+                  "item": "tinkers-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "viol",
+              "label": "Viol",
+              "items": [
+                {
+                  "item": "viol",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "weavers-tools",
+              "label": "Weaver's Tools",
+              "items": [
+                {
+                  "item": "weavers-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "woodcarvers-tools",
+              "label": "Woodcarver's Tools",
+              "items": [
+                {
+                  "item": "woodcarvers-tools",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "paladin",
+      "skills": {
+        "pick": 2,
+        "from": ["athletics", "insight", "intimidation", "medicine", "persuasion", "religion"]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "oath-of-devotion",
+          "name": "Oath of Devotion",
+          "description": "*Uphold the Ideals of Justice and Order*\n\nThe Oath of Devotion binds Paladins to the ideals of justice and order. These Paladins meet the archetype of the knight in shining armor. They hold themselves to the highest standards of conduct, and some—for better or worse—hold the rest of the world to the same standards.\n\nMany who swear this oath are devoted to gods of law and good and use their gods’ tenets as the measure of personal devotion. Others hold angels as their ideals and incorporate images of angelic wings into their helmets or coats of arms.\n\nThese paladins share the following tenets:\n\n- Let your word be your promise.\n- Protect the weak and never fear to act.\n- Let your honorable deeds be an example."
+        }
+      ],
+      "kit": [
+        {
+          "id": "paladin",
+          "prompt": "Paladin: (A) Chain Mail, Shield, Longsword, 6 Javelins, Holy Symbol, Priest's Pack, and 9 GP; or (B) 150 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Chain Mail, Shield, Longsword, Javelin ×6, Priest's Pack, 9 gp",
+              "items": [
+                {
+                  "item": "chain-mail",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "shield",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "longsword",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "javelin",
+                  "qty": 6,
+                  "equipped": true
+                },
+                {
+                  "item": "priests-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 9,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 150 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 150,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "paladinHolySymbol",
+          "prompt": "Which Holy Symbol?",
+          "when": {
+            "step": "paladin",
+            "option": "a"
+          },
+          "options": [
+            {
+              "id": "amulet",
+              "label": "Amulet",
+              "items": [
+                {
+                  "item": "amulet",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "emblem",
+              "label": "Emblem",
+              "items": [
+                {
+                  "item": "emblem",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "reliquary",
+              "label": "Reliquary",
+              "items": [
+                {
+                  "item": "reliquary",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ranger",
+      "skills": {
+        "pick": 3,
+        "from": [
+          "animal-handling",
+          "athletics",
+          "insight",
+          "investigation",
+          "nature",
+          "perception",
+          "stealth",
+          "survival"
+        ]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "hunter",
+          "name": "Hunter",
+          "description": "*Protect Nature and People from Destruction*\n\nYou stalk prey in the wilds and elsewhere, using your abilities as a Hunter to protect nature and people everywhere from forces that would destroy them."
+        }
+      ],
+      "kit": [
+        {
+          "id": "ranger",
+          "prompt": "Ranger: (A) Studded Leather Armor, Scimitar, Shortsword, Longbow, 20 Arrows, Quiver, Druidic Focus (sprig of mistletoe), Explorer's Pack, and 7 GP; or (B) 150 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Studded Leather Armor, Scimitar, Shortsword, Longbow, Arrows ×20, Quiver, Sprig of Mistletoe, Explorer's Pack, 7 gp",
+              "items": [
+                {
+                  "item": "studded-leather",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "scimitar",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "shortsword",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "longbow",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "arrows",
+                  "qty": 20,
+                  "equipped": false
+                },
+                {
+                  "item": "quiver",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "sprig-of-mistletoe",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 7,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 150 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 150,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rogue",
+      "skills": {
+        "pick": 4,
+        "from": [
+          "acrobatics",
+          "athletics",
+          "deception",
+          "insight",
+          "intimidation",
+          "investigation",
+          "perception",
+          "persuasion",
+          "sleight-of-hand",
+          "stealth"
+        ]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "thief",
+          "name": "Thief",
+          "description": "*Hunt for Treasure as a Classic Adventurer*\n\nA mix of burglar, treasure hunter, and explorer, you are the epitome of an adventurer. In addition to improving your agility and stealth, you gain abilities useful for delving into ruins and getting maximum benefit from the magic items you find there."
+        }
+      ],
+      "kit": [
+        {
+          "id": "rogue",
+          "prompt": "Rogue: (A) Leather Armor, 2 Daggers, Shortsword, Shortbow, 20 Arrows, Quiver, Thieves' Tools, Burglar's Pack, and 8 GP; or (B) 100 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Leather Armor, Dagger ×2, Shortsword, Shortbow, Arrows ×20, Quiver, Thieves' Tools, Burglar's Pack, 8 gp",
+              "items": [
+                {
+                  "item": "leather",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "dagger",
+                  "qty": 2,
+                  "equipped": true
+                },
+                {
+                  "item": "shortsword",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "arrows",
+                  "qty": 20,
+                  "equipped": false
+                },
+                {
+                  "item": "quiver",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "thieves-tools",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "burglars-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 8,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 100 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 100,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sorcerer",
+      "skills": {
+        "pick": 2,
+        "from": ["arcana", "deception", "insight", "intimidation", "persuasion", "religion"]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "draconic-sorcery",
+          "name": "Draconic Sorcery",
+          "description": "**Breathe the Magic of Dragons**\n\nYour innate magic comes from the gift of a dragon. Perhaps an ancient dragon facing death bequeathed some of its magical power to you or your ancestor. You might have absorbed magic from a site infused with dragons’ power. Or perhaps you handled a treasure taken from a dragon’s hoard that was steeped in draconic power. Or you might have a dragon for an ancestor."
+        }
+      ],
+      "kit": [
+        {
+          "id": "sorcerer",
+          "prompt": "Sorcerer: (A) Spear, 2 Daggers, Arcane Focus (crystal), Dungeoneer's Pack, and 28 GP; or (B) 50 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Spear, Dagger ×2, Crystal, Dungeoneer's Pack, 28 gp",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "dagger",
+                  "qty": 2,
+                  "equipped": true
+                },
+                {
+                  "item": "crystal",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "dungeoneers-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 28,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 50 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 50,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "warlock",
+      "skills": {
+        "pick": 2,
+        "from": ["arcana", "deception", "history", "intimidation", "investigation", "nature", "religion"]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "fiend-patron",
+          "name": "Fiend Patron",
+          "description": "**Make a Deal with the Lower Planes**\n\nYour pact draws on the Lower Planes, the realms of perdition. You might forge a bargain with a demon lord, an archdevil, or another fiend that is especially mighty. That patron’s aims are evil—the corruption or destruction of all things, ultimately including you—and your path is defined by the extent to which you strive against those aims."
+        }
+      ],
+      "kit": [
+        {
+          "id": "warlock",
+          "prompt": "Warlock: (A) Leather Armor, Sickle, 2 Daggers, Arcane Focus (orb), Book (occult lore), Scholar's Pack, and 15 GP; or (B) 100 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Leather Armor, Sickle, Dagger ×2, Orb, Book, Scholar's Pack, 15 gp",
+              "items": [
+                {
+                  "item": "leather",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "dagger",
+                  "qty": 2,
+                  "equipped": true
+                },
+                {
+                  "item": "orb",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "book",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "scholars-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 15,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 100 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 100,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wizard",
+      "skills": {
+        "pick": 2,
+        "from": ["arcana", "history", "insight", "investigation", "medicine", "nature", "religion"]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "evoker",
+          "name": "Evoker",
+          "description": "**Create Explosive Elemental Effects**\n\nYour studies focus on magic that creates powerful elemental effects such as bitter cold, searing flame, rolling thunder, crackling lightning, and burning acid. Some Evokers find employment in military forces, serving as artillery to blast armies from afar. Others use their power to protect others, while some seek their own gain."
+        }
+      ],
+      "kit": [
+        {
+          "id": "wizard",
+          "prompt": "Wizard: (A) 2 Daggers, Arcane Focus (Quarterstaff), Robe, Spellbook, Scholar's Pack, and 5 GP; or (B) 55 GP",
+          "options": [
+            {
+              "id": "a",
+              "label": "A: Dagger ×2, Quarterstaff, Robe, Spellbook, Scholar's Pack, 5 gp",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 2,
+                  "equipped": true
+                },
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "robe",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "spellbook",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "scholars-pack",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "gp",
+                  "qty": 5,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "b",
+              "label": "B: 55 gp",
+              "items": [
+                {
+                  "item": "gp",
+                  "qty": 55,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "gear": [
+    {
+      "type": "gear",
+      "id": "calligraphers-supplies",
+      "name": "Calligrapher's Supplies",
+      "weight": 5
+    },
+    {
+      "type": "gear",
+      "id": "book",
+      "name": "Book",
+      "weight": 5
+    },
+    {
+      "type": "gear",
+      "id": "parchment",
+      "name": "Parchment",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "robe",
+      "name": "Robe",
+      "weight": 4
+    },
+    {
+      "type": "gear",
+      "id": "gp",
+      "name": "Gold piece",
+      "weight": 0.02
+    },
+    {
+      "type": "gear",
+      "id": "amulet",
+      "name": "Amulet",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "emblem",
+      "name": "Emblem",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "reliquary",
+      "name": "Reliquary",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "crowbar",
+      "name": "Crowbar",
+      "weight": 5
+    },
+    {
+      "type": "gear",
+      "id": "pouch",
+      "name": "Pouch",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "travelers-clothes",
+      "name": "Traveler's Clothes",
+      "weight": 4
+    },
+    {
+      "type": "gear",
+      "id": "arrows",
+      "name": "Arrows",
+      "weight": 0.05
+    },
+    {
+      "type": "gear",
+      "id": "quiver",
+      "name": "Quiver",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "dice",
+      "name": "Dice",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "dragonchess",
+      "name": "Dragonchess",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "playing-cards",
+      "name": "Playing Cards",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "three-dragon-ante",
+      "name": "Three-Dragon Ante",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "explorers-pack",
+      "name": "Explorer's Pack",
+      "weight": 55
+    },
+    {
+      "type": "gear",
+      "id": "entertainers-pack",
+      "name": "Entertainer's Pack",
+      "weight": 58.5
+    },
+    {
+      "type": "gear",
+      "id": "bagpipes",
+      "name": "Bagpipes",
+      "weight": 6
+    },
+    {
+      "type": "gear",
+      "id": "drum",
+      "name": "Drum",
+      "weight": 3
+    },
+    {
+      "type": "gear",
+      "id": "dulcimer",
+      "name": "Dulcimer",
+      "weight": 10
+    },
+    {
+      "type": "gear",
+      "id": "flute",
+      "name": "Flute",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "horn",
+      "name": "Horn",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "lute",
+      "name": "Lute",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "lyre",
+      "name": "Lyre",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "pan-flute",
+      "name": "Pan Flute",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "shawm",
+      "name": "Shawm",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "viol",
+      "name": "Viol",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "priests-pack",
+      "name": "Priest's Pack",
+      "weight": 29
+    },
+    {
+      "type": "gear",
+      "id": "herbalism-kit",
+      "name": "Herbalism Kit",
+      "weight": 3
+    },
+    {
+      "type": "gear",
+      "id": "dungeoneers-pack",
+      "name": "Dungeoneer's Pack",
+      "weight": 55
+    },
+    {
+      "type": "gear",
+      "id": "alchemists-supplies",
+      "name": "Alchemist's Supplies",
+      "weight": 8
+    },
+    {
+      "type": "gear",
+      "id": "brewers-supplies",
+      "name": "Brewer's Supplies",
+      "weight": 9
+    },
+    {
+      "type": "gear",
+      "id": "carpenters-tools",
+      "name": "Carpenter's Tools",
+      "weight": 6
+    },
+    {
+      "type": "gear",
+      "id": "cartographers-tools",
+      "name": "Cartographer's Tools",
+      "weight": 6
+    },
+    {
+      "type": "gear",
+      "id": "cobblers-tools",
+      "name": "Cobbler's Tools",
+      "weight": 5
+    },
+    {
+      "type": "gear",
+      "id": "cooks-utensils",
+      "name": "Cook's Utensils",
+      "weight": 8
+    },
+    {
+      "type": "gear",
+      "id": "glassblowers-tools",
+      "name": "Glassblower's Tools",
+      "weight": 5
+    },
+    {
+      "type": "gear",
+      "id": "jewelers-tools",
+      "name": "Jeweler's Tools",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "leatherworkers-tools",
+      "name": "Leatherworker's Tools",
+      "weight": 5
+    },
+    {
+      "type": "gear",
+      "id": "masons-tools",
+      "name": "Mason's Tools",
+      "weight": 8
+    },
+    {
+      "type": "gear",
+      "id": "painters-supplies",
+      "name": "Painter's Supplies",
+      "weight": 5
+    },
+    {
+      "type": "gear",
+      "id": "potters-tools",
+      "name": "Potter's Tools",
+      "weight": 3
+    },
+    {
+      "type": "gear",
+      "id": "smiths-tools",
+      "name": "Smith's Tools",
+      "weight": 8
+    },
+    {
+      "type": "gear",
+      "id": "tinkers-tools",
+      "name": "Tinker's Tools",
+      "weight": 10
+    },
+    {
+      "type": "gear",
+      "id": "weavers-tools",
+      "name": "Weaver's Tools",
+      "weight": 5
+    },
+    {
+      "type": "gear",
+      "id": "woodcarvers-tools",
+      "name": "Woodcarver's Tools",
+      "weight": 5
+    },
+    {
+      "type": "gear",
+      "id": "sprig-of-mistletoe",
+      "name": "Sprig of Mistletoe",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "burglars-pack",
+      "name": "Burglar's Pack",
+      "weight": 42
+    },
+    {
+      "type": "gear",
+      "id": "crystal",
+      "name": "Crystal",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "orb",
+      "name": "Orb",
+      "weight": 3
+    },
+    {
+      "type": "gear",
+      "id": "scholars-pack",
+      "name": "Scholar's Pack",
+      "weight": 22
+    },
+    {
+      "type": "gear",
+      "id": "spellbook",
+      "name": "Spellbook",
+      "weight": 3
+    }
+  ]
+}

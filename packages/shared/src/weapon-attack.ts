@@ -5,6 +5,7 @@ import type { CastSide } from './spells.ts';
 import type { Effect } from './spell-schema.ts';
 import type { Attack, Damage, DamageType } from './stats-schema.ts';
 import type { Rng } from './dice.ts';
+import { divineSmite, hitRiders, markDamage, withWeaponBonus } from './riders.ts';
 
 // One attack with a weapon or natural weapon, with everything that changes
 // it: conditions, bless, sneak attack, rage, and 2024 weapon masteries.
@@ -17,6 +18,8 @@ export interface WeaponAttackInput {
   gridSize: number;
   /** An ally of the attacker is within 5 ft of the target (for sneak attack). */
   allyNearTarget: boolean;
+  /** Spell slot spent on Divine Smite if the attack hits (2014 paladin); the server checks it's allowed. */
+  smite?: number;
   /** Sneak attack was already used this turn. */
   sneakUsed: boolean;
 }
@@ -25,6 +28,8 @@ export interface WeaponAttackOutcome {
   roll: AttackRoll;
   /** Sneak attack dice were added. */
   sneak: boolean;
+  /** Divine Smite landed, so its slot is spent. */
+  smote: boolean;
   /** Damage a grazing weapon deals on a miss. */
   graze?: { amount: number; type: DamageType };
   /** Feet the push mastery moves the target away. */
@@ -43,13 +48,23 @@ function canSneak(input: WeaponAttackInput, advantage: boolean, disadvantage: bo
 }
 
 function extraDamage(input: WeaponAttackInput, sneak: boolean): Damage[] {
-  const { attacker, attack } = input;
+  const { attacker, attack, target } = input;
   const type = attack.damage[0]!.type;
   const extra: Damage[] = [];
   const rage = attacker.sheet.effects.reduce((n, e) => n + (e.meleeDamage ?? 0), 0);
   if (rage && attack.kind === 'melee' && attack.weapon?.ability === 'str') extra.push({ dice: String(rage), type });
   if (sneak) extra.push({ dice: attacker.sheet.sneakAttack!, type });
-  return extra;
+  extra.push(...hitRiders({ id: attacker.token.id, sheet: attacker.sheet }, type).damage);
+  extra.push(...markDamage(target.sheet, attacker.token.id, type));
+  return [...extra, ...smiting(input)];
+}
+
+/** Divine Smite on a melee hit, and Improved Divine Smite's 1d8 on every melee hit (2014 paladin). */
+function smiting({ attacker, attack, target, smite }: WeaponAttackInput): Damage[] {
+  if (attack.kind !== 'melee') return [];
+  const improved = attacker.sheet.features.some((f) => f.id === 'improved-divine-smite');
+  const out: Damage[] = smite ? [divineSmite(smite, target.sheet.type)] : [];
+  return improved ? [...out, { dice: '1d8', type: 'radiant' }] : out;
 }
 
 const MASTERY_EFFECTS: Record<string, Omit<Effect, 'id' | 'source'>> = {
@@ -91,7 +106,8 @@ function grazeDamage(input: WeaponAttackInput): WeaponAttackOutcome['graze'] {
 }
 
 export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.random): WeaponAttackOutcome {
-  const { attacker, target, attack, gridSize } = input;
+  const { attacker, target, gridSize } = input;
+  const attack = withWeaponBonus(input.attack, attacker.sheet);
   const within5 = tokenDistance(attacker.token, target.token, gridSize) <= 5;
   const mods = attackModifiers(attacker, target, { within5 });
   const disadvantage = mods.disadvantage || input.range === 'long';
@@ -99,17 +115,19 @@ export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.ra
   const result = rollAttack(
     attack,
     target.sheet,
-    { ...mods, disadvantage, extraDamage: extraDamage(input, sneak) },
+    { ...mods, disadvantage, extraDamage: extraDamage({ ...input, attack }, sneak) },
     rng,
   );
   const mastery = result.hit ? masteryOnHit(input, rng) : { effects: [], notes: [] };
+  const riders = result.hit ? hitRiders({ id: attacker.token.id, sheet: attacker.sheet }, 'force').used : [];
   return {
     roll: result,
     sneak: sneak && result.hit,
+    smote: !!input.smite && result.hit && attack.kind === 'melee',
     graze: result.hit ? undefined : grazeDamage(input),
     push: result.hit ? pushOnHit(input) : undefined,
     targetEffects: mastery.effects,
-    used: mods.used,
+    used: [...mods.used, ...riders],
     notes: [...(sneak && result.hit ? ['sneak attack'] : []), ...mastery.notes],
   };
 }

@@ -7,7 +7,8 @@
       "y": 2000,
       "w": 2000,
       "h": 2000,
-      "color": "#36502a"
+      "color": "#4c6a38",
+      "texture": "grass"
     },
     {
       "kind": "rect",
@@ -16,7 +17,8 @@
       "y": 2500,
       "w": 600,
       "h": 400,
-      "color": "#3a5f7a"
+      "color": "#4a7a94",
+      "texture": "water"
     },
     {
       "kind": "rect",
@@ -25,7 +27,8 @@
       "y": 2300,
       "w": 500,
       "h": 500,
-      "color": "#4f6b3a"
+      "color": "#7a9a54",
+      "texture": "grass"
     }
   ],
   "walls": [

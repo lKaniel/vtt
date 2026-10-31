@@ -1,86 +1,24 @@
-import { srdFor, type Combat, type ServerMessage, type Token } from '@vtt/shared';
+import { srdFor, type ServerMessage } from '@vtt/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Session } from './session.ts';
-
-/** The most recently opened FakeWebSocket. */
-let lastSocket: FakeWebSocket | undefined;
-
-/** Stands in for the browser WebSocket. */
-class FakeWebSocket {
-  static readonly OPEN = 1;
-  readyState = FakeWebSocket.OPEN;
-  sent: unknown[] = [];
-  onmessage?: (e: { data: string }) => void;
-  onclose?: (e: { code: number }) => void;
-
-  constructor(readonly url: string) {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias -- tests reach the socket the session opened
-    lastSocket = this;
-  }
-
-  send(text: string): void {
-    this.sent.push(JSON.parse(text));
-  }
-
-  close(): void {
-    this.readyState = 3;
-  }
-
-  receive(msg: ServerMessage): void {
-    this.onmessage?.({ data: JSON.stringify(msg) });
-  }
-}
-
-const token = (id: string, x = 50, y = 50): Token => ({
-  id,
-  name: id,
-  x,
-  y,
-  size: 1,
-  color: '#fff',
-  speed: 30,
-  darkvision: 0,
-  controllers: ['ana'],
-  hidden: false,
-});
-
-function welcome(tokens: Token[] = [token('hero')]): ServerMessage {
-  return {
-    t: 'welcome',
-    world: { name: 'Test', gridSize: 100, chunkSize: 1000, start: [0, 0], darkness: 0, vision: true, rules: '2014' },
-    you: { id: 'ana', name: 'Ana', role: 'player', color: '#f00' },
-    tokens,
-    chat: [],
-    combat: null,
-  };
-}
-
-const fight = (turn: number, move = 30): Combat => ({
-  round: 1,
-  turn,
-  order: [
-    { token: 'goblin', initiative: 15 },
-    { token: 'hero', initiative: 10 },
-  ],
-  left: { move, action: true, bonus: true, attacks: 0, used: [] },
-  side: {},
-});
+import {
+  closeSession,
+  latestSocket,
+  fight,
+  openSession,
+  token,
+  welcome,
+  type FakeWebSocket,
+} from './session.fixtures.ts';
 
 let session: Session;
 let ws: FakeWebSocket;
 
 beforeEach(() => {
-  vi.stubGlobal('WebSocket', FakeWebSocket);
-  vi.stubGlobal('location', { protocol: 'http:', host: 'table:3000' });
-  session = new Session('ana');
-  session.connect();
-  ws = lastSocket!;
+  ({ session, ws } = openSession());
 });
 
-afterEach(() => {
-  session.close();
-  vi.unstubAllGlobals();
-});
+afterEach(() => closeSession(session));
 
 describe('Session', () => {
   it('joins with the player id and takes the welcome', () => {
@@ -89,6 +27,29 @@ describe('Session', () => {
     ws.receive(welcome());
     expect(session.status).toBe('open');
     expect(session.canControl(session.tokens.get('hero')!)).toBe(true);
+  });
+
+  it('follows the time of day without reconnecting', () => {
+    ws.receive(welcome());
+    const lit = vi.fn();
+    session.on('lighting', lit);
+    ws.receive({ t: 'lighting', darkness: 0.7 });
+    expect(session.world?.darkness).toBeCloseTo(0.7);
+    expect(lit).toHaveBeenCalled();
+  });
+
+  it('picks a map tool, which puts away any readied action, and sends map edits', () => {
+    ws.receive(welcome());
+    session.setMapTool('wall');
+    expect(session.mapTool).toBe('wall');
+    session.editMap({ op: 'remove', chunk: '0_0', id: 'w' });
+    expect(ws.sent.at(-1)).toEqual({ t: 'mapEdit', edit: { op: 'remove', chunk: '0_0', id: 'w' } });
+    session.setLightPreset('campfire');
+    expect(session.lightPreset).toBe('campfire');
+    session.setDarkness(0.4);
+    expect(ws.sent.at(-1)).toEqual({ t: 'darkness', darkness: 0.4 });
+    session.setMapTool(undefined);
+    expect(session.mapTool).toBeUndefined();
   });
 
   it('keeps only chunks in view', () => {
@@ -160,13 +121,20 @@ describe('Session', () => {
     ws.onclose?.({ code: 1006 });
     expect(session.status).toBe('closed');
     vi.advanceTimersByTime(1000);
-    const second = lastSocket!;
+    const second = latestSocket()!;
     expect(second).not.toBe(ws);
     second.onclose?.({ code: 4001 });
     vi.advanceTimersByTime(1000);
-    expect(lastSocket).toBe(second);
-    expect(session.error?.message).toMatch(/Unknown player/);
+    expect(latestSocket()).toBe(second);
+    expect(session.error?.message).toMatch(/no seat/);
     vi.useRealTimers();
+  });
+
+  it('joins as the signed-in account when no seat is given', () => {
+    const own = new Session();
+    own.connect();
+    expect(latestSocket()!.url).toMatch(/\/ws$/);
+    own.close();
   });
 
   it('passes focus requests to the map', () => {
@@ -211,6 +179,16 @@ describe('Session', () => {
       expect(session.armed).toBeUndefined();
     });
 
+    it('smites with a chosen slot on the armed attack, then forgets the choice', () => {
+      session.select('hero');
+      session.arm('Longsword');
+      session.setSmite(2);
+      session.attack('goblin');
+      expect(ws.sent.at(-1)).toMatchObject({ t: 'attack', attack: 'Longsword', smite: 2 });
+      session.arm('Longsword');
+      expect(session.smite).toBeUndefined();
+    });
+
     it('drops the armed attack when the selection changes', () => {
       session.select('hero');
       session.arm('Longsword');
@@ -222,6 +200,7 @@ describe('Session', () => {
       const wizard = () => ({
         ...token('hero'),
         sheet: {
+          effects: [],
           caster: {
             level: 5,
             spells: [srdFor('2014').spells.get('magic-missile')!, srdFor('2014').spells.get('fireball')!],
@@ -251,6 +230,27 @@ describe('Session', () => {
         expect(session.aiming).toBeUndefined();
       });
 
+      it('aims a feature like a spell and uses it on the picked creature', () => {
+        const inspiration = {
+          id: 'bardic-inspiration',
+          name: 'Bardic Inspiration',
+          level: 1,
+          recharge: 'long',
+          action: 'bonus',
+          spell: { targets: 1, range: 60 },
+        };
+        ws.receive({ t: 'token', token: { ...wizard(), sheet: { features: [inspiration] } as never } });
+        session.aimFeature('bardic-inspiration');
+        expect(session.aiming).toMatchObject({ mode: 'creatures', need: 1, feature: 'bardic-inspiration' });
+        session.pickTarget('orc');
+        expect(ws.sent.at(-1)).toEqual({
+          t: 'feature',
+          token: 'hero',
+          feature: 'bardic-inspiration',
+          targets: ['orc'],
+        });
+      });
+
       it('casts with fewer targets on confirm', () => {
         session.aim('magic-missile', 1);
         session.pickTarget('goblin');
@@ -268,7 +268,7 @@ describe('Session', () => {
         const familiar = srdFor('2014').spells.get('find-familiar')!;
         ws.receive({
           t: 'token',
-          token: { ...wizard(), sheet: { caster: { level: 5, spells: [familiar] } } as never },
+          token: { ...wizard(), sheet: { caster: { level: 5, spells: [familiar] }, effects: [] } as never },
         });
         session.aim('find-familiar', 1);
         session.chooseSummon('owl');
@@ -337,81 +337,5 @@ describe('Session', () => {
         { t: 'equip', token: 'hero', item: 2, equipped: true },
       ]);
     });
-  });
-});
-
-describe('the GM tools', () => {
-  const gmWelcome = (): ServerMessage => ({
-    ...(welcome() as Extract<ServerMessage, { t: 'welcome' }>),
-    you: { id: 'gm', name: 'GM', role: 'gm', color: '#fc0' },
-    players: [{ id: 'gm', name: 'GM', role: 'gm', color: '#fc0' }],
-    actors: [{ ...token('bandit'), folder: 'Road' }],
-  });
-
-  it('keeps the Actors list up to date', () => {
-    ws.receive(gmWelcome());
-    expect([...session.actors.keys()]).toEqual(['bandit']);
-    expect(session.players.map((p) => p.id)).toEqual(['gm']);
-    ws.receive({ t: 'actor', actor: { ...token('wolf') } });
-    ws.receive({ t: 'actorGone', id: 'bandit' });
-    expect([...session.actors.keys()]).toEqual(['wolf']);
-  });
-
-  it('opens a sheet, switches it to editing, and closes it when the token goes', () => {
-    ws.receive(gmWelcome());
-    session.openSheet({ kind: 'token', id: 'hero' });
-    expect(session.sheet).toEqual({ kind: 'token', id: 'hero', edit: false });
-    session.setSheetEdit(true);
-    expect(session.sheet?.edit).toBe(true);
-    ws.receive({ t: 'tokenGone', id: 'hero' });
-    expect(session.sheet).toBeUndefined();
-  });
-
-  it('only lets the GM edit a sheet', () => {
-    ws.receive(welcome());
-    session.openSheet({ kind: 'token', id: 'hero' }, true);
-    expect(session.sheet?.edit).toBe(false);
-  });
-
-  it('saves a hotbar layout', () => {
-    ws.receive(welcome());
-    session.setHotbar('hero', ['spell:fire-bolt', null]);
-    expect(ws.sent.at(-1)).toEqual({ t: 'hotbar', token: 'hero', slots: ['spell:fire-bolt', null] });
-  });
-
-  it('sends drops and shows why one was refused', () => {
-    ws.receive(gmWelcome());
-    session.spawnHidden = true;
-    session.drop({ kind: 'monster', id: 'goblin', rules: '2014' }, [10, 10]);
-    expect(ws.sent.at(-1)).toMatchObject({ t: 'spawn', hidden: true });
-    session.drop({ kind: 'item', id: 'dagger' }, [900, 900]);
-    expect(session.error?.message).toBe('Drop items on a creature');
-  });
-});
-
-describe('the GM tools send', () => {
-  it('edits, deletions, spawns and actors', () => {
-    ws.receive(welcome());
-    session.editToken('hero', {});
-    session.editToken('hero', { hp: 3 });
-    session.deleteToken('hero');
-    session.setSpawnHidden(false);
-    session.spawn({ kind: 'actor', id: 'bandit' }, [5, 5]);
-    session.saveActor({ ...token('bandit') });
-    session.deleteActor('bandit');
-    expect(ws.sent.slice(-5)).toEqual([
-      { t: 'editToken', token: 'hero', patch: { hp: 3 } },
-      { t: 'deleteToken', token: 'hero' },
-      { t: 'spawn', from: { kind: 'actor', id: 'bandit' }, at: [5, 5], hidden: false },
-      { t: 'saveActor', actor: token('bandit') },
-      { t: 'deleteActor', actor: 'bandit' },
-    ]);
-  });
-
-  it('places things at the centre of the screen', () => {
-    ws.receive(welcome());
-    expect(session.viewCentre()).toEqual([0, 0]);
-    session.viewRect = { x: 100, y: 200, w: 400, h: 200 };
-    expect(session.viewCentre()).toEqual([300, 300]);
   });
 });

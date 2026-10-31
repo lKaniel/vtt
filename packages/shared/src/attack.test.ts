@@ -32,11 +32,13 @@ const bow: Attack = {
 };
 
 const target = (over: Partial<Creature> = {}): Creature => ({
+  edition: '2014',
   abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
   proficiency: 2,
   ac: 15,
   hp: 20,
   maxHp: 20,
+  tempHp: 0,
   speed: 30,
   initiative: 0,
   attacks: [],
@@ -114,6 +116,11 @@ describe('applyDamage', () => {
     expect(applyDamage(t, [{ amount: 7, type: 'fire' }])).toMatchObject({ dealt: [3], hp: 17 });
     expect(applyDamage(t, [{ amount: 4, type: 'bludgeoning' }])).toMatchObject({ dealt: [8], hp: 12 });
     expect(applyDamage(t, [{ amount: 9, type: 'poison' }])).toMatchObject({ dealt: [0], hp: 20 });
+  });
+
+  it('takes damage off temporary hit points first', () => {
+    expect(applyDamage(target({ tempHp: 5 }), [{ amount: 3, type: 'fire' }])).toMatchObject({ hp: 20, tempHp: 2 });
+    expect(applyDamage(target({ tempHp: 5 }), [{ amount: 8, type: 'fire' }])).toMatchObject({ hp: 17, tempHp: 0 });
   });
 
   it('never goes below 0 hp', () => {

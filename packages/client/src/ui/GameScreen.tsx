@@ -6,11 +6,12 @@ import { stepTarget } from '../stepping.ts';
 import { activateTile, ActionBar, canActivate } from './ActionBar.tsx';
 import { CharacterSheet } from './CharacterSheet.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
+import { MapTools } from './MapTools.tsx';
 import { PartyBar } from './PartyBar.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
 
-export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; onLeave: () => void }>) {
+export function GameScreen({ playerId, onLeave }: Readonly<{ playerId?: string; onLeave: () => void }>) {
   const [session] = useState(() => new Session(playerId));
   const host = useRef<HTMLDivElement>(null);
   useSession(session);
@@ -30,7 +31,8 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target)) return;
-      if (e.key === 'c') toggleSheet(session);
+      if (e.key === 'Escape' && session.mapTool) session.setMapTool(undefined);
+      else if (e.key === 'c') toggleSheet(session);
       else if (e.key === 'e') toggleEditor(session);
       else handleGameKey(session, e);
     };
@@ -51,11 +53,12 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
           {session.you?.name}
         </span>
         <button className="link" onClick={onLeave}>
-          Change seat
+          Leave
         </button>
       </header>
       <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />
       <PartyBar session={session} />
+      <MapTools session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <CharacterSheet session={session} />
       <ChatPanel session={session} />
@@ -76,11 +79,14 @@ function toggleSheet(session: Session): void {
   else if (session.selected) session.openSheet({ kind: 'token', id: session.selected });
 }
 
-/** GM: E switches the open sheet to edit mode and back, or opens the selected creature's sheet for editing. */
+/**
+ * E switches the open sheet to edit mode and back, or opens the selected
+ * creature's sheet for editing: for the GM, and trusted players on their own tokens.
+ */
 function toggleEditor(session: Session): void {
-  if (session.you?.role !== 'gm') return;
   if (session.sheet) session.setSheetEdit(!session.sheet.edit);
-  else if (session.selected) session.openSheet({ kind: 'token', id: session.selected }, true);
+  else if (session.selected && session.canEdit(session.selected))
+    session.openSheet({ kind: 'token', id: session.selected }, true);
 }
 
 /** Arrow keys walk the selected creature one square. */

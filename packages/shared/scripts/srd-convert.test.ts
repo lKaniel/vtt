@@ -115,6 +115,20 @@ describe('convertClass', () => {
 });
 
 describe('convertMonster', () => {
+  it('reads every sense, with darkvision', () => {
+    const dragon: Entry = {
+      id: 'monsters.dragon',
+      type: 'monster',
+      fields: { ac: 18, hp: 200, cr: 10, darkvision: 120, blindsight: 60, tremorsense: 30, truesight: 10 },
+    };
+    expect(convertMonster(pack([dragon]), dragon)).toMatchObject({
+      darkvision: 120,
+      blindsight: 60,
+      tremorsense: 30,
+      truesight: 10,
+    });
+  });
+
   it('builds a stat block with attacks, thrown weapons and defenses', () => {
     const ogre: Entry = {
       id: 'monsters.ogre',

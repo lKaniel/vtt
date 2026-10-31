@@ -322,7 +322,7 @@ export function FeaturesPage({ sheet, edit, update }: Readonly<SheetProps>) {
 
 export function EffectsPage({ session, value, kind }: Readonly<SheetProps>) {
   const effects = value.effects ?? [];
-  const gm = session.you?.role === 'gm';
+  const gm = session.isGm();
   if (!effects.length && !value.concentration) return <p className="muted">Nothing is affecting {value.name}.</p>;
   return (
     <ul className="rows">

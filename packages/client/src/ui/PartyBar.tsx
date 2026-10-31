@@ -1,12 +1,13 @@
+import { canObserveToken, isGm, isPartyToken } from '@vtt/shared';
 import type { Session } from '../session.ts';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 
 /** Portraits of your party down the left edge. Click to select, double-click to jump to them. */
 export function PartyBar({ session }: Readonly<{ session: Session }>) {
   const you = session.you;
-  // Players see their own tokens; the GM sees the whole party.
+  // Players see the tokens they own or observe; the GM sees the whole party.
   const mine = [...session.tokens.values()].filter((t) =>
-    you?.role === 'gm' ? t.controllers.length > 0 : !!you && t.controllers.includes(you.id),
+    you && isGm(you) ? isPartyToken(t) : !!you && canObserveToken(t, you),
   );
   if (mine.length === 0) return null;
   const turn = session.turnToken()?.id;

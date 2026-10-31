@@ -5,6 +5,7 @@ import {
   attackModifiers,
   canAct,
   concentrationDc,
+  afterDamage,
   dropConcentration,
   rollSave,
   saveModifiers,
@@ -123,5 +124,24 @@ describe('turns and concentration', () => {
     expect(out.changed.map((t) => t.id)).toEqual(['caster', 'ally']);
     expect(out.changed[0]!.concentration).toBeUndefined();
     expect(out.changed[1]!.effects?.map((e) => e.id)).toEqual(['e1']);
+  });
+});
+
+describe('effects that taking damage ends', () => {
+  it('wakes a sleeper and snaps a creature out of a hypnotic pattern', () => {
+    const t = withEffects('t', { name: 'Sleep', endsOnDamage: true, conditions: ['unconscious'] }, { name: 'Bless' });
+    const out = afterDamage(t, sheet(t), () => 0);
+    expect(out.token.effects?.map((e) => e.name)).toEqual(['Bless']);
+    expect(out.notes).toEqual(['t wakes from Sleep']);
+  });
+
+  it('gives a new save, with advantage, against effects like hideous laughter', () => {
+    const laughing = { name: 'Laughter', saveOnDamage: true, save: { ability: 'wis' as const, dc: 15 } };
+    const t = withEffects('t', laughing);
+    // Advantage: the better of 3 and 19 saves.
+    const rolls = [(3 - 1) / 20, (19 - 1) / 20];
+    const out = afterDamage(t, sheet(t), () => rolls.shift() ?? 0);
+    expect(out.token.effects).toBeUndefined();
+    expect(out.notes[0]).toMatch(/shakes off Laughter/);
   });
 });

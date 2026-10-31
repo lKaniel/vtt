@@ -1,11 +1,14 @@
 import {
+  canControlToken,
+  canEditToken,
   currentTurn,
+  featureSpell,
+  isGm,
   type Actor,
   type Chunk,
   type ChatMessage,
   type ClientMessage,
   type Combat,
-  type DoorState,
   type Player,
   type Point,
   type Rect,
@@ -17,7 +20,9 @@ import {
 } from '@vtt/shared';
 
 import { dropMessage, type DragPayload } from './drops.ts';
-import { aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
+import { Commands } from './session-commands.ts';
+import type { LightPreset, MapTool } from './map-tools.ts';
+import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
 
@@ -46,13 +51,17 @@ export interface SessionEvents {
   focus: (point: Point) => void;
   /** A chat message arrived live (not the history sent on joining). */
   chat: (message: ChatMessage) => void;
+  /** The time of day changed. */
+  lighting: () => void;
+  /** GM: a map tool was picked or put away. */
+  mapTool: () => void;
 }
 
 /**
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session {
+export class Session extends Commands {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -64,6 +73,8 @@ export class Session {
   combat: Combat | null = null;
   /** The attack the selected token will make on the next token clicked. */
   armed?: string;
+  /** Slot level to Divine Smite with on the armed attack. */
+  smite?: number;
   /** The spell the selected token is aiming, and what it has picked so far. */
   aiming?: Aiming;
   error?: { message: string; at: number };
@@ -71,10 +82,13 @@ export class Session {
   players: Player[] = [];
   /** GM only: the Actors list. */
   readonly actors = new Map<string, Actor>();
-  /** The open character sheet; `edit` is the GM's edit mode. */
+  /** The open character sheet; `edit` is edit mode (the GM's, or a trusted owner's). */
   sheet?: SheetTarget & { edit: boolean };
   /** GM only: creatures dropped on the map arrive hidden from the players. */
   spawnHidden = false;
+  /** GM: the map tool in use, and the light the light tool places. */
+  mapTool?: MapTool;
+  lightPreset: LightPreset = 'torch';
   /** The part of the world on screen, kept up to date by the map. */
   viewRect?: Rect;
   /** Bumped on every change; React re-renders on it. */
@@ -86,7 +100,10 @@ export class Session {
   private closed = false;
   private retry?: ReturnType<typeof setTimeout>;
 
-  constructor(readonly playerId: string) {}
+  /** `playerId` sits at one of the world's seats; without it the signed-in account joins. */
+  constructor(readonly playerId?: string) {
+    super();
+  }
 
   on<K extends keyof SessionEvents>(event: K, fn: SessionEvents[K]): () => void {
     const set = this.listeners.get(event) ?? new Set();
@@ -108,7 +125,8 @@ export class Session {
 
   connect(): void {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${proto}://${location.host}/ws?player=${encodeURIComponent(this.playerId)}`);
+    const seat = this.playerId ? `?player=${encodeURIComponent(this.playerId)}` : '';
+    const ws = new WebSocket(`${proto}://${location.host}/ws${seat}`);
     this.ws = ws;
     this.status = 'connecting';
     this.changed();
@@ -116,7 +134,7 @@ export class Session {
     ws.onclose = (e) => {
       if (this.ws !== ws) return;
       this.status = 'closed';
-      if (e.code === 4001) this.showError('Unknown player. Pick a seat again.');
+      if (e.code === 4001) this.showError('You have no seat at this world. Join again from your account.');
       this.changed();
       if (!this.closed && e.code !== 4001) this.retry = setTimeout(() => this.connect(), 1000);
     };
@@ -145,16 +163,16 @@ export class Session {
     this.send({ t: 'view', chunks: keys });
   }
 
-  move(token: string, to: Point): void {
-    this.send({ t: 'move', token, to });
+  setMapTool(tool: MapTool | undefined): void {
+    this.mapTool = tool;
+    if (tool) this.select(undefined);
+    this.emit('mapTool');
+    this.changed();
   }
 
-  setDoor(chunk: string, wall: string, state: DoorState): void {
-    this.send({ t: 'door', chunk, wall, state });
-  }
-
-  say(text: string): void {
-    this.send({ t: 'chat', text });
+  setLightPreset(preset: LightPreset): void {
+    this.lightPreset = preset;
+    this.changed();
   }
 
   select(id: string | undefined): void {
@@ -168,6 +186,7 @@ export class Session {
   /** Readies an attack of the selected token; the next token clicked is the target. */
   arm(attack: string | undefined): void {
     this.armed = attack;
+    this.smite = undefined;
     this.aiming = undefined;
     this.emit('armed');
     this.changed();
@@ -175,10 +194,20 @@ export class Session {
 
   /** Readies a spell of the selected token with a slot, or for free; self spells go off at once. */
   aim(spellId: string | undefined, slot = 0, free = false): void {
-    const caster = this.selected ? this.tokens.get(this.selected)?.sheet?.caster : undefined;
-    const spell = caster?.spells.find((s) => s.id === spellId);
+    const sheet = this.selected ? this.tokens.get(this.selected)?.sheet : undefined;
     this.armed = undefined;
-    this.aiming = spell && { ...aimSpell(spell, slot, caster!.level), ...(free && { free }) };
+    this.aiming = aimFor(sheet, spellId, { slot, free });
+    if (this.aiming?.mode === 'self') return this.confirmCast();
+    this.emit('armed');
+    this.changed();
+  }
+
+  /** Readies a feature of the selected token that's aimed like a spell; one without targets goes off at once. */
+  aimFeature(featureId: string | undefined): void {
+    const token = this.selected ? this.tokens.get(this.selected) : undefined;
+    const feature = token?.sheet?.features.find((f) => f.id === featureId);
+    this.armed = undefined;
+    this.aiming = feature && { ...aimSpell(featureSpell(feature), 0, token?.stats?.level ?? 1), feature: feature.id };
     if (this.aiming?.mode === 'self') return this.confirmCast();
     this.emit('armed');
     this.changed();
@@ -222,59 +251,40 @@ export class Session {
     this.aim(undefined);
   }
 
-  useFeature(token: string, feature: string): void {
-    this.send({ t: 'feature', token, feature });
-  }
-
-  rest(tokens: string[], kind: 'short' | 'long'): void {
-    this.send({ t: 'rest', tokens, kind });
-  }
-
-  dropConcentration(token: string): void {
-    this.send({ t: 'dropConcentration', token });
-  }
-
-  removeEffect(token: string, effect: string): void {
-    this.send({ t: 'removeEffect', token, effect });
+  /** Spends a slot of this level on Divine Smite if the armed attack hits; undefined for no smite. */
+  setSmite(slot: number | undefined): void {
+    this.smite = slot;
+    this.changed();
   }
 
   attack(target: string): void {
     if (!this.selected || !this.armed) return;
-    this.send({ t: 'attack', attacker: this.selected, target, attack: this.armed });
+    const smite = this.smite ? { smite: this.smite } : {};
+    this.send({ t: 'attack', attacker: this.selected, target, attack: this.armed, ...smite });
     this.arm(undefined);
-  }
-
-  endTurn(): void {
-    this.send({ t: 'endTurn' });
-  }
-
-  startCombat(tokens: string[]): void {
-    this.send({ t: 'combatStart', tokens });
-  }
-
-  endCombat(): void {
-    this.send({ t: 'combatEnd' });
-  }
-
-  equip(token: string, item: number, equipped: boolean): void {
-    this.send({ t: 'equip', token, item, equipped });
   }
 
   // GM tools ---------------------------------------------------------------
 
-  /** Opens a sheet (or closes it with undefined); only the GM can open one for editing. */
+  /** Opens a sheet (or closes it with undefined); only those who may edit it can open it for editing. */
   openSheet(target: SheetTarget | undefined, edit = false): void {
-    this.sheet = target && { ...target, edit: edit && this.you?.role === 'gm' };
+    const editable = target && (target.kind === 'actor' ? this.isGm() : this.canEdit(target.id));
+    this.sheet = target && { ...target, edit: edit && !!editable };
     this.changed();
+  }
+
+  isGm(): boolean {
+    return !!this.you && isGm(this.you);
+  }
+
+  /** The GM edits any token; a trusted player the ones they own. */
+  canEdit(id: string): boolean {
+    const token = this.tokens.get(id);
+    return !!this.you && !!token && canEditToken(token, this.you);
   }
 
   setSheetEdit(edit: boolean): void {
     if (this.sheet) this.openSheet(this.sheet, edit);
-  }
-
-  /** Saves how the creature's action bar is arranged. */
-  setHotbar(token: string, slots: (string | null)[]): void {
-    this.send({ t: 'hotbar', token, slots });
   }
 
   setSpawnHidden(hidden: boolean): void {
@@ -282,24 +292,8 @@ export class Session {
     this.changed();
   }
 
-  editToken(token: string, patch: Record<string, unknown>): void {
-    if (Object.keys(patch).length) this.send({ t: 'editToken', token, patch });
-  }
-
-  deleteToken(token: string): void {
-    this.send({ t: 'deleteToken', token });
-  }
-
   spawn(from: SpawnSource, at: Point): void {
     this.send({ t: 'spawn', from, at, hidden: this.spawnHidden });
-  }
-
-  saveActor(actor: Actor): void {
-    this.send({ t: 'saveActor', actor });
-  }
-
-  deleteActor(id: string): void {
-    this.send({ t: 'deleteActor', actor: id });
   }
 
   /** Something dragged from the Actors list or Compendium was dropped on the map at `p`. */
@@ -348,7 +342,7 @@ export class Session {
   }
 
   canControl(token: Token): boolean {
-    return !!this.you && (this.you.role === 'gm' || token.controllers.includes(this.you.id));
+    return !!this.you && canControlToken(token, this.you);
   }
 
   showError(message: string): void {
@@ -390,8 +384,21 @@ export class Session {
       case 'actorGone':
         this.onActor(msg);
         return true;
+      default:
+        return this.applyOther(msg);
+    }
+  }
+
+  private applyOther(msg: ServerMessage): boolean {
+    switch (msg.t) {
+      case 'lighting':
+        if (this.world) this.world = { ...this.world, darkness: msg.darkness };
+        this.emit('lighting');
+        return true;
       case 'error':
         this.showError(msg.message);
+        return false;
+      default:
         return false;
     }
   }
@@ -420,11 +427,18 @@ export class Session {
     this.players = msg.players ?? [];
     this.actors.clear();
     for (const a of msg.actors ?? []) this.actors.set(a.id, a);
+    // A new role may take edit mode away (or the creature out of sight).
+    if (this.sheet) this.reopenSheet(this.sheet);
     // A reconnect starts from scratch: ask for the chunks again.
     this.chunks.clear();
     this.emit('welcome');
     for (const t of msg.tokens) this.emit('token', t);
     if (this.view.length) this.send({ t: 'view', chunks: this.view });
+  }
+
+  private reopenSheet(sheet: SheetTarget & { edit: boolean }): void {
+    const there = sheet.kind === 'token' ? this.tokens.has(sheet.id) : this.actors.has(sheet.id);
+    this.openSheet(there ? sheet : undefined, sheet.edit);
   }
 
   private onActor(msg: Extract<ServerMessage, { t: 'actor' | 'actorGone' }>): void {

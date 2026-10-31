@@ -1,6 +1,8 @@
 import {
+  afterDamage,
   canAct,
   canControlToken,
+  isGm,
   concentrationDc,
   currentTurn,
   dropConcentration,
@@ -144,6 +146,16 @@ export class Table {
     this.setBudget(token, next);
   }
 
+  /** Marks one spell slot of level `slot` as spent. */
+  spendSlot(id: string, slot: number): void {
+    const token = this.store.tokens.get(id);
+    if (!token || slot < 1) return;
+    const slots = [...(token.spent?.slots ?? [])];
+    while (slots.length < slot) slots.push(0);
+    slots[slot - 1]! += 1;
+    this.store.setToken({ ...token, spent: { ...token.spent, slots } });
+  }
+
   // ---- Consequences ------------------------------------------------------
 
   /** Ends effects that did their one job (guiding bolt's advantage, a vexing hit). */
@@ -155,12 +167,25 @@ export class Table {
     }
   }
 
-  /** Sets a creature's hit points after it took `damage`, then checks its concentration. */
-  hurt(token: Token, hp: number, damage: number): void {
+  /**
+   * Sets a creature's hit points (and temporary ones) after it took `damage`,
+   * ends what damage ends, then checks its concentration.
+   */
+  hurt(token: Token, after: { hp: number; tempHp?: number }, damage: number): void {
     const current = this.store.tokens.get(token.id) ?? token;
-    this.store.setToken({ ...current, hp });
+    const tempHp = after.tempHp ?? current.tempHp ?? 0;
+    const unhurt = after.hp >= (this.sheetOf(current)?.maxHp ?? Infinity);
+    const hurt = { ...current, hp: unhurt ? undefined : after.hp, tempHp: tempHp > 0 ? tempHp : undefined };
+    const shaken = damage > 0 ? afterDamage(hurt, this.sheetOf(hurt)!, this.rng) : { token: hurt, notes: [] };
+    this.store.setToken(shaken.token);
+    for (const n of shaken.notes) this.note(n);
+    this.checkConcentration(shaken.token, damage);
+  }
+
+  private checkConcentration(current: Token, damage: number): void {
+    const hp = current.hp ?? 1;
     if (damage <= 0 || !current.concentration) return;
-    const sheet = this.sheetOf({ ...current, hp })!;
+    const sheet = this.sheetOf(current)!;
     if (hp > 0) {
       const dc = concentrationDc(damage, editionOf(current, this.store.world));
       const save = rollSave(sheet, 'con', dc, this.rng);
@@ -218,5 +243,5 @@ export class Table {
 }
 
 export function requireGm(player: Player): void {
-  if (player.role !== 'gm') throw new Refusal('Only the GM can do that');
+  if (!isGm(player)) throw new Refusal('Only the GM can do that');
 }

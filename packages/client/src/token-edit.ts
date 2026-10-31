@@ -1,4 +1,4 @@
-import { DamageTypeSchema, omitKey, type Ability, type DamageType, type Stats } from '@vtt/shared';
+import { DamageTypeSchema, omitKey, type Ability, type DamageType, type Ownership, type Stats } from '@vtt/shared';
 
 // The GM's token editor works on a draft copy of the token; these helpers
 // keep the draft tidy and turn it into the patch the server applies.
@@ -22,6 +22,18 @@ export function tokenPatch(before: Record<string, unknown>, after: Record<string
 function withField<T extends object>(obj: T, key: string, value: unknown): T {
   const empty = value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
   return empty ? omitKey(obj, key) : { ...obj, [key]: value };
+}
+
+/** The draft with `player` owning the token, observing it, or neither; an empty observer list goes away. */
+export function setOwnership<D extends { controllers: string[]; observers?: string[] }>(
+  draft: D,
+  player: string,
+  level: Ownership,
+): D {
+  const without = (list: readonly string[] = []) => list.filter((p) => p !== player);
+  const controllers = level === 'owner' ? [...without(draft.controllers), player] : without(draft.controllers);
+  const observers = level === 'observer' ? [...without(draft.observers), player] : without(draft.observers);
+  return withField({ ...draft, controllers }, 'observers', observers);
 }
 
 /** The draft with one `stats` field set or cleared; an empty `stats` goes away. */

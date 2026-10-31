@@ -32,6 +32,15 @@ describe('WorldStore', () => {
     expect(JSON.parse(await readFile(join(dir, 'tokens/hero.json'), 'utf8'))).toMatchObject({ x: 50 });
   });
 
+  it('writes world.json when the seats change', async () => {
+    const { dir, store } = await loaded();
+    const players = store.world.players.map((p) => (p.id === 'bo' ? { ...p, role: 'observer' as const } : p));
+    store.setWorld({ ...store.world, players });
+    await store.flush();
+    const saved = JSON.parse(await readFile(join(dir, 'world.json'), 'utf8')) as { players: { role: string }[] };
+    expect(saved.players.map((p) => p.role)).toEqual(['gm', 'player', 'observer']);
+  });
+
   it('deletes a removed token and its file', async () => {
     const { dir, store } = await loaded();
     const gone = new Promise((resolve) => store.once('tokenGone', resolve));
@@ -54,6 +63,26 @@ describe('WorldStore', () => {
       await writeFile(join(dir, 'tokens/goblin.json'), '{ broken');
       await new Promise((r) => setTimeout(r, 300));
       expect(store.tokens.get('goblin')!.x).toBe(950);
+    } finally {
+      store.close();
+    }
+  });
+
+  it('changes the time of day without starting the world over', async () => {
+    const { dir, store } = await loaded();
+    const events: string[] = [];
+    store.on('lighting', () => events.push('lighting'));
+    store.on('world', () => events.push('world'));
+    store.setDarkness(0.7);
+    await store.flush();
+    expect(JSON.parse(await readFile(join(dir, 'world.json'), 'utf8'))).toMatchObject({ darkness: 0.7 });
+    store.watch();
+    try {
+      const world = JSON.parse(await readFile(join(dir, 'world.json'), 'utf8')) as object;
+      const lit = new Promise((r) => store.once('lighting', r));
+      await writeFile(join(dir, 'world.json'), JSON.stringify({ ...world, darkness: 0.2 }));
+      await lit;
+      expect(events).toEqual(['lighting', 'lighting']);
     } finally {
       store.close();
     }

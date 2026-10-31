@@ -97,4 +97,19 @@ describe('end of turn saves', () => {
     expect(freed.token.effects).toBeUndefined();
     expect(freed.saves[0]).toMatchObject({ effect: 'Hold Person', save: { success: true } });
   });
+
+  it('turns a failed repeat save into something worse (2024 sleep: incapacitated, then unconscious)', () => {
+    const drowsy = {
+      id: 'sleep-wiz',
+      name: 'Sleep',
+      conditions: ['incapacitated' as const],
+      repeatSave: true,
+      worsens: ['unconscious' as const],
+      save: { ability: 'wis' as const, dc: 15 },
+    };
+    const t = character('fighter', '2024', { effects: [drowsy] });
+    const out = endOfTurnSaves(t, sheet(t), () => 0.1);
+    expect(out.token.effects?.[0]).toMatchObject({ conditions: ['unconscious'], repeatSave: undefined });
+    expect(out.saves[0]).toMatchObject({ effect: 'Sleep', save: { success: false }, worse: true });
+  });
 });

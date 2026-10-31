@@ -1,11 +1,12 @@
-import { srdFor } from '@vtt/shared';
+import { isGm, ownershipOf, srdFor, type Ownership, type Player } from '@vtt/shared';
 import { useState } from 'react';
-import { setStat } from '../token-edit.ts';
+import { setOwnership, setStat } from '../token-edit.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { Check, Field, NumberInput, TextInput } from './EditorFields.tsx';
 import { withKey, type Draft, type Update } from './sheet-model.ts';
 
-// The GM's Details page: who the creature is and which rules build it.
+// The Details page: who the creature is and which rules build it. Who owns
+// it and whether it hides are the GM's; a trusted owner sees the rest.
 
 const SIZES = [
   [0.5, 'Tiny'],
@@ -58,8 +59,12 @@ function Identity({ session, kind, value, update }: Readonly<SheetProps>) {
         </Field>
         <LightFields value={value} update={update} />
       </div>
-      <Check label="Hidden from players" checked={value.hidden} onChange={set('hidden', true)} />
-      <Controllers session={session} value={value} update={update} />
+      {session.isGm() && (
+        <>
+          <Check label="Hidden from players" checked={value.hidden} onChange={set('hidden', true)} />
+          <OwnershipFields session={session} value={value} update={update} />
+        </>
+      )}
     </div>
   );
 }
@@ -89,22 +94,36 @@ function LightFields({ value, update }: Readonly<{ value: Draft; update: Update 
   );
 }
 
-function Controllers({ session, value, update }: Readonly<Pick<SheetProps, 'session' | 'value' | 'update'>>) {
-  const players = session.players.filter((p) => p.role === 'player');
+const LEVELS: readonly [Ownership, string][] = [
+  ['none', 'None'],
+  ['observer', 'Observer'],
+  ['owner', 'Owner'],
+];
+
+/** Like Foundry's ownership: owners act with the token (and edit it if trusted); observers watch through it. */
+function OwnershipFields({ session, value, update }: Readonly<Pick<SheetProps, 'session' | 'value' | 'update'>>) {
+  const players = session.players.filter((p) => !isGm(p));
   if (!players.length) return null;
-  const toggle = (id: string, on: boolean) =>
-    update((d) => ({ ...d, controllers: on ? [...d.controllers, id] : d.controllers.filter((c) => c !== id) }), true);
+  const level = (p: Player) => ownershipOf({ x: 0, y: 0, ...value }, p);
   return (
     <>
-      <h4>Controlled by</h4>
-      <div className="ed-chips">
+      <h4>Ownership</h4>
+      <div className="ed-grid">
         {players.map((p) => (
-          <Check
-            key={p.id}
-            label={p.name}
-            checked={value.controllers.includes(p.id)}
-            onChange={(on) => toggle(p.id, on)}
-          />
+          <Field key={p.id} label={p.name}>
+            <select
+              value={level(p)}
+              disabled={p.role === 'observer'}
+              title={p.role === 'observer' ? 'An observer seat only watches' : undefined}
+              onChange={(e) => update((d) => setOwnership(d, p.id, e.target.value as Ownership), true)}
+            >
+              {LEVELS.map(([v, label]) => (
+                <option key={v} value={v}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </Field>
         ))}
       </div>
     </>

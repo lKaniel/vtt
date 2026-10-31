@@ -1,6 +1,9 @@
 import {
   ActorSchema,
   applyTokenPatch,
+  canEditToken,
+  isGm,
+  lockedPatchKeys,
   placeToken,
   srdFor,
   tokenFromActor,
@@ -11,13 +14,18 @@ import {
   type Placement,
   type Player,
   type Point,
+  type Role,
   type SpawnSource,
   type Token,
 } from '@vtt/shared';
 import type { z } from 'zod';
 import { Refusal, requireGm, type Table } from './table.ts';
 
-/** The GM's tools: editing any token, placing new ones and keeping the Actors list. */
+/**
+ * The GM's tools: editing any token, placing new ones, keeping the Actors
+ * list and deciding who may do what. Trusted players share the editor for
+ * the tokens they own.
+ */
 export class GmActions {
   constructor(private table: Table) {}
 
@@ -26,9 +34,11 @@ export class GmActions {
   }
 
   edit(player: Player, id: string, patch: Record<string, unknown>): void {
-    requireGm(player);
     const token = this.store.tokens.get(id);
     if (!token) throw new Refusal('No such token');
+    if (!canEditToken(token, player)) throw new Refusal(`You can't edit ${token.name}`);
+    const locked = lockedPatchKeys(patch, player);
+    if (locked.length) throw new Refusal(`Only the GM can change ${locked.join(', ')}`);
     this.store.setToken(valid(TokenSchema, applyTokenPatch(token, patch)));
   }
 
@@ -51,6 +61,16 @@ export class GmActions {
   deleteActor(player: Player, id: string): void {
     requireGm(player);
     this.store.removeActor(id);
+  }
+
+  /** Changes a seat's role; the table always keeps a GM. */
+  setRole(player: Player, id: string, role: Role): void {
+    requireGm(player);
+    const world = this.store.world;
+    if (!world.players.some((p) => p.id === id)) throw new Refusal('No such player');
+    const players = world.players.map((p) => (p.id === id ? { ...p, role } : p));
+    if (!players.some(isGm)) throw new Refusal('The table needs a GM');
+    this.store.setWorld({ ...world, players });
   }
 
   private monster(from: Extract<SpawnSource, { kind: 'monster' }>, at: Point, hidden?: boolean): Token {

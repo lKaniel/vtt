@@ -86,7 +86,7 @@ function sheetOf(
   preview: Creature | undefined,
 ): Creature | undefined {
   if (live.sheet && !target.edit) return live.sheet;
-  return target.kind === 'token' && !live.sheet && session.you?.role !== 'gm' ? undefined : preview;
+  return target.kind === 'token' && !live.sheet && !session.isGm() ? undefined : preview;
 }
 
 function Pages(props: Readonly<SheetProps & { rules: Edition }>) {
@@ -116,7 +116,7 @@ function SheetHead({ session, kind, value, update, edit }: Readonly<SheetProps>)
   const title = [level && `Level ${level}`, value.stats?.class ?? value.monster, kind === 'actor' && '(actor)']
     .filter(Boolean)
     .join(' ');
-  const gm = session.you?.role === 'gm';
+  const editable = kind === 'actor' ? session.isGm() : session.canEdit(value.id);
   return (
     <header className="sheet-head">
       <div>
@@ -133,7 +133,7 @@ function SheetHead({ session, kind, value, update, edit }: Readonly<SheetProps>)
         <span className="sheet-sub">{title}</span>
       </div>
       <div className="sheet-head-tools">
-        {gm && (
+        {editable && (
           <button className="btn small" onClick={() => session.setSheetEdit(!edit)} title="Edit mode (E)">
             {edit ? 'Done' : 'Edit'}
           </button>
@@ -302,7 +302,18 @@ function Defenses({ value, update, sheet, edit }: Readonly<SheetProps>) {
 }
 
 /** Edit mode: keep, place or delete what's on the sheet. */
-function SheetFoot({ session, kind, value }: Readonly<SheetProps>) {
+function SheetFoot(props: Readonly<SheetProps>) {
+  return (
+    <footer className="sheet-foot">
+      <span className="muted">Changes save as you type.</span>
+      <span className="ed-spacer" />
+      {props.session.isGm() && <GmFootButtons {...props} />}
+    </footer>
+  );
+}
+
+/** Keeping, placing and deleting creatures is the GM's. */
+function GmFootButtons({ session, kind, value }: Readonly<SheetProps>) {
   const [confirm, setConfirm] = useState(false);
   const remove = () => {
     if (!confirm) {
@@ -319,9 +330,7 @@ function SheetFoot({ session, kind, value }: Readonly<SheetProps>) {
     session.showError(`Saved ${value.name} to the Actors list`);
   };
   return (
-    <footer className="sheet-foot">
-      <span className="muted">Changes save as you type.</span>
-      <span className="ed-spacer" />
+    <>
       {kind === 'token' ? (
         <button className="btn small" onClick={saveAsActor} title="Keep a copy in the Actors list">
           Save as actor
@@ -337,6 +346,6 @@ function SheetFoot({ session, kind, value }: Readonly<SheetProps>) {
       <button className={confirm ? 'btn small danger' : 'btn small'} onClick={remove} onBlur={() => setConfirm(false)}>
         {confirm ? 'Really delete?' : 'Delete'}
       </button>
-    </footer>
+    </>
   );
 }

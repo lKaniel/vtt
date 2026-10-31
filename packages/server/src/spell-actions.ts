@@ -1,5 +1,6 @@
 import {
   castProblem,
+  lastingEffects,
   inArea,
   joinCombat,
   resolveCast,
@@ -19,6 +20,7 @@ import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
 
 export interface CastRequest {
   caster: string;
+  repeat?: boolean;
   spell: string;
   slot: number;
   free?: boolean;
@@ -54,43 +56,69 @@ export class SpellActions {
     const caster = this.table.actor(player, req.caster);
     const spell = this.table.content(caster.token).spells.get(req.spell);
     if (!spell) throw new Refusal(`There is no spell called ${req.spell}`);
+    const plan = this.plan(caster, spell, req);
+    this.table.check(caster.token, plan.cost);
+    const aimed = this.targets(caster, spell, { ...req, slot: plan.slot }, canSee);
+    const targets = spell.zone && !spell.zone.onCast && !plan.again ? [] : aimed;
+    this.table.pay(caster.token, plan.cost);
+    if (!plan.again) this.begin(caster, spell, plan.spend);
+    if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
+    if (spell.teleport) this.teleport(caster.token.id, req.point!);
+    const summoned = spell.summon ? this.summon(this.table.fighter(caster.token.id), spell, req) : [];
+    const free = req.free && plan.slot > 0 && !plan.again ? ['cast without a spell slot'] : [];
+    this.strike(caster.token.id, { spell, slot: plan.slot, point: req.point }, targets, [
+      ...free,
+      ...summonNotes(summoned),
+    ]);
+  }
+
+  /** What casting costs: the action, slot and slot spent; using a lasting spell again needs no slot. */
+  private plan(
+    caster: Fighter,
+    spell: Spell,
+    req: CastRequest,
+  ): { cost: Cost; slot: number; spend: number; again: boolean } {
+    if (req.repeat) {
+      const going = caster.sheet.effects.find((e) => e.repeat?.spell === spell.id);
+      if (!going || !spell.repeat) throw new Refusal(`${spell.name} isn't going`);
+      return { cost: spell.repeat, slot: going.repeat!.slot, spend: 0, again: true };
+    }
     const problem = castProblem({ spell, slot: req.slot, sheet: caster.sheet, free: req.free });
     if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
-    const cost = COST[spell.castingTime];
     if ((spell.castingTime === 'minute' || spell.castingTime === 'hour') && this.table.inFight(caster.token.id)) {
       throw new Refusal(`${spell.name} takes too long to cast in a fight`);
     }
-    this.table.check(caster.token, cost);
     const slot = spell.level === 0 ? 0 : req.slot;
-    const spend = req.free ? 0 : slot;
-    const targets = this.targets(caster, spell, { ...req, slot }, canSee);
-    this.table.pay(caster.token, cost);
-    this.begin(caster, spell, spend);
-    if (spell.teleport) this.teleport(caster.token.id, req.point!);
-    const summoned = spell.summon ? this.summon(this.table.fighter(caster.token.id), spell, req) : [];
-    const outcome = resolveCast(
-      { spell, slot, caster: this.table.fighter(caster.token.id), targets, gridSize: this.grid },
-      this.table.rng,
-    );
+    return { cost: COST[spell.castingTime], slot, spend: req.free ? 0 : slot, again: false };
+  }
+
+  /** Rolls a spell from `casterId` against `targets`, applies it and logs it: casts, features and zones. */
+  strike(
+    casterId: string,
+    { spell, slot, point }: { spell: Spell; slot: number; point?: Point },
+    targets: Fighter[],
+    notes: string[] = [],
+  ): void {
+    const caster = this.table.fighter(casterId);
+    const outcome = resolveCast({ spell, slot, caster, targets, gridSize: this.grid }, this.table.rng);
     this.apply(outcome);
     const pushed = this.push(caster.token, outcome);
-    const free = req.free && slot > 0 ? ['cast without a spell slot'] : [];
-    this.log(caster, { spell, slot, point: req.point }, outcome, [...free, ...summonNotes(summoned), ...pushed]);
+    const drained = this.drain(casterId, outcome.drained);
+    this.log(caster, { spell, slot, point }, outcome, [...notes, ...pushed, ...drained]);
+  }
+
+  private addLasting(id: string, effects: Effect[]): void {
+    for (const e of effects) this.addEffect(id, e);
   }
 
   /** Spends the slot, ends invisibility and starts concentrating. */
   private begin(caster: Fighter, spell: Spell, slot: number): void {
     if (spell.concentration && caster.token.concentration) this.table.endConcentration(caster.token.id);
+    this.table.spendSlot(caster.token.id, slot);
     const token = this.store.tokens.get(caster.token.id)!;
-    const slots = [...(token.spent?.slots ?? [])];
-    if (slot > 0) {
-      while (slots.length < slot) slots.push(0);
-      slots[slot - 1]! += 1;
-    }
     const effects = token.effects?.filter((e) => !e.endsOnAttack);
     this.store.setToken({
       ...token,
-      spent: slot > 0 ? { ...token.spent, slots } : token.spent,
       effects: effects?.length ? effects : undefined,
       concentration: spell.concentration ? { spell: spell.id, name: spell.name } : token.concentration,
     });
@@ -98,7 +126,7 @@ export class SpellActions {
 
   // ---- Targets -----------------------------------------------------------
 
-  private targets(caster: Fighter, spell: Spell, req: CastRequest, canSee: (id: string) => boolean): Fighter[] {
+  targets(caster: Fighter, spell: Spell, req: CastRequest, canSee: (id: string) => boolean): Fighter[] {
     if (spell.teleport || spell.summon) {
       this.checkPoint(caster, spell, req.point, spell.teleport ?? spell.range);
       return [];
@@ -157,7 +185,9 @@ export class SpellActions {
       if (r.healed !== undefined) {
         this.store.setToken({ ...target.token, hp: r.hp >= target.sheet.maxHp ? undefined : r.hp });
       } else if (r.damage > 0) {
-        this.table.hurt(target.token, r.hp, r.damage);
+        this.table.hurt(target.token, r, r.damage);
+      } else if (r.tempHp !== undefined) {
+        this.store.setToken({ ...target.token, tempHp: r.tempHp || undefined });
       }
       if (r.effect) this.addEffect(r.target, r.effect);
     }
@@ -174,6 +204,15 @@ export class SpellActions {
       if (feet > 0) notes.push(`${name} is ${r.push > 0 ? 'pushed' : 'pulled'} ${feet} ft`);
     }
     return notes;
+  }
+
+  /** The caster regains hit points from what the spell drained. */
+  private drain(id: string, amount: number | undefined): string[] {
+    if (!amount) return [];
+    const { token, sheet } = this.table.fighter(id);
+    const hp = Math.min(sheet.maxHp, sheet.hp + amount);
+    this.store.setToken({ ...token, hp: hp >= sheet.maxHp ? undefined : hp });
+    return [`${token.name} regains ${hp - sheet.hp} HP`];
   }
 
   private addEffect(id: string, effect: Effect): void {
@@ -265,6 +304,7 @@ export class SpellActions {
     const name = (id: string) => this.store.tokens.get(id)?.name ?? id;
     const notes = [...extra];
     if (!spell.automated) notes.push('not automated: the GM applies it');
+    if (spell.automated && spell.gmNote) notes.push(`GM: ${spell.gmNote}`);
     const down = new Set(outcome.results.filter((r) => r.damage > 0 && r.hp <= 0).map((r) => r.target));
     for (const id of down) notes.push(`${name(id)} is down`);
     this.logSpell({

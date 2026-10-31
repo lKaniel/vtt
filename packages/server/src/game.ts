@@ -1,11 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import {
   canControlToken,
-  DoorStateSchema,
-  EditionSchema,
+  isGm,
   tokensVisibleTo,
   findPath,
-  PointSchema,
   roll,
   editionOf,
   srdFor,
@@ -16,61 +14,20 @@ import {
   type Rng,
   type ServerMessage,
   type Token,
+  type World,
   type WorldInfo,
 } from '@vtt/shared';
-import type { RawData, WebSocket } from 'ws';
-import { z } from 'zod';
+import type { WebSocket } from 'ws';
+import { parseClientMessage, type ClientMessage } from './client-messages.ts';
 import { CombatActions } from './combat-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
+import { castFeature } from './feature-casting.ts';
+import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
+import { Zones } from './zones.ts';
 import { Refusal, Table } from './table.ts';
 import type { WorldStore } from './world-store.ts';
-
-const ClientMessageSchema = z.discriminatedUnion('t', [
-  z.object({ t: z.literal('view'), chunks: z.array(z.string()).max(400) }),
-  z.object({ t: z.literal('move'), token: z.string(), to: PointSchema }),
-  z.object({ t: z.literal('door'), chunk: z.string(), wall: z.string(), state: DoorStateSchema }),
-  z.object({ t: z.literal('chat'), text: z.string().min(1).max(2000) }),
-  z.object({ t: z.literal('combatStart'), tokens: z.array(z.string()).min(1).max(100) }),
-  z.object({ t: z.literal('combatEnd') }),
-  z.object({ t: z.literal('endTurn') }),
-  z.object({ t: z.literal('attack'), attacker: z.string(), target: z.string(), attack: z.string() }),
-  z.object({ t: z.literal('equip'), token: z.string(), item: z.number().int().nonnegative(), equipped: z.boolean() }),
-  z.object({
-    t: z.literal('cast'),
-    caster: z.string(),
-    spell: z.string(),
-    slot: z.number().int().min(0).max(9),
-    free: z.boolean().optional(),
-    targets: z.array(z.string()).max(20),
-    point: PointSchema.optional(),
-    summon: z.string().optional(),
-  }),
-  z.object({ t: z.literal('feature'), token: z.string(), feature: z.string() }),
-  z.object({ t: z.literal('dropConcentration'), token: z.string() }),
-  z.object({ t: z.literal('removeEffect'), token: z.string(), effect: z.string() }),
-  z.object({ t: z.literal('rest'), tokens: z.array(z.string()).min(1).max(100), kind: z.enum(['short', 'long']) }),
-  z.object({ t: z.literal('editToken'), token: z.string(), patch: z.record(z.string(), z.unknown()) }),
-  z.object({ t: z.literal('deleteToken'), token: z.string() }),
-  z.object({
-    t: z.literal('hotbar'),
-    token: z.string(),
-    slots: z.array(z.string().max(80).nullable()).max(60),
-  }),
-  z.object({
-    t: z.literal('spawn'),
-    from: z.discriminatedUnion('kind', [
-      z.object({ kind: z.literal('monster'), id: z.string(), rules: EditionSchema }),
-      z.object({ kind: z.literal('actor'), id: z.string() }),
-    ]),
-    at: PointSchema,
-    hidden: z.boolean().optional(),
-  }),
-  // The actor itself is checked by GmActions, so a broken one gets a readable refusal.
-  z.object({ t: z.literal('saveActor'), actor: z.unknown() }),
-  z.object({ t: z.literal('deleteActor'), actor: z.string() }),
-]);
 
 interface Client {
   ws: WebSocket;
@@ -80,8 +37,6 @@ interface Client {
   /** Tokens this client currently knows about. */
   visible: Set<string>;
 }
-
-type ClientMessage = z.infer<typeof ClientMessageSchema>;
 
 const CHAT_HISTORY = 200;
 const ROLL_COMMANDS = new Set(['/r', '/roll', '/gmr']);
@@ -97,19 +52,32 @@ export class Game {
   private clients = new Set<Client>();
   private chat: ChatMessage[] = [];
   private combat: CombatActions;
-  private spells: SpellActions;
+  readonly spells: SpellActions;
+  readonly table: Table;
+  private zones: Zones;
   private features: FeatureActions;
   private gm: GmActions;
+  /** world.json minus the seats, to tell a role change from a new grid. */
+  private settings: string;
+  private map: MapActions;
 
   constructor(
     private store: WorldStore,
     { rng = Math.random }: { rng?: Rng } = {},
   ) {
     const table = new Table(store, rng, (text) => this.narrate({ text }));
-    this.combat = new CombatActions(table, (attack) => this.narrate({ attack }));
+    this.table = table;
     this.spells = new SpellActions(table, (spell) => this.narrate({ spell }));
+    this.zones = new Zones(table, this.spells);
+    this.combat = new CombatActions(
+      table,
+      (attack) => this.narrate({ attack }),
+      (id) => this.zones.turnStarted(id),
+    );
     this.features = new FeatureActions(table);
     this.gm = new GmActions(table);
+    this.settings = worldSettings(store.world);
+    this.map = new MapActions(table);
     store.on('chunk', (key, chunk) => {
       for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
       // A door or a light changed: what everyone can see may have too.
@@ -130,10 +98,33 @@ export class Game {
     store.on('combat', (combat) => {
       for (const c of this.clients) this.send(c, { t: 'combat', combat: combat ?? null });
     });
-    store.on('world', () => {
-      // Player list or grid changes need a fresh start on every client.
-      for (const c of this.clients) c.ws.close(4000, 'world settings changed');
+    store.on('lighting', (darkness) => {
+      for (const c of this.clients) this.send(c, { t: 'lighting', darkness });
+      this.refreshAll();
     });
+    store.on('world', (world) => this.onWorld(world));
+  }
+
+  /**
+   * Role and seat changes reach everyone live with a fresh welcome; anything
+   * else (grid, rules) or a seat that's gone needs a reconnect.
+   */
+  private onWorld(world: World): void {
+    const settings = worldSettings(world);
+    const same = settings === this.settings;
+    this.settings = settings;
+    for (const c of this.clients) {
+      const player = world.players.find((p) => p.id === c.player.id);
+      if (!same || !player) {
+        c.ws.close(4000, 'world settings changed');
+        continue;
+      }
+      c.player = player;
+      c.visible = this.visibleTo(player);
+      // The client starts over and asks for its chunks again.
+      c.chunks = new Set();
+      this.welcome(c);
+    }
   }
 
   findPlayer(id: string): Player | undefined {
@@ -143,17 +134,7 @@ export class Game {
   connect(ws: WebSocket, player: Player): void {
     const client: Client = { ws, player, chunks: new Set(), visible: this.visibleTo(player) };
     this.clients.add(client);
-    const { players: _players, ...world } = this.store.world;
-    const info: WorldInfo = world;
-    this.send(client, {
-      t: 'welcome',
-      world: info,
-      you: player,
-      tokens: [...client.visible].map((id) => this.view(this.store.tokens.get(id)!, player)),
-      chat: this.chat.filter((m) => !m.gmOnly || player.role === 'gm'),
-      combat: this.store.combat ?? null,
-      ...(player.role === 'gm' ? { players: this.store.world.players, actors: [...this.store.actors.values()] } : {}),
-    });
+    this.welcome(client);
     ws.on('message', (data) => {
       const msg = parseClientMessage(data);
       if (msg) this.handle(client, msg);
@@ -163,11 +144,29 @@ export class Game {
     console.log(`[game] ${player.name} joined`);
   }
 
+  /** Everything a client needs to start (or start over) with its current seat. */
+  private welcome(c: Client): void {
+    const { players: _players, ...world } = this.store.world;
+    const info: WorldInfo = world;
+    const player = c.player;
+    const gm = isGm(player);
+    this.send(c, {
+      t: 'welcome',
+      world: info,
+      you: player,
+      tokens: [...c.visible].map((id) => this.view(this.store.tokens.get(id)!, player)),
+      chat: this.chat.filter((m) => !m.gmOnly || gm),
+      combat: this.store.combat ?? null,
+      ...(gm ? { players: this.store.world.players, actors: [...this.store.actors.values()] } : {}),
+    });
+  }
+
   private visibleTo(player: Player): Set<string> {
     return tokensVisibleTo(player, [...this.store.tokens.values()], {
       world: this.store.world,
       lights: this.store.lights(),
       wallsBetween: (a, b) => this.store.wallsBetween(a, b),
+      monster: (t) => srdFor(editionOf(t, this.store.world)).monsters.get(t.monster ?? ''),
     });
   }
 
@@ -247,6 +246,12 @@ export class Game {
         return this.gm.saveActor(c.player, msg.actor);
       case 'deleteActor':
         return this.gm.deleteActor(c.player, msg.actor);
+      case 'setRole':
+        return this.gm.setRole(c.player, msg.player, msg.role);
+      case 'mapEdit':
+        return this.map.edit(c.player, msg.edit);
+      case 'darkness':
+        return this.map.darkness(c.player, msg.darkness);
       default:
         return undefined;
     }
@@ -258,7 +263,9 @@ export class Game {
       case 'cast':
         return this.spells.cast(c.player, (id) => c.visible.has(id), msg);
       case 'feature':
-        return this.features.use(c.player, msg.token, msg.feature);
+        return this.useFeature(c, msg);
+      case 'useItem':
+        return this.features.useItem(c.player, msg.token, msg.item);
       case 'dropConcentration':
         return this.features.dropConcentration(c.player, msg.token);
       case 'removeEffect':
@@ -268,6 +275,14 @@ export class Game {
       default:
         return this.dispatchGm(c, msg);
     }
+  }
+
+  /** Features aimed like spells go through the spell rules; the rest act on their user. */
+  private useFeature(c: Client, msg: Extract<ClientMessage, { t: 'feature' }>): void {
+    if (this.features.aimed(msg.token, msg.feature)) {
+      return castFeature(this, c.player, (id) => c.visible.has(id), msg);
+    }
+    this.features.use(c.player, msg.token, msg.feature);
   }
 
   private onView(c: Client, chunks: string[]): void {
@@ -299,6 +314,7 @@ export class Game {
     if (path.points.length < 2) return;
     const walker = this.combat.move(token, path.feet);
     this.store.setToken({ ...walker, x, y }, path.points);
+    this.zones.moved(token.id, path.points);
   }
 
   private onHotbar(c: Client, id: string, slots: (string | null)[]): void {
@@ -312,8 +328,9 @@ export class Game {
     const chunk = this.store.chunks.get(msg.chunk);
     const wall = chunk?.walls.find((w) => w.id === msg.wall);
     if (!chunk || !wall?.door) return this.fail(c, 'No such door');
+    if (c.player.role === 'observer') return this.fail(c, 'Observers only watch');
     const touchesLock = wall.door === 'locked' || msg.state === 'locked';
-    if (touchesLock && c.player.role !== 'gm') return this.fail(c, 'The door is locked');
+    if (touchesLock && !isGm(c.player)) return this.fail(c, 'The door is locked');
     const walls = chunk.walls.map((w) => (w === wall ? { ...w, door: msg.state } : w));
     this.store.setChunk(msg.chunk, { ...chunk, walls });
   }
@@ -334,7 +351,7 @@ export class Game {
     this.chat.push(message);
     if (this.chat.length > CHAT_HISTORY) this.chat.shift();
     for (const other of this.clients) {
-      if (message.gmOnly && other.player.role !== 'gm' && other !== sender) continue;
+      if (message.gmOnly && !isGm(other.player) && other !== sender) continue;
       this.send(other, { t: 'chat', message });
     }
   }
@@ -354,7 +371,7 @@ export class Game {
   }
 
   private toGms(msg: ServerMessage): void {
-    for (const c of this.clients) if (c.player.role === 'gm') this.send(c, msg);
+    for (const c of this.clients) if (isGm(c.player)) this.send(c, msg);
   }
 
   private fail(c: Client, message: string): void {
@@ -366,13 +383,8 @@ export class Game {
   }
 }
 
-function parseClientMessage(data: RawData): ClientMessage | undefined {
-  const buffer = Array.isArray(data) ? Buffer.concat(data) : Buffer.from(data as ArrayBuffer);
-  const text = buffer.toString('utf8');
-  try {
-    const parsed = ClientMessageSchema.safeParse(JSON.parse(text));
-    return parsed.success ? parsed.data : undefined;
-  } catch {
-    return undefined;
-  }
+/** world.json minus what changes live: the seats and the time of day. */
+function worldSettings(world: World): string {
+  const { players: _players, darkness: _darkness, ...settings } = world;
+  return JSON.stringify(settings);
 }

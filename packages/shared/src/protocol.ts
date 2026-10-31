@@ -1,6 +1,7 @@
 import type { Combat } from './combat.ts';
 import type { Roll } from './dice.ts';
-import type { Actor, Chunk, DoorState, Player, Point, World } from './schema.ts';
+import type { Actor, Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
+import type { MapEdit } from './map-edit.ts';
 import type { Area } from './spell-schema.ts';
 import type { Ability, DamageType, Edition } from './stats-schema.ts';
 import type { TokenView } from './token-view.ts';
@@ -88,7 +89,8 @@ export type ClientMessage =
   | { t: 'combatStart'; tokens: string[] }
   | { t: 'combatEnd' }
   | { t: 'endTurn' }
-  | { t: 'attack'; attacker: string; target: string; attack: string }
+  /** `smite`: spend a slot of this level on Divine Smite if the attack hits (2014 paladin). */
+  | { t: 'attack'; attacker: string; target: string; attack: string; smite?: number }
   /** `item` is the index in the token's inventory. */
   | { t: 'equip'; token: string; item: number; equipped: boolean }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
@@ -99,11 +101,16 @@ export type ClientMessage =
       slot: number;
       /** Cast without spending a slot. */
       free?: boolean;
+      /** Use a lasting spell again, e.g. attack with the spiritual weapon. */
+      repeat?: boolean;
       targets: string[];
       point?: Point;
       summon?: string;
     }
-  | { t: 'feature'; token: string; feature: string }
+  /** `targets` and `point` aim features used like spells (bardic inspiration, turn undead). */
+  | { t: 'feature'; token: string; feature: string; targets?: string[]; point?: Point }
+  /** Use one of an item the token carries, by item id (drink a potion). */
+  | { t: 'useItem'; token: string; item: string }
   | { t: 'dropConcentration'; token: string }
   /** GM: end one effect on a token. */
   | { t: 'removeEffect'; token: string; effect: string }
@@ -111,14 +118,21 @@ export type ClientMessage =
   | { t: 'rest'; tokens: string[]; kind: 'short' | 'long' }
   /** Save how a creature you control has its action bar arranged. */
   | { t: 'hotbar'; token: string; slots: (string | null)[] }
-  /** GM: change token fields; `null` removes one (e.g. `hp: null` heals fully). */
+  /** Change token fields; `null` removes one (e.g. `hp: null` heals fully). The GM may edit any token, a trusted player the ones they own. */
   | { t: 'editToken'; token: string; patch: Record<string, unknown> }
   | { t: 'deleteToken'; token: string }
   /** GM: put a new token on the map at a point (snapped to the grid). */
   | { t: 'spawn'; from: SpawnSource; at: Point; hidden?: boolean }
   /** GM: add or replace an actor in the Actors list. */
   | { t: 'saveActor'; actor: Actor }
-  | { t: 'deleteActor'; actor: string };
+  | { t: 'deleteActor'; actor: string }
+  /** GM: change what a seat may do at the table. */
+  | { t: 'setRole'; player: string; role: Role }
+
+  /** GM: draw or erase walls, doors, windows and lights. */
+  | { t: 'mapEdit'; edit: MapEdit }
+  /** GM: the time of day, 0 daylight to 1 pitch black. */
+  | { t: 'darkness'; darkness: number };
 
 export type ServerMessage =
   | {
@@ -141,4 +155,6 @@ export type ServerMessage =
   /** GM only: an actor was added, changed or removed. */
   | { t: 'actor'; actor: Actor }
   | { t: 'actorGone'; id: string }
+  /** The time of day changed. */
+  | { t: 'lighting'; darkness: number }
   | { t: 'error'; message: string };

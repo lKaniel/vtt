@@ -1,19 +1,22 @@
 import type { Content } from './content.ts';
 import { resolveCreature, type Creature } from './creature.ts';
-import { canControlToken } from './permissions.ts';
+import { canObserveToken } from './permissions.ts';
 import type { Player, Token } from './schema.ts';
+import { sensesOf, type Senses } from './senses.ts';
 
 /** How hurt a creature looks to someone who can't see its hit points. */
 export type Health = 'unhurt' | 'hurt' | 'bloodied' | 'down';
 
 /** A token as one player is told about it. */
 export interface TokenView extends Token {
-  /** Full statistics, for the GM and the token's controllers. */
+  /** Full statistics, for the GM and the token's owners and observers. */
   sheet?: Creature;
   /** For everyone else, only how hurt it looks. */
   health?: Health;
   /** The monster's painted token, drawn when the token has no `img` of its own. */
   art?: string;
+  /** What it perceives, for its controllers: the map draws their darkvision and blindsight. */
+  senses?: Senses;
 }
 
 export function healthOf(hp: number, maxHp: number): Health {
@@ -28,7 +31,10 @@ export function viewToken(token: Token, player: Player, content: Content): Token
   if (!sheet) return token;
   const art = token.monster ? content.monsters.get(token.monster)?.img : undefined;
   const look = art ? { art } : {};
-  if (canControlToken(token, player)) return { ...token, ...look, sheet };
-  const { monster: _m, stats: _s, hp: _h, inventory: _i, ...visible } = token;
+  if (canObserveToken(token, player)) {
+    const senses = sensesOf(token, token.monster ? content.monsters.get(token.monster) : undefined);
+    return { ...token, ...look, sheet, senses };
+  }
+  const { monster: _m, stats: _s, hp: _h, tempHp: _t, inventory: _i, ...visible } = token;
   return { ...visible, ...look, health: healthOf(sheet.hp, sheet.maxHp) };
 }

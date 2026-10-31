@@ -1,4 +1,4 @@
-import { srdFor, type TokenView } from '@vtt/shared';
+import { itemCost, srdFor, type TokenView } from '@vtt/shared';
 import { actionTiles, type ActionTile } from './actions.ts';
 import { itemArt } from './icon-art.ts';
 import { itemIcon } from './icons.ts';
@@ -32,6 +32,7 @@ function itemTile(token: TokenView, id: string): ActionTile | undefined {
     icon: { ...itemIcon(item), art: itemArt(item) },
     spent: false,
     item,
+    cost: itemCost(item, token.sheet?.edition ?? '2014'),
   };
   return entry.qty > 1 ? { ...tile, uses: String(entry.qty) } : tile;
 }

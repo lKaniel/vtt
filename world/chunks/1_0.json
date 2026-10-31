@@ -7,7 +7,8 @@
       "y": 0,
       "w": 2000,
       "h": 2000,
-      "color": "#4f6b3a"
+      "color": "#6f8f4e",
+      "texture": "grass"
     },
     {
       "kind": "rect",
@@ -16,7 +17,8 @@
       "y": 900,
       "w": 2000,
       "h": 200,
-      "color": "#8a7a5a"
+      "color": "#a08a64",
+      "texture": "dirt"
     },
     {
       "kind": "rect",
@@ -25,7 +27,8 @@
       "y": 1300,
       "w": 800,
       "h": 600,
-      "color": "#6e6e6e"
+      "color": "#8a8478",
+      "texture": "cobble"
     }
   ],
   "walls": [
@@ -71,7 +74,9 @@
       "x": 3050,
       "y": 1450,
       "bright": 10,
-      "dim": 10
+      "dim": 10,
+      "color": "#ff7a30",
+      "animation": "flicker"
     }
   ]
 }

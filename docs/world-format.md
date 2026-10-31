@@ -45,7 +45,29 @@ grows down, negative values are fine.
 ```
 
 At least one player must have `"role": "gm"`. `start` is where the camera
-opens. Changing this file reconnects everyone.
+opens, and where characters joining from an account appear. Changing the
+seats (a role, a new player) reaches everyone live; changing anything else
+reconnects everyone.
+
+Players whose `id` matches an account (see the README) are that account's
+seat. The server adds one when an account first joins, so you can change its
+`role` here afterwards. A character brought from an account becomes a token
+whose `id` is the character's id, with the account in `controllers`; saving
+or levelling the character updates that token's name, stats and senses.
+
+Roles, like Foundry's user roles (the GM changes them in the Players tab):
+
+| Role       | What the seat may do                                                                   |
+| ---------- | -------------------------------------------------------------------------------------- |
+| `gm`       | Everything.                                                                            |
+| `trusted`  | Play the tokens they own, and edit their sheets (not ownership, position or `hidden`). |
+| `player`   | Play the tokens they own.                                                              |
+| `observer` | Watch through the party's eyes and read their sheets; act on nothing.                  |
+
+`darkness` (0 to 1, default 0) is the time of day: up to 0.3 is daylight,
+up to 0.6 is dim light (dusk, moonlight) and above that is darkness, where
+only lights and senses like darkvision show anything. `vision` (default
+`true`) hides what players' tokens can't see behind fog of war.
 
 ## Chunks
 
@@ -70,11 +92,42 @@ wall's midpoint). The checker warns when one is in the wrong file.
 }
 ```
 
-- Tiles draw in file order, later ones on top. `image` tiles load from
+- Tiles draw in file order, later ones on top.
+- A `rect` tile can have painted ground: `"texture"` is one of `grass`, `dirt`,
+  `sand`, `stone`, `cobble`, `wood`, `water`, `rock`, tinted by `color` (pick
+  the lightest shade you want). `textureScale` is how many squares one repeat
+  covers (default 2). Grass, dirt, sand, water and rock get natural wobbly
+  edges; set `"edge": "straight"` or `"rough"` to choose. `image` tiles load from
   `assets/`.
 - A wall is a line from `a` to `b` that blocks movement. Add `door` to make
   it a door: `"closed"`, `"open"` or `"locked"`. Open doors don't block.
 - Ids must be unique within the chunk.
+
+## Lights
+
+A chunk's `lights` are placed light sources. Radii are in feet, like the
+rules: `bright` light, then `dim` light beyond it.
+
+```json
+"lights": [
+  { "id": "hearth", "x": 550, "y": 250, "bright": 20, "dim": 20, "color": "#ff9a40", "animation": "flicker" },
+  { "id": "moonwell", "x": 1500, "y": 300, "bright": 10, "dim": 30, "color": "#7ab0ff", "animation": "pulse" },
+  { "id": "shadow", "x": 900, "y": 1400, "bright": 15, "darkness": true }
+]
+```
+
+| Field       | Meaning                                                                          |
+| ----------- | -------------------------------------------------------------------------------- |
+| `color`     | Colour of the light; default a warm white.                                       |
+| `animation` | `"flicker"` for flames, `"pulse"` for magic.                                     |
+| `darkness`  | Magical darkness (the Darkness spell) of radius `bright + dim` instead of light. |
+
+The GM can also draw walls, doors and windows, place, drag and erase lights,
+and set the time of day from the map tools in the game (bottom left).
+
+Walls stop light like they stop sight. A token carries a light with the same
+fields in `light`. Magical darkness puts out every other light, and only
+devil's sight, truesight, blindsight and tremorsense work inside it.
 
 ## Tokens
 
@@ -92,17 +145,28 @@ wall's midpoint). The checker warns when one is in the wrong file.
 }
 ```
 
-| Field         | Meaning                                                             |
-| ------------- | ------------------------------------------------------------------- |
-| `id`          | Lowercase letters, digits, dashes. Must match the file name.        |
-| `x`, `y`      | Centre of the token in pixels (a square centre).                    |
-| `size`        | In squares: 1 medium, 2 large, 3 huge. Default 1.                   |
-| `color`       | Disc colour behind the placeholder when there is no picture.        |
-| `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency. |
-| `speed`       | Walking speed in feet. Default 30.                                  |
-| `controllers` | Player ids who may move it. The GM always can.                      |
-| `hidden`      | `true` = only the GM sees it.                                       |
-| `visibleTo`   | If set, only these players (and the GM) see it. Used for illusions. |
+| Field         | Meaning                                                                |
+| ------------- | ---------------------------------------------------------------------- |
+| `id`          | Lowercase letters, digits, dashes. Must match the file name.           |
+| `x`, `y`      | Centre of the token in pixels (a square centre).                       |
+| `size`        | In squares: 1 medium, 2 large, 3 huge. Default 1.                      |
+| `color`       | Disc colour behind the placeholder when there is no picture.           |
+| `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency.    |
+| `speed`       | Walking speed in feet. Default 30.                                     |
+| `controllers` | Player ids who own it: they move and act with it. The GM always can.   |
+| `observers`   | Player ids who may read its sheet and see through its eyes.            |
+| `darkvision`  | Range in feet. Also `blindsight`, `tremorsense`, `truesight`.          |
+| `devilsSight` | Sees in magical and nonmagical darkness to this range, in feet.        |
+| `light`       | A light it carries, like a chunk light: `{ "bright": 20, "dim": 20 }`. |
+| `hidden`      | `true` = only the GM sees it.                                          |
+| `visibleTo`   | If set, only these players (and the GM) see it. Used for illusions.    |
+
+Senses missing on a token come from its monster's stat block. Players see a
+creature when one of their tokens has a clear line to it and it is lit (even
+dimly) or within darkvision; blindsight and truesight see in any darkness,
+tremorsense feels creatures through walls, and an `invisible` creature (a
+condition in its `effects`) is found only by blindsight, truesight,
+tremorsense or an effect with `seeInvisible`.
 
 A token with a `monster` and no `img` uses that monster's painted token, if one
 has been imported (see [token-art/README.md](token-art/README.md)).
@@ -121,7 +185,8 @@ and SRD 5.2 (`monsters-5.2.json`) under 2024 rules; the weapon and armor list
 monster id and rules then come from that edition.
 
 A monster uses the stat block as is. Anything in `stats` overrides it, and
-`hp` tracks damage (leave it out for an unhurt creature):
+`hp` tracks damage (leave it out for an unhurt creature), and `tempHp` holds
+temporary hit points, which are lost first:
 
 ```json
 { "id": "goblin-1", "name": "Goblin", "x": 2850, "y": 1650, "monster": "goblin", "hp": 4 }
@@ -191,14 +256,24 @@ edit it too:
 | `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"` or `null`. |
 | `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                           |
 
-Effect modifiers: `conditions` (e.g. `["prone"]`, `["paralyzed"]`),
+Effect modifiers: `senses` (e.g. `{ "darkvision": 60 }` or
+`{ "seeInvisible": true }`), `conditions` (e.g. `["prone"]`, `["paralyzed"]`),
 `attackBonus` and `saveBonus` (dice like `"1d4"` or `"-1d4"`), `ac`, `speed`,
 `resistances`, `advantage`, `disadvantage`, `advantageAgainst`,
-`disadvantageAgainst`, `meleeDamage`, `saveAdvantage`. Lifetime: `rounds`
+`disadvantageAgainst`, `meleeDamage`, `saveAdvantage`, `immobile` (speed 0),
+`hitDamage` (added to the bearer's weapon hits, e.g. divine favor), `markDamage`
+(added when `onlyFor` hits the bearer, e.g. hunter's mark; a damage `type` of
+`"weapon"` takes the attack's type), `weaponBonus` (magic weapon),
+`zone: { "spell", "slot", "at"?, "spares"? }` (a lasting area like spirit
+guardians: creatures starting their turn in it or walking in are hit),
+`repeat: { "spell", "slot" }` (the spell can be used again without a slot,
+like spiritual weapon). Lifetime: `rounds`
 counts down at the start of the `source` creature's turn; `once` ends it the
 first time it changes an attack; `repeatSave` with `save: { "ability", "dc" }`
 lets the bearer save again at the end of each of its turns; `endsOnAttack`
-ends it when the bearer attacks or casts. A hidden trap or a GM ruling can
+ends it when the bearer attacks or casts; `endsOnDamage` ends it when the bearer
+takes damage, and `saveOnDamage` gives it another save (with advantage) then;
+`worsens` (with `repeatSave`) swaps the conditions for these on a failed save. A hidden trap or a GM ruling can
 just write an effect into the token file.
 
 Players only receive the stats of tokens they control. For everyone else

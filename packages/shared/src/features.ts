@@ -4,10 +4,24 @@ import type { Creature } from './creature.ts';
 import { roll, type Rng } from './dice.ts';
 import { removeEffects, rollSave, type SaveRoll } from './effects.ts';
 import type { Token } from './schema.ts';
-import type { Effect } from './spell-schema.ts';
+import { SpellSchema, type Effect, type Spell } from './spell-schema.ts';
 
 // Using class features (second wind, action surge, rage), resting, and the
 // saves creatures repeat at the end of their turns.
+
+/** The spell a feature is aimed like (bardic inspiration, turn undead), cast with its action. */
+export function featureSpell(feature: FeatureSheet): Spell {
+  return SpellSchema.parse({
+    id: feature.id,
+    name: feature.name,
+    level: 0,
+    school: 'feature',
+    castingTime: feature.action === 'bonus' ? 'bonus' : 'action',
+    range: 0,
+    description: feature.description,
+    ...feature.spell,
+  });
+}
 
 /** Why `sheet` can't use the feature now, or undefined if it can. */
 export function featureProblem(sheet: Creature, id: string): string | undefined {
@@ -24,11 +38,14 @@ export interface FeatureUse {
   effect?: Effect;
   /** The creature gets its action back (action surge). */
   grantAction?: boolean;
+  /** Feet of extra movement (dash). */
+  dash?: number;
 }
 
-function spendUse(token: Token, feature: FeatureSheet): Token {
+export function spendUse(token: Token, feature: FeatureSheet, amount = 1): Token {
   if (feature.max === undefined) return token;
-  const uses = { ...token.spent?.uses, [feature.id]: (token.spent?.uses?.[feature.id] ?? 0) + 1 };
+  const id = feature.usesFrom ?? feature.id;
+  const uses = { ...token.spent?.uses, [id]: (token.spent?.uses?.[id] ?? 0) + amount };
   return { ...token, spent: { ...token.spent, uses } };
 }
 
@@ -58,7 +75,14 @@ export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng =
   }
   const effect = featureEffect(token, feature);
   if (effect) next = { ...next, effects: [...(next.effects ?? []).filter((e) => e.id !== effect.id), effect] };
-  return { token: next, feature, healed, effect, grantAction: feature.grantAction };
+  return {
+    token: next,
+    feature,
+    healed,
+    effect,
+    grantAction: feature.grantAction,
+    dash: feature.dash ? sheet.speed : undefined,
+  };
 }
 
 function restUses(token: Token, sheet: Creature): Record<string, number> | undefined {
@@ -80,15 +104,26 @@ export function rest(token: Token, sheet: Creature, kind: 'short' | 'long'): Tok
   return { ...token, spent: uses || slots ? { slots, uses } : undefined };
 }
 
-/** Repeats the saves of effects like hold person; those saved against end. */
+/** A failed repeated save makes some effects worse instead of keeping them as they are. */
+function worsen(effect: Effect): Effect {
+  return { ...effect, conditions: effect.worsens, worsens: undefined, repeatSave: undefined };
+}
+
+/** Repeats the saves of effects like hold person; those saved against end, and some failed ones get worse. */
 export function endOfTurnSaves(
   token: Token,
   sheet: Creature,
   rng: Rng = Math.random,
-): { token: Token; saves: { effect: string; save: SaveRoll }[] } {
+): { token: Token; saves: { effect: string; save: SaveRoll; worse?: boolean }[] } {
   const saves = (token.effects ?? [])
     .filter((e) => e.repeatSave && e.save)
-    .map((e) => ({ id: e.id, effect: e.name, save: rollSave(sheet, e.save!.ability, e.save!.dc, rng) }));
-  const ended = new Set(saves.filter((s) => s.save.success).map((s) => s.id));
-  return { token: removeEffects(token, ended), saves: saves.map(({ effect, save }) => ({ effect, save })) };
+    .map((e) => ({ e, save: rollSave(sheet, e.save!.ability, e.save!.dc, rng) }));
+  const ended = new Set(saves.filter((s) => s.save.success).map((s) => s.e.id));
+  const worse = new Set(saves.filter((s) => !s.save.success && s.e.worsens).map((s) => s.e.id));
+  const kept = removeEffects(token, ended);
+  const effects = kept.effects?.map((e) => (worse.has(e.id) ? worsen(e) : e));
+  return {
+    token: worse.size ? { ...kept, effects } : kept,
+    saves: saves.map(({ e, save }) => ({ effect: e.name, save, ...(worse.has(e.id) && { worse: true }) })),
+  };
 }

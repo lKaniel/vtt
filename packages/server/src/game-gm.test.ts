@@ -53,7 +53,11 @@ describe('the GM editing tokens', () => {
     ana.receive({ t: 'deleteToken', token: 'hero' });
     ana.receive({ t: 'spawn', from: { kind: 'monster', id: 'goblin', rules: '2014' }, at: [0, 0] });
     ana.receive({ t: 'saveActor', actor: { id: 'x', name: 'X' } });
-    expect(ana.take('error').map((e) => e.message)).toEqual(Array(4).fill('Only the GM can do that'));
+    // A plain player can't edit their own token either; trusted players can (game-permissions.test.ts).
+    expect(ana.take('error').map((e) => e.message)).toEqual([
+      "You can't edit Hero",
+      ...Array<string>(3).fill('Only the GM can do that'),
+    ]);
     expect(store.tokens.size).toBe(2);
   });
 

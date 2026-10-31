@@ -27,6 +27,11 @@ describe('viewToken', () => {
     expect(viewToken(hero, ana, srdFor('2024')).sheet?.attacks[0]?.name).toBe('Dagger');
   });
 
+  it('tells controllers what their token perceives, from its monster too', () => {
+    expect(viewToken(goblin, gm, srdFor('2024')).senses?.darkvision).toBe(60);
+    expect(viewToken(goblin, ana, srdFor('2024')).senses).toBeUndefined();
+  });
+
   it('hides stats from other players and tells them only how hurt it looks', () => {
     const seen = viewToken(goblin, ana, srdFor('2024'));
     expect(seen.sheet).toBeUndefined();

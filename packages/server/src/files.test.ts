@@ -34,6 +34,14 @@ describe('parseFile', () => {
 });
 
 describe('crossCheck', () => {
+  it('reports observers who are not at the table', () => {
+    const world = WorldSchema.parse({ name: 'w', players: [{ id: 'gm', name: 'GM', role: 'gm' }] });
+    const token = TokenSchema.parse({ id: 'w', name: 'W', x: 0, y: 0, observers: ['ghost'] });
+    expect(crossCheck(world, new Map(), new Map([['w', token]])).map((i) => i.message)).toEqual([
+      'unknown player "ghost"',
+    ]);
+  });
+
   it('reports spells the edition does not have', () => {
     const world = WorldSchema.parse({ name: 'w', players: [{ id: 'gm', name: 'GM', role: 'gm' }] });
     const token = TokenSchema.parse({ id: 'w', name: 'W', x: 0, y: 0, stats: { spells: ['fireball', 'chaos-bolt'] } });

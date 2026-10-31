@@ -10,10 +10,20 @@ const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digi
 export const PointSchema = z.tuple([z.number(), z.number()]);
 export type Point = z.infer<typeof PointSchema>;
 
+/**
+ * What a seat may do at the table, like Foundry's user roles:
+ * - gm: everything;
+ * - trusted: a player who may also edit the tokens they own (their character sheet);
+ * - player: plays the tokens they own;
+ * - observer: watches through the party's eyes and reads their sheets, but acts on nothing.
+ */
+export const RoleSchema = z.enum(['gm', 'trusted', 'player', 'observer']);
+export type Role = z.infer<typeof RoleSchema>;
+
 export const PlayerSchema = z.object({
   id,
   name: z.string().min(1),
-  role: z.enum(['gm', 'player']),
+  role: RoleSchema,
   color: z.string().default('#8a8a8a'),
 });
 export type Player = z.infer<typeof PlayerSchema>;
@@ -38,8 +48,21 @@ export type World = z.infer<typeof WorldSchema>;
 
 const tileBase = { id, x: z.number(), y: z.number(), w: z.number().positive(), h: z.number().positive() };
 
+/** Painted ground for rect tiles, tinted by the tile's colour. */
+export const TileTextureSchema = z.enum(['grass', 'dirt', 'sand', 'stone', 'cobble', 'wood', 'water', 'rock']);
+export type TileTexture = z.infer<typeof TileTextureSchema>;
+
 export const TileSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('rect'), ...tileBase, color: z.string() }),
+  z.object({
+    kind: z.literal('rect'),
+    ...tileBase,
+    color: z.string(),
+    texture: TileTextureSchema.optional(),
+    /** Squares one repeat of the texture covers; default 2. */
+    textureScale: z.number().positive().optional(),
+    /** "rough" wobbles the edges (the default for grass, dirt, sand, water and rock); "straight" keeps them crisp. */
+    edge: z.enum(['rough', 'straight']).optional(),
+  }),
   z.object({ kind: z.literal('image'), ...tileBase, src: z.string().min(1) }),
 ]);
 export type Tile = z.infer<typeof TileSchema>;
@@ -62,6 +85,12 @@ export type Wall = z.infer<typeof WallSchema>;
 export const LightSchema = z.object({
   bright: z.number().nonnegative(),
   dim: z.number().nonnegative().default(0),
+  /** Colour of the light, e.g. "#ff9a40" for a torch. Missing means white. */
+  color: z.string().optional(),
+  /** How the light moves: a torch flickers, a magic glow pulses. */
+  animation: z.enum(['flicker', 'pulse']).optional(),
+  /** Magical darkness instead of light (the Darkness spell): nothing nonmagical lights it. */
+  darkness: z.boolean().optional(),
 });
 export type Light = z.infer<typeof LightSchema>;
 
@@ -87,10 +116,18 @@ export const TokenSchema = z.object({
   img: z.string().optional(),
   /** Walking speed in feet. */
   speed: z.number().nonnegative().default(30),
-  /** Player ids that may control this token. The GM always can. */
+  /** Player ids that own this token: they act with it, and trusted players may edit it. The GM always can. */
   controllers: z.array(id).default([]),
+  /** Player ids that may read this token's sheet and see through its eyes, but not act with it. */
+  observers: z.array(id).optional(),
   /** Darkvision range in feet; 0 for none. */
   darkvision: z.number().nonnegative().default(0),
+  /** Other senses, in feet. Missing ones fall back to the monster's stat block. */
+  blindsight: z.number().nonnegative().optional(),
+  tremorsense: z.number().nonnegative().optional(),
+  truesight: z.number().nonnegative().optional(),
+  /** Sees normally in magical and nonmagical darkness to this range (the warlock invocation). */
+  devilsSight: z.number().nonnegative().optional(),
   /** A light the token carries, e.g. a torch: { "bright": 20, "dim": 20 }. */
   light: LightSchema.optional(),
   /** Hidden tokens are seen by the GM only. */
@@ -103,6 +140,8 @@ export const TokenSchema = z.object({
   stats: StatsSchema.optional(),
   /** Current hit points; missing means unhurt. */
   hp: z.number().int().optional(),
+  /** Temporary hit points: lost first, and don't stack. */
+  tempHp: z.number().int().positive().optional(),
   inventory: z.array(InventoryEntrySchema).optional(),
   /** Spells, conditions and features currently affecting the token. */
   effects: z.array(EffectSchema).optional(),

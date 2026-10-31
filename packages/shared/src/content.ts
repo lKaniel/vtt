@@ -4,6 +4,8 @@ import classes51 from '../content/srd/classes-5.1.json' with { type: 'json' };
 import classes52 from '../content/srd/classes-5.2.json' with { type: 'json' };
 import items from '../content/srd/items.json' with { type: 'json' };
 import monsters51 from '../content/srd/monsters-5.1.json' with { type: 'json' };
+import origins51 from '../content/srd/origins-5.1.json' with { type: 'json' };
+import origins52 from '../content/srd/origins-5.2.json' with { type: 'json' };
 import monsters52 from '../content/srd/monsters-5.2.json' with { type: 'json' };
 import spellAutomation from '../content/srd/spell-automation.json' with { type: 'json' };
 import spells51 from '../content/srd/spells-5.1.json' with { type: 'json' };
@@ -15,6 +17,7 @@ import { ItemSchema, MonsterSchema, type Edition, type Item, type Monster } from
 
 /** Everything a token can refer to by id, for one rules edition. */
 export interface Content {
+  edition: Edition;
   items: ReadonlyMap<string, Item>;
   monsters: ReadonlyMap<string, Monster>;
   spells: ReadonlyMap<string, Spell>;
@@ -40,7 +43,9 @@ function withOverlay(entry: Entry, overlay: Overlay, edition: Edition): Entry {
 
 function merge(entry: Entry, part: Record<string, unknown>): Entry {
   const { features, ...rest } = part as { features?: Record<string, object> };
-  const out: Entry = { ...entry, ...rest };
+  // null in the overlay takes a generated field away (false life's healing).
+  const kept = Object.entries({ ...entry, ...rest } as Record<string, unknown>).filter(([, value]) => value !== null);
+  const out: Entry = Object.fromEntries(kept) as Entry;
   if (features && Array.isArray(entry.features)) {
     out.features = (entry.features as Entry[]).map((f) => ({ ...f, ...features[f.id] }));
   }
@@ -67,9 +72,22 @@ export function withTokenArt(monsters: Monster[], art: Record<string, string>): 
 const sharedItems = byId(z.array(ItemSchema).parse(items));
 const monsterList = z.array(MonsterSchema);
 
-function edition(edition: Edition, data: { monsters: unknown[]; spells: unknown[]; classes: unknown[] }): Content {
+interface EditionData {
+  monsters: unknown[];
+  spells: unknown[];
+  classes: unknown[];
+  /** Gear from the starting kits (packs, holy symbols...) that items.json doesn't list. */
+  gear: unknown[];
+}
+
+function edition(edition: Edition, data: EditionData): Content {
+  const gear = z
+    .array(ItemSchema)
+    .parse(data.gear)
+    .filter((g) => !sharedItems.has(g.id));
   return {
-    items: sharedItems,
+    edition,
+    items: new Map([...sharedItems, ...byId(gear)]),
     monsters: byId(withTokenArt(monsterList.parse(data.monsters), tokenArt as Record<string, string>)),
     spells: load(SpellSchema, data.spells, [spellAutomation as Overlay, edition]),
     classes: load(ClassSchema, data.classes, [classAutomation as Overlay, edition]),
@@ -78,8 +96,8 @@ function edition(edition: Edition, data: { monsters: unknown[]; spells: unknown[
 
 /** The bundled SRD content (CC-BY-4.0), validated on load: 5.1 for 2014, 5.2 for 2024. */
 const SRD: Record<Edition, Content> = {
-  '2014': edition('2014', { monsters: monsters51, spells: spells51, classes: classes51 }),
-  '2024': edition('2024', { monsters: monsters52, spells: spells52, classes: classes52 }),
+  '2014': edition('2014', { monsters: monsters51, spells: spells51, classes: classes51, gear: origins51.gear }),
+  '2024': edition('2024', { monsters: monsters52, spells: spells52, classes: classes52, gear: origins52.gear }),
 };
 
 export function srdFor(edition: Edition): Content {

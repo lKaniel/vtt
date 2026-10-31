@@ -1,4 +1,4 @@
-import type { TokenView, TurnBudget } from '@vtt/shared';
+import type { FeatureSheet, Item, TokenView, TurnBudget } from '@vtt/shared';
 import { useState } from 'react';
 import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, type Tab } from '../actions.ts';
 import { slotChoices } from '../charges.ts';
@@ -18,6 +18,7 @@ import type { Glyph as GlyphName } from '../icons.ts';
 import type { Session } from '../session.ts';
 import type { Aiming } from '../targeting.ts';
 import { ORDINAL } from '../spell-text.ts';
+import { SmiteControls } from './SmiteControls.tsx';
 import { attackTip, featureTip, itemTip, spellTip } from '../tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
@@ -45,8 +46,14 @@ function budgetOf(session: Session, token: TokenView): TurnBudget | undefined {
 export function activateTile(session: Session, token: TokenView, tile: ActionTile): void {
   if (tile.kind === 'attack') session.arm(session.armed === tile.name ? undefined : tile.name);
   else if (tile.kind === 'spell') aimTile(session, tile);
-  else if (tile.kind === 'feature') session.useFeature(token.id, tile.feature.id);
-  else readyItem(session, token, tile.item.name);
+  else if (tile.kind === 'feature') activateFeature(session, token, tile.feature);
+  else readyItem(session, token, tile.item);
+}
+
+/** A feature aimed like a spell waits for its targets; any other goes off at once. */
+function activateFeature(session: Session, token: TokenView, feature: FeatureSheet): void {
+  if (!feature.spell) return session.useFeature(token.id, feature.id);
+  session.aimFeature(session.aiming?.feature === feature.id ? undefined : feature.id);
 }
 
 /** A spell with no slot left can still be cast for free. */
@@ -60,8 +67,11 @@ function aimTile(session: Session, tile: Extract<ActionTile, { kind: 'spell' }>)
 }
 
 /** A weapon on the bar readies its attack; other items aren't automated yet. */
-function readyItem(session: Session, token: TokenView, name: string): void {
+/** A weapon readies its attack; a potion or other usable item is used at once. */
+function readyItem(session: Session, token: TokenView, item: Item): void {
+  const name = item.name;
   if (token.sheet?.attacks.some((a) => a.name === name)) session.arm(session.armed === name ? undefined : name);
+  else if (item.type === 'gear' && item.use) session.useItem(token.id, item.id);
   else session.showError(`Using ${name} isn't automated yet: ask the GM`);
 }
 
@@ -72,6 +82,7 @@ export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onS
     <footer className="actionbar-wrap">
       <div className="hint">{hint(session, token)}</div>
       {token && <AimingControls session={session} token={token} />}
+      {token && <SmiteControls session={session} token={token} />}
       {token && <Bar session={session} token={token} onSheet={onSheet} />}
     </footer>
   );
@@ -113,10 +124,9 @@ function Portrait({ token, onSheet }: Readonly<{ token: TokenView; onSheet: () =
 }
 
 function Who({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
-  const gm = session.you?.role === 'gm';
   return (
     <div className="ab-who">
-      {gm ? (
+      {session.canEdit(token.id) ? (
         <button
           className="ab-name ab-edit"
           title="Edit sheet (E)"

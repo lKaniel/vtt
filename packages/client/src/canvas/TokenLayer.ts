@@ -1,4 +1,4 @@
-import { currentTurn, type Health, type Point, type TokenView } from '@vtt/shared';
+import { canObserveToken, currentTurn, hasCondition, isGm, type Health, type Point, type TokenView } from '@vtt/shared';
 import { Assets, Container, Graphics, Sprite as PixiSprite, Text, type Texture } from 'pixi.js';
 import { BarTween } from '../bar-tween.ts';
 import { cutoutOf, portraitOf } from '../icon-art.ts';
@@ -74,11 +74,11 @@ export class TokenLayer {
     drawPlaceholder(view, cutout ? undefined : token.color);
     showTexture(view.face, portraitOf(token), cutout ? box : r * 2);
     redrawStatus(view);
-    const notes = [token.hidden && 'hidden', token.visibleTo && 'illusion'].filter(Boolean);
-    view.label.text = notes.length ? `${token.name} (${notes.join(', ')})` : token.name;
+    const { label, faint } = describe(token);
+    view.label.text = label;
     view.label.position.set(0, r * 1.15);
     view.label.visible = this.labelsVisible;
-    view.root.alpha = token.hidden ? 0.5 : 1;
+    view.root.alpha = faint ? 0.5 : 1;
     view.root.cursor = this.isTarget(token) ? 'crosshair' : 'pointer';
   }
 
@@ -101,14 +101,14 @@ export class TokenLayer {
     for (const v of this.views.values()) v.label.visible = visible;
   }
 
-  /** Your tokens, which see for you, where they're drawn right now. The GM has none. */
+  /** Your tokens (owned or observed), which see for you, where they're drawn right now. The GM has none. */
   viewers(): Viewer[] {
     const you = this.session.you;
-    if (!you || you.role === 'gm') return [];
+    if (!you || isGm(you)) return [];
     const out: Viewer[] = [];
     for (const t of this.session.tokens.values()) {
       const view = this.views.get(t.id);
-      if (view && t.controllers.includes(you.id)) out.push({ token: t, at: [view.root.x, view.root.y] });
+      if (view && canObserveToken(t, you)) out.push({ token: t, at: [view.root.x, view.root.y] });
     }
     return out;
   }
@@ -253,6 +253,20 @@ export class TokenLayer {
 }
 
 const DOUBLE_CLICK_MS = 350;
+
+/**
+ * The name under a token, with notes for the GM, and whether it is drawn
+ * faintly: hidden tokens, and invisible ones seen anyway (by their own side,
+ * the GM, or truesight).
+ */
+function describe(token: TokenView): { label: string; faint: boolean } {
+  const invisible = hasCondition(token, 'invisible');
+  const notes = [token.hidden && 'hidden', invisible && 'invisible', token.visibleTo && 'illusion'].filter(Boolean);
+  return {
+    label: notes.length ? `${token.name} (${notes.join(', ')})` : token.name,
+    faint: token.hidden || invisible,
+  };
+}
 
 /**
  * Shows a picture once it has loaded, scaled to fit a `size` square without

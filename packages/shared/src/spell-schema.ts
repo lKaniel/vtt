@@ -28,6 +28,10 @@ export const ConditionSchema = z.enum([
 ]);
 export type Condition = z.infer<typeof ConditionSchema>;
 
+/** Extra damage an effect adds to hits; "weapon" takes the type of the attack it rides on. */
+export const RiderDamageSchema = z.object({ dice, type: z.union([DamageTypeSchema, z.literal('weapon')]) });
+export type RiderDamage = z.infer<typeof RiderDamageSchema>;
+
 /** What an effect changes about the creature that has it. */
 const modifiers = {
   conditions: z.array(ConditionSchema).optional(),
@@ -49,6 +53,41 @@ const modifiers = {
   meleeDamage: z.number().int().optional(),
   /** Saving throws the bearer makes with advantage. */
   saveAdvantage: z.array(AbilitySchema).optional(),
+  /** Damage the bearer adds to its weapon hits (divine favor; with `once`, a smite). */
+  hitDamage: z.array(RiderDamageSchema).optional(),
+  /** Damage `onlyFor` adds when it hits the bearer with an attack (hunter's mark, hex). */
+  markDamage: z.array(RiderDamageSchema).optional(),
+  /** Added to the bearer's weapon attack and damage rolls (magic weapon). */
+  weaponBonus: z.number().int().optional(),
+  /** The bearer keeps a spell's area going: creatures that start their turn in it or walk into it are hit (spirit guardians). */
+  zone: z
+    .object({
+      spell: id,
+      slot: z.number().int().min(0).max(9),
+      /** Where a placed area sits; missing for areas around the bearer. */
+      at: z.tuple([z.number(), z.number()]).optional(),
+      /** "allies": creatures on the bearer's side aren't hit. */
+      spares: z.enum(['allies']).optional(),
+    })
+    .optional(),
+  /** The bearer may use this spell again without a slot while it lasts (spiritual weapon, call lightning). */
+  repeat: z.object({ spell: id, slot: z.number().int().min(0).max(9) }).optional(),
+  /** The bearer's movement doesn't provoke opportunity attacks (disengage). */
+  disengaged: z.boolean().optional(),
+  /** The bearer's speed is 0 (hypnotic pattern). */
+  immobile: z.boolean().optional(),
+  /** Senses the effect grants, in feet (darkvision spell), or the power to see invisible things. */
+  senses: z
+    .object({
+      darkvision: z.number().nonnegative(),
+      blindsight: z.number().nonnegative(),
+      tremorsense: z.number().nonnegative(),
+      truesight: z.number().nonnegative(),
+      devilsSight: z.number().nonnegative(),
+      seeInvisible: z.boolean(),
+    })
+    .partial()
+    .optional(),
 };
 
 /** An effect as a spell or feature describes it, before it lands on anyone. */
@@ -64,6 +103,12 @@ export const EffectTemplateSchema = z.object({
   repeatSave: z.boolean().optional(),
   /** Ends when the bearer attacks or casts a spell (invisibility). */
   endsOnAttack: z.boolean().optional(),
+  /** With `repeatSave`: failing the repeated save swaps the conditions for these and ends the saves (2024 sleep). */
+  worsens: z.array(ConditionSchema).optional(),
+  /** Ends when the bearer takes damage (sleep, hypnotic pattern). */
+  endsOnDamage: z.boolean().optional(),
+  /** The bearer repeats the save, with advantage, each time it takes damage (hideous laughter). */
+  saveOnDamage: z.boolean().optional(),
 });
 export type EffectTemplate = z.infer<typeof EffectTemplateSchema>;
 
@@ -129,6 +174,14 @@ export const SpellSchema = z.object({
   /** Hit points restored, plus the caster's spellcasting modifier when `healMod`. */
   heal: dice.optional(),
   healMod: z.boolean().default(false),
+  /** Temporary hit points given to each target (false life); they don't stack with others. */
+  tempHp: dice.optional(),
+  /** Hit points of creatures affected, weakest first, rolled on each cast (2014 sleep). */
+  hpPool: dice.optional(),
+  /** The caster regains half the damage dealt (vampiric touch). */
+  drain: z.boolean().optional(),
+  /** What the GM still has to do by hand when the rest is automated; shown in the log. */
+  gmNote: z.string().optional(),
   /** Separate attacks or bolts per cast (magic missile darts, scorching rays, eldritch blast beams). */
   beams: z.number().int().positive().optional(),
   /** Never misses (magic missile). */
@@ -138,6 +191,8 @@ export const SpellSchema = z.object({
     .object({
       damage: dice.optional(),
       heal: dice.optional(),
+      tempHp: z.number().int().optional(),
+      hpPool: dice.optional(),
       targets: z.number().int().optional(),
       beams: z.number().int().optional(),
     })
@@ -151,6 +206,24 @@ export const SpellSchema = z.object({
   teleport: z.number().positive().optional(),
   /** Feet each creature hit (or failing its save) is moved: positive pushes away from the caster, negative pulls closer. */
   push: z.number().int().optional(),
+  /**
+   * The damage isn't dealt on casting but rides on later hits: "self" on the
+   * caster's weapon hits (divine favor, smites), "mark" on the caster's attacks
+   * against the target (hunter's mark, hex).
+   */
+  rider: z.enum(['self', 'mark']).optional(),
+  /** Rider damage takes the type of the weapon it rides on (2014 hunter's mark). */
+  weaponType: z.boolean().optional(),
+  /** The area stays: it hits creatures that start their turn in it or enter it (spirit guardians, moonbeam). */
+  zone: z
+    .object({
+      spares: z.enum(['allies']).optional(),
+      /** Whether it also hits what's in it when cast. */
+      onCast: z.boolean().default(true),
+    })
+    .optional(),
+  /** Later turns can use it again without a slot, with this action (spiritual weapon, call lightning). */
+  repeat: z.enum(['action', 'bonus']).optional(),
   /** Only creatures of these types are affected (hold person: humanoid). */
   creatureTypes: z.array(z.string()).optional(),
   /** false when the engine only shows the text: the GM applies it by hand. */
@@ -182,6 +255,30 @@ export const FeatureSchema = z.object({
   effect: EffectTemplateSchema.optional(),
   /** For an effect's `meleeDamage`: the bonus by class level. */
   meleeDamage: LevelTableSchema.optional(),
+  /** Using it gives the creature its speed again as movement (Dash). */
+  dash: z.boolean().optional(),
+  /** Basic actions (by id) this feature lets the creature take as a bonus action (cunning action). */
+  bonusActions: z.array(id).optional(),
+  /** An effect the creature always has (danger sense). */
+  passive: EffectTemplateSchema.optional(),
+  /** Unarmored, AC is 10 + Dex + this ability (unarmored defense). */
+  unarmoredAc: AbilitySchema.optional(),
+  /** false when a shield loses unarmored defense (monk). */
+  unarmoredShield: z.boolean().optional(),
+  /** Uses are this ability's modifier, at least 1 (bardic inspiration). */
+  usesAbility: AbilitySchema.optional(),
+  /** Uses are class level times this, spent a hit point at a time (lay on hands). */
+  poolPerLevel: z.number().int().positive().optional(),
+  /** Spends the uses of this other feature (turn undead uses channel divinity). */
+  usesFrom: id.optional(),
+  /** From this class level a short rest gives every use back (font of inspiration). */
+  shortRestFrom: z.number().int().min(1).max(20).optional(),
+  /** The die size by class level; "{die}" in `spell` stands for it, e.g. "1d{die}". */
+  die: LevelTableSchema.optional(),
+  /** Heals a target from the pool of uses, as much as it's missing (lay on hands). */
+  healPool: z.boolean().optional(),
+  /** Aimed like a spell at creatures or an area: spell fields such as targets, range, area, save, effect. */
+  spell: z.record(z.string(), z.unknown()).optional(),
 });
 export type Feature = z.infer<typeof FeatureSchema>;
 
