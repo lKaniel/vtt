@@ -1,6 +1,7 @@
 import type { Session } from '../session.ts';
+import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 
-/** Portraits of your party. Click to select, double-click to jump to them. */
+/** Portraits of your party down the left edge. Click to select, double-click to jump to them. */
 export function PartyBar({ session }: Readonly<{ session: Session }>) {
   const you = session.you;
   // Players see their own tokens; the GM sees the whole party.
@@ -8,21 +9,28 @@ export function PartyBar({ session }: Readonly<{ session: Session }>) {
     you?.role === 'gm' ? t.controllers.length > 0 : !!you && t.controllers.includes(you.id),
   );
   if (mine.length === 0) return null;
+  const turn = session.turnToken()?.id;
   return (
     <nav className="party">
-      {mine.map((t) => (
-        <button
-          key={t.id}
-          className={`portrait${session.selected === t.id ? ' selected' : ''}`}
-          style={{ background: t.color }}
-          title={`${t.name}: click to select, double-click to find`}
-          onClick={() => session.select(t.id)}
-          onDoubleClick={() => session.focus([t.x, t.y])}
-        >
-          <span className="initials">{t.name.slice(0, 2)}</span>
-          <span className="portrait-name">{t.name}</span>
-        </button>
-      ))}
+      {mine.map((t) => {
+        const cls = ['member', session.selected === t.id && 'selected', turn === t.id && 'acting'];
+        return (
+          <button
+            key={t.id}
+            className={cls.filter(Boolean).join(' ')}
+            title={`${t.name}: click to select, double-click to find`}
+            onClick={() => session.select(t.id)}
+            onDoubleClick={() => session.focus([t.x, t.y])}
+          >
+            <Face token={t} className="member-face" />
+            <span className="member-info">
+              <span className="member-name">{t.name}</span>
+              <HpBar token={t} />
+              <EffectBadges token={t} />
+            </span>
+          </button>
+        );
+      })}
     </nav>
   );
 }

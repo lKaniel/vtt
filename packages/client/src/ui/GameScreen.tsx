@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { actionTiles } from '../actions.ts';
 import { MapView } from '../canvas/MapView.ts';
 import { Session } from '../session.ts';
+import { activateTile, ActionBar } from './ActionBar.tsx';
 import { CharacterSheet } from './CharacterSheet.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
-import { Hotbar } from './Hotbar.tsx';
 import { PartyBar } from './PartyBar.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
@@ -39,11 +40,12 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
   return (
     <div className="game">
       <div className="map" ref={host} />
-      <header className="topbar">
-        <strong>{session.world?.name ?? 'Connecting…'}</strong>
-        <span className={`status status-${session.status}`}>
-          {session.status === 'open' ? 'connected' : session.status}
-        </span>
+      <header className="topbar frame">
+        <span
+          className={`status status-${session.status}`}
+          title={session.status === 'open' ? 'Connected' : session.status}
+        />
+        <strong className="world-name">{session.world?.name ?? 'Connecting…'}</strong>
         <span className="you" style={{ color: session.you?.color }}>
           {session.you?.name}
         </span>
@@ -53,7 +55,7 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
       </header>
       <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />
       <PartyBar session={session} />
-      <Hotbar session={session} onSheet={() => setSheetOpen((open) => !open)} />
+      <ActionBar session={session} onSheet={() => setSheetOpen((open) => !open)} />
       {sheetOpen && <CharacterSheet session={session} onClose={() => setSheetOpen(false)} />}
       <ChatPanel session={session} />
       <Toast session={session} />
@@ -61,7 +63,7 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
   );
 }
 
-/** Esc backs out, 1-8 ready an attack, Space ends your turn. */
+/** Esc backs out, 1-0 use the action bar's tiles, Space ends your turn. */
 function handleGameKey(session: Session, e: KeyboardEvent): void {
   if (e.key === 'Escape') {
     if (session.armed ?? session.aiming) session.arm(undefined);
@@ -73,10 +75,9 @@ function handleGameKey(session: Session, e: KeyboardEvent): void {
     session.endTurn();
     return;
   }
-  const slot = Number(e.key) - 1;
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
-  const attack = Number.isInteger(slot) ? token?.sheet?.attacks[slot] : undefined;
-  if (attack) session.arm(session.armed === attack.name ? undefined : attack.name);
+  const tile = token && actionTiles(token).find((t) => t.hotkey === e.key);
+  if (token && tile && !tile.spent) activateTile(session, token, tile);
 }
 
 const TOAST_MS = 3000;

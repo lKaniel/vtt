@@ -1,5 +1,6 @@
 import { currentTurn, type Health, type Point, type TokenView } from '@vtt/shared';
-import { Container, Graphics, Text } from 'pixi.js';
+import { Assets, Container, Graphics, Sprite as PixiSprite, Text, type Texture } from 'pixi.js';
+import { portraitOf, tokenBaseArt } from '../icon-art.ts';
 import type { Session } from '../session.ts';
 import type { Viewer } from './Vision.ts';
 
@@ -8,10 +9,20 @@ const WALK_SPEED = 900;
 /** Token disc radius as a share of its size in pixels. */
 const DISC = 0.42;
 /** Ring around the token whose turn it is. */
-const TURN_COLOR = '#f0c040';
+const TURN_COLOR = '#e8c070';
+/** Painted base ring diameter as a multiple of the disc radius. */
+const BASE = 2.85;
+/** Rims of party members and of everyone else. */
+const ALLY_RIM = '#a88a5e';
+const OTHER_RIM = '#5a2620';
 
 interface Sprite {
   root: Container;
+  /** The painted ring under the disc. */
+  base: PixiSprite;
+  /** The token's picture, cut to a circle inside the rim. */
+  face: PixiSprite;
+  faceMask: Graphics;
   disc: Graphics;
   /** Hit point bar and markers drawn over the disc. */
   status: Graphics;
@@ -32,11 +43,13 @@ export class TokenLayer {
     const view = this.views.get(token.id) ?? this.create(token);
     if (view.route.length === 0) view.root.position.set(token.x, token.y);
     const r = token.size * (this.session.world?.gridSize ?? 100) * DISC;
-    view.disc
+    showTexture(view.base, tokenBaseArt(token, this.session.selected === token.id), r * BASE);
+    drawDisc(view.disc.clear(), token, r, this.ringColor(token));
+    view.faceMask
       .clear()
-      .circle(0, 0, r)
-      .fill(token.color)
-      .stroke({ width: this.session.selected === token.id ? 8 : 4, color: this.ringColor(token) });
+      .circle(0, 0, r - 2)
+      .fill(0xffffff);
+    showTexture(view.face, portraitOf(token), r * 2);
     drawStatus(view.status.clear(), token, r);
     drawEffects(view.status, token, r);
     const notes = [token.hidden && 'hidden', token.visibleTo && 'illusion'].filter(Boolean);
@@ -96,23 +109,35 @@ export class TokenLayer {
   }
 
   private ringColor(token: TokenView): string {
-    if (this.session.selected === token.id) return '#ffffff';
     const combat = this.session.combat;
     if (combat && currentTurn(combat) === token.id) return TURN_COLOR;
     const you = this.session.you;
-    return you && token.controllers.includes(you.id) ? you.color : '#111111';
+    if (you && token.controllers.includes(you.id)) return you.color;
+    return token.controllers.length > 0 ? ALLY_RIM : OTHER_RIM;
   }
 
   private create(token: TokenView): Sprite {
     const root = new Container();
+    const base = new PixiSprite();
+    base.anchor.set(0.5);
     const disc = new Graphics();
+    const face = new PixiSprite();
+    face.anchor.set(0.5);
+    const faceMask = new Graphics();
+    face.mask = faceMask;
     const status = new Graphics();
     const label = new Text({
       text: '',
-      style: { fill: 0xffffff, fontSize: 22, stroke: { color: 0x000000, width: 4 } },
+      style: {
+        fill: 0xf2e3c0,
+        fontFamily: '"IM Fell English SC", Georgia, serif',
+        fontSize: 20,
+        fontWeight: '400',
+        stroke: { color: 0x000000, width: 5 },
+      },
     });
     label.anchor.set(0.5, 0);
-    root.addChild(disc, status, label);
+    root.addChild(base, disc, face, faceMask, status, label);
     root.eventMode = 'static';
     root.cursor = 'pointer';
     root.on('pointerdown', (e) => {
@@ -124,10 +149,29 @@ export class TokenLayer {
       else if (this.session.canControl(t)) this.session.select(t.id);
     });
     this.container.addChild(root);
-    const view = { root, disc, status, label, route: [] };
+    const view = { root, base, disc, face, faceMask, status, label, route: [] };
     this.views.set(token.id, view);
     return view;
   }
+}
+
+/** Shows a picture once it has loaded; switching pictures keeps the old one until then. */
+function showTexture(sprite: PixiSprite, url: string, size: number): void {
+  sprite.label = url;
+  void Assets.load<Texture>(url).then((texture) => {
+    if (sprite.destroyed || sprite.label !== url) return;
+    sprite.texture = texture;
+    sprite.setSize(size);
+  });
+}
+
+/** A shadow on the ground, the disc with a soft highlight, and a rim in the token's ring colour. */
+function drawDisc(g: Graphics, token: TokenView, r: number, rim: string): void {
+  g.ellipse(0, r * 0.12, r * 1.08, r * 1.02).fill({ color: 0x000000, alpha: 0.45 });
+  g.circle(0, 0, r).fill(token.color);
+  g.circle(-r * 0.22, -r * 0.25, r * 0.6).fill({ color: 0xffffff, alpha: 0.12 });
+  g.circle(0, 0, r).stroke({ width: 5, color: rim });
+  g.circle(0, 0, r + 3).stroke({ width: 1.5, color: 0x000000, alpha: 0.8 });
 }
 
 /** How full the hit point bar looks for tokens whose exact hit points are secret. */

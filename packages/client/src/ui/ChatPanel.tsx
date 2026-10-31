@@ -1,17 +1,19 @@
 import type { AttackLog, ChatMessage, DiceTerm, SpellLog } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '../session.ts';
+import { diceArt } from '../icon-art.ts';
 import { targetText } from '../spell-text.ts';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
 export function ChatPanel({ session }: Readonly<{ session: Session }>) {
   const [text, setText] = useState('');
+  const [open, setOpen] = useState(true);
   const list = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     list.current?.scrollTo({ top: list.current.scrollHeight });
-  }, [session.chat.length]);
+  }, [session.chat.length, open]);
 
   const submit = (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -21,7 +23,13 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
   };
 
   return (
-    <aside className="chat">
+    <aside className={open ? 'chat frame' : 'chat frame closed'}>
+      <header className="chat-head">
+        <span>Adventure log</span>
+        <button className="close" onClick={() => setOpen(!open)} aria-label={open ? 'Hide log' : 'Show log'}>
+          {open ? '–' : '+'}
+        </button>
+      </header>
       <div className="chat-list" ref={list}>
         {session.chat.length === 0 && (
           <p className="muted">Type to chat. Roll with /r 1d20+5, or /gmr for a GM-only roll.</p>
@@ -32,8 +40,9 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
       </div>
       <div className="dice">
         {QUICK_DICE.map((d) => (
-          <button key={d} onClick={() => session.say(`/r 1${d}`)}>
-            {d}
+          <button key={d} onClick={() => session.say(`/r 1${d}`)} title={`Roll 1${d}`}>
+            <img src={diceArt(d)} alt="" draggable={false} />
+            <span>{d}</span>
           </button>
         ))}
       </div>
@@ -44,9 +53,15 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
   );
 }
 
+function kindOf(m: ChatMessage): string {
+  if (m.attack) return 'msg msg-attack';
+  if (m.spell) return 'msg msg-spell';
+  return m.roll ? 'msg msg-roll' : 'msg';
+}
+
 function Message({ m }: Readonly<{ m: ChatMessage }>) {
   return (
-    <div className="msg">
+    <div className={kindOf(m)}>
       <span className="msg-from" style={{ color: m.color }}>
         {m.from}
         {m.gmOnly && <span className="muted"> (to GM)</span>}
@@ -92,7 +107,7 @@ function AttackLine({ a }: Readonly<{ a: AttackLog }>) {
         <span className={v.cls}>{v.text}</span>
       </span>
       {a.hit && (
-        <span className="msg-text">
+        <span className="msg-text damage">
           {a.parts.map((p) => `${p.dealt} ${p.type}`).join(' + ')} damage
           {a.parts.some((p) => p.dealt !== p.roll.total) && <span className="muted"> (adjusted)</span>}
         </span>
@@ -111,7 +126,7 @@ function SpellLine({ s }: Readonly<{ s: SpellLog }>) {
   return (
     <span className="attack-log spell-log">
       <span className="msg-text">
-        {s.caster} casts {s.spell}
+        <b>{s.caster}</b> casts <b className="spell-name">{s.spell}</b>
         {s.slot > 0 && <span className="muted"> (level {s.slot} slot)</span>}
       </span>
       {s.results.map((r, i) => (

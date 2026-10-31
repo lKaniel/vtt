@@ -1,6 +1,11 @@
 import type { TokenView } from '@vtt/shared';
+import { spellArt } from '../icon-art.ts';
+import { effectIcon, spellIcon } from '../icons.ts';
 import type { Session } from '../session.ts';
-import { describeSpell } from '../spell-text.ts';
+import { ORDINAL } from '../spell-text.ts';
+import { featureTip, spellTip } from '../tooltip.ts';
+import { IconFace } from './Icon.tsx';
+import { TipCard } from './Tip.tsx';
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -22,24 +27,29 @@ function Effects({ session, token }: Readonly<{ session: Session; token: TokenVi
   return (
     <>
       <h4>Affected by</h4>
-      <ul className="sheet-list">
+      <ul className="rows">
         {token.concentration && (
-          <li className="item">
-            <span>Concentrating on {token.concentration.name}</span>
-            <button className="small" onClick={() => session.dropConcentration(token.id)}>
+          <li className="row">
+            <IconFace icon={{ glyph: 'eye', tint: 'arcane' }} size={16} />
+            <span className="row-name">Concentrating on {token.concentration.name}</span>
+            <button className="btn small" onClick={() => session.dropConcentration(token.id)}>
               Stop
             </button>
           </li>
         )}
         {effects.map((e) => (
-          <li key={e.id} className="item">
-            <span>
-              {e.name}
-              {e.conditions?.length ? <span className="muted"> ({e.conditions.join(', ')})</span> : null}
-              {e.rounds !== undefined && <span className="muted"> · {e.rounds} rd</span>}
+          <li key={e.id} className="row">
+            <IconFace icon={effectIcon(e)} size={16} />
+            <span className="row-name">{e.name}</span>
+            <span className="row-detail">
+              {[e.conditions?.join(', '), e.rounds !== undefined && `${e.rounds} rd`].filter(Boolean).join(' · ')}
             </span>
             {gm && (
-              <button className="small" title="End this effect" onClick={() => session.removeEffect(token.id, e.id)}>
+              <button
+                className="btn small"
+                title="End this effect"
+                onClick={() => session.removeEffect(token.id, e.id)}
+              >
                 ×
               </button>
             )}
@@ -53,7 +63,7 @@ function Effects({ session, token }: Readonly<{ session: Session; token: TokenVi
 function Spells({ token }: Readonly<{ token: TokenView }>) {
   const caster = token.sheet?.caster;
   if (!caster) return null;
-  const spells = [...caster.spells].sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+  const levels = [...new Set(caster.spells.map((s) => s.level))].sort((a, b) => a - b);
   return (
     <>
       <h4>
@@ -62,15 +72,21 @@ function Spells({ token }: Readonly<{ token: TokenView }>) {
           · save DC {caster.dc} · attack {signed(caster.attack)}
         </span>
       </h4>
-      <ul className="sheet-list">
-        {spells.map((s) => (
-          <li key={s.id} title={describeSpell(s)}>
-            <span className="muted">{s.level || 'C'}</span> {s.name}
-            {s.concentration && <span className="muted"> · concentration</span>}
-            {!s.automated && <span className="muted"> · manual</span>}
-          </li>
-        ))}
-      </ul>
+      {levels.map((level) => (
+        <div key={level} className="spell-level">
+          <span className="spell-level-name">{level ? `${ORDINAL[level]} level` : 'Cantrips'}</span>
+          <div className="bag">
+            {caster.spells
+              .filter((s) => s.level === level)
+              .map((s) => (
+                <span key={s.id} className="bag-slot" tabIndex={0} aria-label={s.name}>
+                  <IconFace icon={{ ...spellIcon(s), art: spellArt(s) }} size={24} />
+                  <TipCard tip={spellTip(s)} />
+                </span>
+              ))}
+          </div>
+        </div>
+      ))}
     </>
   );
 }
@@ -81,16 +97,16 @@ function Features({ token }: Readonly<{ token: TokenView }>) {
   return (
     <>
       <h4>Features</h4>
-      <ul className="sheet-list">
+      <ul className="rows">
         {features.map((f) => (
-          <li key={f.id} title={f.description}>
-            {f.name}
+          <li key={f.id} className="row has-tip" tabIndex={0}>
+            <span className="row-name">{f.name}</span>
             {f.max !== undefined && (
-              <span className="muted">
-                {' '}
-                · {f.left}/{f.max} ({f.recharge === 'long' ? 'long rest' : 'short rest'})
+              <span className="row-detail">
+                {f.left}/{f.max}
               </span>
             )}
+            <TipCard tip={featureTip(f)} />
           </li>
         ))}
       </ul>

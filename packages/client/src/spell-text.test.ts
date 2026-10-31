@@ -1,6 +1,6 @@
 import { srdFor, type TokenView } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
-import { describeSpell, featureTitle, lowestSlot, previewLabel, targetText } from './spell-text.ts';
+import { lowestSlot, previewLabel, targetText } from './spell-text.ts';
 
 const spell = (id: string) => srdFor('2014').spells.get(id)!;
 const caster = (left: number[]) => ({ sheet: { caster: { left } } }) as unknown as TokenView;
@@ -10,15 +10,6 @@ describe('spell text', () => {
     expect(lowestSlot(caster([0, 0, 1]), spell('magic-missile'))).toBe(3);
     expect(lowestSlot(caster([0, 0, 0]), spell('magic-missile'))).toBeUndefined();
     expect(lowestSlot(caster([]), spell('fire-bolt'))).toBe(0);
-  });
-
-  it('describes a spell for its tooltip', () => {
-    expect(describeSpell(spell('fireball'))).toMatch(
-      /^Fireball: 3rd-level evocation, action, 150 ft, Instantaneous\n\n/,
-    );
-    expect(describeSpell(spell('fire-bolt'))).toMatch(/^Fire Bolt: evocation cantrip, action, 120 ft/);
-    expect(describeSpell(spell('shield'))).toMatch(/reaction, self/);
-    expect(describeSpell(spell('wish'))).toMatch(/not automated/);
   });
 
   it('sums up what a spell did to one target', () => {
@@ -33,11 +24,6 @@ describe('spell text', () => {
     );
     expect(targetText({ target: 'Ana', damage: 0, healed: 6, effect: 'Bless' })).toBe('Ana: heals 6 · Bless');
     expect(targetText({ target: 'Wolf', damage: 0, immune: true })).toBe('Wolf: unaffected');
-  });
-
-  it('labels a feature tile with its uses', () => {
-    expect(featureTitle({ name: 'Rage', max: 2, left: 1, description: 'Grr.' } as never)).toBe('Rage (1/2): Grr.');
-    expect(featureTitle({ name: 'Dash', description: 'Go.' } as never)).toBe('Dash: Go.');
   });
 
   it('labels the aiming preview', () => {
