@@ -171,6 +171,7 @@ export class CombatActions {
     if (range === 'long') notes.push('long range: disadvantage');
     if (outcome.graze) notes.push(`graze: ${dealt.at(-1)} damage`);
     if (total > 0 && hp <= 0) notes.push(`${target.token.name} is down`);
+    notes.push(...this.push(attacker.token, target.token, outcome.push));
     this.logAttack({
       attacker: attacker.token.name,
       target: target.token.name,
@@ -185,6 +186,13 @@ export class CombatActions {
       parts: result.damage.map((d, i) => ({ ...d, dealt: dealt[i]! })),
       notes,
     });
+  }
+
+  /** The push mastery shoves the target straight away from the attacker. */
+  private push(attacker: Token, target: Token, feet: number | undefined): string[] {
+    if (!feet) return [];
+    const moved = this.table.forceMove(target.id, [attacker.x, attacker.y], feet);
+    return moved > 0 ? [`${target.name} is pushed ${moved} ft`] : [];
   }
 
   private addEffects(id: string, outcome: WeaponAttackOutcome): void {

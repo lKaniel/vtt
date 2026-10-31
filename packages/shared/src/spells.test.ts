@@ -73,6 +73,17 @@ describe('resolveCast', () => {
     ]);
   });
 
+  it('pushes creatures that fail the save, and only those (thunderwave)', () => {
+    const targets = [side(goblin('a', 150)), side(goblin('b', 150))];
+    // 2d8 of 1s; goblin a fails (d20 1), goblin b saves (d20 20).
+    const rng = rngOf([face(1, 8), face(1, 8), face(1, 20), face(20, 20)]);
+    const out = resolveCast(
+      { spell: spell('thunderwave'), slot: 1, caster: side(wizard), targets, gridSize: 100 },
+      rng,
+    );
+    expect(out.results.map((r) => r.push)).toEqual([10, undefined]);
+  });
+
   it('sends each magic missile dart on its own and never misses', () => {
     const g = side(goblin('g'));
     const rng = rngOf([face(1, 4), face(1, 4), face(1, 4)]);

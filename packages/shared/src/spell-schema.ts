@@ -149,6 +149,8 @@ export const SpellSchema = z.object({
   summon: SummonSchema.optional(),
   /** Moves the caster up to this many feet to a point they can see (misty step). */
   teleport: z.number().positive().optional(),
+  /** Feet each creature hit (or failing its save) is moved: positive pushes away from the caster, negative pulls closer. */
+  push: z.number().int().optional(),
   /** Only creatures of these types are affected (hold person: humanoid). */
   creatureTypes: z.array(z.string()).optional(),
   /** false when the engine only shows the text: the GM applies it by hand. */

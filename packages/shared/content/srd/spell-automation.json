@@ -213,5 +213,15 @@
         "rounds": 1
       }
     }
+  },
+  "thunderwave": {
+    "both": {
+      "push": 10
+    }
+  },
+  "gust-of-wind": {
+    "2024": {
+      "push": 15
+    }
   }
 }

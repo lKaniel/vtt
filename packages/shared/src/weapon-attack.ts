@@ -27,6 +27,8 @@ export interface WeaponAttackOutcome {
   sneak: boolean;
   /** Damage a grazing weapon deals on a miss. */
   graze?: { amount: number; type: DamageType };
+  /** Feet the push mastery moves the target away. */
+  push?: number;
   /** Effects the attack leaves on the target (masteries). */
   targetEffects: Effect[];
   used: UsedEffect[];
@@ -55,6 +57,12 @@ const MASTERY_EFFECTS: Record<string, Omit<Effect, 'id' | 'source'>> = {
   vex: { name: 'Vexed', advantageAgainst: true, once: true, rounds: 1 },
   slow: { name: 'Slowed', speed: -10, rounds: 1 },
 };
+
+/** Push: 10 feet away, for a Large or smaller target. */
+function pushOnHit({ attacker, target, attack }: WeaponAttackInput): number | undefined {
+  const pushes = attacker.sheet.weaponMastery && attack.weapon?.mastery === 'push';
+  return pushes && target.token.size <= 2 ? 10 : undefined;
+}
 
 /** What the weapon's mastery does when it hits; topple needs a Con save. */
 function masteryOnHit(input: WeaponAttackInput, rng: Rng): { effects: Effect[]; notes: string[] } {
@@ -99,6 +107,7 @@ export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.ra
     roll: result,
     sneak: sneak && result.hit,
     graze: result.hit ? undefined : grazeDamage(input),
+    push: result.hit ? pushOnHit(input) : undefined,
     targetEffects: mastery.effects,
     used: mods.used,
     notes: [...(sneak && result.hit ? ['sneak attack'] : []), ...mastery.notes],

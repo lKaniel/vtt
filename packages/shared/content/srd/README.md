@@ -23,7 +23,8 @@ overlays that are merged in when the content loads, keyed `"both"`, `"2014"`
 or `"2024"`:
 
 - `spell-automation.json`: per spell id, effects (bless, hold person),
-  beams (scorching ray), summons (find familiar), teleports (misty step).
+  beams (scorching ray), summons (find familiar), teleports (misty step), `push` in feet
+  (thunderwave; negative pulls).
 - `class-automation.json`: per class id, spellcasting and features with
   uses, actions and effects (second wind, rage, sneak attack, weapon mastery).
 

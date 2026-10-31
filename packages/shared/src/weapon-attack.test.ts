@@ -100,6 +100,14 @@ describe('resolveWeaponAttack', () => {
       expect(out.targetEffects[0]).toMatchObject({ name: 'Vexed', advantageAgainst: true, onlyFor: 'pc' });
     });
 
+    it('pushes a Large or smaller target 10 feet on a hit', () => {
+      const fighter = pc('fighter', '2024', { inventory: [{ item: 'warhammer', equipped: true }] });
+      const hit = [face(15, 20), face(1, 8)];
+      expect(attack(fighter, ogre(), { name: 'Warhammer', rng: hit }).push).toBe(10);
+      expect(attack(fighter, ogre({ size: 3 }), { name: 'Warhammer', rng: hit }).push).toBeUndefined();
+      expect(attack(fighter, ogre(), { name: 'Warhammer', rng: [face(2, 20)] }).push).toBeUndefined();
+    });
+
     it('topples a target that fails a Constitution save', () => {
       const out = attack(pc('fighter', '2024', { inventory: [{ item: 'maul', equipped: true }] }), ogre(), {
         name: 'Maul',

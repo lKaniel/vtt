@@ -5,6 +5,7 @@ import {
   currentTurn,
   dropConcentration,
   editionOf,
+  forcedMove,
   freshTurn,
   hasLineOfSight,
   leaveCombat,
@@ -167,6 +168,36 @@ export class Table {
     }
     this.note(`${current.name} loses concentration on ${current.concentration.name}`);
     this.endConcentration(current.id);
+  }
+
+  /** Slides a creature up to `feet` away from `from` (negative: toward it), stopping at walls and creatures. Returns the feet it moved. */
+  forceMove(id: string, from: Point, feet: number): number {
+    const token = this.store.tokens.get(id);
+    if (!token) return 0;
+    const g = this.store.world.gridSize;
+    const reach = (Math.abs(feet) / 5 + token.size) * g;
+    const path = forcedMove({
+      from,
+      start: [token.x, token.y],
+      feet,
+      gridSize: g,
+      walls: this.store.wallsBetween([token.x - reach, token.y - reach], [token.x + reach, token.y + reach]),
+      taken: (p) => this.blocks(token, p),
+    });
+    if (path.length < 2) return 0;
+    const [x, y] = path.at(-1)!;
+    this.store.setToken({ ...token, x, y }, path);
+    return (path.length - 1) * 5;
+  }
+
+  /** Whether a creature that isn't down stands where `token` would be at `p`. */
+  private blocks(token: Token, [x, y]: Point): boolean {
+    const g = this.store.world.gridSize;
+    return [...this.store.tokens.values()].some((t) => {
+      const reach = ((t.size + token.size) * g) / 2;
+      const overlaps = Math.abs(t.x - x) < reach && Math.abs(t.y - y) < reach;
+      return t.id !== token.id && overlaps && (this.sheetOf(t)?.hp ?? 1) > 0;
+    });
   }
 
   /** Ends whatever `caster` concentrates on: its effects end and its summons vanish. */
