@@ -34,7 +34,7 @@ export interface CastRequest {
 const COST: Record<CastingTime, Cost> = {
   action: 'action',
   bonus: 'bonus',
-  reaction: 'free',
+  reaction: 'reaction',
   minute: 'free',
   hour: 'free',
 };

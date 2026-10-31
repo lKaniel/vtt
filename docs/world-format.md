@@ -205,7 +205,8 @@ guardians: creatures starting their turn in it or walking in are hit),
 `repeat: { "spell", "slot" }` (the spell can be used again without a slot,
 like spiritual weapon), `armorBase` (unarmored AC is this + dex, mage armor),
 `minAc` (barkskin), `maxHp` (aid), `turnTempHp` (temporary hit points at the
-start of each of the bearer's turns, heroism). Lifetime: `rounds`
+start of each of the bearer's turns, heroism), `speedTimes` (speed multiplier:
+2 for haste, 0.5 for slow), `turnAttacks` (extra attacks each turn, haste). Lifetime: `rounds`
 counts down at the start of the `source` creature's turn; `once` ends it the
 first time it changes an attack; `repeatSave` with `save: { "ability", "dc" }`
 lets the bearer save again at the end of each of its turns; `endsOnAttack`

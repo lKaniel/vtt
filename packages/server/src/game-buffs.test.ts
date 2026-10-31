@@ -85,3 +85,13 @@ describe('buff spells on the server', () => {
     expect(tok('bo').deathSaves).toBeUndefined();
   });
 });
+
+describe('haste on the server', () => {
+  it('gives the hasted creature an extra attack at the start of its turn', () => {
+    store.setToken({ ...tok('bo'), effects: [{ id: 'haste-hero', name: 'Haste', turnAttacks: 1, source: 'hero' }] });
+    const gm = join_('gm');
+    dice = [0.99, 0.5];
+    gm.receive({ t: 'combatStart', tokens: ['bo', 'hero'] });
+    expect(store.combat!.left).toMatchObject({ action: true, attacks: 1 });
+  });
+});

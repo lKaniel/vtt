@@ -21,6 +21,7 @@ beforeEach(async () => {
       ...store.tokens.get('hero'),
       x: 50,
       y: 50,
+      darkvision: 60,
       stats: { class: 'wizard', level: 5, maxHp: 30, abilities: { int: 16, dex: 14 }, spells: ['shield'] },
     }),
   );
@@ -75,5 +76,22 @@ describe('reactions to being hit', () => {
     const { gm } = goblinSwings();
     gm.receive({ t: 'endTurn' });
     expect(tok('hero').hp).toBe(30 - 5);
+  });
+});
+
+describe('reaction spells', () => {
+  it('casting hellish rebuke out of turn uses the reaction, once a round', () => {
+    store.setToken({ ...tok('hero'), stats: { ...tok('hero').stats, spells: ['hellish-rebuke'] } });
+    const ana = join_('ana');
+    const gm = join_('gm');
+    dice = [face(20), face(1)];
+    gm.receive({ t: 'combatStart', tokens: ['goblin', 'hero'] });
+    ana.take('error');
+    const rebuke = { t: 'cast', caster: 'hero', spell: 'hellish-rebuke', slot: 1, targets: ['goblin'] } as const;
+    ana.receive(rebuke);
+    expect(ana.take('error')).toEqual([]);
+    expect(store.combat!.reacted).toEqual(['hero']);
+    ana.receive(rebuke);
+    expect(ana.take('error').map((m) => m.message)).toEqual(['Hero has already used their reaction']);
   });
 });

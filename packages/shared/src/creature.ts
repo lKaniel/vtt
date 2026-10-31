@@ -162,12 +162,13 @@ function applyEffects(c: Creature): Creature {
   const held = c.conditions.some((x) => HELD.includes(x)) || effects.some((e) => e.immobile);
   const maxHp = c.maxHp + sum('maxHp');
   const minAc = Math.max(0, ...effects.map((e) => e.minAc ?? 0));
+  const times = effects.reduce((n, e) => n * (e.speedTimes ?? 1), 1);
   return {
     ...c,
     maxHp,
     hp: Math.min(c.hp, maxHp),
     ac: Math.max(c.ac + sum('ac'), minAc),
-    speed: held ? 0 : Math.max(0, c.speed + sum('speed')),
+    speed: held ? 0 : Math.floor(Math.max(0, c.speed + sum('speed')) * times),
     resistances: [...new Set([...c.resistances, ...effects.flatMap((e) => e.resistances ?? [])])],
   };
 }

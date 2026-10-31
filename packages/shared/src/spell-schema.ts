@@ -50,6 +50,10 @@ const modifiers = {
   turnTempHp: z.union([z.number().int(), z.literal('mod')]).optional(),
   /** Feet added to (or taken from) the bearer's speed. */
   speed: z.number().int().optional(),
+  /** The bearer's speed is multiplied by this after the rest: 2 for haste, 0.5 for slow. */
+  speedTimes: z.number().positive().optional(),
+  /** Attacks the bearer gets at the start of each of its turns, on top of its action (haste). */
+  turnAttacks: z.number().int().positive().optional(),
   resistances: z.array(DamageTypeSchema).optional(),
   /** Attacks against the bearer have advantage (faerie fire) or disadvantage. */
   advantageAgainst: z.boolean().optional(),

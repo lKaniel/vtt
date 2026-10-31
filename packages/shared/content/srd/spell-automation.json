@@ -235,6 +235,14 @@
       "gmNote": "Cast right after a weapon hit. The restrained target takes 1d6 piercing at the start of each of its turns and can use its action to escape (Athletics vs your DC)."
     }
   },
+  "entangle": {
+    "2024": {
+      "area": {
+        "shape": "cube",
+        "size": 20
+      }
+    }
+  },
   "enthrall": {
     "both": {
       "automated": false
@@ -371,6 +379,17 @@
   "hallow": {
     "both": {
       "automated": false
+    }
+  },
+  "haste": {
+    "both": {
+      "effect": {
+        "ac": 2,
+        "saveAdvantage": ["dex"],
+        "speedTimes": 2,
+        "turnAttacks": 1
+      },
+      "gmNote": "The extra action can also Dash, Disengage, Hide or Use an Object; when Haste ends the target loses its next turn."
     }
   },
   "heal": {
@@ -738,6 +757,29 @@
       "automated": true
     }
   },
+  "sleet-storm": {
+    "2014": {
+      "automated": true,
+      "save": {
+        "ability": "dex"
+      },
+      "effect": {
+        "conditions": ["prone"],
+        "rounds": 1
+      },
+      "gmNote": "Concentrating casters in the area make a Constitution save; the area is heavily obscured."
+    }
+  },
+  "slow": {
+    "both": {
+      "effect": {
+        "ac": -2,
+        "speedTimes": 0.5,
+        "repeatSave": true
+      },
+      "gmNote": "Also -2 to Dexterity saves, no reactions, one attack a turn, and an action or a bonus action but not both."
+    }
+  },
   "spare-the-dying": {
     "both": {
       "stabilize": true,
@@ -816,6 +858,26 @@
         "once": true,
         "rounds": 1
       }
+    }
+  },
+  "wall-of-fire": {
+    "2024": {
+      "area": {
+        "shape": "line",
+        "size": 60
+      }
+    }
+  },
+  "web": {
+    "2014": {
+      "automated": true,
+      "save": {
+        "ability": "dex"
+      },
+      "effect": {
+        "conditions": ["restrained"]
+      },
+      "gmNote": "A restrained creature can use its action for a Strength check to break free; the web is difficult terrain."
     }
   },
   "zone-of-truth": {

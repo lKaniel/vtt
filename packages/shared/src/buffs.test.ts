@@ -105,3 +105,30 @@ describe('buff spells', () => {
     expect(cast('revivify', ally()).revived).toBeUndefined();
   });
 });
+
+describe('haste and slow', () => {
+  it('haste doubles speed, adds 2 AC and Dex save advantage, and gives an attack each turn', () => {
+    const bo = ally();
+    const effect = cast('haste', bo).effect;
+    expect(effect).toMatchObject({ ac: 2, saveAdvantage: ['dex'], turnAttacks: 1, concentration: true });
+    expect(sheetOf(wearing(bo, effect))).toMatchObject({ speed: 60, ac: 14 });
+  });
+
+  it('slow halves speed and takes 2 AC', () => {
+    const bo = ally();
+    expect(sheetOf(wearing(bo, { ...cast('slow', bo).effect!, id: 'slow' }))).toMatchObject({ speed: 15, ac: 10 });
+  });
+});
+
+describe('area fixes', () => {
+  it('2014 web restrains on a failed Dex save; 2024 entangle and wall of fire cover an area', () => {
+    expect(spell('web')).toMatchObject({
+      automated: true,
+      save: { ability: 'dex' },
+      effect: { conditions: ['restrained'] },
+    });
+    expect(spell('entangle', '2024').area).toMatchObject({ shape: 'cube', size: 20 });
+    expect(spell('wall-of-fire', '2024').area).toMatchObject({ shape: 'line', size: 60 });
+    expect(spell('sleet-storm')).toMatchObject({ automated: true, effect: { conditions: ['prone'] } });
+  });
+});

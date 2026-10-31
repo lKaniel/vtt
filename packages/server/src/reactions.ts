@@ -92,7 +92,7 @@ export class Reactions {
   }
 
   private answer(hit: PendingHit, choice: string | undefined): void {
-    if (choice) this.spendReaction(hit.target.token.id);
+    if (choice) this.table.pay(hit.target.token, 'reaction');
     if (choice === 'shield') return this.combat.land(this.shield(hit));
     if (choice === 'uncanny-dodge') {
       this.table.note(`${hit.target.token.name} uses Uncanny Dodge`);
@@ -113,11 +113,6 @@ export class Reactions {
     const ac = sheet.ac + 5;
     this.table.note(`${token.name} casts Shield: AC ${ac}`);
     return hit.outcome.roll.total < ac ? { ...hit, outcome: shielded(hit.outcome) } : hit;
-  }
-
-  private spendReaction(id: string): void {
-    const combat = this.table.store.combat;
-    if (combat) this.table.store.setCombat({ ...combat, reacted: [...combat.reacted, id] });
   }
 
   private offer(offer: ReactionOffer): void {

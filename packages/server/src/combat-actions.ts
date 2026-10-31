@@ -130,14 +130,16 @@ export class CombatActions {
     this.turnStarted(id);
   }
 
-  /** Temporary hit points an effect gives at the start of the bearer's turn (heroism). */
+  /** What effects give at the start of the bearer's turn: temporary hit points (heroism), attacks (haste). */
   private hearten(id: string): void {
     const token = this.store.tokens.get(id);
-    const given = Math.max(
-      0,
-      ...(token?.effects ?? []).map((e) => (typeof e.turnTempHp === 'number' ? e.turnTempHp : 0)),
-    );
-    if (token && given > (token.tempHp ?? 0)) this.store.setToken({ ...token, tempHp: given });
+    if (!token) return;
+    const effects = token.effects ?? [];
+    const given = Math.max(0, ...effects.map((e) => (typeof e.turnTempHp === 'number' ? e.turnTempHp : 0)));
+    if (given > (token.tempHp ?? 0)) this.store.setToken({ ...token, tempHp: given });
+    const attacks = effects.reduce((n, e) => n + (e.turnAttacks ?? 0), 0);
+    const left = attacks ? this.table.budget(token) : undefined;
+    if (left) this.table.setBudget(token, { ...left, attacks: left.attacks + attacks });
   }
 
   /** Checks that `token` may walk `feet` now, and spends the movement in a fight. Standing up costs half its speed. */
@@ -176,8 +178,8 @@ export class CombatActions {
     const attacker = this.table.actor(player, req.attacker);
     const target = this.table.fighter(req.target);
     const attack = this.attackOf(attacker, req);
-    const combat = this.store.combat;
-    if (combat) this.store.setCombat({ ...combat, reacted: [...combat.reacted, attacker.token.id] });
+    this.table.check(attacker.token, 'reaction');
+    this.table.pay(attacker.token, 'reaction');
     this.resolve({ attacker, target, attack, range: 'normal' }, { smite: req.smite, reaction: true });
   }
 

@@ -39,7 +39,7 @@ export interface Fighter {
 }
 
 /** What one turn costs: an action, a bonus action, or one attack of an Attack action. */
-export type Cost = 'action' | 'bonus' | 'attack' | 'free';
+export type Cost = 'action' | 'bonus' | 'attack' | 'reaction' | 'free';
 
 /**
  * The world as the rules see it, shared by combat, spells and features:
@@ -127,6 +127,7 @@ export class Table {
   /** Throws unless `token` can pay `cost` now. Outside a fight everything is free. */
   check(token: Token, cost: Cost): void {
     if (cost === 'free') return;
+    if (cost === 'reaction') return this.checkReaction(token);
     const left = this.budget(token);
     if (!left) return;
     if (cost === 'bonus' && !left.bonus) throw new Refusal(`${token.name} has already used their bonus action`);
@@ -139,6 +140,7 @@ export class Table {
   /** Spends `cost`; an attack starts the Attack action, which gives `attacks` attacks. */
   pay(token: Token, cost: Cost, attacks = 1): void {
     if (cost === 'free') return;
+    if (cost === 'reaction') return this.payReaction(token);
     const left = this.budget(token);
     if (!left) return;
     if (cost === 'bonus') return this.setBudget(token, { ...left, bonus: false });
@@ -146,6 +148,18 @@ export class Table {
     const next =
       left.attacks > 0 ? { ...left, attacks: left.attacks - 1 } : { ...left, action: false, attacks: attacks - 1 };
     this.setBudget(token, next);
+  }
+
+  /** A reaction is once per round, at any time, in a fight; outside one it's free. */
+  private checkReaction(token: Token): void {
+    if (this.store.combat?.reacted.includes(token.id)) {
+      throw new Refusal(`${token.name} has already used their reaction`);
+    }
+  }
+
+  private payReaction(token: Token): void {
+    const combat = this.store.combat;
+    if (combat && this.inFight(token.id)) this.store.setCombat({ ...combat, reacted: [...combat.reacted, token.id] });
   }
 
   /** Marks one spell slot of level `slot` as spent. */
