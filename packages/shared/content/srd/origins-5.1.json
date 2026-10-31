@@ -1,0 +1,5441 @@
+{
+  "species": [
+    {
+      "id": "dragonborn",
+      "name": "Dragonborn",
+      "description": "Your draconic heritage manifests in a variety of traits you share with other dragonborn.\n\n***Ability Score Increase.*** Your Strength score increases by 2, and your Charisma score increases by 1.\n\n***Age.*** Young dragonborn grow quickly. They walk hours after hatching, attain the size and development of a 10-year-old human child by the age of 3, and reach adulthood by 15. They live to be around 80.\n\n***Alignment.*** Dragonborn tend to extremes, making a conscious choice for one side or the other in the cosmic war between good and evil. Most dragonborn are good, but those who side with evil can be terrible villains.\n\n***Size.*** Dragonborn are taller and heavier than humans, standing well over 6 feet tall and averaging almost 250 pounds. Your size is Medium.\n\n***Speed.*** Your base walking speed is 30 feet.\n\n***Draconic Ancestry.*** You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table.\n\n**Draconic Ancestry**\n\n| Dragon | Damage Type | Breath Weapon |\n| --- | --- | --- |\n| Black | Acid | 5 by 30 ft. line (Dex. save) |\n| Blue | Lightning | 5 by 30 ft. line (Dex. save) |\n| Brass | Fire | 5 by 30 ft. line (Dex. save) |\n| Bronze | Lightning | 5 by 30 ft. line (Dex. save) |\n| Copper | Acid | 5 by 30 ft. line (Dex. save) |\n| Gold | Fire | 15 ft. cone (Dex. save) |\n| Green | Poison | 15 ft. cone (Con. save) |\n| Red | Fire | 15 ft. cone (Dex. save) |\n| Silver | Cold | 15 ft. cone (Con. save) |\n| White | Cold | 15 ft. cone (Con. save) |\n\n***Breath Weapon.*** You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation.\n\nWhen you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level.\n\nAfter you use your breath weapon, you can't use it again until you complete a short or long rest.\n\n***Languages.*** You can speak, read, and write Common and Draconic. Draconic is thought to be one of the oldest languages and is often used in the study of magic. The language sounds harsh to most other creatures and includes numerous hard consonants and sibilants.",
+      "traits": [
+        {
+          "name": "Damage Resistance",
+          "description": "You have resistance to the damage type associated with your draconic ancestry."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 30,
+      "darkvision": 0,
+      "bonuses": {
+        "str": 2,
+        "cha": 1
+      },
+      "subspecies": []
+    },
+    {
+      "id": "dwarf",
+      "name": "Dwarf",
+      "description": "Your dwarf character has an assortment of inborn abilities, part and parcel of dwarven nature.\n\n***Ability Score Increase.*** Your Constitution score increases by 2.\n\n***Age.*** Dwarves mature at the same rate as humans, but they're considered young until they reach the age of 50. On average, they live about 350 years.\n\n***Alignment.*** Most dwarves are lawful, believing firmly in the benefits of a well-ordered society. They tend toward good as well, with a strong sense of fair play and a belief that everyone deserves to share in the benefits of a just order.\n\n***Size.*** Dwarves stand between 4 and 5 feet tall and average about 150 pounds. Your size is Medium.\n\n***Languages.*** You can speak, read, and write Common and Dwarvish. Dwarvish is full of hard consonants and guttural sounds, and those characteristics spill over into whatever other language a dwarf might speak.",
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+        },
+        {
+          "name": "Dwarven Speed",
+          "description": "Your base walking speed is 25 feet. Your speed is not reduced by wearing heavy armor."
+        },
+        {
+          "name": "Dwarven Resilience",
+          "description": "You have advantage on saving throws against poison, and you have resistance against poison damage."
+        },
+        {
+          "name": "Dwarven Combat Training",
+          "description": "You have proficiency with the battleaxe, handaxe, light hammer, and warhammer."
+        },
+        {
+          "name": "Tool Proficiency",
+          "description": "You gain proficiency with the artisan's tools of your choice: smith's tools, brewer's supplies, or mason's tools."
+        },
+        {
+          "name": "Stonecunning",
+          "description": "Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check, instead of your normal proficiency bonus."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 25,
+      "darkvision": 60,
+      "bonuses": {
+        "con": 2
+      },
+      "subspecies": [
+        {
+          "id": "hill-dwarf",
+          "name": "Hill dwarf",
+          "description": "As a hill dwarf, you have keen senses, deep intuition, and remarkable resilience.\n\n***Ability Score Increase.*** Your Wisdom score increases by 1.",
+          "bonuses": {
+            "wis": 1
+          },
+          "traits": [
+            {
+              "name": "Dwarven Toughness",
+              "description": "Your hit point maximum increases by 1, and it increases by 1 every time you gain a level."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elf",
+      "name": "Elf",
+      "description": "Your elf character has a variety of natural abilities, the result of thousands of years of elven refinement.\n\n***Ability Score Increase.*** Your Dexterity score increases by 2.\n\n***Age.*** Although elves reach physical maturity at about the same age as humans, the elven understanding of adulthood goes beyond physical growth to encompass worldly experience. An elf typically claims adulthood and an adult name around the age of 100 and can live to be 750 years old.\n\n***Alignment.*** Elves love freedom, variety, and self-expression, so they lean strongly toward the gentler aspects of chaos. They value and protect others' freedom as well as their own, and they are more often good than not.\n\n***Size.*** Elves range from under 5 to over 6 feet tall and have slender builds. Your size is Medium.\n\n***Speed.*** Your base walking speed is 30 feet.\n\n***Languages.*** You can speak, read, and write Common and Elvish. Elvish is fluid, with subtle intonations and intricate grammar. Elven literature is rich and varied, and their songs and poems are famous among other races. Many bards learn their language so they can add Elvish ballads to their repertoires.",
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+        },
+        {
+          "name": "Keen Senses",
+          "description": "You have proficiency in the Perception skill."
+        },
+        {
+          "name": "Fey Ancestry",
+          "description": "You have advantage on saving throws against being charmed, and magic can't put you to sleep."
+        },
+        {
+          "name": "Trance",
+          "description": "Elves don't need to sleep. Instead, they meditate deeply, remaining semiconscious, for 4 hours a day. (The Common word for such meditation is \"trance.\") While meditating, you can dream after a fashion; such dreams are actually mental exercises that have become reflexive through years of practice. After resting in this way, you gain the same benefit that a human does from 8 hours of sleep."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 30,
+      "darkvision": 60,
+      "bonuses": {
+        "dex": 2
+      },
+      "subspecies": [
+        {
+          "id": "high-elf",
+          "name": "High elf",
+          "description": "As a high elf, you have a keen mind and a mastery of at least the basics of magic. In many fantasy gaming worlds, there are two kinds of high elves. One type is haughty and reclusive, believing themselves to be superior to non-elves and even other elves. The other type is more common and more friendly, and often encountered among humans and other races.\n\n***Ability Score Increase.*** Your Intelligence score increases by 1.",
+          "bonuses": {
+            "int": 1
+          },
+          "traits": [
+            {
+              "name": "Elf Weapon Training",
+              "description": "You have proficiency with the longsword, shortsword, shortbow, and longbow."
+            },
+            {
+              "name": "Cantrip",
+              "description": "You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it."
+            },
+            {
+              "name": "Extra Language",
+              "description": "You can speak, read, and write one extra language of your choice."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gnome",
+      "name": "Gnome",
+      "description": "Your gnome character has certain characteristics in common with all other gnomes.\n\n***Ability Score Increase.*** Your Intelligence score increases by 2.\n\n***Age.*** Gnomes mature at the same rate humans do, and most are expected to settle down into an adult life by around age 40. They can live 350 to almost 500 years.\n\n***Alignment.*** Gnomes are most often good. Those who tend toward law are sages, engineers, researchers, scholars, investigators, or inventors. Those who tend toward chaos are minstrels, tricksters, wanderers, or fanciful jewelers. Gnomes are good-hearted, and even the tricksters among them are more playful than vicious.\n\n***Size.*** Gnomes are between 3 and 4 feet tall and average about 40 pounds. Your size is Small.\n\n***Speed.*** Your base walking speed is 25 feet.\n\n***Languages.*** You can speak, read, and write Common and Gnomish. The Gnomish language, which uses the Dwarvish script, is renowned for its technical treatises and its catalogs of knowledge about the natural world.",
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+        },
+        {
+          "name": "Gnome Cunning",
+          "description": "You have advantage on all Intelligence, Wisdom, and Charisma saving throws against magic."
+        }
+      ],
+      "sizes": ["small"],
+      "speed": 25,
+      "darkvision": 60,
+      "bonuses": {
+        "int": 2
+      },
+      "subspecies": [
+        {
+          "id": "rock-gnome",
+          "name": "Rock gnome",
+          "description": "As a rock gnome, you have a natural inventiveness and hardiness beyond that of other gnomes.\n\n***Ability Score Increase.*** Your Constitution score increases by 1.",
+          "bonuses": {
+            "con": 1
+          },
+          "traits": [
+            {
+              "name": "Artificer's Lore",
+              "description": "Whenever you make an Intelligence (History) check related to magic items, alchemical objects, or technological devices, you can add twice your proficiency bonus, instead of any proficiency bonus you normally apply."
+            },
+            {
+              "name": "Tinker",
+              "description": "You have proficiency with artisan's tools (tinker's tools). Using those tools, you can spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork device (AC 5, 1 hp). The device ceases to function after 24 hours (unless you spend 1 hour repairing it to keep the device functioning), or when you use your action to dismantle it; at that time, you can reclaim the materials used to create it. You can have up to three such devices active at a time.\n\nWhen you create a device, choose one of the following options:\n\n*Clockwork Toy.* This toy is a clockwork animal, monster, or person, such as a frog, mouse, bird, dragon, or soldier. When placed on the ground, the toy moves 5 feet across the ground on each of your turns in a random direction. It makes noises as appropriate to the creature it represents.\n\n*Fire Starter.* The device produces a miniature flame, which you can use to light a candle, torch, or campfire. Using the device requires your action.\n\n*Music Box.* When opened, this music box plays a single song at a moderate volume. The box stops playing when it reaches the song's end or when it is closed."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "half-elf",
+      "name": "Half-elf",
+      "description": "Your half-elf character has some qualities in common with elves and some that are unique to half-elves.\n\n***Ability Score Increase.*** Your Charisma score increases by 2, and two other ability scores of your choice increase by 1.\n\n***Age.*** Half-elves mature at the same rate humans do and reach adulthood around the age of 20. They live much longer than humans, however, often exceeding 180 years.\n\n***Alignment.*** Half-elves share the chaotic bent of their elven heritage. They value both personal freedom and creative expression, demonstrating neither love of leaders nor desire for followers. They chafe at rules, resent others' demands, and sometimes prove unreliable, or at least unpredictable.\n\n***Size.*** Half-elves are about the same size as humans, ranging from 5 to 6 feet tall. Your size is Medium.\n\n***Speed.*** Your base walking speed is 30 feet.\n\n***Languages.*** You can speak, read, and write Common, Elvish, and one extra language of your choice.",
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+        },
+        {
+          "name": "Fey Ancestry",
+          "description": "You have advantage on saving throws against being charmed, and magic can't put you to sleep."
+        },
+        {
+          "name": "Skill Versatility",
+          "description": "You gain proficiency in two skills of your choice."
+        },
+        {
+          "name": "Extra Language",
+          "description": "You can speak, read, and write one extra language of your choice."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 30,
+      "darkvision": 60,
+      "bonuses": {
+        "cha": 2
+      },
+      "bonusChoice": {
+        "count": 2,
+        "amount": 1,
+        "from": ["str", "dex", "con", "int", "wis"]
+      },
+      "subspecies": []
+    },
+    {
+      "id": "half-orc",
+      "name": "Half-orc",
+      "description": "Your half-orc character has certain traits deriving from your orc ancestry.\n\n***Ability Score Increase.*** Your Strength score increases by 2, and your Constitution score increases by 1.\n\n***Age.*** Half-orcs mature a little faster than humans, reaching adulthood around age 14. They age noticeably faster and rarely live longer than 75 years.\n\n***Alignment.*** Half-orcs inherit a tendency toward chaos from their orc parents and are not strongly inclined toward good. Half-orcs raised among orcs and willing to live out their lives among them are usually evil.\n\n***Size.*** Half-orcs are somewhat larger and bulkier than humans, and they range from 5 to well over 6 feet tall. Your size is Medium.\n\n***Speed.*** Your base walking speed is 30 feet.\n\n***Languages.*** You can speak, read, and write Common and Orc. Orc is a harsh, grating language with hard consonants. It has no script of its own but is written in the Dwarvish script.",
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+        },
+        {
+          "name": "Menacing",
+          "description": "You gain proficiency in the Intimidation skill."
+        },
+        {
+          "name": "Relentless Endurance",
+          "description": "When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. You can't use this feature again until you finish a long rest."
+        },
+        {
+          "name": "Savage Attacks",
+          "description": "When you score a critical hit with a melee weapon attack, you can roll one of the weapon's damage dice one additional time and add it to the extra damage of the critical hit."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 30,
+      "darkvision": 60,
+      "bonuses": {
+        "str": 2,
+        "con": 1
+      },
+      "subspecies": []
+    },
+    {
+      "id": "halfling",
+      "name": "Halfling",
+      "description": "Your halfling character has a number of traits in common with all other halflings.\n\n***Ability Score Increase.*** Your Dexterity score increases by 2.\n\n***Age.*** A halfling reaches adulthood at the age of 20 and generally lives into the middle of his or her second century.\n\n***Alignment.*** Most halflings are lawful good. As a rule, they are good-hearted and kind, hate to see others in pain, and have no tolerance for oppression. They are also very orderly and traditional, leaning heavily on the support of their community and the comfort of their old ways.\n\n***Size.*** Halflings average about 3 feet tall and weigh about 40 pounds. Your size is Small.\n\n***Speed.*** Your base walking speed is 25 feet.\n\n***Languages.*** You can speak, read, and write Common and Halfling. The Halfling language isn't secret, but halflings are loath to share it with others. They write very little, so they don't have a rich body of literature. Their oral tradition, however, is very strong. Almost all halflings speak Common to converse with the people in whose lands they dwell or through which they are traveling.",
+      "traits": [
+        {
+          "name": "Lucky",
+          "description": "When you roll a 1 on the d20 for an attack roll, ability check, or saving throw, you can reroll the die and must use the new roll."
+        },
+        {
+          "name": "Brave",
+          "description": "You have advantage on saving throws against being frightened."
+        },
+        {
+          "name": "Halfling Nimbleness",
+          "description": "You can move through the space of any creature that is of a size larger than yours."
+        }
+      ],
+      "sizes": ["small"],
+      "speed": 25,
+      "darkvision": 0,
+      "bonuses": {
+        "dex": 2
+      },
+      "subspecies": [
+        {
+          "id": "lightfoot",
+          "name": "Lightfoot halfling",
+          "description": "As a lightfoot halfling, you can easily hide from notice, even using other people as cover. You're inclined to be affable and get along well with others.\n\nLightfoots are more prone to wanderlust than other halflings, and often dwell alongside other races or take up a nomadic life.\n\n***Ability Score Increase.*** Your Charisma score increases by 1.",
+          "bonuses": {
+            "cha": 1
+          },
+          "traits": [
+            {
+              "name": "Naturally Stealthy",
+              "description": "You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "human",
+      "name": "Human",
+      "description": "It's hard to make generalizations about humans, but your human character has these traits.\n\n***Ability Score Increase.*** Your ability scores each increase by 1.\n\n***Age.*** Humans reach adulthood in their late teens and live less than a century.\n\n***Alignment.*** Humans tend toward no particular alignment. The best and the worst are found among them.\n\n***Size.*** Humans vary widely in height and build, from barely 5 feet to well over 6 feet tall. Regardless of your position in that range, your size is Medium.\n\n***Speed.*** Your base walking speed is 30 feet.\n\n***Languages.*** You can speak, read, and write Common and one extra language of your choice. Humans typically learn the languages of other peoples they deal with, including obscure dialects. They are fond of sprinkling their speech with words borrowed from other tongues: Orc curses, Elvish musical expressions, Dwarvish military phrases, and so on.",
+      "traits": [
+        {
+          "name": "Extra Language",
+          "description": "You can speak, read, and write one extra language of your choice."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 30,
+      "darkvision": 0,
+      "bonuses": {
+        "str": 1,
+        "dex": 1,
+        "con": 1,
+        "int": 1,
+        "wis": 1,
+        "cha": 1
+      },
+      "subspecies": []
+    },
+    {
+      "id": "tiefling",
+      "name": "Tiefling",
+      "description": "Tieflings share certain racial traits as a result of their infernal descent.\n\n***Ability Score Increase.*** Your Intelligence score increases by 1, and your Charisma score increases by 2.\n\n***Age.*** Tieflings mature at the same rate as humans but live a few years longer.\n\n***Alignment.*** Tieflings might not have an innate tendency toward evil, but many of them end up there. Evil or not, an independent nature inclines many tieflings toward a chaotic alignment.\n\n***Size.*** Tieflings are about the same size and build as humans. Your size is Medium.\n\n***Speed.*** Your base walking speed is 30 feet.\n\n***Languages.*** You can speak, read, and write Common and Infernal.",
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+        },
+        {
+          "name": "Hellish Resistance",
+          "description": "You have resistance to fire damage."
+        },
+        {
+          "name": "Infernal Legacy",
+          "description": "You know the *thaumaturgy* cantrip. When you reach 3rd level, you can cast the *hellish rebuke* spell as a 2nd-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the *darkness* spell once with this trait and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells."
+        }
+      ],
+      "sizes": ["medium"],
+      "speed": 30,
+      "darkvision": 60,
+      "bonuses": {
+        "int": 1,
+        "cha": 2
+      },
+      "subspecies": []
+    }
+  ],
+  "backgrounds": [
+    {
+      "id": "acolyte",
+      "name": "Acolyte",
+      "description": "You have spent your life in the service of a temple to a specific god or pantheon of gods. You act as an intermediary between the realm of the holy and the mortal world, performing sacred rites and offering sacrifices in order to conduct worshipers into the presence of the divine. You are not necessarily a cleric—performing sacred rites is not the same thing as channeling divine power.\n\nChoose a god, a pantheon of gods, or some other quasi-divine being from among those listed in \"Fantasy-Historical Pantheons\" or those specified by your GM, and work with your GM to detail the nature of your religious service. Were you a lesser functionary in a temple, raised from childhood to assist the priests in the sacred rites? Or were you a high priest who suddenly experienced a call to serve your god in a different way? Perhaps you were the leader of a small cult outside of any established temple structure, or even an occult group that served a fiendish master that you now deny.\n\n**Skill Proficiencies:** Insight, Religion\n\n**Languages:** Two of your choice\n\n**Equipment:** A holy symbol (a gift to you when you entered the priesthood), a prayer book or prayer wheel, 5 sticks of incense, vestments, a set of common clothes, and a pouch containing 15 gp",
+      "skills": ["insight", "religion"],
+      "kit": [
+        {
+          "id": "acolyteSymbol",
+          "prompt": "Acolyte: choose your holy symbol",
+          "options": [
+            {
+              "id": "amulet",
+              "label": "Amulet",
+              "items": [
+                {
+                  "item": "amulet",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "emblem",
+              "label": "Emblem",
+              "items": [
+                {
+                  "item": "emblem",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "reliquary",
+              "label": "Reliquary",
+              "items": [
+                {
+                  "item": "reliquary",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "classes": [
+    {
+      "id": "barbarian",
+      "skills": {
+        "pick": 2,
+        "from": ["animal-handling", "athletics", "intimidation", "nature", "perception", "survival"]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "path-of-the-berserker",
+          "name": "Path of the Berserker",
+          "description": "For some barbarians, rage is a means to an end—that end being violence. The Path of the Berserker is a path of untrammeled fury, slick with blood. As you enter the berserker's rage, you thrill in the chaos of battle, heedless of your own health or well-being."
+        }
+      ],
+      "kit": [
+        {
+          "id": "barbarianWeapon",
+          "prompt": "Starting weapon: a greataxe or any martial melee weapon?",
+          "options": [
+            {
+              "id": "greataxe",
+              "label": "A greataxe",
+              "items": [
+                {
+                  "item": "greataxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "martial-melee",
+              "label": "Any martial melee weapon",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "barbarianMartial",
+          "prompt": "Choose a martial melee weapon",
+          "when": {
+            "step": "barbarianWeapon",
+            "option": "martial-melee"
+          },
+          "options": [
+            {
+              "id": "battleaxe",
+              "label": "Battleaxe",
+              "items": [
+                {
+                  "item": "battleaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "blowgun",
+              "label": "Blowgun",
+              "items": [
+                {
+                  "item": "blowgun",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "flail",
+              "label": "Flail",
+              "items": [
+                {
+                  "item": "flail",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "glaive",
+              "label": "Glaive",
+              "items": [
+                {
+                  "item": "glaive",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greataxe",
+              "label": "Greataxe",
+              "items": [
+                {
+                  "item": "greataxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatsword",
+              "label": "Greatsword",
+              "items": [
+                {
+                  "item": "greatsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "halberd",
+              "label": "Halberd",
+              "items": [
+                {
+                  "item": "halberd",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "hand-crossbow",
+              "label": "Hand crossbow",
+              "items": [
+                {
+                  "item": "hand-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "heavy-crossbow",
+              "label": "Heavy crossbow",
+              "items": [
+                {
+                  "item": "heavy-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "lance",
+              "label": "Lance",
+              "items": [
+                {
+                  "item": "lance",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "longbow",
+              "label": "Longbow",
+              "items": [
+                {
+                  "item": "longbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "longsword",
+              "label": "Longsword",
+              "items": [
+                {
+                  "item": "longsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "maul",
+              "label": "Maul",
+              "items": [
+                {
+                  "item": "maul",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "morningstar",
+              "label": "Morningstar",
+              "items": [
+                {
+                  "item": "morningstar",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "pike",
+              "label": "Pike",
+              "items": [
+                {
+                  "item": "pike",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "rapier",
+              "label": "Rapier",
+              "items": [
+                {
+                  "item": "rapier",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "scimitar",
+              "label": "Scimitar",
+              "items": [
+                {
+                  "item": "scimitar",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortsword",
+              "label": "Shortsword",
+              "items": [
+                {
+                  "item": "shortsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "trident",
+              "label": "Trident",
+              "items": [
+                {
+                  "item": "trident",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "war-pick",
+              "label": "War pick",
+              "items": [
+                {
+                  "item": "war-pick",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "warhammer",
+              "label": "Warhammer",
+              "items": [
+                {
+                  "item": "warhammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "whip",
+              "label": "Whip",
+              "items": [
+                {
+                  "item": "whip",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "barbarianSecond",
+          "prompt": "Second weapon: two handaxes or any simple weapon?",
+          "options": [
+            {
+              "id": "two-handaxes",
+              "label": "Two handaxes",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 2,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "simple",
+              "label": "Any simple weapon",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "barbarianSimple",
+          "prompt": "Choose a simple weapon",
+          "when": {
+            "step": "barbarianSecond",
+            "option": "simple"
+          },
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bard",
+      "skills": {
+        "pick": 3,
+        "from": [
+          "acrobatics",
+          "animal-handling",
+          "arcana",
+          "athletics",
+          "deception",
+          "history",
+          "insight",
+          "intimidation",
+          "investigation",
+          "medicine",
+          "nature",
+          "perception",
+          "performance",
+          "persuasion",
+          "religion",
+          "sleight-of-hand",
+          "stealth",
+          "survival"
+        ]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "college-of-lore",
+          "name": "College of Lore",
+          "description": "Bards of the College of Lore know something about most things, collecting bits of knowledge from sources as diverse as scholarly tomes and peasant tales. Whether singing folk ballads in taverns or elaborate compositions in royal courts, these bards use their gifts to hold audiences spellbound. When the applause dies down, the audience members might find themselves questioning everything they held to be true, from their faith in the priesthood of the local temple to their loyalty to the king.\n\nThe loyalty of these bards lies in the pursuit of beauty and truth, not in fealty to a monarch or following the tenets of a deity. A noble who keeps such a bard as a herald or advisor knows that the bard would rather be honest than politic.\n\nThe college's members gather in libraries and sometimes in actual colleges, complete with classrooms and dormitories, to share their lore with one another. They also meet at festivals or affairs of state, where they can expose corruption, unravel lies, and poke fun at self-important figures of authority."
+        }
+      ],
+      "kit": [
+        {
+          "id": "bardWeapon",
+          "prompt": "Starting weapon: a rapier, a longsword or any simple weapon?",
+          "options": [
+            {
+              "id": "rapier",
+              "label": "A rapier",
+              "items": [
+                {
+                  "item": "rapier",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "longsword",
+              "label": "A longsword",
+              "items": [
+                {
+                  "item": "longsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "simple",
+              "label": "Any simple weapon",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "bardSimple",
+          "prompt": "Choose a simple weapon",
+          "when": {
+            "step": "bardWeapon",
+            "option": "simple"
+          },
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bardPack",
+          "prompt": "A diplomat's pack or an entertainer's pack?",
+          "options": [
+            {
+              "id": "diplomats-pack",
+              "label": "A diplomat's pack",
+              "items": [
+                {
+                  "item": "diplomats-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "entertainers-pack",
+              "label": "An entertainer's pack",
+              "items": [
+                {
+                  "item": "entertainers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bardInstrument",
+          "prompt": "A lute or another musical instrument?",
+          "options": [
+            {
+              "id": "lute",
+              "label": "A lute",
+              "items": [
+                {
+                  "item": "lute",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "other-instrument",
+              "label": "Another musical instrument",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "bardOtherInstrument",
+          "prompt": "Choose a musical instrument",
+          "when": {
+            "step": "bardInstrument",
+            "option": "other-instrument"
+          },
+          "options": [
+            {
+              "id": "bagpipes",
+              "label": "Bagpipes",
+              "items": [
+                {
+                  "item": "bagpipes",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "drum",
+              "label": "Drum",
+              "items": [
+                {
+                  "item": "drum",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "dulcimer",
+              "label": "Dulcimer",
+              "items": [
+                {
+                  "item": "dulcimer",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "flute",
+              "label": "Flute",
+              "items": [
+                {
+                  "item": "flute",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "horn",
+              "label": "Horn",
+              "items": [
+                {
+                  "item": "horn",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "lute",
+              "label": "Lute",
+              "items": [
+                {
+                  "item": "lute",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "lyre",
+              "label": "Lyre",
+              "items": [
+                {
+                  "item": "lyre",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "pan-flute",
+              "label": "Pan flute",
+              "items": [
+                {
+                  "item": "pan-flute",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "shawm",
+              "label": "Shawm",
+              "items": [
+                {
+                  "item": "shawm",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "viol",
+              "label": "Viol",
+              "items": [
+                {
+                  "item": "viol",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cleric",
+      "skills": {
+        "pick": 2,
+        "from": ["history", "insight", "medicine", "persuasion", "religion"]
+      },
+      "subclassLevel": 1,
+      "subclasses": [
+        {
+          "id": "life-domain",
+          "name": "Life Domain",
+          "description": "The Life domain focuses on the vibrant positive energy—one of the fundamental forces of the universe—that sustains all life. The gods of life promote vitality and health through healing the sick and wounded, caring for those in need, and driving away the forces of death and undeath. Almost any non-evil deity can claim influence over this domain, particularly agricultural deities (such as Chauntea, Arawai, and Demeter), sun gods (such as Lathander, Pelor, and Re-Horakhty), gods of healing or endurance (such as Ilmater, Mishakal, Apollo, and Diancecht), and gods of home and community (such as Hestia, Hathor, and Boldrei)."
+        }
+      ],
+      "kit": [
+        {
+          "id": "clericWeapon",
+          "prompt": "Starting weapon: a mace or a warhammer (if proficient)?",
+          "options": [
+            {
+              "id": "mace",
+              "label": "A mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "warhammer",
+              "label": "A warhammer",
+              "items": [
+                {
+                  "item": "warhammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "clericArmor",
+          "prompt": "Starting armor: scale mail, leather armor or chain mail (if proficient)?",
+          "options": [
+            {
+              "id": "scale-mail",
+              "label": "Scale mail",
+              "items": [
+                {
+                  "item": "scale-mail",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "leather-armor",
+              "label": "Leather armor",
+              "items": [
+                {
+                  "item": "leather",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "chain-mail",
+              "label": "Chain mail",
+              "items": [
+                {
+                  "item": "chain-mail",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "clericRanged",
+          "prompt": "A light crossbow and 20 bolts, or any simple weapon?",
+          "options": [
+            {
+              "id": "light-crossbow",
+              "label": "A light crossbow and 20 bolts",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "crossbow-bolts",
+                  "qty": 20,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "simple",
+              "label": "Any simple weapon",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "clericSimple",
+          "prompt": "Choose a simple weapon",
+          "when": {
+            "step": "clericRanged",
+            "option": "simple"
+          },
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "clericPack",
+          "prompt": "A priest's pack or an explorer's pack?",
+          "options": [
+            {
+              "id": "priests-pack",
+              "label": "A priest's pack",
+              "items": [
+                {
+                  "item": "priests-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "explorers-pack",
+              "label": "An explorer's pack",
+              "items": [
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "clericSymbol",
+          "prompt": "Choose your holy symbol",
+          "options": [
+            {
+              "id": "amulet",
+              "label": "Amulet",
+              "items": [
+                {
+                  "item": "amulet",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "emblem",
+              "label": "Emblem",
+              "items": [
+                {
+                  "item": "emblem",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "reliquary",
+              "label": "Reliquary",
+              "items": [
+                {
+                  "item": "reliquary",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "druid",
+      "skills": {
+        "pick": 2,
+        "from": ["arcana", "animal-handling", "insight", "medicine", "nature", "perception", "religion", "survival"]
+      },
+      "subclassLevel": 2,
+      "subclasses": [
+        {
+          "id": "circle-of-the-land",
+          "name": "Circle of the Land",
+          "description": "The Circle of the Land is made up of mystics and sages who safeguard ancient knowledge and rites through a vast oral tradition. These druids meet within sacred circles of trees or standing stones to whisper primal secrets in Druidic. The circle's wisest members preside as the chief priests of communities that hold to the Old Faith and serve as advisors to the rulers of those folk. As a member of this circle, your magic is influenced by the land where you were initiated into the circle's mysterious rites."
+        }
+      ],
+      "kit": [
+        {
+          "id": "druidFirst",
+          "prompt": "A wooden shield or any simple weapon?",
+          "options": [
+            {
+              "id": "wooden-shield",
+              "label": "A wooden shield",
+              "items": [
+                {
+                  "item": "shield",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "simple",
+              "label": "Any simple weapon",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "druidSimple",
+          "prompt": "Choose a simple weapon",
+          "when": {
+            "step": "druidFirst",
+            "option": "simple"
+          },
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "druidWeapon",
+          "prompt": "A scimitar or any simple melee weapon?",
+          "options": [
+            {
+              "id": "scimitar",
+              "label": "A scimitar",
+              "items": [
+                {
+                  "item": "scimitar",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "simple-melee",
+              "label": "Any simple melee weapon",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "druidSimpleMelee",
+          "prompt": "Choose a simple melee weapon",
+          "when": {
+            "step": "druidWeapon",
+            "option": "simple-melee"
+          },
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "druidFocus",
+          "prompt": "Choose your druidic focus",
+          "options": [
+            {
+              "id": "sprig-of-mistletoe",
+              "label": "Sprig of mistletoe",
+              "items": [
+                {
+                  "item": "sprig-of-mistletoe",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "totem",
+              "label": "Totem",
+              "items": [
+                {
+                  "item": "totem",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "wooden-staff",
+              "label": "Wooden staff",
+              "items": [
+                {
+                  "item": "wooden-staff",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "yew-wand",
+              "label": "Yew wand",
+              "items": [
+                {
+                  "item": "yew-wand",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fighter",
+      "skills": {
+        "pick": 2,
+        "from": [
+          "acrobatics",
+          "animal-handling",
+          "athletics",
+          "history",
+          "insight",
+          "intimidation",
+          "perception",
+          "survival"
+        ]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "champion",
+          "name": "Champion",
+          "description": "The archetypal Champion focuses on the development of raw physical power honed to deadly perfection. Those who model themselves on this archetype combine rigorous training with physical excellence to deal devastating blows."
+        }
+      ],
+      "kit": [
+        {
+          "id": "fighterArmor",
+          "prompt": "Chain mail, or leather armor, a longbow and 20 arrows?",
+          "options": [
+            {
+              "id": "chain-mail",
+              "label": "Chain mail",
+              "items": [
+                {
+                  "item": "chain-mail",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "leather-longbow",
+              "label": "Leather armor, a longbow and 20 arrows",
+              "items": [
+                {
+                  "item": "leather",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "longbow",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "arrows",
+                  "qty": 20,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fighterWeapons",
+          "prompt": "A martial weapon and a shield, or two martial weapons?",
+          "options": [
+            {
+              "id": "martial-and-shield",
+              "label": "A martial weapon and a shield",
+              "items": [
+                {
+                  "item": "shield",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "two-martial",
+              "label": "Two martial weapons",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "fighterMartial",
+          "prompt": "Choose a martial weapon",
+          "options": [
+            {
+              "id": "battleaxe",
+              "label": "Battleaxe",
+              "items": [
+                {
+                  "item": "battleaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "blowgun",
+              "label": "Blowgun",
+              "items": [
+                {
+                  "item": "blowgun",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "flail",
+              "label": "Flail",
+              "items": [
+                {
+                  "item": "flail",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "glaive",
+              "label": "Glaive",
+              "items": [
+                {
+                  "item": "glaive",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greataxe",
+              "label": "Greataxe",
+              "items": [
+                {
+                  "item": "greataxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatsword",
+              "label": "Greatsword",
+              "items": [
+                {
+                  "item": "greatsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "halberd",
+              "label": "Halberd",
+              "items": [
+                {
+                  "item": "halberd",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "hand-crossbow",
+              "label": "Hand crossbow",
+              "items": [
+                {
+                  "item": "hand-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "heavy-crossbow",
+              "label": "Heavy crossbow",
+              "items": [
+                {
+                  "item": "heavy-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "lance",
+              "label": "Lance",
+              "items": [
+                {
+                  "item": "lance",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "longbow",
+              "label": "Longbow",
+              "items": [
+                {
+                  "item": "longbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "longsword",
+              "label": "Longsword",
+              "items": [
+                {
+                  "item": "longsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "maul",
+              "label": "Maul",
+              "items": [
+                {
+                  "item": "maul",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "morningstar",
+              "label": "Morningstar",
+              "items": [
+                {
+                  "item": "morningstar",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "pike",
+              "label": "Pike",
+              "items": [
+                {
+                  "item": "pike",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "rapier",
+              "label": "Rapier",
+              "items": [
+                {
+                  "item": "rapier",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "scimitar",
+              "label": "Scimitar",
+              "items": [
+                {
+                  "item": "scimitar",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortsword",
+              "label": "Shortsword",
+              "items": [
+                {
+                  "item": "shortsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "trident",
+              "label": "Trident",
+              "items": [
+                {
+                  "item": "trident",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "war-pick",
+              "label": "War pick",
+              "items": [
+                {
+                  "item": "war-pick",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "warhammer",
+              "label": "Warhammer",
+              "items": [
+                {
+                  "item": "warhammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "whip",
+              "label": "Whip",
+              "items": [
+                {
+                  "item": "whip",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fighterMartial2",
+          "prompt": "Choose a second martial weapon",
+          "when": {
+            "step": "fighterWeapons",
+            "option": "two-martial"
+          },
+          "options": [
+            {
+              "id": "battleaxe",
+              "label": "Battleaxe",
+              "items": [
+                {
+                  "item": "battleaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "blowgun",
+              "label": "Blowgun",
+              "items": [
+                {
+                  "item": "blowgun",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "flail",
+              "label": "Flail",
+              "items": [
+                {
+                  "item": "flail",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "glaive",
+              "label": "Glaive",
+              "items": [
+                {
+                  "item": "glaive",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greataxe",
+              "label": "Greataxe",
+              "items": [
+                {
+                  "item": "greataxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatsword",
+              "label": "Greatsword",
+              "items": [
+                {
+                  "item": "greatsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "halberd",
+              "label": "Halberd",
+              "items": [
+                {
+                  "item": "halberd",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "hand-crossbow",
+              "label": "Hand crossbow",
+              "items": [
+                {
+                  "item": "hand-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "heavy-crossbow",
+              "label": "Heavy crossbow",
+              "items": [
+                {
+                  "item": "heavy-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "lance",
+              "label": "Lance",
+              "items": [
+                {
+                  "item": "lance",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "longbow",
+              "label": "Longbow",
+              "items": [
+                {
+                  "item": "longbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "longsword",
+              "label": "Longsword",
+              "items": [
+                {
+                  "item": "longsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "maul",
+              "label": "Maul",
+              "items": [
+                {
+                  "item": "maul",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "morningstar",
+              "label": "Morningstar",
+              "items": [
+                {
+                  "item": "morningstar",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "pike",
+              "label": "Pike",
+              "items": [
+                {
+                  "item": "pike",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "rapier",
+              "label": "Rapier",
+              "items": [
+                {
+                  "item": "rapier",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "scimitar",
+              "label": "Scimitar",
+              "items": [
+                {
+                  "item": "scimitar",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortsword",
+              "label": "Shortsword",
+              "items": [
+                {
+                  "item": "shortsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "trident",
+              "label": "Trident",
+              "items": [
+                {
+                  "item": "trident",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "war-pick",
+              "label": "War pick",
+              "items": [
+                {
+                  "item": "war-pick",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "warhammer",
+              "label": "Warhammer",
+              "items": [
+                {
+                  "item": "warhammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "whip",
+              "label": "Whip",
+              "items": [
+                {
+                  "item": "whip",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fighterRanged",
+          "prompt": "A light crossbow and 20 bolts, or two handaxes?",
+          "options": [
+            {
+              "id": "light-crossbow",
+              "label": "A light crossbow and 20 bolts",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "crossbow-bolts",
+                  "qty": 20,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "two-handaxes",
+              "label": "Two handaxes",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 2,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fighterPack",
+          "prompt": "A dungeoneer's pack or an explorer's pack?",
+          "options": [
+            {
+              "id": "dungeoneers-pack",
+              "label": "A dungeoneer's pack",
+              "items": [
+                {
+                  "item": "dungeoneers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "explorers-pack",
+              "label": "An explorer's pack",
+              "items": [
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "monk",
+      "skills": {
+        "pick": 2,
+        "from": ["acrobatics", "athletics", "history", "insight", "religion", "stealth"]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "way-of-the-open-hand",
+          "name": "Way of the Open Hand",
+          "description": "Monks of the Way of the Open Hand are the ultimate masters of martial arts combat, whether armed or unarmed. They learn techniques to push and trip their opponents, manipulate ki to heal damage to their bodies, and practice advanced meditation that can protect them from harm."
+        }
+      ],
+      "kit": [
+        {
+          "id": "monkWeapon",
+          "prompt": "Starting weapon: a shortsword or any simple weapon?",
+          "options": [
+            {
+              "id": "shortsword",
+              "label": "A shortsword",
+              "items": [
+                {
+                  "item": "shortsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "simple",
+              "label": "Any simple weapon",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "monkSimple",
+          "prompt": "Choose a simple weapon",
+          "when": {
+            "step": "monkWeapon",
+            "option": "simple"
+          },
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "monkPack",
+          "prompt": "A dungeoneer's pack or an explorer's pack?",
+          "options": [
+            {
+              "id": "dungeoneers-pack",
+              "label": "A dungeoneer's pack",
+              "items": [
+                {
+                  "item": "dungeoneers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "explorers-pack",
+              "label": "An explorer's pack",
+              "items": [
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "paladin",
+      "skills": {
+        "pick": 2,
+        "from": ["athletics", "insight", "intimidation", "medicine", "persuasion", "religion"]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "oath-of-devotion",
+          "name": "Oath of Devotion",
+          "description": "The Oath of Devotion binds a paladin to the loftiest ideals of justice, virtue, and order. Sometimes called cavaliers, white knights, or holy warriors, these paladins meet the ideal of the knight in shining armor, acting with honor in pursuit of justice and the greater good. They hold themselves to the highest standards of conduct, and some, for better or worse, hold the rest of the world to the same standards. Many who swear this oath are devoted to gods of law and good and use their gods' tenets as the measure of their devotion. They hold angels—the perfect servants of good—as their ideals, and incorporate images of angelic wings into their helmets or coats of arms."
+        }
+      ],
+      "kit": [
+        {
+          "id": "paladinWeapons",
+          "prompt": "A martial weapon and a shield, or two martial weapons?",
+          "options": [
+            {
+              "id": "martial-and-shield",
+              "label": "A martial weapon and a shield",
+              "items": [
+                {
+                  "item": "shield",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "two-martial",
+              "label": "Two martial weapons",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "paladinMartial",
+          "prompt": "Choose a martial weapon",
+          "options": [
+            {
+              "id": "battleaxe",
+              "label": "Battleaxe",
+              "items": [
+                {
+                  "item": "battleaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "blowgun",
+              "label": "Blowgun",
+              "items": [
+                {
+                  "item": "blowgun",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "flail",
+              "label": "Flail",
+              "items": [
+                {
+                  "item": "flail",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "glaive",
+              "label": "Glaive",
+              "items": [
+                {
+                  "item": "glaive",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greataxe",
+              "label": "Greataxe",
+              "items": [
+                {
+                  "item": "greataxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatsword",
+              "label": "Greatsword",
+              "items": [
+                {
+                  "item": "greatsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "halberd",
+              "label": "Halberd",
+              "items": [
+                {
+                  "item": "halberd",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "hand-crossbow",
+              "label": "Hand crossbow",
+              "items": [
+                {
+                  "item": "hand-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "heavy-crossbow",
+              "label": "Heavy crossbow",
+              "items": [
+                {
+                  "item": "heavy-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "lance",
+              "label": "Lance",
+              "items": [
+                {
+                  "item": "lance",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "longbow",
+              "label": "Longbow",
+              "items": [
+                {
+                  "item": "longbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "longsword",
+              "label": "Longsword",
+              "items": [
+                {
+                  "item": "longsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "maul",
+              "label": "Maul",
+              "items": [
+                {
+                  "item": "maul",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "morningstar",
+              "label": "Morningstar",
+              "items": [
+                {
+                  "item": "morningstar",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "pike",
+              "label": "Pike",
+              "items": [
+                {
+                  "item": "pike",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "rapier",
+              "label": "Rapier",
+              "items": [
+                {
+                  "item": "rapier",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "scimitar",
+              "label": "Scimitar",
+              "items": [
+                {
+                  "item": "scimitar",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortsword",
+              "label": "Shortsword",
+              "items": [
+                {
+                  "item": "shortsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "trident",
+              "label": "Trident",
+              "items": [
+                {
+                  "item": "trident",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "war-pick",
+              "label": "War pick",
+              "items": [
+                {
+                  "item": "war-pick",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "warhammer",
+              "label": "Warhammer",
+              "items": [
+                {
+                  "item": "warhammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "whip",
+              "label": "Whip",
+              "items": [
+                {
+                  "item": "whip",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "paladinMartial2",
+          "prompt": "Choose a second martial weapon",
+          "when": {
+            "step": "paladinWeapons",
+            "option": "two-martial"
+          },
+          "options": [
+            {
+              "id": "battleaxe",
+              "label": "Battleaxe",
+              "items": [
+                {
+                  "item": "battleaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "blowgun",
+              "label": "Blowgun",
+              "items": [
+                {
+                  "item": "blowgun",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "flail",
+              "label": "Flail",
+              "items": [
+                {
+                  "item": "flail",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "glaive",
+              "label": "Glaive",
+              "items": [
+                {
+                  "item": "glaive",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greataxe",
+              "label": "Greataxe",
+              "items": [
+                {
+                  "item": "greataxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatsword",
+              "label": "Greatsword",
+              "items": [
+                {
+                  "item": "greatsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "halberd",
+              "label": "Halberd",
+              "items": [
+                {
+                  "item": "halberd",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "hand-crossbow",
+              "label": "Hand crossbow",
+              "items": [
+                {
+                  "item": "hand-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "heavy-crossbow",
+              "label": "Heavy crossbow",
+              "items": [
+                {
+                  "item": "heavy-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "lance",
+              "label": "Lance",
+              "items": [
+                {
+                  "item": "lance",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "longbow",
+              "label": "Longbow",
+              "items": [
+                {
+                  "item": "longbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "longsword",
+              "label": "Longsword",
+              "items": [
+                {
+                  "item": "longsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "maul",
+              "label": "Maul",
+              "items": [
+                {
+                  "item": "maul",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "morningstar",
+              "label": "Morningstar",
+              "items": [
+                {
+                  "item": "morningstar",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "pike",
+              "label": "Pike",
+              "items": [
+                {
+                  "item": "pike",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "rapier",
+              "label": "Rapier",
+              "items": [
+                {
+                  "item": "rapier",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "scimitar",
+              "label": "Scimitar",
+              "items": [
+                {
+                  "item": "scimitar",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortsword",
+              "label": "Shortsword",
+              "items": [
+                {
+                  "item": "shortsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "trident",
+              "label": "Trident",
+              "items": [
+                {
+                  "item": "trident",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "war-pick",
+              "label": "War pick",
+              "items": [
+                {
+                  "item": "war-pick",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "warhammer",
+              "label": "Warhammer",
+              "items": [
+                {
+                  "item": "warhammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "whip",
+              "label": "Whip",
+              "items": [
+                {
+                  "item": "whip",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "paladinSecond",
+          "prompt": "Five javelins or any simple melee weapon?",
+          "options": [
+            {
+              "id": "five-javelins",
+              "label": "Five javelins",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 5,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "simple-melee",
+              "label": "Any simple melee weapon",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "paladinSimpleMelee",
+          "prompt": "Choose a simple melee weapon",
+          "when": {
+            "step": "paladinSecond",
+            "option": "simple-melee"
+          },
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "paladinPack",
+          "prompt": "A priest's pack or an explorer's pack?",
+          "options": [
+            {
+              "id": "priests-pack",
+              "label": "A priest's pack",
+              "items": [
+                {
+                  "item": "priests-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "explorers-pack",
+              "label": "An explorer's pack",
+              "items": [
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "paladinSymbol",
+          "prompt": "Choose your holy symbol",
+          "options": [
+            {
+              "id": "amulet",
+              "label": "Amulet",
+              "items": [
+                {
+                  "item": "amulet",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "emblem",
+              "label": "Emblem",
+              "items": [
+                {
+                  "item": "emblem",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "reliquary",
+              "label": "Reliquary",
+              "items": [
+                {
+                  "item": "reliquary",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ranger",
+      "skills": {
+        "pick": 3,
+        "from": [
+          "animal-handling",
+          "athletics",
+          "insight",
+          "investigation",
+          "nature",
+          "perception",
+          "stealth",
+          "survival"
+        ]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "hunter",
+          "name": "Hunter",
+          "description": "Emulating the Hunter archetype means accepting your place as a bulwark between civilization and the terrors of the wilderness. As you walk the Hunter's path, you learn specialized techniques for fighting the threats you face, from rampaging ogres and hordes of orcs to towering giants and terrifying dragons."
+        }
+      ],
+      "kit": [
+        {
+          "id": "rangerArmor",
+          "prompt": "Starting armor: scale mail or leather armor?",
+          "options": [
+            {
+              "id": "scale-mail",
+              "label": "Scale mail",
+              "items": [
+                {
+                  "item": "scale-mail",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "leather-armor",
+              "label": "Leather armor",
+              "items": [
+                {
+                  "item": "leather",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "rangerWeapons",
+          "prompt": "Two shortswords or two simple melee weapons?",
+          "options": [
+            {
+              "id": "two-shortswords",
+              "label": "Two shortswords",
+              "items": [
+                {
+                  "item": "shortsword",
+                  "qty": 2,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "two-simple-melee",
+              "label": "Two simple melee weapons",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "rangerSimpleMelee",
+          "prompt": "Choose a simple melee weapon",
+          "when": {
+            "step": "rangerWeapons",
+            "option": "two-simple-melee"
+          },
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "rangerSimpleMelee2",
+          "prompt": "Choose a second simple melee weapon",
+          "when": {
+            "step": "rangerWeapons",
+            "option": "two-simple-melee"
+          },
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "rangerPack",
+          "prompt": "A dungeoneer's pack or an explorer's pack?",
+          "options": [
+            {
+              "id": "dungeoneers-pack",
+              "label": "A dungeoneer's pack",
+              "items": [
+                {
+                  "item": "dungeoneers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "explorers-pack",
+              "label": "An explorer's pack",
+              "items": [
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rogue",
+      "skills": {
+        "pick": 4,
+        "from": [
+          "acrobatics",
+          "athletics",
+          "deception",
+          "insight",
+          "intimidation",
+          "investigation",
+          "perception",
+          "performance",
+          "persuasion",
+          "sleight-of-hand",
+          "stealth"
+        ]
+      },
+      "subclassLevel": 3,
+      "subclasses": [
+        {
+          "id": "thief",
+          "name": "Thief",
+          "description": "You hone your skills in the larcenous arts. Burglars, bandits, cutpurses, and other criminals typically follow this archetype, but so do rogues who prefer to think of themselves as professional treasure seekers, explorers, delvers, and investigators. In addition to improving your agility and stealth, you learn skills useful for delving into ancient ruins, reading unfamiliar languages, and using magic items you normally couldn't employ."
+        }
+      ],
+      "kit": [
+        {
+          "id": "rogueWeapon",
+          "prompt": "Starting weapon: a rapier or a shortsword?",
+          "options": [
+            {
+              "id": "rapier",
+              "label": "A rapier",
+              "items": [
+                {
+                  "item": "rapier",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortsword",
+              "label": "A shortsword",
+              "items": [
+                {
+                  "item": "shortsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "rogueSecond",
+          "prompt": "A shortbow and a quiver of 20 arrows, or a shortsword?",
+          "options": [
+            {
+              "id": "shortbow",
+              "label": "A shortbow and a quiver of 20 arrows",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "quiver",
+                  "qty": 1,
+                  "equipped": false
+                },
+                {
+                  "item": "arrows",
+                  "qty": 20,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "shortsword",
+              "label": "A shortsword",
+              "items": [
+                {
+                  "item": "shortsword",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "roguePack",
+          "prompt": "A burglar's pack, a dungeoneer's pack or an explorer's pack?",
+          "options": [
+            {
+              "id": "burglars-pack",
+              "label": "A burglar's pack",
+              "items": [
+                {
+                  "item": "burglars-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "dungeoneers-pack",
+              "label": "A dungeoneer's pack",
+              "items": [
+                {
+                  "item": "dungeoneers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "explorers-pack",
+              "label": "An explorer's pack",
+              "items": [
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sorcerer",
+      "skills": {
+        "pick": 2,
+        "from": ["arcana", "deception", "insight", "intimidation", "persuasion", "religion"]
+      },
+      "subclassLevel": 1,
+      "subclasses": [
+        {
+          "id": "draconic-bloodline",
+          "name": "Draconic Bloodline",
+          "description": "Your innate magic comes from draconic magic that was mingled with your blood or that of your ancestors. Most often, sorcerers with this origin trace their descent back to a mighty sorcerer of ancient times who made a bargain with a dragon or who might even have claimed a dragon parent. Some of these bloodlines are well established in the world, but most are obscure. Any given sorcerer could be the first of a new bloodline, as a result of a pact or some other exceptional circumstance."
+        }
+      ],
+      "kit": [
+        {
+          "id": "sorcererWeapon",
+          "prompt": "A light crossbow and 20 bolts, or any simple weapon?",
+          "options": [
+            {
+              "id": "light-crossbow",
+              "label": "A light crossbow and 20 bolts",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "crossbow-bolts",
+                  "qty": 20,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "simple",
+              "label": "Any simple weapon",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "sorcererSimple",
+          "prompt": "Choose a simple weapon",
+          "when": {
+            "step": "sorcererWeapon",
+            "option": "simple"
+          },
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "sorcererFocus",
+          "prompt": "A component pouch or an arcane focus?",
+          "options": [
+            {
+              "id": "component-pouch",
+              "label": "A component pouch",
+              "items": [
+                {
+                  "item": "component-pouch",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "arcane-focus",
+              "label": "An arcane focus",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "sorcererArcaneFocus",
+          "prompt": "Choose your arcane focus",
+          "when": {
+            "step": "sorcererFocus",
+            "option": "arcane-focus"
+          },
+          "options": [
+            {
+              "id": "crystal",
+              "label": "Crystal",
+              "items": [
+                {
+                  "item": "crystal",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "orb",
+              "label": "Orb",
+              "items": [
+                {
+                  "item": "orb",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "rod",
+              "label": "Rod",
+              "items": [
+                {
+                  "item": "rod",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "staff",
+              "label": "Staff",
+              "items": [
+                {
+                  "item": "staff",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "wand",
+              "label": "Wand",
+              "items": [
+                {
+                  "item": "wand",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "sorcererPack",
+          "prompt": "A dungeoneer's pack or an explorer's pack?",
+          "options": [
+            {
+              "id": "dungeoneers-pack",
+              "label": "A dungeoneer's pack",
+              "items": [
+                {
+                  "item": "dungeoneers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "explorers-pack",
+              "label": "An explorer's pack",
+              "items": [
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "warlock",
+      "skills": {
+        "pick": 2,
+        "from": ["arcana", "deception", "history", "intimidation", "investigation", "nature", "religion"]
+      },
+      "subclassLevel": 1,
+      "subclasses": [
+        {
+          "id": "the-fiend",
+          "name": "The Fiend",
+          "description": "You have made a pact with a fiend from the lower planes of existence, a being whose aims are evil, even if you strive against those aims. Such beings desire the corruption or destruction of all things, ultimately including you. Fiends powerful enough to forge a pact include demon lords such as Demogorgon, Orcus, Fraz'Urb-luu, and Baphomet; archdevils such as Asmodeus, Dispater, Mephistopheles, and Belial; pit fiends and balors that are especially mighty; and ultroloths and other lords of the yugoloths."
+        }
+      ],
+      "kit": [
+        {
+          "id": "warlockWeapon",
+          "prompt": "A light crossbow and 20 bolts, or any simple weapon?",
+          "options": [
+            {
+              "id": "light-crossbow",
+              "label": "A light crossbow and 20 bolts",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                },
+                {
+                  "item": "crossbow-bolts",
+                  "qty": 20,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "simple",
+              "label": "Any simple weapon",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "warlockSimple",
+          "prompt": "Choose a simple weapon",
+          "when": {
+            "step": "warlockWeapon",
+            "option": "simple"
+          },
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "warlockFocus",
+          "prompt": "A component pouch or an arcane focus?",
+          "options": [
+            {
+              "id": "component-pouch",
+              "label": "A component pouch",
+              "items": [
+                {
+                  "item": "component-pouch",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "arcane-focus",
+              "label": "An arcane focus",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "warlockArcaneFocus",
+          "prompt": "Choose your arcane focus",
+          "when": {
+            "step": "warlockFocus",
+            "option": "arcane-focus"
+          },
+          "options": [
+            {
+              "id": "crystal",
+              "label": "Crystal",
+              "items": [
+                {
+                  "item": "crystal",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "orb",
+              "label": "Orb",
+              "items": [
+                {
+                  "item": "orb",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "rod",
+              "label": "Rod",
+              "items": [
+                {
+                  "item": "rod",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "staff",
+              "label": "Staff",
+              "items": [
+                {
+                  "item": "staff",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "wand",
+              "label": "Wand",
+              "items": [
+                {
+                  "item": "wand",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "warlockPack",
+          "prompt": "A scholar's pack or a dungeoneer's pack?",
+          "options": [
+            {
+              "id": "scholars-pack",
+              "label": "A scholar's pack",
+              "items": [
+                {
+                  "item": "scholars-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "dungeoneers-pack",
+              "label": "A dungeoneer's pack",
+              "items": [
+                {
+                  "item": "dungeoneers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "warlockExtra",
+          "prompt": "Choose a simple weapon to go with your leather armor and daggers",
+          "options": [
+            {
+              "id": "club",
+              "label": "Club",
+              "items": [
+                {
+                  "item": "club",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Dart",
+              "items": [
+                {
+                  "item": "dart",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Greatclub",
+              "items": [
+                {
+                  "item": "greatclub",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Handaxe",
+              "items": [
+                {
+                  "item": "handaxe",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Javelin",
+              "items": [
+                {
+                  "item": "javelin",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Light crossbow",
+              "items": [
+                {
+                  "item": "light-crossbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Light hammer",
+              "items": [
+                {
+                  "item": "light-hammer",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Mace",
+              "items": [
+                {
+                  "item": "mace",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Shortbow",
+              "items": [
+                {
+                  "item": "shortbow",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sickle",
+              "label": "Sickle",
+              "items": [
+                {
+                  "item": "sickle",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Sling",
+              "items": [
+                {
+                  "item": "sling",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Spear",
+              "items": [
+                {
+                  "item": "spear",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wizard",
+      "skills": {
+        "pick": 2,
+        "from": ["arcana", "history", "insight", "investigation", "medicine", "religion"]
+      },
+      "subclassLevel": 2,
+      "subclasses": [
+        {
+          "id": "school-of-evocation",
+          "name": "School of Evocation",
+          "description": "You focus your study on magic that creates powerful elemental effects such as bitter cold, searing flame, rolling thunder, crackling lightning, and burning acid. Some evokers find employment in military forces, serving as artillery to blast enemy armies from afar. Others use their spectacular power to protect the weak, while some seek their own gain as bandits, adventurers, or aspiring tyrants."
+        }
+      ],
+      "kit": [
+        {
+          "id": "wizardWeapon",
+          "prompt": "Starting weapon: a quarterstaff or a dagger?",
+          "options": [
+            {
+              "id": "quarterstaff",
+              "label": "A quarterstaff",
+              "items": [
+                {
+                  "item": "quarterstaff",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "A dagger",
+              "items": [
+                {
+                  "item": "dagger",
+                  "qty": 1,
+                  "equipped": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wizardFocus",
+          "prompt": "A component pouch or an arcane focus?",
+          "options": [
+            {
+              "id": "component-pouch",
+              "label": "A component pouch",
+              "items": [
+                {
+                  "item": "component-pouch",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "arcane-focus",
+              "label": "An arcane focus",
+              "items": []
+            }
+          ]
+        },
+        {
+          "id": "wizardArcaneFocus",
+          "prompt": "Choose your arcane focus",
+          "when": {
+            "step": "wizardFocus",
+            "option": "arcane-focus"
+          },
+          "options": [
+            {
+              "id": "crystal",
+              "label": "Crystal",
+              "items": [
+                {
+                  "item": "crystal",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "orb",
+              "label": "Orb",
+              "items": [
+                {
+                  "item": "orb",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "rod",
+              "label": "Rod",
+              "items": [
+                {
+                  "item": "rod",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "staff",
+              "label": "Staff",
+              "items": [
+                {
+                  "item": "staff",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "wand",
+              "label": "Wand",
+              "items": [
+                {
+                  "item": "wand",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wizardPack",
+          "prompt": "A scholar's pack or an explorer's pack?",
+          "options": [
+            {
+              "id": "scholars-pack",
+              "label": "A scholar's pack",
+              "items": [
+                {
+                  "item": "scholars-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            },
+            {
+              "id": "explorers-pack",
+              "label": "An explorer's pack",
+              "items": [
+                {
+                  "item": "explorers-pack",
+                  "qty": 1,
+                  "equipped": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "gear": [
+    {
+      "type": "gear",
+      "id": "amulet",
+      "name": "Amulet",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "emblem",
+      "name": "Emblem",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "reliquary",
+      "name": "Reliquary",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "diplomats-pack",
+      "name": "Diplomat's pack",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "entertainers-pack",
+      "name": "Entertainer's pack",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "lute",
+      "name": "Lute",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "bagpipes",
+      "name": "Bagpipes",
+      "weight": 6
+    },
+    {
+      "type": "gear",
+      "id": "drum",
+      "name": "Drum",
+      "weight": 3
+    },
+    {
+      "type": "gear",
+      "id": "dulcimer",
+      "name": "Dulcimer",
+      "weight": 10
+    },
+    {
+      "type": "gear",
+      "id": "flute",
+      "name": "Flute",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "horn",
+      "name": "Horn",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "lyre",
+      "name": "Lyre",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "pan-flute",
+      "name": "Pan flute",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "shawm",
+      "name": "Shawm",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "viol",
+      "name": "Viol",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "crossbow-bolts",
+      "name": "Crossbow bolt",
+      "weight": 0.075
+    },
+    {
+      "type": "gear",
+      "id": "priests-pack",
+      "name": "Priest's pack",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "explorers-pack",
+      "name": "Explorer's pack",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "sprig-of-mistletoe",
+      "name": "Sprig of mistletoe",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "totem",
+      "name": "Totem",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "wooden-staff",
+      "name": "Wooden staff",
+      "weight": 4
+    },
+    {
+      "type": "gear",
+      "id": "yew-wand",
+      "name": "Yew wand",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "arrows",
+      "name": "Arrow",
+      "weight": 0.05
+    },
+    {
+      "type": "gear",
+      "id": "dungeoneers-pack",
+      "name": "Dungeoneer's pack",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "quiver",
+      "name": "Quiver",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "burglars-pack",
+      "name": "Burglar's pack",
+      "weight": 0
+    },
+    {
+      "type": "gear",
+      "id": "component-pouch",
+      "name": "Component pouch",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "crystal",
+      "name": "Crystal",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "orb",
+      "name": "Orb",
+      "weight": 3
+    },
+    {
+      "type": "gear",
+      "id": "rod",
+      "name": "Rod",
+      "weight": 2
+    },
+    {
+      "type": "gear",
+      "id": "staff",
+      "name": "Staff",
+      "weight": 4
+    },
+    {
+      "type": "gear",
+      "id": "wand",
+      "name": "Wand",
+      "weight": 1
+    },
+    {
+      "type": "gear",
+      "id": "scholars-pack",
+      "name": "Scholar's pack",
+      "weight": 0
+    }
+  ]
+}
