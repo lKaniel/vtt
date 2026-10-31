@@ -1,0 +1,21 @@
+{
+  "name": "@vtt/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "tsx src/index.ts",
+    "check-world": "tsx src/check.ts",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@vtt/shared": "workspace:*",
+    "ws": "^8.22.0",
+    "zod": "^4.6.7",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.2"
+  }
+}

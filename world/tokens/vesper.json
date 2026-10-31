@@ -1,0 +1,10 @@
+{
+  "id": "vesper",
+  "name": "Vesper",
+  "x": 550,
+  "y": 650,
+  "color": "#7a5ad0",
+  "controllers": [
+    "player1"
+  ]
+}
