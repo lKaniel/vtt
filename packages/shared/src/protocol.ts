@@ -104,6 +104,8 @@ export type ClientMessage =
       summon?: string;
     }
   | { t: 'feature'; token: string; feature: string }
+  /** Use one of an item the token carries, by item id (drink a potion). */
+  | { t: 'useItem'; token: string; item: string }
   | { t: 'dropConcentration'; token: string }
   /** GM: end one effect on a token. */
   | { t: 'removeEffect'; token: string; effect: string }

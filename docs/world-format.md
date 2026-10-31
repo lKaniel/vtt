@@ -121,7 +121,8 @@ and SRD 5.2 (`monsters-5.2.json`) under 2024 rules; the weapon and armor list
 monster id and rules then come from that edition.
 
 A monster uses the stat block as is. Anything in `stats` overrides it, and
-`hp` tracks damage (leave it out for an unhurt creature):
+`hp` tracks damage (leave it out for an unhurt creature), and `tempHp` holds
+temporary hit points, which are lost first:
 
 ```json
 { "id": "goblin-1", "name": "Goblin", "x": 2850, "y": 1650, "monster": "goblin", "hp": 4 }
@@ -194,11 +195,13 @@ edit it too:
 Effect modifiers: `conditions` (e.g. `["prone"]`, `["paralyzed"]`),
 `attackBonus` and `saveBonus` (dice like `"1d4"` or `"-1d4"`), `ac`, `speed`,
 `resistances`, `advantage`, `disadvantage`, `advantageAgainst`,
-`disadvantageAgainst`, `meleeDamage`, `saveAdvantage`. Lifetime: `rounds`
+`disadvantageAgainst`, `meleeDamage`, `saveAdvantage`, `immobile` (speed 0). Lifetime: `rounds`
 counts down at the start of the `source` creature's turn; `once` ends it the
 first time it changes an attack; `repeatSave` with `save: { "ability", "dc" }`
 lets the bearer save again at the end of each of its turns; `endsOnAttack`
-ends it when the bearer attacks or casts. A hidden trap or a GM ruling can
+ends it when the bearer attacks or casts; `endsOnDamage` ends it when the bearer
+takes damage, and `saveOnDamage` gives it another save (with advantage) then;
+`worsens` (with `repeatSave`) swaps the conditions for these on a failed save. A hidden trap or a GM ruling can
 just write an effect into the token file.
 
 Players only receive the stats of tokens they control. For everyone else

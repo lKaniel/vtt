@@ -48,6 +48,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     summon: z.string().optional(),
   }),
   z.object({ t: z.literal('feature'), token: z.string(), feature: z.string() }),
+  z.object({ t: z.literal('useItem'), token: z.string(), item: z.string() }),
   z.object({ t: z.literal('dropConcentration'), token: z.string() }),
   z.object({ t: z.literal('removeEffect'), token: z.string(), effect: z.string() }),
   z.object({ t: z.literal('rest'), tokens: z.array(z.string()).min(1).max(100), kind: z.enum(['short', 'long']) }),
@@ -259,6 +260,8 @@ export class Game {
         return this.spells.cast(c.player, (id) => c.visible.has(id), msg);
       case 'feature':
         return this.features.use(c.player, msg.token, msg.feature);
+      case 'useItem':
+        return this.features.useItem(c.player, msg.token, msg.item);
       case 'dropConcentration':
         return this.features.dropConcentration(c.player, msg.token);
       case 'removeEffect':

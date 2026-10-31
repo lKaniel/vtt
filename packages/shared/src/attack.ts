@@ -52,7 +52,11 @@ export function rollAttack(attack: Attack, target: Creature, opts: AttackOptions
 }
 
 /** Damage after resistance (half, rounded down), vulnerability (double) and immunity (none). */
-function adjustedDamage(target: Creature, amount: number, type: DamageType): number {
+function adjustedDamage(
+  target: Pick<Creature, 'immunities' | 'resistances' | 'vulnerabilities'>,
+  amount: number,
+  type: DamageType,
+): number {
   if (target.immunities.includes(type)) return 0;
   let out = Math.max(0, amount);
   if (target.resistances.includes(type)) out = Math.floor(out / 2);
@@ -60,14 +64,15 @@ function adjustedDamage(target: Creature, amount: number, type: DamageType): num
   return out;
 }
 
-/** Applies damage to a creature; returns what each part dealt and the hit points left. */
+/** Applies damage to a creature, temporary hit points first; returns what each part dealt and what's left. */
 export function applyDamage(
-  target: Creature,
+  target: Pick<Creature, 'hp' | 'tempHp' | 'immunities' | 'resistances' | 'vulnerabilities'>,
   parts: readonly { amount: number; type: DamageType }[],
-): { dealt: number[]; hp: number } {
+): { dealt: number[]; hp: number; tempHp: number } {
   const dealt = parts.map((p) => adjustedDamage(target, p.amount, p.type));
   const total = dealt.reduce((sum, d) => sum + d, 0);
-  return { dealt, hp: Math.max(0, target.hp - total) };
+  const absorbed = Math.min(target.tempHp, total);
+  return { dealt, hp: Math.max(0, target.hp - (total - absorbed)), tempHp: target.tempHp - absorbed };
 }
 
 interface Placed {

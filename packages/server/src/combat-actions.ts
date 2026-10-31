@@ -163,9 +163,9 @@ export class CombatActions {
     const parts = result.damage.map((d) => ({ amount: d.roll.total, type: d.type }));
     if (outcome.graze) parts.push(outcome.graze);
     const fresh = this.table.fighter(target.token.id);
-    const { dealt, hp } = applyDamage(fresh.sheet, parts);
+    const { dealt, hp, tempHp } = applyDamage(fresh.sheet, parts);
     const total = dealt.reduce((sum, d) => sum + d, 0);
-    if (total > 0) this.table.hurt(fresh.token, hp, total);
+    if (total > 0) this.table.hurt(fresh.token, { hp, tempHp }, total);
     this.addEffects(target.token.id, outcome);
     const notes = [...outcome.notes];
     if (range === 'long') notes.push('long range: disadvantage');

@@ -74,8 +74,10 @@ export class SpellActions {
     );
     this.apply(outcome);
     const pushed = this.push(caster.token, outcome);
+    const drained = this.drain(caster.token.id, outcome.drained);
     const free = req.free && slot > 0 ? ['cast without a spell slot'] : [];
-    this.log(caster, { spell, slot, point: req.point }, outcome, [...free, ...summonNotes(summoned), ...pushed]);
+    const notes = [...free, ...summonNotes(summoned), ...pushed, ...drained];
+    this.log(caster, { spell, slot, point: req.point }, outcome, notes);
   }
 
   /** Spends the slot, ends invisibility and starts concentrating. */
@@ -157,7 +159,9 @@ export class SpellActions {
       if (r.healed !== undefined) {
         this.store.setToken({ ...target.token, hp: r.hp >= target.sheet.maxHp ? undefined : r.hp });
       } else if (r.damage > 0) {
-        this.table.hurt(target.token, r.hp, r.damage);
+        this.table.hurt(target.token, r, r.damage);
+      } else if (r.tempHp !== undefined) {
+        this.store.setToken({ ...target.token, tempHp: r.tempHp || undefined });
       }
       if (r.effect) this.addEffect(r.target, r.effect);
     }
@@ -174,6 +178,15 @@ export class SpellActions {
       if (feet > 0) notes.push(`${name} is ${r.push > 0 ? 'pushed' : 'pulled'} ${feet} ft`);
     }
     return notes;
+  }
+
+  /** The caster regains hit points from what the spell drained. */
+  private drain(id: string, amount: number | undefined): string[] {
+    if (!amount) return [];
+    const { token, sheet } = this.table.fighter(id);
+    const hp = Math.min(sheet.maxHp, sheet.hp + amount);
+    this.store.setToken({ ...token, hp: hp >= sheet.maxHp ? undefined : hp });
+    return [`${token.name} regains ${hp - sheet.hp} HP`];
   }
 
   private addEffect(id: string, effect: Effect): void {
@@ -265,6 +278,7 @@ export class SpellActions {
     const name = (id: string) => this.store.tokens.get(id)?.name ?? id;
     const notes = [...extra];
     if (!spell.automated) notes.push('not automated: the GM applies it');
+    if (spell.automated && spell.gmNote) notes.push(`GM: ${spell.gmNote}`);
     const down = new Set(outcome.results.filter((r) => r.damage > 0 && r.hp <= 0).map((r) => r.target));
     for (const id of down) notes.push(`${name(id)} is down`);
     this.logSpell({

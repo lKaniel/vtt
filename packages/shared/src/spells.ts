@@ -30,6 +30,16 @@ function timesDice(formula: string, n: number): string {
   return formula.replace(/^(\d*)d/, (_, c: string) => `${diceCount(c) * n}d`);
 }
 
+/** Healing, temporary hit points and hit point pools at a higher slot. */
+function upcastPools(spell: Spell, extra: number): Pick<Spell, 'heal' | 'tempHp' | 'hpPool'> {
+  const tempBonus = extra * (spell.upcast?.tempHp ?? 0);
+  return {
+    heal: spell.heal && addDice(spell.heal, spell.upcast?.heal, extra),
+    tempHp: spell.tempHp && (tempBonus ? `${spell.tempHp}+${tempBonus}` : spell.tempHp),
+    hpPool: spell.hpPool && addDice(spell.hpPool, spell.upcast?.hpPool, extra),
+  };
+}
+
 /** The spell as it works when cast with `slot` by a caster of `casterLevel`. */
 export function scaledSpell(spell: Spell, slot: number, casterLevel: number): Spell & { beams: number } {
   const extra = Math.max(0, slot - spell.level);
@@ -43,7 +53,7 @@ export function scaledSpell(spell: Spell, slot: number, casterLevel: number): Sp
   return {
     ...spell,
     damage,
-    heal: spell.heal && addDice(spell.heal, spell.upcast?.heal, extra),
+    ...upcastPools(spell, extra),
     targets: spell.targets + extra * (spell.upcast?.targets ?? 0),
     beams: cantrip === 'beams' ? baseBeams + tier - 1 : baseBeams + extra * (spell.upcast?.beams ?? 0),
   };
@@ -105,6 +115,8 @@ export interface CastResult {
   healed?: number;
   /** Hit points after this result. */
   hp: number;
+  /** Temporary hit points after this result, when they changed. */
+  tempHp?: number;
   effect?: Effect;
   /** The spell doesn't work on this kind of creature. */
   immune?: boolean;
@@ -116,6 +128,8 @@ export interface CastOutcome {
   results: CastResult[];
   /** One-shot effects that were used up, e.g. a guiding bolt's advantage. */
   used: UsedEffect[];
+  /** Hit points the caster regains from the damage dealt (vampiric touch). */
+  drained?: number;
 }
 
 interface Cast {
@@ -136,14 +150,15 @@ function rollDamage(parts: readonly Damage[], crit: boolean, rng: Rng): { roll: 
 
 function dealt(target: Creature, rolls: { roll: Roll; type: DamageType }[], half: boolean) {
   const amounts = rolls.map((r) => ({ amount: half ? Math.floor(r.roll.total / 2) : r.roll.total, type: r.type }));
-  const { dealt: each, hp } = applyDamage(target, amounts);
-  return { parts: rolls.map((r, i) => ({ ...r, dealt: each[i]! })), hp, damage: each.reduce((s, d) => s + d, 0) };
+  const { dealt: each, hp, tempHp } = applyDamage(target, amounts);
+  const parts = rolls.map((r, i) => ({ ...r, dealt: each[i]! }));
+  return { parts, hp, damage: each.reduce((s, d) => s + d, 0), ...(tempHp !== target.tempHp && { tempHp }) };
 }
 
 function effectFor(cast: Cast): Effect | undefined {
   const { spell, caster, dc } = cast;
   if (!spell.effect) return undefined;
-  const { repeatSave, ...template } = spell.effect;
+  const { repeatSave, saveOnDamage, ...template } = spell.effect;
   return {
     ...template,
     id: `${spell.id}-${caster.token.id}`,
@@ -152,7 +167,8 @@ function effectFor(cast: Cast): Effect | undefined {
     concentration: spell.concentration || undefined,
     rounds: template.rounds ?? spell.rounds,
     repeatSave,
-    save: repeatSave && spell.save ? { ability: spell.save.ability, dc } : undefined,
+    saveOnDamage,
+    save: (repeatSave || saveOnDamage) && spell.save ? { ability: spell.save.ability, dc } : undefined,
   };
 }
 
@@ -183,6 +199,7 @@ function oneTarget(cast: Cast, target: CastSide, used: UsedEffect[]): CastResult
   const base = { target: target.token.id, damage: 0, parts: [], hp: target.sheet.hp };
   if (spell.creatureTypes && !spell.creatureTypes.includes(target.sheet.type)) return { ...base, immune: true };
   if (spell.heal) return heal(cast, target, base);
+  if (spell.tempHp) return shield(cast, target, base);
   const { attack, save, landed, half } = landing(cast, target, used);
   const rolls = cast.shared ?? rollDamage(spell.damage, attack?.crit === true, cast.rng);
   const damaged = landed || half ? dealt(target.sheet, rolls, half) : undefined;
@@ -200,6 +217,37 @@ function heal(cast: Cast, target: CastSide, base: Pick<CastResult, 'target' | 'd
   const healing = roll(cast.spell.heal!, cast.rng).total + (cast.spell.healMod ? cast.mod : 0);
   const hp = Math.min(target.sheet.maxHp, target.sheet.hp + Math.max(0, healing));
   return { ...base, healed: hp - target.sheet.hp, hp, effect: effectFor(cast) };
+}
+
+/** Temporary hit points: the higher of what the target has and what the spell gives. */
+function shield(
+  cast: Cast,
+  target: CastSide,
+  base: Pick<CastResult, 'target' | 'damage' | 'parts' | 'hp'>,
+): CastResult {
+  const given = roll(cast.spell.tempHp!, cast.rng).total;
+  return { ...base, tempHp: Math.max(target.sheet.tempHp, given), effect: effectFor(cast) };
+}
+
+/** Who a hit point pool reaches: the weakest first while the pool lasts, skipping the unconscious (2014 sleep). */
+function pooled(cast: Cast, targets: readonly CastSide[]): Set<string> | undefined {
+  if (!cast.spell.hpPool) return undefined;
+  let pool = roll(cast.spell.hpPool, cast.rng).total;
+  const reached = new Set<string>();
+  const awake = targets.filter((t) => t.sheet.hp > 0 && !t.sheet.conditions.includes('unconscious'));
+  for (const t of [...awake].sort((a, b) => a.sheet.hp - b.sheet.hp)) {
+    if (t.sheet.hp > pool) break;
+    pool -= t.sheet.hp;
+    reached.add(t.token.id);
+  }
+  return reached;
+}
+
+/** Half the damage dealt to others, for spells that drain life. */
+function drainOf(cast: Cast, results: readonly CastResult[]): number | undefined {
+  if (!cast.spell.drain) return undefined;
+  const dealt = results.filter((r) => r.target !== cast.caster.token.id).reduce((n, r) => n + r.damage, 0);
+  return Math.floor(dealt / 2);
 }
 
 /**
@@ -220,13 +268,15 @@ export function resolveCast(input: CastInput, rng: Rng = Math.random): CastOutco
     rng,
   };
   if (!cast.spell.attack && cast.spell.beams === 1) cast.shared = rollDamage(cast.spell.damage, false, rng);
-  const hp = new Map<string, number>();
+  const reached = pooled(cast, input.targets);
+  const hp = new Map<string, Pick<Creature, 'hp' | 'tempHp'>>();
   const used: UsedEffect[] = [];
   const results = input.targets.map((t) => {
-    const now = { ...t, sheet: { ...t.sheet, hp: hp.get(t.token.id) ?? t.sheet.hp } };
+    const now = { ...t, sheet: { ...t.sheet, ...hp.get(t.token.id) } };
+    if (reached && !reached.has(t.token.id)) return { target: t.token.id, damage: 0, parts: [], hp: now.sheet.hp };
     const result = oneTarget(cast, now, used);
-    hp.set(t.token.id, result.hp);
+    hp.set(t.token.id, { hp: result.hp, tempHp: result.tempHp ?? now.sheet.tempHp });
     return result;
   });
-  return { results, used };
+  return { results, used, drained: drainOf(cast, results) };
 }

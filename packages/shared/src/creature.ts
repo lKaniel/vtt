@@ -12,6 +12,7 @@ import {
   type Armor,
   type Attack,
   type DamageType,
+  type Edition,
   type Item,
   type Monster,
   type Stats,
@@ -20,11 +21,15 @@ import {
 
 /** A token's game statistics, with everything derived from its gear, class and effects worked out. */
 export interface Creature extends Affected {
+  /** The rules it plays by. */
+  edition: Edition;
   abilities: Abilities;
   proficiency: number;
   ac: number;
   hp: number;
   maxHp: number;
+  /** Temporary hit points, lost before `hp`. */
+  tempHp: number;
   /** Walking speed in feet after effects; 0 while held in place. */
   speed: number;
   /** Initiative bonus (the dexterity modifier). */
@@ -64,11 +69,13 @@ export function resolveCreature(token: Token, content: Content): Creature | unde
   const gear = equippedItems(token, content);
   const { maxHp, ac } = fixedNumbers(stats, monster, classHp(cls, stats, abilities));
   const base: Creature = {
+    edition: content.edition,
     abilities,
     proficiency,
     ac: ac ?? armorClass(abilities, gear.armor),
     hp: Math.min(token.hp ?? maxHp, maxHp),
     maxHp,
+    tempHp: token.tempHp ?? 0,
     speed: token.speed,
     initiative: abilityMod(abilities.dex),
     attacks: creatureAttacks(stats, monster, gear.weapons, { abilities, proficiency }),
@@ -131,7 +138,7 @@ const HELD: readonly Condition[] = ['grappled', 'paralyzed', 'petrified', 'restr
 function applyEffects(c: Creature): Creature {
   const effects = c.effects;
   const sum = (key: 'ac' | 'speed') => effects.reduce((n, e) => n + (e[key] ?? 0), 0);
-  const held = c.conditions.some((x) => HELD.includes(x));
+  const held = c.conditions.some((x) => HELD.includes(x)) || effects.some((e) => e.immobile);
   return {
     ...c,
     ac: c.ac + sum('ac'),

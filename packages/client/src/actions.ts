@@ -19,7 +19,7 @@ export type ActionTile =
   | (TileBase & { kind: 'spell'; spell: Spell; slot: number | undefined })
   | (TileBase & { kind: 'feature'; feature: FeatureSheet; uses?: string })
   /** An item put on the bar by hand; `uses` is how many are carried. */
-  | (TileBase & { kind: 'item'; item: Item; uses?: string });
+  | (TileBase & { kind: 'item'; item: Item; uses?: string; cost?: 'action' | 'bonus' });
 
 export type Cost = 'action' | 'bonus' | 'reaction' | 'free' | 'long';
 
@@ -84,7 +84,8 @@ export function filterTiles(tiles: ActionTile[], tab: Tab): ActionTile[] {
 }
 
 export function costOf(tile: ActionTile): Cost {
-  if (tile.kind === 'attack' || tile.kind === 'item') return 'action';
+  if (tile.kind === 'item') return tile.cost ?? 'action';
+  if (tile.kind === 'attack') return 'action';
   if (tile.kind === 'feature') return tile.feature.action ?? 'free';
   const time = tile.spell.castingTime;
   return time === 'minute' || time === 'hour' ? 'long' : time;

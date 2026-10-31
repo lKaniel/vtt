@@ -694,7 +694,44 @@
     "type": "gear",
     "name": "Potion of Healing",
     "description": "Regain 2d4+2 hit points.",
-    "weight": 0.5
+    "weight": 0.5,
+    "use": {
+      "heal": "2d4+2",
+      "potion": true
+    }
+  },
+  {
+    "id": "potion-of-greater-healing",
+    "type": "gear",
+    "name": "Potion of Greater Healing",
+    "description": "Regain 4d4+4 hit points.",
+    "weight": 0.5,
+    "use": {
+      "heal": "4d4+4",
+      "potion": true
+    }
+  },
+  {
+    "id": "potion-of-superior-healing",
+    "type": "gear",
+    "name": "Potion of Superior Healing",
+    "description": "Regain 8d4+8 hit points.",
+    "weight": 0.5,
+    "use": {
+      "heal": "8d4+8",
+      "potion": true
+    }
+  },
+  {
+    "id": "potion-of-supreme-healing",
+    "type": "gear",
+    "name": "Potion of Supreme Healing",
+    "description": "Regain 10d4+20 hit points.",
+    "weight": 0.5,
+    "use": {
+      "heal": "10d4+20",
+      "potion": true
+    }
   },
   {
     "id": "thieves-tools",

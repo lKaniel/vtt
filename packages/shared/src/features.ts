@@ -80,15 +80,26 @@ export function rest(token: Token, sheet: Creature, kind: 'short' | 'long'): Tok
   return { ...token, spent: uses || slots ? { slots, uses } : undefined };
 }
 
-/** Repeats the saves of effects like hold person; those saved against end. */
+/** A failed repeated save makes some effects worse instead of keeping them as they are. */
+function worsen(effect: Effect): Effect {
+  return { ...effect, conditions: effect.worsens, worsens: undefined, repeatSave: undefined };
+}
+
+/** Repeats the saves of effects like hold person; those saved against end, and some failed ones get worse. */
 export function endOfTurnSaves(
   token: Token,
   sheet: Creature,
   rng: Rng = Math.random,
-): { token: Token; saves: { effect: string; save: SaveRoll }[] } {
+): { token: Token; saves: { effect: string; save: SaveRoll; worse?: boolean }[] } {
   const saves = (token.effects ?? [])
     .filter((e) => e.repeatSave && e.save)
-    .map((e) => ({ id: e.id, effect: e.name, save: rollSave(sheet, e.save!.ability, e.save!.dc, rng) }));
-  const ended = new Set(saves.filter((s) => s.save.success).map((s) => s.id));
-  return { token: removeEffects(token, ended), saves: saves.map(({ effect, save }) => ({ effect, save })) };
+    .map((e) => ({ e, save: rollSave(sheet, e.save!.ability, e.save!.dc, rng) }));
+  const ended = new Set(saves.filter((s) => s.save.success).map((s) => s.e.id));
+  const worse = new Set(saves.filter((s) => !s.save.success && s.e.worsens).map((s) => s.e.id));
+  const kept = removeEffects(token, ended);
+  const effects = kept.effects?.map((e) => (worse.has(e.id) ? worsen(e) : e));
+  return {
+    token: worse.size ? { ...kept, effects } : kept,
+    saves: saves.map(({ e, save }) => ({ effect: e.name, save, ...(worse.has(e.id) && { worse: true }) })),
+  };
 }

@@ -19,6 +19,7 @@ export * from './effects.ts';
 export * from './areas.ts';
 export * from './spells.ts';
 export * from './features.ts';
+export * from './items.ts';
 export * from './weapon-attack.ts';
 export * from './spawn.ts';
 export * from './forced-move.ts';

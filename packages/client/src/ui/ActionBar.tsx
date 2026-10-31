@@ -1,4 +1,4 @@
-import type { TokenView, TurnBudget } from '@vtt/shared';
+import type { Item, TokenView, TurnBudget } from '@vtt/shared';
 import { useState } from 'react';
 import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, type Tab } from '../actions.ts';
 import { slotChoices } from '../charges.ts';
@@ -46,7 +46,7 @@ export function activateTile(session: Session, token: TokenView, tile: ActionTil
   if (tile.kind === 'attack') session.arm(session.armed === tile.name ? undefined : tile.name);
   else if (tile.kind === 'spell') aimTile(session, tile);
   else if (tile.kind === 'feature') session.useFeature(token.id, tile.feature.id);
-  else readyItem(session, token, tile.item.name);
+  else readyItem(session, token, tile.item);
 }
 
 /** A spell with no slot left can still be cast for free. */
@@ -60,8 +60,11 @@ function aimTile(session: Session, tile: Extract<ActionTile, { kind: 'spell' }>)
 }
 
 /** A weapon on the bar readies its attack; other items aren't automated yet. */
-function readyItem(session: Session, token: TokenView, name: string): void {
+/** A weapon readies its attack; a potion or other usable item is used at once. */
+function readyItem(session: Session, token: TokenView, item: Item): void {
+  const name = item.name;
   if (token.sheet?.attacks.some((a) => a.name === name)) session.arm(session.armed === name ? undefined : name);
+  else if (item.type === 'gear' && item.use) session.useItem(token.id, item.id);
   else session.showError(`Using ${name} isn't automated yet: ask the GM`);
 }
 

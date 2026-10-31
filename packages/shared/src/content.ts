@@ -15,6 +15,7 @@ import { ItemSchema, MonsterSchema, type Edition, type Item, type Monster } from
 
 /** Everything a token can refer to by id, for one rules edition. */
 export interface Content {
+  edition: Edition;
   items: ReadonlyMap<string, Item>;
   monsters: ReadonlyMap<string, Monster>;
   spells: ReadonlyMap<string, Spell>;
@@ -40,7 +41,9 @@ function withOverlay(entry: Entry, overlay: Overlay, edition: Edition): Entry {
 
 function merge(entry: Entry, part: Record<string, unknown>): Entry {
   const { features, ...rest } = part as { features?: Record<string, object> };
-  const out: Entry = { ...entry, ...rest };
+  // null in the overlay takes a generated field away (false life's healing).
+  const kept = Object.entries({ ...entry, ...rest } as Record<string, unknown>).filter(([, value]) => value !== null);
+  const out: Entry = Object.fromEntries(kept) as Entry;
   if (features && Array.isArray(entry.features)) {
     out.features = (entry.features as Entry[]).map((f) => ({ ...f, ...features[f.id] }));
   }
@@ -69,6 +72,7 @@ const monsterList = z.array(MonsterSchema);
 
 function edition(edition: Edition, data: { monsters: unknown[]; spells: unknown[]; classes: unknown[] }): Content {
   return {
+    edition,
     items: sharedItems,
     monsters: byId(withTokenArt(monsterList.parse(data.monsters), tokenArt as Record<string, string>)),
     spells: load(SpellSchema, data.spells, [spellAutomation as Overlay, edition]),

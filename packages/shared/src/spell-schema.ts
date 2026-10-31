@@ -49,6 +49,8 @@ const modifiers = {
   meleeDamage: z.number().int().optional(),
   /** Saving throws the bearer makes with advantage. */
   saveAdvantage: z.array(AbilitySchema).optional(),
+  /** The bearer's speed is 0 (hypnotic pattern). */
+  immobile: z.boolean().optional(),
 };
 
 /** An effect as a spell or feature describes it, before it lands on anyone. */
@@ -64,6 +66,12 @@ export const EffectTemplateSchema = z.object({
   repeatSave: z.boolean().optional(),
   /** Ends when the bearer attacks or casts a spell (invisibility). */
   endsOnAttack: z.boolean().optional(),
+  /** With `repeatSave`: failing the repeated save swaps the conditions for these and ends the saves (2024 sleep). */
+  worsens: z.array(ConditionSchema).optional(),
+  /** Ends when the bearer takes damage (sleep, hypnotic pattern). */
+  endsOnDamage: z.boolean().optional(),
+  /** The bearer repeats the save, with advantage, each time it takes damage (hideous laughter). */
+  saveOnDamage: z.boolean().optional(),
 });
 export type EffectTemplate = z.infer<typeof EffectTemplateSchema>;
 
@@ -129,6 +137,14 @@ export const SpellSchema = z.object({
   /** Hit points restored, plus the caster's spellcasting modifier when `healMod`. */
   heal: dice.optional(),
   healMod: z.boolean().default(false),
+  /** Temporary hit points given to each target (false life); they don't stack with others. */
+  tempHp: dice.optional(),
+  /** Hit points of creatures affected, weakest first, rolled on each cast (2014 sleep). */
+  hpPool: dice.optional(),
+  /** The caster regains half the damage dealt (vampiric touch). */
+  drain: z.boolean().optional(),
+  /** What the GM still has to do by hand when the rest is automated; shown in the log. */
+  gmNote: z.string().optional(),
   /** Separate attacks or bolts per cast (magic missile darts, scorching rays, eldritch blast beams). */
   beams: z.number().int().positive().optional(),
   /** Never misses (magic missile). */
@@ -138,6 +154,8 @@ export const SpellSchema = z.object({
     .object({
       damage: dice.optional(),
       heal: dice.optional(),
+      tempHp: z.number().int().optional(),
+      hpPool: dice.optional(),
       targets: z.number().int().optional(),
       beams: z.number().int().optional(),
     })

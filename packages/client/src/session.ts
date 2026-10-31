@@ -226,6 +226,11 @@ export class Session {
     this.send({ t: 'feature', token, feature });
   }
 
+  /** Uses one of an item the token carries (drinks a potion). */
+  useItem(token: string, item: string): void {
+    this.send({ t: 'useItem', token, item });
+  }
+
   rest(tokens: string[], kind: 'short' | 'long'): void {
     this.send({ t: 'rest', tokens, kind });
   }
