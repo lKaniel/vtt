@@ -129,6 +129,9 @@ export const MonsterSchema = z.object({
   hp: z.number().int().positive(),
   speed: z.number().nonnegative().default(30),
   darkvision: z.number().nonnegative().default(0),
+  blindsight: z.number().nonnegative().default(0),
+  tremorsense: z.number().nonnegative().default(0),
+  truesight: z.number().nonnegative().default(0),
   abilities: AbilitiesSchema,
   /** Creature type, e.g. "humanoid" or "beast". */
   type: z.string().optional(),

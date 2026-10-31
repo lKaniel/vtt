@@ -1,18 +1,26 @@
 import { chunkKey, type Point, type Rect, type Wall } from '@vtt/shared';
-import { Application, Container, CullerPlugin, extensions, Graphics, type FederatedPointerEvent } from 'pixi.js';
+import {
+  Application,
+  Container,
+  CullerPlugin,
+  extensions,
+  Graphics,
+  Rectangle,
+  type FederatedPointerEvent,
+} from 'pixi.js';
 import { DRAG_TYPE, type DragPayload } from '../drops.ts';
 import type { Session } from '../session.ts';
 import { cuesOf } from '../feedback.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
+import { CameraMotion } from './camera-motion.ts';
 import { EffectsLayer } from './EffectsLayer.ts';
+import { MapEditor } from './MapEditor.ts';
 import { PathPreview } from './PathPreview.ts';
 import { TokenLayer } from './TokenLayer.ts';
 import { Vision } from './Vision.ts';
 
 extensions.add(CullerPlugin);
 
-const MIN_ZOOM = 0.05;
-const MAX_ZOOM = 3;
 const WHEEL_ZOOM_SPEED = 0.0015;
 /** Below these zoom levels the matching detail is skipped, so a zoomed-out map stays cheap. */
 const LOD = { grid: 0.35, labels: 0.45, doors: 0.25 };
@@ -25,6 +33,8 @@ const DRAG_THRESHOLD = 5;
 interface Drag {
   start: Point;
   last: Point;
+  /** When the pointer was last at `last`, for the speed of a fling. */
+  at: number;
   panning: boolean;
   button: number;
   /** Set when the drag started on a token you control: dropping it walks the token there. */
@@ -40,6 +50,8 @@ interface Drag {
 export class MapView {
   readonly app = new Application();
   private camera = new Container();
+  /** Floor, grid and walls: lit, and hidden by fog of war. */
+  private ground = new Container();
   /** Drawn above darkness and fog, with the same transform as the camera. */
   private overhead = new Container();
   private grid = new Graphics();
@@ -47,14 +59,23 @@ export class MapView {
   private tokens: TokenLayer;
   private effects: EffectsLayer;
   private preview = new PathPreview();
+  private editor: MapEditor;
   private vision?: Vision;
 
   /** World point at the centre of the screen. */
-  private center: Point = [0, 0];
-  private zoom = 0.6;
+  private cam = new CameraMotion([0, 0], 0.6);
+  private get center(): Point {
+    return this.cam.center;
+  }
+  private get zoom(): number {
+    return this.cam.zoom;
+  }
   private dirty = true;
   private visionDirty = true;
+  private cameraMoved = true;
   private wasWalking = false;
+  /** A flickering light is on screen, so lighting is redrawn every frame. */
+  private animatedLights = false;
   private viewId = '';
   private drag?: Drag;
   private hoverPoint?: Point;
@@ -65,8 +86,9 @@ export class MapView {
     this.chunks = new ChunkLayer(session);
     this.tokens = new TokenLayer(session);
     this.tokens.onGrab = (token, at) => {
-      this.drag = { start: at, last: at, panning: false, button: 0, token };
+      this.drag = { start: at, last: at, at: performance.now(), panning: false, button: 0, token };
     };
+    this.editor = new MapEditor(session);
     this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
   }
 
@@ -75,6 +97,8 @@ export class MapView {
       resizeTo: host,
       background: 0x1b1d22,
       antialias: true,
+      // The lighting filter is written in GLSL.
+      preference: 'webgl',
       autoDensity: true,
       resolution: devicePixelRatio,
     });
@@ -83,18 +107,15 @@ export class MapView {
       return;
     }
     host.appendChild(this.app.canvas);
-    this.camera.addChild(
-      this.chunks.ground,
-      this.grid,
-      this.chunks.walls,
-      this.tokens.container,
-      this.effects.container,
-    );
-    this.overhead.addChild(this.preview.container, this.effects.labels);
+    this.ground.addChild(this.chunks.ground, this.grid, this.chunks.walls);
+    this.camera.addChild(this.ground, this.tokens.container, this.effects.container);
+    this.overhead.addChild(this.preview.container, this.effects.labels, this.editor.container);
     // Previews are drawn over tokens; clicks must still reach the tokens below.
     this.overhead.eventMode = 'none';
     this.vision = new Vision(this.app, this.session);
-    this.app.stage.addChild(this.camera, ...this.vision.sprites, this.overhead);
+    this.ground.filters = [this.vision.mapFilter];
+    this.tokens.container.filters = [this.vision.tokenFilter];
+    this.app.stage.addChild(this.camera, this.overhead);
     this.listenToInput();
     this.listenToSession();
     this.app.ticker.add((t) => {
@@ -154,6 +175,7 @@ export class MapView {
         const chunk = s.chunks.get(key);
         if (chunk) this.chunks.draw(key, chunk);
         this.wallsChanged();
+        this.editor.redraw();
       }),
       s.on('chunkGone', (key) => {
         if (this.chunks.remove(key)) this.wallsChanged();
@@ -185,16 +207,29 @@ export class MapView {
       s.on('chat', (message) => {
         this.effects.play(cuesOf(message), performance.now());
       }),
+      s.on('lighting', visionChanged),
+      s.on('mapTool', () => {
+        this.onMapTool();
+      }),
       s.on('focus', (p) => {
-        this.center = [...p];
+        this.cam.glideTo(p);
         this.dirty = true;
       }),
     );
   }
 
+  /** While a map tool is in use, clicks go to it instead of tokens and doors. */
+  private onMapTool(): void {
+    const editing = !!this.session.mapTool;
+    this.tokens.container.eventMode = editing ? 'none' : 'passive';
+    this.chunks.walls.eventMode = editing ? 'none' : 'passive';
+    this.editor.cancel();
+    this.updatePreview(true);
+  }
+
   private onWelcome(): void {
     const world = this.session.world;
-    if (world && !this.viewId) this.center = [...world.start];
+    if (world && !this.viewId) this.cam.jumpTo(world.start);
     this.vision?.loadExplored();
     for (const key of this.chunks.keys) this.chunks.remove(key);
     this.wallsChanged();
@@ -219,26 +254,34 @@ export class MapView {
     this.tokens.animateFeedback(now);
     this.effects.tick(now);
     if (!this.session.world) return;
+    if (this.cam.step(dt)) this.dirty = true;
     // One more render after a walk ends, to mark what the token now sees as explored.
     const stopped = this.wasWalking && !walking;
     this.wasWalking = walking;
-    if (this.dirty || this.visionDirty || walking || stopped) {
-      this.visionDirty = false;
-      this.vision?.render({ center: this.center, zoom: this.zoom }, this.allWalls(), this.tokens.viewers(), !walking);
-    }
     if (this.dirty) this.applyCamera();
+    if (this.visionDirty || this.cameraMoved || walking || stopped || this.animatedLights) {
+      this.visionDirty = this.cameraMoved = false;
+      const camera = { center: this.center, zoom: this.zoom };
+      this.animatedLights = this.vision?.render(camera, this.allWalls(), this.tokens.viewers(), !walking) ?? false;
+    }
   }
 
   private applyCamera(): void {
     this.dirty = false;
+    this.cameraMoved = true;
     const { width, height } = this.app.screen;
     for (const layer of [this.camera, this.overhead]) {
       layer.scale.set(this.zoom);
       layer.position.set(width / 2 - this.center[0] * this.zoom, height / 2 - this.center[1] * this.zoom);
     }
-    this.session.viewRect = this.visibleRect();
+    const view = this.visibleRect();
+    this.session.viewRect = view;
+    // Lighting covers the whole screen, even where nothing is drawn yet.
+    this.ground.filterArea = new Rectangle(view.x, view.y, view.w, view.h);
+    this.tokens.container.filterArea = this.ground.filterArea;
     this.requestChunks();
     this.drawGrid();
+    this.editor.setZoom(this.zoom);
     this.tokens.showLabels(this.zoom >= LOD.labels);
     this.chunks.showDoors(this.zoom >= LOD.doors);
   }
@@ -277,7 +320,9 @@ export class MapView {
     const r = this.visibleRect();
     for (let x = Math.floor(r.x / size) * size; x <= r.x + r.w; x += size) g.moveTo(x, r.y).lineTo(x, r.y + r.h);
     for (let y = Math.floor(r.y / size) * size; y <= r.y + r.h; y += size) g.moveTo(r.x, y).lineTo(r.x + r.w, y);
-    g.stroke({ width: 1 / this.zoom, color: 0x000000, alpha: 0.18 });
+    // The grid fades in as you zoom closer, instead of popping in.
+    const alpha = 0.16 * Math.min(1, (this.zoom - LOD.grid) / 0.25);
+    g.stroke({ width: 1 / this.zoom, color: 0x000000, alpha });
   }
 
   // Input -------------------------------------------------------------------
@@ -287,10 +332,7 @@ export class MapView {
     const rect = this.app.canvas.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
-    const before = this.screenToWorld(sx, sy);
-    this.zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, this.zoom * Math.exp(-e.deltaY * WHEEL_ZOOM_SPEED)));
-    const after = this.screenToWorld(sx, sy);
-    this.center = [this.center[0] + before[0] - after[0], this.center[1] + before[1] - after[1]];
+    this.cam.zoomAt(this.cam.zoomGoal * Math.exp(-e.deltaY * WHEEL_ZOOM_SPEED), [sx, sy], this.app.screen);
     this.dirty = true;
   };
 
@@ -311,13 +353,17 @@ export class MapView {
 
   private onPointerDown(e: FederatedPointerEvent): void {
     const p: Point = [e.global.x, e.global.y];
-    this.drag = { start: p, last: p, panning: e.button !== 0, button: e.button };
+    const at = this.screenToWorld(p[0], p[1]);
+    if (this.editor.pointerDown({ at, button: e.button, free: e.shiftKey })) return;
+    this.drag = { start: p, last: p, at: performance.now(), panning: e.button !== 0, button: e.button };
+    this.cam.hold();
   }
 
   private onPointerMove(e: FederatedPointerEvent): void {
     const p: Point = [e.global.x, e.global.y];
     if (this.drag) this.dragTo(this.drag, p);
     this.hoverPoint = this.screenToWorld(p[0], p[1]);
+    this.editor.pointerMove(this.hoverPoint, e.shiftKey);
     this.updatePreview(false);
   }
 
@@ -328,17 +374,17 @@ export class MapView {
       return;
     }
     if (far) drag.panning = drag.moved = true;
+    const now = performance.now();
     if (drag.panning) {
-      this.center = [
-        this.center[0] - (p[0] - drag.last[0]) / this.zoom,
-        this.center[1] - (p[1] - drag.last[1]) / this.zoom,
-      ];
+      this.cam.drag([p[0] - drag.last[0], p[1] - drag.last[1]], (now - drag.at) / 1000);
       this.dirty = true;
     }
     drag.last = p;
+    drag.at = now;
   }
 
   private onPointerUp(e: FederatedPointerEvent): void {
+    this.editor.pointerUp({ at: this.screenToWorld(e.global.x, e.global.y), button: e.button, free: e.shiftKey });
     const drag = this.drag;
     this.drag = undefined;
     if (drag?.token) {
@@ -350,8 +396,14 @@ export class MapView {
       this.session.cancelAction();
       return;
     }
-    if (!drag || drag.panning || drag.button !== 0) return;
+    if (drag?.panning) return this.letGo(drag);
+    if (drag?.button !== 0) return;
     this.clickGround(this.screenToWorld(e.global.x, e.global.y));
+  }
+
+  /** A fling glides on; a drag that stopped before letting go stays put. */
+  private letGo(drag: Drag): void {
+    if (performance.now() - drag.at < 80) this.cam.release();
   }
 
   /** A left click on the map: casts an aimed area spell, puts away an action, or walks. */

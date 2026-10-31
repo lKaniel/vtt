@@ -48,8 +48,21 @@ export type World = z.infer<typeof WorldSchema>;
 
 const tileBase = { id, x: z.number(), y: z.number(), w: z.number().positive(), h: z.number().positive() };
 
+/** Painted ground for rect tiles, tinted by the tile's colour. */
+export const TileTextureSchema = z.enum(['grass', 'dirt', 'sand', 'stone', 'cobble', 'wood', 'water', 'rock']);
+export type TileTexture = z.infer<typeof TileTextureSchema>;
+
 export const TileSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('rect'), ...tileBase, color: z.string() }),
+  z.object({
+    kind: z.literal('rect'),
+    ...tileBase,
+    color: z.string(),
+    texture: TileTextureSchema.optional(),
+    /** Squares one repeat of the texture covers; default 2. */
+    textureScale: z.number().positive().optional(),
+    /** "rough" wobbles the edges (the default for grass, dirt, sand, water and rock); "straight" keeps them crisp. */
+    edge: z.enum(['rough', 'straight']).optional(),
+  }),
   z.object({ kind: z.literal('image'), ...tileBase, src: z.string().min(1) }),
 ]);
 export type Tile = z.infer<typeof TileSchema>;
@@ -72,6 +85,12 @@ export type Wall = z.infer<typeof WallSchema>;
 export const LightSchema = z.object({
   bright: z.number().nonnegative(),
   dim: z.number().nonnegative().default(0),
+  /** Colour of the light, e.g. "#ff9a40" for a torch. Missing means white. */
+  color: z.string().optional(),
+  /** How the light moves: a torch flickers, a magic glow pulses. */
+  animation: z.enum(['flicker', 'pulse']).optional(),
+  /** Magical darkness instead of light (the Darkness spell): nothing nonmagical lights it. */
+  darkness: z.boolean().optional(),
 });
 export type Light = z.infer<typeof LightSchema>;
 
@@ -103,6 +122,12 @@ export const TokenSchema = z.object({
   observers: z.array(id).optional(),
   /** Darkvision range in feet; 0 for none. */
   darkvision: z.number().nonnegative().default(0),
+  /** Other senses, in feet. Missing ones fall back to the monster's stat block. */
+  blindsight: z.number().nonnegative().optional(),
+  tremorsense: z.number().nonnegative().optional(),
+  truesight: z.number().nonnegative().optional(),
+  /** Sees normally in magical and nonmagical darkness to this range (the warlock invocation). */
+  devilsSight: z.number().nonnegative().optional(),
   /** A light the token carries, e.g. a torch: { "bright": 20, "dim": 20 }. */
   light: LightSchema.optional(),
   /** Hidden tokens are seen by the GM only. */

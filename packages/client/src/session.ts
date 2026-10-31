@@ -10,6 +10,7 @@ import {
   type ClientMessage,
   type Combat,
   type DoorState,
+  type MapEdit,
   type Player,
   type Point,
   type Rect,
@@ -22,6 +23,7 @@ import {
 } from '@vtt/shared';
 
 import { dropMessage, type DragPayload } from './drops.ts';
+import type { LightPreset, MapTool } from './map-tools.ts';
 import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
@@ -51,6 +53,10 @@ export interface SessionEvents {
   focus: (point: Point) => void;
   /** A chat message arrived live (not the history sent on joining). */
   chat: (message: ChatMessage) => void;
+  /** The time of day changed. */
+  lighting: () => void;
+  /** GM: a map tool was picked or put away. */
+  mapTool: () => void;
 }
 
 /**
@@ -82,6 +88,9 @@ export class Session {
   sheet?: SheetTarget & { edit: boolean };
   /** GM only: creatures dropped on the map arrive hidden from the players. */
   spawnHidden = false;
+  /** GM: the map tool in use, and the light the light tool places. */
+  mapTool?: MapTool;
+  lightPreset: LightPreset = 'torch';
   /** The part of the world on screen, kept up to date by the map. */
   viewRect?: Rect;
   /** Bumped on every change; React re-renders on it. */
@@ -158,6 +167,26 @@ export class Session {
 
   setDoor(chunk: string, wall: string, state: DoorState): void {
     this.send({ t: 'door', chunk, wall, state });
+  }
+
+  setMapTool(tool: MapTool | undefined): void {
+    this.mapTool = tool;
+    if (tool) this.select(undefined);
+    this.emit('mapTool');
+    this.changed();
+  }
+
+  setLightPreset(preset: LightPreset): void {
+    this.lightPreset = preset;
+    this.changed();
+  }
+
+  editMap(edit: MapEdit): void {
+    this.send({ t: 'mapEdit', edit });
+  }
+
+  setDarkness(darkness: number): void {
+    this.send({ t: 'darkness', darkness });
   }
 
   say(text: string): void {
@@ -436,8 +465,21 @@ export class Session {
       case 'actorGone':
         this.onActor(msg);
         return true;
+      default:
+        return this.applyOther(msg);
+    }
+  }
+
+  private applyOther(msg: ServerMessage): boolean {
+    switch (msg.t) {
+      case 'lighting':
+        if (this.world) this.world = { ...this.world, darkness: msg.darkness };
+        this.emit('lighting');
+        return true;
       case 'error':
         this.showError(msg.message);
+        return false;
+      default:
         return false;
     }
   }

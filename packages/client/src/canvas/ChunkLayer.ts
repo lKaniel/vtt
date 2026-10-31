@@ -1,11 +1,11 @@
 import type { Chunk, Wall } from '@vtt/shared';
-import { Assets, Container, Graphics, Sprite } from 'pixi.js';
+import { Assets, Circle, Container, Graphics, Sprite } from 'pixi.js';
+import { rectTile, type GroundContext } from './art/ground.ts';
+import { drawDoor, drawWalls, drawWallShadows } from './art/walls.ts';
 import type { Session } from '../session.ts';
 
 const DOOR_COLORS = { closed: 0xd08a3a, open: 0x7ac06a, locked: 0xd04a4a } as const;
-const WALL_COLOR = 0x111111;
-const WALL_WIDTH = 10;
-const DOOR_HANDLE_RADIUS = 16;
+const DOOR_HANDLE_RADIUS = 11;
 
 interface ChunkView {
   ground: Container;
@@ -32,8 +32,10 @@ export class ChunkLayer {
     const view: ChunkView = { ground: new Container(), walls: new Container(), doors: [] };
     view.ground.cullable = true;
     view.walls.cullable = true;
-    drawTiles(view.ground, chunk);
-    view.walls.addChild(wallLines(chunk.walls));
+    const world = this.session.world;
+    drawTiles(view.ground, chunk, { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 });
+    view.ground.addChild(shadowsOf(chunk.walls));
+    view.walls.addChild(wallsOf(chunk.walls));
     for (const wall of chunk.walls) {
       if (!wall.door) continue;
       const door = this.door(key, wall);
@@ -58,16 +60,15 @@ export class ChunkLayer {
     for (const v of this.views.values()) for (const d of v.doors) d.visible = visible;
   }
 
+  /** The clickable handle in the middle of a door, coloured by its state. */
   private door(key: string, wall: Wall): Graphics {
-    const state = wall.door ?? 'closed';
-    const color = DOOR_COLORS[state];
-    const open = state === 'open';
-    const door = new Graphics()
-      .moveTo(...wall.a)
-      .lineTo(...wall.b)
-      .stroke({ width: open ? 4 : WALL_WIDTH, color, alpha: open ? 0.6 : 1 });
+    const color = DOOR_COLORS[wall.door ?? 'closed'];
     const mid = [(wall.a[0] + wall.b[0]) / 2, (wall.a[1] + wall.b[1]) / 2] as const;
-    door.circle(mid[0], mid[1], DOOR_HANDLE_RADIUS).fill({ color: 0x1b1d22, alpha: 0.85 }).stroke({ width: 4, color });
+    const door = new Graphics()
+      .circle(mid[0], mid[1], DOOR_HANDLE_RADIUS)
+      .fill({ color: 0x1b1d22, alpha: 0.7 })
+      .stroke({ width: 3, color });
+    door.hitArea = new Circle(mid[0], mid[1], DOOR_HANDLE_RADIUS * 2);
     door.eventMode = 'static';
     door.cursor = 'pointer';
     door.on('pointerdown', (e) => {
@@ -89,12 +90,10 @@ export class ChunkLayer {
   }
 }
 
-function drawTiles(into: Container, chunk: Chunk): void {
-  const rects = new Graphics();
-  into.addChild(rects);
+function drawTiles(into: Container, chunk: Chunk, ctx: GroundContext): void {
   for (const tile of chunk.tiles) {
     if (tile.kind === 'rect') {
-      rects.rect(tile.x, tile.y, tile.w, tile.h).fill(tile.color);
+      into.addChild(rectTile(tile, ctx));
       continue;
     }
     const sprite = new Sprite();
@@ -113,8 +112,16 @@ function drawTiles(into: Container, chunk: Chunk): void {
   }
 }
 
-function wallLines(walls: readonly Wall[]): Graphics {
-  const lines = new Graphics();
-  for (const w of walls) if (!w.door) lines.moveTo(...w.a).lineTo(...w.b);
-  return lines.stroke({ width: WALL_WIDTH, color: WALL_COLOR, cap: 'round' });
+function shadowsOf(walls: readonly Wall[]): Graphics {
+  const g = new Graphics();
+  drawWallShadows(g, walls);
+  return g;
+}
+
+/** Walls, windows and door leaves; door handles are added separately so they can hide when zoomed out. */
+function wallsOf(walls: readonly Wall[]): Graphics {
+  const g = new Graphics();
+  drawWalls(g, walls);
+  for (const w of walls) if (w.door) drawDoor(g, w);
+  return g;
 }

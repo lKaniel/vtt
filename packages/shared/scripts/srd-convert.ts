@@ -217,6 +217,16 @@ function damageDefense(f: Fields, key: string): string[] {
   return [...new Set(types)];
 }
 
+/** Blindsight, tremorsense and truesight, only when the monster has them, to keep the files small. */
+function otherSenses(f: Fields): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const sense of ['blindsight', 'tremorsense', 'truesight']) {
+    const range = num(f[sense]);
+    if (range) out[sense] = range;
+  }
+  return out;
+}
+
 export function convertMonster(pack: Pack, m: Entry): object {
   const f = m.fields ?? {};
   const refs = [...(m.grants ?? []).map((g) => g.item), ...list(f.entries)];
@@ -230,6 +240,7 @@ export function convertMonster(pack: Pack, m: Entry): object {
     hp: f.hp,
     speed: num(f.speed) ?? 30,
     darkvision: num(f.darkvision) ?? 0,
+    ...otherSenses(f),
     abilities: { str: f.str, dex: f.dex, con: f.con, int: f.int, wis: f.wis, cha: f.cha },
     cr: f.cr,
     saves: defense('saves'),

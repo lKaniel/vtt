@@ -1,35 +1,35 @@
 import {
+  ambientLevel,
   isGm,
   feetToPx,
+  sensesOf,
   tokenLights,
   visibilityPolygon,
   type LightSource,
   type Point,
   type Rect,
-  type Token,
+  type Senses,
+  type TokenView,
   type Wall,
 } from '@vtt/shared';
-import { Container, Graphics, RenderTexture, Sprite, type Application } from 'pixi.js';
+import { Container, Graphics, type Application } from 'pixi.js';
 import type { Session } from '../session.ts';
-import { ExploredMap } from './ExploredMap.ts';
+import { FogMemory } from './lighting/FogMemory.ts';
+import { LightingFilter } from './lighting/LightingFilter.ts';
+import { LightMap, type LightScene } from './lighting/LightMap.ts';
+import { SightMap } from './lighting/SightMap.ts';
 
 /** How far a token can see when nothing blocks it, in squares. */
 const SIGHT_SQUARES = 40;
 /** How much darkness the GM sees, relative to players. */
 const GM_DARKNESS = 0.5;
-/** Darkvision lifts this share of the darkness. */
-const DARKVISION = 0.5;
+/** Tokens never get darker than this share of their colour, so the party stays readable at night. */
+const TOKEN_FLOOR = 0.5;
 
 export interface Viewer {
-  token: Token;
+  token: TokenView;
   /** Where the token is drawn right now, which differs from token.x/y mid-walk. */
   at: Point;
-}
-
-interface Scene {
-  walls: readonly Wall[];
-  viewers: Viewer[];
-  lights: LightSource[];
 }
 
 export interface Camera {
@@ -38,21 +38,19 @@ export interface Camera {
 }
 
 /**
- * Draws two screen-sized overlays above the map: darkness (cut by lights and
- * darkvision) and fog of war (black where you've never been, dimmed where
- * you've been, clear where your tokens can see now). Each is a render
- * texture, with lit or seen areas erased from a filled rectangle.
+ * Lighting, senses and fog of war. Each frame it draws what light falls
+ * where and what your tokens perceive into two screen-sized textures, and two
+ * lighting filters use them: one over the map (which also hides what you
+ * can't see) and one over the tokens.
  */
 export class Vision {
-  private darkTex: RenderTexture;
-  private fogTex: RenderTexture;
-  private darkSprite: Sprite;
-  private fogSprite: Sprite;
-  private scene = new Container();
-  private background = new Graphics();
-  /** Shapes erased from the background this frame. */
-  private shapes = new Container();
-  private explored = new ExploredMap();
+  readonly mapFilter: LightingFilter;
+  readonly tokenFilter: LightingFilter;
+  private light: LightMap;
+  private sight: SightMap;
+  private explored: FogMemory;
+  /** What the last stamp of explored ground was made from, so it isn't repeated. */
+  private stamped = '';
   private polyCache = new Map<string, number[]>();
   private wallsVersion = 0;
 
@@ -60,86 +58,96 @@ export class Vision {
     private app: Application,
     private session: Session,
   ) {
-    this.darkTex = this.makeTexture();
-    this.fogTex = this.makeTexture();
-    this.darkSprite = new Sprite(this.darkTex);
-    this.fogSprite = new Sprite(this.fogTex);
-    this.darkSprite.eventMode = 'none';
-    this.fogSprite.eventMode = 'none';
-    this.scene.addChild(this.background, this.explored.graphic, this.shapes);
-  }
-
-  /** The overlays, to be added above the map. */
-  get sprites(): Sprite[] {
-    return [this.darkSprite, this.fogSprite];
-  }
-
-  private makeTexture(): RenderTexture {
-    const { width, height } = this.app.screen;
-    return RenderTexture.create({ width, height, resolution: this.app.renderer.resolution });
+    this.light = new LightMap(app.renderer);
+    this.explored = new FogMemory(app.renderer, () => session.world?.chunkSize ?? 2000);
+    this.sight = new SightMap(app.renderer, this.explored.layer);
+    const maps = { light: this.light.texture, sight: this.sight.texture };
+    this.mapFilter = new LightingFilter({ ...maps, fog: 1, floor: 0, opaque: 1 });
+    this.tokenFilter = new LightingFilter({ ...maps, fog: 0, floor: TOKEN_FLOOR, opaque: 0 });
+    this.resize();
   }
 
   resize(): void {
-    for (const [tex, sprite] of [
-      [this.darkTex, this.darkSprite],
-      [this.fogTex, this.fogSprite],
-    ] as const) {
-      tex.resize(this.app.screen.width, this.app.screen.height);
-      sprite.texture = tex;
-    }
+    const { width, height } = this.app.screen;
+    this.light.resize(width, height);
+    this.sight.resize(width, height);
+    this.mapFilter.resize(width, height);
+    this.tokenFilter.resize(width, height);
   }
 
-  /** Call when walls change so cached sight polygons are rebuilt. */
+  /** Call when walls change so sight and light shapes are rebuilt. */
   wallsChanged(): void {
     this.wallsVersion++;
     this.polyCache.clear();
+    this.light.wallsChanged();
   }
 
   /** Loads the explored squares remembered for this world and player. */
   loadExplored(): void {
     const world = this.session.world;
-    if (world) this.explored.load(`vtt-explored:${world.name}:${this.session.playerId}`);
+    if (world) this.explored.load(`vtt-fog:${world.name}:${this.session.playerId}`);
+    this.stamped = '';
   }
 
   destroy(): void {
     this.explored.destroy();
-    this.darkTex.destroy(true);
-    this.fogTex.destroy(true);
-    this.scene.destroy({ children: true });
-    for (const s of this.sprites) s.destroy();
+    this.light.destroy();
+    this.sight.destroy();
   }
 
-  private polygon(origin: Point, radius: number, walls: readonly Wall[]): number[] {
-    const key = `${origin[0]},${origin[1]},${radius},${this.wallsVersion}`;
-    let poly = this.polyCache.get(key);
-    if (!poly) {
-      poly = visibilityPolygon(origin, radius, walls);
-      if (this.polyCache.size > 500) this.polyCache.clear();
-      this.polyCache.set(key, poly);
-    }
-    return poly;
+  private polygon(walls: readonly Wall[]) {
+    return (origin: Point, radius: number): number[] => {
+      const key = `${origin[0]},${origin[1]},${radius},${this.wallsVersion}`;
+      let poly = this.polyCache.get(key);
+      if (!poly) {
+        poly = visibilityPolygon(origin, radius, walls);
+        if (this.polyCache.size > 500) this.polyCache.clear();
+        this.polyCache.set(key, poly);
+      }
+      return poly;
+    };
   }
 
-  /** Redraws both overlays for the current camera, walls and viewers. */
-  render(camera: Camera, walls: readonly Wall[], viewers: Viewer[], settled: boolean): void {
+  /**
+   * Redraws light and sight for the current camera. Returns true when a
+   * light on screen is animated, so the caller keeps calling every frame.
+   */
+  render(camera: Camera, walls: readonly Wall[], viewers: Viewer[], settled: boolean): boolean {
     const world = this.session.world;
     const you = this.session.you;
-    if (!world || !you) return;
+    if (!world || !you) return false;
     const { width, height } = this.app.screen;
-    this.scene.scale.set(camera.zoom);
-    this.scene.position.set(width / 2 - camera.center[0] * camera.zoom, height / 2 - camera.center[1] * camera.zoom);
+    const transform = {
+      scale: camera.zoom,
+      x: width / 2 - camera.center[0] * camera.zoom,
+      y: height / 2 - camera.center[1] * camera.zoom,
+    };
     const view: Rect = {
       x: camera.center[0] - width / 2 / camera.zoom,
       y: camera.center[1] - height / 2 / camera.zoom,
       w: width / camera.zoom,
       h: height / camera.zoom,
     };
-    const lights = this.lights(viewers);
     const gm = isGm(you);
-    this.renderDarkness(view, world.darkness * (gm ? GM_DARKNESS : 1), { walls, viewers, lights });
-    const fog = !gm && world.vision;
-    this.fogSprite.visible = fog;
-    if (fog) this.renderFog(view, { walls, viewers, lights }, settled);
+    const polygon = this.polygon(walls);
+    const lights = this.lights(viewers);
+    const scene: LightScene = {
+      view,
+      darkness: world.darkness * (gm ? GM_DARKNESS : 1),
+      gridSize: world.gridSize,
+      lights,
+      polygon,
+      now: performance.now(),
+    };
+    this.light.render(scene, transform);
+    const eyes = viewers.map((v) => ({ at: v.at, senses: sensesOfView(v.token) }));
+    const sightRadius = SIGHT_SQUARES * world.gridSize;
+    this.explored.show(view);
+    if (settled && !gm) this.markExplored(eyes, lights, polygon);
+    const darkness = lights.filter((l) => l.darkness);
+    this.sight.render({ view, gridSize: world.gridSize, viewers: eyes, darkness, sightRadius, polygon }, transform);
+    this.mapFilter.fog = !gm && world.vision ? 1 : 0;
+    return this.light.animated(scene);
   }
 
   /** Every light, with your own tokens' lights where they're drawn mid-walk. */
@@ -152,58 +160,59 @@ export class Vision {
     ];
   }
 
-  /** Darkness over the map, cut by lights and darkvision. */
-  private renderDarkness(view: Rect, darkness: number, scene: Scene): void {
-    this.darkSprite.visible = darkness > 0;
-    if (darkness <= 0) return;
-    const g = this.session.world!.gridSize;
-    this.reset(view, 0x05060a, darkness);
-    this.explored.graphic.visible = false;
-    for (const l of scene.lights) {
-      const at: Point = [l.x, l.y];
-      const dim = feetToPx(l.bright + l.dim, g);
-      if (dim > 0) this.erase(this.polygon(at, dim, scene.walls), 0.5);
-      const bright = feetToPx(l.bright, g);
-      if (bright > 0) this.erase(this.polygon(at, bright, scene.walls), 1);
-    }
-    for (const v of scene.viewers) {
-      const dv = feetToPx(v.token.darkvision, g);
-      if (dv > 0) this.erase(this.polygon(v.at, dv, scene.walls), DARKVISION);
-    }
-    this.app.renderer.render({ container: this.scene, target: this.darkTex, clear: true });
-  }
-
-  /** Black where you've never been, dimmed where you've been, clear where you see now. */
-  private renderFog(view: Rect, scene: Scene, settled: boolean): void {
+  /** Paints what your tokens can make out now into the explored memory. */
+  private markExplored(eyes: Eye[], lights: LightSource[], polygon: Polygon): void {
     const world = this.session.world!;
     const sight = SIGHT_SQUARES * world.gridSize;
-    const polys = scene.viewers.map((v) => ({ v, poly: this.polygon(v.at, sight, scene.walls) }));
-    if (settled) {
-      const ctx = {
-        gridSize: world.gridSize,
-        chunkSize: world.chunkSize,
-        loaded: (key: string) => this.session.chunks.has(key),
-        dark: world.darkness >= 0.5,
-        lights: scene.lights,
-      };
-      for (const { v, poly } of polys) this.explored.markSeen({ at: v.at, darkvision: v.token.darkvision }, poly, ctx);
-    }
-    this.explored.draw(world.gridSize);
-    this.reset(view, 0x000000, 1);
-    this.explored.graphic.visible = true;
-    for (const { poly } of polys) this.erase(poly, 1);
-    this.app.renderer.render({ container: this.scene, target: this.fogTex, clear: true });
+    const key = `${JSON.stringify(eyes.map((e) => e.at))}|${this.wallsVersion}|${lights.length}|${world.darkness}`;
+    if (eyes.length === 0 || key === this.stamped) return;
+    this.stamped = key;
+    const shape = new Container();
+    const dark = ambientLevel(world.darkness) === 'dark';
+    for (const e of eyes) shape.addChild(...visibleFrom(e, { dark, lights, polygon, sight, gridSize: world.gridSize }));
+    const xs = eyes.map((e) => e.at[0]);
+    const ys = eyes.map((e) => e.at[1]);
+    const bounds = { x: Math.min(...xs) - sight, y: Math.min(...ys) - sight, w: 0, h: 0 };
+    bounds.w = Math.max(...xs) + sight - bounds.x;
+    bounds.h = Math.max(...ys) + sight - bounds.y;
+    this.explored.stamp(shape, bounds, (key) => this.session.chunks.has(key));
+    shape.destroy({ children: true });
   }
+}
 
-  private reset(view: Rect, color: number, alpha: number): void {
-    this.background.clear().rect(view.x, view.y, view.w, view.h).fill({ color, alpha });
-    for (const child of this.shapes.removeChildren()) child.destroy();
-  }
+type Polygon = (at: Point, radius: number) => number[];
+interface Eye {
+  at: Point;
+  senses: Senses;
+}
 
-  /** Erases a polygon from the background; amount 1 clears it fully. */
-  private erase(poly: number[], amount: number): void {
-    const shape = new Graphics().poly(poly).fill({ color: 0xffffff, alpha: amount });
-    shape.blendMode = 'erase';
-    this.shapes.addChild(shape);
+/**
+ * What one token can make out, in white: everything in sight by day; at night
+ * only what its senses reach and what lights it can see fall on.
+ */
+function visibleFrom(
+  eye: Eye,
+  ctx: { dark: boolean; lights: LightSource[]; polygon: Polygon; sight: number; gridSize: number },
+): Container[] {
+  const inSight = ctx.polygon(eye.at, ctx.sight);
+  if (!ctx.dark) return [new Graphics().poly(inSight).fill(0xffffff)];
+  const s = eye.senses;
+  const sense = feetToPx(Math.max(s.darkvision, s.blindsight, s.truesight, s.devilsSight), ctx.gridSize);
+  const out: Container[] = [];
+  if (sense > 0) out.push(new Graphics().poly(ctx.polygon(eye.at, sense)).fill(0xffffff));
+  for (const l of ctx.lights) {
+    const reach = feetToPx(l.bright + l.dim, ctx.gridSize);
+    if (l.darkness || reach <= 0 || Math.hypot(l.x - eye.at[0], l.y - eye.at[1]) > ctx.sight + reach) continue;
+    const lit = new Container();
+    const mask = new Graphics().poly(inSight).fill(0xffffff);
+    lit.addChild(new Graphics().poly(ctx.polygon([l.x, l.y], reach)).fill(0xffffff), mask);
+    lit.mask = mask;
+    out.push(lit);
   }
+  return out;
+}
+
+/** A token's senses as the server worked them out, or from its own fields if it didn't. */
+function sensesOfView(token: TokenView): Senses {
+  return token.senses ?? sensesOf(token);
 }

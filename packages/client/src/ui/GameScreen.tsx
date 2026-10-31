@@ -6,6 +6,7 @@ import { stepTarget } from '../stepping.ts';
 import { activateTile, ActionBar, canActivate } from './ActionBar.tsx';
 import { CharacterSheet } from './CharacterSheet.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
+import { MapTools } from './MapTools.tsx';
 import { PartyBar } from './PartyBar.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
@@ -30,7 +31,8 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target)) return;
-      if (e.key === 'c') toggleSheet(session);
+      if (e.key === 'Escape' && session.mapTool) session.setMapTool(undefined);
+      else if (e.key === 'c') toggleSheet(session);
       else if (e.key === 'e') toggleEditor(session);
       else handleGameKey(session, e);
     };
@@ -56,6 +58,7 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
       </header>
       <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />
       <PartyBar session={session} />
+      <MapTools session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <CharacterSheet session={session} />
       <ChatPanel session={session} />

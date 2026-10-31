@@ -76,6 +76,18 @@ const modifiers = {
   disengaged: z.boolean().optional(),
   /** The bearer's speed is 0 (hypnotic pattern). */
   immobile: z.boolean().optional(),
+  /** Senses the effect grants, in feet (darkvision spell), or the power to see invisible things. */
+  senses: z
+    .object({
+      darkvision: z.number().nonnegative(),
+      blindsight: z.number().nonnegative(),
+      tremorsense: z.number().nonnegative(),
+      truesight: z.number().nonnegative(),
+      devilsSight: z.number().nonnegative(),
+      seeInvisible: z.boolean(),
+    })
+    .partial()
+    .optional(),
 };
 
 /** An effect as a spell or feature describes it, before it lands on anyone. */

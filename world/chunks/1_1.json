@@ -7,7 +7,8 @@
       "y": 2000,
       "w": 2000,
       "h": 2000,
-      "color": "#36502a"
+      "color": "#4c6a38",
+      "texture": "grass"
     }
   ],
   "walls": []

@@ -1,6 +1,7 @@
 import type { Combat } from './combat.ts';
 import type { Roll } from './dice.ts';
 import type { Actor, Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
+import type { MapEdit } from './map-edit.ts';
 import type { Area } from './spell-schema.ts';
 import type { Ability, DamageType, Edition } from './stats-schema.ts';
 import type { TokenView } from './token-view.ts';
@@ -126,7 +127,12 @@ export type ClientMessage =
   | { t: 'saveActor'; actor: Actor }
   | { t: 'deleteActor'; actor: string }
   /** GM: change what a seat may do at the table. */
-  | { t: 'setRole'; player: string; role: Role };
+  | { t: 'setRole'; player: string; role: Role }
+
+  /** GM: draw or erase walls, doors, windows and lights. */
+  | { t: 'mapEdit'; edit: MapEdit }
+  /** GM: the time of day, 0 daylight to 1 pitch black. */
+  | { t: 'darkness'; darkness: number };
 
 export type ServerMessage =
   | {
@@ -149,4 +155,6 @@ export type ServerMessage =
   /** GM only: an actor was added, changed or removed. */
   | { t: 'actor'; actor: Actor }
   | { t: 'actorGone'; id: string }
+  /** The time of day changed. */
+  | { t: 'lighting'; darkness: number }
   | { t: 'error'; message: string };

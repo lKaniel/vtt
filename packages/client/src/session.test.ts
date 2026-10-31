@@ -91,6 +91,29 @@ describe('Session', () => {
     expect(session.canControl(session.tokens.get('hero')!)).toBe(true);
   });
 
+  it('follows the time of day without reconnecting', () => {
+    ws.receive(welcome());
+    const lit = vi.fn();
+    session.on('lighting', lit);
+    ws.receive({ t: 'lighting', darkness: 0.7 });
+    expect(session.world?.darkness).toBeCloseTo(0.7);
+    expect(lit).toHaveBeenCalled();
+  });
+
+  it('picks a map tool, which puts away any readied action, and sends map edits', () => {
+    ws.receive(welcome());
+    session.setMapTool('wall');
+    expect(session.mapTool).toBe('wall');
+    session.editMap({ op: 'remove', chunk: '0_0', id: 'w' });
+    expect(ws.sent.at(-1)).toEqual({ t: 'mapEdit', edit: { op: 'remove', chunk: '0_0', id: 'w' } });
+    session.setLightPreset('campfire');
+    expect(session.lightPreset).toBe('campfire');
+    session.setDarkness(0.4);
+    expect(ws.sent.at(-1)).toEqual({ t: 'darkness', darkness: 0.4 });
+    session.setMapTool(undefined);
+    expect(session.mapTool).toBeUndefined();
+  });
+
   it('keeps only chunks in view', () => {
     const chunk = { tiles: [], walls: [], lights: [] };
     const gone = vi.fn();

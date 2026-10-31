@@ -7,6 +7,7 @@ import {
   EditionSchema,
   tokensVisibleTo,
   findPath,
+  MapEditSchema,
   PointSchema,
   roll,
   editionOf,
@@ -27,6 +28,7 @@ import { CombatActions } from './combat-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
 import { castFeature } from './feature-casting.ts';
+import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
 import { Zones } from './zones.ts';
 import { Refusal, Table } from './table.ts';
@@ -90,6 +92,8 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('saveActor'), actor: z.unknown() }),
   z.object({ t: z.literal('deleteActor'), actor: z.string() }),
   z.object({ t: z.literal('setRole'), player: z.string(), role: RoleSchema }),
+  z.object({ t: z.literal('mapEdit'), edit: MapEditSchema }),
+  z.object({ t: z.literal('darkness'), darkness: z.number().min(0).max(1) }),
 ]);
 
 interface Client {
@@ -124,6 +128,7 @@ export class Game {
   private gm: GmActions;
   /** world.json minus the seats, to tell a role change from a new grid. */
   private settings: string;
+  private map: MapActions;
 
   constructor(
     private store: WorldStore,
@@ -141,6 +146,7 @@ export class Game {
     this.features = new FeatureActions(table);
     this.gm = new GmActions(table);
     this.settings = worldSettings(store.world);
+    this.map = new MapActions(table);
     store.on('chunk', (key, chunk) => {
       for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
       // A door or a light changed: what everyone can see may have too.
@@ -160,6 +166,10 @@ export class Game {
     store.on('actorGone', (id) => this.toGms({ t: 'actorGone', id }));
     store.on('combat', (combat) => {
       for (const c of this.clients) this.send(c, { t: 'combat', combat: combat ?? null });
+    });
+    store.on('lighting', (darkness) => {
+      for (const c of this.clients) this.send(c, { t: 'lighting', darkness });
+      this.refreshAll();
     });
     store.on('world', (world) => this.onWorld(world));
   }
@@ -225,6 +235,7 @@ export class Game {
       world: this.store.world,
       lights: this.store.lights(),
       wallsBetween: (a, b) => this.store.wallsBetween(a, b),
+      monster: (t) => srdFor(editionOf(t, this.store.world)).monsters.get(t.monster ?? ''),
     });
   }
 
@@ -306,6 +317,10 @@ export class Game {
         return this.gm.deleteActor(c.player, msg.actor);
       case 'setRole':
         return this.gm.setRole(c.player, msg.player, msg.role);
+      case 'mapEdit':
+        return this.map.edit(c.player, msg.edit);
+      case 'darkness':
+        return this.map.darkness(c.player, msg.darkness);
       default:
         return undefined;
     }
@@ -437,8 +452,9 @@ export class Game {
   }
 }
 
+/** world.json minus what changes live: the seats and the time of day. */
 function worldSettings(world: World): string {
-  const { players: _players, ...settings } = world;
+  const { players: _players, darkness: _darkness, ...settings } = world;
   return JSON.stringify(settings);
 }
 
