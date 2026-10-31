@@ -132,7 +132,7 @@ export class CombatActions {
     this.table.pay(attacker.token, 'attack', attacker.sheet.attacksPerAction);
     if (outcome.sneak) this.markUsed(attacker.token, 'sneak-attack');
     this.table.useUp(outcome.used);
-    this.applyOutcome(attacker, target, outcome, { range, name: attack.name });
+    this.applyOutcome(attacker, target, outcome, { range, name: attack.name, kind: attack.kind });
   }
 
   private markUsed(token: Token, what: string): void {
@@ -157,7 +157,7 @@ export class CombatActions {
     attacker: Fighter,
     target: Fighter,
     outcome: WeaponAttackOutcome,
-    { range, name }: { range: string; name: string },
+    { range, name, kind }: { range: string; name: string; kind: AttackLog['kind'] },
   ): void {
     const { roll: result } = outcome;
     const parts = result.damage.map((d) => ({ amount: d.roll.total, type: d.type }));
@@ -174,6 +174,9 @@ export class CombatActions {
     this.logAttack({
       attacker: attacker.token.name,
       target: target.token.name,
+      attackerId: attacker.token.id,
+      targetId: target.token.id,
+      kind,
       attack: name,
       d20: result.d20,
       hit: result.hit,

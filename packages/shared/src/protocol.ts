@@ -1,6 +1,7 @@
 import type { Combat } from './combat.ts';
 import type { Roll } from './dice.ts';
 import type { Chunk, DoorState, Player, Point, World } from './schema.ts';
+import type { Area } from './spell-schema.ts';
 import type { Ability, DamageType } from './stats-schema.ts';
 import type { TokenView } from './token-view.ts';
 
@@ -11,6 +12,10 @@ export type WorldInfo = Omit<World, 'players'>;
 export interface AttackLog {
   attacker: string;
   target: string;
+  /** Token ids, so the map can play the swing or shot between them. */
+  attackerId: string;
+  targetId: string;
+  kind: 'melee' | 'ranged';
   attack: string;
   d20: Roll;
   hit: boolean;
@@ -25,6 +30,7 @@ export interface AttackLog {
 /** One target's part of a spell, as the chat log shows it. */
 export interface SpellTargetLog {
   target: string;
+  targetId: string;
   attack?: Roll;
   hit?: boolean;
   crit?: boolean;
@@ -40,6 +46,16 @@ export interface SpellTargetLog {
 export interface SpellLog {
   caster: string;
   spell: string;
+  /** Ids and shape the map uses to draw the spell. */
+  casterId: string;
+  spellId: string;
+  /** The spell's first damage type, which colours it. */
+  damageType?: DamageType;
+  /** Spell attacks: a touch (melee) or a bolt (ranged). */
+  attackKind?: 'melee' | 'ranged';
+  /** Where an area or teleport was aimed. */
+  point?: Point;
+  area?: Area;
   /** Slot level; 0 for a cantrip. */
   slot: number;
   results: SpellTargetLog[];

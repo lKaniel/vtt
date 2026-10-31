@@ -1,5 +1,6 @@
 import { currentTurn, type Health, type Point, type TokenView } from '@vtt/shared';
 import { Assets, Container, Graphics, Sprite as PixiSprite, Text, type Texture } from 'pixi.js';
+import { BarTween } from '../bar-tween.ts';
 import { portraitOf, tokenBaseArt } from '../icon-art.ts';
 import type { Session } from '../session.ts';
 import type { Viewer } from './Vision.ts';
@@ -15,6 +16,12 @@ const BASE = 2.85;
 /** Rims of party members and of everyone else. */
 const ALLY_RIM = '#a88a5e';
 const OTHER_RIM = '#5a2620';
+/** A flinch: how long the flash and shake last (ms) and how far it shakes (share of the radius). */
+const FLINCH_MS = 320;
+const SHAKE = 0.12;
+/** A lunge toward the target and back, ms, and how far (share of the radius). */
+const LUNGE_MS = 260;
+const LUNGE = 0.6;
 
 interface Sprite {
   root: Container;
@@ -29,6 +36,12 @@ interface Sprite {
   label: Text;
   /** Remaining points of an animated move. */
   route: Point[];
+  token: TokenView;
+  r: number;
+  bar?: BarTween;
+  /** Flinch start time and colour, lunge start time and direction. */
+  flinch?: { at: number; color: number };
+  lunge?: { at: number; dir: Point };
 }
 
 /** Draws tokens and animates them along the paths they walk. */
@@ -43,6 +56,9 @@ export class TokenLayer {
     const view = this.views.get(token.id) ?? this.create(token);
     if (view.route.length === 0) view.root.position.set(token.x, token.y);
     const r = token.size * (this.session.world?.gridSize ?? 100) * DISC;
+    view.token = token;
+    view.r = r;
+    trackHp(view, token);
     showTexture(view.base, tokenBaseArt(token, this.session.selected === token.id), r * BASE);
     drawDisc(view.disc.clear(), token, r, this.ringColor(token));
     view.faceMask
@@ -50,8 +66,7 @@ export class TokenLayer {
       .circle(0, 0, r - 2)
       .fill(0xffffff);
     showTexture(view.face, portraitOf(token), r * 2);
-    drawStatus(view.status.clear(), token, r);
-    drawEffects(view.status, token, r);
+    redrawStatus(view);
     const notes = [token.hidden && 'hidden', token.visibleTo && 'illusion'].filter(Boolean);
     view.label.text = notes.length ? `${token.name} (${notes.join(', ')})` : token.name;
     view.label.position.set(0, r + 4);
@@ -102,6 +117,49 @@ export class TokenLayer {
     return walking;
   }
 
+  /** Where a token is drawn right now, and its disc radius. */
+  placeOf(id: string): { at: Point; r: number } | undefined {
+    const v = this.views.get(id);
+    return v && { at: [v.root.x, v.root.y], r: v.r };
+  }
+
+  /** The blow landed: flash and shake, and let the hit point bar move. */
+  flinch(id: string, color: number, now: number): void {
+    const v = this.views.get(id);
+    if (!v) return;
+    v.flinch = { at: now, color };
+    this.release(id, now);
+  }
+
+  /** Lets a waiting hit point bar move (healing or damage with no flinch). */
+  release(id: string, now: number): void {
+    this.views.get(id)?.bar?.release(now);
+  }
+
+  /** Steps toward `toward` and back. */
+  lunge(id: string, toward: string, now: number): void {
+    const v = this.views.get(id);
+    const t = this.views.get(toward);
+    if (!v || !t) return;
+    const dx = t.root.x - v.root.x;
+    const dy = t.root.y - v.root.y;
+    const d = Math.hypot(dx, dy) || 1;
+    v.lunge = { at: now, dir: [dx / d, dy / d] };
+  }
+
+  /** Hit point bars, flinches and lunges; true while any is playing. */
+  animateFeedback(now: number): boolean {
+    let busy = false;
+    for (const v of this.views.values()) {
+      if (v.bar?.step(now)) {
+        redrawStatus(v);
+        busy = true;
+      }
+      busy = moveBody(v, now) || busy;
+    }
+    return busy;
+  }
+
   /** Clicking this token would fire the armed attack, or pick it for the aimed spell. */
   private isTarget(token: TokenView): boolean {
     if (this.session.aiming?.mode === 'creatures') return true;
@@ -149,7 +207,7 @@ export class TokenLayer {
       else if (this.session.canControl(t)) this.session.select(t.id);
     });
     this.container.addChild(root);
-    const view = { root, base, disc, face, faceMask, status, label, route: [] };
+    const view: Sprite = { root, base, disc, face, faceMask, status, label, route: [], token, r: 0 };
     this.views.set(token.id, view);
     return view;
   }
@@ -182,14 +240,32 @@ function hpShare(token: TokenView): number | undefined {
   return token.health ? HEALTH_SHARE[token.health] : undefined;
 }
 
-/** A hit point bar under the disc, and a cross over creatures that are down. */
-function drawStatus(g: Graphics, token: TokenView, r: number): void {
+/** Starts the bar for a token seen for the first time; later changes animate. */
+function trackHp(view: Sprite, token: TokenView): void {
   const share = hpShare(token);
-  if (share === undefined) return;
+  if (share === undefined) {
+    view.bar = undefined;
+    return;
+  }
+  const value = Math.max(0, share);
+  if (view.bar) view.bar.set(value, performance.now());
+  else view.bar = new BarTween(value);
+}
+
+function redrawStatus(view: Sprite): void {
+  drawStatus(view.status.clear(), view, view.r);
+  drawEffects(view.status, view.token, view.r);
+}
+
+/** A hit point bar under the disc, with a pale trail of what was just lost, and a cross over creatures that are down. */
+function drawStatus(g: Graphics, { bar }: Sprite, r: number): void {
+  if (!bar) return;
+  const share = bar.shown;
   const w = r * 1.6;
   const y = r * 0.55;
   g.rect(-w / 2, y, w, 10).fill({ color: 0x000000, alpha: 0.7 });
-  g.rect(-w / 2, y, w * Math.max(0, share), 10).fill(barColor(share));
+  if (bar.trail > share) g.rect(-w / 2, y, w * bar.trail, 10).fill({ color: 0xf2e3c0, alpha: 0.85 });
+  g.rect(-w / 2, y, w * share, 10).fill(barColor(share));
   if (share > 0) return;
   const c = r * 0.5;
   g.moveTo(-c, -c).lineTo(c, c).moveTo(c, -c).lineTo(-c, c).stroke({ width: 8, color: 0x000000, alpha: 0.8 });
@@ -210,6 +286,37 @@ function drawEffects(g: Graphics, token: TokenView, r: number): void {
 function barColor(share: number): number {
   if (share > 0.5) return 0x4caf50;
   return share > 0.25 ? 0xe0a030 : 0xd04a4a;
+}
+
+/** Flinch (red flash and shake) and lunge offsets; true while either plays. */
+function moveBody(v: Sprite, now: number): boolean {
+  let dx = 0;
+  let dy = 0;
+  const f = v.flinch && (now - v.flinch.at) / FLINCH_MS;
+  if (v.flinch && f !== undefined && f < 1) {
+    const amp = v.r * SHAKE * (1 - f);
+    dx += Math.sin(f * 40) * amp;
+    v.face.tint = mix(v.flinch.color, 0xffffff, f);
+    v.disc.tint = v.face.tint;
+  } else if (v.flinch) {
+    v.flinch = undefined;
+    v.face.tint = v.disc.tint = 0xffffff;
+  }
+  const l = v.lunge && (now - v.lunge.at) / LUNGE_MS;
+  if (v.lunge && l !== undefined && l < 1) {
+    const reach = Math.sin(l * Math.PI) * v.r * LUNGE;
+    dx += v.lunge.dir[0] * reach;
+    dy += v.lunge.dir[1] * reach;
+  } else v.lunge = undefined;
+  v.root.pivot.set(-dx, -dy);
+  return !!(v.flinch ?? v.lunge);
+}
+
+/** Blends two colours, `t` of the way from `a` to `b`. */
+function mix(a: number, b: number, t: number): number {
+  const ch = (c: number, s: number) => (c >> s) & 0xff;
+  const one = (s: number) => Math.round(ch(a, s) + (ch(b, s) - ch(a, s)) * t) << s;
+  return one(16) | one(8) | one(0);
 }
 
 /** Moves a token up to `distance` pixels along its route. */

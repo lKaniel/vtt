@@ -71,7 +71,7 @@ export class SpellActions {
       this.table.rng,
     );
     this.apply(outcome);
-    this.log(caster, { spell, slot }, outcome, summoned);
+    this.log(caster, { spell, slot, point: req.point }, outcome, summoned);
   }
 
   /** Spends the slot, ends invisibility and starts concentrating. */
@@ -242,7 +242,7 @@ export class SpellActions {
 
   private log(
     caster: Fighter,
-    { spell, slot }: { spell: Spell; slot: number },
+    { spell, slot, point }: { spell: Spell; slot: number; point?: Point },
     outcome: CastOutcome,
     summoned: Token[],
   ): void {
@@ -255,9 +255,16 @@ export class SpellActions {
     this.logSpell({
       caster: caster.token.name,
       spell: spell.name,
+      casterId: caster.token.id,
+      spellId: spell.id,
+      damageType: spell.damage[0]?.type,
+      attackKind: spell.attack,
+      point,
+      area: spell.area,
       slot,
       results: outcome.results.map((r) => ({
         target: name(r.target),
+        targetId: r.target,
         attack: r.attack,
         hit: r.hit,
         crit: r.crit,

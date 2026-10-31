@@ -13,17 +13,24 @@ describe('spell text', () => {
   });
 
   it('sums up what a spell did to one target', () => {
-    expect(targetText({ target: 'Goblin', hit: true, damage: 7, attack: { total: 18 } as never })).toBe(
+    expect(targetText({ target: 'Goblin', targetId: 'x', hit: true, damage: 7, attack: { total: 18 } as never })).toBe(
       'Goblin: 18 hit · 7 damage',
     );
-    expect(targetText({ target: 'Orc', hit: false, crit: false, damage: 0, attack: { total: 3 } as never })).toBe(
-      'Orc: 3 miss',
+    expect(
+      targetText({ target: 'Orc', targetId: 'x', hit: false, crit: false, damage: 0, attack: { total: 3 } as never }),
+    ).toBe('Orc: 3 miss');
+    expect(
+      targetText({
+        target: 'Orc',
+        targetId: 'x',
+        damage: 4,
+        save: { ability: 'dex', dc: 15, total: 16, success: true },
+      }),
+    ).toBe('Orc: DEX save 16 vs DC 15, saved · 4 damage');
+    expect(targetText({ target: 'Ana', targetId: 'x', damage: 0, healed: 6, effect: 'Bless' })).toBe(
+      'Ana: heals 6 · Bless',
     );
-    expect(targetText({ target: 'Orc', damage: 4, save: { ability: 'dex', dc: 15, total: 16, success: true } })).toBe(
-      'Orc: DEX save 16 vs DC 15, saved · 4 damage',
-    );
-    expect(targetText({ target: 'Ana', damage: 0, healed: 6, effect: 'Bless' })).toBe('Ana: heals 6 · Bless');
-    expect(targetText({ target: 'Wolf', damage: 0, immune: true })).toBe('Wolf: unaffected');
+    expect(targetText({ target: 'Wolf', targetId: 'x', damage: 0, immune: true })).toBe('Wolf: unaffected');
   });
 
   it('labels the aiming preview', () => {
