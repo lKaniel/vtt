@@ -2420,3 +2420,135 @@ h4 {
   width: 44px;
   height: 44px;
 }
+
+/* ---------- Character sheet: edit mode and dragging ---------- */
+
+.sheet-head-tools {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.sheet-name-input {
+  width: 100%;
+  max-width: 420px;
+  padding: 2px 6px;
+  font-family: var(--display);
+  font-size: 24px;
+  color: var(--gold-bright);
+  background: #0e0a07;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+}
+.sheet input,
+.sheet select {
+  min-width: 0;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: #0e0a07;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.sheet input:focus,
+.sheet select:focus {
+  border-color: var(--gold);
+  outline: none;
+}
+.sheet input[type='checkbox'] {
+  width: auto;
+  padding: 0;
+  accent-color: var(--gold);
+}
+.sheet .sheet-name-input {
+  font-size: 24px;
+}
+.sheet.editing {
+  box-shadow:
+    0 0 0 1px rgba(232, 211, 166, 0.25),
+    0 10px 30px rgba(0, 0, 0, 0.55);
+}
+.ability input.ability-score {
+  width: 46px;
+  padding: 1px 2px;
+  font-size: 12px;
+  text-align: center;
+}
+.stat-edit input {
+  width: 64px;
+  font-family: var(--display);
+  font-size: 16px;
+  text-align: center;
+  color: var(--gold-bright);
+}
+.hp-edit {
+  display: grid;
+  grid-template-columns: 1fr 1fr 54px auto auto;
+  gap: 5px;
+  align-items: end;
+}
+.hp-edit label {
+  display: grid;
+  gap: 1px;
+}
+.hp-edit label span {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.defenses input {
+  width: 100%;
+  padding: 2px 6px;
+  font-size: 13px;
+}
+.defenses div {
+  align-items: center;
+}
+.sheet-foot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 10px;
+  margin-top: 14px;
+  font-size: 13px;
+  font-style: italic;
+  border-top: 1px solid var(--gold-dim);
+}
+.ed-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 8px;
+}
+.bag-slot {
+  cursor: grab;
+}
+.slot-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 2;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  line-height: 1;
+  color: #ffb3a8;
+  background: #1a0f0b;
+  border: 1px solid var(--bad);
+  border-radius: 50%;
+}
+.ab-slot {
+  display: contents;
+}
+.tile[draggable='true'] {
+  cursor: grab;
+}
+.dragging-tile .sheet {
+  pointer-events: none;
+  opacity: 0.3;
+  transition: opacity 0.15s;
+}
+.dragging-tile .actionbar-wrap {
+  z-index: 10;
+}

@@ -135,3 +135,14 @@ describe('the Actors list', () => {
     expect(anaWelcome!.players).toBeUndefined();
   });
 });
+
+describe('arranging the hotbar', () => {
+  it('saves the layout for a creature you control', () => {
+    const ana = seat('ana');
+    ana.receive({ t: 'hotbar', token: 'hero', slots: ['spell:fire-bolt', null] });
+    expect(store.tokens.get('hero')!.hotbar).toEqual(['spell:fire-bolt', null]);
+    const bo = seat('bo');
+    bo.receive({ t: 'hotbar', token: 'hero', slots: [] });
+    expect(bo.take('error')[0]!.message).toMatch(/don't control/);
+  });
+});

@@ -339,12 +339,26 @@ describe('the GM tools', () => {
     expect([...session.actors.keys()]).toEqual(['wolf']);
   });
 
-  it('opens the editor for a token or an actor and closes it when the token goes', () => {
+  it('opens a sheet, switches it to editing, and closes it when the token goes', () => {
     ws.receive(gmWelcome());
-    session.openEditor({ kind: 'token', id: 'hero' });
-    expect(session.editing).toEqual({ kind: 'token', id: 'hero' });
+    session.openSheet({ kind: 'token', id: 'hero' });
+    expect(session.sheet).toEqual({ kind: 'token', id: 'hero', edit: false });
+    session.setSheetEdit(true);
+    expect(session.sheet?.edit).toBe(true);
     ws.receive({ t: 'tokenGone', id: 'hero' });
-    expect(session.editing).toBeUndefined();
+    expect(session.sheet).toBeUndefined();
+  });
+
+  it('only lets the GM edit a sheet', () => {
+    ws.receive(welcome());
+    session.openSheet({ kind: 'token', id: 'hero' }, true);
+    expect(session.sheet?.edit).toBe(false);
+  });
+
+  it('saves a hotbar layout', () => {
+    ws.receive(welcome());
+    session.setHotbar('hero', ['spell:fire-bolt', null]);
+    expect(ws.sent.at(-1)).toEqual({ t: 'hotbar', token: 'hero', slots: ['spell:fire-bolt', null] });
   });
 
   it('sends drops and shows why one was refused', () => {

@@ -27,6 +27,9 @@ interface Drag {
   last: Point;
   panning: boolean;
   button: number;
+  /** Set when the drag started on a token you control: dropping it walks the token there. */
+  token?: string;
+  moved?: boolean;
 }
 
 /**
@@ -61,6 +64,9 @@ export class MapView {
   constructor(private session: Session) {
     this.chunks = new ChunkLayer(session);
     this.tokens = new TokenLayer(session);
+    this.tokens.onGrab = (token, at) => {
+      this.drag = { start: at, last: at, panning: false, button: 0, token };
+    };
     this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
   }
 
@@ -316,7 +322,12 @@ export class MapView {
   }
 
   private dragTo(drag: Drag, p: Point): void {
-    if (Math.hypot(p[0] - drag.start[0], p[1] - drag.start[1]) > DRAG_THRESHOLD) drag.panning = true;
+    const far = Math.hypot(p[0] - drag.start[0], p[1] - drag.start[1]) > DRAG_THRESHOLD;
+    if (drag.token) {
+      if (far) drag.moved = true;
+      return;
+    }
+    if (far) drag.panning = true;
     if (drag.panning) {
       this.center = [
         this.center[0] - (p[0] - drag.last[0]) / this.zoom,
@@ -330,6 +341,10 @@ export class MapView {
   private onPointerUp(e: FederatedPointerEvent): void {
     const drag = this.drag;
     this.drag = undefined;
+    if (drag?.token) {
+      if (drag.moved) this.session.move(drag.token, this.screenToWorld(e.global.x, e.global.y));
+      return;
+    }
     if (!drag || drag.panning || drag.button !== 0) return;
     // Clicking the ground with an attack ready puts it away instead of walking.
     if (this.session.armed) return this.session.arm(undefined);

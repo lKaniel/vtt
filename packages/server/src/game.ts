@@ -53,6 +53,11 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('editToken'), token: z.string(), patch: z.record(z.string(), z.unknown()) }),
   z.object({ t: z.literal('deleteToken'), token: z.string() }),
   z.object({
+    t: z.literal('hotbar'),
+    token: z.string(),
+    slots: z.array(z.string().max(80).nullable()).max(60),
+  }),
+  z.object({
     t: z.literal('spawn'),
     from: z.discriminatedUnion('kind', [
       z.object({ kind: z.literal('monster'), id: z.string(), rules: EditionSchema }),
@@ -233,6 +238,8 @@ export class Game {
         return this.gm.edit(c.player, msg.token, msg.patch);
       case 'deleteToken':
         return this.gm.delete(c.player, msg.token);
+      case 'hotbar':
+        return this.onHotbar(c, msg.token, msg.slots);
       case 'spawn':
         return this.gm.spawn(c.player, msg.from, msg.at, msg.hidden);
       case 'saveActor':
@@ -291,6 +298,13 @@ export class Game {
     if (path.points.length < 2) return;
     const walker = this.combat.move(token, path.feet);
     this.store.setToken({ ...walker, x, y }, path.points);
+  }
+
+  private onHotbar(c: Client, id: string, slots: (string | null)[]): void {
+    const token = this.store.tokens.get(id);
+    if (!token || !c.visible.has(id)) return this.fail(c, 'No such token');
+    if (!canControlToken(token, c.player)) return this.fail(c, `You don't control ${token.name}`);
+    this.store.setToken({ ...token, hotbar: slots });
   }
 
   private onDoor(c: Client, msg: Extract<ClientMessage, { t: 'door' }>): void {

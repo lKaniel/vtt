@@ -40,15 +40,18 @@ export function NumberInput({
   onChange,
   placeholder,
   min,
+  className,
 }: Readonly<{
   value: number | undefined;
   onChange: (v: number | undefined) => void;
   placeholder?: string | number;
   min?: number;
+  className?: string;
 }>) {
   return (
     <input
       type="number"
+      className={className}
       value={value ?? ''}
       min={min}
       placeholder={placeholder === undefined ? '' : String(placeholder)}

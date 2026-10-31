@@ -21,8 +21,8 @@ import { aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
 
-/** What the GM's editor is open on: a token on the map or an actor in the list. */
-export interface EditTarget {
+/** What a character sheet shows: a token on the map or (GM only) an actor in the list. */
+export interface SheetTarget {
   kind: 'token' | 'actor';
   id: string;
 }
@@ -71,8 +71,8 @@ export class Session {
   players: Player[] = [];
   /** GM only: the Actors list. */
   readonly actors = new Map<string, Actor>();
-  /** GM only: the token or actor open in the editor. */
-  editing?: EditTarget;
+  /** The open character sheet; `edit` is the GM's edit mode. */
+  sheet?: SheetTarget & { edit: boolean };
   /** GM only: creatures dropped on the map arrive hidden from the players. */
   spawnHidden = false;
   /** The part of the world on screen, kept up to date by the map. */
@@ -249,9 +249,19 @@ export class Session {
 
   // GM tools ---------------------------------------------------------------
 
-  openEditor(target: EditTarget | undefined): void {
-    this.editing = target;
+  /** Opens a sheet (or closes it with undefined); only the GM can open one for editing. */
+  openSheet(target: SheetTarget | undefined, edit = false): void {
+    this.sheet = target && { ...target, edit: edit && this.you?.role === 'gm' };
     this.changed();
+  }
+
+  setSheetEdit(edit: boolean): void {
+    if (this.sheet) this.openSheet(this.sheet, edit);
+  }
+
+  /** Saves how the creature's action bar is arranged. */
+  setHotbar(token: string, slots: (string | null)[]): void {
+    this.send({ t: 'hotbar', token, slots });
   }
 
   setSpawnHidden(hidden: boolean): void {
@@ -410,13 +420,13 @@ export class Session {
       return;
     }
     this.actors.delete(msg.id);
-    if (this.editing?.kind === 'actor' && this.editing.id === msg.id) this.editing = undefined;
+    if (this.sheet?.kind === 'actor' && this.sheet.id === msg.id) this.sheet = undefined;
   }
 
   private onTokenGone(id: string): boolean {
     if (!this.tokens.delete(id)) return false;
     if (this.selected === id) this.select(undefined);
-    if (this.editing?.kind === 'token' && this.editing.id === id) this.editing = undefined;
+    if (this.sheet?.kind === 'token' && this.sheet.id === id) this.sheet = undefined;
     this.emit('tokenGone', id);
     return true;
   }

@@ -99,6 +99,8 @@ export type ClientMessage =
   | { t: 'removeEffect'; token: string; effect: string }
   /** GM: everyone listed takes a short or long rest. */
   | { t: 'rest'; tokens: string[]; kind: 'short' | 'long' }
+  /** Save how a creature you control has its action bar arranged. */
+  | { t: 'hotbar'; token: string; slots: (string | null)[] }
   /** GM: change token fields; `null` removes one (e.g. `hp: null` heals fully). */
   | { t: 'editToken'; token: string; patch: Record<string, unknown> }
   | { t: 'deleteToken'; token: string }

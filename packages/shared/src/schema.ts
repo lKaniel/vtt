@@ -121,6 +121,8 @@ export const TokenSchema = z.object({
   summon: z.object({ by: id, spell: id, concentration: z.boolean().default(false) }).optional(),
   /** Acts on this token's turn instead of its own (summons, companions). */
   leader: id.optional(),
+  /** How its controller arranged the action bar: one tile reference per slot ("spell:fire-bolt"), or null. */
+  hotbar: z.array(z.string().max(80).nullable()).max(60).optional(),
 });
 export type Token = z.infer<typeof TokenSchema>;
 

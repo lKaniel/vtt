@@ -35,7 +35,7 @@ export function ActorsTab({ session }: Readonly<{ session: Session }>) {
       darkvision: 0,
       hidden: false,
     });
-    session.openEditor({ kind: 'actor', id });
+    session.openSheet({ kind: 'actor', id }, true);
   };
   return (
     <div className="lib">
@@ -81,7 +81,7 @@ function TokenRow({ session, token }: Readonly<{ session: Session; token: TokenV
       <button
         className="lib-main"
         onClick={show}
-        onDoubleClick={() => session.openEditor({ kind: 'token', id: token.id })}
+        onDoubleClick={() => session.openSheet({ kind: 'token', id: token.id }, true)}
       >
         <Face token={token} className="lib-face" />
         <span className="lib-text">
@@ -100,7 +100,11 @@ function TokenRow({ session, token }: Readonly<{ session: Session; token: TokenV
       >
         {token.hidden ? '◌' : '◉'}
       </button>
-      <button className="lib-icon" title="Edit" onClick={() => session.openEditor({ kind: 'token', id: token.id })}>
+      <button
+        className="lib-icon"
+        title="Edit"
+        onClick={() => session.openSheet({ kind: 'token', id: token.id }, true)}
+      >
         ✎
       </button>
     </li>
@@ -128,7 +132,7 @@ function ActorFolders({ session, actors }: Readonly<{ session: Session; actors: 
 }
 
 function ActorRow({ session, actor }: Readonly<{ session: Session; actor: Actor }>) {
-  const edit = () => session.openEditor({ kind: 'actor', id: actor.id });
+  const edit = () => session.openSheet({ kind: 'actor', id: actor.id }, true);
   return (
     <li className="lib-row" draggable onDragStart={(e) => startDrag(e, { kind: 'actor', id: actor.id })}>
       <button className="lib-main" onClick={edit} title="Drag onto the map to place a copy">

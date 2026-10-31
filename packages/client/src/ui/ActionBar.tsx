@@ -1,10 +1,21 @@
 import type { TokenView, TurnBudget } from '@vtt/shared';
 import { useState } from 'react';
 import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, type Tab } from '../actions.ts';
+import {
+  dragTile,
+  hotbarSlots,
+  hotbarTiles,
+  moveOnHotbar,
+  placeOnHotbar,
+  removeFromHotbar,
+  TILE_DRAG,
+  type Slots,
+  type TileDrag,
+} from '../hotbar.ts';
 import type { Glyph as GlyphName } from '../icons.ts';
 import type { Session } from '../session.ts';
 import { ORDINAL } from '../spell-text.ts';
-import { attackTip, featureTip, spellTip } from '../tooltip.ts';
+import { attackTip, featureTip, itemTip, spellTip } from '../tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 import { TipCard } from './Tip.tsx';
@@ -32,7 +43,14 @@ export function activateTile(session: Session, token: TokenView, tile: ActionTil
   if (tile.kind === 'attack') session.arm(session.armed === tile.name ? undefined : tile.name);
   else if (tile.kind === 'spell')
     session.aim(session.aiming?.spell.id === tile.spell.id ? undefined : tile.spell.id, tile.slot);
-  else session.useFeature(token.id, tile.feature.id);
+  else if (tile.kind === 'feature') session.useFeature(token.id, tile.feature.id);
+  else readyItem(session, token, tile.item.name);
+}
+
+/** A weapon on the bar readies its attack; other items aren't automated yet. */
+function readyItem(session: Session, token: TokenView, name: string): void {
+  if (token.sheet?.attacks.some((a) => a.name === name)) session.arm(session.armed === name ? undefined : name);
+  else session.showError(`Using ${name} isn't automated yet: ask the GM`);
 }
 
 /** BG3-style bar along the bottom: portrait, resources, action tiles and end turn. */
@@ -89,8 +107,8 @@ function Who({ session, token }: Readonly<{ session: Session; token: TokenView }
       {gm ? (
         <button
           className="ab-name ab-edit"
-          title="Edit (E)"
-          onClick={() => session.openEditor({ kind: 'token', id: token.id })}
+          title="Edit sheet (E)"
+          onClick={() => session.openSheet({ kind: 'token', id: token.id }, true)}
         >
           {token.name} ✎
         </button>
@@ -128,6 +146,7 @@ function Grid({
   tab,
   budget,
 }: Readonly<{ session: Session; token: TokenView; tab: Tab; budget: TurnBudget | undefined }>) {
+  if (tab === 'all') return <Hotbar session={session} token={token} budget={budget} />;
   const shown = filterTiles(actionTiles(token), tab);
   return (
     <div className="ab-grid">
@@ -141,6 +160,59 @@ function Grid({
   );
 }
 
+/** Slots without the empty ones at the end, as saved on the token. */
+function trimmed(slots: Slots): Slots {
+  const last = slots.findLastIndex((s) => s !== null);
+  return slots.slice(0, last + 1);
+}
+
+/** The arranged bar: drop tiles from the sheet onto any slot, drag tiles to swap them. */
+function Hotbar({
+  session,
+  token,
+  budget,
+}: Readonly<{ session: Session; token: TokenView; budget: TurnBudget | undefined }>) {
+  const save = (slots: Slots) => session.setHotbar(token.id, trimmed(slots));
+  const onDrop = (i: number) => (e: React.DragEvent) => {
+    const data = e.dataTransfer.getData(TILE_DRAG);
+    if (!data) return;
+    e.preventDefault();
+    const drag = JSON.parse(data) as TileDrag;
+    const slots = hotbarSlots(token);
+    save('ref' in drag ? placeOnHotbar(slots, drag.ref, i) : moveOnHotbar(slots, drag.from, i));
+  };
+  const onDragOver = (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes(TILE_DRAG)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+  return (
+    <div className="ab-grid">
+      {hotbarTiles(token).map((tile, i) => (
+        <span key={i} className="ab-slot" onDragOver={onDragOver} onDrop={onDrop(i)}>
+          {tile ? (
+            <Tile
+              session={session}
+              token={token}
+              tile={tile}
+              budget={budget}
+              onDragStart={(e) => dragTile(e, { from: i })}
+              // An item dragged off the bar leaves it.
+              onDragEnd={(e) =>
+                e.dataTransfer.dropEffect === 'none' &&
+                tile.kind === 'item' &&
+                save(removeFromHotbar(hotbarSlots(token), i))
+              }
+            />
+          ) : (
+            <span className="tile empty" />
+          )}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function isActive(session: Session, tile: ActionTile): boolean {
   if (tile.kind === 'attack') return session.armed === tile.name;
   return tile.kind === 'spell' && session.aiming?.spell.id === tile.spell.id;
@@ -149,6 +221,7 @@ function isActive(session: Session, tile: ActionTile): boolean {
 function tipFor(tile: ActionTile) {
   if (tile.kind === 'attack') return attackTip(tile.attack);
   if (tile.kind === 'spell') return spellTip(tile.spell);
+  if (tile.kind === 'item') return itemTip(tile.item, tile.item.id, false);
   return featureTip(tile.feature);
 }
 
@@ -157,7 +230,16 @@ function Tile({
   token,
   tile,
   budget,
-}: Readonly<{ session: Session; token: TokenView; tile: ActionTile; budget: TurnBudget | undefined }>) {
+  onDragStart,
+  onDragEnd,
+}: Readonly<{
+  session: Session;
+  token: TokenView;
+  tile: ActionTile;
+  budget: TurnBudget | undefined;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
+}>) {
   const usable = !tile.spent && affordable(tile, budget);
   const cls = ['tile', `cost-${costOf(tile)}`, isActive(session, tile) && 'active', !usable && 'unusable'];
   return (
@@ -165,6 +247,9 @@ function Tile({
       className={cls.filter(Boolean).join(' ')}
       disabled={tile.spent}
       aria-label={tile.name}
+      draggable={!!onDragStart}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onClick={() => activateTile(session, token, tile)}
     >
       <IconFace icon={tile.icon} size={26} />
@@ -180,6 +265,7 @@ function Tile({
 function TileCorner({ tile }: Readonly<{ tile: ActionTile }>) {
   if (tile.kind === 'spell') return <span className="tile-level">{tile.spell.level || ''}</span>;
   if (tile.kind === 'feature' && tile.uses) return <span className="tile-level">{tile.feature.left}</span>;
+  if (tile.kind === 'item' && tile.uses) return <span className="tile-level">{tile.uses}</span>;
   return null;
 }
 

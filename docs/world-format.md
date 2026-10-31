@@ -178,13 +178,14 @@ from `classes-5.x.json`. A homebrew class or a monster that casts uses
 The server writes the rest of a creature's magic to its token file, and you can
 edit it too:
 
-| Token field     | Meaning                                                                                                     |
-| --------------- | ----------------------------------------------------------------------------------------------------------- |
-| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.       |
-| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.       |
-| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st) and feature uses.      |
-| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.               |
-| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons). |
+| Token field     | Meaning                                                                                                                                                               |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.                                                                 |
+| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                 |
+| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st) and feature uses.                                                                |
+| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                         |
+| `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"` or `null`. |
+| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                           |
 
 Effect modifiers: `conditions` (e.g. `["prone"]`, `["paralyzed"]`),
 `attackBonus` and `saveBonus` (dice like `"1d4"` or `"-1d4"`), `ac`, `speed`,

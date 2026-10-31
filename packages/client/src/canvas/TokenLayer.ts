@@ -50,6 +50,8 @@ export class TokenLayer {
   private views = new Map<string, Sprite>();
   private labelsVisible = true;
   private lastClick = { id: '', at: 0 };
+  /** Called when a token you control is pressed, so the map can let you drag it somewhere. */
+  onGrab?: (id: string, at: Point) => void;
 
   constructor(private session: Session) {}
 
@@ -211,11 +213,12 @@ export class TokenLayer {
       e.stopPropagation();
       const t = this.session.tokens.get(token.id);
       if (!t) return;
-      if (this.isDoubleClick(t.id) && this.session.you?.role === 'gm')
-        this.session.openEditor({ kind: 'token', id: t.id });
-      if (this.session.aiming?.mode === 'creatures') this.session.pickTarget(t.id);
-      else if (this.isTarget(t)) this.session.attack(t.id);
-      else if (this.session.canControl(t)) this.session.select(t.id);
+      if (this.session.aiming?.mode === 'creatures') return this.session.pickTarget(t.id);
+      if (this.isTarget(t)) return this.session.attack(t.id);
+      if (!this.session.canControl(t)) return;
+      this.session.select(t.id);
+      if (this.isDoubleClick(t.id)) this.session.openSheet({ kind: 'token', id: t.id });
+      else this.onGrab?.(t.id, [e.global.x, e.global.y]);
     });
     this.container.addChild(root);
     const view: Sprite = { root, base, disc, face, faceMask, status, label, route: [], token, r: 0 };
