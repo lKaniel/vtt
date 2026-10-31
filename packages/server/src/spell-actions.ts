@@ -21,6 +21,7 @@ export interface CastRequest {
   caster: string;
   spell: string;
   slot: number;
+  free?: boolean;
   targets: string[];
   point?: Point;
   summon?: string;
@@ -53,7 +54,7 @@ export class SpellActions {
     const caster = this.table.actor(player, req.caster);
     const spell = this.table.content(caster.token).spells.get(req.spell);
     if (!spell) throw new Refusal(`There is no spell called ${req.spell}`);
-    const problem = castProblem({ spell, slot: req.slot, sheet: caster.sheet });
+    const problem = castProblem({ spell, slot: req.slot, sheet: caster.sheet, free: req.free });
     if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
     const cost = COST[spell.castingTime];
     if ((spell.castingTime === 'minute' || spell.castingTime === 'hour') && this.table.inFight(caster.token.id)) {
@@ -61,9 +62,10 @@ export class SpellActions {
     }
     this.table.check(caster.token, cost);
     const slot = spell.level === 0 ? 0 : req.slot;
+    const spend = req.free ? 0 : slot;
     const targets = this.targets(caster, spell, { ...req, slot }, canSee);
     this.table.pay(caster.token, cost);
-    this.begin(caster, spell, slot);
+    this.begin(caster, spell, spend);
     if (spell.teleport) this.teleport(caster.token.id, req.point!);
     const summoned = spell.summon ? this.summon(this.table.fighter(caster.token.id), spell, req) : [];
     const outcome = resolveCast(
@@ -71,7 +73,7 @@ export class SpellActions {
       this.table.rng,
     );
     this.apply(outcome);
-    this.log(caster, { spell, slot, point: req.point }, outcome, summoned);
+    this.log(caster, { spell, slot, point: req.point, free: req.free && slot > 0 }, outcome, summoned);
   }
 
   /** Spends the slot, ends invisibility and starts concentrating. */
@@ -242,12 +244,13 @@ export class SpellActions {
 
   private log(
     caster: Fighter,
-    { spell, slot, point }: { spell: Spell; slot: number; point?: Point },
+    { spell, slot, point, free }: { spell: Spell; slot: number; point?: Point; free?: boolean },
     outcome: CastOutcome,
     summoned: Token[],
   ): void {
     const name = (id: string) => this.store.tokens.get(id)?.name ?? id;
     const notes: string[] = [];
+    if (free) notes.push('cast without a spell slot');
     if (summoned.length) notes.push(`${summoned.map((t) => t.name).join(', ')} appear`);
     if (!spell.automated) notes.push('not automated: the GM applies it');
     const down = new Set(outcome.results.filter((r) => r.damage > 0 && r.hp <= 0).map((r) => r.target));

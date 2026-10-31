@@ -1,4 +1,5 @@
 import { srdFor, type Edition, type InventoryEntry, type Spell } from '@vtt/shared';
+import { pipLeft, withSlotsLeft, withUsesLeft } from '../charges.ts';
 import { dragTile } from '../hotbar.ts';
 import { attackArt, featureArt, itemArt, spellArt } from '../icon-art.ts';
 import { attackIcon, effectIcon, featureIcon, itemIcon, spellIcon } from '../icons.ts';
@@ -6,7 +7,9 @@ import { ORDINAL } from '../spell-text.ts';
 import { setStat } from '../token-edit.ts';
 import { attackTip, featureTip, itemTip, spellTip } from '../tooltip.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
+import { NumberInput } from './EditorFields.tsx';
 import { IconFace } from './Icon.tsx';
+import { withKey } from './sheet-model.ts';
 import { Adder, RemoveButton } from './SheetDetails.tsx';
 import { TipCard } from './Tip.tsx';
 
@@ -16,6 +19,85 @@ import { TipCard } from './Tip.tsx';
 const items = srdFor('2014').items;
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 const DRAG_HINT = 'Drag onto the action bar';
+
+const MAX_PIPS = 10;
+
+interface PipProps {
+  name: string;
+  left: number;
+  total: number;
+  onChange?: (left: number) => void;
+  feature?: boolean;
+}
+
+/** Charges left: pips, or a number for big pools; in edit mode the GM spends and restores them. */
+function Pips(props: Readonly<PipProps>) {
+  const { name, left, total, onChange, feature } = props;
+  if (total > MAX_PIPS) return <PoolLeft {...props} />;
+  const cls = (k: number) => ['pip', feature && 'feature', k >= left && 'used'].filter(Boolean).join(' ');
+  return (
+    <span className="charge-row" title={`${name}: ${left} of ${total} left`}>
+      {!feature && <span className="charge-row-name">{name}</span>}
+      {Array.from({ length: total }, (_, k) =>
+        onChange ? (
+          <button
+            key={k}
+            className={cls(k)}
+            aria-label={`${name} ${k + 1}`}
+            onClick={() => onChange(pipLeft(k, left))}
+          />
+        ) : (
+          <span key={k} className={cls(k)} />
+        ),
+      )}
+    </span>
+  );
+}
+
+function PoolLeft({ name, left, total, onChange }: Readonly<PipProps>) {
+  if (!onChange)
+    return (
+      <span className="row-detail">
+        {left}/{total}
+      </span>
+    );
+  return (
+    <span className="charge-row">
+      <NumberInput
+        className="pool-left"
+        value={left}
+        min={0}
+        onChange={(v) => onChange(Math.min(total, Math.max(0, v ?? total)))}
+      />
+      <span className="muted" aria-label={`${name} uses`}>
+        /{total}
+      </span>
+    </span>
+  );
+}
+
+/** Spell slots left per level; the GM spends and restores them in edit mode. */
+function SlotPips({ sheet, edit, update }: Readonly<SheetProps>) {
+  const caster = sheet.caster;
+  if (!caster?.slots.some((n) => n > 0)) return null;
+  const set = (level: number, left: number) =>
+    update((d) => withKey(d, 'spent', withSlotsLeft(d.spent, { level, left, total: caster.slots[level - 1]! })), true);
+  return (
+    <div className="charges" aria-label="Spell slots">
+      {caster.slots.map((total, i) =>
+        total ? (
+          <Pips
+            key={i}
+            name={ORDINAL[i + 1]!}
+            left={caster.left[i] ?? 0}
+            total={total}
+            onChange={edit ? (left) => set(i + 1, left) : undefined}
+          />
+        ) : null,
+      )}
+    </div>
+  );
+}
 
 export function InventoryPage(props: Readonly<SheetProps>) {
   const { sheet } = props;
@@ -142,6 +224,7 @@ export function SpellsPage(props: Readonly<SheetProps & { rules: Edition }>) {
       ) : (
         <p className="muted">{edit ? 'Give the creature a caster class or spells to cast.' : 'No spellcasting.'}</p>
       )}
+      <SlotPips {...props} />
       {levels.map((level) => (
         <div key={level} className="spell-level">
           <span className="spell-level-name">{level ? `${ORDINAL[level]} level` : 'Cantrips'}</span>
@@ -204,7 +287,9 @@ function SpellAdder({ value, update, rules }: Readonly<SheetProps & { rules: Edi
   );
 }
 
-export function FeaturesPage({ sheet, edit }: Readonly<SheetProps>) {
+export function FeaturesPage({ sheet, edit, update }: Readonly<SheetProps>) {
+  const setUses = (id: string, max: number) => (left: number) =>
+    update((d) => withKey(d, 'spent', withUsesLeft(d.spent, { id, left, max })), true);
   if (!sheet.features.length)
     return <p className="muted">{edit ? 'Features come from the class and level (Details tab).' : 'No features.'}</p>;
   return (
@@ -220,9 +305,13 @@ export function FeaturesPage({ sheet, edit }: Readonly<SheetProps>) {
           <IconFace icon={{ ...featureIcon(f), art: featureArt(f) }} size={18} />
           <span className="row-name">{f.name}</span>
           {f.max !== undefined && (
-            <span className="row-detail">
-              {f.left}/{f.max}
-            </span>
+            <Pips
+              name={f.name}
+              feature
+              left={f.left ?? 0}
+              total={f.max}
+              onChange={edit ? setUses(f.id, f.max) : undefined}
+            />
           )}
           <TipCard tip={featureTip(f)} />
         </li>

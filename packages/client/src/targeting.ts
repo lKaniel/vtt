@@ -13,6 +13,8 @@ export interface Aiming {
   need: number;
   /** For summons: the monster to bring. */
   summon?: string;
+  /** Cast without spending a slot. */
+  free?: boolean;
 }
 
 export function aimSpell(spell: Spell, slot: number, casterLevel: number): Aiming {
@@ -42,6 +44,7 @@ export function castMessage(caster: string, aiming: Aiming, point?: Point): Clie
     targets: aiming.picks,
     ...(point && { point }),
     ...(aiming.summon && { summon: aiming.summon }),
+    ...(aiming.free && { free: true }),
   };
 }
 

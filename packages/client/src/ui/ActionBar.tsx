@@ -1,6 +1,7 @@
 import type { TokenView, TurnBudget } from '@vtt/shared';
 import { useState } from 'react';
 import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, type Tab } from '../actions.ts';
+import { slotChoices } from '../charges.ts';
 import {
   dragTile,
   hotbarSlots,
@@ -14,6 +15,7 @@ import {
 } from '../hotbar.ts';
 import type { Glyph as GlyphName } from '../icons.ts';
 import type { Session } from '../session.ts';
+import type { Aiming } from '../targeting.ts';
 import { ORDINAL } from '../spell-text.ts';
 import { attackTip, featureTip, itemTip, spellTip } from '../tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
@@ -41,10 +43,19 @@ function budgetOf(session: Session, token: TokenView): TurnBudget | undefined {
 /** Does what a tile says: readies an attack, aims a spell, or uses a feature. */
 export function activateTile(session: Session, token: TokenView, tile: ActionTile): void {
   if (tile.kind === 'attack') session.arm(session.armed === tile.name ? undefined : tile.name);
-  else if (tile.kind === 'spell')
-    session.aim(session.aiming?.spell.id === tile.spell.id ? undefined : tile.spell.id, tile.slot);
+  else if (tile.kind === 'spell') aimTile(session, tile);
   else if (tile.kind === 'feature') session.useFeature(token.id, tile.feature.id);
   else readyItem(session, token, tile.item.name);
+}
+
+/** A spell with no slot left can still be cast for free. */
+export function canActivate(tile: ActionTile): boolean {
+  return !tile.spent || tile.kind === 'spell';
+}
+
+function aimTile(session: Session, tile: Extract<ActionTile, { kind: 'spell' }>): void {
+  if (session.aiming?.spell.id === tile.spell.id) return session.aim(undefined);
+  session.aim(tile.spell.id, tile.slot ?? tile.spell.level, tile.slot === undefined && tile.spell.level > 0);
 }
 
 /** A weapon on the bar readies its attack; other items aren't automated yet. */
@@ -245,7 +256,7 @@ function Tile({
   return (
     <button
       className={cls.filter(Boolean).join(' ')}
-      disabled={tile.spent}
+      disabled={!canActivate(tile)}
       aria-label={tile.name}
       draggable={!!onDragStart}
       onDragStart={onDragStart}
@@ -316,12 +327,51 @@ function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenVi
   );
 }
 
+/** The slot levels a spell can be cast with, how many of each are left, and casting it for free. */
+function SlotChoices({
+  session,
+  aiming,
+  caster,
+}: Readonly<{ session: Session; aiming: Aiming; caster: { slots: number[]; left: number[] } }>) {
+  const { spell, free } = aiming;
+  const choices = slotChoices(spell, caster).filter((c) => free === true || c.left > 0);
+  const backToSlots = () => {
+    session.setFreeCast(false);
+    const current = choices.find((c) => c.level === aiming.slot);
+    const first = choices.find((c) => c.left > 0);
+    if (!current?.left && first) session.aim(spell.id, first.level);
+  };
+  return (
+    <span className="slot-choices" role="group" aria-label="Spell slot">
+      <span className="slot-choices-label">Slot</span>
+      {choices.map((c) => (
+        <button
+          key={c.level}
+          className={c.level === aiming.slot ? 'chip slot-chip on' : 'chip slot-chip'}
+          onClick={() => session.aim(spell.id, c.level, free)}
+          title={free ? `Cast at ${ORDINAL[c.level]} level for free` : `Use a ${ORDINAL[c.level]}-level slot`}
+        >
+          {ORDINAL[c.level]}
+          {!free && <span className="slot-chip-left">{`${c.left}/${c.total}`}</span>}
+        </button>
+      ))}
+      <button
+        className={free ? 'chip slot-chip free on' : 'chip slot-chip free'}
+        onClick={() => (free ? backToSlots() : session.setFreeCast(true))}
+        title="Cast without spending a spell slot"
+      >
+        Free
+      </button>
+    </span>
+  );
+}
+
 function hint(session: Session, token: TokenView | undefined): string {
-  if (session.armed) return `Click a target for ${session.armed} · Esc or click the ground to cancel`;
+  if (session.armed) return `Click a target for ${session.armed} · right click or Esc to cancel`;
   const aiming = session.aiming;
-  if (aiming?.mode === 'point') return `Click where ${aiming.spell.name} goes · Esc to cancel`;
+  if (aiming?.mode === 'point') return `Click where ${aiming.spell.name} goes · right click or Esc to cancel`;
   if (aiming)
-    return `Click ${aiming.need - aiming.picks.length} more target(s) for ${aiming.spell.name} · Esc to cancel`;
+    return `Click ${aiming.need - aiming.picks.length} more target(s) for ${aiming.spell.name} · right click or Esc to cancel`;
   if (!token) return 'Click one of your characters to select them';
   return 'Click to walk · 1–0 for actions · C for the sheet · Space ends your turn';
 }
@@ -329,19 +379,14 @@ function hint(session: Session, token: TokenView | undefined): string {
 /** While a spell is aimed: which slot to cast it with, what to summon, and casting with fewer targets. */
 function AimingControls({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
   const aiming = session.aiming;
-  const left = token.sheet?.caster?.left ?? [];
   if (!aiming) return null;
   const { spell } = aiming;
-  const levels = left.map((_, i) => i + 1).filter((l) => l >= spell.level && left[l - 1]! > 0);
   return (
     <div className="aiming frame">
       <span className="aiming-name">{spell.name}</span>
-      {spell.level > 0 &&
-        levels.map((l) => (
-          <button key={l} className={l === aiming.slot ? 'chip on' : 'chip'} onClick={() => session.aim(spell.id, l)}>
-            {ORDINAL[l]}
-          </button>
-        ))}
+      {spell.level > 0 && token.sheet?.caster && (
+        <SlotChoices session={session} aiming={aiming} caster={token.sheet.caster} />
+      )}
       {spell.summon && (
         <select value={aiming.summon} onChange={(e) => session.chooseSummon(e.target.value)}>
           {spell.summon.options.map((o) => (

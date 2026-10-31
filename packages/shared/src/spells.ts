@@ -56,16 +56,19 @@ export function castProblem({
   spell,
   slot,
   sheet,
+  free,
 }: {
   spell: Spell;
   slot: number;
   sheet: Creature;
+  /** Cast without spending a slot. */
+  free?: boolean;
 }): string | undefined {
   const caster = sheet.caster;
   if (!caster?.spells.some((s) => s.id === spell.id)) return `doesn't know ${spell.name}`;
   if (spell.level === 0) return undefined;
   if (slot < spell.level || slot > 9) return `needs a slot of ${ORDINAL[spell.level]} level or higher`;
-  if (!caster.left[slot - 1]) return `has no ${ORDINAL[slot]}-level slots left`;
+  if (!free && !caster.left[slot - 1]) return `has no ${ORDINAL[slot]}-level slots left`;
   return undefined;
 }
 

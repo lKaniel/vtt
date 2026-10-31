@@ -92,7 +92,17 @@ export type ClientMessage =
   /** `item` is the index in the token's inventory. */
   | { t: 'equip'; token: string; item: number; equipped: boolean }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
-  | { t: 'cast'; caster: string; spell: string; slot: number; targets: string[]; point?: Point; summon?: string }
+  | {
+      t: 'cast';
+      caster: string;
+      spell: string;
+      slot: number;
+      /** Cast without spending a slot. */
+      free?: boolean;
+      targets: string[];
+      point?: Point;
+      summon?: string;
+    }
   | { t: 'feature'; token: string; feature: string }
   | { t: 'dropConcentration'; token: string }
   /** GM: end one effect on a token. */

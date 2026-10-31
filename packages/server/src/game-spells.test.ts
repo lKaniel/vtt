@@ -128,6 +128,15 @@ describe('casting spells', () => {
     expect(errors(ana)[0]).toMatch(/no 1st-level slots left/);
   });
 
+  it('casts for free without spending a slot, and says so in the log', () => {
+    const ana = join_('ana');
+    dice = Array<number>(6).fill(face(1, 4));
+    store.setToken({ ...tok('hero'), spent: { slots: [4] } });
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'magic-missile', slot: 2, free: true, targets: ['goblin'] });
+    expect(spellLogs(ana)[0]!.notes).toContain('cast without a spell slot');
+    expect(tok('hero').spent?.slots).toEqual([4]);
+  });
+
   it('says a creature is down once, however many darts hit it', () => {
     const ana = join_('ana');
     dice = Array<number>(6).fill(face(4, 4));

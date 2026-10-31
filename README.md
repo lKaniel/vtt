@@ -37,7 +37,12 @@ on, shared live between players.
 - **Attacks.** Press 1-8 or click a hotbar slot, hover a target to see range
   (long range shows disadvantage), click to attack. The server rolls to hit
   against AC, crits on a 20, applies resistances, vulnerabilities and
-  immunities, and posts the result in chat.
+  immunities, and posts the result in chat. Right click (or Esc) puts a
+  readied attack or aimed spell away.
+- **Spell slots.** While a spell is aimed, the bar above the hotbar picks the
+  slot level to cast it with, or _Free_ to cast without spending one (the log
+  says so). In the sheet's edit mode the GM clicks slot and feature charge
+  pips to spend or restore them.
 - **Character sheet (C, or double-click your token).** Abilities, AC, HP and
   tabs for Inventory, Spells, Features and Effects; click an item to equip it.
 - **Arrange the action bar.** Drag spells, attacks, features and items from
