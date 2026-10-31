@@ -66,6 +66,7 @@ export const fight = (turn: number, move = 30): Combat => ({
   ],
   left: { move, action: true, bonus: true, attacks: 0, used: [] },
   side: {},
+  reacted: [],
 });
 
 /** The socket a session opened most recently. */

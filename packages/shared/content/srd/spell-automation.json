@@ -1,5 +1,18 @@
 {
   "$comment": "Hand-written automation merged over spells-5.1.json (2014) and spells-5.2.json (2024) at load. Each spell id maps to fields for both editions and/or for one edition.",
+  "aid": {
+    "both": {
+      "automated": true,
+      "targets": 3,
+      "heal": "5",
+      "effect": {
+        "maxHp": 5
+      },
+      "upcast": {
+        "maxHp": 5
+      }
+    }
+  },
   "animal-messenger": {
     "both": {
       "automated": false
@@ -13,6 +26,20 @@
   "banishment": {
     "both": {
       "automated": false
+    }
+  },
+  "barkskin": {
+    "2014": {
+      "automated": true,
+      "effect": {
+        "minAc": 16
+      }
+    },
+    "2024": {
+      "automated": true,
+      "effect": {
+        "minAc": 17
+      }
     }
   },
   "bestow-curse": {
@@ -40,6 +67,14 @@
     "2014": {
       "upcast": {
         "targets": 1
+      }
+    }
+  },
+  "blur": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "disadvantageAgainst": true
       }
     }
   },
@@ -200,6 +235,14 @@
       "gmNote": "Cast right after a weapon hit. The restrained target takes 1d6 piercing at the start of each of its turns and can use its action to escape (Athletics vs your DC)."
     }
   },
+  "entangle": {
+    "2024": {
+      "area": {
+        "shape": "cube",
+        "size": 20
+      }
+    }
+  },
   "enthrall": {
     "both": {
       "automated": false
@@ -303,6 +346,13 @@
       "gmNote": "Creatures that end their turn within 5 ft of the sphere take its damage too."
     }
   },
+  "greater-restoration": {
+    "both": {
+      "automated": true,
+      "cures": ["charmed", "petrified"],
+      "gmNote": "Exhaustion, curses and reduced scores or maximum are restored by hand."
+    }
+  },
   "guardian-of-faith": {
     "both": {
       "automated": false
@@ -329,6 +379,47 @@
   "hallow": {
     "both": {
       "automated": false
+    }
+  },
+  "haste": {
+    "both": {
+      "effect": {
+        "ac": 2,
+        "saveAdvantage": ["dex"],
+        "speedTimes": 2,
+        "turnAttacks": 1
+      },
+      "gmNote": "The extra action can also Dash, Disengage, Hide or Use an Object; when Haste ends the target loses its next turn."
+    }
+  },
+  "heal": {
+    "2014": {
+      "automated": true,
+      "heal": "70",
+      "upcast": {
+        "heal": "10"
+      },
+      "cures": ["blinded", "deafened"]
+    },
+    "2024": {
+      "automated": true,
+      "heal": "70",
+      "upcast": {
+        "heal": "10"
+      },
+      "cures": ["blinded", "deafened", "poisoned"]
+    }
+  },
+  "heroism": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "turnTempHp": "mod"
+      },
+      "upcast": {
+        "targets": 1
+      },
+      "gmNote": "The target is also immune to being frightened."
     }
   },
   "hex": {
@@ -420,9 +511,34 @@
       }
     }
   },
+  "lesser-restoration": {
+    "both": {
+      "automated": true,
+      "cures": ["blinded", "deafened", "paralyzed", "poisoned"]
+    }
+  },
   "light": {
     "both": {
       "automated": false
+    }
+  },
+  "longstrider": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "speed": 10
+      },
+      "upcast": {
+        "targets": 1
+      }
+    }
+  },
+  "mage-armor": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "armorBase": 13
+      }
     }
   },
   "magic-circle": {
@@ -560,6 +676,13 @@
       "automated": false
     }
   },
+  "revivify": {
+    "both": {
+      "automated": true,
+      "revive": true,
+      "gmNote": "Only for a creature dead less than a minute; uses up a 300 gp diamond."
+    }
+  },
   "scorching-ray": {
     "both": {
       "beams": 3,
@@ -634,6 +757,36 @@
       "automated": true
     }
   },
+  "sleet-storm": {
+    "2014": {
+      "automated": true,
+      "save": {
+        "ability": "dex"
+      },
+      "effect": {
+        "conditions": ["prone"],
+        "rounds": 1
+      },
+      "gmNote": "Concentrating casters in the area make a Constitution save; the area is heavily obscured."
+    }
+  },
+  "slow": {
+    "both": {
+      "effect": {
+        "ac": -2,
+        "speedTimes": 0.5,
+        "repeatSave": true
+      },
+      "gmNote": "Also -2 to Dexterity saves, no reactions, one attack a turn, and an action or a bonus action but not both."
+    }
+  },
+  "spare-the-dying": {
+    "both": {
+      "stabilize": true,
+      "targets": 1,
+      "automated": true
+    }
+  },
   "spirit-guardians": {
     "2014": {
       "area": {
@@ -705,6 +858,26 @@
         "once": true,
         "rounds": 1
       }
+    }
+  },
+  "wall-of-fire": {
+    "2024": {
+      "area": {
+        "shape": "line",
+        "size": 60
+      }
+    }
+  },
+  "web": {
+    "2014": {
+      "automated": true,
+      "save": {
+        "ability": "dex"
+      },
+      "effect": {
+        "conditions": ["restrained"]
+      },
+      "gmNote": "A restrained creature can use its action for a Strength check to break free; the web is difficult terrain."
     }
   },
   "zone-of-truth": {

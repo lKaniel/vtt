@@ -34,6 +34,12 @@
             "advantageAgainst": true,
             "rounds": 1
           }
+        },
+        "fast-movement": {
+          "passive": {
+            "name": "Fast Movement",
+            "speed": 10
+          }
         }
       }
     },
@@ -230,6 +236,144 @@
         "unarmored-defense": {
           "unarmoredAc": "wis",
           "unarmoredShield": false
+        }
+      }
+    },
+    "2014": {
+      "features": {
+        "ki": {
+          "poolPerLevel": 1,
+          "recharge": "short"
+        },
+        "martial-arts": {
+          "action": "bonus",
+          "grantAttacks": 1
+        },
+        "flurry-of-blows": {
+          "name": "Flurry of Blows",
+          "level": 2,
+          "action": "bonus",
+          "usesFrom": "ki",
+          "grantAttacks": 2
+        },
+        "patient-defense": {
+          "name": "Patient Defense",
+          "level": 2,
+          "action": "bonus",
+          "usesFrom": "ki",
+          "effect": {
+            "name": "Patient Defense",
+            "disadvantageAgainst": true,
+            "saveAdvantage": ["dex"],
+            "rounds": 1
+          }
+        },
+        "step-of-the-wind": {
+          "name": "Step of the Wind",
+          "level": 2,
+          "action": "bonus",
+          "usesFrom": "ki",
+          "dash": true
+        },
+        "stunning-strike": {
+          "action": "free",
+          "usesFrom": "ki",
+          "spell": {
+            "targets": 1,
+            "range": 5,
+            "save": {
+              "ability": "con"
+            },
+            "rounds": 1,
+            "effect": {
+              "name": "Stunned",
+              "conditions": ["stunned"]
+            }
+          }
+        },
+        "unarmored-movement": {
+          "passive": {
+            "name": "Unarmored Movement"
+          },
+          "speed": [
+            [2, 10],
+            [6, 15],
+            [10, 20],
+            [14, 25],
+            [18, 30]
+          ]
+        }
+      }
+    },
+    "2024": {
+      "features": {
+        "monks-focus": {
+          "poolPerLevel": 1,
+          "recharge": "short"
+        },
+        "martial-arts": {
+          "action": "bonus",
+          "grantAttacks": 1
+        },
+        "flurry-of-blows": {
+          "name": "Flurry of Blows",
+          "level": 2,
+          "action": "bonus",
+          "usesFrom": "monks-focus",
+          "grantAttacks": 2
+        },
+        "patient-defense": {
+          "name": "Patient Defense",
+          "level": 2,
+          "action": "bonus",
+          "usesFrom": "monks-focus",
+          "effect": {
+            "name": "Patient Defense",
+            "disadvantageAgainst": true,
+            "saveAdvantage": ["dex"],
+            "rounds": 1,
+            "disengaged": true
+          }
+        },
+        "step-of-the-wind": {
+          "name": "Step of the Wind",
+          "level": 2,
+          "action": "bonus",
+          "usesFrom": "monks-focus",
+          "dash": true,
+          "effect": {
+            "name": "Step of the Wind",
+            "disengaged": true,
+            "rounds": 1
+          }
+        },
+        "stunning-strike": {
+          "action": "free",
+          "usesFrom": "monks-focus",
+          "spell": {
+            "targets": 1,
+            "range": 5,
+            "save": {
+              "ability": "con"
+            },
+            "rounds": 1,
+            "effect": {
+              "name": "Stunned",
+              "conditions": ["stunned"]
+            }
+          }
+        },
+        "unarmored-movement": {
+          "passive": {
+            "name": "Unarmored Movement"
+          },
+          "speed": [
+            [2, 10],
+            [6, 15],
+            [10, 20],
+            [14, 25],
+            [18, 30]
+          ]
         }
       }
     }

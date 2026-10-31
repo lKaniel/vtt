@@ -31,6 +31,11 @@ export abstract class Commands {
     this.send({ t: 'feature', token, feature });
   }
 
+  /** Takes a reaction with one of the offered choices, or declines it without one. */
+  takeReaction(offer: string, choice?: string): void {
+    this.send({ t: 'react', offer, ...(choice && { choice }) });
+  }
+
   /** Uses one of an item the token carries (drinks a potion). */
   useItem(token: string, item: string): void {
     this.send({ t: 'useItem', token, item });

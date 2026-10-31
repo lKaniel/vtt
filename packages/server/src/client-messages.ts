@@ -39,6 +39,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     point: PointSchema.optional(),
   }),
   z.object({ t: z.literal('useItem'), token: z.string(), item: z.string() }),
+  z.object({ t: z.literal('react'), offer: z.string(), choice: z.string().optional() }),
   z.object({ t: z.literal('dropConcentration'), token: z.string() }),
   z.object({ t: z.literal('removeEffect'), token: z.string(), effect: z.string() }),
   z.object({ t: z.literal('rest'), tokens: z.array(z.string()).min(1).max(100), kind: z.enum(['short', 'long']) }),

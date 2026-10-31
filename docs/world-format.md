@@ -250,6 +250,7 @@ edit it too:
 | Token field     | Meaning                                                                                                                                                               |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.                                                                 |
+| `deathSaves`    | `{ "successes", "failures", "stable"?, "dead"? }`: a character at 0 hp rolls these at the start of its turns. Monsters just die at 0.                                 |
 | `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                 |
 | `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st) and feature uses.                                                                |
 | `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                         |
@@ -267,7 +268,10 @@ Effect modifiers: `senses` (e.g. `{ "darkvision": 60 }` or
 `zone: { "spell", "slot", "at"?, "spares"? }` (a lasting area like spirit
 guardians: creatures starting their turn in it or walking in are hit),
 `repeat: { "spell", "slot" }` (the spell can be used again without a slot,
-like spiritual weapon). Lifetime: `rounds`
+like spiritual weapon), `armorBase` (unarmored AC is this + dex, mage armor),
+`minAc` (barkskin), `maxHp` (aid), `turnTempHp` (temporary hit points at the
+start of each of the bearer's turns, heroism), `speedTimes` (speed multiplier:
+2 for haste, 0.5 for slow), `turnAttacks` (extra attacks each turn, haste). Lifetime: `rounds`
 counts down at the start of the `source` creature's turn; `once` ends it the
 first time it changes an attack; `repeatSave` with `save: { "ability", "dc" }`
 lets the bearer save again at the end of each of its turns; `endsOnAttack`

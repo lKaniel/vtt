@@ -40,6 +40,8 @@ export interface FeatureUse {
   grantAction?: boolean;
   /** Feet of extra movement (dash). */
   dash?: number;
+  /** Extra attacks this turn (flurry of blows). */
+  grantAttacks?: number;
 }
 
 export function spendUse(token: Token, feature: FeatureSheet, amount = 1): Token {
@@ -82,6 +84,7 @@ export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng =
     effect,
     grantAction: feature.grantAction,
     dash: feature.dash ? sheet.speed : undefined,
+    grantAttacks: feature.grantAttacks,
   };
 }
 

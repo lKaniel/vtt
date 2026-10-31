@@ -22,6 +22,8 @@ export const CombatSchema = z.object({
   turn: z.number().int().nonnegative().default(0),
   order: z.array(z.object({ token: z.string(), initiative: z.number() })).min(1),
   left: TurnBudgetSchema,
+  /** Creatures that used their reaction since their last turn started. */
+  reacted: z.array(z.string()).default([]),
   /** Budgets of creatures acting on the current turn alongside it (summons, companions). */
   side: z.record(z.string(), TurnBudgetSchema).default({}),
 });
@@ -46,7 +48,7 @@ export function startCombat(fighters: readonly Combatant[], rng: Rng = Math.rand
   const rolled = fighters.map((f) => ({ ...f, initiative: roll('1d20', rng).total + f.bonus }));
   rolled.sort((a, b) => b.initiative - a.initiative || b.bonus - a.bonus);
   const order = rolled.map(({ token, initiative }) => ({ token, initiative }));
-  return { round: 1, turn: 0, order, left: freshTurn(rolled[0]?.speed ?? 0), side: {} };
+  return { round: 1, turn: 0, order, left: freshTurn(rolled[0]?.speed ?? 0), side: {}, reacted: [] };
 }
 
 export function currentTurn(combat: Combat): string | undefined {
@@ -70,7 +72,8 @@ function advance(combat: Combat, start: number, info: TurnInfo): Combat {
     const who = info(entry.token);
     if (!who?.active) continue;
     const round = combat.round + Math.floor(index / n);
-    return { ...combat, round, turn: index % n, left: freshTurn(who.speed), side: {} };
+    const reacted = combat.reacted.filter((id) => id !== entry.token);
+    return { ...combat, round, turn: index % n, left: freshTurn(who.speed), side: {}, reacted };
   }
   return combat;
 }

@@ -1,6 +1,7 @@
 import { applyDamage, critDice, tokenDistance } from './attack.ts';
 import type { Creature } from './creature.ts';
 import { abilityMod } from './creature-math.ts';
+import { isDead, makesDeathSaves } from './deaths.ts';
 import { markDamage } from './riders.ts';
 import { roll, type Rng, type Roll } from './dice.ts';
 import { attackModifiers, d20Formula, rollSave, type SaveRoll, type UsedEffect } from './effects.ts';
@@ -32,13 +33,21 @@ function timesDice(formula: string, n: number): string {
 }
 
 /** Healing, temporary hit points and hit point pools at a higher slot. */
-function upcastPools(spell: Spell, extra: number): Pick<Spell, 'heal' | 'tempHp' | 'hpPool'> {
+function upcastPools(spell: Spell, extra: number): Pick<Spell, 'heal' | 'tempHp' | 'hpPool' | 'effect'> {
   const tempBonus = extra * (spell.upcast?.tempHp ?? 0);
   return {
-    heal: spell.heal && addDice(spell.heal, spell.upcast?.heal, extra),
+    ...raisedMaximum(spell, extra),
     tempHp: spell.tempHp && (tempBonus ? `${spell.tempHp}+${tempBonus}` : spell.tempHp),
     hpPool: spell.hpPool && addDice(spell.hpPool, spell.upcast?.hpPool, extra),
   };
+}
+
+/** Healing, and for aid a raised maximum healed with it, at a higher slot. */
+function raisedMaximum(spell: Spell, extra: number): Pick<Spell, 'heal' | 'effect'> {
+  const heal = spell.heal && addDice(spell.heal, spell.upcast?.heal, extra);
+  const bonus = extra * (spell.upcast?.maxHp ?? 0);
+  if (!bonus || !spell.effect) return { heal, effect: spell.effect };
+  return { heal: heal && `${heal}+${bonus}`, effect: { ...spell.effect, maxHp: (spell.effect.maxHp ?? 0) + bonus } };
 }
 
 /** The spell as it works when cast with `slot` by a caster of `casterLevel`. */
@@ -116,6 +125,12 @@ export interface CastResult {
   healed?: number;
   /** Hit points after this result. */
   hp: number;
+  /** A dying creature became stable. */
+  stabilized?: boolean;
+  /** Ids of the target's effects the spell ended (lesser restoration). */
+  cured?: string[];
+  /** A dead creature came back (revivify). */
+  revived?: boolean;
   /** Temporary hit points after this result, when they changed. */
   tempHp?: number;
   effect?: Effect;
@@ -167,9 +182,10 @@ function riderOf({ spell, caster }: Cast): Partial<Effect> | undefined {
 function effectFor(cast: Cast): Effect | undefined {
   const { spell, caster, dc } = cast;
   if (!spell.effect && !spell.rider) return undefined;
-  const { repeatSave, saveOnDamage, ...template } = { ...spell.effect, ...riderOf(cast) };
+  const { repeatSave, saveOnDamage, turnTempHp, ...template } = { ...spell.effect, ...riderOf(cast) };
   return {
     ...template,
+    ...(turnTempHp !== undefined && { turnTempHp: turnTempHp === 'mod' ? cast.mod : turnTempHp }),
     id: `${spell.id}-${caster.token.id}`,
     name: template.name ?? spell.name,
     source: caster.token.id,
@@ -210,7 +226,22 @@ function unrolled(cast: Cast, target: CastSide, base: Base): CastResult | undefi
   if (spell.heal) return heal(cast, target, base);
   if (spell.tempHp) return shield(cast, target, base);
   if (spell.rider) return { ...base, effect: effectFor(cast) };
+  if (spell.stabilize) return { ...base, stabilized: true };
+  if (spell.revive) return revive(target, base);
+  if (spell.cures) return { ...base, cured: cured(spell, target.token) };
   return undefined;
+}
+
+/** The target's effects that impose a condition the spell cures. */
+function cured(spell: Spell, token: Token): string[] | undefined {
+  const ids = (token.effects ?? []).filter((e) => e.conditions?.some((c) => spell.cures?.includes(c))).map((e) => e.id);
+  return ids.length ? ids : undefined;
+}
+
+/** A dead creature comes back with 1 hit point; a living or merely dying one is unchanged. */
+function revive(target: CastSide, base: Base): CastResult {
+  const dead = makesDeathSaves(target.token) ? isDead(target.token) : target.sheet.hp <= 0;
+  return dead ? { ...base, hp: 1, revived: true } : base;
 }
 
 function oneTarget(cast: Cast, target: CastSide, used: UsedEffect[]): CastResult {
@@ -236,8 +267,12 @@ type Base = Pick<CastResult, 'target' | 'damage' | 'parts' | 'hp'>;
 
 function heal(cast: Cast, target: CastSide, base: Base): CastResult {
   const healing = roll(cast.spell.heal!, cast.rng).total + (cast.spell.healMod ? cast.mod : 0);
-  const hp = Math.min(target.sheet.maxHp, target.sheet.hp + Math.max(0, healing));
-  return { ...base, healed: hp - target.sheet.hp, hp, effect: effectFor(cast) };
+  const effect = effectFor(cast);
+  // A raised maximum (aid) counts once, even when the effect is cast again.
+  const before = target.token.effects?.find((e) => e.id === effect?.id)?.maxHp ?? 0;
+  const max = target.sheet.maxHp + (effect?.maxHp ?? 0) - before;
+  const hp = Math.min(max, target.sheet.hp + Math.max(0, healing));
+  return { ...base, healed: hp - target.sheet.hp, hp, effect, cured: cured(cast.spell, target.token) };
 }
 
 /** Temporary hit points: the higher of what the target has and what the spell gives. */

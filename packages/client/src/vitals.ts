@@ -19,6 +19,16 @@ function toneOf(hp: number, maxHp: number): Health {
   return hp <= maxHp / 2 ? 'bloodied' : 'hurt';
 }
 
+function hpLabel(hp: number, sheet: NonNullable<TokenView['sheet']>): string {
+  return sheet.tempHp ? `${hp}/${sheet.maxHp} +${sheet.tempHp}` : `${hp}/${sheet.maxHp}`;
+}
+
+function deathLabel(saves: NonNullable<TokenView['deathSaves']>): string {
+  if (saves.dead || saves.failures >= 3) return 'Dead';
+  if (saves.stable) return 'Stable';
+  return `Dying: ${saves.successes} ✓ ${saves.failures} ✗`;
+}
+
 export function hpBar(token: TokenView): HpBar | undefined {
   const sheet = token.sheet;
   if (sheet) {
@@ -26,7 +36,7 @@ export function hpBar(token: TokenView): HpBar | undefined {
     return {
       percent: Math.round((hp / sheet.maxHp) * 100),
       tone: toneOf(hp, sheet.maxHp),
-      label: sheet.tempHp ? `${hp}/${sheet.maxHp} +${sheet.tempHp}` : `${hp}/${sheet.maxHp}`,
+      label: hp === 0 && token.deathSaves ? deathLabel(token.deathSaves) : hpLabel(hp, sheet),
     };
   }
   if (!token.health) return undefined;

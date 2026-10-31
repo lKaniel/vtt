@@ -11,6 +11,7 @@ import {
   type Combat,
   type Player,
   type Point,
+  type ReactionOffer,
   type Rect,
   type ServerMessage,
   type SpawnSource,
@@ -22,6 +23,7 @@ import {
 import { dropMessage, type DragPayload } from './drops.ts';
 import { Commands } from './session-commands.ts';
 import type { LightPreset, MapTool } from './map-tools.ts';
+import { withOffer } from './reactions.ts';
 import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
@@ -75,6 +77,8 @@ export class Session extends Commands {
   armed?: string;
   /** Slot level to Divine Smite with on the armed attack. */
   smite?: number;
+  /** Chances one of your creatures has to react (an opportunity attack). */
+  reactions: ReactionOffer[] = [];
   /** The spell the selected token is aiming, and what it has picked so far. */
   aiming?: Aiming;
   error?: { message: string; at: number };
@@ -398,6 +402,10 @@ export class Session extends Commands {
       case 'error':
         this.showError(msg.message);
         return false;
+      case 'reactionOffer':
+      case 'reactionGone':
+        this.reactions = withOffer(this.reactions, msg);
+        return true;
       default:
         return false;
     }

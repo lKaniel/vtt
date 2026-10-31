@@ -8,6 +8,7 @@ import { CharacterSheet } from './CharacterSheet.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { MapTools } from './MapTools.tsx';
 import { PartyBar } from './PartyBar.tsx';
+import { ReactionPrompt } from './ReactionPrompt.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
 
@@ -59,6 +60,7 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId?: string; 
       <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />
       <PartyBar session={session} />
       <MapTools session={session} />
+      <ReactionPrompt session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <CharacterSheet session={session} />
       <ChatPanel session={session} />
