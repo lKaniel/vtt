@@ -56,7 +56,7 @@ function Bar({ session, token, onSheet }: Readonly<{ session: Session; token: To
       <Portrait token={token} onSheet={onSheet} />
       <div className="ab-tray">
         <div className="ab-top">
-          <Who token={token} />
+          <Who session={session} token={token} />
           <Resources token={token} budget={budget} />
         </div>
         <div className="ab-body">
@@ -82,10 +82,21 @@ function Portrait({ token, onSheet }: Readonly<{ token: TokenView; onSheet: () =
   );
 }
 
-function Who({ token }: Readonly<{ token: TokenView }>) {
+function Who({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
+  const gm = session.you?.role === 'gm';
   return (
     <div className="ab-who">
-      <div className="ab-name">{token.name}</div>
+      {gm ? (
+        <button
+          className="ab-name ab-edit"
+          title="Edit (E)"
+          onClick={() => session.openEditor({ kind: 'token', id: token.id })}
+        >
+          {token.name} ✎
+        </button>
+      ) : (
+        <div className="ab-name">{token.name}</div>
+      )}
       <HpBar token={token} />
       <EffectBadges token={token} />
     </div>

@@ -9,6 +9,7 @@ world/
   world.json          settings and players
   chunks/<cx>_<cy>.json   map content, one file per chunk
   tokens/<id>.json    one file per token
+  actors/<id>.json    the GM's Actors list: creatures ready to be placed
   combat.json         the fight in progress, if any
   assets/             images referenced by tiles and tokens
 ```
@@ -197,6 +198,21 @@ just write an effect into the token file.
 
 Players only receive the stats of tokens they control. For everyone else
 they're told how hurt the creature looks (unhurt, hurt, bloodied, down).
+
+## Actors
+
+`actors/` holds the GM's Actors list: creatures that aren't on the map yet.
+An actor is a token without `x` and `y`, plus an optional `folder` that
+groups it in the list. Dragging one onto the map in the game copies it into
+`tokens/` with a free id (`bandit`, `bandit-2`, ...) and a numbered name.
+
+```json
+{ "id": "bandit", "name": "Bandit", "folder": "Road", "monster": "bandit" }
+```
+
+The GM also places SRD monsters straight from the Compendium, and can save
+any token as an actor. Both write these files, and `check-world` checks
+actors like tokens.
 
 ## combat.json
 

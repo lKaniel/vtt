@@ -78,6 +78,6 @@ export function srdFor(edition: Edition): Content {
 }
 
 /** The edition a token plays by: its own `stats.rules`, else the world's. */
-export function editionOf(token: Token, world: Pick<World, 'rules'>): Edition {
+export function editionOf(token: Pick<Token, 'stats'>, world: Pick<World, 'rules'>): Edition {
   return token.stats?.rules ?? world.rules;
 }

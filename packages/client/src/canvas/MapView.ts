@@ -1,5 +1,6 @@
 import { chunkKey, type Point, type Rect, type Wall } from '@vtt/shared';
 import { Application, Container, CullerPlugin, extensions, Graphics, type FederatedPointerEvent } from 'pixi.js';
+import { DRAG_TYPE, type DragPayload } from '../drops.ts';
 import type { Session } from '../session.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
 import { PathPreview } from './PathPreview.ts';
@@ -116,6 +117,8 @@ export class MapView {
     this.app.canvas.addEventListener('contextmenu', (e) => {
       e.preventDefault();
     });
+    this.app.canvas.addEventListener('dragover', this.onDragOver);
+    this.app.canvas.addEventListener('drop', this.onDrop);
     this.app.renderer.on('resize', () => {
       this.vision?.resize();
       this.dirty = true;
@@ -267,6 +270,21 @@ export class MapView {
     const after = this.screenToWorld(sx, sy);
     this.center = [this.center[0] + before[0] - after[0], this.center[1] + before[1] - after[1]];
     this.dirty = true;
+  };
+
+  /** The GM drags actors, monsters, items and spells in from the side panel. */
+  private onDragOver = (e: DragEvent): void => {
+    if (!e.dataTransfer?.types.includes(DRAG_TYPE)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  private onDrop = (e: DragEvent): void => {
+    const data = e.dataTransfer?.getData(DRAG_TYPE);
+    if (!data) return;
+    e.preventDefault();
+    const rect = this.app.canvas.getBoundingClientRect();
+    this.session.drop(JSON.parse(data) as DragPayload, this.screenToWorld(e.clientX - rect.left, e.clientY - rect.top));
   };
 
   private onPointerDown(e: FederatedPointerEvent): void {

@@ -6,6 +6,7 @@ import { activateTile, ActionBar } from './ActionBar.tsx';
 import { CharacterSheet } from './CharacterSheet.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { PartyBar } from './PartyBar.tsx';
+import { TokenEditor } from './TokenEditor.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
 
@@ -29,8 +30,9 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return;
+      if (isTyping(e.target)) return;
       if (e.key === 'c') setSheetOpen((open) => !open);
+      else if (e.key === 'e') toggleEditor(session);
       else handleGameKey(session, e);
     };
     addEventListener('keydown', onKey);
@@ -58,15 +60,30 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
       <ActionBar session={session} onSheet={() => setSheetOpen((open) => !open)} />
       {sheetOpen && <CharacterSheet session={session} onClose={() => setSheetOpen(false)} />}
       <ChatPanel session={session} />
+      <TokenEditor session={session} />
       <Toast session={session} />
     </div>
   );
 }
 
+function isTyping(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement
+  );
+}
+
+/** GM: E opens the editor on the selected token, or closes it. */
+function toggleEditor(session: Session): void {
+  if (session.you?.role !== 'gm') return;
+  if (session.editing) session.openEditor(undefined);
+  else if (session.selected) session.openEditor({ kind: 'token', id: session.selected });
+}
+
 /** Esc backs out, 1-0 use the action bar's tiles, Space ends your turn. */
 function handleGameKey(session: Session, e: KeyboardEvent): void {
   if (e.key === 'Escape') {
-    if (session.armed ?? session.aiming) session.arm(undefined);
+    if (session.editing) session.openEditor(undefined);
+    else if (session.armed ?? session.aiming) session.arm(undefined);
     else session.select(undefined);
     return;
   }

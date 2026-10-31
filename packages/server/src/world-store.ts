@@ -4,6 +4,7 @@ import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promise
 import { dirname, join, relative } from 'node:path';
 import {
   chunksInRect,
+  type Actor,
   tokenLights,
   type Chunk,
   type Combat,
@@ -23,6 +24,8 @@ interface StoreEvents {
   /** `path` is set when the token walked there inside the game. */
   token: [Token, Point[] | undefined];
   tokenGone: [string];
+  actor: [Actor];
+  actorGone: [string];
   combat: [Combat | undefined];
 }
 
@@ -35,6 +38,8 @@ export class WorldStore extends EventEmitter<StoreEvents> {
   world!: World;
   readonly chunks = new Map<string, Chunk>();
   readonly tokens = new Map<string, Token>();
+  /** The GM's Actors list: creatures ready to be placed, from actors/. */
+  readonly actors = new Map<string, Actor>();
   /** The fight in progress, from combat.json. */
   combat?: Combat;
 
@@ -54,7 +59,7 @@ export class WorldStore extends EventEmitter<StoreEvents> {
       throw new Error(`world.json is invalid:\n  ${result.errors.join('\n  ')}`);
     }
     this.world = result.file.data;
-    for (const sub of ['chunks', 'tokens']) {
+    for (const sub of ['chunks', 'tokens', 'actors']) {
       await mkdir(join(this.dir, sub), { recursive: true });
       for (const name of await readdir(join(this.dir, sub))) {
         const rel = `${sub}/${name}`;
@@ -63,7 +68,10 @@ export class WorldStore extends EventEmitter<StoreEvents> {
       }
     }
     await this.loadOptional('combat.json', { kind: 'combat' });
-    for (const issue of crossCheck(this.world, this.chunks, this.tokens, this.combat)) {
+    for (const issue of crossCheck(this.world, this.chunks, this.tokens, {
+      combat: this.combat,
+      actors: this.actors,
+    })) {
       console.warn(`[world] ${issue.file}: ${issue.message}`);
     }
     console.log(`[world] loaded "${this.world.name}": ${this.chunks.size} chunks, ${this.tokens.size} tokens`);
@@ -127,6 +135,18 @@ export class WorldStore extends EventEmitter<StoreEvents> {
     this.remove(`tokens/${id}.json`);
   }
 
+  setActor(actor: Actor): void {
+    this.actors.set(actor.id, actor);
+    this.emit('actor', actor);
+    this.write(`actors/${actor.id}.json`, actor);
+  }
+
+  removeActor(id: string): void {
+    if (!this.actors.delete(id)) return;
+    this.emit('actorGone', id);
+    this.remove(`actors/${id}.json`);
+  }
+
   setChunk(key: string, chunk: Chunk): void {
     this.chunks.set(key, chunk);
     this.emit('chunk', key, chunk);
@@ -156,14 +176,24 @@ export class WorldStore extends EventEmitter<StoreEvents> {
       text = await readFile(join(this.dir, rel), 'utf8');
     } catch {
       this.written.delete(rel);
-      if (kind.kind === 'chunk' && this.chunks.delete(kind.key)) this.emit('chunkGone', kind.key);
-      if (kind.kind === 'token' && this.tokens.delete(kind.id)) this.emit('tokenGone', kind.id);
-      if (kind.kind === 'combat' && this.combat) this.setCombat(undefined);
+      this.forget(kind);
       return;
     }
     if (this.written.get(rel) === text) return;
     console.log(`[world] reloading ${rel}`);
     this.applyText(rel, kind, text, true);
+  }
+
+  /** A file was deleted outside the game. */
+  private forget(kind: FileKind): void {
+    if (kind.kind === 'chunk') this.drop(this.chunks, kind.key, 'chunkGone');
+    else if (kind.kind === 'token') this.drop(this.tokens, kind.id, 'tokenGone');
+    else if (kind.kind === 'actor') this.drop(this.actors, kind.id, 'actorGone');
+    else if (kind.kind === 'combat' && this.combat) this.setCombat(undefined);
+  }
+
+  private drop(map: Map<string, unknown>, id: string, event: 'chunkGone' | 'tokenGone' | 'actorGone'): void {
+    if (map.delete(id)) this.emit(event, id);
   }
 
   private async loadFile(rel: string, kind: FileKind, live: boolean): Promise<void> {
@@ -189,6 +219,10 @@ export class WorldStore extends EventEmitter<StoreEvents> {
       case 'token':
         this.tokens.set(file.id, file.data);
         if (live) this.emit('token', file.data, undefined);
+        break;
+      case 'actor':
+        this.actors.set(file.id, file.data);
+        if (live) this.emit('actor', file.data);
         break;
       case 'combat':
         this.combat = file.data;

@@ -1,5 +1,6 @@
 import { basename } from 'node:path';
 import {
+  ActorSchema,
   ChunkSchema,
   CombatSchema,
   editionOf,
@@ -8,6 +9,7 @@ import {
   srdFor,
   TokenSchema,
   WorldSchema,
+  type Actor,
   type Chunk,
   type Combat,
   type Token,
@@ -22,10 +24,15 @@ export type WorldFile =
   | { kind: 'world'; data: World }
   | { kind: 'chunk'; key: string; data: Chunk }
   | { kind: 'token'; id: string; data: Token }
+  | { kind: 'actor'; id: string; data: Actor }
   | { kind: 'combat'; data: Combat };
 
 export type FileKind =
-  { kind: 'world' } | { kind: 'combat' } | { kind: 'chunk'; key: string } | { kind: 'token'; id: string };
+  | { kind: 'world' }
+  | { kind: 'combat' }
+  | { kind: 'chunk'; key: string }
+  | { kind: 'token'; id: string }
+  | { kind: 'actor'; id: string };
 
 /** Classifies a path relative to the world folder, or null for files we ignore. */
 export function classify(rel: string): FileKind | null {
@@ -36,6 +43,7 @@ export function classify(rel: string): FileKind | null {
   const name = basename(parts[1]!, '.json');
   if (parts[0] === 'chunks') return { kind: 'chunk', key: name };
   if (parts[0] === 'tokens') return { kind: 'token', id: name };
+  if (parts[0] === 'actors') return { kind: 'actor', id: name };
   return null;
 }
 
@@ -62,6 +70,8 @@ export function parseFile(kind: FileKind, text: string): ParseResult {
       return parseChunk(kind.key, json);
     case 'token':
       return parseToken(kind.id, json);
+    case 'actor':
+      return parseActor(kind.id, json);
     case 'combat':
       return parseCombat(json);
   }
@@ -108,6 +118,13 @@ function parseToken(id: string, json: unknown): ParseResult {
   return { file: { kind: 'token', id, data: r.data }, errors: [] };
 }
 
+function parseActor(id: string, json: unknown): ParseResult {
+  const r = ActorSchema.safeParse(json);
+  if (!r.success) return { errors: formatIssues(r.error) };
+  if (r.data.id !== id) return { errors: [`id "${r.data.id}" must match the file name "${id}"`] };
+  return { file: { kind: 'actor', id, data: r.data }, errors: [] };
+}
+
 function parseCombat(json: unknown): ParseResult {
   const r = CombatSchema.safeParse(json);
   if (!r.success) return { errors: formatIssues(r.error) };
@@ -125,11 +142,12 @@ export function crossCheck(
   world: World,
   chunks: Map<string, Chunk>,
   tokens: Map<string, Token>,
-  combat?: Combat,
+  { combat, actors = new Map() }: { combat?: Combat; actors?: ReadonlyMap<string, Actor> } = {},
 ): Issue[] {
   const players = new Set(world.players.map((p) => p.id));
   const out: Issue[] = [];
-  for (const t of tokens.values()) out.push(...tokenIssues(t, players, world));
+  for (const t of tokens.values()) out.push(...tokenIssues(t, players, world, `tokens/${t.id}.json`));
+  for (const a of actors.values()) out.push(...tokenIssues(a, players, world, `actors/${a.id}.json`));
   for (const [key, chunk] of chunks) out.push(...misplacedItems(key, chunk, world.chunkSize));
   for (const e of combat?.order ?? []) {
     if (!tokens.has(e.token)) {
@@ -139,8 +157,8 @@ export function crossCheck(
   return out;
 }
 
-/** References from a token to players and SRD content that don't exist. */
-function tokenIssues(t: Token, players: Set<string>, world: World): Issue[] {
+/** References from a token or actor to players and SRD content that don't exist. */
+function tokenIssues(t: Actor, players: Set<string>, world: World, file: string): Issue[] {
   const edition = editionOf(t, world);
   const srd = srdFor(edition);
   const messages = [
@@ -151,7 +169,7 @@ function tokenIssues(t: Token, players: Set<string>, world: World): Issue[] {
       .filter((s) => !srd.spells.has(s))
       .map((s) => `unknown spell "${s}" in the ${edition} rules`),
   ];
-  return messages.map((message) => ({ file: `tokens/${t.id}.json`, message }));
+  return messages.map((message) => ({ file, message }));
 }
 
 /** Items whose anchor point lies outside the chunk file they're stored in. */

@@ -123,3 +123,10 @@ export const TokenSchema = z.object({
   leader: id.optional(),
 });
 export type Token = z.infer<typeof TokenSchema>;
+
+/**
+ * A creature kept in the GM's Actors list, ready to be placed on the map:
+ * a token without a position. `folder` groups it in the list.
+ */
+export const ActorSchema = TokenSchema.omit({ x: true, y: true }).extend({ folder: z.string().min(1).optional() });
+export type Actor = z.infer<typeof ActorSchema>;

@@ -91,6 +91,22 @@ Development is red-green: write a failing test, watch it fail, then make it
 pass. Version control is [jj](https://jj-vcs.github.io/jj/), colocated with
 git, so plain git tools still work.
 
+### GM tools
+
+- **Edit any token.** Double-click a token, press E with it selected, or click
+  its name on the action bar. The editor changes name, picture, size, speed,
+  vision, light, hidden, who controls it, monster stat block, rules edition,
+  class and level, HP (with quick Damage and Heal), AC, abilities, defences,
+  inventory and spells, and ends effects. Changes are saved to the token file.
+- **Actors.** The GM's side panel has an _Actors_ tab: every creature on the
+  map (click to find it, toggle hidden, edit) and the Actors list, kept in
+  `actors/` in the world folder and grouped by `folder`. Drag an actor onto
+  the map to place a copy; _Save as actor_ keeps any token for later.
+- **Compendium.** The _Compendium_ tab searches the SRD monsters, weapons,
+  armour, gear and spells, from the 2014 or 2024 book. Drag a monster onto
+  the map to place it (tick _Place new creatures hidden_ for an ambush), or
+  drop an item or spell on a creature to give it.
+
 ## Not yet
 
 Vision, lighting and fog (phase 2), character sheets and combat (phase 3),

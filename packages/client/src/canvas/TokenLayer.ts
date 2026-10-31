@@ -36,6 +36,7 @@ export class TokenLayer {
   readonly container = new Container();
   private views = new Map<string, Sprite>();
   private labelsVisible = true;
+  private lastClick = { id: '', at: 0 };
 
   constructor(private session: Session) {}
 
@@ -103,6 +104,14 @@ export class TokenLayer {
   }
 
   /** Clicking this token would fire the armed attack, or pick it for the aimed spell. */
+  /** True for the second click on the same token in quick succession. */
+  private isDoubleClick(id: string): boolean {
+    const now = performance.now();
+    const double = this.lastClick.id === id && now - this.lastClick.at < DOUBLE_CLICK_MS;
+    this.lastClick = { id, at: double ? 0 : now };
+    return double;
+  }
+
   private isTarget(token: TokenView): boolean {
     if (this.session.aiming?.mode === 'creatures') return true;
     return !!this.session.armed && this.session.selected !== token.id;
@@ -144,6 +153,8 @@ export class TokenLayer {
       e.stopPropagation();
       const t = this.session.tokens.get(token.id);
       if (!t) return;
+      if (this.isDoubleClick(t.id) && this.session.you?.role === 'gm')
+        this.session.openEditor({ kind: 'token', id: t.id });
       if (this.session.aiming?.mode === 'creatures') this.session.pickTarget(t.id);
       else if (this.isTarget(t)) this.session.attack(t.id);
       else if (this.session.canControl(t)) this.session.select(t.id);
@@ -154,6 +165,8 @@ export class TokenLayer {
     return view;
   }
 }
+
+const DOUBLE_CLICK_MS = 350;
 
 /** Shows a picture once it has loaded; switching pictures keeps the old one until then. */
 function showTexture(sprite: PixiSprite, url: string, size: number): void {
