@@ -108,6 +108,8 @@ export interface CastResult {
   effect?: Effect;
   /** The spell doesn't work on this kind of creature. */
   immune?: boolean;
+  /** Feet the target is pushed away from the caster (negative: pulled closer). */
+  push?: number;
 }
 
 export interface CastOutcome {
@@ -190,6 +192,7 @@ function oneTarget(cast: Cast, target: CastSide, used: UsedEffect[]): CastResult
     save,
     ...damaged,
     effect: landed ? effectFor(cast) : undefined,
+    push: landed ? spell.push : undefined,
   };
 }
 
