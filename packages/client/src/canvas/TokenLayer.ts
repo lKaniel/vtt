@@ -38,6 +38,7 @@ export class TokenLayer {
       .fill(token.color)
       .stroke({ width: this.session.selected === token.id ? 8 : 4, color: this.ringColor(token) });
     drawStatus(view.status.clear(), token, r);
+    drawEffects(view.status, token, r);
     const notes = [token.hidden && 'hidden', token.visibleTo && 'illusion'].filter(Boolean);
     view.label.text = notes.length ? `${token.name} (${notes.join(', ')})` : token.name;
     view.label.position.set(0, r + 4);
@@ -88,8 +89,9 @@ export class TokenLayer {
     return walking;
   }
 
-  /** Clicking this token would fire the armed attack at it. */
+  /** Clicking this token would fire the armed attack, or pick it for the aimed spell. */
   private isTarget(token: TokenView): boolean {
+    if (this.session.aiming?.mode === 'creatures') return true;
     return !!this.session.armed && this.session.selected !== token.id;
   }
 
@@ -117,7 +119,8 @@ export class TokenLayer {
       e.stopPropagation();
       const t = this.session.tokens.get(token.id);
       if (!t) return;
-      if (this.isTarget(t)) this.session.attack(t.id);
+      if (this.session.aiming?.mode === 'creatures') this.session.pickTarget(t.id);
+      else if (this.isTarget(t)) this.session.attack(t.id);
       else if (this.session.canControl(t)) this.session.select(t.id);
     });
     this.container.addChild(root);
@@ -146,6 +149,18 @@ function drawStatus(g: Graphics, token: TokenView, r: number): void {
   if (share > 0) return;
   const c = r * 0.5;
   g.moveTo(-c, -c).lineTo(c, c).moveTo(c, -c).lineTo(-c, c).stroke({ width: 8, color: 0x000000, alpha: 0.8 });
+}
+
+/** Small dots over the disc, one per effect (red for conditions), and a blue ring while concentrating. */
+function drawEffects(g: Graphics, token: TokenView, r: number): void {
+  const effects = token.effects ?? [];
+  effects.slice(0, 6).forEach((e, i) => {
+    const color = e.conditions?.length ? 0xd04a4a : 0x7ab0ff;
+    g.circle(-r * 0.6 + i * r * 0.24, -r * 0.75, r * 0.1)
+      .fill(color)
+      .stroke({ width: 2, color: 0x000000 });
+  });
+  if (token.concentration) g.circle(0, 0, r * 1.12).stroke({ width: 3, color: 0x7ab0ff, alpha: 0.8 });
 }
 
 function barColor(share: number): number {

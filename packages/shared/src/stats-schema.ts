@@ -40,24 +40,6 @@ export type Damage = z.infer<typeof DamageSchema>;
 /** Normal and long range in feet. */
 const RangeSchema = z.tuple([z.number().positive(), z.number().positive()]);
 
-/** A ready-to-roll attack, as printed in a stat block. */
-export const AttackSchema = z.object({
-  name: z.string().min(1),
-  kind: z.enum(['melee', 'ranged']),
-  toHit: z.number().int(),
-  /** Melee reach in feet. */
-  reach: z.number().positive().optional(),
-  range: RangeSchema.optional(),
-  damage: z.array(DamageSchema).min(1),
-});
-export type Attack = z.infer<typeof AttackSchema>;
-
-const defenses = {
-  resistances: z.array(DamageTypeSchema).default([]),
-  immunities: z.array(DamageTypeSchema).default([]),
-  vulnerabilities: z.array(DamageTypeSchema).default([]),
-};
-
 export const WeaponPropertySchema = z.enum([
   'ammunition',
   'finesse',
@@ -69,6 +51,32 @@ export const WeaponPropertySchema = z.enum([
   'two-handed',
   'versatile',
 ]);
+
+/** A ready-to-roll attack, as printed in a stat block. */
+export const AttackSchema = z.object({
+  name: z.string().min(1),
+  kind: z.enum(['melee', 'ranged']),
+  toHit: z.number().int(),
+  /** Melee reach in feet. */
+  reach: z.number().positive().optional(),
+  range: RangeSchema.optional(),
+  damage: z.array(DamageSchema).min(1),
+  /** Set on attacks made with a weapon: the ability it used, its properties and mastery. */
+  weapon: z
+    .object({
+      ability: z.enum(ABILITIES),
+      properties: z.array(WeaponPropertySchema).default([]),
+      mastery: z.string().optional(),
+    })
+    .optional(),
+});
+export type Attack = z.infer<typeof AttackSchema>;
+
+const defenses = {
+  resistances: z.array(DamageTypeSchema).default([]),
+  immunities: z.array(DamageTypeSchema).default([]),
+  vulnerabilities: z.array(DamageTypeSchema).default([]),
+};
 
 const itemBase = { id, name: z.string().min(1), weight: z.number().nonnegative().default(0) };
 
@@ -109,10 +117,15 @@ export const MonsterSchema = z.object({
   speed: z.number().nonnegative().default(30),
   darkvision: z.number().nonnegative().default(0),
   abilities: AbilitiesSchema,
+  /** Creature type, e.g. "humanoid" or "beast". */
+  type: z.string().optional(),
   /** Challenge rating, e.g. 0.25 for CR 1/4. */
   cr: z.number().nonnegative(),
+  /** Saving throws the monster is proficient in. */
+  saves: z.array(z.enum(ABILITIES)).default([]),
   attacks: z.array(AttackSchema).default([]),
   ...defenses,
+  conditionImmunities: z.array(z.string()).default([]),
 });
 export type Monster = z.infer<typeof MonsterSchema>;
 
@@ -128,6 +141,17 @@ export const StatsSchema = z.object({
   proficiency: z.number().int().optional(),
   /** Extra attacks besides the equipped weapons. */
   attacks: z.array(AttackSchema).optional(),
+  /** Spells the character knows or has prepared, by id. */
+  spells: z.array(id).optional(),
+  /** Spellcasting for creatures without a caster class (a homebrew class, a monster). */
+  spellcasting: z
+    .object({
+      ability: z.enum(ABILITIES),
+      progression: z.enum(['full', 'half', 'pact']).default('full'),
+      /** Caster level for slots and cantrips; defaults to `level`. */
+      level: z.number().int().min(1).max(20).optional(),
+    })
+    .optional(),
   resistances: z.array(DamageTypeSchema).optional(),
   immunities: z.array(DamageTypeSchema).optional(),
   vulnerabilities: z.array(DamageTypeSchema).optional(),

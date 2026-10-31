@@ -9,6 +9,10 @@ export const TurnBudgetSchema = z.object({
   move: z.number().nonnegative(),
   action: z.boolean(),
   bonus: z.boolean(),
+  /** Attacks left from an Attack action already begun (extra attack). */
+  attacks: z.number().int().nonnegative().default(0),
+  /** Once-a-turn things already done, e.g. "sneak-attack". */
+  used: z.array(z.string()).default([]),
 });
 export type TurnBudget = z.infer<typeof TurnBudgetSchema>;
 
@@ -18,6 +22,8 @@ export const CombatSchema = z.object({
   turn: z.number().int().nonnegative().default(0),
   order: z.array(z.object({ token: z.string(), initiative: z.number() })).min(1),
   left: TurnBudgetSchema,
+  /** Budgets of creatures acting on the current turn alongside it (summons, companions). */
+  side: z.record(z.string(), TurnBudgetSchema).default({}),
 });
 export type Combat = z.infer<typeof CombatSchema>;
 
@@ -31,8 +37,8 @@ export interface Combatant {
 /** What the turn order needs to know about a token when its turn comes up. */
 export type TurnInfo = (token: string) => { speed: number; active: boolean } | undefined;
 
-function freshTurn(speed: number): TurnBudget {
-  return { move: speed, action: true, bonus: true };
+export function freshTurn(speed: number): TurnBudget {
+  return { move: speed, action: true, bonus: true, attacks: 0, used: [] };
 }
 
 /** Rolls initiative for everyone and starts round 1. */
@@ -40,7 +46,7 @@ export function startCombat(fighters: readonly Combatant[], rng: Rng = Math.rand
   const rolled = fighters.map((f) => ({ ...f, initiative: roll('1d20', rng).total + f.bonus }));
   rolled.sort((a, b) => b.initiative - a.initiative || b.bonus - a.bonus);
   const order = rolled.map(({ token, initiative }) => ({ token, initiative }));
-  return { round: 1, turn: 0, order, left: freshTurn(rolled[0]?.speed ?? 0) };
+  return { round: 1, turn: 0, order, left: freshTurn(rolled[0]?.speed ?? 0), side: {} };
 }
 
 export function currentTurn(combat: Combat): string | undefined {
@@ -64,9 +70,19 @@ function advance(combat: Combat, start: number, info: TurnInfo): Combat {
     const who = info(entry.token);
     if (!who?.active) continue;
     const round = combat.round + Math.floor(index / n);
-    return { ...combat, round, turn: index % n, left: freshTurn(who.speed) };
+    return { ...combat, round, turn: index % n, left: freshTurn(who.speed), side: {} };
   }
   return combat;
+}
+
+/** Adds creatures to the order right after `after`, sharing its initiative (summons). */
+export function joinCombat(combat: Combat, after: string, tokens: readonly string[]): Combat {
+  const index = combat.order.findIndex((e) => e.token === after);
+  if (index < 0) return combat;
+  const initiative = combat.order[index]!.initiative;
+  const order = [...combat.order];
+  order.splice(index + 1, 0, ...tokens.map((token) => ({ token, initiative })));
+  return { ...combat, order, turn: combat.turn > index ? combat.turn + tokens.length : combat.turn };
 }
 
 /** Takes a creature out of the order. If it was its turn, the next creature's starts. */

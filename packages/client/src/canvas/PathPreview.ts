@@ -1,4 +1,5 @@
 import {
+  areaShape,
   attackRange,
   findPath,
   hasLineOfSight,
@@ -10,11 +11,14 @@ import {
   type Wall,
 } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
+import { previewLabel } from '../spell-text.ts';
+import { needsClearPath, type Aiming } from '../targeting.ts';
 
 const OK_COLOR = 0xffffff;
 const TOO_FAR_COLOR = 0xff8060;
 const BLOCKED_COLOR = 0xd04a4a;
 const LONG_RANGE_COLOR = 0xf0c040;
+const AREA_COLOR = 0xff9040;
 
 interface PreviewContext {
   gridSize: number;
@@ -77,6 +81,39 @@ export class PathPreview {
     const note = { normal: '', long: ' · disadvantage', out: blocked ? ' · no clear shot' : ' · out of range' }[range];
     this.setLabel(`${attack.name} · ${feet} ft${note}`, color);
     this.placeLabel(target, ctx);
+  }
+
+  /** Where the aimed spell would land: its area, or a line to the hovered creature or point, and whether it's in range. */
+  showSpell(token: Token, hover: Point, aiming: Aiming, ctx: PreviewContext): void {
+    const { spell } = aiming;
+    const target = snapToGrid(hover, ctx.gridSize);
+    const key = `spell:${spell.id}:${aiming.picks.length}:${target[0]},${target[1]}:${token.x},${token.y}`;
+    if (!this.needsRedraw(key, ctx.force)) return;
+    const reach = spell.teleport ?? spell.range;
+    const feet = Math.round((Math.hypot(target[0] - token.x, target[1] - token.y) / ctx.gridSize) * 5);
+    const blocked = needsClearPath(spell) && !hasLineOfSight([token.x, token.y], target, ctx.walls);
+    const out = (reach > 0 && feet > Math.max(5, reach) + 2.5) || blocked;
+    const color = out ? BLOCKED_COLOR : OK_COLOR;
+    const count = aiming.mode === 'creatures' ? `${aiming.picks.length + 1}/${aiming.need}` : undefined;
+    if (spell.area) {
+      this.drawArea(
+        areaShape({ area: spell.area, range: spell.range }, { caster: token, aim: hover, gridSize: ctx.gridSize }),
+      );
+    } else {
+      this.line
+        .moveTo(token.x, token.y)
+        .lineTo(...target)
+        .stroke({ width: 4, color, alpha: 0.8 });
+      this.line.circle(target[0], target[1], ctx.gridSize * 0.4).stroke({ width: 6, color });
+    }
+    this.setLabel(previewLabel({ name: spell.name, count, feet, reach, blocked }), color);
+    this.placeLabel(target, ctx);
+  }
+
+  private drawArea(shape: ReturnType<typeof areaShape>): void {
+    if (shape.kind === 'circle') this.line.circle(shape.center[0], shape.center[1], shape.radius);
+    else this.line.poly(shape.points.flat());
+    this.line.fill({ color: AREA_COLOR, alpha: 0.25 }).stroke({ width: 4, color: AREA_COLOR, alpha: 0.9 });
   }
 
   private needsRedraw(key: string, force: boolean): boolean {

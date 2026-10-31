@@ -1,7 +1,7 @@
 import type { Combat } from './combat.ts';
 import type { Roll } from './dice.ts';
 import type { Chunk, DoorState, Player, Point, World } from './schema.ts';
-import type { DamageType } from './stats-schema.ts';
+import type { Ability, DamageType } from './stats-schema.ts';
 import type { TokenView } from './token-view.ts';
 
 /** World settings a client needs; the player list is replaced by `you`. */
@@ -22,6 +22,30 @@ export interface AttackLog {
   notes: string[];
 }
 
+/** One target's part of a spell, as the chat log shows it. */
+export interface SpellTargetLog {
+  target: string;
+  attack?: Roll;
+  hit?: boolean;
+  crit?: boolean;
+  save?: { ability: Ability; dc: number; total: number; success: boolean };
+  damage: number;
+  healed?: number;
+  /** Name of the effect it left, e.g. "Hold Person". */
+  effect?: string;
+  immune?: boolean;
+}
+
+/** A spell as the chat log shows it. */
+export interface SpellLog {
+  caster: string;
+  spell: string;
+  /** Slot level; 0 for a cantrip. */
+  slot: number;
+  results: SpellTargetLog[];
+  notes: string[];
+}
+
 export interface ChatMessage {
   id: string;
   time: number;
@@ -30,6 +54,7 @@ export interface ChatMessage {
   text?: string;
   roll?: Roll;
   attack?: AttackLog;
+  spell?: SpellLog;
   /** Set on GM-only messages. */
   gmOnly?: boolean;
 }
@@ -46,7 +71,15 @@ export type ClientMessage =
   | { t: 'endTurn' }
   | { t: 'attack'; attacker: string; target: string; attack: string }
   /** `item` is the index in the token's inventory. */
-  | { t: 'equip'; token: string; item: number; equipped: boolean };
+  | { t: 'equip'; token: string; item: number; equipped: boolean }
+  /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
+  | { t: 'cast'; caster: string; spell: string; slot: number; targets: string[]; point?: Point; summon?: string }
+  | { t: 'feature'; token: string; feature: string }
+  | { t: 'dropConcentration'; token: string }
+  /** GM: end one effect on a token. */
+  | { t: 'removeEffect'; token: string; effect: string }
+  /** GM: everyone listed takes a short or long rest. */
+  | { t: 'rest'; tokens: string[]; kind: 'short' | 'long' };
 
 export type ServerMessage =
   | { t: 'welcome'; world: WorldInfo; you: Player; tokens: TokenView[]; chat: ChatMessage[]; combat: Combat | null }

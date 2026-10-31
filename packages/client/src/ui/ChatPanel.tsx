@@ -1,6 +1,7 @@
-import type { AttackLog, ChatMessage, DiceTerm } from '@vtt/shared';
+import type { AttackLog, ChatMessage, DiceTerm, SpellLog } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '../session.ts';
+import { targetText } from '../spell-text.ts';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
@@ -52,6 +53,7 @@ function Message({ m }: Readonly<{ m: ChatMessage }>) {
       </span>
       {m.text && <span className="msg-text">{m.text}</span>}
       {m.attack && <AttackLine a={m.attack} />}
+      {m.spell && <SpellLine s={m.spell} />}
       {m.roll && (
         <span className="roll">
           <span className="muted">{m.roll.formula}</span>
@@ -96,6 +98,28 @@ function AttackLine({ a }: Readonly<{ a: AttackLog }>) {
         </span>
       )}
       {a.notes.map((n) => (
+        <span key={n} className="muted">
+          {n}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** "Wiz casts Fireball (3rd level)", then a line per target. */
+function SpellLine({ s }: Readonly<{ s: SpellLog }>) {
+  return (
+    <span className="attack-log spell-log">
+      <span className="msg-text">
+        {s.caster} casts {s.spell}
+        {s.slot > 0 && <span className="muted"> (level {s.slot} slot)</span>}
+      </span>
+      {s.results.map((r, i) => (
+        <span key={i} className="msg-text">
+          {targetText(r)}
+        </span>
+      ))}
+      {s.notes.map((n) => (
         <span key={n} className="muted">
           {n}
         </span>

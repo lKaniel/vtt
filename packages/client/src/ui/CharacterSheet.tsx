@@ -1,6 +1,7 @@
 import { ABILITIES, abilityMod, srdFor, type TokenView } from '@vtt/shared';
 import type { Session } from '../session.ts';
 import { describeAttack } from './Hotbar.tsx';
+import { MagicSheet } from './MagicSheet.tsx';
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -21,7 +22,7 @@ export function CharacterSheet({ session, onClose }: Readonly<{ session: Session
       <div className="sheet-stats">
         <Stat label="HP" value={`${sheet.hp}/${sheet.maxHp}`} />
         <Stat label="AC" value={sheet.ac} />
-        <Stat label="Speed" value={`${token.speed} ft`} />
+        <Stat label="Speed" value={`${sheet.speed} ft`} />
         <Stat label="Init" value={signed(sheet.initiative)} />
         <Stat label="Prof" value={signed(sheet.proficiency)} />
       </div>
@@ -40,6 +41,7 @@ export function CharacterSheet({ session, onClose }: Readonly<{ session: Session
           <li key={a.name}>{describeAttack(a)}</li>
         ))}
       </ul>
+      <MagicSheet session={session} token={token} />
       <Inventory session={session} token={token} />
     </section>
   );

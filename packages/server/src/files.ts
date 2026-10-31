@@ -147,6 +147,9 @@ function tokenIssues(t: Token, players: Set<string>, world: World): Issue[] {
     ...[...t.controllers, ...(t.visibleTo ?? [])].filter((c) => !players.has(c)).map((c) => `unknown player "${c}"`),
     ...(t.monster && !srd.monsters.has(t.monster) ? [`unknown monster "${t.monster}" in the ${edition} rules`] : []),
     ...(t.inventory ?? []).filter((e) => !srd.items.has(e.item)).map((e) => `unknown item "${e.item}"`),
+    ...(t.stats?.spells ?? [])
+      .filter((s) => !srd.spells.has(s))
+      .map((s) => `unknown spell "${s}" in the ${edition} rules`),
   ];
   return messages.map((message) => ({ file: `tokens/${t.id}.json`, message }));
 }

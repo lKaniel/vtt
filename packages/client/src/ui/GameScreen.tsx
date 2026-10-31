@@ -64,7 +64,7 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
 /** Esc backs out, 1-8 ready an attack, Space ends your turn. */
 function handleGameKey(session: Session, e: KeyboardEvent): void {
   if (e.key === 'Escape') {
-    if (session.armed) session.arm(undefined);
+    if (session.armed ?? session.aiming) session.arm(undefined);
     else session.select(undefined);
     return;
   }

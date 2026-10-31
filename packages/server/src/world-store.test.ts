@@ -32,6 +32,15 @@ describe('WorldStore', () => {
     expect(JSON.parse(await readFile(join(dir, 'tokens/hero.json'), 'utf8'))).toMatchObject({ x: 50 });
   });
 
+  it('deletes a removed token and its file', async () => {
+    const { dir, store } = await loaded();
+    const gone = new Promise((resolve) => store.once('tokenGone', resolve));
+    store.removeToken('goblin');
+    expect(await gone).toBe('goblin');
+    await store.flush();
+    await expect(readFile(join(dir, 'tokens/goblin.json'), 'utf8')).rejects.toThrow();
+  });
+
   it('picks up edits made outside the game and ignores broken ones', async () => {
     const { dir, store } = await loaded();
     store.watch();

@@ -158,6 +158,43 @@ better of STR and DEX, ranged weapons DEX), proficiency from `level`:
 | `attacks`                                      | Extra attacks: `{ "name", "kind": "melee"\|"ranged", "toHit", "reach" or "range": [normal, long], "damage": [{ "dice": "1d6+2", "type": "fire" }] }` |
 | `resistances`, `immunities`, `vulnerabilities` | Damage types, e.g. `["fire"]`.                                                                                                                       |
 
+**Spells and features.** `stats.spells` lists the spell ids a character
+knows or has prepared (from `spells-5.1.json` or `spells-5.2.json`, by the
+token's edition). A `class` named after an SRD class (Wizard, Fighter, ...)
+gives that class's spell slots, spellcasting ability and features by `level`,
+from `classes-5.x.json`. A homebrew class or a monster that casts uses
+`"spellcasting": { "ability": "int", "progression": "full" | "half" | "pact", "level": 5 }`.
+
+```json
+"stats": {
+  "class": "Wizard",
+  "level": 3,
+  "abilities": { "int": 16, "dex": 14, "con": 14 },
+  "spells": ["fire-bolt", "magic-missile", "shield", "misty-step"]
+}
+```
+
+The server writes the rest of a creature's magic to its token file, and you can
+edit it too:
+
+| Token field     | Meaning                                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------------------- |
+| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.       |
+| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.       |
+| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st) and feature uses.      |
+| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.               |
+| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons). |
+
+Effect modifiers: `conditions` (e.g. `["prone"]`, `["paralyzed"]`),
+`attackBonus` and `saveBonus` (dice like `"1d4"` or `"-1d4"`), `ac`, `speed`,
+`resistances`, `advantage`, `disadvantage`, `advantageAgainst`,
+`disadvantageAgainst`, `meleeDamage`, `saveAdvantage`. Lifetime: `rounds`
+counts down at the start of the `source` creature's turn; `once` ends it the
+first time it changes an attack; `repeatSave` with `save: { "ability", "dc" }`
+lets the bearer save again at the end of each of its turns; `endsOnAttack`
+ends it when the bearer attacks or casts. A hidden trap or a GM ruling can
+just write an effect into the token file.
+
 Players only receive the stats of tokens they control. For everyone else
 they're told how hurt the creature looks (unhurt, hurt, bloodied, down).
 
@@ -174,9 +211,12 @@ it to set up an encounter that starts mid-fight:
     { "token": "goblin-1", "initiative": 17 },
     { "token": "bram", "initiative": 12 }
   ],
-  "left": { "move": 30, "action": true, "bonus": true }
+  "left": { "move": 30, "action": true, "bonus": true, "attacks": 0, "used": [] },
+  "side": {}
 }
 ```
 
 `turn` is the index in `order` of the creature acting now; `left` is what it
-has left this turn (feet of movement, action, bonus action).
+has left this turn (feet of movement, action, bonus action, attacks left in an
+Attack action, once-per-turn things already used like sneak attack). `side`
+holds the same for creatures acting on this turn through `leader`, by id.

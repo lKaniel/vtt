@@ -45,7 +45,7 @@ describe('resolveCreature', () => {
     // Chain shirt 13 + dex (max 2) + shield 2.
     expect(c.ac).toBe(17);
     expect(c.proficiency).toBe(3);
-    expect(c.attacks).toEqual([
+    expect(c.attacks).toMatchObject([
       { name: 'Longsword', kind: 'melee', toHit: 6, reach: 5, damage: [{ dice: '1d8+3', type: 'slashing' }] },
     ]);
   });
@@ -62,7 +62,7 @@ describe('resolveCreature', () => {
       srdFor('2024'),
     )!;
     expect(c.ac).toBe(13);
-    expect(c.attacks).toEqual([
+    expect(c.attacks).toMatchObject([
       { name: 'Dagger', kind: 'melee', toHit: 5, reach: 5, damage: [{ dice: '1d4+3', type: 'piercing' }] },
       { name: 'Longbow', kind: 'ranged', toHit: 5, range: [150, 600], damage: [{ dice: '1d8+3', type: 'piercing' }] },
     ]);
@@ -70,7 +70,7 @@ describe('resolveCreature', () => {
 
   it('fights unarmed when nothing is equipped', () => {
     const c = resolveCreature(token({ stats: { abilities: { str: 14 } } }), srdFor('2024'))!;
-    expect(c.attacks).toEqual([
+    expect(c.attacks).toMatchObject([
       { name: 'Unarmed Strike', kind: 'melee', toHit: 4, reach: 5, damage: [{ dice: '3', type: 'bludgeoning' }] },
     ]);
   });

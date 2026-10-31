@@ -14,6 +14,8 @@ import {
   type WorldInfo,
 } from '@vtt/shared';
 
+import { aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
+
 type Status = 'connecting' | 'open' | 'closed';
 
 const CHAT_HISTORY = 200;
@@ -30,7 +32,7 @@ export interface SessionEvents {
   select: (id: string | undefined) => void;
   /** The fight started, ended or moved on. */
   combat: () => void;
-  /** An attack was readied or put away. */
+  /** An attack or spell was readied or put away. */
   armed: () => void;
   focus: (point: Point) => void;
 }
@@ -51,6 +53,8 @@ export class Session {
   combat: Combat | null = null;
   /** The attack the selected token will make on the next token clicked. */
   armed?: string;
+  /** The spell the selected token is aiming, and what it has picked so far. */
+  aiming?: Aiming;
   error?: { message: string; at: number };
   /** The part of the world on screen, kept up to date by the map. */
   viewRect?: Rect;
@@ -137,7 +141,7 @@ export class Session {
   select(id: string | undefined): void {
     if (this.selected === id) return;
     this.selected = id;
-    if (this.armed) this.arm(undefined);
+    if (this.armed ?? this.aiming) this.arm(undefined);
     this.emit('select', id);
     this.changed();
   }
@@ -145,8 +149,61 @@ export class Session {
   /** Readies an attack of the selected token; the next token clicked is the target. */
   arm(attack: string | undefined): void {
     this.armed = attack;
+    this.aiming = undefined;
     this.emit('armed');
     this.changed();
+  }
+
+  /** Readies a spell of the selected token with a slot; self spells go off at once. */
+  aim(spellId: string | undefined, slot = 0): void {
+    const caster = this.selected ? this.tokens.get(this.selected)?.sheet?.caster : undefined;
+    const spell = caster?.spells.find((s) => s.id === spellId);
+    this.armed = undefined;
+    this.aiming = spell && aimSpell(spell, slot, caster!.level);
+    if (this.aiming?.mode === 'self') return this.confirmCast();
+    this.emit('armed');
+    this.changed();
+  }
+
+  /** Changes what the aimed summoning spell brings. */
+  chooseSummon(monster: string): void {
+    if (this.aiming) this.aiming = { ...this.aiming, summon: monster };
+    this.changed();
+  }
+
+  pickTarget(id: string): void {
+    if (!this.aiming) return;
+    const { aiming, done } = pick(this.aiming, id);
+    this.aiming = aiming;
+    if (done) this.confirmCast();
+    else this.changed();
+  }
+
+  /** Casts the aimed spell at a point (areas, teleports, summons). */
+  castAt(point: Point): void {
+    this.confirmCast(point);
+  }
+
+  /** Casts the aimed spell now, with the targets picked so far. */
+  confirmCast(point?: Point): void {
+    if (this.selected && this.aiming) this.send(castMessage(this.selected, this.aiming, point));
+    this.aim(undefined);
+  }
+
+  useFeature(token: string, feature: string): void {
+    this.send({ t: 'feature', token, feature });
+  }
+
+  rest(tokens: string[], kind: 'short' | 'long'): void {
+    this.send({ t: 'rest', tokens, kind });
+  }
+
+  dropConcentration(token: string): void {
+    this.send({ t: 'dropConcentration', token });
+  }
+
+  removeEffect(token: string, effect: string): void {
+    this.send({ t: 'removeEffect', token, effect });
   }
 
   attack(target: string): void {
