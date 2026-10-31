@@ -4,6 +4,7 @@ import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, ty
 import { slotChoices } from '../charges.ts';
 import {
   dragTile,
+  landOn,
   hotbarSlots,
   hotbarTiles,
   moveOnHotbar,
@@ -177,6 +178,10 @@ function trimmed(slots: Slots): Slots {
   return slots.slice(0, last + 1);
 }
 
+function slotBox(e: React.DragEvent): Element {
+  return e.currentTarget.firstElementChild ?? e.currentTarget;
+}
+
 /** The arranged bar: drop tiles from the sheet onto any slot, drag tiles to swap them. */
 function Hotbar({
   session,
@@ -188,6 +193,10 @@ function Hotbar({
     const data = e.dataTransfer.getData(TILE_DRAG);
     if (!data) return;
     e.preventDefault();
+    // Slots are display: contents, so the tile inside has the box.
+    const box = slotBox(e);
+    box.classList.remove('drop-target');
+    landOn(box);
     const drag = JSON.parse(data) as TileDrag;
     const slots = hotbarSlots(token);
     save('ref' in drag ? placeOnHotbar(slots, drag.ref, i) : moveOnHotbar(slots, drag.from, i));
@@ -196,11 +205,16 @@ function Hotbar({
     if (!e.dataTransfer.types.includes(TILE_DRAG)) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    slotBox(e).classList.add('drop-target');
+  };
+  const onDragLeave = (e: React.DragEvent) => {
+    const box = slotBox(e);
+    if (!box.contains(e.relatedTarget as Node | null)) box.classList.remove('drop-target');
   };
   return (
     <div className="ab-grid">
       {hotbarTiles(token).map((tile, i) => (
-        <span key={i} className="ab-slot" onDragOver={onDragOver} onDrop={onDrop(i)}>
+        <span key={i} className="ab-slot" onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop(i)}>
           {tile ? (
             <Tile
               session={session}
