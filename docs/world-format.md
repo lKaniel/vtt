@@ -9,6 +9,7 @@ world/
   world.json          settings and players
   chunks/<cx>_<cy>.json   map content, one file per chunk
   tokens/<id>.json    one file per token
+  actors/<id>.json    the GM's Actors list: creatures ready to be placed
   combat.json         the fight in progress, if any
   assets/             images referenced by tiles and tokens
 ```
@@ -177,13 +178,14 @@ from `classes-5.x.json`. A homebrew class or a monster that casts uses
 The server writes the rest of a creature's magic to its token file, and you can
 edit it too:
 
-| Token field     | Meaning                                                                                                     |
-| --------------- | ----------------------------------------------------------------------------------------------------------- |
-| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.       |
-| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.       |
-| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st) and feature uses.      |
-| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.               |
-| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons). |
+| Token field     | Meaning                                                                                                                                                               |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.                                                                 |
+| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                 |
+| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st) and feature uses.                                                                |
+| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                         |
+| `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"` or `null`. |
+| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                           |
 
 Effect modifiers: `conditions` (e.g. `["prone"]`, `["paralyzed"]`),
 `attackBonus` and `saveBonus` (dice like `"1d4"` or `"-1d4"`), `ac`, `speed`,
@@ -197,6 +199,21 @@ just write an effect into the token file.
 
 Players only receive the stats of tokens they control. For everyone else
 they're told how hurt the creature looks (unhurt, hurt, bloodied, down).
+
+## Actors
+
+`actors/` holds the GM's Actors list: creatures that aren't on the map yet.
+An actor is a token without `x` and `y`, plus an optional `folder` that
+groups it in the list. Dragging one onto the map in the game copies it into
+`tokens/` with a free id (`bandit`, `bandit-2`, ...) and a numbered name.
+
+```json
+{ "id": "bandit", "name": "Bandit", "folder": "Road", "monster": "bandit" }
+```
+
+The GM also places SRD monsters straight from the Compendium, and can save
+any token as an actor. Both write these files, and `check-world` checks
+actors like tokens.
 
 ## combat.json
 

@@ -1,4 +1,4 @@
-import type { Attack, FeatureSheet, Spell, TokenView, TurnBudget } from '@vtt/shared';
+import type { Attack, FeatureSheet, Item, Spell, TokenView, TurnBudget } from '@vtt/shared';
 import { attackArt, featureArt, spellArt } from './icon-art.ts';
 import { attackIcon, featureIcon, spellIcon, type Icon } from './icons.ts';
 import { lowestSlot } from './spell-text.ts';
@@ -17,7 +17,9 @@ interface TileBase {
 export type ActionTile =
   | (TileBase & { kind: 'attack'; attack: Attack })
   | (TileBase & { kind: 'spell'; spell: Spell; slot: number | undefined })
-  | (TileBase & { kind: 'feature'; feature: FeatureSheet; uses?: string });
+  | (TileBase & { kind: 'feature'; feature: FeatureSheet; uses?: string })
+  /** An item put on the bar by hand; `uses` is how many are carried. */
+  | (TileBase & { kind: 'item'; item: Item; uses?: string });
 
 export type Cost = 'action' | 'bonus' | 'reaction' | 'free' | 'long';
 
@@ -82,7 +84,7 @@ export function filterTiles(tiles: ActionTile[], tab: Tab): ActionTile[] {
 }
 
 export function costOf(tile: ActionTile): Cost {
-  if (tile.kind === 'attack') return 'action';
+  if (tile.kind === 'attack' || tile.kind === 'item') return 'action';
   if (tile.kind === 'feature') return tile.feature.action ?? 'free';
   const time = tile.spell.castingTime;
   return time === 'minute' || time === 'hour' ? 'long' : time;

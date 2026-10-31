@@ -2003,3 +2003,552 @@ h4 {
   border-radius: 0;
   clip-path: none;
 }
+
+/* ---------- GM tools ----------
+   The side panel's tabs (log, Actors, Compendium) and the token editor. */
+
+.side-tabs {
+  display: flex;
+  gap: 2px;
+  margin: 2px 0 6px;
+  border-bottom: 1px solid var(--gold-dim);
+}
+.side-tabs button {
+  flex: 1;
+  padding: 4px 6px;
+  font-family: var(--display);
+  font-size: 13px;
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+}
+.side-tabs button.on {
+  color: var(--gold-bright);
+  background: rgba(168, 138, 94, 0.12);
+  border-color: var(--gold-dim);
+}
+.chat.library {
+  height: calc(100vh - 24px);
+  max-height: 900px;
+}
+.chat.library:not(.closed) .chat-head {
+  margin-top: -2px;
+}
+
+.lib {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 6px;
+  font-size: 14px;
+}
+.lib input,
+.lib select,
+.editor input,
+.editor select {
+  min-width: 0;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: #0e0a07;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.lib input:focus,
+.lib select:focus,
+.editor input:focus,
+.editor select:focus {
+  border-color: var(--gold-dim);
+  outline: none;
+}
+.lib input[type='checkbox'],
+.editor input[type='checkbox'] {
+  width: auto;
+  padding: 0;
+  accent-color: var(--gold);
+}
+.lib-search {
+  width: 100%;
+}
+.lib-filter {
+  display: flex;
+  gap: 6px;
+}
+.lib-filter .lib-search {
+  flex: 1;
+}
+.lib-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.lib h4 {
+  margin: 10px 0 4px;
+  font-size: 13px;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+}
+.lib-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.lib-hint {
+  margin: 4px 2px;
+  font-size: 12px;
+  font-style: italic;
+  list-style: none;
+}
+.lib-hidden {
+  font-size: 13px;
+}
+.lib-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.lib-cats button {
+  padding: 2px 9px;
+  font-size: 13px;
+  color: var(--muted);
+  background: #1a140f;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.lib-cats button.on {
+  color: var(--gold-bright);
+  border-color: var(--gold);
+  background: rgba(168, 138, 94, 0.15);
+}
+.lib-list {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lib-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.lib-row[draggable='true'] {
+  cursor: grab;
+}
+.lib-row:hover,
+.lib-row.on {
+  border-color: var(--gold-dim);
+  background: rgba(168, 138, 94, 0.08);
+}
+.lib-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 6px;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: inherit;
+}
+.lib-face {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 50%;
+}
+.lib-text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.lib-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+.lib-sub {
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
+}
+.lib-text .hpbar {
+  height: 5px;
+}
+.lib-tag {
+  margin-left: 6px;
+  padding: 0 5px;
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.lib-icon {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  font-size: 14px;
+  color: var(--muted);
+  background: none;
+  border: 0;
+}
+.lib-icon:hover {
+  color: var(--gold-bright);
+}
+.lib-folder summary {
+  margin: 6px 0 3px;
+  font-family: var(--display);
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.lib-detail {
+  flex-basis: 100%;
+  padding: 2px 10px 8px;
+  font-size: 13px;
+  cursor: default;
+}
+.lib-detail .tip-facts {
+  margin: 0 0 6px;
+  padding-left: 16px;
+}
+.lib-body {
+  max-height: 160px;
+  margin: 0 0 6px;
+  overflow-y: auto;
+  color: var(--muted);
+  white-space: pre-line;
+}
+.lib-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* The token editor: the sheet's painted panel, three columns of fields. */
+.editor {
+  position: absolute;
+  top: 6vh;
+  left: 50%;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  width: min(1040px, calc(100vw - 32px));
+  max-height: 86vh;
+  transform: translateX(-50%);
+}
+.editor.frame {
+  padding: 40px 46px 36px;
+  border-image: url('/art/ui/panel-large.webp') 110 fill / 38px stretch;
+}
+.ed-head {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.ed-head > div {
+  flex: 1;
+}
+.ed-face {
+  width: 56px;
+  height: 56px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+}
+.ed-cols {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 22px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.ed-col h4 {
+  margin: 12px 0 6px;
+  font-size: 14px;
+  color: var(--gold);
+}
+.ed-col h4:first-child {
+  margin-top: 0;
+}
+.ed-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 8px;
+  margin-bottom: 6px;
+}
+.ed-field {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.ed-field > span {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ed-field input[type='color'] {
+  width: 100%;
+  height: 31px;
+  padding: 2px;
+}
+.ed-check {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 4px 0;
+  cursor: pointer;
+}
+.ed-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+}
+.ed-abilities {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.ed-abilities .ed-field > span {
+  text-align: center;
+}
+.ed-abilities input {
+  padding: 4px 2px;
+  text-align: center;
+}
+.ed-hp {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.ed-hp input {
+  width: 90px;
+}
+.ed-list .row {
+  padding: 3px 6px;
+  font-size: 13px;
+  font-weight: 400;
+}
+.ed-bad .row-name {
+  color: var(--bad);
+}
+.ed-qty {
+  width: 52px;
+}
+.ed-equip {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+.ed-remove {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 0;
+}
+.ed-remove:hover {
+  color: var(--bad);
+}
+.ed-adder {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.ed-adder input {
+  flex: 1;
+}
+.ed-foot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 12px;
+  margin-top: 10px;
+  border-top: 1px solid var(--gold-dim);
+}
+.ed-spacer {
+  flex: 1;
+}
+.btn.danger {
+  color: #ffb3a8;
+}
+@media (max-width: 900px) {
+  .ed-cols {
+    grid-template-columns: 1fr;
+  }
+}
+.ab-edit {
+  padding: 0;
+  background: none;
+  border: 0;
+}
+.ab-edit:hover {
+  color: #fff4dc;
+}
+/* Name and summary share one line, above the ornament in the frame's top edge. */
+.ed-head > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: baseline;
+}
+.ed-head {
+  padding-bottom: 26px;
+  border-bottom: 0;
+}
+.ed-face {
+  width: 44px;
+  height: 44px;
+}
+
+/* ---------- Character sheet: edit mode and dragging ---------- */
+
+.sheet-head-tools {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.sheet-name-input {
+  width: 100%;
+  max-width: 420px;
+  padding: 2px 6px;
+  font-family: var(--display);
+  font-size: 24px;
+  color: var(--gold-bright);
+  background: #0e0a07;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+}
+.sheet input,
+.sheet select {
+  min-width: 0;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: #0e0a07;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.sheet input:focus,
+.sheet select:focus {
+  border-color: var(--gold);
+  outline: none;
+}
+.sheet input[type='checkbox'] {
+  width: auto;
+  padding: 0;
+  accent-color: var(--gold);
+}
+.sheet .sheet-name-input {
+  font-size: 24px;
+}
+.sheet.editing {
+  box-shadow:
+    0 0 0 1px rgba(232, 211, 166, 0.25),
+    0 10px 30px rgba(0, 0, 0, 0.55);
+}
+.ability input.ability-score {
+  width: 46px;
+  padding: 1px 2px;
+  font-size: 12px;
+  text-align: center;
+}
+.stat-edit input {
+  width: 64px;
+  font-family: var(--display);
+  font-size: 16px;
+  text-align: center;
+  color: var(--gold-bright);
+}
+.hp-edit {
+  display: grid;
+  grid-template-columns: 1fr 1fr 54px auto auto;
+  gap: 5px;
+  align-items: end;
+}
+.hp-edit label {
+  display: grid;
+  gap: 1px;
+}
+.hp-edit label span {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.defenses input {
+  width: 100%;
+  padding: 2px 6px;
+  font-size: 13px;
+}
+.defenses div {
+  align-items: center;
+}
+.sheet-foot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 10px;
+  margin-top: 14px;
+  font-size: 13px;
+  font-style: italic;
+  border-top: 1px solid var(--gold-dim);
+}
+.ed-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 8px;
+}
+.bag-slot {
+  cursor: grab;
+}
+.slot-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 2;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  line-height: 1;
+  color: #ffb3a8;
+  background: #1a0f0b;
+  border: 1px solid var(--bad);
+  border-radius: 50%;
+}
+.ab-slot {
+  display: contents;
+}
+.tile[draggable='true'] {
+  cursor: grab;
+}
+.dragging-tile .sheet {
+  pointer-events: none;
+  opacity: 0.3;
+  transition: opacity 0.15s;
+}
+.dragging-tile .actionbar-wrap {
+  z-index: 10;
+}

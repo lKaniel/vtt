@@ -1,0 +1,7 @@
+{
+  "id": "bandit-captain",
+  "name": "Bandit Captain",
+  "folder": "Road ambush",
+  "monster": "bandit-captain",
+  "inventory": [{ "item": "potion-of-healing" }]
+}

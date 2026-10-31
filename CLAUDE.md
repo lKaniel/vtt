@@ -12,6 +12,9 @@ you add maps, place tokens, and prepare encounters.
   chunk file for where it starts: chunk `floor(x / chunkSize)_floor(y / chunkSize)`.
 - Always run `pnpm check-world` after editing and fix every error.
 - Hidden enemies for an encounter: `"hidden": true`, the GM reveals them.
+- Creatures the GM may want later (an ambush, reinforcements) go in
+  `actors/<id>.json`: a token without `x`/`y`, with an optional `folder`.
+  The GM drags them onto the map from the Actors tab.
 - Creatures: `"monster": "<srd id>"` for a stat block, or `stats` + `inventory`
   for a character (see "Creatures" in the format doc). Monster and item ids
   are in `packages/shared/content/srd/`; `check-world` flags unknown ones.

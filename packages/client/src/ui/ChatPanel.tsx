@@ -1,14 +1,48 @@
 import type { AttackLog, ChatMessage, DiceTerm, SpellLog } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '../session.ts';
+import { ActorsTab } from './ActorsTab.tsx';
+import { CompendiumTab } from './CompendiumTab.tsx';
 import { diceArt } from '../icon-art.ts';
 import { targetText } from '../spell-text.ts';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
+/** The GM's side panel has tabs, like a VTT sidebar: the log, the Actors list and the Compendium. */
+const TABS = ['Adventure log', 'Actors', 'Compendium'] as const;
+type Tab = (typeof TABS)[number];
+
 export function ChatPanel({ session }: Readonly<{ session: Session }>) {
-  const [text, setText] = useState('');
   const [open, setOpen] = useState(true);
+  const [tab, setTab] = useState<Tab>('Adventure log');
+  const gm = session.you?.role === 'gm';
+  const shown = gm ? tab : 'Adventure log';
+  return (
+    <aside className={`chat frame${open ? '' : ' closed'}${shown === 'Adventure log' ? '' : ' library'}`}>
+      <header className="chat-head">
+        <span>{shown}</span>
+        <button className="close" onClick={() => setOpen(!open)} aria-label={open ? 'Hide panel' : 'Show panel'}>
+          {open ? '–' : '+'}
+        </button>
+      </header>
+      {gm && (
+        <nav className="side-tabs">
+          {TABS.map((t) => (
+            <button key={t} className={t === tab ? 'on' : ''} onClick={() => setTab(t)}>
+              {t === 'Adventure log' ? 'Log' : t}
+            </button>
+          ))}
+        </nav>
+      )}
+      {shown === 'Adventure log' && <Log session={session} open={open} />}
+      {shown === 'Actors' && <ActorsTab session={session} />}
+      {shown === 'Compendium' && <CompendiumTab session={session} />}
+    </aside>
+  );
+}
+
+function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
+  const [text, setText] = useState('');
   const list = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -23,13 +57,7 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
   };
 
   return (
-    <aside className={open ? 'chat frame' : 'chat frame closed'}>
-      <header className="chat-head">
-        <span>Adventure log</span>
-        <button className="close" onClick={() => setOpen(!open)} aria-label={open ? 'Hide log' : 'Show log'}>
-          {open ? '–' : '+'}
-        </button>
-      </header>
+    <>
       <div className="chat-list" ref={list}>
         {session.chat.length === 0 && (
           <p className="muted">Type to chat. Roll with /r 1d20+5, or /gmr for a GM-only roll.</p>
@@ -49,7 +77,7 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
       <form onSubmit={submit}>
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message or /r 2d20kh1+4" />
       </form>
-    </aside>
+    </>
   );
 }
 

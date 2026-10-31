@@ -1,13 +1,13 @@
-import { ABILITIES, abilityMod, srdFor, type TokenView } from '@vtt/shared';
-import { useState } from 'react';
-import { itemArt } from '../icon-art.ts';
-import { itemIcon } from '../icons.ts';
-import type { Session } from '../session.ts';
-import { attackTip, itemTip } from '../tooltip.ts';
-import { IconFace } from './Icon.tsx';
-import { MagicSheet } from './MagicSheet.tsx';
+import { ABILITIES, abilityMod, actorFromToken, uniqueId, type Creature, type Edition } from '@vtt/shared';
+import { useEffect, useRef, useState } from 'react';
+import type { Session, SheetTarget } from '../session.ts';
+import { listText, parseList, setAbility, setStat, tokenPatch } from '../token-edit.ts';
+import { NumberInput } from './EditorFields.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
-import { TipCard } from './Tip.tsx';
+import { previewSheet, withKey, type Draft, type Update } from './sheet-model.ts';
+import { Details } from './SheetDetails.tsx';
+import { EffectsPage, FeaturesPage, InventoryPage, SpellsPage } from './SheetPages.tsx';
+import { useAutoSave } from './useAutoSave.ts';
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -20,66 +20,195 @@ const ABILITY_NAME = {
   cha: 'Charisma',
 } as const;
 
-const PAGES = ['Equipment', 'Spells & features'] as const;
+const PAGES = ['Inventory', 'Spells', 'Features', 'Effects', 'Details'] as const;
 type Page = (typeof PAGES)[number];
 
-/** BG3-style character window: abilities on the left, portrait and vitals in the middle, gear or magic on the right. */
-export function CharacterSheet({ session, onClose }: Readonly<{ session: Session; onClose: () => void }>) {
-  const [page, setPage] = useState<Page>('Equipment');
-  const token = session.selected ? session.tokens.get(session.selected) : undefined;
-  const sheet = token?.sheet;
-  if (!token || !sheet) return null;
-  const level = token.stats?.level;
-  const title = [level && `Level ${level}`, token.stats?.class ?? token.monster].filter(Boolean).join(' ');
+/** Everything a part of the sheet needs. */
+export interface SheetProps {
+  session: Session;
+  kind: SheetTarget['kind'];
+  value: Draft;
+  update: Update;
+  sheet: Creature;
+  edit: boolean;
+}
+
+/**
+ * BG3-style character window: abilities on the left, portrait and vitals in
+ * the middle, gear, magic and details on the right. The GM can switch it to
+ * edit mode, where every field saves itself.
+ */
+export function CharacterSheet({ session }: Readonly<{ session: Session }>) {
+  const target = session.sheet;
+  const live = target && (target.kind === 'token' ? session.tokens.get(target.id) : session.actors.get(target.id));
+  if (!target || !live) return null;
+  return <SheetWindow key={`${target.kind}:${target.id}`} session={session} target={target} live={live} />;
+}
+
+function SheetWindow({
+  session,
+  target,
+  live,
+}: Readonly<{ session: Session; target: SheetTarget & { edit: boolean }; live: Draft }>) {
+  const liveRef = useRef(live);
+  useEffect(() => {
+    liveRef.current = live;
+  });
+  const { value, update } = useAutoSave<Draft>(live, (draft) => {
+    if (target.kind === 'token') session.editToken(live.id, tokenPatch(liveRef.current, draft));
+    else session.saveActor(draft);
+  });
+  const rules = value.stats?.rules ?? session.world?.rules ?? '2014';
+  const sheet = sheetOf(session, target, live, previewSheet(value, rules));
+  if (!sheet) return null;
+  const props: SheetProps = { session, kind: target.kind, value, update, sheet, edit: target.edit };
   return (
-    <section className="sheet frame" aria-label={`${token.name}'s character sheet`}>
-      <header className="sheet-head">
-        <div>
-          <h2>{token.name}</h2>
-          <span className="sheet-sub">{title}</span>
-        </div>
-        <button className="close" onClick={onClose} aria-label="Close (C)">
+    <section
+      className={target.edit ? 'sheet frame editing' : 'sheet frame'}
+      aria-label={`${value.name}'s character sheet`}
+    >
+      <SheetHead {...props} />
+      <div className="sheet-cols">
+        <Abilities {...props} />
+        <Hero {...props} />
+        <Pages {...props} rules={rules} />
+      </div>
+      {target.edit && <SheetFoot {...props} />}
+    </section>
+  );
+}
+
+/** The stats shown: as the server sent them, or as edited; a plain token (no stats) shows only to the GM. */
+function sheetOf(
+  session: Session,
+  target: SheetTarget & { edit: boolean },
+  live: Draft,
+  preview: Creature | undefined,
+): Creature | undefined {
+  if (live.sheet && !target.edit) return live.sheet;
+  return target.kind === 'token' && !live.sheet && session.you?.role !== 'gm' ? undefined : preview;
+}
+
+function Pages(props: Readonly<SheetProps & { rules: Edition }>) {
+  const [page, setPage] = useState<Page>('Inventory');
+  const pages = PAGES.filter((p) => p !== 'Details' || props.edit);
+  const shown = pages.includes(page) ? page : 'Inventory';
+  return (
+    <div className="sheet-page">
+      <nav className="sheet-tabs">
+        {pages.map((p) => (
+          <button key={p} className={p === shown ? 'on' : ''} onClick={() => setPage(p)}>
+            {p}
+          </button>
+        ))}
+      </nav>
+      {shown === 'Inventory' && <InventoryPage {...props} />}
+      {shown === 'Spells' && <SpellsPage {...props} />}
+      {shown === 'Features' && <FeaturesPage {...props} />}
+      {shown === 'Effects' && <EffectsPage {...props} />}
+      {shown === 'Details' && <Details {...props} />}
+    </div>
+  );
+}
+
+function SheetHead({ session, kind, value, update, edit }: Readonly<SheetProps>) {
+  const level = value.stats?.level;
+  const title = [level && `Level ${level}`, value.stats?.class ?? value.monster, kind === 'actor' && '(actor)']
+    .filter(Boolean)
+    .join(' ');
+  const gm = session.you?.role === 'gm';
+  return (
+    <header className="sheet-head">
+      <div>
+        {edit ? (
+          <input
+            className="sheet-name-input"
+            value={value.name}
+            aria-label="Name"
+            onChange={(e) => update((d) => ({ ...d, name: e.target.value }))}
+          />
+        ) : (
+          <h2>{value.name}</h2>
+        )}
+        <span className="sheet-sub">{title}</span>
+      </div>
+      <div className="sheet-head-tools">
+        {gm && (
+          <button className="btn small" onClick={() => session.setSheetEdit(!edit)} title="Edit mode (E)">
+            {edit ? 'Done' : 'Edit'}
+          </button>
+        )}
+        <button className="close" onClick={() => session.openSheet(undefined)} aria-label="Close (C)">
           ×
         </button>
-      </header>
-      <div className="sheet-cols">
-        <div className="sheet-abilities">
-          {ABILITIES.map((a) => (
-            <div key={a} className="ability" title={ABILITY_NAME[a]}>
-              <span className="ability-name">{a.toUpperCase()}</span>
-              <strong className="ability-mod">{signed(abilityMod(sheet.abilities[a]))}</strong>
-              <span className="ability-score">{sheet.abilities[a]}</span>
-            </div>
-          ))}
-        </div>
-        <div className="sheet-hero">
-          <Face token={token} className="hero-face" />
-          <HpBar token={token} />
-          <EffectBadges token={token} />
-          <div className="sheet-stats">
-            <Stat label="Armour" value={sheet.ac} />
-            <Stat label="Speed" value={`${sheet.speed} ft`} />
-            <Stat label="Initiative" value={signed(sheet.initiative)} />
-            <Stat label="Proficiency" value={signed(sheet.proficiency)} />
-          </div>
-          <Defenses token={token} />
-        </div>
-        <div className="sheet-page">
-          <nav className="sheet-tabs">
-            {PAGES.map((p) => (
-              <button key={p} className={p === page ? 'on' : ''} onClick={() => setPage(p)}>
-                {p}
-              </button>
-            ))}
-          </nav>
-          {page === 'Equipment' ? (
-            <Equipment session={session} token={token} />
+      </div>
+    </header>
+  );
+}
+
+function Abilities({ value, update, sheet, edit }: Readonly<SheetProps>) {
+  return (
+    <div className="sheet-abilities">
+      {ABILITIES.map((a) => (
+        <div key={a} className="ability" title={ABILITY_NAME[a]}>
+          <span className="ability-name">{a.toUpperCase()}</span>
+          <strong className="ability-mod">{signed(abilityMod(sheet.abilities[a]))}</strong>
+          {edit ? (
+            <NumberInput
+              className="ability-score"
+              value={value.stats?.abilities?.[a]}
+              min={1}
+              placeholder={sheet.abilities[a]}
+              onChange={(v) => update((d) => setAbility(d, a, v))}
+            />
           ) : (
-            <MagicSheet session={session} token={token} />
+            <span className="ability-score">{sheet.abilities[a]}</span>
           )}
         </div>
-      </div>
-    </section>
+      ))}
+    </div>
+  );
+}
+
+function Hero(props: Readonly<SheetProps>) {
+  const { value, sheet, edit } = props;
+  return (
+    <div className="sheet-hero">
+      <Face token={{ x: 0, y: 0, ...value }} className="hero-face" />
+      {edit ? <HpEdit {...props} /> : <HpBar token={{ x: 0, y: 0, ...value, sheet }} />}
+      <EffectBadges token={{ x: 0, y: 0, ...value }} />
+      {edit ? <StatsEdit {...props} /> : <StatsView sheet={sheet} />}
+      <Defenses {...props} />
+    </div>
+  );
+}
+
+function StatsView({ sheet }: Readonly<{ sheet: Creature }>) {
+  return (
+    <div className="sheet-stats">
+      <Stat label="Armour" value={sheet.ac} />
+      <Stat label="Speed" value={`${sheet.speed} ft`} />
+      <Stat label="Initiative" value={signed(sheet.initiative)} />
+      <Stat label="Proficiency" value={signed(sheet.proficiency)} />
+    </div>
+  );
+}
+
+function StatsEdit({ value, update, sheet }: Readonly<SheetProps>) {
+  const stat = (key: 'ac' | 'proficiency') => (v: number | undefined) => update((d) => setStat(d, key, v));
+  return (
+    <div className="sheet-stats">
+      <EditStat label="Armour">
+        <NumberInput value={value.stats?.ac} placeholder={sheet.ac} onChange={stat('ac')} />
+      </EditStat>
+      <EditStat label="Speed">
+        <NumberInput value={value.speed} min={0} onChange={(v) => update((d) => ({ ...d, speed: v ?? 30 }))} />
+      </EditStat>
+      <Stat label="Initiative" value={signed(sheet.initiative)} />
+      <EditStat label="Proficiency">
+        <NumberInput value={value.stats?.proficiency} placeholder={sheet.proficiency} onChange={stat('proficiency')} />
+      </EditStat>
+    </div>
   );
 }
 
@@ -92,70 +221,122 @@ function Stat({ label, value }: Readonly<{ label: string; value: string | number
   );
 }
 
-function Defenses({ token }: Readonly<{ token: TokenView }>) {
-  const s = token.sheet!;
-  const rows: [string, string[]][] = [
-    ['Resistant', s.resistances],
-    ['Immune', s.immunities],
-    ['Vulnerable', s.vulnerabilities],
-  ];
-  const shown = rows.filter(([, list]) => list.length > 0);
+function EditStat({ label, children }: Readonly<{ label: string; children: React.ReactNode }>) {
+  return (
+    <label className="stat stat-edit">
+      {children}
+      <span>{label}</span>
+    </label>
+  );
+}
+
+/** Hit points and maximum, plus quick damage and healing. */
+function HpEdit({ value, update, sheet }: Readonly<SheetProps>) {
+  const [amount, setAmount] = useState<number | undefined>();
+  const apply = (sign: number) => {
+    if (!amount) return;
+    const hp = Math.min(sheet.maxHp, Math.max(0, (value.hp ?? sheet.maxHp) + sign * amount));
+    update((d) => withKey(d, 'hp', hp >= sheet.maxHp ? undefined : hp), true);
+    setAmount(undefined);
+  };
+  return (
+    <div className="hp-edit">
+      <label>
+        <span>HP</span>
+        <NumberInput
+          value={value.hp}
+          placeholder={`${sheet.maxHp}`}
+          onChange={(v) => update((d) => withKey(d, 'hp', v))}
+        />
+      </label>
+      <label>
+        <span>Max</span>
+        <NumberInput
+          value={value.stats?.maxHp}
+          min={1}
+          placeholder={sheet.maxHp}
+          onChange={(v) => update((d) => setStat(d, 'maxHp', v))}
+        />
+      </label>
+      <NumberInput value={amount} min={0} onChange={setAmount} placeholder="±" />
+      <button className="btn small" onClick={() => apply(-1)} title="Take damage">
+        Hit
+      </button>
+      <button className="btn small" onClick={() => apply(1)} title="Heal">
+        Heal
+      </button>
+    </div>
+  );
+}
+
+const DEFENSES = [
+  ['resistances', 'Resistant'],
+  ['immunities', 'Immune'],
+  ['vulnerabilities', 'Vulnerable'],
+] as const;
+
+function Defenses({ value, update, sheet, edit }: Readonly<SheetProps>) {
+  const shown = DEFENSES.filter(([key]) => edit || sheet[key].length > 0);
   if (!shown.length) return null;
   return (
     <dl className="defenses">
-      {shown.map(([label, list]) => (
-        <div key={label}>
+      {shown.map(([key, label]) => (
+        <div key={key}>
           <dt>{label}</dt>
-          <dd>{list.join(', ')}</dd>
+          <dd>
+            {edit ? (
+              <input
+                key={listText(value.stats?.[key])}
+                defaultValue={listText(value.stats?.[key])}
+                placeholder={listText(sheet[key]) || 'e.g. fire, cold'}
+                onBlur={(e) => update((d) => setStat(d, key, parseList(e.target.value)), true)}
+              />
+            ) : (
+              sheet[key].join(', ')
+            )}
+          </dd>
         </div>
       ))}
     </dl>
   );
 }
 
-function Equipment({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
-  const items = token.inventory ?? [];
+/** Edit mode: keep, place or delete what's on the sheet. */
+function SheetFoot({ session, kind, value }: Readonly<SheetProps>) {
+  const [confirm, setConfirm] = useState(false);
+  const remove = () => {
+    if (!confirm) {
+      setConfirm(true);
+      return;
+    }
+    if (kind === 'token') session.deleteToken(value.id);
+    else session.deleteActor(value.id);
+    session.openSheet(undefined);
+  };
+  const saveAsActor = () => {
+    const id = uniqueId(value.name, (x) => session.actors.has(x));
+    session.saveActor(actorFromToken({ x: 0, y: 0, ...value }, id));
+    session.showError(`Saved ${value.name} to the Actors list`);
+  };
   return (
-    <>
-      <h4>Attacks</h4>
-      <ul className="rows">
-        {token.sheet!.attacks.map((a) => {
-          const tip = attackTip(a);
-          return (
-            <li key={a.name} className="row">
-              <span className="row-name">{a.name}</span>
-              <span className="row-detail">{tip.facts.slice(1).join(' · ')}</span>
-            </li>
-          );
-        })}
-      </ul>
-      <h4>Inventory</h4>
-      {items.length === 0 && <p className="muted">Empty-handed.</p>}
-      <div className="bag">
-        {items.map((e, i) => (
-          <BagItem key={`${e.item}-${i}`} entry={e} onEquip={(on) => session.equip(token.id, i, on)} />
-        ))}
-      </div>
-    </>
-  );
-}
-
-function BagItem({
-  entry,
-  onEquip,
-}: Readonly<{ entry: NonNullable<TokenView['inventory']>[number]; onEquip: (equipped: boolean) => void }>) {
-  // Weapons and armor are the same in both editions.
-  const item = srdFor('2014').items.get(entry.item);
-  return (
-    <button
-      className={entry.equipped ? 'bag-slot equipped' : 'bag-slot'}
-      aria-label={item?.name ?? entry.item}
-      disabled={!item || item.type === 'gear'}
-      onClick={() => onEquip(!entry.equipped)}
-    >
-      <IconFace icon={{ ...itemIcon(item), art: itemArt(item) }} size={24} />
-      {entry.qty > 1 && <span className="bag-qty">{entry.qty}</span>}
-      <TipCard tip={itemTip(item, entry.item, entry.equipped)} />
-    </button>
+    <footer className="sheet-foot">
+      <span className="muted">Changes save as you type.</span>
+      <span className="ed-spacer" />
+      {kind === 'token' ? (
+        <button className="btn small" onClick={saveAsActor} title="Keep a copy in the Actors list">
+          Save as actor
+        </button>
+      ) : (
+        <button
+          className="btn small"
+          onClick={() => session.spawn({ kind: 'actor', id: value.id }, session.viewCentre())}
+        >
+          Place on map
+        </button>
+      )}
+      <button className={confirm ? 'btn small danger' : 'btn small'} onClick={remove} onBlur={() => setConfirm(false)}>
+        {confirm ? 'Really delete?' : 'Delete'}
+      </button>
+    </footer>
   );
 }

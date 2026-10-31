@@ -38,8 +38,13 @@ on, shared live between players.
   (long range shows disadvantage), click to attack. The server rolls to hit
   against AC, crits on a 20, applies resistances, vulnerabilities and
   immunities, and posts the result in chat.
-- **Character sheet (C).** Abilities, AC, HP, attacks and inventory; tick
-  _equipped_ to change weapons or armor.
+- **Character sheet (C, or double-click your token).** Abilities, AC, HP and
+  tabs for Inventory, Spells, Features and Effects; click an item to equip it.
+- **Arrange the action bar.** Drag spells, attacks, features and items from
+  the sheet onto the bar, and drag tiles to swap them. The layout is saved
+  on the token (`hotbar`); new abilities fill the gaps.
+- **Moving.** Click where to go, drag your token there, or step with the
+  arrow keys.
 - **Both editions.** Worlds play 2014 rules by default (`"rules"` in
   `world.json`), and any character can opt into 2024 rules with
   `"stats": { "rules": "2024" }`. Monsters come from SRD 5.1 or 5.2 to match;
@@ -90,6 +95,23 @@ pnpm check-world   # validate world files
 Development is red-green: write a failing test, watch it fail, then make it
 pass. Version control is [jj](https://jj-vcs.github.io/jj/), colocated with
 git, so plain git tools still work.
+
+### GM tools
+
+- **Edit any token.** The character sheet has an edit mode for the GM:
+  press E (or _Edit_ on the sheet, or click the name on the action bar).
+  Name, abilities, HP (with quick Hit and Heal), AC, speed, proficiency,
+  defences, inventory and spells become editable in place, and a _Details_
+  tab holds the picture, size, vision, light, hidden, controllers, monster,
+  rules edition, class and level. Every change saves itself.
+- **Actors.** The GM's side panel has an _Actors_ tab: every creature on the
+  map (click to find it, toggle hidden, edit) and the Actors list, kept in
+  `actors/` in the world folder and grouped by `folder`. Drag an actor onto
+  the map to place a copy; _Save as actor_ keeps any token for later.
+- **Compendium.** The _Compendium_ tab searches the SRD monsters, weapons,
+  armour, gear and spells, from the 2014 or 2024 book. Drag a monster onto
+  the map to place it (tick _Place new creatures hidden_ for an ambush), or
+  drop an item or spell on a creature to give it.
 
 ## Not yet
 

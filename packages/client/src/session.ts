@@ -1,5 +1,6 @@
 import {
   currentTurn,
+  type Actor,
   type Chunk,
   type ChatMessage,
   type ClientMessage,
@@ -9,14 +10,22 @@ import {
   type Point,
   type Rect,
   type ServerMessage,
+  type SpawnSource,
   type Token,
   type TokenView,
   type WorldInfo,
 } from '@vtt/shared';
 
+import { dropMessage, type DragPayload } from './drops.ts';
 import { aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
+
+/** What a character sheet shows: a token on the map or (GM only) an actor in the list. */
+export interface SheetTarget {
+  kind: 'token' | 'actor';
+  id: string;
+}
 
 const CHAT_HISTORY = 200;
 
@@ -58,6 +67,14 @@ export class Session {
   /** The spell the selected token is aiming, and what it has picked so far. */
   aiming?: Aiming;
   error?: { message: string; at: number };
+  /** GM only: everyone at the table. */
+  players: Player[] = [];
+  /** GM only: the Actors list. */
+  readonly actors = new Map<string, Actor>();
+  /** The open character sheet; `edit` is the GM's edit mode. */
+  sheet?: SheetTarget & { edit: boolean };
+  /** GM only: creatures dropped on the map arrive hidden from the players. */
+  spawnHidden = false;
   /** The part of the world on screen, kept up to date by the map. */
   viewRect?: Rect;
   /** Bumped on every change; React re-renders on it. */
@@ -230,6 +247,63 @@ export class Session {
     this.send({ t: 'equip', token, item, equipped });
   }
 
+  // GM tools ---------------------------------------------------------------
+
+  /** Opens a sheet (or closes it with undefined); only the GM can open one for editing. */
+  openSheet(target: SheetTarget | undefined, edit = false): void {
+    this.sheet = target && { ...target, edit: edit && this.you?.role === 'gm' };
+    this.changed();
+  }
+
+  setSheetEdit(edit: boolean): void {
+    if (this.sheet) this.openSheet(this.sheet, edit);
+  }
+
+  /** Saves how the creature's action bar is arranged. */
+  setHotbar(token: string, slots: (string | null)[]): void {
+    this.send({ t: 'hotbar', token, slots });
+  }
+
+  setSpawnHidden(hidden: boolean): void {
+    this.spawnHidden = hidden;
+    this.changed();
+  }
+
+  editToken(token: string, patch: Record<string, unknown>): void {
+    if (Object.keys(patch).length) this.send({ t: 'editToken', token, patch });
+  }
+
+  deleteToken(token: string): void {
+    this.send({ t: 'deleteToken', token });
+  }
+
+  spawn(from: SpawnSource, at: Point): void {
+    this.send({ t: 'spawn', from, at, hidden: this.spawnHidden });
+  }
+
+  saveActor(actor: Actor): void {
+    this.send({ t: 'saveActor', actor });
+  }
+
+  deleteActor(id: string): void {
+    this.send({ t: 'deleteActor', actor: id });
+  }
+
+  /** Something dragged from the Actors list or Compendium was dropped on the map at `p`. */
+  drop(payload: DragPayload, p: Point): void {
+    if (!this.world) return;
+    const ctx = { tokens: this.tokens.values(), gridSize: this.world.gridSize, rules: this.world.rules };
+    const msg = dropMessage(payload, p, { ...ctx, hidden: this.spawnHidden });
+    if ('error' in msg) this.showError(msg.error);
+    else this.send(msg);
+  }
+
+  /** The centre of the screen, where Compendium buttons place things. */
+  viewCentre(): Point {
+    const r = this.viewRect;
+    return r ? [r.x + r.w / 2, r.y + r.h / 2] : (this.world?.start ?? [0, 0]);
+  }
+
   /** Visible creatures (tokens with stats) on screen: who joins a fight the GM starts. */
   fightersInView(): string[] {
     const r = this.viewRect;
@@ -299,6 +373,10 @@ export class Session {
       case 'combat':
         this.onCombat(msg.combat);
         return true;
+      case 'actor':
+      case 'actorGone':
+        this.onActor(msg);
+        return true;
       case 'error':
         this.showError(msg.message);
         return false;
@@ -326,6 +404,9 @@ export class Session {
     for (const t of msg.tokens) this.tokens.set(t.id, t);
     this.chat = msg.chat;
     this.combat = msg.combat;
+    this.players = msg.players ?? [];
+    this.actors.clear();
+    for (const a of msg.actors ?? []) this.actors.set(a.id, a);
     // A reconnect starts from scratch: ask for the chunks again.
     this.chunks.clear();
     this.emit('welcome');
@@ -333,9 +414,19 @@ export class Session {
     if (this.view.length) this.send({ t: 'view', chunks: this.view });
   }
 
+  private onActor(msg: Extract<ServerMessage, { t: 'actor' | 'actorGone' }>): void {
+    if (msg.t === 'actor') {
+      this.actors.set(msg.actor.id, msg.actor);
+      return;
+    }
+    this.actors.delete(msg.id);
+    if (this.sheet?.kind === 'actor' && this.sheet.id === msg.id) this.sheet = undefined;
+  }
+
   private onTokenGone(id: string): boolean {
     if (!this.tokens.delete(id)) return false;
     if (this.selected === id) this.select(undefined);
+    if (this.sheet?.kind === 'token' && this.sheet.id === id) this.sheet = undefined;
     this.emit('tokenGone', id);
     return true;
   }

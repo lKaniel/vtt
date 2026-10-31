@@ -121,5 +121,14 @@ export const TokenSchema = z.object({
   summon: z.object({ by: id, spell: id, concentration: z.boolean().default(false) }).optional(),
   /** Acts on this token's turn instead of its own (summons, companions). */
   leader: id.optional(),
+  /** How its controller arranged the action bar: one tile reference per slot ("spell:fire-bolt"), or null. */
+  hotbar: z.array(z.string().max(80).nullable()).max(60).optional(),
 });
 export type Token = z.infer<typeof TokenSchema>;
+
+/**
+ * A creature kept in the GM's Actors list, ready to be placed on the map:
+ * a token without a position. `folder` groups it in the list.
+ */
+export const ActorSchema = TokenSchema.omit({ x: true, y: true }).extend({ folder: z.string().min(1).optional() });
+export type Actor = z.infer<typeof ActorSchema>;

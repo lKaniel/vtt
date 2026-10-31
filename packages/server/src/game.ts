@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   canControlToken,
   DoorStateSchema,
+  EditionSchema,
   tokensVisibleTo,
   findPath,
   PointSchema,
@@ -21,6 +22,7 @@ import type { RawData, WebSocket } from 'ws';
 import { z } from 'zod';
 import { CombatActions } from './combat-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
+import { GmActions } from './gm-actions.ts';
 import { SpellActions } from './spell-actions.ts';
 import { Refusal, Table } from './table.ts';
 import type { WorldStore } from './world-store.ts';
@@ -48,6 +50,25 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('dropConcentration'), token: z.string() }),
   z.object({ t: z.literal('removeEffect'), token: z.string(), effect: z.string() }),
   z.object({ t: z.literal('rest'), tokens: z.array(z.string()).min(1).max(100), kind: z.enum(['short', 'long']) }),
+  z.object({ t: z.literal('editToken'), token: z.string(), patch: z.record(z.string(), z.unknown()) }),
+  z.object({ t: z.literal('deleteToken'), token: z.string() }),
+  z.object({
+    t: z.literal('hotbar'),
+    token: z.string(),
+    slots: z.array(z.string().max(80).nullable()).max(60),
+  }),
+  z.object({
+    t: z.literal('spawn'),
+    from: z.discriminatedUnion('kind', [
+      z.object({ kind: z.literal('monster'), id: z.string(), rules: EditionSchema }),
+      z.object({ kind: z.literal('actor'), id: z.string() }),
+    ]),
+    at: PointSchema,
+    hidden: z.boolean().optional(),
+  }),
+  // The actor itself is checked by GmActions, so a broken one gets a readable refusal.
+  z.object({ t: z.literal('saveActor'), actor: z.unknown() }),
+  z.object({ t: z.literal('deleteActor'), actor: z.string() }),
 ]);
 
 interface Client {
@@ -77,6 +98,7 @@ export class Game {
   private combat: CombatActions;
   private spells: SpellActions;
   private features: FeatureActions;
+  private gm: GmActions;
 
   constructor(
     private store: WorldStore,
@@ -86,6 +108,7 @@ export class Game {
     this.combat = new CombatActions(table, (attack) => this.narrate({ attack }));
     this.spells = new SpellActions(table, (spell) => this.narrate({ spell }));
     this.features = new FeatureActions(table);
+    this.gm = new GmActions(table);
     store.on('chunk', (key, chunk) => {
       for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
       // A door or a light changed: what everyone can see may have too.
@@ -101,6 +124,8 @@ export class Game {
       this.combat.forget(id);
       this.refreshAll();
     });
+    store.on('actor', (actor) => this.toGms({ t: 'actor', actor }));
+    store.on('actorGone', (id) => this.toGms({ t: 'actorGone', id }));
     store.on('combat', (combat) => {
       for (const c of this.clients) this.send(c, { t: 'combat', combat: combat ?? null });
     });
@@ -126,6 +151,7 @@ export class Game {
       tokens: [...client.visible].map((id) => this.view(this.store.tokens.get(id)!, player)),
       chat: this.chat.filter((m) => !m.gmOnly || player.role === 'gm'),
       combat: this.store.combat ?? null,
+      ...(player.role === 'gm' ? { players: this.store.world.players, actors: [...this.store.actors.values()] } : {}),
     });
     ws.on('message', (data) => {
       const msg = parseClientMessage(data);
@@ -205,6 +231,26 @@ export class Game {
     }
   }
 
+  /** The GM's tools. */
+  private dispatchGm(c: Client, msg: ClientMessage): void {
+    switch (msg.t) {
+      case 'editToken':
+        return this.gm.edit(c.player, msg.token, msg.patch);
+      case 'deleteToken':
+        return this.gm.delete(c.player, msg.token);
+      case 'hotbar':
+        return this.onHotbar(c, msg.token, msg.slots);
+      case 'spawn':
+        return this.gm.spawn(c.player, msg.from, msg.at, msg.hidden);
+      case 'saveActor':
+        return this.gm.saveActor(c.player, msg.actor);
+      case 'deleteActor':
+        return this.gm.deleteActor(c.player, msg.actor);
+      default:
+        return undefined;
+    }
+  }
+
   /** Spells, features, effects and rests. */
   private dispatchMagic(c: Client, msg: ClientMessage): void {
     switch (msg.t) {
@@ -219,7 +265,7 @@ export class Game {
       case 'rest':
         return this.features.rest(c.player, msg.tokens, msg.kind);
       default:
-        return undefined;
+        return this.dispatchGm(c, msg);
     }
   }
 
@@ -252,6 +298,13 @@ export class Game {
     if (path.points.length < 2) return;
     const walker = this.combat.move(token, path.feet);
     this.store.setToken({ ...walker, x, y }, path.points);
+  }
+
+  private onHotbar(c: Client, id: string, slots: (string | null)[]): void {
+    const token = this.store.tokens.get(id);
+    if (!token || !c.visible.has(id)) return this.fail(c, 'No such token');
+    if (!canControlToken(token, c.player)) return this.fail(c, `You don't control ${token.name}`);
+    this.store.setToken({ ...token, hotbar: slots });
   }
 
   private onDoor(c: Client, msg: Extract<ClientMessage, { t: 'door' }>): void {
@@ -297,6 +350,10 @@ export class Game {
   /** A message from the game itself: initiative, attack results. */
   private narrate(content: Pick<ChatMessage, 'text' | 'attack' | 'spell'>): void {
     this.post({ id: randomUUID(), time: Date.now(), from: 'Combat', color: '#c8b48a', ...content });
+  }
+
+  private toGms(msg: ServerMessage): void {
+    for (const c of this.clients) if (c.player.role === 'gm') this.send(c, msg);
   }
 
   private fail(c: Client, message: string): void {

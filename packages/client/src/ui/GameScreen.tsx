@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { actionTiles } from '../actions.ts';
 import { MapView } from '../canvas/MapView.ts';
+import { hotbarTiles } from '../hotbar.ts';
 import { Session } from '../session.ts';
+import { stepTarget } from '../stepping.ts';
 import { activateTile, ActionBar } from './ActionBar.tsx';
 import { CharacterSheet } from './CharacterSheet.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
@@ -11,7 +12,6 @@ import { useSession } from './useSession.ts';
 
 export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; onLeave: () => void }>) {
   const [session] = useState(() => new Session(playerId));
-  const [sheetOpen, setSheetOpen] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   useSession(session);
 
@@ -29,8 +29,9 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return;
-      if (e.key === 'c') setSheetOpen((open) => !open);
+      if (isTyping(e.target)) return;
+      if (e.key === 'c') toggleSheet(session);
+      else if (e.key === 'e') toggleEditor(session);
       else handleGameKey(session, e);
     };
     addEventListener('keydown', onKey);
@@ -55,28 +56,61 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
       </header>
       <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />
       <PartyBar session={session} />
-      <ActionBar session={session} onSheet={() => setSheetOpen((open) => !open)} />
-      {sheetOpen && <CharacterSheet session={session} onClose={() => setSheetOpen(false)} />}
+      <ActionBar session={session} onSheet={() => toggleSheet(session)} />
+      <CharacterSheet session={session} />
       <ChatPanel session={session} />
       <Toast session={session} />
     </div>
   );
 }
 
+function isTyping(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement
+  );
+}
+
+/** C opens the selected creature's sheet, or closes the open one. */
+function toggleSheet(session: Session): void {
+  if (session.sheet) session.openSheet(undefined);
+  else if (session.selected) session.openSheet({ kind: 'token', id: session.selected });
+}
+
+/** GM: E switches the open sheet to edit mode and back, or opens the selected creature's sheet for editing. */
+function toggleEditor(session: Session): void {
+  if (session.you?.role !== 'gm') return;
+  if (session.sheet) session.setSheetEdit(!session.sheet.edit);
+  else if (session.selected) session.openSheet({ kind: 'token', id: session.selected }, true);
+}
+
+/** Arrow keys walk the selected creature one square. */
+function step(session: Session, e: KeyboardEvent): boolean {
+  const token = session.selected ? session.tokens.get(session.selected) : undefined;
+  const to = token && session.world && stepTarget(token, e.key, session.world.gridSize);
+  if (!token || !to) return false;
+  e.preventDefault();
+  session.move(token.id, to);
+  return true;
+}
+
+/** Esc closes the sheet, puts away a readied attack or spell, or lets go of the selection. */
+function backOut(session: Session): void {
+  if (session.sheet) session.openSheet(undefined);
+  else if (session.armed ?? session.aiming) session.arm(undefined);
+  else session.select(undefined);
+}
+
 /** Esc backs out, 1-0 use the action bar's tiles, Space ends your turn. */
 function handleGameKey(session: Session, e: KeyboardEvent): void {
-  if (e.key === 'Escape') {
-    if (session.armed ?? session.aiming) session.arm(undefined);
-    else session.select(undefined);
-    return;
-  }
+  if (step(session, e)) return;
+  if (e.key === 'Escape') return backOut(session);
   if (e.key === ' ' && session.isMyTurn()) {
     e.preventDefault();
     session.endTurn();
     return;
   }
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
-  const tile = token && actionTiles(token).find((t) => t.hotkey === e.key);
+  const tile = token && hotbarTiles(token).find((t) => t?.hotkey === e.key);
   if (token && tile && !tile.spent) activateTile(session, token, tile);
 }
 

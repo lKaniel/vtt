@@ -1,5 +1,6 @@
 import { chunkKey, type Point, type Rect, type Wall } from '@vtt/shared';
 import { Application, Container, CullerPlugin, extensions, Graphics, type FederatedPointerEvent } from 'pixi.js';
+import { DRAG_TYPE, type DragPayload } from '../drops.ts';
 import type { Session } from '../session.ts';
 import { cuesOf } from '../feedback.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
@@ -26,6 +27,9 @@ interface Drag {
   last: Point;
   panning: boolean;
   button: number;
+  /** Set when the drag started on a token you control: dropping it walks the token there. */
+  token?: string;
+  moved?: boolean;
 }
 
 /**
@@ -60,6 +64,9 @@ export class MapView {
   constructor(private session: Session) {
     this.chunks = new ChunkLayer(session);
     this.tokens = new TokenLayer(session);
+    this.tokens.onGrab = (token, at) => {
+      this.drag = { start: at, last: at, panning: false, button: 0, token };
+    };
     this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
   }
 
@@ -126,6 +133,8 @@ export class MapView {
     this.app.canvas.addEventListener('contextmenu', (e) => {
       e.preventDefault();
     });
+    this.app.canvas.addEventListener('dragover', this.onDragOver);
+    this.app.canvas.addEventListener('drop', this.onDrop);
     this.app.renderer.on('resize', () => {
       this.vision?.resize();
       this.dirty = true;
@@ -285,6 +294,21 @@ export class MapView {
     this.dirty = true;
   };
 
+  /** The GM drags actors, monsters, items and spells in from the side panel. */
+  private onDragOver = (e: DragEvent): void => {
+    if (!e.dataTransfer?.types.includes(DRAG_TYPE)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  private onDrop = (e: DragEvent): void => {
+    const data = e.dataTransfer?.getData(DRAG_TYPE);
+    if (!data) return;
+    e.preventDefault();
+    const rect = this.app.canvas.getBoundingClientRect();
+    this.session.drop(JSON.parse(data) as DragPayload, this.screenToWorld(e.clientX - rect.left, e.clientY - rect.top));
+  };
+
   private onPointerDown(e: FederatedPointerEvent): void {
     const p: Point = [e.global.x, e.global.y];
     this.drag = { start: p, last: p, panning: e.button !== 0, button: e.button };
@@ -298,7 +322,12 @@ export class MapView {
   }
 
   private dragTo(drag: Drag, p: Point): void {
-    if (Math.hypot(p[0] - drag.start[0], p[1] - drag.start[1]) > DRAG_THRESHOLD) drag.panning = true;
+    const far = Math.hypot(p[0] - drag.start[0], p[1] - drag.start[1]) > DRAG_THRESHOLD;
+    if (drag.token) {
+      if (far) drag.moved = true;
+      return;
+    }
+    if (far) drag.panning = true;
     if (drag.panning) {
       this.center = [
         this.center[0] - (p[0] - drag.last[0]) / this.zoom,
@@ -312,6 +341,10 @@ export class MapView {
   private onPointerUp(e: FederatedPointerEvent): void {
     const drag = this.drag;
     this.drag = undefined;
+    if (drag?.token) {
+      if (drag.moved) this.session.move(drag.token, this.screenToWorld(e.global.x, e.global.y));
+      return;
+    }
     if (!drag || drag.panning || drag.button !== 0) return;
     // Clicking the ground with an attack ready puts it away instead of walking.
     if (this.session.armed) return this.session.arm(undefined);
