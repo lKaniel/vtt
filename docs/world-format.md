@@ -105,6 +105,9 @@ rules: `bright` light, then `dim` light beyond it.
 | `animation` | `"flicker"` for flames, `"pulse"` for magic.                                     |
 | `darkness`  | Magical darkness (the Darkness spell) of radius `bright + dim` instead of light. |
 
+The GM can also draw walls, doors and windows, place, drag and erase lights,
+and set the time of day from the map tools in the game (bottom left).
+
 Walls stop light like they stop sight. A token carries a light with the same
 fields in `light`. Magical darkness puts out every other light, and only
 devil's sight, truesight, blindsight and tremorsense work inside it.

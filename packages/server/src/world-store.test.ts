@@ -59,6 +59,26 @@ describe('WorldStore', () => {
     }
   });
 
+  it('changes the time of day without starting the world over', async () => {
+    const { dir, store } = await loaded();
+    const events: string[] = [];
+    store.on('lighting', () => events.push('lighting'));
+    store.on('world', () => events.push('world'));
+    store.setDarkness(0.7);
+    await store.flush();
+    expect(JSON.parse(await readFile(join(dir, 'world.json'), 'utf8'))).toMatchObject({ darkness: 0.7 });
+    store.watch();
+    try {
+      const world = JSON.parse(await readFile(join(dir, 'world.json'), 'utf8')) as object;
+      const lit = new Promise((r) => store.once('lighting', r));
+      await writeFile(join(dir, 'world.json'), JSON.stringify({ ...world, darkness: 0.2 }));
+      await lit;
+      expect(events).toEqual(['lighting', 'lighting']);
+    } finally {
+      store.close();
+    }
+  });
+
   it('refuses to start without a valid world.json', async () => {
     const { dir } = await loaded();
     await writeFile(join(dir, 'world.json'), '{}');

@@ -14,6 +14,7 @@ import { cuesOf } from '../feedback.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
 import { CameraMotion } from './camera-motion.ts';
 import { EffectsLayer } from './EffectsLayer.ts';
+import { MapEditor } from './MapEditor.ts';
 import { PathPreview } from './PathPreview.ts';
 import { TokenLayer } from './TokenLayer.ts';
 import { Vision } from './Vision.ts';
@@ -58,6 +59,7 @@ export class MapView {
   private tokens: TokenLayer;
   private effects: EffectsLayer;
   private preview = new PathPreview();
+  private editor: MapEditor;
   private vision?: Vision;
 
   /** World point at the centre of the screen. */
@@ -86,6 +88,7 @@ export class MapView {
     this.tokens.onGrab = (token, at) => {
       this.drag = { start: at, last: at, at: performance.now(), panning: false, button: 0, token };
     };
+    this.editor = new MapEditor(session);
     this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
   }
 
@@ -106,7 +109,7 @@ export class MapView {
     host.appendChild(this.app.canvas);
     this.ground.addChild(this.chunks.ground, this.grid, this.chunks.walls);
     this.camera.addChild(this.ground, this.tokens.container, this.effects.container);
-    this.overhead.addChild(this.preview.container, this.effects.labels);
+    this.overhead.addChild(this.preview.container, this.effects.labels, this.editor.container);
     // Previews are drawn over tokens; clicks must still reach the tokens below.
     this.overhead.eventMode = 'none';
     this.vision = new Vision(this.app, this.session);
@@ -172,6 +175,7 @@ export class MapView {
         const chunk = s.chunks.get(key);
         if (chunk) this.chunks.draw(key, chunk);
         this.wallsChanged();
+        this.editor.redraw();
       }),
       s.on('chunkGone', (key) => {
         if (this.chunks.remove(key)) this.wallsChanged();
@@ -203,11 +207,24 @@ export class MapView {
       s.on('chat', (message) => {
         this.effects.play(cuesOf(message), performance.now());
       }),
+      s.on('lighting', visionChanged),
+      s.on('mapTool', () => {
+        this.onMapTool();
+      }),
       s.on('focus', (p) => {
         this.cam.glideTo(p);
         this.dirty = true;
       }),
     );
+  }
+
+  /** While a map tool is in use, clicks go to it instead of tokens and doors. */
+  private onMapTool(): void {
+    const editing = !!this.session.mapTool;
+    this.tokens.container.eventMode = editing ? 'none' : 'passive';
+    this.chunks.walls.eventMode = editing ? 'none' : 'passive';
+    this.editor.cancel();
+    this.updatePreview(true);
   }
 
   private onWelcome(): void {
@@ -264,6 +281,7 @@ export class MapView {
     this.tokens.container.filterArea = this.ground.filterArea;
     this.requestChunks();
     this.drawGrid();
+    this.editor.setZoom(this.zoom);
     this.tokens.showLabels(this.zoom >= LOD.labels);
     this.chunks.showDoors(this.zoom >= LOD.doors);
   }
@@ -335,6 +353,8 @@ export class MapView {
 
   private onPointerDown(e: FederatedPointerEvent): void {
     const p: Point = [e.global.x, e.global.y];
+    const at = this.screenToWorld(p[0], p[1]);
+    if (this.editor.pointerDown({ at, button: e.button, free: e.shiftKey })) return;
     this.drag = { start: p, last: p, at: performance.now(), panning: e.button !== 0, button: e.button };
     this.cam.hold();
   }
@@ -343,6 +363,7 @@ export class MapView {
     const p: Point = [e.global.x, e.global.y];
     if (this.drag) this.dragTo(this.drag, p);
     this.hoverPoint = this.screenToWorld(p[0], p[1]);
+    this.editor.pointerMove(this.hoverPoint, e.shiftKey);
     this.updatePreview(false);
   }
 
@@ -363,6 +384,7 @@ export class MapView {
   }
 
   private onPointerUp(e: FederatedPointerEvent): void {
+    this.editor.pointerUp({ at: this.screenToWorld(e.global.x, e.global.y), button: e.button, free: e.shiftKey });
     const drag = this.drag;
     this.drag = undefined;
     if (drag?.token) {

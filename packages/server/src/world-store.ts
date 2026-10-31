@@ -19,6 +19,8 @@ import { classify, crossCheck, parseFile, type FileKind } from './files.ts';
 
 interface StoreEvents {
   world: [World];
+  /** Only the time of day changed: no need to start over. */
+  lighting: [number];
   chunk: [string, Chunk];
   chunkGone: [string];
   /** `path` is set when the token walked there inside the game. */
@@ -153,6 +155,12 @@ export class WorldStore extends EventEmitter<StoreEvents> {
     this.write(`chunks/${key}.json`, chunk);
   }
 
+  setDarkness(darkness: number): void {
+    this.world = { ...this.world, darkness };
+    this.emit('lighting', darkness);
+    this.write('world.json', this.world);
+  }
+
   setCombat(combat: Combat | undefined): void {
     this.combat = combat;
     this.emit('combat', combat);
@@ -209,8 +217,7 @@ export class WorldStore extends EventEmitter<StoreEvents> {
     this.written.set(rel, text);
     switch (file.kind) {
       case 'world':
-        this.world = file.data;
-        if (live) this.emit('world', file.data);
+        this.onWorld(file.data, live);
         break;
       case 'chunk':
         this.chunks.set(file.key, file.data);
@@ -229,6 +236,14 @@ export class WorldStore extends EventEmitter<StoreEvents> {
         if (live) this.emit('combat', file.data);
         break;
     }
+  }
+
+  private onWorld(world: World, live: boolean): void {
+    const before = this.world;
+    this.world = world;
+    if (!live) return;
+    if (onlyDarknessChanged(before, world)) this.emit('lighting', world.darkness);
+    else this.emit('world', world);
   }
 
   /** Writes atomically (temp file + rename) and one write per file at a time. */
@@ -261,4 +276,9 @@ export class WorldStore extends EventEmitter<StoreEvents> {
   async flush(): Promise<void> {
     await Promise.all(this.writeQueue.values());
   }
+}
+
+/** True when two world settings differ in nothing but the time of day. */
+function onlyDarknessChanged(a: World, b: World): boolean {
+  return JSON.stringify({ ...a, darkness: 0 }) === JSON.stringify({ ...b, darkness: 0 });
 }

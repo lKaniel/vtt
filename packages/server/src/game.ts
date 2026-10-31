@@ -5,6 +5,7 @@ import {
   EditionSchema,
   tokensVisibleTo,
   findPath,
+  MapEditSchema,
   PointSchema,
   roll,
   editionOf,
@@ -23,6 +24,7 @@ import { z } from 'zod';
 import { CombatActions } from './combat-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
+import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
 import { Refusal, Table } from './table.ts';
 import type { WorldStore } from './world-store.ts';
@@ -70,6 +72,8 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   // The actor itself is checked by GmActions, so a broken one gets a readable refusal.
   z.object({ t: z.literal('saveActor'), actor: z.unknown() }),
   z.object({ t: z.literal('deleteActor'), actor: z.string() }),
+  z.object({ t: z.literal('mapEdit'), edit: MapEditSchema }),
+  z.object({ t: z.literal('darkness'), darkness: z.number().min(0).max(1) }),
 ]);
 
 interface Client {
@@ -100,6 +104,7 @@ export class Game {
   private spells: SpellActions;
   private features: FeatureActions;
   private gm: GmActions;
+  private map: MapActions;
 
   constructor(
     private store: WorldStore,
@@ -110,6 +115,7 @@ export class Game {
     this.spells = new SpellActions(table, (spell) => this.narrate({ spell }));
     this.features = new FeatureActions(table);
     this.gm = new GmActions(table);
+    this.map = new MapActions(table);
     store.on('chunk', (key, chunk) => {
       for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
       // A door or a light changed: what everyone can see may have too.
@@ -129,6 +135,10 @@ export class Game {
     store.on('actorGone', (id) => this.toGms({ t: 'actorGone', id }));
     store.on('combat', (combat) => {
       for (const c of this.clients) this.send(c, { t: 'combat', combat: combat ?? null });
+    });
+    store.on('lighting', (darkness) => {
+      for (const c of this.clients) this.send(c, { t: 'lighting', darkness });
+      this.refreshAll();
     });
     store.on('world', () => {
       // Player list or grid changes need a fresh start on every client.
@@ -248,6 +258,10 @@ export class Game {
         return this.gm.saveActor(c.player, msg.actor);
       case 'deleteActor':
         return this.gm.deleteActor(c.player, msg.actor);
+      case 'mapEdit':
+        return this.map.edit(c.player, msg.edit);
+      case 'darkness':
+        return this.map.darkness(c.player, msg.darkness);
       default:
         return undefined;
     }
