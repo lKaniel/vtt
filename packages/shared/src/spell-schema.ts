@@ -59,6 +59,8 @@ const modifiers = {
   markDamage: z.array(RiderDamageSchema).optional(),
   /** Added to the bearer's weapon attack and damage rolls (magic weapon). */
   weaponBonus: z.number().int().optional(),
+  /** The bearer's movement doesn't provoke opportunity attacks (disengage). */
+  disengaged: z.boolean().optional(),
   /** The bearer's speed is 0 (hypnotic pattern). */
   immobile: z.boolean().optional(),
 };
@@ -218,6 +220,30 @@ export const FeatureSchema = z.object({
   effect: EffectTemplateSchema.optional(),
   /** For an effect's `meleeDamage`: the bonus by class level. */
   meleeDamage: LevelTableSchema.optional(),
+  /** Using it gives the creature its speed again as movement (Dash). */
+  dash: z.boolean().optional(),
+  /** Basic actions (by id) this feature lets the creature take as a bonus action (cunning action). */
+  bonusActions: z.array(id).optional(),
+  /** An effect the creature always has (danger sense). */
+  passive: EffectTemplateSchema.optional(),
+  /** Unarmored, AC is 10 + Dex + this ability (unarmored defense). */
+  unarmoredAc: AbilitySchema.optional(),
+  /** false when a shield loses unarmored defense (monk). */
+  unarmoredShield: z.boolean().optional(),
+  /** Uses are this ability's modifier, at least 1 (bardic inspiration). */
+  usesAbility: AbilitySchema.optional(),
+  /** Uses are class level times this, spent a hit point at a time (lay on hands). */
+  poolPerLevel: z.number().int().positive().optional(),
+  /** Spends the uses of this other feature (turn undead uses channel divinity). */
+  usesFrom: id.optional(),
+  /** From this class level a short rest gives every use back (font of inspiration). */
+  shortRestFrom: z.number().int().min(1).max(20).optional(),
+  /** The die size by class level; "{die}" in `spell` stands for it, e.g. "1d{die}". */
+  die: LevelTableSchema.optional(),
+  /** Heals a target from the pool of uses, as much as it's missing (lay on hands). */
+  healPool: z.boolean().optional(),
+  /** Aimed like a spell at creatures or an area: spell fields such as targets, range, area, save, effect. */
+  spell: z.record(z.string(), z.unknown()).optional(),
 });
 export type Feature = z.infer<typeof FeatureSchema>;
 

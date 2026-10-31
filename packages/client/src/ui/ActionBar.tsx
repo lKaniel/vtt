@@ -1,4 +1,4 @@
-import type { Item, TokenView, TurnBudget } from '@vtt/shared';
+import type { FeatureSheet, Item, TokenView, TurnBudget } from '@vtt/shared';
 import { useState } from 'react';
 import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, type Tab } from '../actions.ts';
 import { slotChoices } from '../charges.ts';
@@ -46,8 +46,14 @@ function budgetOf(session: Session, token: TokenView): TurnBudget | undefined {
 export function activateTile(session: Session, token: TokenView, tile: ActionTile): void {
   if (tile.kind === 'attack') session.arm(session.armed === tile.name ? undefined : tile.name);
   else if (tile.kind === 'spell') aimTile(session, tile);
-  else if (tile.kind === 'feature') session.useFeature(token.id, tile.feature.id);
+  else if (tile.kind === 'feature') activateFeature(session, token, tile.feature);
   else readyItem(session, token, tile.item);
+}
+
+/** A feature aimed like a spell waits for its targets; any other goes off at once. */
+function activateFeature(session: Session, token: TokenView, feature: FeatureSheet): void {
+  if (!feature.spell) return session.useFeature(token.id, feature.id);
+  session.aimFeature(session.aiming?.feature === feature.id ? undefined : feature.id);
 }
 
 /** A spell with no slot left can still be cast for free. */

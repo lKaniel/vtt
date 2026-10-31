@@ -261,6 +261,27 @@ describe('Session', () => {
         expect(session.aiming).toBeUndefined();
       });
 
+      it('aims a feature like a spell and uses it on the picked creature', () => {
+        const inspiration = {
+          id: 'bardic-inspiration',
+          name: 'Bardic Inspiration',
+          level: 1,
+          recharge: 'long',
+          action: 'bonus',
+          spell: { targets: 1, range: 60 },
+        };
+        ws.receive({ t: 'token', token: { ...wizard(), sheet: { features: [inspiration] } as never } });
+        session.aimFeature('bardic-inspiration');
+        expect(session.aiming).toMatchObject({ mode: 'creatures', need: 1, feature: 'bardic-inspiration' });
+        session.pickTarget('orc');
+        expect(ws.sent.at(-1)).toEqual({
+          t: 'feature',
+          token: 'hero',
+          feature: 'bardic-inspiration',
+          targets: ['orc'],
+        });
+      });
+
       it('casts with fewer targets on confirm', () => {
         session.aim('magic-missile', 1);
         session.pickTarget('goblin');

@@ -178,3 +178,42 @@ describe('riders on hits', () => {
     expect(tok('goblin2').hp).toBe(7 - (1 + 3) - 3);
   });
 });
+
+describe('basic actions and class features', () => {
+  it('dashes for more movement and dodges until the next turn', () => {
+    const { bo } = fight(['bo', 'hero', 'goblin', 'goblin2']);
+    bo.receive({ t: 'feature', token: 'bo', feature: 'dash' });
+    expect(store.combat!.left).toMatchObject({ move: 60, action: false });
+    store.setCombat({ ...store.combat!, left: { ...store.combat!.left, action: true } });
+    bo.receive({ t: 'feature', token: 'bo', feature: 'dodge' });
+    expect(tok('bo').effects?.[0]).toMatchObject({ name: 'Dodging', disadvantageAgainst: true });
+  });
+
+  it('lays on hands: heals a touched ally from the pool, as much as it misses', () => {
+    store.setToken({ ...tok('bo'), stats: { ...tok('bo').stats, class: 'paladin', level: 2 } });
+    store.setToken({ ...tok('hero'), x: 50, y: 150, hp: 26 });
+    const bo = join_('bo');
+    bo.receive({ t: 'feature', token: 'bo', feature: 'lay-on-hands', targets: ['hero'] });
+    expect(tok('hero').hp).toBeUndefined();
+    expect(tok('bo').spent?.uses).toEqual({ 'lay-on-hands': 4 });
+  });
+
+  it('inspires an ally with a bardic inspiration die', () => {
+    store.setToken({ ...tok('hero'), stats: { ...tok('hero').stats, class: 'bard', abilities: { cha: 16 } } });
+    const ana = join_('ana');
+    ana.receive({ t: 'feature', token: 'hero', feature: 'bardic-inspiration', targets: ['bo'] });
+    expect(tok('bo').effects?.[0]).toMatchObject({ name: 'Bardic Inspiration', attackBonus: '1d8', once: true });
+    expect(tok('hero').spent?.uses).toEqual({ 'bardic-inspiration': 1 });
+  });
+
+  it('turns undead around the cleric, using Channel Divinity', () => {
+    store.setToken({ ...tok('hero'), stats: { ...tok('hero').stats, class: 'cleric', abilities: { wis: 16 } } });
+    store.setToken({ ...tok('goblin'), monster: 'zombie', x: 150, y: 50 });
+    const ana = join_('ana');
+    dice = [face(1)];
+    ana.receive({ t: 'feature', token: 'hero', feature: 'turn-undead', targets: [] });
+    expect(tok('goblin').effects?.[0]).toMatchObject({ name: 'Turned', conditions: ['frightened'] });
+    expect(tok('goblin2').effects).toBeUndefined();
+    expect(tok('hero').spent?.uses).toEqual({ 'channel-divinity': 1 });
+  });
+});

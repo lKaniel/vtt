@@ -1,5 +1,9 @@
 import {
   castProblem,
+  featureProblem,
+  featureSpell,
+  spendUse,
+  type FeatureSheet,
   inArea,
   joinCombat,
   resolveCast,
@@ -16,6 +20,21 @@ import {
   type Token,
 } from '@vtt/shared';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
+
+export interface FeatureRequest {
+  token: string;
+  feature: string;
+  targets?: string[];
+  point?: Point;
+}
+
+/** Hit points a healing pool spends on its target: what it's missing, as far as the pool goes. */
+function poolHealing(feature: FeatureSheet, targets: readonly Fighter[]): number {
+  const target = targets[0];
+  const missing = target ? target.sheet.maxHp - target.sheet.hp : 0;
+  if (missing <= 0) throw new Refusal(`${target?.token.name ?? 'Nobody'} isn't hurt`);
+  return Math.min(missing, feature.left ?? 0);
+}
 
 export interface CastRequest {
   caster: string;
@@ -78,6 +97,33 @@ export class SpellActions {
     const free = req.free && slot > 0 ? ['cast without a spell slot'] : [];
     const notes = [...free, ...summonNotes(summoned), ...pushed, ...drained];
     this.log(caster, { spell, slot, point: req.point }, outcome, notes);
+  }
+
+  /** Uses a feature aimed like a spell (bardic inspiration, lay on hands, turn undead): one use, no slot. */
+  castFeature(player: Player, canSee: (id: string) => boolean, req: FeatureRequest): void {
+    const caster = this.table.actor(player, req.token);
+    const problem = featureProblem(caster.sheet, req.feature);
+    if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
+    const feature = caster.sheet.features.find((f) => f.id === req.feature)!;
+    const cost: Cost = feature.action ?? 'free';
+    this.table.check(caster.token, cost);
+    let spell = featureSpell(feature);
+    const targets = this.targets(
+      caster,
+      spell,
+      { ...req, caster: req.token, spell: spell.id, slot: 0, targets: req.targets ?? [] },
+      canSee,
+    );
+    const spend = feature.healPool ? poolHealing(feature, targets) : 1;
+    if (feature.healPool) spell = { ...spell, heal: String(spend) };
+    this.table.pay(caster.token, cost);
+    this.store.setToken(spendUse(this.store.tokens.get(caster.token.id)!, feature, spend));
+    const outcome = resolveCast(
+      { spell, slot: 0, caster: this.table.fighter(caster.token.id), targets, gridSize: this.grid },
+      this.table.rng,
+    );
+    this.apply(outcome);
+    this.log(caster, { spell, slot: 0, point: req.point }, outcome, this.push(caster.token, outcome));
   }
 
   /** Spends the slot, ends invisibility and starts concentrating. */

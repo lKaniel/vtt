@@ -1,5 +1,6 @@
 import {
   currentTurn,
+  featureSpell,
   type Actor,
   type Chunk,
   type ChatMessage,
@@ -182,6 +183,17 @@ export class Session {
     const spell = caster?.spells.find((s) => s.id === spellId);
     this.armed = undefined;
     this.aiming = spell && { ...aimSpell(spell, slot, caster!.level), ...(free && { free }) };
+    if (this.aiming?.mode === 'self') return this.confirmCast();
+    this.emit('armed');
+    this.changed();
+  }
+
+  /** Readies a feature of the selected token that's aimed like a spell; one without targets goes off at once. */
+  aimFeature(featureId: string | undefined): void {
+    const token = this.selected ? this.tokens.get(this.selected) : undefined;
+    const feature = token?.sheet?.features.find((f) => f.id === featureId);
+    this.armed = undefined;
+    this.aiming = feature && { ...aimSpell(featureSpell(feature), 0, token?.stats?.level ?? 1), feature: feature.id };
     if (this.aiming?.mode === 'self') return this.confirmCast();
     this.emit('armed');
     this.changed();

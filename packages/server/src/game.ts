@@ -53,7 +53,13 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     point: PointSchema.optional(),
     summon: z.string().optional(),
   }),
-  z.object({ t: z.literal('feature'), token: z.string(), feature: z.string() }),
+  z.object({
+    t: z.literal('feature'),
+    token: z.string(),
+    feature: z.string(),
+    targets: z.array(z.string()).max(20).optional(),
+    point: PointSchema.optional(),
+  }),
   z.object({ t: z.literal('useItem'), token: z.string(), item: z.string() }),
   z.object({ t: z.literal('dropConcentration'), token: z.string() }),
   z.object({ t: z.literal('removeEffect'), token: z.string(), effect: z.string() }),
@@ -265,7 +271,7 @@ export class Game {
       case 'cast':
         return this.spells.cast(c.player, (id) => c.visible.has(id), msg);
       case 'feature':
-        return this.features.use(c.player, msg.token, msg.feature);
+        return this.useFeature(c, msg);
       case 'useItem':
         return this.features.useItem(c.player, msg.token, msg.item);
       case 'dropConcentration':
@@ -277,6 +283,14 @@ export class Game {
       default:
         return this.dispatchGm(c, msg);
     }
+  }
+
+  /** Features aimed like spells go through the spell rules; the rest act on their user. */
+  private useFeature(c: Client, msg: Extract<ClientMessage, { t: 'feature' }>): void {
+    if (this.features.aimed(msg.token, msg.feature)) {
+      return this.spells.castFeature(c.player, (id) => c.visible.has(id), msg);
+    }
+    this.features.use(c.player, msg.token, msg.feature);
   }
 
   private onView(c: Client, chunks: string[]): void {

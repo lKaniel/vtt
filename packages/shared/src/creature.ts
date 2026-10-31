@@ -1,4 +1,5 @@
 import type { Content } from './content.ts';
+import { withBasicActions } from './basic-actions.ts';
 import { casterSheet, classOf, featureSheets, levelValue, type CasterSheet, type FeatureSheet } from './classes.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
@@ -68,11 +69,18 @@ export function resolveCreature(token: Token, content: Content): Creature | unde
   const proficiency = defaultProficiency(stats, monster);
   const gear = equippedItems(token, content);
   const { maxHp, ac } = fixedNumbers(stats, monster, classHp(cls, stats, abilities));
+  const features = withBasicActions(featureSheets(token, cls, abilities));
   const base: Creature = {
     edition: content.edition,
     abilities,
     proficiency,
-    ac: ac ?? armorClass(abilities, gear.armor),
+    ac:
+      ac ??
+      armorClass(
+        abilities,
+        gear.armor,
+        features.find((f) => f.unarmoredAc),
+      ),
     hp: Math.min(token.hp ?? maxHp, maxHp),
     maxHp,
     tempHp: token.tempHp ?? 0,
@@ -81,10 +89,10 @@ export function resolveCreature(token: Token, content: Content): Creature | unde
     attacks: creatureAttacks(stats, monster, gear.weapons, { abilities, proficiency }),
     ...defenses(stats, monster),
     ...kindAndSaves(monster, cls, { abilities, proficiency }),
-    ...effectParts(token),
+    ...effectParts(token, features),
     ...classParts(token, cls),
     caster: casterSheet(token, { abilities, proficiency }, content),
-    features: featureSheets(token, cls),
+    features,
   };
   return applyEffects(base);
 }
@@ -99,8 +107,12 @@ function kindAndSaves(
   return { type: monster?.type ?? 'humanoid', saves: saveBonuses(abilities, proficiency, proficient) };
 }
 
-function effectParts(token: Token): Pick<Creature, 'effects' | 'conditions'> {
-  const effects = token.effects ?? [];
+/** The token's effects, then the ones its features always give (danger sense). */
+function effectParts(token: Token, features: readonly FeatureSheet[]): Pick<Creature, 'effects' | 'conditions'> {
+  const passive = features.flatMap((f) =>
+    f.passive ? [{ ...f.passive, id: f.id, name: f.passive.name ?? f.name, source: token.id }] : [],
+  );
+  const effects = [...(token.effects ?? []), ...passive];
   return { effects, conditions: [...new Set(effects.flatMap((e) => e.conditions ?? []))] };
 }
 
@@ -187,12 +199,16 @@ function equippedItems(token: Token, content: Content): { weapons: Weapon[]; arm
   };
 }
 
-/** AC from worn armor and shield, or 10 + dex without armor. */
-export function armorClass(abilities: Abilities, armor: readonly Armor[]): number {
+/** AC from worn armor and shield, or 10 + dex without armor (plus another ability with unarmored defense). */
+export function armorClass(
+  abilities: Abilities,
+  armor: readonly Armor[],
+  unarmored?: Pick<FeatureSheet, 'unarmoredAc' | 'unarmoredShield'>,
+): number {
   const dex = abilityMod(abilities.dex);
   const shield = armor.filter((a) => a.category === 'shield').reduce((sum, a) => sum + a.ac, 0);
   const body = armor.find((a) => a.category !== 'shield');
-  if (!body) return 10 + dex + shield;
+  if (!body) return 10 + dex + shield + unarmoredBonus(abilities, shield > 0, unarmored);
   const dexBonus = { light: dex, medium: Math.min(dex, 2), heavy: 0 }[body.category as 'light' | 'medium' | 'heavy'];
   return body.ac + dexBonus + shield;
 }
@@ -217,6 +233,15 @@ export function weaponAttack(weapon: Weapon, abilities: Abilities, proficiency: 
     damage: [{ dice: withModifier(weapon.damage.dice, mod), type: weapon.damage.type }],
     weapon: { ability, properties: weapon.properties, mastery: weapon.mastery },
   };
+}
+
+function unarmoredBonus(
+  abilities: Abilities,
+  shield: boolean,
+  unarmored: Pick<FeatureSheet, 'unarmoredAc' | 'unarmoredShield'> | undefined,
+): number {
+  if (!unarmored?.unarmoredAc || (shield && unarmored.unarmoredShield === false)) return 0;
+  return abilityMod(abilities[unarmored.unarmoredAc]);
 }
 
 function unarmedStrike(abilities: Abilities, proficiency: number): Attack {

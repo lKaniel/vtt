@@ -104,7 +104,8 @@ export type ClientMessage =
       point?: Point;
       summon?: string;
     }
-  | { t: 'feature'; token: string; feature: string }
+  /** `targets` and `point` aim features used like spells (bardic inspiration, turn undead). */
+  | { t: 'feature'; token: string; feature: string; targets?: string[]; point?: Point }
   /** Use one of an item the token carries, by item id (drink a potion). */
   | { t: 'useItem'; token: string; item: string }
   | { t: 'dropConcentration'; token: string }

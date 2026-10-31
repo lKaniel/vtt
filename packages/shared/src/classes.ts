@@ -126,21 +126,43 @@ export function casterSheet(
 }
 
 /** A class feature as the character sheet shows it. */
-export interface FeatureSheet extends Feature {
+export interface FeatureSheet extends Omit<Feature, 'spell'> {
   /** Uses at this level, and how many are left; undefined for unlimited features. */
   max?: number;
   left?: number;
+  /** For features aimed like spells, with "{die}" filled in. */
+  spell?: Partial<Spell>;
 }
 
-/** The class features a token has at its level, with uses left. */
-export function featureSheets(token: Token, cls: Class | undefined): FeatureSheet[] {
+/** Most uses at `level`: a fixed table, an ability modifier (at least 1), or hit points per level. */
+function maxUses(f: Feature, level: number, abilities: Abilities): number | undefined {
+  if (f.usesAbility) return Math.max(1, abilityMod(abilities[f.usesAbility]));
+  if (f.poolPerLevel) return f.poolPerLevel * level;
+  return f.uses && levelValue(f.uses, level);
+}
+
+/** The spell a feature is aimed like, with its die for this level filled in. */
+function featureSpell(f: Feature, level: number): Partial<Spell> | undefined {
+  if (!f.spell) return undefined;
+  const die = String(levelValue(f.die ?? [], level));
+  return JSON.parse(JSON.stringify(f.spell).replace(/\{die\}/g, die)) as Partial<Spell>;
+}
+
+function sheetOf(f: Feature, level: number, abilities: Abilities, spent: Record<string, number>): FeatureSheet {
+  const short = f.shortRestFrom !== undefined && level >= f.shortRestFrom;
+  const base: FeatureSheet = { ...f, spell: featureSpell(f, level), ...(short && { recharge: 'short' as const }) };
+  const max = maxUses(f, level, abilities);
+  if (max === undefined) return base;
+  return { ...base, max, left: Math.max(0, max - (spent[f.id] ?? 0)) };
+}
+
+/** The class features a token has at its level, with uses left; `usesFrom` features share another's. */
+export function featureSheets(token: Token, cls: Class | undefined, abilities: Abilities): FeatureSheet[] {
   const level = token.stats?.level ?? 1;
   const spent = token.spent?.uses ?? {};
-  return (cls?.features ?? [])
-    .filter((f) => f.level <= level)
-    .map((f) => {
-      if (!f.uses) return f;
-      const max = levelValue(f.uses, level);
-      return { ...f, max, left: Math.max(0, max - (spent[f.id] ?? 0)) };
-    });
+  const sheets = (cls?.features ?? []).filter((f) => f.level <= level).map((f) => sheetOf(f, level, abilities, spent));
+  return sheets.map((f) => {
+    const from = f.usesFrom ? sheets.find((s) => s.id === f.usesFrom) : undefined;
+    return from ? { ...f, max: from.max, left: from.left } : f;
+  });
 }

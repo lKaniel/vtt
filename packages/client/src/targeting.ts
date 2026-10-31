@@ -15,6 +15,8 @@ export interface Aiming {
   summon?: string;
   /** Cast without spending a slot. */
   free?: boolean;
+  /** Set when a feature is aimed like a spell (bardic inspiration): it's used instead of cast. */
+  feature?: string;
 }
 
 export function aimSpell(spell: Spell, slot: number, casterLevel: number): Aiming {
@@ -36,6 +38,9 @@ export function pick(aiming: Aiming, id: string): { aiming: Aiming; done: boolea
 }
 
 export function castMessage(caster: string, aiming: Aiming, point?: Point): ClientMessage {
+  if (aiming.feature) {
+    return { t: 'feature', token: caster, feature: aiming.feature, targets: aiming.picks, ...(point && { point }) };
+  }
   return {
     t: 'cast',
     caster,
