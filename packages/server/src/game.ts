@@ -23,7 +23,9 @@ import { z } from 'zod';
 import { CombatActions } from './combat-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
+import { castFeature } from './feature-casting.ts';
 import { SpellActions } from './spell-actions.ts';
+import { Zones } from './zones.ts';
 import { Refusal, Table } from './table.ts';
 import type { WorldStore } from './world-store.ts';
 
@@ -49,6 +51,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     spell: z.string(),
     slot: z.number().int().min(0).max(9),
     free: z.boolean().optional(),
+    repeat: z.boolean().optional(),
     targets: z.array(z.string()).max(20),
     point: PointSchema.optional(),
     summon: z.string().optional(),
@@ -110,7 +113,9 @@ export class Game {
   private clients = new Set<Client>();
   private chat: ChatMessage[] = [];
   private combat: CombatActions;
-  private spells: SpellActions;
+  readonly spells: SpellActions;
+  readonly table: Table;
+  private zones: Zones;
   private features: FeatureActions;
   private gm: GmActions;
 
@@ -119,8 +124,14 @@ export class Game {
     { rng = Math.random }: { rng?: Rng } = {},
   ) {
     const table = new Table(store, rng, (text) => this.narrate({ text }));
-    this.combat = new CombatActions(table, (attack) => this.narrate({ attack }));
+    this.table = table;
     this.spells = new SpellActions(table, (spell) => this.narrate({ spell }));
+    this.zones = new Zones(table, this.spells);
+    this.combat = new CombatActions(
+      table,
+      (attack) => this.narrate({ attack }),
+      (id) => this.zones.turnStarted(id),
+    );
     this.features = new FeatureActions(table);
     this.gm = new GmActions(table);
     store.on('chunk', (key, chunk) => {
@@ -288,7 +299,7 @@ export class Game {
   /** Features aimed like spells go through the spell rules; the rest act on their user. */
   private useFeature(c: Client, msg: Extract<ClientMessage, { t: 'feature' }>): void {
     if (this.features.aimed(msg.token, msg.feature)) {
-      return this.spells.castFeature(c.player, (id) => c.visible.has(id), msg);
+      return castFeature(this, c.player, (id) => c.visible.has(id), msg);
     }
     this.features.use(c.player, msg.token, msg.feature);
   }
@@ -322,6 +333,7 @@ export class Game {
     if (path.points.length < 2) return;
     const walker = this.combat.move(token, path.feet);
     this.store.setToken({ ...walker, x, y }, path.points);
+    this.zones.moved(token.id, path.points);
   }
 
   private onHotbar(c: Client, id: string, slots: (string | null)[]): void {

@@ -1,9 +1,6 @@
 import {
   castProblem,
-  featureProblem,
-  featureSpell,
-  spendUse,
-  type FeatureSheet,
+  lastingEffects,
   inArea,
   joinCombat,
   resolveCast,
@@ -21,23 +18,9 @@ import {
 } from '@vtt/shared';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
 
-export interface FeatureRequest {
-  token: string;
-  feature: string;
-  targets?: string[];
-  point?: Point;
-}
-
-/** Hit points a healing pool spends on its target: what it's missing, as far as the pool goes. */
-function poolHealing(feature: FeatureSheet, targets: readonly Fighter[]): number {
-  const target = targets[0];
-  const missing = target ? target.sheet.maxHp - target.sheet.hp : 0;
-  if (missing <= 0) throw new Refusal(`${target?.token.name ?? 'Nobody'} isn't hurt`);
-  return Math.min(missing, feature.left ?? 0);
-}
-
 export interface CastRequest {
   caster: string;
+  repeat?: boolean;
   spell: string;
   slot: number;
   free?: boolean;
@@ -73,57 +56,59 @@ export class SpellActions {
     const caster = this.table.actor(player, req.caster);
     const spell = this.table.content(caster.token).spells.get(req.spell);
     if (!spell) throw new Refusal(`There is no spell called ${req.spell}`);
+    const plan = this.plan(caster, spell, req);
+    this.table.check(caster.token, plan.cost);
+    const aimed = this.targets(caster, spell, { ...req, slot: plan.slot }, canSee);
+    const targets = spell.zone && !spell.zone.onCast && !plan.again ? [] : aimed;
+    this.table.pay(caster.token, plan.cost);
+    if (!plan.again) this.begin(caster, spell, plan.spend);
+    if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
+    if (spell.teleport) this.teleport(caster.token.id, req.point!);
+    const summoned = spell.summon ? this.summon(this.table.fighter(caster.token.id), spell, req) : [];
+    const free = req.free && plan.slot > 0 && !plan.again ? ['cast without a spell slot'] : [];
+    this.strike(caster.token.id, { spell, slot: plan.slot, point: req.point }, targets, [
+      ...free,
+      ...summonNotes(summoned),
+    ]);
+  }
+
+  /** What casting costs: the action, slot and slot spent; using a lasting spell again needs no slot. */
+  private plan(
+    caster: Fighter,
+    spell: Spell,
+    req: CastRequest,
+  ): { cost: Cost; slot: number; spend: number; again: boolean } {
+    if (req.repeat) {
+      const going = caster.sheet.effects.find((e) => e.repeat?.spell === spell.id);
+      if (!going || !spell.repeat) throw new Refusal(`${spell.name} isn't going`);
+      return { cost: spell.repeat, slot: going.repeat!.slot, spend: 0, again: true };
+    }
     const problem = castProblem({ spell, slot: req.slot, sheet: caster.sheet, free: req.free });
     if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
-    const cost = COST[spell.castingTime];
     if ((spell.castingTime === 'minute' || spell.castingTime === 'hour') && this.table.inFight(caster.token.id)) {
       throw new Refusal(`${spell.name} takes too long to cast in a fight`);
     }
-    this.table.check(caster.token, cost);
     const slot = spell.level === 0 ? 0 : req.slot;
-    const spend = req.free ? 0 : slot;
-    const targets = this.targets(caster, spell, { ...req, slot }, canSee);
-    this.table.pay(caster.token, cost);
-    this.begin(caster, spell, spend);
-    if (spell.teleport) this.teleport(caster.token.id, req.point!);
-    const summoned = spell.summon ? this.summon(this.table.fighter(caster.token.id), spell, req) : [];
-    const outcome = resolveCast(
-      { spell, slot, caster: this.table.fighter(caster.token.id), targets, gridSize: this.grid },
-      this.table.rng,
-    );
-    this.apply(outcome);
-    const pushed = this.push(caster.token, outcome);
-    const drained = this.drain(caster.token.id, outcome.drained);
-    const free = req.free && slot > 0 ? ['cast without a spell slot'] : [];
-    const notes = [...free, ...summonNotes(summoned), ...pushed, ...drained];
-    this.log(caster, { spell, slot, point: req.point }, outcome, notes);
+    return { cost: COST[spell.castingTime], slot, spend: req.free ? 0 : slot, again: false };
   }
 
-  /** Uses a feature aimed like a spell (bardic inspiration, lay on hands, turn undead): one use, no slot. */
-  castFeature(player: Player, canSee: (id: string) => boolean, req: FeatureRequest): void {
-    const caster = this.table.actor(player, req.token);
-    const problem = featureProblem(caster.sheet, req.feature);
-    if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
-    const feature = caster.sheet.features.find((f) => f.id === req.feature)!;
-    const cost: Cost = feature.action ?? 'free';
-    this.table.check(caster.token, cost);
-    let spell = featureSpell(feature);
-    const targets = this.targets(
-      caster,
-      spell,
-      { ...req, caster: req.token, spell: spell.id, slot: 0, targets: req.targets ?? [] },
-      canSee,
-    );
-    const spend = feature.healPool ? poolHealing(feature, targets) : 1;
-    if (feature.healPool) spell = { ...spell, heal: String(spend) };
-    this.table.pay(caster.token, cost);
-    this.store.setToken(spendUse(this.store.tokens.get(caster.token.id)!, feature, spend));
-    const outcome = resolveCast(
-      { spell, slot: 0, caster: this.table.fighter(caster.token.id), targets, gridSize: this.grid },
-      this.table.rng,
-    );
+  /** Rolls a spell from `casterId` against `targets`, applies it and logs it: casts, features and zones. */
+  strike(
+    casterId: string,
+    { spell, slot, point }: { spell: Spell; slot: number; point?: Point },
+    targets: Fighter[],
+    notes: string[] = [],
+  ): void {
+    const caster = this.table.fighter(casterId);
+    const outcome = resolveCast({ spell, slot, caster, targets, gridSize: this.grid }, this.table.rng);
     this.apply(outcome);
-    this.log(caster, { spell, slot: 0, point: req.point }, outcome, this.push(caster.token, outcome));
+    const pushed = this.push(caster.token, outcome);
+    const drained = this.drain(casterId, outcome.drained);
+    this.log(caster, { spell, slot, point }, outcome, [...notes, ...pushed, ...drained]);
+  }
+
+  private addLasting(id: string, effects: Effect[]): void {
+    for (const e of effects) this.addEffect(id, e);
   }
 
   /** Spends the slot, ends invisibility and starts concentrating. */
@@ -141,7 +126,7 @@ export class SpellActions {
 
   // ---- Targets -----------------------------------------------------------
 
-  private targets(caster: Fighter, spell: Spell, req: CastRequest, canSee: (id: string) => boolean): Fighter[] {
+  targets(caster: Fighter, spell: Spell, req: CastRequest, canSee: (id: string) => boolean): Fighter[] {
     if (spell.teleport || spell.summon) {
       this.checkPoint(caster, spell, req.point, spell.teleport ?? spell.range);
       return [];

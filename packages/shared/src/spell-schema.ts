@@ -59,6 +59,19 @@ const modifiers = {
   markDamage: z.array(RiderDamageSchema).optional(),
   /** Added to the bearer's weapon attack and damage rolls (magic weapon). */
   weaponBonus: z.number().int().optional(),
+  /** The bearer keeps a spell's area going: creatures that start their turn in it or walk into it are hit (spirit guardians). */
+  zone: z
+    .object({
+      spell: id,
+      slot: z.number().int().min(0).max(9),
+      /** Where a placed area sits; missing for areas around the bearer. */
+      at: z.tuple([z.number(), z.number()]).optional(),
+      /** "allies": creatures on the bearer's side aren't hit. */
+      spares: z.enum(['allies']).optional(),
+    })
+    .optional(),
+  /** The bearer may use this spell again without a slot while it lasts (spiritual weapon, call lightning). */
+  repeat: z.object({ spell: id, slot: z.number().int().min(0).max(9) }).optional(),
   /** The bearer's movement doesn't provoke opportunity attacks (disengage). */
   disengaged: z.boolean().optional(),
   /** The bearer's speed is 0 (hypnotic pattern). */
@@ -189,6 +202,16 @@ export const SpellSchema = z.object({
   rider: z.enum(['self', 'mark']).optional(),
   /** Rider damage takes the type of the weapon it rides on (2014 hunter's mark). */
   weaponType: z.boolean().optional(),
+  /** The area stays: it hits creatures that start their turn in it or enter it (spirit guardians, moonbeam). */
+  zone: z
+    .object({
+      spares: z.enum(['allies']).optional(),
+      /** Whether it also hits what's in it when cast. */
+      onCast: z.boolean().default(true),
+    })
+    .optional(),
+  /** Later turns can use it again without a slot, with this action (spiritual weapon, call lightning). */
+  repeat: z.enum(['action', 'bonus']).optional(),
   /** Only creatures of these types are affected (hold person: humanoid). */
   creatureTypes: z.array(z.string()).optional(),
   /** false when the engine only shows the text: the GM applies it by hand. */

@@ -53,6 +53,23 @@
       "gmNote": "The target also sheds light and can’t be invisible."
     }
   },
+  "call-lightning": {
+    "both": {
+      "repeat": "action"
+    },
+    "2014": {
+      "save": {
+        "ability": "dex",
+        "onSave": "half"
+      }
+    },
+    "2024": {
+      "area": {
+        "shape": "sphere",
+        "size": 5
+      }
+    }
+  },
   "calm-emotions": {
     "both": {
       "automated": false
@@ -264,6 +281,28 @@
       "automated": true
     }
   },
+  "flaming-sphere": {
+    "both": {
+      "targets": 1,
+      "range": 60,
+      "save": {
+        "ability": "dex",
+        "onSave": "half"
+      },
+      "damage": [
+        {
+          "dice": "2d6",
+          "type": "fire"
+        }
+      ],
+      "upcast": {
+        "damage": "1d6"
+      },
+      "repeat": "bonus",
+      "automated": true,
+      "gmNote": "Creatures that end their turn within 5 ft of the sphere take its damage too."
+    }
+  },
   "guardian-of-faith": {
     "both": {
       "automated": false
@@ -432,6 +471,17 @@
       "automated": true
     }
   },
+  "moonbeam": {
+    "both": {
+      "zone": {},
+      "gmNote": "Moving the beam is up to the GM for now."
+    },
+    "2014": {
+      "zone": {
+        "onCast": false
+      }
+    }
+  },
   "phantasmal-force": {
     "both": {
       "automated": false
@@ -589,10 +639,23 @@
       "area": {
         "shape": "emanation",
         "size": 15
+      },
+      "zone": {
+        "spares": "allies",
+        "onCast": false
       }
     },
     "both": {
-      "automated": false
+      "automated": true,
+      "zone": {
+        "spares": "allies"
+      },
+      "gmNote": "Enemies move at half speed inside it."
+    }
+  },
+  "spiritual-weapon": {
+    "both": {
+      "repeat": "bonus"
     }
   },
   "stinking-cloud": {
@@ -631,7 +694,7 @@
       },
       "drain": true,
       "automated": true,
-      "gmNote": "Later touches are an action each turn while it lasts: cast it again without a slot."
+      "repeat": "action"
     }
   },
   "vicious-mockery": {

@@ -34,6 +34,7 @@ export class CombatActions {
   constructor(
     private table: Table,
     private logAttack: (log: AttackLog) => void,
+    private turnStarted: (id: string) => void = () => undefined,
   ) {}
 
   private get store() {
@@ -88,6 +89,7 @@ export class CombatActions {
       const after = tickEffects(t, id);
       if (after !== t) this.store.setToken(after);
     }
+    this.turnStarted(id);
   }
 
   /** Checks that `token` may walk `feet` now, and spends the movement in a fight. Standing up costs half its speed. */

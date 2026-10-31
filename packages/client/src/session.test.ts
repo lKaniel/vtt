@@ -232,6 +232,7 @@ describe('Session', () => {
       const wizard = () => ({
         ...token('hero'),
         sheet: {
+          effects: [],
           caster: {
             level: 5,
             spells: [srdFor('2014').spells.get('magic-missile')!, srdFor('2014').spells.get('fireball')!],
@@ -299,7 +300,7 @@ describe('Session', () => {
         const familiar = srdFor('2014').spells.get('find-familiar')!;
         ws.receive({
           t: 'token',
-          token: { ...wizard(), sheet: { caster: { level: 5, spells: [familiar] } } as never },
+          token: { ...wizard(), sheet: { caster: { level: 5, spells: [familiar] }, effects: [] } as never },
         });
         session.aim('find-familiar', 1);
         session.chooseSummon('owl');

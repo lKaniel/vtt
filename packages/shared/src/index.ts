@@ -21,6 +21,7 @@ export * from './spells.ts';
 export * from './features.ts';
 export * from './items.ts';
 export * from './basic-actions.ts';
+export * from './zones.ts';
 export * from './weapon-attack.ts';
 export * from './riders.ts';
 export * from './spawn.ts';

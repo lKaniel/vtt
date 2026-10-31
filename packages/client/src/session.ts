@@ -18,7 +18,7 @@ import {
 } from '@vtt/shared';
 
 import { dropMessage, type DragPayload } from './drops.ts';
-import { aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
+import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
 
@@ -179,10 +179,9 @@ export class Session {
 
   /** Readies a spell of the selected token with a slot, or for free; self spells go off at once. */
   aim(spellId: string | undefined, slot = 0, free = false): void {
-    const caster = this.selected ? this.tokens.get(this.selected)?.sheet?.caster : undefined;
-    const spell = caster?.spells.find((s) => s.id === spellId);
+    const sheet = this.selected ? this.tokens.get(this.selected)?.sheet : undefined;
     this.armed = undefined;
-    this.aiming = spell && { ...aimSpell(spell, slot, caster!.level), ...(free && { free }) };
+    this.aiming = aimFor(sheet, spellId, { slot, free });
     if (this.aiming?.mode === 'self') return this.confirmCast();
     this.emit('armed');
     this.changed();

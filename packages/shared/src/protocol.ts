@@ -100,6 +100,8 @@ export type ClientMessage =
       slot: number;
       /** Cast without spending a slot. */
       free?: boolean;
+      /** Use a lasting spell again, e.g. attack with the spiritual weapon. */
+      repeat?: boolean;
       targets: string[];
       point?: Point;
       summon?: string;

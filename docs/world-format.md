@@ -198,7 +198,11 @@ Effect modifiers: `conditions` (e.g. `["prone"]`, `["paralyzed"]`),
 `disadvantageAgainst`, `meleeDamage`, `saveAdvantage`, `immobile` (speed 0),
 `hitDamage` (added to the bearer's weapon hits, e.g. divine favor), `markDamage`
 (added when `onlyFor` hits the bearer, e.g. hunter's mark; a damage `type` of
-`"weapon"` takes the attack's type), `weaponBonus` (magic weapon). Lifetime: `rounds`
+`"weapon"` takes the attack's type), `weaponBonus` (magic weapon),
+`zone: { "spell", "slot", "at"?, "spares"? }` (a lasting area like spirit
+guardians: creatures starting their turn in it or walking in are hit),
+`repeat: { "spell", "slot" }` (the spell can be used again without a slot,
+like spiritual weapon). Lifetime: `rounds`
 counts down at the start of the `source` creature's turn; `once` ends it the
 first time it changes an attack; `repeatSave` with `save: { "ability", "dc" }`
 lets the bearer save again at the end of each of its turns; `endsOnAttack`

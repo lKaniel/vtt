@@ -217,3 +217,68 @@ describe('basic actions and class features', () => {
     expect(tok('hero').spent?.uses).toEqual({ 'channel-divinity': 1 });
   });
 });
+
+describe('lasting zones and repeated attacks', () => {
+  const learn = (...spells: string[]) =>
+    store.setToken({
+      ...tok('hero'),
+      stats: { ...tok('hero').stats, class: 'cleric', spells, abilities: { wis: 16 } },
+    });
+
+  it('hurts enemies that start their turn in spirit guardians, sparing allies (2014)', () => {
+    learn('spirit-guardians');
+    store.setToken({ ...tok('goblin'), x: 150, y: 50 });
+    store.setToken({ ...tok('bo'), x: 50, y: 150 });
+    const { ana, gm } = fight(['hero', 'goblin', 'bo', 'goblin2']);
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'spirit-guardians', slot: 3, targets: [], point: [150, 50] });
+    expect(tok('goblin').hp).toBeUndefined();
+    expect(tok('hero').effects?.[0]).toMatchObject({
+      zone: { spell: 'spirit-guardians', slot: 3 },
+      concentration: true,
+    });
+    // The goblin fails its Wis save (1) and takes 3d8 of 1s.
+    dice = [face(1), face(1, 8), face(1, 8), face(1, 8)];
+    ana.receive({ t: 'endTurn' });
+    expect(tok('goblin').hp).toBe(4);
+    gm.receive({ t: 'endTurn' });
+    expect(tok('bo').hp).toBeUndefined();
+  });
+
+  it('hurts a creature that walks into a moonbeam, once per turn', () => {
+    learn('moonbeam');
+    const { ana, gm } = fight(['hero', 'goblin', 'bo', 'goblin2']);
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'moonbeam', slot: 2, targets: [], point: [250, 250] });
+    expect(errors(ana)).toEqual([]);
+    ana.receive({ t: 'endTurn' });
+    // The goblin fails its Con save (1) and takes 2d10 of 1s.
+    dice = [face(1), face(1, 10), face(1, 10)];
+    gm.receive({ t: 'move', token: 'goblin', to: [250, 250] });
+    expect(tok('goblin').hp).toBe(5);
+    gm.receive({ t: 'move', token: 'goblin', to: [250, 150] });
+    gm.receive({ t: 'move', token: 'goblin', to: [250, 250] });
+    expect(tok('goblin').hp).toBe(5);
+  });
+
+  it('attacks again with a spiritual weapon as a bonus action, without a new slot', () => {
+    learn('spiritual-weapon');
+    const { ana } = fight(['hero', 'goblin', 'bo', 'goblin2']);
+    dice = [face(2)];
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'spiritual-weapon', slot: 2, targets: ['goblin'] });
+    expect(errors(ana)).toEqual([]);
+    expect(tok('hero').spent?.slots).toEqual([0, 1]);
+    ana.receive({ t: 'endTurn' });
+    store.setCombat({ ...store.combat!, turn: 0, left: { ...store.combat!.left, bonus: true } });
+    dice = [face(2)];
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'spiritual-weapon', slot: 2, targets: ['goblin'], repeat: true });
+    expect(errors(ana)).toEqual([]);
+    expect(tok('hero').spent?.slots).toEqual([0, 1]);
+    expect(store.combat!.left.bonus).toBe(false);
+  });
+
+  it('refuses to repeat a spell that isn’t going', () => {
+    learn('spiritual-weapon');
+    const ana = join_('ana');
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'spiritual-weapon', slot: 2, targets: ['goblin'], repeat: true });
+    expect(errors(ana)[0]).toMatch(/isn't going/);
+  });
+});
