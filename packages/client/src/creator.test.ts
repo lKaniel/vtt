@@ -134,7 +134,9 @@ describe('creatorSteps', () => {
     const fighter = creatorSteps(fresh());
     expect(fighter.map((s) => s.id)).not.toContain('spells');
     expect(fighter.find((s) => s.id === 'skills')?.issues).toEqual(['Choose 2 class skills.']);
-    expect(creatorSteps(chooseClass(fresh(), 'wizard')).map((s) => s.id)).toContain('spells');
+    const wizard = creatorSteps(chooseClass(fresh(), 'wizard'));
+    expect(wizard.map((s) => s.id)).toContain('spells');
+    expect(wizard.find((s) => s.id === 'spells')?.issues).toEqual(['Pick 3 more cantrips and 6 more spells.']);
   });
 });
 

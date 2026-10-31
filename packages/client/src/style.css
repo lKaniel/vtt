@@ -3445,7 +3445,8 @@ button.pip:hover {
 }
 .cc-score {
   display: grid;
-  padding: 16px 0 10px;
+  padding: 14px 0 20px;
+  line-height: 1.1;
   background: url('/art/ui/ability-plaque.webp') center / 100% 100% no-repeat;
 }
 .cc-score-name {

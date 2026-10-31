@@ -166,7 +166,20 @@ export function creatorSteps(c: Character): StepInfo[] {
 
 function stepIssues(c: Character, id: StepId, issues: Record<CreatorStep, string[]>): string[] {
   if (id === 'identity') return c.name.trim() ? [] : ['Name your character.'];
+  if (id === 'spells' && !issues.spells.length) return spellsLeft(c);
   return id === 'equipment' ? [] : issues[id];
+}
+
+/** A new character should fill every spell pick, though the rules allow fewer. */
+function spellsLeft(c: Character): string[] {
+  const { limits, cantrips } = spellChoices(c);
+  const picked = c.spells.filter((id) => cantrips.some((s) => s.id === id)).length;
+  const left = [
+    [limits.cantrips - picked, 'cantrip'],
+    [limits.spells - (c.spells.length - picked), 'spell'],
+  ] as const;
+  const parts = left.filter(([n]) => n > 0).map(([n, word]) => `${n} more ${word}${n === 1 ? '' : 's'}`);
+  return parts.length ? [`Pick ${parts.join(' and ')}.`] : [];
 }
 
 // ---- Level up -----------------------------------------------------------
