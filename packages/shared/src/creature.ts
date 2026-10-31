@@ -1,10 +1,11 @@
 import type { Content } from './content.ts';
 import { withBasicActions } from './basic-actions.ts';
+import { makesDeathSaves } from './deaths.ts';
 import { casterSheet, classOf, featureSheets, levelValue, type CasterSheet, type FeatureSheet } from './classes.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
 import type { Token } from './schema.ts';
-import type { Class, Condition } from './spell-schema.ts';
+import type { Class, Condition, Effect } from './spell-schema.ts';
 import {
   ABILITIES,
   AbilitiesSchema,
@@ -107,12 +108,18 @@ function kindAndSaves(
   return { type: monster?.type ?? 'humanoid', saves: saveBonuses(abilities, proficiency, proficient) };
 }
 
+/** A character at 0 hp lies unconscious until it's healed. */
+function downed(token: Token): Effect[] {
+  if (!makesDeathSaves(token) || token.hp === undefined || token.hp > 0) return [];
+  return [{ id: 'down', name: token.deathSaves?.dead ? 'Dead' : 'Down', conditions: ['unconscious', 'prone'] }];
+}
+
 /** The token's effects, then the ones its features always give (danger sense). */
 function effectParts(token: Token, features: readonly FeatureSheet[]): Pick<Creature, 'effects' | 'conditions'> {
   const passive = features.flatMap((f) =>
     f.passive ? [{ ...f.passive, id: f.id, name: f.passive.name ?? f.name, source: token.id }] : [],
   );
-  const effects = [...(token.effects ?? []), ...passive];
+  const effects = [...(token.effects ?? []), ...passive, ...downed(token)];
   return { effects, conditions: [...new Set(effects.flatMap((e) => e.conditions ?? []))] };
 }
 

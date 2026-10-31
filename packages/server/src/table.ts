@@ -1,5 +1,8 @@
 import {
   afterDamage,
+  damagedWhileDown,
+  isDead,
+  isDying,
   canAct,
   canControlToken,
   concentrationDc,
@@ -87,7 +90,7 @@ export class Table {
     const token = this.store.tokens.get(id);
     if (!token) return undefined;
     const sheet = this.sheetOf(token);
-    return { speed: sheet?.speed ?? token.speed, active: !sheet || sheet.hp > 0 };
+    return { speed: sheet?.speed ?? token.speed, active: !sheet || sheet.hp > 0 || isDying(token) };
   };
 
   // ---- Turn budgets -------------------------------------------------------
@@ -170,15 +173,27 @@ export class Table {
    * Sets a creature's hit points (and temporary ones) after it took `damage`,
    * ends what damage ends, then checks its concentration.
    */
-  hurt(token: Token, after: { hp: number; tempHp?: number }, damage: number): void {
+  hurt(token: Token, after: { hp: number; tempHp?: number; crit?: boolean }, damage: number): void {
     const current = this.store.tokens.get(token.id) ?? token;
-    const tempHp = after.tempHp ?? current.tempHp ?? 0;
-    const unhurt = after.hp >= (this.sheetOf(current)?.maxHp ?? Infinity);
-    const hurt = { ...current, hp: unhurt ? undefined : after.hp, tempHp: tempHp > 0 ? tempHp : undefined };
+    const before = this.sheetOf(current)!;
+    const hurt = this.downed(withHp(current, after, before.maxHp), {
+      damage,
+      crit: !!after.crit,
+      maxHp: before.maxHp,
+      hpBefore: before.hp,
+    });
     const shaken = damage > 0 ? afterDamage(hurt, this.sheetOf(hurt)!, this.rng) : { token: hurt, notes: [] };
     this.store.setToken(shaken.token);
     for (const n of shaken.notes) this.note(n);
     this.checkConcentration(shaken.token, damage);
+  }
+
+  /** A character hit while down fails death saves, and massive damage kills it. */
+  private downed(token: Token, hit: Parameters<typeof damagedWhileDown>[1]): Token {
+    if ((token.hp ?? 1) > 0) return token;
+    const after = damagedWhileDown(token, hit);
+    if (isDead(after) && !isDead(token)) this.note(`${token.name} dies`);
+    return after;
   }
 
   private checkConcentration(current: Token, damage: number): void {
@@ -239,6 +254,12 @@ export class Table {
     }
     this.store.removeToken(id);
   }
+}
+
+/** The token with new hit points and temporary ones; full hit points are left out. */
+function withHp(token: Token, after: { hp: number; tempHp?: number }, maxHp: number): Token {
+  const tempHp = after.tempHp ?? token.tempHp ?? 0;
+  return { ...token, hp: after.hp >= maxHp ? undefined : after.hp, tempHp: tempHp > 0 ? tempHp : undefined };
 }
 
 export function requireGm(player: Player): void {

@@ -103,6 +103,15 @@ export const TokenSchema = z.object({
   stats: StatsSchema.optional(),
   /** Current hit points; missing means unhurt. */
   hp: z.number().int().optional(),
+  /** A character's death saves while at 0 hp; cleared once it's healed. */
+  deathSaves: z
+    .object({
+      successes: z.number().int().min(0).max(3),
+      failures: z.number().int().min(0).max(3),
+      stable: z.boolean().optional(),
+      dead: z.boolean().optional(),
+    })
+    .optional(),
   /** Temporary hit points: lost first, and don't stack. */
   tempHp: z.number().int().positive().optional(),
   inventory: z.array(InventoryEntrySchema).optional(),

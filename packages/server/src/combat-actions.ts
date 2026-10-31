@@ -3,6 +3,8 @@ import {
   attackRange,
   canControlToken,
   currentTurn,
+  deathSave,
+  isDying,
   endOfTurnSaves,
   leaveCombat,
   nextTurn,
@@ -65,10 +67,30 @@ export class CombatActions {
     const token = this.store.tokens.get(currentTurn(combat) ?? '');
     if (token && !canControlToken(token, player)) throw new Refusal("It's not your turn");
     if (token) this.endOfTurn(token);
-    const next = nextTurn(this.store.combat ?? combat, this.table.turnInfo);
-    this.store.setCombat(next);
-    const starting = currentTurn(next);
-    if (starting) this.startOfTurn(starting);
+    this.advance();
+  }
+
+  /** Passes the turn on; a dying character's turn is only its death save, so it passes again. */
+  private advance(): void {
+    for (let guard = 0; guard < 100; guard++) {
+      const next = nextTurn(this.store.combat!, this.table.turnInfo);
+      this.store.setCombat(next);
+      const starting = currentTurn(next);
+      if (!starting) return;
+      this.startOfTurn(starting);
+      if (!this.deathSaveFor(starting)) return;
+    }
+  }
+
+  /** Rolls a dying character's death save; true when its turn is over (it didn't wake). */
+  private deathSaveFor(id: string): boolean {
+    const token = this.store.tokens.get(id);
+    if (token?.deathSaves && (token.hp ?? 1) > 0) this.store.setToken({ ...token, deathSaves: undefined });
+    if (!token || !isDying(token)) return false;
+    const { token: after, note } = deathSave(token, this.table.rng);
+    this.store.setToken(after);
+    this.table.note(note);
+    return isDying(after) || (after.hp ?? 1) <= 0;
   }
 
   /** Effects like hold person get another save as the creature's turn ends. */
@@ -173,7 +195,7 @@ export class CombatActions {
     const fresh = this.table.fighter(target.token.id);
     const { dealt, hp, tempHp } = applyDamage(fresh.sheet, parts);
     const total = dealt.reduce((sum, d) => sum + d, 0);
-    if (total > 0) this.table.hurt(fresh.token, { hp, tempHp }, total);
+    if (total > 0) this.table.hurt(fresh.token, { hp, tempHp, crit: result.crit }, total);
     this.addEffects(target.token.id, outcome);
     const notes = [...outcome.notes];
     if (range === 'long') notes.push('long range: disadvantage');

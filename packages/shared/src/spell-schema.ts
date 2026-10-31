@@ -166,6 +166,8 @@ export const SpellSchema = z.object({
   tempHp: dice.optional(),
   /** Hit points of creatures affected, weakest first, rolled on each cast (2014 sleep). */
   hpPool: dice.optional(),
+  /** Makes a dying creature stable (spare the dying). */
+  stabilize: z.boolean().optional(),
   /** The caster regains half the damage dealt (vampiric touch). */
   drain: z.boolean().optional(),
   /** What the GM still has to do by hand when the rest is automated; shown in the log. */

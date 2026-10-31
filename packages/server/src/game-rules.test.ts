@@ -282,3 +282,32 @@ describe('lasting zones and repeated attacks', () => {
     expect(errors(ana)[0]).toMatch(/isn't going/);
   });
 });
+
+describe('dying and death saves', () => {
+  it('rolls a death save when a downed character’s turn comes, then passes the turn', () => {
+    store.setToken({ ...tok('bo'), hp: 0 });
+    const { gm } = fight(['hero', 'bo', 'goblin', 'goblin2']);
+    store.setCombat({ ...store.combat!, turn: 0 });
+    dice = [face(8)];
+    gm.receive({ t: 'endTurn' });
+    expect(tok('bo').deathSaves).toMatchObject({ successes: 0, failures: 1 });
+    expect(store.combat!.order[store.combat!.turn]!.token).toBe('goblin');
+  });
+
+  it('fails a death save when hit while down, and dies at three', () => {
+    store.setToken({ ...tok('hero'), hp: 0, deathSaves: { successes: 0, failures: 2 } });
+    store.setToken({ ...tok('goblin'), x: 150, y: 50 });
+    const { gm } = fight(['goblin', 'hero', 'bo', 'goblin2']);
+    dice = [face(15), face(1, 6), face(1, 6)];
+    gm.receive({ t: 'attack', attacker: 'goblin', target: 'hero', attack: 'Scimitar' });
+    expect(tok('hero').deathSaves).toMatchObject({ dead: true });
+  });
+
+  it('stabilizes a dying creature with spare the dying', () => {
+    store.setToken({ ...tok('hero'), stats: { ...tok('hero').stats, spells: ['spare-the-dying'] } });
+    store.setToken({ ...tok('bo'), x: 50, y: 150, hp: 0, deathSaves: { successes: 1, failures: 2 } });
+    const ana = join_('ana');
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'spare-the-dying', slot: 0, targets: ['bo'] });
+    expect(tok('bo').deathSaves).toMatchObject({ stable: true });
+  });
+});

@@ -116,6 +116,8 @@ export interface CastResult {
   healed?: number;
   /** Hit points after this result. */
   hp: number;
+  /** A dying creature became stable. */
+  stabilized?: boolean;
   /** Temporary hit points after this result, when they changed. */
   tempHp?: number;
   effect?: Effect;
@@ -210,6 +212,7 @@ function unrolled(cast: Cast, target: CastSide, base: Base): CastResult | undefi
   if (spell.heal) return heal(cast, target, base);
   if (spell.tempHp) return shield(cast, target, base);
   if (spell.rider) return { ...base, effect: effectFor(cast) };
+  if (spell.stabilize) return { ...base, stabilized: true };
   return undefined;
 }
 

@@ -2,12 +2,14 @@ import {
   castProblem,
   lastingEffects,
   inArea,
+  isDying,
   joinCombat,
   resolveCast,
   scaledSpell,
   tokenDistance,
   TokenSchema,
   type CastOutcome,
+  type CastResult,
   type CastingTime,
   type Effect,
   type Player,
@@ -181,17 +183,23 @@ export class SpellActions {
 
   private apply(outcome: CastOutcome): void {
     for (const r of outcome.results) {
-      const target = this.table.fighter(r.target);
-      if (r.healed !== undefined) {
-        this.store.setToken({ ...target.token, hp: r.hp >= target.sheet.maxHp ? undefined : r.hp });
-      } else if (r.damage > 0) {
-        this.table.hurt(target.token, r, r.damage);
-      } else if (r.tempHp !== undefined) {
-        this.store.setToken({ ...target.token, tempHp: r.tempHp || undefined });
-      }
+      this.applyHp(r);
       if (r.effect) this.addEffect(r.target, r.effect);
+      if (r.stabilized) this.stabilize(r.target);
     }
     this.table.useUp(outcome.used);
+  }
+
+  /** Healing, damage or temporary hit points from one result. */
+  private applyHp(r: CastResult): void {
+    const target = this.table.fighter(r.target);
+    if (r.healed !== undefined) {
+      this.store.setToken({ ...target.token, hp: r.hp >= target.sheet.maxHp ? undefined : r.hp });
+    } else if (r.damage > 0) {
+      this.table.hurt(target.token, r, r.damage);
+    } else if (r.tempHp !== undefined) {
+      this.store.setToken({ ...target.token, tempHp: r.tempHp || undefined });
+    }
   }
 
   /** Pushes or pulls everyone the spell moves, from where the caster stands. */
@@ -204,6 +212,13 @@ export class SpellActions {
       if (feet > 0) notes.push(`${name} is ${r.push > 0 ? 'pushed' : 'pulled'} ${feet} ft`);
     }
     return notes;
+  }
+
+  private stabilize(id: string): void {
+    const token = this.store.tokens.get(id);
+    if (!token || !isDying(token)) return;
+    this.store.setToken({ ...token, deathSaves: { successes: 0, failures: 0, ...token.deathSaves, stable: true } });
+    this.table.note(`${token.name} is stable`);
   }
 
   /** The caster regains hit points from what the spell drained. */

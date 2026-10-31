@@ -634,6 +634,13 @@
       "automated": true
     }
   },
+  "spare-the-dying": {
+    "both": {
+      "stabilize": true,
+      "targets": 1,
+      "automated": true
+    }
+  },
   "spirit-guardians": {
     "2014": {
       "area": {
