@@ -73,7 +73,9 @@ export class SpellActions {
       this.table.rng,
     );
     this.apply(outcome);
-    this.log(caster, { spell, slot, point: req.point, free: req.free && slot > 0 }, outcome, summoned);
+    const pushed = this.push(caster.token, outcome);
+    const free = req.free && slot > 0 ? ['cast without a spell slot'] : [];
+    this.log(caster, { spell, slot, point: req.point }, outcome, [...free, ...summonNotes(summoned), ...pushed]);
   }
 
   /** Spends the slot, ends invisibility and starts concentrating. */
@@ -162,6 +164,18 @@ export class SpellActions {
     this.table.useUp(outcome.used);
   }
 
+  /** Pushes or pulls everyone the spell moves, from where the caster stands. */
+  private push(caster: Token, outcome: CastOutcome): string[] {
+    const notes: string[] = [];
+    for (const r of outcome.results) {
+      if (!r.push) continue;
+      const feet = this.table.forceMove(r.target, [caster.x, caster.y], r.push);
+      const name = this.store.tokens.get(r.target)?.name ?? r.target;
+      if (feet > 0) notes.push(`${name} is ${r.push > 0 ? 'pushed' : 'pulled'} ${feet} ft`);
+    }
+    return notes;
+  }
+
   private addEffect(id: string, effect: Effect): void {
     const token = this.store.tokens.get(id);
     if (!token) return;
@@ -172,7 +186,7 @@ export class SpellActions {
   private teleport(id: string, point: Point): void {
     const token = this.store.tokens.get(id)!;
     const [x, y] = this.snap(point, token.size);
-    this.store.setToken({ ...token, x, y }, [[x, y]]);
+    this.store.setToken({ ...token, x, y });
   }
 
   private snap([x, y]: Point, size: number): Point {
@@ -244,14 +258,12 @@ export class SpellActions {
 
   private log(
     caster: Fighter,
-    { spell, slot, point, free }: { spell: Spell; slot: number; point?: Point; free?: boolean },
+    { spell, slot, point }: { spell: Spell; slot: number; point?: Point },
     outcome: CastOutcome,
-    summoned: Token[],
+    extra: string[],
   ): void {
     const name = (id: string) => this.store.tokens.get(id)?.name ?? id;
-    const notes: string[] = [];
-    if (free) notes.push('cast without a spell slot');
-    if (summoned.length) notes.push(`${summoned.map((t) => t.name).join(', ')} appear`);
+    const notes = [...extra];
     if (!spell.automated) notes.push('not automated: the GM applies it');
     const down = new Set(outcome.results.filter((r) => r.damage > 0 && r.hp <= 0).map((r) => r.target));
     for (const id of down) notes.push(`${name(id)} is down`);
@@ -280,6 +292,10 @@ export class SpellActions {
       notes,
     });
   }
+}
+
+function summonNotes(summoned: readonly Token[]): string[] {
+  return summoned.length ? [`${summoned.map((t) => t.name).join(', ')} appear`] : [];
 }
 
 /** The squares on the edge of a square ring `ring` steps out from `c`. */

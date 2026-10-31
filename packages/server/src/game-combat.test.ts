@@ -133,6 +133,23 @@ describe('attacking', () => {
     expect(ana.take('error')[0]!.message).toMatch(/already used/);
   });
 
+  it('pushes the target with a push mastery weapon (2024)', () => {
+    store.setToken({
+      ...store.tokens.get('hero')!,
+      x: 50,
+      y: 150,
+      stats: { class: 'fighter', level: 1, rules: '2024', maxHp: 12, abilities: { str: 16 } },
+      inventory: [{ item: 'warhammer', equipped: true, qty: 1 }],
+    });
+    store.setToken({ ...store.tokens.get('goblin')!, x: 150, y: 150 });
+    const { ana } = fight();
+    dice = [d20(15), 0];
+    ana.receive({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Warhammer' });
+    // One square east, then the closed door stops it.
+    expect([store.tokens.get('goblin')!.x, store.tokens.get('goblin')!.y]).toEqual([250, 150]);
+    expect(ana.take('chat')[0]!.message.attack!.notes).toContain('Goblin is pushed 5 ft');
+  });
+
   it('tells players only how hurt an enemy looks', () => {
     const { ana } = fight();
     dice = [d20(11), 0];

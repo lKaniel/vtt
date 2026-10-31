@@ -37,6 +37,7 @@ beforeEach(async () => {
       spells: [
         'fire-bolt',
         'magic-missile',
+        'thunderwave',
         'fireball',
         'hold-person',
         'misty-step',
@@ -178,7 +179,33 @@ describe('casting spells', () => {
     const { ana } = fight(['hero', 'goblin', 'goblin2', 'bo']);
     ana.receive({ t: 'cast', caster: 'hero', spell: 'misty-step', slot: 2, targets: [], point: [150, 250] });
     expect([tok('hero').x, tok('hero').y]).toEqual([150, 250]);
+    // The map jumps the token there instead of waiting for a walk that never comes.
+    const update = ana.sent.findLast((m) => m.t === 'token' && m.token.id === 'hero');
+    expect(update).toMatchObject({ token: { x: 150, y: 250 } });
     expect(store.combat!.left).toMatchObject({ action: true, bonus: false });
+  });
+});
+
+describe('forced movement', () => {
+  it('pushes creatures that fail against thunderwave, stopping at walls and doors', () => {
+    const ana = join_('ana');
+    put({ ...tok('hero'), x: 50, y: 150 });
+    put({ ...tok('goblin'), x: 150, y: 150 });
+    // 2d8 of 1s, then both goblins fail their Con saves.
+    dice = [face(1, 8), face(1, 8), face(1), face(1)];
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'thunderwave', slot: 1, targets: [], point: [250, 150] });
+    const moved = ana.sent.flatMap((m) => (m.t === 'moved' ? [[m.id, m.path]] : []));
+    expect(moved).toContainEqual([
+      'goblin',
+      [
+        [150, 150],
+        [250, 150],
+      ],
+    ]);
+    // The goblin slides one square east and stops at the closed door; goblin 2 is against the south-east corner.
+    expect([tok('goblin').x, tok('goblin').y]).toEqual([250, 150]);
+    expect([tok('goblin2').x, tok('goblin2').y]).toEqual([250, 250]);
+    expect(spellLogs(ana)[0]!.notes).toContain('Goblin is pushed 5 ft');
   });
 });
 
