@@ -28,3 +28,8 @@ export * from './riders.ts';
 export * from './spawn.ts';
 export * from './forced-move.ts';
 export * from './map-edit.ts';
+export * from './origins.ts';
+export * from './character-rules.ts';
+export * from './character.ts';
+export * from './character-check.ts';
+export * from './character-token.ts';

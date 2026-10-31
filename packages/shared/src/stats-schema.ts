@@ -161,6 +161,8 @@ export const StatsSchema = z.object({
   attacks: z.array(AttackSchema).optional(),
   /** Spells the character knows or has prepared, by id. */
   spells: z.array(id).optional(),
+  /** Skills the character is proficient in, e.g. "stealth". */
+  skills: z.array(id).optional(),
   /** Spellcasting for creatures without a caster class (a homebrew class, a monster). */
   spellcasting: z
     .object({

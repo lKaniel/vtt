@@ -11,7 +11,7 @@ import { PartyBar } from './PartyBar.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
 
-export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; onLeave: () => void }>) {
+export function GameScreen({ playerId, onLeave }: Readonly<{ playerId?: string; onLeave: () => void }>) {
   const [session] = useState(() => new Session(playerId));
   const host = useRef<HTMLDivElement>(null);
   useSession(session);
@@ -53,7 +53,7 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId: string; o
           {session.you?.name}
         </span>
         <button className="link" onClick={onLeave}>
-          Change seat
+          Leave
         </button>
       </header>
       <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />

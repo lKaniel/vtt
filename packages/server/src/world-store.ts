@@ -9,6 +9,7 @@ import {
   type Chunk,
   type Combat,
   type LightSource,
+  type Player,
   type Point,
   type Rect,
   type Token,
@@ -165,6 +166,16 @@ export class WorldStore extends EventEmitter<StoreEvents> {
   setDarkness(darkness: number): void {
     this.world = { ...this.world, darkness };
     this.emit('lighting', darkness);
+    this.write('world.json', this.world);
+  }
+
+  /**
+   * Seats a new player (an account joining). Connected clients are left
+   * alone: unlike a hand edit of world.json, this doesn't restart the table.
+   */
+  addPlayer(player: Player): void {
+    if (this.world.players.some((p) => p.id === player.id)) return;
+    this.world = { ...this.world, players: [...this.world.players, player] };
     this.write('world.json', this.world);
   }
 

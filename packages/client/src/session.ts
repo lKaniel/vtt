@@ -102,7 +102,8 @@ export class Session {
   private closed = false;
   private retry?: ReturnType<typeof setTimeout>;
 
-  constructor(readonly playerId: string) {}
+  /** `playerId` sits at one of the world's seats; without it the signed-in account joins. */
+  constructor(readonly playerId?: string) {}
 
   on<K extends keyof SessionEvents>(event: K, fn: SessionEvents[K]): () => void {
     const set = this.listeners.get(event) ?? new Set();
@@ -124,7 +125,8 @@ export class Session {
 
   connect(): void {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${proto}://${location.host}/ws?player=${encodeURIComponent(this.playerId)}`);
+    const seat = this.playerId ? `?player=${encodeURIComponent(this.playerId)}` : '';
+    const ws = new WebSocket(`${proto}://${location.host}/ws${seat}`);
     this.ws = ws;
     this.status = 'connecting';
     this.changed();
@@ -132,7 +134,7 @@ export class Session {
     ws.onclose = (e) => {
       if (this.ws !== ws) return;
       this.status = 'closed';
-      if (e.code === 4001) this.showError('Unknown player. Pick a seat again.');
+      if (e.code === 4001) this.showError('You have no seat at this world. Join again from your account.');
       this.changed();
       if (!this.closed && e.code !== 4001) this.retry = setTimeout(() => this.connect(), 1000);
     };

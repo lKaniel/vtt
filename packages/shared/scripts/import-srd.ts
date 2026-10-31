@@ -1,5 +1,6 @@
 // Converts the Open Character Format SRD packs (CC-BY-4.0) into our content
-// files: every spell, class and monster of SRD 5.1 (2014) and 5.2 (2024).
+// files: every spell, class and monster of SRD 5.1 (2014) and 5.2 (2024),
+// plus the species, backgrounds and starting kits the character creator offers.
 //
 //   npm pack @opencharacter/5e-srd-5.1 @opencharacter/5e-srd-5.2   (then untar each)
 //   node --experimental-strip-types scripts/import-srd.ts <5.1 package dir> <5.2 package dir>
@@ -10,6 +11,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { convertOrigins } from './origins-convert.ts';
 import { convertClass, convertMonster, convertSpell, ofType, type Entry, type Pack } from './srd-convert.ts';
 
 const OUT = join(import.meta.dirname, '../content/srd');
@@ -27,6 +29,12 @@ function write(name: string, data: object[]): void {
   console.log(`${name}: ${data.length}`);
 }
 
+function writeOrigins(name: string, origins: object): void {
+  writeFileSync(join(OUT, name), `${JSON.stringify(origins, null, 2)}\n`);
+  console.log(`${name}: written`);
+}
+
+const items = JSON.parse(readFileSync(join(OUT, 'items.json'), 'utf8')) as { id: string; name: string }[];
 const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id);
 
 for (const [edition, dir] of [
@@ -48,4 +56,5 @@ for (const [edition, dir] of [
     `monsters-${edition}.json`,
     sorted('monster').map((m) => convertMonster(pack, m)),
   );
+  writeOrigins(`origins-${edition}.json`, convertOrigins(pack, items));
 }
