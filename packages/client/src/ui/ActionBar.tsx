@@ -180,6 +180,7 @@ function Resources({ token, budget }: Readonly<{ token: TokenView; budget: TurnB
     <div className="ab-resources">
       <span className={budget && !budget.action ? 'res res-action used' : 'res res-action'} title="Action" />
       <span className={budget && !budget.bonus ? 'res res-bonus used' : 'res res-bonus'} title="Bonus action" />
+      <span className="res-move-icon" title="Movement left" />
       <span className="res-move" title="Movement left">
         <span
           className="res-move-fill"
