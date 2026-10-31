@@ -129,7 +129,11 @@ describe('spells', () => {
 
   it('a cone sprays from the caster toward the point', () => {
     const log = spell({ attackKind: undefined, point: [300, 200], area: { shape: 'cone', size: 15, width: 5 } });
-    expect(only(cuesOf(message({ spell: log })), 'spray')[0]).toMatchObject({ from: 'wiz', to: [300, 200], length: 15 });
+    expect(only(cuesOf(message({ spell: log })), 'spray')[0]).toMatchObject({
+      from: 'wiz',
+      to: [300, 200],
+      length: 15,
+    });
   });
 
   it('an emanation bursts around the caster', () => {
@@ -146,7 +150,11 @@ describe('spells', () => {
   });
 
   it('names the effect it leaves, or says the target saved', () => {
-    const held = spell({ damageType: undefined, attackKind: undefined, results: [hitOn('a', { effect: 'Hold Person' })] });
+    const held = spell({
+      damageType: undefined,
+      attackKind: undefined,
+      results: [hitOn('a', { effect: 'Hold Person' })],
+    });
     expect(only(cuesOf(message({ spell: held })), 'number')[0]).toMatchObject({ text: 'Hold Person', tone: 'note' });
     const saved = spell({ damageType: undefined, attackKind: undefined, results: [hitOn('a', { save: save(true) })] });
     expect(only(cuesOf(message({ spell: saved })), 'number')[0]).toMatchObject({ text: 'Saved', tone: 'miss' });

@@ -20,7 +20,7 @@ export type Cue = { at: number } & (
   /** `radius` in feet. */
   | { kind: 'burst'; where: Where; radius: number; element: Element }
   /** A cone or line from the caster toward `to`, `length` feet long. */
-  | { kind: 'spray'; from: string; to: Point; length: number; element: Element }
+  | { kind: 'spray'; from: string; to: Point; length: number; wide: boolean; element: Element }
   /** The caster gathering the spell. */
   | { kind: 'channel'; token: string; element: Element }
   /** The target flinches: a flash and a shake. */
@@ -46,7 +46,7 @@ const PUFF = 5;
 const PHYSICAL = new Set<DamageType>(['slashing', 'piercing', 'bludgeoning']);
 
 const COLORS: Record<Element, number> = {
-  steel: 0xe8e4da,
+  steel: 0xcfe0ff,
   heal: 0x7ee08a,
   arcane: 0xb48cff,
   acid: 0x9be33a,
@@ -105,9 +105,13 @@ function landing(r: SpellTargetLog, at: number, element: Element): Cue[] {
   if (r.healed) out.push({ at, kind: 'glow', token, element: 'heal' }, say(`+${r.healed}`, 'heal'));
   if (r.damage > 0) out.push({ at, kind: 'impact', token, element }, say(String(r.damage), r.crit ? 'crit' : 'damage'));
   if (r.effect) out.push(say(r.effect, 'note', out.length ? NOTE_DELAY : 0));
-  if (!out.length && r.save?.success) out.push(say('Saved', 'miss'));
-  if (!out.length && r.hit) out.push(say('0', 'damage'));
-  return out;
+  return out.length ? out : nothingLanded(r, say);
+}
+
+/** A target that took no damage and got no effect: it saved, or the hit did nothing. */
+function nothingLanded(r: SpellTargetLog, say: (text: string, tone: Tone) => Cue): Cue[] {
+  if (r.save?.success) return [say('Saved', 'miss')];
+  return r.hit ? [say('0', 'damage')] : [];
 }
 
 function spellElement(log: SpellLog): Element {
@@ -133,7 +137,8 @@ function areaCues(log: SpellLog, element: Element): Cue[] {
     blast = [{ at: lands, kind: 'burst', where: from, radius: area.size, element }];
   } else if (area.shape === 'cone' || area.shape === 'line') {
     lands = CHANNEL + IMPACT.spray;
-    blast = [{ at: CHANNEL, kind: 'spray', from, to: log.point, length: area.size, element }];
+    const wide = area.shape === 'cone';
+    blast = [{ at: CHANNEL, kind: 'spray', from, to: log.point, length: area.size, wide, element }];
   } else {
     lands = CHANNEL + IMPACT.orb;
     blast = [
@@ -148,11 +153,11 @@ function areaCues(log: SpellLog, element: Element): Cue[] {
 function targetCues(log: SpellLog, element: Element): Cue[] {
   const from = log.casterId;
   const puff: Cue[] = log.point ? [{ at: CHANNEL, kind: 'burst', where: log.point, radius: PUFF, element }] : [];
-  const each = log.results.flatMap((r, i) => {
+  const each = log.results.flatMap((r, i): Cue[] => {
     const start = CHANNEL + i * STAGGER;
     const to = r.targetId;
     if (log.attackKind === 'melee') {
-      return [{ at: start, kind: 'slash', from, to, element } as Cue, ...landing(r, start + IMPACT.melee, element)];
+      return [{ at: start, kind: 'slash', from, to, element }, ...landing(r, start + IMPACT.melee, element)];
     }
     if (to === from || !flies(log, r)) return landing(r, start, element);
     const bolt: Cue = { at: start, kind: 'missile', from, to, element, style: 'orb', duration: IMPACT.orb };
