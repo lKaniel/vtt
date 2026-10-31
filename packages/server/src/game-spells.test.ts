@@ -98,6 +98,14 @@ describe('casting spells', () => {
       spell: 'Fire Bolt',
       results: [{ target: 'Goblin', hit: true, damage: 2 }],
     });
+    // What the map needs to draw the bolt: who, at whom, and what it burns with.
+    expect(log).toMatchObject({
+      casterId: 'hero',
+      spellId: 'fire-bolt',
+      damageType: 'fire',
+      attackKind: 'ranged',
+      results: [{ targetId: 'goblin' }],
+    });
     expect(store.combat!.left.action).toBe(false);
     ana.receive({ t: 'cast', caster: 'hero', spell: 'fire-bolt', slot: 0, targets: ['goblin'] });
     expect(errors(ana)[0]).toMatch(/already used/);
@@ -138,6 +146,7 @@ describe('casting spells', () => {
     // 8d6 of 1s = 8; everyone fails their save.
     dice = [...Array<number>(8).fill(face(1, 6)), face(1), face(1), face(1), face(1)];
     ana.receive({ t: 'cast', caster: 'hero', spell: 'fireball', slot: 3, targets: [], point: [250, 150] });
+    expect(spellLogs(ana)[0]).toMatchObject({ point: [250, 150], area: { shape: 'sphere', size: 20 } });
     expect([tok('goblin').hp, tok('goblin2').hp, tok('hero').hp, tok('bo').hp]).toEqual([0, 0, 22, 32]);
   });
 
