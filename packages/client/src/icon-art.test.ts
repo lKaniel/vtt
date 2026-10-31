@@ -49,6 +49,6 @@ describe('painted icon art', () => {
 
   it("shows a token's own picture, or a hooded stranger when it has none", () => {
     expect(portraitOf({ img: '/assets/orrin.png' } as TokenView)).toBe('/assets/orrin.png');
-    expect(portraitOf({} as TokenView)).toBe('/art/ui/portrait-default.svg');
+    expect(portraitOf({} as TokenView)).toBe('/art/ui/portrait-default.webp');
   });
 });

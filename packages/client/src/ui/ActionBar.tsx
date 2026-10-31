@@ -213,9 +213,7 @@ function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenVi
         onClick={() => session.endTurn()}
         title={mine ? 'End turn (Space)' : 'Waiting for your turn'}
         aria-label={mine ? 'End turn' : 'Waiting for your turn'}
-      >
-        <Glyph glyph="hourglass" size={38} />
-      </button>
+      />
     </div>
   );
 }

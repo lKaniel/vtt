@@ -5,7 +5,6 @@ import { effectTone } from './vitals.ts';
 // themselves are SVG paths in ui/Icon.tsx; tints are CSS classes in style.css.
 
 export type Glyph =
-  | 'hourglass'
   | 'sword'
   | 'mace'
   | 'bow'

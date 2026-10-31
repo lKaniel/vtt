@@ -30,4 +30,4 @@ export function tokenBaseArt(token: TokenView, selected: boolean): string {
 export const diceArt = (die: string) => `/art/icons/dice/${die === 'd100' ? 'd10' : die}.webp`;
 
 /** A token's own picture, or a hooded stranger for creatures without one. */
-export const portraitOf = (token: TokenView) => token.img ?? '/art/ui/portrait-default.svg';
+export const portraitOf = (token: TokenView) => token.img ?? '/art/ui/portrait-default.webp';

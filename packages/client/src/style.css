@@ -1909,17 +1909,7 @@ h4 {
   transform: translateY(-2px) rotate(-8deg);
   filter: drop-shadow(0 0 6px rgba(232, 211, 166, 0.5));
 }
-/* End turn is an hourglass engraved into the medallion. */
-.end-turn {
-  place-items: center;
-  color: #3a2709;
-}
-.end-turn .glyph {
-  filter: drop-shadow(0 1px 0 rgba(255, 238, 200, 0.55));
-}
-.end-turn:disabled {
-  color: #7d7262;
-}
-.end-turn:disabled .glyph {
-  filter: drop-shadow(0 1px 1px #000);
+/* End turn: Kaniel's painted hourglass medallion, lit or dimmed. */
+.end-turn:not(:disabled):hover {
+  filter: brightness(1.12) drop-shadow(0 0 10px rgba(232, 211, 166, 0.45));
 }
