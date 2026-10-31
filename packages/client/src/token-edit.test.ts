@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listText, parseList, setAbility, setStat, tokenPatch } from './token-edit.ts';
+import { listText, parseList, setAbility, setOwnership, setStat, tokenPatch } from './token-edit.ts';
 
 describe('the GM token editor', () => {
   it('sends only what changed, and null for what was cleared', () => {
@@ -19,5 +19,14 @@ describe('the GM token editor', () => {
   it('reads damage type lists typed with commas, keeping only real types', () => {
     expect(parseList('Fire, cold ,  , banana')).toEqual(['fire', 'cold']);
     expect(listText(['fire', 'cold'])).toBe('fire, cold');
+  });
+});
+
+describe('ownership in the editor', () => {
+  it('moves a player between owner, observer and none', () => {
+    const t = { controllers: ['ana'], observers: ['bo'] };
+    expect(setOwnership(t, 'bo', 'owner')).toEqual({ controllers: ['ana', 'bo'] });
+    expect(setOwnership(t, 'ana', 'observer')).toEqual({ controllers: [], observers: ['bo', 'ana'] });
+    expect(setOwnership(t, 'bo', 'none')).toEqual({ controllers: ['ana'] });
   });
 });

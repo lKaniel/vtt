@@ -10,10 +10,20 @@ const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digi
 export const PointSchema = z.tuple([z.number(), z.number()]);
 export type Point = z.infer<typeof PointSchema>;
 
+/**
+ * What a seat may do at the table, like Foundry's user roles:
+ * - gm: everything;
+ * - trusted: a player who may also edit the tokens they own (their character sheet);
+ * - player: plays the tokens they own;
+ * - observer: watches through the party's eyes and reads their sheets, but acts on nothing.
+ */
+export const RoleSchema = z.enum(['gm', 'trusted', 'player', 'observer']);
+export type Role = z.infer<typeof RoleSchema>;
+
 export const PlayerSchema = z.object({
   id,
   name: z.string().min(1),
-  role: z.enum(['gm', 'player']),
+  role: RoleSchema,
   color: z.string().default('#8a8a8a'),
 });
 export type Player = z.infer<typeof PlayerSchema>;
@@ -87,8 +97,10 @@ export const TokenSchema = z.object({
   img: z.string().optional(),
   /** Walking speed in feet. */
   speed: z.number().nonnegative().default(30),
-  /** Player ids that may control this token. The GM always can. */
+  /** Player ids that own this token: they act with it, and trusted players may edit it. The GM always can. */
   controllers: z.array(id).default([]),
+  /** Player ids that may read this token's sheet and see through its eyes, but not act with it. */
+  observers: z.array(id).optional(),
   /** Darkvision range in feet; 0 for none. */
   darkvision: z.number().nonnegative().default(0),
   /** A light the token carries, e.g. a torch: { "bright": 20, "dim": 20 }. */

@@ -32,6 +32,15 @@ describe('WorldStore', () => {
     expect(JSON.parse(await readFile(join(dir, 'tokens/hero.json'), 'utf8'))).toMatchObject({ x: 50 });
   });
 
+  it('writes world.json when the seats change', async () => {
+    const { dir, store } = await loaded();
+    const players = store.world.players.map((p) => (p.id === 'bo' ? { ...p, role: 'observer' as const } : p));
+    store.setWorld({ ...store.world, players });
+    await store.flush();
+    const saved = JSON.parse(await readFile(join(dir, 'world.json'), 'utf8')) as { players: { role: string }[] };
+    expect(saved.players.map((p) => p.role)).toEqual(['gm', 'player', 'observer']);
+  });
+
   it('deletes a removed token and its file', async () => {
     const { dir, store } = await loaded();
     const gone = new Promise((resolve) => store.once('tokenGone', resolve));

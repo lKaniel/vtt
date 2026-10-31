@@ -45,7 +45,17 @@ grows down, negative values are fine.
 ```
 
 At least one player must have `"role": "gm"`. `start` is where the camera
-opens. Changing this file reconnects everyone.
+opens. Changing the seats (a role, a new player) reaches everyone live;
+changing anything else reconnects everyone.
+
+Roles, like Foundry's user roles (the GM changes them in the Players tab):
+
+| Role       | What the seat may do                                                                   |
+| ---------- | -------------------------------------------------------------------------------------- |
+| `gm`       | Everything.                                                                            |
+| `trusted`  | Play the tokens they own, and edit their sheets (not ownership, position or `hidden`). |
+| `player`   | Play the tokens they own.                                                              |
+| `observer` | Watch through the party's eyes and read their sheets; act on nothing.                  |
 
 ## Chunks
 
@@ -92,17 +102,18 @@ wall's midpoint). The checker warns when one is in the wrong file.
 }
 ```
 
-| Field         | Meaning                                                             |
-| ------------- | ------------------------------------------------------------------- |
-| `id`          | Lowercase letters, digits, dashes. Must match the file name.        |
-| `x`, `y`      | Centre of the token in pixels (a square centre).                    |
-| `size`        | In squares: 1 medium, 2 large, 3 huge. Default 1.                   |
-| `color`       | Disc colour behind the placeholder when there is no picture.        |
-| `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency. |
-| `speed`       | Walking speed in feet. Default 30.                                  |
-| `controllers` | Player ids who may move it. The GM always can.                      |
-| `hidden`      | `true` = only the GM sees it.                                       |
-| `visibleTo`   | If set, only these players (and the GM) see it. Used for illusions. |
+| Field         | Meaning                                                              |
+| ------------- | -------------------------------------------------------------------- |
+| `id`          | Lowercase letters, digits, dashes. Must match the file name.         |
+| `x`, `y`      | Centre of the token in pixels (a square centre).                     |
+| `size`        | In squares: 1 medium, 2 large, 3 huge. Default 1.                    |
+| `color`       | Disc colour behind the placeholder when there is no picture.         |
+| `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency.  |
+| `speed`       | Walking speed in feet. Default 30.                                   |
+| `controllers` | Player ids who own it: they move and act with it. The GM always can. |
+| `observers`   | Player ids who may read its sheet and see through its eyes.          |
+| `hidden`      | `true` = only the GM sees it.                                        |
+| `visibleTo`   | If set, only these players (and the GM) see it. Used for illusions.  |
 
 A token with a `monster` and no `img` uses that monster's painted token, if one
 has been imported (see [token-art/README.md](token-art/README.md)).

@@ -122,6 +122,13 @@ export class WorldStore extends EventEmitter<StoreEvents> {
     return out;
   }
 
+  /** Replaces world.json, e.g. when the GM changes someone's role. */
+  setWorld(world: World): void {
+    this.world = world;
+    this.emit('world', world);
+    this.write('world.json', world);
+  }
+
   setToken(token: Token, path?: Point[]): void {
     this.tokens.set(token.id, token);
     this.emit('token', token, path);

@@ -162,7 +162,9 @@ function tokenIssues(t: Actor, players: Set<string>, world: World, file: string)
   const edition = editionOf(t, world);
   const srd = srdFor(edition);
   const messages = [
-    ...[...t.controllers, ...(t.visibleTo ?? [])].filter((c) => !players.has(c)).map((c) => `unknown player "${c}"`),
+    ...[...t.controllers, ...(t.observers ?? []), ...(t.visibleTo ?? [])]
+      .filter((c) => !players.has(c))
+      .map((c) => `unknown player "${c}"`),
     ...(t.monster && !srd.monsters.has(t.monster) ? [`unknown monster "${t.monster}" in the ${edition} rules`] : []),
     ...(t.inventory ?? []).filter((e) => !srd.items.has(e.item)).map((e) => `unknown item "${e.item}"`),
     ...(t.stats?.spells ?? [])

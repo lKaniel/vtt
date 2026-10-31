@@ -5,7 +5,7 @@ import { Face, HpBar } from './Portrait.tsx';
 /** Initiative order across the top of the screen, plus the GM's fight controls. */
 export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onStart: () => void }>) {
   const combat = session.combat;
-  const gm = session.you?.role === 'gm';
+  const gm = session.isGm();
   if (!combat) {
     return gm ? (
       <div className="turn-order idle">

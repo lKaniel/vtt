@@ -76,11 +76,14 @@ function toggleSheet(session: Session): void {
   else if (session.selected) session.openSheet({ kind: 'token', id: session.selected });
 }
 
-/** GM: E switches the open sheet to edit mode and back, or opens the selected creature's sheet for editing. */
+/**
+ * E switches the open sheet to edit mode and back, or opens the selected
+ * creature's sheet for editing: for the GM, and trusted players on their own tokens.
+ */
 function toggleEditor(session: Session): void {
-  if (session.you?.role !== 'gm') return;
   if (session.sheet) session.setSheetEdit(!session.sheet.edit);
-  else if (session.selected) session.openSheet({ kind: 'token', id: session.selected }, true);
+  else if (session.selected && session.canEdit(session.selected))
+    session.openSheet({ kind: 'token', id: session.selected }, true);
 }
 
 /** Arrow keys walk the selected creature one square. */

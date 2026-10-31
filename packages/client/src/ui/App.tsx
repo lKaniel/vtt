@@ -1,6 +1,7 @@
 import type { Player } from '@vtt/shared';
 import { useEffect, useState } from 'react';
 import { GameScreen } from './GameScreen.tsx';
+import { ROLE_NAMES } from './PlayersTab.tsx';
 
 export function App() {
   const [playerId, setPlayerId] = useState(() => new URLSearchParams(location.search).get('player'));
@@ -35,7 +36,7 @@ function JoinScreen({ onJoin }: Readonly<{ onJoin: (id: string) => void }>) {
         {players?.map((p) => (
           <button key={p.id} className="join-seat" style={{ borderColor: p.color }} onClick={() => onJoin(p.id)}>
             <span className="join-name">{p.name}</span>
-            <span className="join-role">{p.role === 'gm' ? 'Game master' : 'Player'}</span>
+            <span className="join-role">{ROLE_NAMES[p.role].name}</span>
           </button>
         ))}
       </div>

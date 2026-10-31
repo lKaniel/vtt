@@ -82,7 +82,7 @@ export class ChunkLayer {
 
   /** Click opens or closes; shift-click lets the GM lock or unlock. */
   private toggle(key: string, wall: Wall, shift: boolean): void {
-    const isGm = this.session.you?.role === 'gm';
+    const isGm = this.session.isGm();
     if (isGm && shift) this.session.setDoor(key, wall.id, wall.door === 'locked' ? 'closed' : 'locked');
     else if (wall.door === 'locked') this.session.showError('The door is locked');
     else this.session.setDoor(key, wall.id, wall.door === 'open' ? 'closed' : 'open');

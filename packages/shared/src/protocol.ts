@@ -1,6 +1,6 @@
 import type { Combat } from './combat.ts';
 import type { Roll } from './dice.ts';
-import type { Actor, Chunk, DoorState, Player, Point, World } from './schema.ts';
+import type { Actor, Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
 import type { Area } from './spell-schema.ts';
 import type { Ability, DamageType, Edition } from './stats-schema.ts';
 import type { TokenView } from './token-view.ts';
@@ -111,14 +111,16 @@ export type ClientMessage =
   | { t: 'rest'; tokens: string[]; kind: 'short' | 'long' }
   /** Save how a creature you control has its action bar arranged. */
   | { t: 'hotbar'; token: string; slots: (string | null)[] }
-  /** GM: change token fields; `null` removes one (e.g. `hp: null` heals fully). */
+  /** Change token fields; `null` removes one (e.g. `hp: null` heals fully). The GM may edit any token, a trusted player the ones they own. */
   | { t: 'editToken'; token: string; patch: Record<string, unknown> }
   | { t: 'deleteToken'; token: string }
   /** GM: put a new token on the map at a point (snapped to the grid). */
   | { t: 'spawn'; from: SpawnSource; at: Point; hidden?: boolean }
   /** GM: add or replace an actor in the Actors list. */
   | { t: 'saveActor'; actor: Actor }
-  | { t: 'deleteActor'; actor: string };
+  | { t: 'deleteActor'; actor: string }
+  /** GM: change what a seat may do at the table. */
+  | { t: 'setRole'; player: string; role: Role };
 
 export type ServerMessage =
   | {

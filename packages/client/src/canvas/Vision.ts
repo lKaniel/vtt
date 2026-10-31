@@ -1,4 +1,5 @@
 import {
+  isGm,
   feetToPx,
   tokenLights,
   visibilityPolygon,
@@ -134,9 +135,9 @@ export class Vision {
       h: height / camera.zoom,
     };
     const lights = this.lights(viewers);
-    const isGm = you.role === 'gm';
-    this.renderDarkness(view, world.darkness * (isGm ? GM_DARKNESS : 1), { walls, viewers, lights });
-    const fog = !isGm && world.vision;
+    const gm = isGm(you);
+    this.renderDarkness(view, world.darkness * (gm ? GM_DARKNESS : 1), { walls, viewers, lights });
+    const fog = !gm && world.vision;
     this.fogSprite.visible = fog;
     if (fog) this.renderFog(view, { walls, viewers, lights }, settled);
   }

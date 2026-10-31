@@ -113,10 +113,9 @@ function Portrait({ token, onSheet }: Readonly<{ token: TokenView; onSheet: () =
 }
 
 function Who({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
-  const gm = session.you?.role === 'gm';
   return (
     <div className="ab-who">
-      {gm ? (
+      {session.canEdit(token.id) ? (
         <button
           className="ab-name ab-edit"
           title="Edit sheet (E)"

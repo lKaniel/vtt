@@ -1,6 +1,7 @@
 import {
   canAct,
   canControlToken,
+  isGm,
   concentrationDc,
   currentTurn,
   dropConcentration,
@@ -218,5 +219,5 @@ export class Table {
 }
 
 export function requireGm(player: Player): void {
-  if (player.role !== 'gm') throw new Refusal('Only the GM can do that');
+  if (!isGm(player)) throw new Refusal('Only the GM can do that');
 }

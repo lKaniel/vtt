@@ -27,6 +27,9 @@ you add maps, place tokens, and prepare encounters.
   client can preview them with the same code. Don't duplicate them.
 - The server is authoritative: clients send intents, the server validates
   and broadcasts each player's filtered view (`canSeeToken`, `viewToken`).
+- Who may do what lives in `permissions.ts`: seat roles (gm, trusted, player,
+  observer) and token ownership (`controllers` own, `observers` look). Check
+  with its helpers (`isGm`, `canControlToken`, `canEditToken`), never `role === 'gm'`.
 - Combat rules: `creature.ts` (stats from monster/gear), `attack.ts` (rolls,
   damage, range), `combat.ts` (initiative, turns). The server applies them
   in `combat-actions.ts`; a rule violation throws `Refusal`.

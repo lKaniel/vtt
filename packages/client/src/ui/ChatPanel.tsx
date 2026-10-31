@@ -3,19 +3,20 @@ import { useEffect, useRef, useState } from 'react';
 import type { Session } from '../session.ts';
 import { ActorsTab } from './ActorsTab.tsx';
 import { CompendiumTab } from './CompendiumTab.tsx';
+import { PlayersTab } from './PlayersTab.tsx';
 import { diceArt } from '../icon-art.ts';
 import { targetText } from '../spell-text.ts';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
-/** The GM's side panel has tabs, like a VTT sidebar: the log, the Actors list and the Compendium. */
-const TABS = ['Adventure log', 'Actors', 'Compendium'] as const;
+/** The GM's side panel has tabs, like a VTT sidebar: the log, the Actors list, the Compendium and the seats. */
+const TABS = ['Adventure log', 'Actors', 'Compendium', 'Players'] as const;
 type Tab = (typeof TABS)[number];
 
 export function ChatPanel({ session }: Readonly<{ session: Session }>) {
   const [open, setOpen] = useState(true);
   const [tab, setTab] = useState<Tab>('Adventure log');
-  const gm = session.you?.role === 'gm';
+  const gm = session.isGm();
   const shown = gm ? tab : 'Adventure log';
   return (
     <aside className={`chat frame${open ? '' : ' closed'}${shown === 'Adventure log' ? '' : ' library'}`}>
@@ -37,6 +38,7 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
       {shown === 'Adventure log' && <Log session={session} open={open} />}
       {shown === 'Actors' && <ActorsTab session={session} />}
       {shown === 'Compendium' && <CompendiumTab session={session} />}
+      {shown === 'Players' && <PlayersTab session={session} />}
     </aside>
   );
 }

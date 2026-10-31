@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import {
   canControlToken,
   DoorStateSchema,
+  isGm,
+  RoleSchema,
   EditionSchema,
   tokensVisibleTo,
   findPath,
@@ -16,6 +18,7 @@ import {
   type Rng,
   type ServerMessage,
   type Token,
+  type World,
   type WorldInfo,
 } from '@vtt/shared';
 import type { RawData, WebSocket } from 'ws';
@@ -70,6 +73,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   // The actor itself is checked by GmActions, so a broken one gets a readable refusal.
   z.object({ t: z.literal('saveActor'), actor: z.unknown() }),
   z.object({ t: z.literal('deleteActor'), actor: z.string() }),
+  z.object({ t: z.literal('setRole'), player: z.string(), role: RoleSchema }),
 ]);
 
 interface Client {
@@ -100,6 +104,8 @@ export class Game {
   private spells: SpellActions;
   private features: FeatureActions;
   private gm: GmActions;
+  /** world.json minus the seats, to tell a role change from a new grid. */
+  private settings: string;
 
   constructor(
     private store: WorldStore,
@@ -110,6 +116,7 @@ export class Game {
     this.spells = new SpellActions(table, (spell) => this.narrate({ spell }));
     this.features = new FeatureActions(table);
     this.gm = new GmActions(table);
+    this.settings = worldSettings(store.world);
     store.on('chunk', (key, chunk) => {
       for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
       // A door or a light changed: what everyone can see may have too.
@@ -130,10 +137,29 @@ export class Game {
     store.on('combat', (combat) => {
       for (const c of this.clients) this.send(c, { t: 'combat', combat: combat ?? null });
     });
-    store.on('world', () => {
-      // Player list or grid changes need a fresh start on every client.
-      for (const c of this.clients) c.ws.close(4000, 'world settings changed');
-    });
+    store.on('world', (world) => this.onWorld(world));
+  }
+
+  /**
+   * Role and seat changes reach everyone live with a fresh welcome; anything
+   * else (grid, rules) or a seat that's gone needs a reconnect.
+   */
+  private onWorld(world: World): void {
+    const settings = worldSettings(world);
+    const same = settings === this.settings;
+    this.settings = settings;
+    for (const c of this.clients) {
+      const player = world.players.find((p) => p.id === c.player.id);
+      if (!same || !player) {
+        c.ws.close(4000, 'world settings changed');
+        continue;
+      }
+      c.player = player;
+      c.visible = this.visibleTo(player);
+      // The client starts over and asks for its chunks again.
+      c.chunks = new Set();
+      this.welcome(c);
+    }
   }
 
   findPlayer(id: string): Player | undefined {
@@ -143,17 +169,7 @@ export class Game {
   connect(ws: WebSocket, player: Player): void {
     const client: Client = { ws, player, chunks: new Set(), visible: this.visibleTo(player) };
     this.clients.add(client);
-    const { players: _players, ...world } = this.store.world;
-    const info: WorldInfo = world;
-    this.send(client, {
-      t: 'welcome',
-      world: info,
-      you: player,
-      tokens: [...client.visible].map((id) => this.view(this.store.tokens.get(id)!, player)),
-      chat: this.chat.filter((m) => !m.gmOnly || player.role === 'gm'),
-      combat: this.store.combat ?? null,
-      ...(player.role === 'gm' ? { players: this.store.world.players, actors: [...this.store.actors.values()] } : {}),
-    });
+    this.welcome(client);
     ws.on('message', (data) => {
       const msg = parseClientMessage(data);
       if (msg) this.handle(client, msg);
@@ -161,6 +177,23 @@ export class Game {
     });
     ws.on('close', () => this.clients.delete(client));
     console.log(`[game] ${player.name} joined`);
+  }
+
+  /** Everything a client needs to start (or start over) with its current seat. */
+  private welcome(c: Client): void {
+    const { players: _players, ...world } = this.store.world;
+    const info: WorldInfo = world;
+    const player = c.player;
+    const gm = isGm(player);
+    this.send(c, {
+      t: 'welcome',
+      world: info,
+      you: player,
+      tokens: [...c.visible].map((id) => this.view(this.store.tokens.get(id)!, player)),
+      chat: this.chat.filter((m) => !m.gmOnly || gm),
+      combat: this.store.combat ?? null,
+      ...(gm ? { players: this.store.world.players, actors: [...this.store.actors.values()] } : {}),
+    });
   }
 
   private visibleTo(player: Player): Set<string> {
@@ -247,6 +280,8 @@ export class Game {
         return this.gm.saveActor(c.player, msg.actor);
       case 'deleteActor':
         return this.gm.deleteActor(c.player, msg.actor);
+      case 'setRole':
+        return this.gm.setRole(c.player, msg.player, msg.role);
       default:
         return undefined;
     }
@@ -312,8 +347,9 @@ export class Game {
     const chunk = this.store.chunks.get(msg.chunk);
     const wall = chunk?.walls.find((w) => w.id === msg.wall);
     if (!chunk || !wall?.door) return this.fail(c, 'No such door');
+    if (c.player.role === 'observer') return this.fail(c, 'Observers only watch');
     const touchesLock = wall.door === 'locked' || msg.state === 'locked';
-    if (touchesLock && c.player.role !== 'gm') return this.fail(c, 'The door is locked');
+    if (touchesLock && !isGm(c.player)) return this.fail(c, 'The door is locked');
     const walls = chunk.walls.map((w) => (w === wall ? { ...w, door: msg.state } : w));
     this.store.setChunk(msg.chunk, { ...chunk, walls });
   }
@@ -334,7 +370,7 @@ export class Game {
     this.chat.push(message);
     if (this.chat.length > CHAT_HISTORY) this.chat.shift();
     for (const other of this.clients) {
-      if (message.gmOnly && other.player.role !== 'gm' && other !== sender) continue;
+      if (message.gmOnly && !isGm(other.player) && other !== sender) continue;
       this.send(other, { t: 'chat', message });
     }
   }
@@ -354,7 +390,7 @@ export class Game {
   }
 
   private toGms(msg: ServerMessage): void {
-    for (const c of this.clients) if (c.player.role === 'gm') this.send(c, msg);
+    for (const c of this.clients) if (isGm(c.player)) this.send(c, msg);
   }
 
   private fail(c: Client, message: string): void {
@@ -364,6 +400,11 @@ export class Game {
   private send(c: Client, msg: ServerMessage): void {
     if (c.ws.readyState === c.ws.OPEN) c.ws.send(JSON.stringify(msg));
   }
+}
+
+function worldSettings(world: World): string {
+  const { players: _players, ...settings } = world;
+  return JSON.stringify(settings);
 }
 
 function parseClientMessage(data: RawData): ClientMessage | undefined {

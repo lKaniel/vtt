@@ -1,5 +1,8 @@
 import {
+  canControlToken,
+  canEditToken,
   currentTurn,
+  isGm,
   type Actor,
   type Chunk,
   type ChatMessage,
@@ -9,6 +12,7 @@ import {
   type Player,
   type Point,
   type Rect,
+  type Role,
   type ServerMessage,
   type SpawnSource,
   type Token,
@@ -71,7 +75,7 @@ export class Session {
   players: Player[] = [];
   /** GM only: the Actors list. */
   readonly actors = new Map<string, Actor>();
-  /** The open character sheet; `edit` is the GM's edit mode. */
+  /** The open character sheet; `edit` is edit mode (the GM's, or a trusted owner's). */
   sheet?: SheetTarget & { edit: boolean };
   /** GM only: creatures dropped on the map arrive hidden from the players. */
   spawnHidden = false;
@@ -262,10 +266,26 @@ export class Session {
 
   // GM tools ---------------------------------------------------------------
 
-  /** Opens a sheet (or closes it with undefined); only the GM can open one for editing. */
+  /** Opens a sheet (or closes it with undefined); only those who may edit it can open it for editing. */
   openSheet(target: SheetTarget | undefined, edit = false): void {
-    this.sheet = target && { ...target, edit: edit && this.you?.role === 'gm' };
+    const editable = target && (target.kind === 'actor' ? this.isGm() : this.canEdit(target.id));
+    this.sheet = target && { ...target, edit: edit && !!editable };
     this.changed();
+  }
+
+  isGm(): boolean {
+    return !!this.you && isGm(this.you);
+  }
+
+  /** The GM edits any token; a trusted player the ones they own. */
+  canEdit(id: string): boolean {
+    const token = this.tokens.get(id);
+    return !!this.you && !!token && canEditToken(token, this.you);
+  }
+
+  /** GM: change what a seat may do at the table. */
+  setRole(player: string, role: Role): void {
+    this.send({ t: 'setRole', player, role });
   }
 
   setSheetEdit(edit: boolean): void {
@@ -348,7 +368,7 @@ export class Session {
   }
 
   canControl(token: Token): boolean {
-    return !!this.you && (this.you.role === 'gm' || token.controllers.includes(this.you.id));
+    return !!this.you && canControlToken(token, this.you);
   }
 
   showError(message: string): void {
@@ -420,11 +440,18 @@ export class Session {
     this.players = msg.players ?? [];
     this.actors.clear();
     for (const a of msg.actors ?? []) this.actors.set(a.id, a);
+    // A new role may take edit mode away (or the creature out of sight).
+    if (this.sheet) this.reopenSheet(this.sheet);
     // A reconnect starts from scratch: ask for the chunks again.
     this.chunks.clear();
     this.emit('welcome');
     for (const t of msg.tokens) this.emit('token', t);
     if (this.view.length) this.send({ t: 'view', chunks: this.view });
+  }
+
+  private reopenSheet(sheet: SheetTarget & { edit: boolean }): void {
+    const there = sheet.kind === 'token' ? this.tokens.has(sheet.id) : this.actors.has(sheet.id);
+    this.openSheet(there ? sheet : undefined, sheet.edit);
   }
 
   private onActor(msg: Extract<ServerMessage, { t: 'actor' | 'actorGone' }>): void {

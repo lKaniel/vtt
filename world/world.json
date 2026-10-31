@@ -14,7 +14,7 @@
     {
       "id": "player1",
       "name": "Player 1",
-      "role": "player",
+      "role": "trusted",
       "color": "#5a9be0"
     },
     {

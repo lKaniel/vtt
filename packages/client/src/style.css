@@ -2680,3 +2680,34 @@ button.pip:hover {
   user-select: none;
   -webkit-user-select: none;
 }
+
+/* GM Players tab: seats and their roles. */
+.players-tab {
+  padding: 8px 10px;
+  overflow-y: auto;
+}
+
+.player-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.player-row select {
+  margin-left: auto;
+}
+
+.role-help {
+  margin: 12px 0 8px;
+  font-size: 0.85em;
+}
+
+.role-help dt {
+  color: var(--text);
+  font-weight: bold;
+}
+
+.role-help dd {
+  margin: 0 0 6px;
+}

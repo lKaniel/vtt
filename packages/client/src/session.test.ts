@@ -367,10 +367,37 @@ describe('the GM tools', () => {
     expect(session.sheet).toBeUndefined();
   });
 
-  it('only lets the GM edit a sheet', () => {
+  it('only lets the GM, or a trusted owner, edit a sheet', () => {
     ws.receive(welcome());
     session.openSheet({ kind: 'token', id: 'hero' }, true);
     expect(session.sheet?.edit).toBe(false);
+    const trusted = welcome([token('hero'), { ...token('goblin'), controllers: [] }]);
+    ws.receive({ ...trusted, you: { id: 'ana', name: 'Ana', role: 'trusted', color: '#f00' } } as ServerMessage);
+    expect(session.canEdit('hero')).toBe(true);
+    expect(session.canEdit('goblin')).toBe(false);
+    session.openSheet({ kind: 'token', id: 'hero' }, true);
+    expect(session.sheet?.edit).toBe(true);
+    session.openSheet({ kind: 'actor', id: 'bandit' }, true);
+    expect(session.sheet?.edit).toBe(false);
+  });
+
+  it('leaves edit mode when a new role no longer allows it', () => {
+    const trusted = { ...welcome(), you: { id: 'ana', name: 'Ana', role: 'trusted', color: '#f00' } } as ServerMessage;
+    ws.receive(trusted);
+    session.openSheet({ kind: 'token', id: 'hero' }, true);
+    ws.receive(welcome());
+    expect(session.sheet).toEqual({ kind: 'token', id: 'hero', edit: false });
+  });
+
+  it('lets an observer seat watch but not act', () => {
+    ws.receive({ ...welcome(), you: { id: 'ana', name: 'Ana', role: 'observer', color: '#f00' } } as ServerMessage);
+    expect(session.canControl(session.tokens.get('hero')!)).toBe(false);
+  });
+
+  it("sends the GM's role changes", () => {
+    ws.receive(gmWelcome());
+    session.setRole('ana', 'trusted');
+    expect(ws.sent.at(-1)).toEqual({ t: 'setRole', player: 'ana', role: 'trusted' });
   });
 
   it('saves a hotbar layout', () => {

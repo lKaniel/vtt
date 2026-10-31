@@ -1,4 +1,4 @@
-import { featureProblem, removeEffects, rest, useFeature, type Player } from '@vtt/shared';
+import { canControlToken, featureProblem, removeEffects, rest, useFeature, type Player } from '@vtt/shared';
 import { Refusal, requireGm, type Cost, type Table } from './table.ts';
 
 /** Class features, rests, and ending effects by hand. */
@@ -53,6 +53,6 @@ export class FeatureActions {
 
   private canManage(player: Player, id: string): boolean {
     const token = this.store.tokens.get(id);
-    return player.role === 'gm' || !!token?.controllers.includes(player.id);
+    return !!token && canControlToken(token, player);
   }
 }

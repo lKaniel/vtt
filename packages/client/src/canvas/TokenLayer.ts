@@ -1,4 +1,4 @@
-import { currentTurn, type Health, type Point, type TokenView } from '@vtt/shared';
+import { canObserveToken, currentTurn, isGm, type Health, type Point, type TokenView } from '@vtt/shared';
 import { Assets, Container, Graphics, Sprite as PixiSprite, Text, type Texture } from 'pixi.js';
 import { BarTween } from '../bar-tween.ts';
 import { cutoutOf, portraitOf } from '../icon-art.ts';
@@ -101,14 +101,14 @@ export class TokenLayer {
     for (const v of this.views.values()) v.label.visible = visible;
   }
 
-  /** Your tokens, which see for you, where they're drawn right now. The GM has none. */
+  /** Your tokens (owned or observed), which see for you, where they're drawn right now. The GM has none. */
   viewers(): Viewer[] {
     const you = this.session.you;
-    if (!you || you.role === 'gm') return [];
+    if (!you || isGm(you)) return [];
     const out: Viewer[] = [];
     for (const t of this.session.tokens.values()) {
       const view = this.views.get(t.id);
-      if (view && t.controllers.includes(you.id)) out.push({ token: t, at: [view.root.x, view.root.y] });
+      if (view && canObserveToken(t, you)) out.push({ token: t, at: [view.root.x, view.root.y] });
     }
     return out;
   }
