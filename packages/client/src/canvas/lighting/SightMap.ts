@@ -1,6 +1,6 @@
 import { feetToPx, type LightSource, type Point, type Rect, type Senses } from '@vtt/shared';
 import { Container, Graphics, RenderTexture, type Renderer } from 'pixi.js';
-import { MAP_RESOLUTION } from './LightMap.ts';
+import { MAP_RESOLUTION, placeScene, type ViewTransform } from './LightMap.ts';
 
 export interface SightViewer {
   at: Point;
@@ -49,9 +49,8 @@ export class SightMap {
     this.texture.resize(width, height);
   }
 
-  render(scene: SightScene, transform: { scale: number; x: number; y: number }): void {
-    this.scene.scale.set(transform.scale);
-    this.scene.position.set(transform.x, transform.y);
+  render(scene: SightScene, transform: ViewTransform): void {
+    placeScene(this.scene, transform);
     const { view } = scene;
     this.background.clear().rect(view.x, view.y, view.w, view.h).fill(0x000000);
     for (const g of [this.sight, this.senses, this.darkness, this.keenSenses]) g.clear();

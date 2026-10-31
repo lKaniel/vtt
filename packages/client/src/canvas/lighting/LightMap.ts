@@ -4,6 +4,18 @@ import { ambientColor, falloff, lightColor, lightPulse } from './light-style.ts'
 
 /** Light and sight are drawn at this share of the screen's resolution: cheaper, and the edges come out soft. */
 export const MAP_RESOLUTION = 0.5;
+
+export interface ViewTransform {
+  scale: number;
+  x: number;
+  y: number;
+}
+
+/** Lines a world-space scene up with the camera. */
+export function placeScene(scene: Container, transform: ViewTransform): void {
+  scene.scale.set(transform.scale);
+  scene.position.set(transform.x, transform.y);
+}
 const GRADIENT_SIZE = 256;
 
 export interface LightScene {
@@ -52,9 +64,8 @@ export class LightMap {
     return scene.lights.some((l) => l.animation && !l.darkness);
   }
 
-  render(scene: LightScene, transform: { scale: number; x: number; y: number }): void {
-    this.scene.scale.set(transform.scale);
-    this.scene.position.set(transform.x, transform.y);
+  render(scene: LightScene, transform: ViewTransform): void {
+    placeScene(this.scene, transform);
     const { view } = scene;
     this.ambient.clear().rect(view.x, view.y, view.w, view.h).fill(ambientColor(scene.darkness));
     for (const lamp of this.cache.values()) lamp.used = false;

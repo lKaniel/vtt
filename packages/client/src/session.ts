@@ -9,12 +9,9 @@ import {
   type ChatMessage,
   type ClientMessage,
   type Combat,
-  type DoorState,
-  type MapEdit,
   type Player,
   type Point,
   type Rect,
-  type Role,
   type ServerMessage,
   type SpawnSource,
   type Token,
@@ -23,6 +20,7 @@ import {
 } from '@vtt/shared';
 
 import { dropMessage, type DragPayload } from './drops.ts';
+import { Commands } from './session-commands.ts';
 import type { LightPreset, MapTool } from './map-tools.ts';
 import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
@@ -63,7 +61,7 @@ export interface SessionEvents {
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session {
+export class Session extends Commands {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -103,7 +101,9 @@ export class Session {
   private retry?: ReturnType<typeof setTimeout>;
 
   /** `playerId` sits at one of the world's seats; without it the signed-in account joins. */
-  constructor(readonly playerId?: string) {}
+  constructor(readonly playerId?: string) {
+    super();
+  }
 
   on<K extends keyof SessionEvents>(event: K, fn: SessionEvents[K]): () => void {
     const set = this.listeners.get(event) ?? new Set();
@@ -163,14 +163,6 @@ export class Session {
     this.send({ t: 'view', chunks: keys });
   }
 
-  move(token: string, to: Point): void {
-    this.send({ t: 'move', token, to });
-  }
-
-  setDoor(chunk: string, wall: string, state: DoorState): void {
-    this.send({ t: 'door', chunk, wall, state });
-  }
-
   setMapTool(tool: MapTool | undefined): void {
     this.mapTool = tool;
     if (tool) this.select(undefined);
@@ -181,18 +173,6 @@ export class Session {
   setLightPreset(preset: LightPreset): void {
     this.lightPreset = preset;
     this.changed();
-  }
-
-  editMap(edit: MapEdit): void {
-    this.send({ t: 'mapEdit', edit });
-  }
-
-  setDarkness(darkness: number): void {
-    this.send({ t: 'darkness', darkness });
-  }
-
-  say(text: string): void {
-    this.send({ t: 'chat', text });
   }
 
   select(id: string | undefined): void {
@@ -271,27 +251,6 @@ export class Session {
     this.aim(undefined);
   }
 
-  useFeature(token: string, feature: string): void {
-    this.send({ t: 'feature', token, feature });
-  }
-
-  /** Uses one of an item the token carries (drinks a potion). */
-  useItem(token: string, item: string): void {
-    this.send({ t: 'useItem', token, item });
-  }
-
-  rest(tokens: string[], kind: 'short' | 'long'): void {
-    this.send({ t: 'rest', tokens, kind });
-  }
-
-  dropConcentration(token: string): void {
-    this.send({ t: 'dropConcentration', token });
-  }
-
-  removeEffect(token: string, effect: string): void {
-    this.send({ t: 'removeEffect', token, effect });
-  }
-
   /** Spends a slot of this level on Divine Smite if the armed attack hits; undefined for no smite. */
   setSmite(slot: number | undefined): void {
     this.smite = slot;
@@ -303,22 +262,6 @@ export class Session {
     const smite = this.smite ? { smite: this.smite } : {};
     this.send({ t: 'attack', attacker: this.selected, target, attack: this.armed, ...smite });
     this.arm(undefined);
-  }
-
-  endTurn(): void {
-    this.send({ t: 'endTurn' });
-  }
-
-  startCombat(tokens: string[]): void {
-    this.send({ t: 'combatStart', tokens });
-  }
-
-  endCombat(): void {
-    this.send({ t: 'combatEnd' });
-  }
-
-  equip(token: string, item: number, equipped: boolean): void {
-    this.send({ t: 'equip', token, item, equipped });
   }
 
   // GM tools ---------------------------------------------------------------
@@ -340,18 +283,8 @@ export class Session {
     return !!this.you && !!token && canEditToken(token, this.you);
   }
 
-  /** GM: change what a seat may do at the table. */
-  setRole(player: string, role: Role): void {
-    this.send({ t: 'setRole', player, role });
-  }
-
   setSheetEdit(edit: boolean): void {
     if (this.sheet) this.openSheet(this.sheet, edit);
-  }
-
-  /** Saves how the creature's action bar is arranged. */
-  setHotbar(token: string, slots: (string | null)[]): void {
-    this.send({ t: 'hotbar', token, slots });
   }
 
   setSpawnHidden(hidden: boolean): void {
@@ -359,24 +292,8 @@ export class Session {
     this.changed();
   }
 
-  editToken(token: string, patch: Record<string, unknown>): void {
-    if (Object.keys(patch).length) this.send({ t: 'editToken', token, patch });
-  }
-
-  deleteToken(token: string): void {
-    this.send({ t: 'deleteToken', token });
-  }
-
   spawn(from: SpawnSource, at: Point): void {
     this.send({ t: 'spawn', from, at, hidden: this.spawnHidden });
-  }
-
-  saveActor(actor: Actor): void {
-    this.send({ t: 'saveActor', actor });
-  }
-
-  deleteActor(id: string): void {
-    this.send({ t: 'deleteActor', actor: id });
   }
 
   /** Something dragged from the Actors list or Compendium was dropped on the map at `p`. */
