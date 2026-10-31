@@ -55,6 +55,8 @@ export class CombatActions {
     const names = new Map(fighters.map((f) => [f.token.id, f.token.name]));
     const order = combat.order.map((e) => `${names.get(e.token)} ${e.initiative}`).join(', ');
     this.table.note(`Roll for initiative! ${order}`);
+    const first = currentTurn(combat);
+    if (first) this.startOfTurn(first);
   }
 
   end(player: Player): void {
@@ -112,7 +114,18 @@ export class CombatActions {
       const after = tickEffects(t, id);
       if (after !== t) this.store.setToken(after);
     }
+    this.hearten(id);
     this.turnStarted(id);
+  }
+
+  /** Temporary hit points an effect gives at the start of the bearer's turn (heroism). */
+  private hearten(id: string): void {
+    const token = this.store.tokens.get(id);
+    const given = Math.max(
+      0,
+      ...(token?.effects ?? []).map((e) => (typeof e.turnTempHp === 'number' ? e.turnTempHp : 0)),
+    );
+    if (token && given > (token.tempHp ?? 0)) this.store.setToken({ ...token, tempHp: given });
   }
 
   /** Checks that `token` may walk `feet` now, and spends the movement in a fight. Standing up costs half its speed. */

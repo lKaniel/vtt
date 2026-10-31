@@ -32,7 +32,9 @@ or `"2024"`:
   caster's attacks against the target, like hunter's mark and hex), `zone`
   (`{ "spares": "allies", "onCast": false }`: the area lasts and hits
   creatures that start their turn in it or enter it), `repeat` (`"action"` or
-  `"bonus"`: used again on later turns without a slot), and a `gmNote` for the part the GM still does by
+  `"bonus"`: used again on later turns without a slot), `cures` (conditions
+  whose effects end, like lesser restoration), `revive` (revivify),
+  `upcast.maxHp` (aid's raised maximum per slot), and a `gmNote` for the part the GM still does by
   hand. `null` takes away a generated field; `"automated": false` makes the
   chat say the GM applies the spell.
 - `class-automation.json`: per class id, spellcasting and features with

@@ -182,12 +182,33 @@ export class SpellActions {
   // ---- Results -----------------------------------------------------------
 
   private apply(outcome: CastOutcome): void {
-    for (const r of outcome.results) {
-      this.applyHp(r);
-      if (r.effect) this.addEffect(r.target, r.effect);
-      if (r.stabilized) this.stabilize(r.target);
-    }
+    for (const r of outcome.results) this.applyOne(r);
     this.table.useUp(outcome.used);
+  }
+
+  private applyOne(r: CastResult): void {
+    // A raised maximum (aid) is in place before the healing that fills it.
+    const first = r.healed !== undefined;
+    if (r.effect && first) this.addEffect(r.target, r.effect);
+    this.applyHp(r);
+    if (r.effect && !first) this.addEffect(r.target, r.effect);
+    if (r.stabilized) this.stabilize(r.target);
+    if (r.cured) this.cure(r.target, r.cured);
+    if (r.revived) this.revive(r.target);
+  }
+
+  private cure(id: string, effects: readonly string[]): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    const left = (token.effects ?? []).filter((e) => !effects.includes(e.id));
+    this.store.setToken({ ...token, effects: left.length ? left : undefined });
+  }
+
+  private revive(id: string): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    this.store.setToken({ ...token, hp: 1, deathSaves: undefined });
+    this.table.note(`${token.name} returns to life`);
   }
 
   /** Healing, damage or temporary hit points from one result. */

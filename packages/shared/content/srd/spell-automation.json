@@ -1,5 +1,18 @@
 {
   "$comment": "Hand-written automation merged over spells-5.1.json (2014) and spells-5.2.json (2024) at load. Each spell id maps to fields for both editions and/or for one edition.",
+  "aid": {
+    "both": {
+      "automated": true,
+      "targets": 3,
+      "heal": "5",
+      "effect": {
+        "maxHp": 5
+      },
+      "upcast": {
+        "maxHp": 5
+      }
+    }
+  },
   "animal-messenger": {
     "both": {
       "automated": false
@@ -13,6 +26,20 @@
   "banishment": {
     "both": {
       "automated": false
+    }
+  },
+  "barkskin": {
+    "2014": {
+      "automated": true,
+      "effect": {
+        "minAc": 16
+      }
+    },
+    "2024": {
+      "automated": true,
+      "effect": {
+        "minAc": 17
+      }
     }
   },
   "bestow-curse": {
@@ -40,6 +67,14 @@
     "2014": {
       "upcast": {
         "targets": 1
+      }
+    }
+  },
+  "blur": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "disadvantageAgainst": true
       }
     }
   },
@@ -303,6 +338,13 @@
       "gmNote": "Creatures that end their turn within 5 ft of the sphere take its damage too."
     }
   },
+  "greater-restoration": {
+    "both": {
+      "automated": true,
+      "cures": ["charmed", "petrified"],
+      "gmNote": "Exhaustion, curses and reduced scores or maximum are restored by hand."
+    }
+  },
   "guardian-of-faith": {
     "both": {
       "automated": false
@@ -329,6 +371,36 @@
   "hallow": {
     "both": {
       "automated": false
+    }
+  },
+  "heal": {
+    "2014": {
+      "automated": true,
+      "heal": "70",
+      "upcast": {
+        "heal": "10"
+      },
+      "cures": ["blinded", "deafened"]
+    },
+    "2024": {
+      "automated": true,
+      "heal": "70",
+      "upcast": {
+        "heal": "10"
+      },
+      "cures": ["blinded", "deafened", "poisoned"]
+    }
+  },
+  "heroism": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "turnTempHp": "mod"
+      },
+      "upcast": {
+        "targets": 1
+      },
+      "gmNote": "The target is also immune to being frightened."
     }
   },
   "hex": {
@@ -420,9 +492,34 @@
       }
     }
   },
+  "lesser-restoration": {
+    "both": {
+      "automated": true,
+      "cures": ["blinded", "deafened", "paralyzed", "poisoned"]
+    }
+  },
   "light": {
     "both": {
       "automated": false
+    }
+  },
+  "longstrider": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "speed": 10
+      },
+      "upcast": {
+        "targets": 1
+      }
+    }
+  },
+  "mage-armor": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "armorBase": 13
+      }
     }
   },
   "magic-circle": {
@@ -558,6 +655,13 @@
   "reverse-gravity": {
     "both": {
       "automated": false
+    }
+  },
+  "revivify": {
+    "both": {
+      "automated": true,
+      "revive": true,
+      "gmNote": "Only for a creature dead less than a minute; uses up a 300 gp diamond."
     }
   },
   "scorching-ray": {

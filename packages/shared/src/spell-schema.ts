@@ -40,6 +40,14 @@ const modifiers = {
   /** Added to the bearer's saving throws. */
   saveBonus: dice.optional(),
   ac: z.number().int().optional(),
+  /** Unarmored AC before dex: the bearer's AC without body armor is this + dex (mage armor). */
+  armorBase: z.number().int().optional(),
+  /** The bearer's AC is at least this (barkskin). */
+  minAc: z.number().int().optional(),
+  /** Added to the bearer's hit point maximum (aid). */
+  maxHp: z.number().int().optional(),
+  /** Temporary hit points the bearer gains at the start of each of its turns; "mod" is the caster's spellcasting modifier (heroism). */
+  turnTempHp: z.union([z.number().int(), z.literal('mod')]).optional(),
   /** Feet added to (or taken from) the bearer's speed. */
   speed: z.number().int().optional(),
   resistances: z.array(DamageTypeSchema).optional(),
@@ -166,6 +174,10 @@ export const SpellSchema = z.object({
   tempHp: dice.optional(),
   /** Hit points of creatures affected, weakest first, rolled on each cast (2014 sleep). */
   hpPool: dice.optional(),
+  /** Ends the target's effects that impose any of these conditions (lesser restoration). */
+  cures: z.array(ConditionSchema).optional(),
+  /** Brings a dead creature back with 1 hit point (revivify). */
+  revive: z.boolean().optional(),
   /** Makes a dying creature stable (spare the dying). */
   stabilize: z.boolean().optional(),
   /** The caster regains half the damage dealt (vampiric touch). */
@@ -182,6 +194,8 @@ export const SpellSchema = z.object({
       damage: dice.optional(),
       heal: dice.optional(),
       tempHp: z.number().int().optional(),
+      /** Added to the effect's `maxHp`, and healed on casting (aid). */
+      maxHp: z.number().int().optional(),
       hpPool: dice.optional(),
       targets: z.number().int().optional(),
       beams: z.number().int().optional(),

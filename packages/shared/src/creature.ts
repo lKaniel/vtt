@@ -77,12 +77,9 @@ export function resolveCreature(token: Token, content: Content): Creature | unde
     proficiency,
     ac:
       ac ??
-      armorClass(
-        abilities,
-        gear.armor,
-        features.find((f) => f.unarmoredAc),
-      ),
-    hp: Math.min(token.hp ?? maxHp, maxHp),
+      armorClass(abilities, gear.armor, { ...features.find((f) => f.unarmoredAc), armorBase: armorBaseOf(token) }),
+    // Clamped once effects have changed the maximum (aid).
+    hp: token.hp ?? Number.POSITIVE_INFINITY,
     maxHp,
     tempHp: token.tempHp ?? 0,
     speed: token.speed,
@@ -153,14 +150,23 @@ function classHp(cls: Class | undefined, stats: Stats, abilities: Abilities): nu
 
 const HELD: readonly Condition[] = ['grappled', 'paralyzed', 'petrified', 'restrained', 'stunned', 'unconscious'];
 
-/** AC, speed and resistances changed by spells and features. */
+/** The best unarmored base AC an effect gives (mage armor), or 0. */
+function armorBaseOf(token: Token): number {
+  return Math.max(0, ...(token.effects ?? []).map((e) => e.armorBase ?? 0));
+}
+
+/** AC, hit points, speed and resistances changed by spells and features. */
 function applyEffects(c: Creature): Creature {
   const effects = c.effects;
-  const sum = (key: 'ac' | 'speed') => effects.reduce((n, e) => n + (e[key] ?? 0), 0);
+  const sum = (key: 'ac' | 'speed' | 'maxHp') => effects.reduce((n, e) => n + (e[key] ?? 0), 0);
   const held = c.conditions.some((x) => HELD.includes(x)) || effects.some((e) => e.immobile);
+  const maxHp = c.maxHp + sum('maxHp');
+  const minAc = Math.max(0, ...effects.map((e) => e.minAc ?? 0));
   return {
     ...c,
-    ac: c.ac + sum('ac'),
+    maxHp,
+    hp: Math.min(c.hp, maxHp),
+    ac: Math.max(c.ac + sum('ac'), minAc),
     speed: held ? 0 : Math.max(0, c.speed + sum('speed')),
     resistances: [...new Set([...c.resistances, ...effects.flatMap((e) => e.resistances ?? [])])],
   };
@@ -210,12 +216,15 @@ function equippedItems(token: Token, content: Content): { weapons: Weapon[]; arm
 export function armorClass(
   abilities: Abilities,
   armor: readonly Armor[],
-  unarmored?: Pick<FeatureSheet, 'unarmoredAc' | 'unarmoredShield'>,
+  unarmored?: Pick<FeatureSheet, 'unarmoredAc' | 'unarmoredShield'> & { armorBase?: number },
 ): number {
   const dex = abilityMod(abilities.dex);
   const shield = armor.filter((a) => a.category === 'shield').reduce((sum, a) => sum + a.ac, 0);
   const body = armor.find((a) => a.category !== 'shield');
-  if (!body) return 10 + dex + shield + unarmoredBonus(abilities, shield > 0, unarmored);
+  if (!body) {
+    const natural = 10 + unarmoredBonus(abilities, shield > 0, unarmored);
+    return Math.max(natural, unarmored?.armorBase ?? 0) + dex + shield;
+  }
   const dexBonus = { light: dex, medium: Math.min(dex, 2), heavy: 0 }[body.category as 'light' | 'medium' | 'heavy'];
   return body.ac + dexBonus + shield;
 }
