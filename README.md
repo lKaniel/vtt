@@ -47,20 +47,28 @@ Use another world folder with `VTT_WORLD=/path/to/world pnpm start`.
 
 ## Layout
 
-| Path | What it is |
-| --- | --- |
-| `packages/shared` | World schema, geometry, pathfinding, dice, permissions, network protocol. Used by both sides. |
+| Path              | What it is                                                                                               |
+| ----------------- | -------------------------------------------------------------------------------------------------------- |
+| `packages/shared` | World schema, geometry, pathfinding, dice, permissions, network protocol. Used by both sides.            |
 | `packages/server` | Node server: loads and watches the world folder, runs the game, streams per-player views over WebSocket. |
-| `packages/client` | Vite + React UI with a PixiJS map. |
-| `world/` | The example world. See [docs/world-format.md](docs/world-format.md). |
+| `packages/client` | Vite + React UI with a PixiJS map.                                                                       |
+| `world/`          | The example world. See [docs/world-format.md](docs/world-format.md).                                     |
 
 ## Checks
 
 ```sh
-pnpm test          # unit tests
+pnpm check         # everything below, as CI runs it
+pnpm test          # unit tests (vitest)
+pnpm lint          # ESLint: strict TypeScript, SonarJS, nesting and complexity limits
+pnpm format        # Prettier (format:check only reports)
 pnpm typecheck
+pnpm quality       # coverage, then fallow: dead code, duplication, complexity, untested risk
 pnpm check-world   # validate world files
 ```
+
+Development is red-green: write a failing test, watch it fail, then make it
+pass. Version control is [jj](https://jj-vcs.github.io/jj/), colocated with
+git, so plain git tools still work.
 
 ## Not yet
 

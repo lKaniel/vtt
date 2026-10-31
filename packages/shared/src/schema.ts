@@ -24,6 +24,10 @@ export const WorldSchema = z.object({
   chunkSize: z.number().int().positive().default(2000),
   /** Where the camera starts, in pixels. */
   start: PointSchema.default([0, 0]),
+  /** How dark unlit areas are: 0 is full daylight, 1 is pitch black. */
+  darkness: z.number().min(0).max(1).default(0),
+  /** When true, players only see what their tokens can see. */
+  vision: z.boolean().default(true),
   players: z.array(PlayerSchema).min(1),
 });
 export type World = z.infer<typeof WorldSchema>;
@@ -45,12 +49,25 @@ export const WallSchema = z.object({
   b: PointSchema,
   /** Present only on doors. */
   door: DoorStateSchema.optional(),
+  /** false for windows and bars: they block movement but not sight. */
+  sight: z.boolean().optional(),
 });
 export type Wall = z.infer<typeof WallSchema>;
+
+/** Light radii are in feet, like the rules. */
+export const LightSchema = z.object({
+  bright: z.number().nonnegative(),
+  dim: z.number().nonnegative().default(0),
+});
+export type Light = z.infer<typeof LightSchema>;
+
+export const PlacedLightSchema = LightSchema.extend({ id, x: z.number(), y: z.number() });
+export type PlacedLight = z.infer<typeof PlacedLightSchema>;
 
 export const ChunkSchema = z.object({
   tiles: z.array(TileSchema).default([]),
   walls: z.array(WallSchema).default([]),
+  lights: z.array(PlacedLightSchema).default([]),
 });
 export type Chunk = z.infer<typeof ChunkSchema>;
 
@@ -68,6 +85,10 @@ export const TokenSchema = z.object({
   speed: z.number().nonnegative().default(30),
   /** Player ids that may control this token. The GM always can. */
   controllers: z.array(id).default([]),
+  /** Darkvision range in feet; 0 for none. */
+  darkvision: z.number().nonnegative().default(0),
+  /** A light the token carries, e.g. a torch: { "bright": 20, "dim": 20 }. */
+  light: LightSchema.optional(),
   /** Hidden tokens are seen by the GM only. */
   hidden: z.boolean().default(false),
   /** When set, only these players (and the GM) see the token. Used by illusions. */

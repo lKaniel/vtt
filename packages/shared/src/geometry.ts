@@ -1,3 +1,4 @@
+import type { Rect } from './chunks.ts';
 import type { Point, Wall } from './schema.ts';
 
 function orient(a: Point, b: Point, c: Point): number {
@@ -35,4 +36,15 @@ export function blocksMovement(wall: Wall): boolean {
 export function movementBlocked(from: Point, to: Point, walls: readonly Wall[]): boolean {
   for (const w of walls) if (blocksMovement(w) && segmentsIntersect(from, to, w.a, w.b)) return true;
   return false;
+}
+
+/** Walls whose bounding box overlaps the rectangle. */
+export function wallsInRect(walls: readonly Wall[], r: Rect): Wall[] {
+  return walls.filter(
+    (w) =>
+      Math.max(w.a[0], w.b[0]) >= r.x &&
+      Math.min(w.a[0], w.b[0]) <= r.x + r.w &&
+      Math.max(w.a[1], w.b[1]) >= r.y &&
+      Math.min(w.a[1], w.b[1]) <= r.y + r.h,
+  );
 }

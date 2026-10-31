@@ -45,7 +45,10 @@ describe('findPath', () => {
 });
 
 describe('roll', () => {
-  const seq = (...v: number[]) => () => (v.shift()! - 0.5) / 20;
+  const seq =
+    (...v: number[]) =>
+    () =>
+      (v.shift()! - 0.5) / 20;
   it('adds dice and modifiers', () => {
     const r = roll('1d20 + 5', seq(12));
     expect(r.total).toBe(17);
@@ -63,7 +66,12 @@ describe('roll', () => {
 
 describe('chunksInRect', () => {
   it('covers negative coordinates', () => {
-    expect(chunksInRect({ x: -10, y: -10, w: 20, h: 20 }, 1000).sort()).toEqual(['-1_-1', '-1_0', '0_-1', '0_0']);
+    expect(chunksInRect({ x: -10, y: -10, w: 20, h: 20 }, 1000).sort((a, b) => a.localeCompare(b))).toEqual([
+      '-1_-1',
+      '-1_0',
+      '0_-1',
+      '0_0',
+    ]);
   });
 });
 

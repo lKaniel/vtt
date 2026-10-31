@@ -16,45 +16,39 @@ export interface Roll {
 
 export type Rng = () => number;
 
-const TERM = /([+-]?)\s*(?:(\d*)d(\d+)(?:(kh|kl)(\d+))?|(\d+))/gy;
+const TERM = /^([+-]?) *(?:(\d*)d(\d+)(?:(kh|kl)(\d+))?|(\d+))$/;
+const MAX_DICE = 100;
+const MAX_FACES = 1000;
 
 /** Rolls a formula like "1d20+5", "2d20kh1 + 3" or "4d6kh3". Throws on bad input. */
 export function roll(formula: string, rng: Rng = Math.random): Roll {
   const src = formula.trim().toLowerCase();
   if (!src) throw new Error('Empty formula');
-  const terms: DiceTerm[] = [];
-  TERM.lastIndex = 0;
-  let pos = 0;
-  while (pos < src.length) {
-    while (src[pos] === ' ') pos++;
-    if (pos >= src.length) break;
-    TERM.lastIndex = pos;
-    const m = TERM.exec(src);
-    if (!m || m[0].trim() === '') throw new Error(`Can't read "${src.slice(pos)}"`);
-    if (terms.length > 0 && !m[1]) throw new Error(`Missing + or - before "${m[0].trim()}"`);
-    pos = TERM.lastIndex;
-    const sign: 1 | -1 = m[1] === '-' ? -1 : 1;
-    if (m[6] !== undefined) {
-      const n = Number(m[6]);
-      terms.push({ text: m[0].trim(), sign, rolls: [], kept: [], value: n });
-      continue;
-    }
-    const count = m[2] ? Number(m[2]) : 1;
-    const faces = Number(m[3]);
-    if (count < 1 || count > 100) throw new Error('Roll between 1 and 100 dice');
-    if (faces < 2 || faces > 1000) throw new Error('Dice need 2 to 1000 faces');
-    const rolls = Array.from({ length: count }, () => 1 + Math.floor(rng() * faces));
-    let kept = rolls.map(() => true);
-    if (m[4]) {
-      const keep = Number(m[5]);
-      if (keep < 1 || keep > count) throw new Error(`Can't keep ${keep} of ${count} dice`);
-      const order = rolls.map((v, i) => [v, i] as const).sort((a, b) => (m[4] === 'kh' ? b[0] - a[0] : a[0] - b[0]));
-      const keepIdx = new Set(order.slice(0, keep).map(([, i]) => i));
-      kept = rolls.map((_, i) => keepIdx.has(i));
-    }
-    const value = rolls.reduce((sum, v, i) => sum + (kept[i] ? v : 0), 0);
-    terms.push({ text: m[0].trim(), sign, rolls, kept, value });
-  }
+  // Split before every sign, so "1d20 + 5 - 1" becomes "1d20 ", "+ 5 ", "- 1".
+  const terms = src.split(/(?=[+-])/).map((part) => parseTerm(part.trim(), rng));
   const total = terms.reduce((sum, t) => sum + t.sign * t.value, 0);
   return { formula: src, terms, total };
+}
+
+function parseTerm(text: string, rng: Rng): DiceTerm {
+  const m = TERM.exec(text);
+  if (!m) throw new Error(`Can't read "${text}"`);
+  const sign = m[1] === '-' ? -1 : 1;
+  if (m[6] !== undefined) return { text, sign, rolls: [], kept: [], value: Number(m[6]) };
+  const count = m[2] ? Number(m[2]) : 1;
+  const faces = Number(m[3]);
+  if (count < 1 || count > MAX_DICE) throw new Error(`Roll between 1 and ${MAX_DICE} dice`);
+  if (faces < 2 || faces > MAX_FACES) throw new Error(`Dice need 2 to ${MAX_FACES} faces`);
+  const rolls = Array.from({ length: count }, () => 1 + Math.floor(rng() * faces));
+  const kept = m[4] ? keepDice(rolls, m[4] === 'kh', Number(m[5])) : rolls.map(() => true);
+  const value = rolls.reduce((sum, v, i) => sum + (kept[i] ? v : 0), 0);
+  return { text, sign, rolls, kept, value };
+}
+
+/** Marks the `keep` highest (or lowest) rolls as kept. */
+function keepDice(rolls: number[], highest: boolean, keep: number): boolean[] {
+  if (keep < 1 || keep > rolls.length) throw new Error(`Can't keep ${keep} of ${rolls.length} dice`);
+  const order = rolls.map((v, i) => ({ v, i })).sort((a, b) => (highest ? b.v - a.v : a.v - b.v));
+  const keepIdx = new Set(order.slice(0, keep).map(({ i }) => i));
+  return rolls.map((_, i) => keepIdx.has(i));
 }

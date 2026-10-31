@@ -1,7 +1,7 @@
 import type { Session } from '../session.ts';
 
 /** Bottom bar for the selected token. Actions arrive with combat in phase 3. */
-export function Hotbar({ session }: { session: Session }) {
+export function Hotbar({ session }: Readonly<{ session: Session }>) {
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
   return (
     <footer className="hotbar">
@@ -20,8 +20,8 @@ export function Hotbar({ session }: { session: Session }) {
         </>
       ) : null}
       <div className="hint">
-        {token ? 'Click the ground to walk · Esc to deselect' : 'Click one of your tokens to select it'} · Drag to pan · Wheel to
-        zoom
+        {token ? 'Click the ground to walk · Esc to deselect' : 'Click one of your tokens to select it'} · Drag to pan ·
+        Wheel to zoom
       </div>
     </footer>
   );

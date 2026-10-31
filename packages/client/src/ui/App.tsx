@@ -16,7 +16,7 @@ export function App() {
   return playerId ? <GameScreen playerId={playerId} onLeave={() => choose(null)} /> : <JoinScreen onJoin={choose} />;
 }
 
-function JoinScreen({ onJoin }: { onJoin: (id: string) => void }) {
+function JoinScreen({ onJoin }: Readonly<{ onJoin: (id: string) => void }>) {
   const [players, setPlayers] = useState<Player[]>();
   const [error, setError] = useState<string>();
 

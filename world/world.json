@@ -2,10 +2,8 @@
   "name": "Example: the crossroads",
   "gridSize": 100,
   "chunkSize": 2000,
-  "start": [
-    1000,
-    900
-  ],
+  "start": [1000, 900],
+  "darkness": 0.85,
   "players": [
     {
       "id": "gm",

@@ -1,7 +1,7 @@
 import type { Session } from '../session.ts';
 
 /** Portraits of your party. Click to select, double-click to jump to them. */
-export function PartyBar({ session }: { session: Session }) {
+export function PartyBar({ session }: Readonly<{ session: Session }>) {
   const you = session.you;
   // Players see their own tokens; the GM sees the whole party.
   const mine = [...session.tokens.values()].filter((t) =>

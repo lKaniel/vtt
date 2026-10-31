@@ -2,7 +2,17 @@ import { EventEmitter } from 'node:events';
 import { watch, type FSWatcher } from 'node:fs';
 import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
-import { chunksInRect, type Chunk, type Point, type Rect, type Token, type Wall, type World } from '@vtt/shared';
+import {
+  chunksInRect,
+  tokenLights,
+  type Chunk,
+  type LightSource,
+  type Point,
+  type Rect,
+  type Token,
+  type Wall,
+  type World,
+} from '@vtt/shared';
 import { classify, crossCheck, parseFile, type FileKind } from './files.ts';
 
 interface StoreEvents {
@@ -36,7 +46,7 @@ export class WorldStore extends EventEmitter<StoreEvents> {
 
   async load(): Promise<void> {
     const result = parseFile({ kind: 'world' }, await readFile(join(this.dir, 'world.json'), 'utf8'));
-    if (!result.file || result.file.kind !== 'world') {
+    if (result.file?.kind !== 'world') {
       throw new Error(`world.json is invalid:\n  ${result.errors.join('\n  ')}`);
     }
     this.world = result.file.data;
@@ -57,11 +67,14 @@ export class WorldStore extends EventEmitter<StoreEvents> {
   watch(): void {
     this.watcher = watch(this.dir, { recursive: true }, (_event, filename) => {
       if (!filename) return;
-      const rel = filename.toString().split('\\').join('/');
+      const rel = filename.split('\\').join('/');
       if (!classify(rel)) return;
       // Editors often write a file in several steps; wait for it to settle.
       clearTimeout(this.pending.get(rel));
-      this.pending.set(rel, setTimeout(() => void this.onFileChanged(rel), 80));
+      this.pending.set(
+        rel,
+        setTimeout(() => void this.onFileChanged(rel), 80),
+      );
     });
   }
 
@@ -77,6 +90,23 @@ export class WorldStore extends EventEmitter<StoreEvents> {
       if (c) walls.push(...c.walls);
     }
     return walls;
+  }
+
+  wallsBetween(a: Point, b: Point): Wall[] {
+    return this.wallsIn({
+      x: Math.min(a[0], b[0]) - 1,
+      y: Math.min(a[1], b[1]) - 1,
+      w: Math.abs(a[0] - b[0]) + 2,
+      h: Math.abs(a[1] - b[1]) + 2,
+    });
+  }
+
+  /** Every light in the world: placed in chunks and carried by tokens. */
+  lights(): LightSource[] {
+    const out: LightSource[] = [];
+    for (const c of this.chunks.values()) out.push(...c.lights);
+    out.push(...tokenLights(this.tokens.values()));
+    return out;
   }
 
   setToken(token: Token, path?: Point[]): void {
