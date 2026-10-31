@@ -183,7 +183,7 @@ export class SpellActions {
   private teleport(id: string, point: Point): void {
     const token = this.store.tokens.get(id)!;
     const [x, y] = this.snap(point, token.size);
-    this.store.setToken({ ...token, x, y }, [[x, y]]);
+    this.store.setToken({ ...token, x, y });
   }
 
   private snap([x, y]: Point, size: number): Point {
