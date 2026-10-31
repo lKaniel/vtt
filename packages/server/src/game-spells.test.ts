@@ -171,7 +171,8 @@ describe('casting spells', () => {
     ana.receive({ t: 'cast', caster: 'hero', spell: 'misty-step', slot: 2, targets: [], point: [150, 250] });
     expect([tok('hero').x, tok('hero').y]).toEqual([150, 250]);
     // The map jumps the token there instead of waiting for a walk that never comes.
-    expect(ana.sent).toContainEqual({ t: 'token', token: expect.objectContaining({ id: 'hero', x: 150, y: 250 }) });
+    const update = ana.sent.findLast((m) => m.t === 'token' && m.token.id === 'hero');
+    expect(update).toMatchObject({ token: { x: 150, y: 250 } });
     expect(store.combat!.left).toMatchObject({ action: true, bonus: false });
   });
 });
