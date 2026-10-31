@@ -126,6 +126,8 @@ describe('attacking', () => {
     expect(store.tokens.get('goblin')!.hp).toBe(3);
     const [log] = ana.take('chat');
     expect(log!.message.attack).toMatchObject({ attacker: 'Hero', target: 'Goblin', hit: true, damage: 4 });
+    // Ids and the kind of attack let the map play the swing on the right tokens.
+    expect(log!.message.attack).toMatchObject({ attackerId: 'hero', targetId: 'goblin', kind: 'melee' });
     expect(store.combat!.left.action).toBe(false);
     ana.receive({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Longsword' });
     expect(ana.take('error')[0]!.message).toMatch(/already used/);

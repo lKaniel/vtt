@@ -138,6 +138,17 @@ describe('Session', () => {
     expect(session.error?.message).toBe('nope');
   });
 
+  it('tells the map about new chat messages, but not the history it joins with', () => {
+    const heard = vi.fn();
+    session.on('chat', heard);
+    const old = { id: '0', time: 0, from: 'Ana', color: '#f00', text: 'earlier' };
+    ws.receive({ ...welcome(), chat: [old] } as ServerMessage);
+    expect(heard).not.toHaveBeenCalled();
+    const fresh = { ...old, id: '1', text: 'now' };
+    ws.receive({ t: 'chat', message: fresh });
+    expect(heard).toHaveBeenCalledWith(fresh);
+  });
+
   it('asks for its chunks again after reconnecting', () => {
     session.setView(['0_0']);
     ws.receive(welcome());

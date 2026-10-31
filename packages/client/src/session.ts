@@ -44,6 +44,8 @@ export interface SessionEvents {
   /** An attack or spell was readied or put away. */
   armed: () => void;
   focus: (point: Point) => void;
+  /** A chat message arrived live (not the history sent on joining). */
+  chat: (message: ChatMessage) => void;
 }
 
 /**
@@ -356,6 +358,7 @@ export class Session {
         return this.onMoved(msg.id, msg.path);
       case 'chat':
         this.chat = [...this.chat, msg.message].slice(-CHAT_HISTORY);
+        this.emit('chat', msg.message);
         return true;
       case 'combat':
         this.onCombat(msg.combat);

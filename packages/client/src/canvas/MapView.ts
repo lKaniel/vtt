@@ -2,7 +2,9 @@ import { chunkKey, type Point, type Rect, type Wall } from '@vtt/shared';
 import { Application, Container, CullerPlugin, extensions, Graphics, type FederatedPointerEvent } from 'pixi.js';
 import { DRAG_TYPE, type DragPayload } from '../drops.ts';
 import type { Session } from '../session.ts';
+import { cuesOf } from '../feedback.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
+import { EffectsLayer } from './EffectsLayer.ts';
 import { PathPreview } from './PathPreview.ts';
 import { TokenLayer } from './TokenLayer.ts';
 import { Vision } from './Vision.ts';
@@ -40,6 +42,7 @@ export class MapView {
   private grid = new Graphics();
   private chunks: ChunkLayer;
   private tokens: TokenLayer;
+  private effects: EffectsLayer;
   private preview = new PathPreview();
   private vision?: Vision;
 
@@ -58,6 +61,7 @@ export class MapView {
   constructor(private session: Session) {
     this.chunks = new ChunkLayer(session);
     this.tokens = new TokenLayer(session);
+    this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
   }
 
   async init(host: HTMLElement): Promise<void> {
@@ -73,8 +77,14 @@ export class MapView {
       return;
     }
     host.appendChild(this.app.canvas);
-    this.camera.addChild(this.chunks.ground, this.grid, this.chunks.walls, this.tokens.container);
-    this.overhead.addChild(this.preview.container);
+    this.camera.addChild(
+      this.chunks.ground,
+      this.grid,
+      this.chunks.walls,
+      this.tokens.container,
+      this.effects.container,
+    );
+    this.overhead.addChild(this.preview.container, this.effects.labels);
     // Previews are drawn over tokens; clicks must still reach the tokens below.
     this.overhead.eventMode = 'none';
     this.vision = new Vision(this.app, this.session);
@@ -166,6 +176,9 @@ export class MapView {
         this.tokens.redrawAll();
         this.updatePreview(true);
       }),
+      s.on('chat', (message) => {
+        this.effects.play(cuesOf(message), performance.now());
+      }),
       s.on('focus', (p) => {
         this.center = [...p];
         this.dirty = true;
@@ -196,6 +209,9 @@ export class MapView {
 
   private tick(dt: number): void {
     const walking = this.tokens.animate(dt);
+    const now = performance.now();
+    this.tokens.animateFeedback(now);
+    this.effects.tick(now);
     if (!this.session.world) return;
     // One more render after a walk ends, to mark what the token now sees as explored.
     const stopped = this.wasWalking && !walking;
