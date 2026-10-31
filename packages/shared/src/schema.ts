@@ -62,6 +62,12 @@ export type Wall = z.infer<typeof WallSchema>;
 export const LightSchema = z.object({
   bright: z.number().nonnegative(),
   dim: z.number().nonnegative().default(0),
+  /** Colour of the light, e.g. "#ff9a40" for a torch. Missing means white. */
+  color: z.string().optional(),
+  /** How the light moves: a torch flickers, a magic glow pulses. */
+  animation: z.enum(['flicker', 'pulse']).optional(),
+  /** Magical darkness instead of light (the Darkness spell): nothing nonmagical lights it. */
+  darkness: z.boolean().optional(),
 });
 export type Light = z.infer<typeof LightSchema>;
 
@@ -91,6 +97,12 @@ export const TokenSchema = z.object({
   controllers: z.array(id).default([]),
   /** Darkvision range in feet; 0 for none. */
   darkvision: z.number().nonnegative().default(0),
+  /** Other senses, in feet. Missing ones fall back to the monster's stat block. */
+  blindsight: z.number().nonnegative().optional(),
+  tremorsense: z.number().nonnegative().optional(),
+  truesight: z.number().nonnegative().optional(),
+  /** Sees normally in magical and nonmagical darkness to this range (the warlock invocation). */
+  devilsSight: z.number().nonnegative().optional(),
   /** A light the token carries, e.g. a torch: { "bright": 20, "dim": 20 }. */
   light: LightSchema.optional(),
   /** Hidden tokens are seen by the GM only. */

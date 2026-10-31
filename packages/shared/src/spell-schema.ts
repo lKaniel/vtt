@@ -49,6 +49,18 @@ const modifiers = {
   meleeDamage: z.number().int().optional(),
   /** Saving throws the bearer makes with advantage. */
   saveAdvantage: z.array(AbilitySchema).optional(),
+  /** Senses the effect grants, in feet (darkvision spell), or the power to see invisible things. */
+  senses: z
+    .object({
+      darkvision: z.number().nonnegative(),
+      blindsight: z.number().nonnegative(),
+      tremorsense: z.number().nonnegative(),
+      truesight: z.number().nonnegative(),
+      devilsSight: z.number().nonnegative(),
+      seeInvisible: z.boolean(),
+    })
+    .partial()
+    .optional(),
 };
 
 /** An effect as a spell or feature describes it, before it lands on anyone. */

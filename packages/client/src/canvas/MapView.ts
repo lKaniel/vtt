@@ -1,5 +1,13 @@
 import { chunkKey, type Point, type Rect, type Wall } from '@vtt/shared';
-import { Application, Container, CullerPlugin, extensions, Graphics, type FederatedPointerEvent } from 'pixi.js';
+import {
+  Application,
+  Container,
+  CullerPlugin,
+  extensions,
+  Graphics,
+  Rectangle,
+  type FederatedPointerEvent,
+} from 'pixi.js';
 import { DRAG_TYPE, type DragPayload } from '../drops.ts';
 import type { Session } from '../session.ts';
 import { cuesOf } from '../feedback.ts';
@@ -40,6 +48,8 @@ interface Drag {
 export class MapView {
   readonly app = new Application();
   private camera = new Container();
+  /** Floor, grid and walls: lit, and hidden by fog of war. */
+  private ground = new Container();
   /** Drawn above darkness and fog, with the same transform as the camera. */
   private overhead = new Container();
   private grid = new Graphics();
@@ -54,7 +64,10 @@ export class MapView {
   private zoom = 0.6;
   private dirty = true;
   private visionDirty = true;
+  private cameraMoved = true;
   private wasWalking = false;
+  /** A flickering light is on screen, so lighting is redrawn every frame. */
+  private animatedLights = false;
   private viewId = '';
   private drag?: Drag;
   private hoverPoint?: Point;
@@ -75,6 +88,8 @@ export class MapView {
       resizeTo: host,
       background: 0x1b1d22,
       antialias: true,
+      // The lighting filter is written in GLSL.
+      preference: 'webgl',
       autoDensity: true,
       resolution: devicePixelRatio,
     });
@@ -83,18 +98,15 @@ export class MapView {
       return;
     }
     host.appendChild(this.app.canvas);
-    this.camera.addChild(
-      this.chunks.ground,
-      this.grid,
-      this.chunks.walls,
-      this.tokens.container,
-      this.effects.container,
-    );
+    this.ground.addChild(this.chunks.ground, this.grid, this.chunks.walls);
+    this.camera.addChild(this.ground, this.tokens.container, this.effects.container);
     this.overhead.addChild(this.preview.container, this.effects.labels);
     // Previews are drawn over tokens; clicks must still reach the tokens below.
     this.overhead.eventMode = 'none';
     this.vision = new Vision(this.app, this.session);
-    this.app.stage.addChild(this.camera, ...this.vision.sprites, this.overhead);
+    this.ground.filters = [this.vision.mapFilter];
+    this.tokens.container.filters = [this.vision.tokenFilter];
+    this.app.stage.addChild(this.camera, this.overhead);
     this.listenToInput();
     this.listenToSession();
     this.app.ticker.add((t) => {
@@ -222,21 +234,27 @@ export class MapView {
     // One more render after a walk ends, to mark what the token now sees as explored.
     const stopped = this.wasWalking && !walking;
     this.wasWalking = walking;
-    if (this.dirty || this.visionDirty || walking || stopped) {
-      this.visionDirty = false;
-      this.vision?.render({ center: this.center, zoom: this.zoom }, this.allWalls(), this.tokens.viewers(), !walking);
-    }
     if (this.dirty) this.applyCamera();
+    if (this.visionDirty || this.cameraMoved || walking || stopped || this.animatedLights) {
+      this.visionDirty = this.cameraMoved = false;
+      const camera = { center: this.center, zoom: this.zoom };
+      this.animatedLights = this.vision?.render(camera, this.allWalls(), this.tokens.viewers(), !walking) ?? false;
+    }
   }
 
   private applyCamera(): void {
     this.dirty = false;
+    this.cameraMoved = true;
     const { width, height } = this.app.screen;
     for (const layer of [this.camera, this.overhead]) {
       layer.scale.set(this.zoom);
       layer.position.set(width / 2 - this.center[0] * this.zoom, height / 2 - this.center[1] * this.zoom);
     }
-    this.session.viewRect = this.visibleRect();
+    const view = this.visibleRect();
+    this.session.viewRect = view;
+    // Lighting covers the whole screen, even where nothing is drawn yet.
+    this.ground.filterArea = new Rectangle(view.x, view.y, view.w, view.h);
+    this.tokens.container.filterArea = this.ground.filterArea;
     this.requestChunks();
     this.drawGrid();
     this.tokens.showLabels(this.zoom >= LOD.labels);

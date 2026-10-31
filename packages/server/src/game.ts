@@ -168,6 +168,7 @@ export class Game {
       world: this.store.world,
       lights: this.store.lights(),
       wallsBetween: (a, b) => this.store.wallsBetween(a, b),
+      monster: (t) => srdFor(editionOf(t, this.store.world)).monsters.get(t.monster ?? ''),
     });
   }
 

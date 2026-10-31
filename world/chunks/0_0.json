@@ -103,14 +103,18 @@
       "x": 550,
       "y": 250,
       "bright": 20,
-      "dim": 20
+      "dim": 20,
+      "color": "#ff9a40",
+      "animation": "flicker"
     },
     {
       "id": "road-lamp",
       "x": 1050,
       "y": 1150,
       "bright": 10,
-      "dim": 20
+      "dim": 20,
+      "color": "#ffd27a",
+      "animation": "flicker"
     }
   ]
 }

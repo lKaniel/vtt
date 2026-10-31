@@ -5,6 +5,7 @@ export * from './pathfinding.ts';
 export * from './dice.ts';
 export * from './permissions.ts';
 export * from './vision.ts';
+export * from './senses.ts';
 export * from './protocol.ts';
 export * from './stats-schema.ts';
 export * from './spell-schema.ts';

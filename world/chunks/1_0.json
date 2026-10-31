@@ -71,7 +71,9 @@
       "x": 3050,
       "y": 1450,
       "bright": 10,
-      "dim": 10
+      "dim": 10,
+      "color": "#ff7a30",
+      "animation": "flicker"
     }
   ]
 }
