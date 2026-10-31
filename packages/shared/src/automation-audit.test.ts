@@ -13,7 +13,19 @@ const automated = (edition: Edition) => [...srdFor(edition).spells.values()].fil
 const HURTS_CASTER_ON_PURPOSE = new Set(['contact-other-plane']);
 
 const doesSomething = (s: Spell) =>
-  [s.damage.length, s.effect, s.heal, s.tempHp, s.summon, s.teleport, s.push, s.hpPool].some(Boolean);
+  [
+    s.damage.length,
+    s.effect,
+    s.heal,
+    s.tempHp,
+    s.summon,
+    s.teleport,
+    s.push,
+    s.hpPool,
+    s.stabilize,
+    s.cures,
+    s.revive,
+  ].some(Boolean);
 
 describe.each(EDITIONS)('automated %s spells', (edition) => {
   it('never damage or save against their own caster', () => {

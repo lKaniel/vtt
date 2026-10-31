@@ -3,6 +3,11 @@ import {
   attackRange,
   canControlToken,
   currentTurn,
+  deathSave,
+  isDying,
+  lightAttack,
+  offHandCost,
+  offHandProblem,
   endOfTurnSaves,
   leaveCombat,
   nextTurn,
@@ -11,12 +16,23 @@ import {
   startCombat,
   tickEffects,
   tokenDistance,
+  type Attack,
   type AttackLog,
   type Player,
   type Token,
   type WeaponAttackOutcome,
 } from '@vtt/shared';
-import { Refusal, requireGm, type Fighter, type Table } from './table.ts';
+import { Refusal, requireGm, type Cost, type Fighter, type Table } from './table.ts';
+
+/** An attack that has been rolled but not yet landed: its target may still react (shield). */
+export interface PendingHit {
+  attacker: Fighter;
+  target: Fighter;
+  attack: Attack;
+  range: 'normal' | 'long';
+  smite?: number;
+  outcome: WeaponAttackOutcome;
+}
 
 export interface AttackRequest {
   attacker: string;
@@ -35,6 +51,8 @@ export class CombatActions {
     private table: Table,
     private logAttack: (log: AttackLog) => void,
     private turnStarted: (id: string) => void = () => undefined,
+    /** Offers the target a reaction to a hit; true when the attack waits for the answer. */
+    private onHit: (hit: PendingHit) => boolean = () => false,
   ) {}
 
   private get store() {
@@ -52,6 +70,8 @@ export class CombatActions {
     const names = new Map(fighters.map((f) => [f.token.id, f.token.name]));
     const order = combat.order.map((e) => `${names.get(e.token)} ${e.initiative}`).join(', ');
     this.table.note(`Roll for initiative! ${order}`);
+    const first = currentTurn(combat);
+    if (first) this.startOfTurn(first);
   }
 
   end(player: Player): void {
@@ -65,10 +85,30 @@ export class CombatActions {
     const token = this.store.tokens.get(currentTurn(combat) ?? '');
     if (token && !canControlToken(token, player)) throw new Refusal("It's not your turn");
     if (token) this.endOfTurn(token);
-    const next = nextTurn(this.store.combat ?? combat, this.table.turnInfo);
-    this.store.setCombat(next);
-    const starting = currentTurn(next);
-    if (starting) this.startOfTurn(starting);
+    this.advance();
+  }
+
+  /** Passes the turn on; a dying character's turn is only its death save, so it passes again. */
+  private advance(): void {
+    for (let guard = 0; guard < 100; guard++) {
+      const next = nextTurn(this.store.combat!, this.table.turnInfo);
+      this.store.setCombat(next);
+      const starting = currentTurn(next);
+      if (!starting) return;
+      this.startOfTurn(starting);
+      if (!this.deathSaveFor(starting)) return;
+    }
+  }
+
+  /** Rolls a dying character's death save; true when its turn is over (it didn't wake). */
+  private deathSaveFor(id: string): boolean {
+    const token = this.store.tokens.get(id);
+    if (token?.deathSaves && (token.hp ?? 1) > 0) this.store.setToken({ ...token, deathSaves: undefined });
+    if (!token || !isDying(token)) return false;
+    const { token: after, note } = deathSave(token, this.table.rng);
+    this.store.setToken(after);
+    this.table.note(note);
+    return isDying(after) || (after.hp ?? 1) <= 0;
   }
 
   /** Effects like hold person get another save as the creature's turn ends. */
@@ -89,7 +129,20 @@ export class CombatActions {
       const after = tickEffects(t, id);
       if (after !== t) this.store.setToken(after);
     }
+    this.hearten(id);
     this.turnStarted(id);
+  }
+
+  /** What effects give at the start of the bearer's turn: temporary hit points (heroism), attacks (haste). */
+  private hearten(id: string): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    const effects = token.effects ?? [];
+    const given = Math.max(0, ...effects.map((e) => (typeof e.turnTempHp === 'number' ? e.turnTempHp : 0)));
+    if (given > (token.tempHp ?? 0)) this.store.setToken({ ...token, tempHp: given });
+    const attacks = effects.reduce((n, e) => n + (e.turnAttacks ?? 0), 0);
+    const left = attacks ? this.table.budget(token) : undefined;
+    if (left) this.table.setBudget(token, { ...left, attacks: left.attacks + attacks });
   }
 
   /** Checks that `token` may walk `feet` now, and spends the movement in a fight. Standing up costs half its speed. */
@@ -111,18 +164,55 @@ export class CombatActions {
     const attacker = this.table.actor(player, req.attacker);
     if (!canSee(req.target)) throw new Refusal('No such target');
     const target = this.table.fighter(req.target);
-    const attack = attacker.sheet.attacks.find((a) => a.name === req.attack);
-    if (!attack) throw new Refusal(`${attacker.token.name} has no attack called ${req.attack}`);
-    const smiting = req.smite && smiteProblem(attacker.sheet, attack, req.smite);
-    if (smiting) throw new Refusal(`${attacker.token.name} ${smiting}`);
-    this.table.check(attacker.token, 'attack');
+    const attack = this.attackOf(attacker, req);
+    const cost = this.attackCost(attacker, attack);
+    this.table.check(attacker.token, cost);
     const feet = tokenDistance(attacker.token, target.token, this.store.world.gridSize);
     const range = attackRange(attack, feet);
     if (range === 'out') throw new Refusal(`${target.token.name} is out of range (${feet} ft)`);
     if (!this.table.clearShot([attacker.token.x, attacker.token.y], [target.token.x, target.token.y])) {
       throw new Refusal(`${attacker.token.name} has no clear shot`);
     }
-    const sneakUsed = !!this.table.budget(attacker.token)?.used.includes('sneak-attack');
+    this.table.pay(attacker.token, cost, attacker.sheet.attacksPerAction);
+    if (lightAttack(attack)) this.markUsed(attacker.token, 'light-attack');
+    if (attack.offHand && cost === 'free') this.markUsed(attacker.token, 'nick');
+    this.resolve({ attacker, target, attack, range }, { smite: req.smite, reaction: false });
+  }
+
+  /** An opportunity attack: the reaction the creature had, not its action, and the target was in reach as it left. */
+  reactionAttack(player: Player, req: AttackRequest): void {
+    const attacker = this.table.actor(player, req.attacker);
+    const target = this.table.fighter(req.target);
+    const attack = this.attackOf(attacker, req);
+    this.table.check(attacker.token, 'reaction');
+    this.table.pay(attacker.token, 'reaction');
+    this.resolve({ attacker, target, attack, range: 'normal' }, { smite: req.smite, reaction: true });
+  }
+
+  /** An Attack action attack, or two-weapon fighting's off-hand attack: a bonus action, free with nick. */
+  private attackCost(attacker: Fighter, attack: Attack): Cost {
+    if (!attack.offHand) return 'attack';
+    const used = this.table.budget(attacker.token)?.used;
+    if (!used) return 'free';
+    const problem = offHandProblem(used);
+    if (problem) throw new Refusal(`${attacker.token.name} ${problem}`);
+    return offHandCost(attacker.sheet, attack, used);
+  }
+
+  private attackOf(attacker: Fighter, req: AttackRequest): Fighter['sheet']['attacks'][number] {
+    const attack = attacker.sheet.attacks.find((a) => a.name === req.attack);
+    if (!attack) throw new Refusal(`${attacker.token.name} has no attack called ${req.attack}`);
+    const smiting = req.smite && smiteProblem(attacker.sheet, attack, req.smite);
+    if (smiting) throw new Refusal(`${attacker.token.name} ${smiting}`);
+    return attack;
+  }
+
+  private resolve(
+    { attacker, target, attack, range }: Pick<PendingHit, 'attacker' | 'target' | 'attack' | 'range'>,
+    { smite, reaction }: { smite: number | undefined; reaction: boolean },
+  ): void {
+    // Out of its turn a creature has no budget; its sneak attack is still unused.
+    const sneakUsed = !reaction && !!this.table.budget(attacker.token)?.used.includes('sneak-attack');
     const outcome = resolveWeaponAttack(
       {
         attacker,
@@ -132,13 +222,18 @@ export class CombatActions {
         gridSize: this.store.world.gridSize,
         allyNearTarget: this.allyNear(attacker.token, target.token),
         sneakUsed,
-        smite: req.smite,
+        smite,
       },
       this.table.rng,
     );
-    this.table.pay(attacker.token, 'attack', attacker.sheet.attacksPerAction);
-    if (outcome.sneak) this.markUsed(attacker.token, 'sneak-attack');
-    if (outcome.smote) this.table.spendSlot(attacker.token.id, req.smite!);
+    if (outcome.sneak && !reaction) this.markUsed(attacker.token, 'sneak-attack');
+    const hit = { attacker, target, attack, range, smite, outcome };
+    if (!outcome.roll.hit || !this.onHit(hit)) this.land(hit);
+  }
+
+  /** Lands a rolled attack, once any reaction to it is settled. */
+  land({ attacker, target, attack, range, smite, outcome }: PendingHit): void {
+    if (outcome.smote) this.table.spendSlot(attacker.token.id, smite!);
     this.table.useUp(outcome.used);
     this.applyOutcome(attacker, target, outcome, { range, name: attack.name, kind: attack.kind });
   }
@@ -173,7 +268,7 @@ export class CombatActions {
     const fresh = this.table.fighter(target.token.id);
     const { dealt, hp, tempHp } = applyDamage(fresh.sheet, parts);
     const total = dealt.reduce((sum, d) => sum + d, 0);
-    if (total > 0) this.table.hurt(fresh.token, { hp, tempHp }, total);
+    if (total > 0) this.table.hurt(fresh.token, { hp, tempHp, crit: result.crit }, total);
     this.addEffects(target.token.id, outcome);
     const notes = [...outcome.notes];
     if (range === 'long') notes.push('long range: disadvantage');

@@ -8,7 +8,9 @@ import {
   rest,
   useFeature,
   useItem,
+  type FeatureUse,
   type Player,
+  type Token,
 } from '@vtt/shared';
 import { Refusal, requireGm, type Cost, type Table } from './table.ts';
 
@@ -30,11 +32,21 @@ export class FeatureActions {
     const out = useFeature(token, sheet, featureId, this.table.rng);
     this.table.pay(token, cost);
     this.store.setToken({ ...out.token, x: token.x, y: token.y });
-    const left = this.table.budget(token);
-    if (out.grantAction && left) this.table.setBudget(token, { ...left, action: true });
-    if (out.dash && left) this.table.setBudget(token, { ...this.table.budget(token)!, move: left.move + out.dash });
+    this.grant(token, out);
     const detail = out.healed !== undefined ? ` and regains ${out.healed} HP` : '';
     this.table.note(`${token.name} uses ${feature.name}${detail}`);
+  }
+
+  /** What a feature gives back this turn: the action, movement or attacks. */
+  private grant(token: Token, out: FeatureUse): void {
+    const left = this.table.budget(token);
+    if (!left) return;
+    this.table.setBudget(token, {
+      ...left,
+      action: left.action || !!out.grantAction,
+      move: left.move + (out.dash ?? 0),
+      attacks: left.attacks + (out.grantAttacks ?? 0),
+    });
   }
 
   /** Uses up one of an item: a potion is drunk. */

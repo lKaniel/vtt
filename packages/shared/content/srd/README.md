@@ -32,11 +32,16 @@ or `"2024"`:
   caster's attacks against the target, like hunter's mark and hex), `zone`
   (`{ "spares": "allies", "onCast": false }`: the area lasts and hits
   creatures that start their turn in it or enter it), `repeat` (`"action"` or
-  `"bonus"`: used again on later turns without a slot), and a `gmNote` for the part the GM still does by
+  `"bonus"`: used again on later turns without a slot), `cures` (conditions
+  whose effects end, like lesser restoration), `revive` (revivify),
+  `upcast.maxHp` (aid's raised maximum per slot), and a `gmNote` for the part the GM still does by
   hand. `null` takes away a generated field; `"automated": false` makes the
   chat say the GM applies the spell.
 - `class-automation.json`: per class id, spellcasting and features with
-  uses, actions and effects (second wind, rage, sneak attack, weapon mastery).
+  uses, actions and effects (second wind, rage, sneak attack, weapon mastery),
+  `grantAttacks` (flurry of blows) and `speed` by level for a passive effect
+  (unarmored movement). A feature id the generated class lacks is added whole,
+  with its own `name` and `level` (flurry of blows, folded into ki in the text).
 
 A spell or feature without automation still shows its text, and the chat says
 the GM applies it.

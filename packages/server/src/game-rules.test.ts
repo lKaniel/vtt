@@ -282,3 +282,86 @@ describe('lasting zones and repeated attacks', () => {
     expect(errors(ana)[0]).toMatch(/isn't going/);
   });
 });
+
+describe('dying and death saves', () => {
+  it('rolls a death save when a downed character’s turn comes, then passes the turn', () => {
+    store.setToken({ ...tok('bo'), hp: 0 });
+    const { gm } = fight(['hero', 'bo', 'goblin', 'goblin2']);
+    store.setCombat({ ...store.combat!, turn: 0 });
+    dice = [face(8)];
+    gm.receive({ t: 'endTurn' });
+    expect(tok('bo').deathSaves).toMatchObject({ successes: 0, failures: 1 });
+    expect(store.combat!.order[store.combat!.turn]!.token).toBe('goblin');
+  });
+
+  it('fails a death save when hit while down, and dies at three', () => {
+    store.setToken({ ...tok('hero'), hp: 0, deathSaves: { successes: 0, failures: 2 } });
+    store.setToken({ ...tok('goblin'), x: 150, y: 50 });
+    const { gm } = fight(['goblin', 'hero', 'bo', 'goblin2']);
+    dice = [face(15), face(1, 6), face(1, 6)];
+    gm.receive({ t: 'attack', attacker: 'goblin', target: 'hero', attack: 'Scimitar' });
+    expect(tok('hero').deathSaves).toMatchObject({ dead: true });
+  });
+
+  it('stabilizes a dying creature with spare the dying', () => {
+    store.setToken({ ...tok('hero'), stats: { ...tok('hero').stats, spells: ['spare-the-dying'] } });
+    store.setToken({ ...tok('bo'), x: 50, y: 150, hp: 0, deathSaves: { successes: 1, failures: 2 } });
+    const ana = join_('ana');
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'spare-the-dying', slot: 0, targets: ['bo'] });
+    expect(tok('bo').deathSaves).toMatchObject({ stable: true });
+  });
+});
+
+describe('opportunity attacks', () => {
+  it('offers the enemy an attack when a creature walks out of its reach, once per round', () => {
+    store.setToken({ ...tok('goblin'), x: 150, y: 250 });
+    const { bo, gm } = fight(['bo', 'goblin', 'hero', 'goblin2']);
+    bo.receive({ t: 'move', token: 'bo', to: [50, 50] });
+    const [offer] = gm.take('reactionOffer');
+    expect(offer).toMatchObject({ offer: { reactor: 'goblin', target: 'bo', kind: 'opportunity' } });
+    expect(bo.take('reactionOffer')).toEqual([]);
+    dice = [face(19), face(3, 6)];
+    gm.receive({ t: 'react', offer: offer!.offer.id, choice: 'Scimitar' });
+    expect(tok('bo').hp).toBe(40 - 5);
+    expect(store.combat!.reacted).toEqual(['goblin']);
+    expect(store.combat!.left.action).toBe(true);
+    gm.receive({ t: 'react', offer: offer!.offer.id, choice: 'Scimitar' });
+    expect(errors(gm)[0]).toMatch(/passed/);
+  });
+
+  it('makes no offer when the creature disengaged first', () => {
+    store.setToken({ ...tok('goblin'), x: 150, y: 250 });
+    const { bo, gm } = fight(['bo', 'goblin', 'hero', 'goblin2']);
+    bo.receive({ t: 'feature', token: 'bo', feature: 'disengage' });
+    bo.receive({ t: 'move', token: 'bo', to: [50, 50] });
+    expect(gm.take('reactionOffer')).toEqual([]);
+  });
+});
+
+describe('monk', () => {
+  it('flurry of blows gives two more attacks for a ki point', () => {
+    store.setToken({ ...tok('bo'), stats: { class: 'monk', level: 5, maxHp: 30, abilities: { dex: 16, wis: 14 } } });
+    const { bo } = fight(['bo', 'goblin', 'hero', 'goblin2']);
+    bo.receive({ t: 'feature', token: 'bo', feature: 'flurry-of-blows' });
+    expect(store.combat!.left).toMatchObject({ bonus: false, attacks: 2, action: true });
+    expect(tok('bo').spent?.uses).toEqual({ ki: 1 });
+  });
+});
+
+describe('two-weapon fighting', () => {
+  it('attacks with the off hand as a bonus action after a light-weapon attack', () => {
+    const swords = [
+      { item: 'shortsword', equipped: true, qty: 1 },
+      { item: 'shortsword', equipped: true, qty: 1 },
+    ];
+    store.setToken({ ...tok('bo'), x: 150, y: 250, inventory: swords });
+    const { bo } = fight(['bo', 'goblin', 'hero', 'goblin2']);
+    const offHand = { t: 'attack', attacker: 'bo', target: 'goblin2', attack: 'Shortsword (off-hand)' } as const;
+    bo.receive(offHand);
+    expect(errors(bo)).toEqual(['Fighter must attack with a light weapon first']);
+    bo.receive({ ...offHand, attack: 'Shortsword' });
+    bo.receive(offHand);
+    expect(errors(bo)).toEqual([]);
+    expect(store.combat!.left).toMatchObject({ bonus: false });
+  });
+});

@@ -2,12 +2,14 @@ import {
   castProblem,
   lastingEffects,
   inArea,
+  isDying,
   joinCombat,
   resolveCast,
   scaledSpell,
   tokenDistance,
   TokenSchema,
   type CastOutcome,
+  type CastResult,
   type CastingTime,
   type Effect,
   type Player,
@@ -32,7 +34,7 @@ export interface CastRequest {
 const COST: Record<CastingTime, Cost> = {
   action: 'action',
   bonus: 'bonus',
-  reaction: 'free',
+  reaction: 'reaction',
   minute: 'free',
   hour: 'free',
 };
@@ -180,18 +182,45 @@ export class SpellActions {
   // ---- Results -----------------------------------------------------------
 
   private apply(outcome: CastOutcome): void {
-    for (const r of outcome.results) {
-      const target = this.table.fighter(r.target);
-      if (r.healed !== undefined) {
-        this.store.setToken({ ...target.token, hp: r.hp >= target.sheet.maxHp ? undefined : r.hp });
-      } else if (r.damage > 0) {
-        this.table.hurt(target.token, r, r.damage);
-      } else if (r.tempHp !== undefined) {
-        this.store.setToken({ ...target.token, tempHp: r.tempHp || undefined });
-      }
-      if (r.effect) this.addEffect(r.target, r.effect);
-    }
+    for (const r of outcome.results) this.applyOne(r);
     this.table.useUp(outcome.used);
+  }
+
+  private applyOne(r: CastResult): void {
+    // A raised maximum (aid) is in place before the healing that fills it.
+    const first = r.healed !== undefined;
+    if (r.effect && first) this.addEffect(r.target, r.effect);
+    this.applyHp(r);
+    if (r.effect && !first) this.addEffect(r.target, r.effect);
+    if (r.stabilized) this.stabilize(r.target);
+    if (r.cured) this.cure(r.target, r.cured);
+    if (r.revived) this.revive(r.target);
+  }
+
+  private cure(id: string, effects: readonly string[]): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    const left = (token.effects ?? []).filter((e) => !effects.includes(e.id));
+    this.store.setToken({ ...token, effects: left.length ? left : undefined });
+  }
+
+  private revive(id: string): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    this.store.setToken({ ...token, hp: 1, deathSaves: undefined });
+    this.table.note(`${token.name} returns to life`);
+  }
+
+  /** Healing, damage or temporary hit points from one result. */
+  private applyHp(r: CastResult): void {
+    const target = this.table.fighter(r.target);
+    if (r.healed !== undefined) {
+      this.store.setToken({ ...target.token, hp: r.hp >= target.sheet.maxHp ? undefined : r.hp });
+    } else if (r.damage > 0) {
+      this.table.hurt(target.token, r, r.damage);
+    } else if (r.tempHp !== undefined) {
+      this.store.setToken({ ...target.token, tempHp: r.tempHp || undefined });
+    }
   }
 
   /** Pushes or pulls everyone the spell moves, from where the caster stands. */
@@ -204,6 +233,13 @@ export class SpellActions {
       if (feet > 0) notes.push(`${name} is ${r.push > 0 ? 'pushed' : 'pulled'} ${feet} ft`);
     }
     return notes;
+  }
+
+  private stabilize(id: string): void {
+    const token = this.store.tokens.get(id);
+    if (!token || !isDying(token)) return;
+    this.store.setToken({ ...token, deathSaves: { successes: 0, failures: 0, ...token.deathSaves, stable: true } });
+    this.table.note(`${token.name} is stable`);
   }
 
   /** The caster regains hit points from what the spell drained. */

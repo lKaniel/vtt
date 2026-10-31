@@ -1,10 +1,12 @@
 import type { Content } from './content.ts';
 import { withBasicActions } from './basic-actions.ts';
+import { offHandAttacks } from './two-weapon.ts';
+import { makesDeathSaves } from './deaths.ts';
 import { casterSheet, classOf, featureSheets, levelValue, type CasterSheet, type FeatureSheet } from './classes.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
 import type { Token } from './schema.ts';
-import type { Class, Condition } from './spell-schema.ts';
+import type { Class, Condition, Effect } from './spell-schema.ts';
 import {
   ABILITIES,
   AbilitiesSchema,
@@ -76,12 +78,9 @@ export function resolveCreature(token: Token, content: Content): Creature | unde
     proficiency,
     ac:
       ac ??
-      armorClass(
-        abilities,
-        gear.armor,
-        features.find((f) => f.unarmoredAc),
-      ),
-    hp: Math.min(token.hp ?? maxHp, maxHp),
+      armorClass(abilities, gear.armor, { ...features.find((f) => f.unarmoredAc), armorBase: armorBaseOf(token) }),
+    // Clamped once effects have changed the maximum (aid).
+    hp: token.hp ?? Number.POSITIVE_INFINITY,
     maxHp,
     tempHp: token.tempHp ?? 0,
     speed: token.speed,
@@ -107,12 +106,18 @@ function kindAndSaves(
   return { type: monster?.type ?? 'humanoid', saves: saveBonuses(abilities, proficiency, proficient) };
 }
 
+/** A character at 0 hp lies unconscious until it's healed. */
+function downed(token: Token): Effect[] {
+  if (!makesDeathSaves(token) || token.hp === undefined || token.hp > 0) return [];
+  return [{ id: 'down', name: token.deathSaves?.dead ? 'Dead' : 'Down', conditions: ['unconscious', 'prone'] }];
+}
+
 /** The token's effects, then the ones its features always give (danger sense). */
 function effectParts(token: Token, features: readonly FeatureSheet[]): Pick<Creature, 'effects' | 'conditions'> {
   const passive = features.flatMap((f) =>
     f.passive ? [{ ...f.passive, id: f.id, name: f.passive.name ?? f.name, source: token.id }] : [],
   );
-  const effects = [...(token.effects ?? []), ...passive];
+  const effects = [...(token.effects ?? []), ...passive, ...downed(token)];
   return { effects, conditions: [...new Set(effects.flatMap((e) => e.conditions ?? []))] };
 }
 
@@ -146,15 +151,25 @@ function classHp(cls: Class | undefined, stats: Stats, abilities: Abilities): nu
 
 const HELD: readonly Condition[] = ['grappled', 'paralyzed', 'petrified', 'restrained', 'stunned', 'unconscious'];
 
-/** AC, speed and resistances changed by spells and features. */
+/** The best unarmored base AC an effect gives (mage armor), or 0. */
+function armorBaseOf(token: Token): number {
+  return Math.max(0, ...(token.effects ?? []).map((e) => e.armorBase ?? 0));
+}
+
+/** AC, hit points, speed and resistances changed by spells and features. */
 function applyEffects(c: Creature): Creature {
   const effects = c.effects;
-  const sum = (key: 'ac' | 'speed') => effects.reduce((n, e) => n + (e[key] ?? 0), 0);
+  const sum = (key: 'ac' | 'speed' | 'maxHp') => effects.reduce((n, e) => n + (e[key] ?? 0), 0);
   const held = c.conditions.some((x) => HELD.includes(x)) || effects.some((e) => e.immobile);
+  const maxHp = c.maxHp + sum('maxHp');
+  const minAc = Math.max(0, ...effects.map((e) => e.minAc ?? 0));
+  const times = effects.reduce((n, e) => n * (e.speedTimes ?? 1), 1);
   return {
     ...c,
-    ac: c.ac + sum('ac'),
-    speed: held ? 0 : Math.max(0, c.speed + sum('speed')),
+    maxHp,
+    hp: Math.min(c.hp, maxHp),
+    ac: Math.max(c.ac + sum('ac'), minAc),
+    speed: held ? 0 : Math.floor(Math.max(0, c.speed + sum('speed')) * times),
     resistances: [...new Set([...c.resistances, ...effects.flatMap((e) => e.resistances ?? [])])],
   };
 }
@@ -167,7 +182,7 @@ function creatureAttacks(
 ): Attack[] {
   const fromWeapons = weapons.map((w) => weaponAttack(w, abilities, proficiency));
   const natural = monster?.attacks ?? (fromWeapons.length ? [] : [unarmedStrike(abilities, proficiency)]);
-  return [...natural, ...fromWeapons, ...(stats.attacks ?? [])];
+  return [...natural, ...fromWeapons, ...offHandAttacks(fromWeapons, abilities), ...(stats.attacks ?? [])];
 }
 
 function defenses(stats: Stats, monster: Monster | undefined): Pick<Creature, DefenseKey> {
@@ -203,12 +218,15 @@ function equippedItems(token: Token, content: Content): { weapons: Weapon[]; arm
 export function armorClass(
   abilities: Abilities,
   armor: readonly Armor[],
-  unarmored?: Pick<FeatureSheet, 'unarmoredAc' | 'unarmoredShield'>,
+  unarmored?: Pick<FeatureSheet, 'unarmoredAc' | 'unarmoredShield'> & { armorBase?: number },
 ): number {
   const dex = abilityMod(abilities.dex);
   const shield = armor.filter((a) => a.category === 'shield').reduce((sum, a) => sum + a.ac, 0);
   const body = armor.find((a) => a.category !== 'shield');
-  if (!body) return 10 + dex + shield + unarmoredBonus(abilities, shield > 0, unarmored);
+  if (!body) {
+    const natural = 10 + unarmoredBonus(abilities, shield > 0, unarmored);
+    return Math.max(natural, unarmored?.armorBase ?? 0) + dex + shield;
+  }
   const dexBonus = { light: dex, medium: Math.min(dex, 2), heavy: 0 }[body.category as 'light' | 'medium' | 'heavy'];
   return body.ac + dexBonus + shield;
 }

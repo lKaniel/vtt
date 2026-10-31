@@ -40,8 +40,20 @@ const modifiers = {
   /** Added to the bearer's saving throws. */
   saveBonus: dice.optional(),
   ac: z.number().int().optional(),
+  /** Unarmored AC before dex: the bearer's AC without body armor is this + dex (mage armor). */
+  armorBase: z.number().int().optional(),
+  /** The bearer's AC is at least this (barkskin). */
+  minAc: z.number().int().optional(),
+  /** Added to the bearer's hit point maximum (aid). */
+  maxHp: z.number().int().optional(),
+  /** Temporary hit points the bearer gains at the start of each of its turns; "mod" is the caster's spellcasting modifier (heroism). */
+  turnTempHp: z.union([z.number().int(), z.literal('mod')]).optional(),
   /** Feet added to (or taken from) the bearer's speed. */
   speed: z.number().int().optional(),
+  /** The bearer's speed is multiplied by this after the rest: 2 for haste, 0.5 for slow. */
+  speedTimes: z.number().positive().optional(),
+  /** Attacks the bearer gets at the start of each of its turns, on top of its action (haste). */
+  turnAttacks: z.number().int().positive().optional(),
   resistances: z.array(DamageTypeSchema).optional(),
   /** Attacks against the bearer have advantage (faerie fire) or disadvantage. */
   advantageAgainst: z.boolean().optional(),
@@ -178,6 +190,12 @@ export const SpellSchema = z.object({
   tempHp: dice.optional(),
   /** Hit points of creatures affected, weakest first, rolled on each cast (2014 sleep). */
   hpPool: dice.optional(),
+  /** Ends the target's effects that impose any of these conditions (lesser restoration). */
+  cures: z.array(ConditionSchema).optional(),
+  /** Brings a dead creature back with 1 hit point (revivify). */
+  revive: z.boolean().optional(),
+  /** Makes a dying creature stable (spare the dying). */
+  stabilize: z.boolean().optional(),
   /** The caster regains half the damage dealt (vampiric touch). */
   drain: z.boolean().optional(),
   /** What the GM still has to do by hand when the rest is automated; shown in the log. */
@@ -192,6 +210,8 @@ export const SpellSchema = z.object({
       damage: dice.optional(),
       heal: dice.optional(),
       tempHp: z.number().int().optional(),
+      /** Added to the effect's `maxHp`, and healed on casting (aid). */
+      maxHp: z.number().int().optional(),
       hpPool: dice.optional(),
       targets: z.number().int().optional(),
       beams: z.number().int().optional(),
@@ -255,6 +275,10 @@ export const FeatureSchema = z.object({
   effect: EffectTemplateSchema.optional(),
   /** For an effect's `meleeDamage`: the bonus by class level. */
   meleeDamage: LevelTableSchema.optional(),
+  /** Extra attacks it gives this turn (flurry of blows, a monk's bonus unarmed strike). */
+  grantAttacks: z.number().int().positive().optional(),
+  /** For a `passive` effect's `speed`: the bonus by class level (unarmored movement). */
+  speed: LevelTableSchema.optional(),
   /** Using it gives the creature its speed again as movement (Dash). */
   dash: z.boolean().optional(),
   /** Basic actions (by id) this feature lets the creature take as a bonus action (cunning action). */

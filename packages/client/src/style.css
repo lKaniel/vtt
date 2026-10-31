@@ -3633,3 +3633,13 @@ button.pip:hover {
     min-width: 0;
   }
 }
+
+.reaction-prompt {
+  position: absolute;
+  top: 120px;
+  left: 50%;
+  z-index: 20;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  flex-wrap: wrap;
+}

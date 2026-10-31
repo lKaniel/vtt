@@ -1,5 +1,8 @@
 import {
   afterDamage,
+  damagedWhileDown,
+  isDead,
+  isDying,
   canAct,
   canControlToken,
   isGm,
@@ -37,7 +40,7 @@ export interface Fighter {
 }
 
 /** What one turn costs: an action, a bonus action, or one attack of an Attack action. */
-export type Cost = 'action' | 'bonus' | 'attack' | 'free';
+export type Cost = 'action' | 'bonus' | 'attack' | 'reaction' | 'free';
 
 /**
  * The world as the rules see it, shared by combat, spells and features:
@@ -88,7 +91,7 @@ export class Table {
     const token = this.store.tokens.get(id);
     if (!token) return undefined;
     const sheet = this.sheetOf(token);
-    return { speed: sheet?.speed ?? token.speed, active: !sheet || sheet.hp > 0 };
+    return { speed: sheet?.speed ?? token.speed, active: !sheet || sheet.hp > 0 || isDying(token) };
   };
 
   // ---- Turn budgets -------------------------------------------------------
@@ -125,6 +128,7 @@ export class Table {
   /** Throws unless `token` can pay `cost` now. Outside a fight everything is free. */
   check(token: Token, cost: Cost): void {
     if (cost === 'free') return;
+    if (cost === 'reaction') return this.checkReaction(token);
     const left = this.budget(token);
     if (!left) return;
     if (cost === 'bonus' && !left.bonus) throw new Refusal(`${token.name} has already used their bonus action`);
@@ -137,6 +141,7 @@ export class Table {
   /** Spends `cost`; an attack starts the Attack action, which gives `attacks` attacks. */
   pay(token: Token, cost: Cost, attacks = 1): void {
     if (cost === 'free') return;
+    if (cost === 'reaction') return this.payReaction(token);
     const left = this.budget(token);
     if (!left) return;
     if (cost === 'bonus') return this.setBudget(token, { ...left, bonus: false });
@@ -144,6 +149,18 @@ export class Table {
     const next =
       left.attacks > 0 ? { ...left, attacks: left.attacks - 1 } : { ...left, action: false, attacks: attacks - 1 };
     this.setBudget(token, next);
+  }
+
+  /** A reaction is once per round, at any time, in a fight; outside one it's free. */
+  private checkReaction(token: Token): void {
+    if (this.store.combat?.reacted.includes(token.id)) {
+      throw new Refusal(`${token.name} has already used their reaction`);
+    }
+  }
+
+  private payReaction(token: Token): void {
+    const combat = this.store.combat;
+    if (combat && this.inFight(token.id)) this.store.setCombat({ ...combat, reacted: [...combat.reacted, token.id] });
   }
 
   /** Marks one spell slot of level `slot` as spent. */
@@ -171,15 +188,27 @@ export class Table {
    * Sets a creature's hit points (and temporary ones) after it took `damage`,
    * ends what damage ends, then checks its concentration.
    */
-  hurt(token: Token, after: { hp: number; tempHp?: number }, damage: number): void {
+  hurt(token: Token, after: { hp: number; tempHp?: number; crit?: boolean }, damage: number): void {
     const current = this.store.tokens.get(token.id) ?? token;
-    const tempHp = after.tempHp ?? current.tempHp ?? 0;
-    const unhurt = after.hp >= (this.sheetOf(current)?.maxHp ?? Infinity);
-    const hurt = { ...current, hp: unhurt ? undefined : after.hp, tempHp: tempHp > 0 ? tempHp : undefined };
+    const before = this.sheetOf(current)!;
+    const hurt = this.downed(withHp(current, after, before.maxHp), {
+      damage,
+      crit: !!after.crit,
+      maxHp: before.maxHp,
+      hpBefore: before.hp,
+    });
     const shaken = damage > 0 ? afterDamage(hurt, this.sheetOf(hurt)!, this.rng) : { token: hurt, notes: [] };
     this.store.setToken(shaken.token);
     for (const n of shaken.notes) this.note(n);
     this.checkConcentration(shaken.token, damage);
+  }
+
+  /** A character hit while down fails death saves, and massive damage kills it. */
+  private downed(token: Token, hit: Parameters<typeof damagedWhileDown>[1]): Token {
+    if ((token.hp ?? 1) > 0) return token;
+    const after = damagedWhileDown(token, hit);
+    if (isDead(after) && !isDead(token)) this.note(`${token.name} dies`);
+    return after;
   }
 
   private checkConcentration(current: Token, damage: number): void {
@@ -240,6 +269,12 @@ export class Table {
     }
     this.store.removeToken(id);
   }
+}
+
+/** The token with new hit points and temporary ones; full hit points are left out. */
+function withHp(token: Token, after: { hp: number; tempHp?: number }, maxHp: number): Token {
+  const tempHp = after.tempHp ?? token.tempHp ?? 0;
+  return { ...token, hp: after.hp >= maxHp ? undefined : after.hp, tempHp: tempHp > 0 ? tempHp : undefined };
 }
 
 export function requireGm(player: Player): void {

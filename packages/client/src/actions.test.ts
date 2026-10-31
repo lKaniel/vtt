@@ -101,6 +101,14 @@ describe('what an action costs', () => {
     expect(costOf(feature!)).toBe('bonus');
   });
 
+  it('makes an off-hand attack a bonus action', () => {
+    const [attack] = actionTiles(wizard());
+    if (attack?.kind !== 'attack') throw new Error('expected an attack tile');
+    const offHand = { ...attack, attack: { ...attack.attack, offHand: true } };
+    expect(costOf(offHand)).toBe('bonus');
+    expect(affordable(offHand, budget({ action: false, attacks: 0 }))).toBe(true);
+  });
+
   it('is always affordable outside your turn', () => {
     const [attack] = actionTiles(wizard());
     expect(affordable(attack!, undefined)).toBe(true);

@@ -30,6 +30,13 @@ describe('health bars', () => {
     expect(hpBar(token({ sheet: shielded }))).toMatchObject({ percent: 75, label: '15/20 +8' });
   });
 
+  it('shows death saves on a downed character', () => {
+    const down = (deathSaves: TokenView['deathSaves']) => hpBar(token({ sheet: sheet(0, 20), deathSaves }))?.label;
+    expect(down({ successes: 1, failures: 2 })).toBe('Dying: 1 ✓ 2 ✗');
+    expect(down({ successes: 3, failures: 0, stable: true })).toBe('Stable');
+    expect(down({ successes: 0, failures: 3, dead: true })).toBe('Dead');
+  });
+
   it('estimates from how hurt it looks otherwise', () => {
     expect(hpBar(token({ health: 'bloodied' }))).toEqual({ percent: 35, tone: 'bloodied', label: 'Bloodied' });
     expect(hpBar(token({ health: 'unhurt' }))).toMatchObject({ percent: 100 });
