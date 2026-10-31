@@ -126,6 +126,8 @@ export const MonsterSchema = z.object({
   attacks: z.array(AttackSchema).default([]),
   ...defenses,
   conditionImmunities: z.array(z.string()).default([]),
+  /** Painted top-down token with a transparent background, set from content/token-art.json. */
+  img: z.string().optional(),
 });
 export type Monster = z.infer<typeof MonsterSchema>;
 

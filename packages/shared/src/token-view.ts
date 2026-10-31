@@ -12,6 +12,8 @@ export interface TokenView extends Token {
   sheet?: Creature;
   /** For everyone else, only how hurt it looks. */
   health?: Health;
+  /** The monster's painted token, drawn when the token has no `img` of its own. */
+  art?: string;
 }
 
 export function healthOf(hp: number, maxHp: number): Health {
@@ -24,7 +26,9 @@ export function healthOf(hp: number, maxHp: number): Health {
 export function viewToken(token: Token, player: Player, content: Content): TokenView {
   const sheet = resolveCreature(token, content);
   if (!sheet) return token;
-  if (canControlToken(token, player)) return { ...token, sheet };
+  const art = token.monster ? content.monsters.get(token.monster)?.img : undefined;
+  const look = art ? { art } : {};
+  if (canControlToken(token, player)) return { ...token, ...look, sheet };
   const { monster: _m, stats: _s, hp: _h, inventory: _i, ...visible } = token;
-  return { ...visible, health: healthOf(sheet.hp, sheet.maxHp) };
+  return { ...visible, ...look, health: healthOf(sheet.hp, sheet.maxHp) };
 }

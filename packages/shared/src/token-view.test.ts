@@ -40,4 +40,13 @@ describe('viewToken', () => {
     const tree = TokenSchema.parse({ id: 'tree', name: 'Tree', x: 0, y: 0 });
     expect(viewToken(tree, ana, srdFor('2024'))).toEqual(tree);
   });
+
+  it("shows everyone the monster's painted token without telling them which monster it is", () => {
+    const srd = srdFor('2024');
+    const painted = { ...srd.monsters.get('goblin-warrior')!, img: '/art/tokens/goblin.webp' };
+    const content = { ...srd, monsters: new Map([['goblin-warrior', painted]]) };
+    expect(viewToken(goblin, ana, content)).toMatchObject({ art: '/art/tokens/goblin.webp' });
+    expect(viewToken(goblin, gm, content)).toMatchObject({ art: '/art/tokens/goblin.webp' });
+    expect(viewToken(goblin, ana, srd)).not.toHaveProperty('art');
+  });
 });

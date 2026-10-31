@@ -1,21 +1,19 @@
 import { currentTurn, type Health, type Point, type TokenView } from '@vtt/shared';
 import { Assets, Container, Graphics, Sprite as PixiSprite, Text, type Texture } from 'pixi.js';
 import { BarTween } from '../bar-tween.ts';
-import { portraitOf, tokenBaseArt } from '../icon-art.ts';
+import { cutoutOf, portraitOf } from '../icon-art.ts';
 import type { Session } from '../session.ts';
 import type { Viewer } from './Vision.ts';
 
 /** Token walking speed when animating a move, pixels per second. */
 const WALK_SPEED = 900;
-/** Token disc radius as a share of its size in pixels. */
+/** Token radius as a share of its size in pixels: effects, bars and the ground ring are laid out on it. */
 const DISC = 0.42;
 /** Ring around the token whose turn it is. */
 const TURN_COLOR = '#e8c070';
-/** Painted base ring diameter as a multiple of the disc radius. */
-const BASE = 2.85;
-/** Rims of party members and of everyone else. */
-const ALLY_RIM = '#a88a5e';
-const OTHER_RIM = '#5a2620';
+/** Ground rings of party members and of everyone else, bright enough to read on any floor. */
+const ALLY_RIM = '#d8c08a';
+const OTHER_RIM = '#d0503c';
 /** A flinch: how long the flash and shake last (ms) and how far it shakes (share of the radius). */
 const FLINCH_MS = 320;
 const SHAKE = 0.12;
@@ -23,14 +21,21 @@ const SHAKE = 0.12;
 const LUNGE_MS = 260;
 const LUNGE = 0.6;
 
+/** A ring on the ground under a token; strong ones glow. */
+interface Ring {
+  color: string;
+  strong: boolean;
+}
+
 interface Sprite {
   root: Container;
-  /** The painted ring under the disc. */
-  base: PixiSprite;
-  /** The token's picture, cut to a circle inside the rim. */
+  /** Shadow and, when selected, hovered or taking its turn, a ring on the ground. */
+  ground: Graphics;
+  /** The token's picture, drawn as it is with its transparency. */
   face: PixiSprite;
-  faceMask: Graphics;
+  /** Placeholder disc for tokens without a picture: the hooded stranger is cut to it. */
   disc: Graphics;
+  faceMask: Graphics;
   /** Hit point bar and markers drawn over the disc. */
   status: Graphics;
   label: Text;
@@ -38,6 +43,7 @@ interface Sprite {
   route: Point[];
   token: TokenView;
   r: number;
+  hover: boolean;
   bar?: BarTween;
   /** Flinch start time and colour, lunge start time and direction. */
   flinch?: { at: number; color: number };
@@ -58,21 +64,19 @@ export class TokenLayer {
   draw(token: TokenView): void {
     const view = this.views.get(token.id) ?? this.create(token);
     if (view.route.length === 0) view.root.position.set(token.x, token.y);
-    const r = token.size * (this.session.world?.gridSize ?? 100) * DISC;
+    const box = token.size * (this.session.world?.gridSize ?? 100);
+    const r = box * DISC;
     view.token = token;
     view.r = r;
     trackHp(view, token);
-    showTexture(view.base, tokenBaseArt(token, this.session.selected === token.id), r * BASE);
-    drawDisc(view.disc.clear(), token, r, this.ringColor(token));
-    view.faceMask
-      .clear()
-      .circle(0, 0, r - 2)
-      .fill(0xffffff);
-    showTexture(view.face, portraitOf(token), r * 2);
+    this.redrawGround(view);
+    const cutout = cutoutOf(token);
+    drawPlaceholder(view, cutout ? undefined : token.color);
+    showTexture(view.face, portraitOf(token), cutout ? box : r * 2);
     redrawStatus(view);
     const notes = [token.hidden && 'hidden', token.visibleTo && 'illusion'].filter(Boolean);
     view.label.text = notes.length ? `${token.name} (${notes.join(', ')})` : token.name;
-    view.label.position.set(0, r + 4);
+    view.label.position.set(0, r * 1.15);
     view.label.visible = this.labelsVisible;
     view.root.alpha = token.hidden ? 0.5 : 1;
     view.root.cursor = this.isTarget(token) ? 'crosshair' : 'pointer';
@@ -177,9 +181,20 @@ export class TokenLayer {
     return !!this.session.armed && this.session.selected !== token.id;
   }
 
-  private ringColor(token: TokenView): string {
+  /** Gold for the creature whose turn it is; your colour (or ally/foe) when selected or under the pointer. */
+  private ringOf(view: Sprite): Ring | undefined {
+    const { token } = view;
     const combat = this.session.combat;
-    if (combat && currentTurn(combat) === token.id) return TURN_COLOR;
+    if (combat && currentTurn(combat) === token.id) return { color: TURN_COLOR, strong: true };
+    if (this.session.selected === token.id) return { color: this.session.you?.color ?? TURN_COLOR, strong: true };
+    return view.hover ? { color: this.ringColor(token), strong: false } : undefined;
+  }
+
+  private redrawGround(view: Sprite): void {
+    drawGround(view.ground.clear(), view.r, this.ringOf(view));
+  }
+
+  private ringColor(token: TokenView): string {
     const you = this.session.you;
     if (you && token.controllers.includes(you.id)) return you.color;
     return token.controllers.length > 0 ? ALLY_RIM : OTHER_RIM;
@@ -187,13 +202,11 @@ export class TokenLayer {
 
   private create(token: TokenView): Sprite {
     const root = new Container();
-    const base = new PixiSprite();
-    base.anchor.set(0.5);
+    const ground = new Graphics();
     const disc = new Graphics();
     const face = new PixiSprite();
     face.anchor.set(0.5);
     const faceMask = new Graphics();
-    face.mask = faceMask;
     const status = new Graphics();
     const label = new Text({
       text: '',
@@ -206,7 +219,7 @@ export class TokenLayer {
       },
     });
     label.anchor.set(0.5, 0);
-    root.addChild(base, disc, face, faceMask, status, label);
+    root.addChild(ground, disc, face, faceMask, status, label);
     root.eventMode = 'static';
     root.cursor = 'pointer';
     root.on('pointerdown', (e) => {
@@ -221,31 +234,61 @@ export class TokenLayer {
       else this.onGrab?.(t.id, [e.global.x, e.global.y]);
     });
     this.container.addChild(root);
-    const view: Sprite = { root, base, disc, face, faceMask, status, label, route: [], token, r: 0 };
+    const view: Sprite = { root, ground, disc, face, faceMask, status, label, route: [], token, r: 0, hover: false };
+    this.watchHover(view);
     this.views.set(token.id, view);
     return view;
+  }
+
+  private watchHover(view: Sprite): void {
+    const set = (hover: boolean) => {
+      view.hover = hover;
+      this.redrawGround(view);
+    };
+    view.root.on('pointerover', () => set(true));
+    view.root.on('pointerout', () => set(false));
   }
 }
 
 const DOUBLE_CLICK_MS = 350;
 
-/** Shows a picture once it has loaded; switching pictures keeps the old one until then. */
+/**
+ * Shows a picture once it has loaded, scaled to fit a `size` square without
+ * stretching; switching pictures keeps the old one until then.
+ */
 function showTexture(sprite: PixiSprite, url: string, size: number): void {
-  sprite.label = url;
+  const key = `${url}@${size}`;
+  if (sprite.label === key) return;
+  sprite.label = key;
   void Assets.load<Texture>(url).then((texture) => {
-    if (sprite.destroyed || sprite.label !== url) return;
+    if (sprite.destroyed || sprite.label !== key) return;
     sprite.texture = texture;
-    sprite.setSize(size);
+    sprite.scale.set(size / Math.max(texture.width, texture.height, 1));
   });
 }
 
-/** A shadow on the ground, the disc with a soft highlight, and a rim in the token's ring colour. */
-function drawDisc(g: Graphics, token: TokenView, r: number, rim: string): void {
-  g.ellipse(0, r * 0.12, r * 1.08, r * 1.02).fill({ color: 0x000000, alpha: 0.45 });
-  g.circle(0, 0, r).fill(token.color);
-  g.circle(-r * 0.22, -r * 0.25, r * 0.6).fill({ color: 0xffffff, alpha: 0.12 });
-  g.circle(0, 0, r).stroke({ width: 5, color: rim });
-  g.circle(0, 0, r + 3).stroke({ width: 1.5, color: 0x000000, alpha: 0.8 });
+/** A soft shadow under the token and, if it has one, its ring: a glowing band for strong rings. */
+function drawGround(g: Graphics, r: number, ring: Ring | undefined): void {
+  g.ellipse(0, r * 0.18, r * 0.95, r * 0.8).fill({ color: 0x000000, alpha: 0.28 });
+  g.ellipse(0, r * 0.12, r * 0.7, r * 0.6).fill({ color: 0x000000, alpha: 0.22 });
+  if (!ring) return;
+  const at = r * 1.08;
+  if (ring.strong) {
+    g.circle(0, 0, at).stroke({ width: 16, color: ring.color, alpha: 0.12 });
+    g.circle(0, 0, at).stroke({ width: 8, color: ring.color, alpha: 0.3 });
+  }
+  g.circle(0, 0, at).stroke({ width: ring.strong ? 3 : 2, color: ring.color, alpha: ring.strong ? 1 : 0.6 });
+}
+
+/** The round placeholder behind the hooded stranger, or nothing when the token has its own picture. */
+function drawPlaceholder(view: Sprite, color: string | undefined): void {
+  view.disc.clear();
+  view.faceMask.clear();
+  view.face.mask = color === undefined ? null : view.faceMask;
+  if (color === undefined) return;
+  const r = view.r;
+  view.disc.circle(0, 0, r).fill(color);
+  view.faceMask.circle(0, 0, r - 2).fill(0xffffff);
 }
 
 /** How full the hit point bar looks for tokens whose exact hit points are secret. */
@@ -273,12 +316,12 @@ function redrawStatus(view: Sprite): void {
   drawEffects(view.status, view.token, view.r);
 }
 
-/** A hit point bar under the disc, with a pale trail of what was just lost, and a cross over creatures that are down. */
+/** A hit point bar across the token's feet, with a pale trail of what was just lost, and a cross over creatures that are down. */
 function drawStatus(g: Graphics, { bar }: Sprite, r: number): void {
   if (!bar) return;
   const share = bar.shown;
   const w = r * 1.6;
-  const y = r * 0.55;
+  const y = r * 0.85;
   g.rect(-w / 2, y, w, 10).fill({ color: 0x000000, alpha: 0.7 });
   if (bar.trail > share) g.rect(-w / 2, y, w * bar.trail, 10).fill({ color: 0xf2e3c0, alpha: 0.85 });
   g.rect(-w / 2, y, w * share, 10).fill(barColor(share));
