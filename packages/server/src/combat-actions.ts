@@ -5,6 +5,9 @@ import {
   currentTurn,
   deathSave,
   isDying,
+  lightAttack,
+  offHandCost,
+  offHandProblem,
   endOfTurnSaves,
   leaveCombat,
   nextTurn,
@@ -19,7 +22,7 @@ import {
   type Token,
   type WeaponAttackOutcome,
 } from '@vtt/shared';
-import { Refusal, requireGm, type Fighter, type Table } from './table.ts';
+import { Refusal, requireGm, type Cost, type Fighter, type Table } from './table.ts';
 
 /** An attack that has been rolled but not yet landed: its target may still react (shield). */
 export interface PendingHit {
@@ -162,14 +165,17 @@ export class CombatActions {
     if (!canSee(req.target)) throw new Refusal('No such target');
     const target = this.table.fighter(req.target);
     const attack = this.attackOf(attacker, req);
-    this.table.check(attacker.token, 'attack');
+    const cost = this.attackCost(attacker, attack);
+    this.table.check(attacker.token, cost);
     const feet = tokenDistance(attacker.token, target.token, this.store.world.gridSize);
     const range = attackRange(attack, feet);
     if (range === 'out') throw new Refusal(`${target.token.name} is out of range (${feet} ft)`);
     if (!this.table.clearShot([attacker.token.x, attacker.token.y], [target.token.x, target.token.y])) {
       throw new Refusal(`${attacker.token.name} has no clear shot`);
     }
-    this.table.pay(attacker.token, 'attack', attacker.sheet.attacksPerAction);
+    this.table.pay(attacker.token, cost, attacker.sheet.attacksPerAction);
+    if (lightAttack(attack)) this.markUsed(attacker.token, 'light-attack');
+    if (attack.offHand && cost === 'free') this.markUsed(attacker.token, 'nick');
     this.resolve({ attacker, target, attack, range }, { smite: req.smite, reaction: false });
   }
 
@@ -181,6 +187,16 @@ export class CombatActions {
     this.table.check(attacker.token, 'reaction');
     this.table.pay(attacker.token, 'reaction');
     this.resolve({ attacker, target, attack, range: 'normal' }, { smite: req.smite, reaction: true });
+  }
+
+  /** An Attack action attack, or two-weapon fighting's off-hand attack: a bonus action, free with nick. */
+  private attackCost(attacker: Fighter, attack: Attack): Cost {
+    if (!attack.offHand) return 'attack';
+    const used = this.table.budget(attacker.token)?.used;
+    if (!used) return 'free';
+    const problem = offHandProblem(used);
+    if (problem) throw new Refusal(`${attacker.token.name} ${problem}`);
+    return offHandCost(attacker.sheet, attack, used);
   }
 
   private attackOf(attacker: Fighter, req: AttackRequest): Fighter['sheet']['attacks'][number] {

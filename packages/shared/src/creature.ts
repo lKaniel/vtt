@@ -1,5 +1,6 @@
 import type { Content } from './content.ts';
 import { withBasicActions } from './basic-actions.ts';
+import { offHandAttacks } from './two-weapon.ts';
 import { makesDeathSaves } from './deaths.ts';
 import { casterSheet, classOf, featureSheets, levelValue, type CasterSheet, type FeatureSheet } from './classes.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
@@ -181,7 +182,7 @@ function creatureAttacks(
 ): Attack[] {
   const fromWeapons = weapons.map((w) => weaponAttack(w, abilities, proficiency));
   const natural = monster?.attacks ?? (fromWeapons.length ? [] : [unarmedStrike(abilities, proficiency)]);
-  return [...natural, ...fromWeapons, ...(stats.attacks ?? [])];
+  return [...natural, ...fromWeapons, ...offHandAttacks(fromWeapons, abilities), ...(stats.attacks ?? [])];
 }
 
 function defenses(stats: Stats, monster: Monster | undefined): Pick<Creature, DefenseKey> {

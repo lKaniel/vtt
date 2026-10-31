@@ -85,7 +85,7 @@ export function filterTiles(tiles: ActionTile[], tab: Tab): ActionTile[] {
 
 export function costOf(tile: ActionTile): Cost {
   if (tile.kind === 'item') return tile.cost ?? 'action';
-  if (tile.kind === 'attack') return 'action';
+  if (tile.kind === 'attack') return tile.attack.offHand ? 'bonus' : 'action';
   if (tile.kind === 'feature') return tile.feature.action ?? 'free';
   const time = tile.spell.castingTime;
   return time === 'minute' || time === 'hour' ? 'long' : time;

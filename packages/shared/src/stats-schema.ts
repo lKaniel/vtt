@@ -69,6 +69,8 @@ export const AttackSchema = z.object({
       mastery: z.string().optional(),
     })
     .optional(),
+  /** The bonus attack of two-weapon fighting: no ability modifier to damage. */
+  offHand: z.boolean().optional(),
 });
 export type Attack = z.infer<typeof AttackSchema>;
 

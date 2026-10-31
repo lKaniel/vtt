@@ -347,3 +347,21 @@ describe('monk', () => {
     expect(tok('bo').spent?.uses).toEqual({ ki: 1 });
   });
 });
+
+describe('two-weapon fighting', () => {
+  it('attacks with the off hand as a bonus action after a light-weapon attack', () => {
+    const swords = [
+      { item: 'shortsword', equipped: true, qty: 1 },
+      { item: 'shortsword', equipped: true, qty: 1 },
+    ];
+    store.setToken({ ...tok('bo'), x: 150, y: 250, inventory: swords });
+    const { bo } = fight(['bo', 'goblin', 'hero', 'goblin2']);
+    const offHand = { t: 'attack', attacker: 'bo', target: 'goblin2', attack: 'Shortsword (off-hand)' } as const;
+    bo.receive(offHand);
+    expect(errors(bo)).toEqual(['Fighter must attack with a light weapon first']);
+    bo.receive({ ...offHand, attack: 'Shortsword' });
+    bo.receive(offHand);
+    expect(errors(bo)).toEqual([]);
+    expect(store.combat!.left).toMatchObject({ bonus: false });
+  });
+});

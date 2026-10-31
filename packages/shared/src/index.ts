@@ -25,6 +25,7 @@ export * from './zones.ts';
 export * from './deaths.ts';
 export * from './reactions.ts';
 export * from './hit-reactions.ts';
+export * from './two-weapon.ts';
 export * from './weapon-attack.ts';
 export * from './riders.ts';
 export * from './spawn.ts';
