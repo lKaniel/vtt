@@ -22,6 +22,8 @@ export interface HttpOptions {
   /** The built client; unknown paths fall back to its index.html. */
   clientDir: string;
   players: () => readonly Player[];
+  /** Account routes; answers true when it handled the request. */
+  api?: (req: IncomingMessage, res: ServerResponse) => Promise<boolean>;
 }
 
 /** Streams a file from inside `root`, refusing paths that escape it. */
@@ -39,6 +41,7 @@ async function serveFile(res: ServerResponse, root: string, urlPath: string): Pr
 export function httpHandler(opts: HttpOptions): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   return async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
+    if (opts.api && (await opts.api(req, res))) return;
     if (url.pathname === '/api/players') {
       // Self-hosted for friends: anyone who can reach the server may pick a seat.
       const players = opts.players().map(({ id, name, role, color }) => ({ id, name, role, color }));

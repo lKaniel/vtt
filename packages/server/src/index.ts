@@ -1,9 +1,12 @@
 import { createServer } from 'node:http';
 import { join, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
+import { AccountStore } from './accounts.ts';
+import { accountApi, sessionToken } from './api.ts';
+import { CharacterStore } from './characters.ts';
 import { Game } from './game.ts';
 import { httpHandler } from './http.ts';
-import { repoRoot, worldDirFromArgs } from './paths.ts';
+import { dataDirFor, repoRoot, worldDirFromArgs } from './paths.ts';
 import { WorldStore } from './world-store.ts';
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -14,11 +17,17 @@ const store = new WorldStore(worldDir);
 await store.load();
 store.watch();
 const game = new Game(store);
+const dataDir = dataDirFor(worldDir);
+const accounts = new AccountStore(dataDir);
+await accounts.load();
+const characters = new CharacterStore(dataDir);
+await characters.load();
 
 const handleRequest = httpHandler({
   assetsDir: join(worldDir, 'assets'),
   clientDir: clientDist,
   players: () => store.world.players,
+  api: accountApi({ accounts, characters, world: store }),
 });
 
 const server = createServer((req, res) => {
@@ -33,14 +42,19 @@ const wss = new WebSocketServer({ noServer: true });
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
   if (url.pathname !== '/ws') return socket.destroy();
-  const player = game.findPlayer(url.searchParams.get('player') ?? '');
+  // Signed-in accounts join as themselves; ?player= picks one of the world's seats.
+  const account = accounts.sessionAccount(sessionToken(req));
+  const seat = url.searchParams.get('player');
+  const player = game.findPlayer(seat ?? account?.id ?? '');
   wss.handleUpgrade(req, socket, head, (ws) => {
     if (!player) return ws.close(4001, 'unknown player');
     game.connect(ws, player);
   });
 });
 
-server.listen(PORT, () => console.log(`[server] http://localhost:${PORT} serving world ${worldDir}`));
+server.listen(PORT, () =>
+  console.log(`[server] http://localhost:${PORT} serving world ${worldDir}, data in ${dataDir}`),
+);
 
 for (const sig of ['SIGINT', 'SIGTERM'] as const) {
   process.on(sig, () => {

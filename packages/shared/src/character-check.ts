@@ -77,7 +77,7 @@ function bonusIssues(c: Character, p: Parts): string[] {
 function backgroundBonusIssues(picks: [Ability, number][], p: Parts): string[] {
   const allowed = p.background?.abilities ?? [];
   if (picks.some(([a]) => !allowed.includes(a))) return [`${p.background?.name} raises only ${listNames(allowed)}.`];
-  const values = picks.map(([, v]) => v).sort();
+  const values = picks.map(([, v]) => v).sort((a, b) => a - b);
   const ok = values.join() === '1,2' || values.join() === '1,1,1';
   return ok ? [] : ['Give one ability +2 and another +1, or three +1.'];
 }

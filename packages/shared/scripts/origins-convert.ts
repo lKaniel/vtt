@@ -214,9 +214,10 @@ class Ctx {
 
   private change(c: Change): KitItem | undefined {
     if (c.type === 'adjust' && c.field === 'coins.gp' && c.by) return this.coins(c.by);
-    const ref = /^'(.+)'$/.exec(c.entry?.item ?? '')?.[1];
-    if (c.type !== 'addItem' || !ref) return undefined;
-    return { item: this.itemId(ref), qty: c.entry?.quantity ?? 1, equipped: c.entry?.equipped ?? false };
+    const entry = c.type === 'addItem' ? c.entry : undefined;
+    const ref = entry && /^'(.+)'$/.exec(entry.item)?.[1];
+    if (!entry || !ref) return undefined;
+    return { item: this.itemId(ref), qty: entry.quantity ?? 1, equipped: entry.equipped ?? false };
   }
 
   private coins(qty: number): KitItem {
@@ -275,7 +276,7 @@ function backgroundAbilities(choices: Choice[]): string[] | undefined {
 function grantedSkills(effects: Effect[]): string[] {
   return effects
     .filter((e) => e.target === 'proficiencies.skills' && e.op === 'grant')
-    .map((e) => String((e.value as { tag?: string }).tag ?? ''))
+    .map((e) => (e.value as { tag?: string }).tag ?? '')
     .filter((t) => t.startsWith('skill.'))
     .map(bare);
 }
