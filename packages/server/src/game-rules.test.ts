@@ -311,3 +311,29 @@ describe('dying and death saves', () => {
     expect(tok('bo').deathSaves).toMatchObject({ stable: true });
   });
 });
+
+describe('opportunity attacks', () => {
+  it('offers the enemy an attack when a creature walks out of its reach, once per round', () => {
+    store.setToken({ ...tok('goblin'), x: 150, y: 250 });
+    const { bo, gm } = fight(['bo', 'goblin', 'hero', 'goblin2']);
+    bo.receive({ t: 'move', token: 'bo', to: [50, 50] });
+    const [offer] = gm.take('reactionOffer');
+    expect(offer).toMatchObject({ offer: { reactor: 'goblin', target: 'bo', kind: 'opportunity' } });
+    expect(bo.take('reactionOffer')).toEqual([]);
+    dice = [face(19), face(3, 6)];
+    gm.receive({ t: 'react', offer: offer!.offer.id, attack: 'Scimitar' });
+    expect(tok('bo').hp).toBe(40 - 5);
+    expect(store.combat!.reacted).toEqual(['goblin']);
+    expect(store.combat!.left.action).toBe(true);
+    gm.receive({ t: 'react', offer: offer!.offer.id, attack: 'Scimitar' });
+    expect(errors(gm)[0]).toMatch(/passed/);
+  });
+
+  it('makes no offer when the creature disengaged first', () => {
+    store.setToken({ ...tok('goblin'), x: 150, y: 250 });
+    const { bo, gm } = fight(['bo', 'goblin', 'hero', 'goblin2']);
+    bo.receive({ t: 'feature', token: 'bo', feature: 'disengage' });
+    bo.receive({ t: 'move', token: 'bo', to: [50, 50] });
+    expect(gm.take('reactionOffer')).toEqual([]);
+  });
+});

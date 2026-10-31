@@ -9,6 +9,7 @@ import {
   type DoorState,
   type Player,
   type Point,
+  type ReactionOffer,
   type Rect,
   type ServerMessage,
   type SpawnSource,
@@ -18,6 +19,7 @@ import {
 } from '@vtt/shared';
 
 import { dropMessage, type DragPayload } from './drops.ts';
+import { withOffer } from './reactions.ts';
 import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
@@ -67,6 +69,8 @@ export class Session {
   armed?: string;
   /** Slot level to Divine Smite with on the armed attack. */
   smite?: number;
+  /** Chances one of your creatures has to react (an opportunity attack). */
+  reactions: ReactionOffer[] = [];
   /** The spell the selected token is aiming, and what it has picked so far. */
   aiming?: Aiming;
   error?: { message: string; at: number };
@@ -238,6 +242,11 @@ export class Session {
 
   useFeature(token: string, feature: string): void {
     this.send({ t: 'feature', token, feature });
+  }
+
+  /** Takes a reaction with one of the offered attacks, or declines it without one. */
+  takeReaction(offer: string, attack?: string): void {
+    this.send({ t: 'react', offer, ...(attack && { attack }) });
   }
 
   /** Uses one of an item the token carries (drinks a potion). */
@@ -416,10 +425,19 @@ export class Session {
       case 'actorGone':
         this.onActor(msg);
         return true;
-      case 'error':
-        this.showError(msg.message);
-        return false;
+      default:
+        return this.applyNotice(msg);
     }
+  }
+
+  /** Messages for this player alone: reaction offers and refusals. */
+  private applyNotice(msg: Extract<ServerMessage, { t: 'reactionOffer' | 'reactionGone' | 'error' }>): boolean {
+    if (msg.t === 'error') {
+      this.showError(msg.message);
+      return false;
+    }
+    this.reactions = withOffer(this.reactions, msg);
+    return true;
   }
 
   /** When one of your creatures' turns starts, select it and bring it into view. */

@@ -16,6 +16,7 @@ import {
   type AttackLog,
   type Player,
   type Token,
+  type WeaponAttackInput,
   type WeaponAttackOutcome,
 } from '@vtt/shared';
 import { Refusal, requireGm, type Fighter, type Table } from './table.ts';
@@ -133,10 +134,7 @@ export class CombatActions {
     const attacker = this.table.actor(player, req.attacker);
     if (!canSee(req.target)) throw new Refusal('No such target');
     const target = this.table.fighter(req.target);
-    const attack = attacker.sheet.attacks.find((a) => a.name === req.attack);
-    if (!attack) throw new Refusal(`${attacker.token.name} has no attack called ${req.attack}`);
-    const smiting = req.smite && smiteProblem(attacker.sheet, attack, req.smite);
-    if (smiting) throw new Refusal(`${attacker.token.name} ${smiting}`);
+    const attack = this.attackOf(attacker, req);
     this.table.check(attacker.token, 'attack');
     const feet = tokenDistance(attacker.token, target.token, this.store.world.gridSize);
     const range = attackRange(attack, feet);
@@ -144,7 +142,34 @@ export class CombatActions {
     if (!this.table.clearShot([attacker.token.x, attacker.token.y], [target.token.x, target.token.y])) {
       throw new Refusal(`${attacker.token.name} has no clear shot`);
     }
-    const sneakUsed = !!this.table.budget(attacker.token)?.used.includes('sneak-attack');
+    this.table.pay(attacker.token, 'attack', attacker.sheet.attacksPerAction);
+    this.resolve({ attacker, target, attack, range }, { smite: req.smite, reaction: false });
+  }
+
+  /** An opportunity attack: the reaction the creature had, not its action, and the target was in reach as it left. */
+  reactionAttack(player: Player, req: AttackRequest): void {
+    const attacker = this.table.actor(player, req.attacker);
+    const target = this.table.fighter(req.target);
+    const attack = this.attackOf(attacker, req);
+    const combat = this.store.combat;
+    if (combat) this.store.setCombat({ ...combat, reacted: [...combat.reacted, attacker.token.id] });
+    this.resolve({ attacker, target, attack, range: 'normal' }, { smite: req.smite, reaction: true });
+  }
+
+  private attackOf(attacker: Fighter, req: AttackRequest): Fighter['sheet']['attacks'][number] {
+    const attack = attacker.sheet.attacks.find((a) => a.name === req.attack);
+    if (!attack) throw new Refusal(`${attacker.token.name} has no attack called ${req.attack}`);
+    const smiting = req.smite && smiteProblem(attacker.sheet, attack, req.smite);
+    if (smiting) throw new Refusal(`${attacker.token.name} ${smiting}`);
+    return attack;
+  }
+
+  private resolve(
+    { attacker, target, attack, range }: Pick<WeaponAttackInput, 'attacker' | 'target' | 'attack' | 'range'>,
+    { smite, reaction }: { smite: number | undefined; reaction: boolean },
+  ): void {
+    // Out of its turn a creature has no budget; its sneak attack is still unused.
+    const sneakUsed = !reaction && !!this.table.budget(attacker.token)?.used.includes('sneak-attack');
     const outcome = resolveWeaponAttack(
       {
         attacker,
@@ -154,13 +179,12 @@ export class CombatActions {
         gridSize: this.store.world.gridSize,
         allyNearTarget: this.allyNear(attacker.token, target.token),
         sneakUsed,
-        smite: req.smite,
+        smite,
       },
       this.table.rng,
     );
-    this.table.pay(attacker.token, 'attack', attacker.sheet.attacksPerAction);
-    if (outcome.sneak) this.markUsed(attacker.token, 'sneak-attack');
-    if (outcome.smote) this.table.spendSlot(attacker.token.id, req.smite!);
+    if (outcome.sneak && !reaction) this.markUsed(attacker.token, 'sneak-attack');
+    if (outcome.smote) this.table.spendSlot(attacker.token.id, smite!);
     this.table.useUp(outcome.used);
     this.applyOutcome(attacker, target, outcome, { range, name: attack.name, kind: attack.kind });
   }

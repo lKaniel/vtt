@@ -25,6 +25,7 @@ import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
 import { castFeature } from './feature-casting.ts';
 import { SpellActions } from './spell-actions.ts';
+import { Reactions } from './reactions.ts';
 import { Zones } from './zones.ts';
 import { Refusal, Table } from './table.ts';
 import type { WorldStore } from './world-store.ts';
@@ -64,6 +65,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     point: PointSchema.optional(),
   }),
   z.object({ t: z.literal('useItem'), token: z.string(), item: z.string() }),
+  z.object({ t: z.literal('react'), offer: z.string(), attack: z.string().optional() }),
   z.object({ t: z.literal('dropConcentration'), token: z.string() }),
   z.object({ t: z.literal('removeEffect'), token: z.string(), effect: z.string() }),
   z.object({ t: z.literal('rest'), tokens: z.array(z.string()).min(1).max(100), kind: z.enum(['short', 'long']) }),
@@ -116,6 +118,7 @@ export class Game {
   readonly spells: SpellActions;
   readonly table: Table;
   private zones: Zones;
+  private reactions: Reactions;
   private features: FeatureActions;
   private gm: GmActions;
 
@@ -130,8 +133,14 @@ export class Game {
     this.combat = new CombatActions(
       table,
       (attack) => this.narrate({ attack }),
-      (id) => this.zones.turnStarted(id),
+      (id) => {
+        this.reactions.clear();
+        this.zones.turnStarted(id);
+      },
     );
+    this.reactions = new Reactions(table, this.combat, (msg, reactor) => {
+      for (const c of this.clients) if (canControlToken(reactor, c.player)) this.send(c, msg);
+    });
     this.features = new FeatureActions(table);
     this.gm = new GmActions(table);
     store.on('chunk', (key, chunk) => {
@@ -285,6 +294,8 @@ export class Game {
         return this.useFeature(c, msg);
       case 'useItem':
         return this.features.useItem(c.player, msg.token, msg.item);
+      case 'react':
+        return this.reactions.react(c.player, msg.offer, msg.attack);
       case 'dropConcentration':
         return this.features.dropConcentration(c.player, msg.token);
       case 'removeEffect':
@@ -334,6 +345,7 @@ export class Game {
     const walker = this.combat.move(token, path.feet);
     this.store.setToken({ ...walker, x, y }, path.points);
     this.zones.moved(token.id, path.points);
+    this.reactions.moved(token, path.points);
   }
 
   private onHotbar(c: Client, id: string, slots: (string | null)[]): void {

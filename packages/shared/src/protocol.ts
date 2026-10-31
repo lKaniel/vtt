@@ -78,6 +78,16 @@ export interface ChatMessage {
 /** What the GM places on the map: a monster from one edition's book, or a copy of an actor. */
 export type SpawnSource = { kind: 'monster'; id: string; rules: Edition } | { kind: 'actor'; id: string };
 
+/** A chance to react out of turn, sent to whoever controls the reactor. */
+export interface ReactionOffer {
+  id: string;
+  reactor: string;
+  target: string;
+  kind: 'opportunity';
+  /** Melee attacks the reactor could make. */
+  attacks: string[];
+}
+
 export type ClientMessage =
   /** The chunks this client's camera can see; the server streams them. */
   | { t: 'view'; chunks: string[] }
@@ -110,6 +120,8 @@ export type ClientMessage =
   | { t: 'feature'; token: string; feature: string; targets?: string[]; point?: Point }
   /** Use one of an item the token carries, by item id (drink a potion). */
   | { t: 'useItem'; token: string; item: string }
+  /** Take a reaction that was offered, with this attack; no attack declines it. */
+  | { t: 'react'; offer: string; attack?: string }
   | { t: 'dropConcentration'; token: string }
   /** GM: end one effect on a token. */
   | { t: 'removeEffect'; token: string; effect: string }
@@ -147,4 +159,7 @@ export type ServerMessage =
   /** GM only: an actor was added, changed or removed. */
   | { t: 'actor'; actor: Actor }
   | { t: 'actorGone'; id: string }
-  | { t: 'error'; message: string };
+  | { t: 'error'; message: string }
+  /** A reaction you may take now; `reactionGone` once it's taken, declined or too late. */
+  | { t: 'reactionOffer'; offer: ReactionOffer }
+  | { t: 'reactionGone'; id: string };

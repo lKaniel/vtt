@@ -58,6 +58,7 @@ describe('crossCheck', () => {
       order: [{ token: 'ghost', initiative: 3 }],
       left: { move: 30, action: true, bonus: true, attacks: 0, used: [] },
       side: {},
+      reacted: [],
     };
     const issues = crossCheck(world, new Map(), new Map([['orc', token]]), { combat });
     expect(issues.map((i) => i.message)).toEqual([

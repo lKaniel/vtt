@@ -64,6 +64,7 @@ const fight = (turn: number, move = 30): Combat => ({
   ],
   left: { move, action: true, bonus: true, attacks: 0, used: [] },
   side: {},
+  reacted: [],
 });
 
 let session: Session;
