@@ -12,6 +12,7 @@ import { DRAG_TYPE, type DragPayload } from '../drops.ts';
 import type { Session } from '../session.ts';
 import { cuesOf } from '../feedback.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
+import { CameraMotion } from './camera-motion.ts';
 import { EffectsLayer } from './EffectsLayer.ts';
 import { PathPreview } from './PathPreview.ts';
 import { TokenLayer } from './TokenLayer.ts';
@@ -19,8 +20,6 @@ import { Vision } from './Vision.ts';
 
 extensions.add(CullerPlugin);
 
-const MIN_ZOOM = 0.05;
-const MAX_ZOOM = 3;
 const WHEEL_ZOOM_SPEED = 0.0015;
 /** Below these zoom levels the matching detail is skipped, so a zoomed-out map stays cheap. */
 const LOD = { grid: 0.35, labels: 0.45, doors: 0.25 };
@@ -33,6 +32,8 @@ const DRAG_THRESHOLD = 5;
 interface Drag {
   start: Point;
   last: Point;
+  /** When the pointer was last at `last`, for the speed of a fling. */
+  at: number;
   panning: boolean;
   button: number;
   /** Set when the drag started on a token you control: dropping it walks the token there. */
@@ -60,8 +61,13 @@ export class MapView {
   private vision?: Vision;
 
   /** World point at the centre of the screen. */
-  private center: Point = [0, 0];
-  private zoom = 0.6;
+  private cam = new CameraMotion([0, 0], 0.6);
+  private get center(): Point {
+    return this.cam.center;
+  }
+  private get zoom(): number {
+    return this.cam.zoom;
+  }
   private dirty = true;
   private visionDirty = true;
   private cameraMoved = true;
@@ -78,7 +84,7 @@ export class MapView {
     this.chunks = new ChunkLayer(session);
     this.tokens = new TokenLayer(session);
     this.tokens.onGrab = (token, at) => {
-      this.drag = { start: at, last: at, panning: false, button: 0, token };
+      this.drag = { start: at, last: at, at: performance.now(), panning: false, button: 0, token };
     };
     this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
   }
@@ -198,7 +204,7 @@ export class MapView {
         this.effects.play(cuesOf(message), performance.now());
       }),
       s.on('focus', (p) => {
-        this.center = [...p];
+        this.cam.glideTo(p);
         this.dirty = true;
       }),
     );
@@ -206,7 +212,7 @@ export class MapView {
 
   private onWelcome(): void {
     const world = this.session.world;
-    if (world && !this.viewId) this.center = [...world.start];
+    if (world && !this.viewId) this.cam.jumpTo(world.start);
     this.vision?.loadExplored();
     for (const key of this.chunks.keys) this.chunks.remove(key);
     this.wallsChanged();
@@ -231,6 +237,7 @@ export class MapView {
     this.tokens.animateFeedback(now);
     this.effects.tick(now);
     if (!this.session.world) return;
+    if (this.cam.step(dt)) this.dirty = true;
     // One more render after a walk ends, to mark what the token now sees as explored.
     const stopped = this.wasWalking && !walking;
     this.wasWalking = walking;
@@ -295,7 +302,9 @@ export class MapView {
     const r = this.visibleRect();
     for (let x = Math.floor(r.x / size) * size; x <= r.x + r.w; x += size) g.moveTo(x, r.y).lineTo(x, r.y + r.h);
     for (let y = Math.floor(r.y / size) * size; y <= r.y + r.h; y += size) g.moveTo(r.x, y).lineTo(r.x + r.w, y);
-    g.stroke({ width: 1 / this.zoom, color: 0x000000, alpha: 0.18 });
+    // The grid fades in as you zoom closer, instead of popping in.
+    const alpha = 0.16 * Math.min(1, (this.zoom - LOD.grid) / 0.25);
+    g.stroke({ width: 1 / this.zoom, color: 0x000000, alpha });
   }
 
   // Input -------------------------------------------------------------------
@@ -305,10 +314,7 @@ export class MapView {
     const rect = this.app.canvas.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
-    const before = this.screenToWorld(sx, sy);
-    this.zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, this.zoom * Math.exp(-e.deltaY * WHEEL_ZOOM_SPEED)));
-    const after = this.screenToWorld(sx, sy);
-    this.center = [this.center[0] + before[0] - after[0], this.center[1] + before[1] - after[1]];
+    this.cam.zoomAt(this.cam.zoomGoal * Math.exp(-e.deltaY * WHEEL_ZOOM_SPEED), [sx, sy], this.app.screen);
     this.dirty = true;
   };
 
@@ -329,7 +335,8 @@ export class MapView {
 
   private onPointerDown(e: FederatedPointerEvent): void {
     const p: Point = [e.global.x, e.global.y];
-    this.drag = { start: p, last: p, panning: e.button !== 0, button: e.button };
+    this.drag = { start: p, last: p, at: performance.now(), panning: e.button !== 0, button: e.button };
+    this.cam.hold();
   }
 
   private onPointerMove(e: FederatedPointerEvent): void {
@@ -346,14 +353,13 @@ export class MapView {
       return;
     }
     if (far) drag.panning = drag.moved = true;
+    const now = performance.now();
     if (drag.panning) {
-      this.center = [
-        this.center[0] - (p[0] - drag.last[0]) / this.zoom,
-        this.center[1] - (p[1] - drag.last[1]) / this.zoom,
-      ];
+      this.cam.drag([p[0] - drag.last[0], p[1] - drag.last[1]], (now - drag.at) / 1000);
       this.dirty = true;
     }
     drag.last = p;
+    drag.at = now;
   }
 
   private onPointerUp(e: FederatedPointerEvent): void {
@@ -368,8 +374,14 @@ export class MapView {
       this.session.cancelAction();
       return;
     }
-    if (!drag || drag.panning || drag.button !== 0) return;
+    if (drag?.panning) return this.letGo(drag);
+    if (drag?.button !== 0) return;
     this.clickGround(this.screenToWorld(e.global.x, e.global.y));
+  }
+
+  /** A fling glides on; a drag that stopped before letting go stays put. */
+  private letGo(drag: Drag): void {
+    if (performance.now() - drag.at < 80) this.cam.release();
   }
 
   /** A left click on the map: casts an aimed area spell, puts away an action, or walks. */

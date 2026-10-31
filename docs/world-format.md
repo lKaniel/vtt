@@ -75,7 +75,12 @@ wall's midpoint). The checker warns when one is in the wrong file.
 }
 ```
 
-- Tiles draw in file order, later ones on top. `image` tiles load from
+- Tiles draw in file order, later ones on top.
+- A `rect` tile can have painted ground: `"texture"` is one of `grass`, `dirt`,
+  `sand`, `stone`, `cobble`, `wood`, `water`, `rock`, tinted by `color` (pick
+  the lightest shade you want). `textureScale` is how many squares one repeat
+  covers (default 2). Grass, dirt, sand, water and rock get natural wobbly
+  edges; set `"edge": "straight"` or `"rough"` to choose. `image` tiles load from
   `assets/`.
 - A wall is a line from `a` to `b` that blocks movement. Add `door` to make
   it a door: `"closed"`, `"open"` or `"locked"`. Open doors don't block.

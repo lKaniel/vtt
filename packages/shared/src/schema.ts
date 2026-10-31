@@ -38,8 +38,21 @@ export type World = z.infer<typeof WorldSchema>;
 
 const tileBase = { id, x: z.number(), y: z.number(), w: z.number().positive(), h: z.number().positive() };
 
+/** Painted ground for rect tiles, tinted by the tile's colour. */
+export const TileTextureSchema = z.enum(['grass', 'dirt', 'sand', 'stone', 'cobble', 'wood', 'water', 'rock']);
+export type TileTexture = z.infer<typeof TileTextureSchema>;
+
 export const TileSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('rect'), ...tileBase, color: z.string() }),
+  z.object({
+    kind: z.literal('rect'),
+    ...tileBase,
+    color: z.string(),
+    texture: TileTextureSchema.optional(),
+    /** Squares one repeat of the texture covers; default 2. */
+    textureScale: z.number().positive().optional(),
+    /** "rough" wobbles the edges (the default for grass, dirt, sand, water and rock); "straight" keeps them crisp. */
+    edge: z.enum(['rough', 'straight']).optional(),
+  }),
   z.object({ kind: z.literal('image'), ...tileBase, src: z.string().min(1) }),
 ]);
 export type Tile = z.infer<typeof TileSchema>;
