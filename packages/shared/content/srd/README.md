@@ -38,7 +38,10 @@ or `"2024"`:
   hand. `null` takes away a generated field; `"automated": false` makes the
   chat say the GM applies the spell.
 - `class-automation.json`: per class id, spellcasting and features with
-  uses, actions and effects (second wind, rage, sneak attack, weapon mastery).
+  uses, actions and effects (second wind, rage, sneak attack, weapon mastery),
+  `grantAttacks` (flurry of blows) and `speed` by level for a passive effect
+  (unarmored movement). A feature id the generated class lacks is added whole,
+  with its own `name` and `level` (flurry of blows, folded into ki in the text).
 
 A spell or feature without automation still shows its text, and the chat says
 the GM applies it.

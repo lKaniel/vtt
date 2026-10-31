@@ -259,6 +259,10 @@ export const FeatureSchema = z.object({
   effect: EffectTemplateSchema.optional(),
   /** For an effect's `meleeDamage`: the bonus by class level. */
   meleeDamage: LevelTableSchema.optional(),
+  /** Extra attacks it gives this turn (flurry of blows, a monk's bonus unarmed strike). */
+  grantAttacks: z.number().int().positive().optional(),
+  /** For a `passive` effect's `speed`: the bonus by class level (unarmored movement). */
+  speed: LevelTableSchema.optional(),
   /** Using it gives the creature its speed again as movement (Dash). */
   dash: z.boolean().optional(),
   /** Basic actions (by id) this feature lets the creature take as a bonus action (cunning action). */

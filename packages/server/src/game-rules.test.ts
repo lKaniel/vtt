@@ -337,3 +337,13 @@ describe('opportunity attacks', () => {
     expect(gm.take('reactionOffer')).toEqual([]);
   });
 });
+
+describe('monk', () => {
+  it('flurry of blows gives two more attacks for a ki point', () => {
+    store.setToken({ ...tok('bo'), stats: { class: 'monk', level: 5, maxHp: 30, abilities: { dex: 16, wis: 14 } } });
+    const { bo } = fight(['bo', 'goblin', 'hero', 'goblin2']);
+    bo.receive({ t: 'feature', token: 'bo', feature: 'flurry-of-blows' });
+    expect(store.combat!.left).toMatchObject({ bonus: false, attacks: 2, action: true });
+    expect(tok('bo').spent?.uses).toEqual({ ki: 1 });
+  });
+});

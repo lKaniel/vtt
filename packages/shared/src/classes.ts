@@ -150,7 +150,13 @@ function featureSpell(f: Feature, level: number): Partial<Spell> | undefined {
 
 function sheetOf(f: Feature, level: number, abilities: Abilities, spent: Record<string, number>): FeatureSheet {
   const short = f.shortRestFrom !== undefined && level >= f.shortRestFrom;
-  const base: FeatureSheet = { ...f, spell: featureSpell(f, level), ...(short && { recharge: 'short' as const }) };
+  const passive = f.passive && f.speed ? { ...f.passive, speed: levelValue(f.speed, level) } : f.passive;
+  const base: FeatureSheet = {
+    ...f,
+    passive,
+    spell: featureSpell(f, level),
+    ...(short && { recharge: 'short' as const }),
+  };
   const max = maxUses(f, level, abilities);
   if (max === undefined) return base;
   return { ...base, max, left: Math.max(0, max - (spent[f.id] ?? 0)) };

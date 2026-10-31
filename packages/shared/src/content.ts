@@ -45,7 +45,12 @@ function merge(entry: Entry, part: Record<string, unknown>): Entry {
   const kept = Object.entries({ ...entry, ...rest } as Record<string, unknown>).filter(([, value]) => value !== null);
   const out: Entry = Object.fromEntries(kept) as Entry;
   if (features && Array.isArray(entry.features)) {
-    out.features = (entry.features as Entry[]).map((f) => ({ ...f, ...features[f.id] }));
+    const known = entry.features as Entry[];
+    // Features the generated text folds into another (flurry of blows under ki) are added whole.
+    const added = Object.entries(features)
+      .filter(([id]) => !known.some((f) => f.id === id))
+      .map(([id, f]) => ({ id, ...f }));
+    out.features = [...known.map((f) => ({ ...f, ...features[f.id] })), ...added];
   }
   return out;
 }
