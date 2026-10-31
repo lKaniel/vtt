@@ -93,5 +93,10 @@ export function dragTile(e: React.DragEvent, payload: TileDrag): void {
   // While a tile is in the air the sheet fades and lets drops through to the bar under it.
   // Changing the page during dragstart cancels the drag, so wait a moment.
   setTimeout(() => document.body.classList.add('dragging-tile'));
-  document.addEventListener('dragend', () => document.body.classList.remove('dragging-tile'), { once: true });
+  const done = () => {
+    document.body.classList.remove('dragging-tile');
+    // A tile keeps focus after a drag, which would leave its tooltip open.
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  };
+  document.addEventListener('dragend', done, { once: true });
 }
