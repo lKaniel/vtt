@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { srdFor } from './content.ts';
+import { srdFor, withTokenArt } from './content.ts';
 
 describe('SRD content', () => {
   it('has every SRD spell for both editions', () => {
@@ -55,5 +55,21 @@ describe('SRD content', () => {
   it('has the whole SRD bestiary', () => {
     expect(srdFor('2014').monsters.size).toBeGreaterThan(300);
     expect(srdFor('2024').monsters.get('owl')).toMatchObject({ type: 'beast', hp: 1 });
+  });
+});
+
+describe('monster token art', () => {
+  const goblin = srdFor('2014').monsters.get('goblin')!;
+  const warrior = srdFor('2024').monsters.get('goblin-warrior')!;
+
+  it('points monsters at their painted token, sharing one picture between names', () => {
+    const art = { goblin: 'goblin', 'goblin-warrior': 'goblin' };
+    const [g, w] = withTokenArt([goblin, warrior], art);
+    expect(g?.img).toBe('/art/tokens/goblin.webp');
+    expect(w?.img).toBe('/art/tokens/goblin.webp');
+  });
+
+  it('leaves monsters without a painting alone', () => {
+    expect(withTokenArt([goblin], {})[0]?.img).toBeUndefined();
   });
 });

@@ -8,6 +8,7 @@ import monsters52 from '../content/srd/monsters-5.2.json' with { type: 'json' };
 import spellAutomation from '../content/srd/spell-automation.json' with { type: 'json' };
 import spells51 from '../content/srd/spells-5.1.json' with { type: 'json' };
 import spells52 from '../content/srd/spells-5.2.json' with { type: 'json' };
+import tokenArt from '../content/token-art.json' with { type: 'json' };
 import type { Token, World } from './schema.ts';
 import { ClassSchema, SpellSchema, type Class, type Spell } from './spell-schema.ts';
 import { ItemSchema, MonsterSchema, type Edition, type Item, type Monster } from './stats-schema.ts';
@@ -55,13 +56,21 @@ function load<T extends { id: string }>(
   return byId(z.array(schema).parse(entries));
 }
 
+/**
+ * Gives each monster listed in `art` its painted token, `/art/tokens/<file>.webp`.
+ * Several monsters can share one painting (a 2014 goblin and a 2024 goblin warrior).
+ */
+export function withTokenArt(monsters: Monster[], art: Record<string, string>): Monster[] {
+  return monsters.map((m) => (art[m.id] ? { ...m, img: `/art/tokens/${art[m.id]}.webp` } : m));
+}
+
 const sharedItems = byId(z.array(ItemSchema).parse(items));
 const monsterList = z.array(MonsterSchema);
 
 function edition(edition: Edition, data: { monsters: unknown[]; spells: unknown[]; classes: unknown[] }): Content {
   return {
     items: sharedItems,
-    monsters: byId(monsterList.parse(data.monsters)),
+    monsters: byId(withTokenArt(monsterList.parse(data.monsters), tokenArt as Record<string, string>)),
     spells: load(SpellSchema, data.spells, [spellAutomation as Overlay, edition]),
     classes: load(ClassSchema, data.classes, [classAutomation as Overlay, edition]),
   };

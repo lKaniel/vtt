@@ -97,11 +97,15 @@ wall's midpoint). The checker warns when one is in the wrong file.
 | `id`          | Lowercase letters, digits, dashes. Must match the file name.        |
 | `x`, `y`      | Centre of the token in pixels (a square centre).                    |
 | `size`        | In squares: 1 medium, 2 large, 3 huge. Default 1.                   |
-| `color`       | Disc colour until token art exists.                                 |
+| `color`       | Disc colour behind the placeholder when there is no picture.        |
+| `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency. |
 | `speed`       | Walking speed in feet. Default 30.                                  |
 | `controllers` | Player ids who may move it. The GM always can.                      |
 | `hidden`      | `true` = only the GM sees it.                                       |
 | `visibleTo`   | If set, only these players (and the GM) see it. Used for illusions. |
+
+A token with a `monster` and no `img` uses that monster's painted token, if one
+has been imported (see [token-art/README.md](token-art/README.md)).
 
 ## Creatures: stats, monsters and gear
 

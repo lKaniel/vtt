@@ -20,14 +20,11 @@ export const attackArt = (attack: Attack) =>
   art('actions', attack.kind === 'ranged' ? 'ranged-attack' : 'melee-attack');
 export const itemArt = (item: Item | undefined) => (item ? art('items', item.id) : undefined);
 
-/** The painted ring a token stands on: gold when selected, blue for the party, red for the rest. */
-export function tokenBaseArt(token: TokenView, selected: boolean): string {
-  if (selected) return '/art/ui/token-base-selected.webp';
-  return token.controllers.length > 0 ? '/art/ui/token-base-ally.webp' : '/art/ui/token-base-foe.webp';
-}
-
 /** A painted die for the quick-roll buttons; there is no d100, so it borrows the d10. */
 export const diceArt = (die: string) => `/art/icons/dice/${die === 'd100' ? 'd10' : die}.webp`;
 
-/** A token's own picture, or a hooded stranger for creatures without one. */
-export const portraitOf = (token: TokenView) => token.img ?? '/art/ui/portrait-default.webp';
+/** A token's own picture, else its monster's painted token, if it has either. */
+export const cutoutOf = (token: TokenView): string | undefined => token.img ?? token.art;
+
+/** The picture to show for a token, or a hooded stranger for creatures without one. */
+export const portraitOf = (token: TokenView) => cutoutOf(token) ?? '/art/ui/portrait-default.webp';

@@ -1,0 +1,1806 @@
+[
+  {
+    "id": "commoner",
+    "group": "People and NPCs",
+    "look": "a plain peasant villager in a rough linen tunic and patched wool cloak, holding a wooden pitchfork",
+    "start": true
+  },
+  {
+    "id": "bandit",
+    "group": "People and NPCs",
+    "look": "a scruffy bandit in a dirty leather jerkin and hooded brown cloak, a scimitar in hand, a light crossbow on the back",
+    "start": true
+  },
+  {
+    "id": "cultist",
+    "group": "People and NPCs",
+    "look": "a cultist in a dark crimson hooded robe with the face in shadow, a curved ritual dagger in hand",
+    "start": true
+  },
+  {
+    "id": "guard",
+    "group": "People and NPCs",
+    "look": "a town guard in a chain shirt and open steel helm with a tabard, holding a spear and a round wooden shield",
+    "start": true
+  },
+  {
+    "id": "noble",
+    "group": "People and NPCs",
+    "look": "an elegant noble in an embroidered velvet doublet and fur-trimmed cape, a slim rapier at the hip, gold rings",
+    "start": true
+  },
+  {
+    "id": "tribal-warrior",
+    "group": "People and NPCs",
+    "look": "a tribal warrior in hide armor with feathers and bone ornaments, holding a stone-tipped spear",
+    "aliases": ["warrior-infantry"]
+  },
+  {
+    "id": "acolyte",
+    "group": "People and NPCs",
+    "look": "a young temple acolyte in a simple hooded robe, holding a wooden staff and a small holy symbol on a cord",
+    "aliases": ["priest-acolyte"],
+    "start": true
+  },
+  {
+    "id": "drow",
+    "group": "People and NPCs",
+    "look": "a dark elf with obsidian-black skin and long white hair, a mithral chain shirt, a shortsword and a hand crossbow"
+  },
+  {
+    "id": "deep-gnome",
+    "group": "People and NPCs",
+    "look": "a small bald deep gnome with grey stony skin, plain dark leathers, holding a war pick and a glowing crystal"
+  },
+  {
+    "id": "scout",
+    "group": "People and NPCs",
+    "look": "a lean scout in a green-brown hooded cloak and leather armor, a longbow drawn, quiver on the back",
+    "start": true
+  },
+  {
+    "id": "thug",
+    "group": "People and NPCs",
+    "look": "a burly street thug in a worn leather vest with bare scarred arms, swinging a heavy iron-studded club",
+    "aliases": ["tough"],
+    "start": true
+  },
+  {
+    "id": "duergar",
+    "group": "People and NPCs",
+    "look": "a grim grey-skinned duergar dwarf with an iron helm and a braided beard, scale mail, a war pick and javelins"
+  },
+  {
+    "id": "pirate",
+    "group": "People and NPCs",
+    "look": "a sea pirate with a red bandana, striped shirt and sash, a cutlass in hand and a dagger on the belt"
+  },
+  {
+    "id": "spy",
+    "group": "People and NPCs",
+    "look": "a spy in a dark charcoal hooded coat, half-masked face, a hand crossbow and a short sword",
+    "start": true
+  },
+  {
+    "id": "bandit-captain",
+    "group": "People and NPCs",
+    "look": "a confident bandit captain in a studded leather coat and red sash, scimitar in one hand and a dagger in the other",
+    "start": true
+  },
+  {
+    "id": "berserker",
+    "group": "People and NPCs",
+    "look": "a wild berserker with braided hair, bare chest painted with woad, a huge greataxe raised, wolf-pelt cloak"
+  },
+  {
+    "id": "cult-fanatic",
+    "group": "People and NPCs",
+    "look": "a cult fanatic in black and crimson robes covered in sigils, one hand crackling with dark magic, a dagger in the other",
+    "aliases": ["cultist-fanatic"],
+    "start": true
+  },
+  {
+    "id": "druid",
+    "group": "People and NPCs",
+    "look": "a druid in a cloak of leaves and moss, antler headdress, a gnarled wooden staff sprouting leaves"
+  },
+  {
+    "id": "priest",
+    "group": "People and NPCs",
+    "look": "a priest in layered white and gold vestments over chain mail, holding a mace and a glowing holy symbol",
+    "start": true
+  },
+  {
+    "id": "wererat",
+    "group": "People and NPCs",
+    "look": "a wererat, a rat-headed humanoid in a dark cloak with a shortsword"
+  },
+  {
+    "id": "knight",
+    "group": "People and NPCs",
+    "look": "a knight in full gleaming plate armor with a closed great helm and heraldic surcoat, holding a greatsword",
+    "start": true
+  },
+  {
+    "id": "vampire-familiar",
+    "group": "People and NPCs",
+    "look": "a pale, sickly human servant of a vampire in a dark high-collared coat, bite marks on the neck, a stiletto dagger"
+  },
+  {
+    "id": "veteran",
+    "group": "People and NPCs",
+    "look": "a grizzled veteran soldier in scuffed splint armor, a longsword and a shortsword, a battered cloak",
+    "aliases": ["warrior-veteran"],
+    "start": true
+  },
+  {
+    "id": "werewolf",
+    "group": "People and NPCs",
+    "look": "a werewolf, a towering wolf-headed humanoid with grey fur and claws"
+  },
+  {
+    "id": "guard-captain",
+    "group": "People and NPCs",
+    "look": "a veteran guard captain in polished half plate with a plumed helm and a blue tabard, longsword and kite shield"
+  },
+  {
+    "id": "tough-boss",
+    "group": "People and NPCs",
+    "look": "a hulking gang boss in a spiked leather coat and iron pauldrons, holding a heavy warhammer, gold chain on the neck"
+  },
+  {
+    "id": "wereboar",
+    "group": "People and NPCs",
+    "look": "a wereboar, a boar-headed humanoid with tusks and bristly hair, a maul"
+  },
+  {
+    "id": "weretiger",
+    "group": "People and NPCs",
+    "look": "a weretiger, a tiger-striped humanoid with a tiger head and a scimitar"
+  },
+  {
+    "id": "gladiator",
+    "group": "People and NPCs",
+    "look": "an arena gladiator in a bronze crested helm and one armored arm, a trident-like spear and a round shield"
+  },
+  {
+    "id": "half-red-dragon-veteran",
+    "group": "People and NPCs",
+    "look": "a half-dragon warrior with crimson scales, small horns and a short tail, plate armor and a longsword",
+    "aliases": ["half-dragon"]
+  },
+  {
+    "id": "werebear",
+    "group": "People and NPCs",
+    "look": "a werebear, a huge brown bear-human hybrid in torn clothes"
+  },
+  {
+    "id": "mage",
+    "group": "People and NPCs",
+    "look": "a mage in deep blue robes with silver embroidery, a tall staff topped with a crystal, a glowing spell in the free hand",
+    "start": true
+  },
+  {
+    "id": "pirate-captain",
+    "group": "People and NPCs",
+    "look": "a pirate captain in a long burgundy coat and tricorn hat with a feather, a cutlass and a coiled whip"
+  },
+  {
+    "id": "assassin",
+    "group": "People and NPCs",
+    "look": "an assassin in black layered leathers and a hood, cloth mask over the face, two poisoned daggers held low"
+  },
+  {
+    "id": "archmage",
+    "group": "People and NPCs",
+    "look": "an ancient archmage in flowing violet and gold robes, long white beard, an ornate staff, floating arcane runes around"
+  },
+  {
+    "id": "goblin-minion",
+    "group": "Goblinoids and kin",
+    "look": "a scrawny goblin runt with grey-green skin in rags, clutching a pair of small daggers",
+    "background": "magenta"
+  },
+  {
+    "id": "kobold",
+    "group": "Goblinoids and kin",
+    "look": "a tiny reptilian kobold with rust-red scales and a doglike snout, ragged loincloth, a small spear and a sling",
+    "aliases": ["kobold-warrior"],
+    "start": true
+  },
+  {
+    "id": "merfolk",
+    "group": "Goblinoids and kin",
+    "look": "a merfolk warrior with a scaled fish tail and blue-green skin, seashell armor, a long spear",
+    "aliases": ["merfolk-skirmisher"]
+  },
+  {
+    "id": "goblin",
+    "group": "Goblinoids and kin",
+    "look": "a small wiry goblin with grey-green skin, big pointed ears, leather scraps, a rusty scimitar and a tiny wooden shield",
+    "aliases": ["goblin-warrior"],
+    "background": "magenta",
+    "start": true
+  },
+  {
+    "id": "grimlock",
+    "group": "Goblinoids and kin",
+    "look": "an eyeless grey-skinned grimlock with a hairless head and sharp teeth, crude furs, a stone-headed club"
+  },
+  {
+    "id": "gnoll",
+    "group": "Goblinoids and kin",
+    "look": "a hyena-headed gnoll with spotted fur, crude leather armor and bone trophies, a spear and a longbow",
+    "aliases": ["gnoll-warrior"],
+    "start": true
+  },
+  {
+    "id": "hobgoblin",
+    "group": "Goblinoids and kin",
+    "look": "a disciplined hobgoblin soldier with orange-red skin, a lacquered iron helm, chain mail, longsword and shield",
+    "aliases": ["hobgoblin-warrior"],
+    "start": true
+  },
+  {
+    "id": "lizardfolk",
+    "group": "Goblinoids and kin",
+    "look": "a lizardfolk hunter with green scales and a crest, a bone-tipped spear and a turtle-shell shield",
+    "background": "magenta"
+  },
+  {
+    "id": "orc",
+    "group": "Goblinoids and kin",
+    "look": "a muscular orc warrior with grey-green skin and jutting tusks, hide and bone armor, a huge greataxe",
+    "background": "magenta",
+    "start": true
+  },
+  {
+    "id": "sahuagin",
+    "group": "Goblinoids and kin",
+    "look": "a sahuagin shark-man with dark green scales, fins on the head and arms, a coral trident",
+    "aliases": ["sahuagin-warrior"],
+    "background": "magenta"
+  },
+  {
+    "id": "bugbear",
+    "group": "Goblinoids and kin",
+    "look": "a huge hairy bugbear with a bear-like face and brown fur, hide armor, a spiked morningstar",
+    "aliases": ["bugbear-warrior"],
+    "start": true
+  },
+  {
+    "id": "goblin-boss",
+    "group": "Goblinoids and kin",
+    "look": "a goblin chieftain with grey-green skin, a crown of bones, a dented chain shirt and a notched scimitar",
+    "background": "magenta",
+    "start": true
+  },
+  {
+    "id": "bugbear-stalker",
+    "group": "Goblinoids and kin",
+    "look": "a lean bugbear ambusher in dark furs and a hood, holding a long spiked javelin and a morningstar"
+  },
+  {
+    "id": "hobgoblin-captain",
+    "group": "Goblinoids and kin",
+    "look": "a hobgoblin captain with orange-red skin, ornate black half plate with red cords, a greatsword"
+  },
+  {
+    "id": "baboon",
+    "group": "Beasts",
+    "look": "a baboon with olive fur, a long muzzle and a curved tail"
+  },
+  {
+    "id": "badger",
+    "group": "Beasts",
+    "look": "a stocky badger with a black and white striped head and digging claws"
+  },
+  {
+    "id": "bat",
+    "group": "Beasts",
+    "look": "a small brown bat with leathery wings spread wide"
+  },
+  {
+    "id": "cat",
+    "group": "Beasts",
+    "look": "a small tabby house cat, tail curled"
+  },
+  {
+    "id": "crab",
+    "group": "Beasts",
+    "look": "a red shore crab with raised claws"
+  },
+  {
+    "id": "deer",
+    "group": "Beasts",
+    "look": "a slender red deer with a white tail"
+  },
+  {
+    "id": "eagle",
+    "group": "Beasts",
+    "look": "a golden eagle with broad wings spread"
+  },
+  {
+    "id": "frog",
+    "group": "Beasts",
+    "look": "a tiny green frog",
+    "background": "magenta"
+  },
+  {
+    "id": "giant-fire-beetle",
+    "group": "Beasts",
+    "look": "a giant beetle with a dark red shell and two glowing orange glands on its head"
+  },
+  {
+    "id": "goat",
+    "group": "Beasts",
+    "look": "a brown mountain goat with short horns"
+  },
+  {
+    "id": "hawk",
+    "group": "Beasts",
+    "look": "a red-tailed hawk with wings spread"
+  },
+  {
+    "id": "hyena",
+    "group": "Beasts",
+    "look": "a spotted hyena"
+  },
+  {
+    "id": "jackal",
+    "group": "Beasts",
+    "look": "a slim golden jackal"
+  },
+  {
+    "id": "lizard",
+    "group": "Beasts",
+    "look": "a small brown lizard",
+    "background": "magenta"
+  },
+  {
+    "id": "octopus",
+    "group": "Beasts",
+    "look": "a small orange octopus"
+  },
+  {
+    "id": "owl",
+    "group": "Beasts",
+    "look": "a brown barn owl with wings spread"
+  },
+  {
+    "id": "quipper",
+    "group": "Beasts",
+    "look": "a small silver piranha-like fish with sharp teeth",
+    "aliases": ["piranha"]
+  },
+  {
+    "id": "rat",
+    "group": "Beasts",
+    "look": "a grey rat"
+  },
+  {
+    "id": "raven",
+    "group": "Beasts",
+    "look": "a black raven with wings spread"
+  },
+  {
+    "id": "scorpion",
+    "group": "Beasts",
+    "look": "a small yellow scorpion"
+  },
+  {
+    "id": "sea-horse",
+    "group": "Beasts",
+    "look": "a small orange seahorse",
+    "aliases": ["seahorse"]
+  },
+  {
+    "id": "spider",
+    "group": "Beasts",
+    "look": "a small black spider"
+  },
+  {
+    "id": "vulture",
+    "group": "Beasts",
+    "look": "a vulture with dark feathers and a bald head, wings spread"
+  },
+  {
+    "id": "weasel",
+    "group": "Beasts",
+    "look": "a small brown weasel"
+  },
+  {
+    "id": "blood-hawk",
+    "group": "Beasts",
+    "look": "a crimson-feathered blood hawk with wings spread and a hooked beak"
+  },
+  {
+    "id": "camel",
+    "group": "Beasts",
+    "look": "a one-humped tan camel with a woven saddle blanket"
+  },
+  {
+    "id": "flying-snake",
+    "group": "Beasts",
+    "look": "a flying snake, a small brightly coloured serpent with feathered wings"
+  },
+  {
+    "id": "giant-crab",
+    "group": "Beasts",
+    "look": "a giant crab with a barnacled blue-grey shell and huge pincers"
+  },
+  {
+    "id": "giant-rat",
+    "group": "Beasts",
+    "look": "a giant rat with matted grey fur and a long naked tail",
+    "start": true
+  },
+  {
+    "id": "giant-rat-diseased",
+    "group": "Beasts",
+    "look": "a diseased giant rat with patchy fur, sores and a long naked tail"
+  },
+  {
+    "id": "giant-weasel",
+    "group": "Beasts",
+    "look": "a giant weasel with sleek brown fur"
+  },
+  {
+    "id": "mastiff",
+    "group": "Beasts",
+    "look": "a big brown mastiff dog with a studded leather collar"
+  },
+  {
+    "id": "mule",
+    "group": "Beasts",
+    "look": "a grey mule carrying saddlebags"
+  },
+  {
+    "id": "poisonous-snake",
+    "group": "Beasts",
+    "look": "a small banded venomous snake",
+    "aliases": ["venomous-snake"]
+  },
+  {
+    "id": "pony",
+    "group": "Beasts",
+    "look": "a small shaggy pony with a saddle"
+  },
+  {
+    "id": "stirge",
+    "group": "Beasts",
+    "look": "a stirge, a small bat-winged mosquito-like creature with a long needle proboscis"
+  },
+  {
+    "id": "axe-beak",
+    "group": "Beasts",
+    "look": "an axe beak, a tall flightless bird with an axe-shaped beak and dark feathers"
+  },
+  {
+    "id": "boar",
+    "group": "Beasts",
+    "look": "a wild boar with bristly brown hair and sharp curved tusks",
+    "start": true
+  },
+  {
+    "id": "constrictor-snake",
+    "group": "Beasts",
+    "look": "a thick constrictor snake with a brown and tan diamond pattern, coiled in an S"
+  },
+  {
+    "id": "draft-horse",
+    "group": "Beasts",
+    "look": "a heavy brown draft horse with feathered hooves and a leather harness"
+  },
+  {
+    "id": "elk",
+    "group": "Beasts",
+    "look": "an elk with wide branching antlers and brown fur"
+  },
+  {
+    "id": "giant-badger",
+    "group": "Beasts",
+    "look": "a giant badger with a striped head, digging claws and bared teeth"
+  },
+  {
+    "id": "giant-bat",
+    "group": "Beasts",
+    "look": "a giant black bat with huge leathery wings spread"
+  },
+  {
+    "id": "giant-centipede",
+    "group": "Beasts",
+    "look": "a giant centipede with a segmented copper-red body and many legs, curved in an S"
+  },
+  {
+    "id": "giant-frog",
+    "group": "Beasts",
+    "look": "a giant frog with mottled green skin",
+    "background": "magenta"
+  },
+  {
+    "id": "giant-lizard",
+    "group": "Beasts",
+    "look": "a giant lizard with green-brown scales and a long tail",
+    "background": "magenta"
+  },
+  {
+    "id": "giant-owl",
+    "group": "Beasts",
+    "look": "a giant owl with grey-brown feathers and wide amber eyes, wings spread"
+  },
+  {
+    "id": "giant-poisonous-snake",
+    "group": "Beasts",
+    "look": "a giant venomous snake with bright banded red, black and yellow scales, fangs bared",
+    "aliases": ["giant-venomous-snake"]
+  },
+  {
+    "id": "giant-wolf-spider",
+    "group": "Beasts",
+    "look": "a giant wolf spider with furry brown and grey legs"
+  },
+  {
+    "id": "panther",
+    "group": "Beasts",
+    "look": "a black panther, sleek and crouched"
+  },
+  {
+    "id": "pteranodon",
+    "group": "Beasts",
+    "look": "a pteranodon with long leathery wings spread and a crested head"
+  },
+  {
+    "id": "riding-horse",
+    "group": "Beasts",
+    "look": "a chestnut riding horse with a leather saddle",
+    "start": true
+  },
+  {
+    "id": "swarm-of-bats",
+    "group": "Beasts",
+    "look": "a dense swarm of dozens of small brown bats filling a round area"
+  },
+  {
+    "id": "swarm-of-rats",
+    "group": "Beasts",
+    "look": "a seething swarm of grey rats filling a round area"
+  },
+  {
+    "id": "swarm-of-ravens",
+    "group": "Beasts",
+    "look": "a swirling flock of black ravens filling a round area"
+  },
+  {
+    "id": "wolf",
+    "group": "Beasts",
+    "look": "a grey wolf with a bushy tail, snarling",
+    "start": true
+  },
+  {
+    "id": "ape",
+    "group": "Beasts",
+    "look": "a powerful grey-furred ape knuckle-walking, long arms"
+  },
+  {
+    "id": "black-bear",
+    "group": "Beasts",
+    "look": "a black bear on all fours with glossy black fur",
+    "start": true
+  },
+  {
+    "id": "crocodile",
+    "group": "Beasts",
+    "look": "a long crocodile with dark green armored scales and open toothy jaws",
+    "background": "magenta"
+  },
+  {
+    "id": "giant-goat",
+    "group": "Beasts",
+    "look": "a giant goat with long curled horns and white shaggy fur"
+  },
+  {
+    "id": "giant-sea-horse",
+    "group": "Beasts",
+    "look": "a giant seahorse with teal and gold scales and a curled tail",
+    "aliases": ["giant-seahorse"]
+  },
+  {
+    "id": "giant-wasp",
+    "group": "Beasts",
+    "look": "a giant wasp with yellow and black stripes and translucent wings"
+  },
+  {
+    "id": "reef-shark",
+    "group": "Beasts",
+    "look": "a reef shark with blue-grey skin and black-tipped fins"
+  },
+  {
+    "id": "swarm-of-beetles",
+    "group": "Beasts",
+    "look": "a dense swarm of shiny black beetles carpeting a round area"
+  },
+  {
+    "id": "swarm-of-centipedes",
+    "group": "Beasts",
+    "look": "a writhing swarm of red-brown centipedes filling a round area"
+  },
+  {
+    "id": "swarm-of-insects",
+    "group": "Beasts",
+    "look": "a dense cloud of buzzing insects filling a round area"
+  },
+  {
+    "id": "swarm-of-spiders",
+    "group": "Beasts",
+    "look": "a crawling swarm of small black spiders filling a round area"
+  },
+  {
+    "id": "swarm-of-wasps",
+    "group": "Beasts",
+    "look": "a dense swarm of yellow and black wasps filling a round area"
+  },
+  {
+    "id": "warhorse",
+    "group": "Beasts",
+    "look": "a black warhorse in steel barding with a war saddle"
+  },
+  {
+    "id": "brown-bear",
+    "group": "Beasts",
+    "look": "a massive brown bear on all fours, shaggy fur and big claws",
+    "start": true
+  },
+  {
+    "id": "dire-wolf",
+    "group": "Beasts",
+    "look": "a huge dire wolf with dark grey shaggy fur, bared fangs",
+    "start": true
+  },
+  {
+    "id": "giant-eagle",
+    "group": "Beasts",
+    "look": "a giant eagle with brown and gold feathers, wings spread wide"
+  },
+  {
+    "id": "giant-hyena",
+    "group": "Beasts",
+    "look": "a giant spotted hyena with a sloped back and grinning jaws"
+  },
+  {
+    "id": "giant-octopus",
+    "group": "Beasts",
+    "look": "a giant octopus with reddish skin and eight curling tentacles spread out"
+  },
+  {
+    "id": "giant-spider",
+    "group": "Beasts",
+    "look": "a giant black spider with a red hourglass mark and long hairy legs",
+    "start": true
+  },
+  {
+    "id": "giant-toad",
+    "group": "Beasts",
+    "look": "a giant warty brown toad",
+    "background": "magenta"
+  },
+  {
+    "id": "giant-vulture",
+    "group": "Beasts",
+    "look": "a giant vulture with ragged black feathers and a bald red head"
+  },
+  {
+    "id": "lion",
+    "group": "Beasts",
+    "look": "a male lion with a thick golden mane"
+  },
+  {
+    "id": "swarm-of-quippers",
+    "group": "Beasts",
+    "look": "a frenzied school of silver piranha-like fish in a round area",
+    "aliases": ["swarm-of-piranhas"]
+  },
+  {
+    "id": "tiger",
+    "group": "Beasts",
+    "look": "an orange and black striped tiger"
+  },
+  {
+    "id": "allosaurus",
+    "group": "Beasts",
+    "look": "an allosaurus, a large two-legged predatory dinosaur with ridged brows"
+  },
+  {
+    "id": "giant-boar",
+    "group": "Beasts",
+    "look": "a giant boar with a ridge of black bristles and long yellow tusks"
+  },
+  {
+    "id": "giant-constrictor-snake",
+    "group": "Beasts",
+    "look": "an enormous constrictor snake with olive and black blotches, coiled"
+  },
+  {
+    "id": "giant-elk",
+    "group": "Beasts",
+    "look": "a giant elk with enormous branching antlers glowing faintly gold"
+  },
+  {
+    "id": "hunter-shark",
+    "group": "Beasts",
+    "look": "a sleek grey hunter shark"
+  },
+  {
+    "id": "plesiosaurus",
+    "group": "Beasts",
+    "look": "a plesiosaurus with a long neck and four flippers"
+  },
+  {
+    "id": "polar-bear",
+    "group": "Beasts",
+    "look": "a polar bear with thick white fur"
+  },
+  {
+    "id": "rhinoceros",
+    "group": "Beasts",
+    "look": "a grey rhinoceros with a great horn"
+  },
+  {
+    "id": "saber-toothed-tiger",
+    "group": "Beasts",
+    "look": "a saber-toothed tiger with long curved fangs and striped tawny fur"
+  },
+  {
+    "id": "swarm-of-poisonous-snakes",
+    "group": "Beasts",
+    "look": "a tangled mass of banded venomous snakes filling a round area",
+    "aliases": ["swarm-of-venomous-snakes"]
+  },
+  {
+    "id": "ankylosaurus",
+    "group": "Beasts",
+    "look": "an ankylosaurus with an armored spiked back and a club tail"
+  },
+  {
+    "id": "giant-scorpion",
+    "group": "Beasts",
+    "look": "a giant black scorpion with raised pincers and a curled stinger"
+  },
+  {
+    "id": "killer-whale",
+    "group": "Beasts",
+    "look": "a black and white killer whale"
+  },
+  {
+    "id": "archelon",
+    "group": "Beasts",
+    "look": "an archelon, a huge prehistoric sea turtle with a leathery shell"
+  },
+  {
+    "id": "elephant",
+    "group": "Beasts",
+    "look": "an elephant with great ivory tusks and wrinkled grey hide"
+  },
+  {
+    "id": "hippopotamus",
+    "group": "Beasts",
+    "look": "a hippopotamus with grey-pink hide and a wide open mouth"
+  },
+  {
+    "id": "giant-crocodile",
+    "group": "Beasts",
+    "look": "a gigantic crocodile with dark scales and jaws full of teeth",
+    "background": "magenta"
+  },
+  {
+    "id": "giant-shark",
+    "group": "Beasts",
+    "look": "an enormous grey shark with a pale belly"
+  },
+  {
+    "id": "triceratops",
+    "group": "Beasts",
+    "look": "a triceratops with three horns and a bony frill"
+  },
+  {
+    "id": "mammoth",
+    "group": "Beasts",
+    "look": "a woolly mammoth with long curved tusks and shaggy brown hair"
+  },
+  {
+    "id": "giant-ape",
+    "group": "Beasts",
+    "look": "a gigantic grey ape with heavy shoulders and scarred fists"
+  },
+  {
+    "id": "tyrannosaurus-rex",
+    "group": "Beasts",
+    "look": "a tyrannosaurus rex with huge jaws, small arms and a long tail"
+  },
+  {
+    "id": "cockatrice",
+    "group": "Monstrosities",
+    "look": "a cockatrice, a rooster-like creature with leathery bat wings and a serpent tail"
+  },
+  {
+    "id": "darkmantle",
+    "group": "Monstrosities",
+    "look": "a darkmantle, a small squid-like creature with a dark rubbery body and a web of tentacles spread out like a skirt"
+  },
+  {
+    "id": "rust-monster",
+    "group": "Monstrosities",
+    "look": "a rust monster, an insect-like creature with a rust-orange carapace, long feathery antennae and a propeller-like tail"
+  },
+  {
+    "id": "worg",
+    "group": "Monstrosities",
+    "look": "a worg, a huge evil wolf with black fur, glowing yellow eyes and drooling fangs"
+  },
+  {
+    "id": "death-dog",
+    "group": "Monstrosities",
+    "look": "a death dog, a black two-headed mastiff with mangy fur"
+  },
+  {
+    "id": "harpy",
+    "group": "Monstrosities",
+    "look": "a harpy, a vulture-winged woman with talons and wild grey hair"
+  },
+  {
+    "id": "hippogriff",
+    "group": "Monstrosities",
+    "look": "a hippogriff with the head and wings of an eagle and the body of a horse"
+  },
+  {
+    "id": "ankheg",
+    "group": "Monstrosities",
+    "look": "an ankheg, a huge insect-like burrower with a hard brown carapace, long mandibles and six legs"
+  },
+  {
+    "id": "centaur",
+    "group": "Monstrosities",
+    "look": "a centaur, a creature with the upper body of a human and the body of a chestnut horse, a pike and a longbow",
+    "aliases": ["centaur-trooper"]
+  },
+  {
+    "id": "ettercap",
+    "group": "Monstrosities",
+    "look": "an ettercap, a spider-like humanoid with spindly limbs, a bloated belly and fanged mandibles"
+  },
+  {
+    "id": "grick",
+    "group": "Monstrosities",
+    "look": "a grick, a grey worm-like creature with a ridged body and four hooked tentacles around a beaked mouth"
+  },
+  {
+    "id": "griffon",
+    "group": "Monstrosities",
+    "look": "a griffon with the head and wings of an eagle and the body of a lion"
+  },
+  {
+    "id": "merrow",
+    "group": "Monstrosities",
+    "look": "a merrow, a large green-skinned aquatic ogre with webbed claws and a harpoon",
+    "background": "magenta"
+  },
+  {
+    "id": "mimic",
+    "group": "Monstrosities",
+    "look": "a mimic disguised as a wooden treasure chest, its lid open as a toothy mouth with a long tongue",
+    "start": true
+  },
+  {
+    "id": "basilisk",
+    "group": "Monstrosities",
+    "look": "a basilisk, an eight-legged reptile with grey-brown scales and dull glowing eyes"
+  },
+  {
+    "id": "doppelganger",
+    "group": "Monstrosities",
+    "look": "a doppelganger, a grey-skinned humanoid with a blank featureless face and long fingers"
+  },
+  {
+    "id": "manticore",
+    "group": "Monstrosities",
+    "look": "a manticore with a lion's body, bat wings, a human-like bearded face and a tail of iron spikes"
+  },
+  {
+    "id": "minotaur",
+    "group": "Monstrosities",
+    "look": "a minotaur, a huge bull-headed humanoid with dark fur and a massive greataxe",
+    "aliases": ["minotaur-of-baphomet"]
+  },
+  {
+    "id": "owlbear",
+    "group": "Monstrosities",
+    "look": "an owlbear, a huge creature with a bear's body and an owl's feathered head and beak",
+    "start": true
+  },
+  {
+    "id": "phase-spider",
+    "group": "Monstrosities",
+    "look": "a phase spider, a giant purple-black spider that shimmers between planes"
+  },
+  {
+    "id": "winter-wolf",
+    "group": "Monstrosities",
+    "look": "a winter wolf, a huge white wolf with frost on its fur and icy breath"
+  },
+  {
+    "id": "lamia",
+    "group": "Monstrosities",
+    "look": "a lamia, a creature with a beautiful woman's upper body and a lion's lower body, gold jewelry and a dagger"
+  },
+  {
+    "id": "bulette",
+    "group": "Monstrosities",
+    "look": "a bulette, a huge armored land shark with a grey-blue plated shell and a jaw full of teeth"
+  },
+  {
+    "id": "gorgon",
+    "group": "Monstrosities",
+    "look": "a gorgon, a huge bull made of overlapping steel plates, steam venting from its nostrils"
+  },
+  {
+    "id": "roper",
+    "group": "Monstrosities",
+    "look": "a roper, a stony grey stalagmite-like creature with one eye, a wide fanged mouth and six long sticky tendrils spread out"
+  },
+  {
+    "id": "chimera",
+    "group": "Monstrosities",
+    "look": "a chimera with the heads of a lion, a goat and a red dragon, and leathery dragon wings"
+  },
+  {
+    "id": "drider",
+    "group": "Monstrosities",
+    "look": "a drider, a dark elf upper body fused to a giant black spider body, a longsword"
+  },
+  {
+    "id": "medusa",
+    "group": "Monstrosities",
+    "look": "a medusa, a woman with snakes for hair, green-scaled skin and a longbow",
+    "background": "magenta"
+  },
+  {
+    "id": "hydra",
+    "group": "Monstrosities",
+    "look": "a hydra, a huge dark-scaled reptile with five long-necked snarling heads"
+  },
+  {
+    "id": "spirit-naga",
+    "group": "Monstrosities",
+    "look": "a spirit naga, a black-scaled serpent with a wicked human face and long dark hair"
+  },
+  {
+    "id": "guardian-naga",
+    "group": "Monstrosities",
+    "look": "a guardian naga, a golden-scaled serpent with a serene human face and a hood like a cobra"
+  },
+  {
+    "id": "behir",
+    "group": "Monstrosities",
+    "look": "a behir, a very long blue serpentine creature with many legs, crackling with lightning"
+  },
+  {
+    "id": "gynosphinx",
+    "group": "Monstrosities",
+    "look": "a sphinx of lore, a lion-bodied sphinx with a woman's head, a jeweled headdress and great feathered wings spread",
+    "aliases": ["sphinx-of-lore"]
+  },
+  {
+    "id": "remorhaz",
+    "group": "Monstrosities",
+    "look": "a remorhaz, a huge centipede-like creature with icy blue armor and glowing red-hot plates on its back"
+  },
+  {
+    "id": "roc",
+    "group": "Monstrosities",
+    "look": "a roc, a colossal eagle-like bird with dark brown feathers, wings spread enormously wide"
+  },
+  {
+    "id": "purple-worm",
+    "group": "Monstrosities",
+    "look": "a purple worm, a colossal purple segmented worm with a huge round mouth ringed with teeth and a stinger tail"
+  },
+  {
+    "id": "androsphinx",
+    "group": "Monstrosities",
+    "look": "a sphinx of valor, a lion-bodied sphinx with a bearded man's head, a golden headdress and great feathered wings spread",
+    "aliases": ["sphinx-of-valor"]
+  },
+  {
+    "id": "kraken",
+    "group": "Monstrosities",
+    "look": "a kraken, a colossal dark red squid-like monster with ten enormous tentacles spread wide"
+  },
+  {
+    "id": "tarrasque",
+    "group": "Monstrosities",
+    "look": "the tarrasque, a colossal armored reptilian monster with a spiked carapace, two great horns and a massive tail"
+  },
+  {
+    "id": "skeleton",
+    "group": "Undead",
+    "look": "a skeleton warrior with yellowed bones, a rusty shortsword and a cracked shield",
+    "start": true
+  },
+  {
+    "id": "zombie",
+    "group": "Undead",
+    "look": "a shambling zombie with rotting grey skin and torn clothes",
+    "start": true
+  },
+  {
+    "id": "shadow",
+    "group": "Undead",
+    "look": "a shadow, a dark humanoid silhouette of living darkness with faint glowing eyes, slightly translucent"
+  },
+  {
+    "id": "warhorse-skeleton",
+    "group": "Undead",
+    "look": "a warhorse skeleton in tattered barding"
+  },
+  {
+    "id": "ghoul",
+    "group": "Undead",
+    "look": "a ghoul, an emaciated grey humanoid with long claws, a long tongue and torn rags",
+    "start": true
+  },
+  {
+    "id": "specter",
+    "group": "Undead",
+    "look": "a specter, a ghostly hooded figure of grey mist, translucent"
+  },
+  {
+    "id": "ghast",
+    "group": "Undead",
+    "look": "a ghast, a gaunt grey ghoul with long claws and a horrid stench haze"
+  },
+  {
+    "id": "minotaur-skeleton",
+    "group": "Undead",
+    "look": "a minotaur skeleton, the bones of a huge bull-headed humanoid holding a rusted greataxe"
+  },
+  {
+    "id": "ogre-zombie",
+    "group": "Undead",
+    "look": "an ogre zombie, a rotting bloated ogre corpse with a greatclub"
+  },
+  {
+    "id": "will-o-wisp",
+    "group": "Undead",
+    "look": "a will-o'-wisp, a floating ball of pale blue-white light with a faint misty trail"
+  },
+  {
+    "id": "mummy",
+    "group": "Undead",
+    "look": "a mummy wrapped in dirty linen bandages with glowing eyes"
+  },
+  {
+    "id": "swarm-of-crawling-claws",
+    "group": "Undead",
+    "look": "a swarm of severed undead hands crawling on their fingers in a round area"
+  },
+  {
+    "id": "wight",
+    "group": "Undead",
+    "look": "a wight, an undead warrior in corroded armor with withered skin, glowing eyes and a longsword"
+  },
+  {
+    "id": "ghost",
+    "group": "Undead",
+    "look": "a ghost, a translucent pale blue spectral figure of a woman in a tattered gown, almost see-through"
+  },
+  {
+    "id": "vampire-spawn",
+    "group": "Undead",
+    "look": "a vampire spawn, a pale feral vampire in torn clothing with clawed hands and fangs"
+  },
+  {
+    "id": "wraith",
+    "group": "Undead",
+    "look": "a wraith, a dark hooded spectre of shadow with glowing red eyes and clawed hands, translucent"
+  },
+  {
+    "id": "vampire",
+    "group": "Undead",
+    "look": "a vampire, a pale aristocrat in a high-collared black and crimson cloak, red eyes and fangs"
+  },
+  {
+    "id": "mummy-lord",
+    "group": "Undead",
+    "look": "a mummy lord in golden burial jewelry and ancient bandages, glowing green eyes, a regal headdress"
+  },
+  {
+    "id": "lich",
+    "group": "Undead",
+    "look": "a lich, a skeletal undead sorcerer in rich dark robes, a crown and glowing blue eye-lights, a staff"
+  },
+  {
+    "id": "lemure",
+    "group": "Fiends",
+    "look": "a lemure, a melting blob-like humanoid of pale pink flesh with a vacant face"
+  },
+  {
+    "id": "dretch",
+    "group": "Fiends",
+    "look": "a dretch, a small pot-bellied grey-pink demon with spindly limbs and a dumb mean face"
+  },
+  {
+    "id": "imp",
+    "group": "Fiends",
+    "look": "an imp, a tiny red devil with bat wings, small horns and a barbed tail",
+    "start": true
+  },
+  {
+    "id": "quasit",
+    "group": "Fiends",
+    "look": "a quasit, a tiny green demon with bat-like ears, claws and a spiky tail",
+    "background": "magenta"
+  },
+  {
+    "id": "bearded-devil",
+    "group": "Fiends",
+    "look": "a bearded devil, a red-skinned devil with a beard of writhing snake-like tendrils, holding a saw-toothed glaive"
+  },
+  {
+    "id": "hell-hound",
+    "group": "Fiends",
+    "look": "a hell hound, a black-furred hound with glowing red eyes and fire curling from its jaws"
+  },
+  {
+    "id": "nightmare",
+    "group": "Fiends",
+    "look": "a nightmare, a black horse with a mane and hooves of fire and smoking nostrils"
+  },
+  {
+    "id": "incubus",
+    "group": "Fiends",
+    "look": "an incubus, an alluring male fiend with dark bat wings, small horns and a tail"
+  },
+  {
+    "id": "succubus",
+    "group": "Fiends",
+    "look": "a succubus, an alluring fiend with dark feathered bat wings, small horns and a tail",
+    "aliases": ["succubus-incubus"]
+  },
+  {
+    "id": "barbed-devil",
+    "group": "Fiends",
+    "look": "a barbed devil, a lean red-skinned devil covered in sharp barbs and spikes"
+  },
+  {
+    "id": "night-hag",
+    "group": "Fiends",
+    "look": "a night hag, a hag with blue-black skin, white hair, curved horns and a dark tattered robe"
+  },
+  {
+    "id": "vrock",
+    "group": "Fiends",
+    "look": "a vrock, a vulture-headed demon with grey feathers, wide wings and long claws"
+  },
+  {
+    "id": "chain-devil",
+    "group": "Fiends",
+    "look": "a chain devil, a tall devil wrapped in barbed chains that writhe around it"
+  },
+  {
+    "id": "hezrou",
+    "group": "Fiends",
+    "look": "a hezrou, a bulky toad-like demon with warty grey-green skin and spines on its back",
+    "background": "magenta"
+  },
+  {
+    "id": "bone-devil",
+    "group": "Fiends",
+    "look": "a bone devil, a gaunt skeletal devil with dried skin stretched over bones, wings and a scorpion tail"
+  },
+  {
+    "id": "glabrezu",
+    "group": "Fiends",
+    "look": "a glabrezu, a towering dog-headed demon with four arms, two ending in huge crab-like pincers"
+  },
+  {
+    "id": "horned-devil",
+    "group": "Fiends",
+    "look": "a horned devil, a large winged devil with dark scales, big horns and a heavy fork"
+  },
+  {
+    "id": "erinyes",
+    "group": "Fiends",
+    "look": "an erinyes, a fierce fallen-angel warrior woman in black plate armor with dark feathered wings and a longsword"
+  },
+  {
+    "id": "nalfeshnee",
+    "group": "Fiends",
+    "look": "a nalfeshnee, a huge obese demon with a boar's head, an ape-like body and tiny feathered wings"
+  },
+  {
+    "id": "rakshasa",
+    "group": "Fiends",
+    "look": "a rakshasa, a tiger-headed fiend in rich silk robes with backward-facing hands"
+  },
+  {
+    "id": "ice-devil",
+    "group": "Fiends",
+    "look": "an ice devil, a pale blue insect-like devil with frost-covered mandibles and a spear of ice"
+  },
+  {
+    "id": "marilith",
+    "group": "Fiends",
+    "look": "a marilith, a six-armed demon with a woman's upper body and a long green-scaled serpent tail, a sword in each hand",
+    "background": "magenta"
+  },
+  {
+    "id": "balor",
+    "group": "Fiends",
+    "look": "a balor, a gigantic demon of fire and shadow with huge bat wings spread, horns, a flaming whip and a lightning sword"
+  },
+  {
+    "id": "pit-fiend",
+    "group": "Fiends",
+    "look": "a pit fiend, a colossal red-scaled devil with huge wings wrapped in flame, a spiked mace and a tail"
+  },
+  {
+    "id": "troll-limb",
+    "group": "Giants",
+    "look": "a severed troll arm crawling on its own, green-skinned with long claws",
+    "background": "magenta"
+  },
+  {
+    "id": "ogre",
+    "group": "Giants",
+    "look": "an ogre, a hulking brute with yellowish skin, a pot belly, furs and a huge greatclub",
+    "start": true
+  },
+  {
+    "id": "ettin",
+    "group": "Giants",
+    "look": "an ettin, a two-headed giant in filthy furs holding a battleaxe and a morningstar"
+  },
+  {
+    "id": "hill-giant",
+    "group": "Giants",
+    "look": "a hill giant, a dim brutish giant with ruddy skin in crude hides, holding a tree-trunk club"
+  },
+  {
+    "id": "troll",
+    "group": "Giants",
+    "look": "a troll, a gaunt green-skinned regenerating giant with long arms, claws and a tangled mop of dark hair",
+    "background": "magenta",
+    "start": true
+  },
+  {
+    "id": "oni",
+    "group": "Giants",
+    "look": "an oni, a towering blue-skinned ogre mage with horns, tusks, ornate armor and a glaive"
+  },
+  {
+    "id": "stone-giant",
+    "group": "Giants",
+    "look": "a stone giant with smooth grey stone-like skin and a carved stone club"
+  },
+  {
+    "id": "frost-giant",
+    "group": "Giants",
+    "look": "a frost giant with icy blue-white skin, a frosty beard, furs and a giant greataxe"
+  },
+  {
+    "id": "cloud-giant",
+    "group": "Giants",
+    "look": "a cloud giant with pale blue-grey skin, fine silver robes and a huge morningstar"
+  },
+  {
+    "id": "fire-giant",
+    "group": "Giants",
+    "look": "a fire giant with coal-black skin, a fiery orange beard, dark iron armor and a huge greatsword"
+  },
+  {
+    "id": "storm-giant",
+    "group": "Giants",
+    "look": "a storm giant with pale violet skin, long dark hair, ornate armor and a lightning-charged greatsword"
+  },
+  {
+    "id": "pseudodragon",
+    "group": "Dragons",
+    "look": "a pseudodragon, a tiny cat-sized red-brown dragon with wings spread and a curled barbed tail"
+  },
+  {
+    "id": "brass-dragon-wyrmling",
+    "group": "Dragons",
+    "look": "a small young dragon wyrmling, cute but fierce, wings half spread, with polished brass-coloured scales and a wide blade-like head frill"
+  },
+  {
+    "id": "copper-dragon-wyrmling",
+    "group": "Dragons",
+    "look": "a small young dragon wyrmling, cute but fierce, wings half spread, with shining copper scales, a crest of long backward horns"
+  },
+  {
+    "id": "black-dragon-wyrmling",
+    "group": "Dragons",
+    "look": "a small young dragon wyrmling, cute but fierce, wings half spread, with glossy black scales, swept-back horns and a skull-like face, dripping acid"
+  },
+  {
+    "id": "bronze-dragon-wyrmling",
+    "group": "Dragons",
+    "look": "a small young dragon wyrmling, cute but fierce, wings half spread, with bronze scales, a finned crest and ridged horns"
+  },
+  {
+    "id": "green-dragon-wyrmling",
+    "group": "Dragons",
+    "look": "a small young dragon wyrmling, cute but fierce, wings half spread, with emerald-green scales, a tall frilled crest and wisps of poison gas",
+    "background": "magenta"
+  },
+  {
+    "id": "silver-dragon-wyrmling",
+    "group": "Dragons",
+    "look": "a small young dragon wyrmling, cute but fierce, wings half spread, with gleaming silver scales and a smooth frill running down the neck"
+  },
+  {
+    "id": "white-dragon-wyrmling",
+    "group": "Dragons",
+    "look": "a small young dragon wyrmling, cute but fierce, wings half spread, with frosty white scales, a spiky crest and icy breath"
+  },
+  {
+    "id": "blue-dragon-wyrmling",
+    "group": "Dragons",
+    "look": "a small young dragon wyrmling, cute but fierce, wings half spread, with sapphire-blue scales, a single great horn on the snout and crackling lightning"
+  },
+  {
+    "id": "gold-dragon-wyrmling",
+    "group": "Dragons",
+    "look": "a small young dragon wyrmling, cute but fierce, wings half spread, with brilliant gold scales, whisker-like tendrils and a regal frilled head"
+  },
+  {
+    "id": "red-dragon-wyrmling",
+    "group": "Dragons",
+    "look": "a small young dragon wyrmling, cute but fierce, wings half spread, with crimson-red scales, sweeping horns, and embers glowing in the jaws"
+  },
+  {
+    "id": "wyvern",
+    "group": "Dragons",
+    "look": "a wyvern, a dark brown two-legged dragon with huge bat wings spread and a scorpion-like stinging tail"
+  },
+  {
+    "id": "young-brass-dragon",
+    "group": "Dragons",
+    "look": "a young dragon, sleek and lean, wings spread wide, with polished brass-coloured scales and a wide blade-like head frill"
+  },
+  {
+    "id": "young-white-dragon",
+    "group": "Dragons",
+    "look": "a young dragon, sleek and lean, wings spread wide, with frosty white scales, a spiky crest and icy breath"
+  },
+  {
+    "id": "young-black-dragon",
+    "group": "Dragons",
+    "look": "a young dragon, sleek and lean, wings spread wide, with glossy black scales, swept-back horns and a skull-like face, dripping acid"
+  },
+  {
+    "id": "young-copper-dragon",
+    "group": "Dragons",
+    "look": "a young dragon, sleek and lean, wings spread wide, with shining copper scales, a crest of long backward horns"
+  },
+  {
+    "id": "young-bronze-dragon",
+    "group": "Dragons",
+    "look": "a young dragon, sleek and lean, wings spread wide, with bronze scales, a finned crest and ridged horns"
+  },
+  {
+    "id": "young-green-dragon",
+    "group": "Dragons",
+    "look": "a young dragon, sleek and lean, wings spread wide, with emerald-green scales, a tall frilled crest and wisps of poison gas",
+    "background": "magenta"
+  },
+  {
+    "id": "young-blue-dragon",
+    "group": "Dragons",
+    "look": "a young dragon, sleek and lean, wings spread wide, with sapphire-blue scales, a single great horn on the snout and crackling lightning"
+  },
+  {
+    "id": "young-silver-dragon",
+    "group": "Dragons",
+    "look": "a young dragon, sleek and lean, wings spread wide, with gleaming silver scales and a smooth frill running down the neck"
+  },
+  {
+    "id": "young-gold-dragon",
+    "group": "Dragons",
+    "look": "a young dragon, sleek and lean, wings spread wide, with brilliant gold scales, whisker-like tendrils and a regal frilled head"
+  },
+  {
+    "id": "young-red-dragon",
+    "group": "Dragons",
+    "look": "a young dragon, sleek and lean, wings spread wide, with crimson-red scales, sweeping horns, and embers glowing in the jaws",
+    "start": true
+  },
+  {
+    "id": "adult-brass-dragon",
+    "group": "Dragons",
+    "look": "a huge adult dragon, wings spread wide, powerful and armored, with polished brass-coloured scales and a wide blade-like head frill"
+  },
+  {
+    "id": "adult-white-dragon",
+    "group": "Dragons",
+    "look": "a huge adult dragon, wings spread wide, powerful and armored, with frosty white scales, a spiky crest and icy breath"
+  },
+  {
+    "id": "adult-black-dragon",
+    "group": "Dragons",
+    "look": "a huge adult dragon, wings spread wide, powerful and armored, with glossy black scales, swept-back horns and a skull-like face, dripping acid"
+  },
+  {
+    "id": "adult-copper-dragon",
+    "group": "Dragons",
+    "look": "a huge adult dragon, wings spread wide, powerful and armored, with shining copper scales, a crest of long backward horns"
+  },
+  {
+    "id": "adult-bronze-dragon",
+    "group": "Dragons",
+    "look": "a huge adult dragon, wings spread wide, powerful and armored, with bronze scales, a finned crest and ridged horns"
+  },
+  {
+    "id": "adult-green-dragon",
+    "group": "Dragons",
+    "look": "a huge adult dragon, wings spread wide, powerful and armored, with emerald-green scales, a tall frilled crest and wisps of poison gas",
+    "background": "magenta"
+  },
+  {
+    "id": "adult-blue-dragon",
+    "group": "Dragons",
+    "look": "a huge adult dragon, wings spread wide, powerful and armored, with sapphire-blue scales, a single great horn on the snout and crackling lightning"
+  },
+  {
+    "id": "adult-silver-dragon",
+    "group": "Dragons",
+    "look": "a huge adult dragon, wings spread wide, powerful and armored, with gleaming silver scales and a smooth frill running down the neck"
+  },
+  {
+    "id": "adult-gold-dragon",
+    "group": "Dragons",
+    "look": "a huge adult dragon, wings spread wide, powerful and armored, with brilliant gold scales, whisker-like tendrils and a regal frilled head"
+  },
+  {
+    "id": "adult-red-dragon",
+    "group": "Dragons",
+    "look": "a huge adult dragon, wings spread wide, powerful and armored, with crimson-red scales, sweeping horns, and embers glowing in the jaws"
+  },
+  {
+    "id": "dragon-turtle",
+    "group": "Dragons",
+    "look": "a dragon turtle, a gigantic sea turtle with a dragon's head, a spiked dark green-blue shell and steam rising from its mouth"
+  },
+  {
+    "id": "ancient-brass-dragon",
+    "group": "Dragons",
+    "look": "a colossal ancient dragon, battle-scarred, wings spread wide, horns and spikes thick with age, with polished brass-coloured scales and a wide blade-like head frill"
+  },
+  {
+    "id": "ancient-white-dragon",
+    "group": "Dragons",
+    "look": "a colossal ancient dragon, battle-scarred, wings spread wide, horns and spikes thick with age, with frosty white scales, a spiky crest and icy breath"
+  },
+  {
+    "id": "ancient-black-dragon",
+    "group": "Dragons",
+    "look": "a colossal ancient dragon, battle-scarred, wings spread wide, horns and spikes thick with age, with glossy black scales, swept-back horns and a skull-like face, dripping acid"
+  },
+  {
+    "id": "ancient-copper-dragon",
+    "group": "Dragons",
+    "look": "a colossal ancient dragon, battle-scarred, wings spread wide, horns and spikes thick with age, with shining copper scales, a crest of long backward horns"
+  },
+  {
+    "id": "ancient-bronze-dragon",
+    "group": "Dragons",
+    "look": "a colossal ancient dragon, battle-scarred, wings spread wide, horns and spikes thick with age, with bronze scales, a finned crest and ridged horns"
+  },
+  {
+    "id": "ancient-green-dragon",
+    "group": "Dragons",
+    "look": "a colossal ancient dragon, battle-scarred, wings spread wide, horns and spikes thick with age, with emerald-green scales, a tall frilled crest and wisps of poison gas",
+    "background": "magenta"
+  },
+  {
+    "id": "ancient-blue-dragon",
+    "group": "Dragons",
+    "look": "a colossal ancient dragon, battle-scarred, wings spread wide, horns and spikes thick with age, with sapphire-blue scales, a single great horn on the snout and crackling lightning"
+  },
+  {
+    "id": "ancient-silver-dragon",
+    "group": "Dragons",
+    "look": "a colossal ancient dragon, battle-scarred, wings spread wide, horns and spikes thick with age, with gleaming silver scales and a smooth frill running down the neck"
+  },
+  {
+    "id": "ancient-gold-dragon",
+    "group": "Dragons",
+    "look": "a colossal ancient dragon, battle-scarred, wings spread wide, horns and spikes thick with age, with brilliant gold scales, whisker-like tendrils and a regal frilled head"
+  },
+  {
+    "id": "ancient-red-dragon",
+    "group": "Dragons",
+    "look": "a colossal ancient dragon, battle-scarred, wings spread wide, horns and spikes thick with age, with crimson-red scales, sweeping horns, and embers glowing in the jaws"
+  },
+  {
+    "id": "steam-mephit",
+    "group": "Elementals",
+    "look": "a steam mephit, a tiny imp-like creature of pale steam and boiling water with wispy wings"
+  },
+  {
+    "id": "dust-mephit",
+    "group": "Elementals",
+    "look": "a dust mephit, a tiny imp-like creature of grey dust with brittle wings"
+  },
+  {
+    "id": "ice-mephit",
+    "group": "Elementals",
+    "look": "an ice mephit, a tiny imp-like creature of jagged blue ice with frosty wings"
+  },
+  {
+    "id": "magma-mephit",
+    "group": "Elementals",
+    "look": "a magma mephit, a tiny imp-like creature of glowing molten rock with fiery wings"
+  },
+  {
+    "id": "magmin",
+    "group": "Elementals",
+    "look": "a magmin, a small chubby creature of molten rock with fiery cracks and a flame on its head"
+  },
+  {
+    "id": "azer",
+    "group": "Elementals",
+    "look": "an azer, a dwarf-like being of living bronze with flaming hair and beard, holding a warhammer",
+    "aliases": ["azer-sentinel"]
+  },
+  {
+    "id": "gargoyle",
+    "group": "Elementals",
+    "look": "a gargoyle, a crouching winged grey stone creature with horns and claws"
+  },
+  {
+    "id": "air-elemental",
+    "group": "Elementals",
+    "look": "an air elemental, a swirling whirlwind of pale grey cloud with a vague angry face in the vortex"
+  },
+  {
+    "id": "earth-elemental",
+    "group": "Elementals",
+    "look": "an earth elemental, a hulking mass of rock and soil with huge boulder fists and glowing crystal eyes"
+  },
+  {
+    "id": "fire-elemental",
+    "group": "Elementals",
+    "look": "a fire elemental, a roaring humanoid shape of living orange and yellow flame"
+  },
+  {
+    "id": "salamander",
+    "group": "Elementals",
+    "look": "a salamander, a fiery red serpent-bodied creature with a humanoid upper body, a spear and flaming spines"
+  },
+  {
+    "id": "water-elemental",
+    "group": "Elementals",
+    "look": "a water elemental, a towering wave of churning blue water with a crest of foam"
+  },
+  {
+    "id": "xorn",
+    "group": "Elementals",
+    "look": "a xorn, a squat round stone creature with three arms, three eyes and a huge mouth on top"
+  },
+  {
+    "id": "invisible-stalker",
+    "group": "Elementals",
+    "look": "an invisible stalker, a faint rippling outline of a humanoid made of shimmering air, almost transparent but outlined in pale blue"
+  },
+  {
+    "id": "djinni",
+    "group": "Elementals",
+    "look": "a djinni, a towering blue-skinned genie with a lower body of swirling wind, silk sash and a scimitar"
+  },
+  {
+    "id": "efreeti",
+    "group": "Elementals",
+    "look": "an efreeti, a huge red-skinned genie with a lower body of smoke and fire, brass bracers and a scimitar"
+  },
+  {
+    "id": "blink-dog",
+    "group": "Fey",
+    "look": "a blink dog, a yellow-brown dog with a faint shimmering blue afterimage"
+  },
+  {
+    "id": "sprite",
+    "group": "Fey",
+    "look": "a sprite, a tiny winged fey warrior with dragonfly wings and a tiny longsword"
+  },
+  {
+    "id": "satyr",
+    "group": "Fey",
+    "look": "a satyr, a goat-legged man with curled horns, holding panpipes and a shortbow"
+  },
+  {
+    "id": "dryad",
+    "group": "Fey",
+    "look": "a dryad, a graceful woman with bark-textured skin and long hair of green leaves and flowers",
+    "background": "magenta"
+  },
+  {
+    "id": "sea-hag",
+    "group": "Fey",
+    "look": "a sea hag, a hideous crone with slimy grey-green skin, seaweed hair and webbed claws",
+    "background": "magenta"
+  },
+  {
+    "id": "green-hag",
+    "group": "Fey",
+    "look": "a green hag, a hunched crone with green skin, wild tangled black hair and long claws",
+    "background": "magenta"
+  },
+  {
+    "id": "sphinx-of-wonder",
+    "group": "Celestials",
+    "look": "a small sphinx of wonder, a cat-sized lion with a curious face and bright jewel-toned feathered wings"
+  },
+  {
+    "id": "pegasus",
+    "group": "Celestials",
+    "look": "a pegasus, a white winged horse with feathered wings spread"
+  },
+  {
+    "id": "couatl",
+    "group": "Celestials",
+    "look": "a couatl, a feathered serpent with iridescent rainbow wings spread and golden scales"
+  },
+  {
+    "id": "unicorn",
+    "group": "Celestials",
+    "look": "a unicorn, a pure white horse with a spiraled golden horn and a silver mane"
+  },
+  {
+    "id": "deva",
+    "group": "Celestials",
+    "look": "a deva, a radiant angel with silvery skin, white feathered wings spread wide and a glowing mace"
+  },
+  {
+    "id": "planetar",
+    "group": "Celestials",
+    "look": "a planetar, a towering emerald-skinned angel with vast white wings and a huge flaming greatsword",
+    "background": "magenta"
+  },
+  {
+    "id": "solar",
+    "group": "Celestials",
+    "look": "a solar, a majestic golden-skinned angel with immense golden wings, a blazing greatsword and a bow, glowing with holy light"
+  },
+  {
+    "id": "homunculus",
+    "group": "Constructs",
+    "look": "a homunculus, a tiny grey-green leathery creature with bat wings and a long tail",
+    "background": "magenta"
+  },
+  {
+    "id": "flying-sword",
+    "group": "Constructs",
+    "look": "an enchanted longsword flying by itself, point down, trailing a faint blue glow",
+    "aliases": ["animated-flying-sword"]
+  },
+  {
+    "id": "animated-armor",
+    "group": "Constructs",
+    "look": "an empty suit of dented plate armor animated by magic, faint blue glow inside the open helm"
+  },
+  {
+    "id": "rug-of-smothering",
+    "group": "Constructs",
+    "look": "an animated ornate red and gold patterned rug, its corners curling up like grasping hands",
+    "aliases": ["animated-rug-of-smothering"]
+  },
+  {
+    "id": "flesh-golem",
+    "group": "Constructs",
+    "look": "a flesh golem, a huge stitched-together humanoid of mismatched pale body parts, iron bolts in the neck"
+  },
+  {
+    "id": "shield-guardian",
+    "group": "Constructs",
+    "look": "a shield guardian, a tall construct of wood and iron with a glowing amulet in its chest"
+  },
+  {
+    "id": "clay-golem",
+    "group": "Constructs",
+    "look": "a clay golem, a hulking humanoid of cracked reddish-brown clay with runes carved in the chest"
+  },
+  {
+    "id": "stone-golem",
+    "group": "Constructs",
+    "look": "a stone golem, a blocky giant of carved grey granite with glowing runes"
+  },
+  {
+    "id": "iron-golem",
+    "group": "Constructs",
+    "look": "an iron golem, a towering armored iron giant with glowing furnace eyes and a massive iron sword"
+  },
+  {
+    "id": "gibbering-mouther",
+    "group": "Aberrations",
+    "look": "a gibbering mouther, a pale fleshy blob covered in dozens of eyes and toothy mouths",
+    "background": "magenta"
+  },
+  {
+    "id": "chuul",
+    "group": "Aberrations",
+    "look": "a chuul, a lobster-like armored aberration with a dark red shell, huge pincers and writhing tentacles around its mouth"
+  },
+  {
+    "id": "otyugh",
+    "group": "Aberrations",
+    "look": "an otyugh, a bloated three-legged garbage-eating creature with a huge toothy maw, two spiked tentacles and an eye stalk",
+    "background": "magenta"
+  },
+  {
+    "id": "cloaker",
+    "group": "Aberrations",
+    "look": "a cloaker, a ray-shaped aberration like a black leathery cloak spread wide, pale bone claws along the edges and glowing red eyes"
+  },
+  {
+    "id": "aboleth",
+    "group": "Aberrations",
+    "look": "an aboleth, a huge primeval fish-like aberration with slimy blue-grey skin, three glowing red eyes in a vertical row and four long tentacles trailing back"
+  },
+  {
+    "id": "gray-ooze",
+    "group": "Oozes",
+    "look": "a gray ooze, a puddle of wet grey slime like dirty stone"
+  },
+  {
+    "id": "gelatinous-cube",
+    "group": "Oozes",
+    "look": "a gelatinous cube, a translucent pale cube of jelly with bones, coins and a sword suspended inside",
+    "start": true
+  },
+  {
+    "id": "ochre-jelly",
+    "group": "Oozes",
+    "look": "an ochre jelly, a spreading yellow-orange translucent jelly"
+  },
+  {
+    "id": "black-pudding",
+    "group": "Oozes",
+    "look": "a black pudding, a glistening blob of tar-black ooze spreading over the ground"
+  },
+  {
+    "id": "awakened-shrub",
+    "group": "Plants",
+    "look": "an awakened shrub, a small leafy bush with twig arms and roots for feet",
+    "background": "magenta"
+  },
+  {
+    "id": "shrieker",
+    "group": "Plants",
+    "look": "a shrieker, a large purple and white mushroom with a wide cap",
+    "aliases": ["shrieker-fungus"]
+  },
+  {
+    "id": "violet-fungus",
+    "group": "Plants",
+    "look": "a violet fungus, a cluster of purple mushrooms with four long whip-like tendrils"
+  },
+  {
+    "id": "awakened-tree",
+    "group": "Plants",
+    "look": "an awakened tree, a walking oak with a bark face and branches like arms",
+    "background": "magenta"
+  },
+  {
+    "id": "shambling-mound",
+    "group": "Plants",
+    "look": "a shambling mound, a hulking heap of rotting vines, moss and leaves in a rough humanoid shape",
+    "background": "magenta"
+  },
+  {
+    "id": "treant",
+    "group": "Plants",
+    "look": "a treant, a huge ancient tree giant with a bark face, mossy limbs and leafy crown",
+    "background": "magenta"
+  }
+]
