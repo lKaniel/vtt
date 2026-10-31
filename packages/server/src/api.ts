@@ -19,7 +19,7 @@ import type { WorldStore } from './world-store.ts';
 // player's characters, and taking a seat at the world with one of them. The
 // game itself then runs over the WebSocket, signed in by the same cookie.
 
-export const SESSION_COOKIE = 'vtt_session';
+const SESSION_COOKIE = 'vtt_session';
 const MAX_BODY = 256 * 1024;
 
 export interface ApiDeps {
@@ -48,8 +48,21 @@ class HttpError extends Error {
   }
 }
 
+/**
+ * Who a WebSocket upgrade is for: `?player=` picks one of the world's seats,
+ * otherwise the signed-in account joins as itself (once it has a seat).
+ */
+export function upgradePlayer(
+  req: IncomingMessage,
+  accounts: Pick<AccountStore, 'sessionAccount'>,
+  findPlayer: (id: string) => Player | undefined,
+): Player | undefined {
+  const seat = new URL(req.url ?? '/', 'http://localhost').searchParams.get('player');
+  return findPlayer(seat ?? accounts.sessionAccount(sessionToken(req))?.id ?? '');
+}
+
 /** Reads the session token from a request's cookies. */
-export function sessionToken(req: IncomingMessage): string | undefined {
+function sessionToken(req: IncomingMessage): string | undefined {
   for (const part of (req.headers.cookie ?? '').split(';')) {
     const [name, ...value] = part.trim().split('=');
     if (name === SESSION_COOKIE) return value.join('=');

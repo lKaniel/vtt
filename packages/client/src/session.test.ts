@@ -165,8 +165,15 @@ describe('Session', () => {
     second.onclose?.({ code: 4001 });
     vi.advanceTimersByTime(1000);
     expect(lastSocket).toBe(second);
-    expect(session.error?.message).toMatch(/Unknown player/);
+    expect(session.error?.message).toMatch(/no seat/);
     vi.useRealTimers();
+  });
+
+  it('joins as the signed-in account when no seat is given', () => {
+    const own = new Session();
+    own.connect();
+    expect(lastSocket!.url).toMatch(/\/ws$/);
+    own.close();
   });
 
   it('passes focus requests to the map', () => {

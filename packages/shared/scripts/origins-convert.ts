@@ -38,16 +38,16 @@ interface Step {
 }
 export type OriginEntry = Entry & { choices?: Choice[]; actions?: { id: string; steps: Step[] }[] };
 
-export interface Trait {
+interface Trait {
   name: string;
   description: string;
 }
-export interface KitItem {
+interface KitItem {
   item: string;
   qty: number;
   equipped: boolean;
 }
-export interface KitStep {
+interface KitStep {
   id: string;
   prompt: string;
   when?: { step: string; option: string };

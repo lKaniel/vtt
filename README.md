@@ -64,8 +64,35 @@ pnpm install
 pnpm dev          # server on :3001, client on http://localhost:5173
 ```
 
-Open http://localhost:5173, pick a seat, and open a second browser window as
-another player to see sync and per-player views.
+Open http://localhost:5173. The main menu offers:
+
+- **Create an account / Sign in.** Your account keeps your characters. The
+  first account made on a server is its admin and sits at worlds as the GM;
+  everyone after joins as a player (change a role in `world.json`).
+- **Your roster.** Create a character, edit it, level it up, or delete it.
+  _Enter the world_ seats you and puts the chosen character on the map, at
+  the world's `start`. _Run the game as GM_ joins without a character.
+- **Take a seat without an account.** The world's fixed seats from
+  `world.json`, handy for a quick test: open a second browser window as
+  another player to see sync and per-player views.
+
+### Accounts and characters
+
+Accounts and characters live in a `data/` folder next to the world folder
+(set `VTT_DATA` to move it), outside the world so one roster can visit many
+campaigns. Passwords are stored as salted scrypt hashes, and a sign-in lasts
+30 days in an HttpOnly cookie. There's no e-mail or reset: to reset an
+account, delete its file in `data/accounts/`.
+
+The character creator follows the BG3 order: race or species, class,
+background, abilities (point buy, standard array, 4d6 or manual), skills,
+spells, starting equipment, then name and look. Each character picks its
+rules edition: 2014 (SRD 5.1, the default) or 2024 (SRD 5.2, with
+background ability bonuses, lineages and the 2024 spell tables). The server
+checks every saved character against those rules. Levelling up adds hit
+points (average or a roll), ability score improvements, the subclass at its
+level and new spells, and updates the character's token on the map while
+keeping its wounds, position and inventory.
 
 To serve a built client from the game server alone:
 
@@ -122,4 +149,6 @@ git, so plain git tools still work.
 
 Vision, lighting and fog (phase 2), character sheets and combat (phase 3),
 spells and effects (phase 4), levels (phase 5), live AI tools (phase 6).
-Seats have no passwords yet: anyone who can reach the server can join.
+Fixed seats (_Take a seat without an account_) have no passwords: anyone who
+can reach the server can take one. Feats, multiclassing and subclass
+features beyond their names aren't in the character builder yet.

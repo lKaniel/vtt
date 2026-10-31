@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { join, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
 import { AccountStore } from './accounts.ts';
-import { accountApi, sessionToken } from './api.ts';
+import { accountApi, upgradePlayer } from './api.ts';
 import { CharacterStore } from './characters.ts';
 import { Game } from './game.ts';
 import { httpHandler } from './http.ts';
@@ -42,10 +42,7 @@ const wss = new WebSocketServer({ noServer: true });
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
   if (url.pathname !== '/ws') return socket.destroy();
-  // Signed-in accounts join as themselves; ?player= picks one of the world's seats.
-  const account = accounts.sessionAccount(sessionToken(req));
-  const seat = url.searchParams.get('player');
-  const player = game.findPlayer(seat ?? account?.id ?? '');
+  const player = upgradePlayer(req, accounts, (id) => game.findPlayer(id));
   wss.handleUpgrade(req, socket, head, (ws) => {
     if (!player) return ws.close(4001, 'unknown player');
     game.connect(ws, player);

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AccountStore } from './accounts.ts';
-import { accountApi } from './api.ts';
+import { accountApi, upgradePlayer } from './api.ts';
 import { CharacterStore } from './characters.ts';
 import { makeWorld } from './test/fixtures.ts';
 import { WorldStore } from './world-store.ts';
@@ -63,11 +63,24 @@ const sorcerer = {
   rules: '2014',
   species: 'tiefling',
   class: 'sorcerer',
+  subclass: 'draconic-bloodline',
   background: 'acolyte',
   base: { str: 8, dex: 14, con: 14, int: 10, wis: 10, cha: 15 },
   skills: ['arcana', 'deception'],
   spells: ['fire-bolt', 'light', 'mage-hand', 'prestidigitation', 'magic-missile', 'shield'],
 };
+
+describe('upgradePlayer', () => {
+  it('takes the seat asked for, else the signed-in account', async () => {
+    const account = await accounts.register({ username: 'cy', password: 'hunter22', name: 'Cy' });
+    const token = await accounts.startSession(account.id);
+    const find = (id: string) => (id ? { id, name: id, role: 'player' as const, color: '#fff' } : undefined);
+    const req = (url: string, cookie = '') => ({ url, headers: { cookie } }) as never;
+    expect(upgradePlayer(req('/ws?player=ana'), accounts, find)?.id).toBe('ana');
+    expect(upgradePlayer(req('/ws', `other=1; vtt_session=${token}`), accounts, find)?.id).toBe('cy');
+    expect(upgradePlayer(req('/ws'), accounts, find)).toBeUndefined();
+  });
+});
 
 describe('account api', () => {
   it('signs up, signs in and out', async () => {

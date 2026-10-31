@@ -10,7 +10,7 @@ import {
   newCharacter,
   type Character,
 } from './character.ts';
-import { characterIssues, levelUp } from './character-check.ts';
+import { characterIssues, issuesByStep, levelUp } from './character-check.ts';
 import type { KitStep } from './origins.ts';
 
 /** A valid level 1 2014 hill dwarf cleric. */
@@ -23,6 +23,7 @@ function cleric(over: Partial<Character> = {}): Character {
     species: 'dwarf',
     subspecies: 'hill-dwarf',
     class: 'cleric',
+    subclass: 'life-domain',
     background: 'acolyte',
     base: { str: 14, dex: 8, con: 15, int: 8, wis: 15, cha: 10 },
     skills: ['medicine', 'history'],
@@ -163,6 +164,16 @@ describe('characterIssues', () => {
   });
 });
 
+describe('issuesByStep', () => {
+  it('groups the issues by creator step', () => {
+    const steps = issuesByStep(cleric({ skills: [], subspecies: undefined }));
+    expect(steps.species).toEqual(['Choose a subrace for Dwarf.']);
+    expect(steps.skills).toEqual([]);
+    expect(issuesByStep(cleric({ skills: [] })).skills).toEqual(['Choose 2 class skills.']);
+    expect(issuesByStep(cleric()).spells).toEqual([]);
+  });
+});
+
 describe('levelUp', () => {
   it('adds a level with its hit points, improvement and new spells', () => {
     const c = levelUp(cleric({ level: 3, hpRolls: [5, 5] }), {
@@ -172,6 +183,10 @@ describe('levelUp', () => {
     });
     expect(c).toMatchObject({ level: 4, hpRolls: [5, 5, 6], improvements: [{ wis: 2 }] });
     expect(characterIssues(c)).toEqual([]);
+  });
+
+  it('asks for the subclass once the level reaches it', () => {
+    expect(characterIssues(cleric({ subclass: undefined }))).toEqual(['Choose a Cleric subclass.']);
   });
 
   it('takes the subclass at its level', () => {

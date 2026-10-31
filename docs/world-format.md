@@ -45,7 +45,14 @@ grows down, negative values are fine.
 ```
 
 At least one player must have `"role": "gm"`. `start` is where the camera
-opens. Changing this file reconnects everyone.
+opens, and where characters joining from an account appear. Changing this
+file reconnects everyone.
+
+Players whose `id` matches an account (see the README) are that account's
+seat. The server adds one when an account first joins, so you can change its
+`role` here afterwards. A character brought from an account becomes a token
+whose `id` is the character's id, with the account in `controllers`; saving
+or levelling the character updates that token's name, stats and senses.
 
 ## Chunks
 

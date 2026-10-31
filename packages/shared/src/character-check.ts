@@ -26,29 +26,41 @@ function listNames(abilities: readonly Ability[]): string {
 
 const sum = (b: Partial<Record<Ability, number>>) => Object.values(b).reduce((a, v) => a + v, 0);
 
+/** The creator's steps, each with its own rules to check. */
+export type CreatorStep = 'species' | 'class' | 'background' | 'abilities' | 'skills' | 'spells' | 'level';
+
 /** Everything wrong with a character, as sentences; empty when it's valid. */
 export function characterIssues(c: Character): string[] {
-  const parts = partsOf(c);
-  const missing = missingParts(c, parts);
-  if (missing.length) return missing;
-  return [
-    ...scoreIssues(c),
-    ...bonusIssues(c, parts),
-    ...skillIssues(c, parts),
-    ...levelIssues(c, parts),
-    ...spellIssues(c, parts),
-  ];
+  return Object.values(issuesByStep(c)).flat();
 }
 
-function missingParts(c: Character, p: Parts): string[] {
-  const out: string[] = [];
-  if (!p.species) out.push(`Unknown species "${c.species}".`);
-  else if (p.species.subspecies.length && !p.subspecies) {
-    out.push(`Choose a ${c.rules === '2014' ? 'subrace' : 'lineage'} for ${p.species.name}.`);
+/** The issues grouped by the creator step that fixes them. */
+export function issuesByStep(c: Character): Record<CreatorStep, string[]> {
+  const p = partsOf(c);
+  const none = { abilities: [], skills: [], spells: [], level: [] };
+  const missing = {
+    species: speciesIssues(c, p),
+    class: p.cls && p.options ? [] : [`Unknown class "${c.class}".`],
+    background: p.background ? [] : [`Unknown background "${c.background}".`],
+  };
+  if (Object.values(missing).some((m) => m.length)) return { ...missing, ...none };
+  return {
+    ...missing,
+    class: subclassIssues(c, p),
+    abilities: [...scoreIssues(c), ...bonusIssues(c, p)],
+    skills: skillIssues(c, p),
+    spells: spellIssues(c, p),
+    level: levelIssues(c, p),
+  };
+}
+
+function speciesIssues(c: Character, p: Parts): string[] {
+  if (!p.species) return [`Unknown species "${c.species}".`];
+  if (p.species.subspecies.length && !p.subspecies) {
+    return [`Choose a ${c.rules === '2014' ? 'subrace' : 'lineage'} for ${p.species.name}.`];
   }
-  if (!p.cls || !p.options) out.push(`Unknown class "${c.class}".`);
-  if (!p.background) out.push(`Unknown background "${c.background}".`);
-  return out;
+  if (p.species.sizes.length > 1 && !c.size) return [`Choose whether ${p.species.name}s are small or medium.`];
+  return [];
 }
 
 function scoreIssues(c: Character): string[] {
@@ -99,10 +111,14 @@ function levelIssues(c: Character, p: Parts): string[] {
   if (c.improvements.length !== due || c.improvements.some((b) => sum(b) !== 2)) {
     out.push(`Take ${due} ability score improvement${due === 1 ? '' : 's'} (2 points each).`);
   }
-  if (c.subclass && !p.options!.subclasses.some((s) => s.id === c.subclass)) {
-    out.push(`Unknown subclass "${c.subclass}".`);
-  }
   return out;
+}
+
+function subclassIssues(c: Character, p: Parts): string[] {
+  const { subclasses, subclassLevel } = p.options!;
+  if (c.subclass && !subclasses.some((s) => s.id === c.subclass)) return [`Unknown subclass "${c.subclass}".`];
+  if (!c.subclass && c.level >= subclassLevel && subclasses.length) return [`Choose a ${p.cls!.name} subclass.`];
+  return [];
 }
 
 function spellIssues(c: Character, p: Parts): string[] {
