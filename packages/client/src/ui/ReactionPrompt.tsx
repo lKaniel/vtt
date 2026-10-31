@@ -1,21 +1,34 @@
+import type { ReactionOffer } from '@vtt/shared';
 import type { Session } from '../session.ts';
 
-/** Offers to react out of turn: an enemy left one of your creatures' reach. */
+const CHOICE_LABELS: Record<string, string> = {
+  shield: 'Shield (+5 AC)',
+  'uncanny-dodge': 'Uncanny Dodge (half damage)',
+};
+
+/** What the offer asks, e.g. "Goblin: opportunity attack on Bo?". */
+function question(offer: ReactionOffer, name: (id: string) => string): string {
+  if (offer.kind === 'hit')
+    return `${name(offer.target)} is about to hit ${name(offer.reactor)} (${offer.total}). React?`;
+  return `${name(offer.reactor)}: opportunity attack on ${name(offer.target)}?`;
+}
+
+/** Offers to react out of turn: an enemy left your creature's reach, or an attack is about to hit it. */
 export function ReactionPrompt({ session }: Readonly<{ session: Session }>) {
   const offer = session.reactions[0];
   if (!offer) return null;
   const name = (id: string) => session.tokens.get(id)?.name ?? 'Someone';
   return (
     <div className="aiming frame reaction-prompt" role="dialog" aria-label="Reaction">
-      <span className="aiming-name">{`${name(offer.reactor)}: opportunity attack on ${name(offer.target)}?`}</span>
+      <span className="aiming-name">{question(offer, name)}</span>
       <span className="slot-choices">
-        {offer.attacks.map((attack) => (
-          <button key={attack} className="chip" onClick={() => session.takeReaction(offer.id, attack)}>
-            {attack}
+        {offer.choices.map((choice) => (
+          <button key={choice} className="chip" onClick={() => session.takeReaction(offer.id, choice)}>
+            {CHOICE_LABELS[choice] ?? choice}
           </button>
         ))}
         <button className="chip" onClick={() => session.takeReaction(offer.id)}>
-          Let it go
+          {offer.kind === 'hit' ? 'Take the hit' : 'Let it go'}
         </button>
       </span>
     </div>

@@ -13,13 +13,23 @@ import {
   startCombat,
   tickEffects,
   tokenDistance,
+  type Attack,
   type AttackLog,
   type Player,
   type Token,
-  type WeaponAttackInput,
   type WeaponAttackOutcome,
 } from '@vtt/shared';
 import { Refusal, requireGm, type Fighter, type Table } from './table.ts';
+
+/** An attack that has been rolled but not yet landed: its target may still react (shield). */
+export interface PendingHit {
+  attacker: Fighter;
+  target: Fighter;
+  attack: Attack;
+  range: 'normal' | 'long';
+  smite?: number;
+  outcome: WeaponAttackOutcome;
+}
 
 export interface AttackRequest {
   attacker: string;
@@ -38,6 +48,8 @@ export class CombatActions {
     private table: Table,
     private logAttack: (log: AttackLog) => void,
     private turnStarted: (id: string) => void = () => undefined,
+    /** Offers the target a reaction to a hit; true when the attack waits for the answer. */
+    private onHit: (hit: PendingHit) => boolean = () => false,
   ) {}
 
   private get store() {
@@ -178,7 +190,7 @@ export class CombatActions {
   }
 
   private resolve(
-    { attacker, target, attack, range }: Pick<WeaponAttackInput, 'attacker' | 'target' | 'attack' | 'range'>,
+    { attacker, target, attack, range }: Pick<PendingHit, 'attacker' | 'target' | 'attack' | 'range'>,
     { smite, reaction }: { smite: number | undefined; reaction: boolean },
   ): void {
     // Out of its turn a creature has no budget; its sneak attack is still unused.
@@ -197,6 +209,12 @@ export class CombatActions {
       this.table.rng,
     );
     if (outcome.sneak && !reaction) this.markUsed(attacker.token, 'sneak-attack');
+    const hit = { attacker, target, attack, range, smite, outcome };
+    if (!outcome.roll.hit || !this.onHit(hit)) this.land(hit);
+  }
+
+  /** Lands a rolled attack, once any reaction to it is settled. */
+  land({ attacker, target, attack, range, smite, outcome }: PendingHit): void {
     if (outcome.smote) this.table.spendSlot(attacker.token.id, smite!);
     this.table.useUp(outcome.used);
     this.applyOutcome(attacker, target, outcome, { range, name: attack.name, kind: attack.kind });

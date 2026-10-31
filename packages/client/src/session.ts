@@ -244,9 +244,9 @@ export class Session {
     this.send({ t: 'feature', token, feature });
   }
 
-  /** Takes a reaction with one of the offered attacks, or declines it without one. */
-  takeReaction(offer: string, attack?: string): void {
-    this.send({ t: 'react', offer, ...(attack && { attack }) });
+  /** Takes a reaction with one of the offered choices, or declines it without one. */
+  takeReaction(offer: string, choice?: string): void {
+    this.send({ t: 'react', offer, ...(choice && { choice }) });
   }
 
   /** Uses one of an item the token carries (drinks a potion). */

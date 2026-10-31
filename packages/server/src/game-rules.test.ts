@@ -321,11 +321,11 @@ describe('opportunity attacks', () => {
     expect(offer).toMatchObject({ offer: { reactor: 'goblin', target: 'bo', kind: 'opportunity' } });
     expect(bo.take('reactionOffer')).toEqual([]);
     dice = [face(19), face(3, 6)];
-    gm.receive({ t: 'react', offer: offer!.offer.id, attack: 'Scimitar' });
+    gm.receive({ t: 'react', offer: offer!.offer.id, choice: 'Scimitar' });
     expect(tok('bo').hp).toBe(40 - 5);
     expect(store.combat!.reacted).toEqual(['goblin']);
     expect(store.combat!.left.action).toBe(true);
-    gm.receive({ t: 'react', offer: offer!.offer.id, attack: 'Scimitar' });
+    gm.receive({ t: 'react', offer: offer!.offer.id, choice: 'Scimitar' });
     expect(errors(gm)[0]).toMatch(/passed/);
   });
 

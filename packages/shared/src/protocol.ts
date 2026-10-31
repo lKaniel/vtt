@@ -83,9 +83,12 @@ export interface ReactionOffer {
   id: string;
   reactor: string;
   target: string;
-  kind: 'opportunity';
-  /** Melee attacks the reactor could make. */
-  attacks: string[];
+  /** "opportunity": `target` left the reactor's reach; "hit": `target`'s attack is about to hit the reactor. */
+  kind: 'opportunity' | 'hit';
+  /** What the reactor may do: melee attack names, or reactions to a hit ("shield", "uncanny-dodge"). */
+  choices: string[];
+  /** For a hit: the attack roll's total. */
+  total?: number;
 }
 
 export type ClientMessage =
@@ -121,7 +124,7 @@ export type ClientMessage =
   /** Use one of an item the token carries, by item id (drink a potion). */
   | { t: 'useItem'; token: string; item: string }
   /** Take a reaction that was offered, with this attack; no attack declines it. */
-  | { t: 'react'; offer: string; attack?: string }
+  | { t: 'react'; offer: string; choice?: string }
   | { t: 'dropConcentration'; token: string }
   /** GM: end one effect on a token. */
   | { t: 'removeEffect'; token: string; effect: string }

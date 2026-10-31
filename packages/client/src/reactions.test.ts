@@ -8,7 +8,7 @@ const offer = (id: string): ReactionOffer => ({
   reactor: 'goblin',
   target: 'bo',
   kind: 'opportunity',
-  attacks: ['Scimitar'],
+  choices: ['Scimitar'],
 });
 
 describe('reaction offers', () => {
@@ -55,7 +55,7 @@ describe('Session reactions', () => {
     socket.onmessage?.({ data: JSON.stringify({ t: 'reactionOffer', offer: offer('a') }) });
     expect(session.reactions).toHaveLength(1);
     session.takeReaction('a', 'Scimitar');
-    expect(sent.at(-1)).toEqual({ t: 'react', offer: 'a', attack: 'Scimitar' });
+    expect(sent.at(-1)).toEqual({ t: 'react', offer: 'a', choice: 'Scimitar' });
     session.takeReaction('a');
     expect(sent.at(-1)).toEqual({ t: 'react', offer: 'a' });
     socket.onmessage?.({ data: JSON.stringify({ t: 'reactionGone', id: 'a' }) });
