@@ -372,6 +372,7 @@ export class MapView {
     // An aimed spell or readied attack keeps the left click for itself.
     const acting = !!(this.session.armed ?? this.session.aiming) && !this.editor.active;
     if (!acting && this.fogBrush.down(at, e.button)) return;
+    if (!acting && e.button === 0 && this.openNote(at)) return;
     if (!acting && this.editor.pointerDown({ at, button: e.button, mods: modsOf(e) })) return;
     this.drag = { start: p, last: p, at: performance.now(), panning: e.button === 1, button: e.button };
     this.cam.hold();
@@ -432,11 +433,16 @@ export class MapView {
     if (performance.now() - drag.at < 80) this.cam.release();
   }
 
-  /** A left click on the map: with an action ready, casts an aimed area spell or puts it away; on a note, opens its entry. */
+  /** In the tokens mode, a click on a map note opens its journal entry. */
+  private openNote(at: Point): boolean {
+    const note = this.session.mode === 'tokens' ? this.items.noteAt(at) : undefined;
+    if (note) this.session.openJournal(note.entry, note.page);
+    return !!note;
+  }
+
+  /** A left click on the map with an action ready: casts an aimed area spell, or puts the action away. */
   private clickGround(p: Point): void {
     if (this.session.armed) return this.session.arm(undefined);
-    const note = this.session.aiming ? undefined : this.items.noteAt(p);
-    if (note) return this.session.openJournal(note.entry, note.page);
     const aiming = this.session.aiming;
     if (aiming?.mode === 'point') return this.session.castAt(p);
     if (aiming) this.session.aim(undefined);

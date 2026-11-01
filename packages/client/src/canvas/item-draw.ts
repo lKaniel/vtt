@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { feetToPx, ITEM_MODES, type Point, type Shape, shapeOf } from '@vtt/shared';
+import { feetToPx, type Point, type Shape, shapeOf } from '@vtt/shared';
 import type { Graphics } from 'pixi.js';
 import type { ItemTool } from '../editor/shape-tools.ts';
 
@@ -134,6 +134,3 @@ export function drawDraft(
     g.poly((data.points as Point[]).flat(), false).stroke({ width: 2 * ctx.px, color: 0x40c0a0 });
   else drawItem(g, doc, ctx);
 }
-
-/** Whether `type` is one of the item types this file draws. */
-export const isItemType = (type: string): boolean => Object.values(ITEM_MODES).some((m) => m.type === type);

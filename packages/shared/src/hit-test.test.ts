@@ -52,6 +52,35 @@ describe('marqueeHits', () => {
     expect(marqueeHits([tile], rectBetween([0, 0], [500, 500]), 'contain')).toEqual(['tile']);
   });
 
+  it('catches paths and polygons by their sides, and a polygon round the rectangle', () => {
+    const path: Hittable = {
+      key: 'p',
+      shape: {
+        kind: 'path',
+        points: [
+          [0, 0],
+          [100, 0],
+          [100, 100],
+        ],
+      },
+    };
+    const poly: Hittable = {
+      key: 'q',
+      shape: {
+        kind: 'polygon',
+        points: [
+          [0, 0],
+          [1000, 0],
+          [1000, 1000],
+          [0, 1000],
+        ],
+      },
+    };
+    expect(marqueeHits([path], { x: 90, y: 40, w: 20, h: 20 }, 'touch')).toEqual(['p']);
+    expect(marqueeHits([path], { x: 40, y: 40, w: 20, h: 20 }, 'touch')).toEqual([]);
+    expect(marqueeHits([poly], { x: 400, y: 400, w: 20, h: 20 }, 'touch')).toEqual(['q']);
+  });
+
   it('catches a wall that crosses the rectangle without an end inside it', () => {
     const diagonal: Hittable = { key: 'd', shape: { kind: 'segment', a: [0, 0], b: [100, 100] } };
     expect(marqueeHits([diagonal], { x: 40, y: 40, w: 20, h: 20 }, 'touch')).toEqual(['d']);

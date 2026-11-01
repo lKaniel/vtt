@@ -8,6 +8,7 @@ import {
   type Wall,
 } from '@vtt/shared';
 import { z } from 'zod';
+import { foundryList } from './foundry-lists.ts';
 import { foundryPlaceables } from './foundry-placeables.ts';
 
 // A Foundry VTT scene (from a module's compendium, a world, or "Export
@@ -60,12 +61,7 @@ const FoundryTile = z.object({
   overhead: z.boolean().optional().catch(undefined),
 });
 
-const list = <T extends z.ZodType>(item: T) =>
-  z
-    .array(z.unknown())
-    .optional()
-    .catch(undefined)
-    .transform((xs) => (xs ?? []).flatMap((x) => (item.safeParse(x).success ? [item.parse(x)] : [])));
+const list = foundryList;
 
 const FoundrySceneSchema = z.object({
   name: z.string().min(1).catch('Imported scene'),

@@ -2044,6 +2044,7 @@ h4 {
 
 .side-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 2px;
   margin: 2px 0 6px;
   border-bottom: 1px solid var(--gold-dim);

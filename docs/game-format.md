@@ -13,8 +13,16 @@ world/                      the example game (another folder: VTT_GAME); lobby g
     walls.json              walls, doors and windows
     lights.json             placed lights
     tokens.json             tokens on the scene: where each actor stands
+    drawings.json           shapes, lines, freehand and text drawn on the map
+    notes.json              map pins that open journal entries
+    templates.json          measured areas: spell circles, cones, lines and squares
+    regions.json            areas that do something when a token walks in
+    sounds.json             ambient sounds
     fog/<player>.json       explored fog of war, kept by the server (don't edit)
   actors/<id>.json          creatures' sheets: the Actors list
+  journals/<id>.json        journal entries: handouts and the GM's notes
+  tables/<id>.json          roll tables
+  playlists/<id>.json       music
   combat.json               the fight in progress, if any
   assets/                   images referenced by tiles and tokens (uploads in assets/uploads/)
 ```
@@ -114,6 +122,8 @@ Optional, all set from the Scenes tab too:
 | `gridOpacity`          | 0 to 1, default 0.16.                                                           |
 | `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                            |
 | `darknessFollowsClock` | Saved for world time (a later step); does nothing yet.                          |
+| `levels`               | Floors of the scene, see "Scene levels" below.                                  |
+| `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.  |
 
 Every scene is live at once: the rules (moves, doors, fights, spells) work
 on whichever scene the player acting is on.
@@ -201,8 +211,116 @@ The GM can also draw walls, doors and windows, place, drag and erase lights,
 and set the time of day from the map tools in the game (bottom left).
 
 Walls stop light like they stop sight. A token carries a light with the same
-fields in `light`. Magical darkness puts out every other light, and only
+fields in `light`. A placed light with `activeAt: [from, to]` shines only
+while the darkness is in that band (`[0.6, 1]` lamps lit at night; a band
+written high to low wraps round, `[0.8, 0.2]` dusk to dawn). Everything with
+`activeAt` reads it through `activeAt()` in `shared/levels.ts`, the one place
+time of day is read, so world time (step 13) changes it in one spot. Magical darkness puts out every other light, and only
 devil's sight, truesight, blindsight and tremorsense work inside it.
+
+## Scene levels
+
+A scene can have floors, like Foundry's Levels module. `levels` in
+`scene.json` names them by the elevation (feet) where each starts:
+
+```json
+"levels": [{ "id": "ground", "name": "Ground", "bottom": 0 }, { "id": "loft", "name": "Loft", "bottom": 10 }]
+```
+
+A token is on the highest level its `elevation` (feet, default 0) reaches.
+Tiles, walls, lights, drawings, notes, templates, regions and sounds take a
+`level`; without one they are on every level. A token sees, and is lit and
+blocked by, only what is on its own level, and players don't see creatures
+on another floor (`tokensVisibleTo` in `shared/permissions.ts`, the fog
+keeper on the server, `Vision` on the client). The GM picks the floor shown
+in the map tools; a player sees their token's. A region with a `level`
+behaviour moves a token between floors (stairs, a ladder).
+
+## Drawings, notes, templates, regions and sounds
+
+Each is a list in the scene folder (schemas in `shared/scene-items.ts`).
+Every item has an `id`, and may have `level`, `hidden` (players don't get
+it) and `locked`.
+
+**Drawings** (`drawings.json`). Boxes have `x, y, w, h`: `"shape"` is
+`"rect"`, `"ellipse"` or `"text"` (with `text`, `fontSize`, `textColor`).
+Paths have `points` (`[[x, y], ...]`): `"polygon"`, `"line"` or
+`"freehand"`. All take `stroke`, `strokeWidth`, `fill`, `fillAlpha`.
+Players draw too: theirs carry their seat id as `author`, and they can
+change and delete only their own.
+
+```json
+[
+  {
+    "id": "route",
+    "shape": "line",
+    "points": [
+      [100, 100],
+      [900, 400]
+    ],
+    "stroke": "#ff4040",
+    "strokeWidth": 6
+  }
+]
+```
+
+**Notes** (`notes.json`): `x, y`, `label`, `icon`, `color`, and the
+journal `entry` (and `page`) it opens. Players see a note only when they may
+see its entry.
+
+**Templates** (`templates.json`): `shape` `"circle"`, `"cone"`, `"line"` or
+`"square"`, origin `x, y`, `distance` in feet (a circle's radius, a cone's or
+line's length, a square's side), `direction` in degrees clockwise from east,
+`width` (lines, feet, default 5), `angle` (cones, default 53.13), `color`,
+`author`. Lasting spells (spirit guardians, moonbeam) are templates the
+server keeps: id `zone-<effect>`, `effect` naming the creature and effect,
+`attachedTo` when it moves with its caster. The GM may move one, and the
+spell then hits where the template is; it goes when the spell ends. `endsAt`
+(a game-clock second) is kept for world time.
+
+**Regions** (`regions.json`): `points` (3 or more), `name`, `color`,
+`visible` (players see its outline), `disabled`, `activeAt`, and
+`behaviors`, run in order when a token walks in:
+
+| Behaviour                                                           | What it does                                                                                                                                                      |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{ "type": "difficult", "multiplier": 2 }`                          | Moving through costs that many times as much (paths go round it if they can).                                                                                     |
+| `{ "type": "trap", "message": "…", "once": true, "system": { … } }` | The game system springs it; D&D: `system` is `{ "save": "dex", "dc": 15, "damage": "2d6", "type": "piercing", "half": true }`. `once` turns the region off after. |
+| `{ "type": "teleport", "to": [x, y], "scene": "cellar" }`           | Moves the token there (and, to another scene, the players who own it).                                                                                            |
+| `{ "type": "level", "to": "loft" }`                                 | Takes the token to that level (its elevation becomes the level's bottom).                                                                                         |
+| `{ "type": "reveal" }`                                              | The players whose token walked in see the whole region as explored.                                                                                               |
+| `{ "type": "message", "text": "…", "gmOnly": true }`                | Says it in chat (to the GM alone with `gmOnly`).                                                                                                                  |
+
+**Sounds** (`sounds.json`): `x, y`, `radius` (feet), `src`, `volume` (0
+to 1, default 0.5), `walls` (default true: each wall between muffles it),
+`activeAt`, `name`. A player hears them from their token, the GM from the
+middle of the screen.
+
+## Journal entries, roll tables and playlists
+
+One file each, in `journals/`, `tables/` and `playlists/` (schemas in
+`shared/journals.ts`). Each has `id`, `name`, and may have `folder`, `sort`
+and `ownership` (missing: only the GM sees it; `limited` shows the title,
+`observer` the pages).
+
+```json
+{
+  "id": "the-well",
+  "name": "The Old Well",
+  "ownership": { "default": "observer" },
+  "pages": [
+    { "id": "story", "name": "Story", "text": "Dug **long** ago." },
+    { "id": "map", "name": "Map", "kind": "image", "src": "/assets/well.webp" }
+  ]
+}
+```
+
+A roll table has `results` (`text`, `weight` default 1, `drawn`), and
+`replacement: false` draws each result once until it is reset. A playlist
+has `mode` (`"sequence"`, `"shuffle"`, `"together"`), `volume`, and
+`tracks` (`id`, `name`, `src`, `volume`, `repeat`, `playing`); players are
+sent the playlists that are playing, and the GM's client moves on to the
+next track when one ends.
 
 ## Actors and tokens
 

@@ -2,7 +2,7 @@ import type { Doc } from '@vtt/core';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Session } from './session.ts';
-import { closeSession, openSession, welcome, type FakeWebSocket } from './session.fixtures.ts';
+import { closeSession, openSession, token, welcome, type FakeWebSocket } from './session.fixtures.ts';
 
 // Drawings, notes, templates, regions and sounds made with the shape tools,
 // and what players may do with the drawings and templates they make.
@@ -101,5 +101,32 @@ describe('shape tools in the session', () => {
     const doc = lastOps()?.ops?.[0]?.doc;
     expect(doc).toMatchObject({ id: 'note-1', type: 'note', x: 50, y: 50 });
     expect(doc?.author).toBeUndefined();
+  });
+
+  it("show the level the GM picks, or the one the player's token stands on", () => {
+    const levels = [
+      { id: 'ground', name: 'Ground', bottom: 0 },
+      { id: 'loft', name: 'Loft', bottom: 10 },
+    ];
+    const base = welcome([{ ...token('hero'), elevation: 12 }]) as Extract<ServerMessage, { t: 'welcome' }>;
+    ws.receive({ ...base, world: { ...base.world, levels } });
+    expect(session.level).toBe('loft');
+    ws.receive({ ...base, world: { ...base.world, levels }, you: { id: 'gm', name: 'GM', role: 'gm', color: '#fc0' } });
+    expect(session.level).toBeUndefined();
+    session.setViewLevel('ground');
+    expect(session.level).toBe('ground');
+    ws.receive({ ...base });
+    expect(session.level).toBeUndefined();
+  });
+
+  it('let the inspector edit only what this seat may', () => {
+    joinAs('player');
+    session.setMode('drawings');
+    session.setSelection(['main/drawings#gms']);
+    expect(session.canEditSelection()).toBe(false);
+    session.setSelection(['main/drawings#mine']);
+    expect(session.canEditSelection()).toBe(true);
+    session.editEach((doc) => ({ stroke: doc.id === 'mine' ? '#123456' : '#000000' }));
+    expect(lastOps()).toMatchObject({ ops: [{ op: 'update', id: 'mine', patch: { stroke: '#123456' } }] });
   });
 });

@@ -1,5 +1,6 @@
 import type { Drawing, Note, Point, Region, RegionBehavior, Sound, Template } from '@vtt/shared';
 import { z } from 'zod';
+import { foundryList } from './foundry-lists.ts';
 
 // The drawings, map notes, measured templates, ambient sounds and (v12)
 // regions of a Foundry scene, as ours. Foundry measures templates and sounds
@@ -66,12 +67,7 @@ const FoundryRegion = z.object({
   behaviors: z.array(z.object({ type: z.string(), system: z.record(z.string(), z.unknown()).catch({}) })).catch([]),
 });
 
-const items = <T extends z.ZodType>(item: T) =>
-  z
-    .array(z.unknown())
-    .optional()
-    .catch(undefined)
-    .transform((xs) => (xs ?? []).flatMap((x) => (item.safeParse(x).success ? [item.parse(x)] : [])));
+const items = foundryList;
 
 const FoundryPlaceables = z.object({
   drawings: items(FoundryDrawing),
