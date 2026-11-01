@@ -19,7 +19,15 @@ describe('classify', () => {
       coll: 'walls',
     });
     expect(classify('scenes/crossroads/tokens.json')).toMatchObject({ coll: 'tokens' });
-    expect(classify('scenes/crossroads/notes.json')).toBeNull();
+    expect(classify('scenes/crossroads/notes.json')).toEqual({
+      kind: 'collection',
+      scene: 'crossroads',
+      coll: 'notes',
+    });
+    expect(classify('scenes/crossroads/scribbles.json')).toBeNull();
+    expect(classify('journals/the-inn.json')).toEqual({ kind: 'entry', coll: 'journals', id: 'the-inn' });
+    expect(classify('tables/loot.json')).toEqual({ kind: 'entry', coll: 'tables', id: 'loot' });
+    expect(classify('playlists/tavern.json')).toEqual({ kind: 'entry', coll: 'playlists', id: 'tavern' });
     expect(classify('scenes/crossroads/walls.json.123.tmp')).toBeNull();
     expect(classify('.v1-backup/2026/world.json')).toBeNull();
     expect(classify('assets/map.png')).toBeNull();
@@ -199,6 +207,47 @@ describe('crossCheck', () => {
       'scenes/main/tokens.json: token "b": name: Invalid input: expected string, received undefined',
       'scenes/main/tokens.json: token "c": unknown player "ghost"',
       'actors/odd.json: unknown monster "nothing-like-it" in the 2014 rules',
+    ]);
+  });
+
+  it('reports notes on missing journal entries, teleports to missing scenes and unknown levels', () => {
+    const scene = {
+      scene: SceneSchema.parse({ levels: [{ id: 'ground', name: 'Ground', bottom: 0 }] }),
+      tiles: [],
+      walls: [{ id: 'w', a: [0, 0], b: [1, 0], level: 'attic' }],
+      lights: [],
+      tokens: [],
+      notes: [
+        { id: 'pin', x: 0, y: 0, entry: 'lost-diary' },
+        { id: 'inn', x: 0, y: 0, entry: 'the-inn' },
+      ],
+      regions: [
+        {
+          id: 'portal',
+          points: [
+            [0, 0],
+            [1, 0],
+            [0, 1],
+          ],
+          behaviors: [{ type: 'teleport', to: [0, 0], scene: 'mars' }],
+        },
+        {
+          id: 'stairs',
+          points: [
+            [0, 0],
+            [1, 0],
+            [0, 1],
+          ],
+          behaviors: [{ type: 'level', to: 'roof' }],
+        },
+      ],
+    } as GameState['scenes'] extends Map<string, infer S> ? S : never;
+    const journals = new Map([['the-inn', { id: 'the-inn', name: 'The inn', pages: [] }]]);
+    expect(crossCheck({ ...state([]), scenes: new Map([['main', scene]]), journals })).toEqual([
+      { file: 'scenes/main/walls.json', message: 'wall "w": unknown level "attic"' },
+      { file: 'scenes/main/notes.json', message: 'note "pin": unknown journal entry "lost-diary"' },
+      { file: 'scenes/main/regions.json', message: 'region "portal": unknown scene "mars"' },
+      { file: 'scenes/main/regions.json', message: 'region "stairs": unknown level "roof"' },
     ]);
   });
 });

@@ -170,9 +170,9 @@ export class Game {
   }
 
   connect(ws: WebSocket, player: Player): void {
-    const feed = new DocFeed(this.store.access);
     const scene = sceneOf(player, this.store);
     const visible = this.visibleTo(player, scene);
+    const feed = new DocFeed(this.store.access, () => client.scene);
     const client: Client = { ws, player, scene, start: '', chunks: new Set(), visible, feed };
     this.clients.add(client);
     this.welcome(client);

@@ -144,6 +144,11 @@ export function foundryScene(data: unknown, media: MediaLookup): ConvertedScene 
     tiles: [...background, ...tilesOf(s, lookupIn(media), skipped)],
     walls: wallsOf(s, skipped),
     lights: lightsOf(s, grid),
+    drawings: [],
+    notes: [],
+    templates: [],
+    regions: [],
+    sounds: [],
   };
   const tokens = s.tokens?.length ?? 0;
   if (tokens) skipped.push(`${plural(tokens, 'token')} (place the creatures from the Actors tab)`);

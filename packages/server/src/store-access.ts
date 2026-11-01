@@ -9,6 +9,9 @@ import { fromDoc } from './doc-sync.ts';
 /** What a stored document is, for deciding who may touch it. */
 export type OwnedDoc = Owned & { name?: unknown; hidden?: boolean; visibleTo?: string[] };
 
+/** Journal entries and roll tables: missing ownership means only the GM sees them. */
+const SIDEBAR = new Set(['journals', 'tables']);
+
 export interface DocAccess {
   get(coll: string, id: string): Doc | undefined;
   /** The document as ownership is decided on it: a token read together with its actor. */
@@ -30,6 +33,9 @@ export class StoreAccess implements DocAccess {
   }
 
   owned(coll: string, doc: Doc): OwnedDoc {
+    // Sidebar entries without ownership are the GM's alone.
+    if (SIDEBAR.has(coll))
+      return { ...doc, ownership: (doc.ownership as OwnedDoc['ownership']) ?? { default: 'none' } };
     if (!coll.endsWith('/tokens')) return doc as OwnedDoc;
     const entry = fromDoc<TokenEntry>(doc);
     return resolveToken(entry, entry.actor ? this.actors.get(entry.actor) : undefined).token ?? entry;

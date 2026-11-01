@@ -1,5 +1,5 @@
 import { type Change, type Doc, docPatch, type Op, type Patch } from '@vtt/core';
-import { canControl, canEdit, canObserve, canSee, isGm, lockedPatchKeys, type Player } from '@vtt/shared';
+import { canControl, canEdit, isGm, lockedPatchKeys, type Player, sceneCollOf } from '@vtt/shared';
 import { sameJson } from '@vtt/system-dnd5e';
 import type { DocAccess, OwnedDoc } from './store-access.ts';
 import { Refusal } from './table.ts';
@@ -45,7 +45,25 @@ function checkUpdate(player: Player, access: DocAccess, op: Extract<Op, { op: 'u
   if (!may(owned, player)) throw new Refusal(`You can't edit ${nameOf(owned, op.id)}`);
 }
 
+/** Drawings and templates: a player adds their own (`author`), and changes or removes only those. */
+const AUTHORED = new Set(['drawings', 'templates']);
+const authored = (coll: string) => AUTHORED.has(sceneCollOf(coll)?.name ?? '');
+
+/** True when the op is on a player's own drawing or template and allowed; throws when it isn't. */
+function checkAuthored(player: Player, access: DocAccess, op: Op): boolean {
+  if (!authored(op.coll) || player.role === 'observer') return false;
+  if (op.op === 'create') return op.doc.author === player.id;
+  const doc = access.get(op.coll, op.id);
+  if (!doc) return true; // The store reports the missing document.
+  if (doc.author !== player.id) throw new Refusal(`You can't edit ${nameOf(doc as OwnedDoc, op.id)}`);
+  if (op.op === 'update' && 'author' in op.patch && op.patch.author !== player.id) {
+    throw new Refusal('Only the GM can change author');
+  }
+  return true;
+}
+
 function checkOp(player: Player, access: DocAccess, op: Op): void {
+  if (checkAuthored(player, access, op)) return;
   if (op.op === 'update') return checkUpdate(player, access, op);
   if (op.op === 'create') throw new Refusal(`Only the GM can add ${nameOf(op.doc as OwnedDoc, op.doc.id)}`);
   const doc = access.get(op.coll, op.id);
@@ -66,17 +84,4 @@ export function undoOps(access: DocAccess, changes: readonly Change[]): Op[] {
     if (!before) return [{ op: 'delete', coll, id }];
     return [{ op: 'update', coll, id, patch: docPatch(now, before) }];
   });
-}
-
-/** Whether a player is sent a document: only those they see and may read in full. The GM gets all. */
-export function sendsDoc(player: Player, access: DocAccess, coll: string, doc: Doc): boolean {
-  if (isGm(player)) return true;
-  if (!isOwnable(coll)) return false;
-  const owned = access.owned(coll, doc);
-  return canSee(owned, player) && canObserve(owned, player);
-}
-
-/** Collections whose documents carry ownership: actors and tokens, for now. */
-function isOwnable(coll: string): boolean {
-  return coll === 'actors' || coll.endsWith('/tokens');
 }

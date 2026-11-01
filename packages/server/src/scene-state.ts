@@ -11,6 +11,7 @@ import {
   type Point,
   type Rect,
   type Scene,
+  type SceneCollection,
   tokenLights,
   type Wall,
   type World,
@@ -51,7 +52,7 @@ export class SceneState {
     this.world = worldOf(fromDoc<Game>(docs.all('game')[0]!), this.scene);
   }
 
-  coll(name: MapCollection | 'tokens'): string {
+  coll(name: SceneCollection): string {
     return `${this.id}/${name}`;
   }
 
