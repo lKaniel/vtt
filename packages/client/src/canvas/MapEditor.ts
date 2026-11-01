@@ -18,6 +18,7 @@ import { previewDoc, previewTiles } from '../editor/preview.ts';
 import { keyOf, refOf, type Mods } from '../editor/selection.ts';
 import { TileItems } from '../editor/tile-items.ts';
 import type { Session } from '../session.ts';
+import { moveSelectionTo } from '../map-clicks.ts';
 import { dragsFreely } from '../walking.ts';
 import { DrawTools } from './DrawTools.ts';
 import { drawHandles, drawLight, drawMarquee, drawOutline, drawWall, type DrawCtx } from './editor-draw.ts';
@@ -226,6 +227,8 @@ export class MapEditor {
       slop: () => SLOP_PX * this.ctx.px,
       commitMove: (keys, delta, free) => s.moveSelection(keys, delta, free),
       commitHandle: (key, handle, to, free) => s.reshape(key, handle, to, free),
+      // In the tokens mode a plain click on the ground walks the selection there.
+      clickEmpty: (at, mods) => s.mode === 'tokens' && !mods.shift && !mods.ctrl && moveSelectionTo(s, at),
     };
   }
 

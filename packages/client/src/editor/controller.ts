@@ -22,6 +22,8 @@ export interface EditorHost {
   draggable?(key: string): boolean;
   /** A double click on `key` (a group): what inside it, under `at`, to select instead. */
   enter?(key: string, at: Point): string | undefined;
+  /** A click on empty space: true when the host used it (the tokens mode walks there) and the selection stays. */
+  clickEmpty?(at: Point, mods: Mods): boolean;
   /** Milliseconds, for telling double clicks. */
   now?(): number;
 }
@@ -37,7 +39,7 @@ export type Preview =
 
 type Gesture =
   | { kind: 'press'; start: Point; mods: Mods; key?: string; grip?: { key: string; handle: string } }
-  | { kind: 'marquee'; start: Point; now: Point; alt: boolean }
+  | { kind: 'marquee'; start: Point; now: Point; mods: Mods }
   | { kind: 'move'; start: Point; keys: readonly string[]; delta: Point; free: boolean }
   | { kind: 'handle'; key: string; handle: string; to: Point; free: boolean };
 
@@ -78,7 +80,9 @@ export class EditorController {
     if (!g) return;
     switch (g.kind) {
       case 'press':
-        if (!g.grip) this.click(g.key, at, g.mods);
+        if (g.grip) return;
+        if (g.key) this.click(g.key, at, g.mods);
+        else if (!this.host.clickEmpty?.(at, g.mods)) this.click(undefined, at, g.mods);
         return;
       case 'marquee':
         return this.finishMarquee(g, mods);
@@ -119,7 +123,7 @@ export class EditorController {
   private startDrag(press: Extract<Gesture, { kind: 'press' }>, at: Point, mods: Mods): Gesture {
     const free = mods.shift;
     if (press.grip) return { kind: 'handle', ...press.grip, to: at, free };
-    if (!this.grabs(press.key)) return { kind: 'marquee', start: press.start, now: at, alt: press.mods.alt };
+    if (!this.grabs(press.key)) return { kind: 'marquee', start: press.start, now: at, mods: press.mods };
     // Figma's rule: dragging something not selected selects it (alone) and drags it.
     let keys: readonly string[] = this.host.selection();
     if (!keys.includes(press.key)) {
@@ -129,9 +133,14 @@ export class EditorController {
     return { kind: 'move', start: press.start, keys, delta: [at[0] - press.start[0], at[1] - press.start[1]], free };
   }
 
+  /**
+   * Shift and ctrl count as held when the marquee started: the tokens mode
+   * passes shift on every move and release for a free drag, which must not
+   * turn an empty marquee into "add nothing" instead of "select nothing".
+   */
   private finishMarquee(g: Extract<Gesture, { kind: 'marquee' }>, mods: Mods): void {
-    const mode: MarqueeMode = g.alt || mods.alt ? 'contain' : 'touch';
+    const mode: MarqueeMode = g.mods.alt || mods.alt ? 'contain' : 'touch';
     const hits = this.host.inRect(rectBetween(g.start, g.now), mode);
-    this.host.setSelection(marqueeSelect(this.host.selection(), hits, mods));
+    this.host.setSelection(marqueeSelect(this.host.selection(), hits, g.mods));
   }
 }
