@@ -1,6 +1,7 @@
 import { RevisionError, type Change } from '@vtt/core';
 import { isGm, type HistoryState, type Player } from '@vtt/shared';
 import type { ClientMessage } from './client-messages.ts';
+import type { FogChange } from './fog-store.ts';
 import type { GameStore } from './game-store.ts';
 import { BY_FILES } from './store-history.ts';
 import { checkOps, undoOps } from './op-permissions.ts';
@@ -18,6 +19,8 @@ interface Step {
   label: string;
   action: boolean;
   changes: Change[];
+  /** The GM's fog edits (fog isn't a document, see fog-store.ts). */
+  fog: FogChange[];
   /** Chat cards the step posted, marked "undone" while it is. */
   cards: string[];
 }
@@ -35,6 +38,7 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   deleteActor: { label: 'actor delete' },
   mapEdit: { label: 'map edit' },
   darkness: { label: 'time of day' },
+  fog: { label: 'fog edit' },
   hotbar: { label: 'action bar change' },
   move: { label: 'move', action: true },
   door: { label: 'door', action: true },
@@ -76,23 +80,27 @@ export class History {
       return false;
     }
     let error: Error | undefined;
+    let fog: FogChange[] = [];
     this.cards = [];
     const changes = this.store.record(player.id, () => {
-      try {
-        fn();
-      } catch (e) {
-        error = e as Error;
-      }
+      fog = this.store.fog.record(() => {
+        try {
+          fn();
+        } catch (e) {
+          error = e as Error;
+        }
+      });
     });
     const cards = this.cards;
     this.cards = undefined;
     // A message refused half way still keeps what it did before that.
-    if (changes.length) {
+    const changed = changes.length > 0 || fog.length > 0;
+    if (changed) {
       const label = msg.t === 'ops' ? (msg.label ?? kind.label) : kind.label;
-      this.push(player.id, { seq: ++this.seq, label, action: !!kind.action, changes, cards }, true);
+      this.push(player.id, { seq: ++this.seq, label, action: !!kind.action, changes, fog, cards }, true);
     }
     if (error) throw error;
-    return changes.length > 0;
+    return changed;
   }
 
   /** A chat card posted by the step being recorded. */
@@ -177,6 +185,7 @@ export class History {
   /** Puts back what a step changed, as a step of its own (whose changes are the way back). */
   private revert(player: Player, step: Step, verb: 'undo' | 'redo'): Change[] {
     this.permit(player, step, verb);
+    if (step.fog.length) requireGm(player);
     let changes: Change[];
     try {
       changes = this.store.record(player.id, () => this.store.revert(step.changes));
@@ -185,6 +194,7 @@ export class History {
       throw new Refusal(`Can't ${verb} the ${step.label}: ${this.conflict(step, e)}`);
     }
     this.rebase(step.changes);
+    this.store.fog.revert(step.fog, verb === 'redo');
     return changes;
   }
 

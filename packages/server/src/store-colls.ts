@@ -47,7 +47,8 @@ export function scopeOf(kind: FileKind): { coll: string; only?: string } | undef
   return { coll: `${kind.scene}/${kind.coll}` };
 }
 
-/** True when two table settings differ in nothing but the time of day. */
-export function onlyDarknessChanged(a: World, b: World): boolean {
-  return JSON.stringify({ ...a, darkness: 0 }) === JSON.stringify({ ...b, darkness: 0 });
+/** True when two scenes' settings differ in nothing but the time of day (the game's own settings aside). */
+export function sameScene(a: World, b: World): boolean {
+  const scene = ({ players: _p, name: _n, rules: _r, darkness: _d, ...rest }: World) => JSON.stringify(rest);
+  return scene(a) === scene(b);
 }

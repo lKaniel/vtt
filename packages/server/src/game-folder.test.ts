@@ -11,6 +11,13 @@ describe('checkFolder', () => {
     expect(state?.scenes.get('main')?.walls).toHaveLength(6);
   });
 
+  it('leaves the explored fog the server keeps beside a scene alone', async () => {
+    const dir = await makeWorld();
+    await mkdir(join(dir, 'scenes/main/fog'));
+    await writeFile(join(dir, 'scenes/main/fog/ana.json'), '{"cell":25,"blocks":{}}');
+    expect((await checkFolder(dir)).issues).toEqual([]);
+  });
+
   it('reports broken files, strays and scenes without settings', async () => {
     const dir = await makeWorld();
     await writeFile(join(dir, 'scenes/main/walls.json'), '[{"id":"x"}]');

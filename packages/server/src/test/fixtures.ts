@@ -46,6 +46,27 @@ export function makeWorld(): Promise<string> {
   });
 }
 
+/**
+ * The test game with a second scene, "cellar": a lit room far from the
+ * origin, with Ana's scout and a rat in it.
+ */
+export async function makeTwoScenes(): Promise<string> {
+  const dir = await makeWorld();
+  const extra = {
+    'scenes/cellar/scene.json': { name: 'Cellar', darkness: 0 },
+    'scenes/cellar/walls.json': [{ id: 'cw', a: [0, 0], b: [0, 1000] }],
+    'scenes/cellar/tokens.json': [
+      { id: 'scout', name: 'Scout', x: 150, y: 150, controllers: ['ana'] },
+      { id: 'rat', name: 'Rat', x: 550, y: 150 },
+    ],
+  };
+  for (const [rel, data] of Object.entries(extra)) {
+    await mkdir(dirname(join(dir, rel)), { recursive: true });
+    await writeFile(join(dir, rel), JSON.stringify(data));
+  }
+  return dir;
+}
+
 /** The same table in the old world layout (chunks/, tokens/), with an actor and a fight. */
 export function makeLegacyWorld(): Promise<string> {
   return folder({

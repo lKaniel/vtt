@@ -2,6 +2,7 @@ import type { Doc, Op } from '@vtt/core';
 import type { Combat } from './combat.ts';
 import type { Roll } from './dice.ts';
 import type { Actor, Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
+import type { FogEdit } from './fog-edit.ts';
 import type { MapEdit } from './map-edit.ts';
 import type { Area } from './spell-schema.ts';
 import type { Ability, DamageType, Edition } from './stats-schema.ts';
@@ -173,6 +174,14 @@ export type ClientMessage =
    * cut, delete). `txn` comes back on the resulting `docs` or a `reject`.
    */
   | { t: 'ops'; txn: string; label?: string; ops: Op[] }
+  /** GM: look at (and edit) another scene; the players stay where they are. */
+  | { t: 'viewScene'; scene: string }
+  /** GM: the game moves to this scene, and everyone with it. */
+  | { t: 'activateScene'; scene: string }
+  /** GM: put one seat on a scene of its own; no scene sends it back to the game's. */
+  | { t: 'sendPlayer'; player: string; scene?: string }
+  /** GM: reveal, hide or reset explored fog on the scene you are on (see fog-edit.ts). */
+  | { t: 'fog'; edit: FogEdit }
   /** Undo your latest edit (the GM: or the latest game action); `card` undoes the action that chat card reports. */
   | { t: 'undo'; card?: string }
   | { t: 'redo' };
@@ -185,8 +194,11 @@ export type ServerMessage =
       tokens: TokenView[];
       chat: ChatMessage[];
       combat: Combat | null;
-      /** The scene everyone is on. */
+      /** The scene you are on, and its name. */
       scene: string;
+      sceneName?: string;
+      /** The scene the game is on (where the party plays unless the GM sent someone elsewhere). */
+      active: string;
       /** GM only: everyone at the table and the Actors list. */
       players?: Player[];
       actors?: Actor[];
@@ -195,6 +207,12 @@ export type ServerMessage =
       history: HistoryState;
     }
   | { t: 'chunk'; key: string; chunk: Chunk }
+  /**
+   * Explored fog of war on your scene: a player gets their own, the GM every
+   * player's. `blocks` maps a block key to its bits (base64, "" for an empty
+   * block, see fog.ts); `full` means forget the blocks not listed.
+   */
+  | { t: 'fog'; player: string; cell: number; blocks: Record<string, string>; full?: boolean }
   | { t: 'token'; token: TokenView }
   | { t: 'tokenGone'; id: string }
   | { t: 'moved'; id: string; path: Point[] }

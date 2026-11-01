@@ -1,0 +1,61 @@
+import type { Player } from '@vtt/shared';
+import type { ClientMessage } from './client-messages.ts';
+import type { GameStore } from './game-store.ts';
+import { Refusal, requireGm } from './table.ts';
+
+// Moving people between scenes. Each seat is on the game's scene unless its
+// `scene` says otherwise: the GM looking at a scene to prepare it, or a
+// player the GM sent elsewhere (a split party). Activating a scene moves the
+// game there and brings everyone along.
+
+/** The scene a seat is on. */
+export function sceneOf(player: Player, store: GameStore): string {
+  return player.scene && store.hasScene(player.scene) ? player.scene : store.activeScene;
+}
+
+export class SceneActions {
+  constructor(private store: GameStore) {}
+
+  /** Runs a scene message; others are left alone. */
+  dispatch(player: Player, msg: ClientMessage): void {
+    if (msg.t === 'viewScene') this.view(player, msg.scene);
+    else if (msg.t === 'activateScene') this.activate(player, msg.scene);
+    else if (msg.t === 'sendPlayer') this.send(player, msg.player, msg.scene);
+  }
+
+  /** GM: look at another scene; the players stay where they are. */
+  view(player: Player, scene: string): void {
+    requireGm(player);
+    this.place(player.id, this.existing(scene));
+  }
+
+  /** GM: the game moves to `scene`, and every seat with it. */
+  activate(player: Player, scene: string): void {
+    requireGm(player);
+    const world = this.store.world;
+    const players = world.players.map(({ scene: _gone, ...p }) => p);
+    this.store.setGame({ scene: this.existing(scene), players });
+  }
+
+  /** GM: put one seat on a scene of its own, or (no scene) back on the game's. */
+  send(player: Player, who: string, scene?: string): void {
+    requireGm(player);
+    if (!this.store.world.players.some((p) => p.id === who)) throw new Refusal('No such player');
+    this.place(who, scene === undefined ? this.store.activeScene : this.existing(scene));
+  }
+
+  private existing(scene: string): string {
+    if (!this.store.hasScene(scene)) throw new Refusal(`There is no scene "${scene}"`);
+    return scene;
+  }
+
+  private place(who: string, scene: string): void {
+    const away = scene === this.store.activeScene ? undefined : scene;
+    const players = this.store.world.players.map((p) => {
+      if (p.id !== who) return p;
+      const { scene: _old, ...seat } = p;
+      return away ? { ...seat, scene: away } : seat;
+    });
+    this.store.setGame({ players });
+  }
+}
