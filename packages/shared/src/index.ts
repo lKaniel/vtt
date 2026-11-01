@@ -31,3 +31,4 @@ export * from './playlists.ts';
 export * from './box-handles.ts';
 export * from './item-shapes.ts';
 export * from './clock.ts';
+export * from './walking.ts';

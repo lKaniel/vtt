@@ -53,7 +53,7 @@ const onLevel = { level: id.optional() };
 
 /** A scene's grid, camera start and lighting (scenes/<id>/scene.json, without its name). */
 export const SceneSettingsSchema = z.object({
-  /** Pixels per 5 ft square. */
+  /** Pixels per 5 ft: the side of a square when the scene has a grid. */
   gridSize: z.number().int().positive().default(100),
   /** Side of a streaming chunk, in pixels. Must be a multiple of gridSize. */
   chunkSize: z.number().int().positive().default(2000),
@@ -65,7 +65,11 @@ export const SceneSettingsSchema = z.object({
   vision: z.boolean().default(true),
   /** With fog of war, players keep seeing (dimmed) where they have been. Default true. */
   exploration: z.boolean().optional(),
-  /** "square" (the default) or "none": no grid lines drawn, tokens still stand on squares. */
+  /**
+   * "none" (the default): no grid, tokens walk anywhere and distances are
+   * plain feet. "square": grid lines, tokens walk square to square, every
+   * square (diagonals too) 5 ft.
+   */
   grid: z.enum(['square', 'none']).optional(),
   /** Grid line colour (default black) and opacity (default 0.16). */
   gridColor: z.string().optional(),

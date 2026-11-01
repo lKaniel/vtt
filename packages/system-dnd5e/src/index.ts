@@ -10,6 +10,7 @@ export * from './classes.ts';
 export * from './attack.ts';
 export * from './combat.ts';
 export * from './token-view.ts';
+export * from './in-the-way.ts';
 export * from './effects.ts';
 export * from './areas.ts';
 export * from './spells.ts';
