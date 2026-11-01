@@ -3,15 +3,15 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
-import { WorldStore } from './world-store.ts';
+import { GameStore } from './game-store.ts';
 
 let dir: string;
-let store: WorldStore;
+let store: GameStore;
 let game: Game;
 
 beforeEach(async () => {
   dir = await makeWorld();
-  store = new WorldStore(dir);
+  store = new GameStore(dir);
   await store.load();
   game = new Game(store);
 });
@@ -39,8 +39,7 @@ describe('the GM editing the map', () => {
     expect(wall).toMatchObject({ a: [1000, 0], b: [1000, 300] });
     expect(gm.take('chunk')).toHaveLength(1);
     await store.flush();
-    const saved = (await readJson('chunks/0_0.json')) as { walls: unknown[] };
-    expect(saved.walls).toContainEqual(wall);
+    expect(await readJson('scenes/main/walls.json')).toContainEqual(wall);
   });
 
   it('places and erases a light', () => {
@@ -73,6 +72,6 @@ describe('the time of day', () => {
     expect(ana.take('lighting')).toEqual([{ t: 'lighting', darkness: 0.8 }]);
     expect(ana.readyState).toBe(1);
     await store.flush();
-    expect(await readJson('world.json')).toMatchObject({ darkness: 0.8 });
+    expect(await readJson('scenes/main/scene.json')).toMatchObject({ darkness: 0.8 });
   });
 });

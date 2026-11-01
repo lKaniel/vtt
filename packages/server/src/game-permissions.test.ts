@@ -3,20 +3,20 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
-import { WorldStore } from './world-store.ts';
+import { GameStore } from './game-store.ts';
 
 let dir: string;
-let store: WorldStore;
+let store: GameStore;
 let game: Game;
 
 beforeEach(async () => {
   dir = await makeWorld();
   // Ana is trusted for these tests; Cy only watches.
-  const world = JSON.parse(await readFile(join(dir, 'world.json'), 'utf8')) as { players: { role: string }[] };
-  world.players[1]!.role = 'trusted';
-  world.players.push({ id: 'cy', name: 'Cy', role: 'observer' } as never);
-  await writeFile(join(dir, 'world.json'), JSON.stringify(world));
-  store = new WorldStore(dir);
+  const seats = JSON.parse(await readFile(join(dir, 'game.json'), 'utf8')) as { players: { role: string }[] };
+  seats.players[1]!.role = 'trusted';
+  seats.players.push({ id: 'cy', name: 'Cy', role: 'observer' } as never);
+  await writeFile(join(dir, 'game.json'), JSON.stringify(seats));
+  store = new GameStore(dir);
   await store.load();
   game = new Game(store);
 });
@@ -93,7 +93,7 @@ describe('the GM granting access', () => {
     expect(welcome[0]!.you.role).toBe('trusted');
     expect(bo.readyState).toBe(1);
     await store.flush();
-    const saved = JSON.parse(await readFile(join(dir, 'world.json'), 'utf8')) as {
+    const saved = JSON.parse(await readFile(join(dir, 'game.json'), 'utf8')) as {
       players: { id: string; role: string }[];
     };
     expect(saved.players.find((p) => p.id === 'bo')!.role).toBe('trusted');

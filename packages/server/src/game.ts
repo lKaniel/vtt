@@ -28,7 +28,7 @@ import { SpellActions } from './spell-actions.ts';
 import { Reactions } from './reactions.ts';
 import { Zones } from './zones.ts';
 import { Refusal, Table } from './table.ts';
-import type { WorldStore } from './world-store.ts';
+import type { GameStore } from './game-store.ts';
 
 interface Client {
   ws: WebSocket;
@@ -64,7 +64,7 @@ export class Game {
   private map: MapActions;
 
   constructor(
-    private store: WorldStore,
+    private store: GameStore,
     { rng = Math.random }: { rng?: Rng } = {},
   ) {
     const table = new Table(store, rng, (text) => this.narrate({ text }));

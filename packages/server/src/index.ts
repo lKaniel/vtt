@@ -6,14 +6,14 @@ import { accountApi, upgradePlayer } from './api.ts';
 import { CharacterStore } from './characters.ts';
 import { Game } from './game.ts';
 import { httpHandler } from './http.ts';
-import { dataDirFor, repoRoot, worldDirFromArgs } from './paths.ts';
-import { WorldStore } from './world-store.ts';
+import { dataDirFor, repoRoot, gameDirFromArgs } from './paths.ts';
+import { GameStore } from './game-store.ts';
 
 const PORT = Number(process.env.PORT ?? 3001);
-const worldDir = worldDirFromArgs();
+const worldDir = gameDirFromArgs();
 const clientDist = resolve(repoRoot, 'packages/client/dist');
 
-const store = new WorldStore(worldDir);
+const store = new GameStore(worldDir);
 await store.load();
 store.watch();
 const game = new Game(store);

@@ -1,9 +1,8 @@
 {
+  "id": "example",
   "name": "Example: the crossroads",
-  "gridSize": 100,
-  "chunkSize": 2000,
-  "start": [1000, 900],
-  "darkness": 0.85,
+  "rules": "2014",
+  "scene": "crossroads",
   "players": [
     {
       "id": "gm",
@@ -23,6 +22,5 @@
       "role": "player",
       "color": "#5ac08a"
     }
-  ],
-  "rules": "2014"
+  ]
 }

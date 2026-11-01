@@ -13,7 +13,7 @@ import {
 import { z } from 'zod';
 import { AccountError, type Account, type AccountStore } from './accounts.ts';
 import type { CharacterStore } from './characters.ts';
-import type { WorldStore } from './world-store.ts';
+import type { GameStore } from './game-store.ts';
 
 // The account side of the server, as JSON over HTTP: signing up and in, the
 // player's characters, and taking a seat at the world with one of them. The
@@ -25,7 +25,7 @@ const MAX_BODY = 256 * 1024;
 export interface ApiDeps {
   accounts: AccountStore;
   characters: CharacterStore;
-  world: WorldStore;
+  world: GameStore;
 }
 
 interface Call {

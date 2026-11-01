@@ -1,5 +1,6 @@
 export * from './schema.ts';
 export * from './chunks.ts';
+export * from './game-schema.ts';
 export * from './geometry.ts';
 export * from './pathfinding.ts';
 export * from './dice.ts';

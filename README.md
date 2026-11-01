@@ -22,7 +22,7 @@ on, shared live between players.
 - **Dice and chat.** `/r 1d20+5`, `/r 2d20kh1+4` (advantage), `/gmr` for a
   roll only the GM sees, plus quick dice buttons.
 - **Live file editing.** Edit any file in `world/` and every client updates
-  within a moment. `pnpm check-world` validates the folder.
+  within a moment. `pnpm check-game` validates the folder.
 
 ### Combat (phase 3)
 
@@ -51,7 +51,7 @@ on, shared live between players.
 - **Moving.** Click where to go, drag your token there, or step with the
   arrow keys.
 - **Both editions.** Worlds play 2014 rules by default (`"rules"` in
-  `world.json`), and any character can opt into 2024 rules with
+  `game.json`), and any character can opt into 2024 rules with
   `"stats": { "rules": "2024" }`. Monsters come from SRD 5.1 or 5.2 to match;
   weapons, armor and gear are shared. All in `packages/shared/content/srd/`.
 
@@ -68,12 +68,12 @@ Open http://localhost:5173. The main menu offers:
 
 - **Create an account / Sign in.** Your account keeps your characters. The
   first account made on a server is its admin and sits at worlds as the GM;
-  everyone after joins as a player (change a role in `world.json`).
+  everyone after joins as a player (change a role in `game.json`).
 - **Your roster.** Create a character, edit it, level it up, or delete it.
   _Enter the world_ seats you and puts the chosen character on the map, at
   the world's `start`. _Run the game as GM_ joins without a character.
 - **Take a seat without an account.** The world's fixed seats from
-  `world.json`, handy for a quick test: open a second browser window as
+  `game.json`, handy for a quick test: open a second browser window as
   another player to see sync and per-player views.
 
 ### Accounts and characters
@@ -101,7 +101,10 @@ pnpm build
 pnpm start        # http://localhost:3001
 ```
 
-Use another world folder with `VTT_WORLD=/path/to/world pnpm start`.
+Use another game folder with `VTT_GAME=/path/to/game pnpm start` (`VTT_WORLD`
+still works). A folder in the old world layout (`world.json`, `chunks/`,
+`tokens/`) is moved to the game layout on start, with the old files kept in
+`.v1-backup/`; see [docs/game-format.md](docs/game-format.md).
 
 ## Layout
 
@@ -110,7 +113,7 @@ Use another world folder with `VTT_WORLD=/path/to/world pnpm start`.
 | `packages/shared` | World schema, geometry, pathfinding, dice, permissions, network protocol. Used by both sides.            |
 | `packages/server` | Node server: loads and watches the world folder, runs the game, streams per-player views over WebSocket. |
 | `packages/client` | Vite + React UI with a PixiJS map.                                                                       |
-| `world/`          | The example world. See [docs/world-format.md](docs/world-format.md).                                     |
+| `world/`          | The example game. See [docs/game-format.md](docs/game-format.md).                                        |
 
 ## Checks
 
@@ -121,7 +124,7 @@ pnpm lint          # ESLint: strict TypeScript, SonarJS, nesting and complexity 
 pnpm format        # Prettier (format:check only reports)
 pnpm typecheck
 pnpm quality       # coverage, then fallow: dead code, duplication, complexity, untested risk
-pnpm check-world   # validate world files
+pnpm check-game    # validate game files
 ```
 
 Development is red-green: write a failing test, watch it fail, then make it

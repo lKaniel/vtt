@@ -6,7 +6,9 @@
     "dev": "pnpm -r --parallel --filter ./packages/server --filter ./packages/client dev",
     "build": "pnpm --filter @vtt/client build",
     "start": "pnpm --filter @vtt/server start",
-    "check-world": "pnpm --filter @vtt/server check-world",
+    "check-game": "pnpm --filter @vtt/server check-game",
+    "check-world": "pnpm check-game",
+    "migrate-world": "pnpm --filter @vtt/server migrate-world",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
     "lint": "eslint .",
@@ -14,7 +16,7 @@
     "format:check": "prettier --check .",
     "coverage": "vitest run --coverage",
     "quality": "pnpm coverage && fallow",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm quality && pnpm check-world"
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm quality && pnpm check-game"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

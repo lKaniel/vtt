@@ -15,6 +15,17 @@ describe('applyMapEdit', () => {
     expect(out[0]!.chunk.walls.map((w) => w.id)).toEqual(['wall-1', 'wall-2']);
   });
 
+  it('picks an id no chunk of the scene uses yet', () => {
+    const chunks = new Map([
+      ['0_0', { ...empty(), walls: [{ id: 'wall-1', a: [0, 0], b: [100, 0] }] as Chunk['walls'] }],
+      ['1_0', { ...empty(), lights: [{ id: 'light-1', x: 2050, y: 50, bright: 5, dim: 0 }] }],
+    ]);
+    const wall = applyMapEdit(chunks, SIZE, { op: 'addWall', wall: { a: [2100, 0], b: [2200, 0] } });
+    expect(wall[0]!.chunk.walls.map((w) => w.id)).toEqual(['wall-2']);
+    const light = applyMapEdit(chunks, SIZE, { op: 'addLight', light: { x: 50, y: 50, bright: 5, dim: 0 } });
+    expect(light[0]!.chunk.lights.map((l) => l.id)).toEqual(['light-2']);
+  });
+
   it('creates the chunk when nothing was there yet, and names doors and windows', () => {
     const out = applyMapEdit(new Map(), SIZE, { op: 'addWall', wall: { a: [-200, 0], b: [-100, 0], door: 'closed' } });
     expect(out[0]!.key).toBe('-1_0');

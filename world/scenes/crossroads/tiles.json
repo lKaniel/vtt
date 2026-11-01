@@ -1,0 +1,132 @@
+[
+  {
+    "id": "grass",
+    "kind": "rect",
+    "x": -2000,
+    "y": 0,
+    "w": 2000,
+    "h": 2000,
+    "color": "#6f8f4e",
+    "texture": "grass"
+  },
+  {
+    "id": "road",
+    "kind": "rect",
+    "x": -2000,
+    "y": 900,
+    "w": 2000,
+    "h": 200,
+    "color": "#a08a64",
+    "texture": "dirt"
+  },
+  {
+    "id": "grass-2",
+    "kind": "rect",
+    "x": 0,
+    "y": 0,
+    "w": 2000,
+    "h": 2000,
+    "color": "#6f8f4e",
+    "texture": "grass"
+  },
+  {
+    "id": "road-2",
+    "kind": "rect",
+    "x": 0,
+    "y": 900,
+    "w": 2000,
+    "h": 200,
+    "color": "#a08a64",
+    "texture": "dirt"
+  },
+  {
+    "id": "tavern-floor",
+    "kind": "rect",
+    "x": 400,
+    "y": 200,
+    "w": 800,
+    "h": 600,
+    "color": "#9a7048",
+    "texture": "wood"
+  },
+  {
+    "id": "cellar-floor",
+    "kind": "rect",
+    "x": 900,
+    "y": 200,
+    "w": 300,
+    "h": 600,
+    "color": "#7a6a58",
+    "texture": "stone"
+  },
+  {
+    "id": "grass-3",
+    "kind": "rect",
+    "x": 2000,
+    "y": 0,
+    "w": 2000,
+    "h": 2000,
+    "color": "#6f8f4e",
+    "texture": "grass"
+  },
+  {
+    "id": "road-3",
+    "kind": "rect",
+    "x": 2000,
+    "y": 900,
+    "w": 2000,
+    "h": 200,
+    "color": "#a08a64",
+    "texture": "dirt"
+  },
+  {
+    "id": "ruin-floor",
+    "kind": "rect",
+    "x": 2600,
+    "y": 1300,
+    "w": 800,
+    "h": 600,
+    "color": "#8a8478",
+    "texture": "cobble"
+  },
+  {
+    "id": "forest",
+    "kind": "rect",
+    "x": 0,
+    "y": 2000,
+    "w": 2000,
+    "h": 2000,
+    "color": "#4c6a38",
+    "texture": "grass"
+  },
+  {
+    "id": "pond",
+    "kind": "rect",
+    "x": 600,
+    "y": 2500,
+    "w": 600,
+    "h": 400,
+    "color": "#4a7a94",
+    "texture": "water"
+  },
+  {
+    "id": "clearing",
+    "kind": "rect",
+    "x": 1300,
+    "y": 2300,
+    "w": 500,
+    "h": 500,
+    "color": "#7a9a54",
+    "texture": "grass"
+  },
+  {
+    "id": "forest-2",
+    "kind": "rect",
+    "x": 2000,
+    "y": 2000,
+    "w": 2000,
+    "h": 2000,
+    "color": "#4c6a38",
+    "texture": "grass"
+  }
+]

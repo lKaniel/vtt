@@ -1,17 +1,15 @@
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { FakeSocket, makeWorld } from './test/fixtures.ts';
-import { WorldStore } from './world-store.ts';
+import { FakeSocket, makeWorld, savedToken } from './test/fixtures.ts';
+import { GameStore } from './game-store.ts';
 
 let dir: string;
-let store: WorldStore;
+let store: GameStore;
 let game: Game;
 
 beforeEach(async () => {
   dir = await makeWorld();
-  store = new WorldStore(dir);
+  store = new GameStore(dir);
   await store.load();
   game = new Game(store);
 });
@@ -50,7 +48,7 @@ describe('moving', () => {
     const [moved] = ana.take('moved');
     expect(moved!.path.at(-1)).toEqual([50, 50]);
     await store.flush();
-    expect(JSON.parse(await readFile(join(dir, 'tokens/hero.json'), 'utf8'))).toMatchObject({ x: 50, y: 50 });
+    expect(await savedToken(dir, 'hero')).toMatchObject({ x: 50, y: 50 });
   });
 
   it('refuses tokens you do not control or cannot reach', () => {

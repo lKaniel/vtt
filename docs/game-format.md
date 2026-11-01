@@ -1,42 +1,50 @@
-# World format
+# Game format
 
-A world is a folder of JSON files. The server loads it on start, watches it,
+A game is a folder of JSON files. The server loads it on start, watches it,
 and writes game changes (token moves, doors) back to it. Editing a file by
 hand or with Claude updates every connected client live.
 
 ```
-world/
-  world.json          settings and players
-  chunks/<cx>_<cy>.json   map content, one file per chunk
-  tokens/<id>.json    one file per token
-  actors/<id>.json    the GM's Actors list: creatures ready to be placed
-  combat.json         the fight in progress, if any
-  assets/             images referenced by tiles and tokens
+world/                      the example game (another folder: VTT_GAME)
+  game.json                 the game: name, rules, active scene, players
+  scenes/<scene>/
+    scene.json              grid, camera start, time of day, vision
+    tiles.json              the scene's tiles, as one list
+    walls.json              walls, doors and windows
+    lights.json             placed lights
+    tokens.json             tokens on the scene
+  actors/<id>.json          the GM's Actors list: creatures ready to be placed
+  combat.json               the fight in progress, if any
+  assets/                   images referenced by tiles and tokens
 ```
 
-Run `pnpm check-world` after editing. It reports every problem with the file
-and field it's in. The schemas live in `packages/shared/src/schema.ts`.
+Run `pnpm check-game` after editing. It reports every problem with the file
+and the item it's in. The schemas live in `packages/shared/src/schema.ts`
+(tiles, walls, lights, tokens) and `packages/shared/src/game-schema.ts`
+(game and scene).
+
+Every id is lowercase letters, digits and dashes, and unique within its list:
+two walls of a scene can't share an id, but a wall and a light can.
 
 ## Coordinates
 
-Everything is in **pixels** on one unbounded plane. `x` grows right, `y`
-grows down, negative values are fine.
+Everything is in **pixels** on one unbounded plane per scene. `x` grows
+right, `y` grows down, negative values are fine.
 
 - `gridSize` pixels make one 5 ft square (default 100).
-- `chunkSize` pixels make one chunk side (default 2000, so 20 by 20 squares).
 - The square at column `c`, row `r` spans `c*gridSize` to `(c+1)*gridSize`.
   Its centre is `(c + 0.5) * gridSize`. Tokens stand on square centres, so
   with `gridSize: 100` a token sits at `x: 550`, not `x: 500`.
 - Walls run along square edges, so their ends are multiples of `gridSize`.
 
-## world.json
+## game.json
 
 ```json
 {
+  "id": "example",
   "name": "The crossroads",
-  "gridSize": 100,
-  "chunkSize": 2000,
-  "start": [1000, 900],
+  "rules": "2014",
+  "scene": "crossroads",
   "players": [
     { "id": "gm", "name": "GM", "role": "gm", "color": "#e0b040" },
     { "id": "player1", "name": "Player 1", "role": "player", "color": "#5a9be0" }
@@ -44,10 +52,9 @@ grows down, negative values are fine.
 }
 ```
 
-At least one player must have `"role": "gm"`. `start` is where the camera
-opens, and where characters joining from an account appear. Changing the
-seats (a role, a new player) reaches everyone live; changing anything else
-reconnects everyone.
+`scene` is the folder in `scenes/` everyone plays on. At least one player must
+have `"role": "gm"`. Changing the seats (a role, a new player) reaches
+everyone live; changing anything else reconnects everyone.
 
 Players whose `id` matches an account (see the README) are that account's
 seat. The server adds one when an account first joins, so you can change its
@@ -64,32 +71,42 @@ Roles, like Foundry's user roles (the GM changes them in the Players tab):
 | `player`   | Play the tokens they own.                                                              |
 | `observer` | Watch through the party's eyes and read their sheets; act on nothing.                  |
 
-`darkness` (0 to 1, default 0) is the time of day: up to 0.3 is daylight,
-up to 0.6 is dim light (dusk, moonlight) and above that is darkness, where
-only lights and senses like darkvision show anything. `vision` (default
-`true`) hides what players' tokens can't see behind fog of war.
-
-## Chunks
-
-A chunk file holds the tiles and walls of one `chunkSize` square of the map.
-The file name is the chunk's column and row: `0_0.json` covers pixels 0 to
-1999 on both axes, `-1_0.json` covers x -2000 to -1, and so on. Coordinates
-inside the file are **absolute** map pixels, not relative to the chunk.
-
-Put each item in the chunk where it starts (a tile's top-left corner, a
-wall's midpoint). The checker warns when one is in the wrong file.
+## scene.json
 
 ```json
-{
-  "tiles": [
-    { "kind": "rect", "id": "grass", "x": 0, "y": 0, "w": 2000, "h": 2000, "color": "#4f6b3a" },
-    { "kind": "image", "id": "tavern", "x": 400, "y": 200, "w": 800, "h": 600, "src": "maps/tavern.webp" }
-  ],
-  "walls": [
-    { "id": "tavern-n", "a": [400, 200], "b": [1200, 200] },
-    { "id": "tavern-door", "a": [700, 800], "b": [800, 800], "door": "closed" }
-  ]
-}
+{ "name": "Crossroads", "gridSize": 100, "start": [1000, 900], "darkness": 0.85 }
+```
+
+`start` is where the camera opens, and where characters joining from an
+account appear. `darkness` (0 to 1, default 0) is the time of day: up to 0.3
+is daylight, up to 0.6 is dim light (dusk, moonlight) and above that is
+darkness, where only lights and senses like darkvision show anything.
+`vision` (default `true`) hides what players' tokens can't see behind fog of
+war. `chunkSize` (default 2000, a multiple of `gridSize`) is how big the
+pieces are that the server streams to each camera; it has nothing to do with
+how the scene is stored.
+
+## Tiles and walls
+
+`tiles.json` and `walls.json` are plain lists. Coordinates are absolute scene
+pixels.
+
+`tiles.json`:
+
+```json
+[
+  { "kind": "rect", "id": "grass", "x": 0, "y": 0, "w": 2000, "h": 2000, "color": "#4f6b3a" },
+  { "kind": "image", "id": "tavern", "x": 400, "y": 200, "w": 800, "h": 600, "src": "maps/tavern.webp" }
+]
+```
+
+`walls.json`:
+
+```json
+[
+  { "id": "tavern-n", "a": [400, 200], "b": [1200, 200] },
+  { "id": "tavern-door", "a": [700, 800], "b": [800, 800], "door": "closed" }
+]
 ```
 
 - Tiles draw in file order, later ones on top.
@@ -101,15 +118,15 @@ wall's midpoint). The checker warns when one is in the wrong file.
   `assets/`.
 - A wall is a line from `a` to `b` that blocks movement. Add `door` to make
   it a door: `"closed"`, `"open"` or `"locked"`. Open doors don't block.
-- Ids must be unique within the chunk.
+- Ids must be unique within the list.
 
 ## Lights
 
-A chunk's `lights` are placed light sources. Radii are in feet, like the
+`lights.json` lists placed light sources. Radii are in feet, like the
 rules: `bright` light, then `dim` light beyond it.
 
 ```json
-"lights": [
+[
   { "id": "hearth", "x": 550, "y": 250, "bright": 20, "dim": 20, "color": "#ff9a40", "animation": "flicker" },
   { "id": "moonwell", "x": 1500, "y": 300, "bright": 10, "dim": 30, "color": "#7ab0ff", "animation": "pulse" },
   { "id": "shadow", "x": 900, "y": 1400, "bright": 15, "darkness": true }
@@ -131,6 +148,8 @@ devil's sight, truesight, blindsight and tremorsense work inside it.
 
 ## Tokens
 
+`tokens.json` lists the scene's tokens, each one like this:
+
 ```json
 {
   "id": "bram",
@@ -145,21 +164,21 @@ devil's sight, truesight, blindsight and tremorsense work inside it.
 }
 ```
 
-| Field         | Meaning                                                                |
-| ------------- | ---------------------------------------------------------------------- |
-| `id`          | Lowercase letters, digits, dashes. Must match the file name.           |
-| `x`, `y`      | Centre of the token in pixels (a square centre).                       |
-| `size`        | In squares: 1 medium, 2 large, 3 huge. Default 1.                      |
-| `color`       | Disc colour behind the placeholder when there is no picture.           |
-| `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency.    |
-| `speed`       | Walking speed in feet. Default 30.                                     |
-| `controllers` | Player ids who own it: they move and act with it. The GM always can.   |
-| `observers`   | Player ids who may read its sheet and see through its eyes.            |
-| `darkvision`  | Range in feet. Also `blindsight`, `tremorsense`, `truesight`.          |
-| `devilsSight` | Sees in magical and nonmagical darkness to this range, in feet.        |
-| `light`       | A light it carries, like a chunk light: `{ "bright": 20, "dim": 20 }`. |
-| `hidden`      | `true` = only the GM sees it.                                          |
-| `visibleTo`   | If set, only these players (and the GM) see it. Used for illusions.    |
+| Field         | Meaning                                                                 |
+| ------------- | ----------------------------------------------------------------------- |
+| `id`          | Lowercase letters, digits, dashes. Unique in the scene.                 |
+| `x`, `y`      | Centre of the token in pixels (a square centre).                        |
+| `size`        | In squares: 1 medium, 2 large, 3 huge. Default 1.                       |
+| `color`       | Disc colour behind the placeholder when there is no picture.            |
+| `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency.     |
+| `speed`       | Walking speed in feet. Default 30.                                      |
+| `controllers` | Player ids who own it: they move and act with it. The GM always can.    |
+| `observers`   | Player ids who may read its sheet and see through its eyes.             |
+| `darkvision`  | Range in feet. Also `blindsight`, `tremorsense`, `truesight`.           |
+| `devilsSight` | Sees in magical and nonmagical darkness to this range, in feet.         |
+| `light`       | A light it carries, like a placed light: `{ "bright": 20, "dim": 20 }`. |
+| `hidden`      | `true` = only the GM sees it.                                           |
+| `visibleTo`   | If set, only these players (and the GM) see it. Used for illusions.     |
 
 Senses missing on a token come from its monster's stat block. Players see a
 creature when one of their tokens has a clear line to it and it is lit (even
@@ -177,7 +196,7 @@ A token with `monster` or `stats` is a creature: it gets a hit point bar, can
 attack and joins fights. Monster and item ids come from the SRD content in
 `packages/shared/content/srd/`.
 
-**Rules edition.** `world.json` has `"rules": "2014"` (the default) or
+**Rules edition.** `game.json` has `"rules": "2014"` (the default) or
 `"2024"`. Monsters come from SRD 5.1 (`monsters-5.1.json`) under 2014 rules
 and SRD 5.2 (`monsters-5.2.json`) under 2024 rules; the weapon and armor list
 (`items.json`) is shared. A character can play by the other edition, e.g. a
@@ -244,7 +263,7 @@ from `classes-5.x.json`. A homebrew class or a monster that casts uses
 }
 ```
 
-The server writes the rest of a creature's magic to its token file, and you can
+The server writes the rest of a creature's magic to its token, and you can
 edit it too:
 
 | Token field     | Meaning                                                                                                                                                               |
@@ -278,7 +297,7 @@ lets the bearer save again at the end of each of its turns; `endsOnAttack`
 ends it when the bearer attacks or casts; `endsOnDamage` ends it when the bearer
 takes damage, and `saveOnDamage` gives it another save (with advantage) then;
 `worsens` (with `repeatSave`) swaps the conditions for these on a failed save. A hidden trap or a GM ruling can
-just write an effect into the token file.
+just write an effect into the token.
 
 Players only receive the stats of tokens they control. For everyone else
 they're told how hurt the creature looks (unhurt, hurt, bloodied, down).
@@ -288,14 +307,14 @@ they're told how hurt the creature looks (unhurt, hurt, bloodied, down).
 `actors/` holds the GM's Actors list: creatures that aren't on the map yet.
 An actor is a token without `x` and `y`, plus an optional `folder` that
 groups it in the list. Dragging one onto the map in the game copies it into
-`tokens/` with a free id (`bandit`, `bandit-2`, ...) and a numbered name.
+the scene's `tokens.json` with a free id (`bandit`, `bandit-2`, ...) and a numbered name.
 
 ```json
 { "id": "bandit", "name": "Bandit", "folder": "Road", "monster": "bandit" }
 ```
 
 The GM also places SRD monsters straight from the Compendium, and can save
-any token as an actor. Both write these files, and `check-world` checks
+any token as an actor. Both write these files, and `check-game` checks
 actors like tokens.
 
 ## combat.json
@@ -320,3 +339,16 @@ it to set up an encounter that starts mid-fight:
 has left this turn (feet of movement, action, bonus action, attacks left in an
 Attack action, once-per-turn things already used like sneak attack). `side`
 holds the same for creatures acting on this turn through `leader`, by id.
+
+## Moving from the old world layout
+
+Before storage v2 a world was `world.json`, `chunks/<cx>_<cy>.json` and one
+file per token in `tokens/`. The server moves such a folder to this layout
+when it starts (or run `pnpm migrate-world [folder]`): `world.json` becomes
+`game.json` plus `scenes/main/scene.json`, every chunk's tiles, walls and
+lights go into the scene's lists, and the token files into `tokens.json`.
+Ids two chunks shared get a number (`grass`, `grass-2`). The old files are
+copied to `.v1-backup/<time>/` first and nothing is deleted from there. A
+broken old file stops the move before anything changes, and old files that
+turn up next to a moved game (a token file restored from git, say) are
+added to its active scene the next time the server starts.

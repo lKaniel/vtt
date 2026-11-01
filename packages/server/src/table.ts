@@ -29,7 +29,7 @@ import {
   type TurnInfo,
   type UsedEffect,
 } from '@vtt/shared';
-import type { WorldStore } from './world-store.ts';
+import type { GameStore } from './game-store.ts';
 
 /** A request the rules don't allow; its message goes back to the player. */
 export class Refusal extends Error {}
@@ -49,7 +49,7 @@ export type Cost = 'action' | 'bonus' | 'attack' | 'reaction' | 'free';
  */
 export class Table {
   constructor(
-    readonly store: WorldStore,
+    readonly store: GameStore,
     readonly rng: Rng,
     readonly note: (text: string) => void,
   ) {}

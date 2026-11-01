@@ -8,18 +8,18 @@ import { AccountStore } from './accounts.ts';
 import { accountApi, upgradePlayer } from './api.ts';
 import { CharacterStore } from './characters.ts';
 import { makeWorld } from './test/fixtures.ts';
-import { WorldStore } from './world-store.ts';
+import { GameStore } from './game-store.ts';
 
 let server: Server;
 let base: string;
 let worldDir: string;
-let store: WorldStore;
+let store: GameStore;
 let accounts: AccountStore;
 
 beforeEach(async () => {
   const dataDir = await mkdtemp(join(tmpdir(), 'vtt-data-'));
   worldDir = await makeWorld();
-  store = new WorldStore(worldDir);
+  store = new GameStore(worldDir);
   await store.load();
   accounts = new AccountStore(dataDir);
   await accounts.load();
@@ -138,7 +138,7 @@ describe('account api', () => {
     const token = store.tokens.get(id)!;
     expect(token).toMatchObject({ name: 'Vex', controllers: ['dee'], stats: { class: 'sorcerer', level: 1 } });
     await store.flush();
-    const saved = JSON.parse(await readFile(join(worldDir, 'world.json'), 'utf8')) as { players: Json[] };
+    const saved = JSON.parse(await readFile(join(worldDir, 'game.json'), 'utf8')) as { players: Json[] };
     expect(saved.players.map((p) => p.id)).toContain('dee');
   });
 

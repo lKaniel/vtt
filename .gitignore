@@ -5,3 +5,4 @@ dist
 .fallow/
 coverage
 /data/
+.v1-backup/
