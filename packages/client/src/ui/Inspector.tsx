@@ -8,7 +8,9 @@ const GM_FIELDS = new Set(['hidden', 'level']);
 /** A field whose options come from the game: its journal entries, or the scene's levels. */
 function withChoices(field: Field, session: Session): Field {
   if (field.choices === 'journals') {
-    const entries = session.docs.all('journals').map((j) => ({ value: j.id, label: typeof j.name === 'string' ? j.name : j.id }));
+    const entries = session.docs
+      .all('journals')
+      .map((j) => ({ value: j.id, label: typeof j.name === 'string' ? j.name : j.id }));
     return { ...field, options: [{ value: '', label: 'none' }, ...entries] };
   }
   if (field.choices === 'levels') {

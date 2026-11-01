@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { onLevel } from '@vtt/shared';
+import { hitTest, onLevel, type Point, shapeOf } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
 import type { Session } from '../session.ts';
 import { drawItem } from './item-draw.ts';
@@ -25,6 +25,21 @@ export class ItemLayer {
   setZoom(zoom: number): void {
     this.zoom = zoom;
     this.redraw();
+  }
+
+  /** The note pinned at `at` that opens an entry, if any. */
+  noteAt(at: Point): { entry: string; page?: string } | undefined {
+    const s = this.session;
+    const ctx = { px: 1 / this.zoom, gridSize: s.world?.gridSize ?? 100 };
+    const notes = s.docs.all(`${s.scene}/notes`).filter((n) => typeof n.entry === 'string');
+    const id = hitTest(
+      notes.map((n) => ({ key: n.id, shape: shapeOf(n, ctx) })),
+      at,
+      0,
+    );
+    const note = notes.find((n) => n.id === id);
+    if (!note) return undefined;
+    return { entry: note.entry as string, ...(typeof note.page === 'string' ? { page: note.page } : {}) };
   }
 
   /** The items to draw, bottom up: regions, templates, drawings, notes, then sounds (GM, in their mode). */

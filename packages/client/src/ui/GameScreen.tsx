@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { SoundScape } from '../audio.ts';
 import { MapView } from '../canvas/MapView.ts';
 import { editKey, editorKey, type EditKey, type LayerKey } from '../edit-keys.ts';
 import { hotbarTiles } from '../hotbar.ts';
@@ -9,6 +10,7 @@ import { CharacterSheet } from './CharacterSheet.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
 import { Inspector } from './Inspector.tsx';
+import { JournalViewer } from './JournalViewer.tsx';
 import { MapTools } from './MapTools.tsx';
 import { PartyBar } from './PartyBar.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
@@ -51,6 +53,10 @@ export function GameScreen({
   }, [session]);
 
   useEffect(() => listenToClipboard(session), [session]);
+  useEffect(() => {
+    const sound = new SoundScape(session);
+    return () => sound.destroy();
+  }, [session]);
 
   return (
     <div className="game">
@@ -74,6 +80,7 @@ export function GameScreen({
       <PartyBar session={session} />
       <MapTools session={session} />
       <Inspector session={session} />
+      <JournalViewer session={session} />
       <ReactionPrompt session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <CharacterSheet session={session} />

@@ -2,6 +2,7 @@ import type { Doc, DocRef, Patch } from '@vtt/core';
 import type { EditorMode, MapEdit, Point, ZOrder } from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
 import { LIGHT_PRESETS, type LightPreset } from '../map-tools.ts';
+import type { Draft } from './shape-tools.ts';
 
 // Right-click menus. Each kind of thing registers the entries it adds, so a
 // new placeable (or a game system) brings its own without touching the
@@ -19,6 +20,11 @@ export interface MenuItem {
 export interface MenuApi {
   isGm(): boolean;
   canEdit(id: string): boolean;
+  /** Copy, cut and delete may work on the selection (the GM's, or a player's own drawings). */
+  canEditSelection(): boolean;
+  createItem(draft: Draft): void;
+  openJournal(entry: string, page?: string): void;
+  showJournal(entry: string, page?: string): void;
   copy(): string | undefined;
   cut(): string | undefined;
   paste(): void;
@@ -84,7 +90,7 @@ function toClipboard(text: string | undefined): void {
 const allDocs = (t: MenuTarget, test: (doc: Doc) => boolean): boolean => t.docs.every((d) => test(d.doc));
 
 registerMenu('selection', (_t, api) =>
-  api.isGm()
+  api.canEditSelection()
     ? [
         { label: 'Copy', run: () => toClipboard(api.copy()) },
         { label: 'Cut', run: () => toClipboard(api.cut()) },
@@ -168,12 +174,58 @@ registerMenu('tile', (t, api) => {
   ];
 });
 
+const ITEM_TYPES = ['drawing', 'note', 'template', 'region', 'sound'];
+
+/** The GM hides map things from players, or reveals them. */
+for (const type of ITEM_TYPES)
+  registerMenu(type, (t, api) => {
+    if (!api.isGm()) return [];
+    const hidden = allDocs(t, (d) => d.hidden === true);
+    return [
+      {
+        label: hidden ? 'Reveal to players' : 'Hide from players',
+        run: () => api.editSelection({ hidden: hidden ? null : true }, hidden ? 'reveal' : 'hide'),
+      },
+    ];
+  });
+
+registerMenu('note', (t, api) => {
+  const note = t.docs.length === 1 ? t.docs[0]!.doc : undefined;
+  const entry = typeof note?.entry === 'string' ? note.entry : undefined;
+  if (!entry) return [];
+  const page = typeof note?.page === 'string' ? note.page : undefined;
+  return [
+    { label: 'Open journal entry', run: () => api.openJournal(entry, page) },
+    api.isGm() && { label: 'Show to players', run: () => api.showJournal(entry, page) },
+  ];
+});
+
+registerMenu('region', (t, api) => {
+  const off = allDocs(t, (d) => d.disabled === true);
+  const shown = allDocs(t, (d) => d.visible === true);
+  return [
+    { label: off ? 'Turn on' : 'Turn off', run: () => api.editSelection({ disabled: off ? null : true }) },
+    {
+      label: shown ? 'Hide its outline' : 'Show its outline',
+      run: () => api.editSelection({ visible: shown ? null : true }),
+    },
+  ];
+});
+
+/** Modes where players paste what they copied. */
+const PLAYER_PASTE = new Set(['drawings', 'templates']);
+
 registerMenu('ground', (t, api) => {
   const gm = api.isGm();
   const token = t.token;
   const { label: _l, ...light } = LIGHT_PRESETS[api.lightPreset];
   return [
-    gm && { label: 'Paste here', run: () => api.paste() },
+    (gm || PLAYER_PASTE.has(t.mode)) && { label: 'Paste here', run: () => api.paste() },
+    gm &&
+      t.mode === 'notes' && {
+        label: 'Put a note here',
+        run: () => api.createItem({ mode: 'notes', data: { x: t.at[0], y: t.at[1] } }),
+      },
     gm &&
       t.mode === 'lights' && {
         label: `Place ${LIGHT_PRESETS[api.lightPreset].label.toLowerCase()} here`,

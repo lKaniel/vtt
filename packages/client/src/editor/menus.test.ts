@@ -7,6 +7,10 @@ function api(gm = true) {
   return {
     isGm: () => gm,
     canEdit: () => gm,
+    canEditSelection: () => gm,
+    createItem: vi.fn(),
+    openJournal: vi.fn(),
+    showJournal: vi.fn(),
     copy: vi.fn(() => undefined),
     cut: vi.fn(() => undefined),
     paste: vi.fn(),
@@ -151,5 +155,40 @@ describe('context menus', () => {
       pick(onTiles(tile('a')), a, 'Bring forward').run();
       expect(a.reorder).toHaveBeenCalledWith('forward');
     });
+  });
+
+  it("opens a note's journal entry, and lets the GM show it to the players", () => {
+    const a = api();
+    const note: Doc = { id: 'n', type: 'note', rev: 1, x: 0, y: 0, entry: 'lore', page: 'p1' };
+    pick({ ...on(note), mode: 'notes' }, a, 'Open journal entry').run();
+    expect(a.openJournal).toHaveBeenCalledWith('lore', 'p1');
+    pick({ ...on(note), mode: 'notes' }, a, 'Show to players').run();
+    expect(a.showJournal).toHaveBeenCalledWith('lore', 'p1');
+    expect(labels({ ...on(note), mode: 'notes' }, api(false))).toEqual(['Open journal entry']);
+  });
+
+  it('turns regions on and off, and hides map things from players', () => {
+    const a = api();
+    const region: Doc = { id: 'r', type: 'region', rev: 1, points: [], behaviors: [] };
+    pick(on(region), a, 'Turn off').run();
+    expect(a.editSelection).toHaveBeenCalledWith({ disabled: true });
+    pick(on(region), a, 'Hide from players').run();
+    expect(a.editSelection).toHaveBeenLastCalledWith({ hidden: true }, 'hide');
+    expect(labels(on({ ...region, disabled: true, hidden: true }), a)).toEqual(
+      expect.arrayContaining(['Turn on', 'Reveal to players']),
+    );
+  });
+
+  it('puts a note down on the ground in the notes mode', () => {
+    const a = api();
+    pick({ mode: 'notes', at: [100, 200], docs: [] }, a, 'Put a note here').run();
+    expect(a.createItem).toHaveBeenCalledWith({ mode: 'notes', data: { x: 100, y: 200 } });
+  });
+
+  it('gives a player copy, cut and delete on their own drawings, and paste in the drawings mode', () => {
+    const a = { ...api(false), canEditSelection: () => true };
+    const mine: Doc = { id: 'd', type: 'drawing', rev: 1, author: 'ana' };
+    expect(labels({ ...on(mine), mode: 'drawings' }, a)).toEqual(['Copy', 'Cut', 'Duplicate', 'Delete']);
+    expect(labels({ mode: 'drawings', at: [0, 0], docs: [] }, a)).toContain('Paste here');
   });
 });

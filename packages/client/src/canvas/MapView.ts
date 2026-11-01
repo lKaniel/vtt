@@ -432,9 +432,11 @@ export class MapView {
     if (performance.now() - drag.at < 80) this.cam.release();
   }
 
-  /** A left click on the map with an action ready: casts an aimed area spell, or puts the action away. */
+  /** A left click on the map: with an action ready, casts an aimed area spell or puts it away; on a note, opens its entry. */
   private clickGround(p: Point): void {
     if (this.session.armed) return this.session.arm(undefined);
+    const note = this.session.aiming ? undefined : this.items.noteAt(p);
+    if (note) return this.session.openJournal(note.entry, note.page);
     const aiming = this.session.aiming;
     if (aiming?.mode === 'point') return this.session.castAt(p);
     if (aiming) this.session.aim(undefined);
