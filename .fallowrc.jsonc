@@ -3,6 +3,10 @@
   "$schema": "./node_modules/fallow/schema.json",
   "workspaces": { "patterns": ["packages/*"] },
   "duplicates": { "minOccurrences": 2 },
+  // The component library (shadcn/ui in the game's look): every part is kept
+  // ready for the next screen that needs it, used or not yet.
+  "entry": ["packages/client/src/ui/kit/*.tsx"],
+  "ignoreExports": [{ "file": "packages/client/src/ui/kit/*.tsx", "exports": ["*"] }],
   "health": {
     // Same ceilings as ESLint's complexity rules, so both tools agree.
     "maxCyclomatic": 12,

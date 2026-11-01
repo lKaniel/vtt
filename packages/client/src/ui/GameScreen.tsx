@@ -7,7 +7,7 @@ import { Session } from '../session.ts';
 import { stepTarget } from '../stepping.ts';
 import { activateTile, ActionBar, canActivate } from './ActionBar.tsx';
 import { CharacterSheet } from './CharacterSheet.tsx';
-import { ClockBar } from './ClockBar.tsx';
+import { ClockBar } from './clock/ClockBar.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
 import { Inspector } from './Inspector.tsx';

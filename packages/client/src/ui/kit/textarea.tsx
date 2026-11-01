@@ -1,0 +1,9 @@
+import type * as React from 'react';
+import { cn } from '@/lib/utils';
+import { fieldClass } from './input.tsx';
+
+function Textarea({ className, ...props }: React.ComponentProps<'textarea'>) {
+  return <textarea data-slot="textarea" className={cn(fieldClass, 'h-auto min-h-16 py-1.5', className)} {...props} />;
+}
+
+export { Textarea };
