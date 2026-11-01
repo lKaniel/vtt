@@ -6,7 +6,19 @@ import { hasLineOfSight, type LightSource } from './vision.ts';
 export type Ownership = 'none' | 'observer' | 'owner';
 
 /** Fields only the GM may change, even on a token a trusted player owns. */
-const GM_ONLY_FIELDS = ['id', 'x', 'y', 'controllers', 'observers', 'hidden', 'visibleTo', 'summon', 'leader'];
+const GM_ONLY_FIELDS = [
+  'id',
+  'x',
+  'y',
+  'controllers',
+  'observers',
+  'hidden',
+  'visibleTo',
+  'summon',
+  'leader',
+  'actor',
+  'linked',
+];
 
 export function isGm(player: Pick<Player, 'role'>): boolean {
   return player.role === 'gm';

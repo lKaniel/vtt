@@ -119,16 +119,23 @@ function ActorFolders({ session, actors }: Readonly<{ session: Session; actors: 
   }
   // Folders by name, then the actors outside any folder.
   const names = [...folders.keys()].sort((a, b) => Number(!a) - Number(!b) || a.localeCompare(b));
-  return names.map((folder) => (
-    <details key={folder || '-'} className="lib-folder" open>
-      {folder && <summary>{folder}</summary>}
+  return names.map((folder) => {
+    const list = (
       <ul className="lib-list">
         {folders.get(folder)!.map((a) => (
           <ActorRow key={a.id} session={session} actor={a} />
         ))}
       </ul>
-    </details>
-  ));
+    );
+    // A details element without a summary would show the browser's own "Details" label.
+    if (!folder) return <div key="-">{list}</div>;
+    return (
+      <details key={folder} className="lib-folder" open>
+        <summary>{folder}</summary>
+        {list}
+      </details>
+    );
+  });
 }
 
 function ActorRow({ session, actor }: Readonly<{ session: Session; actor: Actor }>) {

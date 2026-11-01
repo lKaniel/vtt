@@ -5,10 +5,11 @@ import {
   editionOf,
   GameSchema,
   PlacedLightSchema,
+  resolveToken,
   SceneSchema,
   srdFor,
   TileSchema,
-  TokenSchema,
+  TokenEntrySchema,
   WallSchema,
   worldOf,
   type Actor,
@@ -17,7 +18,7 @@ import {
   type PlacedLight,
   type Scene,
   type Tile,
-  type Token,
+  type TokenEntry,
   type Wall,
   type World,
 } from '@vtt/shared';
@@ -27,7 +28,7 @@ import type { z } from 'zod';
 // server and the `check-game` command so both report the same problems.
 //
 //   game.json                     the game and its seats
-//   actors/<id>.json              the GM's Actors list
+//   actors/<id>.json              creatures' sheets: the GM's Actors list
 //   combat.json                   the fight in progress
 //   scenes/<id>/scene.json        a scene's grid, lighting and camera start
 //   scenes/<id>/<coll>.json       a list per collection: tiles, walls, lights, tokens
@@ -39,10 +40,10 @@ export interface SceneItems {
   tiles: Tile[];
   walls: Wall[];
   lights: PlacedLight[];
-  tokens: Token[];
+  tokens: TokenEntry[];
 }
 
-const ITEM_SCHEMAS = { tiles: TileSchema, walls: WallSchema, lights: PlacedLightSchema, tokens: TokenSchema };
+const ITEM_SCHEMAS = { tiles: TileSchema, walls: WallSchema, lights: PlacedLightSchema, tokens: TokenEntrySchema };
 const NOUN: Record<SceneCollection, string> = { tiles: 'tile', walls: 'wall', lights: 'light', tokens: 'token' };
 
 export type FileKind =
@@ -215,13 +216,7 @@ export function crossCheck(state: GameState): Issue[] {
   const active = scenes.get(game.scene);
   if (!active) out.push({ file: 'game.json', message: `scene "${game.scene}" has no folder in scenes/` });
   const players = new Set(game.players.map((p) => p.id));
-  for (const [id, s] of scenes) {
-    const world = worldOf(game, s.scene);
-    for (const t of s.tokens) {
-      const issues = tokenIssues(t, players, world).map((m) => `token "${t.id}": ${m}`);
-      out.push(...issues.map((message) => ({ file: `scenes/${id}/tokens.json`, message })));
-    }
-  }
+  for (const [id, s] of scenes) out.push(...sceneTokenIssues(id, s, state, players));
   const world = worldOf(game, active?.scene ?? SceneSchema.parse({}));
   for (const a of actors.values()) {
     out.push(...tokenIssues(a, players, world).map((message) => ({ file: `actors/${a.id}.json`, message })));
@@ -233,6 +228,30 @@ export function crossCheck(state: GameState): Issue[] {
     }
   }
   return out;
+}
+
+/** Problems with the tokens of one scene. */
+function sceneTokenIssues(
+  id: string,
+  s: { scene: Scene } & SceneItems,
+  state: GameState,
+  players: Set<string>,
+): Issue[] {
+  const world = worldOf(state.game, s.scene);
+  return s.tokens.flatMap((t) =>
+    entryIssues(t, t.actor ? state.actors.get(t.actor) : undefined, players, world).map((m) => ({
+      file: `scenes/${id}/tokens.json`,
+      message: `token "${t.id}": ${m}`,
+    })),
+  );
+}
+
+/** What is wrong with a stored token, leaving out what its actor's own file is reported for. */
+function entryIssues(entry: TokenEntry, actor: Actor | undefined, players: Set<string>, world: World): string[] {
+  const { token, errors } = resolveToken(entry, actor);
+  if (!token) return errors;
+  const inherited = new Set(actor ? tokenIssues(actor, players, world) : []);
+  return tokenIssues(token, players, world).filter((m) => !inherited.has(m));
 }
 
 /** References from a token or actor to players and SRD content that don't exist. */

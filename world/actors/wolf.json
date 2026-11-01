@@ -1,0 +1,8 @@
+{
+  "id": "wolf",
+  "name": "Wolf",
+  "color": "#6a6a6a",
+  "speed": 40,
+  "darkvision": 60,
+  "monster": "wolf"
+}

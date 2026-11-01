@@ -141,8 +141,11 @@ git, so plain git tools still work.
   rules edition, class and level. Every change saves itself.
 - **Actors.** The GM's side panel has an _Actors_ tab: every creature on the
   map (click to find it, toggle hidden, edit) and the Actors list, kept in
-  `actors/` in the world folder and grouped by `folder`. Drag an actor onto
-  the map to place a copy; _Save as actor_ keeps any token for later.
+  `actors/` in the world folder and grouped by `folder`. Every creature's
+  sheet is an actor: characters' tokens are linked to theirs (one HP pool),
+  monsters' tokens are unlinked copies with their own wounds. Drag an actor
+  onto the map to place a token; the sheet's edit mode can unlink a token,
+  save a copy's changes to its actor, reset it or link it back.
 - **Compendium.** The _Compendium_ tab searches the SRD monsters, weapons,
   armour, gear and spells, from the 2014 or 2024 book. Drag a monster onto
   the map to place it (tick _Place new creatures hidden_ for an ambush), or

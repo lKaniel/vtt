@@ -98,12 +98,14 @@ describe('the GM tools send', () => {
     session.spawn({ kind: 'actor', id: 'bandit' }, [5, 5]);
     session.saveActor({ ...token('bandit') });
     session.deleteActor('bandit');
-    expect(ws.sent.slice(-5)).toEqual([
+    session.relinkToken('hero', 'unlink');
+    expect(ws.sent.slice(-6)).toEqual([
       { t: 'editToken', token: 'hero', patch: { hp: 3 } },
       { t: 'deleteToken', token: 'hero' },
       { t: 'spawn', from: { kind: 'actor', id: 'bandit' }, at: [5, 5], hidden: false },
       { t: 'saveActor', actor: token('bandit') },
       { t: 'deleteActor', actor: 'bandit' },
+      { t: 'relinkToken', token: 'hero', how: 'unlink' },
     ]);
   });
 

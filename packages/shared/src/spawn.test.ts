@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  actorFromMonster,
   actorFromToken,
   ActorSchema,
   applyTokenPatch,
@@ -48,6 +49,36 @@ describe('spawning', () => {
     const boss = srdFor('2024').monsters.get('goblin-boss')!;
     const t = tokenFromMonster(boss, { id: 'b', name: 'Boss', at: [0, 0], rules: '2024', hidden: true }, '2014');
     expect(t).toMatchObject({ monster: 'goblin-boss', stats: { rules: '2024' }, hidden: true });
+  });
+
+  it('makes the stock actor of a monster, for the Monsters folder', () => {
+    const boss = srdFor('2024').monsters.get('goblin-boss')!;
+    expect(actorFromMonster(boss, '2024', '2014')).toEqual(
+      ActorSchema.parse({
+        id: 'goblin-boss',
+        name: boss.name,
+        folder: 'Monsters',
+        size: boss.size,
+        speed: boss.speed,
+        darkvision: boss.darkvision,
+        monster: 'goblin-boss',
+        stats: { rules: '2024' },
+      }),
+    );
+  });
+
+  it('places monsters as unlinked copies of their actor and everyone else linked', () => {
+    const at = { id: 'x', name: 'X', at: [0, 0] as [number, number] };
+    expect(tokenFromActor(ActorSchema.parse({ id: 'g', name: 'G', monster: 'goblin' }), at)).toMatchObject({
+      actor: 'g',
+      linked: false,
+    });
+    expect(tokenFromActor(ActorSchema.parse({ id: 'bram', name: 'Bram' }), at)).toMatchObject({
+      actor: 'bram',
+      linked: true,
+    });
+    const tame = ActorSchema.parse({ id: 'wolf', name: 'Wolf', monster: 'wolf', linked: true });
+    expect(tokenFromActor(tame, at).linked).toBe(true);
   });
 
   it('copies an actor onto the map, without its folder', () => {

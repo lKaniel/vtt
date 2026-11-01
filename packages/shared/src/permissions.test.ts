@@ -56,9 +56,18 @@ describe('editing a token', () => {
   });
 
   it('keeps who owns it, where it stands and whether it hides for the GM', () => {
-    const patch = { name: 'X', hp: 3, controllers: ['bo'], x: 5, hidden: true, observers: [] };
+    const patch = {
+      name: 'X',
+      hp: 3,
+      controllers: ['bo'],
+      x: 5,
+      hidden: true,
+      observers: [],
+      actor: 'y',
+      linked: false,
+    };
     expect(lockedPatchKeys(patch, gm)).toEqual([]);
-    expect(lockedPatchKeys(patch, tess)).toEqual(['controllers', 'x', 'hidden', 'observers']);
+    expect(lockedPatchKeys(patch, tess)).toEqual(['controllers', 'x', 'hidden', 'observers', 'actor', 'linked']);
   });
 });
 

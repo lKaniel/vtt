@@ -1,16 +1,21 @@
 import {
+  actorFromMonster,
   ActorSchema,
   applyTokenPatch,
   canEditToken,
   isGm,
   lockedPatchKeys,
   placeToken,
+  sameJson,
+  sheetFields,
   srdFor,
   tokenFromActor,
-  tokenFromMonster,
   TokenSchema,
   uniqueId,
   uniqueName,
+  type Actor,
+  type Edition,
+  type Monster,
   type Placement,
   type Player,
   type Point,
@@ -19,6 +24,7 @@ import {
   type Token,
 } from '@vtt/shared';
 import type { z } from 'zod';
+import type { Relink } from './token-ops.ts';
 import { Refusal, requireGm, type Table } from './table.ts';
 
 /**
@@ -53,6 +59,18 @@ export class GmActions {
     this.store.setToken(from.kind === 'monster' ? this.monster(from, at, hidden) : this.copy(from.id, at, hidden));
   }
 
+  /** Links a token to its actor, unlinks it, or saves or resets an unlinked copy's changes. */
+  relink(player: Player, id: string, how: Relink): void {
+    requireGm(player);
+    const token = this.store.tokens.get(id);
+    if (!token) throw new Refusal('No such token');
+    if (!token.actor || !this.store.actors.has(token.actor)) throw new Refusal(`${token.name} has no actor`);
+    if (token.linked && (how === 'save' || how === 'reset')) {
+      throw new Refusal(`${token.name} is linked: its changes are already its actor’s`);
+    }
+    this.store.relinkToken(id, how);
+  }
+
   saveActor(player: Player, actor: unknown): void {
     requireGm(player);
     this.store.setActor(valid(ActorSchema, actor));
@@ -73,17 +91,34 @@ export class GmActions {
     this.store.setWorld({ ...world, players });
   }
 
+  /** An unlinked copy of the monster's stock actor. */
   private monster(from: Extract<SpawnSource, { kind: 'monster' }>, at: Point, hidden?: boolean): Token {
     const monster = srdFor(from.rules).monsters.get(from.id);
     if (!monster) throw new Refusal(`No monster "${from.id}" in the ${from.rules} rules`);
-    const place = this.placement(monster.name, monster.size, at, hidden);
-    return tokenFromMonster(monster, { ...place, rules: from.rules }, this.store.world.rules);
+    return this.tokenOf(this.stockActor(monster, from.rules), at, hidden);
+  }
+
+  /** The Actors list's untouched actor for a monster, made the first time it is placed. */
+  private stockActor(monster: Monster, rules: Edition): Actor {
+    const fresh = actorFromMonster(monster, rules, this.store.world.rules);
+    const actors = this.store.actors;
+    const found = [...actors.values()].find((a) => sameJson(sheetFields(a), sheetFields(fresh)));
+    if (found) return found;
+    const actor = { ...fresh, id: uniqueId(monster.id, (id) => actors.has(id)) };
+    this.store.setActor(actor);
+    return actor;
   }
 
   private copy(id: string, at: Point, hidden?: boolean): Token {
     const actor = this.store.actors.get(id);
     if (!actor) throw new Refusal('No such actor');
-    return tokenFromActor(actor, this.placement(actor.name, actor.size, at, hidden));
+    return this.tokenOf(actor, at, hidden);
+  }
+
+  /** A new token of `actor`: unlinked copies get numbered names, linked tokens keep the actor's. */
+  private tokenOf(actor: Actor, at: Point, hidden?: boolean): Token {
+    const token = tokenFromActor(actor, this.placement(actor.name, actor.size, at, hidden));
+    return token.linked ? { ...token, name: actor.name } : token;
   }
 
   /** A free id and name for a new creature, and its square. */

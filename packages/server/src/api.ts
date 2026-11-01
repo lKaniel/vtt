@@ -207,10 +207,11 @@ class Routes {
     throw new HttpError(405, 'Method not allowed.');
   }
 
-  /** A fresh id from the character's name, unique among characters and the world's tokens. */
+  /** A fresh id from the character's name, unique among characters and the game's tokens and actors. */
   private newId(): (name: string) => string {
     const suffix = randomBytes(2).toString('hex');
-    const taken = (id: string) => this.deps.characters.has(id) || this.deps.world.tokens.has(id);
+    const { characters, world } = this.deps;
+    const taken = (id: string) => characters.has(id) || world.tokens.has(id) || world.actors.has(id);
     return (name) => uniqueId(`${name} ${suffix}`, taken);
   }
 

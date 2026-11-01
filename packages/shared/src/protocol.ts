@@ -136,6 +136,8 @@ export type ClientMessage =
   /** Change token fields; `null` removes one (e.g. `hp: null` heals fully). The GM may edit any token, a trusted player the ones they own. */
   | { t: 'editToken'; token: string; patch: Record<string, unknown> }
   | { t: 'deleteToken'; token: string }
+  /** GM: link a token to its actor, unlink it, or save or reset an unlinked copy's changes. */
+  | { t: 'relinkToken'; token: string; how: 'link' | 'unlink' | 'save' | 'reset' }
   /** GM: put a new token on the map at a point (snapped to the grid). */
   | { t: 'spawn'; from: SpawnSource; at: Point; hidden?: boolean }
   /** GM: add or replace an actor in the Actors list. */

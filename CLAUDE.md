@@ -11,11 +11,16 @@ you add maps, place tokens, and prepare encounters.
 - `game.json` names the active scene; its content is in
   `scenes/<scene>/`: `scene.json` (grid, darkness) and one list per
   collection, `tiles.json`, `walls.json`, `lights.json`, `tokens.json`.
+- A creature's sheet is an actor (`actors/<id>.json`); a token in
+  `tokens.json` is an actor standing there: `{ "id", "x", "y", "actor",
+"linked" }`. Characters are linked (they share the actor's HP); monsters
+  are unlinked copies whose own changes (hp, a numbered name) go in `delta`.
+  Three goblins = one `goblin` actor + three tokens.
 - Always run `pnpm check-game` after editing and fix every error.
 - Hidden enemies for an encounter: `"hidden": true`, the GM reveals them.
 - Creatures the GM may want later (an ambush, reinforcements) go in
-  `actors/<id>.json`: a token without `x`/`y`, with an optional `folder`.
-  The GM drags them onto the map from the Actors tab.
+  `actors/<id>.json` with an optional `folder` and no token yet. The GM
+  drags them onto the map from the Actors tab.
 - Creatures: `"monster": "<srd id>"` for a stat block, or `stats` + `inventory`
   for a character (see "Creatures" in the format doc). Monster and item ids
   are in `packages/shared/content/srd/`; `check-game` flags unknown ones.
@@ -31,6 +36,11 @@ you add maps, place tokens, and prepare encounters.
   documents: hand edits become ops, changes are written back per collection
   file. It still offers the old maps (`tokens`, `chunks`) the game code reads;
   the server cuts chunks from the scene by position (`groupChunks`).
+- Tokens are stored as entries (placement + `actor`, `linked`, `delta`);
+  `token-link.ts` in shared merges them with their actor (`resolveToken`) so
+  rules code sees one `Token`, and `splitToken` puts a changed token back
+  (linked: into the actor). `store.tokens` holds resolved tokens and
+  `store.setToken` splits, so game code keeps working on whole tokens.
 - Rules and geometry live in `shared` so the server can enforce them and the
   client can preview them with the same code. Don't duplicate them.
 - The server is authoritative: clients send intents, the server validates

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ActorSchema, GameSchema, SceneSchema, TokenSchema, type Token } from '@vtt/shared';
+import { ActorSchema, GameSchema, SceneSchema, TokenSchema, type Token, type TokenEntry } from '@vtt/shared';
 import { classify, crossCheck, parseFile, type GameState } from './game-files.ts';
 
 describe('classify', () => {
@@ -24,12 +24,21 @@ describe('classify', () => {
 
 describe('parseFile', () => {
   it('fills defaults in every item of a collection', () => {
-    const r = parseFile(
-      { kind: 'collection', scene: 'main', coll: 'tokens' },
-      '[{"id":"bram","name":"Bram","x":50,"y":50}]',
-    );
+    const r = parseFile({ kind: 'collection', scene: 'main', coll: 'walls' }, '[{"id":"w","a":[0,0],"b":[1,0]}]');
     expect(r.errors).toEqual([]);
-    expect(r.file?.kind === 'collection' && (r.file.data[0] as Token).speed).toBe(30);
+    expect(r.file?.kind === 'collection' && r.file.data[0]).toEqual({ id: 'w', a: [0, 0], b: [1, 0] });
+    const lights = parseFile(
+      { kind: 'collection', scene: 'main', coll: 'lights' },
+      '[{"id":"l","x":0,"y":0,"bright":5}]',
+    );
+    expect(lights.file?.kind === 'collection' && lights.file.data[0]).toMatchObject({ dim: 0 });
+  });
+
+  it('keeps tokens as written: their sheet comes from the actor', () => {
+    const text = '[{"id":"g","x":50,"y":50,"actor":"goblin","delta":{"hp":3,"tempHp":null}}]';
+    const r = parseFile({ kind: 'collection', scene: 'main', coll: 'tokens' }, text);
+    expect(r.errors).toEqual([]);
+    expect(r.file?.kind === 'collection' && r.file.data[0]).toEqual((JSON.parse(text) as unknown[])[0]);
   });
 
   it('explains what is wrong, naming the item', () => {
@@ -58,7 +67,7 @@ describe('parseFile', () => {
   });
 });
 
-function state(tokens: Token[], extra: Partial<GameState> = {}): GameState {
+function state(tokens: (Token | TokenEntry)[], extra: Partial<GameState> = {}): GameState {
   const game = GameSchema.parse({ id: 'g', name: 'G', scene: 'main', players: [{ id: 'gm', name: 'GM', role: 'gm' }] });
   const scene = { scene: SceneSchema.parse({}), tiles: [], walls: [], lights: [], tokens };
   return { game, scenes: new Map([['main', scene]]), actors: new Map(), ...extra };
@@ -110,6 +119,23 @@ describe('crossCheck', () => {
     expect(crossCheck(s)).toEqual([
       { file: 'game.json', message: 'scene "cellar" has no folder in scenes/' },
       { file: 'actors/odd.json', message: 'unknown monster "nothing-like-it" in the 2014 rules' },
+    ]);
+  });
+
+  it('reports tokens whose actor is missing or whose delta breaks them, once per problem', () => {
+    const odd = ActorSchema.parse({ id: 'odd', name: 'Odd', monster: 'nothing-like-it' });
+    const tokens: TokenEntry[] = [
+      { id: 'a', x: 0, y: 0, actor: 'nobody' },
+      { id: 'b', x: 0, y: 0, actor: 'odd', delta: { name: null } },
+      { id: 'c', x: 0, y: 0, actor: 'odd', delta: { observers: ['ghost'] } },
+    ];
+    expect(
+      crossCheck(state(tokens, { actors: new Map([['odd', odd]]) })).map((i) => `${i.file}: ${i.message}`),
+    ).toEqual([
+      'scenes/main/tokens.json: token "a": unknown actor "nobody"',
+      'scenes/main/tokens.json: token "b": name: Invalid input: expected string, received undefined',
+      'scenes/main/tokens.json: token "c": unknown player "ghost"',
+      'actors/odd.json: unknown monster "nothing-like-it" in the 2014 rules',
     ]);
   });
 });
