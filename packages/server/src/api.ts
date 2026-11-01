@@ -1,12 +1,21 @@
 import { randomBytes } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { characterIssues, characterOnMap, CharacterSchema, uniqueId, type Character, type Player } from '@vtt/shared';
+import { characterIssues, characterOnMap, CharacterSchema, uniqueId, type Character } from '@vtt/shared';
 import { z } from 'zod';
 import { AccountError, type Account, type AccountStore } from './accounts.ts';
 import type { CharacterStore } from './characters.ts';
 import { HubError, type GameHub } from './game-hub.ts';
 import type { GameStore } from './game-store.ts';
-import { HttpError, parseBody, send, SESSION_COOKIE, sessionToken, signedIn, type Call } from './http-json.ts';
+import {
+  HttpError,
+  parseBody,
+  send,
+  SESSION_COOKIE,
+  sessionToken,
+  signedIn,
+  type Call,
+  type Routes,
+} from './http-json.ts';
 import { LobbyRoutes } from './lobby-api.ts';
 
 // The account side of the server, as JSON over HTTP: signing up and in, and
@@ -26,11 +35,6 @@ const Credentials = z.object({ username: z.string().max(64), password: z.string(
 const SignUp = Credentials.extend({ name: z.string().max(80).default('') });
 /** What a client sends for a character: everything but who owns it and its id. */
 const CharacterInput = CharacterSchema.omit({ id: true, owner: true });
-
-interface Routes {
-  handles(route: string | undefined): boolean;
-  serve(call: Call): Promise<void>;
-}
 
 /** Handles /api/ requests about accounts, characters and games; returns false for anything else. */
 export function apiHandler(deps: ApiDeps): (req: IncomingMessage, res: ServerResponse) => Promise<boolean> {

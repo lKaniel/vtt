@@ -159,6 +159,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
   // Reading
 
   /** game.json as it is now: the campaign's name, system, rules and seats. */
+  // fallow-ignore-next-line unused-class-member -- game-hub.ts reads it through Running.store
   get campaign(): Game {
     return this.game;
   }

@@ -15,8 +15,12 @@ import { ReactionPrompt } from './ReactionPrompt.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
 
-export function GameScreen({ playerId, onLeave }: Readonly<{ playerId?: string; onLeave: () => void }>) {
-  const [session] = useState(() => new Session(playerId));
+export function GameScreen({
+  playerId,
+  gameId,
+  onLeave,
+}: Readonly<{ playerId?: string; gameId?: string; onLeave: () => void }>) {
+  const [session] = useState(() => new Session(playerId, gameId));
   const host = useRef<HTMLDivElement>(null);
   useSession(session);
 

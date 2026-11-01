@@ -44,8 +44,8 @@ async function serveFile(res: ServerResponse, root: string, urlPath: string): Pr
 /** /assets/<path> of the home game, or /games/<id>/assets/<path>. */
 async function serveAsset(res: ServerResponse, opts: HttpOptions, path: string): Promise<boolean> {
   const match = /^\/games\/([a-z0-9-]+)\/assets\/(.*)$/.exec(path);
-  const [game, rest] = match ? [match[1], match[2]!] : path.startsWith('/assets/') ? [undefined, path.slice(8)] : [];
-  if (rest === undefined) return false;
+  if (!match && !path.startsWith('/assets/')) return false;
+  const [game, rest] = match ? [match[1], match[2]!] : [undefined, path.slice(8)];
   const dir = opts.assetsDir(game);
   return !!dir && serveFile(res, dir, rest);
 }

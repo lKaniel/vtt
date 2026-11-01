@@ -16,6 +16,12 @@ export interface Call {
   token?: string;
 }
 
+/** A family of /api/ routes: the first path part says which. */
+export interface Routes {
+  handles(route: string | undefined): boolean;
+  serve(call: Call): Promise<void>;
+}
+
 /** A request that can't be served, with the status and message to answer it with. */
 export class HttpError extends Error {
   constructor(

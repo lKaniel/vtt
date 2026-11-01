@@ -37,7 +37,13 @@ describe('the games on a server', () => {
   it('starts with the game folder the server was started with, open to every account', async () => {
     expect(hub.ids()).toEqual(['test']);
     expect(hub.homeId).toBe('test');
-    expect(await hub.info('test')).toMatchObject({ id: 'test', name: 'Test', system: 'dnd5e', rules: '2014', open: true });
+    expect(await hub.info('test')).toMatchObject({
+      id: 'test',
+      name: 'Test',
+      system: 'dnd5e',
+      rules: '2014',
+      open: true,
+    });
     expect(hub.isRunning('test')).toBe(false);
   });
 
@@ -85,7 +91,10 @@ describe('the games on a server', () => {
 
   it('changes who is in a game, cleaning up after a removed member', async () => {
     const { store } = await hub.open('test');
-    await hub.setMembers('test', store.world.players.filter((p) => p.id !== 'bo'));
+    await hub.setMembers(
+      'test',
+      store.world.players.filter((p) => p.id !== 'bo'),
+    );
     expect((await hub.info('test')).players.map((p) => p.id)).toEqual(['gm', 'ana']);
   });
 

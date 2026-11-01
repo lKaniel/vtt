@@ -36,7 +36,10 @@ const sorcerer = {
 describe('account api', () => {
   it('signs up, signs in and out', async () => {
     const call = client();
-    expect((await call('GET', '/api/session')).json).toMatchObject({ account: null, home: { id: 'test', name: 'Test', rules: '2014' } });
+    expect((await call('GET', '/api/session')).json).toMatchObject({
+      account: null,
+      home: { id: 'test', name: 'Test', rules: '2014' },
+    });
     const reg = await call('POST', '/api/register', { username: 'kaniel', password: 'hunter22', name: 'Kaniel' });
     expect(reg).toMatchObject({ status: 200, json: { account: { id: 'kaniel', admin: true } } });
     expect((await call('GET', '/api/session')).json).toMatchObject({ account: { id: 'kaniel' } });

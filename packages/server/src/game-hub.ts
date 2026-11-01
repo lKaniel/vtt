@@ -37,7 +37,14 @@ export interface HubOptions {
 export interface Running {
   store: GameStore;
   game: Game;
+  /** Who is connected. */
+  sockets: Map<WebSocket, Player>;
 }
+
+/** Seats connected to a game, each once. */
+const onlineIn = (running: Running | undefined) => [
+  ...new Set([...(running?.sockets.values() ?? [])].map((p) => p.id)),
+];
 
 /** A game as the lobby lists it. */
 export interface GameInfo {
@@ -82,7 +89,7 @@ export class GameHub {
     await this.index.load();
     if (this.opts.home) await this.loadHome(this.opts.home);
     const names = await readdir(this.gamesDir).catch(() => [] as string[]);
-    for (const name of names.sort()) {
+    for (const name of [...names].sort((a, b) => a.localeCompare(b))) {
       const dir = join(this.gamesDir, name);
       const game = await readGameFile(dir);
       if (game && !this.dirs.has(game.id)) this.dirs.set(game.id, dir);
@@ -143,13 +150,13 @@ export class GameHub {
     const store = new GameStore(dir);
     await store.load();
     if (this.opts.watch !== false) store.watch();
-    return { store, game: new Game(store) };
+    return { store, game: new Game(store), sockets: new Map() };
   }
 
   /** Unloads the game after a while if nobody is connected (and keeps it while someone is). */
   private idle(id: string): void {
     clearTimeout(this.timers.get(id));
-    if (this.live.get(id)?.game.online().length) return;
+    if (this.live.get(id)?.sockets.size) return;
     const timer = setTimeout(() => void this.unload(id), this.opts.idleMs ?? IDLE_MS);
     timer.unref();
     this.timers.set(id, timer);
@@ -169,9 +176,13 @@ export class GameHub {
     const running = this.live.get(id);
     if (!running) throw new HubError('That game is not loaded.');
     running.game.connect(ws, player);
+    running.sockets.set(ws, player);
     clearTimeout(this.timers.get(id));
     void this.index.set(id, { lastPlayed: Date.now() });
-    ws.on('close', () => this.idle(id));
+    ws.on('close', () => {
+      running.sockets.delete(ws);
+      this.idle(id);
+    });
   }
 
   async info(id: string): Promise<GameInfo> {
@@ -185,7 +196,7 @@ export class GameHub {
       rules: file.rules,
       players: file.players,
       open: entry.open ?? id === this.homeId,
-      online: this.live.get(id)?.game.online() ?? [],
+      online: onlineIn(this.live.get(id)),
       ...(entry.lastPlayed ? { lastPlayed: entry.lastPlayed } : {}),
       ...(entry.invite ? { invite: entry.invite } : {}),
       home: id === this.homeId,
@@ -206,10 +217,11 @@ export class GameHub {
 
   /** Deletes a game made in the lobby, files and all. */
   async remove(id: string): Promise<void> {
-    if (id === this.homeId) throw new HubError('This is the game the server was started with: delete its folder by hand.');
+    if (id === this.homeId)
+      throw new HubError('This is the game the server was started with: delete its folder by hand.');
     const dir = this.dirs.get(id);
     if (!dir) throw new HubError('No such game.');
-    this.live.get(id)?.game.closeAll('the game was deleted');
+    for (const ws of this.live.get(id)?.sockets.keys() ?? []) ws.close(4004, 'the game was deleted');
     await this.unload(id);
     this.dirs.delete(id);
     await this.index.remove(id);

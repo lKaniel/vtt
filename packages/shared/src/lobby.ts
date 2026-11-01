@@ -58,7 +58,10 @@ export function nextSeatColor(players: readonly Player[]): string {
 /** The seats once `member` has `role`, or is removed (null). A game always keeps a GM. */
 export function membersAfter(players: readonly Player[], member: string, role: Role | null): Player[] {
   if (!players.some((p) => p.id === member)) throw new Error('That account is not a member of this game.');
-  const next = players.flatMap((p) => (p.id !== member ? [p] : role ? [{ ...p, role }] : []));
+  const next = players.flatMap((p) => {
+    if (p.id !== member) return [p];
+    return role ? [{ ...p, role }] : [];
+  });
   if (!next.some(isGm)) throw new Error('A game needs a GM: make someone else GM first.');
   return next;
 }

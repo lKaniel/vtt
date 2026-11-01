@@ -20,7 +20,7 @@ beforeAll(async () => {
   await writeFile(join(dir, 'secret.txt'), 'nope');
   const handle = httpHandler({
     // The home game is "home"; "other" is a game made in the lobby.
-    assetsDir: (game) => (game === 'other' ? join(dir, 'other', 'assets') : game ? undefined : join(dir, 'assets')),
+    assetsDir: (game) => ({ other: join(dir, 'other', 'assets'), home: join(dir, 'assets') })[game ?? 'home'],
     clientDir: join(dir, 'client'),
     players: () => [{ id: 'gm', name: 'GM', role: 'gm', color: '#fff' }],
   });

@@ -19,7 +19,7 @@ import type { Account, AccountStore } from './accounts.ts';
 import type { CharacterStore } from './characters.ts';
 import type { GameHub, GameInfo } from './game-hub.ts';
 import type { GameStore } from './game-store.ts';
-import { HttpError, parseBody, send, signedIn, type Call } from './http-json.ts';
+import { HttpError, parseBody, send, signedIn, type Call, type Routes } from './http-json.ts';
 
 // The lobby, as JSON over HTTP: the games an account can enter, making a
 // game, invite links, members and their roles, and taking a seat with a
@@ -58,7 +58,13 @@ function detail(info: GameInfo, account: Account): GameDetail {
   const seat = seatOf(info, account);
   return {
     ...summary(info, account),
-    players: info.players.map(({ id, name, role, color }) => ({ id, name, role, color, online: info.online.includes(id) })),
+    players: info.players.map(({ id, name, role, color }) => ({
+      id,
+      name,
+      role,
+      color,
+      online: info.online.includes(id),
+    })),
     ...(seat && isGm(seat) && info.invite ? { invite: info.invite } : {}),
   };
 }
@@ -66,7 +72,7 @@ function detail(info: GameInfo, account: Account): GameDetail {
 /** Members see their games, everyone sees open ones, and the admin sees them all. */
 const canSeeGame = (info: GameInfo, account: Account) => !!seatOf(info, account) || info.open || account.admin;
 
-export class LobbyRoutes {
+export class LobbyRoutes implements Routes {
   constructor(private deps: LobbyDeps) {}
 
   handles(route: string | undefined): boolean {
@@ -81,7 +87,8 @@ export class LobbyRoutes {
     const info = await this.visible(id, account);
     switch (`${call.method} ${sub ?? ''}`) {
       case 'GET ':
-        return send(call.res, 200, { game: detail(info, account) });
+        send(call.res, 200, { game: detail(info, account) });
+        return;
       case 'DELETE ':
         return this.remove(call, info, account);
       case 'POST join':
