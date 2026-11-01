@@ -3834,3 +3834,107 @@ button.pip:hover {
   font-size: 12px;
   color: var(--gold-dim);
 }
+
+/* GM Scenes tab: the game's scenes, who is on each, and their settings. */
+.scenes-tab {
+  padding: 8px 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.scene-new {
+  display: flex;
+  gap: 6px;
+}
+.scene-new input {
+  flex: 1;
+  min-width: 0;
+}
+.scene-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.18);
+}
+.scene-row.here {
+  border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(232, 211, 166, 0.25);
+}
+.scene-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.scene-head .row-name {
+  font-family: var(--display);
+  color: var(--gold-bright);
+}
+.scene-badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  color: #1c150f;
+  background: var(--gold);
+}
+.scene-badge.you {
+  background: #7fb0e0;
+}
+.scene-seats,
+.scene-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.seat-chip {
+  font-size: 12px;
+  padding: 1px 6px;
+  border: 1px solid;
+  border-radius: 8px;
+}
+.scene-actions select,
+.scene-settings select,
+.scene-settings input:not([type='checkbox']) {
+  font: inherit;
+  color: var(--gold-bright);
+  background: #1c150f;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.scene-settings {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding-top: 4px;
+  border-top: 1px solid var(--gold-dim);
+}
+.scene-settings label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.scene-settings label > span {
+  color: var(--muted);
+}
+.scene-settings .scene-check {
+  justify-content: flex-start;
+}
+.scene-settings input[type='number'] {
+  width: 80px;
+}
+.fog-tools {
+  align-items: center;
+}
+.fog-label {
+  font-family: var(--display);
+  color: var(--muted);
+  margin-right: 2px;
+}
+.fog-tools input[type='range'] {
+  width: 70px;
+}

@@ -167,6 +167,17 @@ describe('making and removing scenes', () => {
     expect(await exists('scenes/cellar/tokens.json')).toBe(true);
   });
 
+  it('refuses settings its scene.json could not be loaded with', () => {
+    const gm = seat('gm');
+    const rev = store.docs.get('scenes', 'cellar')!.rev;
+    gm.receive({
+      t: 'ops',
+      txn: 't1',
+      ops: [{ op: 'update', coll: 'scenes', id: 'cellar', rev, patch: { gridSize: 75 } }],
+    });
+    expect(gm.take('reject')[0]!.reason).toBe('chunkSize must be a multiple of gridSize');
+  });
+
   it('will not delete the scene the game is on', () => {
     const gm = seat('gm');
     gm.receive({ t: 'ops', txn: 't1', ops: [{ op: 'delete', coll: 'scenes', id: 'main' }] });

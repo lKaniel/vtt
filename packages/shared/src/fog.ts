@@ -90,6 +90,27 @@ export function rasterCircle(center: Point, radius: number, cell: number): Raste
   return rasterize(ring, cell);
 }
 
+/** A brush dragged through `path`: every stamp at once, as one raster. */
+export function rasterStroke(path: readonly Point[], radius: number, cell: number): Raster {
+  const stamps = path.map((p) => rasterCircle(p, radius, cell));
+  const x0 = Math.min(...stamps.map((r) => r.x0));
+  const y0 = Math.min(...stamps.map((r) => r.y0));
+  const x1 = Math.max(...stamps.map((r) => r.x0 + r.w));
+  const y1 = Math.max(...stamps.map((r) => r.y0 + r.h));
+  const out = emptyRaster(x0, y0, x1 - x0, y1 - y0);
+  for (const r of stamps) stampInto(out, r);
+  return out;
+}
+
+/** Sets in `out` every cell set in `r` (which lies inside it). */
+function stampInto(out: Raster, r: Raster): void {
+  for (let row = 0; row < r.h; row++) {
+    for (let col = 0; col < r.w; col++) {
+      if (r.bits[row * r.w + col]) out.bits[(r.y0 + row - out.y0) * out.w + (r.x0 + col - out.x0)] = 1;
+    }
+  }
+}
+
 /** The cells set in both. */
 function intersect(a: Raster, b: Raster): Raster {
   const x0 = Math.max(a.x0, b.x0);
@@ -207,6 +228,21 @@ export class FogMap {
     bytes[i >> 3] = on ? bytes[i >> 3]! | bit : bytes[i >> 3]! & ~bit;
     return true;
   }
+}
+
+/** One map made of several: a cell is explored when any of them has it (the GM looking at every player). */
+export function unionFog(maps: readonly FogMap[]): FogMap | undefined {
+  if (maps.length <= 1) return maps[0];
+  const out = new FogMap(maps[0]!.cell);
+  for (const map of maps.filter((m) => m.cell === out.cell)) {
+    for (const key of map.keys()) {
+      const mine = out.block(key);
+      const theirs = map.block(key);
+      for (let i = 0; i < BYTES; i++) mine[i] = mine[i]! | theirs[i]!;
+      out.setBlock(key, mine);
+    }
+  }
+  return out;
 }
 
 /**

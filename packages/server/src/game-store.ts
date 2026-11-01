@@ -217,12 +217,14 @@ export class GameStore extends EventEmitter<StoreEvents> {
   }
 
   wallsBetween(a: Point, b: Point): Wall[] {
-    return this.here.wallsBetween(a, b);
+    const scene: SceneState = this.here;
+    return scene.wallsBetween(a, b);
   }
 
   /** Every light on the current scene: placed ones and those tokens carry. */
   lights(): LightSource[] {
-    return this.here.lights();
+    const scene: SceneState = this.here;
+    return scene.lights();
   }
 
   // Changing

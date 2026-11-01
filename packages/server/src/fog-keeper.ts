@@ -5,7 +5,7 @@ import {
   exploredRasters,
   fogCell,
   isGm,
-  rasterCircle,
+  rasterStroke,
   sensesOf,
   SIGHT_SQUARES,
   srdFor,
@@ -30,10 +30,6 @@ export class FogKeeper {
   private mapRev = new Map<string, number>();
 
   constructor(private store: GameStore) {}
-
-  private get fog() {
-    return this.store.fog;
-  }
 
   /** The current scene's fog cell size. */
   cell(): number {
@@ -74,7 +70,7 @@ export class FogKeeper {
       gridSize: world.gridSize,
       cell: this.cell(),
     };
-    this.fog.explore(scene, player.id, ctx.cell, exploredRasters(eyes, ctx));
+    this.store.fog.explore(scene, player.id, ctx.cell, exploredRasters(eyes, ctx));
   }
 
   /** GM: reveal, hide or reset fog on the current scene. */
@@ -82,9 +78,9 @@ export class FogKeeper {
     requireGm(player);
     const scene = this.store.currentScene;
     const players = edit.players ?? this.store.world.players.filter((p) => !isGm(p)).map((p) => p.id);
-    if (edit.op === 'reset') return this.fog.reset(scene, players, this.cell());
-    const raster = rasterCircle(edit.at, edit.radius, this.cell());
-    this.fog.paint(scene, players, this.cell(), { raster, reveal: edit.op === 'reveal' });
+    if (edit.op === 'reset') return this.store.fog.reset(scene, players, this.cell());
+    const raster = rasterStroke(edit.path, edit.radius, this.cell());
+    this.store.fog.paint(scene, players, this.cell(), { raster, reveal: edit.op === 'reveal' });
     // A hidden patch a token still sees is seen again on its next look, not now.
   }
 
@@ -94,7 +90,7 @@ export class FogKeeper {
     const scene = this.store.currentScene;
     const cell = this.cell();
     const players = isGm(viewer) ? this.store.world.players.filter((p) => !isGm(p)) : [viewer];
-    return players.map((p) => ({ player: p.id, cell, blocks: this.fog.map(scene, p.id, cell).encode().blocks }));
+    return players.map((p) => ({ player: p.id, cell, blocks: this.store.fog.map(scene, p.id, cell).encode().blocks }));
   }
 
   private eyeOf(token: Token): FogEye {

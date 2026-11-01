@@ -113,7 +113,7 @@ describe('the GM’s fog tools', () => {
     const ana = seat('ana');
     const fog = fogOf(ana, 'ana');
     const gm = gmInCellar();
-    gm.receive({ t: 'fog', edit: { op: 'reveal', at: [-500, 150], radius: 200 } });
+    gm.receive({ t: 'fog', edit: { op: 'reveal', path: [[-500, 150]], radius: 200 } });
     fogOf(ana, 'ana', fog);
     expect(fog.explored([-500, 150])).toBe(true);
     gm.receive({ t: 'undo' });
@@ -129,7 +129,7 @@ describe('the GM’s fog tools', () => {
     const ana = seat('ana');
     const fog = fogOf(ana, 'ana');
     const gm = gmInCellar();
-    gm.receive({ t: 'fog', edit: { op: 'hide', at: [1500, 150], radius: 300, players: ['ana'] } });
+    gm.receive({ t: 'fog', edit: { op: 'hide', path: [[1500, 150]], radius: 300, players: ['ana'] } });
     expect(fogOf(ana, 'ana', fog).explored([1500, 150])).toBe(false);
   });
 

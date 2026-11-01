@@ -171,8 +171,10 @@ export class Game {
 
   /** Everything a welcome depends on, short of the documents. */
   private startOf(c: Client): string {
-    const { players: _seats, ...world } = this.store.inScene(c.scene, () => this.store.world);
-    return JSON.stringify([c.scene, this.store.activeScene, c.player, world, this.store.sceneName(c.scene)]);
+    const { players, ...world } = this.store.inScene(c.scene, () => this.store.world);
+    // The GM's welcome lists the seats too.
+    const seats = isGm(c.player) ? players : undefined;
+    return JSON.stringify([c.scene, this.store.activeScene, c.player, world, this.store.sceneName(c.scene), seats]);
   }
 
   /** The clients on a scene. */

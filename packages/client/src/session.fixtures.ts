@@ -55,6 +55,7 @@ export function welcome(tokens: Token[] = [token('hero')]): ServerMessage {
     chat: [],
     combat: null,
     scene: 'main',
+    active: 'main',
     history: {},
   };
 }

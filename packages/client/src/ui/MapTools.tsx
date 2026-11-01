@@ -72,7 +72,67 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
       {session.mode === 'lights' && <LightPresets session={session} />}
       {session.mode === 'tiles' && <TilePresets session={session} />}
       {session.mode === 'tiles' && <LayersPanel session={session} />}
+      {session.world?.vision !== false && <FogTools session={session} />}
       <Darkness key={session.world?.darkness ?? 0} session={session} />
+    </div>
+  );
+}
+
+const BRUSHES = [
+  { brush: 'reveal' as const, label: 'Reveal', hint: 'Drag to show the players ground they have not explored' },
+  { brush: 'hide' as const, label: 'Hide', hint: 'Drag to hide explored ground from the players again' },
+];
+
+/**
+ * The fog of war on this scene: brushes that paint explored ground in or
+ * out (each stroke one undo), whose fog they paint, and a reset. While a
+ * brush is on, the map shows what the players picked have explored.
+ */
+function FogTools({ session }: Readonly<{ session: Session }>) {
+  const seats = session.players.filter((p) => p.role !== 'gm');
+  const picked = session.fogPlayers?.[0] ?? '';
+  return (
+    <div className="map-tools-row fog-tools" role="toolbar" aria-label="Fog of war">
+      <span className="fog-label">Fog</span>
+      {BRUSHES.map(({ brush, label, hint }) => (
+        <button
+          key={brush}
+          className={`btn small${session.fogBrush === brush ? ' active' : ''}`}
+          title={hint}
+          onClick={() => session.setFogBrush(session.fogBrush === brush ? undefined : brush)}
+        >
+          {label}
+        </button>
+      ))}
+      <input
+        type="range"
+        min={1}
+        max={10}
+        value={session.fogBrushSize}
+        title={`Brush: ${session.fogBrushSize} squares across each way`}
+        aria-label="Brush size"
+        onChange={(e) => session.setFogBrushSize(Number(e.target.value))}
+      />
+      <select
+        value={picked}
+        aria-label="Whose fog"
+        title="Whose fog the brushes and reset change, and the map shows"
+        onChange={(e) => session.setFogPlayers(e.target.value ? [e.target.value] : undefined)}
+      >
+        <option value="">All players</option>
+        {seats.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+      <button
+        className="btn small"
+        title="Forget what they explored here (Ctrl+Z undoes)"
+        onClick={() => session.resetFog()}
+      >
+        Reset
+      </button>
     </div>
   );
 }

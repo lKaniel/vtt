@@ -4,8 +4,10 @@ import {
   FOG_BLOCK,
   FogMap,
   rasterCircle,
+  rasterStroke,
   rasterize,
   undoFogBlock,
+  unionFog,
   visibilityPolygon,
   type Wall,
 } from './index.ts';
@@ -34,6 +36,25 @@ describe('rasterize', () => {
     expect(map.explored([150, 0])).toBe(true);
     expect(map.explored([250, 0])).toBe(false);
     expect(map.explored([-350, 0])).toBe(true);
+  });
+});
+
+describe('rasterStroke', () => {
+  it('covers every brush stamp along a drag', () => {
+    const map = new FogMap(CELL);
+    map.add(
+      rasterStroke(
+        [
+          [0, 0],
+          [400, 0],
+          [400, 400],
+        ],
+        50,
+        CELL,
+      ),
+    );
+    expect([map.explored([0, 0]), map.explored([400, 0]), map.explored([400, 400])]).toEqual([true, true, true]);
+    expect(map.explored([0, 400])).toBe(false);
   });
 });
 
@@ -72,6 +93,23 @@ describe('FogMap', () => {
     map.setBlock('0_0', undoFogBlock(map.block('0_0'), before, after));
     expect(map.explored([100, 100])).toBe(false);
     expect(map.explored([500, 500])).toBe(true);
+  });
+});
+
+describe('unionFog', () => {
+  it('is explored where any of the maps is', () => {
+    const a = new FogMap(CELL);
+    const b = new FogMap(CELL);
+    a.add(rasterCircle([50, 50], 30, CELL));
+    b.add(rasterCircle([3000, 50], 30, CELL));
+    const both = unionFog([a, b])!;
+    expect([both.explored([50, 50]), both.explored([3000, 50]), both.explored([1500, 50])]).toEqual([
+      true,
+      true,
+      false,
+    ]);
+    expect(unionFog([a])).toBe(a);
+    expect(unionFog([])).toBeUndefined();
   });
 });
 
