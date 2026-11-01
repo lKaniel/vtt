@@ -15,7 +15,7 @@ import { targetText } from '../spell-text.ts';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
-/** The side panel has tabs, like a VTT sidebar: the log and journal for everyone; for the GM the scenes, Actors, Compendium, tables, music, assets and packs, and the seats. */
+/** The side panel has tabs, like a VTT sidebar: the log and journal for everyone; for the GM the scenes, Actors, Compendium, tables, music, assets and packs, and the seats; the Compendium for trusted players. */
 const TABS = [
   'Adventure log',
   'Journal',
@@ -30,10 +30,14 @@ const TABS = [
 type Tab = (typeof TABS)[number];
 const PLAYER_TABS: readonly Tab[] = ['Adventure log', 'Journal'];
 
+/** Players who may edit a creature (trusted owners) also get the Compendium, to fill their sheets from. */
+const playerTabs = (session: Session): readonly Tab[] =>
+  [...session.tokens.keys()].some((id) => session.canEdit(id)) ? [...PLAYER_TABS, 'Compendium'] : PLAYER_TABS;
+
 export function ChatPanel({ session }: Readonly<{ session: Session }>) {
   const [open, setOpen] = useState(true);
   const [tab, setTab] = useState<Tab>('Adventure log');
-  const tabs = session.isGm() ? TABS : PLAYER_TABS;
+  const tabs = session.isGm() ? TABS : playerTabs(session);
   const shown = tabs.includes(tab) ? tab : 'Adventure log';
   return (
     <aside className={`chat frame${open ? '' : ' closed'}${shown === 'Adventure log' ? '' : ' library'}`}>

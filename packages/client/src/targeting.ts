@@ -1,4 +1,5 @@
-import { type ClientMessage, type Creature, scaledSpell, type Spell } from '@vtt/system-dnd5e';
+import { type ClientMessage, type Creature, scaledSpell, type Spell, type TokenView } from '@vtt/system-dnd5e';
+import { gameContent } from './content.ts';
 import type { Point } from '@vtt/shared';
 
 // Picking what a spell is aimed at: nothing (self), a point (areas,
@@ -18,6 +19,8 @@ export interface Aiming {
   free?: boolean;
   /** Uses a lasting spell again (spiritual weapon): no new slot. */
   repeat?: boolean;
+  /** Read from a spell scroll the caster carries. */
+  scroll?: boolean;
   /** Set when a feature is aimed like a spell (bardic inspiration): it's used instead of cast. */
   feature?: string;
 }
@@ -47,6 +50,19 @@ export function aimFor(
   return { ...aimSpell(spell, slot, caster.level), ...(free && { free }) };
 }
 
+/** Aims the spell on a scroll: at the spell's own level, with no slot. */
+export function aimScroll(spell: Spell, casterLevel: number): Aiming {
+  return { ...aimSpell(spell, spell.level, casterLevel), scroll: true };
+}
+
+/** Aims a scroll of `spellId` that `token` reads, at its caster level (or level). */
+export function scrollAiming(token: TokenView | undefined, spellId: string | undefined): Aiming | undefined {
+  const spell = spellId ? gameContent(token?.sheet?.edition ?? '2014').spells.get(spellId) : undefined;
+  return spell && aimScroll(spell, readerLevel(token));
+}
+
+const readerLevel = (token: TokenView | undefined): number => token?.sheet?.caster?.level ?? token?.stats?.level ?? 1;
+
 /** Adds a creature to the picks; `done` once the spell has all it needs. */
 export function pick(aiming: Aiming, id: string): { aiming: Aiming; done: boolean } {
   const beams = (aiming.spell.beams ?? 1) > 1 || aiming.spell.cantrip === 'beams';
@@ -69,6 +85,7 @@ export function castMessage(caster: string, aiming: Aiming, point?: Point): Clie
     ...(aiming.summon && { summon: aiming.summon }),
     ...(aiming.free && { free: true }),
     ...(aiming.repeat && { repeat: true }),
+    ...(aiming.scroll && { scroll: true }),
   };
 }
 

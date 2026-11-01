@@ -6,6 +6,7 @@ import { parseClientMessage, type ClientMessage } from './client-messages.ts';
 import { CombatActions } from './combat-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
+import { isDropMessage } from './sheet-drop-actions.ts';
 import { castFeature } from './feature-casting.ts';
 import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
@@ -399,6 +400,7 @@ export class Game {
     else if (msg.t === 'clock') this.clock.act(c.player, msg.action);
     else if (msg.t === 'turnBased') this.combat.turnBased(c.player, msg.on);
     else if (isEntryMessage(msg)) this.entries.handle(c.player, msg);
+    else if (isDropMessage(msg)) this.gm.drops.handle(c.player, (id) => c.visible.has(id), msg);
     else this.scenes.dispatch(c.player, msg);
   }
 

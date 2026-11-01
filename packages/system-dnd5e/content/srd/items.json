@@ -701,6 +701,13 @@
     }
   },
   {
+    "id": "spell-scroll",
+    "type": "gear",
+    "name": "Spell Scroll",
+    "description": "A spell written on a scroll. Reading it casts the spell without a slot, with the scroll's save DC and attack bonus; then the scroll crumbles to dust.",
+    "weight": 0
+  },
+  {
     "id": "potion-of-greater-healing",
     "type": "gear",
     "name": "Potion of Greater Healing",

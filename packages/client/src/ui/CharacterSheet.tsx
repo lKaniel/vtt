@@ -1,4 +1,12 @@
-import { ABILITIES, abilityMod, actorFromToken, type Creature, type Edition, editionOf } from '@vtt/system-dnd5e';
+import {
+  ABILITIES,
+  abilityMod,
+  actorFromToken,
+  type Creature,
+  type Edition,
+  editionOf,
+  type SheetArea,
+} from '@vtt/system-dnd5e';
 import { uniqueId } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Session, SheetTarget } from '../session.ts';
@@ -9,6 +17,7 @@ import { previewSheet, withKey, type Draft, type Update } from './sheet-model.ts
 import { Details } from './SheetDetails.tsx';
 import { EffectsPage, FeaturesPage, InventoryPage, SpellsPage } from './SheetPages.tsx';
 import { useAutoSave } from './useAutoSave.ts';
+import { sheetDropTarget } from './sheet-drop.ts';
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -23,6 +32,8 @@ const ABILITY_NAME = {
 
 const PAGES = ['Inventory', 'Spells', 'Features', 'Effects', 'Details'] as const;
 type Page = (typeof PAGES)[number];
+/** Where things dropped on a page (or its tab) go. */
+const AREA: Partial<Record<Page, SheetArea>> = { Inventory: 'inventory', Spells: 'spells', Features: 'features' };
 
 /** Everything a part of the sheet needs. */
 export interface SheetProps {
@@ -67,6 +78,7 @@ function SheetWindow({
     <section
       className={target.edit ? 'sheet frame editing' : 'sheet frame'}
       aria-label={`${value.name}'s character sheet`}
+      {...sheetDropTarget(session)}
     >
       <SheetHead {...props} />
       <div className="sheet-cols">
@@ -95,10 +107,16 @@ function Pages(props: Readonly<SheetProps & { rules: Edition }>) {
   const pages = PAGES.filter((p) => p !== 'Details' || props.edit);
   const shown = pages.includes(page) ? page : 'Inventory';
   return (
-    <div className="sheet-page">
+    <div className="sheet-page" data-area={AREA[shown]}>
       <nav className="sheet-tabs">
         {pages.map((p) => (
-          <button key={p} className={p === shown ? 'on' : ''} onClick={() => setPage(p)}>
+          <button
+            key={p}
+            className={p === shown ? 'on' : ''}
+            data-area={AREA[p]}
+            onClick={() => setPage(p)}
+            onDragEnter={() => AREA[p] && setPage(p)}
+          >
             {p}
           </button>
         ))}

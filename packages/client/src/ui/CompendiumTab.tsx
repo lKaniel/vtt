@@ -15,8 +15,9 @@ import type { Session } from '../session.ts';
 import { attackTip, itemTip, spellTip, type Tip } from '../tooltip.ts';
 import { startDrag } from './ActorsTab.tsx';
 
-// The GM's Compendium tab: the SRD books, searchable. Drag a monster onto the
-// map to place it, or an item or spell onto a creature to give it.
+// The Compendium tab (the GM's, and trusted players' for their own sheets):
+// the SRD books, searchable. Drag a monster onto the map to place it; an item,
+// spell or feature onto a creature or a character sheet to give it.
 
 const LABEL: Record<Category, string> = {
   monsters: 'Monsters',
@@ -24,6 +25,16 @@ const LABEL: Record<Category, string> = {
   armor: 'Armour',
   gear: 'Gear',
   spells: 'Spells',
+  features: 'Features',
+};
+
+const HINT: Record<Category, string> = {
+  monsters: 'Drag a monster onto the map to place it.',
+  weapons: 'Drag onto a creature or a character sheet to give it.',
+  armor: 'Drag onto a creature or a character sheet to give it.',
+  gear: 'Drag onto a creature or a character sheet to give it.',
+  spells: 'Drag onto a sheet’s spells to teach it, or its inventory for a scroll.',
+  features: 'Drag onto a creature or a character sheet to grant it.',
 };
 /** Rows shown at once; typing narrows the rest. */
 const SHOWN = 120;
@@ -34,7 +45,7 @@ export function CompendiumTab({ session }: Readonly<{ session: Session }>) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string>();
   const list = compendium(category, rules, query);
-  const editioned = category === 'monsters' || category === 'spells';
+  const editioned = category === 'monsters' || category === 'spells' || category === 'features';
   return (
     <div className="lib">
       <nav className="lib-cats">
@@ -61,11 +72,11 @@ export function CompendiumTab({ session }: Readonly<{ session: Session }>) {
       <ul className="lib-list lib-scroll">
         {list.slice(0, SHOWN).map((e) => (
           <EntryRow
-            key={e.id}
+            key={e.key}
             session={session}
             entry={e}
-            open={open === e.id}
-            onToggle={() => setOpen(open === e.id ? undefined : e.id)}
+            open={open === e.key}
+            onToggle={() => setOpen(open === e.key ? undefined : e.key)}
           />
         ))}
         {list.length > SHOWN && (
@@ -73,9 +84,7 @@ export function CompendiumTab({ session }: Readonly<{ session: Session }>) {
         )}
         {list.length === 0 && <li className="muted lib-hint">Nothing matches.</li>}
       </ul>
-      <p className="muted lib-hint">
-        {category === 'monsters' ? 'Drag a monster onto the map to place it.' : 'Drag onto a creature to give it.'}
-      </p>
+      <p className="muted lib-hint">{HINT[category]}</p>
     </div>
   );
 }
@@ -92,7 +101,7 @@ function EntryRow({
       draggable
       onDragStart={(e) => startDrag(e, entry.drag)}
     >
-      <button className="lib-main" onClick={onToggle} title="Drag onto the map">
+      <button className="lib-main" onClick={onToggle} title="Drag onto the map or a character sheet">
         <span className="lib-text">
           <span className="lib-name">{entry.name}</span>
           <span className="lib-sub">{entry.sub}</span>
@@ -108,7 +117,15 @@ function detailTip(entry: Entry): Tip | undefined {
   if (d.kind === 'monster') return monsterTip(gameContent(d.rules).monsters.get(d.id)!);
   if (d.kind === 'spell') return spellTip(gameContent(d.rules).spells.get(d.id)!);
   if (d.kind === 'item') return itemTip(gameContent('2014').items.get(d.id), d.id, false);
+  if (d.kind === 'feature') return featureEntryTip(d);
   return undefined;
+}
+
+function featureEntryTip(d: { id: string; class: string; rules: Edition }): Tip | undefined {
+  const feature = gameContent(d.rules)
+    .classes.get(d.class)
+    ?.features.find((f) => f.id === d.id);
+  return feature && { title: feature.name, subtitle: '', facts: [], body: feature.description };
 }
 
 function monsterTip(m: Monster): Tip {
@@ -146,7 +163,7 @@ function EntryDetail({ session, entry }: Readonly<{ session: Session; entry: Ent
       )}
       <div className="lib-actions">
         {entry.drag.kind === 'monster' ? (
-          <MonsterButtons session={session} drag={entry.drag} />
+          session.isGm() && <MonsterButtons session={session} drag={entry.drag} />
         ) : (
           <button
             className="btn small"

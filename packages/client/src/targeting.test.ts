@@ -1,6 +1,6 @@
-import { srdFor } from '@vtt/system-dnd5e';
+import { srdFor, type TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
-import { aimFor, aimSpell, castMessage, needsClearPath, pick } from './targeting.ts';
+import { aimFor, aimScroll, aimSpell, castMessage, needsClearPath, pick, scrollAiming } from './targeting.ts';
 
 const spell = (id: string) => srdFor('2014').spells.get(id)!;
 
@@ -59,6 +59,23 @@ describe('casting for free', () => {
     const aiming = { ...aimSpell(spell('magic-missile'), 2, 5), free: true };
     expect(castMessage('wiz', aiming)).toMatchObject({ slot: 2, free: true });
     expect(castMessage('wiz', aimSpell(spell('magic-missile'), 1, 5))).not.toHaveProperty('free');
+  });
+});
+
+describe('reading a scroll', () => {
+  it('aims the scroll’s spell at its own level and tells the server to read the scroll', () => {
+    const aiming = aimScroll(spell('magic-missile'), 5);
+    expect(aiming).toMatchObject({ slot: 1, need: 3, scroll: true });
+    expect(castMessage('wiz', aiming)).toMatchObject({ spell: 'magic-missile', slot: 1, scroll: true });
+  });
+
+  it('looks the spell up in the reader’s rules and scales cantrips by their level', () => {
+    const reader = { stats: { level: 11 }, sheet: { edition: '2014' } } as unknown as TokenView;
+    expect(scrollAiming(reader, 'scorching-ray')).toMatchObject({ slot: 2, need: 3, scroll: true });
+    expect(scrollAiming(reader, 'eldritch-blast')).toMatchObject({ need: 3 });
+    expect(scrollAiming(undefined, 'eldritch-blast')).toMatchObject({ need: 1 });
+    expect(scrollAiming(reader, 'nope')).toBeUndefined();
+    expect(scrollAiming(reader, undefined)).toBeUndefined();
   });
 });
 

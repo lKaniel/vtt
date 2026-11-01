@@ -508,22 +508,31 @@ from `classes-5.x.json`. A homebrew class or a monster that casts uses
   "class": "Wizard",
   "level": 3,
   "abilities": { "int": 16, "dex": 14, "con": 14 },
-  "spells": ["fire-bolt", "magic-missile", "shield", "misty-step"]
+  "spells": ["fire-bolt", "magic-missile", "shield", "misty-step"],
+  "features": ["barbarian/rage"]
 }
 ```
+
+`stats.features` grants class features on top of the class's own, as
+`"<class>/<feature>"` (dragging a feature from the Compendium onto a sheet
+adds one). A spell scroll is an inventory entry with the spell on it:
+`{ "item": "spell-scroll", "spell": "fireball", "qty": 1 }`. Reading it casts
+the spell at its own level without a slot, with the scroll's save DC and
+attack bonus (13/+5 up to 2nd level, 15/+7, 17/+9, 18/+10, 19/+11 for 9th),
+and uses the scroll up.
 
 The server writes the rest of a creature's magic to its token, and you can
 edit it too:
 
-| Token field     | Meaning                                                                                                                                                               |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.                                                                 |
-| `deathSaves`    | `{ "successes", "failures", "stable"?, "dead"? }`: a character at 0 hp rolls these at the start of its turns. Monsters just die at 0.                                 |
-| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                 |
-| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st) and feature uses.                                                                |
-| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                         |
-| `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"` or `null`. |
-| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                           |
+| Token field     | Meaning                                                                                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.                                                                                      |
+| `deathSaves`    | `{ "successes", "failures", "stable"?, "dead"? }`: a character at 0 hp rolls these at the start of its turns. Monsters just die at 0.                                                      |
+| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                                      |
+| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st) and feature uses.                                                                                     |
+| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                                              |
+| `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"`, `"scroll:fireball"` or `null`. |
+| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                                                |
 
 Effect modifiers: `senses` (e.g. `{ "darkvision": 60 }` or
 `{ "seeInvisible": true }`), `conditions` (e.g. `["prone"]`, `["paralyzed"]`),

@@ -10,17 +10,17 @@ import {
   type ReactionOffer,
   type ServerMessage,
   type SpawnSource,
-  toEdition,
   type Token,
   type TokenView,
 } from '@vtt/system-dnd5e';
 import { openSocket, refusalOf } from './session-socket.ts';
 
-import { dropMessage, type DragPayload } from './drops.ts';
+import type { DragPayload } from './drops.ts';
+import { dropOnMap } from './session-drops.ts';
 import { refOf } from './editor/selection.ts';
 import { PackSession } from './session-packs.ts';
 import { withOffer } from './reactions.ts';
-import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
+import { aimFor, aimSpell, castMessage, pick, scrollAiming, type Aiming } from './targeting.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
 
@@ -229,6 +229,15 @@ export class Session extends PackSession {
     this.changed();
   }
 
+  /** Readies the spell on a scroll the selected token carries. */
+  aimScroll(spellId: string | undefined): void {
+    this.armed = undefined;
+    this.aiming = scrollAiming(this.selected ? this.tokens.get(this.selected) : undefined, spellId);
+    if (this.aiming?.mode === 'self') return this.confirmCast();
+    this.emit('armed');
+    this.changed();
+  }
+
   /** Casts the aimed spell without spending a slot, or with one again. */
   setFreeCast(free: boolean): void {
     if (this.aiming) this.aiming = { ...this.aiming, free };
@@ -312,17 +321,9 @@ export class Session extends PackSession {
     this.send({ t: 'spawn', from, at, hidden: this.spawnHidden });
   }
 
-  /** Something dragged from the Actors list, the Compendium or the Assets tab was dropped on the map at `p`. */
+  /** Something dragged from the side panel or a sheet's inventory was dropped on the map at `p`. */
   drop(payload: DragPayload, p: Point): void {
-    if (!this.world) return;
-    if (payload.kind === 'media') {
-      const size = payload.w && payload.h ? { w: payload.w, h: payload.h } : undefined;
-      return this.placeMedia(payload.src, p, size);
-    }
-    const ctx = { tokens: this.tokens.values(), gridSize: this.world.gridSize, rules: toEdition(this.world.rules) };
-    const msg = dropMessage(payload, p, { ...ctx, hidden: this.spawnHidden });
-    if ('error' in msg) this.showError(msg.error);
-    else this.send(msg);
+    dropOnMap(this, payload, p);
   }
 
   protected startPoint(): Point {

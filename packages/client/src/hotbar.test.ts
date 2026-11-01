@@ -52,6 +52,21 @@ describe('items on the hotbar', () => {
   });
 });
 
+describe('spell scrolls', () => {
+  const scrolled = (hotbar: (string | null)[]): TokenView => ({
+    ...wizard(hotbar),
+    inventory: [{ item: 'spell-scroll', spell: 'fireball', qty: 2, equipped: false }],
+  });
+
+  it('puts a scroll on the bar by hand as its spell, with how many are carried', () => {
+    const tile = hotbarTiles(scrolled(['scroll:fireball']))[0]!;
+    expect(tile).toMatchObject({ kind: 'spell', name: 'Scroll of Fireball', scroll: true, uses: '2', spent: false });
+    expect(tileRef(tile)).toBe('scroll:fireball');
+    expect(refs(scrolled([]))).not.toContain('scroll:fireball');
+    expect(hotbarTiles(scrolled(['scroll:shield']))[0]?.name).not.toBe('Scroll of Shield');
+  });
+});
+
 describe('the hotbar', () => {
   it('lays everything out in order when nothing was arranged, padded to the bar size', () => {
     const r = refs(wizard());

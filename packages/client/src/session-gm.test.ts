@@ -1,6 +1,7 @@
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Session } from './session.ts';
+import { dropOnOpenSheet } from './session-drops.ts';
 import { closeSession, openSession, token, welcome, type FakeWebSocket } from './session.fixtures.ts';
 
 let session: Session;
@@ -85,6 +86,34 @@ describe('the GM tools', () => {
     expect(ws.sent.at(-1)).toMatchObject({ t: 'spawn', hidden: true });
     session.drop({ kind: 'item', id: 'dagger' }, [900, 900]);
     expect(session.error?.message).toBe('Drop items on a creature');
+  });
+
+  it('sends what lands on the open sheet, with the part of it', () => {
+    ws.receive(gmWelcome());
+    dropOnOpenSheet(session, { kind: 'item', id: 'dagger' });
+    expect(ws.sent.at(-1)).not.toMatchObject({ t: 'drop' });
+    session.openSheet({ kind: 'token', id: 'hero' });
+    dropOnOpenSheet(session, { kind: 'spell', id: 'fireball', rules: '2014' }, 'inventory');
+    expect(ws.sent.at(-1)).toEqual({
+      t: 'drop',
+      what: { kind: 'spell', id: 'fireball', rules: '2014' },
+      onto: { kind: 'token', id: 'hero' },
+      area: 'inventory',
+    });
+    dropOnOpenSheet(session, { kind: 'monster', id: 'goblin', rules: '2014' });
+    expect(session.error?.message).toBe('Drop creatures on the map');
+    session.openSheet({ kind: 'actor', id: 'bandit' });
+    dropOnOpenSheet(session, { kind: 'media', src: 'art/bandit.png' });
+    expect(ws.sent.at(-1)).toMatchObject({ t: 'saveActor', actor: { id: 'bandit', img: 'art/bandit.png' } });
+  });
+
+  it('pins a journal entry dropped on the map as a note', () => {
+    ws.receive(gmWelcome());
+    session.drop({ kind: 'journal', id: 'lore', name: 'Lore' }, [40, 60]);
+    expect(ws.sent.at(-1)).toMatchObject({
+      t: 'ops',
+      ops: [{ op: 'create', doc: { type: 'note', x: 40, y: 60, entry: 'lore', label: 'Lore' } }],
+    });
   });
 });
 

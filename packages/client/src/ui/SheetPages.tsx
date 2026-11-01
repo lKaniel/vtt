@@ -1,13 +1,15 @@
 import type { Edition, InventoryEntry, Spell } from '@vtt/system-dnd5e';
 import { gameContent } from '../content.ts';
 import { pipLeft, withSlotsLeft, withUsesLeft } from '../charges.ts';
+import { carriedDrag, carriedLook } from '../carried.ts';
+import { DRAG_TYPE } from '../drops.ts';
 import { dragTile } from '../hotbar.ts';
-import { attackArt, featureArt, itemArt, spellArt } from '../icon-art.ts';
-import { attackIcon, effectIcon, featureIcon, itemIcon, spellIcon } from '../icons.ts';
+import { attackArt, featureArt, spellArt } from '../icon-art.ts';
+import { attackIcon, effectIcon, featureIcon, spellIcon } from '../icons.ts';
 import { effectLeft } from '../session-time.ts';
 import { ORDINAL } from '../spell-text.ts';
 import { setStat } from '../token-edit.ts';
-import { attackTip, featureTip, itemTip, spellTip } from '../tooltip.ts';
+import { attackTip, featureTip, spellTip } from '../tooltip.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { NumberInput } from './EditorFields.tsx';
 import { IconFace } from './Icon.tsx';
@@ -129,25 +131,30 @@ export function InventoryPage(props: Readonly<SheetProps>) {
   );
 }
 
-function Bag({ session, value }: Readonly<SheetProps>) {
+function Bag({ session, value, kind, sheet }: Readonly<SheetProps>) {
   const list = value.inventory ?? [];
   if (!list.length) return <p className="muted">Empty-handed.</p>;
   return (
     <div className="bag">
       {list.map((entry, i) => {
+        const look = carriedLook(entry, sheet.edition);
         const item = items().get(entry.item);
+        const use = () => {
+          if (entry.spell) readScroll(session, value.id, entry.spell);
+          else if (item && item.type !== 'gear') session.equip(value.id, i, !entry.equipped);
+        };
         return (
           <button
-            key={`${entry.item}-${i}`}
+            key={`${look.ref}-${i}`}
             className={entry.equipped ? 'bag-slot equipped' : 'bag-slot'}
-            aria-label={item?.name ?? entry.item}
+            aria-label={look.name}
             draggable
-            onDragStart={(e) => dragTile(e, { ref: `item:${entry.item}` })}
-            onClick={() => item && item.type !== 'gear' && session.equip(value.id, i, !entry.equipped)}
+            onDragStart={(e) => dragCarried(e, kind === 'token' ? value.id : undefined, entry, look.ref)}
+            onClick={use}
           >
-            <IconFace icon={{ ...itemIcon(item), art: itemArt(item) }} size={24} />
+            <IconFace icon={look.icon} size={24} />
             {entry.qty > 1 && <span className="bag-qty">{entry.qty}</span>}
-            <TipCard tip={itemTip(item, entry.item, entry.equipped)} />
+            <TipCard tip={look.tip} />
           </button>
         );
       })}
@@ -155,7 +162,19 @@ function Bag({ session, value }: Readonly<SheetProps>) {
   );
 }
 
-function InventoryEdit({ value, update }: Readonly<SheetProps>) {
+/** Dragged onto the action bar it's placed there; onto another creature on the map it's handed over. */
+function dragCarried(e: React.DragEvent, token: string | undefined, entry: InventoryEntry, ref: string): void {
+  if (token) e.dataTransfer.setData(DRAG_TYPE, JSON.stringify(carriedDrag(token, entry)));
+  dragTile(e, { ref });
+}
+
+/** Reads a scroll: the token is selected and the scroll's spell aimed. */
+function readScroll(session: SheetProps['session'], token: string, spell: string): void {
+  session.select(token);
+  session.aimScroll(spell);
+}
+
+function InventoryEdit({ value, update, sheet }: Readonly<SheetProps>) {
   const list = value.inventory ?? [];
   const setList = (next: InventoryEntry[], now = true) =>
     update((d) => ({ ...d, inventory: next.length ? next : undefined }), now);
@@ -168,16 +187,16 @@ function InventoryEdit({ value, update }: Readonly<SheetProps>) {
     <>
       <ul className="rows ed-list">
         {list.map((e, i) => {
-          const item = items().get(e.item);
+          const look = carriedLook(e, sheet.edition);
           return (
             <li
-              key={`${e.item}-${i}`}
+              key={`${look.ref}-${i}`}
               className="row"
               draggable
-              onDragStart={(ev) => dragTile(ev, { ref: `item:${e.item}` })}
+              onDragStart={(ev) => dragTile(ev, { ref: look.ref })}
             >
-              <IconFace icon={{ ...itemIcon(item), art: itemArt(item) }} size={18} />
-              <span className="row-name">{item?.name ?? e.item}</span>
+              <IconFace icon={look.icon} size={18} />
+              <span className="row-name">{look.name}</span>
               <input
                 className="ed-qty"
                 type="number"
@@ -290,11 +309,31 @@ function SpellAdder({ value, update, rules }: Readonly<SheetProps & { rules: Edi
   );
 }
 
-export function FeaturesPage({ sheet, edit, update }: Readonly<SheetProps>) {
+/** A feature granted on top of the class, as stored ("barbarian/rage"). */
+const grantedRef = (granted: readonly string[] | undefined, id: string) => granted?.find((r) => r.endsWith(`/${id}`));
+
+export function FeaturesPage({ sheet, edit, update, value }: Readonly<SheetProps>) {
+  const granted = value.stats?.features;
+  const revoke = (ref: string) =>
+    update(
+      (d) =>
+        setStat(
+          d,
+          'features',
+          (d.stats?.features ?? []).filter((r) => r !== ref),
+        ),
+      true,
+    );
   const setUses = (id: string, max: number) => (left: number) =>
     update((d) => withKey(d, 'spent', withUsesLeft(d.spent, { id, left, max })), true);
   if (!sheet.features.length)
-    return <p className="muted">{edit ? 'Features come from the class and level (Details tab).' : 'No features.'}</p>;
+    return (
+      <p className="muted">
+        {edit
+          ? 'Features come from the class and level (Details tab), or drag one from the Compendium.'
+          : 'No features.'}
+      </p>
+    );
   return (
     <ul className="rows">
       {sheet.features.map((f) => (
@@ -316,6 +355,7 @@ export function FeaturesPage({ sheet, edit, update }: Readonly<SheetProps>) {
               onChange={edit ? setUses(f.id, f.max) : undefined}
             />
           )}
+          {edit && grantedRef(granted, f.id) && <RemoveButton onClick={() => revoke(grantedRef(granted, f.id)!)} />}
           <TipCard tip={featureTip(f)} />
         </li>
       ))}

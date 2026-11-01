@@ -29,6 +29,7 @@ import type { z } from 'zod';
 import type { Relink } from './token-ops.ts';
 import { Refusal, requireGm, type Table } from './table.ts';
 import { packContent } from './game-packs.ts';
+import { SheetDrops } from './sheet-drop-actions.ts';
 
 /**
  * The GM's tools: editing any token, placing new ones, keeping the Actors
@@ -36,7 +37,12 @@ import { packContent } from './game-packs.ts';
  * the tokens they own.
  */
 export class GmActions {
-  constructor(private table: Table) {}
+  /** Drag and drop onto sheets, for editors and (handing items over) players. */
+  readonly drops: SheetDrops;
+
+  constructor(private table: Table) {
+    this.drops = new SheetDrops(table);
+  }
 
   private get store() {
     return this.table.store;

@@ -36,6 +36,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     slot: z.number().int().min(0).max(9),
     free: z.boolean().optional(),
     repeat: z.boolean().optional(),
+    scroll: z.boolean().optional(),
     targets: z.array(z.string()).max(20),
     point: PointSchema.optional(),
     summon: z.string().optional(),
@@ -69,6 +70,17 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     at: PointSchema,
     hidden: z.boolean().optional(),
   }),
+  z.object({
+    t: z.literal('drop'),
+    what: z.discriminatedUnion('kind', [
+      z.object({ kind: z.literal('item'), id: z.string() }),
+      z.object({ kind: z.literal('spell'), id: z.string(), rules: EditionSchema }),
+      z.object({ kind: z.literal('feature'), id: z.string(), class: z.string(), rules: EditionSchema }),
+    ]),
+    onto: z.object({ kind: z.enum(['token', 'actor']), id: z.string() }),
+    area: z.enum(['inventory', 'spells', 'features']).optional(),
+  }),
+  z.object({ t: z.literal('give'), from: z.string(), to: z.string(), item: z.string(), spell: z.string().optional() }),
   // The actor itself is checked by GmActions, so a broken one gets a readable refusal.
   z.object({ t: z.literal('saveActor'), actor: z.unknown() }),
   z.object({ t: z.literal('deleteActor'), actor: z.string() }),

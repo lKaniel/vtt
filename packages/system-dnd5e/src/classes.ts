@@ -162,13 +162,34 @@ function sheetOf(f: Feature, level: number, abilities: Abilities, spent: Record<
   return { ...base, max, left: Math.max(0, max - (spent[f.id] ?? 0)) };
 }
 
-/** The class features a token has at its level, with uses left; `usesFrom` features share another's. */
-export function featureSheets(token: Token, cls: Class | undefined, abilities: Abilities): FeatureSheet[] {
+/** The class features a token has at its level and those granted by hand, with uses left; `usesFrom` features share another's. */
+export function featureSheets(
+  token: Token,
+  cls: Class | undefined,
+  abilities: Abilities,
+  granted: readonly Feature[] = [],
+): FeatureSheet[] {
   const level = token.stats?.level ?? 1;
   const spent = token.spent?.uses ?? {};
-  const sheets = (cls?.features ?? []).filter((f) => f.level <= level).map((f) => sheetOf(f, level, abilities, spent));
+  const own = (cls?.features ?? []).filter((f) => f.level <= level);
+  const extra = granted.filter((g) => !own.some((f) => f.id === g.id));
+  const sheets = [...own, ...extra].map((f) => sheetOf(f, level, abilities, spent));
   return sheets.map((f) => {
     const from = f.usesFrom ? sheets.find((s) => s.id === f.usesFrom) : undefined;
     return from ? { ...f, max: from.max, left: from.left } : f;
   });
+}
+
+/** The features a token was granted on top of its class ("barbarian/rage"); unknown ones are left out. */
+export function grantedFeatures(token: Token, content: Content): Feature[] {
+  return (token.stats?.features ?? []).flatMap((ref) => {
+    const found = classFeature(ref, content);
+    return found ? [found] : [];
+  });
+}
+
+/** A class feature by "<class>/<feature>". */
+export function classFeature(ref: string, content: Content): Feature | undefined {
+  const [cls, id] = ref.split('/');
+  return content.classes.get(cls ?? '')?.features.find((f) => f.id === id);
 }
