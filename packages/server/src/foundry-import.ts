@@ -3,7 +3,8 @@ import { dirname, join } from 'node:path';
 import { freeId, mediaKind, type PackManifest, packRef, slugify } from '@vtt/core';
 import type { SceneEntry } from '@vtt/shared';
 import { z } from 'zod';
-import { foundryScene, type MediaLookup } from './foundry-scene.ts';
+import { foundryEntries } from './foundry-entries.ts';
+import { foundryScene, type MediaLookup, type SceneLookups } from './foundry-scene.ts';
 import { readJson, writeJson } from './json-files.ts';
 import { filesUnder } from './pack-store.ts';
 
@@ -12,7 +13,8 @@ import { filesUnder } from './pack-store.ts';
 // media/ (folders kept, so they become tags), and the scenes of its
 // old-style compendia (.db files, Foundry v10 and before), of a world's
 // data/scenes.db and of "Export Data" files (fvtt-Scene-*.json) become a
-// scene compendium. Foundry v11+ compendia are LevelDB databases, which
+// scene compendium; journal entries, roll tables and playlists become
+// compendia of their own (map notes keep pointing at their entries). Foundry v11+ compendia are LevelDB databases, which
 // can't be read yet. Run it with `pnpm import-foundry <folder>`.
 
 const KINDS = ['module', 'world', 'system'] as const;
@@ -56,6 +58,8 @@ export interface ImportReport {
   dir: string;
   media: number;
   scenes: number;
+  /** Journal entries, roll tables and playlists. */
+  documents: number;
   /** What could not come along. */
   skipped: string[];
 }
@@ -138,44 +142,99 @@ const isDir = (path: string) =>
     () => false,
   );
 
-/** The raw scenes of one Foundry compendium, or why it was left out. */
-async function compendiumScenes(src: Source, pack: FoundryPack): Promise<{ scenes: unknown[]; skipped?: string }> {
-  const type = pack.type ?? pack.entity ?? '?';
-  if (type !== 'Scene')
-    return { scenes: [], skipped: `compendium "${pack.name}" (${type}): only scenes are imported so far` };
+/** Foundry document types we bring along, by the kind of raw list they go in. */
+const TYPES: Record<string, keyof RawDocs> = {
+  Scene: 'scenes',
+  JournalEntry: 'journals',
+  RollTable: 'tables',
+  Playlist: 'playlists',
+};
+
+/** A world's data/ files, by the raw list they go in. */
+const WORLD_FILES: Record<keyof RawDocs, string> = {
+  scenes: 'scenes.db',
+  journals: 'journal.db',
+  tables: 'tables.db',
+  playlists: 'playlists.db',
+};
+
+interface RawDocs {
+  scenes: unknown[];
+  journals: unknown[];
+  tables: unknown[];
+  playlists: unknown[];
+}
+
+/** The raw documents of one Foundry compendium, or why it was left out. */
+async function compendiumDocs(src: Source, pack: FoundryPack): Promise<{ docs: unknown[]; skipped?: string }> {
   const path = join(src.dir, pack.path);
-  if (path.endsWith('.db')) return { scenes: await readNedb(path).catch(() => []) };
+  if (path.endsWith('.db')) return { docs: await readNedb(path).catch(() => []) };
   if (await isDir(path)) {
     const why =
-      'a Foundry v11+ database, which cannot be read yet (export its scenes with "Export Data" and import again)';
-    return { scenes: [], skipped: `compendium "${pack.name}": ${why}` };
+      'a Foundry v11+ database, which cannot be read yet (export its documents with "Export Data" and import again)';
+    return { docs: [], skipped: `compendium "${pack.name}": ${why}` };
   }
-  return { scenes: await readNedb(`${path}.db`).catch(() => []) };
+  return { docs: await readNedb(`${path}.db`).catch(() => []) };
 }
 
-/** Every raw scene the folder has: in its compendia, a world's data/scenes.db, and scene exports. */
-async function rawScenes(src: Source, skipped: string[]): Promise<unknown[]> {
-  const out: unknown[] = [];
+const ONLY = 'only scenes, journal entries, roll tables and playlists are imported so far';
+
+/** Every raw document the folder has: in its compendia, a world's data/, and scene exports. */
+async function rawDocs(src: Source, skipped: string[]): Promise<RawDocs> {
+  const out: RawDocs = { scenes: [], journals: [], tables: [], playlists: [] };
   for (const pack of src.manifest.packs ?? []) {
-    const found = await compendiumScenes(src, pack);
-    out.push(...found.scenes);
+    const type = pack.type ?? pack.entity ?? '?';
+    const into = TYPES[type];
+    if (!into) {
+      skipped.push(`compendium "${pack.name}" (${type}): ${ONLY}`);
+      continue;
+    }
+    const found = await compendiumDocs(src, pack);
+    out[into].push(...found.docs);
     if (found.skipped) skipped.push(found.skipped);
   }
-  if (src.kind === 'world') out.push(...(await readNedb(join(src.dir, 'data', 'scenes.db')).catch(() => [])));
+  if (src.kind === 'world')
+    for (const [into, file] of Object.entries(WORLD_FILES) as [keyof RawDocs, string][])
+      out[into].push(...(await readNedb(join(src.dir, 'data', file)).catch(() => [])));
   const exports = (await filesUnder(src.dir)).filter((rel) => /(^|\/)fvtt-Scene-[^/]*\.json$/.test(rel));
-  for (const rel of exports) out.push(await readJson(join(src.dir, rel)));
-  return out.filter((s) => s && typeof s === 'object');
+  for (const rel of exports) out.scenes.push(await readJson(join(src.dir, rel)));
+  for (const key of Object.keys(out) as (keyof RawDocs)[])
+    out[key] = out[key].filter((d) => d && typeof d === 'object');
+  return out;
 }
 
-function convertScenes(raw: unknown[], lookup: MediaLookup, skipped: string[]): SceneEntry[] {
+function convertScenes(
+  raw: unknown[],
+  lookups: SceneLookups & { media: MediaLookup },
+  skipped: string[],
+): SceneEntry[] {
   const taken = new Set<string>();
   return raw.map((data) => {
-    const { scene, skipped: lost } = foundryScene(data, lookup);
+    const { scene, skipped: lost } = foundryScene(data, lookups.media, lookups);
     const id = freeId(slugify(scene.name) || 'scene', (x) => taken.has(x), { bare: true });
     taken.add(id);
     skipped.push(...lost.map((what) => `scene "${scene.name}": ${what}`));
     return { id, ...scene };
   });
+}
+
+const COMPENDIA = [
+  { id: 'scenes', name: 'Scenes', type: 'scene' },
+  { id: 'journals', name: 'Journal entries', type: 'journal' },
+  { id: 'tables', name: 'Roll tables', type: 'rolltable' },
+  { id: 'playlists', name: 'Playlists', type: 'playlist' },
+] as const;
+
+/** Writes each non-empty list as a compendium; their manifest entries. */
+async function writeCompendia(dir: string, lists: Record<(typeof COMPENDIA)[number]['id'], unknown[]>) {
+  const out: PackManifest['compendia'] = [];
+  for (const c of COMPENDIA) {
+    if (!lists[c.id].length) continue;
+    const path = `compendia/${c.id}.json`;
+    await writeJson(join(dir, path), lists[c.id]);
+    out.push({ ...c, path });
+  }
+  return out;
 }
 
 async function targetDir(packsDir: string, id: string, overwrite?: boolean): Promise<string> {
@@ -194,20 +253,24 @@ export async function importFoundry(from: string, packsDir: string, opts: Import
   const dir = await targetDir(packsDir, id, opts.overwrite);
   const skipped: string[] = [];
   const media = await copyMedia(src, dir, id);
-  const scenes = convertScenes(await rawScenes(src, skipped), media.lookup, skipped);
+  const raw = await rawDocs(src, skipped);
+  const entries = foundryEntries(raw, media.lookup);
+  skipped.push(...entries.skipped);
+  const scenes = convertScenes(raw.scenes, { media: media.lookup, ...entries }, skipped);
+  const compendia = await writeCompendia(dir, { scenes, ...entries });
   const { manifest: m } = src;
   const manifest: PackManifest = {
     id,
     name: m.title ?? src.foundryId,
     version: m.version === undefined ? '1.0.0' : String(m.version),
     system: null,
-    compendia: scenes.length ? [{ id: 'scenes', name: 'Scenes', type: 'scene', path: 'compendia/scenes.json' }] : [],
+    compendia,
     media: 'media/',
     source: `foundry:${src.kind}`,
     ...(authorOf(m) ? { author: authorOf(m) } : {}),
     ...(m.description ? { description: plainText(m.description) } : {}),
   };
-  if (scenes.length) await writeJson(join(dir, 'compendia', 'scenes.json'), scenes);
   await writeJson(join(dir, 'pack.json'), manifest);
-  return { id, dir, media: media.count, scenes: scenes.length, skipped };
+  const documents = entries.journals.length + entries.tables.length + entries.playlists.length;
+  return { id, dir, media: media.count, scenes: scenes.length, documents, skipped };
 }

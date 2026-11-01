@@ -8,6 +8,7 @@ import {
   type Wall,
 } from '@vtt/shared';
 import { z } from 'zod';
+import { foundryPlaceables } from './foundry-placeables.ts';
 
 // A Foundry VTT scene (from a module's compendium, a world, or "Export
 // Data") as one of our scene entries. Foundry draws the scene's background
@@ -125,14 +126,26 @@ const decoded = (path: string) => {
 
 const lookupIn = (media: MediaLookup) => (src: string | null | undefined) => (src ? media(decoded(src)) : undefined);
 
-/** Converts one Foundry scene; `media` finds the copied pictures. */
-export function foundryScene(data: unknown, media: MediaLookup): ConvertedScene {
+/** Our ids for the journal entries and pages brought along with the scene, for its map notes. */
+export interface SceneLookups {
+  entries?: (foundryId: string) => string | undefined;
+  pages?: (foundryId: string) => string | undefined;
+}
+
+/** Converts one Foundry scene; `media` finds the copied pictures and sounds. */
+export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLookups = {}): ConvertedScene {
   const s = FoundrySceneSchema.parse(data);
   const grid = gridOf(s);
   const pad = (side: number) => Math.ceil((side * s.padding) / grid.size) * grid.size;
   const [x, y] = [pad(s.width), pad(s.height)];
   const skipped: string[] = [];
   const background = backgroundTile(s, { x, y }, lookupIn(media), skipped);
+  const { skipped: lost, ...placeables } = foundryPlaceables(data, {
+    grid,
+    media: (p) => media(decoded(p)),
+    ...lookups,
+  });
+  skipped.push(...lost);
   const scene: Omit<SceneEntry, 'id'> = {
     name: s.name,
     ...(gridSizePatch(grid.size) as { gridSize: number; chunkSize: number }),
@@ -144,11 +157,7 @@ export function foundryScene(data: unknown, media: MediaLookup): ConvertedScene 
     tiles: [...background, ...tilesOf(s, lookupIn(media), skipped)],
     walls: wallsOf(s, skipped),
     lights: lightsOf(s, grid),
-    drawings: [],
-    notes: [],
-    templates: [],
-    regions: [],
-    sounds: [],
+    ...placeables,
   };
   const tokens = s.tokens?.length ?? 0;
   if (tokens) skipped.push(`${plural(tokens, 'token')} (place the creatures from the Actors tab)`);

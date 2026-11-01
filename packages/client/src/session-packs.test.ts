@@ -143,4 +143,47 @@ describe('the GM’s asset browser', () => {
       actor: { id: 'bandit-chief', name: 'Bandit Chief', folder: 'Bandits' },
     });
   });
+
+  it('adds a journal entry, roll table or playlist from a compendium under a free id', () => {
+    ws.receive(gmWelcome());
+    ws.receive({
+      t: 'docs',
+      changes: [{ coll: 'journals', id: 'lore', doc: { type: 'journal', id: 'lore', rev: 1, name: 'Lore', pages: [] } }],
+    });
+    session.importEntry('journal', { id: 'lore', name: 'Lore', pages: [{ id: 'p', name: 'Gods', text: 'Many' }] });
+    expect(sent()).toMatchObject({
+      t: 'ops',
+      label: 'journal import',
+      ops: [{ op: 'create', coll: 'journals', doc: { id: 'lore-2', type: 'journal', name: 'Lore' } }],
+    });
+    session.importEntry('rolltable', { id: 'loot', name: 'Loot', results: [{ text: 'Gold' }] });
+    expect(sent()).toMatchObject({ ops: [{ op: 'create', coll: 'tables', doc: { id: 'loot', type: 'rolltable' } }] });
+    session.importEntry('playlist', { id: 'inn', name: 'Inn', tracks: [] });
+    expect(sent()).toMatchObject({ ops: [{ op: 'create', coll: 'playlists', doc: { id: 'inn', type: 'playlist' } }] });
+    const before = ws.sent.length;
+    session.importEntry('rolltable', { id: 'empty', name: 'Empty', results: [] });
+    expect(ws.sent).toHaveLength(before);
+    expect(session.error?.message).toMatch(/can't be imported/);
+  });
+
+  it('places a tile prefab in the middle of the screen, on whole squares as a paste is', () => {
+    ws.receive(gmWelcome());
+    session.viewRect = { x: 1000, y: 1000, w: 400, h: 400 };
+    session.importPrefab({
+      id: 'cart',
+      name: 'Cart',
+      tiles: [
+        { id: 'bed', kind: 'rect', x: 0, y: 0, w: 200, h: 100, color: '#8a5a2a' },
+        { id: 'wheel', kind: 'rect', x: 0, y: 100, w: 100, h: 100, color: '#333333' },
+      ],
+    });
+    expect(sent()).toMatchObject({
+      t: 'ops',
+      label: 'prefab',
+      ops: [
+        { op: 'create', coll: 'main/tiles', doc: { id: 'bed', x: 1200, y: 1200 } },
+        { op: 'create', coll: 'main/tiles', doc: { id: 'wheel', x: 1200, y: 1300 } },
+      ],
+    });
+  });
 });

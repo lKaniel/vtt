@@ -1,6 +1,6 @@
 import { OwnershipSchema } from '@vtt/core';
 import { z } from 'zod';
-import { IdSchema as id } from './schema.ts';
+import { IdSchema as id, TileSchema } from './schema.ts';
 
 // The game's sidebar documents beyond actors: journal entries (handouts and
 // the GM's notes, which map notes open), roll tables and playlists. Each is
@@ -72,3 +72,19 @@ export const PlaylistSchema = z.object({
   tracks: z.array(TrackSchema).default([]),
 });
 export type Playlist = z.infer<typeof PlaylistSchema>;
+
+/** A compendium's tile prefab: tiles drawn together (a cart, a market stall), placed as one. */
+export const PrefabSchema = z.object({
+  id,
+  name: z.string().min(1),
+  tiles: z.array(TileSchema).min(1),
+});
+export type Prefab = z.infer<typeof PrefabSchema>;
+
+/** The sidebar documents a compendium may hold, by compendium type, with the collection they go in. */
+export const ENTRY_TYPES = {
+  journal: { coll: 'journals', schema: JournalSchema },
+  rolltable: { coll: 'tables', schema: RollTableSchema },
+  playlist: { coll: 'playlists', schema: PlaylistSchema },
+} as const;
+export type EntryType = keyof typeof ENTRY_TYPES;
