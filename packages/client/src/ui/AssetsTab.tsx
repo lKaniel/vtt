@@ -19,7 +19,6 @@ export function AssetsTab({ session }: Readonly<{ session: Session }>) {
   const [view, setView] = useState<View>('media');
   useEffect(() => {
     session.requestPacks();
-    session.requestMedia();
   }, [session]);
   return (
     <div className="lib assets">
@@ -124,6 +123,10 @@ function MediaView({ session }: Readonly<{ session: Session }>) {
   const [kind, setKind] = useState<MediaKind | ''>('');
   const [source, setSource] = useState<string>();
   const [tag, setTag] = useState<string>();
+  // Fresh each time: packs may have been turned on, or files added, since.
+  useEffect(() => {
+    session.requestMedia();
+  }, [session]);
   const base = searchMedia(session.media, {
     query,
     ...(kind ? { kind } : {}),

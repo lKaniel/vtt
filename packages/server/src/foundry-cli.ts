@@ -25,7 +25,9 @@ try {
   // pnpm runs the script in packages/server; the folder is relative to where it was typed.
   const from = resolve(process.env.INIT_CWD ?? process.cwd(), folder);
   const report = await importFoundry(from, packsDir, values);
-  console.log(`Imported "${report.id}" into ${report.dir}: ${report.media} media files, ${report.scenes} scenes.`);
+  console.log(
+    `Imported "${report.id}" into ${report.dir}: ${report.media} media files, ${report.scenes} scene${report.scenes === 1 ? '' : 's'}.`,
+  );
   for (const line of report.skipped) console.log(`  left out: ${line}`);
 } catch (e) {
   console.error((e as Error).message);
