@@ -1,7 +1,7 @@
 import { IdSchema as id, OwnershipSchema } from '@vtt/core';
 import { LightSchema } from '@vtt/shared';
 import { EffectSchema, FeatureSchema, SpellSchema } from './spell-schema.ts';
-import { InventoryEntrySchema, ItemSchema, StatsSchema } from './stats-schema.ts';
+import { CurrencySchema, InventorySchema, ItemSchema, StatsSchema } from './stats-schema.ts';
 import { z } from 'zod';
 
 // A D&D creature as it is stored: a token in a scene's tokens.json (where it
@@ -72,7 +72,8 @@ export const TokenSchema = z.object({
     .optional(),
   /** Temporary hit points: lost first, and don't stack. */
   tempHp: z.number().int().positive().optional(),
-  inventory: z.array(InventoryEntrySchema).optional(),
+  inventory: InventorySchema.optional(),
+  currency: CurrencySchema.optional(),
   own: OwnSchema.optional(),
   /** Spells, conditions and features currently affecting the token. */
   effects: z.array(EffectSchema).optional(),

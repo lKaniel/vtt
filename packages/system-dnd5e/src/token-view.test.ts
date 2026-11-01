@@ -49,6 +49,12 @@ describe('viewToken', () => {
     expect(viewToken(made, ana, srdFor('2024')).own?.items?.[0]?.name).toBe('Secret');
   });
 
+  it("keeps someone else's purse from other players", () => {
+    const rich = { ...hero, currency: { gp: 120 } };
+    expect(viewToken(rich, { ...ana, id: 'bob' }, srdFor('2024'))).not.toHaveProperty('currency');
+    expect(viewToken(rich, ana, srdFor('2024')).currency?.gp).toBe(120);
+  });
+
   it('adds nothing to tokens without stats', () => {
     const tree = TokenSchema.parse({ id: 'tree', name: 'Tree', x: 0, y: 0 });
     expect(viewToken(tree, ana, srdFor('2024'))).toEqual(tree);

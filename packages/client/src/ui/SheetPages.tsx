@@ -1,42 +1,27 @@
-import {
-  dropOwn,
-  type Edition,
-  knownSpellIds,
-  type InventoryEntry,
-  type OwnKind,
-  type Spell,
-  withOwn,
-} from '@vtt/system-dnd5e';
+import { dropOwn, type Edition, knownSpellIds, type OwnKind, type Spell, withOwn } from '@vtt/system-dnd5e';
 import { gameContent } from '../content.ts';
 import { pipLeft, withSlotsLeft, withUsesLeft } from '../charges.ts';
-import { carriedDrag, carriedLook } from '../carried.ts';
-import { DRAG_TYPE } from '../drops.ts';
 import { dragTile } from '../hotbar.ts';
-import { attackArt, featureArt, spellArt } from '../icon-art.ts';
-import { attackIcon, effectIcon, featureIcon, spellIcon } from '../icons.ts';
+import { featureArt, spellArt } from '../icon-art.ts';
+import { effectIcon, featureIcon, spellIcon } from '../icons.ts';
 import { effectLeft } from '../session-time.ts';
 import { ORDINAL } from '../spell-text.ts';
 import { setStat } from '../token-edit.ts';
-import { attackTip, featureTip, spellTip } from '../tooltip.ts';
+import { featureTip, spellTip } from '../tooltip.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { NumberInput } from './EditorFields.tsx';
 import { IconFace } from './Icon.tsx';
-import { type Draft, withKey } from './sheet-model.ts';
+import { withKey } from './sheet-model.ts';
 import { RemoveButton } from './SheetDetails.tsx';
 import { EditButton, isOwn, NewButton, useOwnEditor } from './own/OwnEditor.tsx';
 import { TipCard } from './Tip.tsx';
 import { Button } from './kit/button.tsx';
-import { Input } from './kit/input.tsx';
-import { Checkbox } from './kit/checkbox.tsx';
 
 // The right-hand pages of the character sheet. Anything usable can be
 // dragged onto the action bar; in edit mode the GM makes new things here
 // (existing ones are dragged from the Compendium) and removes them.
 
-/** Gear is the same in both editions; the game's packs and the sheet add their own. */
-const items = (sheet: Draft) => withOwn(gameContent('2014'), sheet).items;
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
-const DRAG_HINT = 'Drag onto the action bar';
 
 const MAX_PIPS = 10;
 
@@ -114,128 +99,6 @@ function SlotPips({ sheet, edit, update }: Readonly<SheetProps>) {
         ) : null,
       )}
     </div>
-  );
-}
-
-export function InventoryPage(props: Readonly<SheetProps>) {
-  const { sheet } = props;
-  return (
-    <>
-      <h4>Attacks</h4>
-      <div className="bag">
-        {sheet.attacks.map((a) => (
-          <span
-            key={a.name}
-            className="bag-slot"
-            tabIndex={0}
-            draggable
-            onDragStart={(e) => dragTile(e, { ref: `attack:${a.name}` })}
-            aria-label={a.name}
-            title={DRAG_HINT}
-          >
-            <IconFace icon={{ ...attackIcon(a), art: attackArt(a) }} size={24} />
-            <TipCard tip={attackTip(a)} />
-          </span>
-        ))}
-      </div>
-      <h4>Inventory</h4>
-      {props.edit ? <InventoryEdit {...props} /> : <Bag {...props} />}
-    </>
-  );
-}
-
-function Bag({ session, value, kind, sheet }: Readonly<SheetProps>) {
-  const list = value.inventory ?? [];
-  if (!list.length) return <p className="muted">Empty-handed.</p>;
-  return (
-    <div className="bag">
-      {list.map((entry, i) => {
-        const look = carriedLook(entry, sheet.edition, value);
-        const item = items(value).get(entry.item);
-        const use = () => {
-          if (entry.spell) readScroll(session, value.id, entry.spell);
-          else if (item && item.type !== 'gear') session.equip(value.id, i, !entry.equipped);
-        };
-        return (
-          <button
-            key={`${look.ref}-${i}`}
-            className={entry.equipped ? 'bag-slot equipped' : 'bag-slot'}
-            aria-label={look.name}
-            draggable
-            onDragStart={(e) => dragCarried(e, kind === 'token' ? value.id : undefined, entry, look.ref)}
-            onClick={use}
-          >
-            <IconFace icon={look.icon} size={24} />
-            {entry.qty > 1 && <span className="bag-qty">{entry.qty}</span>}
-            <TipCard tip={look.tip} />
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Dragged onto the action bar it's placed there; onto another creature on the map it's handed over. */
-function dragCarried(e: React.DragEvent, token: string | undefined, entry: InventoryEntry, ref: string): void {
-  if (token) e.dataTransfer.setData(DRAG_TYPE, JSON.stringify(carriedDrag(token, entry)));
-  dragTile(e, { ref });
-}
-
-/** Reads a scroll: the token is selected and the scroll's spell aimed. */
-function readScroll(session: SheetProps['session'], token: string, spell: string): void {
-  session.select(token);
-  session.aimScroll(spell);
-}
-
-function InventoryEdit({ value, update, sheet }: Readonly<SheetProps>) {
-  const list = value.inventory ?? [];
-  const own = useOwnEditor(value, update);
-  const setList = (next: InventoryEntry[], now = true) =>
-    update((d) => ({ ...d, inventory: next.length ? next : undefined }), now);
-  const change = (i: number, entry: Partial<InventoryEntry>, now = true) =>
-    setList(
-      list.map((e, j) => (j === i ? { ...e, ...entry } : e)),
-      now,
-    );
-  return (
-    <>
-      <ul className="rows ed-list">
-        {list.map((e, i) => {
-          const look = carriedLook(e, sheet.edition, value);
-          const mine = isOwn(value, 'item', e.item);
-          return (
-            <li
-              key={`${look.ref}-${i}`}
-              className="row"
-              draggable
-              onDragStart={(ev) => dragTile(ev, { ref: look.ref })}
-            >
-              <IconFace icon={look.icon} size={18} />
-              <span className="row-name">{look.name}</span>
-              <Input
-                className="ed-qty"
-                type="number"
-                min={1}
-                value={e.qty}
-                aria-label="Quantity"
-                onChange={(ev) => change(i, { qty: Math.max(1, Number(ev.target.value) || 1) }, false)}
-              />
-              <label className="ed-equip" title="Equipped">
-                <Checkbox checked={e.equipped} onCheckedChange={(on) => change(i, { equipped: on === true })} />E
-              </label>
-              {mine && <EditButton name={look.name} onClick={() => own.open('item', e.item)} />}
-              <RemoveButton
-                onClick={() =>
-                  mine ? update((d) => dropOwn(d, 'item', e.item), true) : setList(list.filter((_, j) => j !== i))
-                }
-              />
-            </li>
-          );
-        })}
-      </ul>
-      <NewButton label="New item" onClick={() => own.create('item')} />
-      {own.dialog}
-    </>
   );
 }
 
