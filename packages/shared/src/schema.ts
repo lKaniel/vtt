@@ -6,6 +6,8 @@ import { z } from 'zod';
 // these schemas.
 
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digits and dashes');
+/** Ids in a game folder: lowercase letters, digits and dashes. */
+export const IdSchema = id;
 
 export const PointSchema = z.tuple([z.number(), z.number()]);
 export type Point = z.infer<typeof PointSchema>;
@@ -30,6 +32,25 @@ export const PlayerSchema = z.object({
 });
 export type Player = z.infer<typeof PlayerSchema>;
 
+/** A named elevation band of a scene: a cellar, the ground floor, an upper floor. */
+export const SceneLevelSchema = z.object({
+  id,
+  name: z.string().min(1),
+  /** Feet: a token at this elevation or above (and below the next level up) is on this level. */
+  bottom: z.number(),
+});
+export type SceneLevel = z.infer<typeof SceneLevelSchema>;
+
+/**
+ * When it is on, by the scene's darkness (0 day, 1 night): `[0.6, 1]` is
+ * "only at night". The game clock (a later step) drives darkness, so a band
+ * follows the time of day through the same helper (`activeAt` in levels.ts).
+ */
+export const DarknessBandSchema = z.tuple([z.number().min(0).max(1), z.number().min(0).max(1)]);
+
+/** The scene level a map item is on (scene.json `levels`); missing = on every level. */
+const onLevel = { level: id.optional() };
+
 /** A scene's grid, camera start and lighting (scenes/<id>/scene.json, without its name). */
 export const SceneSettingsSchema = z.object({
   /** Pixels per 5 ft square. */
@@ -53,6 +74,10 @@ export const SceneSettingsSchema = z.object({
   background: z.string().optional(),
   /** The time of day follows the game clock (world time, a later step); stored, not used yet. */
   darknessFollowsClock: z.boolean().optional(),
+  /** Floors of the scene, bottom up (see levels.ts); none = one level. */
+  levels: z.array(SceneLevelSchema).optional(),
+  /** A playlist that starts when the game moves to this scene. */
+  playlist: id.optional(),
 });
 
 /** The table settings the rules and the client use: the game's, plus those of the scene being played. */
@@ -74,6 +99,7 @@ const tileTree = {
   sort: z.string().optional(),
   /** Clicks and marquees pass through it; select it in the layers panel. */
   locked: z.boolean().optional(),
+  ...onLevel,
 };
 
 const tileBase = {
@@ -122,6 +148,7 @@ export const WallSchema = z.object({
   door: DoorStateSchema.optional(),
   /** false for windows and bars: they block movement but not sight. */
   sight: z.boolean().optional(),
+  ...onLevel,
 });
 export type Wall = z.infer<typeof WallSchema>;
 
@@ -138,7 +165,14 @@ export const LightSchema = z.object({
 });
 export type Light = z.infer<typeof LightSchema>;
 
-export const PlacedLightSchema = LightSchema.extend({ id, x: z.number(), y: z.number() });
+export const PlacedLightSchema = LightSchema.extend({
+  id,
+  x: z.number(),
+  y: z.number(),
+  ...onLevel,
+  /** Shines only while the scene's darkness is in this band ("only at night"). */
+  activeAt: DarknessBandSchema.optional(),
+});
 export type PlacedLight = z.infer<typeof PlacedLightSchema>;
 
 export const ChunkSchema = z.object({
@@ -158,6 +192,8 @@ export interface PlacedToken {
   id: string;
   x: number;
   y: number;
+  /** Feet above the ground: which of the scene's levels it is on. */
+  elevation?: number;
   ownership?: Ownership;
   hidden?: boolean;
   visibleTo?: string[];

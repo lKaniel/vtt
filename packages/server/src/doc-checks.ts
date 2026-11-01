@@ -5,6 +5,7 @@ import type { z } from 'zod';
 import { fromDoc, toDoc } from './doc-sync.ts';
 import { ITEM_SCHEMAS } from './game-files.ts';
 import { ACTORS, COMBAT, GAME, SCENES, TYPE } from './store-colls.ts';
+import { ENTRY_COLLS } from './entry-files.ts';
 
 // Documents sent by a client in an `ops` message are checked against the
 // same schemas as the files they are saved in, so an edit can't write a
@@ -23,6 +24,7 @@ const NAMED: Record<string, Rule> = {
   [SCENES]: { type: 'scene', schema: SceneSchema, bare: true, extra: wholeChunks },
   [ACTORS]: { type: 'actor', schema: ActorSchema },
   [COMBAT]: { type: 'combat', schema: CombatSchema, bare: true },
+  ...Object.fromEntries(Object.entries(ENTRY_COLLS).map(([coll, rule]) => [coll, { ...rule }])),
 };
 
 /** As game-files.ts checks scene.json. */

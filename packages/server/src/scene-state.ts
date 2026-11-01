@@ -1,5 +1,6 @@
 import type { Doc, DocStore } from '@vtt/core';
 import {
+  activeAt,
   anchorChunk,
   type Chunk,
   chunksInRect,
@@ -11,6 +12,8 @@ import {
   type Point,
   type Rect,
   type Scene,
+  type SceneCollection,
+  tokenLevel,
   tokenLights,
   type Wall,
   type World,
@@ -51,7 +54,7 @@ export class SceneState {
     this.world = worldOf(fromDoc<Game>(docs.all('game')[0]!), this.scene);
   }
 
-  coll(name: MapCollection | 'tokens'): string {
+  coll(name: SceneCollection): string {
     return `${this.id}/${name}`;
   }
 
@@ -95,11 +98,15 @@ export class SceneState {
     });
   }
 
-  /** Every light on the scene: placed ones and those tokens carry. */
+  /** Every light shining on the scene: placed ones in their darkness band, and those tokens carry (on the token's level). */
   lights(): LightSource[] {
+    const { darkness, levels } = this.world;
     const out: LightSource[] = [];
-    for (const c of this.chunks.values()) out.push(...c.lights);
-    out.push(...tokenLights(this.tokens.values()));
+    for (const c of this.chunks.values()) out.push(...c.lights.filter((l) => activeAt(l.activeAt, darkness)));
+    for (const t of this.tokens.values()) {
+      const level = levels?.length ? tokenLevel(levels, t) : undefined;
+      out.push(...tokenLights([t]).map((l) => ({ ...l, ...(level && { level }) })));
+    }
     return out;
   }
 

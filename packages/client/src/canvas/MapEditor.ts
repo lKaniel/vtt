@@ -75,6 +75,13 @@ export class MapEditor {
     return had;
   }
 
+  /** Ends a line, polygon or region being drawn; true if there was one. */
+  finish(): boolean {
+    const done = this.tools.finish();
+    this.redraw();
+    return done;
+  }
+
   /** A left press: true when the editor took it. */
   pointerDown(p: PointerInfo): boolean {
     if (p.button !== 0) return false;
@@ -89,6 +96,7 @@ export class MapEditor {
     this.hover = at;
     this.free = mods.shift;
     this.controller.move(at, mods);
+    if (this.tools.busy) this.tools.drag(at);
     if (this.active || this.controller.busy) this.redraw();
   }
 

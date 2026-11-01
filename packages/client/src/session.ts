@@ -121,7 +121,7 @@ export class Session extends PackSession {
     for (const fn of this.listeners.get(event) ?? []) (fn as (...a: Parameters<SessionEvents[K]>) => void)(...args);
   }
 
-  private changed(): void {
+  protected changed(): void {
     this.version++;
     this.emit('change');
   }

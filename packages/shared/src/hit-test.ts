@@ -1,6 +1,7 @@
 import type { Rect } from './chunks.ts';
 import { segmentsIntersect } from './geometry.ts';
 import type { Point } from './schema.ts';
+import { pointInPolygon } from './vision.ts';
 
 // Hit-testing for the map editor: what is under the pointer, and what a
 // dragged rectangle takes. Everything the editor picks is reduced to one of
@@ -10,7 +11,11 @@ import type { Point } from './schema.ts';
 export type Shape =
   | { kind: 'circle'; c: Point; r: number }
   | { kind: 'segment'; a: Point; b: Point }
-  | { kind: 'rect'; x: number; y: number; w: number; h: number };
+  | { kind: 'rect'; x: number; y: number; w: number; h: number }
+  /** Closed: inside counts. */
+  | { kind: 'polygon'; points: Point[] }
+  /** Open, like a drawn line: only near its segments counts. */
+  | { kind: 'path'; points: Point[] };
 
 /** Something the editor can pick, named by `key`. */
 export interface Hittable {
@@ -44,7 +49,29 @@ export function distanceTo(shape: Shape, p: Point): number {
       return dist(p, nearestOnSegment(p, shape.a, shape.b));
     case 'rect':
       return dist(p, clampToRect(p, shape));
+    case 'polygon':
+      return pointInPolygon(p, shape.points.flat()) ? 0 : edgeDistance(shape.points, p, true);
+    case 'path':
+      return edgeDistance(shape.points, p, false);
   }
+}
+
+/** How far `p` is from the nearest edge of a run of points (closed: back to the first). */
+function edgeDistance(points: readonly Point[], p: Point, closed: boolean): number {
+  let best = Infinity;
+  const n = closed ? points.length : points.length - 1;
+  for (let i = 0; i < n; i++) {
+    best = Math.min(best, dist(p, nearestOnSegment(p, points[i]!, points[(i + 1) % points.length]!)));
+  }
+  return points.length === 1 ? dist(p, points[0]!) : best;
+}
+
+/** The box around some points. */
+export function pointsBounds(points: readonly Point[]): Rect {
+  const xs = points.map((p) => p[0]);
+  const ys = points.map((p) => p[1]);
+  const [x, y] = [Math.min(...xs), Math.min(...ys)];
+  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
 }
 
 /** The topmost item (items are listed bottom to top) within `reach` of `p`. */
@@ -66,6 +93,9 @@ export function shapeBounds(shape: Shape): Rect {
       return rectBetween(shape.a, shape.b);
     case 'rect':
       return { x: shape.x, y: shape.y, w: shape.w, h: shape.h };
+    case 'polygon':
+    case 'path':
+      return pointsBounds(shape.points);
   }
 }
 
@@ -97,6 +127,13 @@ function segmentTouches(a: Point, b: Point, r: Rect): boolean {
   return c.some((p, i) => segmentsIntersect(a, b, p, c[(i + 1) % 4]!));
 }
 
+/** A run of points touches a rectangle when a segment does, or (closed) when the rectangle is inside it. */
+function pointsTouch(points: readonly Point[], r: Rect, closed: boolean): boolean {
+  const n = closed ? points.length : points.length - 1;
+  for (let i = 0; i < n; i++) if (segmentTouches(points[i]!, points[(i + 1) % points.length]!, r)) return true;
+  return closed && pointInPolygon([r.x, r.y], points.flat());
+}
+
 function touches(shape: Shape, r: Rect): boolean {
   switch (shape.kind) {
     case 'circle':
@@ -105,6 +142,9 @@ function touches(shape: Shape, r: Rect): boolean {
       return segmentTouches(shape.a, shape.b, r);
     case 'rect':
       return overlaps(shape, r);
+    case 'polygon':
+    case 'path':
+      return pointsTouch(shape.points, r, shape.kind === 'polygon');
   }
 }
 

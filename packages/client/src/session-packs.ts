@@ -1,5 +1,16 @@
 import type { MediaEntry, PackInfo } from '@vtt/core';
-import { importSceneOps, type Rect, SceneEntrySchema, uniqueId } from '@vtt/shared';
+import type { Doc } from '@vtt/core';
+import {
+  ENTRY_TYPES,
+  type EntryType,
+  importSceneOps,
+  pasteAt,
+  pasteOffsetTo,
+  PrefabSchema,
+  type Rect,
+  SceneEntrySchema,
+  uniqueId,
+} from '@vtt/shared';
 import { type Actor, ActorSchema, type ServerMessage } from '@vtt/system-dnd5e';
 import { setPackContent } from './content.ts';
 import { SceneSession } from './session-scenes.ts';
@@ -86,6 +97,34 @@ export abstract class PackSession extends SceneSession {
     const actor = parsed.data;
     const id = this.actors.has(actor.id) ? uniqueId(actor.name, (x) => this.actors.has(x)) : actor.id;
     this.saveActor({ ...actor, id, ...(folder ? { folder } : {}) });
+  }
+
+  /** A journal entry, roll table or playlist from a compendium joins the sidebar, under a free id. */
+  importEntry(type: EntryType, entry: unknown): void {
+    const { coll, schema } = ENTRY_TYPES[type];
+    const parsed = schema.safeParse(entry);
+    if (!parsed.success) {
+      this.showError(`That ${type} can't be imported: ${parsed.error.issues[0]?.message ?? 'broken'}`);
+      return;
+    }
+    const data = parsed.data;
+    const taken = (x: string) => !!this.docs.get(coll, x);
+    const id = taken(data.id) ? uniqueId(data.name, taken) : data.id;
+    const doc = { ...data, id, type, rev: 0 } as Doc;
+    this.sendChanges(`${type} import`, [{ op: 'create', coll, doc }]);
+    this.showNotice(`Imported "${data.name}"`);
+  }
+
+  /** A tile prefab from a compendium, placed with its middle in the middle of the screen. */
+  importPrefab(entry: unknown): void {
+    const parsed = PrefabSchema.safeParse(entry);
+    if (!parsed.success) {
+      this.showError(`That prefab can't be placed: ${parsed.error.issues[0]?.message ?? 'broken'}`);
+      return;
+    }
+    const clip = { docs: parsed.data.tiles.map((t) => ({ ...t, type: 'tile', rev: 0 })) };
+    const offset = pasteOffsetTo(clip, this.viewCentre(), this.gridSize());
+    this.sendChanges('prefab', pasteAt(this.docs, clip, { scene: this.scene, offset }).ops);
   }
 
   protected override applyEdit(msg: ServerMessage): boolean {

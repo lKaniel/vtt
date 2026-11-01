@@ -26,7 +26,7 @@ try {
   const from = resolve(process.env.INIT_CWD ?? process.cwd(), folder);
   const report = await importFoundry(from, packsDir, values);
   console.log(
-    `Imported "${report.id}" into ${report.dir}: ${report.media} media files, ${report.scenes} scene${report.scenes === 1 ? '' : 's'}.`,
+    `Imported "${report.id}" into ${report.dir}: ${report.media} media files, ${report.scenes} scene${report.scenes === 1 ? '' : 's'}, ${report.documents} journal entries, tables and playlists.`,
   );
   for (const line of report.skipped) console.log(`  left out: ${line}`);
 } catch (e) {

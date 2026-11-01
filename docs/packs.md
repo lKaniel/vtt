@@ -58,11 +58,13 @@ install. A game's own files stay `/assets/<path>` (uploads go in
 
 ## Compendium types
 
-| Type                       | What happens with it                                                                                                                                                 |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scene`                    | Copied into the game as a new scene (Assets tab, Packs, Import): a `scene.json` with `tiles`, `walls`, `lights` in it (`SceneEntrySchema`, `shared/scene-entry.ts`). |
-| `actor`                    | Added to the Actors list (the system's actor schema).                                                                                                                |
-| `monster`, `item`, `spell` | D&D rules content: while the pack is on, tokens can use them like SRD ones (`"monster": "<id>"`), and they appear in the Compendium tab.                             |
+| Type                               | What happens with it                                                                                                                                                 |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scene`                            | Copied into the game as a new scene (Assets tab, Packs, Import): a `scene.json` with `tiles`, `walls`, `lights` in it (`SceneEntrySchema`, `shared/scene-entry.ts`). |
+| `actor`                            | Added to the Actors list (the system's actor schema).                                                                                                                |
+| `journal`, `rolltable`, `playlist` | Added to the Journal, Tables or Music tab, under a free id (`ENTRY_TYPES`, `shared/journals.ts`).                                                                    |
+| `prefab`                           | Tiles placed together, their middle in the middle of the screen: `{ "id", "name", "tiles": [...] }` (`PrefabSchema`).                                                |
+| `monster`, `item`, `spell`         | D&D rules content: while the pack is on, tokens can use them like SRD ones (`"monster": "<id>"`), and they appear in the Compendium tab.                             |
 
 Other types are listed but not used yet.
 
@@ -114,9 +116,19 @@ with `module.json`, `world.json` or `system.json`). It makes a pack in
   background becomes a locked ground tile where Foundry draws it (inside the
   scene's padding), tiles become image tiles, walls, doors and windows
   become ours, lights keep their radius (in feet), colour and animation.
+- Scenes keep their drawings, map notes, measured templates (in feet; a
+  rectangle as the square it covers), ambient sounds and (v12) regions:
+  their shape, colour, and the behaviours we have a match for (scrolling
+  text becomes a message).
+- Journal entries (text and image pages), roll tables (weights from their
+  ranges) and playlists (tracks whose file came along) become `journal`,
+  `rolltable` and `playlist` compendia, from compendia and a world's
+  `data/journal.db`, `tables.db` and `playlists.db`. Map notes point at the
+  entries brought with them.
 - It prints what it left out: tokens (place creatures from the Actors
-  tab), tiles whose picture isn't in the module, walls that block neither
-  movement nor sight, and compendia of other types.
+  tab), tiles and sounds whose file isn't in the module, walls that block
+  neither movement nor sight, page kinds and region behaviours we have no
+  match for, and compendia of other types.
 
 Foundry v11 and later keep compendia in LevelDB databases, which can't be
 read yet. Open the module in Foundry, use "Export Data" on its scenes, put
@@ -124,8 +136,6 @@ the files in the module folder and import again.
 
 ## Not done yet
 
-- Reading Foundry v11+ LevelDB compendia, and Foundry actors, items and
-  journals (their data is system-specific).
-- Tile prefabs (a `tile` compendium dropped as a group), playlists from
-  sound packs (step 12 adds ambient sounds).
+- Reading Foundry v11+ LevelDB compendia, and Foundry actors and items
+  (their data is system-specific).
 - Installing a pack from the browser (zip upload) and per-pack permissions.

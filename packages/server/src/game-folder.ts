@@ -1,5 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import type { Actor } from '@vtt/system-dnd5e';
+import type { Journal } from '@vtt/shared';
 import { join } from 'node:path';
 import {
   classify,
@@ -11,6 +12,7 @@ import {
   type Issue,
 } from './game-files.ts';
 import type { PackStore } from './pack-store.ts';
+import { ENTRY_COLLS } from './entry-files.ts';
 
 // Reading a whole game folder: every file the game knows, parsed. The
 // server loads from this and `check-game` reports from it.
@@ -30,7 +32,9 @@ async function names(dir: string, sub: string): Promise<string[]> {
 /** Paths of the files a game folder holds, game.json first. Unknown files are listed separately. */
 async function gameFiles(dir: string): Promise<{ known: string[]; unknown: string[] }> {
   const top = await names(dir, '.');
-  const all = [...top.filter((n) => n.endsWith('.json')), ...(await names(dir, 'actors')).map((n) => `actors/${n}`)];
+  const all = top.filter((n) => n.endsWith('.json'));
+  for (const sub of ['actors', ...Object.keys(ENTRY_COLLS)])
+    all.push(...(await names(dir, sub)).map((n) => `${sub}/${n}`));
   for (const scene of await names(dir, 'scenes')) {
     // fog/ holds explored fog of war, which the server keeps (see fog-store.ts).
     const files = (await names(dir, `scenes/${scene}`)).filter((n) => n !== 'fog');
@@ -61,10 +65,14 @@ export async function readFolder(dir: string): Promise<FolderEntry[]> {
 
 const emptyScene = () => ({ tiles: [], walls: [], lights: [], tokens: [] });
 
-function addFile(state: GameState & { actors: Map<string, Actor> }, file: GameFile): void {
+function addFile(
+  state: GameState & { actors: Map<string, Actor>; journals: Map<string, Journal> },
+  file: GameFile,
+): void {
   if (file.kind === 'scene') state.scenes.set(file.scene, { ...emptyScene(), scene: file.data });
   else if (file.kind === 'actor') state.actors.set(file.id, file.data);
   else if (file.kind === 'combat') state.combat = file.data;
+  else if (file.kind === 'entry' && file.coll === 'journals') state.journals.set(file.id, file.data as Journal);
 }
 
 function addItems(state: GameState, file: GameFile): void {
@@ -77,7 +85,7 @@ export function stateOf(entries: readonly FolderEntry[]): GameState | undefined 
   const files = entries.flatMap((e) => (e.file ? [e.file] : []));
   const game = files.find((f) => f.kind === 'game');
   if (game?.kind !== 'game') return undefined;
-  const state = { game: game.data, scenes: new Map(), actors: new Map<string, Actor>() };
+  const state = { game: game.data, scenes: new Map(), actors: new Map<string, Actor>(), journals: new Map() };
   for (const file of files) addFile(state, file);
   for (const file of files) addItems(state, file);
   return state;

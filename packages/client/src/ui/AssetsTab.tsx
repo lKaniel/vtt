@@ -257,7 +257,7 @@ function PackDetail({ session, pack }: Readonly<{ session: Session; pack: PackIn
 }
 
 /** Document types the GM copies into the game; the rest is rules content the Compendium tab shows. */
-const IMPORTED = new Set(['scene', 'actor']);
+const IMPORTED = new Set(['scene', 'actor', 'journal', 'rolltable', 'playlist', 'prefab']);
 
 const nameOf = (doc: unknown) => {
   const d = doc as { name?: unknown; id?: unknown };
@@ -280,8 +280,7 @@ function CompendiumView({
     const where = pack.enabled ? 'In the Compendium tab.' : 'Turn the pack on to use it.';
     return <p className="lib-sub">{`${label}: ${where}`}</p>;
   }
-  const add = (doc: unknown) =>
-    compendium.type === 'scene' ? session.importScene(doc) : session.importActor(doc, pack.name);
+  const add = (doc: unknown) => importDoc(session, compendium.type, doc, pack.name);
   return (
     <details className="lib-folder" open={open}>
       <summary
@@ -305,4 +304,12 @@ function CompendiumView({
       </ul>
     </details>
   );
+}
+
+/** Copies one compendium document into the game, as its type goes in. */
+function importDoc(session: Session, type: string, doc: unknown, folder: string): void {
+  if (type === 'scene') session.importScene(doc);
+  else if (type === 'prefab') session.importPrefab(doc);
+  else if (type === 'journal' || type === 'rolltable' || type === 'playlist') session.importEntry(type, doc);
+  else session.importActor(doc, folder);
 }

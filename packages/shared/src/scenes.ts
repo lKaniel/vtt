@@ -1,5 +1,6 @@
 import { type Doc, type DocRef, freeId, keyBetween, type Op, type Patch, slugify } from '@vtt/core';
 import { copyRefs, pasteAt } from './edit-kinds.ts';
+import { SCENE_COLLECTIONS } from './scene-colls.ts';
 
 // The Scenes list's commands as document ops: a new scene, a copy of one
 // with everything on it, in the list's order. Deleting is one op on the
@@ -12,7 +13,6 @@ interface Source {
 }
 
 const SCENES = 'scenes';
-const PLACEABLES = ['tiles', 'walls', 'lights', 'tokens'];
 
 const sortOf = (d: Doc) => (typeof d.sort === 'string' ? d.sort : '');
 const nameOf = (d: Doc) => (typeof d.name === 'string' ? d.name : d.id);
@@ -61,7 +61,7 @@ export function duplicateSceneOps(src: Source, from: string): { id: string; ops:
   if (!scene) return { id: from, ops: [] };
   const id = freeSceneId(src, `${from}-copy`);
   const copy: Doc = { ...scene, id, rev: 0, name: `${nameOf(scene)} (copy)`, sort: lastKey(src) };
-  const refs: DocRef[] = PLACEABLES.flatMap((coll) =>
+  const refs: DocRef[] = SCENE_COLLECTIONS.flatMap((coll) =>
     src.all(`${from}/${coll}`).map((d) => ({ coll: `${from}/${coll}`, id: d.id })),
   );
   const { ops } = pasteAt(src, copyRefs(src, refs), { scene: id, offset: [0, 0] });

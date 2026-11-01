@@ -11,8 +11,21 @@ import {
   TokenEntrySchema,
 } from '@vtt/system-dnd5e';
 import {
+  type Drawing,
+  DrawingSchema,
   type Game,
   GameSchema,
+  type Journal,
+  type Note,
+  NoteSchema,
+  type Region,
+  RegionSchema,
+  SCENE_COLLECTIONS,
+  type SceneCollection,
+  type Sound,
+  SoundSchema,
+  type Template,
+  TemplateSchema,
   type PlacedLight,
   PlacedLightSchema,
   type Scene,
@@ -30,6 +43,8 @@ import { toDoc } from './doc-sync.ts';
 import { SYSTEMS } from './systems.ts';
 import { contentCompendia, gamePackIssues } from './game-packs.ts';
 import type { PackStore } from './pack-store.ts';
+import { type EntryColl, type EntryData, isEntryColl, parseEntryData } from './entry-files.ts';
+import { sceneItemIssues } from './item-checks.ts';
 
 // Reading and validating single game files (storage v2). Shared by the
 // server and the `check-game` command so both report the same problems.
@@ -38,16 +53,22 @@ import type { PackStore } from './pack-store.ts';
 //   actors/<id>.json              creatures' sheets: the GM's Actors list
 //   combat.json                   the fight in progress
 //   scenes/<id>/scene.json        a scene's grid, lighting and camera start
-//   scenes/<id>/<coll>.json       a list per collection: tiles, walls, lights, tokens
+//   scenes/<id>/<coll>.json       a list per collection: tiles, walls, lights, tokens,
+//                                 drawings, notes, templates, regions, sounds
+//   journals/, tables/, playlists/  one file per journal entry, roll table, playlist
 
-const SCENE_COLLECTIONS = ['tiles', 'walls', 'lights', 'tokens'] as const;
-export type SceneCollection = (typeof SCENE_COLLECTIONS)[number];
+export type { SceneCollection };
 
 export interface SceneItems {
   tiles: Tile[];
   walls: Wall[];
   lights: PlacedLight[];
   tokens: TokenEntry[];
+  drawings?: Drawing[];
+  notes?: Note[];
+  templates?: Template[];
+  regions?: Region[];
+  sounds?: Sound[];
 }
 
 export const ITEM_SCHEMAS = {
@@ -55,22 +76,39 @@ export const ITEM_SCHEMAS = {
   walls: WallSchema,
   lights: PlacedLightSchema,
   tokens: TokenEntrySchema,
+  drawings: DrawingSchema,
+  notes: NoteSchema,
+  templates: TemplateSchema,
+  regions: RegionSchema,
+  sounds: SoundSchema,
 };
-const NOUN: Record<SceneCollection, string> = { tiles: 'tile', walls: 'wall', lights: 'light', tokens: 'token' };
+const NOUN: Record<SceneCollection, string> = {
+  tiles: 'tile',
+  walls: 'wall',
+  lights: 'light',
+  tokens: 'token',
+  drawings: 'drawing',
+  notes: 'note',
+  templates: 'template',
+  regions: 'region',
+  sounds: 'sound',
+};
 
 export type FileKind =
   | { kind: 'game' }
   | { kind: 'combat' }
   | { kind: 'actor'; id: string }
   | { kind: 'scene'; scene: string }
-  | { kind: 'collection'; scene: string; coll: SceneCollection };
+  | { kind: 'collection'; scene: string; coll: SceneCollection }
+  | { kind: 'entry'; coll: EntryColl; id: string };
 
 export type GameFile =
   | { kind: 'game'; data: Game }
   | { kind: 'combat'; data: Combat }
   | { kind: 'actor'; id: string; data: Actor }
   | { kind: 'scene'; scene: string; data: Scene }
-  | { kind: 'collection'; scene: string; coll: SceneCollection; data: SceneItems[SceneCollection] };
+  | { kind: 'collection'; scene: string; coll: SceneCollection; data: NonNullable<SceneItems[SceneCollection]> }
+  | { kind: 'entry'; coll: EntryColl; id: string; data: EntryData };
 
 const isCollection = (name: string): name is SceneCollection => (SCENE_COLLECTIONS as readonly string[]).includes(name);
 
@@ -80,14 +118,19 @@ function classifyScene(scene: string, file: string): FileKind | null {
   return file.endsWith('.json') && isCollection(name) ? { kind: 'collection', scene, coll: name } : null;
 }
 
+/** A file with one document in a folder of the game: an actor, a journal entry, a roll table, a playlist. */
+function classifyEntry(folder: string, file: string): FileKind | null {
+  const id = basename(file, '.json');
+  if (folder === 'actors') return { kind: 'actor', id };
+  return isEntryColl(folder) ? { kind: 'entry', coll: folder, id } : null;
+}
+
 /** Classifies a path relative to the game folder, or null for files we ignore. */
 export function classify(rel: string): FileKind | null {
   const parts = rel.split(/[\\/]/);
   if (parts.length === 1 && parts[0] === 'game.json') return { kind: 'game' };
   if (parts.length === 1 && parts[0] === 'combat.json') return { kind: 'combat' };
-  if (parts.length === 2 && parts[0] === 'actors' && parts[1]!.endsWith('.json')) {
-    return { kind: 'actor', id: basename(parts[1]!, '.json') };
-  }
+  if (parts.length === 2 && parts[1]!.endsWith('.json')) return classifyEntry(parts[0]!, parts[1]!);
   if (parts.length === 3 && parts[0] === 'scenes') return classifyScene(parts[1]!, parts[2]!);
   return null;
 }
@@ -104,6 +147,8 @@ export function pathOf(kind: FileKind): string {
       return `scenes/${kind.scene}/scene.json`;
     case 'collection':
       return `scenes/${kind.scene}/${kind.coll}.json`;
+    case 'entry':
+      return `${kind.coll}/${kind.id}.json`;
   }
 }
 
@@ -134,7 +179,14 @@ export function parseFile(kind: FileKind, text: string): ParseResult {
       return parseActor(kind.id, json);
     case 'combat':
       return parseCombat(json);
+    case 'entry':
+      return parseEntry(kind.coll, kind.id, json);
   }
+}
+
+function parseEntry(coll: EntryColl, id: string, json: unknown): ParseResult {
+  const { data, errors } = parseEntryData(coll, id, json);
+  return data ? { file: { kind: 'entry', coll, id, data }, errors } : { errors };
 }
 
 function result(file: GameFile, errors: string[]): ParseResult {
@@ -177,8 +229,9 @@ function itemName(coll: SceneCollection, raw: unknown, index: number): string {
 
 function parseCollection(scene: string, coll: SceneCollection, json: unknown): ParseResult {
   if (!Array.isArray(json)) return { errors: [`${coll}.json must be a list of ${coll}`] };
-  const schema: z.ZodType<SceneItems[SceneCollection][number]> = ITEM_SCHEMAS[coll];
-  const items: SceneItems[SceneCollection][number][] = [];
+  type Item = NonNullable<SceneItems[SceneCollection]>[number];
+  const schema = ITEM_SCHEMAS[coll] as z.ZodType<Item>;
+  const items: Item[] = [];
   const errors: string[] = [];
   json.forEach((raw: unknown, i) => {
     const r = schema.safeParse(raw);
@@ -191,7 +244,7 @@ function parseCollection(scene: string, coll: SceneCollection, json: unknown): P
       'in this scene',
     ),
   );
-  return result({ kind: 'collection', scene, coll, data: items as SceneItems[SceneCollection] }, errors);
+  return result({ kind: 'collection', scene, coll, data: items as NonNullable<SceneItems[SceneCollection]> }, errors);
 }
 
 function parseActor(id: string, json: unknown): ParseResult {
@@ -213,6 +266,7 @@ export interface GameState {
   scenes: Map<string, { scene: Scene } & SceneItems>;
   actors: ReadonlyMap<string, Actor>;
   combat?: Combat;
+  journals?: ReadonlyMap<string, Journal>;
 }
 
 export interface Issue {
@@ -247,12 +301,21 @@ export function crossCheck(state: GameState, system = SYSTEMS.get(state.game.sys
   for (const [id, s] of scenes) {
     const refs = { players, world: worldOf(game, s.scene), system, content };
     out.push(...sceneTokenIssues(id, s, state, refs), ...sceneTileIssues(id, s.tiles));
+    out.push(...sceneItemIssues(id, s as never, sceneRefs(state, s.scene)));
   }
   const refs = { players, world: worldOf(game, active?.scene ?? SceneSchema.parse({})), system, content };
   for (const a of actors.values()) {
     out.push(...tokenIssues(a, refs).map((message) => ({ file: `actors/${a.id}.json`, message })));
   }
   return [...out, ...combatIssues(combat, active?.tokens ?? [])];
+}
+
+function sceneRefs(state: GameState, scene: Scene) {
+  return {
+    levels: scene.levels,
+    journals: (id: string) => !!state.journals?.has(id),
+    scenes: (id: string) => state.scenes.has(id),
+  };
 }
 
 /** Packs game.json names that the server lacks or can't read. */

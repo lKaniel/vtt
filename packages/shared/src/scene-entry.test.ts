@@ -22,6 +22,20 @@ const cave = SceneEntrySchema.parse({
   ],
   walls: [{ id: 'wall-1', a: [0, 0], b: [140, 0] }],
   lights: [{ id: 'light-1', x: 70, y: 70, bright: 20, dim: 40 }],
+  notes: [{ id: 'note-1', x: 70, y: 70, label: 'Altar' }],
+  sounds: [{ id: 'sound-1', x: 70, y: 70, radius: 30, src: 'pack://caves/media/drip.ogg' }],
+  drawings: [{ id: 'drawing-1', shape: 'text', x: 0, y: 0, w: 140, h: 40, text: 'Here be goblins' }],
+  regions: [
+    {
+      id: 'region-1',
+      points: [
+        [0, 0],
+        [140, 0],
+        [0, 140],
+      ],
+      behaviors: [{ type: 'difficult' }],
+    },
+  ],
 });
 
 describe('a scene from a compendium', () => {
@@ -42,5 +56,9 @@ describe('a scene from a compendium', () => {
     expect(docs.get(`${id}/tiles`, 'background')).toMatchObject({ type: 'tile', src: 'pack://caves/media/cave.webp' });
     expect(docs.get(`${id}/walls`, 'wall-1')).toMatchObject({ type: 'wall', b: [140, 0] });
     expect(docs.get(`${id}/lights`, 'light-1')).toMatchObject({ type: 'light', bright: 20 });
+    expect(docs.get(`${id}/notes`, 'note-1')).toMatchObject({ type: 'note', label: 'Altar' });
+    expect(docs.get(`${id}/sounds`, 'sound-1')).toMatchObject({ type: 'sound', radius: 30 });
+    expect(docs.get(`${id}/drawings`, 'drawing-1')).toMatchObject({ type: 'drawing', text: 'Here be goblins' });
+    expect(docs.get(`${id}/regions`, 'region-1')).toMatchObject({ type: 'region', behaviors: [{ type: 'difficult' }] });
   });
 });

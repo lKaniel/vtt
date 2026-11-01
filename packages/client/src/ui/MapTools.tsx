@@ -1,4 +1,5 @@
-import type { EditorMode, TileTexture } from '@vtt/shared';
+import type { EditorMode, ItemMode, TileTexture } from '@vtt/shared';
+import { ITEM_TOOLS, type ItemTool } from '../editor/shape-tools.ts';
 import { useState } from 'react';
 import { LIGHT_PRESETS, TILE_PRESETS, type LightPreset } from '../map-tools.ts';
 import type { Session } from '../session.ts';
@@ -10,7 +11,30 @@ const MODES: { mode: EditorMode; label: string; key: string; hint: string }[] = 
   { mode: 'tiles', label: 'Tiles', key: 'Shift+T', hint: 'Draw, select, move, resize and group tiles' },
   { mode: 'walls', label: 'Walls', key: 'W', hint: 'Select, move and reshape walls, doors and windows' },
   { mode: 'lights', label: 'Lights', key: 'L', hint: 'Select, move and resize lights' },
+  { mode: 'drawings', label: 'Draw', key: 'D', hint: 'Shapes, lines, freehand and text on the map' },
+  { mode: 'notes', label: 'Notes', key: 'N', hint: 'Pins that open journal entries' },
+  { mode: 'templates', label: 'Measure', key: 'M', hint: 'Spell areas: circles, cones, lines and squares' },
+  { mode: 'regions', label: 'Regions', key: '', hint: 'Areas that do something when a token walks in' },
+  { mode: 'sounds', label: 'Sounds', key: '', hint: 'Ambient sound, louder the nearer you are' },
 ];
+
+const ITEM_TOOL_INFO: Record<ItemTool, { label: string; hint: string }> = {
+  rect: { label: 'Box', hint: 'Drag a box. Shift: no snapping' },
+  ellipse: { label: 'Ellipse', hint: 'Drag the box it fills. Shift: no snapping' },
+  polygon: { label: 'Polygon', hint: 'Click corner to corner; click the first corner or right click to close' },
+  line: { label: 'Line', hint: 'Click point to point; right click ends it' },
+  freehand: { label: 'Freehand', hint: 'Drag to draw' },
+  text: { label: 'Text', hint: 'Drag the box the text goes in; change the words in the inspector' },
+  note: { label: 'Pin', hint: 'Click to put a note down; pick its journal entry in the inspector' },
+  sound: { label: 'Place', hint: 'Click to place a sound; pick its file in the inspector' },
+  circle: { label: 'Circle', hint: 'Drag out from the centre, in 5 ft steps' },
+  cone: { label: 'Cone', hint: 'Drag out from the tip' },
+  ray: { label: 'Line', hint: 'Drag out from the start' },
+  square: { label: 'Square', hint: 'Drag out from the centre' },
+  region: { label: 'Region', hint: 'Click corner to corner; click the first corner or right click to close' },
+};
+
+const itemTools = (mode: ItemMode) => [SELECT, ...ITEM_TOOLS[mode].map((tool) => ({ tool, ...ITEM_TOOL_INFO[tool] }))];
 
 const SELECT = {
   tool: 'select' as const,
@@ -35,20 +59,26 @@ const TOOLS: Partial<Record<EditorMode, { tool: EditorTool; label: string; hint:
     { tool: 'window', label: 'Window', hint: 'Like walls, but they let sight through' },
   ],
   lights: [SELECT, { tool: 'place', label: 'Place', hint: 'Click to place the light picked below' }],
+  drawings: itemTools('drawings'),
+  notes: itemTools('notes'),
+  templates: itemTools('templates'),
+  regions: itemTools('regions'),
+  sounds: itemTools('sounds'),
 };
 
-/** The GM's editor modes down the left side, each mode's tools, and the time of day. */
+/** The editor modes down the left side (players: tokens, drawings and templates), each mode's tools, and the GM's map settings. */
 export function MapTools({ session }: Readonly<{ session: Session }>) {
-  if (!session.isGm()) return null;
+  const gm = session.isGm();
   const tools = TOOLS[session.mode];
+  const modes = MODES.filter((m) => session.canUseMode(m.mode));
   return (
     <div className="map-tools frame">
       <div className="map-tools-row" role="toolbar" aria-label="Editor mode">
-        {MODES.map(({ mode, label, key, hint }) => (
+        {modes.map(({ mode, label, key, hint }) => (
           <button
             key={mode}
             className={`btn small${session.mode === mode ? ' active' : ''}`}
-            title={`${hint} (${key})`}
+            title={key ? `${hint} (${key})` : hint}
             onClick={() => session.setMode(mode)}
           >
             {label}
@@ -72,8 +102,8 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
       {session.mode === 'lights' && <LightPresets session={session} />}
       {session.mode === 'tiles' && <TilePresets session={session} />}
       {session.mode === 'tiles' && <LayersPanel session={session} />}
-      {session.world?.vision !== false && <FogTools session={session} />}
-      <Darkness key={session.world?.darkness ?? 0} session={session} />
+      {session.mode === 'drawings' && <DrawStyle session={session} />}
+      {gm && <SceneTools session={session} />}
     </div>
   );
 }
@@ -185,6 +215,76 @@ function TilePresets({ session }: Readonly<{ session: Session }>) {
         <option key={id} value={id}>
           {t.label}
           {t.background ? ' (ground)' : ''}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** GM: the floor shown, fog of war and the time of day. */
+function SceneTools({ session }: Readonly<{ session: Session }>) {
+  return (
+    <>
+      <LevelPicker session={session} />
+      {session.world?.vision !== false && <FogTools session={session} />}
+      <Darkness key={session.world?.darkness ?? 0} session={session} />
+    </>
+  );
+}
+
+const WIDTHS = [2, 4, 8, 16];
+
+/** How new drawings look: line colour and width, and a fill. */
+function DrawStyle({ session }: Readonly<{ session: Session }>) {
+  const style = session.itemStyle;
+  return (
+    <div className="map-tools-row" role="toolbar" aria-label="Drawing style">
+      <input
+        type="color"
+        value={style.stroke}
+        title="Line colour"
+        aria-label="Line colour"
+        onChange={(e) => session.setItemStyle({ stroke: e.target.value })}
+      />
+      <select
+        value={style.strokeWidth}
+        title="Line width"
+        aria-label="Line width"
+        onChange={(e) => session.setItemStyle({ strokeWidth: Number(e.target.value) })}
+      >
+        {WIDTHS.map((w) => (
+          <option key={w} value={w}>
+            {w} px
+          </option>
+        ))}
+      </select>
+      <label className="map-tools-check" title="Fill boxes, ellipses and polygons">
+        <input
+          type="checkbox"
+          checked={!!style.fill}
+          onChange={(e) => session.setItemStyle({ fill: e.target.checked ? style.stroke : undefined, fillAlpha: 0.3 })}
+        />
+        Fill
+      </label>
+    </div>
+  );
+}
+
+/** GM: which floor of the scene to see and edit; players see their own token's. */
+function LevelPicker({ session }: Readonly<{ session: Session }>) {
+  const levels = session.world?.levels ?? [];
+  if (!levels.length) return null;
+  return (
+    <select
+      value={session.viewLevel ?? ''}
+      aria-label="Level"
+      title="The floor shown: walls, lights, tiles and drawings on others are left out"
+      onChange={(e) => session.setViewLevel(e.target.value || undefined)}
+    >
+      <option value="">Every level</option>
+      {levels.map((l) => (
+        <option key={l.id} value={l.id}>
+          {l.name}
         </option>
       ))}
     </select>

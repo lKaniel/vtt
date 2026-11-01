@@ -12,7 +12,7 @@ import {
   unionFog,
 } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
-import { TileSession } from './session-tiles.ts';
+import { JournalSession } from './session-journal.ts';
 
 // Scenes and fog of war on the client: the Scenes list's commands (as ops,
 // so undo works on them), moving people between scenes, the explored fog the
@@ -24,7 +24,7 @@ export type FogBrush = 'reveal' | 'hide';
 /** Default brush radius, in squares. */
 const BRUSH_SQUARES = 2;
 
-export abstract class SceneSession extends TileSession {
+export abstract class SceneSession extends JournalSession {
   /** The scene the game is on. */
   activeScene = '';
   sceneName = '';

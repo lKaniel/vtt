@@ -2,19 +2,32 @@
 
 One editor drives every kind of thing on the map. Pick a mode, and the same
 clicks, drags, keys and menus work on whatever that mode owns. The GM has
-every mode; players stay on Tokens.
+every mode; players have Tokens, Draw and Measure, and change only what
+they drew.
 
 ## Modes and tools
 
-| Mode   | Key     | Tools                      | Handles                        |
-| ------ | ------- | -------------------------- | ------------------------------ |
-| Tokens | T       | select                     | none (drag a token to walk it) |
-| Tiles  | Shift+T | select, draw               | 8 resize handles               |
-| Walls  | W       | select, wall, door, window | both ends                      |
-| Lights | L       | select, place              | bright ring, dim ring          |
+| Mode    | Key      | Tools                                               | Handles                                                                                    |
+| ------- | -------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Tokens  | T        | select                                              | none (drag a token to walk it)                                                             |
+| Tiles   | Shift+T  | select, draw                                        | 8 resize handles                                                                           |
+| Walls   | W        | select, wall, door, window                          | both ends                                                                                  |
+| Lights  | L        | select, place                                       | bright ring, dim ring                                                                      |
+| Draw    | D        | select, box, ellipse, polygon, line, freehand, text | box: 8; polygon and line: each point, and the middle of each side (drag it to add a point) |
+| Notes   | N        | select, pin                                         | none                                                                                       |
+| Measure | M        | select, circle, cone, line, square                  | the aim (length and direction, 5 ft and 15° steps)                                         |
+| Regions | (button) | select, region                                      | each corner, the middle of each side                                                       |
+| Sounds  | (button) | select, place                                       | the reach                                                                                  |
 
 The buttons are bottom left (`ui/MapTools.tsx`). Outside the tokens mode,
-tokens and door handles don't take clicks.
+tokens and door handles don't take clicks. The shape tools are a small state
+machine in `editor/shape-tools.ts`: drag a box; click point by point for
+polygons, lines and regions (click the first point, or right click, to
+finish); drag freehand; click to put a note or sound down; drag a template
+out from its origin. Shift turns snapping off. In the Draw mode the toolbar
+also picks the line colour, width and fill of new drawings; the GM's
+toolbar has the level picker on scenes with floors. A click on a note in
+the tokens mode opens its journal entry.
 
 ## Pointer
 
@@ -103,11 +116,13 @@ them, as one undo step.
 
 ## How it fits together
 
-- `shared/hit-test.ts`: shapes (circle, segment, rect), picking and
+- `shared/hit-test.ts`: shapes (circle, segment, rect, polygon, path), picking and
   marquees. Geometry lives here and in `geometry.ts`, so a faster
   implementation (Rust/WASM, a spatial index) can replace this one module.
 - `shared/placeables.ts`: per type, its shape, handles, what dragging a
-  handle does, and moves (through `EDIT_KINDS`, as paste uses).
+  handle does, and moves (through `EDIT_KINDS`, as paste uses); drawings,
+  notes, templates, regions and sounds in `item-shapes.ts`, box handles in
+  `box-handles.ts`.
 - `client/editor/controller.ts`: the gestures, with no Pixi in it: press,
   click, marquee, move, handle drag. `selection.ts` has the modifier rules.
 - `client/session-editor.ts`: mode, tool, selection and menu state; every
@@ -115,6 +130,8 @@ them, as one undo step.
   the server refuses it (`sendUpdates` in `session-edits.ts`).
 - `client/canvas/MapEditor.ts`: says what is where for the controller and
   draws walls, lights, the selection, handles and the marquee.
+  `ItemLayer.ts` draws drawings, templates, notes and regions for everyone
+  (`item-draw.ts`), under the fog.
 - `client/editor/menus.ts`: the menu registry. A new type (or a game system)
   calls `registerMenu(type, source)`; `'ground'` is the menu on empty
   ground and `'selection'` adds to every selection.
@@ -125,4 +142,5 @@ them, as one undo step.
    entry with a sample in `server/src/edit-commands.test.ts`.
 2. A shape, handles and handle drags in `placeables.ts`, and a mode in
    `MODES`.
-3. Fields in `editor/inspector.ts` and menu entries with `registerMenu`.
+3. Fields in `editor/inspector.ts` (or `item-fields.ts`) and menu entries
+   with `registerMenu`.

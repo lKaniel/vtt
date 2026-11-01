@@ -1,5 +1,7 @@
 import type { Doc, Patch } from '@vtt/core';
+import { boxHandles, type Handle, resizeBox, type Snap, snapPt } from './box-handles.ts';
 import { EDIT_KINDS } from './edit-kinds.ts';
+import { itemDrag, itemHandles, type ItemMode, ITEM_MODES, itemShape, itemStep, type ItemType } from './item-shapes.ts';
 import type { Shape } from './hit-test.ts';
 import type { Point } from './schema.ts';
 import { feetToPx } from './vision.ts';
@@ -9,14 +11,15 @@ import { feetToPx } from './vision.ts';
 // Moving reuses EDIT_KINDS, so paste and drag agree on where things go.
 
 /** The editor's modes: each selects and edits one collection of the scene. */
-export type EditorMode = 'tokens' | 'tiles' | 'walls' | 'lights';
-export type PlaceableType = 'token' | 'tile' | 'wall' | 'light';
+export type EditorMode = 'tokens' | 'tiles' | 'walls' | 'lights' | ItemMode;
+export type PlaceableType = 'token' | 'tile' | 'wall' | 'light' | ItemType;
 
 export const MODES: Record<EditorMode, { coll: EditorMode; type: PlaceableType }> = {
   tokens: { coll: 'tokens', type: 'token' },
   tiles: { coll: 'tiles', type: 'tile' },
   walls: { coll: 'walls', type: 'wall' },
   lights: { coll: 'lights', type: 'light' },
+  ...ITEM_MODES,
 };
 
 /** Grid size, and map pixels per screen pixel (icons keep their size on screen). */
@@ -25,16 +28,7 @@ export interface View {
   px: number;
 }
 
-export interface Snap {
-  gridSize: number;
-  /** Shift: no snapping. */
-  free: boolean;
-}
-
-export interface Handle {
-  id: string;
-  at: Point;
-}
+export type { Handle, Snap } from './box-handles.ts';
 
 /** Light icons on the map, screen pixels. */
 const LIGHT_ICON = 12;
@@ -58,12 +52,14 @@ export function shapeOf(doc: Doc, view: View): Shape {
       return { kind: 'rect', ...rectOf(doc) };
     case 'light':
       return { kind: 'circle', c: [num(doc, 'x'), num(doc, 'y')], r: LIGHT_ICON * view.px };
-    default:
+    case 'token':
       return {
         kind: 'circle',
         c: [num(doc, 'x'), num(doc, 'y')],
         r: (num(doc, 'size') || 1) * view.gridSize * TOKEN_DISC,
       };
+    default:
+      return itemShape(doc, view);
   }
 }
 
@@ -77,7 +73,7 @@ export function moveBy(doc: Doc, [dx, dy]: Point): Patch {
 
 /** Map pixels a move snaps to: whole squares, half squares for lights. */
 function moveStep(mode: EditorMode, gridSize: number): number {
-  return mode === 'lights' ? gridSize / 2 : gridSize;
+  return mode === 'lights' ? gridSize / 2 : gridSize * itemStep(mode);
 }
 
 const roundTo = (v: number, step: number): number => Math.round(v / step) * step;
@@ -87,24 +83,7 @@ export function snapDelta(d: Point, mode: EditorMode, gridSize: number, free: bo
   return [roundTo(d[0], step), roundTo(d[1], step)];
 }
 
-const snapPt = (p: Point, s: Snap): Point => [
-  roundTo(p[0], s.free ? 1 : s.gridSize),
-  roundTo(p[1], s.free ? 1 : s.gridSize),
-];
-
 // Handles ---------------------------------------------------------------------
-
-/** Tile handles, with the share of the width and height each sits at. */
-const TILE_HANDLES: Record<string, Point> = {
-  nw: [0, 0],
-  n: [0.5, 0],
-  ne: [1, 0],
-  e: [1, 0.5],
-  se: [1, 1],
-  s: [0.5, 1],
-  sw: [0, 1],
-  w: [0, 0.5],
-};
 
 function lightHandles(doc: Doc, gridSize: number): Handle[] {
   const [x, y] = [num(doc, 'x'), num(doc, 'y')];
@@ -117,11 +96,6 @@ function lightHandles(doc: Doc, gridSize: number): Handle[] {
   ];
 }
 
-function tileHandles(doc: Doc): Handle[] {
-  const r = rectOf(doc);
-  return Object.entries(TILE_HANDLES).map(([id, [fx, fy]]) => ({ id, at: [r.x + r.w * fx, r.y + r.h * fy] }));
-}
-
 export function handlesOf(doc: Doc, view: View): Handle[] {
   switch (doc.type) {
     case 'wall':
@@ -132,9 +106,9 @@ export function handlesOf(doc: Doc, view: View): Handle[] {
     case 'light':
       return lightHandles(doc, view.gridSize);
     case 'tile':
-      return tileHandles(doc);
+      return boxHandles(rectOf(doc));
     default:
-      return [];
+      return itemHandles(doc, view);
   }
 }
 
@@ -160,26 +134,9 @@ function dragLightRing(doc: Doc, handle: string, to: Point, s: Snap): Patch {
   return { bright: r, dim: Math.max(0, bright + num(doc, 'dim') - r) };
 }
 
-/** Moves the edge a handle sits on along one axis (f 0: the low edge, 1: the high one, 0.5: neither). */
-function edgeMove([lo, size]: [number, number], f: number, to: number, min: number): [number, number] {
-  if (f === 0.5) return [lo, size];
-  const hi = lo + size;
-  if (f === 0) {
-    const start = Math.min(to, hi - min);
-    return [start, hi - start];
-  }
-  return [lo, Math.max(min, to - lo)];
-}
-
 function resizeTile(doc: Doc, handle: string, to: Point, s: Snap): Patch {
-  const f = TILE_HANDLES[handle];
-  if (!f) return {};
-  const r = rectOf(doc);
-  const at = snapPt(to, s);
-  const min = s.free ? 1 : s.gridSize;
-  const [x, w] = edgeMove([r.x, r.w], f[0], at[0], min);
-  const [y, h] = edgeMove([r.y, r.h], f[1], at[1], min);
-  return { x, y, w, h };
+  const box = resizeBox(rectOf(doc), handle, to, s);
+  return box ? { ...box } : {};
 }
 
 /** What dragging one of a document's handles to `to` changes. */
@@ -192,7 +149,7 @@ export function dragHandle(doc: Doc, handle: string, to: Point, s: Snap): Patch 
     case 'tile':
       return resizeTile(doc, handle, to, s);
     default:
-      return {};
+      return itemDrag(doc, handle, to, s);
   }
 }
 

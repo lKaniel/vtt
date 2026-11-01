@@ -1,5 +1,6 @@
 import { type Level, levelFor, type Ownership } from '@vtt/core';
-import type { PlacedToken, Player, Point, Wall, World } from './schema.ts';
+import { onLevel, tokenLevel } from './levels.ts';
+import type { PlacedToken, Player, Point, SceneLevel, Wall, World } from './schema.ts';
 import { type Eyes, type LightContext, type Perceiver, perceives } from './senses.ts';
 import { hasLineOfSight, type LightSource } from './vision.ts';
 
@@ -12,7 +13,19 @@ export interface Owned {
 }
 
 /** Fields only the GM may change, even on a document a trusted player owns. */
-const GM_ONLY_FIELDS = ['id', 'x', 'y', 'ownership', 'hidden', 'visibleTo', 'summon', 'leader', 'actor', 'linked'];
+const GM_ONLY_FIELDS = [
+  'id',
+  'x',
+  'y',
+  'elevation',
+  'ownership',
+  'hidden',
+  'visibleTo',
+  'summon',
+  'leader',
+  'actor',
+  'linked',
+];
 
 const RANK: Record<Level, number> = { none: 0, limited: 1, observer: 2, owner: 3 };
 const atLeast = (level: Level, min: Level) => RANK[level] >= RANK[min];
@@ -85,34 +98,51 @@ export interface SightContext<T> {
   wallsBetween: (a: Point, b: Point) => readonly Wall[];
   /** A token's senses and conditions, as the game's system works them out. */
   perceiver: (token: T) => Perceiver;
+  /** The scene's floors (see levels.ts): a viewer sees, is lit and blocked only on their own. */
+  levels?: readonly SceneLevel[];
+}
+
+interface LevelEyes {
+  eyes: Eyes;
+  level: string | undefined;
+  light: LightContext;
+}
+
+/** A viewer's eyes, with the light and walls of their own level. */
+function eyesOf<T extends PlacedToken>(v: T, ctx: SightContext<T>): LevelEyes {
+  const p = ctx.perceiver(v);
+  const level = tokenLevel(ctx.levels, v);
+  const light: LightContext = {
+    darkness: ctx.world.darkness,
+    gridSize: ctx.world.gridSize,
+    lights: ctx.lights.filter((l) => onLevel(l, level)),
+    clear: (a, b) =>
+      hasLineOfSight(
+        a,
+        b,
+        ctx.wallsBetween(a, b).filter((w) => onLevel(w, level)),
+      ),
+  };
+  return { eyes: { at: [v.x, v.y], senses: p.senses, blinded: p.blinded }, level, light };
 }
 
 /**
  * Ids of the tokens a player may know about right now. The GM knows all.
  * Players always see the party (tokens any player controls); anything else
- * must be perceived by a token they own or observe: seen in light or with darkvision,
- * or felt with blindsight or tremorsense (see senses.ts).
+ * must be perceived by a token they own or observe on its own level: seen in
+ * light or with darkvision, or felt with blindsight or tremorsense (see senses.ts).
  */
 export function tokensVisibleTo<T extends PlacedToken>(
   player: Player,
   tokens: readonly T[],
   ctx: SightContext<T>,
 ): Set<string> {
-  const viewers = tokens.filter((t) => canObserve(t, player));
   const seesAll = isGm(player) || !ctx.world.vision;
-  const light: LightContext = {
-    darkness: ctx.world.darkness,
-    gridSize: ctx.world.gridSize,
-    lights: ctx.lights,
-    clear: (a, b) => hasLineOfSight(a, b, ctx.wallsBetween(a, b)),
-  };
-  const eyes = viewers.map((v): Eyes => {
-    const p = ctx.perceiver(v);
-    return { at: [v.x, v.y], senses: p.senses, blinded: p.blinded };
-  });
+  const eyes = seesAll ? [] : tokens.filter((t) => canObserve(t, player)).map((v) => eyesOf(v, ctx));
   const spotted = (t: T) => {
     const target = { at: [t.x, t.y] as Point, invisible: ctx.perceiver(t).invisible };
-    return eyes.some((e) => perceives(e, target, light));
+    const level = tokenLevel(ctx.levels, t);
+    return eyes.some((e) => e.level === level && perceives(e.eyes, target, e.light));
   };
   const ids = tokens
     .filter((t) => canSee(t, player))

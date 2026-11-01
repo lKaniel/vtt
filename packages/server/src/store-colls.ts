@@ -1,5 +1,6 @@
 import type { Doc } from '@vtt/core';
-import type { MapCollection, World } from '@vtt/shared';
+import { type MapCollection, SCENE_TYPES, type World } from '@vtt/shared';
+import { ENTRY_COLLS, isEntryColl } from './entry-files.ts';
 import { toDoc } from './doc-sync.ts';
 import type { FileKind, GameFile } from './game-files.ts';
 
@@ -12,7 +13,7 @@ export const ACTORS = 'actors';
 export const COMBAT = 'combat';
 export const FIGHT = 'current';
 export const MAP: MapCollection[] = ['tiles', 'walls', 'lights'];
-export const TYPE = { tiles: 'tile', walls: 'wall', lights: 'light', tokens: 'token' } as const;
+export const TYPE = SCENE_TYPES;
 
 /** Where a file's documents go, and which of them it covers (all of `coll`, or just `only`). */
 export function docsOf(file: GameFile): { coll: string; only?: string; docs: Doc[] } {
@@ -27,6 +28,8 @@ export function docsOf(file: GameFile): { coll: string; only?: string; docs: Doc
       return { coll: SCENES, only: file.scene, docs: [toDoc('scene', file.data, file.scene)] };
     case 'collection':
       return { coll: `${file.scene}/${file.coll}`, docs: file.data.map((item) => toDoc(TYPE[file.coll], item)) };
+    case 'entry':
+      return { coll: file.coll, only: file.id, docs: [toDoc(ENTRY_COLLS[file.coll].type, file.data)] };
   }
 }
 
@@ -35,6 +38,7 @@ export function fileOf(coll: string, id: string): FileKind {
   if (coll === GAME || coll === COMBAT) return { kind: coll };
   if (coll === ACTORS) return { kind: 'actor', id };
   if (coll === SCENES) return { kind: 'scene', scene: id };
+  if (isEntryColl(coll)) return { kind: 'entry', coll, id };
   const [scene, name] = coll.split('/') as [string, keyof typeof TYPE];
   return { kind: 'collection', scene, coll: name };
 }
@@ -44,6 +48,7 @@ export function scopeOf(kind: FileKind): { coll: string; only?: string } | undef
   if (kind.kind === 'game' || kind.kind === 'scene') return undefined;
   if (kind.kind === 'actor') return { coll: ACTORS, only: kind.id };
   if (kind.kind === 'combat') return { coll: COMBAT };
+  if (kind.kind === 'entry') return { coll: kind.coll, only: kind.id };
   return { coll: `${kind.scene}/${kind.coll}` };
 }
 

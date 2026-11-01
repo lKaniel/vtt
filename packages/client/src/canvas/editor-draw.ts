@@ -1,6 +1,7 @@
 import type { Doc } from '@vtt/core';
-import { feetToPx, handlesOf, type Point, type Rect } from '@vtt/shared';
+import { feetToPx, handlesOf, type Point, type Rect, shapeOf } from '@vtt/shared';
 import type { Graphics } from 'pixi.js';
+import { traceShape } from './item-draw.ts';
 import { lightColor } from './lighting/light-style.ts';
 
 // How the map editor draws: walls and lights in their modes, the selection
@@ -58,7 +59,7 @@ export function drawOutline(g: Graphics, doc: Doc, ctx: DrawCtx, hover = false):
     g.circle(x, y, feetToPx(doc.bright as number, ctx.gridSize)).stroke({ ...stroke, width: px, alpha: 0.7 });
   } else if (doc.type === 'tile') {
     g.rect(doc.x as number, doc.y as number, doc.w as number, doc.h as number).stroke(stroke);
-  }
+  } else traceShape(g, shapeOf(doc, ctx)).stroke(stroke);
 }
 
 export function drawHandles(g: Graphics, doc: Doc, ctx: DrawCtx): void {

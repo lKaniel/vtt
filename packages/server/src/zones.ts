@@ -1,7 +1,14 @@
 import { inZone, type Token, type ZoneHit, zonesOf } from '@vtt/system-dnd5e';
-import type { Point } from '@vtt/shared';
+import { inTemplate, isParty, type Point } from '@vtt/shared';
 import type { SpellActions } from './spell-actions.ts';
 import type { Table } from './table.ts';
+import type { ZoneTemplates } from './zone-templates.ts';
+
+/** The bearer, and their allies when the zone spares them. */
+function spared({ bearer, effect }: ZoneHit, token: Token): boolean {
+  if (token.id === bearer.id) return true;
+  return effect.zone.spares === 'allies' && isParty(token) === isParty(bearer);
+}
 
 /**
  * Lasting areas in a fight: a creature that starts its turn in one, or walks
@@ -13,6 +20,7 @@ export class Zones {
   constructor(
     private table: Table,
     private spells: SpellActions,
+    private templates: ZoneTemplates,
   ) {}
 
   private get store() {
@@ -38,9 +46,14 @@ export class Zones {
     }
   }
 
+  /** Whether `token` standing at `at` is in the zone: in its template when it has one (the GM may have moved it). */
   private contains(z: ZoneHit, token: Token, at: Point): boolean {
     const spell = this.table.content(z.bearer).spells.get(z.effect.zone.spell);
-    return !!spell?.area && inZone(z, spell, { token, at, gridSize: this.store.world.gridSize });
+    if (!spell?.area) return false;
+    const gridSize = this.store.world.gridSize;
+    const template = this.templates.of(z);
+    if (!template) return inZone(z, spell, { token, at, gridSize });
+    return !spared(z, token) && inTemplate(template, at, gridSize, (token.size * gridSize) / 4);
   }
 
   private trigger(z: ZoneHit, victim: Token): void {

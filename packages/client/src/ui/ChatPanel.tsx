@@ -5,6 +5,9 @@ import type { Session } from '../session.ts';
 import { ActorsTab } from './ActorsTab.tsx';
 import { AssetsTab } from './AssetsTab.tsx';
 import { CompendiumTab } from './CompendiumTab.tsx';
+import { JournalTab } from './JournalTab.tsx';
+import { PlaylistsTab } from './PlaylistsTab.tsx';
+import { TablesTab } from './TablesTab.tsx';
 import { PlayersTab } from './PlayersTab.tsx';
 import { ScenesTab } from './ScenesTab.tsx';
 import { diceArt } from '../icon-art.ts';
@@ -12,15 +15,26 @@ import { targetText } from '../spell-text.ts';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
-/** The GM's side panel has tabs, like a VTT sidebar: the log, the scenes, the Actors list, the Compendium, assets and packs, and the seats. */
-const TABS = ['Adventure log', 'Scenes', 'Actors', 'Compendium', 'Assets', 'Players'] as const;
+/** The side panel has tabs, like a VTT sidebar: the log and journal for everyone; for the GM the scenes, Actors, Compendium, tables, music, assets and packs, and the seats. */
+const TABS = [
+  'Adventure log',
+  'Journal',
+  'Scenes',
+  'Actors',
+  'Compendium',
+  'Tables',
+  'Music',
+  'Assets',
+  'Players',
+] as const;
 type Tab = (typeof TABS)[number];
+const PLAYER_TABS: readonly Tab[] = ['Adventure log', 'Journal'];
 
 export function ChatPanel({ session }: Readonly<{ session: Session }>) {
   const [open, setOpen] = useState(true);
   const [tab, setTab] = useState<Tab>('Adventure log');
-  const gm = session.isGm();
-  const shown = gm ? tab : 'Adventure log';
+  const tabs = session.isGm() ? TABS : PLAYER_TABS;
+  const shown = tabs.includes(tab) ? tab : 'Adventure log';
   return (
     <aside className={`chat frame${open ? '' : ' closed'}${shown === 'Adventure log' ? '' : ' library'}`}>
       <header className="chat-head">
@@ -29,23 +43,24 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
           {open ? '–' : '+'}
         </button>
       </header>
-      {gm && (
-        <nav className="side-tabs">
-          {TABS.map((t) => (
-            <button key={t} className={t === tab ? 'on' : ''} onClick={() => setTab(t)}>
-              {t === 'Adventure log' ? 'Log' : t}
-            </button>
-          ))}
-        </nav>
-      )}
+      <nav className="side-tabs">
+        {tabs.map((t) => (
+          <button key={t} className={t === shown ? 'on' : ''} onClick={() => setTab(t)}>
+            {t === 'Adventure log' ? 'Log' : t}
+          </button>
+        ))}
+      </nav>
       {shown === 'Adventure log' ? <Log session={session} open={open} /> : <Library tab={shown} session={session} />}
     </aside>
   );
 }
 
-/** The GM's tabs other than the log. */
+/** The tabs other than the log. */
 function Library({ tab, session }: Readonly<{ tab: Exclude<Tab, 'Adventure log'>; session: Session }>) {
   const Panel = {
+    Journal: JournalTab,
+    Tables: TablesTab,
+    Music: PlaylistsTab,
     Scenes: ScenesTab,
     Actors: ActorsTab,
     Compendium: CompendiumTab,

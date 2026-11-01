@@ -11,6 +11,7 @@ import { castFeature } from './feature-casting.ts';
 import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
 import { Reactions } from './reactions.ts';
+import { ZoneTemplates } from './zone-templates.ts';
 import { Zones } from './zones.ts';
 import { DocFeed } from './doc-feed.ts';
 import { checkOps } from './op-permissions.ts';
@@ -22,6 +23,8 @@ import { FogKeeper } from './fog-keeper.ts';
 import { chatMessage } from './chat-command.ts';
 import { TokenMoves } from './token-moves.ts';
 import { isPackMessage, PackActions } from './pack-actions.ts';
+import { EntryActions, isEntryMessage } from './entry-actions.ts';
+import { RegionActions } from './region-actions.ts';
 import { startOf, welcomeOf } from './welcome.ts';
 import { contentFor, packContent } from './game-packs.ts';
 
@@ -54,6 +57,7 @@ export class Game {
   readonly spells: SpellActions;
   readonly table: Table;
   private zones: Zones;
+  private zoneTemplates: ZoneTemplates;
   private reactions: Reactions;
   private features: FeatureActions;
   private gm: GmActions;
@@ -63,6 +67,7 @@ export class Game {
   private moves: TokenMoves;
   private history: History;
   private packs: PackActions;
+  private entries: EntryActions;
 
   constructor(
     private store: GameStore,
@@ -71,7 +76,8 @@ export class Game {
     const table = new Table(store, rng, (text) => this.narrate({ text }));
     this.table = table;
     this.spells = new SpellActions(table, (spell) => this.narrate({ spell }));
-    this.zones = new Zones(table, this.spells);
+    this.zoneTemplates = new ZoneTemplates(table);
+    this.zones = new Zones(table, this.spells, this.zoneTemplates);
     this.combat = new CombatActions(
       table,
       (attack) => this.narrate({ attack }),
@@ -89,9 +95,17 @@ export class Game {
     this.map = new MapActions(table);
     this.scenes = new SceneActions(store);
     this.fog = new FogKeeper(store);
-    this.moves = new TokenMoves(store, this.combat, this.zones, this.reactions);
+    const regions = new RegionActions(table, (text, gmOnly) => this.post(this.card(text, gmOnly)));
+    this.moves = new TokenMoves(store, { combat: this.combat, zones: this.zones, reactions: this.reactions, regions });
     this.history = new History(store, (ids, undone) => this.markCards(ids, undone));
     this.packs = new PackActions(store);
+    this.entries = new EntryActions(store, rng, {
+      post: (message) => this.post(message),
+      show: (entry, page) => {
+        for (const c of this.clients)
+          if (!isGm(c.player)) this.send(c, { t: 'showJournal', entry, ...(page && { page }) });
+      },
+    });
     this.listen(store);
   }
 
@@ -170,9 +184,9 @@ export class Game {
   }
 
   connect(ws: WebSocket, player: Player): void {
-    const feed = new DocFeed(this.store.access);
     const scene = sceneOf(player, this.store);
     const visible = this.visibleTo(player, scene);
+    const feed = new DocFeed(this.store.access, () => client.scene);
     const client: Client = { ws, player, scene, start: '', chunks: new Set(), visible, feed };
     this.clients.add(client);
     this.welcome(client);
@@ -203,6 +217,7 @@ export class Game {
         world: this.store.world,
         lights: this.store.lights(),
         wallsBetween: (a, b) => this.store.wallsBetween(a, b),
+        levels: this.store.world.levels,
         perceiver: (t) => this.store.system.perceiver(t, this.store.world.rules, packContent(this.store)),
       }),
     );
@@ -262,18 +277,25 @@ export class Game {
     if (isPackMessage(msg)) return this.packs.handle(c.player, msg, (reply) => this.send(c, reply));
     try {
       if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);
-      else if (this.history.run(c.player, msg, () => this.dispatch(c, msg))) this.sendHistory();
+      else if (this.history.run(c.player, msg, () => this.settle(() => this.dispatch(c, msg)))) this.sendHistory();
     } catch (e) {
       if (!(e instanceof Refusal)) throw e;
       this.fail(c, e.message);
     }
   }
 
+  /** Runs a step, then brings what follows from it (zone templates) in line, in the same undo step. */
+  private settle(step: () => void): void {
+    step();
+    this.zoneTemplates.sync();
+  }
+
   /** A transaction of document ops, each allowed by ownership: all of it, or a reject saying why not. */
   private onOps(c: Client, msg: Extract<ClientMessage, { t: 'ops' }>): void {
     try {
       checkOps(c.player, msg.ops, this.store.access);
-      if (this.history.run(c.player, msg, () => this.store.applyOps(msg.ops, msg.txn))) this.sendHistory();
+      if (this.history.run(c.player, msg, () => this.settle(() => this.store.applyOps(msg.ops, msg.txn))))
+        this.sendHistory();
     } catch (e) {
       if (!(e instanceof Refusal || e instanceof OpError)) throw e;
       this.send(c, { t: 'reject', txn: msg.txn, reason: e.message });
@@ -357,6 +379,7 @@ export class Game {
   /** Moving between scenes, and the fog on them. */
   private dispatchScenes(c: Client, msg: ClientMessage): void {
     if (msg.t === 'fog') this.fog.edit(c.player, msg.edit);
+    else if (isEntryMessage(msg)) this.entries.handle(c.player, msg);
     else this.scenes.dispatch(c.player, msg);
   }
 
@@ -424,9 +447,14 @@ export class Game {
 
   /** A message from the game itself: initiative, attack results. */
   private narrate(content: Pick<ChatMessage, 'text' | 'attack' | 'spell'>): void {
-    const id = randomUUID();
-    this.history.noteCard(id);
-    this.post({ id, time: Date.now(), from: 'Combat', color: '#c8b48a', ...content });
+    const card = this.card(content.text ?? '');
+    this.history.noteCard(card.id);
+    this.post({ ...card, ...content });
+  }
+
+  /** A chat card from the game itself, part of the action being recorded. */
+  private card(text: string, gmOnly = false): ChatMessage {
+    return { id: randomUUID(), time: Date.now(), from: 'Combat', color: '#c8b48a', text, ...(gmOnly && { gmOnly }) };
   }
 
   private toGms(msg: ServerMessage): void {

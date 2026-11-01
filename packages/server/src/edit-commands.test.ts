@@ -37,6 +37,52 @@ const SAMPLES: Record<string, { coll: string; doc: Doc }> = {
     },
   },
   actor: { coll: 'actors', doc: { id: 'sage', type: 'actor', rev: 0, name: 'Sage' } },
+  drawing: {
+    coll: 'main/drawings',
+    doc: { id: 'x-marks', type: 'drawing', rev: 0, shape: 'rect', x: 400, y: 400, w: 100, h: 50, stroke: '#ff0000' },
+  },
+  note: { coll: 'main/notes', doc: { id: 'pin', type: 'note', rev: 0, x: 450, y: 450, label: 'Altar', entry: 'lore' } },
+  template: {
+    coll: 'main/templates',
+    doc: { id: 'blast', type: 'template', rev: 0, shape: 'cone', x: 400, y: 400, distance: 15, direction: 90 },
+  },
+  region: {
+    coll: 'main/regions',
+    doc: {
+      id: 'bog',
+      type: 'region',
+      rev: 0,
+      points: [
+        [400, 400],
+        [600, 400],
+        [600, 600],
+      ],
+      behaviors: [{ type: 'difficult' }],
+    },
+  },
+  sound: {
+    coll: 'main/sounds',
+    doc: { id: 'brook', type: 'sound', rev: 0, x: 450, y: 450, radius: 30, src: 'brook.ogg' },
+  },
+  journal: {
+    coll: 'journals',
+    doc: { id: 'lore', type: 'journal', rev: 0, name: 'Lore', pages: [{ id: 'p1', name: 'Gods', kind: 'text' }] },
+  },
+  rolltable: {
+    coll: 'tables',
+    doc: { id: 'loot', type: 'rolltable', rev: 0, name: 'Loot', results: [{ text: 'Copper' }, { text: 'Gold' }] },
+  },
+  playlist: {
+    coll: 'playlists',
+    doc: {
+      id: 'tavern',
+      type: 'playlist',
+      rev: 0,
+      name: 'Tavern',
+      mode: 'sequence',
+      tracks: [{ id: 'lute', name: 'Lute', src: 'lute.ogg' }],
+    },
+  },
 };
 
 beforeEach(async () => {
@@ -81,7 +127,7 @@ describe('edit commands on every kind of document', () => {
 
   describe.each(Object.entries(SAMPLES))('%s', (_kind, { coll, doc }) => {
     const ref = { coll, id: doc.id };
-    const moving = EDIT_KINDS[doc.type]!.shift ? ['x', 'y', 'a', 'b'] : [];
+    const moving = EDIT_KINDS[doc.type]!.shift ? ['x', 'y', 'a', 'b', 'points'] : [];
 
     it('copy then paste makes a second one and leaves the first alone', () => {
       const before = store.docs.get(coll, doc.id);

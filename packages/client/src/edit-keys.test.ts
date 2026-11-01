@@ -58,6 +58,12 @@ describe('editorKey', () => {
     expect(editorKey(key('w', { ctrl: true }), false)).toBeUndefined();
   });
 
+  it('switches to drawings with D, notes with N and templates with M', () => {
+    expect(editorKey(key('d'), false)).toEqual({ mode: 'drawings' });
+    expect(editorKey(key('n'), false)).toEqual({ mode: 'notes' });
+    expect(editorKey(key('m'), false)).toEqual({ mode: 'templates' });
+  });
+
   it('nudges with the arrows outside the tokens mode (where they walk)', () => {
     expect(editorKey(key('ArrowLeft'), true)).toEqual({ nudge: [-1, 0], big: false });
     expect(editorKey(key('ArrowDown', { shift: true }), true)).toEqual({ nudge: [0, 1], big: true });

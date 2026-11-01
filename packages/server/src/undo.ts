@@ -40,6 +40,8 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   darkness: { label: 'time of day' },
   fog: { label: 'fog edit' },
   hotbar: { label: 'action bar change' },
+  rollTable: { label: 'table roll' },
+  showJournal: { label: 'journal share' },
   move: { label: 'move', action: true },
   door: { label: 'door', action: true },
   combatStart: { label: 'fight start', action: true },

@@ -62,9 +62,25 @@ export abstract class EditSession extends Commands {
     this.send({ t: 'undo', card });
   }
 
+  /** Whether this client may copy, cut, duplicate and delete these (the GM: anything). */
+  protected mayEdit(_refs: readonly DocRef[]): boolean {
+    return this.isGm();
+  }
+
+  /** What of a clip this client may paste, as it pastes it; undefined for nothing. */
+  protected pastable(clip: Clip): Clip | undefined {
+    return this.isGm() ? clip : undefined;
+  }
+
+  /** The edit targets, if this client may edit them all; else none. */
+  private editable(): DocRef[] {
+    const refs = this.editTargets();
+    return this.mayEdit(refs) ? refs : [];
+  }
+
   /** Copies what is selected; the text to put on the system clipboard, or undefined when there is nothing. */
   copy(): string | undefined {
-    const refs = this.isGm() ? this.editTargets() : [];
+    const refs = this.editable();
     const clip = copyRefs(this.docs, refs);
     if (!clip.docs.length) return undefined;
     this.clip = clip;
@@ -74,27 +90,30 @@ export abstract class EditSession extends Commands {
   /** Copy plus delete, in one transaction so one undo puts it back. */
   cut(): string | undefined {
     const text = this.copy();
-    if (text) this.sendOps('cut', deleteRefs(this.docs, this.editTargets()));
+    if (text) this.sendOps('cut', deleteRefs(this.docs, this.editable()));
     return text;
   }
 
   /** Pastes `text` from the system clipboard (or the last copy) at the pointer, keeping its layout. */
   paste(text?: string): void {
-    const clip = (text ? parseClipboard(text) : undefined) ?? this.clip;
-    if (!clip || !this.isGm()) return;
+    const found = (text ? parseClipboard(text) : undefined) ?? this.clip;
+    const clip = found && this.pastable(found);
+    if (!clip) return;
     const offset = pasteOffsetTo(clip, this.pointer ?? this.viewCentre(), this.gridSize());
     this.sendOps('paste', pasteAt(this.docs, clip, { scene: this.scene, offset }).ops);
   }
 
   /** A copy of what is selected, one square over. */
   duplicate(): void {
-    const clip = copyRefs(this.docs, this.isGm() ? this.editTargets() : []);
+    const clip = this.pastable(copyRefs(this.docs, this.editable()));
+    if (!clip) return;
     const g = this.gridSize();
     this.sendOps('duplicate', pasteAt(this.docs, clip, { scene: this.scene, offset: [g, g] }).ops);
   }
 
   deleteSelected(): void {
-    if (this.isGm()) this.sendOps('delete', deleteRefs(this.docs, this.editTargets()));
+    const refs = this.editable();
+    if (refs.length) this.sendOps('delete', deleteRefs(this.docs, refs));
   }
 
   private sendOps(label: string, ops: Op[]): string | undefined {

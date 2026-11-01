@@ -33,3 +33,4 @@ export * from './character-token.ts';
 export * from './token-link.ts';
 export * from './packs.ts';
 export * from './system.ts';
+export * from './traps.ts';

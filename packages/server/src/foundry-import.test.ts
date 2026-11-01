@@ -21,6 +21,7 @@ const cave = {
   grid: { size: 100, type: 1, distance: 5 },
   background: { src: 'modules/goblin-maps/maps/cave.webp' },
   walls: [{ c: [300, 300, 500, 300], move: 20, sight: 20 }],
+  notes: [{ x: 200, y: 200, entryId: 'J1', pageId: 'P1', text: 'The story' }],
   tiles: [{ texture: { src: 'modules/goblin-maps/tiles/barrel.png' }, x: 400, y: 400, width: 100, height: 100 }],
 };
 
@@ -37,6 +38,9 @@ beforeEach(async () => {
       { name: 'maps', label: 'Maps', type: 'Scene', path: 'packs/maps.db' },
       { name: 'monsters', label: 'Monsters', type: 'Actor', path: 'packs/monsters.db' },
       { name: 'newer', label: 'Newer maps', type: 'Scene', path: 'packs/newer' },
+      { name: 'lore', label: 'Lore', type: 'JournalEntry', path: 'packs/lore.db' },
+      { name: 'loot', label: 'Loot', type: 'RollTable', path: 'packs/loot.db' },
+      { name: 'music', label: 'Music', type: 'Playlist', path: 'packs/music.db' },
     ],
   });
   await put('maps/cave.webp', 'cave');
@@ -49,6 +53,16 @@ beforeEach(async () => {
   );
   await put('packs/monsters.db', `${JSON.stringify({ _id: 'm', name: 'Goblin' })}\n`);
   await put('packs/newer/000005.ldb', 'leveldb');
+  await put(
+    'packs/lore.db',
+    JSON.stringify({
+      _id: 'J1',
+      name: 'The Cave',
+      pages: [{ _id: 'P1', name: 'Story', type: 'text', text: { content: 'Dark' } }],
+    }),
+  );
+  await put('packs/loot.db', JSON.stringify({ _id: 'T1', name: 'Loot', results: [{ text: 'Gold', range: [1, 1] }] }));
+  await put('packs/music.db', JSON.stringify({ _id: 'M1', name: 'Cave', sounds: [] }));
   await put('exports/fvtt-Scene-goblin-cave.json', { ...cave, name: 'Goblin Cave' });
 });
 
@@ -91,11 +105,24 @@ describe('importing a Foundry module', () => {
     });
   });
 
+  it('brings journal entries, roll tables and playlists as compendia, and notes point at the entries', async () => {
+    const report = await importFoundry(src, packsDir);
+    expect(report.documents).toBe(3);
+    const packs = new PackStore(packsDir);
+    await packs.load();
+    expect(packs.compendium('goblin-maps', 'journals')).toMatchObject({ type: 'journal', docs: [{ id: 'the-cave' }] });
+    expect(packs.compendium('goblin-maps', 'tables')).toMatchObject({ type: 'rolltable', docs: [{ id: 'loot' }] });
+    expect(packs.compendium('goblin-maps', 'playlists')).toMatchObject({ type: 'playlist', docs: [{ id: 'cave' }] });
+    expect(packs.compendium('goblin-maps', 'scenes')!.docs[0]).toMatchObject({
+      notes: [{ id: 'note-1', entry: 'the-cave', page: 'story', label: 'The story' }],
+    });
+  });
+
   it('says what it could not bring along', async () => {
     const { skipped } = await importFoundry(src, packsDir);
     expect(skipped).toEqual([
-      'compendium "monsters" (Actor): only scenes are imported so far',
-      'compendium "newer": a Foundry v11+ database, which cannot be read yet (export its scenes with "Export Data" and import again)',
+      'compendium "monsters" (Actor): only scenes, journal entries, roll tables and playlists are imported so far',
+      'compendium "newer": a Foundry v11+ database, which cannot be read yet (export its documents with "Export Data" and import again)',
     ]);
   });
 

@@ -14,7 +14,7 @@ import { linksByDefault } from './spawn.ts';
 // back where its parts are stored.
 
 /** Where a token is and who sees it: always the token's own, never the actor's. */
-const PLACEMENT = ['id', 'x', 'y', 'hidden', 'visibleTo', 'summon', 'leader', 'actor', 'linked'] as const;
+const PLACEMENT = ['id', 'x', 'y', 'elevation', 'hidden', 'visibleTo', 'summon', 'leader', 'actor', 'linked'] as const;
 /** What a copy keeps as its own when its changes are saved to the actor or reset. */
 const INSTANCE = ['name', 'hp', 'tempHp', 'deathSaves', 'effects', 'concentration', 'spent'];
 const isPlacement = (key: string) => (PLACEMENT as readonly string[]).includes(key);
@@ -39,6 +39,7 @@ const placementShape = {
   id: TokenSchema.shape.id,
   x: TokenSchema.shape.x,
   y: TokenSchema.shape.y,
+  elevation: TokenSchema.shape.elevation,
   hidden: z.boolean().optional(),
   visibleTo: TokenSchema.shape.visibleTo,
   summon: TokenSchema.shape.summon,

@@ -1,7 +1,8 @@
 import { areaShape, type Attack, attackRange, type Token, tokenDistance } from '@vtt/system-dnd5e';
-import { findPath, hasLineOfSight, type Point, snapToGrid, type Wall } from '@vtt/shared';
+import { findPath, hasLineOfSight, type Point, type Region, regionCost, snapToGrid, type Wall } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
 import { previewLabel } from '../spell-text.ts';
+import type { Session } from '../session.ts';
 import { needsClearPath, type Aiming } from '../targeting.ts';
 
 const OK_COLOR = 0xffffff;
@@ -15,6 +16,8 @@ interface PreviewContext {
   walls: readonly Wall[];
   zoom: number;
   force: boolean;
+  /** What a step through each point costs (difficult ground the player knows of). */
+  cost?: (p: Point) => number;
 }
 
 /** The path a selected token would walk to the hovered square, with its length in feet. */
@@ -43,7 +46,7 @@ export class PathPreview {
     const g = ctx.gridSize;
     const target = snapToGrid(hover, g);
     if (!this.needsRedraw(`walk:${target[0]},${target[1]}:${token.x},${token.y}`, ctx.force)) return;
-    const path = findPath([token.x, token.y], target, ctx.walls, { gridSize: g });
+    const path = findPath([token.x, token.y], target, ctx.walls, { gridSize: g, cost: ctx.cost });
     if (!path) {
       this.line.circle(target[0], target[1], g * 0.3).stroke({ width: 6, color: BLOCKED_COLOR });
       return;
@@ -132,4 +135,33 @@ export class PathPreview {
     const end = points.at(-1)!;
     l.circle(end[0], end[1], g * 0.3).stroke({ width: 6, color });
   }
+}
+
+/** Shows what the selected token would do at `hover`: cast the spell it aims, attack, or walk (round difficult ground the player knows of). */
+export function showPreview(
+  preview: PathPreview,
+  session: Session,
+  at: {
+    token: Token & { sheet?: { attacks: Attack[] } };
+    hover: Point;
+    walls: readonly Wall[];
+    zoom: number;
+    force: boolean;
+  },
+): void {
+  const world = session.world;
+  if (!world) return preview.clear();
+  const { token, hover } = at;
+  const regions = session.docs.all(`${session.scene}/regions`) as unknown as Region[];
+  const ctx = {
+    gridSize: world.gridSize,
+    walls: at.walls,
+    zoom: at.zoom,
+    force: at.force,
+    cost: regionCost(regions, world.darkness),
+  };
+  const attack = token.sheet?.attacks.find((a) => a.name === session.armed);
+  if (session.aiming) preview.showSpell(token, hover, session.aiming, ctx);
+  else if (attack) preview.showAttack(token, hover, attack, ctx);
+  else preview.show(token, hover, { ...ctx, budget: session.movementLeft(token.id) });
 }

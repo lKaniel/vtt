@@ -1,11 +1,13 @@
 import { type Point, rectBetween } from '@vtt/shared';
 import type { Graphics } from 'pixi.js';
+import { isItemTool, ShapeDraft } from '../editor/shape-tools.ts';
 import { LIGHT_PRESETS, snapPoint, wallEdit } from '../map-tools.ts';
 import type { Session } from '../session.ts';
 import { DOOR_COLOR, WALL_COLOR, type DrawCtx } from './editor-draw.ts';
+import { drawDraft } from './item-draw.ts';
 
 /**
- * The drawing tools of the tiles, walls and lights modes: drag a box to draw
+ * The drawing tools of the tiles, walls and lights modes, and the shape tools of the rest: drag a box to draw
  * a tile, click corner to corner to draw walls, doors and windows (they chain
  * on; a door is one piece), or click to place a light. Shift turns snapping off.
  */
@@ -14,6 +16,8 @@ export class DrawTools {
   private chain?: Point;
   /** Where the tile being drawn starts. */
   private box?: Point;
+  /** The shape tool in use (drawings, notes, templates, regions, sounds). */
+  private draft?: ShapeDraft;
 
   constructor(private session: Session) {}
 
@@ -21,17 +25,48 @@ export class DrawTools {
     return this.session.mode !== 'tokens' && this.session.tool !== 'select';
   }
 
-  /** A wall or tile is half drawn. */
+  /** A wall, tile or shape is half drawn. */
   get busy(): boolean {
-    return !!this.chain || !!this.box;
+    return !!this.chain || !!this.box || !!this.draft?.busy;
   }
 
   cancel(): void {
     this.chain = undefined;
     this.box = undefined;
+    this.draft?.cancel();
+  }
+
+  /** Ends a line, polygon or region being drawn (a right click); true if it did. */
+  finish(): boolean {
+    const done = this.draft?.busy ? this.draft.finish() : undefined;
+    if (done) this.session.createItem(done);
+    return !!done;
+  }
+
+  /** The shape tool for the current tool, made afresh when the tool changes. */
+  private shapes(): ShapeDraft | undefined {
+    const tool = this.session.tool;
+    if (!isItemTool(tool)) return undefined;
+    if (this.draft?.tool !== tool) this.draft = new ShapeDraft(tool);
+    return this.draft;
+  }
+
+  private snap(free: boolean) {
+    return { gridSize: this.grid, free };
+  }
+
+  /** The pointer moved with the button down. */
+  drag(at: Point): void {
+    this.draft?.drag(at);
   }
 
   press(at: Point, free: boolean): void {
+    const shapes = this.shapes();
+    if (shapes) {
+      const done = shapes.press(at, this.snap(free));
+      if (done) this.session.createItem(done);
+      return;
+    }
     const tool = this.session.tool;
     if (tool === 'tile') {
       this.box = snapPoint(at, this.grid, !free);
@@ -43,6 +78,12 @@ export class DrawTools {
 
   /** The end of a drag: a tile tool draws its tile. */
   release(at: Point, free: boolean): void {
+    const shapes = this.shapes();
+    if (shapes) {
+      const done = shapes.release(at, this.snap(free));
+      if (done) this.session.createItem(done);
+      return;
+    }
     const start = this.box;
     this.box = undefined;
     if (!start) return;
@@ -53,6 +94,8 @@ export class DrawTools {
   draw(g: Graphics, hover: Point | undefined, free: boolean, ctx: DrawCtx): void {
     const tool = this.session.tool;
     if (!hover || !this.drawing) return;
+    const shapes = this.shapes();
+    if (shapes) return drawDraft(g, { data: shapes.preview(hover, this.snap(free)), tool: shapes.tool, hover }, ctx);
     const { px } = ctx;
     if (tool === 'tile') {
       const at = snapPoint(hover, this.grid, !free);

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { SoundScape } from '../audio.ts';
 import { MapView } from '../canvas/MapView.ts';
 import { editKey, editorKey, type EditKey, type LayerKey } from '../edit-keys.ts';
 import { hotbarTiles } from '../hotbar.ts';
@@ -9,6 +10,7 @@ import { CharacterSheet } from './CharacterSheet.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
 import { Inspector } from './Inspector.tsx';
+import { JournalViewer } from './JournalViewer.tsx';
 import { MapTools } from './MapTools.tsx';
 import { PartyBar } from './PartyBar.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
@@ -41,7 +43,7 @@ export function GameScreen({
       if (isTyping(e.target)) return;
       if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
       if (e.key === 'Escape' && backOutOfEditor(session)) return;
-      if (session.isGm() && runEditorKey(session, e)) return;
+      if (runEditorKey(session, e)) return;
       if (e.key === 'c') toggleSheet(session);
       else if (e.key === 'e') toggleEditor(session);
       else handleGameKey(session, e);
@@ -51,6 +53,10 @@ export function GameScreen({
   }, [session]);
 
   useEffect(() => listenToClipboard(session), [session]);
+  useEffect(() => {
+    const sound = new SoundScape(session);
+    return () => sound.destroy();
+  }, [session]);
 
   return (
     <div className="game">
@@ -74,6 +80,7 @@ export function GameScreen({
       <PartyBar session={session} />
       <MapTools session={session} />
       <Inspector session={session} />
+      <JournalViewer session={session} />
       <ReactionPrompt session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <CharacterSheet session={session} />
@@ -194,10 +201,10 @@ function backOutOfEditor(session: Session): boolean {
   return true;
 }
 
-/** T, Shift+T, W and L switch modes; the arrows nudge outside the tokens mode. */
+/** T, Shift+T, W, L, D, N and M switch modes (those this seat may use); the arrows nudge outside the tokens mode. */
 function runEditorKey(session: Session, e: KeyboardEvent): boolean {
   const key = editorKey(e, session.mode !== 'tokens');
-  if (!key) return false;
+  if (!key || ('mode' in key && (!session.canUseMode(key.mode) || key.mode === session.mode))) return false;
   e.preventDefault();
   if ('mode' in key) session.setMode(key.mode);
   else session.nudge(key.nudge, key.big);
