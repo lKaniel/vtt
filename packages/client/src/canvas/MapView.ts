@@ -21,7 +21,7 @@ import { FogBrush } from './FogBrush.ts';
 import { ItemLayer } from './ItemLayer.ts';
 import { dropToken, listenToDrops } from './sidebar-drops.ts';
 import { MapEditor } from './MapEditor.ts';
-import { PathPreview } from './PathPreview.ts';
+import { PathPreview, showPreview } from './PathPreview.ts';
 import { TokenLayer } from './TokenLayer.ts';
 import { Vision } from './Vision.ts';
 
@@ -450,17 +450,14 @@ export class MapView {
   }
 
   private updatePreview(force: boolean): void {
-    const world = this.session.world;
     const token = this.pathToken();
-    if (!world || !token || !this.hoverPoint) {
-      this.preview.clear();
-      return;
-    }
-    const ctx = { gridSize: world.gridSize, walls: this.allWalls(), zoom: this.zoom, force };
-    const attack = token.sheet?.attacks.find((a) => a.name === this.session.armed);
-    const aiming = this.session.aiming;
-    if (aiming) this.preview.showSpell(token, this.hoverPoint, aiming, ctx);
-    else if (attack) this.preview.showAttack(token, this.hoverPoint, attack, ctx);
-    else this.preview.show(token, this.hoverPoint, { ...ctx, budget: this.session.movementLeft(token.id) });
+    if (!token || !this.hoverPoint) return this.preview.clear();
+    showPreview(this.preview, this.session, {
+      token,
+      hover: this.hoverPoint,
+      walls: this.allWalls(),
+      zoom: this.zoom,
+      force,
+    });
   }
 }
