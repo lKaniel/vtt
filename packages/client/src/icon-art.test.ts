@@ -28,6 +28,19 @@ describe('painted icon art', () => {
     expect(featureArt(feature('arcane-recovery'))).toBeUndefined();
   });
 
+  it('paints basic actions and their bonus-action versions with the action icons', () => {
+    expect(featureArt(feature('dodge'))).toBe('/art/icons/actions/dodge.webp');
+    expect(featureArt(feature('dash'))).toBe('/art/icons/actions/dash.webp');
+    expect(featureArt(feature('cunning-disengage'))).toBe('/art/icons/actions/disengage.webp');
+  });
+
+  it('borrows the closest painting for features without their own', () => {
+    expect(featureArt(feature('patient-defense'))).toBe('/art/icons/actions/dodge.webp');
+    expect(featureArt(feature('step-of-the-wind'))).toBe('/art/icons/actions/dash.webp');
+    expect(featureArt(feature('turn-undead'))).toBe('/art/icons/features/channel-divinity.webp');
+    expect(featureArt(feature('paladins-smite'))).toBe('/art/icons/features/divine-smite.webp');
+  });
+
   it('finds weapons, armour and gear by item id', () => {
     expect(itemArt(item('longsword'))).toBe('/art/icons/items/longsword.webp');
     expect(itemArt(item('potion-of-healing'))).toBe('/art/icons/items/potion-of-healing.webp');

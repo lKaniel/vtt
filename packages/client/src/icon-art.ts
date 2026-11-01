@@ -15,7 +15,25 @@ function art(kind: Kind, id: string): string | undefined {
 }
 
 export const spellArt = (spell: Spell) => art('spells', spell.id);
-export const featureArt = (feature: FeatureSheet) => art('features', feature.id);
+/** Features painted with another icon: the basic action they are, or the closest painting. */
+const BORROWED: Record<string, [Kind, string]> = {
+  'patient-defense': ['actions', 'dodge'],
+  'step-of-the-wind': ['actions', 'dash'],
+  'flurry-of-blows': ['actions', 'melee-attack'],
+  'martial-arts': ['actions', 'melee-attack'],
+  'turn-undead': ['features', 'channel-divinity'],
+  'paladins-smite': ['features', 'divine-smite'],
+};
+
+/** A class feature's painting; Dash, Dodge and Disengage (and cunning-dash and the like) use the action icons. */
+export function featureArt(feature: FeatureSheet): string | undefined {
+  const own = art('features', feature.id) ?? art('actions', feature.id);
+  if (own) return own;
+  const borrowed = BORROWED[feature.id];
+  if (borrowed) return art(...borrowed);
+  const basic = /-(dash|dodge|disengage)$/.exec(feature.id);
+  return basic ? art('actions', basic[1]!) : undefined;
+}
 export const attackArt = (attack: Attack) =>
   art('actions', attack.kind === 'ranged' ? 'ranged-attack' : 'melee-attack');
 export const itemArt = (item: Item | undefined) => (item ? art('items', item.id) : undefined);
