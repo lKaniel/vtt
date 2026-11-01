@@ -114,6 +114,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
     this.syncScenes(false);
     this.projectCombat(false);
     await this.fog.load(this.sceneIds());
+    this.fog.prune(this.game.players.map((p) => p.id));
     for (const issue of crossCheck(stateOf(entries)!)) console.warn(`[game] ${issue.file}: ${issue.message}`);
     console.log(`[game] loaded "${this.world.name}", ${this.states.size} scenes, on "${this.activeScene}"`);
   }
@@ -156,6 +157,11 @@ export class GameStore extends EventEmitter<StoreEvents> {
   }
 
   // Reading
+
+  /** game.json as it is now: the campaign's name, system, rules and seats. */
+  get campaign(): Game {
+    return this.game;
+  }
 
   /** The scene the game is on. */
   get activeScene(): string {
@@ -440,6 +446,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
     }
     const before = this.game;
     this.game = game;
+    this.fog.prune(game.players.map((p) => p.id));
     const worlds = new Map([...this.states].map(([id, s]) => [id, s.world]));
     const changed = new Set(this.syncScenes(true));
     for (const state of this.states.values()) {

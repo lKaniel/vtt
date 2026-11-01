@@ -2,32 +2,35 @@ import { createServer } from 'node:http';
 import { join, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
 import { AccountStore } from './accounts.ts';
-import { accountApi, upgradePlayer } from './api.ts';
+import { apiHandler } from './api.ts';
 import { CharacterStore } from './characters.ts';
-import { Game } from './game.ts';
+import { GameHub } from './game-hub.ts';
 import { httpHandler } from './http.ts';
 import { dataDirFor, repoRoot, gameDirFromArgs } from './paths.ts';
-import { GameStore } from './game-store.ts';
+import { socketSeat } from './socket-join.ts';
 
 const PORT = Number(process.env.PORT ?? 3001);
-const worldDir = gameDirFromArgs();
+const homeDir = gameDirFromArgs();
 const clientDist = resolve(repoRoot, 'packages/client/dist');
+const dataDir = dataDirFor(homeDir);
 
-const store = new GameStore(worldDir);
-await store.load();
-store.watch();
-const game = new Game(store);
-const dataDir = dataDirFor(worldDir);
+const hub = new GameHub({ dataDir, home: homeDir });
+await hub.load();
 const accounts = new AccountStore(dataDir);
 await accounts.load();
 const characters = new CharacterStore(dataDir);
 await characters.load();
 
+const assetsDir = (game?: string) => {
+  const dir = hub.dirOf(game ?? hub.homeId ?? '');
+  return dir && join(dir, 'assets');
+};
+
 const handleRequest = httpHandler({
-  assetsDir: join(worldDir, 'assets'),
+  assetsDir,
   clientDir: clientDist,
-  players: () => store.world.players,
-  api: accountApi({ accounts, characters, world: store }),
+  players: async () => (hub.homeId ? (await hub.info(hub.homeId)).players : []),
+  api: apiHandler({ accounts, characters, hub }),
 });
 
 const server = createServer((req, res) => {
@@ -42,20 +45,29 @@ const wss = new WebSocketServer({ noServer: true });
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
   if (url.pathname !== '/ws') return socket.destroy();
-  const player = upgradePlayer(req, accounts, (id) => game.findPlayer(id));
-  wss.handleUpgrade(req, socket, head, (ws) => {
-    if (!player) return ws.close(4001, 'unknown player');
-    game.connect(ws, player);
-  });
+  void socketSeat(req, { accounts, hub }).then(
+    (seat) =>
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        if (!seat) return ws.close(4001, 'unknown player');
+        try {
+          hub.connect(seat.game, ws, seat.player);
+        } catch {
+          ws.close(4004, 'no such game');
+        }
+      }),
+    (e: unknown) => {
+      console.error('[server] could not open the game:', e);
+      socket.destroy();
+    },
+  );
 });
 
 server.listen(PORT, () =>
-  console.log(`[server] http://localhost:${PORT} serving world ${worldDir}, data in ${dataDir}`),
+  console.log(`[server] http://localhost:${PORT}: home game ${homeDir}, ${hub.ids().length} games, data in ${dataDir}`),
 );
 
 for (const sig of ['SIGINT', 'SIGTERM'] as const) {
   process.on(sig, () => {
-    store.close();
-    void store.flush().then(() => process.exit(0));
+    void hub.close().then(() => process.exit(0));
   });
 }

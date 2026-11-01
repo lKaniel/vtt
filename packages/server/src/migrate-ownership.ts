@@ -7,7 +7,8 @@ import { backUp, formatOf, isObject, readActors, readTokenFiles } from './migrat
 // Actors, tokens that carry their own sheet, and unlinked tokens' deltas
 // all change; everything else is left as written.
 
-const FORMAT = 4;
+/** The newest game folder format. */
+export const FORMAT = 4;
 
 type Raw = Record<string, unknown>;
 

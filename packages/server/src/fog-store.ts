@@ -60,6 +60,18 @@ export class FogStore extends EventEmitter<FogEvents> {
     }
   }
 
+  /** Forgets, and deletes the files of, the fog of players who no longer have a seat. */
+  prune(seats: readonly string[]): void {
+    const keep = new Set(seats);
+    for (const key of [...this.maps.keys()]) {
+      const [scene, player] = key.split('\u0000') as [string, string];
+      if (keep.has(player)) continue;
+      this.maps.delete(key);
+      this.unsaved.delete(key);
+      this.files.remove(fileOf(scene, player));
+    }
+  }
+
   /** A player's fog on a scene with cells of `cell` pixels; a different grid starts it over. */
   map(scene: string, player: string, cell: number): FogMap {
     const key = slot(scene, player);

@@ -182,6 +182,16 @@ export class Game {
     return [...this.clients].filter((c) => c.scene === scene);
   }
 
+  /** Who is connected now, each seat once. */
+  online(): string[] {
+    return [...new Set([...this.clients].map((c) => c.player.id))];
+  }
+
+  /** Sends everyone away, e.g. when the game is deleted. */
+  closeAll(reason: string): void {
+    for (const c of this.clients) c.ws.close(4004, reason);
+  }
+
   findPlayer(id: string): Player | undefined {
     return this.store.world.players.find((p) => p.id === id);
   }
