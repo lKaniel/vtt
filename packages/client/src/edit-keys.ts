@@ -50,11 +50,19 @@ function layerKey(key: string, shift: boolean): LayerKey | undefined {
 /** A GM's editor key: switch mode, or nudge the selection. */
 export type EditorKey = { mode: EditorMode } | { nudge: Point; big: boolean };
 
-const MODE_KEYS: Record<string, EditorMode> = { t: 'tokens', w: 'walls', l: 'lights' };
+const MODE_KEYS: Record<string, EditorMode> = {
+  t: 'tokens',
+  w: 'walls',
+  l: 'lights',
+  d: 'drawings',
+  n: 'notes',
+  m: 'templates',
+};
 const ARROWS: Record<string, Point> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 
 /**
- * T tokens, Shift+T tiles, W walls, L lights; outside the tokens mode
+ * T tokens, Shift+T tiles, W walls, L lights, D drawings, N notes, M
+ * templates (players reach drawings and templates only); outside the tokens mode
  * (`editing`) the arrows nudge a pixel, or a square with Shift.
  */
 export function editorKey(e: KeyPress, editing: boolean): EditorKey | undefined {

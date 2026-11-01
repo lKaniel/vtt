@@ -41,7 +41,7 @@ export function GameScreen({
       if (isTyping(e.target)) return;
       if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
       if (e.key === 'Escape' && backOutOfEditor(session)) return;
-      if (session.isGm() && runEditorKey(session, e)) return;
+      if (runEditorKey(session, e)) return;
       if (e.key === 'c') toggleSheet(session);
       else if (e.key === 'e') toggleEditor(session);
       else handleGameKey(session, e);
@@ -194,10 +194,10 @@ function backOutOfEditor(session: Session): boolean {
   return true;
 }
 
-/** T, Shift+T, W and L switch modes; the arrows nudge outside the tokens mode. */
+/** T, Shift+T, W, L, D, N and M switch modes (those this seat may use); the arrows nudge outside the tokens mode. */
 function runEditorKey(session: Session, e: KeyboardEvent): boolean {
   const key = editorKey(e, session.mode !== 'tokens');
-  if (!key) return false;
+  if (!key || ('mode' in key && (!session.canUseMode(key.mode) || key.mode === session.mode))) return false;
   e.preventDefault();
   if ('mode' in key) session.setMode(key.mode);
   else session.nudge(key.nudge, key.big);

@@ -1,5 +1,7 @@
 import {
+  activeAt,
   isGm,
+  onLevel,
   type LightSource,
   type Point,
   type Rect,
@@ -145,8 +147,12 @@ export class Vision {
   /** Every light, with your own tokens' lights where they're drawn mid-walk. */
   private lights(viewers: Viewer[]): LightSource[] {
     const yours = new Set(viewers.map((v) => v.token.id));
+    const level = this.session.level;
+    const darkness = this.session.world?.darkness ?? 0;
+    const shines = (l: { level?: string; activeAt?: [number, number] }) =>
+      onLevel(l, level) && activeAt(l.activeAt, darkness);
     return [
-      ...[...this.session.chunks.values()].flatMap((c) => c.lights),
+      ...[...this.session.chunks.values()].flatMap((c) => c.lights.filter(shines)),
       ...tokenLights(viewers.map((v) => ({ ...v.token, x: v.at[0], y: v.at[1] }))),
       ...tokenLights([...this.session.tokens.values()].filter((t) => !yours.has(t.id))),
     ];

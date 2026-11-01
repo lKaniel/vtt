@@ -66,4 +66,55 @@ describe('the inspector', () => {
     const token: Doc = { id: 'k', type: 'token', rev: 1, x: 0, y: 0 };
     expect(commonValue([token], field([token], 'hidden'))).toBe(false);
   });
+
+  it('edits drawings: line, fill, and the words of a text box', () => {
+    const box: Doc = { id: 'd', type: 'drawing', rev: 1, shape: 'rect', x: 0, y: 0, w: 10, h: 10 };
+    expect(fieldsFor([box]).map((f) => f.key)).toEqual([
+      'stroke',
+      'strokeWidth',
+      'fill',
+      'fillAlpha',
+      'level',
+      'hidden',
+      'locked',
+    ]);
+    const text = { ...box, shape: 'text', text: 'Hi' };
+    expect(fieldsFor([text]).map((f) => f.key)).toEqual(['text', 'fontSize', 'textColor', 'level', 'hidden', 'locked']);
+  });
+
+  it('points a note at a journal entry picked from those there are', () => {
+    const note: Doc = { id: 'n', type: 'note', rev: 1, x: 0, y: 0 };
+    const entry = field([note], 'entry');
+    expect(entry.choices).toBe('journals');
+    expect(entry.patch('lore')).toEqual({ entry: 'lore' });
+    expect(entry.patch('')).toEqual({ entry: null });
+  });
+
+  it("sets a region's first behaviour and its details", () => {
+    const region: Doc = { id: 'r', type: 'region', rev: 1, points: [], behaviors: [] };
+    const kind = field([region], 'behavior');
+    expect(kind.patch('difficult')).toEqual({ behaviors: [{ type: 'difficult' }] });
+    expect(kind.patch('')).toEqual({ behaviors: [] });
+    const message = { ...region, behaviors: [{ type: 'message', text: 'Boo' }] };
+    expect(commonValue([message], kind)).toBe('message');
+    const text = field([message], 'behavior.text');
+    expect(commonValue([message], text)).toBe('Boo');
+    expect(text.patch('Hello', message)).toEqual({ behaviors: [{ type: 'message', text: 'Hello' }] });
+    expect(fieldsFor([region]).some((f) => f.key === 'behavior.text')).toBe(false);
+  });
+
+  it('edits templates, sounds and their darkness bands', () => {
+    const template: Doc = { id: 't', type: 'template', rev: 1, shape: 'cone', x: 0, y: 0, distance: 15 };
+    expect(fieldsFor([template]).map((f) => f.key)).toEqual([
+      'distance',
+      'direction',
+      'angle',
+      'color',
+      'level',
+      'hidden',
+      'locked',
+    ]);
+    const sound: Doc = { id: 's', type: 'sound', rev: 1, x: 0, y: 0, radius: 30, src: 'a.ogg' };
+    expect(fieldsFor([sound]).map((f) => f.key)).toContain('src');
+  });
 });

@@ -77,6 +77,11 @@ export abstract class EditorSession extends EditSession {
     return this.isGm() || mode === 'tokens';
   }
 
+  /** Whether this seat may switch to `mode`. */
+  canUseMode(mode: EditorMode): boolean {
+    return this.mayUse(mode);
+  }
+
   /** Changes mode (players only to those they may use), letting go of the selection. */
   setMode(mode: EditorMode, tool: EditorTool = 'select'): void {
     const next = this.mayUse(mode) ? mode : 'tokens';
@@ -138,6 +143,11 @@ export abstract class EditorSession extends EditSession {
   /** Drags one handle of a document (a wall end, a light ring, a tile edge) to `to`. */
   reshape(key: string, handle: string, to: Point, free: boolean): void {
     this.patchEach('reshape', [key], (doc) => dragHandle(doc, handle, to, { gridSize: this.gridSize(), free }));
+  }
+
+  /** Sets fields on each selected document, worked out from it (the inspector). */
+  editEach(patchOf: (doc: Doc) => Patch, label = 'edit'): void {
+    this.patchEach(label, this.selection, patchOf);
   }
 
   /** Sets fields on everything selected (the inspector, menus). */

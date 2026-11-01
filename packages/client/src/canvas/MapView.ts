@@ -1,4 +1,4 @@
-import { chunkKey, type EditorMode, type Point, type Rect, type Wall } from '@vtt/shared';
+import { chunkKey, type EditorMode, onLevel, type Point, type Rect, type Wall } from '@vtt/shared';
 import {
   Application,
   Container,
@@ -18,7 +18,8 @@ import { CameraMotion } from './camera-motion.ts';
 import { EffectsLayer } from './EffectsLayer.ts';
 import { drawGrid } from './grid.ts';
 import { FogBrush } from './FogBrush.ts';
-import { listenToDrops } from './sidebar-drops.ts';
+import { ItemLayer } from './ItemLayer.ts';
+import { dropToken, listenToDrops } from './sidebar-drops.ts';
 import { MapEditor } from './MapEditor.ts';
 import { PathPreview } from './PathPreview.ts';
 import { TokenLayer } from './TokenLayer.ts';
@@ -66,6 +67,7 @@ export class MapView {
   private preview = new PathPreview();
   private editor: MapEditor;
   private fogBrush: FogBrush;
+  private items: ItemLayer;
   private vision?: Vision;
   /** The scene last shown, so a new one starts at its own camera start. */
   private shownScene?: string;
@@ -102,6 +104,7 @@ export class MapView {
     this.editor = new MapEditor(session, (id) => this.tokens.placeOf(id));
     this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
     this.fogBrush = new FogBrush(session);
+    this.items = new ItemLayer(session);
   }
 
   async init(host: HTMLElement): Promise<void> {
@@ -119,7 +122,7 @@ export class MapView {
       return;
     }
     host.appendChild(this.app.canvas);
-    this.ground.addChild(this.chunks.ground, this.grid, this.chunks.walls);
+    this.ground.addChild(this.chunks.ground, this.grid, this.items.container, this.chunks.walls);
     this.camera.addChild(this.ground, this.tokens.container, this.effects.container);
     this.overhead.addChild(this.preview.container, this.effects.labels, this.editor.container, this.fogBrush.container);
     // Previews are drawn over tokens; clicks must still reach the tokens below.
@@ -232,6 +235,7 @@ export class MapView {
       s.on('lighting', visionChanged),
       s.on('fog', visionChanged),
       s.on('editor', () => {
+        this.items.redraw();
         this.onEditor();
         visionChanged();
       }),
@@ -265,6 +269,7 @@ export class MapView {
     }
     for (const key of this.chunks.keys) this.chunks.remove(key);
     this.wallsChanged();
+    this.items.redraw();
   }
 
   private wallsChanged(): void {
@@ -274,8 +279,10 @@ export class MapView {
     this.updatePreview(true);
   }
 
+  /** The walls on the level shown (and those on every level). */
   private allWalls(): Wall[] {
-    return [...this.session.chunks.values()].flatMap((c) => c.walls);
+    const level = this.session.level;
+    return [...this.session.chunks.values()].flatMap((c) => c.walls.filter((w) => onLevel(w, level)));
   }
 
   // Frame -------------------------------------------------------------------
@@ -314,6 +321,7 @@ export class MapView {
     this.requestChunks();
     drawGrid(this.grid, this.session.world!, view, this.zoom);
     this.editor.setZoom(this.zoom);
+    this.items.setZoom(this.zoom);
     this.fogBrush.setZoom(this.zoom);
     this.tokens.showLabels(this.zoom >= LOD.labels);
     this.chunks.showDoors(this.zoom >= LOD.doors);
@@ -401,23 +409,10 @@ export class MapView {
     const drag = this.drag;
     this.drag = undefined;
     if (!drag) return;
-    if (drag.token) return this.dropToken(drag, at);
+    if (drag.token) return dropToken(this.session, drag.token, drag.moved ? at : undefined);
     if (drag.panning) return this.letGo(drag);
     if (drag.button === 2 && !drag.moved) return this.rightClick([e.global.x, e.global.y], at);
     if (drag.button === 0 && !drag.moved) this.clickGround(at);
-  }
-
-  /** A token let go: a drag walks it (and the rest of the selection) there, a click selects it alone. */
-  private dropToken(drag: Drag, at: Point): void {
-    const s = this.session;
-    const id = drag.token!;
-    if (!drag.moved) return s.select(id);
-    const from = s.tokens.get(id);
-    if (!from) return;
-    const [dx, dy] = [at[0] - from.x, at[1] - from.y];
-    for (const t of s.tokens.values())
-      if (t.id !== id && s.isSelected(t.id) && s.canControl(t)) s.move(t.id, [t.x + dx, t.y + dy]);
-    s.move(id, at);
   }
 
   /**
@@ -426,7 +421,7 @@ export class MapView {
    * pointer (or of the ground).
    */
   private rightClick(screen: Point, at: Point): void {
-    if (this.editor.cancel() || this.session.cancelAction()) return;
+    if (this.editor.finish() || this.editor.cancel() || this.session.cancelAction()) return;
     const target = this.editor.menuTarget(at);
     const rect = this.app.canvas.getBoundingClientRect();
     this.session.openMenu([screen[0] + rect.left, screen[1] + rect.top], menuFor(target, this.session));
