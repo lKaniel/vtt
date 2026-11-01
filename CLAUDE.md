@@ -23,6 +23,9 @@ you add maps, place tokens, and prepare encounters.
 ## Code
 
 - TypeScript monorepo: `packages/shared` (used by both sides), `server`, `client`.
+- `packages/core` is the new document layer from the redesign (docs, ops with
+  undo, sort keys, trees, migrations). It knows nothing about D&D; new game
+  state should be built on it.
 - Rules and geometry live in `shared` so the server can enforce them and the
   client can preview them with the same code. Don't duplicate them.
 - The server is authoritative: clients send intents, the server validates
