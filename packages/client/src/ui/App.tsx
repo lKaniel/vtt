@@ -6,7 +6,10 @@ import { AccountScreen } from './AccountScreen.tsx';
 import { CharacterCreator } from './CharacterCreator.tsx';
 import { GameScreen } from './GameScreen.tsx';
 import { LevelUpScreen } from './LevelUpScreen.tsx';
+import { GamePage } from './GamePage.tsx';
+import { GamesScreen, InviteScreen } from './LobbyScreens.tsx';
 import { AuthScreen, MainMenu, SeatsScreen } from './MenuScreens.tsx';
+import { PENDING_INVITE } from '../lobby.ts';
 
 /** The route in the address bar, and a way to go somewhere else. */
 function useRoute(): [Route, (to: Route) => void] {
@@ -63,7 +66,7 @@ export function App() {
     url.searchParams.delete('player');
     history.replaceState(null, '', url);
     setSeat(undefined);
-    go(account.info?.account ? { name: 'account' } : { name: 'menu' });
+    go(account.info?.account ? { name: 'games' } : { name: 'menu' });
   };
 
   if (seat) return <GameScreen playerId={seat} onLeave={leaveSeat} />;
@@ -77,28 +80,40 @@ interface ScreenProps {
   onSeat: (id: string) => void;
 }
 
+/** Where to go once signed in: an invite that was waiting, else the lobby. */
+function afterSignIn(): Route {
+  const code = sessionStorage.getItem(PENDING_INVITE);
+  return code ? { name: 'invite', code } : { name: 'games' };
+}
+
 function Screen({ route, go, account, onSeat }: Readonly<ScreenProps>) {
-  const { info, characters, refresh } = account;
-  const signedIn = info?.account;
-  const toAccount = () => {
+  const { info, refresh } = account;
+  const signedIn = !!info?.account;
+  const toLobby = () => {
     void refresh();
-    go({ name: 'account' });
+    go(afterSignIn());
   };
   switch (route.name) {
     case 'login':
     case 'register':
-      return <AuthScreen mode={route.name} go={go} onSignedIn={toAccount} />;
+      return <AuthScreen mode={route.name} go={go} onSignedIn={toLobby} />;
     case 'seats':
       return <SeatsScreen go={go} onJoin={onSeat} />;
+    case 'invite':
+      return <InviteScreen code={route.code} signedIn={signedIn} go={go} />;
     case 'play':
-      return <GameScreen onLeave={toAccount} />;
-    case 'account':
-    case 'create':
-    case 'levelup':
-      if (!signedIn) return <MainMenu info={info} error={account.error} go={go} />;
-      return <AccountRoutes route={route} go={go} account={account} onSaved={toAccount} />;
+      return (
+        <GameScreen
+          key={route.game ?? ''}
+          gameId={route.game}
+          onLeave={() => go(route.game ? { name: 'game', id: route.game } : { name: 'games' })}
+        />
+      );
+    case 'menu':
+      return <MainMenu info={info} error={account.error} go={go} characters={account.characters.length} />;
     default:
-      return <MainMenu info={info} error={account.error} go={go} characters={characters.length} />;
+      if (!signedIn) return <MainMenu info={info} error={account.error} go={go} />;
+      return <AccountRoutes route={route} go={go} account={account} onSaved={() => go({ name: 'account' })} />;
   }
 }
 
@@ -109,22 +124,29 @@ function AccountRoutes({
   onSaved,
 }: Readonly<Omit<ScreenProps, 'onSeat'> & { onSaved: () => void }>) {
   const { info, characters, refresh } = account;
+  const me = info!.account!;
+  const saved = () => {
+    void refresh();
+    onSaved();
+  };
+  if (route.name === 'games') return <GamesScreen account={me} go={go} />;
+  if (route.name === 'game') return <GamePage id={route.id} account={me} characters={characters} go={go} />;
   if (route.name === 'create') {
     const editing = route.id ? characters.find((c) => c.id === route.id) : undefined;
     return (
       <CharacterCreator
         key={route.id ?? 'new'}
-        owner={info!.account!.id}
-        rules={info!.world.rules}
+        owner={me.id}
+        rules={info!.home?.rules ?? '2014'}
         initial={editing}
-        onDone={onSaved}
+        onDone={saved}
         onCancel={() => go({ name: 'account' })}
       />
     );
   }
   if (route.name === 'levelup') {
     const c = characters.find((x) => x.id === route.id);
-    if (c) return <LevelUpScreen character={c} onDone={onSaved} onCancel={() => go({ name: 'account' })} />;
+    if (c) return <LevelUpScreen character={c} onDone={saved} onCancel={() => go({ name: 'account' })} />;
   }
   return <AccountScreen info={info!} characters={characters} go={go} refresh={refresh} />;
 }

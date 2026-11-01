@@ -1,4 +1,5 @@
 import type { DocRef } from '@vtt/core';
+import { openSocket, refusalOf } from './session-socket.ts';
 import {
   canControl,
   canEdit,
@@ -104,8 +105,11 @@ export class Session extends SceneSession {
   private closed = false;
   private retry?: ReturnType<typeof setTimeout>;
 
-  /** `playerId` sits at one of the world's seats; without it the signed-in account joins. */
-  constructor(readonly playerId?: string) {
+  /** `gameId` is the game to join (else the home game); `playerId` a home game seat, else the account's. */
+  constructor(
+    readonly playerId?: string,
+    readonly gameId?: string,
+  ) {
     super();
   }
 
@@ -128,9 +132,7 @@ export class Session extends SceneSession {
   }
 
   connect(): void {
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const seat = this.playerId ? `?player=${encodeURIComponent(this.playerId)}` : '';
-    const ws = new WebSocket(`${proto}://${location.host}/ws${seat}`);
+    const ws = openSocket(location, this.gameId, this.playerId);
     this.ws = ws;
     this.status = 'connecting';
     this.changed();
@@ -138,9 +140,10 @@ export class Session extends SceneSession {
     ws.onclose = (e) => {
       if (this.ws !== ws) return;
       this.status = 'closed';
-      if (e.code === 4001) this.showError('You have no seat at this world. Join again from your account.');
+      const refused = refusalOf(e.code);
+      if (refused) this.showError(refused);
       this.changed();
-      if (!this.closed && e.code !== 4001) this.retry = setTimeout(() => this.connect(), 1000);
+      if (!this.closed && !refused) this.retry = setTimeout(() => this.connect(), 1000);
     };
   }
 
@@ -158,12 +161,8 @@ export class Session extends SceneSession {
   setView(keys: string[]): void {
     this.view = keys;
     const wanted = new Set(keys);
-    for (const key of [...this.chunks.keys()]) {
-      if (!wanted.has(key)) {
-        this.chunks.delete(key);
-        this.emit('chunkGone', key);
-      }
-    }
+    for (const key of [...this.chunks.keys()])
+      if (!wanted.has(key) && this.chunks.delete(key)) this.emit('chunkGone', key);
     this.send({ t: 'view', chunks: keys });
   }
 

@@ -133,6 +133,13 @@ describe('Session', () => {
     own.close();
   });
 
+  it('joins the game it was opened for', () => {
+    const own = new Session(undefined, 'lost-mine');
+    own.connect();
+    expect(latestSocket()!.url).toMatch(/\/ws\?game=lost-mine$/);
+    own.close();
+  });
+
   it('passes focus requests to the map', () => {
     const focus = vi.fn();
     session.on('focus', focus);

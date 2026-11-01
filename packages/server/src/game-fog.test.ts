@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { FogMap, type ServerMessage } from '@vtt/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -150,5 +150,33 @@ describe('the GM’s fog tools', () => {
     const ana = seat('ana');
     ana.receive({ t: 'fog', edit: { op: 'reset' } });
     expect(ana.take('error').map((e) => e.message)).toEqual(['Only the GM can do that']);
+  });
+});
+
+describe('fog of seats that are gone', () => {
+  const exists = (rel: string) =>
+    readFile(join(dir, rel)).then(
+      () => true,
+      () => false,
+    );
+
+  it('is deleted when the game loads', async () => {
+    seat('ana');
+    await store.flush();
+    await mkdir(join(dir, 'scenes/cellar/fog'), { recursive: true });
+    await writeFile(join(dir, 'scenes/cellar/fog/renamed.json'), JSON.stringify({ cell: 25, blocks: {} }));
+    await start();
+    await store.flush();
+    expect(await exists('scenes/cellar/fog/renamed.json')).toBe(false);
+    expect(await exists('scenes/cellar/fog/ana.json')).toBe(true);
+  });
+
+  it('is deleted when the seat is removed', async () => {
+    seat('ana');
+    await store.flush();
+    expect(await exists('scenes/cellar/fog/ana.json')).toBe(true);
+    store.setGame({ players: store.world.players.filter((p) => p.id !== 'ana') });
+    await store.flush();
+    expect(await exists('scenes/cellar/fog/ana.json')).toBe(false);
   });
 });

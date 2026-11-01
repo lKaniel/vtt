@@ -2938,6 +2938,9 @@ button.pip:hover {
   color: var(--gold);
 }
 .auth-field input,
+.auth-field select,
+.lobby-link,
+.lobby-member select,
 .cc-abilities input,
 .cc-abilities select {
   padding: 9px 12px;
@@ -3108,6 +3111,97 @@ button.pip:hover {
 }
 .chosen-who .chosen-warn {
   color: var(--warn);
+}
+
+/* Lobby: your games and one game's page (LobbyScreens.tsx). */
+.lobby {
+  padding-bottom: 40px;
+}
+.lobby-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+  gap: 22px;
+}
+@media (max-width: 860px) {
+  .lobby-body {
+    grid-template-columns: 1fr;
+  }
+}
+.lobby-side {
+  display: grid;
+  gap: 18px;
+}
+.lobby-form {
+  padding: 20px 22px;
+}
+.lobby-heading {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--gold-bright);
+}
+.lobby-card {
+  align-content: start;
+  min-height: 170px;
+}
+.lobby-online {
+  color: var(--ok, #7cc47c);
+}
+.lobby-members {
+  display: grid;
+  gap: 12px;
+  padding: 20px 22px;
+}
+.lobby-member-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lobby-member {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(168, 138, 94, 0.25);
+  border-radius: 4px;
+}
+.lobby-member-name {
+  flex: 1;
+  font-family: var(--display);
+  font-size: 18px;
+}
+.lobby-member select {
+  padding: 5px 8px;
+  font-size: 14px;
+}
+.lobby-dot {
+  width: 10px;
+  height: 10px;
+  background: #555;
+  border-radius: 50%;
+}
+.lobby-dot.on {
+  background: #7cc47c;
+  box-shadow: 0 0 6px #7cc47c;
+}
+.lobby-link {
+  width: 100%;
+  font-size: 13px;
+}
+.lobby-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+.lobby-danger {
+  display: grid;
+  justify-items: end;
 }
 
 /* Character creator: steps | choices | sheet, with a footer bar. */

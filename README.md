@@ -76,21 +76,26 @@ pnpm dev          # server on :3001, client on http://localhost:5173
 
 Open http://localhost:5173. The main menu offers:
 
-- **Create an account / Sign in.** Your account keeps your characters. The
-  first account made on a server is its admin and sits at worlds as the GM;
-  everyone after joins as a player (change a role in `game.json`).
-- **Your roster.** Create a character, edit it, level it up, or delete it.
-  _Enter the world_ seats you and puts the chosen character on the map, at
-  the world's `start`. _Run the game as GM_ joins without a character.
-- **Take a seat without an account.** The world's fixed seats from
+- **Create an account / Sign in.** Your account keeps your characters and
+  lands you in the lobby. The first account made on a server is its admin.
+- **Your games** (the lobby). Every game you are in, plus games open to the
+  whole server. _New game_ asks for a name, a system (D&D 5e for now) and its
+  rules (2014 or 2024); you are its GM. _Join a game_ takes an invite link or
+  code. A game's page lists who is at the table (GMs change roles and remove
+  members), shows the invite link to the GM, and has _Enter the game_ with a
+  character from your roster, or none.
+- **Your characters.** Create a character, edit it, level it up, or delete it.
+- **Take a seat without an account.** The home game's fixed seats from
   `game.json`, handy for a quick test: open a second browser window as
   another player to see sync and per-player views.
 
+See [docs/lobby.md](docs/lobby.md) for how games, invites and members work.
+
 ### Accounts and characters
 
-Accounts and characters live in a `data/` folder next to the world folder
-(set `VTT_DATA` to move it), outside the world so one roster can visit many
-campaigns. Passwords are stored as salted scrypt hashes, and a sign-in lasts
+Accounts, characters and the games made in the lobby live in a `data/`
+folder next to the world folder (set `VTT_DATA` to move it), so one roster
+can visit many campaigns. Passwords are stored as salted scrypt hashes, and a sign-in lasts
 30 days in an HttpOnly cookie. There's no e-mail or reset: to reset an
 account, delete its file in `data/accounts/`.
 

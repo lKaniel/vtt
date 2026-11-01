@@ -16,6 +16,8 @@ export const GameSchema = z.object({
   name: z.string().min(1),
   /** Rules edition: "2014" (SRD 5.1) or "2024" (SRD 5.2). Characters can override it. */
   rules: EditionSchema.default('2014'),
+  /** The rulebook the game runs on (see lobby.ts); only "dnd5e" so far. */
+  system: z.string().default('dnd5e'),
   /** The scene everyone is on: a folder in scenes/. */
   scene: id,
   players: z.array(PlayerSchema).min(1),

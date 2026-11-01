@@ -4,7 +4,7 @@ import { api, type SessionInfo } from '../account-api.ts';
 import { characterSummary } from '../creator.ts';
 import type { Route } from '../route.ts';
 
-/** The signed-in player's home: their roster, and the door into the world. */
+/** The signed-in player's roster; games are entered from the lobby (LobbyScreens.tsx). */
 export function AccountScreen({
   info,
   characters,
@@ -12,18 +12,8 @@ export function AccountScreen({
   refresh,
 }: Readonly<{ info: SessionInfo; characters: Character[]; go: (to: Route) => void; refresh: () => Promise<void> }>) {
   const [picked, setPicked] = useState(characters[0]?.id);
-  const [error, setError] = useState<string>();
   const chosen = characters.find((c) => c.id === picked) ?? characters[0];
   const account = info.account!;
-
-  const enter = async (character?: string) => {
-    try {
-      await api.join(character);
-      go({ name: 'play' });
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
 
   const signOut = async () => {
     await api.logout();
@@ -32,7 +22,7 @@ export function AccountScreen({
   };
 
   const remove = async (c: Character) => {
-    if (!confirm(`Delete ${c.name} for good? Their token stays on the map.`)) return;
+    if (!confirm(`Delete ${c.name} for good? Their tokens stay in the games they joined.`)) return;
     await api.deleteCharacter(c.id);
     await refresh();
   };
@@ -41,11 +31,13 @@ export function AccountScreen({
     <div className="account">
       <header className="account-head">
         <div>
-          <p className="menu-kicker">{info.world.name}</p>
+          <p className="menu-kicker">Your characters travel with you to every game</p>
           <h1 className="account-title">{account.name}&rsquo;s roster</h1>
         </div>
         <div className="account-actions">
-          {info.seat && <span className="account-seat">Seated as {info.seat.role === 'gm' ? 'GM' : 'player'}</span>}
+          <button className="btn primary" onClick={() => go({ name: 'games' })}>
+            Your games
+          </button>
           <button className="btn" onClick={() => go({ name: 'menu' })}>
             Main menu
           </button>
@@ -65,18 +57,11 @@ export function AccountScreen({
         </button>
       </div>
 
-      {error && <p className="menu-error">{error}</p>}
-
       <footer className="account-foot frame">
         {chosen ? (
-          <ChosenBar c={chosen} go={go} onEnter={() => void enter(chosen.id)} onDelete={() => void remove(chosen)} />
+          <ChosenBar c={chosen} go={go} onDelete={() => void remove(chosen)} />
         ) : (
           <p className="account-empty">Create a character to bring to the table.</p>
-        )}
-        {(account.admin || info.seat?.role === 'gm') && (
-          <button className="btn" onClick={() => void enter()}>
-            Run the game as GM
-          </button>
         )}
       </footer>
     </div>
@@ -104,12 +89,7 @@ function RosterCard({ c, on, onPick }: Readonly<{ c: Character; on: boolean; onP
   );
 }
 
-function ChosenBar({
-  c,
-  go,
-  onEnter,
-  onDelete,
-}: Readonly<{ c: Character; go: (to: Route) => void; onEnter: () => void; onDelete: () => void }>) {
+function ChosenBar({ c, go, onDelete }: Readonly<{ c: Character; go: (to: Route) => void; onDelete: () => void }>) {
   const broken = characterIssues(c);
   return (
     <div className="chosen">
@@ -126,9 +106,6 @@ function ChosenBar({
       </button>
       <button className="btn" disabled={c.level >= 20} onClick={() => go({ name: 'levelup', id: c.id })}>
         Level up
-      </button>
-      <button className="btn primary" onClick={onEnter}>
-        Enter the world
       </button>
     </div>
   );

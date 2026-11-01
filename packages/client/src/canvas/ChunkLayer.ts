@@ -1,4 +1,5 @@
 import type { Chunk, Wall } from '@vtt/shared';
+import { assetUrl } from '../assets.ts';
 import { Assets, Circle, Container, Graphics, Sprite } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
 import { drawDoor, drawWalls, drawWallShadows } from './art/walls.ts';
@@ -110,7 +111,7 @@ function drawTiles(chunk: Chunk, ctx: GroundContext): Container[] {
 function imageTile(tile: Extract<Chunk['tiles'][number], { kind: 'image' }>): Sprite {
   const sprite = new Sprite();
   sprite.position.set(tile.x, tile.y);
-  Assets.load(`/assets/${tile.src}`)
+  Assets.load(assetUrl(tile.src))
     .then((texture: Sprite['texture']) => {
       if (sprite.destroyed) return;
       sprite.texture = texture;

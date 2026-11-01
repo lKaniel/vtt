@@ -46,3 +46,4 @@ export * from './tiles.ts';
 export * from './fog.ts';
 export * from './fog-edit.ts';
 export * from './scenes.ts';
+export * from './lobby.ts';

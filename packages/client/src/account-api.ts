@@ -1,6 +1,6 @@
-import type { Character, Edition, Player } from '@vtt/shared';
+import type { Character, Edition, GameDetail, GameSummary, NewGame, Player, Role, SystemInfo } from '@vtt/shared';
 
-// The account side of the server: signing in, characters, and taking a seat.
+// The account side of the server: signing in, characters, and the lobby.
 
 export interface Account {
   id: string;
@@ -10,9 +10,8 @@ export interface Account {
 
 export interface SessionInfo {
   account: Account | null;
-  world: { name: string; rules: Edition };
-  /** The account's seat at the world, once it has joined. */
-  seat: Player | null;
+  /** The game the server was started with. */
+  home: { id: string; name: string; rules: Edition } | null;
 }
 
 export class ApiError extends Error {
@@ -39,6 +38,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return data;
 }
 
+const game = (id: string, rest = '') => `/api/games/${encodeURIComponent(id)}${rest}`;
+
 export const api = {
   session: () => call<SessionInfo>('GET', '/api/session'),
   login: async (username: string, password: string) =>
@@ -52,5 +53,23 @@ export const api = {
     (await call<{ character: Character }>(id ? 'PUT' : 'POST', id ? `/api/characters/${id}` : '/api/characters', rest))
       .character,
   deleteCharacter: (id: string) => call<object>('DELETE', `/api/characters/${id}`),
-  join: async (character?: string) => (await call<{ player: Player }>('POST', '/api/join', { character })).player,
+
+  games: () => call<{ games: GameSummary[]; systems: SystemInfo[] }>('GET', '/api/games'),
+  game: async (id: string) => (await call<{ game: GameDetail }>('GET', game(id))).game,
+  createGame: async (input: NewGame) => (await call<{ game: GameSummary }>('POST', '/api/games', input)).game,
+  deleteGame: (id: string) => call<object>('DELETE', game(id)),
+  /** Takes your seat at the game, bringing `character` from your roster. */
+  joinGame: async (id: string, character?: string) =>
+    (await call<{ player: Player }>('POST', game(id, '/join'), { character })).player,
+  /** A new invite code; the old link stops working. */
+  newInvite: async (id: string) => (await call<{ invite: string }>('POST', game(id, '/invite'), {})).invite,
+  /** Joins by an invite code, answering the game's id. */
+  acceptInvite: async (code: string) =>
+    (await call<{ game: string }>('POST', `/api/invites/${encodeURIComponent(code)}`, {})).game,
+  setOpen: (id: string, open: boolean) => call<object>('PUT', game(id, '/open'), { open }),
+  /** Changes a member's role, or removes them (null). */
+  setMember: (id: string, member: string, role: Role | null) =>
+    role
+      ? call<object>('PUT', game(id, `/members/${member}`), { role })
+      : call<object>('DELETE', game(id, `/members/${member}`)),
 };

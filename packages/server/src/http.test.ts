@@ -14,10 +14,13 @@ beforeAll(async () => {
   await mkdir(join(dir, 'assets'));
   await mkdir(join(dir, 'client'));
   await writeFile(join(dir, 'assets', 'map.png'), 'png');
+  await mkdir(join(dir, 'other', 'assets'), { recursive: true });
+  await writeFile(join(dir, 'other', 'assets', 'map.png'), 'other png');
   await writeFile(join(dir, 'client', 'index.html'), '<h1>vtt</h1>');
   await writeFile(join(dir, 'secret.txt'), 'nope');
   const handle = httpHandler({
-    assetsDir: join(dir, 'assets'),
+    // The home game is "home"; "other" is a game made in the lobby.
+    assetsDir: (game) => ({ other: join(dir, 'other', 'assets'), home: join(dir, 'assets') })[game ?? 'home'],
     clientDir: join(dir, 'client'),
     players: () => [{ id: 'gm', name: 'GM', role: 'gm', color: '#fff' }],
   });
@@ -40,6 +43,11 @@ describe('httpHandler', () => {
     const res = await fetch(`${base}/assets/map.png`);
     expect(res.headers.get('content-type')).toBe('image/png');
     expect(await res.text()).toBe('png');
+  });
+
+  it('serves each game its own assets', async () => {
+    expect(await (await fetch(`${base}/games/other/assets/map.png`)).text()).toBe('other png');
+    expect(await (await fetch(`${base}/games/nope/assets/map.png`)).text()).toBe('<h1>vtt</h1>');
   });
 
   it('falls back to the client for unknown paths', async () => {

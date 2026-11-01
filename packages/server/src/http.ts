@@ -17,11 +17,15 @@ const TYPES: Record<string, string> = {
 };
 
 export interface HttpOptions {
-  /** World assets, served under /assets/. */
-  assetsDir: string;
+  /**
+   * A game's assets folder, served under /games/<id>/assets/; undefined is
+   * the home game, also served under /assets/ as before games had a lobby.
+   */
+  assetsDir: (game?: string) => string | undefined;
   /** The built client; unknown paths fall back to its index.html. */
   clientDir: string;
-  players: () => readonly Player[];
+  /** The home game's seats, for taking one without an account. */
+  players: () => readonly Player[] | Promise<readonly Player[]>;
   /** Account routes; answers true when it handled the request. */
   api?: (req: IncomingMessage, res: ServerResponse) => Promise<boolean>;
 }
@@ -37,20 +41,29 @@ async function serveFile(res: ServerResponse, root: string, urlPath: string): Pr
   return true;
 }
 
-/** Plain HTTP: the seat list, world assets and the built client. */
+/** /assets/<path> of the home game, or /games/<id>/assets/<path>. */
+async function serveAsset(res: ServerResponse, opts: HttpOptions, path: string): Promise<boolean> {
+  const match = /^\/games\/([a-z0-9-]+)\/assets\/(.*)$/.exec(path);
+  if (!match && !path.startsWith('/assets/')) return false;
+  const [game, rest] = match ? [match[1], match[2]!] : [undefined, path.slice(8)];
+  const dir = opts.assetsDir(game);
+  return !!dir && serveFile(res, dir, rest);
+}
+
+/** Plain HTTP: the home game's seat list, game assets and the built client. */
 export function httpHandler(opts: HttpOptions): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   return async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
     if (opts.api && (await opts.api(req, res))) return;
     if (url.pathname === '/api/players') {
       // Self-hosted for friends: anyone who can reach the server may pick a seat.
-      const players = opts.players().map(({ id, name, role, color }) => ({ id, name, role, color }));
+      const players = (await opts.players()).map(({ id, name, role, color }) => ({ id, name, role, color }));
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify(players));
       return;
     }
     const served =
-      (url.pathname.startsWith('/assets/') && (await serveFile(res, opts.assetsDir, url.pathname.slice(8)))) ||
+      (await serveAsset(res, opts, url.pathname)) ||
       (await serveFile(res, opts.clientDir, url.pathname)) ||
       (await serveFile(res, opts.clientDir, 'index.html'));
     if (!served) res.writeHead(404).end('Not found. In development, open the Vite dev server instead.');

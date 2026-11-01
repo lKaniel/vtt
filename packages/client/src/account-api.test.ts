@@ -46,4 +46,24 @@ describe('account api client', () => {
     );
     await expect(api.session()).rejects.toThrow("Can't reach the game server.");
   });
+
+  it('makes, joins and manages games', async () => {
+    const fetch = answer(200, { game: 'lost-mine', invite: 'abc', player: { id: 'ana' } });
+    await api.createGame({ name: 'Lost Mine', system: 'dnd5e', rules: '2014' });
+    await api.joinGame('lost-mine', 'vex-1');
+    await api.newInvite('lost-mine');
+    expect(await api.acceptInvite('abc')).toBe('lost-mine');
+    await api.setMember('lost-mine', 'bo', 'trusted');
+    await api.setMember('lost-mine', 'bo', null);
+    await api.deleteGame('lost-mine');
+    expect(fetch.mock.calls.map((c) => [((c as unknown[])[1] as RequestInit).method, (c as unknown[])[0]])).toEqual([
+      ['POST', '/api/games'],
+      ['POST', '/api/games/lost-mine/join'],
+      ['POST', '/api/games/lost-mine/invite'],
+      ['POST', '/api/invites/abc'],
+      ['PUT', '/api/games/lost-mine/members/bo'],
+      ['DELETE', '/api/games/lost-mine/members/bo'],
+      ['DELETE', '/api/games/lost-mine'],
+    ]);
+  });
 });

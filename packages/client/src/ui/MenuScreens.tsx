@@ -25,16 +25,16 @@ export function MainMenu({
     <div className="menu main-menu">
       <div className="menu-crest">
         <p className="menu-kicker">Gather at the table</p>
-        <h1 className="menu-logo">{info?.world.name ?? 'Connecting…'}</h1>
-        {info && <p className="menu-sub">{info.world.rules} rules</p>}
+        <h1 className="menu-logo">{info ? (info.home?.name ?? 'The table') : 'Connecting…'}</h1>
       </div>
       {error && <p className="menu-error">{error}</p>}
       <nav className="menu-list">
         {account ? (
           <>
-            <MenuButton primary onClick={() => go({ name: 'account' })}>
-              Continue as {account.name}
+            <MenuButton primary onClick={() => go({ name: 'games' })}>
+              Your games, {account.name}
             </MenuButton>
+            <MenuButton onClick={() => go({ name: 'account' })}>Your characters</MenuButton>
             <MenuButton onClick={() => go({ name: 'create' })}>New character</MenuButton>
             <p className="menu-note">
               {characters} character{characters === 1 ? '' : 's'} in your roster
@@ -135,7 +135,7 @@ export function AuthScreen({
   );
 }
 
-/** The world's fixed seats: the old way in, for quick games and testing. */
+/** The home game's fixed seats: the old way in, for quick games and testing. */
 export function SeatsScreen({ go, onJoin }: Readonly<{ go: (to: Route) => void; onJoin: (id: string) => void }>) {
   const [players, setPlayers] = useState<Player[]>();
   const [error, setError] = useState<string>();
