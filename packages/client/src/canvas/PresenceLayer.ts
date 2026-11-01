@@ -2,7 +2,9 @@ import type { Point } from '@vtt/shared';
 import { Container, type FederatedPointerEvent, Graphics } from 'pixi.js';
 import { LongPress, PING_MS, type ShownPing } from '../presence.ts';
 import type { Session } from '../session.ts';
+import type { Targeter } from '../targets.ts';
 import { LabelPool } from './label-pool.ts';
+import { drawTargets, type PlaceOf } from './target-marks.ts';
 
 const OUTLINE = 0x000000;
 /** How fast a cursor catches up with where its player points (per second). */
@@ -15,7 +17,8 @@ const RING = { from: 12, to: 70, count: 3 };
  * gliding after their pointer with their name beside it, and pings as rings
  * spreading from the spot in the pinger's colour. It also turns your pointer
  * into presence: where it is goes to the table, and a long press pings
- * (Shift: the GM pulls everyone's view there).
+ * (Shift: the GM pulls everyone's view there). Targets are marked here too
+ * (see target-marks.ts), following their tokens as they walk.
  */
 export class PresenceLayer {
   readonly container = new Container();
@@ -32,22 +35,28 @@ export class PresenceLayer {
   private dirty = true;
   /** Pings showed last frame: one more draw clears the last of them. */
   private pinging = false;
+  /** Targets showed last frame. */
+  private targeting = false;
   private press: LongPress;
 
-  constructor(private session: Session) {
+  constructor(
+    private session: Session,
+    private placeOf: PlaceOf,
+  ) {
     this.container.addChild(this.g);
     this.press = new LongPress((at, pull) => session.presence.ping(at, pull && session.isGm()));
   }
 
   /** Listens to the session and the canvas; returns what stops it. */
   attach(canvas: HTMLCanvasElement): () => void {
-    const off = this.session.on('presence', () => {
+    const dirty = () => {
       this.dirty = true;
-    });
+    };
+    const offs = [this.session.on('presence', dirty), this.session.on('targets', dirty)];
     const left = () => this.session.presence.pointer(null);
     canvas.addEventListener('pointerleave', left);
     return () => {
-      off();
+      for (const off of offs) off();
       canvas.removeEventListener('pointerleave', left);
     };
   }
@@ -75,15 +84,23 @@ export class PresenceLayer {
 
   tick(dt: number, now: number): void {
     const pings = this.session.presence.pings(now);
-    const moving = this.follow(dt);
+    // Targets follow their tokens, which may be walking: redraw while there are any.
+    const moving = this.follow(dt) || this.targeting;
+    this.targeting = this.session.targets.any();
     if (!this.dirty && !moving && !pings.length && !this.pinging) return;
     this.dirty = false;
     this.pinging = pings.length > 0;
     this.g.clear();
     this.labels.begin(1 / this.zoom);
+    drawTargets(this.g, this.targetMarks(), this.placeOf, 1 / this.zoom);
     for (const p of pings) this.drawPing(p, (now - p.since) / PING_MS);
     for (const c of this.session.presence.cursors.values()) this.drawCursor(this.drawn.get(c.player)!, c.color, c.name);
     this.labels.end();
+  }
+
+  /** Each token someone targets, with who does. */
+  private *targetMarks(): Iterable<[string, Targeter[]]> {
+    for (const id of this.session.tokens.keys()) yield [id, this.session.targets.on(id)];
   }
 
   /** Moves each drawn cursor towards where it points; true while any is still on its way. */

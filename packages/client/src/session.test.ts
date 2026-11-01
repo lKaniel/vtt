@@ -29,6 +29,37 @@ describe('Session', () => {
     expect(session.canControl(session.tokens.get('hero')!)).toBe(true);
   });
 
+  it('tells the server its roll mode on joining and when it changes', () => {
+    ws.receive(welcome());
+    expect(ws.sent).toContainEqual({ t: 'rollMode', mode: 'public' });
+    session.setRollMode('blind');
+    expect(session.rollMode).toBe('blind');
+    expect(ws.sent.at(-1)).toEqual({ t: 'rollMode', mode: 'blind' });
+  });
+
+  it('forgets a target that is gone, and keeps the rest when it starts over', () => {
+    ws.receive(welcome([token('hero'), token('goblin'), token('orc')]));
+    session.targets.toggle('goblin');
+    ws.receive({ t: 'tokenGone', id: 'goblin' });
+    expect(session.targets.mine.size).toBe(0);
+    session.targets.toggle('hero');
+    session.targets.toggle('orc');
+    ws.receive(welcome([token('hero')]));
+    expect([...session.targets.mine]).toEqual(['hero']);
+    expect(ws.sent).toContainEqual({ t: 'target', tokens: ['hero'] });
+  });
+
+  it('targets the creature under the pointer with T, and lets them all go over empty ground', () => {
+    ws.receive(welcome([token('hero'), token('goblin', 250, 50)]));
+    session.pointer = [240, 60];
+    expect(session.toggleTargetAtPointer()).toBe(true);
+    expect([...session.targets.mine]).toEqual(['goblin']);
+    session.pointer = [650, 650];
+    expect(session.toggleTargetAtPointer()).toBe(true);
+    expect(session.targets.mine.size).toBe(0);
+    expect(session.toggleTargetAtPointer()).toBe(false);
+  });
+
   it('follows the time of day without reconnecting', () => {
     ws.receive(welcome());
     const lit = vi.fn();
@@ -150,7 +181,7 @@ describe('Session', () => {
   it('asks for its chunks again after reconnecting', () => {
     session.setView(['0_0']);
     ws.receive(welcome());
-    expect(ws.sent.at(-1)).toEqual({ t: 'view', chunks: ['0_0'] });
+    expect(ws.sent).toContainEqual({ t: 'view', chunks: ['0_0'] });
   });
 
   it('reconnects unless the seat was refused', () => {
@@ -223,6 +254,14 @@ describe('Session', () => {
       expect(session.armed).toBeUndefined();
     });
 
+    it('fires an armed attack at once at your one target', () => {
+      session.select('hero');
+      session.targets.toggle('goblin');
+      session.arm('Longsword');
+      expect(ws.sent.at(-1)).toEqual({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Longsword' });
+      expect(session.armed).toBeUndefined();
+    });
+
     it('smites with a chosen slot on the armed attack, then forgets the choice', () => {
       session.select('hero');
       session.arm('Longsword');
@@ -271,6 +310,13 @@ describe('Session', () => {
           slot: 1,
           targets: ['goblin', 'goblin', 'orc'],
         });
+        expect(session.aiming).toBeUndefined();
+      });
+
+      it('aims a spell at your targets and casts when they are all it needs', () => {
+        session.targets.toggle('goblin');
+        session.aim('magic-missile', 1);
+        expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', targets: ['goblin', 'goblin', 'goblin'] });
         expect(session.aiming).toBeUndefined();
       });
 

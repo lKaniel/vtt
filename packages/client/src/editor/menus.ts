@@ -42,6 +42,8 @@ export interface MenuApi {
   reorder(how: ZOrder): void;
   toggleLock(): void;
   readonly lightPreset: LightPreset;
+  /** The creatures you target (see targets.ts). */
+  readonly targets: { readonly mine: ReadonlySet<string>; toggle(id: string): void };
 }
 
 /** What the menu was opened on. */
@@ -53,6 +55,8 @@ export interface MenuTarget {
   docs: { ref: DocRef; doc: Doc }[];
   /** In the tokens mode: the token under the pointer, or the one selected for a ground menu. */
   token?: TokenView;
+  /** A ground menu's creature under the pointer that you don't control (to target it). */
+  under?: TokenView;
 }
 
 type Entry = MenuItem | false | undefined;
@@ -112,7 +116,14 @@ registerMenu('token', (t, api) => {
       label: hidden ? 'Reveal to players' : 'Hide from players',
       run: () => api.editSelection({ hidden: hidden ? null : true }, hidden ? 'reveal' : 'hide'),
     },
+    targetEntry(id, api),
   ];
+});
+
+/** Target a creature, or stop (see targets.ts). */
+const targetEntry = (id: string, api: MenuApi): MenuItem => ({
+  label: api.targets.mine.has(id) ? 'Stop targeting' : 'Target',
+  run: () => api.targets.toggle(id),
 });
 
 const WALL_KINDS: { label: string; is: (d: Doc) => boolean; patch: Patch }[] = (
@@ -234,6 +245,7 @@ registerMenu('ground', (t, api) => {
         label: `Place ${LIGHT_PRESETS[api.lightPreset].label.toLowerCase()} here`,
         run: () => api.editMap({ op: 'addLight', light: { ...light, x: t.at[0], y: t.at[1] } }),
       },
+    !!t.under && targetEntry(t.under.id, api),
     t.mode === 'tokens' && !!token && { label: `Move ${token.name} here`, run: () => api.move(token.id, t.at) },
     { label: 'Select all', run: () => api.selectAll() },
   ];

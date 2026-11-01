@@ -19,8 +19,14 @@ on, shared live between players.
   shift-click to lock or unlock.
 - **Per-player views.** Hidden tokens are GM-only, and a token with
   `visibleTo` is seen only by those players. This is the hook illusions use.
-- **Dice and chat.** `/r 1d20+5`, `/r 2d20kh1+4` (advantage), `/gmr` for a
-  roll only the GM sees, plus quick dice buttons.
+- **Dice and chat.** `/r 1d20+5`, `/r 2d20kh1+4` (advantage), plus quick
+  dice buttons. Roll modes as in Foundry: pick public, private GM, blind GM
+  or self beside the chat box, and it holds for your rolls and the cards of
+  your attacks and spells; `/gmr`, `/br`, `/sr` and `/pr` roll once in another.
+- **Targets.** T over a creature (tokens mode) targets it, T over the ground
+  lets them all go, or use the creature's menu. Everyone on the scene sees
+  your targets in your colour. An attack readied with one target goes at it
+  at once, and a spell aimed at creatures picks your targets first.
 - **Live file editing.** Edit any file in `world/` and every client updates
   within a moment. `pnpm check-game` validates the folder.
 

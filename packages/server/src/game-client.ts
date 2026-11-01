@@ -1,4 +1,4 @@
-import type { Player } from '@vtt/shared';
+import type { Player, RollMode } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import type { WebSocket } from 'ws';
 import type { DocFeed } from './doc-feed.ts';
@@ -24,6 +24,10 @@ export interface Client {
   ruler?: boolean;
   /** Its cursor is on the map, shown to the others on its scene. */
   cursor?: boolean;
+  /** The tokens it targets, shown to the others on its scene. */
+  targets?: string[];
+  /** Who sees its rolls and the cards of its actions (see roll-modes.ts); none: everyone. */
+  rollMode?: RollMode;
 }
 
 /** The chunks this client's camera can see now: those it didn't have yet are sent (empty ones too, so it knows the area is loaded). */

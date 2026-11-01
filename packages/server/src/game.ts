@@ -20,7 +20,7 @@ import type { GameStore } from './game-store.ts';
 import { History } from './undo.ts';
 import { SceneActions, sceneOf } from './scene-actions.ts';
 import { FogKeeper } from './fog-keeper.ts';
-import { ChatLog, gameCard } from './chat-log.ts';
+import { actedBy, ChatLog, gameCard } from './chat-log.ts';
 import { TokenMoves } from './token-moves.ts';
 import { isPackMessage, PackActions } from './pack-actions.ts';
 import { EntryActions, isEntryMessage } from './entry-actions.ts';
@@ -63,6 +63,8 @@ export class Game {
   );
   /** World time (see world-clock.ts). */
   readonly clock: WorldClock;
+  /** The seat whose message is being handled: the cards it makes follow its roll mode. */
+  private acting?: Client;
 
   /** `now`: the server's time in ms, which the game clock runs by. */
   constructor(
@@ -97,7 +99,7 @@ export class Game {
     this.clock = new WorldClock(table, { now, step: (fn) => this.timePasses(fn) });
     this.packs = new PackActions(store);
     this.entries = new EntryActions(store, rng, {
-      post: (message) => this.chat.post(message),
+      post: (message) => this.chat.post(actedBy(message, this.acting)),
       show: (entry, page) => {
         for (const c of this.clients)
           if (!isGm(c.player)) this.send(c, { t: 'showJournal', entry, ...(page && { page }) });
@@ -212,6 +214,7 @@ export class Game {
       now: this.clock.serverTime(),
     };
     for (const msg of welcomeOf(this.store, c, parts)) this.send(c, msg);
+    this.presence.greet(c);
     this.store.inScene(c.scene, () => {
       this.fog.explore(player);
       for (const fog of this.fog.snapshot(player)) this.send(c, { t: 'fog', ...fog, full: true });
@@ -276,7 +279,12 @@ export class Game {
 
   /** Runs a message on the scene the client is on. */
   private handle(c: Client, msg: ClientMessage): void {
-    this.store.inScene(c.scene, () => this.handleHere(c, msg));
+    this.acting = c;
+    try {
+      this.store.inScene(c.scene, () => this.handleHere(c, msg));
+    } finally {
+      this.acting = undefined;
+    }
   }
 
   private handleHere(c: Client, msg: ClientMessage): void {
@@ -442,9 +450,9 @@ export class Game {
 
   /** A message from the game itself: initiative, attack results. */
   private narrate(content: Pick<ChatMessage, 'text' | 'attack' | 'spell'>): void {
-    const card = gameCard(content.text ?? '');
+    const card = actedBy({ ...gameCard(content.text ?? ''), ...content }, this.acting);
     this.history.noteCard(card.id);
-    this.chat.post({ ...card, ...content });
+    this.chat.post(card);
   }
 
   private toGms(msg: ServerMessage): void {
