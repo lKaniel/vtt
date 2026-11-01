@@ -7,9 +7,12 @@
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "start": "tsx src/index.ts",
     "check-world": "tsx src/check.ts",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "check-game": "tsx src/check.ts",
+    "migrate-world": "tsx src/migrate-cli.ts"
   },
   "dependencies": {
+    "@vtt/core": "workspace:*",
     "@vtt/shared": "workspace:*",
     "ws": "^8.22.0",
     "zod": "^4.6.7",

@@ -2,8 +2,9 @@ import { z } from 'zod';
 import { EffectSchema } from './spell-schema.ts';
 import { EditionSchema, InventoryEntrySchema, StatsSchema } from './stats-schema.ts';
 
-// Every file in a world folder is described here. The checker, the server and
-// the docs in docs/world-format.md all follow these schemas.
+// The items in a game folder are described here (game.json and scene.json in
+// game-schema.ts). The checker, the server and docs/game-format.md all follow
+// these schemas.
 
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digits and dashes');
 
@@ -28,20 +29,25 @@ export const PlayerSchema = z.object({
 });
 export type Player = z.infer<typeof PlayerSchema>;
 
-export const WorldSchema = z.object({
-  name: z.string().min(1),
+/** A scene's grid, camera start and lighting (scenes/<id>/scene.json, without its name). */
+export const SceneSettingsSchema = z.object({
   /** Pixels per 5 ft square. */
   gridSize: z.number().int().positive().default(100),
-  /** Side of a storage/streaming chunk, in pixels. Must be a multiple of gridSize. */
+  /** Side of a streaming chunk, in pixels. Must be a multiple of gridSize. */
   chunkSize: z.number().int().positive().default(2000),
   /** Where the camera starts, in pixels. */
   start: PointSchema.default([0, 0]),
   /** How dark unlit areas are: 0 is full daylight, 1 is pitch black. */
   darkness: z.number().min(0).max(1).default(0),
-  /** Rules edition: "2014" (SRD 5.1) or "2024" (SRD 5.2). Characters can override it. */
-  rules: EditionSchema.default('2014'),
   /** When true, players only see what their tokens can see. */
   vision: z.boolean().default(true),
+});
+
+/** The table settings the rules and the client use: the game's, plus those of the scene being played. */
+export const WorldSchema = SceneSettingsSchema.extend({
+  name: z.string().min(1),
+  /** Rules edition: "2014" (SRD 5.1) or "2024" (SRD 5.2). Characters can override it. */
+  rules: EditionSchema.default('2014'),
   players: z.array(PlayerSchema).min(1),
 });
 export type World = z.infer<typeof WorldSchema>;

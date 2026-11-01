@@ -1,0 +1,29 @@
+[
+  {
+    "id": "hearth",
+    "x": 550,
+    "y": 250,
+    "bright": 20,
+    "dim": 20,
+    "color": "#ff9a40",
+    "animation": "flicker"
+  },
+  {
+    "id": "road-lamp",
+    "x": 1050,
+    "y": 1150,
+    "bright": 10,
+    "dim": 20,
+    "color": "#ffd27a",
+    "animation": "flicker"
+  },
+  {
+    "id": "brazier",
+    "x": 3050,
+    "y": 1450,
+    "bright": 10,
+    "dim": 10,
+    "color": "#ff7a30",
+    "animation": "flicker"
+  }
+]

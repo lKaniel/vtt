@@ -1,42 +1,64 @@
 // fallow-ignore-file unused-class-member -- Game calls FakeSocket's members through the WebSocket type
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { ServerMessage } from '@vtt/shared';
 import type { WebSocket } from 'ws';
 
-/**
- * A night-time world: a 3x3 square room (300 px) with a door on its east
- * side, a hero inside and a goblin outside to the east.
- */
-export async function makeWorld(): Promise<string> {
+const players = [
+  { id: 'gm', name: 'GM', role: 'gm' },
+  { id: 'ana', name: 'Ana', role: 'player' },
+  { id: 'bo', name: 'Bo', role: 'player' },
+];
+const walls = [
+  { id: 'n', a: [0, 0], b: [300, 0] },
+  { id: 'w', a: [0, 0], b: [0, 300] },
+  { id: 's', a: [0, 300], b: [300, 300] },
+  { id: 'e1', a: [300, 0], b: [300, 100] },
+  { id: 'door', a: [300, 100], b: [300, 200], door: 'closed' },
+  { id: 'e2', a: [300, 200], b: [300, 300] },
+];
+const lights = [{ id: 'lamp', x: 550, y: 150, bright: 10, dim: 0 }];
+const hero = { id: 'hero', name: 'Hero', x: 150, y: 150, controllers: ['ana'] };
+const goblin = { id: 'goblin', name: 'Goblin', x: 550, y: 150 };
+
+async function folder(files: Record<string, unknown>): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'vtt-world-'));
-  await mkdir(join(dir, 'chunks'));
-  await mkdir(join(dir, 'tokens'));
-  const json = (rel: string, data: unknown) => writeFile(join(dir, rel), JSON.stringify(data));
-  await json('world.json', {
-    name: 'Test',
-    darkness: 1,
-    players: [
-      { id: 'gm', name: 'GM', role: 'gm' },
-      { id: 'ana', name: 'Ana', role: 'player' },
-      { id: 'bo', name: 'Bo', role: 'player' },
-    ],
-  });
-  await json('chunks/0_0.json', {
-    walls: [
-      { id: 'n', a: [0, 0], b: [300, 0] },
-      { id: 'w', a: [0, 0], b: [0, 300] },
-      { id: 's', a: [0, 300], b: [300, 300] },
-      { id: 'e1', a: [300, 0], b: [300, 100] },
-      { id: 'door', a: [300, 100], b: [300, 200], door: 'closed' },
-      { id: 'e2', a: [300, 200], b: [300, 300] },
-    ],
-    lights: [{ id: 'lamp', x: 550, y: 150, bright: 10, dim: 0 }],
-  });
-  await json('tokens/hero.json', { id: 'hero', name: 'Hero', x: 150, y: 150, controllers: ['ana'] });
-  await json('tokens/goblin.json', { id: 'goblin', name: 'Goblin', x: 550, y: 150 });
+  for (const [rel, data] of Object.entries(files)) {
+    await mkdir(dirname(join(dir, rel)), { recursive: true });
+    await writeFile(join(dir, rel), JSON.stringify(data));
+  }
   return dir;
+}
+
+/**
+ * A night-time game with one scene, "main": a 3x3 square room (300 px) with
+ * a door on its east side, a hero inside and a goblin outside to the east.
+ */
+export function makeWorld(): Promise<string> {
+  return folder({
+    'game.json': { id: 'test', name: 'Test', scene: 'main', players },
+    'scenes/main/scene.json': { darkness: 1 },
+    'scenes/main/tiles.json': [],
+    'scenes/main/walls.json': walls,
+    'scenes/main/lights.json': lights,
+    'scenes/main/tokens.json': [hero, goblin],
+  });
+}
+
+/** The same table in the old world layout (chunks/, tokens/), with an actor and a fight. */
+export function makeLegacyWorld(): Promise<string> {
+  return folder({
+    'world.json': { name: 'Test', darkness: 1, players },
+    'chunks/0_0.json': { walls, lights },
+    'tokens/hero.json': hero,
+    'tokens/goblin.json': goblin,
+    'actors/bandit.json': { id: 'bandit', name: 'Bandit', monster: 'bandit' },
+    'combat.json': {
+      order: [{ token: 'hero', initiative: 12 }],
+      left: { move: 30, action: true, bonus: true },
+    },
+  });
 }
 
 /** Stands in for a browser connection and records what the server sends. */
@@ -75,4 +97,10 @@ export class FakeSocket {
   get asWebSocket(): WebSocket {
     return this as unknown as WebSocket;
   }
+}
+
+/** A token as saved in the test game's scene file, or undefined. */
+export async function savedToken(dir: string, id: string): Promise<unknown> {
+  const tokens = JSON.parse(await readFile(join(dir, 'scenes/main/tokens.json'), 'utf8')) as { id: string }[];
+  return tokens.find((t) => t.id === id);
 }

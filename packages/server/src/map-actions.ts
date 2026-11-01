@@ -18,7 +18,7 @@ export class MapActions {
       if (e instanceof MapEditError) throw new Refusal(e.message);
       throw e;
     }
-    for (const { key, chunk } of changes) this.store.setChunk(key, chunk);
+    this.store.setChunks(changes);
   }
 
   darkness(player: Player, darkness: number): void {

@@ -90,6 +90,9 @@ importers:
 
   packages/server:
     dependencies:
+      '@vtt/core':
+        specifier: workspace:*
+        version: link:../core
       '@vtt/shared':
         specifier: workspace:*
         version: link:../shared

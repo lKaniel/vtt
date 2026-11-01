@@ -2,9 +2,9 @@ import { TokenSchema, type Token } from '@vtt/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
-import { WorldStore } from './world-store.ts';
+import { GameStore } from './game-store.ts';
 
-let store: WorldStore;
+let store: GameStore;
 let game: Game;
 /** What the next random numbers will be; 0.5 once they run out. */
 let dice: number[];
@@ -17,7 +17,7 @@ function put(data: object): void {
 }
 
 beforeEach(async () => {
-  store = new WorldStore(await makeWorld());
+  store = new GameStore(await makeWorld());
   await store.load();
   dice = [];
   game = new Game(store, { rng: () => dice.shift() ?? 0.5 });

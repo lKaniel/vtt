@@ -39,9 +39,10 @@ type Chunks = ReadonlyMap<string, Chunk>;
 
 const blank = (): Chunk => ({ tiles: [], walls: [], lights: [] });
 
-/** `prefix-N` with the lowest N not used in the chunk. */
-function freeId(chunk: Chunk, prefix: string): string {
-  const used = new Set([...chunk.tiles, ...chunk.walls, ...chunk.lights].map((item) => item.id));
+/** `prefix-N` with the lowest N not used anywhere on the scene: ids are unique per scene. */
+function freeId(chunks: Chunks, prefix: string): string {
+  const used = new Set<string>();
+  for (const c of chunks.values()) for (const item of [...c.tiles, ...c.walls, ...c.lights]) used.add(item.id);
   let n = 1;
   while (used.has(`${prefix}-${n}`)) n++;
   return `${prefix}-${n}`;
@@ -63,7 +64,7 @@ function addWall(chunks: Chunks, size: number, edit: Extract<MapEdit, { op: 'add
   if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 1e-6) throw new MapEditError('A wall needs two different ends');
   const key = chunkOf((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, size);
   const chunk = chunks.get(key) ?? blank();
-  const wall: Wall = { ...edit.wall, id: freeId(chunk, wallPrefix(edit.wall)) };
+  const wall: Wall = { ...edit.wall, id: freeId(chunks, wallPrefix(edit.wall)) };
   return [{ key, chunk: { ...chunk, walls: [...chunk.walls, wall] } }];
 }
 
@@ -81,7 +82,7 @@ function setWall(chunks: Chunks, edit: Extract<MapEdit, { op: 'setWall' }>): Chu
 function addLight(chunks: Chunks, size: number, light: Omit<PlacedLight, 'id'>, id?: string): ChunkChange {
   const key = chunkOf(light.x, light.y, size);
   const chunk = chunks.get(key) ?? blank();
-  const placed = { ...light, id: id && !chunk.lights.some((l) => l.id === id) ? id : freeId(chunk, 'light') };
+  const placed = { ...light, id: id && !chunk.lights.some((l) => l.id === id) ? id : freeId(chunks, 'light') };
   return { key, chunk: { ...chunk, lights: [...chunk.lights, placed] } };
 }
 

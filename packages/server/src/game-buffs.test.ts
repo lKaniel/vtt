@@ -3,14 +3,14 @@ import { TokenSchema, type Token } from '@vtt/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
-import { WorldStore } from './world-store.ts';
+import { GameStore } from './game-store.ts';
 
-let store: WorldStore;
+let store: GameStore;
 let game: Game;
 let dice: number[];
 
 beforeEach(async () => {
-  store = new WorldStore(await makeWorld());
+  store = new GameStore(await makeWorld());
   await store.load();
   dice = [];
   game = new Game(store, { rng: () => dice.shift() ?? 0.5 });

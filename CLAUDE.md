@@ -2,23 +2,24 @@
 
 ## Editing the world from chat
 
-The game world is plain JSON in `world/` (or the folder in `VTT_WORLD`).
+The game is plain JSON in `world/` (or the folder in `VTT_GAME`).
 The running server hot-reloads any file you change, so editing files is how
 you add maps, place tokens, and prepare encounters.
 
-- Read `docs/world-format.md` before editing. Coordinates are pixels;
+- Read `docs/game-format.md` before editing. Coordinates are pixels;
   tokens sit on square centres (`(col + 0.5) * gridSize`).
-- One token per file in `tokens/`, file name = id. Map content goes in the
-  chunk file for where it starts: chunk `floor(x / chunkSize)_floor(y / chunkSize)`.
-- Always run `pnpm check-world` after editing and fix every error.
+- `game.json` names the active scene; its content is in
+  `scenes/<scene>/`: `scene.json` (grid, darkness) and one list per
+  collection, `tiles.json`, `walls.json`, `lights.json`, `tokens.json`.
+- Always run `pnpm check-game` after editing and fix every error.
 - Hidden enemies for an encounter: `"hidden": true`, the GM reveals them.
 - Creatures the GM may want later (an ambush, reinforcements) go in
   `actors/<id>.json`: a token without `x`/`y`, with an optional `folder`.
   The GM drags them onto the map from the Actors tab.
 - Creatures: `"monster": "<srd id>"` for a stat block, or `stats` + `inventory`
   for a character (see "Creatures" in the format doc). Monster and item ids
-  are in `packages/shared/content/srd/`; `check-world` flags unknown ones.
-- Keep ids lowercase with dashes, unique per chunk (tiles, walls) or per world (tokens).
+  are in `packages/shared/content/srd/`; `check-game` flags unknown ones.
+- Keep ids lowercase with dashes, unique within their list (a scene's walls, its tokens).
 
 ## Code
 
@@ -26,6 +27,10 @@ you add maps, place tokens, and prepare encounters.
 - `packages/core` is the new document layer from the redesign (docs, ops with
   undo, sort keys, trees, migrations). It knows nothing about D&D; new game
   state should be built on it.
+- `GameStore` (`server/src/game-store.ts`) holds the game folder as core
+  documents: hand edits become ops, changes are written back per collection
+  file. It still offers the old maps (`tokens`, `chunks`) the game code reads;
+  the server cuts chunks from the scene by position (`groupChunks`).
 - Rules and geometry live in `shared` so the server can enforce them and the
   client can preview them with the same code. Don't duplicate them.
 - The server is authoritative: clients send intents, the server validates
@@ -57,6 +62,6 @@ you add maps, place tokens, and prepare encounters.
   nesting depth 3, 4 params, 80-line functions. Split code rather than
   disabling a rule; a suppression needs a `--` reason.
 - Before committing: `pnpm check` (format, lint, typecheck, tests with
-  coverage, fallow, check-world). `pnpm format` fixes formatting.
+  coverage, fallow, check-game). `pnpm format` fixes formatting.
 - Version control is jj (colocated with git): `jj describe`, `jj new`,
   `jj bookmark set <name>`, `jj git push`. Don't run mutating git commands.

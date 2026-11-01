@@ -4,17 +4,17 @@ import { TokenSchema } from '@vtt/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
-import { WorldStore } from './world-store.ts';
+import { GameStore } from './game-store.ts';
 
 let dir: string;
-let store: WorldStore;
+let store: GameStore;
 let game: Game;
 /** What the next random numbers will be; 0.5 (a d20 of 11) once they run out. */
 let dice: number[];
 
 beforeEach(async () => {
   dir = await makeWorld();
-  store = new WorldStore(dir);
+  store = new GameStore(dir);
   await store.load();
   dice = [];
   game = new Game(store, { rng: () => dice.shift() ?? 0.5 });

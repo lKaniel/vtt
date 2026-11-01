@@ -2,16 +2,16 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { FakeSocket, makeWorld } from './test/fixtures.ts';
-import { WorldStore } from './world-store.ts';
+import { FakeSocket, makeWorld, savedToken } from './test/fixtures.ts';
+import { GameStore } from './game-store.ts';
 
 let dir: string;
-let store: WorldStore;
+let store: GameStore;
 let game: Game;
 
 beforeEach(async () => {
   dir = await makeWorld();
-  store = new WorldStore(dir);
+  store = new GameStore(dir);
   await store.load();
   game = new Game(store);
 });
@@ -37,7 +37,7 @@ describe('the GM editing tokens', () => {
     gm.receive({ t: 'editToken', token: 'goblin', patch: { hp: null } });
     expect(store.tokens.get('goblin')!.hp).toBeUndefined();
     await store.flush();
-    expect(await readJson('tokens/goblin.json')).toMatchObject({ name: 'Snik', monster: 'goblin' });
+    expect(await savedToken(dir, 'goblin')).toMatchObject({ name: 'Snik', monster: 'goblin' });
   });
 
   it('refuses edits that would break the token file', () => {
@@ -66,7 +66,7 @@ describe('the GM editing tokens', () => {
     gm.receive({ t: 'deleteToken', token: 'goblin' });
     expect(store.tokens.has('goblin')).toBe(false);
     await store.flush();
-    await expect(readJson('tokens/goblin.json')).rejects.toThrow();
+    expect(await savedToken(dir, 'goblin')).toBeUndefined();
   });
 });
 
@@ -77,7 +77,7 @@ describe('spawning', () => {
     const spawned = store.tokens.get('goblin-2');
     expect(spawned).toMatchObject({ name: 'Goblin 2', monster: 'goblin', x: 750, y: 450, hidden: true });
     await store.flush();
-    expect(await readJson('tokens/goblin-2.json')).toMatchObject({ monster: 'goblin' });
+    expect(await savedToken(dir, 'goblin-2')).toMatchObject({ monster: 'goblin' });
   });
 
   it('refuses a monster that is not in the book', () => {
