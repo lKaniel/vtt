@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { watch, type FSWatcher } from 'node:fs';
-import { DocStore, OpError, type Doc, type Op } from '@vtt/core';
+import { DocStore, OpError, revertOps, type Change, type Doc, type Op, type Validate } from '@vtt/core';
 import {
   anchorChunk,
   chunksInRect,
@@ -13,6 +13,7 @@ import {
   type Chunk,
   type ChunkChange,
   type Combat,
+  type DocChange,
   type Game,
   type LightSource,
   type MapCollection,
@@ -25,14 +26,28 @@ import {
   type Wall,
   type World,
 } from '@vtt/shared';
+import { clientCheck } from './doc-checks.ts';
 import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
 import { FileWriter } from './file-writer.ts';
 import { classify, crossCheck, pathOf } from './game-files.ts';
 import { readEntry, readFolder, stateOf, type FolderEntry } from './game-folder.ts';
 import { migrateActorsFolder } from './migrate-actors.ts';
 import { migrateFolder } from './migrate-world.ts';
-import { ACTORS, COMBAT, docsOf, FIGHT, fileOf, GAME, MAP, SCENES, scopeOf, TYPE } from './store-colls.ts';
-import { putOps, relinkOps, tokenOps, unlinkActorOps, type Relink } from './token-ops.ts';
+import type { TYPE } from './store-colls.ts';
+import {
+  ACTORS,
+  COMBAT,
+  docsOf,
+  FIGHT,
+  fileOf,
+  GAME,
+  MAP,
+  onlyDarknessChanged,
+  SCENES,
+  scopeOf,
+} from './store-colls.ts';
+import { StoreHistory, touchedBy, type Touched } from './store-history.ts';
+import { actorDeleteOps, chunkOps, putOps, relinkOps, tokenOps, unlinkActorOps, type Relink } from './token-ops.ts';
 
 interface StoreEvents {
   world: [World];
@@ -46,12 +61,8 @@ interface StoreEvents {
   actor: [Actor];
   actorGone: [string];
   combat: [Combat | undefined];
-}
-
-interface Touched {
-  coll: string;
-  id: string;
-  before?: Doc;
+  /** Documents changed: what they are now, who changed them (none: a hand edit) and the client's txn. */
+  docs: [DocChange[], string | undefined, string | undefined];
 }
 
 interface CommitOptions {
@@ -60,6 +71,9 @@ interface CommitOptions {
   /** Update the table settings without telling clients (a new seat). */
   quiet?: boolean;
   path?: Point[];
+  /** A stricter check for documents a client sent. */
+  validate?: Validate;
+  txn?: string;
 }
 
 /**
@@ -91,6 +105,8 @@ export class GameStore extends EventEmitter<StoreEvents> {
   private saveTimer?: NodeJS.Timeout;
   private pending = new Map<string, NodeJS.Timeout>();
   private watcher?: FSWatcher;
+  /** The step being recorded for undo, and who changed each document last. */
+  readonly history = new StoreHistory();
 
   constructor(readonly dir: string) {
     super();
@@ -159,6 +175,11 @@ export class GameStore extends EventEmitter<StoreEvents> {
   }
 
   // Reading
+
+  /** The scene everyone is on. */
+  get activeScene(): string {
+    return this.sceneId;
+  }
 
   wallsIn(rect: Rect): Wall[] {
     const walls: Wall[] = [];
@@ -248,17 +269,30 @@ export class GameStore extends EventEmitter<StoreEvents> {
 
   /** Saves map edits given as whole chunks (see applyMapEdit): items that left them are deleted. */
   setChunks(changes: readonly ChunkChange[]): void {
-    const ops: Op[] = [];
-    for (const coll of MAP) {
-      const name = this.sceneColl(coll);
-      const items = (chunk: Chunk | undefined): { id: string }[] => chunk?.[coll] ?? [];
-      const wanted = changes.flatMap((c) => items(c.chunk)).map((item) => toDoc(TYPE[coll], item));
-      const ids = new Set(wanted.map((d) => d.id));
-      const current = changes.flatMap((c) => items(this.chunks.get(c.key))).map((item) => item.id);
-      for (const doc of wanted) ops.push(...this.putOps(name, doc));
-      for (const id of current.filter((i) => !ids.has(i))) ops.push(...this.deleteOps(name, id));
-    }
-    this.commit(ops);
+    this.commit(chunkOps(this.docs, this.sceneId, changes, this.chunks));
+  }
+
+  /**
+   * GM: applies a transaction a client sent, checked like the files it is
+   * saved in. Deleting an actor leaves its tokens carrying its sheet.
+   * Throws an OpError (nothing applied) when any op can't be.
+   */
+  applyOps(ops: readonly Op[], txn?: string): void {
+    const scenes = this.docs.all(SCENES).map((d) => d.id);
+    const validate = clientCheck((id) => !!this.docs.get(SCENES, id));
+    this.commit([...actorDeleteOps(this.docs, scenes, ops, this.actors), ...ops], { validate, txn });
+  }
+
+  // Undo
+
+  /** Runs `fn` and returns what it changed in the documents, as one undo step by player `by`. */
+  record(by: string, fn: () => void): Change[] {
+    return this.history.record(by, this.docs, fn);
+  }
+
+  /** Puts back what a step changed. Throws a RevisionError when a document has moved on since. */
+  revert(changes: readonly Change[]): void {
+    this.commit(revertOps(this.docs, changes));
   }
 
   // Ops
@@ -283,16 +317,14 @@ export class GameStore extends EventEmitter<StoreEvents> {
   /** Applies a transaction, updates what the game reads, tells listeners and saves. */
   private commit(ops: readonly Op[], opts: CommitOptions = {}): void {
     if (!ops.length) return;
-    const touched = new Map<string, Touched>();
-    for (const op of ops) {
-      const id = op.op === 'create' ? op.doc.id : op.id;
-      const key = `${op.coll}\u0000${id}`;
-      if (!touched.has(key)) touched.set(key, { coll: op.coll, id, before: this.docs.get(op.coll, id) });
-    }
-    this.docs.apply(ops);
-    this.project([...touched.values()], opts);
+    const touched = touchedBy(ops, (coll, id) => this.docs.get(coll, id));
+    this.docs.apply(ops, opts.validate && { validate: opts.validate });
+    this.history.committed(touched, !!opts.fromDisk);
+    this.project(touched, opts);
+    const changes = touched.map((t) => ({ coll: t.coll, id: t.id, doc: this.docs.get(t.coll, t.id) }));
+    this.emit('docs', changes, opts.fromDisk ? undefined : this.history.author, opts.txn);
     if (opts.fromDisk) return;
-    for (const t of touched.values()) this.dirty.set(pathOf(fileOf(t.coll, t.id)), t);
+    for (const t of touched) this.dirty.set(pathOf(fileOf(t.coll, t.id)), t);
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => this.save(), 50);
   }
@@ -478,9 +510,4 @@ export class GameStore extends EventEmitter<StoreEvents> {
     if (coll === SCENES || coll === COMBAT) return this.docs.get(coll, id) && fromDoc(this.docs.get(coll, id)!, false);
     return this.docs.all(coll).map((d) => fromDoc(d));
   }
-}
-
-/** True when two table settings differ in nothing but the time of day. */
-function onlyDarknessChanged(a: World, b: World): boolean {
-  return JSON.stringify({ ...a, darkness: 0 }) === JSON.stringify({ ...b, darkness: 0 });
 }

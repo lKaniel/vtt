@@ -1236,6 +1236,36 @@ h4 {
 .msg-roll {
   border-left-color: var(--gold);
 }
+.msg-undone {
+  opacity: 0.55;
+}
+.msg-undone .msg-text {
+  text-decoration: line-through;
+}
+.msg-undo {
+  float: right;
+  font-size: 12px;
+}
+.undo-buttons {
+  display: flex;
+  gap: 2px;
+}
+.undo-buttons .icon-button {
+  padding: 0 6px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--gold-bright);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+}
+.undo-buttons .icon-button:hover:not(:disabled) {
+  border-color: var(--gold);
+}
+.undo-buttons .icon-button:disabled {
+  color: var(--muted);
+  opacity: 0.5;
+}
 .msg-from {
   font-size: 12px;
   font-weight: 700;
@@ -1352,6 +1382,11 @@ h4 {
   border-radius: 4px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
   transform: translateX(-50%);
+}
+.toast-info {
+  color: var(--gold-bright);
+  background: linear-gradient(180deg, #2c2619, #15120c);
+  border-color: var(--gold);
 }
 
 @media (max-width: 1200px) {

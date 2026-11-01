@@ -1,3 +1,4 @@
+import { OpSchema } from '@vtt/core';
 import { DoorStateSchema, EditionSchema, MapEditSchema, PointSchema, RoleSchema } from '@vtt/shared';
 import type { RawData } from 'ws';
 import { z } from 'zod';
@@ -66,6 +67,14 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('setRole'), player: z.string(), role: RoleSchema }),
   z.object({ t: z.literal('mapEdit'), edit: MapEditSchema }),
   z.object({ t: z.literal('darkness'), darkness: z.number().min(0).max(1) }),
+  z.object({
+    t: z.literal('ops'),
+    txn: z.string().min(1).max(80),
+    label: z.string().max(40).optional(),
+    ops: z.array(OpSchema).min(1).max(2000),
+  }),
+  z.object({ t: z.literal('undo'), card: z.string().optional() }),
+  z.object({ t: z.literal('redo') }),
 ]);
 
 export type ClientMessage = z.infer<typeof ClientMessageSchema>;

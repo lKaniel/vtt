@@ -1,4 +1,6 @@
+export * from './clipboard.ts';
 export * from './doc.ts';
+export * from './history.ts';
 export * from './ids.ts';
 export * from './migrate.ts';
 export * from './ops.ts';

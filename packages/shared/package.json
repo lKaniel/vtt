@@ -11,6 +11,7 @@
     "import-srd": "node --experimental-strip-types scripts/import-srd.ts"
   },
   "dependencies": {
+    "@vtt/core": "workspace:*",
     "zod": "^4.6.7"
   }
 }

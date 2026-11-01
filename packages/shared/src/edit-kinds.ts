@@ -1,0 +1,72 @@
+import {
+  copyDocs,
+  deleteOps,
+  pasteOffset,
+  pasteOps,
+  type Clip,
+  type Doc,
+  type DocRef,
+  type Kind,
+  type Kinds,
+  type Op,
+} from '@vtt/core';
+
+// The game's document types as edit commands see them (see clipboard.ts in
+// core): copy, cut, paste, duplicate and delete use this one table. A new
+// type joins the commands by adding itself here; the shared edit-commands
+// test then runs it through every command.
+
+type Point = [number, number];
+
+const num = (doc: Doc, key: string): number => doc[key] as number;
+const add = ([x, y]: Point, dx: number, dy: number): Point => [x + dx, y + dy];
+
+/** A placeable that sits at its x, y. */
+function atXY(name: string, extra: Partial<Kind> = {}): Kind {
+  return {
+    coll: (scene) => `${scene}/${name}`,
+    anchor: (d) => [num(d, 'x'), num(d, 'y')],
+    shift: (d, dx, dy) => ({ ...d, x: num(d, 'x') + dx, y: num(d, 'y') + dy }),
+    ...extra,
+  };
+}
+
+export const EDIT_KINDS: Kinds = {
+  token: atXY('tokens', { refs: { actor: 'actor', leader: 'token', 'summon.by': 'token' } }),
+  light: atXY('lights'),
+  tile: atXY('tiles'),
+  wall: {
+    coll: (scene) => `${scene}/walls`,
+    anchor: (d) => {
+      const [a, b] = [d.a as Point, d.b as Point];
+      return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    },
+    shift: (d, dx, dy) => ({ ...d, a: add(d.a as Point, dx, dy), b: add(d.b as Point, dx, dy) }),
+  },
+  actor: { coll: () => 'actors' },
+};
+
+interface Source {
+  get(coll: string, id: string): Doc | undefined;
+  all(coll: string): Doc[];
+}
+
+/** Copies documents (and what sits in them) for the clipboard. */
+export function copyRefs(src: Source, refs: readonly DocRef[]): Clip {
+  return copyDocs(src, EDIT_KINDS, refs);
+}
+
+/** The ops that paste a copy onto `scene`, moved by `offset`, with fresh ids. */
+export function pasteAt(src: Source, clip: Clip, at: { scene: string; offset: Point }): { ops: Op[]; ids: string[] } {
+  return pasteOps(src, EDIT_KINDS, clip, at);
+}
+
+/** The ops that delete documents and what sits in them. */
+export function deleteRefs(src: Source, refs: readonly DocRef[]): Op[] {
+  return deleteOps(src, EDIT_KINDS, refs);
+}
+
+/** How far to move a copy so its middle lands on `at`, in whole squares. */
+export function pasteOffsetTo(clip: Clip, at: Point, gridSize: number): Point {
+  return pasteOffset(EDIT_KINDS, clip, at, gridSize);
+}

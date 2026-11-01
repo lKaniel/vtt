@@ -56,6 +56,9 @@ importers:
       '@fontsource/im-fell-english-sc':
         specifier: ^5.3.0
         version: 5.3.0
+      '@vtt/core':
+        specifier: workspace:*
+        version: link:../core
       '@vtt/shared':
         specifier: workspace:*
         version: link:../shared
@@ -112,6 +115,9 @@ importers:
 
   packages/shared:
     dependencies:
+      '@vtt/core':
+        specifier: workspace:*
+        version: link:../core
       zod:
         specifier: ^4.6.7
         version: 4.6.7

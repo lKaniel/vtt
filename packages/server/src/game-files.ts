@@ -43,7 +43,12 @@ export interface SceneItems {
   tokens: TokenEntry[];
 }
 
-const ITEM_SCHEMAS = { tiles: TileSchema, walls: WallSchema, lights: PlacedLightSchema, tokens: TokenEntrySchema };
+export const ITEM_SCHEMAS = {
+  tiles: TileSchema,
+  walls: WallSchema,
+  lights: PlacedLightSchema,
+  tokens: TokenEntrySchema,
+};
 const NOUN: Record<SceneCollection, string> = { tiles: 'tile', walls: 'wall', lights: 'light', tokens: 'token' };
 
 export type FileKind =
