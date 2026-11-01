@@ -1,16 +1,19 @@
-import type { Edition, Item, Monster, Spell } from '@vtt/system-dnd5e';
+import type { Class, Edition, Item, Monster, Spell } from '@vtt/system-dnd5e';
 import { gameContent } from './content.ts';
 import type { DragPayload } from './drops.ts';
 import { spellTip } from './tooltip.ts';
 
-// The GM's Compendium: the SRD monsters, gear and spells, and those of the
-// game's packs, as searchable lists. Every entry can be dragged onto the map.
+// The Compendium: the SRD monsters, gear, spells and class features, and
+// those of the game's packs, as searchable lists. Every entry can be dragged
+// onto the map or a character sheet.
 
-export const CATEGORIES = ['monsters', 'weapons', 'armor', 'gear', 'spells'] as const;
+export const CATEGORIES = ['monsters', 'weapons', 'armor', 'gear', 'spells', 'features'] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 export interface Entry {
   id: string;
+  /** Unique in its list (class features share ids across classes). */
+  key: string;
   name: string;
   /** One line under the name, e.g. "CR 1/4 humanoid". */
   sub: string;
@@ -24,7 +27,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function monsterEntry(m: Monster, rules: Edition): Entry {
   const sub = [`CR ${crText(m.cr)}`, m.type].filter(Boolean).join(' ');
-  return { id: m.id, name: m.name, sub, drag: { kind: 'monster', id: m.id, rules } };
+  return { id: m.id, key: m.id, name: m.name, sub, drag: { kind: 'monster', id: m.id, rules } };
 }
 
 function itemSub(item: Item): string {
@@ -35,11 +38,21 @@ function itemSub(item: Item): string {
 }
 
 function itemEntry(item: Item): Entry {
-  return { id: item.id, name: item.name, sub: itemSub(item), drag: { kind: 'item', id: item.id } };
+  return { id: item.id, key: item.id, name: item.name, sub: itemSub(item), drag: { kind: 'item', id: item.id } };
 }
 
 function spellEntry(s: Spell, rules: Edition): Entry {
-  return { id: s.id, name: s.name, sub: spellTip(s).subtitle, drag: { kind: 'spell', id: s.id, rules } };
+  return { id: s.id, key: s.id, name: s.name, sub: spellTip(s).subtitle, drag: { kind: 'spell', id: s.id, rules } };
+}
+
+function featureEntries(c: Class, rules: Edition): Entry[] {
+  return c.features.map((f) => ({
+    id: f.id,
+    key: `${c.id}/${f.id}`,
+    name: f.name,
+    sub: `${c.name} ${f.level}`,
+    drag: { kind: 'feature', id: f.id, class: c.id, rules },
+  }));
 }
 
 const ITEM_TYPE = { weapons: 'weapon', armor: 'armor', gear: 'gear' } as const;
@@ -48,6 +61,7 @@ function entries(category: Category, rules: Edition): Entry[] {
   const srd = gameContent(rules);
   if (category === 'monsters') return [...srd.monsters.values()].map((m) => monsterEntry(m, rules));
   if (category === 'spells') return [...srd.spells.values()].map((s) => spellEntry(s, rules));
+  if (category === 'features') return [...srd.classes.values()].flatMap((c) => featureEntries(c, rules));
   return [...srd.items.values()].filter((i) => i.type === ITEM_TYPE[category]).map(itemEntry);
 }
 

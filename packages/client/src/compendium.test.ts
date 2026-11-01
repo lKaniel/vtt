@@ -26,6 +26,19 @@ describe('the Compendium', () => {
     expect(compendium('spells', '2014', 'fire bolt')[0]!.sub).toBe('Evocation cantrip');
   });
 
+  it('lists class features with their class and level, keyed by both', () => {
+    const rage = compendium('features', '2014', 'rage');
+    expect(rage[0]).toMatchObject({
+      key: 'barbarian/rage',
+      name: 'Rage',
+      sub: 'Barbarian 1',
+      drag: { kind: 'feature', id: 'rage', class: 'barbarian', rules: '2014' },
+    });
+    const keys = compendium('features', '2014', '').map((e) => e.key);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(compendium('features', '2014', 'unarmored defense').map((e) => e.sub)).toEqual(['Barbarian 1', 'Monk 1']);
+  });
+
   it('writes fractional challenge ratings the usual way', () => {
     expect([0, 0.125, 0.25, 0.5, 3].map(crText)).toEqual(['0', '1/8', '1/4', '1/2', '3']);
   });

@@ -11,6 +11,7 @@ import type {
 } from '@vtt/shared';
 import type { Combat } from './combat.ts';
 import type { Area } from './spell-schema.ts';
+import type { CompendiumDrop, SheetArea } from './sheet-drops.ts';
 import type { Ability, DamageType, Edition } from './stats-schema.ts';
 import type { Actor } from './token-schema.ts';
 import type { TokenView } from './token-view.ts';
@@ -116,6 +117,8 @@ export type ClientMessage =
       free?: boolean;
       /** Use a lasting spell again, e.g. attack with the spiritual weapon. */
       repeat?: boolean;
+      /** Read it from a spell scroll the caster carries: no slot, the scroll's DC, and the scroll is used up. */
+      scroll?: boolean;
       targets: string[];
       point?: Point;
       summon?: string;
@@ -133,6 +136,10 @@ export type ClientMessage =
   | { t: 'rest'; tokens: string[]; kind: 'short' | 'long' }
   /** Save how a creature you control has its action bar arranged. */
   | { t: 'hotbar'; token: string; slots: (string | null)[] }
+  /** Something from the Compendium dropped on a sheet (a token's or, for the GM, an actor's) you may edit. */
+  | { t: 'drop'; what: CompendiumDrop; onto: { kind: 'token' | 'actor'; id: string }; area?: SheetArea }
+  /** Hand the stack of an item a creature you control carries (a scroll: of that spell) to a creature you see. */
+  | { t: 'give'; from: string; to: string; item: string; spell?: string }
   /** GM: put a new token on the map at a point (snapped to the grid). */
   | { t: 'spawn'; from: SpawnSource; at: Point; hidden?: boolean }
   /** GM: add or replace an actor in the Actors list. */

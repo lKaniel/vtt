@@ -2,7 +2,15 @@ import type { Content } from './content.ts';
 import { withBasicActions } from './basic-actions.ts';
 import { offHandAttacks } from './two-weapon.ts';
 import { makesDeathSaves } from './deaths.ts';
-import { casterSheet, type CasterSheet, classOf, type FeatureSheet, featureSheets, levelValue } from './classes.ts';
+import {
+  casterSheet,
+  type CasterSheet,
+  classOf,
+  type FeatureSheet,
+  featureSheets,
+  grantedFeatures,
+  levelValue,
+} from './classes.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
 import type { Token } from './token-schema.ts';
@@ -71,7 +79,7 @@ export function resolveCreature(token: Token, content: Content): Creature | unde
   const proficiency = defaultProficiency(stats, monster);
   const gear = equippedItems(token, content);
   const { maxHp, ac } = fixedNumbers(stats, monster, classHp(cls, stats, abilities));
-  const features = withBasicActions(featureSheets(token, cls, abilities));
+  const features = withBasicActions(featureSheets(token, cls, abilities, grantedFeatures(token, content)));
   const base: Creature = {
     edition: content.edition,
     abilities,

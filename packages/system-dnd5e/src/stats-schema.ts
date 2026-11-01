@@ -163,6 +163,8 @@ export const StatsSchema = z.object({
   attacks: z.array(AttackSchema).optional(),
   /** Spells the character knows or has prepared, by id. */
   spells: z.array(id).optional(),
+  /** Class features granted on top of the class's own, as "<class>/<feature>" (e.g. "barbarian/rage"). */
+  features: z.array(z.string().regex(/^[a-z0-9-]+\/[a-z0-9-]+$/, 'use "<class>/<feature>"')).optional(),
   /** Skills the character is proficient in, e.g. "stealth". */
   skills: z.array(id).optional(),
   /** Spellcasting for creatures without a caster class (a homebrew class, a monster). */
@@ -182,6 +184,8 @@ export type Stats = z.infer<typeof StatsSchema>;
 
 export const InventoryEntrySchema = z.object({
   item: id,
+  /** For a spell scroll: the spell written on it. */
+  spell: id.optional(),
   equipped: z.boolean().default(false),
   qty: z.number().int().positive().default(1),
 });

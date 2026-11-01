@@ -34,6 +34,8 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   deleteToken: { label: 'delete' },
   relinkToken: { label: 'actor link change' },
   spawn: { label: 'new creature' },
+  drop: { label: 'drop' },
+  give: { label: 'hand-over', action: true },
   saveActor: { label: 'actor edit' },
   deleteActor: { label: 'actor delete' },
   mapEdit: { label: 'map edit' },

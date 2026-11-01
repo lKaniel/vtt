@@ -63,6 +63,7 @@ export function canActivate(tile: ActionTile): boolean {
 
 function aimTile(session: Session, tile: Extract<ActionTile, { kind: 'spell' }>): void {
   if (session.aiming?.spell.id === tile.spell.id) return session.aim(undefined);
+  if (tile.scroll) return session.aimScroll(tile.spell.id);
   session.aim(tile.spell.id, tile.slot ?? tile.spell.level, tile.slot === undefined && tile.spell.level > 0);
 }
 
@@ -298,7 +299,8 @@ function Tile({
 
 /** Spell level, or uses left, in the tile's top-right corner. */
 function TileCorner({ tile }: Readonly<{ tile: ActionTile }>) {
-  if (tile.kind === 'spell') return <span className="tile-level">{tile.spell.level || ''}</span>;
+  if (tile.kind === 'spell')
+    return <span className="tile-level">{tile.scroll ? tile.uses : tile.spell.level || ''}</span>;
   if (tile.kind === 'feature' && tile.uses) return <span className="tile-level">{tile.feature.left}</span>;
   if (tile.kind === 'item' && tile.uses) return <span className="tile-level">{tile.uses}</span>;
   return null;
@@ -408,7 +410,8 @@ function AimingControls({ session, token }: Readonly<{ session: Session; token: 
   return (
     <div className="aiming frame">
       <span className="aiming-name">{spell.name}</span>
-      {spell.level > 0 && token.sheet?.caster && (
+      {aiming.scroll && <span className="muted">from a scroll</span>}
+      {spell.level > 0 && !aiming.scroll && token.sheet?.caster && (
         <SlotChoices session={session} aiming={aiming} caster={token.sheet.caster} />
       )}
       {spell.summon && (

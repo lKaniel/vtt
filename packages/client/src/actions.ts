@@ -16,7 +16,8 @@ interface TileBase {
 
 export type ActionTile =
   | (TileBase & { kind: 'attack'; attack: Attack })
-  | (TileBase & { kind: 'spell'; spell: Spell; slot: number | undefined })
+  /** `scroll`: read from a scroll the creature carries, `uses` of them. */
+  | (TileBase & { kind: 'spell'; spell: Spell; slot: number | undefined; scroll?: boolean; uses?: string })
   | (TileBase & { kind: 'feature'; feature: FeatureSheet; uses?: string })
   /** An item put on the bar by hand; `uses` is how many are carried. */
   | (TileBase & { kind: 'item'; item: Item; uses?: string; cost?: 'action' | 'bonus' });

@@ -1,8 +1,8 @@
-import { itemCost, type TokenView } from '@vtt/system-dnd5e';
+import { itemCost, SPELL_SCROLL, type TokenView } from '@vtt/system-dnd5e';
 import { gameContent } from './content.ts';
 import { actionTiles, type ActionTile } from './actions.ts';
-import { itemArt } from './icon-art.ts';
-import { itemIcon } from './icons.ts';
+import { itemArt, spellArt } from './icon-art.ts';
+import { itemIcon, spellIcon } from './icons.ts';
 
 // The "everything" page of the action bar is a hotbar the player arranges:
 // a list of slots saved on the token (`hotbar`), each naming a tile by
@@ -17,7 +17,7 @@ export type Slots = (string | null)[];
 /** The reference a slot stores for a tile. */
 export function tileRef(tile: ActionTile): string {
   if (tile.kind === 'attack') return `attack:${tile.name}`;
-  if (tile.kind === 'spell') return `spell:${tile.spell.id}`;
+  if (tile.kind === 'spell') return `${tile.scroll ? 'scroll' : 'spell'}:${tile.spell.id}`;
   if (tile.kind === 'feature') return `feature:${tile.feature.id}`;
   return `item:${tile.item.id}`;
 }
@@ -38,12 +38,37 @@ function itemTile(token: TokenView, id: string): ActionTile | undefined {
   return entry.qty > 1 ? { ...tile, uses: String(entry.qty) } : tile;
 }
 
+/** A scroll the creature carries, as a tile casting its spell. */
+function scrollTile(token: TokenView, id: string): ActionTile | undefined {
+  const entry = token.inventory?.find((e) => e.item === SPELL_SCROLL && e.spell === id);
+  const spell = entry && gameContent(token.sheet?.edition ?? '2014').spells.get(id);
+  if (!entry || !spell) return undefined;
+  const icon = { ...spellIcon(spell), art: spellArt(spell) };
+  return {
+    kind: 'spell',
+    name: `Scroll of ${spell.name}`,
+    icon,
+    spent: false,
+    spell,
+    slot: spell.level,
+    scroll: true,
+    uses: String(entry.qty),
+  };
+}
+
+/** A tile placed on the bar by hand: an item or a scroll. */
+function placedTile(token: TokenView, ref: string): ActionTile | undefined {
+  if (ref.startsWith('item:')) return itemTile(token, ref.slice(5));
+  if (ref.startsWith('scroll:')) return scrollTile(token, ref.slice(7));
+  return undefined;
+}
+
 /** The bar's slots, padded to HOTBAR_SIZE, with hotkeys 1-0 on the first ten. */
 export function hotbarTiles(token: TokenView): (ActionTile | null)[] {
   const auto = new Map(actionTiles(token).map((t) => [tileRef(t), t]));
   const resolve = (ref: string | null) => {
     if (!ref) return undefined;
-    return ref.startsWith('item:') ? itemTile(token, ref.slice(5)) : auto.get(ref);
+    return placedTile(token, ref) ?? auto.get(ref);
   };
   const slots: (ActionTile | null)[] = (token.hotbar ?? []).map((ref) => resolve(ref) ?? null);
   const placed = new Set(slots.filter((t) => t !== null).map(tileRef));

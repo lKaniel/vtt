@@ -1,16 +1,11 @@
 import { TokenSchema, type TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
-import { dropMessage, tokenAt, type DropContext } from './drops.ts';
+import { dropMessage, sheetDropMessage, tokenAt, type DropContext } from './drops.ts';
 
 const token = (data: object): TokenView => TokenSchema.parse({ id: 't', name: 'T', x: 150, y: 150, ...data });
-const hero = token({
-  id: 'hero',
-  name: 'Hero',
-  stats: { spells: ['fire-bolt'] },
-  inventory: [{ item: 'dagger', qty: 1 }],
-});
+const hero = token({ id: 'hero', name: 'Hero', inventory: [{ item: 'dagger', qty: 1 }] });
 const ogre = token({ id: 'ogre', name: 'Ogre', x: 500, y: 500, size: 2 });
-const ctx: DropContext = { tokens: [hero, ogre], gridSize: 100, rules: '2014', hidden: false };
+const ctx: DropContext = { tokens: [hero, ogre], gridSize: 100, hidden: false };
 
 describe('finding the creature under the pointer', () => {
   it('uses each token’s size', () => {
@@ -20,7 +15,7 @@ describe('finding the creature under the pointer', () => {
   });
 });
 
-describe('dropping from the Actors list and the Compendium', () => {
+describe('dropping on the map', () => {
   it('spawns monsters and actors where they land', () => {
     expect(dropMessage({ kind: 'monster', id: 'goblin', rules: '2014' }, [320, 320], { ...ctx, hidden: true })).toEqual(
       {
@@ -33,35 +28,72 @@ describe('dropping from the Actors list and the Compendium', () => {
     expect(dropMessage({ kind: 'actor', id: 'bandit' }, [0, 0], ctx)).toMatchObject({ from: { kind: 'actor' } });
   });
 
-  it('gives an item to the creature it lands on, stacking copies', () => {
+  it('puts items, spells and features on the sheet of the creature they land on', () => {
     expect(dropMessage({ kind: 'item', id: 'dagger' }, [150, 150], ctx)).toEqual({
-      t: 'editToken',
-      token: 'hero',
-      patch: { inventory: [{ item: 'dagger', qty: 2, equipped: false }] },
+      t: 'drop',
+      what: { kind: 'item', id: 'dagger' },
+      onto: { kind: 'token', id: 'hero' },
     });
-    expect(dropMessage({ kind: 'item', id: 'longsword' }, [500, 500], ctx)).toEqual({
-      t: 'editToken',
-      token: 'ogre',
-      patch: { inventory: [{ item: 'longsword', qty: 1, equipped: false }] },
+    expect(dropMessage({ kind: 'spell', id: 'shield', rules: '2014' }, [500, 500], ctx)).toMatchObject({
+      what: { kind: 'spell', id: 'shield' },
+      onto: { id: 'ogre' },
     });
+    const rage = { kind: 'feature', id: 'rage', class: 'barbarian', rules: '2014' } as const;
+    expect(dropMessage(rage, [150, 150], ctx)).toMatchObject({ what: rage });
     expect(dropMessage({ kind: 'item', id: 'dagger' }, [900, 900], ctx)).toEqual({ error: 'Drop items on a creature' });
   });
 
-  it('teaches a spell from the creature’s own rules', () => {
-    expect(dropMessage({ kind: 'spell', id: 'shield', rules: '2014' }, [150, 150], ctx)).toEqual({
+  it('hands a carried item to the creature it lands on', () => {
+    const carried = { kind: 'carried', from: 'hero', item: 'spell-scroll', spell: 'shield' } as const;
+    expect(dropMessage(carried, [500, 500], ctx)).toEqual({
+      t: 'give',
+      from: 'hero',
+      to: 'ogre',
+      item: 'spell-scroll',
+      spell: 'shield',
+    });
+    expect(dropMessage(carried, [150, 150], ctx)).toBeUndefined();
+    expect(dropMessage(carried, [900, 900], ctx)).toEqual({ error: 'Hand it to a creature' });
+  });
+});
+
+describe('dropping on a character sheet', () => {
+  const onto = { kind: 'token', id: 'hero' } as const;
+
+  it('sends compendium entries with the part of the sheet they landed on', () => {
+    expect(sheetDropMessage({ kind: 'spell', id: 'fireball', rules: '2014' }, onto, 'inventory')).toEqual({
+      t: 'drop',
+      what: { kind: 'spell', id: 'fireball', rules: '2014' },
+      onto,
+      area: 'inventory',
+    });
+    expect(sheetDropMessage({ kind: 'item', id: 'rope' }, { kind: 'actor', id: 'bandit' })).toEqual({
+      t: 'drop',
+      what: { kind: 'item', id: 'rope' },
+      onto: { kind: 'actor', id: 'bandit' },
+    });
+  });
+
+  it('hands over items from another creature, and does nothing when one lands back on its own sheet', () => {
+    const carried = { kind: 'carried', from: 'ogre', item: 'club' } as const;
+    expect(sheetDropMessage(carried, onto)).toEqual({ t: 'give', from: 'ogre', to: 'hero', item: 'club' });
+    expect(sheetDropMessage(carried, { kind: 'token', id: 'ogre' })).toBeUndefined();
+    expect(sheetDropMessage(carried, { kind: 'actor', id: 'bandit' })).toEqual({
+      error: 'Hand it to a creature on the map',
+    });
+  });
+
+  it('makes a picture the portrait, and leaves creatures and journal entries for the map', () => {
+    expect(sheetDropMessage({ kind: 'media', src: 'art/hero.png' }, onto)).toEqual({
       t: 'editToken',
       token: 'hero',
-      patch: { stats: { spells: ['fire-bolt', 'shield'] } },
+      patch: { img: 'art/hero.png' },
     });
-    expect(dropMessage({ kind: 'spell', id: 'fire-bolt', rules: '2014' }, [150, 150], ctx)).toEqual({
-      error: 'Hero already knows that spell',
+    expect(sheetDropMessage({ kind: 'monster', id: 'goblin', rules: '2014' }, onto)).toEqual({
+      error: 'Drop creatures on the map',
     });
-    const caster2024 = token({ id: 'c', name: 'Cleric', stats: { rules: '2024' } });
-    expect(
-      dropMessage({ kind: 'spell', id: 'branding-smite', rules: '2014' }, [150, 150], { ...ctx, tokens: [caster2024] }),
-    ).toEqual({ error: 'Cleric plays by the 2024 rules, which have no such spell' });
-    expect(
-      dropMessage({ kind: 'spell', id: 'shield', rules: '2014' }, [150, 150], { ...ctx, tokens: [caster2024] }),
-    ).toMatchObject({ patch: { stats: { rules: '2024', spells: ['shield'] } } });
+    expect(sheetDropMessage({ kind: 'journal', id: 'lore', name: 'Lore' }, onto)).toEqual({
+      error: 'Drop journal entries on the map',
+    });
   });
 });
