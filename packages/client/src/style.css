@@ -2257,14 +2257,6 @@ h4 {
 .ed-remove:hover {
   color: var(--bad);
 }
-.ed-adder {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-}
-.ed-adder input {
-  flex: 1;
-}
 .ed-foot {
   display: flex;
   gap: 8px;

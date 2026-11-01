@@ -13,6 +13,7 @@ import {
 } from './classes.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
+import { withOwn } from './own-content.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Condition, Effect } from './spell-schema.ts';
 import {
@@ -70,7 +71,8 @@ function proficiencyForCr(cr: number): number {
  * Works out a token's statistics from its monster stat block and/or its own
  * stats and equipped gear. Undefined for tokens without any (scenery, illusions).
  */
-export function resolveCreature(token: Token, content: Content): Creature | undefined {
+export function resolveCreature(token: Token, books: Content): Creature | undefined {
+  const content = withOwn(books, token);
   const monster = token.monster ? content.monsters.get(token.monster) : undefined;
   if (token.monster ? !monster : !token.stats) return undefined;
   const stats = token.stats ?? {};

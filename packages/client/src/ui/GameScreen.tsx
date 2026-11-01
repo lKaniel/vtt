@@ -43,7 +43,8 @@ export function GameScreen({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (isTyping(e.target)) return;
+      // A dialog or popup that closed on this key (Esc) has already handled it.
+      if (e.defaultPrevented || isTyping(e.target)) return;
       if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
       if (e.key === 'Escape' && backOutOfEditor(session)) return;
       if (runEditorKey(session, e)) return;

@@ -1,4 +1,5 @@
 import type { Content } from './content.ts';
+import { knownSpellIds, ownFeatures } from './own-content.ts';
 import { abilityMod } from './creature-math.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Feature, LevelTable, Spell, Spellcasting } from './spell-schema.ts';
@@ -121,7 +122,9 @@ export function casterSheet(
     slots,
     left: slots.map((n, i) => Math.max(0, n - (spent[i] ?? 0))),
     pact: casting.progression === 'pact',
-    spells: (token.stats?.spells ?? []).map((id) => content.spells.get(id)).filter((s): s is Spell => !!s),
+    spells: knownSpellIds(token)
+      .map((id) => content.spells.get(id))
+      .filter((s): s is Spell => !!s),
   };
 }
 
@@ -182,10 +185,11 @@ export function featureSheets(
 
 /** The features a token was granted on top of its class ("barbarian/rage"); unknown ones are left out. */
 export function grantedFeatures(token: Token, content: Content): Feature[] {
-  return (token.stats?.features ?? []).flatMap((ref) => {
+  const fromClasses = (token.stats?.features ?? []).flatMap((ref) => {
     const found = classFeature(ref, content);
     return found ? [found] : [];
   });
+  return [...fromClasses, ...ownFeatures(token)];
 }
 
 /** A class feature by "<class>/<feature>". */

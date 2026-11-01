@@ -521,6 +521,14 @@ the spell at its own level without a slot, with the scroll's save DC and
 attack bonus (13/+5 up to 2nd level, 15/+7, 17/+9, 18/+10, 19/+11 for 9th),
 and uses the scroll up.
 
+**Made on the sheet.** Items, spells and features that exist only on one
+creature (the sheet's New item, New spell and New feature buttons) live in
+its `own` field, written like compendium entries: `"own": { "items": [...],
+"spells": [...], "features": [...] }`. Own items are carried through
+`inventory` by their id like any other item, own spells are known without
+listing them in `stats.spells`, and own features are granted. Existing items,
+spells and features are added by dragging them from the Compendium.
+
 The server writes the rest of a creature's magic to its token, and you can
 edit it too:
 

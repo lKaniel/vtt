@@ -23,4 +23,10 @@ describe('what a creature carries, on its sheet', () => {
     expect(carriedDrag('hero', dagger)).toEqual({ kind: 'carried', from: 'hero', item: 'dagger' });
     expect(carriedLook({ item: 'mystery', qty: 1, equipped: false }, '2014').name).toBe('mystery');
   });
+
+  it('shows an item made on the sheet by its name', () => {
+    const own = { items: [{ type: 'gear' as const, id: 'lucky-coin', name: 'Lucky coin', weight: 0 }] };
+    const coin = { item: 'lucky-coin', qty: 1, equipped: false };
+    expect(carriedLook(coin, '2014', { own }).name).toBe('Lucky coin');
+  });
 });

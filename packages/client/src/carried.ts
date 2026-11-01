@@ -1,4 +1,4 @@
-import { type Edition, type InventoryEntry, SPELL_SCROLL } from '@vtt/system-dnd5e';
+import { type Edition, type InventoryEntry, type Own, SPELL_SCROLL, withOwn } from '@vtt/system-dnd5e';
 import { gameContent } from './content.ts';
 import type { DragPayload } from './drops.ts';
 import { itemArt, spellArt } from './icon-art.ts';
@@ -16,9 +16,9 @@ export interface CarriedLook {
   ref: string;
 }
 
-/** How an entry looks in the inventory of a creature playing by `rules`. */
-export function carriedLook(entry: InventoryEntry, rules: Edition): CarriedLook {
-  const content = gameContent(rules);
+/** How an entry looks in the inventory of a creature playing by `rules` (with the things made on its `sheet`). */
+export function carriedLook(entry: InventoryEntry, rules: Edition, sheet: { own?: Own } = {}): CarriedLook {
+  const content = withOwn(gameContent(rules), sheet);
   const item = content.items.get(entry.item);
   const spell = entry.item === SPELL_SCROLL && entry.spell ? content.spells.get(entry.spell) : undefined;
   if (spell) {

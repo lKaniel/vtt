@@ -2,13 +2,11 @@ import { XIcon } from 'lucide-react';
 import { isGm, type Level, levelOf } from '@vtt/shared';
 import { editionOf, toEdition } from '@vtt/system-dnd5e';
 import { gameContent } from '../content.ts';
-import { useState } from 'react';
 import { setOwnership, setStat } from '../token-edit.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { Check, Field, NumberInput, TextInput } from './EditorFields.tsx';
 import { withKey, type Draft, type Update } from './sheet-model.ts';
 import { Button } from './kit/button.tsx';
-import { Input } from './kit/input.tsx';
 import { ColorInput } from './kit/color-input.tsx';
 import { SelectField } from './kit/select.tsx';
 
@@ -200,42 +198,5 @@ export function RemoveButton({ onClick, className = '' }: Readonly<{ onClick: ()
     >
       <XIcon />
     </Button>
-  );
-}
-
-/** A search box with suggestions; picking a name (or typing an id) adds it. */
-export function Adder({
-  placeholder,
-  options,
-  onAdd,
-}: Readonly<{ placeholder: string; options: { id: string; name: string }[]; onAdd: (id: string) => void }>) {
-  const [text, setText] = useState('');
-  const listId = `adder-${placeholder.replace(/\W/g, '')}`;
-  const add = () => {
-    const t = text.trim().toLowerCase();
-    const hit = options.find((o) => o.name.toLowerCase() === t || o.id === t);
-    if (!hit) return;
-    onAdd(hit.id);
-    setText('');
-  };
-  return (
-    <div className="ed-adder">
-      <Input
-        type="text"
-        value={text}
-        list={listId}
-        placeholder={placeholder}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && add()}
-      />
-      <datalist id={listId}>
-        {options.map((o) => (
-          <option key={o.id} value={o.name} />
-        ))}
-      </datalist>
-      <Button variant="outline" size="sm" onClick={add}>
-        Add
-      </Button>
-    </div>
   );
 }

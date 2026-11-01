@@ -42,6 +42,13 @@ describe('viewToken', () => {
     expect(seen).not.toHaveProperty('stats');
   });
 
+  it("keeps what was made on someone else's sheet from other players", () => {
+    const made = { ...hero, own: { items: [{ type: 'gear' as const, id: 'secret', name: 'Secret', weight: 0 }] } };
+    const bob = { ...ana, id: 'bob' };
+    expect(viewToken(made, bob, srdFor('2024'))).not.toHaveProperty('own');
+    expect(viewToken(made, ana, srdFor('2024')).own?.items?.[0]?.name).toBe('Secret');
+  });
+
   it('adds nothing to tokens without stats', () => {
     const tree = TokenSchema.parse({ id: 'tree', name: 'Tree', x: 0, y: 0 });
     expect(viewToken(tree, ana, srdFor('2024'))).toEqual(tree);
