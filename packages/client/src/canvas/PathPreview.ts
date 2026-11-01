@@ -1,8 +1,18 @@
 import { areaShape, type Attack, attackRange, type Token, tokenDistance } from '@vtt/system-dnd5e';
-import { findPath, hasLineOfSight, type Point, type Region, regionCost, snapToGrid, type Wall } from '@vtt/shared';
+import {
+  hasLineOfSight,
+  isGridless,
+  type Point,
+  type Region,
+  regionCost,
+  type WalkOptions,
+  walkPath,
+  type Wall,
+} from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
 import { previewLabel } from '../spell-text.ts';
 import type { Session } from '../session.ts';
+import { aimPoint, walkOptions } from '../walking.ts';
 import { needsClearPath, type Aiming } from '../targeting.ts';
 
 const OK_COLOR = 0xffffff;
@@ -13,6 +23,8 @@ const AREA_COLOR = 0xff9040;
 
 interface PreviewContext {
   gridSize: number;
+  /** No grid: aim at the very point and measure as the crow flies. */
+  gridless: boolean;
   walls: readonly Wall[];
   zoom: number;
   force: boolean;
@@ -42,11 +54,11 @@ export class PathPreview {
   }
 
   /** Redraws unless the token and the hovered square are unchanged (or `force`). */
-  show(token: Token, hover: Point, ctx: PreviewContext & { budget: number }): void {
+  show(token: Token, hover: Point, ctx: PreviewContext & { budget: number; walk: WalkOptions }): void {
     const g = ctx.gridSize;
-    const target = snapToGrid(hover, g);
+    const target = this.aim(hover, ctx);
     if (!this.needsRedraw(`walk:${target[0]},${target[1]}:${token.x},${token.y}`, ctx.force)) return;
-    const path = findPath([token.x, token.y], target, ctx.walls, { gridSize: g, cost: ctx.cost });
+    const path = walkPath([token.x, token.y], target, ctx.walls, { ...ctx.walk, cost: ctx.cost });
     if (!path) {
       this.line.circle(target[0], target[1], g * 0.3).stroke({ width: 6, color: BLOCKED_COLOR });
       return;
@@ -62,9 +74,9 @@ export class PathPreview {
 
   /** A line from the attacker to the hovered square, saying whether it's in range. */
   showAttack(token: Token, hover: Point, attack: Attack, ctx: PreviewContext): void {
-    const target = snapToGrid(hover, ctx.gridSize);
+    const target = this.aim(hover, ctx);
     if (!this.needsRedraw(`attack:${attack.name}:${target[0]},${target[1]}:${token.x},${token.y}`, ctx.force)) return;
-    const feet = tokenDistance(token, { x: target[0], y: target[1], size: 1 }, ctx.gridSize);
+    const feet = tokenDistance(token, { x: target[0], y: target[1], size: 1 }, ctx.gridSize, ctx.gridless);
     const blocked = !hasLineOfSight([token.x, token.y], target, ctx.walls);
     const range = blocked ? 'out' : attackRange(attack, feet);
     const color = { normal: OK_COLOR, long: LONG_RANGE_COLOR, out: BLOCKED_COLOR }[range];
@@ -79,7 +91,7 @@ export class PathPreview {
   /** Where the aimed spell would land: its area, or a line to the hovered creature or point, and whether it's in range. */
   showSpell(token: Token, hover: Point, aiming: Aiming, ctx: PreviewContext): void {
     const { spell } = aiming;
-    const target = snapToGrid(hover, ctx.gridSize);
+    const target = this.aim(hover, ctx);
     const key = `spell:${spell.id}:${aiming.picks.length}:${target[0]},${target[1]}:${token.x},${token.y}`;
     if (!this.needsRedraw(key, ctx.force)) return;
     const reach = spell.teleport ?? spell.range;
@@ -107,6 +119,12 @@ export class PathPreview {
     if (shape.kind === 'circle') this.line.circle(shape.center[0], shape.center[1], shape.radius);
     else this.line.poly(shape.points.flat());
     this.line.fill({ color: AREA_COLOR, alpha: 0.25 }).stroke({ width: 4, color: AREA_COLOR, alpha: 0.9 });
+  }
+
+  /** The hovered point, whole pixels without a grid, its square's centre on one. */
+  private aim(hover: Point, ctx: PreviewContext): Point {
+    const [x, y] = aimPoint(hover, { gridSize: ctx.gridSize, grid: ctx.gridless ? 'none' : 'square' });
+    return [Math.round(x), Math.round(y)];
   }
 
   private needsRedraw(key: string, force: boolean): boolean {
@@ -155,6 +173,7 @@ export function showPreview(
   const regions = session.docs.all(`${session.scene}/regions`) as unknown as Region[];
   const ctx = {
     gridSize: world.gridSize,
+    gridless: isGridless(world),
     walls: at.walls,
     zoom: at.zoom,
     force: at.force,
@@ -163,5 +182,8 @@ export function showPreview(
   const attack = token.sheet?.attacks.find((a) => a.name === session.armed);
   if (session.aiming) preview.showSpell(token, hover, session.aiming, ctx);
   else if (attack) preview.showAttack(token, hover, attack, ctx);
-  else preview.show(token, hover, { ...ctx, budget: session.movementLeft(token.id) });
+  else {
+    const walk = walkOptions(world, token, session.tokens.values());
+    preview.show(token, hover, { ...ctx, budget: session.movementLeft(token.id), walk });
+  }
 }

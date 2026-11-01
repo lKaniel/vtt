@@ -177,11 +177,12 @@ describe('casting spells', () => {
 
   it('teleports with misty step as a bonus action', () => {
     const { ana } = fight(['hero', 'goblin', 'goblin2', 'bo']);
-    ana.receive({ t: 'cast', caster: 'hero', spell: 'misty-step', slot: 2, targets: [], point: [150, 250] });
-    expect([tok('hero').x, tok('hero').y]).toEqual([150, 250]);
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'misty-step', slot: 2, targets: [], point: [137, 262] });
+    // Without a grid the token lands on the very point aimed at.
+    expect([tok('hero').x, tok('hero').y]).toEqual([137, 262]);
     // The map jumps the token there instead of waiting for a walk that never comes.
     const update = ana.sent.findLast((m) => m.t === 'token' && m.token.id === 'hero');
-    expect(update).toMatchObject({ token: { x: 150, y: 250 } });
+    expect(update).toMatchObject({ token: { x: 137, y: 262 } });
     expect(store.combat!.left).toMatchObject({ action: true, bonus: false });
   });
 });

@@ -1,4 +1,4 @@
-import { canControl, type Player, type Point } from '@vtt/shared';
+import { canControl, isGridless, type Player, type Point } from '@vtt/shared';
 import {
   type Effect,
   halved,
@@ -39,8 +39,9 @@ export class Reactions {
       const sheet = this.table.sheetOf(token);
       return sheet ? [{ token, sheet }] : [];
     });
-    const gridSize = this.table.store.world.gridSize;
-    for (const reactor of opportunityAttackers({ mover, path, others, gridSize, reacted: combat.reacted })) {
+    const { world } = this.table.store;
+    const scale = { gridSize: world.gridSize, gridless: isGridless(world) };
+    for (const reactor of opportunityAttackers({ mover, path, others, ...scale, reacted: combat.reacted })) {
       const sheet = others.find((o) => o.token.id === reactor)!.sheet;
       const choices = sheet.attacks.filter((a) => a.kind === 'melee').map((a) => a.name);
       this.offer({ id: randomUUID(), reactor, target: mover.id, kind: 'opportunity', choices });

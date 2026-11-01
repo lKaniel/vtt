@@ -1,5 +1,6 @@
 import type { Rect } from './chunks.ts';
 import { movementBlocked, wallsInRect } from './geometry.ts';
+import { MinHeap } from './min-heap.ts';
 import type { Point, Wall } from './schema.ts';
 
 export interface PathOptions {
@@ -10,6 +11,8 @@ export interface PathOptions {
   margin?: number;
   /** What walking into the square around a point costs, times 5 ft: 2 for difficult ground. Default 1. */
   cost?: (p: Point) => number;
+  /** Squares no one may walk into, by their centre: where other creatures stand. */
+  blocked?: (p: Point) => boolean;
 }
 
 export interface Path {
@@ -41,55 +44,6 @@ export function squareCentre(sq: Point, gridSize: number): Point {
 /** Centre of the square that contains p. */
 export function snapToGrid(p: Point, gridSize: number): Point {
   return squareCentre(squareOf(p, gridSize), gridSize);
-}
-
-class MinHeap {
-  private items: { key: number; f: number }[] = [];
-
-  get size(): number {
-    return this.items.length;
-  }
-
-  push(key: number, f: number): void {
-    const a = this.items;
-    a.push({ key, f });
-    let i = a.length - 1;
-    while (i > 0) {
-      const p = (i - 1) >> 1;
-      if (a[p]!.f <= a[i]!.f) break;
-      this.swap(p, i);
-      i = p;
-    }
-  }
-
-  pop(): number {
-    const a = this.items;
-    const top = a[0]!;
-    const last = a.pop()!;
-    if (a.length > 0) {
-      a[0] = last;
-      this.siftDown(0);
-    }
-    return top.key;
-  }
-
-  private siftDown(start: number): void {
-    const a = this.items;
-    let i = start;
-    for (;;) {
-      const smallest = [2 * i + 1, 2 * i + 2]
-        .filter((c) => c < a.length)
-        .reduce((m, c) => (a[c]!.f < a[m]!.f ? c : m), i);
-      if (smallest === i) return;
-      this.swap(smallest, i);
-      i = smallest;
-    }
-  }
-
-  private swap(i: number, j: number): void {
-    const a = this.items;
-    [a[i], a[j]] = [a[j]!, a[i]!];
-  }
 }
 
 /** The finite box of squares a search may visit, numbered row by row. */
@@ -133,8 +87,9 @@ export function findPath(from: Point, to: Point, walls: readonly Wall[], opts: P
   const s = squareOf(from, g);
   const t = squareOf(to, g);
   if (s[0] === t[0] && s[1] === t[1]) return { points: [squareCentre(s, g)], feet: 0 };
+  if (opts.blocked?.(squareCentre(t, g))) return null;
 
-  const search = new Search(new SearchBox(s, t, opts.margin ?? 12), t, walls, { gridSize: g, cost: opts.cost });
+  const search = new Search(new SearchBox(s, t, opts.margin ?? 12), t, walls, opts);
   search.start(s);
   for (let expanded = 0; search.hasOpen() && expanded <= (opts.maxNodes ?? 20000); expanded++) {
     const cur = search.next();
@@ -153,16 +108,18 @@ class Search {
   private near: Wall[];
   private gridSize: number;
   readonly stepCost: (p: Point) => number;
+  private blocked: (p: Point) => boolean;
 
   constructor(
     readonly box: SearchBox,
     private target: Point,
     walls: readonly Wall[],
-    opts: { gridSize: number; cost?: (p: Point) => number },
+    opts: PathOptions,
   ) {
     this.goal = box.key(target);
     this.gridSize = opts.gridSize;
     this.stepCost = opts.cost ?? (() => 1);
+    this.blocked = opts.blocked ?? (() => false);
     // Only walls near the search box matter.
     this.near = wallsInRect(walls, box.rect(opts.gridSize));
   }
@@ -190,7 +147,8 @@ class Search {
       const step = this.stepCost(squareCentre(next, this.gridSize));
       const nextCost = base + step * (dx !== 0 && dy !== 0 ? 1.0001 : 1);
       if (!this.box.contains(next) || nextCost >= (this.cost.get(this.box.key(next)) ?? Infinity)) continue;
-      if (movementBlocked(squareCentre(here, this.gridSize), squareCentre(next, this.gridSize), this.near)) continue;
+      const centre = squareCentre(next, this.gridSize);
+      if (this.blocked(centre) || movementBlocked(squareCentre(here, this.gridSize), centre, this.near)) continue;
       const nk = this.box.key(next);
       this.cost.set(nk, nextCost);
       this.came.set(nk, key);

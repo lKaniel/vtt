@@ -18,6 +18,7 @@ import { previewDoc, previewTiles } from '../editor/preview.ts';
 import { keyOf, refOf, type Mods } from '../editor/selection.ts';
 import { TileItems } from '../editor/tile-items.ts';
 import type { Session } from '../session.ts';
+import { dragsFreely } from '../walking.ts';
 import { DrawTools } from './DrawTools.ts';
 import { drawHandles, drawLight, drawMarquee, drawOutline, drawWall, type DrawCtx } from './editor-draw.ts';
 
@@ -95,7 +96,7 @@ export class MapEditor {
   pointerMove(at: Point, mods: Mods): void {
     this.hover = at;
     this.free = mods.shift;
-    this.controller.move(at, mods);
+    this.controller.move(at, this.dragMods(mods));
     if (this.tools.busy) this.tools.drag(at);
     if (this.active || this.controller.busy) this.redraw();
   }
@@ -103,8 +104,13 @@ export class MapEditor {
   pointerUp(p: PointerInfo): void {
     if (p.button !== 0) return;
     if (this.tools.busy) this.tools.release(p.at, p.mods.shift);
-    else if (this.controller.busy) this.controller.up(p.at, p.mods);
+    else if (this.controller.busy) this.controller.up(p.at, this.dragMods(p.mods));
     this.redraw();
+  }
+
+  /** Drags snap unless Shift is held, or the scene has no grid and these are tokens. */
+  private dragMods(mods: Mods): Mods {
+    return dragsFreely(this.session.mode, this.session.world) ? { ...mods, shift: true } : mods;
   }
 
   setZoom(zoom: number): void {

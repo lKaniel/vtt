@@ -20,7 +20,7 @@ import {
   tokenDistance,
   type WeaponAttackOutcome,
 } from '@vtt/system-dnd5e';
-import { canControl, isParty, type Player } from '@vtt/shared';
+import { canControl, isGridless, isParty, type Player } from '@vtt/shared';
 import { Refusal, requireGm, type Cost, type Fighter, type Table } from './table.ts';
 
 /** An attack that has been rolled but not yet landed: its target may still react (shield). */
@@ -193,7 +193,7 @@ export class CombatActions {
     const attack = this.attackOf(attacker, req);
     const cost = this.attackCost(attacker, attack);
     this.table.check(attacker.token, cost);
-    const feet = tokenDistance(attacker.token, target.token, this.store.world.gridSize);
+    const feet = this.distance(attacker.token, target.token);
     const range = attackRange(attack, feet);
     if (range === 'out') throw new Refusal(`${target.token.name} is out of range (${feet} ft)`);
     if (!this.table.clearShot([attacker.token.x, attacker.token.y], [target.token.x, target.token.y])) {
@@ -246,6 +246,7 @@ export class CombatActions {
         attack,
         range,
         gridSize: this.store.world.gridSize,
+        gridless: isGridless(this.store.world),
         allyNearTarget: this.allyNear(attacker.token, target.token),
         sneakUsed,
         smite,
@@ -278,8 +279,14 @@ export class CombatActions {
         t.id !== target.id &&
         side(t) === side(attacker) &&
         (this.table.sheetOf(t)?.hp ?? 0) > 0 &&
-        tokenDistance(t, target, this.store.world.gridSize) <= 5,
+        this.distance(t, target) <= 5,
     );
+  }
+
+  /** Feet between two creatures, as the scene measures them. */
+  private distance(a: Token, b: Token): number {
+    const { world } = this.store;
+    return tokenDistance(a, b, world.gridSize, isGridless(world));
   }
 
   private applyOutcome(

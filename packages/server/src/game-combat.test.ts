@@ -100,8 +100,9 @@ describe('turns', () => {
     const { ana } = fight();
     ana.receive({ t: 'move', token: 'hero', to: [150, 250] });
     expect(store.combat!.left.move).toBe(25);
+    // Without a grid a diagonal is as long as it is: about 11 ft.
     ana.receive({ t: 'move', token: 'hero', to: [50, 50] });
-    expect(store.combat!.left.move).toBe(15);
+    expect(store.combat!.left.move).toBe(14);
     store.combat = { ...store.combat!, left: { ...store.combat!.left, move: 0 } };
     ana.receive({ t: 'move', token: 'hero', to: [150, 150] });
     expect(ana.take('error')[0]!.message).toMatch(/0 ft of movement left/);

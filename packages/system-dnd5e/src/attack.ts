@@ -81,8 +81,17 @@ interface Placed {
   size: number;
 }
 
-/** Feet between two tokens' nearest squares, every square (diagonals too) 5 ft. */
-export function tokenDistance(a: Placed, b: Placed, gridSize: number): number {
+/**
+ * Feet between two tokens. On a grid: between their nearest squares, every
+ * square (diagonals too) 5 ft. Without one: the ground between their edges
+ * plus 5 ft for the target's own space, less half a square of slack, so
+ * creatures standing within a step of each other are 5 ft apart.
+ */
+export function tokenDistance(a: Placed, b: Placed, gridSize: number, gridless = false): number {
+  if (gridless) {
+    const gap = Math.hypot(a.x - b.x, a.y - b.y) - ((a.size + b.size) / 2) * gridSize;
+    return 5 + Math.round(Math.max(0, (gap / gridSize) * 5 - 2.5));
+  }
   const half = ((a.size + b.size) / 2) * gridSize;
   const gap = (d: number) => Math.round(Math.max(0, Math.abs(d) - half) / gridSize);
   return (Math.max(gap(a.x - b.x), gap(a.y - b.y)) + 1) * 5;
