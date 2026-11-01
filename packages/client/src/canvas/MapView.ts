@@ -1,4 +1,4 @@
-import { chunkKey, type Point, type Rect, type Wall } from '@vtt/shared';
+import { chunkKey, type EditorMode, type Point, type Rect, type TokenView, type Wall } from '@vtt/shared';
 import {
   Application,
   Container,
@@ -8,12 +8,15 @@ import {
   Rectangle,
   type FederatedPointerEvent,
 } from 'pixi.js';
-import { DRAG_TYPE, type DragPayload } from '../drops.ts';
+import { menuFor } from '../editor/menus.ts';
+import { modsOf } from '../editor/selection.ts';
 import type { Session } from '../session.ts';
+import type { EditorTool } from '../session-editor.ts';
 import { cuesOf } from '../feedback.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
 import { CameraMotion } from './camera-motion.ts';
 import { EffectsLayer } from './EffectsLayer.ts';
+import { listenToDrops } from './sidebar-drops.ts';
 import { MapEditor } from './MapEditor.ts';
 import { PathPreview } from './PathPreview.ts';
 import { TokenLayer } from './TokenLayer.ts';
@@ -77,6 +80,9 @@ export class MapView {
   /** A flickering light is on screen, so lighting is redrawn every frame. */
   private animatedLights = false;
   private viewId = '';
+  /** The editor mode and tool last seen, to put away a half-drawn wall when they change. */
+  private mode: EditorMode = 'tokens';
+  private tool: EditorTool = 'select';
   private drag?: Drag;
   private hoverPoint?: Point;
   private unsubscribe: (() => void)[] = [];
@@ -88,7 +94,7 @@ export class MapView {
     this.tokens.onGrab = (token, at) => {
       this.drag = { start: at, last: at, at: performance.now(), panning: false, button: 0, token };
     };
-    this.editor = new MapEditor(session);
+    this.editor = new MapEditor(session, (id) => this.tokens.placeOf(id));
     this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
   }
 
@@ -151,11 +157,14 @@ export class MapView {
       this.drag = undefined;
     });
     this.app.canvas.addEventListener('wheel', this.onWheel, { passive: false });
+    // Right click opens our own menus; middle drag pans instead of the browser's auto-scroll.
     this.app.canvas.addEventListener('contextmenu', (e) => {
       e.preventDefault();
     });
-    this.app.canvas.addEventListener('dragover', this.onDragOver);
-    this.app.canvas.addEventListener('drop', this.onDrop);
+    this.app.canvas.addEventListener('mousedown', (e) => {
+      if (e.button === 1) e.preventDefault();
+    });
+    listenToDrops(this.app.canvas, this.session, (x, y) => this.screenToWorld(x, y));
     this.app.renderer.on('resize', () => {
       this.vision?.resize();
       this.dirty = true;
@@ -196,6 +205,10 @@ export class MapView {
         this.tokens.redrawAll();
         this.updatePreview(true);
       }),
+      s.on('selection', () => {
+        this.tokens.redrawAll();
+        this.editor.redraw();
+      }),
       s.on('combat', () => {
         this.tokens.redrawAll();
         this.updatePreview(true);
@@ -208,8 +221,8 @@ export class MapView {
         this.effects.play(cuesOf(message), performance.now());
       }),
       s.on('lighting', visionChanged),
-      s.on('mapTool', () => {
-        this.onMapTool();
+      s.on('editor', () => {
+        this.onEditor();
       }),
       s.on('focus', (p) => {
         this.cam.glideTo(p);
@@ -218,12 +231,15 @@ export class MapView {
     );
   }
 
-  /** While a map tool is in use, clicks go to it instead of tokens and doors. */
-  private onMapTool(): void {
-    const editing = !!this.session.mapTool;
+  /** Outside the tokens mode, clicks go to the editor instead of tokens and doors. */
+  private onEditor(): void {
+    const editing = this.editor.active;
     this.tokens.container.eventMode = editing ? 'none' : 'passive';
     this.chunks.walls.eventMode = editing ? 'none' : 'passive';
-    this.editor.cancel();
+    if (this.mode !== this.session.mode || this.tool !== this.session.tool) this.editor.cancel();
+    this.mode = this.session.mode;
+    this.tool = this.session.tool;
+    this.editor.redraw();
     this.updatePreview(true);
   }
 
@@ -336,26 +352,14 @@ export class MapView {
     this.dirty = true;
   };
 
-  /** The GM drags actors, monsters, items and spells in from the side panel. */
-  private onDragOver = (e: DragEvent): void => {
-    if (!e.dataTransfer?.types.includes(DRAG_TYPE)) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-  };
-
-  private onDrop = (e: DragEvent): void => {
-    const data = e.dataTransfer?.getData(DRAG_TYPE);
-    if (!data) return;
-    e.preventDefault();
-    const rect = this.app.canvas.getBoundingClientRect();
-    this.session.drop(JSON.parse(data) as DragPayload, this.screenToWorld(e.clientX - rect.left, e.clientY - rect.top));
-  };
-
   private onPointerDown(e: FederatedPointerEvent): void {
     const p: Point = [e.global.x, e.global.y];
     const at = this.screenToWorld(p[0], p[1]);
-    if (this.editor.pointerDown({ at, button: e.button, free: e.shiftKey })) return;
-    this.drag = { start: p, last: p, at: performance.now(), panning: e.button !== 0, button: e.button };
+    if (e.button !== 2) this.session.closeMenu();
+    // An aimed spell or readied attack keeps the left click for itself.
+    const acting = !!(this.session.armed ?? this.session.aiming) && !this.editor.active;
+    if (!acting && this.editor.pointerDown({ at, button: e.button, mods: modsOf(e) })) return;
+    this.drag = { start: p, last: p, at: performance.now(), panning: e.button === 1, button: e.button };
     this.cam.hold();
   }
 
@@ -364,17 +368,16 @@ export class MapView {
     if (this.drag) this.dragTo(this.drag, p);
     this.hoverPoint = this.screenToWorld(p[0], p[1]);
     this.session.pointer = this.hoverPoint;
-    this.editor.pointerMove(this.hoverPoint, e.shiftKey);
+    this.editor.pointerMove(this.hoverPoint, modsOf(e));
     this.updatePreview(false);
   }
 
+  /** Right and middle drags pan; a token drag waits for the drop. */
   private dragTo(drag: Drag, p: Point): void {
     const far = Math.hypot(p[0] - drag.start[0], p[1] - drag.start[1]) > DRAG_THRESHOLD;
-    if (drag.token) {
-      if (far) drag.moved = true;
-      return;
-    }
-    if (far) drag.panning = drag.moved = true;
+    if (far) drag.moved = true;
+    if (drag.token) return;
+    if (far && drag.button !== 0) drag.panning = true;
     const now = performance.now();
     if (drag.panning) {
       this.cam.drag([p[0] - drag.last[0], p[1] - drag.last[1]], (now - drag.at) / 1000);
@@ -385,21 +388,40 @@ export class MapView {
   }
 
   private onPointerUp(e: FederatedPointerEvent): void {
-    this.editor.pointerUp({ at: this.screenToWorld(e.global.x, e.global.y), button: e.button, free: e.shiftKey });
+    const at = this.screenToWorld(e.global.x, e.global.y);
+    this.editor.pointerUp({ at, button: e.button, mods: modsOf(e) });
     const drag = this.drag;
     this.drag = undefined;
-    if (drag?.token) {
-      if (drag.moved) this.session.move(drag.token, this.screenToWorld(e.global.x, e.global.y));
-      return;
-    }
-    // A right click that didn't pan cancels an aimed spell or readied attack.
-    if (drag?.button === 2 && !drag.moved) {
-      this.session.cancelAction();
-      return;
-    }
-    if (drag?.panning) return this.letGo(drag);
-    if (drag?.button !== 0) return;
-    this.clickGround(this.screenToWorld(e.global.x, e.global.y));
+    if (!drag) return;
+    if (drag.token) return this.dropToken(drag, at);
+    if (drag.panning) return this.letGo(drag);
+    if (drag.button === 2 && !drag.moved) return this.rightClick([e.global.x, e.global.y], at);
+    if (drag.button === 0 && !drag.moved) this.clickGround(at);
+  }
+
+  /** A token let go: a drag walks it (and the rest of the selection) there, a click selects it alone. */
+  private dropToken(drag: Drag, at: Point): void {
+    const s = this.session;
+    const id = drag.token!;
+    if (!drag.moved) return s.select(id);
+    const from = s.tokens.get(id);
+    if (!from) return;
+    const [dx, dy] = [at[0] - from.x, at[1] - from.y];
+    for (const t of s.tokens.values())
+      if (t.id !== id && s.isSelected(t.id) && s.canControl(t)) s.move(t.id, [t.x + dx, t.y + dy]);
+    s.move(id, at);
+  }
+
+  /**
+   * A right click that didn't pan: puts away a half-drawn wall, an aimed
+   * spell or a readied attack; otherwise opens the menu of what is under the
+   * pointer (or of the ground).
+   */
+  private rightClick(screen: Point, at: Point): void {
+    if (this.editor.cancel() || this.session.cancelAction()) return;
+    const target = this.editor.menuTarget(at);
+    const rect = this.app.canvas.getBoundingClientRect();
+    this.session.openMenu([screen[0] + rect.left, screen[1] + rect.top], menuFor(target, this.session));
   }
 
   /** A fling glides on; a drag that stopped before letting go stays put. */
@@ -407,21 +429,25 @@ export class MapView {
     if (performance.now() - drag.at < 80) this.cam.release();
   }
 
-  /** A left click on the map: casts an aimed area spell, puts away an action, or walks. */
+  /** A left click on the map with an action ready: casts an aimed area spell, or puts the action away. */
   private clickGround(p: Point): void {
-    // Clicking the ground with an attack ready puts it away instead of walking.
     if (this.session.armed) return this.session.arm(undefined);
     const aiming = this.session.aiming;
     if (aiming?.mode === 'point') return this.session.castAt(p);
-    if (aiming) return this.session.aim(undefined);
-    const selected = this.session.selected;
-    if (selected) this.session.move(selected, p);
+    if (aiming) this.session.aim(undefined);
+  }
+
+  /** The token whose path shows: while it is dragged, or aiming a spell or attack. */
+  private pathToken(): TokenView | undefined {
+    const s = this.session;
+    const showing = !!(this.drag?.token ?? s.armed ?? s.aiming) && !this.drag?.panning;
+    return showing && s.selected ? s.tokens.get(s.selected) : undefined;
   }
 
   private updatePreview(force: boolean): void {
     const world = this.session.world;
-    const token = this.session.selected ? this.session.tokens.get(this.session.selected) : undefined;
-    if (!world || !token || !this.hoverPoint || this.drag?.panning) {
+    const token = this.pathToken();
+    if (!world || !token || !this.hoverPoint) {
       this.preview.clear();
       return;
     }

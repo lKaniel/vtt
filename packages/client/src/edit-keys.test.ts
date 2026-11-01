@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { editKey } from './edit-keys.ts';
+import { editKey, editorKey } from './edit-keys.ts';
 
 const key = (k: string, mods: { ctrl?: boolean; meta?: boolean; shift?: boolean } = {}) => ({
   key: k,
@@ -28,5 +28,27 @@ describe('editKey', () => {
     expect(editKey(key('v', { ctrl: true, shift: true }))).toBe('clipboard');
     expect(editKey(key('z'))).toBeUndefined();
     expect(editKey(key('c'))).toBeUndefined();
+  });
+});
+
+describe('select all', () => {
+  it('is Ctrl+A', () => {
+    expect(editKey(key('a', { ctrl: true }))).toBe('selectAll');
+  });
+});
+
+describe('editorKey', () => {
+  it('switches modes: T tokens, Shift+T tiles, W walls, L lights', () => {
+    expect(editorKey(key('t'), false)).toEqual({ mode: 'tokens' });
+    expect(editorKey(key('T', { shift: true }), false)).toEqual({ mode: 'tiles' });
+    expect(editorKey(key('w'), false)).toEqual({ mode: 'walls' });
+    expect(editorKey(key('l'), true)).toEqual({ mode: 'lights' });
+    expect(editorKey(key('w', { ctrl: true }), false)).toBeUndefined();
+  });
+
+  it('nudges with the arrows outside the tokens mode (where they walk)', () => {
+    expect(editorKey(key('ArrowLeft'), true)).toEqual({ nudge: [-1, 0], big: false });
+    expect(editorKey(key('ArrowDown', { shift: true }), true)).toEqual({ nudge: [0, 1], big: true });
+    expect(editorKey(key('ArrowDown'), false)).toBeUndefined();
   });
 });

@@ -86,6 +86,11 @@ collection it goes in, which fields point at other documents (`actor`,
 - The copy travels as JSON with a `vtt/documents` marker, through the
   system clipboard, so it pastes into another scene or browser tab.
 
+The map editor (`editor.md`) calls the same commands on its selection, in
+every mode, and sends drags, nudges and inspector changes as `ops`
+transactions. The client shows those at once and puts them back if the server
+sends `reject`.
+
 A new type (step 6 onwards: drawings, notes, regions...) adds itself to
 `EDIT_KINDS` and a sample to `server/src/edit-commands.test.ts`, which runs
 every kind through copy then paste, cut then undo, delete then undo then

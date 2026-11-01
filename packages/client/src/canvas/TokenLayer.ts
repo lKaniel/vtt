@@ -9,8 +9,17 @@ import {
   type Point,
   type TokenView,
 } from '@vtt/shared';
-import { Assets, Container, Graphics, Sprite as PixiSprite, Text, type Texture } from 'pixi.js';
+import {
+  Assets,
+  Container,
+  Graphics,
+  Sprite as PixiSprite,
+  Text,
+  type FederatedPointerEvent,
+  type Texture,
+} from 'pixi.js';
 import { BarTween } from '../bar-tween.ts';
+import { clickSelect, modsOf } from '../editor/selection.ts';
 import { cutoutOf, portraitOf } from '../icon-art.ts';
 import type { Session } from '../session.ts';
 import type { Viewer } from './Vision.ts';
@@ -196,7 +205,8 @@ export class TokenLayer {
     const { token } = view;
     const combat = this.session.combat;
     if (combat && currentTurn(combat) === token.id) return { color: TURN_COLOR, strong: true };
-    if (this.session.selected === token.id) return { color: this.session.you?.color ?? TURN_COLOR, strong: true };
+    if (this.session.selected === token.id || this.session.isSelected(token.id))
+      return { color: this.session.you?.color ?? TURN_COLOR, strong: true };
     return view.hover ? { color: this.ringColor(token), strong: false } : undefined;
   }
 
@@ -241,15 +251,31 @@ export class TokenLayer {
       if (this.session.aiming?.mode === 'creatures') return this.session.pickTarget(t.id);
       if (this.isTarget(t)) return this.session.attack(t.id);
       if (!this.session.canControl(t)) return;
-      this.session.select(t.id);
-      if (this.isDoubleClick(t.id)) this.session.openSheet({ kind: 'token', id: t.id });
-      else this.onGrab?.(t.id, [e.global.x, e.global.y]);
+      this.press(t.id, e);
     });
     this.container.addChild(root);
     const view: Sprite = { root, ground, disc, face, faceMask, status, label, route: [], token, r: 0, hover: false };
     this.watchHover(view);
     this.views.set(token.id, view);
     return view;
+  }
+
+  /**
+   * A press on a token you control: shift adds or takes it from the
+   * selection, ctrl takes it away; otherwise it is the one you act with and
+   * can be dragged (with the rest of the selection). Double click: its sheet.
+   */
+  private press(id: string, e: FederatedPointerEvent): void {
+    const s = this.session;
+    s.closeMenu();
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      s.setSelection(clickSelect(s.selection, s.tokenKey(id), modsOf(e)));
+      return;
+    }
+    if (s.isSelected(id)) s.setPrimary(id);
+    else s.select(id);
+    if (this.isDoubleClick(id)) s.openSheet({ kind: 'token', id });
+    else this.onGrab?.(id, [e.global.x, e.global.y]);
   }
 
   private watchHover(view: Sprite): void {

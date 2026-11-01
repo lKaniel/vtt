@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { MapView } from '../canvas/MapView.ts';
-import { editKey } from '../edit-keys.ts';
+import { editKey, editorKey } from '../edit-keys.ts';
 import { hotbarTiles } from '../hotbar.ts';
 import { Session } from '../session.ts';
 import { stepTarget } from '../stepping.ts';
 import { activateTile, ActionBar, canActivate } from './ActionBar.tsx';
 import { CharacterSheet } from './CharacterSheet.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
+import { ContextMenu } from './ContextMenu.tsx';
+import { Inspector } from './Inspector.tsx';
 import { MapTools } from './MapTools.tsx';
 import { PartyBar } from './PartyBar.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
@@ -34,8 +36,9 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId?: string; 
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target)) return;
       if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
-      if (e.key === 'Escape' && session.mapTool) session.setMapTool(undefined);
-      else if (e.key === 'c') toggleSheet(session);
+      if (e.key === 'Escape' && backOutOfEditor(session)) return;
+      if (session.isGm() && runEditorKey(session, e)) return;
+      if (e.key === 'c') toggleSheet(session);
       else if (e.key === 'e') toggleEditor(session);
       else handleGameKey(session, e);
     };
@@ -65,11 +68,13 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId?: string; 
       <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />
       <PartyBar session={session} />
       <MapTools session={session} />
+      <Inspector session={session} />
       <ReactionPrompt session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <CharacterSheet session={session} />
       <ChatPanel session={session} />
       <Toast session={session} />
+      <ContextMenu session={session} />
     </div>
   );
 }
@@ -91,7 +96,8 @@ function runEditKey(session: Session, e: KeyboardEvent): boolean {
   // Copy, cut and paste arrive as clipboard events, which can reach the system clipboard.
   if (command === 'clipboard') return true;
   e.preventDefault();
-  if (command === 'undo') session.undo();
+  if (command === 'selectAll') session.selectAll();
+  else if (command === 'undo') session.undo();
   else if (command === 'redo') session.redo();
   else if (command === 'duplicate') session.duplicate();
   else session.deleteSelected();
@@ -152,6 +158,30 @@ function UndoButtons({ session }: Readonly<{ session: Session }>) {
       </button>
     </span>
   );
+}
+
+/**
+ * Esc in the editor: closes the menu, then goes back to the select tool,
+ * then lets go of the selection, then back to the tokens mode. False when
+ * there was nothing of the editor's to back out of.
+ */
+function backOutOfEditor(session: Session): boolean {
+  if (session.menu) session.closeMenu();
+  else if (session.mode === 'tokens') return false;
+  else if (session.tool !== 'select') session.setTool('select');
+  else if (session.selection.length) session.setSelection([]);
+  else session.setMode('tokens');
+  return true;
+}
+
+/** T, Shift+T, W and L switch modes; the arrows nudge outside the tokens mode. */
+function runEditorKey(session: Session, e: KeyboardEvent): boolean {
+  const key = editorKey(e, session.mode !== 'tokens');
+  if (!key) return false;
+  e.preventDefault();
+  if ('mode' in key) session.setMode(key.mode);
+  else session.nudge(key.nudge, key.big);
+  return true;
 }
 
 /** C opens the selected creature's sheet, or closes the open one. */
