@@ -9,7 +9,7 @@ every mode; players stay on Tokens.
 | Mode   | Key     | Tools                      | Handles                        |
 | ------ | ------- | -------------------------- | ------------------------------ |
 | Tokens | T       | select                     | none (drag a token to walk it) |
-| Tiles  | Shift+T | select                     | 8 resize handles               |
+| Tiles  | Shift+T | select, draw               | 8 resize handles               |
 | Walls  | W       | select, wall, door, window | both ends                      |
 | Lights | L       | select, place              | bright ring, dim ring          |
 
@@ -34,6 +34,34 @@ tokens and door handles don't take clicks.
 - Tokens: click selects the token you act with; drag walks it (and the rest
   of the selection, by the same offset) by the rules. Clicking empty ground
   deselects, so walking is by dragging, or "Move … here" in the ground menu.
+
+## Tiles: layers and groups
+
+Tiles work like Figma's layers (rules in `shared/tiles.ts`, format in
+`game-format.md`):
+
+- A click on a tile in a group selects the group; a double click selects the
+  tile (or inner group) under the pointer, and clicks then pick among its
+  siblings until you click something outside.
+- Moving a group or a container tile moves what is in it. A tile dropped onto
+  another (its middle over it) goes inside it, on top; dragged off its
+  container it leaves it. Tiles in a group stay in the group.
+- Resizing a group scales what is in it; resizing a container doesn't.
+- Ground (`background`) never takes tiles in, and a drag that starts on ground
+  that isn't selected draws a marquee; a marquee takes ground only when it
+  holds it whole (Alt).
+- Locked tiles (and what is in them) let clicks and marquees through.
+- The Draw tool drags out a rect tile of the preset picked under it: ground
+  presets go under everything, the rest into the container under them.
+- The layers panel (under the tools) lists the topmost first. Click selects
+  (Shift adds, Ctrl removes), a double click renames, the lock button locks.
+  Drag a row onto the top or bottom edge of another to put it above or below,
+  or onto its middle to put it inside.
+- Group Ctrl+G, ungroup Ctrl+Shift+G, bring forward Ctrl+], send backward
+  Ctrl+[, to the front or back with Shift, lock Ctrl+Shift+L. The tile menu
+  has these too, and "Make it ground".
+- Every drawn tile reaches players with `z`, its place in the scene's draw
+  order, so tiles in different chunks stack right.
 
 ## Keys
 

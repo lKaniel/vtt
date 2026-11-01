@@ -19,7 +19,7 @@ import { EditSession } from './session-edits.ts';
 // EditSession, so undo, redo and the server's checks apply as for any edit.
 
 /** What a press does in the current mode: select (and move, reshape), or draw. */
-export type EditorTool = 'select' | 'wall' | 'door' | 'window' | 'place';
+export type EditorTool = 'select' | 'tile' | 'wall' | 'door' | 'window' | 'place';
 
 /** A context menu on screen. */
 export interface OpenMenu {

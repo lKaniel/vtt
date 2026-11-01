@@ -34,7 +34,14 @@ function atXY(name: string, extra: Partial<Kind> = {}): Kind {
 export const EDIT_KINDS: Kinds = {
   token: atXY('tokens', { refs: { actor: 'actor', leader: 'token', 'summon.by': 'token' } }),
   light: atXY('lights'),
-  tile: atXY('tiles'),
+  // Tiles sit in groups and containers (see tiles.ts); a group has no place of its own.
+  tile: atXY('tiles', {
+    refs: { parent: 'tile' },
+    parent: 'parent',
+    dropsWhenEmpty: (d) => d.kind === 'group',
+    anchor: (d) => (d.kind === 'group' ? undefined : [num(d, 'x'), num(d, 'y')]),
+    shift: (d, dx, dy) => (d.kind === 'group' ? d : { ...d, x: num(d, 'x') + dx, y: num(d, 'y') + dy }),
+  }),
   wall: {
     coll: (scene) => `${scene}/walls`,
     anchor: (d) => {

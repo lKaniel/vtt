@@ -3753,3 +3753,84 @@ button.pip:hover {
   justify-self: start;
   accent-color: var(--gold);
 }
+
+/* Layers panel (tiles mode) ---------------------------------------------- */
+
+.layers {
+  display: flex;
+  flex-direction: column;
+  max-height: 38vh;
+  overflow-y: auto;
+  border-top: 1px solid rgba(232, 211, 166, 0.2);
+  padding-top: 4px;
+  font-size: 12px;
+}
+.layer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding-right: 4px;
+  border-radius: 3px;
+  color: var(--gold-dim);
+  cursor: default;
+  user-select: none;
+}
+.layer:hover {
+  background: rgba(232, 211, 166, 0.08);
+}
+.layer.selected {
+  color: #fff4d8;
+  background: rgba(232, 211, 166, 0.2);
+}
+.layer.locked .layer-name {
+  opacity: 0.6;
+}
+.layer.drop-above {
+  box-shadow: inset 0 2px 0 var(--gold-bright);
+}
+.layer.drop-below {
+  box-shadow: inset 0 -2px 0 var(--gold-bright);
+}
+.layer.drop-inside {
+  box-shadow: inset 0 0 0 1px var(--gold-bright);
+}
+.layer-fold {
+  width: 14px;
+  padding: 0;
+  color: inherit;
+}
+.layer-kind {
+  width: 14px;
+  text-align: center;
+  opacity: 0.8;
+}
+.layer-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.layer-lock {
+  padding: 0 2px;
+  visibility: hidden;
+}
+.layer-lock.on,
+.layer:hover .layer-lock {
+  visibility: visible;
+}
+.layer-rename {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--gold-bright);
+  background: #1c150f;
+  border: 1px solid var(--gold-dim);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+.layers-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--gold-dim);
+}

@@ -8,7 +8,8 @@ const kinds: Kinds = {
   note: { coll: () => 'notes' },
   group: {
     coll: (scene) => `${scene}/pins`,
-    anchor: (d) => [d.x as number, d.y as number],
+    dropsWhenEmpty: () => true,
+    anchor: (d) => (d.x === undefined ? undefined : [d.x as number, d.y as number]),
     shift: (d, dx, dy) => ({ ...d, x: (d.x as number) + dx, y: (d.y as number) + dy }),
   },
   pin: {
@@ -95,6 +96,13 @@ describe('pasteOps', () => {
     expect(pasteOps(store, kinds, twice, { scene: 'a', offset: [0, 0] }).ids).toEqual(['rock-2', 'rock-3']);
   });
 
+  it('drops a link to a parent the scene it lands on does not have', () => {
+    const store = board();
+    const clip = copyDocs(store, kinds, [{ coll: 'a/pins', id: 'door' }]);
+    const { ops } = pasteOps(store, kinds, clip, { scene: 'b', offset: [0, 0] });
+    expect(ops).toEqual([{ op: 'create', coll: 'b/pins', doc: doc('door', 'pin', { x: 100, y: 150, note: 'clue' }) }]);
+  });
+
   it('skips documents of a type it does not know', () => {
     const store = board();
     expect(pasteOps(store, kinds, { docs: [doc('x', 'mystery')] }, { scene: 'a', offset: [0, 0] }).ops).toEqual([]);
@@ -106,6 +114,11 @@ describe('pasteOffset', () => {
     const clip = copyDocs(board(), kinds, [{ coll: 'a/pins', id: 'house' }]);
     // Middle of (100..150, 100..150) is (125, 125); the pointer at (430, 290) is 305, 165 away.
     expect(pasteOffset(kinds, clip, [430, 290], 100)).toEqual([300, 200]);
+  });
+
+  it('leaves out documents with no place of their own', () => {
+    const clip = { docs: [doc('g', 'group'), doc('p', 'pin', { x: 100, y: 100 })] };
+    expect(pasteOffset(kinds, clip, [300, 300], 100)).toEqual([200, 200]);
   });
 
   it('is nothing for a copy that does not sit anywhere', () => {
@@ -123,6 +136,24 @@ describe('deleteOps', () => {
       'house',
       'lamp',
     ]);
+  });
+});
+
+describe('deleteOps and empty parents', () => {
+  const deleted = (ops: ReturnType<typeof deleteOps>) =>
+    ops.map((o) => (o.op === 'delete' ? o.id : '')).sort((a, b) => a.localeCompare(b));
+
+  it('deletes a group once nothing is left in it', () => {
+    const store = board();
+    const ops = deleteOps(store, kinds, [
+      { coll: 'a/pins', id: 'door' },
+      { coll: 'a/pins', id: 'lamp' },
+    ]);
+    expect(deleted(ops)).toEqual(['door', 'house', 'lamp']);
+  });
+
+  it('keeps a group that still holds something', () => {
+    expect(deleted(deleteOps(board(), kinds, [{ coll: 'a/pins', id: 'door' }]))).toEqual(['door']);
   });
 });
 

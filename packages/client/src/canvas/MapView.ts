@@ -153,7 +153,9 @@ export class MapView {
     stage.on('pointerup', (e) => {
       this.onPointerUp(e);
     });
-    stage.on('pointerupoutside', () => {
+    stage.on('pointerupoutside', (e) => {
+      // Let go over a panel or off the window: a drag in the editor still lands where the pointer is.
+      this.editor.pointerUp({ at: this.screenToWorld(e.global.x, e.global.y), button: e.button, mods: modsOf(e) });
       this.drag = undefined;
     });
     this.app.canvas.addEventListener('wheel', this.onWheel, { passive: false });

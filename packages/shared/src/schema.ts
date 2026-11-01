@@ -53,26 +53,52 @@ export const WorldSchema = SceneSettingsSchema.extend({
 });
 export type World = z.infer<typeof WorldSchema>;
 
-const tileBase = { id, x: z.number(), y: z.number(), w: z.number().positive(), h: z.number().positive() };
+/** Where a tile sits in the tile tree (see tiles.ts). */
+const tileTree = {
+  id,
+  name: z.string().optional(),
+  /** The group or container tile it sits in; missing = the top level. */
+  parent: id.optional(),
+  /** Fractional key among its siblings: later draws on top (see sort-key.ts). */
+  sort: z.string().optional(),
+  /** Clicks and marquees pass through it; select it in the layers panel. */
+  locked: z.boolean().optional(),
+};
+
+const tileBase = {
+  ...tileTree,
+  x: z.number(),
+  y: z.number(),
+  w: z.number().positive(),
+  h: z.number().positive(),
+  /** Ground: tiles dropped on it don't go inside it, and a drag starting on it draws a marquee. */
+  background: z.boolean().optional(),
+};
 
 /** Painted ground for rect tiles, tinted by the tile's colour. */
 export const TileTextureSchema = z.enum(['grass', 'dirt', 'sand', 'stone', 'cobble', 'wood', 'water', 'rock']);
 export type TileTexture = z.infer<typeof TileTextureSchema>;
 
-export const TileSchema = z.discriminatedUnion('kind', [
-  z.object({
-    kind: z.literal('rect'),
-    ...tileBase,
-    color: z.string(),
-    texture: TileTextureSchema.optional(),
-    /** Squares one repeat of the texture covers; default 2. */
-    textureScale: z.number().positive().optional(),
-    /** "rough" wobbles the edges (the default for grass, dirt, sand, water and rock); "straight" keeps them crisp. */
-    edge: z.enum(['rough', 'straight']).optional(),
-  }),
-  z.object({ kind: z.literal('image'), ...tileBase, src: z.string().min(1) }),
-]);
+const RectTileSchema = z.object({
+  kind: z.literal('rect'),
+  ...tileBase,
+  color: z.string(),
+  texture: TileTextureSchema.optional(),
+  /** Squares one repeat of the texture covers; default 2. */
+  textureScale: z.number().positive().optional(),
+  /** "rough" wobbles the edges (the default for grass, dirt, sand, water and rock); "straight" keeps them crisp. */
+  edge: z.enum(['rough', 'straight']).optional(),
+});
+const ImageTileSchema = z.object({ kind: z.literal('image'), ...tileBase, src: z.string().min(1) });
+/** A group of tiles: no picture or rect of its own, it spans what is in it. */
+const GroupTileSchema = z.object({ kind: z.literal('group'), ...tileTree });
+
+export const TileSchema = z.discriminatedUnion('kind', [RectTileSchema, ImageTileSchema, GroupTileSchema]);
 export type Tile = z.infer<typeof TileSchema>;
+
+/** A tile with a picture: what the map draws. */
+export const DrawnTileSchema = z.discriminatedUnion('kind', [RectTileSchema, ImageTileSchema]);
+export type DrawnTile = z.infer<typeof DrawnTileSchema>;
 
 export const DoorStateSchema = z.enum(['closed', 'open', 'locked']);
 export type DoorState = z.infer<typeof DoorStateSchema>;
@@ -105,7 +131,8 @@ export const PlacedLightSchema = LightSchema.extend({ id, x: z.number(), y: z.nu
 export type PlacedLight = z.infer<typeof PlacedLightSchema>;
 
 export const ChunkSchema = z.object({
-  tiles: z.array(TileSchema).default([]),
+  /** `z`: where the tile draws among all the scene's tiles, set by the server. */
+  tiles: z.array(DrawnTileSchema.and(z.object({ z: z.number().optional() }))).default([]),
   walls: z.array(WallSchema).default([]),
   lights: z.array(PlacedLightSchema).default([]),
 });

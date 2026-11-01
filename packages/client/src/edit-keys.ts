@@ -1,7 +1,10 @@
 import type { EditorMode, Point } from '@vtt/shared';
 
 /** An edit command a key press asks for; "clipboard" is copy, cut or paste, handled by the clipboard events. */
-export type EditKey = 'undo' | 'redo' | 'duplicate' | 'delete' | 'clipboard' | 'selectAll';
+export type EditKey = 'undo' | 'redo' | 'duplicate' | 'delete' | 'clipboard' | 'selectAll' | LayerKey;
+
+/** Figma's layer keys: group, ungroup, z-order and lock (tiles). */
+export type LayerKey = 'group' | 'ungroup' | 'forward' | 'backward' | 'front' | 'back' | 'lock';
 
 interface KeyPress {
   key: string;
@@ -19,12 +22,29 @@ const WITH_CTRL: Record<string, EditKey> = {
   v: 'clipboard',
 };
 
-/** Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y, Ctrl+D, Delete or Backspace (Cmd for Ctrl on a Mac). */
+/** With Ctrl (and Shift): Ctrl+G, Ctrl+Shift+G, Ctrl+] and [, with Shift to the front or back, Ctrl+Shift+L. */
+const LAYER_KEYS: Record<string, [LayerKey, LayerKey]> = {
+  g: ['group', 'ungroup'],
+  ']': ['forward', 'front'],
+  '[': ['backward', 'back'],
+  '}': ['front', 'front'],
+  '{': ['back', 'back'],
+  l: ['lock', 'lock'],
+};
+
+/** Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y, Ctrl+D, Delete or Backspace, and the layer keys (Cmd for Ctrl on a Mac). */
 export function editKey(e: KeyPress): EditKey | undefined {
   if (!e.ctrlKey && !e.metaKey) return e.key === 'Delete' || e.key === 'Backspace' ? 'delete' : undefined;
   const key = e.key.toLowerCase();
   if (key === 'z') return e.shiftKey ? 'redo' : 'undo';
-  return WITH_CTRL[key];
+  return layerKey(key, e.shiftKey) ?? WITH_CTRL[key];
+}
+
+/** Ctrl+L alone is the browser's address bar: lock is Ctrl+Shift+L. */
+function layerKey(key: string, shift: boolean): LayerKey | undefined {
+  const layer = LAYER_KEYS[key];
+  if (!layer || (key === 'l' && !shift)) return undefined;
+  return shift ? layer[1] : layer[0];
 }
 
 /** A GM's editor key: switch mode, or nudge the selection. */

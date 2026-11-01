@@ -17,8 +17,10 @@ export interface Kind {
   refs?: Readonly<Record<string, string>>;
   /** The field naming the document this one sits in: copying or deleting the parent takes it along. */
   parent?: string;
-  /** Where a placeable sits on its scene. */
-  anchor?: (doc: Doc) => Point;
+  /** True for a parent that is deleted along with the last thing in it (a group). */
+  dropsWhenEmpty?: (doc: Doc) => boolean;
+  /** Where a placeable sits on its scene; undefined for one with no place of its own (a group). */
+  anchor?: (doc: Doc) => Point | undefined;
   /** The document moved by dx, dy. */
   shift?: (doc: Doc, dx: number, dy: number) => Doc;
 }
@@ -58,6 +60,14 @@ function write(doc: Doc, path: string, value: unknown): Doc {
   return { ...doc, [key]: write(doc[key] as Doc, rest.join('.'), value) };
 }
 
+/** The document without the field at `path`. */
+function unset(doc: Doc, path: string): Doc {
+  const [key, ...rest] = path.split('.') as [string, ...string[]];
+  if (rest.length) return { ...doc, [key]: unset(doc[key] as Doc, rest.join('.')) };
+  const { [key]: _gone, ...kept } = doc;
+  return kept as Doc;
+}
+
 /** The documents `refs` name plus, for each, everything sitting in it. */
 function withChildren(src: Source, kinds: Kinds, refs: readonly DocRef[]): { coll: string; doc: Doc }[] {
   const found = new Map<string, { coll: string; doc: Doc }>();
@@ -82,9 +92,34 @@ export function copyDocs(src: Source, kinds: Kinds, refs: readonly DocRef[]): Cl
   return { docs: withChildren(src, kinds, refs).map(({ doc }) => ({ ...doc, rev: 0 })) };
 }
 
-/** Deletes documents and their children, as one transaction. */
+const parentId = (kinds: Kinds, doc: Doc): string | undefined => {
+  const path = kinds[doc.type]?.parent;
+  const value = path ? read(doc, path) : undefined;
+  return typeof value === 'string' ? value : undefined;
+};
+
+/** A parent that drops when empty and has nothing left in it once `gone` is deleted. */
+function emptied(src: Source, kinds: Kinds, at: DocRef, gone: ReadonlySet<string>): Doc | undefined {
+  const parent = src.get(at.coll, at.id);
+  if (!parent || !kinds[parent.type]?.dropsWhenEmpty?.(parent) || gone.has(`${at.coll}\u0000${at.id}`))
+    return undefined;
+  const left = src.all(at.coll).some((d) => parentId(kinds, d) === at.id && !gone.has(`${at.coll}\u0000${d.id}`));
+  return left ? undefined : parent;
+}
+
+/** Deletes documents and their children, and groups they leave empty, as one transaction. */
 export function deleteOps(src: Source, kinds: Kinds, refs: readonly DocRef[]): Op[] {
-  return withChildren(src, kinds, refs).map(({ coll, doc }): Op => ({ op: 'delete', coll, id: doc.id }));
+  const found = withChildren(src, kinds, refs);
+  const gone = new Set(found.map(({ coll, doc }) => `${coll}\u0000${doc.id}`));
+  // Grows as emptied parents join, so their own parents are looked at too.
+  for (const { coll, doc } of found) {
+    const up = parentId(kinds, doc);
+    const parent = up === undefined ? undefined : emptied(src, kinds, { coll, id: up }, gone);
+    if (!parent) continue;
+    gone.add(`${coll}\u0000${parent.id}`);
+    found.push({ coll, doc: parent });
+  }
+  return found.map(({ coll, doc }): Op => ({ op: 'delete', coll, id: doc.id }));
 }
 
 /** The id a pasted copy gets: its own when free there, else the next free number. */
@@ -127,7 +162,10 @@ export function pasteOps(
   const ops = placed.map(({ coll, doc }): Op => {
     const kind = kinds[doc.type]!;
     const moved = kind.shift ? kind.shift(doc, offset[0], offset[1]) : doc;
-    return { op: 'create', coll, doc: relink(moved, kind, renamed) };
+    const linked = relink(moved, kind, renamed);
+    const parent = parentId(kinds, linked);
+    const lost = parent !== undefined && !used.has(`${coll}\u0000${parent}`) && !src.get(coll, parent);
+    return { op: 'create', coll, doc: lost ? unset(linked, kind.parent!) : linked };
   });
   return { ops, ids: placed.map((p) => p.doc.id) };
 }
@@ -135,8 +173,8 @@ export function pasteOps(
 /** How far to move a copy so its middle lands on `at`, in whole grid squares to keep it on the grid. */
 export function pasteOffset(kinds: Kinds, clip: Clip, at: Point, grid: number): Point {
   const points = clip.docs.flatMap((d) => {
-    const anchor = kinds[d.type]?.anchor;
-    return anchor ? [anchor(d)] : [];
+    const at = kinds[d.type]?.anchor?.(d);
+    return at ? [at] : [];
   });
   if (!points.length) return [0, 0];
   const mid = (axis: 0 | 1): number => {

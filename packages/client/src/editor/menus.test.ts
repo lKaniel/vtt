@@ -18,6 +18,10 @@ function api(gm = true) {
     openSheet: vi.fn(),
     move: vi.fn(),
     editMap: vi.fn(),
+    group: vi.fn(),
+    ungroup: vi.fn(),
+    reorder: vi.fn(),
+    toggleLock: vi.fn(),
     lightPreset: 'torch' as const,
   } satisfies MenuApi;
 }
@@ -109,5 +113,43 @@ describe('context menus', () => {
     expect(labels(on(wall()), api(false))).toEqual(['Make it a door', 'Make it a window', 'Measure']);
     off();
     expect(labels(on(wall()), api(false))).not.toContain('Measure');
+  });
+
+  describe('tiles', () => {
+    const tile = (id: string, extra: Record<string, unknown> = {}): Doc => ({
+      id,
+      type: 'tile',
+      rev: 1,
+      kind: 'rect',
+      ...extra,
+    });
+    const onTiles = (...docs: Doc[]): MenuTarget => ({
+      mode: 'tiles',
+      at: [0, 0],
+      docs: docs.map((doc) => ({ ref: { coll: 's/tiles', id: doc.id }, doc })),
+    });
+
+    it('a tile groups, orders, locks and turns into ground', () => {
+      expect(labels(onTiles(tile('a')), api()).slice(0, 7)).toEqual([
+        'Group',
+        'Bring to front',
+        'Bring forward',
+        'Send backward',
+        'Send to back',
+        'Lock',
+        'Make it ground',
+      ]);
+    });
+
+    it('a group ungroups; locked ground unlocks and becomes an object', () => {
+      const a = api();
+      expect(labels(onTiles({ id: 'g', type: 'tile', rev: 1, kind: 'group' }), a)).toContain('Ungroup');
+      pick(onTiles(tile('a', { locked: true, background: true })), a, 'Unlock').run();
+      expect(a.toggleLock).toHaveBeenCalled();
+      pick(onTiles(tile('a', { background: true })), a, 'Make it an object').run();
+      expect(a.editSelection).toHaveBeenCalledWith({ background: null });
+      pick(onTiles(tile('a')), a, 'Bring forward').run();
+      expect(a.reorder).toHaveBeenCalledWith('forward');
+    });
   });
 });

@@ -1,6 +1,6 @@
 import { DocStore, type Doc } from '@vtt/core';
 import { describe, expect, it } from 'vitest';
-import { copyRefs, EDIT_KINDS, pasteAt } from './edit-kinds.ts';
+import { copyRefs, deleteRefs, EDIT_KINDS, pasteAt } from './edit-kinds.ts';
 
 const doc = (id: string, type: string, extra: Record<string, unknown> = {}): Doc => ({ id, type, rev: 0, ...extra });
 
@@ -70,5 +70,37 @@ describe('the edit kinds', () => {
       ['actors', 'goblin-1', undefined],
       ['main/tokens', 'boss-1', 'goblin-1'],
     ]);
+  });
+
+  it('copy a tile group with what is in it, and paste it as a new group', () => {
+    const store = scene();
+    store.apply([
+      { op: 'create', coll: 'main/tiles', doc: doc('camp', 'tile', { kind: 'group' }) },
+      {
+        op: 'create',
+        coll: 'main/tiles',
+        doc: doc('tent', 'tile', { x: 300, y: 300, w: 100, h: 100, parent: 'camp' }),
+      },
+    ]);
+    const { ops } = pasteAt(store, copyRefs(store, [{ coll: 'main/tiles', id: 'camp' }]), {
+      scene: 'main',
+      offset: [100, 0],
+    });
+    expect(ops.map((o) => o.op === 'create' && o.doc)).toEqual([
+      doc('camp-1', 'tile', { kind: 'group' }),
+      doc('tent-1', 'tile', { x: 400, y: 300, w: 100, h: 100, parent: 'camp-1' }),
+    ]);
+  });
+
+  it('delete a tile group with the last tile in it, but never a container', () => {
+    const store = scene();
+    store.apply([
+      { op: 'create', coll: 'main/tiles', doc: doc('camp', 'tile', { kind: 'group' }) },
+      { op: 'create', coll: 'main/tiles', doc: doc('tent', 'tile', { x: 0, y: 0, w: 1, h: 1, parent: 'camp' }) },
+      { op: 'create', coll: 'main/tiles', doc: doc('cot', 'tile', { x: 0, y: 0, w: 1, h: 1, parent: 'rug' }) },
+    ]);
+    const gone = (id: string) => deleteRefs(store, [{ coll: 'main/tiles', id }]).map((o) => o.op === 'delete' && o.id);
+    expect(gone('tent')).toEqual(['tent', 'camp']);
+    expect(gone('cot')).toEqual(['cot']);
   });
 });

@@ -1,4 +1,4 @@
-import type { Chunk, PlacedLight, Tile, Wall } from './schema.ts';
+import type { Chunk, DrawnTile, PlacedLight, Wall } from './schema.ts';
 
 export interface Rect {
   x: number;
@@ -49,7 +49,7 @@ export function anchorChunk<C extends MapCollection>(coll: C, item: MapItem<C>, 
     const { a, b } = item as Wall;
     return chunkOf((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, chunkSize);
   }
-  const { x, y } = item as Tile | PlacedLight;
+  const { x, y } = item as DrawnTile | PlacedLight;
   return chunkOf(x, y, chunkSize);
 }
 

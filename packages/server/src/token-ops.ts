@@ -97,7 +97,10 @@ export function chunkOps(
   return MAP.flatMap((coll) => {
     const name = `${scene}/${coll}`;
     const items = (chunk: Chunk | undefined): { id: string }[] => chunk?.[coll] ?? [];
-    const wanted = changes.flatMap((c) => items(c.chunk)).map((item) => toDoc(TYPE[coll], item));
+    // `z` is where a tile draws, worked out when the scene is streamed: not saved.
+    const wanted = changes
+      .flatMap((c) => items(c.chunk))
+      .map(({ z: _z, ...item }: { id: string; z?: number }) => toDoc(TYPE[coll], item));
     const ids = new Set(wanted.map((d) => d.id));
     const current = changes.flatMap((c) => items(chunks.get(c.key))).map((item) => item.id);
     const gone = current.filter((id) => !ids.has(id) && docs.get(name, id));

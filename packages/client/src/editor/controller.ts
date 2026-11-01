@@ -18,7 +18,16 @@ export interface EditorHost {
   slop(): number;
   commitMove(keys: readonly string[], delta: Point, free: boolean): void;
   commitHandle(key: string, handle: string, to: Point, free: boolean): void;
+  /** False for something a drag doesn't move unless it is selected (ground): the drag draws a marquee. */
+  draggable?(key: string): boolean;
+  /** A double click on `key` (a group): what inside it, under `at`, to select instead. */
+  enter?(key: string, at: Point): string | undefined;
+  /** Milliseconds, for telling double clicks. */
+  now?(): number;
 }
+
+/** Two clicks this close in time (ms) on the same thing are a double click. */
+const DOUBLE_MS = 400;
 
 /** What a gesture in progress looks like, for drawing it. */
 export type Preview =
@@ -36,6 +45,7 @@ const far = (a: Point, b: Point, slop: number): boolean => Math.hypot(a[0] - b[0
 
 export class EditorController {
   private gesture?: Gesture;
+  private lastClick?: { key: string; at: number };
 
   constructor(private host: EditorHost) {}
 
@@ -68,7 +78,7 @@ export class EditorController {
     if (!g) return;
     switch (g.kind) {
       case 'press':
-        if (!g.grip) this.host.setSelection(clickSelect(this.host.selection(), g.key, g.mods));
+        if (!g.grip) this.click(g.key, at, g.mods);
         return;
       case 'marquee':
         return this.finishMarquee(g, mods);
@@ -91,10 +101,25 @@ export class EditorController {
     return g;
   }
 
+  private click(key: string | undefined, at: Point, mods: Mods): void {
+    const time = this.host.now?.() ?? Date.now();
+    const last = this.lastClick;
+    const double = !!key && last?.key === key && time - last.at <= DOUBLE_MS;
+    this.lastClick = key && !double ? { key, at: time } : undefined;
+    const inside = double && this.host.selection().includes(key) ? this.host.enter?.(key, at) : undefined;
+    this.host.setSelection(inside ? [inside] : clickSelect(this.host.selection(), key, mods));
+  }
+
+  /** Whether a drag from `key` moves the selection (else it draws a marquee). */
+  private grabs(key: string | undefined): key is string {
+    if (!key) return false;
+    return this.host.selection().includes(key) || this.host.draggable?.(key) !== false;
+  }
+
   private startDrag(press: Extract<Gesture, { kind: 'press' }>, at: Point, mods: Mods): Gesture {
     const free = mods.shift;
     if (press.grip) return { kind: 'handle', ...press.grip, to: at, free };
-    if (!press.key) return { kind: 'marquee', start: press.start, now: at, alt: press.mods.alt };
+    if (!this.grabs(press.key)) return { kind: 'marquee', start: press.start, now: at, alt: press.mods.alt };
     // Figma's rule: dragging something not selected selects it (alone) and drags it.
     let keys: readonly string[] = this.host.selection();
     if (!keys.includes(press.key)) {

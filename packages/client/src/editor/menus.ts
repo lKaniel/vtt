@@ -1,5 +1,5 @@
 import type { Doc, DocRef, Patch } from '@vtt/core';
-import type { EditorMode, MapEdit, Point, TokenView } from '@vtt/shared';
+import type { EditorMode, MapEdit, Point, TokenView, ZOrder } from '@vtt/shared';
 import { LIGHT_PRESETS, type LightPreset } from '../map-tools.ts';
 
 // Right-click menus. Each kind of thing registers the entries it adds, so a
@@ -29,6 +29,10 @@ export interface MenuApi {
   openSheet(target: { kind: 'token'; id: string }, edit?: boolean): void;
   move(token: string, to: Point): void;
   editMap(edit: MapEdit): void;
+  group(): void;
+  ungroup(): void;
+  reorder(how: ZOrder): void;
+  toggleLock(): void;
   readonly lightPreset: LightPreset;
 }
 
@@ -135,6 +139,30 @@ registerMenu('light', (t, api) => {
     {
       label: dark ? 'Make it light' : 'Make it magical darkness',
       run: () => api.editSelection({ darkness: dark ? null : true }),
+    },
+  ];
+});
+
+const Z_ORDER: { label: string; how: ZOrder }[] = [
+  { label: 'Bring to front', how: 'front' },
+  { label: 'Bring forward', how: 'forward' },
+  { label: 'Send backward', how: 'backward' },
+  { label: 'Send to back', how: 'back' },
+];
+
+registerMenu('tile', (t, api) => {
+  const groups = t.docs.some((d) => d.doc.kind === 'group');
+  const locked = allDocs(t, (d) => d.locked === true);
+  const pictures = allDocs(t, (d) => d.kind !== 'group');
+  const ground = allDocs(t, (d) => d.background === true);
+  return [
+    { label: 'Group', run: () => api.group() },
+    groups && { label: 'Ungroup', run: () => api.ungroup() },
+    ...Z_ORDER.map(({ label, how }) => ({ label, run: () => api.reorder(how) })),
+    { label: locked ? 'Unlock' : 'Lock', run: () => api.toggleLock() },
+    pictures && {
+      label: ground ? 'Make it an object' : 'Make it ground',
+      run: () => api.editSelection({ background: ground ? null : true }),
     },
   ];
 });

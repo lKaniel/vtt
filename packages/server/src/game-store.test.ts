@@ -175,6 +175,60 @@ describe('GameStore map', () => {
   });
 });
 
+describe('GameStore tiles', () => {
+  const tile = (id: string, extra: Record<string, unknown> = {}) => ({
+    id,
+    type: 'tile',
+    rev: 0,
+    kind: 'rect',
+    color: '#888888',
+    x: 100,
+    y: 100,
+    w: 100,
+    h: 100,
+    ...extra,
+  });
+
+  it('sends tiles in draw order with their place in it, and groups not at all', async () => {
+    const { store } = await loaded();
+    store.applyOps([
+      { op: 'create', coll: 'main/tiles', doc: tile('top', { sort: 'Z' }) },
+      { op: 'create', coll: 'main/tiles', doc: { id: 'camp', type: 'tile', rev: 0, kind: 'group', sort: 'B' } },
+      { op: 'create', coll: 'main/tiles', doc: tile('tent', { parent: 'camp', x: 2100 }) },
+      { op: 'create', coll: 'main/tiles', doc: tile('ground', { sort: 'A' }) },
+    ]);
+    const tiles = [...store.chunks.values()].flatMap((c) => c.tiles);
+    expect(tiles.map((t) => [t.id, t.z]).sort((a, b) => (a[1] as number) - (b[1] as number))).toEqual([
+      ['ground', 0],
+      ['tent', 1],
+      ['top', 2],
+    ]);
+  });
+
+  it('resends every chunk with tiles when the draw order changes', async () => {
+    const { store } = await loaded();
+    store.applyOps([
+      { op: 'create', coll: 'main/tiles', doc: tile('a', { sort: 'A' }) },
+      { op: 'create', coll: 'main/tiles', doc: tile('b', { sort: 'B', x: 2100 }) },
+    ]);
+    const sent: string[] = [];
+    store.on('chunk', (key) => sent.push(key));
+    store.applyOps([{ op: 'update', coll: 'main/tiles', id: 'a', patch: { sort: 'C' } }]);
+    expect(sent.toSorted((a, b) => a.localeCompare(b))).toEqual(['0_0', '1_0']);
+    expect(store.chunks.get('1_0')!.tiles[0]!.z).toBe(0);
+  });
+
+  it('keeps the draw order out of the tiles a map edit saves', async () => {
+    const { dir, store } = await loaded();
+    store.applyOps([{ op: 'create', coll: 'main/tiles', doc: tile('a') }]);
+    store.setChunk('0_0', store.chunks.get('0_0')!);
+    await store.flush();
+    expect(await readJson(dir, 'scenes/main/tiles.json')).toEqual([
+      { id: 'a', kind: 'rect', color: '#888888', x: 100, y: 100, w: 100, h: 100 },
+    ]);
+  });
+});
+
 describe('GameStore actors and combat', () => {
   it('loads actors/ and writes and deletes actor files', async () => {
     const { dir, store } = await loaded();

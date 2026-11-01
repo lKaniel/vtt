@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { MapView } from '../canvas/MapView.ts';
-import { editKey, editorKey } from '../edit-keys.ts';
+import { editKey, editorKey, type EditKey, type LayerKey } from '../edit-keys.ts';
 import { hotbarTiles } from '../hotbar.ts';
 import { Session } from '../session.ts';
 import { stepTarget } from '../stepping.ts';
@@ -95,12 +95,27 @@ function runEditKey(session: Session, e: KeyboardEvent): boolean {
   if (!command) return false;
   // Copy, cut and paste arrive as clipboard events, which can reach the system clipboard.
   if (command === 'clipboard') return true;
+  if (isLayerKey(command)) return runLayerKey(session, command, e);
   e.preventDefault();
   if (command === 'selectAll') session.selectAll();
   else if (command === 'undo') session.undo();
   else if (command === 'redo') session.redo();
   else if (command === 'duplicate') session.duplicate();
   else session.deleteSelected();
+  return true;
+}
+
+const LAYER_KEYS = new Set<EditKey>(['group', 'ungroup', 'forward', 'backward', 'front', 'back', 'lock']);
+const isLayerKey = (k: EditKey): k is LayerKey => LAYER_KEYS.has(k);
+
+/** Group, ungroup, z-order and lock: tiles only. */
+function runLayerKey(session: Session, command: LayerKey, e: KeyboardEvent): boolean {
+  if (session.mode !== 'tiles' || !session.isGm()) return false;
+  e.preventDefault();
+  if (command === 'group') session.group();
+  else if (command === 'ungroup') session.ungroup();
+  else if (command === 'lock') session.toggleLock();
+  else session.reorder(command);
   return true;
 }
 
