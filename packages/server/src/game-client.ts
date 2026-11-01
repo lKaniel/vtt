@@ -20,8 +20,10 @@ export interface Client {
   visible: Set<string>;
   /** The documents this client has (see doc-feed.ts). */
   feed: DocFeed;
-  /** Its ruler is out, shown to the others on its scene (see rulers.ts). */
+  /** Its ruler is out, shown to the others on its scene (see presence.ts). */
   ruler?: boolean;
+  /** Its cursor is on the map, shown to the others on its scene. */
+  cursor?: boolean;
 }
 
 /** The chunks this client's camera can see now: those it didn't have yet are sent (empty ones too, so it knows the area is loaded). */

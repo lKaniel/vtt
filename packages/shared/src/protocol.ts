@@ -48,6 +48,10 @@ export type EngineClientMessage =
   | { t: 'move'; token: string; to: Point }
   /** Lay your ruler through these waypoints, shown live to everyone on your scene; none puts it away (see ruler.ts). */
   | { t: 'ruler'; points: Point[] }
+  /** Where your pointer is on the map, shown live to everyone on your scene; null: it left the map. */
+  | { t: 'cursor'; at: Point | null }
+  /** Point out a spot to everyone on your scene; the GM may `pull` everyone's view there. */
+  | { t: 'ping'; at: Point; pull?: boolean }
   | { t: 'door'; chunk: string; wall: string; state: DoorState }
   | { t: 'chat'; text: string }
   /** Change token fields; `null` removes one (e.g. `hp: null` heals fully). The GM may edit any token, a trusted player the ones they own. */
@@ -105,6 +109,10 @@ export type EngineServerMessage =
   | { t: 'moved'; id: string; path: Point[] }
   /** Someone else on your scene laid their ruler through these waypoints; none: they put it away. */
   | { t: 'ruler'; player: string; name: string; color: string; points: Point[] }
+  /** Someone else on your scene is pointing here; null: their pointer left the map. */
+  | { t: 'cursor'; player: string; name: string; color: string; at: Point | null }
+  /** Someone else on your scene pinged a spot; `pull`: the GM brings your view there. */
+  | { t: 'ping'; player: string; name: string; color: string; at: Point; pull?: boolean }
   /** The time of day changed. */
   | { t: 'lighting'; darkness: number }
   | { t: 'error'; message: string }

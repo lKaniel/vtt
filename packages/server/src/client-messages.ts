@@ -18,6 +18,8 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('view'), chunks: z.array(z.string()).max(400) }),
   z.object({ t: z.literal('move'), token: z.string(), to: PointSchema }),
   z.object({ t: z.literal('ruler'), points: z.array(PointSchema).max(MAX_RULER_POINTS) }),
+  z.object({ t: z.literal('cursor'), at: PointSchema.nullable() }),
+  z.object({ t: z.literal('ping'), at: PointSchema, pull: z.boolean().optional() }),
   z.object({ t: z.literal('door'), chunk: z.string(), wall: z.string(), state: DoorStateSchema }),
   z.object({ t: z.literal('chat'), text: z.string().min(1).max(2000) }),
   z.object({ t: z.literal('combatStart'), tokens: z.array(z.string()).min(1).max(100) }),

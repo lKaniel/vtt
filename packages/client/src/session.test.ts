@@ -71,6 +71,24 @@ describe('Session', () => {
     expect(session.rulers.active).toBe(false);
   });
 
+  it('shows the others’ cursors and pings, and a GM’s pull brings your view to the spot', () => {
+    ws.receive(welcome());
+    const shown = vi.fn();
+    const focus = vi.fn();
+    session.on('presence', shown);
+    session.on('focus', focus);
+    const bo = { player: 'bo', name: 'Bo', color: '#00f' };
+    ws.receive({ t: 'cursor', ...bo, at: [3, 4] });
+    expect(session.presence.cursors.get('bo')?.at).toEqual([3, 4]);
+    ws.receive({ t: 'ping', ...bo, at: [8, 8], pull: true });
+    expect(focus).toHaveBeenCalledWith([8, 8]);
+    expect(shown).toHaveBeenCalledTimes(2);
+    session.presence.ping([1, 2], false);
+    expect(ws.sent.at(-1)).toEqual({ t: 'ping', at: [1, 2] });
+    ws.receive(welcome());
+    expect(session.presence.cursors.size).toBe(0);
+  });
+
   it('keeps only chunks in view', () => {
     const chunk = { tiles: [], walls: [], lights: [] };
     const gone = vi.fn();
