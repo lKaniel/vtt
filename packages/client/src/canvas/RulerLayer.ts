@@ -1,7 +1,8 @@
 import { isGridless, measureRuler, type Point, type Region, regionCost } from '@vtt/shared';
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import { rulerLabels } from '../rulers.ts';
 import type { Session } from '../session.ts';
+import { LabelPool } from './label-pool.ts';
 
 const OUTLINE = 0x000000;
 const TEXT_COLOR = 0xffffff;
@@ -16,8 +17,12 @@ const OVER_COLOR = 0xff8060;
 export class RulerLayer {
   readonly container = new Container();
   private g = new Graphics();
-  private texts: Text[] = [];
-  private used = 0;
+  private labels = new LabelPool(this.container, {
+    fill: TEXT_COLOR,
+    fontSize: 16,
+    fontWeight: '600',
+    stroke: { color: OUTLINE, width: 4 },
+  });
   private zoom = 1;
 
   constructor(private session: Session) {
@@ -31,13 +36,13 @@ export class RulerLayer {
 
   redraw(): void {
     this.g.clear();
-    this.used = 0;
+    this.labels.begin(1 / this.zoom);
     const s = this.session;
     if (s.world) {
       for (const r of s.rulers.others.values()) this.drawRuler(r.points, r.color, r.name);
       this.drawRuler(s.rulers.mine, s.you?.color ?? '#ffffff');
     }
-    for (const [i, t] of this.texts.entries()) t.visible = i < this.used;
+    this.labels.end();
   }
 
   private drawRuler(points: Point[], color: string, name?: string): void {
@@ -86,22 +91,7 @@ export class RulerLayer {
   }
 
   private label(at: Point, text: string, fill: number): void {
-    const t = this.texts[this.used] ?? this.newText();
-    this.used++;
-    t.text = text;
-    t.style.fill = fill;
-    t.position.set(at[0], at[1]);
-    t.scale.set(1 / this.zoom);
-  }
-
-  private newText(): Text {
-    const t = new Text({
-      text: '',
-      style: { fill: TEXT_COLOR, fontSize: 16, fontWeight: '600', stroke: { color: OUTLINE, width: 4 } },
-    });
-    t.anchor.set(0.5, 1.6);
-    this.texts.push(t);
-    this.container.addChild(t);
-    return t;
+    // Above the point: half a label's width is 0.5, 1.6 lifts it clear of the line.
+    this.labels.add(at, text, fill, [0.5, 1.6]);
   }
 }

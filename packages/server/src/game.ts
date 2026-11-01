@@ -28,7 +28,7 @@ import { RegionActions } from './region-actions.ts';
 import { startOf, welcomeOf } from './welcome.ts';
 import { contentFor, packContent } from './game-packs.ts';
 import { WorldClock } from './world-clock.ts';
-import { Rulers } from './rulers.ts';
+import { isPresenceMessage, Presence } from './presence.ts';
 import { type Client, streamChunks } from './game-client.ts';
 
 /**
@@ -57,7 +57,7 @@ export class Game {
   private history: History;
   private packs: PackActions;
   private entries: EntryActions;
-  private rulers = new Rulers<Client>(
+  private presence = new Presence<Client>(
     () => this.clients,
     (c, msg) => this.send(c, msg),
   );
@@ -161,7 +161,7 @@ export class Game {
       c.player = player;
       const was = c.scene;
       c.scene = sceneOf(player, this.store);
-      if (was !== c.scene) this.rulers.left(c, was);
+      if (was !== c.scene) this.presence.left(c, was);
       if (startOf(this.store, c) !== c.start) this.restart(c);
     }
   }
@@ -196,7 +196,7 @@ export class Game {
     });
     ws.on('close', () => {
       this.clients.delete(client);
-      this.rulers.left(client, client.scene);
+      this.presence.left(client, client.scene);
     });
     console.log(`[game] ${player.name} joined`);
   }
@@ -281,7 +281,7 @@ export class Game {
 
   private handleHere(c: Client, msg: ClientMessage): void {
     if (msg.t === 'ops') return this.onOps(c, msg);
-    if (msg.t === 'ruler') return this.rulers.lay(c, msg.points);
+    if (isPresenceMessage(msg)) return this.presence.handle(c, msg);
     if (isPackMessage(msg)) return this.packs.handle(c.player, msg, (reply) => this.send(c, reply));
     try {
       if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);

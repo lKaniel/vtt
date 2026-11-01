@@ -1,4 +1,5 @@
 import type { Point, RulerMeasure } from '@vtt/shared';
+import { BROWSER, Throttle, type Timing } from './throttle.ts';
 
 // The rulers on the map: yours, laid click by click and following the
 // pointer, and the ones the others on your scene are laying, as the server
@@ -13,22 +14,7 @@ export interface ShownRuler {
   points: Point[];
 }
 
-interface Timing {
-  interval: number;
-  now: () => number;
-  /** Runs `fn` after `ms`. */
-  later: (fn: () => void, ms: number) => void;
-}
-
-const BROWSER: Timing = {
-  interval: 50,
-  now: () => performance.now(),
-  later: (fn, ms) => {
-    setTimeout(fn, ms);
-  },
-};
-
-const whole = (p: Point): Point => [Math.round(p[0]), Math.round(p[1])];
+export const whole = (p: Point): Point => [Math.round(p[0]), Math.round(p[1])];
 
 export class Rulers {
   readonly others = new Map<string, ShownRuler>();
@@ -36,14 +22,15 @@ export class Rulers {
   private laid: Point[] = [];
   /** Where your ruler ends now: the pointer. */
   private end?: Point;
-  private lastSent = -Infinity;
-  private pending = false;
+  private throttle: Throttle;
 
   constructor(
-    private send: (msg: { t: 'ruler'; points: Point[] }) => void,
+    send: (msg: { t: 'ruler'; points: Point[] }) => void,
     private changed: () => void,
-    private timing: Timing = BROWSER,
-  ) {}
+    timing: Timing = BROWSER,
+  ) {
+    this.throttle = new Throttle(() => send({ t: 'ruler', points: this.mine }), timing);
+  }
 
   /** Your ruler is out. */
   get active(): boolean {
@@ -107,17 +94,7 @@ export class Rulers {
 
   private update(now: boolean): void {
     this.changed();
-    const wait = this.lastSent + this.timing.interval - this.timing.now();
-    if (now || wait <= 0) return this.flush();
-    if (this.pending) return;
-    this.pending = true;
-    this.timing.later(() => this.flush(), wait);
-  }
-
-  private flush(): void {
-    this.pending = false;
-    this.lastSent = this.timing.now();
-    this.send({ t: 'ruler', points: this.mine });
+    this.throttle.update(now);
   }
 }
 

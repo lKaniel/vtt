@@ -29,4 +29,6 @@ export interface SessionEvents {
   fog: () => void;
   /** Your ruler or someone else's moved, or was put away. */
   rulers: () => void;
+  /** Someone's cursor moved, or someone pinged. */
+  presence: () => void;
 }

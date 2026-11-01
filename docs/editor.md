@@ -38,8 +38,17 @@ creature, its speed (or what is left of its turn). The measuring is
 `measureRuler` in `shared/ruler.ts` (crow-flies without a grid, 5 ft a square
 on one, regions' difficult ground from `regionCost`); the client keeps
 rulers in `rulers.ts` and draws them in `canvas/RulerLayer.ts`, and the
-server only passes them on (`server/rulers.ts`): they aren't documents, so
+server only passes them on (`server/presence.ts`): they aren't documents, so
 nothing is saved or undone.
+
+Everyone on a scene also sees where the others point: each player's cursor,
+with their name, in their colour. Hold a left press still for half a second,
+in any mode, to ping that spot: rings spread from it on everyone's map. The
+GM's Shift+long press also pulls everyone's view there. Cursors and pings go
+through `server/presence.ts` like rulers (live, per scene, never saved, a
+cursor goes when its player leaves the map or the scene); the client keeps
+them in `presence.ts` (cursors sent at most every 50 ms, `throttle.ts`) and
+draws them in `canvas/PresenceLayer.ts`.
 
 ## Pointer
 
