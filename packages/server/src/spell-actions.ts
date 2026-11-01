@@ -16,7 +16,7 @@ import {
   tokenDistance,
   TokenSchema,
 } from '@vtt/system-dnd5e';
-import type { Player, Point } from '@vtt/shared';
+import { isGridless, type Player, type Point } from '@vtt/shared';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
 
 export interface CastRequest {
@@ -101,7 +101,8 @@ export class SpellActions {
     notes: string[] = [],
   ): void {
     const caster = this.table.fighter(casterId);
-    const outcome = resolveCast({ spell, slot, caster, targets, gridSize: this.grid }, this.table.rng);
+    const gridless = isGridless(this.store.world);
+    const outcome = resolveCast({ spell, slot, caster, targets, gridSize: this.grid, gridless }, this.table.rng);
     this.apply(outcome);
     const pushed = this.push(caster.token, outcome);
     const drained = this.drain(casterId, outcome.drained);
@@ -144,7 +145,7 @@ export class SpellActions {
   private creatureTarget(caster: Fighter, spell: Spell, id: string, canSee: (id: string) => boolean): Fighter {
     if (!canSee(id)) throw new Refusal('No such target');
     const target = this.table.fighter(id);
-    const feet = tokenDistance(caster.token, target.token, this.grid);
+    const feet = tokenDistance(caster.token, target.token, this.grid, isGridless(this.store.world));
     if (feet > Math.max(5, spell.range)) throw new Refusal(`${target.token.name} is out of range (${feet} ft)`);
     if (!this.table.clearShot([caster.token.x, caster.token.y], [target.token.x, target.token.y])) {
       throw new Refusal(`${caster.token.name} has no clear path to ${target.token.name}`);
@@ -259,7 +260,7 @@ export class SpellActions {
 
   private teleport(id: string, point: Point): void {
     const token = this.store.tokens.get(id)!;
-    const [x, y] = this.snap(point, token.size);
+    const [x, y] = isGridless(this.store.world) ? point : this.snap(point, token.size);
     this.store.setToken({ ...token, x, y });
   }
 

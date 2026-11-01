@@ -135,6 +135,17 @@ describe('distance and range', () => {
     expect(tokenDistance(at(0, 0), at(3, 0, 2), G)).toBe(15);
   });
 
+  it('without a grid, measures the ground between them, creatures a step apart being 5 ft apart', () => {
+    const free = (x: number, y: number, size = 1) => ({ x, y, size });
+    expect(tokenDistance(free(0, 0), free(100, 0), G, true)).toBe(5);
+    expect(tokenDistance(free(0, 0), free(71, 71), G, true)).toBe(5);
+    expect(tokenDistance(free(0, 0), free(150, 0), G, true)).toBe(5);
+    expect(tokenDistance(free(0, 0), free(160, 0), G, true)).toBe(6);
+    expect(tokenDistance(free(0, 0), free(200, 0), G, true)).toBe(8);
+    expect(tokenDistance(free(0, 0), free(300, 400), G, true)).toBe(23);
+    expect(tokenDistance(free(0, 0), free(450, 0, 2), G, true)).toBe(18);
+  });
+
   it('allows melee within reach and ranged out to long range with disadvantage', () => {
     expect(attackRange(sword, 5)).toBe('normal');
     expect(attackRange(sword, 10)).toBe('out');

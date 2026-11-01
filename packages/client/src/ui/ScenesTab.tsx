@@ -139,13 +139,13 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
       </label>
       <label>
         <span>Grid</span>
-        <select value={str(doc, 'grid', 'square')} onChange={(e) => edit({ grid: e.target.value })}>
-          <option value="square">Squares</option>
-          <option value="none">No grid lines</option>
+        <select value={str(doc, 'grid', 'none')} onChange={(e) => edit({ grid: e.target.value })}>
+          <option value="none">None: walk anywhere, distances in feet</option>
+          <option value="square">Squares: walk square to square</option>
         </select>
       </label>
       <label>
-        <span>Square size (px)</span>
+        <span>Pixels per 5 ft</span>
         <input
           type="number"
           min={10}

@@ -42,11 +42,18 @@ two walls of a scene can't share an id, but a wall and a light can.
 Everything is in **pixels** on one unbounded plane per scene. `x` grows
 right, `y` grows down, negative values are fine.
 
-- `gridSize` pixels make one 5 ft square (default 100).
-- The square at column `c`, row `r` spans `c*gridSize` to `(c+1)*gridSize`.
-  Its centre is `(c + 0.5) * gridSize`. Tokens stand on square centres, so
-  with `gridSize: 100` a token sits at `x: 550`, not `x: 500`.
-- Walls run along square edges, so their ends are multiples of `gridSize`.
+- `gridSize` pixels make 5 ft (default 100), with or without a grid.
+- Scenes have no grid unless `grid` is `"square"`. Without one, tokens walk
+  to any point, around walls and around other creatures (no one walks
+  through or stops inside another), and distances are plain feet as the
+  crow flies. Creatures within half a square of each other's edge count as
+  5 ft apart, so melee works without lining tokens up.
+- With `"grid": "square"` the square at column `c`, row `r` spans
+  `c*gridSize` to `(c+1)*gridSize`, its centre is `(c + 0.5) * gridSize`,
+  and tokens walk square centre to square centre (with `gridSize: 100` a
+  token sits at `x: 550`, not `x: 500`), every square 5 ft, diagonals too.
+- Walls usually run along square edges, so their ends are multiples of
+  `gridSize`; the editor snaps to them even when no grid is drawn.
 
 ## game.json
 
@@ -118,7 +125,7 @@ Optional, all set from the Scenes tab too:
 | `name`                 | What the Scenes list and the top bar show (the folder name otherwise).                    |
 | `sort`                 | Order in the Scenes list (a sort key, see `sort-key.ts`); the editor writes it.           |
 | `exploration`          | With fog of war, players keep seeing (dimmed) where they have been. Default on.           |
-| `grid`                 | `"square"` (default) or `"none"`: no grid lines; tokens still stand on squares.           |
+| `grid`                 | `"none"` (default): no grid, free movement in feet. `"square"`: grid lines, square moves. |
 | `gridColor`            | Grid line colour, default `"#000000"`.                                                    |
 | `gridOpacity`          | 0 to 1, default 0.16.                                                                     |
 | `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                                      |
@@ -390,7 +397,7 @@ without one):
 | Field         | Meaning                                                                 |
 | ------------- | ----------------------------------------------------------------------- |
 | `id`          | Lowercase letters, digits, dashes. An actor's must match its file name. |
-| `x`, `y`      | A token's centre in pixels (a square centre).                           |
+| `x`, `y`      | A token's centre in pixels (a square centre on a square grid).          |
 | `size`        | In squares: 1 medium, 2 large, 3 huge. Default 1.                       |
 | `color`       | Disc colour behind the placeholder when there is no picture.            |
 | `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency.     |

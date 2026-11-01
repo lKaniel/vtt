@@ -1,4 +1,15 @@
-import { canControl, type DoorState, findPath, isGm, type Player, type Point } from '@vtt/shared';
+import {
+  bodyOf,
+  canControl,
+  densify,
+  type DoorState,
+  isGm,
+  isGridless,
+  type Player,
+  type Point,
+  walkPath,
+} from '@vtt/shared';
+import { inTheWay, type Token } from '@vtt/system-dnd5e';
 import type { CombatActions } from './combat-actions.ts';
 import type { GameStore } from './game-store.ts';
 import type { Reactions } from './reactions.ts';
@@ -24,7 +35,11 @@ export class TokenMoves {
     private rules: MoveRules,
   ) {}
 
-  /** Walks a token you control along the shortest way there; `seen` is what you know of. */
+  /**
+   * Walks a token you control along the shortest way there, around walls and
+   * the creatures you know of (`seen`): to the exact point without a grid,
+   * square to square on one.
+   */
   move(player: Player, seen: (id: string) => boolean, id: string, to: Point): void {
     const token = this.controlled(player, seen, id);
     const g = this.store.world.gridSize;
@@ -36,15 +51,32 @@ export class TokenMoves {
       h: Math.abs(token.y - to[1]) + 2 * m,
     });
     const { combat, zones, reactions, regions } = this.rules;
-    const path = findPath([token.x, token.y], to, walls, { gridSize: g, margin: PATH_MARGIN, cost: regions.cost() });
+    const path = walkPath([token.x, token.y], to, walls, {
+      gridSize: g,
+      gridless: isGridless(this.store.world),
+      radius: bodyOf(token, g).r,
+      bodies: this.others(token, seen).map((t) => bodyOf(t, g)),
+      margin: PATH_MARGIN,
+      cost: regions.cost(),
+    });
     if (!path) throw new Refusal(`${token.name} can't get there`);
     const [x, y] = path.points.at(-1)!;
     if (path.points.length < 2) return;
     const walker = combat.move(token, path.feet);
     this.store.setToken({ ...walker, x, y }, path.points);
-    zones.moved(token.id, path.points);
-    reactions.moved(token, path.points);
-    regions.entered(token.id, path.points);
+    // Zones, reactions and regions look at every step of the way.
+    const steps = densify(path.points, g / 4);
+    zones.moved(token.id, steps);
+    reactions.moved(token, steps);
+    regions.entered(token.id, steps);
+  }
+
+  /** The creatures in `token`'s way that you know of. */
+  private others(token: Token, seen: (id: string) => boolean): Token[] {
+    return inTheWay(
+      token,
+      [...this.store.tokens.values()].filter((t) => seen(t.id)),
+    );
   }
 
   hotbar(player: Player, seen: (id: string) => boolean, id: string, slots: (string | null)[]): void {

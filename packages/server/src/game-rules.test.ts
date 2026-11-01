@@ -247,15 +247,15 @@ describe('lasting zones and repeated attacks', () => {
   it('hurts a creature that walks into a moonbeam, once per turn', () => {
     learn('moonbeam');
     const { ana, gm } = fight(['hero', 'goblin', 'bo', 'goblin2']);
-    ana.receive({ t: 'cast', caster: 'hero', spell: 'moonbeam', slot: 2, targets: [], point: [250, 250] });
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'moonbeam', slot: 2, targets: [], point: [150, 150] });
     expect(errors(ana)).toEqual([]);
     ana.receive({ t: 'endTurn' });
     // The goblin fails its Con save (1) and takes 2d10 of 1s.
     dice = [face(1), face(1, 10), face(1, 10)];
-    gm.receive({ t: 'move', token: 'goblin', to: [250, 250] });
+    gm.receive({ t: 'move', token: 'goblin', to: [150, 150] });
     expect(tok('goblin').hp).toBe(5);
     gm.receive({ t: 'move', token: 'goblin', to: [250, 150] });
-    gm.receive({ t: 'move', token: 'goblin', to: [250, 250] });
+    gm.receive({ t: 'move', token: 'goblin', to: [150, 150] });
     expect(tok('goblin').hp).toBe(5);
   });
 
@@ -316,7 +316,7 @@ describe('opportunity attacks', () => {
   it('offers the enemy an attack when a creature walks out of its reach, once per round', () => {
     store.setToken({ ...tok('goblin'), x: 150, y: 250 });
     const { bo, gm } = fight(['bo', 'goblin', 'hero', 'goblin2']);
-    bo.receive({ t: 'move', token: 'bo', to: [50, 50] });
+    bo.receive({ t: 'move', token: 'bo', to: [150, 50] });
     const [offer] = gm.take('reactionOffer');
     expect(offer).toMatchObject({ offer: { reactor: 'goblin', target: 'bo', kind: 'opportunity' } });
     expect(bo.take('reactionOffer')).toEqual([]);
@@ -333,7 +333,7 @@ describe('opportunity attacks', () => {
     store.setToken({ ...tok('goblin'), x: 150, y: 250 });
     const { bo, gm } = fight(['bo', 'goblin', 'hero', 'goblin2']);
     bo.receive({ t: 'feature', token: 'bo', feature: 'disengage' });
-    bo.receive({ t: 'move', token: 'bo', to: [50, 50] });
+    bo.receive({ t: 'move', token: 'bo', to: [150, 50] });
     expect(gm.take('reactionOffer')).toEqual([]);
   });
 });

@@ -39,7 +39,7 @@ the tokens mode opens its journal entry.
   selects it first, as in Figma). Dragging a handle reshapes.
 - Moves snap to whole squares (lights to half squares), wall ends to
   corners, light rings to 5 ft and tile edges to the grid. Shift turns
-  snapping off.
+  snapping off. Tokens on a scene without a grid never snap.
 - Right click opens the menu of what is under the pointer (selecting it if
   it wasn't), or of the ground. Right or middle drag pans and opens nothing.
   A right click also puts away a half-drawn wall, an aimed spell or a
@@ -57,7 +57,7 @@ one player on a scene of their own. Add, Copy (everything on it, token ids
 made new) and Delete (with everything on it) are document ops
 (`shared/scenes.ts`), so Ctrl+Z undoes them; the server deletes what is on
 a deleted scene in the same step (`server/scene-ops.ts`) and won't delete
-the scene the game is on. Settings: name, grid (squares or no lines, size,
+the scene the game is on. Settings: name, grid (none, the default, or squares; pixels per 5 ft,
 colour, opacity), darkness, background, fog of war, remembering explored
 ground. Scenes aren't in `EDIT_KINDS`: a scene isn't a placeable, and the
 list's buttons build their own ops.

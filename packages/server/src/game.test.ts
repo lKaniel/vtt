@@ -1,3 +1,5 @@
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld, savedToken } from './test/fixtures.ts';
@@ -49,6 +51,37 @@ describe('moving', () => {
     expect(moved!.path.at(-1)).toEqual([50, 50]);
     await store.flush();
     expect(await savedToken(dir, 'hero')).toMatchObject({ x: 50, y: 50 });
+  });
+
+  it('walks to the exact point when the scene has no grid', () => {
+    const ana = join_('ana');
+    ana.receive({ t: 'move', token: 'hero', to: [137, 62] });
+    expect(ana.take('moved')[0]!.path.at(-1)).toEqual([137, 62]);
+  });
+
+  it('walks square to square when the scene has a grid', async () => {
+    await writeFile(join(dir, 'scenes/main/scene.json'), JSON.stringify({ darkness: 1, grid: 'square' }));
+    store = new GameStore(dir);
+    await store.load();
+    game = new Game(store);
+    const ana = join_('ana');
+    ana.receive({ t: 'move', token: 'hero', to: [137, 62] });
+    expect(ana.take('moved')[0]!.path.at(-1)).toEqual([150, 50]);
+  });
+
+  it('never walks through or into another creature', () => {
+    const gm = join_('gm');
+    gm.receive({ t: 'door', chunk: '0_0', wall: 'door', state: 'open' });
+    gm.receive({ t: 'move', token: 'hero', to: [560, 160] });
+    expect(gm.take('error')[0]!.message).toMatch(/can't get there/);
+    gm.receive({ t: 'move', token: 'hero', to: [750, 150] });
+    const path = gm.take('moved')[0]!.path;
+    expect(path.at(-1)).toEqual([750, 150]);
+    for (let i = 1; i < path.length; i++) {
+      const [a, b] = [path[i - 1]!, path[i]!];
+      const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+      expect(Math.hypot(mid[0]! - 550, mid[1]! - 150)).toBeGreaterThanOrEqual(99);
+    }
   });
 
   it('refuses tokens you do not control or cannot reach', () => {

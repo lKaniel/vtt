@@ -141,7 +141,8 @@ describe('regions', () => {
     region([{ type: 'difficult' }]);
     const gm = seat('gm');
     gm.receive({ t: 'combatStart', tokens: ['hero'] });
+    // 5 ft walked, the second half of it (2.5 ft) on difficult ground.
     stepEast(seat('ana'));
-    expect(store.combat!.left.move).toBe(20);
+    expect(store.combat!.left.move).toBe(22);
   });
 });

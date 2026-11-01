@@ -20,17 +20,21 @@ export function opportunityAttackers({
   path,
   others,
   gridSize,
+  gridless,
   reacted,
 }: {
   mover: Token;
   path: readonly Point[];
   others: readonly { token: Token; sheet: Creature }[];
   gridSize: number;
+  /** The scene has no grid: reach is measured as the crow flies. */
+  gridless?: boolean;
   /** Creatures that already used their reaction this round. */
   reacted: readonly string[];
 }): string[] {
   if (path.length < 2 || mover.effects?.some((e) => e.disengaged)) return [];
-  const within = (o: Token, [x, y]: Point, reach: number) => tokenDistance(o, { ...mover, x, y }, gridSize) <= reach;
+  const within = (o: Token, [x, y]: Point, reach: number) =>
+    tokenDistance(o, { ...mover, x, y }, gridSize, gridless) <= reach;
   return others
     .filter(({ token }) => token.id !== mover.id && onSide(token) !== onSide(mover))
     .filter(({ token, sheet }) => sheet.hp > 0 && canAct(sheet) && !reacted.includes(token.id))
