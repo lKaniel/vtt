@@ -48,6 +48,29 @@ describe('Session', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'darkness', darkness: 0.4 });
   });
 
+  it('lays your ruler for the table and shows the others’ until a fresh welcome', () => {
+    ws.receive(welcome());
+    const shown = vi.fn();
+    session.on('rulers', shown);
+    session.rulers.press([10, 20]);
+    expect(ws.sent.at(-1)).toEqual({ t: 'ruler', points: [[10, 20]] });
+    ws.receive({
+      t: 'ruler',
+      player: 'bo',
+      name: 'Bo',
+      color: '#00f',
+      points: [
+        [0, 0],
+        [5, 5],
+      ],
+    });
+    expect(session.rulers.others.get('bo')?.name).toBe('Bo');
+    expect(shown).toHaveBeenCalled();
+    ws.receive(welcome());
+    expect(session.rulers.others.size).toBe(0);
+    expect(session.rulers.active).toBe(false);
+  });
+
   it('keeps only chunks in view', () => {
     const chunk = { tiles: [], walls: [], lights: [] };
     const gone = vi.fn();

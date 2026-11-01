@@ -25,6 +25,7 @@ export * from './journals.ts';
 export * from './levels.ts';
 export * from './templates.ts';
 export * from './regions.ts';
+export * from './ruler.ts';
 export * from './sounds.ts';
 export * from './roll-tables.ts';
 export * from './playlists.ts';

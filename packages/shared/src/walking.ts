@@ -211,12 +211,16 @@ function smooth(points: readonly Point[], clear: (a: Point, b: Point) => boolean
 
 /** A path through `points`, its feet counted in quarter squares so difficult ground costs what it should. */
 function route(points: Point[], opts: WalkOptions): Path {
-  const cost = opts.cost ?? (() => 1);
-  const fine = densify(points, opts.gridSize / 4);
+  return { points, feet: Math.round(costFeet(points, opts.gridSize, opts.cost)) };
+}
+
+/** Feet along `points` (not rounded), each quarter square weighted by what `cost` says the ground there costs. */
+export function costFeet(points: readonly Point[], gridSize: number, cost: (p: Point) => number = () => 1): number {
+  const fine = densify(points, gridSize / 4);
   let px = 0;
   for (let i = 1; i < fine.length; i++) {
     const [a, b] = [fine[i - 1]!, fine[i]!];
     px += dist(a, b) * cost([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]);
   }
-  return { points, feet: Math.round((px / opts.gridSize) * 5) };
+  return (px / gridSize) * 5;
 }

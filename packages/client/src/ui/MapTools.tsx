@@ -19,7 +19,12 @@ const MODES: { mode: EditorMode; label: string; key: string; hint: string }[] = 
   { mode: 'lights', label: 'Lights', key: 'L', hint: 'Select, move and resize lights' },
   { mode: 'drawings', label: 'Draw', key: 'D', hint: 'Shapes, lines, freehand and text on the map' },
   { mode: 'notes', label: 'Notes', key: 'N', hint: 'Pins that open journal entries' },
-  { mode: 'templates', label: 'Measure', key: 'M', hint: 'Spell areas: circles, cones, lines and squares' },
+  {
+    mode: 'templates',
+    label: 'Measure',
+    key: 'M',
+    hint: 'The ruler (R), and spell areas: circles, cones, lines and squares',
+  },
   { mode: 'regions', label: 'Regions', key: '', hint: 'Areas that do something when a token walks in' },
   { mode: 'sounds', label: 'Sounds', key: '', hint: 'Ambient sound, louder the nearer you are' },
 ];
@@ -67,7 +72,15 @@ const TOOLS: Partial<Record<EditorMode, { tool: EditorTool; label: string; hint:
   lights: [SELECT, { tool: 'place', label: 'Place', hint: 'Click to place the light picked below' }],
   drawings: itemTools('drawings'),
   notes: itemTools('notes'),
-  templates: itemTools('templates'),
+  templates: [
+    SELECT,
+    {
+      tool: 'ruler',
+      label: 'Ruler',
+      hint: 'Click to start (on a creature: from it), click for each waypoint; right click takes one back, Esc puts it away. Everyone sees it',
+    },
+    ...itemTools('templates').slice(1),
+  ],
   regions: itemTools('regions'),
   sounds: itemTools('sounds'),
 };
