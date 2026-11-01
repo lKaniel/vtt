@@ -280,6 +280,7 @@ describe('welcome', () => {
     expect(Object.keys(ana.take('welcome')[0]!.docs!).sort((a, b) => a.localeCompare(b))).toEqual([
       'actors',
       'main/tokens',
+      'time',
     ]);
   });
 });

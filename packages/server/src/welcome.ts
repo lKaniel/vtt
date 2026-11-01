@@ -18,7 +18,8 @@ export interface Joining {
 
 /** Everything a welcome depends on, short of the documents: when it changes, the client starts over. */
 export function startOf(store: GameStore, c: Joining): string {
-  const { players, ...world } = store.inScene(c.scene, () => store.world);
+  // The time of day changes without starting over (a `lighting` message).
+  const { players, darkness: _darkness, ...world } = store.inScene(c.scene, () => store.world);
   // The GM's welcome lists the seats too.
   const seats = isGm(c.player) ? players : undefined;
   const parts = [c.scene, store.activeScene, c.player, world, store.sceneName(c.scene), seats, store.campaign.packs];
@@ -29,6 +30,8 @@ export interface WelcomeParts {
   chat: readonly ChatMessage[];
   history: HistoryState;
   view: (token: Token, player: Player) => TokenView;
+  /** The server's time (ms), for the game clock. */
+  now: number;
 }
 
 /** The welcome, then the rules content of the game's packs. */
@@ -50,6 +53,7 @@ export function welcomeOf(store: GameStore, c: Joining, parts: WelcomeParts): Se
     active: store.activeScene,
     history: parts.history,
     docs: c.feed.start(player),
+    serverTime: parts.now,
     ...(gm ? { players: store.world.players, actors: [...store.actors.values()] } : {}),
   };
   return [welcome, { t: 'packContent', compendia: packContent(store) }];

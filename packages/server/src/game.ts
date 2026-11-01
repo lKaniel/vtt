@@ -1,5 +1,4 @@
-import { randomUUID } from 'node:crypto';
-import { canControl, isGm, type Player, type Point, type Rng, tokensVisibleTo, type World } from '@vtt/shared';
+import { canControl, HOUR, isGm, type Player, type Point, type Rng, tokensVisibleTo, type World } from '@vtt/shared';
 import { type ChatMessage, type ServerMessage, type Token, viewToken } from '@vtt/system-dnd5e';
 import { OpError } from '@vtt/core';
 import type { WebSocket } from 'ws';
@@ -20,13 +19,14 @@ import type { GameStore } from './game-store.ts';
 import { History } from './undo.ts';
 import { SceneActions, sceneOf } from './scene-actions.ts';
 import { FogKeeper } from './fog-keeper.ts';
-import { chatMessage } from './chat-command.ts';
+import { ChatLog, gameCard } from './chat-log.ts';
 import { TokenMoves } from './token-moves.ts';
 import { isPackMessage, PackActions } from './pack-actions.ts';
 import { EntryActions, isEntryMessage } from './entry-actions.ts';
 import { RegionActions } from './region-actions.ts';
 import { startOf, welcomeOf } from './welcome.ts';
 import { contentFor, packContent } from './game-packs.ts';
+import { WorldClock } from './world-clock.ts';
 
 interface Client {
   ws: WebSocket;
@@ -43,8 +43,6 @@ interface Client {
   feed: DocFeed;
 }
 
-const CHAT_HISTORY = 200;
-
 /**
  * The live game. Clients send intents ("move here", "open this door"); the
  * game checks them, updates the world and tells each client only what that
@@ -52,7 +50,10 @@ const CHAT_HISTORY = 200;
  */
 export class Game {
   private clients = new Set<Client>();
-  private chat: ChatMessage[] = [];
+  private chat = new ChatLog<Client>(
+    () => this.clients,
+    (c, msg) => this.send(c, msg),
+  );
   private combat: CombatActions;
   readonly spells: SpellActions;
   readonly table: Table;
@@ -68,10 +69,13 @@ export class Game {
   private history: History;
   private packs: PackActions;
   private entries: EntryActions;
+  /** World time (see world-clock.ts). */
+  readonly clock: WorldClock;
 
+  /** `now`: the server's time in ms, which the game clock runs by. */
   constructor(
     private store: GameStore,
-    { rng = Math.random }: { rng?: Rng } = {},
+    { rng = Math.random, now = Date.now }: { rng?: Rng; now?: () => number } = {},
   ) {
     const table = new Table(store, rng, (text) => this.narrate({ text }));
     this.table = table;
@@ -95,12 +99,13 @@ export class Game {
     this.map = new MapActions(table);
     this.scenes = new SceneActions(store);
     this.fog = new FogKeeper(store);
-    const regions = new RegionActions(table, (text, gmOnly) => this.post(this.card(text, gmOnly)));
+    const regions = new RegionActions(table, (text, gmOnly) => this.chat.post(gameCard(text, gmOnly)));
     this.moves = new TokenMoves(store, { combat: this.combat, zones: this.zones, reactions: this.reactions, regions });
-    this.history = new History(store, (ids, undone) => this.markCards(ids, undone));
+    this.history = new History(store, (ids, undone) => this.chat.undone(ids, undone));
+    this.clock = new WorldClock(table, { now, step: (fn) => this.timePasses(fn) });
     this.packs = new PackActions(store);
     this.entries = new EntryActions(store, rng, {
-      post: (message) => this.post(message),
+      post: (message) => this.chat.post(message),
       show: (entry, page) => {
         for (const c of this.clients)
           if (!isGm(c.player)) this.send(c, { t: 'showJournal', entry, ...(page && { page }) });
@@ -203,7 +208,12 @@ export class Game {
   private welcome(c: Client): void {
     c.start = startOf(this.store, c);
     const player = c.player;
-    const parts = { chat: this.chat, history: this.history.state(player), view: (t: Token) => this.view(t, player) };
+    const parts = {
+      chat: this.chat.all,
+      history: this.history.state(player),
+      view: (t: Token) => this.view(t, player),
+      now: this.clock.serverTime(),
+    };
     for (const msg of welcomeOf(this.store, c, parts)) this.send(c, msg);
     this.store.inScene(c.scene, () => {
       this.fog.explore(player);
@@ -284,10 +294,23 @@ export class Game {
     }
   }
 
-  /** Runs a step, then brings what follows from it (zone templates) in line, in the same undo step. */
+  /** Runs a step, then brings what follows from it (the clock, zone templates) in line, in the same undo step. */
   private settle(step: () => void): void {
     step();
+    this.clock.settle();
     this.zoneTemplates.sync();
+  }
+
+  /** The clock ran on: what ran out ends, as a step the GM can undo. */
+  private timePasses(fn: () => void): void {
+    const gm = this.store.world.players.find(isGm)!;
+    const label = { label: 'time passing', action: true };
+    if (this.history.step(gm, label, () => this.settle(fn))) this.sendHistory();
+  }
+
+  /** Stops the clock's tick (the game is unloaded). */
+  close(): void {
+    this.clock.close();
   }
 
   /** A transaction of document ops, each allowed by ownership: all of it, or a reject saying why not. */
@@ -315,12 +338,6 @@ export class Game {
 
   private sendHistory(): void {
     for (const c of this.clients) this.send(c, { t: 'history', ...this.history.state(c.player) });
-  }
-
-  /** The GM undid (or redid) the action these chat cards report. */
-  private markCards(ids: string[], undone: boolean): void {
-    for (const m of this.chat) if (ids.includes(m.id)) m.undone = undone || undefined;
-    for (const c of this.clients) this.send(c, { t: 'chatUndone', ids, undone });
   }
 
   private dispatch(c: Client, msg: ClientMessage): void {
@@ -379,6 +396,8 @@ export class Game {
   /** Moving between scenes, and the fog on them. */
   private dispatchScenes(c: Client, msg: ClientMessage): void {
     if (msg.t === 'fog') this.fog.edit(c.player, msg.edit);
+    else if (msg.t === 'clock') this.clock.act(c.player, msg.action);
+    else if (msg.t === 'turnBased') this.combat.turnBased(c.player, msg.on);
     else if (isEntryMessage(msg)) this.entries.handle(c.player, msg);
     else this.scenes.dispatch(c.player, msg);
   }
@@ -399,7 +418,8 @@ export class Game {
       case 'removeEffect':
         return this.features.removeEffect(c.player, msg.token, msg.effect);
       case 'rest':
-        return this.features.rest(c.player, msg.tokens, msg.kind);
+        this.features.rest(c.player, msg.tokens, msg.kind);
+        return this.clock.skip(msg.kind === 'long' ? 8 * HOUR : HOUR);
       default:
         return this.dispatchGm(c, msg);
     }
@@ -425,36 +445,18 @@ export class Game {
   }
 
   private onChat(c: Client, text: string): void {
-    if (!text) return;
-    let message: ChatMessage;
     try {
-      message = chatMessage(c.player, text);
+      this.chat.say(c, text);
     } catch (e) {
-      return this.fail(c, (e as Error).message);
-    }
-    this.post(message, c);
-  }
-
-  /** Adds a message to the log and sends it to everyone allowed to read it. */
-  private post(message: ChatMessage, sender?: Client): void {
-    this.chat.push(message);
-    if (this.chat.length > CHAT_HISTORY) this.chat.shift();
-    for (const other of this.clients) {
-      if (message.gmOnly && !isGm(other.player) && other !== sender) continue;
-      this.send(other, { t: 'chat', message });
+      this.fail(c, (e as Error).message);
     }
   }
 
   /** A message from the game itself: initiative, attack results. */
   private narrate(content: Pick<ChatMessage, 'text' | 'attack' | 'spell'>): void {
-    const card = this.card(content.text ?? '');
+    const card = gameCard(content.text ?? '');
     this.history.noteCard(card.id);
-    this.post({ ...card, ...content });
-  }
-
-  /** A chat card from the game itself, part of the action being recorded. */
-  private card(text: string, gmOnly = false): ChatMessage {
-    return { id: randomUUID(), time: Date.now(), from: 'Combat', color: '#c8b48a', text, ...(gmOnly && { gmOnly }) };
+    this.chat.post({ ...card, ...content });
   }
 
   private toGms(msg: ServerMessage): void {

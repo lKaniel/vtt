@@ -179,6 +179,7 @@ export class GameHub {
     clearTimeout(this.timers.get(id));
     if (!running) return;
     this.live.delete(id);
+    running.game.close();
     running.store.close();
     await running.store.flush();
   }

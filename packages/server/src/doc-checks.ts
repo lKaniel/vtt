@@ -1,10 +1,10 @@
 import { type Doc, OpError, type Validate } from '@vtt/core';
 import { ActorSchema, CombatSchema } from '@vtt/system-dnd5e';
-import { type Game, GameSchema, isGm, type Scene, SceneSchema } from '@vtt/shared';
+import { ClockSchema, type Game, GameSchema, isGm, type Scene, SceneSchema } from '@vtt/shared';
 import type { z } from 'zod';
 import { fromDoc, toDoc } from './doc-sync.ts';
 import { ITEM_SCHEMAS } from './game-files.ts';
-import { ACTORS, COMBAT, GAME, SCENES, TYPE } from './store-colls.ts';
+import { ACTORS, CLOCK, COMBAT, GAME, SCENES, TYPE } from './store-colls.ts';
 import { ENTRY_COLLS } from './entry-files.ts';
 
 // Documents sent by a client in an `ops` message are checked against the
@@ -24,6 +24,7 @@ const NAMED: Record<string, Rule> = {
   [SCENES]: { type: 'scene', schema: SceneSchema, bare: true, extra: wholeChunks },
   [ACTORS]: { type: 'actor', schema: ActorSchema },
   [COMBAT]: { type: 'combat', schema: CombatSchema, bare: true },
+  [CLOCK]: { type: 'clock', schema: ClockSchema, bare: true },
   ...Object.fromEntries(Object.entries(ENTRY_COLLS).map(([coll, rule]) => [coll, { ...rule }])),
 };
 

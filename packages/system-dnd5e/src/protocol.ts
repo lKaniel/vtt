@@ -99,6 +99,8 @@ export type ClientMessage =
   /** GM: roll initiative for these tokens and start a fight. */
   | { t: 'combatStart'; tokens: string[] }
   | { t: 'combatEnd' }
+  /** GM: turn-based mode outside a fight: the party takes turns, 6 seconds a round (fights are always turn-based). */
+  | { t: 'turnBased'; on: boolean }
   | { t: 'endTurn' }
   /** `smite`: spend a slot of this level on Divine Smite if the attack hits (2014 paladin). */
   | { t: 'attack'; attacker: string; target: string; attack: string; smite?: number }
@@ -157,6 +159,8 @@ export type ServerMessage =
       /** The documents you may read (the GM: all of them), by collection; `docs` messages keep it up to date. */
       docs?: Record<string, Doc[]>;
       history: HistoryState;
+      /** The server's clock (ms) as it sent this, so the game clock reads the same everywhere. */
+      serverTime?: number;
     }
   | { t: 'token'; token: TokenView }
   | { t: 'chat'; message: ChatMessage }

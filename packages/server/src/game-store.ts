@@ -26,7 +26,7 @@ import { upgradeFolder } from './migrate-all.ts';
 import { SceneState } from './scene-state.ts';
 import { StoreAccess, type DocAccess } from './store-access.ts';
 import type { TYPE } from './store-colls.ts';
-import { ACTORS, COMBAT, docsOf, FIGHT, fileOf, GAME, SCENES, sameScene, scopeOf } from './store-colls.ts';
+import { ACTORS, CLOCK, COMBAT, docsOf, FIGHT, fileOf, GAME, SCENES, sameScene, scopeOf } from './store-colls.ts';
 import { StoreHistory, touchedBy, type Touched } from './store-history.ts';
 import { sceneDeleteOps } from './scene-ops.ts';
 import { isEntryColl } from './entry-files.ts';
@@ -518,7 +518,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
   private fileData(coll: string, id: string): unknown {
     if (coll === GAME) return fromDoc(this.docs.all(GAME)[0]!);
     if (coll === ACTORS || isEntryColl(coll)) return this.docs.get(coll, id) && fromDoc(this.docs.get(coll, id)!);
-    if (coll === SCENES || coll === COMBAT) return this.docs.get(coll, id) && fromDoc(this.docs.get(coll, id)!, false);
+    if (coll === SCENES || coll === COMBAT || coll === CLOCK) return this.docs.get(coll, id) && fromDoc(this.docs.get(coll, id)!, false);
     // A deleted scene takes its collection files with it.
     if (!this.docs.get(SCENES, coll.split('/')[0]!)) return undefined;
     return this.docs.all(coll).map((d) => fromDoc(d));

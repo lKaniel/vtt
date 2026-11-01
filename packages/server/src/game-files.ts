@@ -35,6 +35,8 @@ import {
   tileTreeIssues,
   type Wall,
   WallSchema,
+  type Clock,
+  ClockSchema,
   type World,
   worldOf,
 } from '@vtt/shared';
@@ -52,6 +54,7 @@ import { sceneItemIssues } from './item-checks.ts';
 //   game.json                     the game and its seats
 //   actors/<id>.json              creatures' sheets: the GM's Actors list
 //   combat.json                   the fight in progress
+//   time.json                     the game clock and its calendar
 //   scenes/<id>/scene.json        a scene's grid, lighting and camera start
 //   scenes/<id>/<coll>.json       a list per collection: tiles, walls, lights, tokens,
 //                                 drawings, notes, templates, regions, sounds
@@ -97,6 +100,7 @@ const NOUN: Record<SceneCollection, string> = {
 export type FileKind =
   | { kind: 'game' }
   | { kind: 'combat' }
+  | { kind: 'time' }
   | { kind: 'actor'; id: string }
   | { kind: 'scene'; scene: string }
   | { kind: 'collection'; scene: string; coll: SceneCollection }
@@ -105,6 +109,7 @@ export type FileKind =
 export type GameFile =
   | { kind: 'game'; data: Game }
   | { kind: 'combat'; data: Combat }
+  | { kind: 'time'; data: Clock }
   | { kind: 'actor'; id: string; data: Actor }
   | { kind: 'scene'; scene: string; data: Scene }
   | { kind: 'collection'; scene: string; coll: SceneCollection; data: NonNullable<SceneItems[SceneCollection]> }
@@ -130,6 +135,7 @@ export function classify(rel: string): FileKind | null {
   const parts = rel.split(/[\\/]/);
   if (parts.length === 1 && parts[0] === 'game.json') return { kind: 'game' };
   if (parts.length === 1 && parts[0] === 'combat.json') return { kind: 'combat' };
+  if (parts.length === 1 && parts[0] === 'time.json') return { kind: 'time' };
   if (parts.length === 2 && parts[1]!.endsWith('.json')) return classifyEntry(parts[0]!, parts[1]!);
   if (parts.length === 3 && parts[0] === 'scenes') return classifyScene(parts[1]!, parts[2]!);
   return null;
@@ -140,6 +146,7 @@ export function pathOf(kind: FileKind): string {
   switch (kind.kind) {
     case 'game':
     case 'combat':
+    case 'time':
       return `${kind.kind}.json`;
     case 'actor':
       return `actors/${kind.id}.json`;
@@ -179,6 +186,8 @@ export function parseFile(kind: FileKind, text: string): ParseResult {
       return parseActor(kind.id, json);
     case 'combat':
       return parseCombat(json);
+    case 'time':
+      return parseTime(json);
     case 'entry':
       return parseEntry(kind.coll, kind.id, json);
   }
@@ -258,6 +267,12 @@ function parseCombat(json: unknown): ParseResult {
   const r = CombatSchema.safeParse(json);
   if (!r.success) return { errors: formatIssues(r.error) };
   return { file: { kind: 'combat', data: r.data }, errors: [] };
+}
+
+function parseTime(json: unknown): ParseResult {
+  const r = ClockSchema.safeParse(json);
+  if (!r.success) return { errors: formatIssues(r.error) };
+  return { file: { kind: 'time', data: r.data }, errors: [] };
 }
 
 /** A whole game, as loaded from its folder. */

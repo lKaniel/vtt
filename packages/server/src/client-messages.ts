@@ -1,5 +1,5 @@
 import { OpSchema } from '@vtt/core';
-import { DoorStateSchema, FogEditSchema, MapEditSchema, PointSchema, RoleSchema } from '@vtt/shared';
+import { ClockActionSchema, DoorStateSchema, FogEditSchema, MapEditSchema, PointSchema, RoleSchema } from '@vtt/shared';
 import { EditionSchema } from '@vtt/system-dnd5e';
 import type { RawData } from 'ws';
 import { z } from 'zod';
@@ -18,6 +18,8 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('chat'), text: z.string().min(1).max(2000) }),
   z.object({ t: z.literal('combatStart'), tokens: z.array(z.string()).min(1).max(100) }),
   z.object({ t: z.literal('combatEnd') }),
+  z.object({ t: z.literal('turnBased'), on: z.boolean() }),
+  z.object({ t: z.literal('clock'), action: ClockActionSchema }),
   z.object({ t: z.literal('endTurn') }),
   z.object({
     t: z.literal('attack'),

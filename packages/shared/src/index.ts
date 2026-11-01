@@ -30,3 +30,4 @@ export * from './roll-tables.ts';
 export * from './playlists.ts';
 export * from './box-handles.ts';
 export * from './item-shapes.ts';
+export * from './clock.ts';

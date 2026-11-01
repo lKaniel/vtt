@@ -223,7 +223,8 @@ describe('concentration and lasting effects', () => {
       conditions: ['paralyzed'],
       source: 'hero',
     });
-    expect(tok('hero').concentration).toEqual({ spell: 'hold-person', name: 'Hold Person' });
+    // It lasts a minute of game time (see game-time.test.ts).
+    expect(tok('hero').concentration).toEqual({ spell: 'hold-person', name: 'Hold Person', endsAt: 60 });
   });
 
   it('stops a paralyzed creature from acting', () => {

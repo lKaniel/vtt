@@ -60,15 +60,20 @@ export class CombatActions {
 
   start(player: Player, ids: readonly string[]): void {
     requireGm(player);
-    const fighters = ids.map((id) => this.table.fighter(id));
-    const combat = startCombat(
+    this.open(ids.map((id) => this.table.fighter(id)), 'Roll for initiative!', false);
+  }
+
+  /** Rolls initiative for `fighters` and starts the first turn. */
+  private open(fighters: Fighter[], heading: string, peaceful: boolean): void {
+    const rolled = startCombat(
       fighters.map((f) => ({ token: f.token.id, bonus: f.sheet.initiative, speed: f.sheet.speed })),
       this.table.rng,
     );
+    const combat = peaceful ? { ...rolled, peaceful } : rolled;
     this.store.setCombat(combat);
     const names = new Map(fighters.map((f) => [f.token.id, f.token.name]));
     const order = combat.order.map((e) => `${names.get(e.token)} ${e.initiative}`).join(', ');
-    this.table.note(`Roll for initiative! ${order}`);
+    this.table.note(`${heading} ${order}`);
     const first = currentTurn(combat);
     if (first) this.startOfTurn(first);
   }
@@ -76,6 +81,24 @@ export class CombatActions {
   end(player: Player): void {
     requireGm(player);
     this.store.setCombat(undefined);
+  }
+
+  /** GM: turn-based mode outside a fight. The party on the scene takes turns, as in a fight but with no one fighting. */
+  turnBased(player: Player, on: boolean): void {
+    requireGm(player);
+    const combat = this.store.combat;
+    if (combat && !combat.peaceful) {
+      throw new Refusal(on ? 'A fight is on: it is turn-based already' : 'End the fight to leave turn-based mode');
+    }
+    if (!on) return this.store.setCombat(undefined);
+    if (combat) return;
+    const party = [...this.store.tokens.values()].filter((t) => isParty(t) && !t.leader);
+    const fighters = party.flatMap((t) => {
+      const sheet = this.table.sheetOf(t);
+      return sheet && sheet.hp > 0 ? [{ token: t, sheet }] : [];
+    });
+    if (!fighters.length) throw new Refusal('There is no one in the party here to take turns');
+    this.open(fighters, 'Turn-based mode:', true);
   }
 
   endTurn(player: Player): void {
