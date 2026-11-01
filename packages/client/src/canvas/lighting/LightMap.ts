@@ -1,4 +1,4 @@
-import { feetToPx, type LightSource, type Point, type Rect } from '@vtt/shared';
+import { feetToPx, type LightSource, type ReachPolygon, type Rect } from '@vtt/shared';
 import { Container, Graphics, RenderTexture, Sprite, Texture, type Renderer } from 'pixi.js';
 import { ambientColor, falloff, lightColor, lightPulse } from './light-style.ts';
 
@@ -24,7 +24,7 @@ export interface LightScene {
   gridSize: number;
   lights: readonly LightSource[];
   /** The area a light reaches from a point, stopped by walls. */
-  polygon: (at: Point, radius: number) => number[];
+  polygon: ReachPolygon;
   now: number;
 }
 
@@ -92,7 +92,7 @@ export class LightMap {
 
   private drawDarkness(l: LightSource, scene: LightScene): void {
     const radius = feetToPx(l.bright + l.dim, scene.gridSize);
-    if (radius > 0) this.darkness.poly(scene.polygon([l.x, l.y], radius)).fill(0x000000);
+    if (radius > 0) this.darkness.poly(scene.polygon([l.x, l.y], radius, 'light')).fill(0x000000);
   }
 
   private drawLamp(l: LightSource, index: number, scene: LightScene): void {
@@ -102,7 +102,7 @@ export class LightMap {
     const key = `${l.x},${l.y},${radius},${share}`;
     let lamp = this.cache.get(key);
     if (!lamp) {
-      lamp = this.makeLamp(scene.polygon([l.x, l.y], radius), share);
+      lamp = this.makeLamp(scene.polygon([l.x, l.y], radius, 'light'), share);
       this.cache.set(key, lamp);
       this.lamps.addChild(lamp.root);
     }

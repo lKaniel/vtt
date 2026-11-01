@@ -4,6 +4,7 @@ import {
   onLevel,
   type LightSource,
   type Point,
+  type ReachPolygon,
   type Rect,
   type Senses,
   SIGHT_SQUARES,
@@ -87,12 +88,12 @@ export class Vision {
     this.sight.destroy();
   }
 
-  private polygon(walls: readonly Wall[]) {
-    return (origin: Point, radius: number): number[] => {
-      const key = `${origin[0]},${origin[1]},${radius},${this.wallsVersion}`;
+  private polygon(walls: readonly Wall[], gridSize: number): ReachPolygon {
+    return (origin, radius, kind = 'sight') => {
+      const key = `${kind},${origin[0]},${origin[1]},${radius},${this.wallsVersion}`;
       let poly = this.polyCache.get(key);
       if (!poly) {
-        poly = visibilityPolygon(origin, radius, walls);
+        poly = visibilityPolygon(origin, radius, walls, { kind, gridSize });
         if (this.polyCache.size > 500) this.polyCache.clear();
         this.polyCache.set(key, poly);
       }
@@ -121,7 +122,7 @@ export class Vision {
       h: height / camera.zoom,
     };
     const gm = isGm(you);
-    const polygon = this.polygon(walls);
+    const polygon = this.polygon(walls, world.gridSize);
     const lights = this.lights(viewers);
     const scene: LightScene = {
       view,

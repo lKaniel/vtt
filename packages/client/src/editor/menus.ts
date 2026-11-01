@@ -1,8 +1,9 @@
 import type { Doc, DocRef, Patch } from '@vtt/core';
-import type { EditorMode, MapEdit, Point, ZOrder } from '@vtt/shared';
+import { type EditorMode, type MapEdit, type Point, type WallRules, wallPreset, type ZOrder } from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
 import { LIGHT_PRESETS, type LightPreset } from '../map-tools.ts';
 import type { Draft } from './shape-tools.ts';
+import { presetPatch } from './wall-fields.ts';
 
 // Right-click menus. Each kind of thing registers the entries it adds, so a
 // new placeable (or a game system) brings its own without touching the
@@ -114,11 +115,13 @@ registerMenu('token', (t, api) => {
   ];
 });
 
-const WALL_KINDS: { label: string; is: (d: Doc) => boolean; patch: Patch }[] = [
-  { label: 'Make it a wall', is: (d) => !d.door && d.sight !== false, patch: { door: null, sight: null } },
-  { label: 'Make it a door', is: (d) => !!d.door, patch: { door: 'closed', sight: null } },
-  { label: 'Make it a window', is: (d) => !d.door && d.sight === false, patch: { door: null, sight: false } },
-];
+const WALL_KINDS: { label: string; is: (d: Doc) => boolean; patch: Patch }[] = (
+  ['wall', 'door', 'window'] as const
+).map((kind) => ({
+  label: `Make it a ${kind}`,
+  is: (d) => wallPreset(d as WallRules) === kind,
+  patch: presetPatch(kind),
+}));
 
 registerMenu('wall', (t, api) => {
   const kinds = WALL_KINDS.filter((k) => !allDocs(t, k.is)).map((k) => ({

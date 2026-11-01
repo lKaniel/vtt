@@ -1,7 +1,8 @@
-import type { Doc, Patch } from '@vtt/core';
-import { TileTextureSchema } from '@vtt/shared';
+import type { Doc } from '@vtt/core';
+import { TileTextureSchema, WALL_PRESETS, type WallRules, wallPreset } from '@vtt/shared';
 import { type Field, type FieldValue, flag, MIXED, options, plain } from './field-kit.ts';
 import { ITEM_FIELDS } from './item-fields.ts';
+import { presetPatch, wallRuleFields } from './wall-fields.ts';
 
 export { type Field, type FieldValue, MIXED } from './field-kit.ts';
 
@@ -9,24 +10,14 @@ export { type Field, type FieldValue, MIXED } from './field-kit.ts';
 // what to show for a selection, the value they share (or "mixed"), and the
 // patch an input makes.
 
-const WALL_KIND: Record<string, Patch> = {
-  wall: { door: null, sight: null },
-  door: { door: 'closed', sight: null },
-  window: { door: null, sight: false },
-};
-
-function wallKind(doc: Doc): string {
-  if (doc.door) return 'door';
-  return doc.sight === false ? 'window' : 'wall';
-}
-
 const WALL_FIELDS: Field[] = [
   {
-    ...plain('kind', 'Kind', 'select', { options: options('wall', 'door', 'window') }),
-    get: wallKind,
-    patch: (value) => WALL_KIND[String(value)] ?? {},
+    ...plain('kind', 'Kind', 'select', { options: options(...Object.keys(WALL_PRESETS), 'custom') }),
+    get: (d) => wallPreset(d as WallRules),
+    patch: (value) => presetPatch(String(value)),
   },
   plain('door', 'Door', 'select', { options: options('closed', 'open', 'locked'), when: (d) => !!d.door }),
+  ...wallRuleFields(),
 ];
 
 const LIGHT_FIELDS: Field[] = [

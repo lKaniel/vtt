@@ -29,8 +29,16 @@ export function segmentsIntersect(p1: Point, p2: Point, q1: Point, q2: Point): b
   return false;
 }
 
+/** Distance from p to the segment a-b. */
+export function distToSegment(p: Point, a: Point, b: Point): number {
+  const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
+  const len2 = dx * dx + dy * dy;
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2));
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+}
+
 export function blocksMovement(wall: Wall): boolean {
-  return wall.door !== 'open';
+  return wall.door !== 'open' && wall.move !== 'none';
 }
 
 export function movementBlocked(from: Point, to: Point, walls: readonly Wall[]): boolean {
