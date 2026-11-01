@@ -29,11 +29,53 @@ describe('the edit kinds', () => {
   it('cover every placeable and the Actors list', () => {
     expect(Object.keys(EDIT_KINDS).sort((a, b) => a.localeCompare(b))).toEqual([
       'actor',
+      'drawing',
+      'journal',
       'light',
+      'note',
+      'playlist',
+      'region',
+      'rolltable',
+      'sound',
+      'template',
       'tile',
       'token',
       'wall',
     ]);
+  });
+
+  it('move point runs point by point, and keep a pasted note on its journal entry', () => {
+    const store = scene();
+    store.apply([
+      { op: 'create', coll: 'journals', doc: doc('inn', 'journal', { name: 'The inn', pages: [] }) },
+      { op: 'create', coll: 'main/notes', doc: doc('pin', 'note', { x: 100, y: 100, entry: 'inn' }) },
+      {
+        op: 'create',
+        coll: 'main/regions',
+        doc: doc('bog', 'region', {
+          points: [
+            [0, 0],
+            [100, 0],
+            [0, 100],
+          ],
+          behaviors: [],
+        }),
+      },
+    ]);
+    const refs = [
+      { coll: 'main/notes', id: 'pin' },
+      { coll: 'main/regions', id: 'bog' },
+    ];
+    const { ops } = pasteAt(store, copyRefs(store, refs), { scene: 'main', offset: [100, 0] });
+    const made = ops.map((o) => (o.op === 'create' ? o.doc : undefined));
+    expect(made[0]).toMatchObject({ id: 'pin-1', x: 200, entry: 'inn' });
+    expect(made[1]).toMatchObject({
+      points: [
+        [100, 0],
+        [200, 0],
+        [100, 100],
+      ],
+    });
   });
 
   it('move every placeable by the same offset', () => {

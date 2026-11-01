@@ -8,12 +8,14 @@ export interface PathOptions {
   maxNodes?: number;
   /** How far outside the start-goal box the search may wander, in squares. */
   margin?: number;
+  /** What walking into the square around a point costs, times 5 ft: 2 for difficult ground. Default 1. */
+  cost?: (p: Point) => number;
 }
 
 export interface Path {
   /** Square centres from start to goal, start included. */
   points: Point[];
-  /** Distance in feet, every square (diagonals too) costing 5 ft. */
+  /** Distance in feet, every square (diagonals too) costing 5 ft, or more on difficult ground. */
   feet: number;
 }
 
@@ -132,11 +134,11 @@ export function findPath(from: Point, to: Point, walls: readonly Wall[], opts: P
   const t = squareOf(to, g);
   if (s[0] === t[0] && s[1] === t[1]) return { points: [squareCentre(s, g)], feet: 0 };
 
-  const search = new Search(new SearchBox(s, t, opts.margin ?? 12), t, walls, g);
+  const search = new Search(new SearchBox(s, t, opts.margin ?? 12), t, walls, { gridSize: g, cost: opts.cost });
   search.start(s);
   for (let expanded = 0; search.hasOpen() && expanded <= (opts.maxNodes ?? 20000); expanded++) {
     const cur = search.next();
-    if (cur === search.goal) return tracePath(search.came, cur, search.box, g);
+    if (cur === search.goal) return tracePath(search, cur, g);
     search.expand(cur);
   }
   return null;
@@ -149,16 +151,20 @@ class Search {
   readonly goal: number;
   private open = new MinHeap();
   private near: Wall[];
+  private gridSize: number;
+  readonly stepCost: (p: Point) => number;
 
   constructor(
     readonly box: SearchBox,
     private target: Point,
     walls: readonly Wall[],
-    private gridSize: number,
+    opts: { gridSize: number; cost?: (p: Point) => number },
   ) {
     this.goal = box.key(target);
+    this.gridSize = opts.gridSize;
+    this.stepCost = opts.cost ?? (() => 1);
     // Only walls near the search box matter.
-    this.near = wallsInRect(walls, box.rect(gridSize));
+    this.near = wallsInRect(walls, box.rect(opts.gridSize));
   }
 
   start(square: Point): void {
@@ -181,7 +187,8 @@ class Search {
     for (const [dx, dy] of STEPS) {
       const next: Point = [here[0] + dx, here[1] + dy];
       // Diagonals cost a hair more so straight paths win ties.
-      const nextCost = base + (dx !== 0 && dy !== 0 ? 1.0001 : 1);
+      const step = this.stepCost(squareCentre(next, this.gridSize));
+      const nextCost = base + step * (dx !== 0 && dy !== 0 ? 1.0001 : 1);
       if (!this.box.contains(next) || nextCost >= (this.cost.get(this.box.key(next)) ?? Infinity)) continue;
       if (movementBlocked(squareCentre(here, this.gridSize), squareCentre(next, this.gridSize), this.near)) continue;
       const nk = this.box.key(next);
@@ -196,11 +203,12 @@ class Search {
   }
 }
 
-function tracePath(came: Map<number, number>, goal: number, box: SearchBox, gridSize: number): Path {
+function tracePath(search: Search, goal: number, gridSize: number): Path {
   const points: Point[] = [];
-  for (let k: number | undefined = goal; k !== undefined; k = came.get(k)) {
-    points.push(squareCentre(box.square(k), gridSize));
+  for (let k: number | undefined = goal; k !== undefined; k = search.came.get(k)) {
+    points.push(squareCentre(search.box.square(k), gridSize));
   }
   points.reverse();
-  return { points, feet: (points.length - 1) * 5 };
+  const feet = points.slice(1).reduce((sum, p) => sum + 5 * search.stepCost(p), 0);
+  return { points, feet };
 }

@@ -31,6 +31,22 @@ function atXY(name: string, extra: Partial<Kind> = {}): Kind {
   };
 }
 
+/** A placeable that is a run of points (a region, a polygon drawing), or a box at x, y. */
+function pointsOrXY(name: string, extra: Partial<Kind> = {}): Kind {
+  const points = (d: Doc) => d.points as Point[] | undefined;
+  return {
+    coll: (scene) => `${scene}/${name}`,
+    anchor: (d) => points(d)?.[0] ?? [num(d, 'x'), num(d, 'y')],
+    shift: (d, dx, dy) => {
+      const pts = points(d);
+      return pts
+        ? { ...d, points: pts.map((p) => add(p, dx, dy)) }
+        : { ...d, x: num(d, 'x') + dx, y: num(d, 'y') + dy };
+    },
+    ...extra,
+  };
+}
+
 export const EDIT_KINDS: Kinds = {
   token: atXY('tokens', { refs: { actor: 'actor', leader: 'token', 'summon.by': 'token' } }),
   light: atXY('lights'),
@@ -50,7 +66,15 @@ export const EDIT_KINDS: Kinds = {
     },
     shift: (d, dx, dy) => ({ ...d, a: add(d.a as Point, dx, dy), b: add(d.b as Point, dx, dy) }),
   },
+  drawing: pointsOrXY('drawings'),
+  note: atXY('notes', { refs: { entry: 'journal' } }),
+  template: atXY('templates', { refs: { attachedTo: 'token', 'effect.token': 'token' } }),
+  region: pointsOrXY('regions'),
+  sound: atXY('sounds'),
   actor: { coll: () => 'actors' },
+  journal: { coll: () => 'journals' },
+  rolltable: { coll: () => 'tables' },
+  playlist: { coll: () => 'playlists' },
 };
 
 interface Source {
