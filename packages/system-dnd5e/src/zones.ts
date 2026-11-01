@@ -49,6 +49,46 @@ export function inZone(
   );
 }
 
+/** Where a zone's template goes on the map (see templates.ts in shared): its shape, origin and reach in feet. */
+export interface ZoneTemplate {
+  shape: 'circle' | 'cone' | 'line' | 'square';
+  x: number;
+  y: number;
+  distance: number;
+  direction?: number;
+  width?: number;
+  /** Set when it surrounds or starts at its caster, and so moves with them. */
+  attachedTo?: string;
+}
+
+const SHAPES = { sphere: 'circle', emanation: 'circle', cone: 'cone', line: 'line', cube: 'square' } as const;
+
+/** A cone or line aimed at a point starts at its caster: the direction it points, in degrees. */
+function aimedFrom(bearer: Token, shape: string, at: Point | undefined): number | undefined {
+  if (!at || (shape !== 'cone' && shape !== 'line')) return undefined;
+  return Math.round((Math.atan2(at[1] - bearer.y, at[0] - bearer.x) * 180) / Math.PI);
+}
+
+/** The template a zone shows as: where it was aimed, or on its caster. */
+export function zoneTemplate({ bearer, effect }: ZoneHit, spell: Spell): ZoneTemplate | undefined {
+  const area = spell.area;
+  if (!area) return undefined;
+  const at = effect.zone.at;
+  const direction = aimedFrom(bearer, area.shape, at);
+  const onCaster = !at || area.shape === 'emanation' || direction !== undefined;
+  const [x, y] = onCaster ? [bearer.x, bearer.y] : at;
+  const reach = area.shape === 'emanation' ? area.size + (bearer.size * 5) / 2 : area.size;
+  return {
+    shape: SHAPES[area.shape],
+    x,
+    y,
+    distance: reach,
+    ...(direction !== undefined && { direction }),
+    ...(area.shape === 'line' && { width: area.width }),
+    ...(onCaster && { attachedTo: bearer.id }),
+  };
+}
+
 /** Every zone some creature keeps going. */
 export function zonesOf(tokens: Iterable<Token>): ZoneHit[] {
   const out: ZoneHit[] = [];

@@ -11,6 +11,7 @@ import { castFeature } from './feature-casting.ts';
 import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
 import { Reactions } from './reactions.ts';
+import { ZoneTemplates } from './zone-templates.ts';
 import { Zones } from './zones.ts';
 import { DocFeed } from './doc-feed.ts';
 import { checkOps } from './op-permissions.ts';
@@ -56,6 +57,7 @@ export class Game {
   readonly spells: SpellActions;
   readonly table: Table;
   private zones: Zones;
+  private zoneTemplates: ZoneTemplates;
   private reactions: Reactions;
   private features: FeatureActions;
   private gm: GmActions;
@@ -74,7 +76,8 @@ export class Game {
     const table = new Table(store, rng, (text) => this.narrate({ text }));
     this.table = table;
     this.spells = new SpellActions(table, (spell) => this.narrate({ spell }));
-    this.zones = new Zones(table, this.spells);
+    this.zoneTemplates = new ZoneTemplates(table);
+    this.zones = new Zones(table, this.spells, this.zoneTemplates);
     this.combat = new CombatActions(
       table,
       (attack) => this.narrate({ attack }),
@@ -273,18 +276,25 @@ export class Game {
     if (isPackMessage(msg)) return this.packs.handle(c.player, msg, (reply) => this.send(c, reply));
     try {
       if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);
-      else if (this.history.run(c.player, msg, () => this.dispatch(c, msg))) this.sendHistory();
+      else if (this.history.run(c.player, msg, () => this.settle(() => this.dispatch(c, msg)))) this.sendHistory();
     } catch (e) {
       if (!(e instanceof Refusal)) throw e;
       this.fail(c, e.message);
     }
   }
 
+  /** Runs a step, then brings what follows from it (zone templates) in line, in the same undo step. */
+  private settle(step: () => void): void {
+    step();
+    this.zoneTemplates.sync();
+  }
+
   /** A transaction of document ops, each allowed by ownership: all of it, or a reject saying why not. */
   private onOps(c: Client, msg: Extract<ClientMessage, { t: 'ops' }>): void {
     try {
       checkOps(c.player, msg.ops, this.store.access);
-      if (this.history.run(c.player, msg, () => this.store.applyOps(msg.ops, msg.txn))) this.sendHistory();
+      if (this.history.run(c.player, msg, () => this.settle(() => this.store.applyOps(msg.ops, msg.txn))))
+        this.sendHistory();
     } catch (e) {
       if (!(e instanceof Refusal || e instanceof OpError)) throw e;
       this.send(c, { t: 'reject', txn: msg.txn, reason: e.message });
