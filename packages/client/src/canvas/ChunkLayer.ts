@@ -8,15 +8,19 @@ const DOOR_COLORS = { closed: 0xd08a3a, open: 0x7ac06a, locked: 0xd04a4a } as co
 const DOOR_HANDLE_RADIUS = 11;
 
 interface ChunkView {
-  ground: Container;
+  /** The chunk's tiles and wall shadows: each sits straight in `ground`, so tiles of all chunks stack by `z`. */
+  ground: Container[];
   walls: Container;
   doors: Graphics[];
 }
 
+/** Wall shadows draw over every tile. */
+const SHADOW_Z = 1e9;
+
 /** Draws the tiles, walls and doors of every loaded chunk. */
 export class ChunkLayer {
-  /** Floor tiles, under everything else. */
-  readonly ground = new Container();
+  /** Floor tiles, under everything else, in the scene's draw order. */
+  readonly ground = new Container({ sortableChildren: true });
   /** Walls and doors, above the grid. */
   readonly walls = new Container();
   private views = new Map<string, ChunkView>();
@@ -29,12 +33,13 @@ export class ChunkLayer {
 
   draw(key: string, chunk: Chunk): void {
     this.remove(key);
-    const view: ChunkView = { ground: new Container(), walls: new Container(), doors: [] };
-    view.ground.cullable = true;
+    const view: ChunkView = { ground: [], walls: new Container(), doors: [] };
     view.walls.cullable = true;
     const world = this.session.world;
-    drawTiles(view.ground, chunk, { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 });
-    view.ground.addChild(shadowsOf(chunk.walls));
+    view.ground = drawTiles(chunk, { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 });
+    const shadows = shadowsOf(chunk.walls);
+    shadows.zIndex = SHADOW_Z;
+    view.ground.push(shadows);
     view.walls.addChild(wallsOf(chunk.walls));
     for (const wall of chunk.walls) {
       if (!wall.door) continue;
@@ -42,7 +47,10 @@ export class ChunkLayer {
       view.doors.push(door);
       view.walls.addChild(door);
     }
-    this.ground.addChild(view.ground);
+    for (const item of view.ground) {
+      item.cullable = true;
+      this.ground.addChild(item);
+    }
     this.walls.addChild(view.walls);
     this.views.set(key, view);
   }
@@ -50,7 +58,7 @@ export class ChunkLayer {
   remove(key: string): boolean {
     const v = this.views.get(key);
     if (!v) return false;
-    v.ground.destroy({ children: true });
+    for (const item of v.ground) item.destroy({ children: true });
     v.walls.destroy({ children: true });
     this.views.delete(key);
     return true;
@@ -90,26 +98,29 @@ export class ChunkLayer {
   }
 }
 
-function drawTiles(into: Container, chunk: Chunk, ctx: GroundContext): void {
-  for (const tile of chunk.tiles) {
-    if (tile.kind === 'rect') {
-      into.addChild(rectTile(tile, ctx));
-      continue;
-    }
-    const sprite = new Sprite();
-    sprite.position.set(tile.x, tile.y);
-    into.addChild(sprite);
-    Assets.load(`/assets/${tile.src}`)
-      .then((texture: Sprite['texture']) => {
-        if (sprite.destroyed) return;
-        sprite.texture = texture;
-        sprite.width = tile.w;
-        sprite.height = tile.h;
-      })
-      .catch(() => {
-        console.warn(`Missing image assets/${tile.src}`);
-      });
-  }
+/** The chunk's tiles, each at its place in the scene's draw order. */
+function drawTiles(chunk: Chunk, ctx: GroundContext): Container[] {
+  return chunk.tiles.map((tile, i) => {
+    const drawn = tile.kind === 'rect' ? rectTile(tile, ctx) : imageTile(tile);
+    drawn.zIndex = tile.z ?? i;
+    return drawn;
+  });
+}
+
+function imageTile(tile: Extract<Chunk['tiles'][number], { kind: 'image' }>): Sprite {
+  const sprite = new Sprite();
+  sprite.position.set(tile.x, tile.y);
+  Assets.load(`/assets/${tile.src}`)
+    .then((texture: Sprite['texture']) => {
+      if (sprite.destroyed) return;
+      sprite.texture = texture;
+      sprite.width = tile.w;
+      sprite.height = tile.h;
+    })
+    .catch(() => {
+      console.warn(`Missing image assets/${tile.src}`);
+    });
+  return sprite;
 }
 
 function shadowsOf(walls: readonly Wall[]): Graphics {

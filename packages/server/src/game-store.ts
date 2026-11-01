@@ -25,6 +25,7 @@ import {
   type TokenEntry,
   type Wall,
   type World,
+  isGroup,
 } from '@vtt/shared';
 import { clientCheck } from './doc-checks.ts';
 import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
@@ -32,6 +33,7 @@ import { FileWriter } from './file-writer.ts';
 import { classify, crossCheck, pathOf } from './game-files.ts';
 import { readEntry, readFolder, stateOf, type FolderEntry } from './game-folder.ts';
 import { upgradeFolder } from './migrate-all.ts';
+import { drawnTiles, reordersTiles } from './scene-map.ts';
 import { StoreAccess, type DocAccess } from './store-access.ts';
 import type { TYPE } from './store-colls.ts';
 import {
@@ -391,15 +393,19 @@ export class GameStore extends EventEmitter<StoreEvents> {
   private chunkKeys(t: Touched, keys: Set<string>): void {
     const coll = MAP.find((c) => t.coll === this.sceneColl(c));
     if (!coll) return;
-    for (const doc of [t.before, this.docs.get(t.coll, t.id)]) {
-      if (doc) keys.add(anchorChunk(coll, fromDoc(doc), this.world.chunkSize));
+    const now = this.docs.get(t.coll, t.id);
+    for (const doc of [t.before, now]) {
+      if (doc && !isGroup(doc)) keys.add(anchorChunk(coll, fromDoc(doc), this.world.chunkSize));
+    }
+    if (coll === 'tiles' && reordersTiles(t.before, now)) {
+      for (const [key, chunk] of this.chunks) if (chunk.tiles.length) keys.add(key);
     }
   }
 
   private sceneMap(): Chunk {
     const items = (coll: MapCollection) => this.docs.all(this.sceneColl(coll)).map((d) => fromDoc(d));
     return {
-      tiles: items('tiles') as Chunk['tiles'],
+      tiles: drawnTiles(this.docs.all(this.sceneColl('tiles'))),
       walls: items('walls') as Wall[],
       lights: items('lights') as Chunk['lights'],
     };

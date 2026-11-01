@@ -1,10 +1,22 @@
 import type { Doc } from '@vtt/core';
-import { handlesOf, hitTest, marqueeHits, shapeOf, type Hittable, type Point, type View } from '@vtt/shared';
+import {
+  handlesOf,
+  hitTest,
+  marqueeHits,
+  shapeOf,
+  withGroupBounds,
+  type Hittable,
+  type MarqueeMode,
+  type Point,
+  type Rect,
+  type View,
+} from '@vtt/shared';
 import { Container, Graphics } from 'pixi.js';
 import { EditorController, type EditorHost } from '../editor/controller.ts';
 import type { MenuTarget } from '../editor/menus.ts';
-import { previewDoc } from '../editor/preview.ts';
-import { keyOf, type Mods } from '../editor/selection.ts';
+import { previewDoc, previewTiles } from '../editor/preview.ts';
+import { keyOf, refOf, type Mods } from '../editor/selection.ts';
+import { TileItems } from '../editor/tile-items.ts';
 import type { Session } from '../session.ts';
 import { DrawTools } from './DrawTools.ts';
 import { drawHandles, drawLight, drawMarquee, drawOutline, drawWall, type DrawCtx } from './editor-draw.ts';
@@ -81,8 +93,9 @@ export class MapEditor {
   }
 
   pointerUp(p: PointerInfo): void {
-    if (p.button !== 0 || !this.controller.busy) return;
-    this.controller.up(p.at, p.mods);
+    if (p.button !== 0) return;
+    if (this.tools.busy) this.tools.release(p.at, p.mods.shift);
+    else if (this.controller.busy) this.controller.up(p.at, p.mods);
     this.redraw();
   }
 
@@ -106,20 +119,47 @@ export class MapEditor {
     return { px: 1 / this.zoom, gridSize: this.session.world?.gridSize ?? 100 };
   }
 
-  /** The documents of the current mode, bottom to top, as a drag in progress shows them. */
+  /** The documents of the current mode, bottom to top, as a drag in progress shows them (groups span their tiles). */
   private modeDocs(): { key: string; doc: Doc }[] {
     const coll = this.session.modeColl();
     const preview = this.controller.preview();
     const ctx = { mode: this.session.mode, gridSize: this.ctx.gridSize };
-    return this.session.docs.all(coll).map((doc) => {
+    const docs = this.session.docs.all(coll);
+    if (this.session.mode === 'tiles')
+      return previewTiles(docs, coll, preview, ctx).map((doc) => ({ key: keyOf({ coll, id: doc.id }), doc }));
+    return docs.map((doc) => {
       const key = keyOf({ coll, id: doc.id });
       return { key, doc: previewDoc(key, doc, preview, ctx) };
     });
   }
 
+  /** What the tiles mode picks, with groups and locks (see editor/tile-items.ts). */
+  private tileItems(): TileItems {
+    const s = this.session;
+    const tiles = s.tiles();
+    const selected = s.selection.map((k) => refOf(k).id);
+    return new TileItems(withGroupBounds(tiles), s.modeColl('tiles'), TileItems.scopeOf(tiles, selected));
+  }
+
   private items(): Hittable[] {
     if (this.session.mode === 'tokens') return this.tokenItems(false);
+    if (this.session.mode === 'tiles') return this.tileItems().pick;
     return this.modeDocs().map(({ key, doc }) => ({ key, shape: shapeOf(doc, this.ctx) }));
+  }
+
+  private inRect(r: Rect, mode: MarqueeMode): string[] {
+    const s = this.session;
+    if (s.mode === 'tiles') return marqueeHits(this.tileItems().units(mode), r, mode);
+    const hits = marqueeHits(this.items(), r, mode);
+    return s.mode === 'tokens' ? hits.map((id) => s.tokenKey(id)) : hits;
+  }
+
+  /** The selection as drawn: groups with the bounds of what is in them. */
+  private shownSelection(): { ref: { coll: string; id: string }; doc: Doc }[] {
+    const docs = this.session.selectedDocs();
+    if (this.session.mode !== 'tiles') return docs;
+    const shown = new Map(withGroupBounds(this.session.tiles()).map((d) => [d.id, d]));
+    return docs.map(({ ref, doc }) => ({ ref, doc: shown.get(doc.id) ?? doc }));
   }
 
   /** Tokens as discs where they are drawn: those you control, or all of them for a menu. */
@@ -140,7 +180,7 @@ export class MapEditor {
 
   private pickHandle(at: Point): { key: string; handle: string } | undefined {
     const reach = HANDLE_PX * this.ctx.px;
-    for (const { ref, doc } of this.session.selectedDocs().reverse()) {
+    for (const { ref, doc } of this.shownSelection().reverse()) {
       const handle = handlesOf(doc, this.ctx).find((h) => Math.hypot(h.at[0] - at[0], h.at[1] - at[1]) <= reach);
       if (handle) return { key: keyOf(ref), handle: handle.id };
     }
@@ -164,10 +204,9 @@ export class MapEditor {
     return {
       pick: (p) => this.pick(p),
       pickHandle: (p) => this.pickHandle(p),
-      inRect: (r, mode) => {
-        const hits = marqueeHits(this.items(), r, mode);
-        return s.mode === 'tokens' ? hits.map((id) => s.tokenKey(id)) : hits;
-      },
+      inRect: (r, mode) => this.inRect(r, mode),
+      draggable: (key) => s.mode !== 'tiles' || this.tileItems().draggable(key),
+      enter: (key, at) => (s.mode === 'tiles' ? this.tileItems().enter(key, at) : undefined),
       selection: () => s.selection,
       setSelection: (keys) => s.setSelection(keys),
       slop: () => SLOP_PX * this.ctx.px,

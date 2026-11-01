@@ -51,9 +51,15 @@ describe('the inspector', () => {
   it('shows rect tile fields for rect tiles and the picture for image tiles', () => {
     const rect: Doc = { id: 't', type: 'tile', rev: 1, kind: 'rect', x: 0, y: 0, w: 1, h: 1, color: '#000' };
     const image: Doc = { id: 'i', type: 'tile', rev: 1, kind: 'image', x: 0, y: 0, w: 1, h: 1, src: 'a.png' };
-    expect(fieldsFor([rect]).map((f) => f.key)).toEqual(['x', 'y', 'w', 'h', 'color', 'texture']);
-    expect(fieldsFor([image]).map((f) => f.key)).toEqual(['x', 'y', 'w', 'h', 'src']);
-    expect(fieldsFor([rect, image]).map((f) => f.key)).toEqual(['x', 'y', 'w', 'h']);
+    const both = ['name', 'x', 'y', 'w', 'h', 'background', 'locked'];
+    expect(fieldsFor([rect]).map((f) => f.key)).toEqual([...both, 'color', 'texture']);
+    expect(fieldsFor([image]).map((f) => f.key)).toEqual([...both, 'src']);
+    expect(fieldsFor([rect, image]).map((f) => f.key)).toEqual(both);
+  });
+
+  it('shows a group its name and lock only', () => {
+    const group: Doc = { id: 'g', type: 'tile', rev: 1, kind: 'group' };
+    expect(fieldsFor([group]).map((f) => f.key)).toEqual(['name', 'locked']);
   });
 
   it('lets the GM hide tokens', () => {

@@ -120,4 +120,51 @@ describe('EditorController', () => {
     expect(h.calls).toEqual([]);
     expect(c.busy).toBe(false);
   });
+
+  it('a drag that starts on ground not selected draws a marquee instead of moving it', () => {
+    const h = Object.assign(host(), { draggable: (key: string) => key !== 'a' });
+    const c = new EditorController(h);
+    c.down([0, 0], none);
+    c.move([30, 30], none);
+    expect(c.preview()?.kind).toBe('marquee');
+    c.up([30, 30], none);
+    h.selected = ['a'];
+    c.down([0, 0], none);
+    c.move([30, 0], none);
+    expect(c.preview()?.kind).toBe('move');
+  });
+
+  it('a double click on a selected group selects what is in it under the pointer', () => {
+    let t = 1000;
+    const h = Object.assign(host(), {
+      now: () => t,
+      enter: (key: string, at: Point) => (key === 'a' ? `a/${at[0]}` : undefined),
+    });
+    const c = new EditorController(h);
+    const click = (at: Point) => {
+      c.down(at, none);
+      c.up(at, none);
+    };
+    click([1, 0]);
+    t += 200;
+    click([1, 0]);
+    expect(h.selected).toEqual(['a/1']);
+    t += 1000;
+    click([100, 0]);
+    t += 200;
+    click([100, 0]);
+    expect(h.selected).toEqual(['b']);
+  });
+
+  it('two slow clicks are two clicks', () => {
+    let t = 0;
+    const h = Object.assign(host(), { now: () => t, enter: () => 'deeper' });
+    const c = new EditorController(h);
+    c.down([1, 0], none);
+    c.up([1, 0], none);
+    t += 900;
+    c.down([1, 0], none);
+    c.up([1, 0], none);
+    expect(h.selected).toEqual(['a']);
+  });
 });

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { anchorChunk, groupChunks, TileSchema, type PlacedLight, type Wall } from './index.ts';
+import { anchorChunk, DrawnTileSchema, groupChunks, type PlacedLight, type Wall } from './index.ts';
 
 const SIZE = 2000;
 
 describe('anchorChunk', () => {
   it('puts a tile by its top-left corner, a wall by its midpoint and a light by its centre', () => {
-    const tile = TileSchema.parse({ kind: 'rect', id: 't', x: 1990, y: 0, w: 500, h: 500, color: '#000' });
+    const tile = DrawnTileSchema.parse({ kind: 'rect', id: 't', x: 1990, y: 0, w: 500, h: 500, color: '#000' });
     const wall: Wall = { id: 'w', a: [1900, 0], b: [2300, 0] };
     const light = { id: 'l', x: -5, y: 10, bright: 10, dim: 0 } as PlacedLight;
     expect(anchorChunk('tiles', tile, SIZE)).toBe('0_0');

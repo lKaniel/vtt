@@ -1,17 +1,19 @@
-import type { Point } from '@vtt/shared';
+import { rectBetween, type Point } from '@vtt/shared';
 import type { Graphics } from 'pixi.js';
 import { LIGHT_PRESETS, snapPoint, wallEdit } from '../map-tools.ts';
 import type { Session } from '../session.ts';
 import { DOOR_COLOR, WALL_COLOR, type DrawCtx } from './editor-draw.ts';
 
 /**
- * The drawing tools of the walls and lights modes: click corner to corner to
- * draw walls, doors and windows (they chain on; a door is one piece), or
- * click to place a light. Shift turns snapping off.
+ * The drawing tools of the tiles, walls and lights modes: drag a box to draw
+ * a tile, click corner to corner to draw walls, doors and windows (they chain
+ * on; a door is one piece), or click to place a light. Shift turns snapping off.
  */
 export class DrawTools {
   /** Where the wall being drawn starts. */
   private chain?: Point;
+  /** Where the tile being drawn starts. */
+  private box?: Point;
 
   constructor(private session: Session) {}
 
@@ -19,25 +21,48 @@ export class DrawTools {
     return this.session.mode !== 'tokens' && this.session.tool !== 'select';
   }
 
-  /** A wall is half drawn. */
+  /** A wall or tile is half drawn. */
   get busy(): boolean {
-    return !!this.chain;
+    return !!this.chain || !!this.box;
   }
 
   cancel(): void {
     this.chain = undefined;
+    this.box = undefined;
   }
 
   press(at: Point, free: boolean): void {
     const tool = this.session.tool;
+    if (tool === 'tile') {
+      this.box = snapPoint(at, this.grid, !free);
+      return;
+    }
     if (tool === 'place') return this.placeLight(at, free);
     if (tool === 'wall' || tool === 'door' || tool === 'window') this.pressWall(tool, at, free);
+  }
+
+  /** The end of a drag: a tile tool draws its tile. */
+  release(at: Point, free: boolean): void {
+    const start = this.box;
+    this.box = undefined;
+    if (!start) return;
+    const r = rectBetween(start, snapPoint(at, this.grid, !free));
+    if (r.w > 0 && r.h > 0) this.session.createTile(r);
   }
 
   draw(g: Graphics, hover: Point | undefined, free: boolean, ctx: DrawCtx): void {
     const tool = this.session.tool;
     if (!hover || !this.drawing) return;
     const { px } = ctx;
+    if (tool === 'tile') {
+      const at = snapPoint(hover, this.grid, !free);
+      g.circle(at[0], at[1], 5 * px).fill({ color: 0xffffff, alpha: 0.9 });
+      if (this.box) {
+        const r = rectBetween(this.box, at);
+        g.rect(r.x, r.y, r.w, r.h).stroke({ width: 2 * px, color: 0xffe08a, alpha: 0.9 });
+      }
+      return;
+    }
     if (tool === 'place') {
       const at = this.lightSpot(hover, free);
       g.circle(at[0], at[1], 7 * px).stroke({ width: 2 * px, color: 0xffffff, alpha: 0.8 });

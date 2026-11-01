@@ -1,4 +1,4 @@
-import type { Light, MapEdit, Point } from '@vtt/shared';
+import type { Light, MapEdit, Point, TileTexture } from '@vtt/shared';
 
 export type LightPreset = 'candle' | 'torch' | 'lantern' | 'campfire' | 'magic' | 'moonbeam' | 'darkness';
 
@@ -23,3 +23,15 @@ const WALL_KINDS = { wall: {}, door: { door: 'closed' as const }, window: { sigh
 export function wallEdit(tool: keyof typeof WALL_KINDS, a: Point, b: Point): Extract<MapEdit, { op: 'addWall' }> {
   return { op: 'addWall', wall: { a, b, ...WALL_KINDS[tool] } };
 }
+
+/** What the tile tool draws, by texture: ground (under everything, never a container) or floors and objects. */
+export const TILE_PRESETS: Record<TileTexture, { label: string; color: string; background?: true }> = {
+  grass: { label: 'Grass', color: '#7da05a', background: true },
+  dirt: { label: 'Dirt', color: '#9a7550', background: true },
+  sand: { label: 'Sand', color: '#d8c08a', background: true },
+  water: { label: 'Water', color: '#5a8ab0', background: true },
+  rock: { label: 'Rock', color: '#7a746c', background: true },
+  stone: { label: 'Stone floor', color: '#9a9a94' },
+  cobble: { label: 'Cobbles', color: '#8a8580' },
+  wood: { label: 'Wooden floor', color: '#a0703c' },
+};

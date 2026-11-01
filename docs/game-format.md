@@ -99,8 +99,11 @@ pixels.
 
 ```json
 [
-  { "kind": "rect", "id": "grass", "x": 0, "y": 0, "w": 2000, "h": 2000, "color": "#4f6b3a" },
-  { "kind": "image", "id": "tavern", "x": 400, "y": 200, "w": 800, "h": 600, "src": "maps/tavern.webp" }
+  { "kind": "rect", "id": "grass", "x": 0, "y": 0, "w": 2000, "h": 2000, "color": "#4f6b3a", "background": true },
+  { "kind": "image", "id": "tavern", "x": 400, "y": 200, "w": 800, "h": 600, "src": "maps/tavern.webp" },
+  { "kind": "rect", "id": "rug", "parent": "tavern", "x": 500, "y": 300, "w": 200, "h": 100, "color": "#8a3030" },
+  { "kind": "group", "id": "camp", "name": "Goblin camp", "sort": "V" },
+  { "kind": "image", "id": "tent", "parent": "camp", "x": 1500, "y": 300, "w": 200, "h": 200, "src": "tent.webp" }
 ]
 ```
 
@@ -113,7 +116,20 @@ pixels.
 ]
 ```
 
-- Tiles draw in file order, later ones on top.
+- Tiles nest like Figma layers. `parent` names the tile a tile sits in: a
+  `group` (no picture of its own, it spans what is in it) or any other tile
+  (a container: a house holding its furniture). Moving, copying or deleting a
+  tile takes what is in it along; a group left empty is deleted. Coordinates
+  stay absolute inside parents.
+- Tiles draw parent first, then what is in it. Among tiles with the same
+  parent, `sort` keys (see `sort-key.ts`) set the order, later on top; tiles
+  without one draw first, in file order. The editor writes the keys.
+- `"background": true` marks ground: tiles drawn on it don't go inside it, and
+  a drag that starts on it draws a selection box. `"locked": true` lets clicks
+  and boxes pass through a tile (and what is in it); select it in the layers
+  panel. `name` is what the layers panel shows (the id otherwise).
+- `check-game` reports a `parent` that isn't a tile of the scene, ground
+  holding tiles, loops, and (as a warning) empty groups.
 - A `rect` tile can have painted ground: `"texture"` is one of `grass`, `dirt`,
   `sand`, `stone`, `cobble`, `wood`, `water`, `rock`, tinted by `color` (pick
   the lightest shade you want). `textureScale` is how many squares one repeat

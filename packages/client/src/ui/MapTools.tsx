@@ -1,12 +1,13 @@
-import type { EditorMode } from '@vtt/shared';
+import type { EditorMode, TileTexture } from '@vtt/shared';
 import { useState } from 'react';
-import { LIGHT_PRESETS, type LightPreset } from '../map-tools.ts';
+import { LIGHT_PRESETS, TILE_PRESETS, type LightPreset } from '../map-tools.ts';
 import type { Session } from '../session.ts';
 import type { EditorTool } from '../session-editor.ts';
+import { LayersPanel } from './LayersPanel.tsx';
 
 const MODES: { mode: EditorMode; label: string; key: string; hint: string }[] = [
   { mode: 'tokens', label: 'Tokens', key: 'T', hint: 'Select, move and act with creatures' },
-  { mode: 'tiles', label: 'Tiles', key: 'Shift+T', hint: 'Select, move and resize tiles' },
+  { mode: 'tiles', label: 'Tiles', key: 'Shift+T', hint: 'Draw, select, move, resize and group tiles' },
   { mode: 'walls', label: 'Walls', key: 'W', hint: 'Select, move and reshape walls, doors and windows' },
   { mode: 'lights', label: 'Lights', key: 'L', hint: 'Select, move and resize lights' },
 ];
@@ -19,6 +20,14 @@ const SELECT = {
 
 /** The tools of each mode, after Select. */
 const TOOLS: Partial<Record<EditorMode, { tool: EditorTool; label: string; hint: string }[]>> = {
+  tiles: [
+    SELECT,
+    {
+      tool: 'tile',
+      label: 'Draw',
+      hint: 'Drag a box to draw the tile picked below; on another tile it goes inside it. Shift: no snapping',
+    },
+  ],
   walls: [
     SELECT,
     { tool: 'wall', label: 'Wall', hint: 'Click corner to corner; right click or Esc stops. Shift: no snapping' },
@@ -61,6 +70,8 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
         </div>
       )}
       {session.mode === 'lights' && <LightPresets session={session} />}
+      {session.mode === 'tiles' && <TilePresets session={session} />}
+      {session.mode === 'tiles' && <LayersPanel session={session} />}
       <Darkness key={session.world?.darkness ?? 0} session={session} />
     </div>
   );
@@ -100,5 +111,22 @@ function Darkness({ session }: Readonly<{ session: Session }>) {
       />
       <span>Night</span>
     </label>
+  );
+}
+
+function TilePresets({ session }: Readonly<{ session: Session }>) {
+  return (
+    <select
+      value={session.tilePreset}
+      onChange={(e) => session.setTilePreset(e.target.value as TileTexture)}
+      title="What the Draw tool paints: ground stays under everything and never holds tiles"
+    >
+      {Object.entries(TILE_PRESETS).map(([id, t]) => (
+        <option key={id} value={id}>
+          {t.label}
+          {t.background ? ' (ground)' : ''}
+        </option>
+      ))}
+    </select>
   );
 }

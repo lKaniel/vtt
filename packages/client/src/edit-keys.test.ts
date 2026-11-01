@@ -9,6 +9,18 @@ const key = (k: string, mods: { ctrl?: boolean; meta?: boolean; shift?: boolean 
 });
 
 describe('editKey', () => {
+  it('reads the layer keys: group, ungroup, z-order and lock', () => {
+    expect(editKey(key('g', { ctrl: true }))).toBe('group');
+    expect(editKey(key('G', { ctrl: true, shift: true }))).toBe('ungroup');
+    expect(editKey(key(']', { ctrl: true }))).toBe('forward');
+    expect(editKey(key('[', { ctrl: true }))).toBe('backward');
+    expect(editKey(key('}', { ctrl: true, shift: true }))).toBe('front');
+    expect(editKey(key('{', { ctrl: true, shift: true }))).toBe('back');
+    expect(editKey(key(']', { ctrl: true, shift: true }))).toBe('front');
+    expect(editKey(key('L', { ctrl: true, shift: true }))).toBe('lock');
+    expect(editKey(key('l', { ctrl: true }))).toBeUndefined();
+  });
+
   it('reads undo and redo, with Ctrl or Cmd', () => {
     expect(editKey(key('z', { ctrl: true }))).toBe('undo');
     expect(editKey(key('z', { meta: true }))).toBe('undo');

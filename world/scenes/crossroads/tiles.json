@@ -7,7 +7,8 @@
     "w": 2000,
     "h": 2000,
     "color": "#6f8f4e",
-    "texture": "grass"
+    "texture": "grass",
+    "background": true
   },
   {
     "id": "road",
@@ -17,7 +18,8 @@
     "w": 2000,
     "h": 200,
     "color": "#a08a64",
-    "texture": "dirt"
+    "texture": "dirt",
+    "background": true
   },
   {
     "id": "grass-2",
@@ -27,7 +29,8 @@
     "w": 2000,
     "h": 2000,
     "color": "#6f8f4e",
-    "texture": "grass"
+    "texture": "grass",
+    "background": true
   },
   {
     "id": "road-2",
@@ -37,7 +40,8 @@
     "w": 2000,
     "h": 200,
     "color": "#a08a64",
-    "texture": "dirt"
+    "texture": "dirt",
+    "background": true
   },
   {
     "id": "tavern-floor",
@@ -47,7 +51,8 @@
     "w": 800,
     "h": 600,
     "color": "#9a7048",
-    "texture": "wood"
+    "texture": "wood",
+    "name": "Tavern"
   },
   {
     "id": "cellar-floor",
@@ -57,7 +62,9 @@
     "w": 300,
     "h": 600,
     "color": "#7a6a58",
-    "texture": "stone"
+    "texture": "stone",
+    "parent": "tavern-floor",
+    "name": "Cellar"
   },
   {
     "id": "grass-3",
@@ -67,7 +74,8 @@
     "w": 2000,
     "h": 2000,
     "color": "#6f8f4e",
-    "texture": "grass"
+    "texture": "grass",
+    "background": true
   },
   {
     "id": "road-3",
@@ -77,7 +85,8 @@
     "w": 2000,
     "h": 200,
     "color": "#a08a64",
-    "texture": "dirt"
+    "texture": "dirt",
+    "background": true
   },
   {
     "id": "ruin-floor",
@@ -87,7 +96,8 @@
     "w": 800,
     "h": 600,
     "color": "#8a8478",
-    "texture": "cobble"
+    "texture": "cobble",
+    "name": "Ruins"
   },
   {
     "id": "forest",
@@ -97,7 +107,8 @@
     "w": 2000,
     "h": 2000,
     "color": "#4c6a38",
-    "texture": "grass"
+    "texture": "grass",
+    "background": true
   },
   {
     "id": "pond",
@@ -107,7 +118,8 @@
     "w": 600,
     "h": 400,
     "color": "#4a7a94",
-    "texture": "water"
+    "texture": "water",
+    "background": true
   },
   {
     "id": "clearing",
@@ -117,7 +129,8 @@
     "w": 500,
     "h": 500,
     "color": "#7a9a54",
-    "texture": "grass"
+    "texture": "grass",
+    "background": true
   },
   {
     "id": "forest-2",
@@ -127,6 +140,7 @@
     "w": 2000,
     "h": 2000,
     "color": "#4c6a38",
-    "texture": "grass"
+    "texture": "grass",
+    "background": true
   }
 ]

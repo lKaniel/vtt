@@ -42,3 +42,4 @@ export * from './character-token.ts';
 export * from './token-link.ts';
 export * from './edit-kinds.ts';
 export * from './placeables.ts';
+export * from './tiles.ts';

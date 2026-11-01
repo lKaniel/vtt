@@ -22,7 +22,7 @@ import {
 
 import { dropMessage, type DragPayload } from './drops.ts';
 import { refOf } from './editor/selection.ts';
-import { EditorSession } from './session-editor.ts';
+import { TileSession } from './session-tiles.ts';
 import { withOffer } from './reactions.ts';
 import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
@@ -65,7 +65,7 @@ export interface SessionEvents {
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends EditorSession {
+export class Session extends TileSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;

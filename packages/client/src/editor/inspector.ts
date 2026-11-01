@@ -72,11 +72,20 @@ const LIGHT_FIELDS: Field[] = [
 
 const isRect = (d: Doc) => d.kind === 'rect';
 
+const drawn = (d: Doc) => d.kind !== 'group';
+const flag = (key: string, label: string, extra: Partial<Field> = {}): Field => ({
+  ...plain(key, label, 'check', extra),
+  get: (d) => d[key] === true,
+});
+
 const TILE_FIELDS: Field[] = [
-  plain('x', 'X', 'number'),
-  plain('y', 'Y', 'number'),
-  plain('w', 'Width', 'number'),
-  plain('h', 'Height', 'number'),
+  plain('name', 'Name', 'text'),
+  plain('x', 'X', 'number', { when: drawn }),
+  plain('y', 'Y', 'number', { when: drawn }),
+  plain('w', 'Width', 'number', { when: drawn }),
+  plain('h', 'Height', 'number', { when: drawn }),
+  flag('background', 'Ground', { when: drawn }),
+  flag('locked', 'Locked'),
   plain('color', 'Colour', 'color', { when: isRect }),
   plain('texture', 'Texture', 'select', { options: options('', ...TileTextureSchema.options), when: isRect }),
   plain('src', 'Picture', 'text', { when: (d) => d.kind === 'image' }),

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ActorSchema, GameSchema, SceneSchema, TokenSchema, type Token, type TokenEntry } from '@vtt/shared';
+import {
+  ActorSchema,
+  GameSchema,
+  SceneSchema,
+  TileSchema,
+  TokenSchema,
+  type Token,
+  type TokenEntry,
+} from '@vtt/shared';
 import { classify, crossCheck, parseFile, type GameState } from './game-files.ts';
 
 describe('classify', () => {
@@ -84,6 +92,27 @@ describe('crossCheck', () => {
     });
     expect(crossCheck(state([token]))).toEqual([
       { file: 'scenes/main/tokens.json', message: 'token "w": unknown player "ghost"' },
+    ]);
+  });
+
+  it('reports tiles in a missing or unfit parent, and loops', () => {
+    const rect = (id: string, extra: object = {}) =>
+      TileSchema.parse({ id, kind: 'rect', color: '#000', x: 0, y: 0, w: 1, h: 1, ...extra });
+    const tiles = [
+      rect('ground', { background: true }),
+      rect('lost', { parent: 'nowhere' }),
+      rect('weed', { parent: 'ground' }),
+      TileSchema.parse({ id: 'a', kind: 'group', parent: 'b' }),
+      TileSchema.parse({ id: 'b', kind: 'group', parent: 'a' }),
+      TileSchema.parse({ id: 'empty', kind: 'group' }),
+    ];
+    const scene = { scene: SceneSchema.parse({}), tiles, walls: [], lights: [], tokens: [] };
+    expect(crossCheck({ ...state([]), scenes: new Map([['main', scene]]) })).toEqual([
+      { file: 'scenes/main/tiles.json', message: 'tile "lost": parent "nowhere" is not a tile here' },
+      { file: 'scenes/main/tiles.json', message: 'tile "weed": "ground" is ground and can\'t hold tiles' },
+      { file: 'scenes/main/tiles.json', message: 'tile "a" is inside itself' },
+      { file: 'scenes/main/tiles.json', message: 'tile "b" is inside itself' },
+      { file: 'scenes/main/tiles.json', message: 'group "empty" holds no tiles', warning: true },
     ]);
   });
 

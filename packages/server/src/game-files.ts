@@ -9,6 +9,7 @@ import {
   SceneSchema,
   srdFor,
   TileSchema,
+  tileTreeIssues,
   TokenEntrySchema,
   WallSchema,
   worldOf,
@@ -23,6 +24,7 @@ import {
   type World,
 } from '@vtt/shared';
 import type { z } from 'zod';
+import { toDoc } from './doc-sync.ts';
 
 // Reading and validating single game files (storage v2). Shared by the
 // server and the `check-game` command so both report the same problems.
@@ -221,7 +223,7 @@ export function crossCheck(state: GameState): Issue[] {
   const active = scenes.get(game.scene);
   if (!active) out.push({ file: 'game.json', message: `scene "${game.scene}" has no folder in scenes/` });
   const players = new Set(game.players.map((p) => p.id));
-  for (const [id, s] of scenes) out.push(...sceneTokenIssues(id, s, state, players));
+  for (const [id, s] of scenes) out.push(...sceneTokenIssues(id, s, state, players), ...sceneTileIssues(id, s.tiles));
   const world = worldOf(game, active?.scene ?? SceneSchema.parse({}));
   for (const a of actors.values()) {
     out.push(...tokenIssues(a, players, world).map((message) => ({ file: `actors/${a.id}.json`, message })));
@@ -233,6 +235,12 @@ export function crossCheck(state: GameState): Issue[] {
     }
   }
   return out;
+}
+
+/** Problems with how the tiles of one scene nest. */
+function sceneTileIssues(id: string, tiles: readonly Tile[]): Issue[] {
+  const docs = tiles.map((t) => toDoc('tile', t));
+  return tileTreeIssues(docs).map((issue) => ({ file: `scenes/${id}/tiles.json`, ...issue }));
 }
 
 /** Problems with the tokens of one scene. */

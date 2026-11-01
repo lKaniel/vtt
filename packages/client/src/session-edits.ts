@@ -24,6 +24,14 @@ import { Commands } from './session-commands.ts';
 // document: the registry in shared (edit-kinds.ts) turns them into ops, the
 // server checks and applies them, and keeps each user's undo history.
 
+/** A document as it was before an edit this client showed early, and as the edit leaves it. */
+interface Shown {
+  coll: string;
+  id: string;
+  before?: Doc;
+  after?: Doc;
+}
+
 export abstract class EditSession extends Commands {
   /** The game's documents as this client knows them (GM only for now), kept up to date by `docs` messages. */
   docs = new DocStore();
@@ -37,7 +45,7 @@ export abstract class EditSession extends Commands {
   private clip?: Clip;
   private txns = 0;
   /** Edits shown before the server confirmed them: the documents as they were, by transaction. */
-  private pending = new Map<string, { coll: string; id: string; doc: Doc }[]>();
+  private pending = new Map<string, Shown[]>();
 
   /** What the edit commands work on: the selected token, or the actor whose sheet is open. */
   protected abstract editTargets(): DocRef[];
@@ -109,31 +117,43 @@ export abstract class EditSession extends Commands {
    * the result at once; a refusal puts them back.
    */
   protected sendUpdates(label: string, updates: readonly { ref: DocRef; patch: Patch }[]): void {
-    const before: { coll: string; id: string; doc: Doc }[] = [];
-    const ops: Op[] = [];
-    const after: { coll: string; id: string; doc: Doc }[] = [];
-    for (const { ref, patch } of updates) {
+    const ops = updates.flatMap(({ ref, patch }): Op[] => {
       const doc = this.docs.get(ref.coll, ref.id);
-      if (!doc || !Object.keys(patch).length) continue;
-      ops.push({ op: 'update', coll: ref.coll, id: ref.id, rev: doc.rev, patch });
-      before.push({ ...ref, doc });
-      // The server bumps the revision once per update, so a second edit before the echo still matches.
-      after.push({ ...ref, doc: { ...applyPatch(doc, patch), rev: doc.rev + 1 } });
-    }
-    const txn = this.sendOps(label, ops);
+      if (!doc || !Object.keys(patch).length) return [];
+      return [{ op: 'update', coll: ref.coll, id: ref.id, rev: doc.rev, patch }];
+    });
+    this.sendChanges(label, ops);
+  }
+
+  /**
+   * Sends a transaction of creates, updates and deletes and shows it at
+   * once, as the server will leave the documents; a refusal puts them back.
+   */
+  protected sendChanges(label: string, ops: readonly Op[]): void {
+    const shown = ops.map((op) => this.optimistic(op));
+    const txn = this.sendOps(label, [...ops]);
     if (!txn) return;
-    this.pending.set(txn, before);
-    this.docs.mirror(after);
+    this.pending.set(txn, shown);
+    this.docs.mirror(shown.map(({ coll, id, after }) => ({ coll, id, doc: after })));
     this.docsChanged();
+  }
+
+  /** A document before and after an op, as the server applies it. */
+  private optimistic(op: Op): Shown {
+    if (op.op === 'create') return { coll: op.coll, id: op.doc.id, after: { ...op.doc, rev: op.doc.rev + 1 } };
+    const before = this.docs.get(op.coll, op.id);
+    if (op.op === 'delete' || !before) return { coll: op.coll, id: op.id, before };
+    // The server bumps the revision once per update, so a second edit before the echo still matches.
+    return { coll: op.coll, id: op.id, before, after: { ...applyPatch(before, op.patch), rev: before.rev + 1 } };
   }
 
   /** A refused edit: put back what it changed, unless newer news came since. */
   private takeBack(txn: string): void {
-    const before = this.pending.get(txn) ?? [];
+    const shown = this.pending.get(txn) ?? [];
     this.pending.delete(txn);
-    const current = before.filter((b) => this.docs.get(b.coll, b.id)?.rev === b.doc.rev + 1);
+    const current = shown.filter((s) => this.docs.get(s.coll, s.id)?.rev === s.after?.rev);
     if (!current.length) return;
-    this.docs.mirror(current);
+    this.docs.mirror(current.map(({ coll, id, before }) => ({ coll, id, doc: before })));
     this.docsChanged();
   }
 
