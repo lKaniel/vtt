@@ -1,4 +1,4 @@
-import { abilityName, partsOf, skillName, type Character, type Species } from '@vtt/shared';
+import { abilityName, type Character, partsOf, skillName, type Species } from '@vtt/system-dnd5e';
 import { chooseBackground, chooseClass, chooseSpecies } from '../../creator.ts';
 import { Chips, Detail, OptionCard, RichText, StepHead, TraitList } from './Parts.tsx';
 

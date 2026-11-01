@@ -1,16 +1,14 @@
+import { canControl, type Player, type Point } from '@vtt/shared';
 import {
-  canControl,
+  type Effect,
   halved,
   hitReactions,
   opportunityAttackers,
-  shieldSlot,
-  shielded,
-  type Effect,
-  type Player,
-  type Point,
   type ReactionOffer,
+  shielded,
+  shieldSlot,
   type Token,
-} from '@vtt/shared';
+} from '@vtt/system-dnd5e';
 import { randomUUID } from 'node:crypto';
 import type { CombatActions, PendingHit } from './combat-actions.ts';
 import { Refusal, type Table } from './table.ts';

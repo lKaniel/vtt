@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { FOG_BYTES, FogMap, undoFogBlock, type Raster } from '@vtt/shared';
+import { FOG_BYTES, FogMap, type Raster, undoFogBlock } from '@vtt/shared';
 import { FileWriter } from './file-writer.ts';
 
 // Explored fog of war, per player per scene, kept by the server so it

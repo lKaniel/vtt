@@ -1,19 +1,21 @@
 import { randomBytes } from 'node:crypto';
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
+import { editionIn } from '@vtt/core';
 import {
-  GameSchema,
-  newGameIssues,
-  uniqueId,
-  type Edition,
+  DEFAULT_SYSTEM,
   type Game as GameFile,
+  GameSchema,
   type NewGame,
+  newGameIssues,
   type Player,
+  uniqueId,
 } from '@vtt/shared';
 import type { WebSocket } from 'ws';
 import { Game } from './game.ts';
 import { GameIndex } from './game-index.ts';
 import { GameStore } from './game-store.ts';
+import { SYSTEMS } from './systems.ts';
 import { readJson, writeJson } from './json-files.ts';
 import { FORMAT } from './migrate-ownership.ts';
 
@@ -51,7 +53,8 @@ export interface GameInfo {
   id: string;
   name: string;
   system: string;
-  rules: Edition;
+  /** The game's rules edition (its system's default when game.json doesn't say). */
+  rules: string;
   players: Player[];
   open: boolean;
   /** Seats connected now. */
@@ -147,7 +150,10 @@ export class GameHub {
   }
 
   private async start(dir: string): Promise<Running> {
-    const store = new GameStore(dir);
+    const file = await readGameFile(dir);
+    const system = SYSTEMS.get(file?.system ?? DEFAULT_SYSTEM);
+    if (!system) throw new HubError(`This server has no "${file?.system ?? ''}" system.`);
+    const store = new GameStore(dir, system);
     await store.load();
     if (this.opts.watch !== false) store.watch();
     return { store, game: new Game(store), sockets: new Map() };
@@ -193,7 +199,7 @@ export class GameHub {
       id,
       name: file.name,
       system: file.system,
-      rules: file.rules,
+      rules: rulesOf(file),
       players: file.players,
       open: entry.open ?? id === this.homeId,
       online: onlineIn(this.live.get(id)),
@@ -205,7 +211,7 @@ export class GameHub {
 
   /** Makes a new game in games/<id>/ with `gm` in the only seat; returns its id. */
   async create(input: NewGame, gm: Player): Promise<string> {
-    const issues = newGameIssues(input);
+    const issues = newGameIssues(input, SYSTEMS.infos());
     if (issues.length) throw new HubError(issues[0]);
     const id = uniqueId(input.name, (x) => this.dirs.has(x) || x === 'games');
     const dir = join(this.gamesDir, id);
@@ -257,6 +263,12 @@ export class GameHub {
     await Promise.all([...this.live.keys()].map((id) => this.unload(id)));
     await this.index.flush();
   }
+}
+
+/** The edition a game plays: its own, else its system's default. */
+function rulesOf(file: GameFile): string {
+  const system = SYSTEMS.get(file.system);
+  return system ? editionIn(system, file.rules) : (file.rules ?? '');
 }
 
 async function readGameFile(dir: string): Promise<GameFile | undefined> {

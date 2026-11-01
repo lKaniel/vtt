@@ -1,18 +1,17 @@
 import type { Doc, DocStore, Op } from '@vtt/core';
 import {
+  type Actor,
   linkToken,
   resetToken,
   resolveToken,
   saveTokenToActor,
   splitToken,
   standaloneEntry,
-  unlinkToken,
-  type Actor,
-  type Chunk,
-  type ChunkChange,
   type Token,
   type TokenEntry,
-} from '@vtt/shared';
+  unlinkToken,
+} from '@vtt/system-dnd5e';
+import type { Chunk, ChunkChange } from '@vtt/shared';
 import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
 import { ACTORS, MAP, TYPE } from './store-colls.ts';
 

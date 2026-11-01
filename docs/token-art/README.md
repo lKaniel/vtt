@@ -38,7 +38,7 @@ python3 scripts/token-art.py import path/to/folder
 It keys out the background (the colour is read from the image border, so
 either green or magenta works), trims it, centres it on a 512×512 transparent
 square, saves `packages/client/public/art/tokens/<id>.webp` and rewrites
-`packages/shared/content/token-art.json`, which maps every monster id and its
+`packages/system-dnd5e/content/token-art.json`, which maps every monster id and its
 aliases to a picture. Re-run it whenever new pictures arrive; replacing a
 picture is just importing the new file under the same name.
 

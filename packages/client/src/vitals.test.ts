@@ -1,4 +1,4 @@
-import type { Effect, TokenView } from '@vtt/shared';
+import type { Effect, TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import { effectTone, hpBar } from './vitals.ts';
 

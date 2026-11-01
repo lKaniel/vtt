@@ -5,11 +5,11 @@ import {
   characterSkills,
   partsOf,
   proficiencyForLevel,
-  SKILLS,
-  skillName,
   type Skill,
+  skillName,
+  SKILLS,
   type Spell,
-} from '@vtt/shared';
+} from '@vtt/system-dnd5e';
 import { useState } from 'react';
 import { spellChoices, toggleSkill, toggleSpell } from '../../creator.ts';
 import { spellIcon } from '../../icons.ts';

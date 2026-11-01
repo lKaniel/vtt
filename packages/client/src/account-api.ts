@@ -1,4 +1,6 @@
-import type { Character, Edition, GameDetail, GameSummary, NewGame, Player, Role, SystemInfo } from '@vtt/shared';
+import type { Character } from '@vtt/system-dnd5e';
+import type { GameDetail, GameSummary, NewGame, Player, Role } from '@vtt/shared';
+import type { SystemInfo } from '@vtt/core';
 
 // The account side of the server: signing in, characters, and the lobby.
 
@@ -11,7 +13,7 @@ export interface Account {
 export interface SessionInfo {
   account: Account | null;
   /** The game the server was started with. */
-  home: { id: string; name: string; rules: Edition } | null;
+  home: { id: string; name: string; rules: string } | null;
 }
 
 export class ApiError extends Error {

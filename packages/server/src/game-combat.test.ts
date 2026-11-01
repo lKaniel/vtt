@@ -1,6 +1,6 @@
 import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { TokenSchema } from '@vtt/shared';
+import { TokenSchema } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';

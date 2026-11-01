@@ -1,4 +1,4 @@
-import type { ReactionOffer } from '@vtt/shared';
+import type { ReactionOffer } from '@vtt/system-dnd5e';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { withOffer } from './reactions.ts';
 import { Session } from './session.ts';

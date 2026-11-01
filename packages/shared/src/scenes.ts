@@ -1,4 +1,4 @@
-import { freeId, keyBetween, slugify, type Doc, type DocRef, type Op, type Patch } from '@vtt/core';
+import { type Doc, type DocRef, freeId, keyBetween, type Op, type Patch, slugify } from '@vtt/core';
 import { copyRefs, pasteAt } from './edit-kinds.ts';
 
 // The Scenes list's commands as document ops: a new scene, a copy of one

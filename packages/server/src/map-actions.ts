@@ -1,4 +1,4 @@
-import { applyMapEdit, MapEditError, type MapEdit, type Player } from '@vtt/shared';
+import { applyMapEdit, type MapEdit, MapEditError, type Player } from '@vtt/shared';
 import { Refusal, requireGm, type Table } from './table.ts';
 
 /** The GM's map tools: walls, doors, lights, and the time of day. */

@@ -1,4 +1,5 @@
-import type { AttackLog, ChatMessage, Roll, SpellLog, SpellTargetLog } from '@vtt/shared';
+import type { AttackLog, ChatMessage, SpellLog, SpellTargetLog } from '@vtt/system-dnd5e';
+import type { Roll } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
 import { cuesOf, elementColor, IMPACT, type Cue } from './feedback.ts';
 

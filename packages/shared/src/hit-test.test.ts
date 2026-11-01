@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   distanceTo,
+  type Hittable,
   hitTest,
   marqueeHits,
   nearestOnSegment,
   rectBetween,
   shapeBounds,
-  type Hittable,
 } from './hit-test.ts';
 
 const wall: Hittable = { key: 'wall', shape: { kind: 'segment', a: [0, 0], b: [400, 0] } };

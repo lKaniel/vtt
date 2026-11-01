@@ -1,4 +1,4 @@
-import type { Character } from '@vtt/shared';
+import { toEdition, type Character } from '@vtt/system-dnd5e';
 import { useCallback, useEffect, useState } from 'react';
 import { api, type SessionInfo } from '../account-api.ts';
 import { parseRoute, routeHash, type Route } from '../route.ts';
@@ -137,7 +137,7 @@ function AccountRoutes({
       <CharacterCreator
         key={route.id ?? 'new'}
         owner={me.id}
-        rules={info!.home?.rules ?? '2014'}
+        rules={toEdition(info!.home?.rules)}
         initial={editing}
         onDone={saved}
         onCancel={() => go({ name: 'account' })}

@@ -1,4 +1,4 @@
-import type { Attack, Condition, DamageType, EffectTemplate, Feature, Item, Spell } from '@vtt/shared';
+import type { Attack, Condition, DamageType, EffectTemplate, Feature, Item, Spell } from '@vtt/system-dnd5e';
 import { effectTone } from './vitals.ts';
 
 // Which icon and colour each action tile, effect and log line gets. The glyphs

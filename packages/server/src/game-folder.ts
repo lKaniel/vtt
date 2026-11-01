@@ -1,5 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises';
-import type { Actor } from '@vtt/shared';
+import type { Actor } from '@vtt/system-dnd5e';
 import { join } from 'node:path';
 import {
   classify,

@@ -1,4 +1,4 @@
-import type { EffectTemplate, Health, TokenView } from '@vtt/shared';
+import type { EffectTemplate, Health, TokenView } from '@vtt/system-dnd5e';
 
 // Health bars and effect tones for the party, turn order and sheet.
 

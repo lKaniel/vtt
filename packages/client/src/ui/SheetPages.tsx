@@ -1,4 +1,4 @@
-import { srdFor, type Edition, type InventoryEntry, type Spell } from '@vtt/shared';
+import { type Edition, type InventoryEntry, type Spell, srdFor } from '@vtt/system-dnd5e';
 import { pipLeft, withSlotsLeft, withUsesLeft } from '../charges.ts';
 import { dragTile } from '../hotbar.ts';
 import { attackArt, featureArt, itemArt, spellArt } from '../icon-art.ts';

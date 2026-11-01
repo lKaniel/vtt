@@ -1,4 +1,4 @@
-import { srdFor, type Attack, type FeatureSheet, type TokenView, type TurnBudget } from '@vtt/shared';
+import { type Attack, type FeatureSheet, srdFor, type TokenView, type TurnBudget } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import { actionTiles, affordable, costOf, filterTiles } from './actions.ts';
 

@@ -1,4 +1,4 @@
-import { OpError, type DocStore, type Op } from '@vtt/core';
+import { type DocStore, type Op, OpError } from '@vtt/core';
 import type { Game } from '@vtt/shared';
 import { SCENES } from './store-colls.ts';
 

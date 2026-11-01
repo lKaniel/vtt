@@ -1,4 +1,5 @@
-import type { AttackLog, ChatMessage, DiceTerm, SpellLog } from '@vtt/shared';
+import type { AttackLog, ChatMessage, SpellLog } from '@vtt/system-dnd5e';
+import type { DiceTerm } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '../session.ts';
 import { ActorsTab } from './ActorsTab.tsx';

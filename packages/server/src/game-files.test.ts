@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ActorSchema,
-  GameSchema,
-  SceneSchema,
-  TileSchema,
-  TokenSchema,
-  type Token,
-  type TokenEntry,
-} from '@vtt/shared';
+import { ActorSchema, dnd5e, type Token, type TokenEntry, TokenSchema } from '@vtt/system-dnd5e';
+import { GameSchema, SceneSchema, TileSchema } from '@vtt/shared';
 import { classify, crossCheck, parseFile, type GameState } from './game-files.ts';
 
 describe('classify', () => {
@@ -82,6 +75,17 @@ function state(tokens: (Token | TokenEntry)[], extra: Partial<GameState> = {}): 
 }
 
 describe('crossCheck', () => {
+  it("asks the game's system what a token refers to that its content lacks", () => {
+    const token = TokenSchema.parse({ id: 'w', name: 'W', x: 0, y: 0, monster: 'goblin' });
+    const strict = { ...dnd5e, tokenIssues: () => ['no such creature'] };
+    expect(crossCheck(state([token]), strict)).toEqual([
+      { file: 'scenes/main/tokens.json', message: 'token "w": no such creature' },
+    ]);
+    expect(crossCheck({ ...state([token]), game: { ...state([]).game, system: 'gurps' } })).toEqual([
+      { file: 'game.json', message: 'this server has no "gurps" system' },
+    ]);
+  });
+
   it('reports observers who are not at the table', () => {
     const token = TokenSchema.parse({
       id: 'w',

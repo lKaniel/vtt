@@ -1,4 +1,4 @@
-import { rectBetween, type MarqueeMode, type Point, type Rect } from '@vtt/shared';
+import { type MarqueeMode, type Point, type Rect, rectBetween } from '@vtt/shared';
 import { clickSelect, marqueeSelect, type Mods } from './selection.ts';
 
 // The pointer gestures of the map editor, the same in every mode: click to

@@ -1,4 +1,4 @@
-import { rectBetween, type Point } from '@vtt/shared';
+import { type Point, rectBetween } from '@vtt/shared';
 import type { Graphics } from 'pixi.js';
 import { LIGHT_PRESETS, snapPoint, wallEdit } from '../map-tools.ts';
 import type { Session } from '../session.ts';

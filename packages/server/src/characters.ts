@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { CharacterSchema, type Character } from '@vtt/shared';
+import { type Character, CharacterSchema } from '@vtt/system-dnd5e';
 import { readJsonDir, removeJson, writeJson } from './json-files.ts';
 
 /** Players' characters, one file each in the data folder's characters/. */

@@ -1,4 +1,4 @@
-import type { Attack, FeatureSheet, Item, Spell, TokenView } from '@vtt/shared';
+import type { Attack, FeatureSheet, Item, Spell, TokenView } from '@vtt/system-dnd5e';
 import { assetUrl } from './assets.ts';
 import manifest from './icon-art.json';
 

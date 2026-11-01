@@ -1,4 +1,4 @@
-import { srdFor, type Edition, type Item, type Monster, type Spell } from '@vtt/shared';
+import { type Edition, type Item, type Monster, type Spell, srdFor } from '@vtt/system-dnd5e';
 import type { DragPayload } from './drops.ts';
 import { spellTip } from './tooltip.ts';
 

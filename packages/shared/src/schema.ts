@@ -1,7 +1,5 @@
-import { OwnershipSchema } from '@vtt/core';
+import type { Ownership } from '@vtt/core';
 import { z } from 'zod';
-import { EffectSchema } from './spell-schema.ts';
-import { EditionSchema, InventoryEntrySchema, StatsSchema } from './stats-schema.ts';
 
 // The items in a game folder are described here (game.json and scene.json in
 // game-schema.ts). The checker, the server and docs/game-format.md all follow
@@ -60,8 +58,8 @@ export const SceneSettingsSchema = z.object({
 /** The table settings the rules and the client use: the game's, plus those of the scene being played. */
 export const WorldSchema = SceneSettingsSchema.extend({
   name: z.string().min(1),
-  /** Rules edition: "2014" (SRD 5.1) or "2024" (SRD 5.2). Characters can override it. */
-  rules: EditionSchema.default('2014'),
+  /** The game system's rules edition (see SystemDefinition in core); missing = the system's default. */
+  rules: z.string().min(1).optional(),
   players: z.array(PlayerSchema).min(1),
 });
 export type World = z.infer<typeof WorldSchema>;
@@ -151,89 +149,17 @@ export const ChunkSchema = z.object({
 });
 export type Chunk = z.infer<typeof ChunkSchema>;
 
-export const TokenSchema = z.object({
-  id,
-  name: z.string().min(1),
-  /** Centre of the token, in pixels. */
-  x: z.number(),
-  y: z.number(),
-  /** Size in squares (1 = medium, 2 = large). */
-  size: z.number().positive().default(1),
-  color: z.string().default('#b04a3a'),
-  img: z.string().optional(),
-  /** Walking speed in feet. */
-  speed: z.number().nonnegative().default(30),
-  /**
-   * Who may see, read and act with it: a level per player id, and `default`
-   * for everyone else (see permissions.ts). Missing: everyone sees it, nobody
-   * but the GM owns it.
-   */
-  ownership: OwnershipSchema.optional(),
-  /** Darkvision range in feet; 0 for none. */
-  darkvision: z.number().nonnegative().default(0),
-  /** Other senses, in feet. Missing ones fall back to the monster's stat block. */
-  blindsight: z.number().nonnegative().optional(),
-  tremorsense: z.number().nonnegative().optional(),
-  truesight: z.number().nonnegative().optional(),
-  /** Sees normally in magical and nonmagical darkness to this range (the warlock invocation). */
-  devilsSight: z.number().nonnegative().optional(),
-  /** A light the token carries, e.g. a torch: { "bright": 20, "dim": 20 }. */
-  light: LightSchema.optional(),
-  /** Hidden tokens are seen by the GM only. */
-  hidden: z.boolean().default(false),
-  /** When set, only these players (and the GM) see the token. Used by illusions. */
-  visibleTo: z.array(id).optional(),
-  /** SRD monster id whose stat block this token uses, e.g. "goblin-warrior". */
-  monster: id.optional(),
-  /** Character stats, or overrides for the monster's stat block. */
-  stats: StatsSchema.optional(),
-  /** Current hit points; missing means unhurt. */
-  hp: z.number().int().optional(),
-  /** A character's death saves while at 0 hp; cleared once it's healed. */
-  deathSaves: z
-    .object({
-      successes: z.number().int().min(0).max(3),
-      failures: z.number().int().min(0).max(3),
-      stable: z.boolean().optional(),
-      dead: z.boolean().optional(),
-    })
-    .optional(),
-  /** Temporary hit points: lost first, and don't stack. */
-  tempHp: z.number().int().positive().optional(),
-  inventory: z.array(InventoryEntrySchema).optional(),
-  /** Spells, conditions and features currently affecting the token. */
-  effects: z.array(EffectSchema).optional(),
-  /** The spell this creature is concentrating on. */
-  concentration: z.object({ spell: id, name: z.string() }).optional(),
-  /** Spell slots and feature uses spent since the last rest. */
-  spent: z
-    .object({
-      /** Slots used per spell level, index 0 for 1st level. */
-      slots: z.array(z.number().int().nonnegative()).optional(),
-      /** Uses per feature id. */
-      uses: z.record(z.string(), z.number().int().nonnegative()).optional(),
-    })
-    .optional(),
-  /** Set on creatures a spell or feature brought in; they vanish when it ends. */
-  summon: z.object({ by: id, spell: id, concentration: z.boolean().default(false) }).optional(),
-  /** Acts on this token's turn instead of its own (summons, companions). */
-  leader: id.optional(),
-  /** How its controller arranged the action bar: one tile reference per slot ("spell:fire-bolt"), or null. */
-  hotbar: z.array(z.string().max(80).nullable()).max(60).optional(),
-  /** The actor this token stands for (see token-link.ts); missing on a token that carries its own sheet. */
-  actor: id.optional(),
-  /** Linked tokens share their actor's hit points and effects; unlinked ones are copies with their own. */
-  linked: z.boolean().optional(),
-});
-export type Token = z.infer<typeof TokenSchema>;
-
 /**
- * A creature's sheet, in the GM's Actors list (actors/<id>.json): what its
- * tokens look like and are, without a position. `folder` groups it in the
- * list; `linked` says whether new tokens of it share its hit points and
- * effects (default: linked unless it is a monster).
+ * What the engine knows of a token: where it stands, who may see it and the
+ * light it carries. Its sheet (hit points, senses, conditions) belongs to the
+ * game's system, which builds its token schema on these fields.
  */
-export const ActorSchema = TokenSchema.omit({ x: true, y: true, actor: true }).extend({
-  folder: z.string().min(1).optional(),
-});
-export type Actor = z.infer<typeof ActorSchema>;
+export interface PlacedToken {
+  id: string;
+  x: number;
+  y: number;
+  ownership?: Ownership;
+  hidden?: boolean;
+  visibleTo?: string[];
+  light?: Light;
+}

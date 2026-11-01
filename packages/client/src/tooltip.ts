@@ -1,4 +1,4 @@
-import type { Attack, Damage, FeatureSheet, Item, Spell } from '@vtt/shared';
+import type { Attack, Damage, FeatureSheet, Item, Spell } from '@vtt/system-dnd5e';
 import { ORDINAL } from './spell-text.ts';
 
 // What the hover card on an action tile says.

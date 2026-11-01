@@ -1,6 +1,6 @@
 // fallow-ignore-file unused-class-member -- Session calls FakeWebSocket's members through the global WebSocket
 // Shared set-up for the Session tests: a fake socket and some tokens.
-import type { Combat, ServerMessage, Token } from '@vtt/shared';
+import type { Combat, ServerMessage, Token } from '@vtt/system-dnd5e';
 import { vi } from 'vitest';
 import { Session } from './session.ts';
 

@@ -1,4 +1,5 @@
-import { featureProblem, featureSpell, spendUse, type FeatureSheet, type Player, type Point } from '@vtt/shared';
+import { featureProblem, type FeatureSheet, featureSpell, spendUse } from '@vtt/system-dnd5e';
+import type { Player, Point } from '@vtt/shared';
 import type { SpellActions } from './spell-actions.ts';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { DEFAULT_SYSTEM } from './lobby.ts';
 import { PlayerSchema, SceneSettingsSchema, type World } from './schema.ts';
-import { EditionSchema } from './stats-schema.ts';
 
 // A game folder (storage v2): game.json holds the campaign and its seats,
 // scenes/<id>/scene.json each map's settings. In memory the game combines
@@ -14,10 +14,10 @@ export const GameSchema = z.object({
   /** Folder format: 3 = actors split from tokens, 4 = ownership levels. Older folders are moved up when the server starts. */
   format: z.number().int().positive().optional(),
   name: z.string().min(1),
-  /** Rules edition: "2014" (SRD 5.1) or "2024" (SRD 5.2). Characters can override it. */
-  rules: EditionSchema.default('2014'),
-  /** The rulebook the game runs on (see lobby.ts); only "dnd5e" so far. */
-  system: z.string().default('dnd5e'),
+  /** The system's rules edition (D&D: "2014" or "2024"); missing = the system's default. */
+  rules: z.string().min(1).optional(),
+  /** The game system it runs on (see SystemDefinition in core). Games from before systems play D&D 5e. */
+  system: z.string().default(DEFAULT_SYSTEM),
   /** The scene everyone is on: a folder in scenes/. */
   scene: id,
   players: z.array(PlayerSchema).min(1),

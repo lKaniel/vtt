@@ -1,5 +1,4 @@
 import type { Doc } from '@vtt/core';
-import { describe, expect, it } from 'vitest';
 import {
   applyTileEdit,
   containerAt,
@@ -16,6 +15,7 @@ import {
   withDescendants,
   withGroupBounds,
 } from './tiles.ts';
+import { describe, expect, it } from 'vitest';
 
 const rect = (id: string, [x, y, w, h]: [number, number, number, number], extra: Partial<Doc> = {}): Doc => ({
   id,

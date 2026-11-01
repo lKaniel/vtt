@@ -1,4 +1,4 @@
-import { activeKit, characterInventory, partsOf, type KitStep } from '@vtt/shared';
+import { activeKit, characterInventory, type KitStep, partsOf } from '@vtt/system-dnd5e';
 import { itemIcon } from '../../icons.ts';
 import { itemArt } from '../../icon-art.ts';
 import { IconFace } from '../Icon.tsx';

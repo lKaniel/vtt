@@ -1,5 +1,5 @@
-import { RevisionError, type Change } from '@vtt/core';
-import { isGm, type HistoryState, type Player } from '@vtt/shared';
+import { type Change, RevisionError } from '@vtt/core';
+import { type HistoryState, isGm, type Player } from '@vtt/shared';
 import type { ClientMessage } from './client-messages.ts';
 import type { FogChange } from './fog-store.ts';
 import type { GameStore } from './game-store.ts';

@@ -1,4 +1,5 @@
-import { scaledSpell, type ClientMessage, type Creature, type Point, type Spell } from '@vtt/shared';
+import { type ClientMessage, type Creature, scaledSpell, type Spell } from '@vtt/system-dnd5e';
+import type { Point } from '@vtt/shared';
 
 // Picking what a spell is aimed at: nothing (self), a point (areas,
 // teleports, summons) or some creatures, one per target or beam.

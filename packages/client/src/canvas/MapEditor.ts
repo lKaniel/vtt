@@ -1,15 +1,15 @@
 import type { Doc } from '@vtt/core';
 import {
   handlesOf,
+  type Hittable,
   hitTest,
   marqueeHits,
-  shapeOf,
-  withGroupBounds,
-  type Hittable,
   type MarqueeMode,
   type Point,
   type Rect,
+  shapeOf,
   type View,
+  withGroupBounds,
 } from '@vtt/shared';
 import { Container, Graphics } from 'pixi.js';
 import { EditorController, type EditorHost } from '../editor/controller.ts';

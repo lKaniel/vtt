@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { pointInPolygon, tokensVisibleTo, TokenSchema, visibilityPolygon, type Point, type Wall } from './index.ts';
+import {
+  NO_SENSES,
+  type PlacedToken,
+  type Point,
+  pointInPolygon,
+  tokensVisibleTo,
+  visibilityPolygon,
+  type Wall,
+} from './index.ts';
+
+type Tok = PlacedToken & { name: string; darkvision?: number };
+const sight = (t: Tok) => ({
+  senses: { ...NO_SENSES, darkvision: t.darkvision ?? 0 },
+  blinded: false,
+  invisible: false,
+});
 
 const G = 100;
 const wall: Wall = { id: 'w', a: [300, -500], b: [300, 500] };
@@ -20,22 +35,23 @@ describe('visibilityPolygon', () => {
 });
 
 describe('tokensVisibleTo', () => {
+  const tok = (t: Tok): Tok => t;
   const player = { id: 'p1', name: 'P1', role: 'player' as const, color: '#fff' };
-  const hero = TokenSchema.parse({
+  const hero = tok({
     id: 'hero',
     name: 'Hero',
     x: 50,
     y: 50,
     ownership: { default: 'limited', p1: 'owner' },
   });
-  const ally = TokenSchema.parse({
+  const ally = tok({
     id: 'ally',
     name: 'Ally',
     x: 5050,
     y: 50,
     ownership: { default: 'limited', p2: 'owner' },
   });
-  const orc = (x: number, y: number) => TokenSchema.parse({ id: 'orc', name: 'Orc', x, y });
+  const orc = (x: number, y: number) => tok({ id: 'orc', name: 'Orc', x, y });
   const ctx = (
     darkness: number,
     walls: Wall[] = [],
@@ -44,6 +60,7 @@ describe('tokensVisibleTo', () => {
     world: { darkness, vision: true, gridSize: G },
     lights,
     wallsBetween: (_a: Point, _b: Point) => walls,
+    perceiver: sight,
   });
 
   it('shows what is in sight by day and hides what is behind a wall', () => {

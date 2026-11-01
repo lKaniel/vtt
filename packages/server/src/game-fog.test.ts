@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { FogMap, type ServerMessage } from '@vtt/shared';
+import { FogMap } from '@vtt/shared';
+import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeTwoScenes } from './test/fixtures.ts';

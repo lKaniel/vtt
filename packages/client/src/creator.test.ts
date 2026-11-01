@@ -1,4 +1,4 @@
-import { CharacterSchema, characterIssues, levelUp, newCharacter, type Character } from '@vtt/shared';
+import { type Character, characterIssues, CharacterSchema, levelUp, newCharacter } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import {
   adjustPointBuy,

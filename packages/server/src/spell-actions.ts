@@ -1,23 +1,22 @@
 import {
+  type CastingTime,
+  type CastOutcome,
   castProblem,
-  lastingEffects,
+  type CastResult,
+  type Effect,
   inArea,
   isDying,
   joinCombat,
+  lastingEffects,
   resolveCast,
   scaledSpell,
-  tokenDistance,
-  TokenSchema,
-  type CastOutcome,
-  type CastResult,
-  type CastingTime,
-  type Effect,
-  type Player,
-  type Point,
   type Spell,
   type SpellLog,
   type Token,
-} from '@vtt/shared';
+  tokenDistance,
+  TokenSchema,
+} from '@vtt/system-dnd5e';
+import type { Player, Point } from '@vtt/shared';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
 
 export interface CastRequest {

@@ -1,4 +1,4 @@
-import { ancestors, canReparent, descendants, keysBetween, type Doc, type Patch } from '@vtt/core';
+import { ancestors, canReparent, descendants, type Doc, keysBetween, type Patch } from '@vtt/core';
 import type { Rect } from './chunks.ts';
 import { applyPatch } from './placeables.ts';
 import type { Point } from './schema.ts';

@@ -1,4 +1,4 @@
-import { srdFor, type Attack } from '@vtt/shared';
+import { type Attack, srdFor } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import { attackTip, featureTip, itemTip, plainText, spellTip } from './tooltip.ts';
 

@@ -21,8 +21,9 @@ world/                      the example game (another folder: VTT_GAME); lobby g
 
 Run `pnpm check-game` after editing. It reports every problem with the file
 and the item it's in. The schemas live in `packages/shared/src/schema.ts`
-(tiles, walls, lights, tokens) and `packages/shared/src/game-schema.ts`
-(game and scene).
+(tiles, walls, lights), `packages/shared/src/game-schema.ts` (game and
+scene) and, for D&D creatures, `packages/system-dnd5e/src/token-schema.ts`
+(tokens and actors).
 
 Every id is lowercase letters, digits and dashes, and unique within its list:
 two walls of a scene can't share an id, but a wall and a light can.
@@ -314,10 +315,10 @@ has been imported (see [token-art/README.md](token-art/README.md)).
 
 A token with `monster` or `stats` is a creature: it gets a hit point bar, can
 attack and joins fights. Monster and item ids come from the SRD content in
-`packages/shared/content/srd/`.
+`packages/system-dnd5e/content/srd/`.
 
-**Rules edition.** `game.json` has `"rules": "2014"` (the default) or
-`"2024"`. Monsters come from SRD 5.1 (`monsters-5.1.json`) under 2014 rules
+**Rules edition.** `game.json` has `"rules": "2014"` (the default when it is
+missing) or `"2024"`. Monsters come from SRD 5.1 (`monsters-5.1.json`) under 2014 rules
 and SRD 5.2 (`monsters-5.2.json`) under 2024 rules; the weapon and armor list
 (`items.json`) is shared. A character can play by the other edition, e.g. a
 2024 class in a 2014 game, with `"stats": { "rules": "2024" }`; that token's

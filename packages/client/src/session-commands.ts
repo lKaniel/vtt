@@ -1,4 +1,5 @@
-import type { Actor, ClientMessage, DoorState, MapEdit, Point, Role } from '@vtt/shared';
+import type { Actor, ClientMessage } from '@vtt/system-dnd5e';
+import type { DoorState, MapEdit, Point, Role } from '@vtt/shared';
 
 /**
  * The plain requests a client sends the server, each one message. Session

@@ -1,4 +1,5 @@
-import { inZone, zonesOf, type Point, type Token, type ZoneHit } from '@vtt/shared';
+import { inZone, type Token, type ZoneHit, zonesOf } from '@vtt/system-dnd5e';
+import type { Point } from '@vtt/shared';
 import type { SpellActions } from './spell-actions.ts';
 import type { Table } from './table.ts';
 

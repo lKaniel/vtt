@@ -27,12 +27,19 @@ with `pnpm check-game data/games/<id>`.
   drags them onto the map from the Actors tab.
 - Creatures: `"monster": "<srd id>"` for a stat block, or `stats` + `inventory`
   for a character (see "Creatures" in the format doc). Monster and item ids
-  are in `packages/shared/content/srd/`; `check-game` flags unknown ones.
+  are in `packages/system-dnd5e/content/srd/`; `check-game` flags unknown ones.
 - Keep ids lowercase with dashes, unique within their list (a scene's walls, its tokens).
 
 ## Code
 
-- TypeScript monorepo: `packages/shared` (used by both sides), `server`, `client`.
+- TypeScript monorepo: `packages/core` (documents, `SystemDefinition`),
+  `packages/shared` (the engine: scenes, walls, vision, fog, editor, lobby),
+  `packages/system-dnd5e` (D&D rules, schemas and SRD content), `server`, `client`.
+- Systems (`docs/systems.md`): the engine (core and shared) knows no D&D;
+  `shared/engine-boundary.test.ts` fails on a system import or rules words
+  there. D&D code goes in `system-dnd5e`; the engine reaches a system only
+  through `SystemDefinition` (`core/system.ts`). A game names its system in
+  game.json; the server's systems are registered in `server/systems.ts`.
 - `packages/core` is the new document layer from the redesign (docs, ops with
   undo, sort keys, trees, migrations). It knows nothing about D&D; new game
   state should be built on it.
@@ -48,12 +55,13 @@ with `pnpm check-game data/games/<id>`.
   and player (bitmaps from `shared/fog.ts`), `fog-keeper.ts` explores after
   anything changes what a player sees, and GM fog edits join undo steps.
 - Tokens are stored as entries (placement + `actor`, `linked`, `delta`);
-  `token-link.ts` in shared merges them with their actor (`resolveToken`) so
+  `token-link.ts` in system-dnd5e merges them with their actor (`resolveToken`) so
   rules code sees one `Token`, and `splitToken` puts a changed token back
   (linked: into the actor). `store.tokens` holds resolved tokens and
   `store.setToken` splits, so game code keeps working on whole tokens.
-- Rules and geometry live in `shared` so the server can enforce them and the
-  client can preview them with the same code. Don't duplicate them.
+- Rules live in `system-dnd5e` and geometry in `shared`, so the server can
+  enforce them and the client can preview them with the same code. Don't
+  duplicate them.
 - The server is authoritative: clients send intents, the server validates
   and broadcasts each player's filtered view (`canSee`, `viewToken`).
 - Edits are document ops (see `docs/edits.md`): a client sends an `ops`
@@ -86,8 +94,9 @@ with `pnpm check-game data/games/<id>`.
   in `shared/hit-test.ts` and `placeables.ts` (one boundary for a later
   Rust/WASM port); a new type adds a shape, handles, inspector fields and
   `registerMenu` entries there, never per-type canvas code.
-- Rules editions: the world plays `rules` ("2014" default, SRD 5.1) and a
-  character can opt into the other with `stats.rules`. Look content up with
+- Rules editions: the world plays `rules` (missing = the system's default,
+  2014 for D&D: SRD 5.1) and a character can opt into the other with
+  `stats.rules`. Look content up with
   `srdFor(editionOf(token, world))`; edition-specific rules (class features,
   weapon mastery) must branch on that edition, never assume one.
 - Bundled content is SRD 5.1 and 5.2 (CC-BY-4.0) only; anything else is the user's

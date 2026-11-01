@@ -1,11 +1,11 @@
-import type { Point, Token } from './schema.ts';
-import type { Monster } from './stats-schema.ts';
+import type { Point } from './schema.ts';
 import { feetToPx, type LightSource } from './vision.ts';
 
-// What a creature can perceive: its senses, how much light falls where it
-// looks, and whether it notices another creature. The server uses this to
-// decide which tokens each player is told about; the client draws the same
-// senses as darkvision, blindsight and lit areas on the map.
+// What a creature can perceive: its senses (the game's system works them
+// out), how much light falls where it looks, and whether it notices another
+// creature. The server uses this to decide which tokens each player is told
+// about; the client draws the same senses as darkvision, blindsight and lit
+// areas on the map.
 
 /** Ranges in feet, plus the power to see invisible things. */
 export interface Senses {
@@ -18,27 +18,21 @@ export interface Senses {
   seeInvisible: boolean;
 }
 
-export type MonsterSenses = Pick<Monster, 'darkvision' | 'blindsight' | 'tremorsense' | 'truesight'>;
+/** Someone with no special senses. */
+export const NO_SENSES: Senses = {
+  darkvision: 0,
+  blindsight: 0,
+  tremorsense: 0,
+  truesight: 0,
+  devilsSight: 0,
+  seeInvisible: false,
+};
 
-type Range = 'darkvision' | 'blindsight' | 'tremorsense' | 'truesight' | 'devilsSight';
-
-/** The best of what the token, its monster and the effects on it grant. */
-export function sensesOf(token: Token, monster?: Partial<MonsterSenses>): Senses {
-  const granted = (token.effects ?? []).flatMap((e) => (e.senses ? [e.senses] : []));
-  const range = (key: Range) =>
-    Math.max(token[key] ?? 0, (key === 'devilsSight' ? 0 : monster?.[key]) ?? 0, ...granted.map((g) => g[key] ?? 0));
-  return {
-    darkvision: range('darkvision'),
-    blindsight: range('blindsight'),
-    tremorsense: range('tremorsense'),
-    truesight: range('truesight'),
-    devilsSight: range('devilsSight'),
-    seeInvisible: granted.some((g) => g.seeInvisible === true),
-  };
-}
-
-export function hasCondition(token: Token, condition: string): boolean {
-  return (token.effects ?? []).some((e) => e.conditions?.includes(condition as never));
+/** How a token perceives and is perceived, as its system decides (see SightContext in permissions.ts). */
+export interface Perceiver {
+  senses: Senses;
+  blinded: boolean;
+  invisible: boolean;
 }
 
 // Light ------------------------------------------------------------------

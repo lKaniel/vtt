@@ -1,5 +1,6 @@
 import type { Doc, DocStore } from '@vtt/core';
-import { resolveToken, type Actor, type Owned, type TokenEntry } from '@vtt/shared';
+import { type Actor, resolveToken, type TokenEntry } from '@vtt/system-dnd5e';
+import type { Owned } from '@vtt/shared';
 import { fromDoc } from './doc-sync.ts';
 
 // The game's documents as ownership sees them: who may change them

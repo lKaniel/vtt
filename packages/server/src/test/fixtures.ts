@@ -2,7 +2,7 @@
 import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { ActorSchema, resolveToken, TokenEntrySchema, type ServerMessage, type Token } from '@vtt/shared';
+import { ActorSchema, resolveToken, type ServerMessage, type Token, TokenEntrySchema } from '@vtt/system-dnd5e';
 import type { WebSocket } from 'ws';
 
 const players = [

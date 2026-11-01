@@ -9,7 +9,7 @@
         a 2024 alias such as goblin-warrior.png works too), keys out the flat green or
         magenta background, trims it, centres it on a transparent square and saves it as
         packages/client/public/art/tokens/<id>.webp. Then rewrites
-        packages/shared/content/token-art.json so every monster id (and its aliases)
+        packages/system-dnd5e/content/token-art.json so every monster id (and its aliases)
         points at its picture.
 
 Needs Pillow and numpy (pip install pillow numpy).
@@ -23,8 +23,8 @@ ROOT = Path(__file__).resolve().parent.parent
 CATALOGUE = ROOT / 'docs/token-art/creatures.json'
 PROMPTS = ROOT / 'docs/token-art/prompts.md'
 OUT = ROOT / 'packages/client/public/art/tokens'
-MANIFEST = ROOT / 'packages/shared/content/token-art.json'
-SRD = ROOT / 'packages/shared/content/srd'
+MANIFEST = ROOT / 'packages/system-dnd5e/content/token-art.json'
+SRD = ROOT / 'packages/system-dnd5e/content/srd'
 
 SIZE = 512
 MARGIN = 0.03

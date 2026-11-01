@@ -1,5 +1,5 @@
-import { docPatch, type Doc, type Op } from '@vtt/core';
-import { sameJson } from '@vtt/shared';
+import { type Doc, docPatch, type Op } from '@vtt/core';
+import { sameJson } from '@vtt/system-dnd5e';
 
 // Game objects (tokens, walls, the game itself) are stored as documents in
 // the core DocStore: the object plus its `type` and `rev`. These helpers

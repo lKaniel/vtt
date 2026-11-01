@@ -1,4 +1,4 @@
-import { chunkKey, type EditorMode, type Point, type Rect, type TokenView, type Wall } from '@vtt/shared';
+import { chunkKey, type EditorMode, type Point, type Rect, type Wall } from '@vtt/shared';
 import {
   Application,
   Container,
@@ -446,7 +446,7 @@ export class MapView {
   }
 
   /** The token whose path shows: while it is dragged, or aiming a spell or attack. */
-  private pathToken(): TokenView | undefined {
+  private pathToken() {
     const s = this.session;
     const showing = !!(this.drag?.token ?? s.armed ?? s.aiming) && !this.drag?.panning;
     return showing && s.selected ? s.tokens.get(s.selected) : undefined;

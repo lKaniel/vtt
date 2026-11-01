@@ -1,4 +1,4 @@
-import type { Spell, SpellTargetLog, TokenView } from '@vtt/shared';
+import type { Spell, SpellTargetLog, TokenView } from '@vtt/system-dnd5e';
 
 // Words for spells and features: tooltips, chat lines and preview labels.
 

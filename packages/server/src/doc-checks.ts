@@ -1,5 +1,6 @@
-import { OpError, type Doc, type Validate } from '@vtt/core';
-import { ActorSchema, CombatSchema, GameSchema, isGm, SceneSchema, type Game, type Scene } from '@vtt/shared';
+import { type Doc, OpError, type Validate } from '@vtt/core';
+import { ActorSchema, CombatSchema } from '@vtt/system-dnd5e';
+import { type Game, GameSchema, isGm, type Scene, SceneSchema } from '@vtt/shared';
 import type { z } from 'zod';
 import { fromDoc, toDoc } from './doc-sync.ts';
 import { ITEM_SCHEMAS } from './game-files.ts';

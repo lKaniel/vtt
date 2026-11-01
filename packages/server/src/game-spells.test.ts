@@ -1,4 +1,4 @@
-import { TokenSchema, type Token } from '@vtt/shared';
+import { type Token, TokenSchema } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';

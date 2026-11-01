@@ -1,4 +1,4 @@
-import { TokenSchema, type TokenView } from '@vtt/shared';
+import { TokenSchema, type TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import { dropMessage, tokenAt, type DropContext } from './drops.ts';
 

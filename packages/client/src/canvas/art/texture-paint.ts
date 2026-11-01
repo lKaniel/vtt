@@ -1,4 +1,4 @@
-import { TileTextureSchema, type TileTexture } from '@vtt/shared';
+import { type TileTexture, TileTextureSchema } from '@vtt/shared';
 
 // Floor textures painted from noise, so maps look like ground and planks
 // instead of flat colour without shipping any image files. Each texture is

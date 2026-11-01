@@ -1,22 +1,20 @@
 import { EventEmitter } from 'node:events';
 import { watch, type FSWatcher } from 'node:fs';
-import { DocStore, OpError, revertOps, type Change, type Doc, type Op, type Validate } from '@vtt/core';
+import { type Change, type Doc, DocStore, type Op, OpError, revertOps, type Validate } from '@vtt/core';
 import {
-  splitWorld,
-  type Actor,
   type Chunk,
   type ChunkChange,
-  type Combat,
   type DocChange,
   type Game,
   type LightSource,
   type Player,
   type Point,
   type Rect,
-  type Token,
+  splitWorld,
   type Wall,
   type World,
 } from '@vtt/shared';
+import { dnd5e, type Actor, type Combat, type Dnd5eSystem, type Token } from '@vtt/system-dnd5e';
 import { clientCheck } from './doc-checks.ts';
 import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
 import { FileWriter } from './file-writer.ts';
@@ -93,7 +91,11 @@ export class GameStore extends EventEmitter<StoreEvents> {
   /** The step being recorded for undo, and who changed each document last. */
   readonly history = new StoreHistory();
 
-  constructor(readonly dir: string) {
+  /** `system`: the rules the game plays (game.json `system`), D&D 5e unless the hub says otherwise. */
+  constructor(
+    readonly dir: string,
+    readonly system: Dnd5eSystem = dnd5e,
+  ) {
     super();
     this.files = new FileWriter(dir);
     this.fog = new FogStore(dir);

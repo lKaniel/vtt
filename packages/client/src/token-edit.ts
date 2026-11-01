@@ -1,13 +1,5 @@
-import {
-  DamageTypeSchema,
-  omitKey,
-  type Ability,
-  type DamageType,
-  type Level,
-  type Ownership,
-  type Stats,
-  withLevel,
-} from '@vtt/shared';
+import { type Ability, type DamageType, DamageTypeSchema, omitKey, type Stats } from '@vtt/system-dnd5e';
+import { type Level, type Ownership, withLevel } from '@vtt/shared';
 
 // The GM's token editor works on a draft copy of the token; these helpers
 // keep the draft tidy and turn it into the patch the server applies.

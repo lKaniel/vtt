@@ -1,6 +1,6 @@
 import type { Doc } from '@vtt/core';
-import { describe, expect, it } from 'vitest';
 import { applyPatch, dragHandle, handlesOf, MODES, moveBy, shapeOf, snapDelta, type View } from './placeables.ts';
+import { describe, expect, it } from 'vitest';
 
 const view: View = { gridSize: 100, px: 1 };
 const wall: Doc = { id: 'w', type: 'wall', rev: 1, a: [0, 0], b: [200, 0] };

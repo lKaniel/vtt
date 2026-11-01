@@ -1,6 +1,6 @@
-import { levelFor, type Level, type Ownership } from '@vtt/core';
-import type { Player, Point, Token, Wall, World } from './schema.ts';
-import { hasCondition, perceives, sensesOf, type Eyes, type LightContext, type MonsterSenses } from './senses.ts';
+import { type Level, levelFor, type Ownership } from '@vtt/core';
+import type { PlacedToken, Player, Point, Wall, World } from './schema.ts';
+import { type Eyes, type LightContext, type Perceiver, perceives } from './senses.ts';
 import { hasLineOfSight, type LightSource } from './vision.ts';
 
 /** How much of a document a player has; see `Level` in core. */
@@ -78,13 +78,13 @@ export function withLevel(ownership: Ownership | undefined, player: string, leve
   return level === base.default ? (base as Ownership) : ({ ...base, [player]: level } as Ownership);
 }
 
-export interface SightContext {
+export interface SightContext<T> {
   world: Pick<World, 'darkness' | 'vision' | 'gridSize'>;
   lights: readonly LightSource[];
   /** Walls that could stand between two points. */
   wallsBetween: (a: Point, b: Point) => readonly Wall[];
-  /** The senses on a monster's stat block, for tokens that use one. */
-  monster?: (token: Token) => Partial<MonsterSenses> | undefined;
+  /** A token's senses and conditions, as the game's system works them out. */
+  perceiver: (token: T) => Perceiver;
 }
 
 /**
@@ -93,7 +93,11 @@ export interface SightContext {
  * must be perceived by a token they own or observe: seen in light or with darkvision,
  * or felt with blindsight or tremorsense (see senses.ts).
  */
-export function tokensVisibleTo(player: Player, tokens: readonly Token[], ctx: SightContext): Set<string> {
+export function tokensVisibleTo<T extends PlacedToken>(
+  player: Player,
+  tokens: readonly T[],
+  ctx: SightContext<T>,
+): Set<string> {
   const viewers = tokens.filter((t) => canObserve(t, player));
   const seesAll = isGm(player) || !ctx.world.vision;
   const light: LightContext = {
@@ -102,9 +106,12 @@ export function tokensVisibleTo(player: Player, tokens: readonly Token[], ctx: S
     lights: ctx.lights,
     clear: (a, b) => hasLineOfSight(a, b, ctx.wallsBetween(a, b)),
   };
-  const eyes = viewers.map((v) => eyesOf(v, ctx));
-  const spotted = (t: Token) => {
-    const target = { at: [t.x, t.y] as Point, invisible: hasCondition(t, 'invisible') };
+  const eyes = viewers.map((v): Eyes => {
+    const p = ctx.perceiver(v);
+    return { at: [v.x, v.y], senses: p.senses, blinded: p.blinded };
+  });
+  const spotted = (t: T) => {
+    const target = { at: [t.x, t.y] as Point, invisible: ctx.perceiver(t).invisible };
     return eyes.some((e) => perceives(e, target, light));
   };
   const ids = tokens
@@ -112,9 +119,4 @@ export function tokensVisibleTo(player: Player, tokens: readonly Token[], ctx: S
     .filter((t) => seesAll || isParty(t) || spotted(t))
     .map((t) => t.id);
   return new Set(ids);
-}
-
-function eyesOf(token: Token, ctx: SightContext): Eyes {
-  const monster = token.monster ? ctx.monster?.(token) : undefined;
-  return { at: [token.x, token.y], senses: sensesOf(token, monster), blinded: hasCondition(token, 'blinded') };
 }
