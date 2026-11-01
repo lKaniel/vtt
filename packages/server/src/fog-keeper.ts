@@ -91,6 +91,6 @@ export class FogKeeper {
   }
 
   private eyeOf(token: Token): FogEye {
-    return { at: [token.x, token.y], senses: this.store.system.perceiver(token, this.store.world.rules).senses };
+    return { at: [token.x, token.y], senses: this.store.system.perceiver(token, this.store.world.rules, this.store.packContent()).senses };
   }
 }

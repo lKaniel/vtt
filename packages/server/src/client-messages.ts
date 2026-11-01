@@ -6,6 +6,9 @@ import { z } from 'zod';
 
 // What clients may send, checked before the game looks at it.
 
+/** Uploads up to 20 MB, as base64. */
+const MAX_UPLOAD_BASE64 = Math.ceil((20 * 1024 * 1024 * 4) / 3) + 4;
+
 const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('view'), chunks: z.array(z.string()).max(400) }),
   z.object({ t: z.literal('move'), token: z.string(), to: PointSchema }),
@@ -80,6 +83,10 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('fog'), edit: FogEditSchema }),
   z.object({ t: z.literal('undo'), card: z.string().optional() }),
   z.object({ t: z.literal('redo') }),
+  z.object({ t: z.literal('packs') }),
+  z.object({ t: z.literal('media') }),
+  z.object({ t: z.literal('compendium'), pack: z.string().max(80), compendium: z.string().max(80) }),
+  z.object({ t: z.literal('upload'), name: z.string().min(1).max(200), data: z.string().max(MAX_UPLOAD_BASE64) }),
 ]);
 
 export type ClientMessage = z.infer<typeof ClientMessageSchema>;

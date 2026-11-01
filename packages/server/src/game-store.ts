@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { watch, type FSWatcher } from 'node:fs';
-import { type Change, type Doc, DocStore, type Op, OpError, revertOps, type Validate } from '@vtt/core';
+import { type Change, type Doc, DocStore, type Op, OpError, type PackCompendium, revertOps, type Validate } from '@vtt/core';
 import {
   type Chunk,
   type ChunkChange,
@@ -14,11 +14,22 @@ import {
   type Wall,
   type World,
 } from '@vtt/shared';
-import { dnd5e, type Actor, type Combat, type Dnd5eSystem, type Token } from '@vtt/system-dnd5e';
+import {
+  type Actor,
+  type Combat,
+  type Content,
+  contentWith,
+  dnd5e,
+  type Dnd5eSystem,
+  editionOf,
+  type Token,
+} from '@vtt/system-dnd5e';
 import { clientCheck } from './doc-checks.ts';
 import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
 import { FileWriter } from './file-writer.ts';
 import { FogStore } from './fog-store.ts';
+import { contentCompendia } from './game-packs.ts';
+import type { PackStore } from './pack-store.ts';
 import { classify, crossCheck, pathOf } from './game-files.ts';
 import { readEntry, readFolder, stateOf, type FolderEntry } from './game-folder.ts';
 import { upgradeFolder } from './migrate-all.ts';
@@ -91,10 +102,14 @@ export class GameStore extends EventEmitter<StoreEvents> {
   /** The step being recorded for undo, and who changed each document last. */
   readonly history = new StoreHistory();
 
-  /** `system`: the rules the game plays (game.json `system`), D&D 5e unless the hub says otherwise. */
+  /**
+   * `system`: the rules the game plays (game.json `system`), D&D 5e unless
+   * the hub says otherwise. `packs`: the asset packs installed on the server.
+   */
   constructor(
     readonly dir: string,
     readonly system: Dnd5eSystem = dnd5e,
+    readonly packs?: PackStore,
   ) {
     super();
     this.files = new FileWriter(dir);
@@ -117,7 +132,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
     this.projectCombat(false);
     await this.fog.load(this.sceneIds());
     this.fog.prune(this.game.players.map((p) => p.id));
-    for (const issue of crossCheck(stateOf(entries)!)) console.warn(`[game] ${issue.file}: ${issue.message}`);
+    for (const issue of crossCheck(stateOf(entries)!, this.system, this.packs)) console.warn(`[game] ${issue.file}: ${issue.message}`);
     console.log(`[game] loaded "${this.world.name}", ${this.states.size} scenes, on "${this.activeScene}"`);
   }
 
@@ -164,6 +179,16 @@ export class GameStore extends EventEmitter<StoreEvents> {
   // fallow-ignore-next-line unused-class-member -- game-hub.ts reads it through Running.store
   get campaign(): Game {
     return this.game;
+  }
+
+  /** The rules content (D&D: monsters, items, spells) of the packs game.json turns on. */
+  packContent(): PackCompendium[] {
+    return contentCompendia(this.packs, this.game, this.system);
+  }
+
+  /** What a token can refer to: its edition's SRD plus the game's packs. */
+  contentFor(token: Pick<Token, 'stats'>): Content {
+    return contentWith(editionOf(token, this.world), this.packContent());
   }
 
   /** The scene the game is on. */

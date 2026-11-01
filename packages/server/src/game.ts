@@ -9,7 +9,7 @@ import {
   type World,
   type WorldInfo,
 } from '@vtt/shared';
-import { type ChatMessage, editionOf, type ServerMessage, srdFor, type Token, viewToken } from '@vtt/system-dnd5e';
+import { type ChatMessage, type ServerMessage, type Token, viewToken } from '@vtt/system-dnd5e';
 import { OpError } from '@vtt/core';
 import type { WebSocket } from 'ws';
 import { parseClientMessage, type ClientMessage } from './client-messages.ts';
@@ -30,6 +30,7 @@ import { SceneActions, sceneOf } from './scene-actions.ts';
 import { FogKeeper } from './fog-keeper.ts';
 import { chatMessage } from './chat-command.ts';
 import { TokenMoves } from './token-moves.ts';
+import { isPackMessage, PackActions } from './pack-actions.ts';
 
 interface Client {
   ws: WebSocket;
@@ -68,6 +69,7 @@ export class Game {
   private fog: FogKeeper;
   private moves: TokenMoves;
   private history: History;
+  private packs: PackActions;
 
   constructor(
     private store: GameStore,
@@ -96,6 +98,7 @@ export class Game {
     this.fog = new FogKeeper(store);
     this.moves = new TokenMoves(store, this.combat, this.zones, this.reactions);
     this.history = new History(store, (ids, undone) => this.markCards(ids, undone));
+    this.packs = new PackActions(store);
     this.listen(store);
   }
 
@@ -169,7 +172,8 @@ export class Game {
     const { players, ...world } = this.store.inScene(c.scene, () => this.store.world);
     // The GM's welcome lists the seats too.
     const seats = isGm(c.player) ? players : undefined;
-    return JSON.stringify([c.scene, this.store.activeScene, c.player, world, this.store.sceneName(c.scene), seats]);
+    const packs = this.store.campaign.packs;
+    return JSON.stringify([c.scene, this.store.activeScene, c.player, world, this.store.sceneName(c.scene), seats, packs]);
   }
 
   /** The clients on a scene. */
@@ -219,6 +223,7 @@ export class Game {
       docs: c.feed.start(player),
       ...(gm ? { players: this.store.world.players, actors: [...this.store.actors.values()] } : {}),
     });
+    this.send(c, { t: 'packContent', compendia: this.store.packContent() });
     this.store.inScene(c.scene, () => {
       this.fog.explore(player);
       for (const fog of this.fog.snapshot(player)) this.send(c, { t: 'fog', ...fog, full: true });
@@ -231,7 +236,7 @@ export class Game {
         world: this.store.world,
         lights: this.store.lights(),
         wallsBetween: (a, b) => this.store.wallsBetween(a, b),
-        perceiver: (t) => this.store.system.perceiver(t, this.store.world.rules),
+        perceiver: (t) => this.store.system.perceiver(t, this.store.world.rules, this.store.packContent()),
       }),
     );
   }
@@ -277,7 +282,7 @@ export class Game {
   }
 
   private view(token: Token, player: Player) {
-    return viewToken(token, player, srdFor(editionOf(token, this.store.world)));
+    return viewToken(token, player, this.store.contentFor(token));
   }
 
   /** Runs a message on the scene the client is on. */
@@ -287,6 +292,7 @@ export class Game {
 
   private handleHere(c: Client, msg: ClientMessage): void {
     if (msg.t === 'ops') return this.onOps(c, msg);
+    if (isPackMessage(msg)) return this.onPacks(c, msg);
     try {
       if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);
       else if (this.history.run(c.player, msg, () => this.dispatch(c, msg))) this.sendHistory();
@@ -305,6 +311,15 @@ export class Game {
       if (!(e instanceof Refusal || e instanceof OpError)) throw e;
       this.send(c, { t: 'reject', txn: msg.txn, reason: e.message });
     }
+  }
+
+  /** The GM's asset browser: answered when the files have been read. */
+  private onPacks(c: Client, msg: Parameters<PackActions['run']>[1]): void {
+    this.packs.run(c.player, msg, (reply) => this.send(c, reply)).catch((e: unknown) => {
+      if (e instanceof Refusal) return this.fail(c, e.message);
+      console.error('[game] pack request failed:', e);
+      this.fail(c, 'Could not read the packs');
+    });
   }
 
   private onUndo(c: Client, msg: Extract<ClientMessage, { t: 'undo' | 'redo' }>): void {

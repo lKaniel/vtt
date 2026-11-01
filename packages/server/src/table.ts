@@ -17,7 +17,6 @@ import {
   removeEffects,
   resolveCreature,
   rollSave,
-  srdFor,
   type Token,
   type TurnBudget,
   type TurnInfo,
@@ -50,7 +49,7 @@ export class Table {
   ) {}
 
   content(token: Token): Content {
-    return srdFor(editionOf(token, this.store.world));
+    return this.store.contentFor(token);
   }
 
   sheetOf(token: Token): Creature | undefined {

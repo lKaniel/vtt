@@ -78,6 +78,16 @@ describe('the games on a server', () => {
     await expect(hub.open('odd')).rejects.toThrow('This server has no "gurps" system.');
   });
 
+  it('gives every game the packs installed in the data folder', async () => {
+    await mkdir(join(dataDir, 'packs', 'forest'), { recursive: true });
+    await writeFile(join(dataDir, 'packs', 'forest', 'pack.json'), JSON.stringify({ id: 'forest', name: 'Forest' }));
+    await hub.close();
+    hub = await startHub();
+    const { store } = await hub.open('test');
+    expect(store.packs?.list().map((p) => p.id)).toEqual(['forest']);
+    expect(hub.packs.dir).toBe(join(dataDir, 'packs'));
+  });
+
   it('finds the games made before, after a restart', async () => {
     const id = await hub.create({ name: 'Lost Mine', system: 'dnd5e', rules: '2014' }, kaniel);
     const code = await hub.invite(id);

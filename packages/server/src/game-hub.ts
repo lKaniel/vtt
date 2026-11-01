@@ -18,6 +18,7 @@ import { GameStore } from './game-store.ts';
 import { SYSTEMS } from './systems.ts';
 import { readJson, writeJson } from './json-files.ts';
 import { FORMAT } from './migrate-ownership.ts';
+import { PackStore } from './pack-store.ts';
 
 // Every game on the server. Games made in the lobby live in the data
 // folder's games/<id>/; the game folder the server was started with (world/
@@ -78,9 +79,12 @@ export class GameHub {
   private timers = new Map<string, NodeJS.Timeout>();
   private index: GameIndex;
   homeId?: string;
+  /** The asset packs installed on the server: the data folder's packs/. */
+  readonly packs: PackStore;
 
   constructor(private opts: HubOptions) {
     this.index = new GameIndex(opts.dataDir);
+    this.packs = new PackStore(join(opts.dataDir, 'packs'));
   }
 
   private get gamesDir(): string {
@@ -90,6 +94,8 @@ export class GameHub {
   /** Finds the home game and every game folder in games/. */
   async load(): Promise<void> {
     await this.index.load();
+    await this.packs.load();
+    for (const problem of this.packs.problems) console.warn(`[packs] ${problem}`);
     if (this.opts.home) await this.loadHome(this.opts.home);
     const names = await readdir(this.gamesDir).catch(() => [] as string[]);
     for (const name of [...names].sort((a, b) => a.localeCompare(b))) {
@@ -153,7 +159,7 @@ export class GameHub {
     const file = await readGameFile(dir);
     const system = SYSTEMS.get(file?.system ?? DEFAULT_SYSTEM);
     if (!system) throw new HubError(`This server has no "${file?.system ?? ''}" system.`);
-    const store = new GameStore(dir, system);
+    const store = new GameStore(dir, system, this.packs);
     await store.load();
     if (this.opts.watch !== false) store.watch();
     return { store, game: new Game(store), sockets: new Map() };

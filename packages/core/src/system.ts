@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { PackCompendium, PackManifest } from './packs.ts';
 
 // A game system: the rules, content and creature sheets a game runs on
 // (D&D 5e lives in packages/system-dnd5e). The engine (scenes, walls, fog,
@@ -26,8 +27,24 @@ export interface SystemDefinition<TToken = unknown, TActor = unknown> extends Sy
   tokenSchema: z.ZodType<TToken>;
   /** A creature sheet in actors/<id>.json. */
   actorSchema: z.ZodType<TActor>;
-  /** What a token or actor refers to that the edition's content doesn't have (an unknown monster or spell). */
-  tokenIssues: (sheet: TToken | TActor, edition: string) => string[];
+  /**
+   * What a token or actor refers to that the edition's content doesn't have
+   * (an unknown monster or spell). `content` is the game's rules-content
+   * compendia from its packs, which add to what a sheet may refer to.
+   */
+  tokenIssues: (sheet: TToken | TActor, edition: string, content?: readonly PackCompendium[]) => string[];
+  /** Packs the system ships, always on in its games (D&D: the SRD). */
+  packs?: readonly SystemPackSource[];
+  /** Compendium types that are rules content the system reads from a game's packs (D&D: monster, item, spell). */
+  contentTypes?: readonly string[];
+  /** What is wrong with the documents of one of its content compendia. */
+  packContentIssues?: (compendium: PackCompendium) => string[];
+}
+
+/** A pack a system ships: its manifest and its compendia's documents. */
+export interface SystemPackSource {
+  manifest: PackManifest;
+  compendium: (id: string) => unknown[];
 }
 
 /** The edition a system plays when a game doesn't say. */

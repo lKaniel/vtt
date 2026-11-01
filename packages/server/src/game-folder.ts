@@ -10,6 +10,7 @@ import {
   type GameState,
   type Issue,
 } from './game-files.ts';
+import type { PackStore } from './pack-store.ts';
 
 // Reading a whole game folder: every file the game knows, parsed. The
 // server loads from this and `check-game` reports from it.
@@ -90,7 +91,7 @@ function orphans(entries: readonly FolderEntry[], state: GameState): Issue[] {
 }
 
 /** Every problem in a game folder: file errors first, then the ones that need the whole game. */
-export async function checkFolder(dir: string): Promise<{ issues: Issue[]; state?: GameState }> {
+export async function checkFolder(dir: string, packs?: PackStore): Promise<{ issues: Issue[]; state?: GameState }> {
   const top = await names(dir, '.');
   const issues: Issue[] = [];
   for (const old of ['world.json', 'chunks', 'tokens'].filter((n) => top.includes(n))) {
@@ -102,6 +103,6 @@ export async function checkFolder(dir: string): Promise<{ issues: Issue[]; state
   const entries = await readFolder(dir);
   for (const e of entries) for (const message of e.errors) issues.push({ file: e.rel, message });
   const state = stateOf(entries);
-  if (state) issues.push(...crossCheck(state), ...orphans(entries, state));
+  if (state) issues.push(...crossCheck(state, undefined, packs), ...orphans(entries, state));
   return { issues, state };
 }

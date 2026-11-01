@@ -21,6 +21,8 @@ export const GameSchema = z.object({
   /** The scene everyone is on: a folder in scenes/. */
   scene: id,
   players: z.array(PlayerSchema).min(1),
+  /** Installed asset packs the game uses (data/packs/<id>/); the system's own packs are always on. */
+  packs: z.array(id).optional(),
 });
 export type Game = z.infer<typeof GameSchema>;
 

@@ -9,7 +9,7 @@ import {
   sameJson,
   sheetFields,
   type SpawnSource,
-  srdFor,
+  contentWith,
   type Token,
   tokenFromActor,
   TokenSchema,
@@ -95,7 +95,7 @@ export class GmActions {
 
   /** An unlinked copy of the monster's stock actor. */
   private monster(from: Extract<SpawnSource, { kind: 'monster' }>, at: Point, hidden?: boolean): Token {
-    const monster = srdFor(from.rules).monsters.get(from.id);
+    const monster = contentWith(from.rules, this.store.packContent()).monsters.get(from.id);
     if (!monster) throw new Refusal(`No monster "${from.id}" in the ${from.rules} rules`);
     return this.tokenOf(this.stockActor(monster, from.rules), at, hidden);
   }

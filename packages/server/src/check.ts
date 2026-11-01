@@ -1,12 +1,17 @@
-import { relative } from 'node:path';
+import { join, relative } from 'node:path';
 import { checkFolder } from './game-folder.ts';
-import { gameDirFromArgs } from './paths.ts';
+import { PackStore } from './pack-store.ts';
+import { dataDirFor, gameDirFromArgs } from './paths.ts';
 
 // Validates every file in a game folder. Run it after editing game files
 // by hand or with Claude: `pnpm check-game [folder]`.
 
 const dir = gameDirFromArgs();
-const { issues, state } = await checkFolder(dir);
+// The packs installed next to it, so tokens may use their monsters.
+const packs = new PackStore(join(dataDirFor(dir), 'packs'));
+await packs.load();
+for (const problem of packs.problems) console.log(`warning packs/${problem}`);
+const { issues, state } = await checkFolder(dir, packs);
 const errors = issues.filter((i) => !i.warning);
 for (const i of issues) console.log(`${i.warning ? 'warning' : 'error  '} ${i.file}: ${i.message}`);
 const scenes = [...(state?.scenes.values() ?? [])];
