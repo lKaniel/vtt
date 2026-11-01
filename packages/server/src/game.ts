@@ -1,14 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import {
-  canControl,
-  isGm,
-  type Player,
-  type Point,
-  type Rng,
-  tokensVisibleTo,
-  type World,
-  type WorldInfo,
-} from '@vtt/shared';
+import { canControl, isGm, type Player, type Point, type Rng, tokensVisibleTo, type World } from '@vtt/shared';
 import { type ChatMessage, type ServerMessage, type Token, viewToken } from '@vtt/system-dnd5e';
 import { OpError } from '@vtt/core';
 import type { WebSocket } from 'ws';
@@ -31,6 +22,8 @@ import { FogKeeper } from './fog-keeper.ts';
 import { chatMessage } from './chat-command.ts';
 import { TokenMoves } from './token-moves.ts';
 import { isPackMessage, PackActions } from './pack-actions.ts';
+import { startOf, welcomeOf } from './welcome.ts';
+import { contentFor, packContent } from './game-packs.ts';
 
 interface Client {
   ws: WebSocket;
@@ -156,7 +149,7 @@ export class Game {
       }
       c.player = player;
       c.scene = sceneOf(player, this.store);
-      if (this.startOf(c) !== c.start) this.restart(c);
+      if (startOf(this.store, c) !== c.start) this.restart(c);
     }
   }
 
@@ -165,15 +158,6 @@ export class Game {
     c.visible = this.visibleTo(c.player, c.scene);
     c.chunks = new Set();
     this.welcome(c);
-  }
-
-  /** Everything a welcome depends on, short of the documents. */
-  private startOf(c: Client): string {
-    const { players, ...world } = this.store.inScene(c.scene, () => this.store.world);
-    // The GM's welcome lists the seats too.
-    const seats = isGm(c.player) ? players : undefined;
-    const packs = this.store.campaign.packs;
-    return JSON.stringify([c.scene, this.store.activeScene, c.player, world, this.store.sceneName(c.scene), seats, packs]);
   }
 
   /** The clients on a scene. */
@@ -203,27 +187,10 @@ export class Game {
 
   /** Everything a client needs to start (or start over) with its current seat. */
   private welcome(c: Client): void {
-    c.start = this.startOf(c);
-    const { players: _players, ...world } = this.store.inScene(c.scene, () => this.store.world);
-    const info: WorldInfo = world;
+    c.start = startOf(this.store, c);
     const player = c.player;
-    const gm = isGm(player);
-    const tokens = this.store.inScene(c.scene, () => [...c.visible].map((id) => this.store.tokens.get(id)!));
-    this.send(c, {
-      t: 'welcome',
-      world: info,
-      you: player,
-      tokens: tokens.map((t) => this.view(t, player)),
-      chat: this.chat.filter((m) => !m.gmOnly || gm),
-      combat: this.store.combat ?? null,
-      scene: c.scene,
-      sceneName: this.store.sceneName(c.scene),
-      active: this.store.activeScene,
-      history: this.history.state(player),
-      docs: c.feed.start(player),
-      ...(gm ? { players: this.store.world.players, actors: [...this.store.actors.values()] } : {}),
-    });
-    this.send(c, { t: 'packContent', compendia: this.store.packContent() });
+    const parts = { chat: this.chat, history: this.history.state(player), view: (t: Token) => this.view(t, player) };
+    for (const msg of welcomeOf(this.store, c, parts)) this.send(c, msg);
     this.store.inScene(c.scene, () => {
       this.fog.explore(player);
       for (const fog of this.fog.snapshot(player)) this.send(c, { t: 'fog', ...fog, full: true });
@@ -236,7 +203,7 @@ export class Game {
         world: this.store.world,
         lights: this.store.lights(),
         wallsBetween: (a, b) => this.store.wallsBetween(a, b),
-        perceiver: (t) => this.store.system.perceiver(t, this.store.world.rules, this.store.packContent()),
+        perceiver: (t) => this.store.system.perceiver(t, this.store.world.rules, packContent(this.store)),
       }),
     );
   }
@@ -282,7 +249,7 @@ export class Game {
   }
 
   private view(token: Token, player: Player) {
-    return viewToken(token, player, this.store.contentFor(token));
+    return viewToken(token, player, contentFor(this.store, token));
   }
 
   /** Runs a message on the scene the client is on. */
@@ -292,7 +259,7 @@ export class Game {
 
   private handleHere(c: Client, msg: ClientMessage): void {
     if (msg.t === 'ops') return this.onOps(c, msg);
-    if (isPackMessage(msg)) return this.onPacks(c, msg);
+    if (isPackMessage(msg)) return this.packs.handle(c.player, msg, (reply) => this.send(c, reply));
     try {
       if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);
       else if (this.history.run(c.player, msg, () => this.dispatch(c, msg))) this.sendHistory();
@@ -311,15 +278,6 @@ export class Game {
       if (!(e instanceof Refusal || e instanceof OpError)) throw e;
       this.send(c, { t: 'reject', txn: msg.txn, reason: e.message });
     }
-  }
-
-  /** The GM's asset browser: answered when the files have been read. */
-  private onPacks(c: Client, msg: Parameters<PackActions['run']>[1]): void {
-    this.packs.run(c.player, msg, (reply) => this.send(c, reply)).catch((e: unknown) => {
-      if (e instanceof Refusal) return this.fail(c, e.message);
-      console.error('[game] pack request failed:', e);
-      this.fail(c, 'Could not read the packs');
-    });
   }
 
   private onUndo(c: Client, msg: Extract<ClientMessage, { t: 'undo' | 'redo' }>): void {

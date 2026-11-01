@@ -59,7 +59,13 @@ describe('the packs installed on a server', () => {
     const packs = new PackStore(dir);
     await packs.load();
     expect(await packs.media('forest')).toEqual([
-      { src: 'pack://forest/media/Trees/Dead_Trees/stump.png', name: 'stump', kind: 'image', tags: ['trees', 'dead trees'], pack: 'forest' },
+      {
+        src: 'pack://forest/media/Trees/Dead_Trees/stump.png',
+        name: 'stump',
+        kind: 'image',
+        tags: ['trees', 'dead trees'],
+        pack: 'forest',
+      },
       { src: 'pack://forest/media/Trees/oak.webp', name: 'oak', kind: 'image', tags: ['trees'], pack: 'forest' },
     ]);
     expect(await packs.media('nope')).toEqual([]);

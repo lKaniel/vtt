@@ -1,4 +1,4 @@
-import { type Doc, freeId, type Op, type Patch } from '@vtt/core';
+import { type Doc, freeId, type Op, type Patch, slugify } from '@vtt/core';
 import {
   applyPatch,
   applyTileEdit,
@@ -148,6 +148,17 @@ export abstract class TileSession extends EditorSession {
     const base: Doc = { id, type: 'tile', rev: 0, kind: 'rect', color: look.color, texture: preset, ...r };
     const doc = placeNewTile(tiles, look.background ? { ...base, background: true } : base);
     this.sendTileEdit('draw', { creates: [doc], updates: [], deletes: [] });
+    this.setSelection(this.tileKeys([id]));
+  }
+
+  /** A picture tile; it goes inside a container tile it lands on, like a drawn one. */
+  createImageTile(r: Rect, src: string): void {
+    const tiles = this.tiles();
+    const file = src.split('/').at(-1) ?? '';
+    const name = slugify(file.replace(/\.[^.]*$/, '')) || 'image';
+    const id = freeId(/^[a-z0-9]/.test(name) ? name : 'image', (i) => tiles.some((t) => t.id === i), { bare: true });
+    const doc = placeNewTile(tiles, { id, type: 'tile', rev: 0, kind: 'image', src, ...r });
+    this.sendTileEdit('place', { creates: [doc], updates: [], deletes: [] });
     this.setSelection(this.tileKeys([id]));
   }
 

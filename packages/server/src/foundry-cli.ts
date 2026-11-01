@@ -14,7 +14,9 @@ const { positionals, values } = parseArgs({
 });
 const folder = positionals[0];
 if (!folder) {
-  console.error('Usage: pnpm import-foundry <unzipped Foundry module, world or system folder> [--id <pack id>] [--overwrite]');
+  console.error(
+    'Usage: pnpm import-foundry <unzipped Foundry module, world or system folder> [--id <pack id>] [--overwrite]',
+  );
   process.exit(2);
 }
 const home = resolve(process.env.VTT_GAME ?? process.env.VTT_WORLD ?? resolve(repoRoot, 'world'));

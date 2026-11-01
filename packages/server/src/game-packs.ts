@@ -1,4 +1,6 @@
 import { enabledPacks, type PackCompendium, type PackInfo, type SystemDefinition } from '@vtt/core';
+import { type Content, contentWith, editionOf, type Token } from '@vtt/system-dnd5e';
+import type { GameStore } from './game-store.ts';
 import type { PackStore } from './pack-store.ts';
 
 // Which packs a game uses: its system's own (always on) and the installed
@@ -72,4 +74,16 @@ export function gamePackIssues(
     const check = system.packContentIssues ?? (() => []);
     return store.compendia(id).flatMap((c) => check(c).map((issue) => `pack "${id}": ${issue}`));
   });
+}
+
+type RunningGame = Pick<GameStore, 'packs' | 'campaign' | 'system'>;
+
+/** The rules content (D&D: monsters, items, spells) of the packs a running game turns on. */
+export function packContent(store: RunningGame): PackCompendium[] {
+  return contentCompendia(store.packs, store.campaign, store.system);
+}
+
+/** What a token in a running game can refer to: its edition's SRD plus the game's packs. */
+export function contentFor(store: RunningGame & Pick<GameStore, 'world'>, token: Pick<Token, 'stats'>): Content {
+  return contentWith(editionOf(token, store.world), packContent(store));
 }

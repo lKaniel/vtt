@@ -1,6 +1,13 @@
 import { readdir } from 'node:fs/promises';
 import { join, normalize, sep } from 'node:path';
-import { mediaEntry, type MediaEntry, type PackCompendium, type PackManifest, PackManifestSchema, packRef } from '@vtt/core';
+import {
+  mediaEntry,
+  type MediaEntry,
+  type PackCompendium,
+  type PackManifest,
+  PackManifestSchema,
+  packRef,
+} from '@vtt/core';
 import { readJson } from './json-files.ts';
 
 // The asset packs installed on this server: data/packs/<id>/, each with a
@@ -26,7 +33,12 @@ export async function filesUnder(dir: string, prefix = ''): Promise<string[]> {
   return out;
 }
 
-const mediaFolder = (m: PackManifest) => m.media.replace(/\/+$/, '');
+/** The media folder without its trailing slashes. */
+function mediaFolder(m: PackManifest): string {
+  let folder = m.media;
+  while (folder.endsWith('/')) folder = folder.slice(0, -1);
+  return folder;
+}
 
 export class PackStore {
   private packs = new Map<string, Installed>();
@@ -42,7 +54,7 @@ export class PackStore {
     const packs = new Map<string, Installed>();
     const problems: string[] = [];
     const names = await readdir(this.dir).catch(() => [] as string[]);
-    for (const name of names.sort((a, b) => a.localeCompare(b))) {
+    for (const name of [...names].sort((a, b) => a.localeCompare(b))) {
       const pack = await this.read(name, problems);
       if (pack) packs.set(pack.manifest.id, pack);
     }

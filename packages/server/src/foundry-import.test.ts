@@ -83,7 +83,10 @@ describe('importing a Foundry module', () => {
     const scenes = packs.compendium('goblin-maps', 'scenes')!;
     expect(scenes.docs.map((s) => (s as { id: string }).id)).toEqual(['goblin-cave', 'goblin-cave-2']);
     expect(scenes.docs[0]).toMatchObject({
-      tiles: [{ id: 'background', src: 'pack://goblin-maps/media/maps/cave.webp' }, { src: 'pack://goblin-maps/media/tiles/barrel.png' }],
+      tiles: [
+        { id: 'background', src: 'pack://goblin-maps/media/maps/cave.webp' },
+        { src: 'pack://goblin-maps/media/tiles/barrel.png' },
+      ],
       walls: [{ a: [300, 300] }],
     });
   });

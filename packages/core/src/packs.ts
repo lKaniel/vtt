@@ -154,7 +154,9 @@ export interface MediaQuery {
 }
 
 const matchesFilters = (m: MediaEntry, q: MediaQuery) =>
-  (!q.tag || m.tags.includes(q.tag)) && (!q.kind || m.kind === q.kind) && (q.pack === undefined || (m.pack ?? '') === q.pack);
+  (!q.tag || m.tags.includes(q.tag)) &&
+  (!q.kind || m.kind === q.kind) &&
+  (q.pack === undefined || (m.pack ?? '') === q.pack);
 
 /** The media matching `q`: names that start with the query first, then by name. */
 export function searchMedia(media: readonly MediaEntry[], q: MediaQuery): MediaEntry[] {
@@ -175,4 +177,14 @@ export function enabledPacks<P extends PackManifest>(
 ): P[] {
   const on = new Set(ids ?? []);
   return installed.filter((p) => on.has(p.id) && (p.system === null || p.system === system));
+}
+
+/** The `n` tags most media carry, commonest first (then by name). */
+export function topTags(media: readonly MediaEntry[], n: number): string[] {
+  const counts = new Map<string, number>();
+  for (const m of media) for (const t of m.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+  return [...counts]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, n)
+    .map(([tag]) => tag);
 }

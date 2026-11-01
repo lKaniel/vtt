@@ -35,7 +35,10 @@ const FoundryManifestSchema = z.object({
   title: z.string().optional(),
   version: z.union([z.string(), z.number()]).optional(),
   author: z.string().optional(),
-  authors: z.array(z.object({ name: z.string() }).or(z.string())).optional().catch(undefined),
+  authors: z
+    .array(z.object({ name: z.string() }).or(z.string()))
+    .optional()
+    .catch(undefined),
   description: z.string().optional(),
   packs: z.array(FoundryPackSchema).optional().catch(undefined),
 });
@@ -73,12 +76,14 @@ async function readSource(dir: string): Promise<Source> {
     if (!foundryId) throw new Error(`${kind}.json has no id`);
     return { dir, kind, foundryId, manifest };
   }
-  throw new Error(`${dir} has no module.json, world.json or system.json: unzip a Foundry module, world or system first.`);
+  throw new Error(
+    `${dir} has no module.json, world.json or system.json: unzip a Foundry module, world or system first.`,
+  );
 }
 
 const plainText = (html: string) =>
   html
-    .replace(/<[^>]*>/g, ' ')
+    .replace(/<[^<>]*>/g, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -136,11 +141,13 @@ const isDir = (path: string) =>
 /** The raw scenes of one Foundry compendium, or why it was left out. */
 async function compendiumScenes(src: Source, pack: FoundryPack): Promise<{ scenes: unknown[]; skipped?: string }> {
   const type = pack.type ?? pack.entity ?? '?';
-  if (type !== 'Scene') return { scenes: [], skipped: `compendium "${pack.name}" (${type}): only scenes are imported so far` };
+  if (type !== 'Scene')
+    return { scenes: [], skipped: `compendium "${pack.name}" (${type}): only scenes are imported so far` };
   const path = join(src.dir, pack.path);
   if (path.endsWith('.db')) return { scenes: await readNedb(path).catch(() => []) };
   if (await isDir(path)) {
-    const why = 'a Foundry v11+ database, which cannot be read yet (export its scenes with "Export Data" and import again)';
+    const why =
+      'a Foundry v11+ database, which cannot be read yet (export its scenes with "Export Data" and import again)';
     return { scenes: [], skipped: `compendium "${pack.name}": ${why}` };
   }
   return { scenes: await readNedb(`${path}.db`).catch(() => []) };

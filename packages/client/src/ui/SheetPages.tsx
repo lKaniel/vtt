@@ -1,4 +1,5 @@
-import { type Edition, type InventoryEntry, type Spell, srdFor } from '@vtt/system-dnd5e';
+import type { Edition, InventoryEntry, Spell } from '@vtt/system-dnd5e';
+import { gameContent } from '../content.ts';
 import { pipLeft, withSlotsLeft, withUsesLeft } from '../charges.ts';
 import { dragTile } from '../hotbar.ts';
 import { attackArt, featureArt, itemArt, spellArt } from '../icon-art.ts';
@@ -16,7 +17,8 @@ import { TipCard } from './Tip.tsx';
 // The right-hand pages of the character sheet. Anything usable can be
 // dragged onto the action bar; in edit mode the GM adds and removes things.
 
-const items = srdFor('2014').items;
+/** Gear is the same in both editions; the game's packs add their own. */
+const items = () => gameContent('2014').items;
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 const DRAG_HINT = 'Drag onto the action bar';
 
@@ -132,7 +134,7 @@ function Bag({ session, value }: Readonly<SheetProps>) {
   return (
     <div className="bag">
       {list.map((entry, i) => {
-        const item = items.get(entry.item);
+        const item = items().get(entry.item);
         return (
           <button
             key={`${entry.item}-${i}`}
@@ -165,7 +167,7 @@ function InventoryEdit({ value, update }: Readonly<SheetProps>) {
     <>
       <ul className="rows ed-list">
         {list.map((e, i) => {
-          const item = items.get(e.item);
+          const item = items().get(e.item);
           return (
             <li
               key={`${e.item}-${i}`}
@@ -198,7 +200,7 @@ function InventoryEdit({ value, update }: Readonly<SheetProps>) {
       </ul>
       <Adder
         placeholder="Add an item…"
-        options={[...items.values()].map((it) => ({ id: it.id, name: it.name }))}
+        options={[...items().values()].map((it) => ({ id: it.id, name: it.name }))}
         onAdd={(item) => setList([...list, { item, qty: 1, equipped: false }])}
       />
     </>
@@ -208,7 +210,7 @@ function InventoryEdit({ value, update }: Readonly<SheetProps>) {
 export function SpellsPage(props: Readonly<SheetProps & { rules: Edition }>) {
   const { sheet, value, edit, rules } = props;
   const caster = sheet.caster;
-  const book = srdFor(rules).spells;
+  const book = gameContent(rules).spells;
   const unknown = (value.stats?.spells ?? []).filter((id) => !book.has(id));
   const known = caster?.spells ?? [];
   const levels = [...new Set(known.map((s) => s.level))].sort((a, b) => a - b);
@@ -279,7 +281,7 @@ function SpellAdder({ value, update, rules }: Readonly<SheetProps & { rules: Edi
   return (
     <Adder
       placeholder="Add a spell…"
-      options={[...srdFor(rules).spells.values()]
+      options={[...gameContent(rules).spells.values()]
         .filter((s) => !known.includes(s.id))
         .map((s) => ({ id: s.id, name: s.name }))}
       onAdd={(id) => update((d) => setStat(d, 'spells', [...(d.stats?.spells ?? []), id]), true)}

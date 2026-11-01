@@ -9,6 +9,7 @@ import {
   packUrl,
   parsePackRef,
   searchMedia,
+  topTags,
 } from './index.ts';
 
 describe('a pack manifest', () => {
@@ -27,7 +28,10 @@ describe('a pack manifest', () => {
 describe('pack references', () => {
   it('names a file in a pack and finds it again', () => {
     expect(packRef('forest-tiles', 'media/oak.webp')).toBe('pack://forest-tiles/media/oak.webp');
-    expect(parsePackRef('pack://forest-tiles/media/oak.webp')).toEqual({ pack: 'forest-tiles', path: 'media/oak.webp' });
+    expect(parsePackRef('pack://forest-tiles/media/oak.webp')).toEqual({
+      pack: 'forest-tiles',
+      path: 'media/oak.webp',
+    });
     expect(parsePackRef('/assets/oak.webp')).toBeUndefined();
     expect(parsePackRef('pack://forest-tiles/../game.json')).toBeUndefined();
   });
@@ -60,6 +64,11 @@ describe('media', () => {
   it('finds media by every word of a query, in names and tags, names starting with it first', () => {
     expect(searchMedia(media, { query: 'oak' }).map((m) => m.name)).toEqual(['oak', 'oak-ambience', 'dead-oak']);
     expect(searchMedia(media, { query: 'dead tree' }).map((m) => m.name)).toEqual(['dead-oak']);
+  });
+
+  it('lists the commonest tags first, for the tag chips', () => {
+    expect(topTags(media, 5)).toEqual(['trees', 'dead']);
+    expect(topTags(media, 1)).toEqual(['trees']);
   });
 
   it('narrows to a tag, a kind or a pack', () => {

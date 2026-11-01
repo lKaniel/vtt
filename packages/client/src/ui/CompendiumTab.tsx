@@ -4,11 +4,11 @@ import {
   actorFromToken,
   type Edition,
   type Monster,
-  srdFor,
   toEdition,
   tokenFromMonster,
 } from '@vtt/system-dnd5e';
 import { uniqueId } from '@vtt/shared';
+import { gameContent } from '../content.ts';
 import { useState } from 'react';
 import { CATEGORIES, compendium, crText, type Category, type Entry } from '../compendium.ts';
 import type { Session } from '../session.ts';
@@ -105,9 +105,9 @@ function EntryRow({
 
 function detailTip(entry: Entry): Tip | undefined {
   const d = entry.drag;
-  if (d.kind === 'monster') return monsterTip(srdFor(d.rules).monsters.get(d.id)!);
-  if (d.kind === 'spell') return spellTip(srdFor(d.rules).spells.get(d.id)!);
-  if (d.kind === 'item') return itemTip(srdFor('2014').items.get(d.id), d.id, false);
+  if (d.kind === 'monster') return monsterTip(gameContent(d.rules).monsters.get(d.id)!);
+  if (d.kind === 'spell') return spellTip(gameContent(d.rules).spells.get(d.id)!);
+  if (d.kind === 'item') return itemTip(gameContent('2014').items.get(d.id), d.id, false);
   return undefined;
 }
 
@@ -166,7 +166,7 @@ function MonsterButtons({
   drag,
 }: Readonly<{ session: Session; drag: { kind: 'monster'; id: string; rules: Edition } }>) {
   const addToActors = () => {
-    const monster = srdFor(drag.rules).monsters.get(drag.id)!;
+    const monster = gameContent(drag.rules).monsters.get(drag.id)!;
     const id = uniqueId(monster.name, (x) => session.actors.has(x));
     const token = tokenFromMonster(
       monster,

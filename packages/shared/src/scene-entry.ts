@@ -31,7 +31,11 @@ export function importSceneOps(src: Source, entry: SceneEntry): { id: string; op
   const scene: Doc = { ...settings, type: 'scene', id, rev: 0, sort };
   const placed = { tiles, walls, lights };
   const parts = (Object.keys(PARTS) as (keyof typeof PARTS)[]).flatMap((coll) =>
-    placed[coll].map((item): Op => ({ op: 'create', coll: `${id}/${coll}`, doc: { ...item, type: PARTS[coll], rev: 0 } })),
+    placed[coll].map((item): Op => ({
+      op: 'create',
+      coll: `${id}/${coll}`,
+      doc: { ...item, type: PARTS[coll], rev: 0 },
+    })),
   );
   return { id, ops: [{ op: 'create', coll: 'scenes', doc: scene }, ...parts] };
 }

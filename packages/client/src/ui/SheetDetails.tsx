@@ -1,5 +1,6 @@
 import { isGm, type Level, levelOf } from '@vtt/shared';
-import { editionOf, srdFor, toEdition } from '@vtt/system-dnd5e';
+import { editionOf, toEdition } from '@vtt/system-dnd5e';
+import { gameContent } from '../content.ts';
 import { useState } from 'react';
 import { setOwnership, setStat } from '../token-edit.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
@@ -159,7 +160,7 @@ function RulesFields({ session, value, update }: Readonly<SheetProps>) {
         />
       </Field>
       <datalist id="sheet-monsters">
-        {[...srdFor(rules).monsters.values()].map((m) => (
+        {[...gameContent(rules).monsters.values()].map((m) => (
           <option key={m.id} value={m.id} label={m.name} />
         ))}
       </datalist>

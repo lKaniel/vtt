@@ -15,6 +15,7 @@ import {
 import type { Token } from '@vtt/system-dnd5e';
 import type { GameStore } from './game-store.ts';
 import { requireGm } from './table.ts';
+import { packContent } from './game-packs.ts';
 
 // Who explores what: after anything that changes what a player's tokens
 // see, the game asks the keeper to mark it explored. It works on the
@@ -91,6 +92,9 @@ export class FogKeeper {
   }
 
   private eyeOf(token: Token): FogEye {
-    return { at: [token.x, token.y], senses: this.store.system.perceiver(token, this.store.world.rules, this.store.packContent()).senses };
+    return {
+      at: [token.x, token.y],
+      senses: this.store.system.perceiver(token, this.store.world.rules, packContent(this.store)).senses,
+    };
   }
 }

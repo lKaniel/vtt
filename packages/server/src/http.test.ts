@@ -21,7 +21,8 @@ beforeAll(async () => {
   await mkdir(join(dir, 'packs', 'forest', 'media'), { recursive: true });
   await writeFile(join(dir, 'packs', 'forest', 'media', 'big oak.webp'), 'oak');
   const handle = httpHandler({
-    packFile: (pack, path) => (pack === 'forest' && path.startsWith('media/') ? join(dir, 'packs', pack, path) : undefined),
+    packFile: (pack, path) =>
+      pack === 'forest' && path.startsWith('media/') ? join(dir, 'packs', pack, path) : undefined,
     // The home game is "home"; "other" is a game made in the lobby.
     assetsDir: (game) => ({ other: join(dir, 'other', 'assets'), home: join(dir, 'assets') })[game ?? 'home'],
     clientDir: join(dir, 'client'),

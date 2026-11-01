@@ -8,7 +8,18 @@ const cave = SceneEntrySchema.parse({
   gridSize: 140,
   chunkSize: 1960,
   darkness: 0.8,
-  tiles: [{ id: 'background', kind: 'image', x: 0, y: 0, w: 1400, h: 1400, src: 'pack://caves/media/cave.webp', background: true }],
+  tiles: [
+    {
+      id: 'background',
+      kind: 'image',
+      x: 0,
+      y: 0,
+      w: 1400,
+      h: 1400,
+      src: 'pack://caves/media/cave.webp',
+      background: true,
+    },
+  ],
   walls: [{ id: 'wall-1', a: [0, 0], b: [140, 0] }],
   lights: [{ id: 'light-1', x: 70, y: 70, bright: 20, dim: 40 }],
 });

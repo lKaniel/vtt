@@ -240,8 +240,7 @@ export function crossCheck(state: GameState, system = SYSTEMS.get(state.game.sys
   const out: Issue[] = [];
   if (!system) out.push({ file: 'game.json', message: `this server has no "${game.system}" system` });
   const content = system ? contentCompendia(packs, game, system) : [];
-  for (const message of system ? gamePackIssues(packs, game, system) : [])
-    out.push({ file: 'game.json', message, warning: true });
+  out.push(...packWarnings(game, system, packs));
   const active = scenes.get(game.scene);
   if (!active) out.push({ file: 'game.json', message: `scene "${game.scene}" has no folder in scenes/` });
   const players = new Set(game.players.map((p) => p.id));
@@ -254,6 +253,12 @@ export function crossCheck(state: GameState, system = SYSTEMS.get(state.game.sys
     out.push(...tokenIssues(a, refs).map((message) => ({ file: `actors/${a.id}.json`, message })));
   }
   return [...out, ...combatIssues(combat, active?.tokens ?? [])];
+}
+
+/** Packs game.json names that the server lacks or can't read. */
+function packWarnings(game: GameState['game'], system: Dnd5eSystem | undefined, packs?: PackStore): Issue[] {
+  const issues = system ? gamePackIssues(packs, game, system) : [];
+  return issues.map((message) => ({ file: 'game.json', message, warning: true }));
 }
 
 /** Initiative entries for tokens that aren't on the game's scene. */

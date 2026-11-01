@@ -99,7 +99,11 @@ describe('a game with packs turned on', () => {
     const gm = seat('gm');
     const ana = seat('ana');
     ana.take('packContent');
-    gm.receive({ t: 'ops', txn: 't1', ops: [{ op: 'update', coll: 'game', id: 'test', patch: { packs: ['goblins'] } }] });
+    gm.receive({
+      t: 'ops',
+      txn: 't1',
+      ops: [{ op: 'update', coll: 'game', id: 'test', patch: { packs: ['goblins'] } }],
+    });
     expect(store.campaign.packs).toEqual(['goblins']);
     expect(ana.take('packContent').at(-1)!.compendia).toHaveLength(1);
   });
@@ -125,7 +129,10 @@ describe('the GM browsing packs', () => {
     gm.receive({ t: 'media' });
     await settle();
     const [media] = gm.take('media');
-    expect(media!.entries.map((m) => m.src)).toEqual(['/assets/maps/road.png', 'pack://goblins/media/Tokens/warlord.webp']);
+    expect(media!.entries.map((m) => m.src)).toEqual([
+      '/assets/maps/road.png',
+      'pack://goblins/media/Tokens/warlord.webp',
+    ]);
   });
 
   it('gets a compendium’s documents, its own system’s too', async () => {

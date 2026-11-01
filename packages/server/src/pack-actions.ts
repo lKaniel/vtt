@@ -25,19 +25,29 @@ export class PackActions {
 
   constructor(private store: GameStore) {}
 
-  /** Answers one of the GM's pack messages through `reply`. */
-  async run(player: Player, msg: PackMessage, reply: (msg: ServerMessage) => void): Promise<void> {
+  /** Answers one of the GM's pack messages through `reply`; a refusal or failure is answered with an error. */
+  handle(player: Player, msg: PackMessage, reply: (msg: ServerMessage) => void): void {
+    this.answer(player, msg).then(reply, (e: unknown) => {
+      if (!(e instanceof Refusal)) console.error('[game] pack request failed:', e);
+      reply({ t: 'error', message: e instanceof Refusal ? e.message : 'Could not read the packs' });
+    });
+  }
+
+  private async answer(player: Player, msg: PackMessage): Promise<ServerMessage> {
     if (!isGm(player)) throw new Refusal('Only the GM can browse packs');
     switch (msg.t) {
       case 'packs':
-        return reply(await this.list());
+        return this.list();
       case 'media':
-        return reply({ t: 'media', entries: await this.media() });
+        return { t: 'media', entries: await this.media() };
       case 'compendium':
-        return reply({ t: 'compendium', pack: msg.pack, compendium: msg.compendium, docs: this.docs(msg) });
-      case 'upload':
-        await (this.uploads = this.uploads.catch(() => undefined).then(() => this.upload(msg.name, msg.data)));
-        return reply({ t: 'media', entries: await this.media() });
+        return { t: 'compendium', pack: msg.pack, compendium: msg.compendium, docs: this.docs(msg) };
+      case 'upload': {
+        const done = this.uploads.catch(() => undefined).then(() => this.upload(msg.name, msg.data));
+        this.uploads = done;
+        await done;
+        return { t: 'media', entries: await this.media() };
+      }
     }
   }
 

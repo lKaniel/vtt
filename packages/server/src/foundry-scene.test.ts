@@ -30,7 +30,15 @@ const v11 = {
     { _id: 'l2', x: 1200, y: 900, config: { bright: 0, dim: 0 } },
   ],
   tiles: [
-    { _id: 't2', texture: { src: 'modules/caves/tiles/barrel.png' }, x: 1200, y: 1000, width: 200, height: 200, sort: 2 },
+    {
+      _id: 't2',
+      texture: { src: 'modules/caves/tiles/barrel.png' },
+      x: 1200,
+      y: 1000,
+      width: 200,
+      height: 200,
+      sort: 2,
+    },
     { _id: 't1', texture: { src: 'icons/svg/mystery-man.svg' }, x: 0, y: 0, width: 100, height: 100, sort: 1 },
   ],
   tokens: [{ _id: 'tok', name: 'Goblin' }],
@@ -104,10 +112,14 @@ describe('a Foundry scene', () => {
     expect(scene).toMatchObject({ gridSize: 100, grid: 'none', darkness: 0 });
     expect(scene.tiles[0]).toMatchObject({ x: 300, y: 300 });
     expect(scene.walls).toEqual([{ id: 'wall-1', a: [0, 0], b: [100, 0], door: 'open', sight: false }]);
-    expect(scene.lights).toEqual([{ id: 'light-1', x: 50, y: 50, bright: 5, dim: 10, color: '#ffffff', animation: 'pulse' }]);
+    expect(scene.lights).toEqual([
+      { id: 'light-1', x: 50, y: 50, bright: 5, dim: 10, color: '#ffffff', animation: 'pulse' },
+    ]);
   });
 
   it('reads the v12 darkness level', () => {
-    expect(foundryScene({ ...v11, darkness: undefined, environment: { darknessLevel: 0.4 } }, media).scene.darkness).toBe(0.4);
+    expect(
+      foundryScene({ ...v11, darkness: undefined, environment: { darknessLevel: 0.4 } }, media).scene.darkness,
+    ).toBeCloseTo(0.4);
   });
 });

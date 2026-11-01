@@ -1,4 +1,5 @@
-import { itemCost, srdFor, type TokenView } from '@vtt/system-dnd5e';
+import { itemCost, type TokenView } from '@vtt/system-dnd5e';
+import { gameContent } from './content.ts';
 import { actionTiles, type ActionTile } from './actions.ts';
 import { itemArt } from './icon-art.ts';
 import { itemIcon } from './icons.ts';
@@ -24,7 +25,7 @@ export function tileRef(tile: ActionTile): string {
 /** An inventory item as a tile, if the creature carries it. */
 function itemTile(token: TokenView, id: string): ActionTile | undefined {
   const entry = token.inventory?.find((e) => e.item === id);
-  const item = entry && srdFor('2014').items.get(id);
+  const item = entry && gameContent('2014').items.get(id);
   if (!entry || !item) return undefined;
   const tile: ActionTile = {
     kind: 'item',

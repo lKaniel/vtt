@@ -1,5 +1,5 @@
 import { type PackCompendium, PackManifestSchema, type SystemPackSource } from '@vtt/core';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { type Content, srdFor } from './content.ts';
 import { SpellSchema } from './spell-schema.ts';
 import { type Edition, ItemSchema, MonsterSchema } from './stats-schema.ts';
@@ -27,7 +27,13 @@ function srdPack(edition: Edition): SystemPack {
     spells: [...srd.spells.values()],
   };
   const version = edition === '2014' ? '5.1' : '5.2';
-  const compendium = (id: string, name: string, type: ContentType) => ({ id, name, type, path: `${id}.json`, rules: edition });
+  const compendium = (id: string, name: string, type: ContentType) => ({
+    id,
+    name,
+    type,
+    path: `${id}.json`,
+    rules: edition,
+  });
   const manifest = PackManifestSchema.parse({
     id: `dnd5e-srd-${edition}`,
     name: `D&D SRD ${version} (${edition} rules)`,
@@ -69,7 +75,10 @@ export function contentWith(edition: Edition, compendia: readonly PackCompendium
   const known = cache.get(compendia) ?? {};
   if (known[edition]) return known[edition];
   const add = (type: ContentType, base: ReadonlyMap<string, unknown>) =>
-    new Map([...base, ...mine.filter((c) => c.type === type).flatMap((c) => parsedDocs(c).map((d) => [d.id, d] as const))]);
+    new Map([
+      ...base,
+      ...mine.filter((c) => c.type === type).flatMap((c) => parsedDocs(c).map((d) => [d.id, d] as const)),
+    ]);
   const content = {
     ...srd,
     monsters: add('monster', srd.monsters),
@@ -89,6 +98,7 @@ export function packContentIssues(c: PackCompendium): string[] {
     if (parsed.success) return [];
     const id = (doc as { id?: unknown } | null)?.id;
     const issue = parsed.error.issues[0]!;
-    return [`${c.id} #${i + 1}${typeof id === 'string' ? ` (${id})` : ''}: ${issue.path.join('.')} ${issue.message}`];
+    const which = typeof id === 'string' ? `${c.id} #${i + 1} (${id})` : `${c.id} #${i + 1}`;
+    return [`${which}: ${issue.path.join('.')} ${issue.message}`];
   });
 }
