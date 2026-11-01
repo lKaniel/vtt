@@ -65,9 +65,9 @@ export function ClockBar({ session }: Readonly<{ session: Session }>) {
           {label}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="flex max-h-[calc(100vh-80px)] w-[430px] flex-col gap-3 overflow-y-auto">
+      <PopoverContent align="start" className="flex max-h-[calc(100vh-80px)] w-[460px] flex-col gap-3 overflow-y-auto">
         <ClockHeader session={session} look={look} />
-        <Separator />
+        <Separator ornate className="-my-1" />
         <ClockControls session={session} />
         <Separator />
         <Tabs defaultValue="date">

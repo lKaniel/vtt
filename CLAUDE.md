@@ -112,7 +112,9 @@ with `pnpm check-game data/games/<id>`.
   Badge, Card, CalendarMonth and the rest, never a bare `<button>`, `<input>`
   or `<select>` or one-off CSS for them. When the kit lacks something, add it
   to the kit first (shadcn's version when there is one, in the same style,
-  with a `data-slot`), then use it. Lay screens out with Tailwind classes;
+  with a `data-slot`) and dress it in the painted art through the
+  `art-*` utilities in `index.css` (panel, button plates, slots, divider),
+  then use it. Lay screens out with Tailwind classes;
   `style.css` is the older hand-written layer and only shrinks.
 - Map editor (`docs/editor.md`): modes, selection, handles, menus and the
   inspector work the same for every placeable. Hit-testing and shapes stay

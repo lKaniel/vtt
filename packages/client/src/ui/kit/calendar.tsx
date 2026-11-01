@@ -103,10 +103,9 @@ function Day({
       aria-current={today ? 'date' : undefined}
       onClick={() => onSelect(day)}
       className={cn(
-        'relative flex h-8 cursor-pointer items-center justify-center rounded-md text-sm lining-nums tabular-nums text-foreground/85 transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
-        today && 'border border-gold/70 text-gold-bright',
-        selected &&
-          'bg-linear-to-b from-[#c4a573] to-[#8a6f48] font-semibold text-primary-foreground shadow-[0_1px_4px_rgba(0,0,0,0.6)] hover:text-primary-foreground',
+        'relative mx-auto flex size-9 cursor-pointer items-center justify-center rounded-md text-sm lining-nums tabular-nums text-foreground/85 transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+        today && 'art-slot text-gold-bright',
+        selected && 'art-slot-lit font-semibold text-[#fff3d6] [text-shadow:0_1px_3px_#000] hover:bg-transparent',
       )}
     >
       {day}

@@ -99,3 +99,35 @@
     margin: 0;
   }
 }
+
+/*
+ * Kaniel's painted UI art (public/art/ui), as utilities the kit builds on:
+ * 9-slice plates for panels and buttons, slot frames, the ornate divider.
+ */
+@utility art-panel {
+  border-image: url('/art/ui/panel-small.webp') 70 fill / 16px stretch;
+}
+@utility art-button {
+  border-image: url('/art/ui/button.webp') 40 fill / 9px stretch;
+}
+@utility art-button-lit {
+  border-image-source: url('/art/ui/button-hover.webp');
+}
+@utility art-button-pressed {
+  border-image-source: url('/art/ui/button-pressed.webp');
+}
+@utility art-button-off {
+  border-image-source: url('/art/ui/button-disabled.webp');
+}
+@utility art-well {
+  border-image: url('/art/ui/inventory-slot.webp') 34 fill / 8px stretch;
+}
+@utility art-slot {
+  background: url('/art/ui/slot-frame.webp') center / 100% 100% no-repeat;
+}
+@utility art-slot-lit {
+  background: url('/art/ui/slot-frame-active.webp') center / 100% 100% no-repeat;
+}
+@utility art-divider {
+  background: url('/art/ui/divider.webp') center / auto 100% no-repeat;
+}

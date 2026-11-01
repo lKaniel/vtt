@@ -8,20 +8,20 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        /** Polished bronze: the main thing to do. */
+        /** The painted plate, lit: the main thing to do. */
         default:
-          'border border-gold-bright/40 bg-linear-to-b from-[#c4a573] to-[#8a6f48] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,240,210,0.35),0_2px_6px_rgba(0,0,0,0.5)] hover:from-[#d6b886] hover:to-[#9a7d53]',
-        /** Dark iron with a bronze edge. */
+          'art-button art-button-lit text-gold-bright [text-shadow:0_1px_2px_#000] hover:brightness-125 active:art-button-pressed disabled:art-button-off disabled:text-[#2a2a2a] disabled:[text-shadow:none] disabled:opacity-100',
+        /** The painted plate. */
         outline:
-          'border border-gold-dim bg-linear-to-b from-[#2b2823] to-[#191714] text-gold-bright shadow-[inset_0_1px_0_rgba(232,211,166,0.08)] hover:border-gold hover:text-[#fff3d6]',
+          'art-button text-gold-bright [text-shadow:0_1px_2px_#000] hover:art-button-lit active:art-button-pressed disabled:art-button-off disabled:text-[#2a2a2a] disabled:[text-shadow:none] disabled:opacity-100',
         secondary: 'border border-border bg-secondary text-secondary-foreground hover:bg-accent',
         ghost: 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
         destructive: 'border border-destructive/60 bg-destructive/80 text-white hover:bg-destructive',
         link: 'text-gold-bright underline-offset-4 hover:underline',
       },
       size: {
-        default: 'h-8 px-3 text-sm',
-        sm: 'h-7 px-2.5 text-xs',
+        default: 'h-9 px-4 text-sm',
+        sm: 'h-8 px-3 text-xs',
         lg: 'h-10 px-5 text-base',
         icon: 'size-8',
         'icon-sm': 'size-7',

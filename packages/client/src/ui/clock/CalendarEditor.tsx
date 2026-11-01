@@ -57,7 +57,7 @@ function Section({ title, note, children }: Readonly<{ title: string; note: stri
         <span className="font-display text-sm tracking-wider text-gold-bright">{title}</span>
         <span className="text-xs text-muted-foreground">{note}</span>
       </div>
-      <Card className="max-h-44 overflow-y-auto p-1.5">{children}</Card>
+      <Card className="max-h-44 overflow-y-auto p-2.5">{children}</Card>
     </div>
   );
 }
