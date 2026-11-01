@@ -21,6 +21,8 @@ export function hasLineOfSight(from: Point, to: Point, walls: readonly Wall[]): 
 export interface LightSource extends Light {
   x: number;
   y: number;
+  /** The scene level it shines on (see levels.ts); missing = every level. */
+  level?: string;
 }
 
 /** Lights carried by tokens, as placed light sources. */

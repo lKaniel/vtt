@@ -13,6 +13,7 @@ import {
   type Player,
   PlayerSchema,
   tokensVisibleTo,
+  type Wall,
   withLevel,
 } from './index.ts';
 
@@ -118,5 +119,33 @@ describe('what observers see', () => {
     const far = token('far', { x: 300 });
     expect(tokensVisibleTo(bo, [lookout, far], dark)).toEqual(new Set(['lookout', 'far']));
     expect(tokensVisibleTo(ana, [lookout, far], dark)).toEqual(new Set());
+  });
+
+  it("see only what is on the viewer's level, past walls and in lights on other levels", () => {
+    const levels = [
+      { id: 'ground', name: 'Ground', bottom: 0 },
+      { id: 'loft', name: 'Loft', bottom: 10 },
+    ];
+    const wall = { id: 'w', a: [50, -50], b: [50, 50], level: 'loft' } as Wall;
+    const lamp = { x: 200, y: 0, bright: 20, dim: 0, level: 'loft' };
+    const ctx = {
+      world: { darkness: 1, vision: true, gridSize: 100 },
+      lights: [lamp],
+      wallsBetween: () => [wall],
+      perceiver,
+      levels,
+    };
+    const upstairs = token('upstairs', { x: 200, elevation: 10 });
+    const below = token('below', { x: 200 });
+    // On the ground: the loft's wall and lamp are not there, and the loft's goblin is out of sight.
+    expect(
+      tokensVisibleTo(bo, [token('eye', { ownership: { default: 'limited', bo: 'owner' } }), upstairs, below], ctx),
+    ).toEqual(new Set(['eye']));
+    // In the loft: the wall stands between.
+    const up = token('eye', { elevation: 12, ownership: { default: 'limited', bo: 'owner' } });
+    expect(tokensVisibleTo(bo, [up, upstairs, below], ctx)).toEqual(new Set(['eye']));
+    // In the loft, east of the wall: the lamp lights the goblin up there, not the one below.
+    const east = { ...up, x: 100 };
+    expect(tokensVisibleTo(bo, [east, upstairs, below], ctx)).toEqual(new Set(['eye', 'upstairs']));
   });
 });

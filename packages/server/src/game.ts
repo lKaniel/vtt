@@ -217,6 +217,7 @@ export class Game {
         world: this.store.world,
         lights: this.store.lights(),
         wallsBetween: (a, b) => this.store.wallsBetween(a, b),
+        levels: this.store.world.levels,
         perceiver: (t) => this.store.system.perceiver(t, this.store.world.rules, packContent(this.store)),
       }),
     );
