@@ -1,4 +1,12 @@
-import type { Edition, InventoryEntry, Spell } from '@vtt/system-dnd5e';
+import {
+  dropOwn,
+  type Edition,
+  knownSpellIds,
+  type InventoryEntry,
+  type OwnKind,
+  type Spell,
+  withOwn,
+} from '@vtt/system-dnd5e';
 import { gameContent } from '../content.ts';
 import { pipLeft, withSlotsLeft, withUsesLeft } from '../charges.ts';
 import { carriedDrag, carriedLook } from '../carried.ts';
@@ -13,15 +21,20 @@ import { attackTip, featureTip, spellTip } from '../tooltip.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { NumberInput } from './EditorFields.tsx';
 import { IconFace } from './Icon.tsx';
-import { withKey } from './sheet-model.ts';
-import { Adder, RemoveButton } from './SheetDetails.tsx';
+import { type Draft, withKey } from './sheet-model.ts';
+import { RemoveButton } from './SheetDetails.tsx';
+import { EditButton, isOwn, NewButton, useOwnEditor } from './own/OwnEditor.tsx';
 import { TipCard } from './Tip.tsx';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
+import { Checkbox } from './kit/checkbox.tsx';
 
 // The right-hand pages of the character sheet. Anything usable can be
-// dragged onto the action bar; in edit mode the GM adds and removes things.
+// dragged onto the action bar; in edit mode the GM makes new things here
+// (existing ones are dragged from the Compendium) and removes them.
 
-/** Gear is the same in both editions; the game's packs add their own. */
-const items = () => gameContent('2014').items;
+/** Gear is the same in both editions; the game's packs and the sheet add their own. */
+const items = (sheet: Draft) => withOwn(gameContent('2014'), sheet).items;
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 const DRAG_HINT = 'Drag onto the action bar';
 
@@ -137,8 +150,8 @@ function Bag({ session, value, kind, sheet }: Readonly<SheetProps>) {
   return (
     <div className="bag">
       {list.map((entry, i) => {
-        const look = carriedLook(entry, sheet.edition);
-        const item = items().get(entry.item);
+        const look = carriedLook(entry, sheet.edition, value);
+        const item = items(value).get(entry.item);
         const use = () => {
           if (entry.spell) readScroll(session, value.id, entry.spell);
           else if (item && item.type !== 'gear') session.equip(value.id, i, !entry.equipped);
@@ -176,6 +189,7 @@ function readScroll(session: SheetProps['session'], token: string, spell: string
 
 function InventoryEdit({ value, update, sheet }: Readonly<SheetProps>) {
   const list = value.inventory ?? [];
+  const own = useOwnEditor(value, update);
   const setList = (next: InventoryEntry[], now = true) =>
     update((d) => ({ ...d, inventory: next.length ? next : undefined }), now);
   const change = (i: number, entry: Partial<InventoryEntry>, now = true) =>
@@ -187,7 +201,8 @@ function InventoryEdit({ value, update, sheet }: Readonly<SheetProps>) {
     <>
       <ul className="rows ed-list">
         {list.map((e, i) => {
-          const look = carriedLook(e, sheet.edition);
+          const look = carriedLook(e, sheet.edition, value);
+          const mine = isOwn(value, 'item', e.item);
           return (
             <li
               key={`${look.ref}-${i}`}
@@ -197,7 +212,7 @@ function InventoryEdit({ value, update, sheet }: Readonly<SheetProps>) {
             >
               <IconFace icon={look.icon} size={18} />
               <span className="row-name">{look.name}</span>
-              <input
+              <Input
                 className="ed-qty"
                 type="number"
                 min={1}
@@ -206,23 +221,20 @@ function InventoryEdit({ value, update, sheet }: Readonly<SheetProps>) {
                 onChange={(ev) => change(i, { qty: Math.max(1, Number(ev.target.value) || 1) }, false)}
               />
               <label className="ed-equip" title="Equipped">
-                <input
-                  type="checkbox"
-                  checked={e.equipped}
-                  onChange={(ev) => change(i, { equipped: ev.target.checked })}
-                />
-                E
+                <Checkbox checked={e.equipped} onCheckedChange={(on) => change(i, { equipped: on === true })} />E
               </label>
-              <RemoveButton onClick={() => setList(list.filter((_, j) => j !== i))} />
+              {mine && <EditButton name={look.name} onClick={() => own.open('item', e.item)} />}
+              <RemoveButton
+                onClick={() =>
+                  mine ? update((d) => dropOwn(d, 'item', e.item), true) : setList(list.filter((_, j) => j !== i))
+                }
+              />
             </li>
           );
         })}
       </ul>
-      <Adder
-        placeholder="Add an item…"
-        options={[...items().values()].map((it) => ({ id: it.id, name: it.name }))}
-        onAdd={(item) => setList([...list, { item, qty: 1, equipped: false }])}
-      />
+      <NewButton label="New item" onClick={() => own.create('item')} />
+      {own.dialog}
     </>
   );
 }
@@ -230,22 +242,19 @@ function InventoryEdit({ value, update, sheet }: Readonly<SheetProps>) {
 export function SpellsPage(props: Readonly<SheetProps & { rules: Edition }>) {
   const { sheet, value, edit, rules } = props;
   const caster = sheet.caster;
-  const book = gameContent(rules).spells;
+  const book = withOwn(gameContent(rules), value).spells;
+  const own = useOwnEditor(value, props.update);
   const unknown = (value.stats?.spells ?? []).filter((id) => !book.has(id));
-  const known = caster?.spells ?? [];
+  // Without spellcasting it can't cast them, but the sheet still lists what it has.
+  const known =
+    caster?.spells ??
+    knownSpellIds(value)
+      .map((id) => book.get(id))
+      .filter((sp): sp is Spell => !!sp);
   const levels = [...new Set(known.map((s) => s.level))].sort((a, b) => a - b);
   return (
     <>
-      {caster ? (
-        <h4>
-          Spells{' '}
-          <span className="muted">
-            · save DC {caster.dc} · attack {signed(caster.attack)}
-          </span>
-        </h4>
-      ) : (
-        <p className="muted">{edit ? 'Give the creature a caster class or spells to cast.' : 'No spellcasting.'}</p>
-      )}
+      <SpellsHead caster={caster} edit={edit} />
       <SlotPips {...props} />
       {levels.map((level) => (
         <div key={level} className="spell-level">
@@ -254,7 +263,7 @@ export function SpellsPage(props: Readonly<SheetProps & { rules: Edition }>) {
             {known
               .filter((s) => s.level === level)
               .map((s) => (
-                <SpellSlot key={s.id} {...props} spell={s} />
+                <SpellSlot key={s.id} {...props} spell={s} onOpen={own.open} />
               ))}
           </div>
         </div>
@@ -264,23 +273,41 @@ export function SpellsPage(props: Readonly<SheetProps & { rules: Edition }>) {
           Not in the {rules} rules: {unknown.join(', ')}
         </p>
       )}
-      {edit && <SpellAdder {...props} />}
+      {edit && <NewButton label="New spell" onClick={() => own.create('spell')} />}
+      {own.dialog}
     </>
   );
 }
 
-function SpellSlot({ value, update, edit, spell }: Readonly<SheetProps & { spell: Spell }>) {
-  const own = value.stats?.spells?.includes(spell.id);
-  const forget = () =>
-    update(
-      (d) =>
-        setStat(
-          d,
-          'spells',
-          (d.stats?.spells ?? []).filter((id) => id !== spell.id),
-        ),
-      true,
+/** The save DC and attack bonus, or why there are none. */
+function SpellsHead({ caster, edit }: Readonly<{ caster: SheetProps['sheet']['caster']; edit: boolean }>) {
+  if (caster)
+    return (
+      <h4>
+        Spells{' '}
+        <span className="muted">
+          · save DC {caster.dc} · attack {signed(caster.attack)}
+        </span>
+      </h4>
     );
+  return <p className="muted">{edit ? 'Give the creature a caster class to cast spells.' : 'No spellcasting.'}</p>;
+}
+
+type Open = (kind: OwnKind, id: string) => void;
+
+/** A known spell; in edit mode one made here opens on click, and learnt or made ones can go. */
+function SpellSlot({ value, update, edit, spell, onOpen }: Readonly<SheetProps & { spell: Spell; onOpen: Open }>) {
+  const mine = isOwn(value, 'spell', spell.id);
+  const learnt = !!value.stats?.spells?.includes(spell.id);
+  const forget = () =>
+    update((d) => {
+      const kept = setStat(
+        d,
+        'spells',
+        (d.stats?.spells ?? []).filter((id) => id !== spell.id),
+      );
+      return mine ? dropOwn(kept, 'spell', spell.id) : kept;
+    }, true);
   return (
     <span
       className="bag-slot"
@@ -288,78 +315,80 @@ function SpellSlot({ value, update, edit, spell }: Readonly<SheetProps & { spell
       aria-label={spell.name}
       draggable
       onDragStart={(e) => dragTile(e, { ref: `spell:${spell.id}` })}
+      onClick={edit && mine ? () => onOpen('spell', spell.id) : undefined}
+      title={edit && mine ? 'Click to edit' : undefined}
     >
       <IconFace icon={{ ...spellIcon(spell), art: spellArt(spell) }} size={24} />
-      {edit && own && <RemoveButton className="slot-remove" onClick={forget} />}
+      {edit && (learnt || mine) && <RemoveButton className="slot-remove" onClick={forget} />}
       <TipCard tip={spellTip(spell)} />
     </span>
-  );
-}
-
-function SpellAdder({ value, update, rules }: Readonly<SheetProps & { rules: Edition }>) {
-  const known = value.stats?.spells ?? [];
-  return (
-    <Adder
-      placeholder="Add a spell…"
-      options={[...gameContent(rules).spells.values()]
-        .filter((s) => !known.includes(s.id))
-        .map((s) => ({ id: s.id, name: s.name }))}
-      onAdd={(id) => update((d) => setStat(d, 'spells', [...(d.stats?.spells ?? []), id]), true)}
-    />
   );
 }
 
 /** A feature granted on top of the class, as stored ("barbarian/rage"). */
 const grantedRef = (granted: readonly string[] | undefined, id: string) => granted?.find((r) => r.endsWith(`/${id}`));
 
-export function FeaturesPage({ sheet, edit, update, value }: Readonly<SheetProps>) {
-  const granted = value.stats?.features;
-  const revoke = (ref: string) =>
-    update(
-      (d) =>
-        setStat(
-          d,
-          'features',
-          (d.stats?.features ?? []).filter((r) => r !== ref),
-        ),
-      true,
-    );
-  const setUses = (id: string, max: number) => (left: number) =>
-    update((d) => withKey(d, 'spent', withUsesLeft(d.spent, { id, left, max })), true);
-  if (!sheet.features.length)
-    return (
-      <p className="muted">
-        {edit
-          ? 'Features come from the class and level (Details tab), or drag one from the Compendium.'
-          : 'No features.'}
-      </p>
-    );
+export function FeaturesPage(props: Readonly<SheetProps>) {
+  const { sheet, edit, update, value } = props;
+  const own = useOwnEditor(value, update);
+  const empty = edit ? 'Features come from the class and level (Details tab).' : 'No features.';
   return (
-    <ul className="rows">
-      {sheet.features.map((f) => (
-        <li
-          key={f.id}
-          className="row has-tip"
-          tabIndex={0}
-          draggable={!!f.action}
-          onDragStart={(e) => dragTile(e, { ref: `feature:${f.id}` })}
-        >
-          <IconFace icon={{ ...featureIcon(f), art: featureArt(f) }} size={18} />
-          <span className="row-name">{f.name}</span>
-          {f.max !== undefined && (
-            <Pips
-              name={f.name}
-              feature
-              left={f.left ?? 0}
-              total={f.max}
-              onChange={edit ? setUses(f.id, f.max) : undefined}
-            />
-          )}
-          {edit && grantedRef(granted, f.id) && <RemoveButton onClick={() => revoke(grantedRef(granted, f.id)!)} />}
-          <TipCard tip={featureTip(f)} />
-        </li>
-      ))}
-    </ul>
+    <>
+      {sheet.features.length ? (
+        <ul className="rows">
+          {sheet.features.map((f) => (
+            <FeatureRow key={f.id} {...props} feature={f} onOpen={own.open} />
+          ))}
+        </ul>
+      ) : (
+        <p className="muted">{empty}</p>
+      )}
+      {edit && <NewButton label="New feature" onClick={() => own.create('feature')} />}
+      {own.dialog}
+    </>
+  );
+}
+
+type SheetFeature = SheetProps['sheet']['features'][number];
+
+/** A feature with its uses; in edit mode, granted ones can go and ones made here open. */
+function FeatureRow({
+  edit,
+  update,
+  value,
+  feature: f,
+  onOpen,
+}: Readonly<SheetProps & { feature: SheetFeature; onOpen: Open }>) {
+  const ref = grantedRef(value.stats?.features, f.id);
+  const granted = ref !== undefined;
+  const mine = isOwn(value, 'feature', f.id);
+  const remove = () =>
+    update((d) => {
+      if (mine) return dropOwn(d, 'feature', f.id);
+      return setStat(
+        d,
+        'features',
+        (d.stats?.features ?? []).filter((r) => r !== ref),
+      );
+    }, true);
+  const setUses = (left: number) =>
+    update((d) => withKey(d, 'spent', withUsesLeft(d.spent, { id: f.id, left, max: f.max! })), true);
+  return (
+    <li
+      className="row has-tip"
+      tabIndex={0}
+      draggable={!!f.action}
+      onDragStart={(e) => dragTile(e, { ref: `feature:${f.id}` })}
+    >
+      <IconFace icon={{ ...featureIcon(f), art: featureArt(f) }} size={18} />
+      <span className="row-name">{f.name}</span>
+      {f.max !== undefined && (
+        <Pips name={f.name} feature left={f.left ?? 0} total={f.max} onChange={edit ? setUses : undefined} />
+      )}
+      {edit && mine && <EditButton name={f.name} onClick={() => onOpen('feature', f.id)} />}
+      {edit && (granted || mine) && <RemoveButton onClick={remove} />}
+      <TipCard tip={featureTip(f)} />
+    </li>
   );
 }
 
@@ -375,9 +404,9 @@ export function EffectsPage({ session, value, kind }: Readonly<SheetProps>) {
           <IconFace icon={{ glyph: 'eye', tint: 'arcane' }} size={16} />
           <span className="row-name">Concentrating on {value.concentration.name}</span>
           {kind === 'token' && (
-            <button className="btn small" onClick={() => session.dropConcentration(value.id)}>
+            <Button variant="outline" size="sm" onClick={() => session.dropConcentration(value.id)}>
               Stop
-            </button>
+            </Button>
           )}
         </li>
       )}

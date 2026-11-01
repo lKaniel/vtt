@@ -60,6 +60,13 @@ h4 {
 
 /* ---------- Panels ---------- */
 
+/* Kit fields fill their row unless a rule below sizes them (this layer
+   sits under the kit, so any width set here or later still applies). */
+[data-slot='input'],
+[data-slot='textarea'] {
+  width: 100%;
+}
+
 .frame {
   position: relative;
   background:
@@ -90,60 +97,6 @@ h4 {
 }
 .frame::after {
   right: -5px;
-}
-
-.btn {
-  padding: 6px 14px;
-  font-family: var(--display);
-  font-size: 13px;
-  letter-spacing: 0.05em;
-  color: var(--gold-bright);
-  background: linear-gradient(180deg, #3a2d1e, #1c150f);
-  border: 1px solid var(--gold-dim);
-  border-radius: 4px;
-  box-shadow: inset 0 1px 0 rgba(255, 230, 170, 0.12);
-}
-.btn:hover {
-  border-color: var(--gold);
-  color: #f6ead0;
-}
-.btn.small {
-  padding: 3px 10px;
-  font-size: 12px;
-}
-.chip {
-  padding: 3px 10px;
-  font-size: 13px;
-  background: #1f1812;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-}
-.chip.on {
-  color: var(--ink);
-  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
-  border-color: var(--gold-bright);
-}
-.close {
-  width: 26px;
-  height: 26px;
-  font-size: 18px;
-  line-height: 1;
-  color: var(--gold);
-  background: #1a140f;
-  border: 1px solid var(--gold-dim);
-  border-radius: 50%;
-}
-.close:hover {
-  color: var(--gold-bright);
-  border-color: var(--gold);
-}
-.link {
-  padding: 0;
-  font-size: 13px;
-  color: var(--muted);
-  background: none;
-  border: 0;
-  text-decoration: underline;
 }
 
 /* ---------- Join screen ---------- */
@@ -1204,11 +1157,7 @@ h4 {
   color: var(--gold-bright);
   border-bottom: 1px solid var(--gold-dim);
 }
-.chat-head .close {
-  width: 22px;
-  height: 22px;
-  font-size: 14px;
-}
+
 .chat-list {
   flex: 1;
   display: grid;
@@ -1250,22 +1199,7 @@ h4 {
   display: flex;
   gap: 2px;
 }
-.undo-buttons .icon-button {
-  padding: 0 6px;
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--gold-bright);
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 3px;
-}
-.undo-buttons .icon-button:hover:not(:disabled) {
-  border-color: var(--gold);
-}
-.undo-buttons .icon-button:disabled {
-  color: var(--muted);
-  opacity: 0.5;
-}
+
 .msg-from {
   font-size: 12px;
   font-weight: 700;
@@ -1484,38 +1418,6 @@ h4 {
   border-radius: 0;
   border-image: url('/art/ui/tooltip.webp') 80 50 50 fill / 24px 15px 15px stretch;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
-}
-
-.btn {
-  padding: 7px 18px;
-  color: var(--gold-bright);
-  text-shadow: 0 1px 2px #000;
-  background: none;
-  border: 0;
-  border-radius: 0;
-  border-image: url('/art/ui/button.webp') 40 fill / 9px stretch;
-  box-shadow: none;
-}
-.btn:hover {
-  border-image-source: url('/art/ui/button-hover.webp');
-}
-.btn:active {
-  border-image-source: url('/art/ui/button-pressed.webp');
-}
-.btn:disabled {
-  color: #2a2a2a;
-  text-shadow: none;
-  border-image-source: url('/art/ui/button-disabled.webp');
-}
-.sheet-head .close {
-  width: 34px;
-  height: 34px;
-  font-size: 0;
-  background: url('/art/ui/close-button.webp') center / contain no-repeat;
-  border: 0;
-}
-.sheet-head .close:hover {
-  filter: brightness(1.25);
 }
 
 /* Faces: the frame sits on top, slightly larger than the picture. */
@@ -1899,12 +1801,7 @@ h4 {
   height: 30px;
   padding: 0 28px;
 }
-.chat-head .close {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-}
+
 .chat.frame:not(.closed) .chat-head {
   margin-top: -2px;
   font-size: 17px;
@@ -2042,29 +1939,6 @@ h4 {
 /* ---------- GM tools ----------
    The side panel's tabs (log, Actors, Compendium) and the token editor. */
 
-.side-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  margin: 2px 0 6px;
-  border-bottom: 1px solid var(--gold-dim);
-}
-.side-tabs button {
-  flex: 1;
-  padding: 4px 6px;
-  font-family: var(--display);
-  font-size: 13px;
-  color: var(--muted);
-  background: none;
-  border: 1px solid transparent;
-  border-bottom: 0;
-  border-radius: 4px 4px 0 0;
-}
-.side-tabs button.on {
-  color: var(--gold-bright);
-  background: rgba(168, 138, 94, 0.12);
-  border-color: var(--gold-dim);
-}
 .chat.library {
   height: calc(100vh - 24px);
   max-height: 900px;
@@ -2143,23 +2017,11 @@ h4 {
 .lib-hidden {
   font-size: 13px;
 }
+
 .lib-cats {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-}
-.lib-cats button {
-  padding: 2px 9px;
-  font-size: 13px;
-  color: var(--muted);
-  background: #1a140f;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-}
-.lib-cats button.on {
-  color: var(--gold-bright);
-  border-color: var(--gold);
-  background: rgba(168, 138, 94, 0.15);
 }
 .lib-list {
   display: grid;
@@ -2235,18 +2097,7 @@ h4 {
   border: 1px solid var(--line);
   border-radius: 8px;
 }
-.lib-icon {
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  font-size: 14px;
-  color: var(--muted);
-  background: none;
-  border: 0;
-}
-.lib-icon:hover {
-  color: var(--gold-bright);
-}
+
 .lib-folder summary {
   margin: 6px 0 3px;
   font-family: var(--display);
@@ -2406,14 +2257,6 @@ h4 {
 .ed-remove:hover {
   color: var(--bad);
 }
-.ed-adder {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-}
-.ed-adder input {
-  flex: 1;
-}
 .ed-foot {
   display: flex;
   gap: 8px;
@@ -2425,9 +2268,7 @@ h4 {
 .ed-spacer {
   flex: 1;
 }
-.btn.danger {
-  color: #ffb3a8;
-}
+
 @media (max-width: 900px) {
   .ed-cols {
     grid-template-columns: 1fr;
@@ -2606,25 +2447,10 @@ h4 {
   text-transform: uppercase;
   opacity: 0.8;
 }
-.chip.slot-chip {
-  display: inline-flex;
-  gap: 6px;
-  align-items: baseline;
-  padding: 5px 12px;
-  font-size: 15px;
-}
+
 .slot-chip-left {
   font-size: 12px;
   opacity: 0.75;
-}
-.chip.slot-chip.free {
-  border-style: dashed;
-}
-.chip.slot-chip.free.on {
-  color: #10241a;
-  background: linear-gradient(180deg, #b9e6c4, #6fb486);
-  border-color: #b9e6c4;
-  border-style: solid;
 }
 
 /* ---- Charge pips on the sheet ------------------------------------------ */
@@ -2765,13 +2591,7 @@ button.pip:hover {
   flex-wrap: wrap;
   gap: 4px;
 }
-.map-tools .btn.active {
-  color: #fff4d8;
-  text-shadow: 0 0 6px rgba(255, 210, 140, 0.9);
-  box-shadow:
-    0 0 0 2px var(--gold-bright),
-    0 0 10px rgba(232, 211, 166, 0.5);
-}
+
 .map-tools select {
   font: inherit;
   color: var(--gold-bright);
@@ -2883,30 +2703,7 @@ button.pip:hover {
   gap: 10px;
   width: min(380px, 100%);
 }
-.menu-button {
-  padding: 15px 24px;
-  font-family: var(--display);
-  font-size: 18px;
-  letter-spacing: 0.05em;
-  color: var(--gold-bright);
-  text-shadow: 0 1px 3px #000;
-  background: none;
-  border: 0;
-  border-image: url('/art/ui/seat-card.webp') 40 fill / 12px stretch;
-  transition: filter 0.15s;
-}
-.menu-button:hover {
-  filter: brightness(1.25);
-}
-.menu-button.primary {
-  font-size: 20px;
-  color: #fff3d6;
-  border-image-source: url('/art/ui/button.webp');
-  border-image-slice: 40 fill;
-}
-.menu-button.primary:hover {
-  border-image-source: url('/art/ui/button-hover.webp');
-}
+
 .menu-note {
   margin: 0 0 8px;
   font-size: 14px;
@@ -2916,10 +2713,6 @@ button.pip:hover {
 .menu-back {
   display: block;
   margin: 18px auto 0;
-}
-.btn.primary {
-  color: #fff3d6;
-  filter: saturate(1.2) brightness(1.1);
 }
 
 /* Sign in and sign up. */
@@ -3464,19 +3257,7 @@ button.pip:hover {
 .cc-stepper span {
   min-width: 22px;
 }
-.cc-step-btn {
-  width: 28px;
-  height: 28px;
-  font-size: 18px;
-  line-height: 1;
-  color: var(--gold-bright);
-  background: radial-gradient(circle at 50% 35%, #3a2d1e, #120e0a);
-  border: 1px solid var(--gold-dim);
-  border-radius: 50%;
-}
-.cc-step-btn:hover {
-  border-color: var(--gold-bright);
-}
+
 .cc-bonus {
   color: var(--good);
 }
@@ -3947,6 +3728,7 @@ button.pip:hover {
   min-width: 0;
 }
 .scene-row {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -4008,6 +3790,7 @@ button.pip:hover {
   border-top: 1px solid var(--gold-dim);
 }
 .scene-settings label {
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4184,68 +3967,4 @@ button.pip:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-}
-button.link {
-  background: none;
-  border: none;
-  padding: 0;
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-}
-
-/* World time: the clock in the top bar and the GM's clock panel. */
-.clock-bar {
-  position: relative;
-}
-.clock-date {
-  color: var(--text);
-  white-space: nowrap;
-}
-.clock-date:disabled {
-  cursor: default;
-  opacity: 1;
-}
-.clock-dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--muted);
-}
-.clock-running .clock-dot {
-  background: var(--gold-bright);
-  box-shadow: 0 0 6px var(--gold-bright);
-}
-.clock-turns .clock-dot {
-  background: var(--warn);
-}
-.clock-panel {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 380px;
-  padding: 10px 12px;
-}
-.clock-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-.clock-date-form input[type='number'] {
-  width: 58px;
-}
-.clock-calendar label {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 6px;
-}
-.clock-calendar .clock-row label input {
-  width: 70px;
 }

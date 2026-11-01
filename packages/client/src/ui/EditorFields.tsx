@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { numberOrUndefined } from '../token-edit.ts';
+import { Input } from './kit/input.tsx';
+import { Checkbox } from './kit/checkbox.tsx';
 
 // Small form controls for the GM's token editor, styled to match the sheet.
 
@@ -24,7 +26,7 @@ export function TextInput({
   list?: string;
 }>) {
   return (
-    <input
+    <Input
       type="text"
       value={value ?? ''}
       placeholder={placeholder}
@@ -49,7 +51,7 @@ export function NumberInput({
   className?: string;
 }>) {
   return (
-    <input
+    <Input
       type="number"
       className={className}
       value={value ?? ''}
@@ -67,7 +69,7 @@ export function Check({
 }: Readonly<{ label: string; checked: boolean; onChange: (v: boolean) => void }>) {
   return (
     <label className="ed-check">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <Checkbox checked={checked} onCheckedChange={(v) => onChange(v === true)} />
       <span>{label}</span>
     </label>
   );

@@ -2,6 +2,7 @@ import type { PackCompendium, SystemDefinition } from '@vtt/core';
 import type { Perceiver } from '@vtt/shared';
 import { editionOf, toEdition } from './content.ts';
 import { CONTENT_TYPES, contentWith, packContentIssues, SRD_PACKS } from './packs.ts';
+import { withOwn } from './own-content.ts';
 import { perceiverOf } from './perception.ts';
 import { type Actor, ActorSchema, type Token, TokenSchema } from './token-schema.ts';
 
@@ -11,12 +12,12 @@ import { type Actor, ActorSchema, type Token, TokenSchema } from './token-schema
 // server's action handlers and the client's sheets.
 
 /** What a creature sheet refers to by id: a monster, items and spells. */
-type Sheet = Pick<Token, 'monster' | 'inventory' | 'stats'>;
+type Sheet = Pick<Token, 'monster' | 'inventory' | 'stats' | 'own'>;
 
 /** References from a sheet to content the edition (and the game's packs) doesn't have. */
 function contentIssues(sheet: Sheet, rules: string, packs?: readonly PackCompendium[]): string[] {
   const edition = editionOf(sheet, { rules });
-  const srd = contentWith(edition, packs);
+  const srd = withOwn(contentWith(edition, packs), sheet);
   const monster = sheet.monster && !srd.monsters.has(sheet.monster) ? [sheet.monster] : [];
   return [
     ...monster.map((m) => `unknown monster "${m}" in the ${edition} rules`),

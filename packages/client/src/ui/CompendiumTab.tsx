@@ -14,6 +14,10 @@ import { CATEGORIES, compendium, crText, type Category, type Entry } from '../co
 import type { Session } from '../session.ts';
 import { attackTip, itemTip, spellTip, type Tip } from '../tooltip.ts';
 import { startDrag } from './ActorsTab.tsx';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
+import { Toggle } from './kit/toggle.tsx';
+import { SelectField } from './kit/select.tsx';
 
 // The Compendium tab (the GM's, and trusted players' for their own sheets):
 // the SRD books, searchable. Drag a monster onto the map to place it; an item,
@@ -50,23 +54,28 @@ export function CompendiumTab({ session }: Readonly<{ session: Session }>) {
     <div className="lib">
       <nav className="lib-cats">
         {CATEGORIES.map((c) => (
-          <button key={c} className={c === category ? 'on' : ''} onClick={() => setCategory(c)}>
+          <Toggle key={c} pressed={c === category} onPressedChange={() => setCategory(c)}>
             {LABEL[c]}
-          </button>
+          </Toggle>
         ))}
       </nav>
       <div className="lib-filter">
-        <input
+        <Input
           className="lib-search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={`Search ${LABEL[category].toLowerCase()}…`}
         />
         {editioned && (
-          <select value={rules} onChange={(e) => setRules(e.target.value as Edition)} aria-label="Rules edition">
-            <option value="2014">2014</option>
-            <option value="2024">2024</option>
-          </select>
+          <SelectField
+            value={rules}
+            onValueChange={(r) => setRules(r as Edition)}
+            aria-label="Rules edition"
+            options={[
+              { value: '2014', label: '2014' },
+              { value: '2024', label: '2024' },
+            ]}
+          />
         )}
       </div>
       <ul className="lib-list lib-scroll">
@@ -165,13 +174,14 @@ function EntryDetail({ session, entry }: Readonly<{ session: Session; entry: Ent
         {entry.drag.kind === 'monster' ? (
           session.isGm() && <MonsterButtons session={session} drag={entry.drag} />
         ) : (
-          <button
-            className="btn small"
+          <Button
+            variant="outline"
+            size="sm"
             disabled={!selected}
             onClick={() => selected && session.drop(entry.drag, [selected.x, selected.y])}
           >
             {selected ? `Give to ${selected.name}` : 'Select a creature to give it'}
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -194,12 +204,12 @@ function MonsterButtons({
   };
   return (
     <>
-      <button className="btn small" onClick={() => session.spawn(drag, session.viewCentre())}>
+      <Button variant="outline" size="sm" onClick={() => session.spawn(drag, session.viewCentre())}>
         Place
-      </button>
-      <button className="btn small" onClick={addToActors}>
+      </Button>
+      <Button variant="outline" size="sm" onClick={addToActors}>
         Add to Actors
-      </button>
+      </Button>
     </>
   );
 }

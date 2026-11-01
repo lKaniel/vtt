@@ -1,3 +1,4 @@
+import { Redo2Icon, Undo2Icon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { SoundScape } from '../audio.ts';
 import { MapView } from '../canvas/MapView.ts';
@@ -7,7 +8,7 @@ import { Session } from '../session.ts';
 import { stepTarget } from '../stepping.ts';
 import { activateTile, ActionBar, canActivate } from './ActionBar.tsx';
 import { CharacterSheet } from './CharacterSheet.tsx';
-import { ClockBar } from './ClockBar.tsx';
+import { ClockBar } from './clock/ClockBar.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
 import { Inspector } from './Inspector.tsx';
@@ -17,6 +18,7 @@ import { PartyBar } from './PartyBar.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
+import { Button } from './kit/button.tsx';
 
 export function GameScreen({
   playerId,
@@ -41,7 +43,8 @@ export function GameScreen({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (isTyping(e.target)) return;
+      // A dialog or popup that closed on this key (Esc) has already handled it.
+      if (e.defaultPrevented || isTyping(e.target)) return;
       if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
       if (e.key === 'Escape' && backOutOfEditor(session)) return;
       if (runEditorKey(session, e)) return;
@@ -74,9 +77,9 @@ export function GameScreen({
           {session.you?.name}
         </span>
         <UndoButtons session={session} />
-        <button className="link" onClick={onLeave}>
+        <Button variant="link" onClick={onLeave}>
           Leave
-        </button>
+        </Button>
       </header>
       <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />
       <PartyBar session={session} />
@@ -167,24 +170,26 @@ function UndoButtons({ session }: Readonly<{ session: Session }>) {
   const { undo, redo } = session.history;
   return (
     <span className="undo-buttons">
-      <button
-        className="icon-button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         disabled={!undo}
         onClick={() => session.undo()}
         title={undo ? `Undo the ${undo} (Ctrl+Z)` : 'Nothing to undo'}
         aria-label="Undo"
       >
-        ↶
-      </button>
-      <button
-        className="icon-button"
+        <Undo2Icon />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
         disabled={!redo}
         onClick={() => session.redo()}
         title={redo ? `Redo the ${redo} (Ctrl+Shift+Z)` : 'Nothing to redo'}
         aria-label="Redo"
       >
-        ↷
-      </button>
+        <Redo2Icon />
+      </Button>
     </span>
   );
 }

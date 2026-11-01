@@ -1,9 +1,13 @@
 import type { Actor, TokenView } from '@vtt/system-dnd5e';
 import { uniqueId } from '@vtt/shared';
+import { EyeIcon, EyeOffIcon, PencilIcon, PlusIcon } from 'lucide-react';
 import { useState } from 'react';
 import { DRAG_TYPE, type DragPayload } from '../drops.ts';
 import type { Session } from '../session.ts';
 import { Face, HpBar } from './Portrait.tsx';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
+import { Checkbox } from './kit/checkbox.tsx';
 
 // The GM's Actors tab: every creature on the map, and the Actors list of
 // creatures ready to be placed. Drag an actor onto the map to place a copy.
@@ -39,13 +43,9 @@ export function ActorsTab({ session }: Readonly<{ session: Session }>) {
   };
   return (
     <div className="lib">
-      <input className="lib-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search…" />
+      <Input className="lib-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search…" />
       <label className="ed-check lib-hidden">
-        <input
-          type="checkbox"
-          checked={session.spawnHidden}
-          onChange={(e) => session.setSpawnHidden(e.target.checked)}
-        />
+        <Checkbox checked={session.spawnHidden} onCheckedChange={(on) => session.setSpawnHidden(on === true)} />
         <span>Place new creatures hidden</span>
       </label>
       <div className="lib-scroll">
@@ -57,9 +57,9 @@ export function ActorsTab({ session }: Readonly<{ session: Session }>) {
         </ul>
         <h4 className="lib-heading">
           Actors
-          <button className="btn small" onClick={newActor}>
+          <Button variant="outline" size="sm" onClick={newActor}>
             New
-          </button>
+          </Button>
         </h4>
         {actors.length === 0 && (
           <p className="muted lib-hint">Save a token as an actor, or add monsters from the Compendium.</p>
@@ -93,20 +93,24 @@ function TokenRow({ session, token }: Readonly<{ session: Session; token: TokenV
           <HpBar token={token} showLabel={false} />
         </span>
       </button>
-      <button
-        className="lib-icon"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         title={token.hidden ? 'Reveal to players' : 'Hide from players'}
+        aria-label={token.hidden ? 'Reveal to players' : 'Hide from players'}
         onClick={() => session.editToken(token.id, { hidden: !token.hidden })}
       >
-        {token.hidden ? '◌' : '◉'}
-      </button>
-      <button
-        className="lib-icon"
+        {token.hidden ? <EyeOffIcon /> : <EyeIcon />}
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
         title="Edit"
+        aria-label="Edit"
         onClick={() => session.openSheet({ kind: 'token', id: token.id }, true)}
       >
-        ✎
-      </button>
+        <PencilIcon />
+      </Button>
     </li>
   );
 }
@@ -149,16 +153,18 @@ function ActorRow({ session, actor }: Readonly<{ session: Session; actor: Actor 
           <span className="lib-sub">{subtitle(actor) || 'Actor'}</span>
         </span>
       </button>
-      <button
-        className="lib-icon"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         title="Place at the centre of the screen"
+        aria-label="Place at the centre of the screen"
         onClick={() => session.spawn({ kind: 'actor', id: actor.id }, session.viewCentre())}
       >
-        ＋
-      </button>
-      <button className="lib-icon" title="Edit" onClick={edit}>
-        ✎
-      </button>
+        <PlusIcon />
+      </Button>
+      <Button variant="ghost" size="icon-sm" title="Edit" aria-label="Edit" onClick={edit}>
+        <PencilIcon />
+      </Button>
     </li>
   );
 }

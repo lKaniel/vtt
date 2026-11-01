@@ -1,5 +1,5 @@
 import { enabledPacks, type PackCompendium, type PackInfo, type SystemDefinition } from '@vtt/core';
-import { type Content, contentWith, editionOf, type Token } from '@vtt/system-dnd5e';
+import { type Content, contentWith, editionOf, type Token, withOwn } from '@vtt/system-dnd5e';
 import type { GameStore } from './game-store.ts';
 import type { PackStore } from './pack-store.ts';
 
@@ -84,6 +84,9 @@ export function packContent(store: RunningGame): PackCompendium[] {
 }
 
 /** What a token in a running game can refer to: its edition's SRD plus the game's packs. */
-export function contentFor(store: RunningGame & Pick<GameStore, 'world'>, token: Pick<Token, 'stats'>): Content {
-  return contentWith(editionOf(token, store.world), packContent(store));
+export function contentFor(
+  store: RunningGame & Pick<GameStore, 'world'>,
+  token: Pick<Token, 'stats' | 'own'>,
+): Content {
+  return withOwn(contentWith(editionOf(token, store.world), packContent(store)), token);
 }

@@ -14,6 +14,8 @@ import { api } from '../account-api.ts';
 import { characterSummary, levelUpPlan, spellChoices } from '../creator.ts';
 import { SpellPicker } from './creator/PickSteps.tsx';
 import { Chips, Detail, RichText, TraitList } from './creator/Parts.tsx';
+import { Button } from './kit/button.tsx';
+import { Toggle } from './kit/toggle.tsx';
 
 type Bonus = Partial<Record<Ability, number>>;
 
@@ -86,14 +88,14 @@ function LevelUpFooter({
 }: Readonly<{ message?: string; disabled: boolean; onCancel: () => void; onConfirm: () => void }>) {
   return (
     <footer className="cc-foot">
-      <button className="btn" onClick={onCancel}>
+      <Button variant="outline" onClick={onCancel}>
         Cancel
-      </button>
+      </Button>
       {message && <span className="menu-error">{message}</span>}
       <span className="cc-foot-space" />
-      <button className="btn primary" disabled={disabled} onClick={onConfirm}>
+      <Button disabled={disabled} onClick={onConfirm}>
         Level up
-      </button>
+      </Button>
     </footer>
   );
 }
@@ -133,12 +135,12 @@ function HitPoints({
 }: Readonly<{ die: number; average: number; hp: number; setHp: (n: number) => void }>) {
   return (
     <div className="levelup-hp">
-      <button className="btn" onClick={() => setHp(average)}>
+      <Button variant="outline" onClick={() => setHp(average)}>
         Take {average}
-      </button>
-      <button className="btn" onClick={() => setHp(Math.floor(Math.random() * die) + 1)}>
+      </Button>
+      <Button variant="outline" onClick={() => setHp(Math.floor(Math.random() * die) + 1)}>
         Roll d{die}
-      </button>
+      </Button>
       <span className="levelup-roll">+{hp} and your Constitution modifier</span>
     </div>
   );
@@ -159,15 +161,15 @@ function Improvement({ c, value, onChange }: Readonly<{ c: Character; value: Bon
     <Detail title={`Ability score improvement (${2 - spent} left)`}>
       <div className="cc-chips">
         {ABILITIES.map((a) => (
-          <button key={a} className={value[a] ? 'chip on' : 'chip'} onClick={() => bump(a)}>
+          <Toggle key={a} pressed={!!value[a]} onPressedChange={() => bump(a)}>
             {abilityName(a)} {scores[a]}
             {value[a] ? ` +${value[a]}` : ''}
-          </button>
+          </Toggle>
         ))}
       </div>
-      <button className="link" onClick={() => onChange({})}>
+      <Button variant="link" onClick={() => onChange({})}>
         Clear
-      </button>
+      </Button>
     </Detail>
   );
 }

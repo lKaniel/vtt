@@ -1,5 +1,6 @@
 import type { AttackLog, ChatMessage, SpellLog } from '@vtt/system-dnd5e';
 import type { DiceTerm } from '@vtt/shared';
+import { MinusIcon, PlusIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '../session.ts';
 import { ActorsTab } from './ActorsTab.tsx';
@@ -12,6 +13,9 @@ import { PlayersTab } from './PlayersTab.tsx';
 import { ScenesTab } from './ScenesTab.tsx';
 import { diceArt } from '../icon-art.ts';
 import { targetText } from '../spell-text.ts';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
+import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
@@ -43,17 +47,25 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
     <aside className={`chat frame${open ? '' : ' closed'}${shown === 'Adventure log' ? '' : ' library'}`}>
       <header className="chat-head">
         <span>{shown}</span>
-        <button className="close" onClick={() => setOpen(!open)} aria-label={open ? 'Hide panel' : 'Show panel'}>
-          {open ? '–' : '+'}
-        </button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => setOpen(!open)}
+          aria-label={open ? 'Hide panel' : 'Show panel'}
+          title={open ? 'Hide panel' : 'Show panel'}
+        >
+          {open ? <MinusIcon /> : <PlusIcon />}
+        </Button>
       </header>
-      <nav className="side-tabs">
-        {tabs.map((t) => (
-          <button key={t} className={t === shown ? 'on' : ''} onClick={() => setTab(t)}>
-            {t === 'Adventure log' ? 'Log' : t}
-          </button>
-        ))}
-      </nav>
+      <Tabs value={shown} onValueChange={(t) => setTab(t as Tab)}>
+        <TabsList className="mb-1.5 flex-wrap">
+          {tabs.map((t) => (
+            <TabsTrigger key={t} value={t} className="flex-none px-2 pb-1.5 text-[13px]">
+              {t === 'Adventure log' ? 'Log' : t}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       {shown === 'Adventure log' ? <Log session={session} open={open} /> : <Library tab={shown} session={session} />}
     </aside>
   );
@@ -112,7 +124,7 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
         ))}
       </div>
       <form onSubmit={submit}>
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message or /r 2d20kh1+4" />
+        <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message or /r 2d20kh1+4" />
       </form>
     </>
   );
@@ -134,9 +146,14 @@ function Message({ m, onUndo }: Readonly<{ m: ChatMessage; onUndo?: () => void }
         {m.gmOnly && <span className="muted"> (to GM)</span>}
         {m.undone && <span className="muted"> (undone)</span>}
         {onUndo && (
-          <button className="link msg-undo" onClick={onUndo} title="Undo this action (the dice are not rolled again)">
+          <Button
+            variant="link"
+            className="msg-undo"
+            onClick={onUndo}
+            title="Undo this action (the dice are not rolled again)"
+          >
             Undo
-          </button>
+          </Button>
         )}
       </span>
       {m.text && <span className="msg-text">{m.text}</span>}

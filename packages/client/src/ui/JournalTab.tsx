@@ -1,6 +1,7 @@
 import type { Doc } from '@vtt/core';
 import type { Session } from '../session.ts';
 import { startDrag } from './ActorsTab.tsx';
+import { Button } from './kit/button.tsx';
 
 const nameOf = (doc: Doc) => (typeof doc.name === 'string' ? doc.name : doc.id);
 const shared = (doc: Doc) => {
@@ -20,9 +21,9 @@ export function JournalTab({ session }: Readonly<{ session: Session }>) {
   return (
     <div className="scenes-tab">
       {gm && (
-        <button className="btn small" onClick={() => session.createEntry('journal')}>
+        <Button variant="outline" size="sm" onClick={() => session.createEntry('journal')}>
           New entry
-        </button>
+        </Button>
       )}
       <ul className="rows">
         {entries.map((doc) => (
@@ -33,13 +34,14 @@ export function JournalTab({ session }: Readonly<{ session: Session }>) {
             onDragStart={(e) => startDrag(e, { kind: 'journal', id: doc.id, name: nameOf(doc) })}
             title={gm ? 'Drag onto the map to pin a note' : undefined}
           >
-            <button className="link" onClick={() => session.openJournal(doc.id)}>
+            <Button variant="link" onClick={() => session.openJournal(doc.id)}>
               {nameOf(doc)}
-            </button>
+            </Button>
             {gm && (
               <span className="row-actions">
-                <button
-                  className="btn small"
+                <Button
+                  variant="outline"
+                  size="sm"
                   title={shared(doc) ? 'Players can read it: hide it again' : 'Let the players read it'}
                   onClick={() =>
                     session.patchEntry('journals', doc.id, {
@@ -48,14 +50,15 @@ export function JournalTab({ session }: Readonly<{ session: Session }>) {
                   }
                 >
                   {shared(doc) ? 'Shared' : 'Share'}
-                </button>
-                <button
-                  className="btn small"
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   title="Open it on every player's screen"
                   onClick={() => session.showJournal(doc.id)}
                 >
                   Show
-                </button>
+                </Button>
               </span>
             )}
           </li>

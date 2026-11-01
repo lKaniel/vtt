@@ -23,6 +23,18 @@ describe('the D&D 5e system', () => {
     ]);
   });
 
+  it('knows the items and spells made on a sheet', () => {
+    const made = token({
+      stats: { spells: ['glare'] },
+      own: {
+        items: [{ type: 'gear', id: 'lucky-coin', name: 'Lucky coin' }],
+        spells: [{ id: 'glare', name: 'Glare', level: 0, school: 'evocation', castingTime: 'action', range: 30 }],
+      },
+      inventory: [{ item: 'lucky-coin' }, { item: 'lost-coin' }],
+    });
+    expect(dnd5e.tokenIssues(made, '2014')).toEqual(['unknown item "lost-coin"']);
+  });
+
   it('works out how a token perceives from its stat block', () => {
     const goblin = token({ monster: 'goblin' });
     expect(dnd5e.perceiver(goblin, '2014').senses.darkvision).toBe(60);

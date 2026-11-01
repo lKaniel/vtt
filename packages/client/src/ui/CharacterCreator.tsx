@@ -7,6 +7,8 @@ import { EquipmentStep } from './creator/KitStep.tsx';
 import { BackgroundStep, ClassStep, SpeciesStep, type StepProps } from './creator/OriginSteps.tsx';
 import { SkillsStep, SpellPicker } from './creator/PickSteps.tsx';
 import { IdentityStep, Summary } from './creator/Summary.tsx';
+import { Button } from './kit/button.tsx';
+import { Toggle } from './kit/toggle.tsx';
 
 /** A placeholder id until the server gives the character its own. */
 const NEW = 'new';
@@ -75,27 +77,20 @@ export function CharacterCreator({
       </main>
       <Summary c={c} />
       <footer className="cc-foot">
-        <button className="btn" onClick={onCancel}>
+        <Button variant="outline" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
         {error && <span className="menu-error">{error}</span>}
         <span className="cc-foot-space" />
-        <button className="btn" disabled={index === 0} onClick={() => setStep(steps[index - 1]!.id)}>
+        <Button variant="outline" disabled={index === 0} onClick={() => setStep(steps[index - 1]!.id)}>
           Back
-        </button>
+        </Button>
         {index < steps.length - 1 ? (
-          <button className="btn primary" onClick={() => setStep(steps[index + 1]!.id)}>
-            Next
-          </button>
+          <Button onClick={() => setStep(steps[index + 1]!.id)}>Next</Button>
         ) : (
-          <button
-            className="btn primary"
-            disabled={busy || problems.length > 0}
-            title={problems.join(' ')}
-            onClick={() => void save()}
-          >
+          <Button disabled={busy || problems.length > 0} title={problems.join(' ')} onClick={() => void save()}>
             {initial ? 'Save changes' : 'Create character'}
-          </button>
+          </Button>
         )}
       </footer>
     </div>
@@ -106,13 +101,9 @@ function EditionPicker({ c, set }: Readonly<StepProps>) {
   return (
     <div className="cc-edition" title="Which rules this character follows">
       {(['2014', '2024'] as const).map((r) => (
-        <button
-          key={r}
-          className={c.rules === r ? 'chip on' : 'chip'}
-          onClick={() => r !== c.rules && set(setEdition(c, r))}
-        >
+        <Toggle key={r} pressed={c.rules === r} onPressedChange={() => r !== c.rules && set(setEdition(c, r))}>
           {r} rules
-        </button>
+        </Toggle>
       ))}
     </div>
   );

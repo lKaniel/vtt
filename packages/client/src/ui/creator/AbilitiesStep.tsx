@@ -1,3 +1,4 @@
+import { MinusIcon, PlusIcon } from 'lucide-react';
 import {
   ABILITIES,
   type Ability,
@@ -18,6 +19,10 @@ import {
 } from '../../creator.ts';
 import type { StepProps } from './OriginSteps.tsx';
 import { Chips, Detail, StepHead } from './Parts.tsx';
+import { Button } from '../kit/button.tsx';
+import { Input } from '../kit/input.tsx';
+import { Toggle } from '../kit/toggle.tsx';
+import { SelectField } from '../kit/select.tsx';
 
 type Method = Character['method'];
 const METHODS: { id: Method; label: string }[] = [
@@ -88,9 +93,9 @@ function MethodExtra({ c, set }: Readonly<StepProps>) {
   if (c.method === 'point-buy') return <span className="cc-counter">{pointsLeft(c)} points left</span>;
   if (c.method !== 'roll') return null;
   return (
-    <button className="btn small" onClick={() => set(withMethod(c, 'roll'))}>
+    <Button variant="outline" size="sm" onClick={() => set(withMethod(c, 'roll'))}>
       Roll again
-    </button>
+    </Button>
   );
 }
 
@@ -99,29 +104,33 @@ function ScoreInput({ c, a, set }: Readonly<StepProps & { a: Ability }>) {
   if (c.method === 'point-buy') {
     return (
       <span className="cc-stepper">
-        <button className="cc-step-btn" onClick={() => set(adjustPointBuy(c, a, -1))} aria-label={`Lower ${a}`}>
-          −
-        </button>
+        <Button
+          variant="outline"
+          size="icon-sm"
+          onClick={() => set(adjustPointBuy(c, a, -1))}
+          aria-label={`Lower ${a}`}
+        >
+          <MinusIcon />
+        </Button>
         <span>{value}</span>
-        <button className="cc-step-btn" onClick={() => set(adjustPointBuy(c, a, 1))} aria-label={`Raise ${a}`}>
-          +
-        </button>
+        <Button variant="outline" size="icon-sm" onClick={() => set(adjustPointBuy(c, a, 1))} aria-label={`Raise ${a}`}>
+          <PlusIcon />
+        </Button>
       </span>
     );
   }
   if (c.method === 'standard') {
     return (
-      <select value={value} onChange={(e) => set(assignStandard(c, a, Number(e.target.value)))}>
-        {STANDARD_ARRAY.map((v) => (
-          <option key={v} value={v}>
-            {v}
-          </option>
-        ))}
-      </select>
+      <SelectField
+        value={String(value)}
+        aria-label={`${a} score`}
+        onValueChange={(v) => set(assignStandard(c, a, Number(v)))}
+        options={STANDARD_ARRAY.map((v) => ({ value: String(v), label: String(v) }))}
+      />
     );
   }
   return (
-    <input
+    <Input
       type="number"
       min={c.method === 'roll' ? 3 : 1}
       max={c.method === 'roll' ? 18 : 30}
@@ -146,9 +155,9 @@ function BonusPicker({ c, set }: Readonly<StepProps>) {
     <Detail title={`${p.species!.name}: +${choice.amount} to ${choice.count}`}>
       <div className="cc-chips">
         {choice.from.map((a) => (
-          <button key={a} className={c.bonusPicks[a] ? 'chip on' : 'chip'} onClick={() => set(toggleBonusChoice(c, a))}>
+          <Toggle key={a} pressed={!!c.bonusPicks[a]} onPressedChange={() => set(toggleBonusChoice(c, a))}>
             {abilityName(a)}
-          </button>
+          </Toggle>
         ))}
       </div>
     </Detail>
@@ -188,9 +197,9 @@ function BackgroundBonus({ c, set }: Readonly<StepProps>) {
         value={each ? undefined : plus1}
         onPick={(a) => pick(plus2 === a ? undefined : plus2, a)}
       />
-      <button className={each ? 'chip on' : 'chip'} onClick={() => set(setBackgroundBonus(c, 'each'))}>
+      <Toggle pressed={each} onPressedChange={() => set(setBackgroundBonus(c, 'each'))}>
         +1 to all three
-      </button>
+      </Toggle>
     </Detail>
   );
 }

@@ -1,7 +1,11 @@
+import { ChevronDownIcon, ChevronRightIcon, LockIcon, LockOpenIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useRef, useState, type DragEvent } from 'react';
 import { dropPlace, layerRows, type DropZone, type LayerRow } from '../editor/layers.ts';
 import { clickSelect, keyOf, modsOf, refOf } from '../editor/selection.ts';
 import type { Session } from '../session.ts';
+import { Input } from './kit/input.tsx';
+import { Button } from './kit/button.tsx';
 
 const DRAG = 'application/x-vtt-layers';
 
@@ -96,8 +100,10 @@ function RowBody({ session, row, renaming, onRename, onFold }: Readonly<RowProps
   const lock = row.locked ? null : true;
   return (
     <>
-      <button
-        className="layer-fold link"
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="layer-fold size-5"
         aria-label={row.open ? 'Fold' : 'Unfold'}
         disabled={!row.parent}
         onClick={(e) => {
@@ -105,8 +111,8 @@ function RowBody({ session, row, renaming, onRename, onFold }: Readonly<RowProps
           onFold();
         }}
       >
-        {foldMark(row)}
-      </button>
+        <FoldMark row={row} />
+      </Button>
       <span className="layer-kind">{kindMark(row)}</span>
       {renaming ? (
         <RenameBox
@@ -121,23 +127,26 @@ function RowBody({ session, row, renaming, onRename, onFold }: Readonly<RowProps
           {row.label}
         </span>
       )}
-      <button
-        className={`layer-lock link${row.locked ? ' on' : ''}`}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className={cn('layer-lock size-6', row.locked && 'text-gold-bright')}
         title={row.locked ? 'Unlock' : 'Lock: clicks and boxes on the map pass through it'}
+        aria-label={row.locked ? 'Unlock' : 'Lock'}
         onClick={(e) => {
           e.stopPropagation();
           session.editTiles([row.id], { locked: lock }, row.locked ? 'unlock' : 'lock');
         }}
       >
-        {row.locked ? '🔒' : '🔓'}
-      </button>
+        {row.locked ? <LockIcon /> : <LockOpenIcon />}
+      </Button>
     </>
   );
 }
 
-function foldMark(row: LayerRow): string {
-  if (!row.parent) return '';
-  return row.open ? '▾' : '▸';
+function FoldMark({ row }: Readonly<{ row: LayerRow }>) {
+  if (!row.parent) return null;
+  return row.open ? <ChevronDownIcon /> : <ChevronRightIcon />;
 }
 
 function rowClass(row: LayerRow, selected: boolean, zone: DropZone | undefined): string {
@@ -163,7 +172,7 @@ function RenameBox({ row, onDone }: Readonly<{ row: LayerRow; onDone: (name?: st
     onDone(name);
   };
   return (
-    <input
+    <Input
       className="layer-rename"
       autoFocus
       defaultValue={row.label === row.id ? '' : row.label}

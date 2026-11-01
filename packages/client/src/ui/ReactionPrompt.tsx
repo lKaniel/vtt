@@ -1,5 +1,6 @@
 import type { ReactionOffer } from '@vtt/system-dnd5e';
 import type { Session } from '../session.ts';
+import { Button } from './kit/button.tsx';
 
 const CHOICE_LABELS: Record<string, string> = {
   shield: 'Shield (+5 AC)',
@@ -23,13 +24,13 @@ export function ReactionPrompt({ session }: Readonly<{ session: Session }>) {
       <span className="aiming-name">{question(offer, name)}</span>
       <span className="slot-choices">
         {offer.choices.map((choice) => (
-          <button key={choice} className="chip" onClick={() => session.takeReaction(offer.id, choice)}>
+          <Button key={choice} variant="outline" size="sm" onClick={() => session.takeReaction(offer.id, choice)}>
             {CHOICE_LABELS[choice] ?? choice}
-          </button>
+          </Button>
         ))}
-        <button className="chip" onClick={() => session.takeReaction(offer.id)}>
+        <Button variant="outline" size="sm" onClick={() => session.takeReaction(offer.id)}>
           {offer.kind === 'hit' ? 'Take the hit' : 'Let it go'}
-        </button>
+        </Button>
       </span>
     </div>
   );

@@ -1,9 +1,13 @@
 import type { Doc } from '@vtt/core';
+import { PlusIcon } from 'lucide-react';
 import { useState } from 'react';
 import { assetUrl } from '../assets.ts';
 import { pageText } from '../journal-text.ts';
 import type { Session } from '../session.ts';
 import { RichText } from './creator/Parts.tsx';
+import { Textarea } from './kit/textarea.tsx';
+import { Button } from './kit/button.tsx';
+import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
 
 interface Page {
   id: string;
@@ -36,18 +40,24 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
     <div className="journal frame" role="dialog" aria-label={String(doc.name)}>
       <header className="chat-head">
         <span>{String(doc.name)}</span>
-        <button className="close" onClick={() => session.closeJournal()} aria-label="Close">
-          ×
-        </button>
+        <Button variant="close" onClick={() => session.closeJournal()} aria-label="Close" title="Close" />
       </header>
-      <nav className="side-tabs">
-        {pages.map((p) => (
-          <button key={p.id} className={p.id === page?.id ? 'on' : ''} onClick={() => setPageId(p.id)}>
-            {p.name}
-          </button>
-        ))}
-        {gm && <button onClick={addPage}>+ Page</button>}
-      </nav>
+      <div className="mb-2 flex items-end gap-1">
+        <Tabs value={page?.id ?? ''} onValueChange={setPageId} className="min-w-0 flex-1">
+          <TabsList className="flex-wrap">
+            {pages.map((p) => (
+              <TabsTrigger key={p.id} value={p.id} className="flex-none px-2 pb-1.5 text-[13px]">
+                {p.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        {gm && (
+          <Button variant="ghost" size="sm" onClick={addPage}>
+            <PlusIcon /> Page
+          </Button>
+        )}
+      </div>
       {page ? (
         <PageView page={page} gm={gm} onChange={(p) => setPages(pages.map((x) => (x.id === p.id ? p : x)))} />
       ) : (
@@ -63,7 +73,7 @@ function PageView({ page, gm, onChange }: Readonly<{ page: Page; gm: boolean; on
     return <img className="journal-image" src={assetUrl(page.src)} alt={page.name} />;
   if (!gm) return <RichText text={pageText(page.text ?? '')} className="rich journal-text" />;
   return (
-    <textarea
+    <Textarea
       className="journal-edit"
       value={draft}
       onChange={(e) => setDraft(e.target.value)}

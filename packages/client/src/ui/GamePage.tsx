@@ -7,6 +7,10 @@ import { inviteLink } from '../lobby.ts';
 import type { Route } from '../route.ts';
 import { LobbyHead, systemLine, useLoad } from './LobbyScreens.tsx';
 import { ROLE_NAMES } from './PlayersTab.tsx';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
+import { SelectField } from './kit/select.tsx';
+import { Checkbox } from './kit/checkbox.tsx';
 
 // One game's page in the lobby: its members and their roles, the invite
 // link, and the door to the table.
@@ -26,9 +30,9 @@ export function GamePage({
   return (
     <div className="account lobby">
       <LobbyHead kicker={game ? systemLine(game) : 'Loading…'} title={game?.name ?? ''}>
-        <button className="btn" onClick={() => go({ name: 'games' })}>
+        <Button variant="outline" onClick={() => go({ name: 'games' })}>
           All games
-        </button>
+        </Button>
       </LobbyHead>
       {error && <p className="menu-error">{error}</p>}
       {game && (
@@ -97,25 +101,21 @@ function MemberRow({
         {self && ' (you)'}
       </span>
       {gm ? (
-        <select
+        <SelectField
           value={p.role}
           disabled={lastGm}
           title={lastGm ? 'The game needs a GM' : undefined}
-          onChange={(e) => onChange(e.target.value as Role)}
-        >
-          {Object.entries(ROLE_NAMES).map(([role, r]) => (
-            <option key={role} value={role}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+          aria-label={`${p.name}'s role`}
+          onValueChange={(r) => onChange(r as Role)}
+          options={Object.entries(ROLE_NAMES).map(([role, r]) => ({ value: role, label: r.name }))}
+        />
       ) : (
         <span className="menu-note">{ROLE_NAMES[p.role].name}</span>
       )}
       {(gm || self) && !lastGm && (
-        <button className="btn small" onClick={() => onChange(null)}>
+        <Button variant="outline" size="sm" onClick={() => onChange(null)}>
           {self ? 'Leave' : 'Remove'}
-        </button>
+        </Button>
       )}
     </li>
   );
@@ -137,19 +137,18 @@ function EnterGame({ game, characters, go }: Readonly<{ game: GameDetail; charac
       <h2 className="lobby-heading">{game.you ? 'Take your seat' : 'Join this game'}</h2>
       <label className="auth-field">
         <span>Bring a character</span>
-        <select value={picked} onChange={(e) => setPicked(e.target.value)}>
-          <option value="">{game.you === 'gm' ? 'None: run the game' : 'None for now'}</option>
-          {characters.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}, {characterSummary(c)}
-            </option>
-          ))}
-        </select>
+        <SelectField
+          className="w-full"
+          value={picked}
+          onValueChange={setPicked}
+          options={[
+            { value: '', label: game.you === 'gm' ? 'None: run the game' : 'None for now' },
+            ...characters.map((c) => ({ value: c.id, label: `${c.name}, ${characterSummary(c)}` })),
+          ]}
+        />
       </label>
       {error && <p className="menu-error">{error}</p>}
-      <button className="btn primary" onClick={() => void enter()}>
-        Enter the game
-      </button>
+      <Button onClick={() => void enter()}>Enter the game</Button>
     </div>
   );
 }
@@ -175,23 +174,23 @@ function InvitePanel({ game, onChanged }: Readonly<{ game: GameDetail; onChanged
     <div className="auth frame lobby-form">
       <h2 className="lobby-heading">Invite players</h2>
       {link ? (
-        <input className="lobby-link" readOnly value={link} onFocus={(e) => e.target.select()} />
+        <Input className="lobby-link" readOnly value={link} onFocus={(e) => e.target.select()} />
       ) : (
         <p className="menu-note">No invite link yet.</p>
       )}
       <div className="auth-actions">
-        <button className="btn" onClick={() => void renew()}>
+        <Button variant="outline" onClick={() => void renew()}>
           {link ? 'New link' : 'Make a link'}
-        </button>
+        </Button>
         {link && (
-          <button className="btn" onClick={copy}>
+          <Button variant="outline" onClick={copy}>
             {copied ? 'Copied' : 'Copy'}
-          </button>
+          </Button>
         )}
       </div>
       {link && <p className="menu-note">Anyone with the link joins as a player. A new link turns this one off.</p>}
       <label className="lobby-check">
-        <input type="checkbox" checked={game.open} onChange={(e) => void toggleOpen(e.target.checked)} />
+        <Checkbox checked={game.open} onCheckedChange={(on) => void toggleOpen(on === true)} />
         Anyone on this server may join
       </label>
     </div>
@@ -211,9 +210,9 @@ function DeleteGame({ game, onDeleted }: Readonly<{ game: GameDetail; onDeleted:
   };
   return (
     <div className="lobby-danger">
-      <button className="btn danger" onClick={() => void remove()}>
+      <Button variant="destructive" onClick={() => void remove()}>
         Delete this game
-      </button>
+      </Button>
       {error && <p className="menu-error">{error}</p>}
     </div>
   );

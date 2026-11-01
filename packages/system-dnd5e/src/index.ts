@@ -36,4 +36,5 @@ export * from './packs.ts';
 export * from './system.ts';
 export * from './traps.ts';
 export * from './durations.ts';
+export * from './own-content.ts';
 export * from './sheet-drops.ts';

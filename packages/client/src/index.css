@@ -1,0 +1,136 @@
+/*
+ * The client's styles. Tailwind (without its preflight reset, which would
+ * restyle the whole hand-made UI) plus the component library in src/ui/kit
+ * (shadcn/ui, restyled in the game's look). The older hand-written styles in
+ * style.css sit in their own layer, so Tailwind utilities always win over them.
+ */
+@layer theme, legacy, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import './style.css' layer(legacy);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Tailwind scans these for class names. */
+@source '../src';
+
+/* The kit's colours: shadcn's tokens, taken from the painted frames (see style.css :root). */
+:root {
+  --radius: 0.375rem;
+  --ui-background: #12110f;
+  --ui-foreground: #e6dcc8;
+  --ui-card: #1b1a17;
+  --ui-card-foreground: #e6dcc8;
+  --ui-popover: #1b1a17;
+  --ui-popover-foreground: #e6dcc8;
+  /* Worn bronze, lit up on hover and for what is chosen. */
+  --ui-primary: #a88a5e;
+  --ui-primary-foreground: #14120f;
+  --ui-secondary: #2a2722;
+  --ui-secondary-foreground: #e6dcc8;
+  --ui-muted: #22201c;
+  --ui-muted-foreground: #9b9182;
+  --ui-accent: #34302a;
+  --ui-accent-foreground: #e8d3a6;
+  --ui-destructive: #b5413a;
+  --ui-border: #3d362c;
+  --ui-input: #4a4134;
+  --ui-ring: #e8d3a6;
+  --ui-gold: #a88a5e;
+  --ui-gold-bright: #e8d3a6;
+  --ui-gold-dim: #5e4d36;
+}
+
+@theme inline {
+  --font-display: 'IM Fell English SC', 'Trajan Pro', Georgia, serif;
+  --font-body: 'Alegreya', Georgia, serif;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+  --color-background: var(--ui-background);
+  --color-foreground: var(--ui-foreground);
+  --color-card: var(--ui-card);
+  --color-card-foreground: var(--ui-card-foreground);
+  --color-popover: var(--ui-popover);
+  --color-popover-foreground: var(--ui-popover-foreground);
+  --color-primary: var(--ui-primary);
+  --color-primary-foreground: var(--ui-primary-foreground);
+  --color-secondary: var(--ui-secondary);
+  --color-secondary-foreground: var(--ui-secondary-foreground);
+  --color-muted: var(--ui-muted);
+  --color-muted-foreground: var(--ui-muted-foreground);
+  --color-accent: var(--ui-accent);
+  --color-accent-foreground: var(--ui-accent-foreground);
+  --color-destructive: var(--ui-destructive);
+  --color-border: var(--ui-border);
+  --color-input: var(--ui-input);
+  --color-ring: var(--ui-ring);
+  --color-gold: var(--ui-gold);
+  --color-gold-bright: var(--ui-gold-bright);
+  --color-gold-dim: var(--ui-gold-dim);
+}
+
+/*
+ * A small reset for kit components only (every one has a data-slot), in
+ * place of Tailwind's preflight: the browser's own button and field looks
+ * go, and nothing outside the kit changes.
+ */
+@layer base {
+  [data-slot] {
+    box-sizing: border-box;
+    border: 0 solid;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+  }
+  button[data-slot],
+  input[data-slot],
+  textarea[data-slot] {
+    background: transparent;
+    padding: 0;
+    appearance: none;
+  }
+  [data-slot] :where(svg) {
+    display: block;
+  }
+  input[data-slot]::-webkit-inner-spin-button,
+  input[data-slot]::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+}
+
+/*
+ * Kaniel's painted UI art (public/art/ui), as utilities the kit builds on:
+ * 9-slice plates for panels and buttons, slot frames, the ornate divider.
+ */
+@utility art-panel {
+  border-image: url('/art/ui/panel-small.webp') 70 fill / 16px stretch;
+}
+@utility art-button {
+  border-image: url('/art/ui/button.webp') 40 fill / 9px stretch;
+}
+@utility art-button-lit {
+  border-image-source: url('/art/ui/button-hover.webp');
+}
+@utility art-button-pressed {
+  border-image-source: url('/art/ui/button-pressed.webp');
+}
+@utility art-button-off {
+  border-image-source: url('/art/ui/button-disabled.webp');
+}
+@utility art-well {
+  border-image: url('/art/ui/inventory-slot.webp') 34 fill / 8px stretch;
+}
+@utility art-slot {
+  background: url('/art/ui/slot-frame.webp') center / 100% 100% no-repeat;
+}
+@utility art-slot-lit {
+  background: url('/art/ui/slot-frame-active.webp') center / 100% 100% no-repeat;
+}
+@utility art-divider {
+  background: url('/art/ui/divider.webp') center / auto 100% no-repeat;
+}
+@utility art-card {
+  border-image: url('/art/ui/seat-card.webp') 40 fill / 12px stretch;
+}

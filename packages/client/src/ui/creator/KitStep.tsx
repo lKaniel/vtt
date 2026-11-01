@@ -4,6 +4,7 @@ import { itemArt } from '../../icon-art.ts';
 import { IconFace } from '../Icon.tsx';
 import type { StepProps } from './OriginSteps.tsx';
 import { Detail, StepHead } from './Parts.tsx';
+import { Toggle } from '../kit/toggle.tsx';
 
 export function EquipmentStep({ c, set }: Readonly<StepProps>) {
   const p = partsOf(c);
@@ -24,13 +25,13 @@ export function EquipmentStep({ c, set }: Readonly<StepProps>) {
                 <p className="cc-label">{step.prompt || 'Choose'}</p>
                 <div className="cc-chips">
                   {step.options.map((o) => (
-                    <button
+                    <Toggle
                       key={o.id}
-                      className={o.id === option.id ? 'chip on' : 'chip'}
-                      onClick={() => set({ ...c, kit: { ...c.kit, [step.id]: o.id } })}
+                      pressed={o.id === option.id}
+                      onPressedChange={() => set({ ...c, kit: { ...c.kit, [step.id]: o.id } })}
                     >
                       {o.label}
-                    </button>
+                    </Toggle>
                   ))}
                 </div>
               </div>

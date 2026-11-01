@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { parseRich } from '../../rich-text.ts';
+import { Toggle } from '../kit/toggle.tsx';
 
 // Building blocks shared by the creator's steps.
 
@@ -50,9 +51,9 @@ export function Chips<T extends string>({
   return (
     <div className="cc-chips">
       {options.map((o) => (
-        <button key={o.id} className={o.id === value ? 'chip on' : 'chip'} onClick={() => onPick(o.id)}>
+        <Toggle key={o.id} pressed={o.id === value} onPressedChange={() => onPick(o.id)}>
           {o.label}
-        </button>
+        </Toggle>
       ))}
     </div>
   );

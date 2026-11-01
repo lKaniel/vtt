@@ -105,6 +105,17 @@ with `pnpm check-game data/games/<id>`.
 - Time of day is read in one place, `activeAt()` in `shared/levels.ts`
   (lights, regions and sounds with a darkness band); world time hooks there.
   Lasting spell zones are server-kept templates (`zone-templates.ts`).
+- UI components: every screen is built from the component library in
+  `packages/client/src/ui/kit` (shadcn/ui on Radix and Tailwind, restyled in
+  the game's bronze and iron look; tokens in `client/src/index.css`). Use
+  its Button, Input, NumberField, Select, Popover, Tabs, Slider, ToggleGroup,
+  Badge, Card, CalendarMonth and the rest, never a bare `<button>`, `<input>`
+  or `<select>` or one-off CSS for them. When the kit lacks something, add it
+  to the kit first (shadcn's version when there is one, in the same style,
+  with a `data-slot`) and dress it in the painted art through the
+  `art-*` utilities in `index.css` (panel, button plates, slots, divider),
+  then use it. Lay screens out with Tailwind classes;
+  `style.css` is the older hand-written layer and only shrinks.
 - Map editor (`docs/editor.md`): modes, selection, handles, menus and the
   inspector work the same for every placeable. Hit-testing and shapes stay
   in `shared/hit-test.ts` and `placeables.ts` (one boundary for a later

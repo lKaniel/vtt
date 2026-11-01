@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { commonValue, fieldsFor, MIXED, type Field, type FieldValue } from '../editor/inspector.ts';
 import type { Session } from '../session.ts';
+import { Input } from './kit/input.tsx';
+import { Checkbox } from './kit/checkbox.tsx';
+import { SelectField } from './kit/select.tsx';
 
 /** Fields only the GM sets. */
 const GM_FIELDS = new Set(['hidden', 'level']);
@@ -64,24 +67,15 @@ function InspectorField({ field, value, onChange }: Readonly<FieldProps>) {
     <label className="inspector-field">
       <span>{field.label}</span>
       {field.kind === 'check' && (
-        <input
-          type="checkbox"
-          checked={value === true}
-          ref={(el) => {
-            if (el) el.indeterminate = mixed;
-          }}
-          onChange={(e) => onChange(e.target.checked)}
-        />
+        <Checkbox checked={mixed ? 'indeterminate' : value === true} onCheckedChange={(v) => onChange(v === true)} />
       )}
       {field.kind === 'select' && (
-        <select value={mixed ? '' : String(value ?? '')} onChange={(e) => onChange(e.target.value)}>
-          {mixed && <option value="">Mixed</option>}
-          {field.options?.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <SelectField
+          value={mixed ? '' : String(value ?? '')}
+          onValueChange={onChange}
+          placeholder="Mixed"
+          options={field.options ?? []}
+        />
       )}
       {(field.kind === 'number' || field.kind === 'text' || field.kind === 'color') && (
         <TextInput field={field} value={mixed ? '' : String(value ?? '')} mixed={mixed} onChange={onChange} />
@@ -102,7 +96,7 @@ function TextInput({
     if (text !== value) onChange(text);
   };
   return (
-    <input
+    <Input
       type={field.kind === 'number' ? 'number' : 'text'}
       value={text}
       placeholder={mixed ? 'Mixed' : undefined}
