@@ -1,6 +1,7 @@
 import type { TokenView } from '@vtt/system-dnd5e';
 import type { Session } from '../session.ts';
 import { ORDINAL } from '../spell-text.ts';
+import { Toggle } from './kit/toggle.tsx';
 
 /** While a melee attack is readied by a 2014 paladin: which slot, if any, to Divine Smite with on a hit. */
 export function SmiteControls({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
@@ -15,15 +16,15 @@ export function SmiteControls({ session, token }: Readonly<{ session: Session; t
       <span className="aiming-name">Divine Smite</span>
       <span className="slot-choices" role="group" aria-label="Smite slot">
         {levels.map((level) => (
-          <button
+          <Toggle
             key={level}
-            className={session.smite === level ? 'chip slot-chip on' : 'chip slot-chip'}
-            onClick={() => session.setSmite(session.smite === level ? undefined : level)}
+            pressed={session.smite === level}
+            onPressedChange={(on) => session.setSmite(on ? level : undefined)}
             title={`On a hit, spend a ${ORDINAL[level]}-level slot for radiant damage`}
           >
             {ORDINAL[level]}
             <span className="slot-chip-left">{`${caster.left[level - 1]}/${caster.slots[level - 1]}`}</span>
-          </button>
+          </Toggle>
         ))}
       </span>
     </div>

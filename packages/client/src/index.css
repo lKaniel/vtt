@@ -131,3 +131,6 @@
 @utility art-divider {
   background: url('/art/ui/divider.webp') center / auto 100% no-repeat;
 }
+@utility art-card {
+  border-image: url('/art/ui/seat-card.webp') 40 fill / 12px stretch;
+}

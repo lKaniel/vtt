@@ -23,6 +23,9 @@ import { attackTip, featureTip, itemTip, spellTip } from '../tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 import { TipCard } from './Tip.tsx';
+import { SelectField } from './kit/select.tsx';
+import { Button } from './kit/button.tsx';
+import { Toggle } from './kit/toggle.tsx';
 
 const MIN_TILES = 30;
 
@@ -371,23 +374,23 @@ function SlotChoices({
     <span className="slot-choices" role="group" aria-label="Spell slot">
       <span className="slot-choices-label">Slot</span>
       {choices.map((c) => (
-        <button
+        <Toggle
           key={c.level}
-          className={c.level === aiming.slot ? 'chip slot-chip on' : 'chip slot-chip'}
-          onClick={() => session.aim(spell.id, c.level, free)}
+          pressed={c.level === aiming.slot}
+          onPressedChange={() => session.aim(spell.id, c.level, free)}
           title={free ? `Cast at ${ORDINAL[c.level]} level for free` : `Use a ${ORDINAL[c.level]}-level slot`}
         >
           {ORDINAL[c.level]}
           {!free && <span className="slot-chip-left">{`${c.left}/${c.total}`}</span>}
-        </button>
+        </Toggle>
       ))}
-      <button
-        className={free ? 'chip slot-chip free on' : 'chip slot-chip free'}
-        onClick={() => (free ? backToSlots() : session.setFreeCast(true))}
+      <Toggle
+        pressed={free}
+        onPressedChange={() => (free ? backToSlots() : session.setFreeCast(true))}
         title="Cast without spending a spell slot"
       >
         Free
-      </button>
+      </Toggle>
     </span>
   );
 }
@@ -415,19 +418,20 @@ function AimingControls({ session, token }: Readonly<{ session: Session; token: 
         <SlotChoices session={session} aiming={aiming} caster={token.sheet.caster} />
       )}
       {spell.summon && (
-        <select value={aiming.summon} onChange={(e) => session.chooseSummon(e.target.value)}>
-          {spell.summon.options.map((o) => (
-            <option key={o.monster} value={o.monster}>
-              {o.count > 1 ? `${o.count} × ` : ''}
-              {o.monster}
-            </option>
-          ))}
-        </select>
+        <SelectField
+          value={aiming.summon ?? ''}
+          aria-label="What to summon"
+          onValueChange={(m) => session.chooseSummon(m)}
+          options={spell.summon.options.map((o) => ({
+            value: o.monster,
+            label: o.count > 1 ? `${o.count} × ${o.monster}` : o.monster,
+          }))}
+        />
       )}
       {aiming.mode === 'creatures' && aiming.picks.length > 0 && (
-        <button className="chip on" onClick={() => session.confirmCast()}>
+        <Button size="sm" onClick={() => session.confirmCast()}>
           Cast at {aiming.picks.length}
-        </button>
+        </Button>
       )}
     </div>
   );

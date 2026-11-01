@@ -16,6 +16,9 @@ import { IconFace } from './Icon.tsx';
 import { withKey } from './sheet-model.ts';
 import { Adder, RemoveButton } from './SheetDetails.tsx';
 import { TipCard } from './Tip.tsx';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
+import { Checkbox } from './kit/checkbox.tsx';
 
 // The right-hand pages of the character sheet. Anything usable can be
 // dragged onto the action bar; in edit mode the GM adds and removes things.
@@ -197,7 +200,7 @@ function InventoryEdit({ value, update, sheet }: Readonly<SheetProps>) {
             >
               <IconFace icon={look.icon} size={18} />
               <span className="row-name">{look.name}</span>
-              <input
+              <Input
                 className="ed-qty"
                 type="number"
                 min={1}
@@ -206,12 +209,7 @@ function InventoryEdit({ value, update, sheet }: Readonly<SheetProps>) {
                 onChange={(ev) => change(i, { qty: Math.max(1, Number(ev.target.value) || 1) }, false)}
               />
               <label className="ed-equip" title="Equipped">
-                <input
-                  type="checkbox"
-                  checked={e.equipped}
-                  onChange={(ev) => change(i, { equipped: ev.target.checked })}
-                />
-                E
+                <Checkbox checked={e.equipped} onCheckedChange={(on) => change(i, { equipped: on === true })} />E
               </label>
               <RemoveButton onClick={() => setList(list.filter((_, j) => j !== i))} />
             </li>
@@ -375,9 +373,9 @@ export function EffectsPage({ session, value, kind }: Readonly<SheetProps>) {
           <IconFace icon={{ glyph: 'eye', tint: 'arcane' }} size={16} />
           <span className="row-name">Concentrating on {value.concentration.name}</span>
           {kind === 'token' && (
-            <button className="btn small" onClick={() => session.dropConcentration(value.id)}>
+            <Button variant="outline" size="sm" onClick={() => session.dropConcentration(value.id)}>
               Stop
-            </button>
+            </Button>
           )}
         </li>
       )}

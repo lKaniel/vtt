@@ -2,6 +2,7 @@ import { currentTurn } from '@vtt/system-dnd5e';
 import { isParty } from '@vtt/shared';
 import type { Session } from '../session.ts';
 import { Face, HpBar } from './Portrait.tsx';
+import { Button } from './kit/button.tsx';
 
 /** Initiative order across the top of the screen, plus the GM's fight controls. */
 export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onStart: () => void }>) {
@@ -10,16 +11,17 @@ export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onS
   if (!combat) {
     return gm ? (
       <div className="turn-order idle">
-        <button className="btn" onClick={onStart} title="Roll initiative for every creature with stats on screen">
+        <Button variant="outline" onClick={onStart} title="Roll initiative for every creature with stats on screen">
           Start combat
-        </button>
-        <button
-          className="btn small"
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => session.setTurnBased(true)}
           title="Turn-based mode: the party takes turns, 6 seconds a round"
         >
           Turn-based
-        </button>
+        </Button>
         <RestButtons session={session} />
       </div>
     ) : null;
@@ -53,14 +55,14 @@ export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onS
         })}
       </div>
       {gm && peaceful && (
-        <button className="btn small" onClick={() => session.setTurnBased(false)}>
+        <Button variant="outline" size="sm" onClick={() => session.setTurnBased(false)}>
           Real time
-        </button>
+        </Button>
       )}
       {gm && !peaceful && (
-        <button className="btn small" onClick={() => session.endCombat()}>
+        <Button variant="outline" size="sm" onClick={() => session.endCombat()}>
           End combat
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -71,12 +73,17 @@ function RestButtons({ session }: Readonly<{ session: Session }>) {
   const party = () => [...session.tokens.values()].filter((t) => isParty(t) && t.sheet).map((t) => t.id);
   return (
     <>
-      <button className="btn small" title="Party takes a short rest" onClick={() => session.rest(party(), 'short')}>
+      <Button
+        variant="outline"
+        size="sm"
+        title="Party takes a short rest"
+        onClick={() => session.rest(party(), 'short')}
+      >
         Short rest
-      </button>
-      <button className="btn small" title="Party takes a long rest" onClick={() => session.rest(party(), 'long')}>
+      </Button>
+      <Button variant="outline" size="sm" title="Party takes a long rest" onClick={() => session.rest(party(), 'long')}>
         Long rest
-      </button>
+      </Button>
     </>
   );
 }

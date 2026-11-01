@@ -5,6 +5,12 @@ import { LIGHT_PRESETS, TILE_PRESETS, type LightPreset } from '../map-tools.ts';
 import type { Session } from '../session.ts';
 import type { EditorTool } from '../session-editor.ts';
 import { LayersPanel } from './LayersPanel.tsx';
+import { Button } from './kit/button.tsx';
+import { Toggle } from './kit/toggle.tsx';
+import { SelectField } from './kit/select.tsx';
+import { Slider } from './kit/slider.tsx';
+import { ColorInput } from './kit/color-input.tsx';
+import { Checkbox } from './kit/checkbox.tsx';
 
 const MODES: { mode: EditorMode; label: string; key: string; hint: string }[] = [
   { mode: 'tokens', label: 'Tokens', key: 'T', hint: 'Select, move and act with creatures' },
@@ -75,27 +81,27 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
     <div className="map-tools frame">
       <div className="map-tools-row" role="toolbar" aria-label="Editor mode">
         {modes.map(({ mode, label, key, hint }) => (
-          <button
+          <Toggle
             key={mode}
-            className={`btn small${session.mode === mode ? ' active' : ''}`}
+            pressed={session.mode === mode}
             title={key ? `${hint} (${key})` : hint}
-            onClick={() => session.setMode(mode)}
+            onPressedChange={() => session.setMode(mode)}
           >
             {label}
-          </button>
+          </Toggle>
         ))}
       </div>
       {tools && (
         <div className="map-tools-row" role="toolbar" aria-label="Tool">
           {tools.map(({ tool, label, hint }) => (
-            <button
+            <Toggle
               key={tool}
-              className={`btn small${session.tool === tool ? ' active' : ''}`}
+              pressed={session.tool === tool}
               title={hint}
-              onClick={() => session.setTool(tool)}
+              onPressedChange={() => session.setTool(tool)}
             >
               {label}
-            </button>
+            </Toggle>
           ))}
         </div>
       )}
@@ -125,61 +131,54 @@ function FogTools({ session }: Readonly<{ session: Session }>) {
     <div className="map-tools-row fog-tools" role="toolbar" aria-label="Fog of war">
       <span className="fog-label">Fog</span>
       {BRUSHES.map(({ brush, label, hint }) => (
-        <button
+        <Toggle
           key={brush}
-          className={`btn small${session.fogBrush === brush ? ' active' : ''}`}
+          pressed={session.fogBrush === brush}
           title={hint}
-          onClick={() => session.setFogBrush(session.fogBrush === brush ? undefined : brush)}
+          onPressedChange={(on) => session.setFogBrush(on ? brush : undefined)}
         >
           {label}
-        </button>
+        </Toggle>
       ))}
-      <input
-        type="range"
+      <Slider
+        className="w-20"
         min={1}
         max={10}
-        value={session.fogBrushSize}
+        value={[session.fogBrushSize]}
         title={`Brush: ${session.fogBrushSize} squares across each way`}
         aria-label="Brush size"
-        onChange={(e) => session.setFogBrushSize(Number(e.target.value))}
+        onValueChange={([n]) => session.setFogBrushSize(n!)}
       />
-      <select
+      <SelectField
         value={picked}
         aria-label="Whose fog"
         title="Whose fog the brushes and reset change, and the map shows"
-        onChange={(e) => session.setFogPlayers(e.target.value ? [e.target.value] : undefined)}
-      >
-        <option value="">All players</option>
-        {seats.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}
-          </option>
-        ))}
-      </select>
-      <button
-        className="btn small"
+        onValueChange={(id) => session.setFogPlayers(id ? [id] : undefined)}
+        options={[{ value: '', label: 'All players' }, ...seats.map((p) => ({ value: p.id, label: p.name }))]}
+      />
+      <Button
+        variant="outline"
+        size="sm"
         title="Forget what they explored here (Ctrl+Z undoes)"
         onClick={() => session.resetFog()}
       >
         Reset
-      </button>
+      </Button>
     </div>
   );
 }
 
 function LightPresets({ session }: Readonly<{ session: Session }>) {
   return (
-    <select
+    <SelectField
       value={session.lightPreset}
-      onChange={(e) => session.setLightPreset(e.target.value as LightPreset)}
+      onValueChange={(id) => session.setLightPreset(id as LightPreset)}
       title="The light the Place tool and the menu put down"
-    >
-      {Object.entries(LIGHT_PRESETS).map(([id, l]) => (
-        <option key={id} value={id}>
-          {l.label} ({l.darkness ? `${l.bright} ft` : `${l.bright}/${l.dim} ft`})
-        </option>
-      ))}
-    </select>
+      options={Object.entries(LIGHT_PRESETS).map(([id, l]) => ({
+        value: id,
+        label: `${l.label} (${l.darkness ? l.bright : [l.bright, l.dim].join('/')} ft)`,
+      }))}
+    />
   );
 }
 
@@ -191,15 +190,15 @@ function Darkness({ session }: Readonly<{ session: Session }>) {
   return (
     <label className="map-tools-darkness" title="Time of day: how dark unlit places are">
       <span>Day</span>
-      <input
-        type="range"
+      <Slider
+        className="w-32"
+        aria-label="Darkness"
         min={0}
         max={1}
         step={0.05}
-        value={value}
-        onChange={(e) => setValue(Number(e.target.value))}
-        onPointerUp={() => session.setDarkness(value)}
-        onKeyUp={() => session.setDarkness(value)}
+        value={[value]}
+        onValueChange={([n]) => setValue(n!)}
+        onValueCommit={([n]) => session.setDarkness(n!)}
       />
       <span>Night</span>
     </label>
@@ -208,18 +207,15 @@ function Darkness({ session }: Readonly<{ session: Session }>) {
 
 function TilePresets({ session }: Readonly<{ session: Session }>) {
   return (
-    <select
+    <SelectField
       value={session.tilePreset}
-      onChange={(e) => session.setTilePreset(e.target.value as TileTexture)}
+      onValueChange={(id) => session.setTilePreset(id as TileTexture)}
       title="What the Draw tool paints: ground stays under everything and never holds tiles"
-    >
-      {Object.entries(TILE_PRESETS).map(([id, t]) => (
-        <option key={id} value={id}>
-          {t.label}
-          {t.background ? ' (ground)' : ''}
-        </option>
-      ))}
-    </select>
+      options={Object.entries(TILE_PRESETS).map(([id, t]) => ({
+        value: id,
+        label: `${t.label}${t.background ? ' (ground)' : ''}`,
+      }))}
+    />
   );
 }
 
@@ -241,30 +237,25 @@ function DrawStyle({ session }: Readonly<{ session: Session }>) {
   const style = session.itemStyle;
   return (
     <div className="map-tools-row" role="toolbar" aria-label="Drawing style">
-      <input
-        type="color"
+      <ColorInput
         value={style.stroke}
         title="Line colour"
         aria-label="Line colour"
         onChange={(e) => session.setItemStyle({ stroke: e.target.value })}
       />
-      <select
-        value={style.strokeWidth}
+      <SelectField
+        value={String(style.strokeWidth)}
         title="Line width"
         aria-label="Line width"
-        onChange={(e) => session.setItemStyle({ strokeWidth: Number(e.target.value) })}
-      >
-        {WIDTHS.map((w) => (
-          <option key={w} value={w}>
-            {w} px
-          </option>
-        ))}
-      </select>
+        onValueChange={(w) => session.setItemStyle({ strokeWidth: Number(w) })}
+        options={WIDTHS.map((w) => ({ value: String(w), label: `${w} px` }))}
+      />
       <label className="map-tools-check" title="Fill boxes, ellipses and polygons">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={!!style.fill}
-          onChange={(e) => session.setItemStyle({ fill: e.target.checked ? style.stroke : undefined, fillAlpha: 0.3 })}
+          onCheckedChange={(on) =>
+            session.setItemStyle({ fill: on === true ? style.stroke : undefined, fillAlpha: 0.3 })
+          }
         />
         Fill
       </label>
@@ -277,18 +268,12 @@ function LevelPicker({ session }: Readonly<{ session: Session }>) {
   const levels = session.world?.levels ?? [];
   if (!levels.length) return null;
   return (
-    <select
+    <SelectField
       value={session.viewLevel ?? ''}
       aria-label="Level"
       title="The floor shown: walls, lights, tiles and drawings on others are left out"
-      onChange={(e) => session.setViewLevel(e.target.value || undefined)}
-    >
-      <option value="">Every level</option>
-      {levels.map((l) => (
-        <option key={l.id} value={l.id}>
-          {l.name}
-        </option>
-      ))}
-    </select>
+      onValueChange={(id) => session.setViewLevel(id || undefined)}
+      options={[{ value: '', label: 'Every level' }, ...levels.map((l) => ({ value: l.id, label: l.name }))]}
+    />
   );
 }

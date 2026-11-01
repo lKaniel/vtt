@@ -3,6 +3,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { api, type SessionInfo } from '../account-api.ts';
 import type { Route } from '../route.ts';
 import { ROLE_NAMES } from './PlayersTab.tsx';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
 
 /** The tavern backdrop with a centred column, shared by the menu screens. */
 function MenuShell({ title, children, wide }: Readonly<{ title: string; children: ReactNode; wide?: boolean }>) {
@@ -60,9 +62,9 @@ function MenuButton({
   primary,
 }: Readonly<{ children: ReactNode; onClick: () => void; primary?: boolean }>) {
   return (
-    <button className={primary ? 'menu-button primary' : 'menu-button'} onClick={onClick}>
+    <Button variant={primary ? 'default' : 'menu'} size="xl" onClick={onClick}>
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -97,17 +99,17 @@ export function AuthScreen({
       <form className="auth frame" onSubmit={(e) => void submit(e)}>
         <label className="auth-field">
           <span>Username</span>
-          <input autoFocus autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <Input autoFocus autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
         </label>
         {register && (
           <label className="auth-field">
             <span>Name at the table</span>
-            <input value={name} placeholder="What others see" onChange={(e) => setName(e.target.value)} />
+            <Input value={name} placeholder="What others see" onChange={(e) => setName(e.target.value)} />
           </label>
         )}
         <label className="auth-field">
           <span>Password</span>
-          <input
+          <Input
             type="password"
             autoComplete={register ? 'new-password' : 'current-password'}
             value={password}
@@ -116,20 +118,21 @@ export function AuthScreen({
         </label>
         {error && <p className="menu-error">{error}</p>}
         <div className="auth-actions">
-          <button type="button" className="btn" onClick={() => go({ name: 'menu' })}>
+          <Button type="button" variant="outline" onClick={() => go({ name: 'menu' })}>
             Back
-          </button>
-          <button type="submit" className="btn primary" disabled={busy || !username || !password}>
+          </Button>
+          <Button type="submit" disabled={busy || !username || !password}>
             {register ? 'Create account' : 'Sign in'}
-          </button>
+          </Button>
         </div>
-        <button
+        <Button
           type="button"
-          className="link auth-switch"
+          variant="link"
+          className="auth-switch"
           onClick={() => go({ name: register ? 'login' : 'register' })}
         >
           {register ? 'Already have an account? Sign in' : 'New here? Create an account'}
-        </button>
+        </Button>
       </form>
     </MenuShell>
   );
@@ -158,9 +161,9 @@ export function SeatsScreen({ go, onJoin }: Readonly<{ go: (to: Route) => void; 
           </button>
         ))}
       </div>
-      <button className="btn menu-back" onClick={() => go({ name: 'menu' })}>
+      <Button variant="outline" className="menu-back" onClick={() => go({ name: 'menu' })}>
         Back
-      </button>
+      </Button>
     </MenuShell>
   );
 }

@@ -1,3 +1,4 @@
+import { Redo2Icon, Undo2Icon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { SoundScape } from '../audio.ts';
 import { MapView } from '../canvas/MapView.ts';
@@ -17,6 +18,7 @@ import { PartyBar } from './PartyBar.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
+import { Button } from './kit/button.tsx';
 
 export function GameScreen({
   playerId,
@@ -74,9 +76,9 @@ export function GameScreen({
           {session.you?.name}
         </span>
         <UndoButtons session={session} />
-        <button className="link" onClick={onLeave}>
+        <Button variant="link" onClick={onLeave}>
           Leave
-        </button>
+        </Button>
       </header>
       <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />
       <PartyBar session={session} />
@@ -167,24 +169,26 @@ function UndoButtons({ session }: Readonly<{ session: Session }>) {
   const { undo, redo } = session.history;
   return (
     <span className="undo-buttons">
-      <button
-        className="icon-button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         disabled={!undo}
         onClick={() => session.undo()}
         title={undo ? `Undo the ${undo} (Ctrl+Z)` : 'Nothing to undo'}
         aria-label="Undo"
       >
-        ↶
-      </button>
-      <button
-        className="icon-button"
+        <Undo2Icon />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
         disabled={!redo}
         onClick={() => session.redo()}
         title={redo ? `Redo the ${redo} (Ctrl+Shift+Z)` : 'Nothing to redo'}
         aria-label="Redo"
       >
-        ↷
-      </button>
+        <Redo2Icon />
+      </Button>
     </span>
   );
 }

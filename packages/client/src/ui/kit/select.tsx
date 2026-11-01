@@ -4,21 +4,25 @@ import type * as React from 'react';
 import { cn } from '@/lib/utils';
 import { fieldClass } from './input.tsx';
 
-function Select(props: React.ComponentProps<typeof SelectPrimitive.Root>) {
+function Select(props: Readonly<React.ComponentProps<typeof SelectPrimitive.Root>>) {
   return <SelectPrimitive.Root data-slot="select" {...props} />;
 }
 
-function SelectValue(props: React.ComponentProps<typeof SelectPrimitive.Value>) {
+function SelectValue(props: Readonly<React.ComponentProps<typeof SelectPrimitive.Value>>) {
   return <SelectPrimitive.Value data-slot="select-value" {...props} />;
 }
 
-function SelectTrigger({ className, children, ...props }: React.ComponentProps<typeof SelectPrimitive.Trigger>) {
+function SelectTrigger({
+  className,
+  children,
+  ...props
+}: Readonly<React.ComponentProps<typeof SelectPrimitive.Trigger>>) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={cn(
         fieldClass,
-        'flex cursor-pointer items-center justify-between gap-2 text-left data-placeholder:text-muted-foreground [&>span]:truncate',
+        'flex max-w-full cursor-pointer items-center justify-between gap-2 overflow-hidden text-left data-placeholder:text-muted-foreground [&>span]:truncate',
         className,
       )}
       {...props}
@@ -36,14 +40,14 @@ function SelectContent({
   children,
   position = 'popper',
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Content>) {
+}: Readonly<React.ComponentProps<typeof SelectPrimitive.Content>>) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
         position={position}
         className={cn(
-          'relative z-[1000] max-h-(--radix-select-content-available-height) min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border border-gold-dim bg-popover text-popover-foreground shadow-[0_10px_30px_rgba(0,0,0,0.7)]',
+          'relative z-[1000] max-h-(--radix-select-content-available-height) min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border border-gold-dim bg-popover font-body text-popover-foreground shadow-[0_10px_30px_rgba(0,0,0,0.7)]',
           position === 'popper' && 'w-full min-w-(--radix-select-trigger-width) data-[side=bottom]:translate-y-1',
           className,
         )}
@@ -55,7 +59,7 @@ function SelectContent({
   );
 }
 
-function SelectItem({ className, children, ...props }: React.ComponentProps<typeof SelectPrimitive.Item>) {
+function SelectItem({ className, children, ...props }: Readonly<React.ComponentProps<typeof SelectPrimitive.Item>>) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -75,4 +79,48 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
   );
 }
 
-export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue };
+/** Radix gives no item the empty value; this one stands in for it. */
+const NONE = '\u0000none';
+
+interface SelectFieldProps {
+  value: string;
+  onValueChange: (value: string) => void;
+  /** The choices; a value may be '' (none). */
+  options: readonly { value: string; label: React.ReactNode; disabled?: boolean }[];
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  id?: string;
+  title?: string;
+  'aria-label'?: string;
+}
+
+/** A whole select in one: a trigger showing the choice and a list of options. */
+function SelectField({
+  value,
+  onValueChange,
+  options,
+  placeholder,
+  className,
+  ...trigger
+}: Readonly<SelectFieldProps>) {
+  // '' with no '' option shows the placeholder (a "Send…" picker that acts and resets).
+  const none = options.some((o) => o.value === '');
+  const wire = (v: string) => (v === '' && none ? NONE : v);
+  return (
+    <Select value={wire(value)} onValueChange={(v) => onValueChange(v === NONE ? '' : v)} disabled={trigger.disabled}>
+      <SelectTrigger className={className} {...trigger}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((o) => (
+          <SelectItem key={o.value} value={wire(o.value)} disabled={o.disabled}>
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+export { Select, SelectContent, SelectField, SelectItem, SelectTrigger, SelectValue };

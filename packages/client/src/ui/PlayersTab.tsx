@@ -1,5 +1,6 @@
 import { isGm, type Role, RoleSchema } from '@vtt/shared';
 import type { Session } from '../session.ts';
+import { SelectField } from './kit/select.tsx';
 
 /** How each role reads on screen, and what it lets a seat do. */
 export const ROLE_NAMES: Record<Role, { name: string; about: string }> = {
@@ -27,19 +28,14 @@ export function PlayersTab({ session }: Readonly<{ session: Session }>) {
                 {p.name}
                 {p.id === session.you?.id && <span className="muted"> (you)</span>}
               </span>
-              <select
+              <SelectField
                 value={p.role}
                 aria-label={`${p.name}'s role`}
                 disabled={lastGm}
                 title={lastGm ? 'The table needs a GM' : ROLE_NAMES[p.role].about}
-                onChange={(e) => session.setRole(p.id, e.target.value as Role)}
-              >
-                {RoleSchema.options.map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_NAMES[r].name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(r) => session.setRole(p.id, r as Role)}
+                options={RoleSchema.options.map((r) => ({ value: r, label: ROLE_NAMES[r].name }))}
+              />
             </li>
           );
         })}

@@ -18,6 +18,9 @@ import { Details } from './SheetDetails.tsx';
 import { EffectsPage, FeaturesPage, InventoryPage, SpellsPage } from './SheetPages.tsx';
 import { useAutoSave } from './useAutoSave.ts';
 import { sheetDropTarget } from './sheet-drop.ts';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
+import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -108,19 +111,15 @@ function Pages(props: Readonly<SheetProps & { rules: Edition }>) {
   const shown = pages.includes(page) ? page : 'Inventory';
   return (
     <div className="sheet-page" data-area={AREA[shown]}>
-      <nav className="sheet-tabs">
-        {pages.map((p) => (
-          <button
-            key={p}
-            className={p === shown ? 'on' : ''}
-            data-area={AREA[p]}
-            onClick={() => setPage(p)}
-            onDragEnter={() => AREA[p] && setPage(p)}
-          >
-            {p}
-          </button>
-        ))}
-      </nav>
+      <Tabs value={shown} onValueChange={(p) => setPage(p as Page)}>
+        <TabsList className="sheet-tabs mb-2">
+          {pages.map((p) => (
+            <TabsTrigger key={p} value={p} data-area={AREA[p]} onDragEnter={() => AREA[p] && setPage(p)}>
+              {p}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       {shown === 'Inventory' && <InventoryPage {...props} />}
       {shown === 'Spells' && <SpellsPage {...props} />}
       {shown === 'Features' && <FeaturesPage {...props} />}
@@ -140,7 +139,7 @@ function SheetHead({ session, kind, value, update, edit }: Readonly<SheetProps>)
     <header className="sheet-head">
       <div>
         {edit ? (
-          <input
+          <Input
             className="sheet-name-input"
             value={value.name}
             aria-label="Name"
@@ -153,13 +152,11 @@ function SheetHead({ session, kind, value, update, edit }: Readonly<SheetProps>)
       </div>
       <div className="sheet-head-tools">
         {editable && (
-          <button className="btn small" onClick={() => session.setSheetEdit(!edit)} title="Edit mode (E)">
+          <Button variant="outline" size="sm" onClick={() => session.setSheetEdit(!edit)} title="Edit mode (E)">
             {edit ? 'Done' : 'Edit'}
-          </button>
+          </Button>
         )}
-        <button className="close" onClick={() => session.openSheet(undefined)} aria-label="Close (C)">
-          ×
-        </button>
+        <Button variant="close" onClick={() => session.openSheet(undefined)} aria-label="Close (C)" title="Close (C)" />
       </div>
     </header>
   );
@@ -278,12 +275,12 @@ function HpEdit({ value, update, sheet }: Readonly<SheetProps>) {
         />
       </label>
       <NumberInput value={amount} min={0} onChange={setAmount} placeholder="±" />
-      <button className="btn small" onClick={() => apply(-1)} title="Take damage">
+      <Button variant="outline" size="sm" onClick={() => apply(-1)} title="Take damage">
         Hit
-      </button>
-      <button className="btn small" onClick={() => apply(1)} title="Heal">
+      </Button>
+      <Button variant="outline" size="sm" onClick={() => apply(1)} title="Heal">
         Heal
-      </button>
+      </Button>
     </div>
   );
 }
@@ -304,7 +301,7 @@ function Defenses({ value, update, sheet, edit }: Readonly<SheetProps>) {
           <dt>{label}</dt>
           <dd>
             {edit ? (
-              <input
+              <Input
                 key={listText(value.stats?.[key])}
                 defaultValue={listText(value.stats?.[key])}
                 placeholder={listText(sheet[key]) || 'e.g. fire, cold'}
@@ -340,38 +337,42 @@ function ActorLinkButtons({ session, id, linked }: Readonly<{ session: Session; 
   const relink = (how: 'link' | 'unlink' | 'save' | 'reset') => session.relinkToken(id, how);
   if (linked) {
     return (
-      <button
-        className="btn small"
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => relink('unlink')}
         title="Shares its actor's hit points and effects; unlink to make it a copy with its own"
       >
         Unlink
-      </button>
+      </Button>
     );
   }
   return (
     <>
-      <button
-        className="btn small"
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => relink('save')}
         title="Save this copy's stats, gear and looks to its actor (its wounds and name stay its own)"
       >
         Save to actor
-      </button>
-      <button
-        className="btn small"
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => relink('reset')}
         title="Start over from the actor, keeping only its name"
       >
         Reset
-      </button>
-      <button
-        className="btn small"
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => relink('link')}
         title="Share the actor's hit points and effects from now on"
       >
         Link
-      </button>
+      </Button>
     </>
   );
 }
@@ -396,25 +397,26 @@ function GmFootButtons({ session, kind, value }: Readonly<SheetProps>) {
   const tokenButtons = value.actor ? (
     <ActorLinkButtons session={session} id={value.id} linked={value.linked === true} />
   ) : (
-    <button className="btn small" onClick={saveAsActor} title="Keep a copy in the Actors list">
+    <Button variant="outline" size="sm" onClick={saveAsActor} title="Keep a copy in the Actors list">
       Save as actor
-    </button>
+    </Button>
   );
   return (
     <>
       {kind === 'token' ? (
         tokenButtons
       ) : (
-        <button
-          className="btn small"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => session.spawn({ kind: 'actor', id: value.id }, session.viewCentre())}
         >
           Place on map
-        </button>
+        </Button>
       )}
-      <button className={confirm ? 'btn small danger' : 'btn small'} onClick={remove} onBlur={() => setConfirm(false)}>
+      <Button variant={confirm ? 'destructive' : 'outline'} size="sm" onClick={remove} onBlur={() => setConfirm(false)}>
         {confirm ? 'Really delete?' : 'Delete'}
-      </button>
+      </Button>
     </>
   );
 }

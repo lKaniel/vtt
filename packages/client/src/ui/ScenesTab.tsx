@@ -2,6 +2,13 @@ import type { Doc, Patch } from '@vtt/core';
 import { gridSizePatch, isGm } from '@vtt/shared';
 import { useState } from 'react';
 import type { Session } from '../session.ts';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
+import { Toggle } from './kit/toggle.tsx';
+import { SelectField } from './kit/select.tsx';
+import { ColorInput } from './kit/color-input.tsx';
+import { Slider } from './kit/slider.tsx';
+import { Checkbox } from './kit/checkbox.tsx';
 
 /**
  * GM: the game's scenes. View looks at one (to prepare it) without moving
@@ -20,10 +27,10 @@ export function ScenesTab({ session }: Readonly<{ session: Session }>) {
   return (
     <div className="scenes-tab">
       <form className="scene-new" onSubmit={add}>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New scene name" />
-        <button className="btn small" disabled={!name.trim()}>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="New scene name" />
+        <Button variant="outline" size="sm" disabled={!name.trim()}>
           Add
-        </button>
+        </Button>
       </form>
       <ul className="rows">
         {session.sceneList().map((doc) => (
@@ -73,27 +80,33 @@ function SceneRow({
         </div>
       )}
       <div className="scene-actions">
-        <button className="btn small" disabled={here} onClick={() => session.viewScene(id)}>
+        <Button variant="outline" size="sm" disabled={here} onClick={() => session.viewScene(id)}>
           View
-        </button>
-        <button className="btn small" disabled={active} onClick={() => session.activateScene(id)}>
+        </Button>
+        <Button variant="outline" size="sm" disabled={active} onClick={() => session.activateScene(id)}>
           Play here
-        </button>
+        </Button>
         <SendPlayer session={session} scene={id} />
-        <button className={`btn small${open ? ' active' : ''}`} onClick={onToggle}>
+        <Toggle variant="plate" pressed={open} onPressedChange={onToggle}>
           Settings
-        </button>
-        <button className="btn small" onClick={() => session.duplicateScene(id)} title="A copy with everything on it">
+        </Toggle>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => session.duplicateScene(id)}
+          title="A copy with everything on it"
+        >
           Copy
-        </button>
-        <button
-          className="btn small"
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           disabled={active}
           title={active ? 'Play another scene first' : 'Delete it and everything on it (Ctrl+Z undoes)'}
           onClick={() => session.deleteScene(id)}
         >
           Delete
-        </button>
+        </Button>
       </div>
       {open && <SceneSettings session={session} doc={doc} />}
     </li>
@@ -105,18 +118,14 @@ function SendPlayer({ session, scene }: Readonly<{ session: Session; scene: stri
   const elsewhere = session.players.filter((p) => !isGm(p) && !session.seatsOn(scene).includes(p));
   if (!elsewhere.length) return null;
   return (
-    <select
+    <SelectField
       value=""
       aria-label="Send a player here"
-      onChange={(e) => session.sendPlayer(e.target.value, scene === session.activeScene ? undefined : scene)}
-    >
-      <option value="">Send…</option>
-      {elsewhere.map((p) => (
-        <option key={p.id} value={p.id}>
-          {p.name}
-        </option>
-      ))}
-    </select>
+      placeholder="Send…"
+      className="h-8 text-xs"
+      onValueChange={(id) => session.sendPlayer(id, scene === session.activeScene ? undefined : scene)}
+      options={elsewhere.map((p) => ({ value: p.id, label: p.name }))}
+    />
   );
 }
 
@@ -130,7 +139,7 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
     <div className="scene-settings">
       <label>
         <span>Name</span>
-        <input
+        <Input
           defaultValue={nameOf(doc)}
           onBlur={(e) =>
             e.target.value.trim() && e.target.value !== nameOf(doc) && edit({ name: e.target.value.trim() })
@@ -139,14 +148,18 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
       </label>
       <label>
         <span>Grid</span>
-        <select value={str(doc, 'grid', 'none')} onChange={(e) => edit({ grid: e.target.value })}>
-          <option value="none">None: walk anywhere, distances in feet</option>
-          <option value="square">Squares: walk square to square</option>
-        </select>
+        <SelectField
+          value={str(doc, 'grid', 'none')}
+          onValueChange={(grid) => edit({ grid })}
+          options={[
+            { value: 'none', label: 'None: walk anywhere, distances in feet' },
+            { value: 'square', label: 'Squares: walk square to square' },
+          ]}
+        />
       </label>
       <label>
         <span>Pixels per 5 ft</span>
-        <input
+        <Input
           type="number"
           min={10}
           defaultValue={num(doc, 'gridSize', 100)}
@@ -157,24 +170,22 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
       </label>
       <label>
         <span>Grid colour</span>
-        <input
-          type="color"
+        <ColorInput
           defaultValue={str(doc, 'gridColor', '#000000')}
           onBlur={(e) => edit({ gridColor: e.target.value })}
         />
       </label>
       <label>
         <span>Grid opacity</span>
-        <Slider value={num(doc, 'gridOpacity', 0.16)} onDone={(v) => edit({ gridOpacity: v })} />
+        <Amount value={num(doc, 'gridOpacity', 0.16)} onDone={(v) => edit({ gridOpacity: v })} />
       </label>
       <label>
         <span>Darkness</span>
-        <Slider value={num(doc, 'darkness', 0)} onDone={(v) => edit({ darkness: v })} />
+        <Amount value={num(doc, 'darkness', 0)} onDone={(v) => edit({ darkness: v })} />
       </label>
       <label>
         <span>Background</span>
-        <input
-          type="color"
+        <ColorInput
           defaultValue={str(doc, 'background', '#1b1d22')}
           onBlur={(e) => edit({ background: e.target.value })}
         />
@@ -195,18 +206,18 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
   );
 }
 
-function Slider({ value, onDone }: Readonly<{ value: number; onDone: (v: number) => void }>) {
+/** 0 to 1, saved when let go. */
+function Amount({ value, onDone }: Readonly<{ value: number; onDone: (v: number) => void }>) {
   const [v, setV] = useState(value);
   return (
-    <input
-      type="range"
+    <Slider
+      className="w-32"
       min={0}
       max={1}
       step={0.05}
-      value={v}
-      onChange={(e) => setV(Number(e.target.value))}
-      onPointerUp={() => onDone(v)}
-      onKeyUp={() => onDone(v)}
+      value={[v]}
+      onValueChange={([n]) => setV(n!)}
+      onValueCommit={([n]) => onDone(n!)}
     />
   );
 }
@@ -219,7 +230,7 @@ function Check({
 }: Readonly<{ label: string; value: boolean; onChange: (v: boolean) => void; title?: string }>) {
   return (
     <label className="scene-check" title={title}>
-      <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} />
+      <Checkbox checked={value} onCheckedChange={(v) => onChange(v === true)} />
       <span>{label}</span>
     </label>
   );

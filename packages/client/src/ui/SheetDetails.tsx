@@ -1,3 +1,4 @@
+import { XIcon } from 'lucide-react';
 import { isGm, type Level, levelOf } from '@vtt/shared';
 import { editionOf, toEdition } from '@vtt/system-dnd5e';
 import { gameContent } from '../content.ts';
@@ -6,6 +7,10 @@ import { setOwnership, setStat } from '../token-edit.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { Check, Field, NumberInput, TextInput } from './EditorFields.tsx';
 import { withKey, type Draft, type Update } from './sheet-model.ts';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
+import { ColorInput } from './kit/color-input.tsx';
+import { SelectField } from './kit/select.tsx';
 
 // The Details page: who the creature is and which rules build it. Who owns
 // it and whether it hides are the GM's; a trusted owner sees the rest.
@@ -45,16 +50,14 @@ function Identity({ session, kind, value, update }: Readonly<SheetProps>) {
       )}
       <div className="ed-grid">
         <Field label="Colour">
-          <input type="color" value={value.color} onChange={(e) => set('color')(e.target.value)} />
+          <ColorInput value={value.color} onChange={(e) => set('color')(e.target.value)} />
         </Field>
         <Field label="Size">
-          <select value={value.size} onChange={(e) => set('size', true)(Number(e.target.value))}>
-            {SIZES.map(([n, label]) => (
-              <option key={n} value={n}>
-                {label}
-              </option>
-            ))}
-          </select>
+          <SelectField
+            value={String(value.size)}
+            onValueChange={(n) => set('size', true)(Number(n))}
+            options={SIZES.map(([n, label]) => ({ value: String(n), label }))}
+          />
         </Field>
         <Field label="Darkvision (ft)">
           <NumberInput value={value.darkvision} min={0} onChange={(v) => set('darkvision')(v ?? 0)} />
@@ -123,18 +126,13 @@ function OwnershipFields({ session, value, update }: Readonly<Pick<SheetProps, '
       <div className="ed-grid">
         {rows.map((p) => (
           <Field key={p.id} label={p.name}>
-            <select
+            <SelectField
               value={p.level}
               disabled={p.observer}
               title={p.observer ? 'An observer seat only watches' : undefined}
-              onChange={(e) => update((d) => setOwnership(d, p.id, e.target.value as Level), true)}
-            >
-              {LEVELS.map(([v, label]) => (
-                <option key={v} value={v}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              onValueChange={(v) => update((d) => setOwnership(d, p.id, v as Level), true)}
+              options={LEVELS.map(([v, label]) => ({ value: v, label }))}
+            />
           </Field>
         ))}
       </div>
@@ -165,11 +163,15 @@ function RulesFields({ session, value, update }: Readonly<SheetProps>) {
         ))}
       </datalist>
       <Field label="Rules" wide>
-        <select value={value.stats?.rules ?? ''} onChange={(e) => stat('rules', true)(e.target.value || undefined)}>
-          <option value="">World ({toEdition(session.world?.rules)})</option>
-          <option value="2014">2014 (SRD 5.1)</option>
-          <option value="2024">2024 (SRD 5.2)</option>
-        </select>
+        <SelectField
+          value={value.stats?.rules ?? ''}
+          onValueChange={(r) => stat('rules', true)(r || undefined)}
+          options={[
+            { value: '', label: `World (${toEdition(session.world?.rules)})` },
+            { value: '2014', label: '2014 (SRD 5.1)' },
+            { value: '2024', label: '2024 (SRD 5.2)' },
+          ]}
+        />
       </Field>
       <div className="ed-grid">
         <Field label="Class">
@@ -185,7 +187,9 @@ function RulesFields({ session, value, update }: Readonly<SheetProps>) {
 
 export function RemoveButton({ onClick, className = '' }: Readonly<{ onClick: () => void; className?: string }>) {
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="icon-sm"
       className={`ed-remove ${className}`}
       onClick={(e) => {
         e.stopPropagation();
@@ -194,8 +198,8 @@ export function RemoveButton({ onClick, className = '' }: Readonly<{ onClick: ()
       aria-label="Remove"
       title="Remove"
     >
-      ×
-    </button>
+      <XIcon />
+    </Button>
   );
 }
 
@@ -216,7 +220,7 @@ export function Adder({
   };
   return (
     <div className="ed-adder">
-      <input
+      <Input
         type="text"
         value={text}
         list={listId}
@@ -229,9 +233,9 @@ export function Adder({
           <option key={o.id} value={o.name} />
         ))}
       </datalist>
-      <button className="btn small" onClick={add}>
+      <Button variant="outline" size="sm" onClick={add}>
         Add
-      </button>
+      </Button>
     </div>
   );
 }

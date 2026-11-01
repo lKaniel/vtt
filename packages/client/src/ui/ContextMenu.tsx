@@ -1,5 +1,7 @@
+import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import type { Session } from '../session.ts';
+import { Button } from './kit/button.tsx';
 
 /** The right-click menu the map opened, at the pointer. A click elsewhere closes it. */
 export function ContextMenu({ session }: Readonly<{ session: Session }>) {
@@ -20,17 +22,19 @@ export function ContextMenu({ session }: Readonly<{ session: Session }>) {
   return (
     <div ref={box} className="context-menu frame" style={{ left, top }} role="menu">
       {menu.items.map((item) => (
-        <button
+        <Button
           key={item.label}
           role="menuitem"
-          className={item.danger ? 'danger' : undefined}
+          variant="ghost"
+          size="sm"
+          className={cn('w-full justify-start font-body text-sm', item.danger ? 'text-[#ffb3a8]' : 'text-foreground')}
           onClick={() => {
             session.closeMenu();
             item.run();
           }}
         >
           {item.label}
-        </button>
+        </Button>
       ))}
     </div>
   );

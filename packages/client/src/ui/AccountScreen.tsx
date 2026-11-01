@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { api, type SessionInfo } from '../account-api.ts';
 import { characterSummary } from '../creator.ts';
 import type { Route } from '../route.ts';
+import { Button } from './kit/button.tsx';
 
 /** The signed-in player's roster; games are entered from the lobby (LobbyScreens.tsx). */
 export function AccountScreen({
@@ -35,15 +36,13 @@ export function AccountScreen({
           <h1 className="account-title">{account.name}&rsquo;s roster</h1>
         </div>
         <div className="account-actions">
-          <button className="btn primary" onClick={() => go({ name: 'games' })}>
-            Your games
-          </button>
-          <button className="btn" onClick={() => go({ name: 'menu' })}>
+          <Button onClick={() => go({ name: 'games' })}>Your games</Button>
+          <Button variant="outline" onClick={() => go({ name: 'menu' })}>
             Main menu
-          </button>
-          <button className="btn" onClick={() => void signOut()}>
+          </Button>
+          <Button variant="outline" onClick={() => void signOut()}>
             Sign out
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -98,15 +97,15 @@ function ChosenBar({ c, go, onDelete }: Readonly<{ c: Character; go: (to: Route)
         <span>{characterSummary(c)}</span>
         {broken.length > 0 && <span className="chosen-warn">{broken[0]}</span>}
       </div>
-      <button className="btn danger" onClick={onDelete}>
+      <Button variant="destructive" onClick={onDelete}>
         Delete
-      </button>
-      <button className="btn" onClick={() => go({ name: 'create', id: c.id })}>
+      </Button>
+      <Button variant="outline" onClick={() => go({ name: 'create', id: c.id })}>
         Edit
-      </button>
-      <button className="btn" disabled={c.level >= 20} onClick={() => go({ name: 'levelup', id: c.id })}>
+      </Button>
+      <Button variant="outline" disabled={c.level >= 20} onClick={() => go({ name: 'levelup', id: c.id })}>
         Level up
-      </button>
+      </Button>
     </div>
   );
 }

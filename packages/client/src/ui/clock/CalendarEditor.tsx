@@ -20,7 +20,7 @@ export function CalendarEditor({ session }: Readonly<{ session: Session }>) {
       <div className="grid grid-cols-[1fr_7rem_5rem] gap-2">
         <Label className="flex-col items-start gap-1">
           Name
-          <Input value={draft.name} onChange={(e) => set({ name: e.target.value })} />
+          <Input className="w-full" value={draft.name} onChange={(e) => set({ name: e.target.value })} />
         </Label>
         <Label className="flex-col items-start gap-1">
           First year
@@ -28,7 +28,12 @@ export function CalendarEditor({ session }: Readonly<{ session: Session }>) {
         </Label>
         <Label className="flex-col items-start gap-1">
           Era
-          <Input value={draft.era ?? ''} placeholder="DR" onChange={(e) => set({ era: e.target.value })} />
+          <Input
+            className="w-full"
+            value={draft.era ?? ''}
+            placeholder="DR"
+            onChange={(e) => set({ era: e.target.value })}
+          />
         </Label>
       </div>
       <Section title="Months" note={`${draft.months.reduce((n, m) => n + m.days, 0)} days a year`}>

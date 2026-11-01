@@ -3,6 +3,11 @@ import { useEffect, useState } from 'react';
 import { assetUrl } from '../assets.ts';
 import type { Session } from '../session.ts';
 import { startDrag } from './ActorsTab.tsx';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
+import { Toggle } from './kit/toggle.tsx';
+import { SelectField } from './kit/select.tsx';
+import { Checkbox } from './kit/checkbox.tsx';
 
 // The GM's Assets tab: the pictures, sounds and videos of the game and the
 // packs it uses (search, tags, upload; drag a picture onto the map to make
@@ -23,12 +28,12 @@ export function AssetsTab({ session }: Readonly<{ session: Session }>) {
   return (
     <div className="lib assets">
       <nav className="lib-cats">
-        <button className={view === 'media' ? 'on' : ''} onClick={() => setView('media')}>
+        <Toggle pressed={view === 'media'} onPressedChange={() => setView('media')}>
           Media
-        </button>
-        <button className={view === 'packs' ? 'on' : ''} onClick={() => setView('packs')}>
+        </Toggle>
+        <Toggle pressed={view === 'packs'} onPressedChange={() => setView('packs')}>
           Packs
-        </button>
+        </Toggle>
       </nav>
       {view === 'media' ? <MediaView session={session} /> : <PacksView session={session} />}
     </div>
@@ -59,10 +64,12 @@ function UploadButton({ session }: Readonly<{ session: Session }>) {
     e.target.value = '';
   };
   return (
-    <label className="btn small asset-upload">
-      Upload
-      <input type="file" accept="image/*,audio/*,video/*" multiple hidden onChange={onPick} />
-    </label>
+    <Button asChild variant="outline" size="sm" className="asset-upload">
+      <label>
+        Upload
+        <input type="file" accept="image/*,audio/*,video/*" multiple hidden onChange={onPick} />
+      </label>
+    </Button>
   );
 }
 
@@ -86,33 +93,31 @@ function MediaFilters({
   const packs = session.packs.filter((p) => p.enabled && !p.builtin);
   return (
     <div className="lib-filter">
-      <input
+      <Input
         className="lib-search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search media…"
       />
-      <select value={kind} onChange={(e) => setKind(e.target.value as MediaKind | '')} aria-label="Kind">
-        <option value="">All</option>
-        {(Object.keys(KIND_LABEL) as MediaKind[]).map((k) => (
-          <option key={k} value={k}>
-            {KIND_LABEL[k]}
-          </option>
-        ))}
-      </select>
-      <select
+      <SelectField
+        value={kind}
+        onValueChange={(k) => setKind(k as MediaKind | '')}
+        aria-label="Kind"
+        options={[
+          { value: '', label: 'All' },
+          ...(Object.keys(KIND_LABEL) as MediaKind[]).map((k) => ({ value: k, label: KIND_LABEL[k] })),
+        ]}
+      />
+      <SelectField
         value={source ?? '*'}
-        onChange={(e) => setSource(e.target.value === '*' ? undefined : e.target.value)}
+        onValueChange={(s) => setSource(s === '*' ? undefined : s)}
         aria-label="From"
-      >
-        <option value="*">Everywhere</option>
-        <option value="">This game</option>
-        {packs.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}
-          </option>
-        ))}
-      </select>
+        options={[
+          { value: '*', label: 'Everywhere' },
+          { value: '', label: 'This game' },
+          ...packs.map((p) => ({ value: p.id, label: p.name })),
+        ]}
+      />
       <UploadButton session={session} />
     </div>
   );
@@ -138,13 +143,14 @@ function MediaView({ session }: Readonly<{ session: Session }>) {
       <MediaFilters {...{ session, query, setQuery, kind, setKind, source, setSource }} />
       <div className="asset-tags">
         {topTags(base, TAGS).map((t) => (
-          <button
+          <Toggle
             key={t}
-            className={`lib-tag${t === tag ? ' on' : ''}`}
-            onClick={() => setTag(t === tag ? undefined : t)}
+            className="h-6 px-2 text-xs"
+            pressed={t === tag}
+            onPressedChange={(on) => setTag(on ? t : undefined)}
           >
             {t}
-          </button>
+          </Toggle>
         ))}
       </div>
       <ul className="asset-grid lib-scroll">
@@ -227,11 +233,10 @@ function PackRow({ session, pack }: Readonly<{ session: Session; pack: PackInfo 
   return (
     <li className={open ? 'lib-row lib-entry on' : 'lib-row lib-entry'}>
       <div className="lib-main pack-head">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={pack.enabled}
           disabled={pack.builtin}
-          onChange={(e) => session.setPackEnabled(pack.id, e.target.checked)}
+          onCheckedChange={(on) => session.setPackEnabled(pack.id, on === true)}
           aria-label={`Use ${pack.name}`}
         />
         <button className="lib-text" onClick={() => setOpen(!open)}>
@@ -296,9 +301,9 @@ function CompendiumView({
         {(docs ?? []).map((doc, i) => (
           <li key={i} className="lib-row">
             <span className="lib-name">{nameOf(doc)}</span>
-            <button className="btn small" onClick={() => add(doc)}>
+            <Button variant="outline" size="sm" onClick={() => add(doc)}>
               {compendium.type === 'scene' ? 'Import' : 'Add to Actors'}
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

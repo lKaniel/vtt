@@ -14,15 +14,23 @@ const buttonVariants = cva(
         /** The painted plate. */
         outline:
           'art-button text-gold-bright [text-shadow:0_1px_2px_#000] hover:art-button-lit active:art-button-pressed disabled:art-button-off disabled:text-[#2a2a2a] disabled:[text-shadow:none] disabled:opacity-100',
+        /** The painted card plate: a big choice on a menu screen. */
+        menu: 'art-card text-gold-bright [text-shadow:0_1px_3px_#000] hover:brightness-125',
         secondary: 'border border-border bg-secondary text-secondary-foreground hover:bg-accent',
         ghost: 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-        destructive: 'border border-destructive/60 bg-destructive/80 text-white hover:bg-destructive',
-        link: 'text-gold-bright underline-offset-4 hover:underline',
+        /** The painted plate with a warning red label: deleting, leaving. */
+        destructive:
+          'art-button text-[#ffb3a8] [text-shadow:0_1px_2px_#000] hover:art-button-lit hover:text-[#ffd0c8] active:art-button-pressed disabled:art-button-off disabled:text-[#2a2a2a] disabled:[text-shadow:none] disabled:opacity-100',
+        link: 'h-auto px-0 font-body text-muted-foreground underline underline-offset-2 hover:text-gold-bright',
+        /** The painted round close button. */
+        close:
+          "size-8 bg-[url('/art/ui/close-button.webp')] bg-contain bg-center bg-no-repeat text-[0px] hover:brightness-125",
       },
       size: {
         default: 'h-9 px-4 text-sm',
         sm: 'h-8 px-3 text-xs',
         lg: 'h-10 px-5 text-base',
+        xl: 'h-14 px-6 text-lg',
         icon: 'size-8',
         'icon-sm': 'size-7',
       },

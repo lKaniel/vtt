@@ -5,6 +5,9 @@ import { api, type Account } from '../account-api.ts';
 import { inviteCode, lastPlayedText, PENDING_INVITE } from '../lobby.ts';
 import type { Route } from '../route.ts';
 import { ROLE_NAMES } from './PlayersTab.tsx';
+import { Button } from './kit/button.tsx';
+import { Input } from './kit/input.tsx';
+import { SelectField } from './kit/select.tsx';
 
 // The lobby: the games you can enter, making a game, joining by invite, and
 // each game's page with its members and the door to the table.
@@ -53,12 +56,12 @@ export function GamesScreen({ account, go }: Readonly<{ account: Account; go: Go
   return (
     <div className="account lobby">
       <LobbyHead kicker={`Signed in as ${account.name}`} title="Your games">
-        <button className="btn" onClick={() => go({ name: 'account' })}>
+        <Button variant="outline" onClick={() => go({ name: 'account' })}>
           Your characters
-        </button>
-        <button className="btn" onClick={() => go({ name: 'menu' })}>
+        </Button>
+        <Button variant="outline" onClick={() => go({ name: 'menu' })}>
           Main menu
-        </button>
+        </Button>
       </LobbyHead>
       {error && <p className="menu-error">{error}</p>}
       <div className="lobby-body">
@@ -123,32 +126,30 @@ function NewGameForm({ systems, onMade }: Readonly<{ systems: SystemInfo[]; onMa
       <h2 className="lobby-heading">New game</h2>
       <label className="auth-field">
         <span>Name</span>
-        <input value={name} placeholder="The Lost Mine" onChange={(e) => setName(e.target.value)} />
+        <Input value={name} placeholder="The Lost Mine" onChange={(e) => setName(e.target.value)} />
       </label>
       <label className="auth-field">
         <span>System</span>
-        <select value={system} onChange={(e) => setSystem(e.target.value)}>
-          {systems.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+        <SelectField
+          className="w-full"
+          value={system}
+          onValueChange={setSystem}
+          options={systems.map((s) => ({ value: s.id, label: s.name }))}
+        />
       </label>
       <label className="auth-field">
         <span>Rules</span>
-        <select value={rules} onChange={(e) => setRules(e.target.value)}>
-          {editions.map((ed) => (
-            <option key={ed.id} value={ed.id}>
-              {ed.name}
-            </option>
-          ))}
-        </select>
+        <SelectField
+          className="w-full"
+          value={rules}
+          onValueChange={setRules}
+          options={editions.map((ed) => ({ value: ed.id, label: ed.name }))}
+        />
       </label>
       {error && <p className="menu-error">{error}</p>}
-      <button type="submit" className="btn primary" disabled={issues.length > 0}>
+      <Button type="submit" disabled={issues.length > 0}>
         Create game
-      </button>
+      </Button>
     </form>
   );
 }
@@ -171,12 +172,12 @@ function JoinByInvite({ go, onJoined }: Readonly<{ go: Go; onJoined: () => void 
       <h2 className="lobby-heading">Join a game</h2>
       <label className="auth-field">
         <span>Invite link or code</span>
-        <input value={text} placeholder="Paste what the GM sent you" onChange={(e) => setText(e.target.value)} />
+        <Input value={text} placeholder="Paste what the GM sent you" onChange={(e) => setText(e.target.value)} />
       </label>
       {error && <p className="menu-error">{error}</p>}
-      <button type="submit" className="btn" disabled={!inviteCode(text)}>
+      <Button type="submit" variant="outline" disabled={!inviteCode(text)}>
         Join
-      </button>
+      </Button>
     </form>
   );
 }
@@ -202,19 +203,19 @@ export function InviteScreen({ code, signedIn, go }: Readonly<{ code: string; si
       {!signedIn && (
         <nav className="menu-list">
           <p className="menu-note">Sign in or make an account, and you will join the game.</p>
-          <button className="menu-button primary" onClick={() => go({ name: 'login' })}>
+          <Button size="xl" onClick={() => go({ name: 'login' })}>
             Sign in
-          </button>
-          <button className="menu-button" onClick={() => go({ name: 'register' })}>
+          </Button>
+          <Button variant="menu" size="xl" onClick={() => go({ name: 'register' })}>
             Create an account
-          </button>
+          </Button>
         </nav>
       )}
       {signedIn && !error && <p className="menu-note">Joining…</p>}
       {error && (
-        <button className="btn menu-back" onClick={() => go({ name: 'games' })}>
+        <Button variant="outline" className="menu-back" onClick={() => go({ name: 'games' })}>
           Your games
-        </button>
+        </Button>
       )}
     </div>
   );

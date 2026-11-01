@@ -37,6 +37,7 @@ export function MonthRows({ months, onChange }: Readonly<{ months: Month[]; onCh
         <div key={i} className="flex items-center gap-1.5">
           <span className="w-5 text-right text-xs lining-nums tabular-nums text-muted-foreground">{i + 1}</span>
           <Input
+            className="w-full"
             aria-label={`Month ${i + 1}`}
             value={m.name}
             onChange={(e) => onChange(replaced(months, i, { ...m, name: e.target.value }))}
@@ -71,6 +72,7 @@ export function WeekdayRows({ weekdays, onChange }: Readonly<{ weekdays: string[
         {weekdays.map((w, i) => (
           <div key={i} className="flex items-center gap-1">
             <Input
+              className="w-full"
               aria-label={`Weekday ${i + 1}`}
               value={w}
               onChange={(e) => onChange(replaced(weekdays, i, e.target.value))}

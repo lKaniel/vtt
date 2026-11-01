@@ -1,6 +1,9 @@
 import type { Doc } from '@vtt/core';
 import { useState } from 'react';
 import type { Session } from '../session.ts';
+import { Button } from './kit/button.tsx';
+import { Textarea } from './kit/textarea.tsx';
+import { Checkbox } from './kit/checkbox.tsx';
 
 interface Result {
   text: string;
@@ -36,30 +39,31 @@ export function TablesTab({ session }: Readonly<{ session: Session }>) {
   const tables = session.docs.all('tables').sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
   return (
     <div className="scenes-tab">
-      <button className="btn small" onClick={() => session.createEntry('rolltable')}>
+      <Button variant="outline" size="sm" onClick={() => session.createEntry('rolltable')}>
         New table
-      </button>
+      </Button>
       <ul className="rows">
         {tables.map((doc) => (
           <li key={doc.id} className="scene-row">
-            <button className="link" onClick={() => setOpen(open === doc.id ? undefined : doc.id)}>
+            <Button variant="link" onClick={() => setOpen(open === doc.id ? undefined : doc.id)}>
               {nameOf(doc)}
-            </button>
+            </Button>
             <span className="row-actions">
-              <button className="btn small" onClick={() => session.rollTable(doc.id)}>
+              <Button variant="outline" size="sm" onClick={() => session.rollTable(doc.id)}>
                 Roll
-              </button>
-              <button
-                className="btn small"
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 title="Only you see the result"
                 onClick={() => session.rollTable(doc.id, true)}
               >
                 GM roll
-              </button>
+              </Button>
               {resultsOf(doc).some((r) => r.drawn) && (
-                <button className="btn small" onClick={() => session.resetTable(doc.id)}>
+                <Button variant="outline" size="sm" onClick={() => session.resetTable(doc.id)}>
                   Reset
-                </button>
+                </Button>
               )}
             </span>
             {open === doc.id && <TableEditor key={doc.rev} session={session} doc={doc} />}
@@ -78,12 +82,11 @@ function TableEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
   };
   return (
     <div className="table-edit">
-      <textarea value={text} onChange={(e) => setText(e.target.value)} onBlur={save} aria-label="Results" />
+      <Textarea value={text} onChange={(e) => setText(e.target.value)} onBlur={save} aria-label="Results" />
       <label className="map-tools-check">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={doc.replacement === false}
-          onChange={(e) => session.patchEntry('tables', doc.id, { replacement: e.target.checked ? false : null })}
+          onCheckedChange={(on) => session.patchEntry('tables', doc.id, { replacement: on === true ? false : null })}
         />
         Each result once (until reset)
       </label>
