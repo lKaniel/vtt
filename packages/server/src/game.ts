@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
-  canControlToken,
+  canControl,
   isGm,
   tokensVisibleTo,
   findPath,
@@ -17,7 +17,7 @@ import {
   type World,
   type WorldInfo,
 } from '@vtt/shared';
-import { OpError, type Doc } from '@vtt/core';
+import { OpError } from '@vtt/core';
 import type { WebSocket } from 'ws';
 import { parseClientMessage, type ClientMessage } from './client-messages.ts';
 import { CombatActions } from './combat-actions.ts';
@@ -28,7 +28,9 @@ import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
 import { Reactions } from './reactions.ts';
 import { Zones } from './zones.ts';
-import { Refusal, requireGm, Table } from './table.ts';
+import { DocFeed } from './doc-feed.ts';
+import { checkOps } from './op-permissions.ts';
+import { Refusal, Table } from './table.ts';
 import type { GameStore } from './game-store.ts';
 import { History } from './undo.ts';
 
@@ -39,6 +41,8 @@ interface Client {
   chunks: Set<string>;
   /** Tokens this client currently knows about. */
   visible: Set<string>;
+  /** The documents this client has (see doc-feed.ts). */
+  feed: DocFeed;
 }
 
 const CHAT_HISTORY = 200;
@@ -84,7 +88,7 @@ export class Game {
       (hit) => this.reactions.hit(hit),
     );
     this.reactions = new Reactions(table, this.combat, (msg, reactor) => {
-      for (const c of this.clients) if (canControlToken(reactor, c.player)) this.send(c, msg);
+      for (const c of this.clients) if (canControl(reactor, c.player)) this.send(c, msg);
     });
     this.features = new FeatureActions(table);
     this.gm = new GmActions(table);
@@ -121,8 +125,13 @@ export class Game {
       this.refreshAll();
     });
     store.on('world', (world) => this.onWorld(world));
-    // Documents are only sent as such to GMs for now; players get their filtered views above.
-    store.on('docs', (changes, by, txn) => this.toGms({ t: 'docs', changes, by, txn }));
+    // Each client gets the documents it may read; players also keep their filtered views above.
+    store.on('docs', (all, by, txn) => {
+      for (const c of this.clients) {
+        const changes = c.feed.changes(c.player, all);
+        if (changes.length || (txn && by === c.player.id)) this.send(c, { t: 'docs', changes, by, txn });
+      }
+    });
   }
 
   /**
@@ -152,7 +161,8 @@ export class Game {
   }
 
   connect(ws: WebSocket, player: Player): void {
-    const client: Client = { ws, player, chunks: new Set(), visible: this.visibleTo(player) };
+    const feed = new DocFeed(this.store.access);
+    const client: Client = { ws, player, chunks: new Set(), visible: this.visibleTo(player), feed };
     this.clients.add(client);
     this.welcome(client);
     ws.on('message', (data) => {
@@ -179,15 +189,9 @@ export class Game {
       combat: this.store.combat ?? null,
       scene: this.store.activeScene,
       history: this.history.state(player),
-      ...(gm
-        ? { players: this.store.world.players, actors: [...this.store.actors.values()], docs: this.allDocs() }
-        : {}),
+      docs: c.feed.start(player),
+      ...(gm ? { players: this.store.world.players, actors: [...this.store.actors.values()] } : {}),
     });
-  }
-
-  private allDocs(): Record<string, Doc[]> {
-    const docs = this.store.docs;
-    return Object.fromEntries(docs.collections().map((coll) => [coll, docs.all(coll)]));
   }
 
   private visibleTo(player: Player): Set<string> {
@@ -237,10 +241,10 @@ export class Game {
     }
   }
 
-  /** A transaction of document ops (GM only for now): all of it, or a reject saying why not. */
+  /** A transaction of document ops, each allowed by ownership: all of it, or a reject saying why not. */
   private onOps(c: Client, msg: Extract<ClientMessage, { t: 'ops' }>): void {
     try {
-      requireGm(c.player);
+      checkOps(c.player, msg.ops, this.store.access);
       if (this.history.run(c.player, msg, () => this.store.applyOps(msg.ops, msg.txn))) this.sendHistory();
     } catch (e) {
       if (!(e instanceof Refusal || e instanceof OpError)) throw e;
@@ -366,7 +370,7 @@ export class Game {
   private onMove(c: Client, id: string, to: Point): void {
     const token = this.store.tokens.get(id);
     if (!token || !c.visible.has(token.id)) return this.fail(c, 'No such token');
-    if (!canControlToken(token, c.player)) return this.fail(c, `You don't control ${token.name}`);
+    if (!canControl(token, c.player)) return this.fail(c, `You don't control ${token.name}`);
     const g = this.store.world.gridSize;
     const m = PATH_MARGIN * g;
     const walls = this.store.wallsIn({
@@ -388,7 +392,7 @@ export class Game {
   private onHotbar(c: Client, id: string, slots: (string | null)[]): void {
     const token = this.store.tokens.get(id);
     if (!token || !c.visible.has(id)) return this.fail(c, 'No such token');
-    if (!canControlToken(token, c.player)) return this.fail(c, `You don't control ${token.name}`);
+    if (!canControl(token, c.player)) return this.fail(c, `You don't control ${token.name}`);
     this.store.setToken({ ...token, hotbar: slots });
   }
 

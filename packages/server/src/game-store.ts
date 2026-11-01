@@ -31,8 +31,8 @@ import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
 import { FileWriter } from './file-writer.ts';
 import { classify, crossCheck, pathOf } from './game-files.ts';
 import { readEntry, readFolder, stateOf, type FolderEntry } from './game-folder.ts';
-import { migrateActorsFolder } from './migrate-actors.ts';
-import { migrateFolder } from './migrate-world.ts';
+import { upgradeFolder } from './migrate-all.ts';
+import { StoreAccess, type DocAccess } from './store-access.ts';
 import type { TYPE } from './store-colls.ts';
 import {
   ACTORS,
@@ -114,16 +114,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
   }
 
   async load(): Promise<void> {
-    const migrated = await migrateFolder(this.dir);
-    if (migrated) {
-      console.log(`[game] moved the old world files to the game layout; originals kept in ${migrated.backup}`);
-      for (const note of migrated.notes) console.log(`[game]   ${note}`);
-    }
-    const split = await migrateActorsFolder(this.dir);
-    if (split) {
-      console.log(`[game] gave the creatures on the map actors (format 3); originals kept in ${split.backup}`);
-      for (const note of split.notes) console.log(`[game]   ${note}`);
-    }
+    await upgradeFolder(this.dir);
     const entries = await readFolder(this.dir);
     const game = entries.find((e) => e.kind.kind === 'game');
     if (!game?.file) throw new Error(`game.json is invalid:\n  ${game?.errors.join('\n  ') ?? 'missing'}`);
@@ -293,6 +284,11 @@ export class GameStore extends EventEmitter<StoreEvents> {
   /** Puts back what a step changed. Throws a RevisionError when a document has moved on since. */
   revert(changes: readonly Change[]): void {
     this.commit(revertOps(this.docs, changes));
+  }
+
+  /** Documents as ownership sees them (op-permissions.ts, doc-feed.ts). */
+  get access(): DocAccess {
+    return new StoreAccess(this.docs, this.actors);
   }
 
   // Ops

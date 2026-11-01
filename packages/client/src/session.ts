@@ -1,7 +1,7 @@
 import type { DocRef } from '@vtt/core';
 import {
-  canControlToken,
-  canEditToken,
+  canControl,
+  canEdit,
   currentTurn,
   featureSpell,
   isGm,
@@ -286,7 +286,7 @@ export class Session extends EditSession {
   /** The GM edits any token; a trusted player the ones they own. */
   canEdit(id: string): boolean {
     const token = this.tokens.get(id);
-    return !!this.you && !!token && canEditToken(token, this.you);
+    return !!this.you && !!token && canEdit(token, this.you);
   }
 
   setSheetEdit(edit: boolean): void {
@@ -348,7 +348,7 @@ export class Session extends EditSession {
   }
 
   canControl(token: Token): boolean {
-    return !!this.you && canControlToken(token, this.you);
+    return !!this.you && canControl(token, this.you);
   }
 
   protected editTargets(): DocRef[] {

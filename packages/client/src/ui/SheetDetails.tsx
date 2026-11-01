@@ -1,4 +1,4 @@
-import { isGm, ownershipOf, srdFor, type Ownership, type Player } from '@vtt/shared';
+import { isGm, levelOf, srdFor, type Level } from '@vtt/shared';
 import { useState } from 'react';
 import { setOwnership, setStat } from '../token-edit.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
@@ -94,28 +94,38 @@ function LightFields({ value, update }: Readonly<{ value: Draft; update: Update 
   );
 }
 
-const LEVELS: readonly [Ownership, string][] = [
+const LEVELS: readonly [Level, string][] = [
   ['none', 'None'],
+  ['limited', 'Limited'],
   ['observer', 'Observer'],
   ['owner', 'Owner'],
 ];
 
-/** Like Foundry's ownership: owners act with the token (and edit it if trusted); observers watch through it. */
+/**
+ * Foundry-style ownership levels: none (doesn't know it is there), limited
+ * (sees it, not its sheet), observer (reads the sheet, sees through its
+ * eyes), owner (acts with it, and edits it if trusted). "Everyone" is the
+ * level of players not listed.
+ */
 function OwnershipFields({ session, value, update }: Readonly<Pick<SheetProps, 'session' | 'value' | 'update'>>) {
   const players = session.players.filter((p) => !isGm(p));
   if (!players.length) return null;
-  const level = (p: Player) => ownershipOf({ x: 0, y: 0, ...value }, p);
+  const ownership = value.ownership;
+  const rows: { id: string; name: string; level: Level; observer?: boolean }[] = [
+    { id: 'default', name: 'Everyone', level: ownership?.default ?? 'limited' },
+    ...players.map((p) => ({ id: p.id, name: p.name, level: levelOf(value, p), observer: p.role === 'observer' })),
+  ];
   return (
     <>
       <h4>Ownership</h4>
       <div className="ed-grid">
-        {players.map((p) => (
+        {rows.map((p) => (
           <Field key={p.id} label={p.name}>
             <select
-              value={level(p)}
-              disabled={p.role === 'observer'}
-              title={p.role === 'observer' ? 'An observer seat only watches' : undefined}
-              onChange={(e) => update((d) => setOwnership(d, p.id, e.target.value as Ownership), true)}
+              value={p.level}
+              disabled={p.observer}
+              title={p.observer ? 'An observer seat only watches' : undefined}
+              onChange={(e) => update((d) => setOwnership(d, p.id, e.target.value as Level), true)}
             >
               {LEVELS.map(([v, label]) => (
                 <option key={v} value={v}>

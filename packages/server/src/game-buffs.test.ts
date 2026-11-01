@@ -35,7 +35,7 @@ beforeEach(async () => {
       name: 'Fighter',
       x: 50,
       y: 150,
-      controllers: ['bo'],
+      ownership: { default: 'limited', bo: 'owner' },
       stats: { class: 'fighter', level: 5, maxHp: 40, abilities: { str: 16 } },
     }),
   );

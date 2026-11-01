@@ -131,7 +131,13 @@ describe('tokensVisibleTo with senses', () => {
   });
 
   it('hides invisible creatures from plain sight', () => {
-    const hero = TokenSchema.parse({ id: 'hero', name: 'Hero', x: 50, y: 50, controllers: ['p1'] });
+    const hero = TokenSchema.parse({
+      id: 'hero',
+      name: 'Hero',
+      x: 50,
+      y: 50,
+      ownership: { default: 'limited', p1: 'owner' },
+    });
     const sprite = TokenSchema.parse({
       id: 'sprite',
       name: 'Sprite',
@@ -145,7 +151,14 @@ describe('tokensVisibleTo with senses', () => {
   });
 
   it('uses the monster’s senses through a lookup', () => {
-    const hero = TokenSchema.parse({ id: 'hero', name: 'Hero', x: 50, y: 50, controllers: ['p1'], monster: 'bat' });
+    const hero = TokenSchema.parse({
+      id: 'hero',
+      name: 'Hero',
+      x: 50,
+      y: 50,
+      ownership: { default: 'limited', p1: 'owner' },
+      monster: 'bat',
+    });
     const orc = TokenSchema.parse({ id: 'orc', name: 'Orc', x: 1450, y: 50 });
     const senses = { darkvision: 0, blindsight: 60, tremorsense: 0, truesight: 0 };
     expect(tokensVisibleTo(player, [hero, orc], { ...ctx(1), monster: () => senses }).has('orc')).toBe(false);

@@ -24,9 +24,9 @@ const copy = (id: string, x: number): Token =>
 describe('GameStore actors and tokens', () => {
   it('gives every creature on the map an actor when it loads an older game', async () => {
     const { dir, store } = await loaded();
-    expect(store.actors.get('hero')).toMatchObject({ name: 'Hero', controllers: ['ana'] });
+    expect(store.actors.get('hero')).toMatchObject({ name: 'Hero', ownership: { default: 'limited', ana: 'owner' } });
     expect(store.tokens.get('hero')).toMatchObject({ name: 'Hero', actor: 'hero', linked: true, x: 150 });
-    expect(await readJson(dir, 'game.json')).toMatchObject({ format: 3 });
+    expect(await readJson(dir, 'game.json')).toMatchObject({ format: 4 });
   });
 
   it('shares a linked token’s damage with its actor and every other token of it', async () => {

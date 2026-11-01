@@ -49,9 +49,9 @@ describe('a trusted player editing their own token', () => {
 
   it("can't give it away, move it by hand or hide it", () => {
     const ana = seat('ana');
-    ana.receive({ t: 'editToken', token: 'hero', patch: { controllers: ['ana', 'bo'], x: 9999 } });
-    expect(ana.take('error')[0]!.message).toBe('Only the GM can change controllers, x');
-    expect(store.tokens.get('hero')).toMatchObject({ controllers: ['ana'], x: 150 });
+    ana.receive({ t: 'editToken', token: 'hero', patch: { ownership: { default: 'owner' }, x: 9999 } });
+    expect(ana.take('error')[0]!.message).toBe('Only the GM can change ownership, x');
+    expect(store.tokens.get('hero')).toMatchObject({ ownership: { default: 'limited', ana: 'owner' }, x: 150 });
   });
 
   it('still leaves deleting and spawning to the GM', () => {
@@ -63,7 +63,7 @@ describe('a trusted player editing their own token', () => {
 
 describe('a plain player', () => {
   it("can't edit even their own token", () => {
-    store.setToken({ ...store.tokens.get('hero')!, controllers: ['bo'] });
+    store.setToken({ ...store.tokens.get('hero')!, ownership: { default: 'limited', bo: 'owner' } });
     const bo = seat('bo');
     bo.receive({ t: 'editToken', token: 'hero', patch: { hp: 99 } });
     expect(bo.take('error')[0]!.message).toBe("You can't edit Hero");
@@ -72,7 +72,11 @@ describe('a plain player', () => {
 
 describe('an observer seat', () => {
   it('sees the party sheet but cannot move it or open doors', () => {
-    store.setToken({ ...store.tokens.get('hero')!, monster: 'goblin', controllers: ['ana', 'cy'] });
+    store.setToken({
+      ...store.tokens.get('hero')!,
+      monster: 'goblin',
+      ownership: { default: 'limited', ana: 'owner', cy: 'owner' },
+    });
     const ws = new FakeSocket();
     game.connect(ws.asWebSocket, game.findPlayer('cy')!);
     const hero = ws.take('welcome')[0]!.tokens.find((t) => t.id === 'hero');
@@ -111,9 +115,9 @@ describe('the GM granting access', () => {
     expect(ana.take('error')[0]!.message).toBe('Only the GM can do that');
   });
 
-  it('sets per-token observers', () => {
+  it('sets per-token ownership levels', () => {
     const gm = seat('gm');
-    gm.receive({ t: 'editToken', token: 'goblin', patch: { observers: ['bo'] } });
-    expect(store.tokens.get('goblin')!.observers).toEqual(['bo']);
+    gm.receive({ t: 'editToken', token: 'goblin', patch: { ownership: { default: 'limited', bo: 'observer' } } });
+    expect(store.tokens.get('goblin')!.ownership).toEqual({ default: 'limited', bo: 'observer' });
   });
 });

@@ -2,7 +2,7 @@ import {
   actorFromMonster,
   ActorSchema,
   applyTokenPatch,
-  canEditToken,
+  canEdit,
   isGm,
   lockedPatchKeys,
   placeToken,
@@ -42,7 +42,7 @@ export class GmActions {
   edit(player: Player, id: string, patch: Record<string, unknown>): void {
     const token = this.store.tokens.get(id);
     if (!token) throw new Refusal('No such token');
-    if (!canEditToken(token, player)) throw new Refusal(`You can't edit ${token.name}`);
+    if (!canEdit(token, player)) throw new Refusal(`You can't edit ${token.name}`);
     const locked = lockedPatchKeys(patch, player);
     if (locked.length) throw new Refusal(`Only the GM can change ${locked.join(', ')}`);
     this.store.setToken(valid(TokenSchema, applyTokenPatch(token, patch)));

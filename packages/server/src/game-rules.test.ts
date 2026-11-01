@@ -52,7 +52,7 @@ beforeEach(async () => {
     name: 'Fighter',
     x: 50,
     y: 250,
-    controllers: ['bo'],
+    ownership: { default: 'limited', bo: 'owner' },
     darkvision: 60,
     stats: { class: 'fighter', level: 5, maxHp: 40, abilities: { str: 16 } },
     inventory: [{ item: 'longsword', equipped: true }],

@@ -151,7 +151,7 @@ export function characterToken(c: Character, parts = partsOf(c)): Omit<Token, 'i
     color: c.color,
     ...(c.img ? { img: c.img } : {}),
     speed: parts.species?.speed ?? 30,
-    controllers: [c.owner],
+    ownership: { default: 'limited', [c.owner]: 'owner' },
     darkvision,
     hidden: false,
     stats: {

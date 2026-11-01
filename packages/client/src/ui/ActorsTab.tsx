@@ -31,7 +31,6 @@ export function ActorsTab({ session }: Readonly<{ session: Session }>) {
       size: 1,
       color: '#8a6a4a',
       speed: 30,
-      controllers: [],
       darkvision: 0,
       hidden: false,
     });

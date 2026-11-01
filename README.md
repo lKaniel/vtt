@@ -147,7 +147,7 @@ git, so plain git tools still work.
   press E (or _Edit_ on the sheet, or click the name on the action bar).
   Name, abilities, HP (with quick Hit and Heal), AC, speed, proficiency,
   defences, inventory and spells become editable in place, and a _Details_
-  tab holds the picture, size, vision, light, hidden, controllers, monster,
+  tab holds the picture, size, vision, light, hidden, ownership, monster,
   rules edition, class and level. Every change saves itself.
 - **Actors.** The GM's side panel has an _Actors_ tab: every creature on the
   map (click to find it, toggle hidden, edit) and the Actors list, kept in

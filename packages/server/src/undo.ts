@@ -1,9 +1,9 @@
 import { RevisionError, type Change } from '@vtt/core';
-import { canControlToken, isGm, type HistoryState, type Player } from '@vtt/shared';
+import { isGm, type HistoryState, type Player } from '@vtt/shared';
 import type { ClientMessage } from './client-messages.ts';
 import type { GameStore } from './game-store.ts';
 import { BY_FILES } from './store-history.ts';
-import { ACTORS } from './store-colls.ts';
+import { checkOps, undoOps } from './op-permissions.ts';
 import { Refusal, requireGm } from './table.ts';
 
 // Undo and redo (see the design doc, "Edit commands work on everything").
@@ -176,9 +176,7 @@ export class History {
 
   /** Puts back what a step changed, as a step of its own (whose changes are the way back). */
   private revert(player: Player, step: Step, verb: 'undo' | 'redo'): Change[] {
-    if (!isGm(player) && !step.changes.every((c) => this.mayTouch(player, c))) {
-      throw new Refusal(`You can't ${verb} the ${step.label} any more`);
-    }
+    this.permit(player, step, verb);
     let changes: Change[];
     try {
       changes = this.store.record(player.id, () => this.store.revert(step.changes));
@@ -221,13 +219,14 @@ export class History {
     return `${who} has changed ${name} since`;
   }
 
-  /** Players may only undo changes to creatures they still control (and their linked actors). */
-  private mayTouch(player: Player, change: Change): boolean {
-    const tokens = [...this.store.tokens.values()];
-    if (change.coll === ACTORS) {
-      return tokens.some((t) => t.actor === change.id && t.linked && canControlToken(t, player));
+  /** Undoing is editing: a player may undo only what they could change by hand now. */
+  private permit(player: Player, step: Step, verb: 'undo' | 'redo'): void {
+    try {
+      const access = this.store.access;
+      checkOps(player, undoOps(access, step.changes), access);
+    } catch (e) {
+      if (!(e instanceof Refusal)) throw e;
+      throw new Refusal(`You can't ${verb} the ${step.label} any more`);
     }
-    const token = change.coll.endsWith('/tokens') ? this.store.tokens.get(change.id) : undefined;
-    return !!token && canControlToken(token, player);
   }
 }

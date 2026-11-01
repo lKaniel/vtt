@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
-  canControlToken,
-  canEditToken,
-  canObserveToken,
+  canControl,
+  canEdit,
+  canObserve,
+  canSee,
+  isParty,
+  levelOf,
   lockedPatchKeys,
-  ownershipOf,
+  ownersOf,
   PlayerSchema,
   TokenSchema,
   tokensVisibleTo,
+  withLevel,
   type Player,
 } from './index.ts';
 
@@ -18,72 +22,94 @@ const tess = player('tess', 'trusted');
 const otto = player('otto', 'observer');
 const bo = player('bo', 'player');
 
-const hero = TokenSchema.parse({ id: 'hero', name: 'Hero', x: 0, y: 0, controllers: ['ana', 'tess', 'otto'] });
-const scout = TokenSchema.parse({ id: 'scout', name: 'Scout', x: 0, y: 0, controllers: ['ana'], observers: ['bo'] });
+const token = (id: string, more: object = {}) => TokenSchema.parse({ id, name: id, x: 0, y: 0, ...more });
+const hero = token('hero', { ownership: { default: 'limited', ana: 'owner', tess: 'owner', otto: 'owner' } });
+const scout = token('scout', { ownership: { default: 'limited', ana: 'owner', bo: 'observer' } });
+const goblin = token('goblin');
 
-describe('ownership of a token', () => {
-  it('is full for the GM, owner for controllers, observer for observers, else none', () => {
-    expect(ownershipOf(scout, gm)).toBe('owner');
-    expect(ownershipOf(scout, ana)).toBe('owner');
-    expect(ownershipOf(scout, bo)).toBe('observer');
-    expect(ownershipOf(scout, tess)).toBe('none');
+describe('ownership levels', () => {
+  it('are owner for the GM, else the level the document gives the player, else its default', () => {
+    expect(levelOf(scout, gm)).toBe('owner');
+    expect(levelOf(scout, ana)).toBe('owner');
+    expect(levelOf(scout, bo)).toBe('observer');
+    expect(levelOf(scout, tess)).toBe('limited');
   });
 
-  it('never goes above observer for an observer seat', () => {
-    expect(ownershipOf(hero, otto)).toBe('observer');
-    expect(canControlToken(hero, otto)).toBe(false);
+  it('are limited on a document that says nothing: seen, not read', () => {
+    expect(levelOf(goblin, ana)).toBe('limited');
+    expect(levelOf({ ownership: { default: 'none' } }, ana)).toBe('none');
   });
 
-  it('gives observer seats a look at the whole party', () => {
-    expect(ownershipOf(scout, otto)).toBe('observer');
-    const goblin = TokenSchema.parse({ id: 'goblin', name: 'Goblin', x: 0, y: 0 });
-    expect(ownershipOf(goblin, otto)).toBe('none');
+  it('never go above observer for an observer seat', () => {
+    expect(levelOf(hero, otto)).toBe('observer');
+    expect(canControl(hero, otto)).toBe(false);
   });
 
-  it('lets observers read the sheet but not act', () => {
-    expect(canObserveToken(scout, bo)).toBe(true);
-    expect(canControlToken(scout, bo)).toBe(false);
+  it('give observer seats a look at the whole party', () => {
+    expect(levelOf(scout, otto)).toBe('observer');
+    expect(levelOf(goblin, otto)).toBe('limited');
+  });
+
+  it('let observers read the sheet but not act', () => {
+    expect(canObserve(scout, bo)).toBe(true);
+    expect(canControl(scout, bo)).toBe(false);
+    expect(canObserve(goblin, bo)).toBe(false);
+  });
+
+  it('make a document the party’s when any player owns it', () => {
+    expect(isParty(hero)).toBe(true);
+    expect(isParty(goblin)).toBe(false);
+    expect(isParty({ ownership: { default: 'owner' } })).toBe(true);
+    expect(ownersOf(scout)).toEqual(['ana']);
   });
 });
 
-describe('editing a token', () => {
-  it('is for the GM, and for trusted players on tokens they own', () => {
-    expect(canEditToken(hero, gm)).toBe(true);
-    expect(canEditToken(hero, tess)).toBe(true);
-    expect(canEditToken(scout, tess)).toBe(false);
-    expect(canEditToken(hero, ana)).toBe(false);
-    expect(canEditToken(hero, otto)).toBe(false);
+describe('seeing a document', () => {
+  it('is for players with at least limited, never for hidden ones, and always for the GM', () => {
+    expect(canSee(goblin, ana)).toBe(true);
+    expect(canSee(token('secret', { ownership: { default: 'none', ana: 'limited' } }), bo)).toBe(false);
+    expect(canSee(token('secret', { ownership: { default: 'none', ana: 'limited' } }), ana)).toBe(true);
+    expect(canSee(token('lurker', { hidden: true }), ana)).toBe(false);
+    expect(canSee(token('lurker', { hidden: true }), gm)).toBe(true);
+  });
+
+  it('hides illusions from players they were not woven for', () => {
+    const ghost = token('ghost', { visibleTo: ['ana'] });
+    expect(canSee(ghost, gm)).toBe(true);
+    expect(canSee(ghost, ana)).toBe(true);
+    expect(canSee(ghost, bo)).toBe(false);
+  });
+});
+
+describe('editing a document', () => {
+  it('is for the GM, and for trusted players on what they own', () => {
+    expect(canEdit(hero, gm)).toBe(true);
+    expect(canEdit(hero, tess)).toBe(true);
+    expect(canEdit(scout, tess)).toBe(false);
+    expect(canEdit(hero, ana)).toBe(false);
+    expect(canEdit(hero, otto)).toBe(false);
   });
 
   it('keeps who owns it, where it stands and whether it hides for the GM', () => {
-    const patch = {
-      name: 'X',
-      hp: 3,
-      controllers: ['bo'],
-      x: 5,
-      hidden: true,
-      observers: [],
-      actor: 'y',
-      linked: false,
-    };
+    const patch = { name: 'X', hp: 3, ownership: { default: 'none' }, x: 5, hidden: true, actor: 'y', linked: false };
     expect(lockedPatchKeys(patch, gm)).toEqual([]);
-    expect(lockedPatchKeys(patch, tess)).toEqual(['controllers', 'x', 'hidden', 'observers', 'actor', 'linked']);
+    expect(lockedPatchKeys(patch, tess)).toEqual(['ownership', 'x', 'hidden', 'actor', 'linked']);
+  });
+
+  it('sets one player’s level, keeping the default', () => {
+    expect(withLevel(scout.ownership, 'bo', 'owner')).toEqual({ default: 'limited', ana: 'owner', bo: 'owner' });
+    expect(withLevel(scout.ownership, 'ana', 'none')).toEqual({ default: 'limited', ana: 'none', bo: 'observer' });
+    expect(withLevel(undefined, 'ana', 'owner')).toEqual({ default: 'limited', ana: 'owner' });
+    expect(withLevel({ default: 'limited', ana: 'owner' }, 'ana', 'limited')).toEqual({ default: 'limited' });
   });
 });
 
 describe('what observers see', () => {
   it('lets a token observer see through its eyes', () => {
     const dark = { world: { darkness: 1, vision: true, gridSize: 100 }, lights: [], wallsBetween: () => [] };
-    const lookout = TokenSchema.parse({
-      id: 'lookout',
-      name: 'Lookout',
-      x: 0,
-      y: 0,
-      darkvision: 60,
-      observers: ['bo'],
-    });
-    const goblin = TokenSchema.parse({ id: 'goblin', name: 'Goblin', x: 300, y: 0 });
-    expect(tokensVisibleTo(bo, [lookout, goblin], dark)).toEqual(new Set(['lookout', 'goblin']));
-    expect(tokensVisibleTo(ana, [lookout, goblin], dark)).toEqual(new Set());
+    const lookout = token('lookout', { darkvision: 60, ownership: { default: 'limited', bo: 'observer' } });
+    const far = token('far', { x: 300 });
+    expect(tokensVisibleTo(bo, [lookout, far], dark)).toEqual(new Set(['lookout', 'far']));
+    expect(tokensVisibleTo(ana, [lookout, far], dark)).toEqual(new Set());
   });
 });

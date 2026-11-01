@@ -4,7 +4,7 @@ import {
   isDead,
   isDying,
   canAct,
-  canControlToken,
+  canControl,
   isGm,
   concentrationDc,
   currentTurn,
@@ -73,7 +73,7 @@ export class Table {
   /** The creature, if `player` may act with it and it's able to. */
   actor(player: Player, id: string): Fighter {
     const f = this.fighter(id);
-    if (!canControlToken(f.token, player)) throw new Refusal(`You don't control ${f.token.name}`);
+    if (!canControl(f.token, player)) throw new Refusal(`You don't control ${f.token.name}`);
     if (f.sheet.hp <= 0) throw new Refusal(`${f.token.name} is down`);
     if (!canAct(f.sheet)) throw new Refusal(`${f.token.name} can't act`);
     return f;

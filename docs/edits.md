@@ -9,8 +9,8 @@ the pieces fit; see the design doc for why.
 
 Client to server:
 
-- `{ t: 'ops', txn, label?, ops }`: one edit, all or nothing. GM only for
-  now; step 5 (ownership levels) opens it to owners. The server checks every
+- `{ t: 'ops', txn, label?, ops }`: one edit, all or nothing, allowed by
+  ownership (see below). The server checks every
   document against the schema of the file it is saved in (`doc-checks.ts`),
   so an edit can't write a file the server would refuse to load. Deleting an
   actor first leaves its tokens carrying its sheet, as `deleteActor` does.
@@ -21,15 +21,33 @@ Client to server:
 
 Server to client:
 
-- `docs`: GM only, the documents a transaction changed, as they are now
-  (no `doc` means deleted), with who did it and the client's `txn`. The
-  welcome carries every document (`docs`) for GMs. Players keep getting
-  their filtered views (`token`, `chunk`); per-viewer document filtering
-  comes with ownership levels and server fog.
+- `docs`: the documents a transaction changed, as they are now (no `doc`
+  means deleted, or no longer yours to read), with who did it and the
+  client's `txn`. The welcome carries the documents you may read (`docs`):
+  the GM gets all of them, a player the actors and tokens they observe or
+  own and can see (`doc-feed.ts`). Players also keep their filtered views
+  (`token`, `chunk`); the map's documents follow with server fog (step 8).
 - `reject`: the `ops` transaction was refused; nothing in it applied.
 - `history`: what Ctrl+Z and Ctrl+Shift+Z would undo or redo now, and for
   GMs the chat card of the latest game action.
 - `undone`, `chatUndone`: an undo went through; cards marked undone.
+
+## Who may change what
+
+`op-permissions.ts` checks every op against its sender's ownership levels
+(`permissions.ts`). The GM may do anything. Anyone else:
+
+- may only update documents, never add or remove them;
+- never changes `ownership`, `x`/`y`, `hidden`, `visibleTo`, `summon`,
+  `leader`, `actor` or `linked` (moves go through the `move` intent, which
+  runs the rules);
+- may change `hotbar` on what they own (`canControl`), and anything else on
+  what they own only from a `trusted` seat (`canEdit`);
+- has an unlinked token's `delta` checked field by field, as if it were the
+  token's own fields.
+
+Map items, scenes, the game and the fight have no ownership yet, so they stay
+the GM's.
 
 ## Undo
 
@@ -45,7 +63,9 @@ undoing the undo.
 - Game actions go in one shared list that only the GM can undo: Ctrl+Z
   takes whichever is newer, the GM's own edit or the latest action, and the
   latest action's chat card has an Undo button. Dice are not rolled again.
-- Players may undo only changes to creatures they still control.
+- Undo is an edit like any other: a player may undo only what they could
+  change by hand now (the same check as `ops`), so taking a creature away
+  from them also takes away undoing their edits to it.
 - Hand edits of the files are not undoable steps, but they count as a
   change: undoing over one says "someone editing the files has changed …".
 

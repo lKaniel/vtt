@@ -1,4 +1,4 @@
-import { currentTurn } from '@vtt/shared';
+import { currentTurn, isParty } from '@vtt/shared';
 import type { Session } from '../session.ts';
 import { Face, HpBar } from './Portrait.tsx';
 
@@ -28,7 +28,7 @@ export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onS
           const t = session.tokens.get(e.token);
           if (!t) return null;
           const down = (t.sheet?.hp ?? 1) <= 0 || t.health === 'down';
-          const ally = t.controllers.length > 0;
+          const ally = isParty(t);
           const cls = ['turn', e.token === current && 'current', down && 'down', ally ? 'ally' : 'foe'];
           return (
             <button
@@ -54,7 +54,7 @@ export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onS
 
 /** GM: the whole party takes a short or long rest. */
 function RestButtons({ session }: Readonly<{ session: Session }>) {
-  const party = () => [...session.tokens.values()].filter((t) => t.controllers.length > 0 && t.sheet).map((t) => t.id);
+  const party = () => [...session.tokens.values()].filter((t) => isParty(t) && t.sheet).map((t) => t.id);
   return (
     <>
       <button className="btn small" title="Party takes a short rest" onClick={() => session.rest(party(), 'short')}>

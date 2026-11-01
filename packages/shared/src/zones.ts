@@ -1,4 +1,5 @@
 import { inArea } from './areas.ts';
+import { isParty } from './permissions.ts';
 import type { Point, Token } from './schema.ts';
 import type { Effect, Spell } from './spell-schema.ts';
 
@@ -31,7 +32,7 @@ export interface ZoneHit {
   effect: Effect & { zone: NonNullable<Effect['zone']> };
 }
 
-const onSide = (t: Pick<Token, 'controllers'>) => t.controllers.length > 0;
+const onSide = (t: Pick<Token, 'ownership'>) => isParty(t);
 
 /** Whether a creature standing at `at` is in the zone, and not one it spares. */
 export function inZone(

@@ -2,7 +2,6 @@
   "id": "bram",
   "name": "Bram",
   "color": "#c0603a",
-  "controllers": ["player2"],
   "light": {
     "bright": 20,
     "dim": 20
@@ -45,5 +44,9 @@
       "item": "potion-of-healing",
       "qty": 2
     }
-  ]
+  ],
+  "ownership": {
+    "default": "limited",
+    "player2": "owner"
+  }
 }

@@ -1,4 +1,5 @@
 import { characterToken, type Character } from './character.ts';
+import { withLevel } from './permissions.ts';
 import { TokenSchema, type Point, type Token } from './schema.ts';
 
 // Putting a player's character on the map, and keeping that token in step
@@ -34,7 +35,7 @@ function ringSquares(col: number, row: number, ring: number): [number, number][]
  * position, hit points, inventory, effects, spent slots, hotbar.
  */
 export function characterOnMap(c: Character, existing: Token | undefined, at: Point): Token {
-  const { inventory, controllers, ...build } = characterToken(c);
+  const { inventory, ownership, ...build } = characterToken(c);
   if (!existing) {
     return TokenSchema.parse({
       id: c.id,
@@ -42,7 +43,7 @@ export function characterOnMap(c: Character, existing: Token | undefined, at: Po
       y: at[1],
       ...build,
       inventory,
-      controllers,
+      ownership,
       actor: c.id,
       linked: true,
     });
@@ -51,7 +52,7 @@ export function characterOnMap(c: Character, existing: Token | undefined, at: Po
     ...existing,
     ...build,
     hidden: existing.hidden,
-    controllers: [...new Set([...controllers, ...existing.controllers])],
+    ownership: withLevel(existing.ownership, c.owner, 'owner'),
     stats: { ...existing.stats, ...build.stats },
   });
 }

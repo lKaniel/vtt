@@ -87,7 +87,7 @@ describe('undo and redo of edits', () => {
     const gm = seat('gm');
     const ana = seat('ana');
     ana.receive({ t: 'hotbar', token: 'hero', slots: ['longsword'] });
-    gm.receive({ t: 'ops', txn: 't', ops: [{ op: 'update', coll: 'actors', id: 'hero', patch: { controllers: [] } }] });
+    gm.receive({ t: 'ops', txn: 't', ops: [{ op: 'update', coll: 'actors', id: 'hero', patch: { ownership: null } }] });
     ana.receive({ t: 'undo' });
     expect(errors(ana)).toEqual(["You can't undo the action bar change any more"]);
     expect(store.tokens.get('hero')!.hotbar).toEqual(['longsword']);
@@ -255,13 +255,6 @@ describe('the ops message', () => {
     expect(gm.take('reject')[0]!.reason).toBe('The table needs a GM');
   });
 
-  it('is for the GM only, for now', () => {
-    const ana = seat('ana');
-    ana.receive({ t: 'ops', txn: 't', ops: [{ op: 'delete', coll: 'main/tokens', id: 'hero' }] });
-    expect(ana.take('reject')).toEqual([{ t: 'reject', txn: 't', reason: 'Only the GM can do that' }]);
-    expect(store.tokens.has('hero')).toBe(true);
-  });
-
   it('leaves the tokens of a deleted actor carrying its sheet, and brings both back on undo', () => {
     const gm = seat('gm');
     gm.receive({ t: 'spawn', from: { kind: 'monster', id: 'goblin', rules: '2014' }, at: [720, 480] });
@@ -276,7 +269,7 @@ describe('the ops message', () => {
 });
 
 describe('welcome', () => {
-  it('gives the GM every document and the scene everyone is on', () => {
+  it('gives the GM every document, players only theirs, and the scene everyone is on', () => {
     const ws = new FakeSocket();
     game.connect(ws.asWebSocket, game.findPlayer('gm')!);
     const [welcome] = ws.take('welcome');
@@ -284,7 +277,10 @@ describe('welcome', () => {
     expect(welcome!.docs!['main/tokens']!.map((d) => d.id)).toEqual(['hero', 'goblin']);
     const ana = new FakeSocket();
     game.connect(ana.asWebSocket, game.findPlayer('ana')!);
-    expect(ana.take('welcome')[0]!.docs).toBeUndefined();
+    expect(Object.keys(ana.take('welcome')[0]!.docs!).sort((a, b) => a.localeCompare(b))).toEqual([
+      'actors',
+      'main/tokens',
+    ]);
   });
 });
 

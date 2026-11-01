@@ -1,3 +1,4 @@
+import { OwnershipSchema } from '@vtt/core';
 import { z } from 'zod';
 import { EffectSchema } from './spell-schema.ts';
 import { EditionSchema, InventoryEntrySchema, StatsSchema } from './stats-schema.ts';
@@ -122,10 +123,12 @@ export const TokenSchema = z.object({
   img: z.string().optional(),
   /** Walking speed in feet. */
   speed: z.number().nonnegative().default(30),
-  /** Player ids that own this token: they act with it, and trusted players may edit it. The GM always can. */
-  controllers: z.array(id).default([]),
-  /** Player ids that may read this token's sheet and see through its eyes, but not act with it. */
-  observers: z.array(id).optional(),
+  /**
+   * Who may see, read and act with it: a level per player id, and `default`
+   * for everyone else (see permissions.ts). Missing: everyone sees it, nobody
+   * but the GM owns it.
+   */
+  ownership: OwnershipSchema.optional(),
   /** Darkvision range in feet; 0 for none. */
   darkvision: z.number().nonnegative().default(0),
   /** Other senses, in feet. Missing ones fall back to the monster's stat block. */

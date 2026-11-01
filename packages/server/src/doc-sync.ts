@@ -1,4 +1,5 @@
 import { docPatch, type Doc, type Op } from '@vtt/core';
+import { sameJson } from '@vtt/shared';
 
 // Game objects (tokens, walls, the game itself) are stored as documents in
 // the core DocStore: the object plus its `type` and `rev`. These helpers
@@ -17,17 +18,8 @@ export function fromDoc<T>(doc: Doc, keepId = true): T {
   return (keepId ? { id, ...rest } : rest) as T;
 }
 
-/** JSON with object keys sorted, so field order doesn't count as a change. */
-function stable(value: unknown): string {
-  return JSON.stringify(value, (_key, v: unknown) =>
-    v && typeof v === 'object' && !Array.isArray(v)
-      ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)))
-      : v,
-  );
-}
-
 function same(a: Doc, b: Doc): boolean {
-  return stable(fromDoc(a)) === stable(fromDoc(b));
+  return sameJson(fromDoc(a), fromDoc(b));
 }
 
 /**

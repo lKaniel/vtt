@@ -190,7 +190,7 @@ export type ServerMessage =
       /** GM only: everyone at the table and the Actors list. */
       players?: Player[];
       actors?: Actor[];
-      /** GM only: every document of the game, by collection; `docs` messages keep it up to date. */
+      /** The documents you may read (the GM: all of them), by collection; `docs` messages keep it up to date. */
       docs?: Record<string, Doc[]>;
       history: HistoryState;
     }

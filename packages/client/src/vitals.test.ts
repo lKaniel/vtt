@@ -10,7 +10,6 @@ const token = (t: Partial<TokenView>): TokenView => ({
   size: 1,
   color: '#a33',
   speed: 30,
-  controllers: [],
   darkvision: 0,
   hidden: false,
   ...t,

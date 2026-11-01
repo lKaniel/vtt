@@ -1,5 +1,5 @@
 import {
-  canControlToken,
+  canControl,
   halved,
   hitReactions,
   opportunityAttackers,
@@ -74,7 +74,7 @@ export class Reactions {
     const offer = this.offers.get(id);
     const reactor = offer && this.table.store.tokens.get(offer.reactor);
     if (!offer || !reactor) throw new Refusal('That moment has passed');
-    if (!canControlToken(reactor, player)) throw new Refusal(`You don't control ${reactor.name}`);
+    if (!canControl(reactor, player)) throw new Refusal(`You don't control ${reactor.name}`);
     if (choice && !offer.choices.includes(choice)) throw new Refusal(`${reactor.name} can't ${choice} now`);
     const hit = this.hits.get(id);
     this.drop(id);

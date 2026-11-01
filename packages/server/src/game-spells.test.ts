@@ -51,7 +51,7 @@ beforeEach(async () => {
     name: 'Fighter',
     x: 50,
     y: 250,
-    controllers: ['bo'],
+    ownership: { default: 'limited', bo: 'owner' },
     darkvision: 60,
     stats: { class: 'fighter', level: 5, maxHp: 40, abilities: { str: 16 } },
     inventory: [{ item: 'longsword', equipped: true }],
@@ -291,7 +291,12 @@ describe('summons', () => {
       summon: 'owl',
     });
     const owl = [...store.tokens.values()].find((t) => t.monster === 'owl')!;
-    expect(owl).toMatchObject({ x: 150, y: 50, controllers: ['ana'], summon: { by: 'hero', spell: 'find-familiar' } });
+    expect(owl).toMatchObject({
+      x: 150,
+      y: 50,
+      ownership: { default: 'limited', ana: 'owner' },
+      summon: { by: 'hero', spell: 'find-familiar' },
+    });
   });
 
   it('refuses summoning spells that take minutes in the middle of a fight', () => {

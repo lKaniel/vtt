@@ -5,6 +5,7 @@ import {
   characterOnMap,
   CharacterSchema,
   freeSquare,
+  ownersOf,
   uniqueId,
   type Character,
   type Player,
@@ -258,7 +259,7 @@ class Routes {
   private place(c: Character): void {
     const world = this.deps.world;
     const existing = world.tokens.get(c.id);
-    if (existing && !existing.controllers.includes(c.owner)) {
+    if (existing && !ownersOf(existing).includes(c.owner)) {
       throw new HttpError(409, 'A creature on the map already uses that name.');
     }
     const taken: Point[] = [...world.tokens.values()].map((t) => [t.x, t.y]);

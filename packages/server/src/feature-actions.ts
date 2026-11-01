@@ -1,5 +1,5 @@
 import {
-  canControlToken,
+  canControl,
   editionOf,
   featureProblem,
   itemCost,
@@ -99,6 +99,6 @@ export class FeatureActions {
 
   private canManage(player: Player, id: string): boolean {
     const token = this.store.tokens.get(id);
-    return !!token && canControlToken(token, player);
+    return !!token && canControl(token, player);
   }
 }

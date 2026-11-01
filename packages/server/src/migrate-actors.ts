@@ -1,7 +1,7 @@
-import { cp, mkdir, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { deltaOf, placementFields, sameJson, sheetFields, templateFields, uniqueId } from '@vtt/shared';
 import { writeJson } from './json-files.ts';
+import { backUp, isObject, readActors, readJsonFile, names, readTokenFiles } from './migrate-files.ts';
 
 // Game format 3 splits actors from tokens. Before it, every token in a
 // scene's tokens.json carried a whole sheet. Now a character gets an actor
@@ -86,43 +86,6 @@ export function splitTokens(tokens: readonly unknown[], actors: ReadonlyMap<stri
   return { tokens: tokens.map((t) => splitter.token(t)), actors: splitter.actors, notes: splitter.notes };
 }
 
-// On disk
-
-async function readJsonFile(dir: string, rel: string): Promise<unknown> {
-  const text = await readFile(join(dir, rel), 'utf8');
-  try {
-    return JSON.parse(text) as unknown;
-  } catch (e) {
-    throw new Error(`${rel} can't be migrated to game format 3: ${(e as Error).message}`, { cause: e });
-  }
-}
-
-async function names(dir: string, sub: string): Promise<string[]> {
-  return readdir(join(dir, sub)).catch(() => [] as string[]);
-}
-
-async function readActors(dir: string): Promise<Map<string, unknown>> {
-  const out = new Map<string, unknown>();
-  for (const name of (await names(dir, 'actors')).filter((n) => n.endsWith('.json'))) {
-    const data = await readJsonFile(dir, `actors/${name}`).catch(() => undefined);
-    out.set(name.slice(0, -'.json'.length), data);
-  }
-  return out;
-}
-
-/** Each scene's tokens.json, by path. */
-async function readTokenFiles(dir: string): Promise<Map<string, unknown[]>> {
-  const out = new Map<string, unknown[]>();
-  for (const scene of await names(dir, 'scenes')) {
-    const rel = `scenes/${scene}/tokens.json`;
-    if (!(await names(dir, `scenes/${scene}`)).includes('tokens.json')) continue;
-    const data = await readJsonFile(dir, rel);
-    if (!Array.isArray(data)) throw new Error(`${rel} can't be migrated to game format 3: it isn't a list`);
-    out.set(rel, data);
-  }
-  return out;
-}
-
 export interface MigratedActors {
   backup: string;
   notes: string[];
@@ -152,21 +115,10 @@ export async function migrateActorsFolder(dir: string, { now = new Date() } = {}
     }
     notes.push(...split.notes.map((n) => `${rel}: ${n}`));
   }
-  const backup = `.v2-backup/${now
-    .toISOString()
-    .replace(/\.\d+Z$/, 'Z')
-    .replaceAll(':', '-')}`;
-  await mkdir(join(dir, backup), { recursive: true });
-  for (const name of ['game.json', 'actors', 'scenes']) {
-    await cp(join(dir, name), join(dir, backup, name), { recursive: true }).catch(() => undefined);
-  }
+  const backup = await backUp(dir, 'v2', now);
   // Actors before the tokens that name them.
   const order = [...out].sort(([a], [b]) => Number(b.startsWith('actors/')) - Number(a.startsWith('actors/')));
   for (const [rel, data] of order) await writeJson(join(dir, rel), data);
   await writeJson(join(dir, 'game.json'), { ...game, format: FORMAT });
   return { backup, notes };
-}
-
-function isObject(v: unknown): v is Record<string, unknown> {
-  return !!v && typeof v === 'object' && !Array.isArray(v);
 }

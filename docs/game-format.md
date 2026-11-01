@@ -59,8 +59,8 @@ everyone live; changing anything else reconnects everyone.
 Players whose `id` matches an account (see the README) are that account's
 seat. The server adds one when an account first joins, so you can change its
 `role` here afterwards. A character brought from an account becomes an actor
-and a linked token, both with the character's id and the account in
-`controllers`; saving or levelling the character updates its name, stats and
+and a linked token, both with the character's id and the account as
+`owner` in `ownership`; saving or levelling the character updates its name, stats and
 senses.
 
 `format` is the folder's format; the server sets it when it moves an older
@@ -210,7 +210,7 @@ without one):
   "size": 1,
   "color": "#c0603a",
   "speed": 30,
-  "controllers": ["player2"]
+  "ownership": { "default": "limited", "player2": "owner" }
 }
 ```
 
@@ -222,14 +222,32 @@ without one):
 | `color`       | Disc colour behind the placeholder when there is no picture.            |
 | `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency.     |
 | `speed`       | Walking speed in feet. Default 30.                                      |
-| `controllers` | Player ids who own it: they move and act with it. The GM always can.    |
-| `observers`   | Player ids who may read its sheet and see through its eyes.             |
+| `ownership`   | Who may see, read and act with it; see Ownership below.                 |
 | `darkvision`  | Range in feet. Also `blindsight`, `tremorsense`, `truesight`.           |
 | `devilsSight` | Sees in magical and nonmagical darkness to this range, in feet.         |
 | `light`       | A light it carries, like a placed light: `{ "bright": 20, "dim": 20 }`. |
 | `hidden`      | A token's: `true` = only the GM sees it.                                |
 | `visibleTo`   | A token's: only these players (and the GM) see it. Used for illusions.  |
 | `folder`      | An actor's: groups it in the Actors list.                               |
+
+### Ownership
+
+`ownership` gives each player a level, like Foundry's, and `default` is the
+level of everyone not named:
+
+| Level      | The player                                                        |
+| ---------- | ----------------------------------------------------------------- |
+| `none`     | doesn't know it is there: not sent to them at all.                |
+| `limited`  | sees it on the map but not its sheet, only how hurt it looks.     |
+| `observer` | reads its sheet and sees through its eyes.                        |
+| `owner`    | moves and acts with it; a `trusted` seat may also edit its sheet. |
+
+A creature without `ownership` is `limited` for everyone. The GM is owner of
+everything and an observer seat is never more than observer (and observes
+every creature a player owns). A linked token's ownership is its actor's; an
+unlinked copy can have its own in `delta`. Players may change by hand only
+what their level lets them (see `docs/edits.md`); `ownership`, position,
+`hidden` and the actor link stay with the GM.
 
 Senses missing on a token come from its monster's stat block. Players see a
 creature when one of their tokens has a clear line to it and it is lit (even
@@ -272,7 +290,7 @@ better of STR and DEX, ranged weapons DEX), proficiency from `level`:
   "name": "Bram",
   "x": 650,
   "y": 650,
-  "controllers": ["player2"],
+  "ownership": { "default": "limited", "player2": "owner" },
   "stats": {
     "class": "Fighter",
     "level": 3,
@@ -414,3 +432,13 @@ was their own in `delta`. Each moved token is exactly the creature it was.
 Summons and tokens that already have an actor are left as they are. The
 scenes, actors and `game.json` are copied to `.v2-backup/<time>/` first, and
 `game.json` gets `"format": 3` last.
+
+## Format 4: ownership levels
+
+Before format 4 a creature listed its owners in `controllers` and its
+watchers in `observers`. The server turns them into `ownership` when it
+starts (or run `pnpm migrate-world`): `{ "controllers": ["ana"],
+"observers": ["bo"] }` becomes `{ "ownership": { "default": "limited",
+"ana": "owner", "bo": "observer" } }`, in actors, tokens and unlinked
+tokens' `delta`. The scenes, actors and `game.json` are copied to
+`.v3-backup/<time>/` first, and `game.json` gets `"format": 4` last.
