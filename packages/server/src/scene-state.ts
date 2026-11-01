@@ -74,7 +74,7 @@ export class SceneState {
     if (!this.clock || this.clock.doc !== doc) {
       this.clock = { doc, clock: ClockSchema.parse(doc ? fromDoc(doc, false) : {}) };
     }
-    return this.clock!.clock;
+    return this.clock.clock;
   }
 
   coll(name: SceneCollection): string {

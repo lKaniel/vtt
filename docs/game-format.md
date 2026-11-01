@@ -24,6 +24,7 @@ world/                      the example game (another folder: VTT_GAME); lobby g
   tables/<id>.json          roll tables
   playlists/<id>.json       music
   combat.json               the fight in progress, if any
+  time.json                 the game clock and its calendar (made on first start)
   assets/                   images referenced by tiles and tokens (uploads in assets/uploads/)
 ```
 
@@ -112,18 +113,18 @@ how the scene is stored.
 
 Optional, all set from the Scenes tab too:
 
-| Field                  | What it does                                                                    |
-| ---------------------- | ------------------------------------------------------------------------------- |
-| `name`                 | What the Scenes list and the top bar show (the folder name otherwise).          |
-| `sort`                 | Order in the Scenes list (a sort key, see `sort-key.ts`); the editor writes it. |
-| `exploration`          | With fog of war, players keep seeing (dimmed) where they have been. Default on. |
-| `grid`                 | `"square"` (default) or `"none"`: no grid lines; tokens still stand on squares. |
-| `gridColor`            | Grid line colour, default `"#000000"`.                                          |
-| `gridOpacity`          | 0 to 1, default 0.16.                                                           |
-| `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                            |
-| `darknessFollowsClock` | Saved for world time (a later step); does nothing yet.                          |
-| `levels`               | Floors of the scene, see "Scene levels" below.                                  |
-| `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.  |
+| Field                  | What it does                                                                              |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `name`                 | What the Scenes list and the top bar show (the folder name otherwise).                    |
+| `sort`                 | Order in the Scenes list (a sort key, see `sort-key.ts`); the editor writes it.           |
+| `exploration`          | With fog of war, players keep seeing (dimmed) where they have been. Default on.           |
+| `grid`                 | `"square"` (default) or `"none"`: no grid lines; tokens still stand on squares.           |
+| `gridColor`            | Grid line colour, default `"#000000"`.                                                    |
+| `gridOpacity`          | 0 to 1, default 0.16.                                                                     |
+| `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                                      |
+| `darknessFollowsClock` | The darkness follows the game clock's time of day (see time.json); `darkness` is ignored. |
+| `levels`               | Floors of the scene, see "Scene levels" below.                                            |
+| `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.            |
 
 Every scene is live at once: the rules (moves, doors, fights, spells) work
 on whichever scene the player acting is on.
@@ -275,8 +276,8 @@ line's length, a square's side), `direction` in degrees clockwise from east,
 `author`. Lasting spells (spirit guardians, moonbeam) are templates the
 server keeps: id `zone-<effect>`, `effect` naming the creature and effect,
 `attachedTo` when it moves with its caster. The GM may move one, and the
-spell then hits where the template is; it goes when the spell ends. `endsAt`
-(a game-clock second) is kept for world time.
+spell then hits where the template is; it goes when the spell ends. A template
+with `endsAt` (a game-clock second, see time.json) goes when the clock reaches it.
 
 **Regions** (`regions.json`): `points` (3 or more), `name`, `color`,
 `visible` (players see its outline), `disabled`, `activeAt`, and
@@ -579,6 +580,48 @@ it to set up an encounter that starts mid-fight:
 has left this turn (feet of movement, action, bonus action, attacks left in an
 Attack action, once-per-turn things already used like sneak attack). `side`
 holds the same for creatures acting on this turn through `leader`, by id.
+
+## time.json
+
+The game clock. The server makes it the first time it starts a game; the GM
+runs it from the date in the top bar.
+
+```json
+{
+  "time": 1209600,
+  "running": false,
+  "speed": 1,
+  "calendar": {
+    "months": [
+      { "name": "Deepwinter", "days": 30 },
+      { "name": "Thaw", "days": 30 }
+    ],
+    "weekdays": ["Moonday", "Fireday", "Restday"],
+    "epochYear": 1492,
+    "era": "AR",
+    "sunrise": 6,
+    "sunset": 18,
+    "twilight": 1,
+    "night": 1
+  }
+}
+```
+
+`time` is game seconds since the first day of `epochYear`. Every calendar field
+has a default: twelve months of a 365-day year, Monday to Sunday, sunrise at 6
+and sunset at 18, with dawn and dusk lasting `twilight` hours around them, and
+`night` the darkness at night on scenes with `darknessFollowsClock`. While the
+clock runs, `since` is the server time (ms) it runs from and `time` is the game
+time at that moment; `speed` is game seconds per real second.
+
+In a fight, and in turn-based mode outside one (the GM's "Turn-based" button:
+the party takes turns), the clock holds still and each round adds 6 seconds;
+`round` is the fight round it last counted. A short rest lets 1 hour pass, a
+long rest 8. Everything that lasts has its end on the clock: effects
+(`endsAt`), concentration and summons (`concentration.endsAt`,
+`summon.endsAt`), templates. Skipping time ends them; in a fight, effects that
+last rounds count down on their maker's turns instead. Every change to the
+clock, and what it ended, can be undone.
 
 ## Moving from the old world layout
 

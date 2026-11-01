@@ -60,7 +60,11 @@ export class CombatActions {
 
   start(player: Player, ids: readonly string[]): void {
     requireGm(player);
-    this.open(ids.map((id) => this.table.fighter(id)), 'Roll for initiative!', false);
+    this.open(
+      ids.map((id) => this.table.fighter(id)),
+      'Roll for initiative!',
+      false,
+    );
   }
 
   /** Rolls initiative for `fighters` and starts the first turn. */

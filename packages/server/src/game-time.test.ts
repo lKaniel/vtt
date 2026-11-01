@@ -87,7 +87,11 @@ describe('the clock', () => {
     gm.receive({ t: 'clock', action: { do: 'set', time: 3 * DAY } });
     gm.receive({ t: 'clock', action: { do: 'speed', speed: 60 } });
     gm.receive({ t: 'clock', action: { do: 'calendar', calendar: { weekdays: ['One', 'Two'], epochYear: 1492 } } });
-    expect(clock()).toMatchObject({ time: 3 * DAY, speed: 60, calendar: { weekdays: ['One', 'Two'], epochYear: 1492 } });
+    expect(clock()).toMatchObject({
+      time: 3 * DAY,
+      speed: 60,
+      calendar: { weekdays: ['One', 'Two'], epochYear: 1492 },
+    });
     expect(said(gm).at(-1)).toMatch(/^Two, 4 January 1492/);
   });
 
@@ -222,7 +226,11 @@ describe('turn-based mode', () => {
 describe('darkness following the clock', () => {
   it('lights scenes that follow the clock by the time of day', () => {
     const gm = seat('gm');
-    gm.receive({ t: 'ops', txn: 't', ops: [{ op: 'update', coll: 'scenes', id: 'main', patch: { darknessFollowsClock: true } }] });
+    gm.receive({
+      t: 'ops',
+      txn: 't',
+      ops: [{ op: 'update', coll: 'scenes', id: 'main', patch: { darknessFollowsClock: true } }],
+    });
     expect(store.world.darkness).toBe(1);
     gm.take('lighting');
     gm.receive({ t: 'clock', action: { do: 'skip', seconds: 12 * HOUR } });

@@ -7,6 +7,7 @@ import { Session } from '../session.ts';
 import { stepTarget } from '../stepping.ts';
 import { activateTile, ActionBar, canActivate } from './ActionBar.tsx';
 import { CharacterSheet } from './CharacterSheet.tsx';
+import { ClockBar } from './ClockBar.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
 import { Inspector } from './Inspector.tsx';
@@ -68,6 +69,7 @@ export function GameScreen({
         />
         <strong className="world-name">{session.world?.name ?? 'Connecting…'}</strong>
         {session.sceneName && <span className="scene-name">{session.sceneName}</span>}
+        <ClockBar session={session} />
         <span className="you" style={{ color: session.you?.color }}>
           {session.you?.name}
         </span>

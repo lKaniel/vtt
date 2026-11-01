@@ -1,4 +1,3 @@
-import type { Doc } from '@vtt/core';
 import {
   type Calendar,
   CalendarSchema,
@@ -123,7 +122,8 @@ export class WorldClock {
     const next = combat ? clockInFight(clock, combat.round, at) : clockAfterFight(clock, at);
     if (next !== clock) this.put(next);
     const now = timeNow(next, at);
-    if (combat && clock.round === undefined) this.store.inScene(this.store.activeScene, () => this.out.fightStarts(now));
+    if (combat && clock.round === undefined)
+      this.store.inScene(this.store.activeScene, () => this.out.fightStarts(now));
     this.out.settle(now);
   }
 
@@ -143,7 +143,7 @@ export class WorldClock {
   }
 
   private put(clock: Clock): void {
-    this.store.applyOps(putOps(this.store.docs, CLOCK_COLL, toDoc('clock', clock, CLOCK_ID) as Doc));
+    this.store.applyOps(putOps(this.store.docs, CLOCK_COLL, toDoc('clock', clock, CLOCK_ID)));
   }
 
   /** The clock or a scene changed: run or stop the tick, and relight the scenes that follow the clock. */

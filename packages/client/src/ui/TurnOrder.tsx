@@ -13,15 +13,23 @@ export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onS
         <button className="btn" onClick={onStart} title="Roll initiative for every creature with stats on screen">
           Start combat
         </button>
+        <button
+          className="btn small"
+          onClick={() => session.setTurnBased(true)}
+          title="Turn-based mode: the party takes turns, 6 seconds a round"
+        >
+          Turn-based
+        </button>
         <RestButtons session={session} />
       </div>
     ) : null;
   }
   const current = currentTurn(combat);
+  const peaceful = combat.peaceful === true;
   return (
-    <div className="turn-order">
-      <span className="round" title="Round">
-        <span className="round-label">Round</span>
+    <div className={`turn-order${peaceful ? ' peaceful' : ''}`}>
+      <span className="round" title={peaceful ? 'Turn-based mode: 6 seconds a round' : 'Round'}>
+        <span className="round-label">{peaceful ? 'Turns' : 'Round'}</span>
         <span className="round-number">{combat.round}</span>
       </span>
       <div className="turns">
@@ -44,7 +52,12 @@ export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onS
           );
         })}
       </div>
-      {gm && (
+      {gm && peaceful && (
+        <button className="btn small" onClick={() => session.setTurnBased(false)}>
+          Real time
+        </button>
+      )}
+      {gm && !peaceful && (
         <button className="btn small" onClick={() => session.endCombat()}>
           End combat
         </button>

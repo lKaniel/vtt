@@ -186,6 +186,8 @@ function LightPresets({ session }: Readonly<{ session: Session }>) {
 /** A slider from day to night; the change is sent when you let go. It starts over when the darkness changes. */
 function Darkness({ session }: Readonly<{ session: Session }>) {
   const [value, setValue] = useState(session.world?.darkness ?? 0);
+  const clock = session.docs.get('scenes', session.scene)?.darknessFollowsClock === true;
+  if (clock) return <span className="muted map-tools-darkness">Darkness follows the clock</span>;
   return (
     <label className="map-tools-darkness" title="Time of day: how dark unlit places are">
       <span>Day</span>

@@ -8,7 +8,21 @@ import {
   parseClipboard,
   type Patch,
 } from '@vtt/core';
-import { applyPatch, copyRefs, deleteRefs, type HistoryState, pasteAt, pasteOffsetTo, type Point } from '@vtt/shared';
+import {
+  applyPatch,
+  type Clock,
+  CLOCK_COLL,
+  CLOCK_ID,
+  ClockSchema,
+  copyRefs,
+  deleteRefs,
+  formatDate,
+  type HistoryState,
+  pasteAt,
+  pasteOffsetTo,
+  type Point,
+  timeNow,
+} from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import { Commands } from './session-commands.ts';
 
@@ -38,6 +52,25 @@ export abstract class EditSession extends Commands {
   private txns = 0;
   /** Edits shown before the server confirmed them: the documents as they were, by transaction. */
   private pending = new Map<string, Shown[]>();
+  /** How far the server's clock (ms) is ahead of this browser's. */
+  private serverOffset = 0;
+
+  /** The game clock and its calendar (time.json). */
+  clock(): Clock {
+    const doc = this.docs.get(CLOCK_COLL, CLOCK_ID);
+    const { type: _t, rev: _r, id: _id, ...data } = doc ?? { type: '', rev: 0, id: '' };
+    return ClockSchema.parse(data);
+  }
+
+  /** Game seconds now. */
+  gameTime(): number {
+    return timeNow(this.clock(), Date.now() + this.serverOffset);
+  }
+
+  /** "Monday, 3 March 1492 DR, 14:05" */
+  dateText(): string {
+    return formatDate(this.clock().calendar, this.gameTime());
+  }
 
   /** What the edit commands work on: the selected token, or the actor whose sheet is open. */
   protected abstract editTargets(): DocRef[];
@@ -200,5 +233,6 @@ export abstract class EditSession extends Commands {
       this.docs.mirror(docs.map((doc) => ({ coll, id: doc.id, doc })));
     this.scene = msg.scene;
     this.history = msg.history;
+    this.serverOffset = msg.serverTime === undefined ? 0 : msg.serverTime - Date.now();
   }
 }
