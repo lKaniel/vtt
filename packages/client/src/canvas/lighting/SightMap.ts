@@ -1,4 +1,4 @@
-import { feetToPx, type LightSource, type Point, type Rect, type Senses } from '@vtt/shared';
+import { feetToPx, type LightSource, type Point, type ReachPolygon, type Rect, type Senses } from '@vtt/shared';
 import { Container, Graphics, RenderTexture, type Renderer } from 'pixi.js';
 import { MAP_RESOLUTION, placeScene, type ViewTransform } from './LightMap.ts';
 
@@ -15,7 +15,7 @@ export interface SightScene {
   darkness: readonly LightSource[];
   /** How far eyes reach when nothing blocks them, in pixels. */
   sightRadius: number;
-  polygon: (at: Point, radius: number) => number[];
+  polygon: ReachPolygon;
 }
 
 /**
@@ -72,6 +72,8 @@ export class SightMap {
   }
 
   private area(g: Graphics, scene: SightScene, at: Point, radius: number): void {
-    if (radius > 0) g.poly(scene.polygon(at, radius)).fill(g === this.darkness ? 0x00ffff : 0xff0000);
+    if (radius <= 0) return;
+    const dark = g === this.darkness;
+    g.poly(scene.polygon(at, radius, dark ? 'light' : 'sight')).fill(dark ? 0x00ffff : 0xff0000);
   }
 }

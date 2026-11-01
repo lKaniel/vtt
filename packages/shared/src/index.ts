@@ -7,6 +7,7 @@ export * from './pathfinding.ts';
 export * from './dice.ts';
 export * from './permissions.ts';
 export * from './vision.ts';
+export * from './walls.ts';
 export * from './senses.ts';
 export * from './protocol.ts';
 export * from './map-edit.ts';

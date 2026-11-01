@@ -135,6 +135,11 @@ Bottom right: the fields of the selection (`editor/inspector.ts`). A field
 that differs across the selection shows "Mixed"; setting it sets it on all of
 them, as one undo step.
 
+A wall's Kind picks one of the usual kinds (wall, door, window, terrain,
+invisible, ethereal); below it, Movement, Sight, Light and Sound set what it
+stops one by one (`editor/wall-fields.ts`, rules in `shared/walls.ts`), and a
+proximity sense asks from how many feet it passes.
+
 ## How it fits together
 
 - `shared/hit-test.ts`: shapes (circle, segment, rect, polygon, path), picking and

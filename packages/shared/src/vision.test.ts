@@ -29,7 +29,7 @@ describe('visibilityPolygon', () => {
   });
 
   it('sees through windows and open doors', () => {
-    expect(pointInPolygon([400, 0], visibilityPolygon([0, 0], 1000, [{ ...wall, sight: false }]))).toBe(true);
+    expect(pointInPolygon([400, 0], visibilityPolygon([0, 0], 1000, [{ ...wall, sight: 'none' }]))).toBe(true);
     expect(pointInPolygon([400, 0], visibilityPolygon([0, 0], 1000, [{ ...wall, door: 'open' }]))).toBe(true);
   });
 });

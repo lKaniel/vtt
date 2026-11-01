@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { feetToPx, handlesOf, type Point, type Rect, shapeOf } from '@vtt/shared';
+import { feetToPx, handlesOf, type Point, type Rect, restriction, shapeOf, type WallRules } from '@vtt/shared';
 import type { Graphics } from 'pixi.js';
 import { traceShape } from './item-draw.ts';
 import { lightColor } from './lighting/light-style.ts';
@@ -22,7 +22,7 @@ export interface DrawCtx {
 
 function wallColor(w: Doc): number {
   if (w.door) return DOOR_COLOR;
-  return w.sight === false ? WINDOW_COLOR : WALL_COLOR;
+  return restriction(w as WallRules, 'sight') === 'normal' ? WALL_COLOR : WINDOW_COLOR;
 }
 
 export function drawWall(g: Graphics, w: Doc, { px }: DrawCtx): void {
