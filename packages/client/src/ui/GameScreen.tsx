@@ -57,6 +57,7 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId?: string; 
           title={session.status === 'open' ? 'Connected' : session.status}
         />
         <strong className="world-name">{session.world?.name ?? 'Connecting…'}</strong>
+        {session.sceneName && <span className="scene-name">{session.sceneName}</span>}
         <span className="you" style={{ color: session.you?.color }}>
           {session.you?.name}
         </span>

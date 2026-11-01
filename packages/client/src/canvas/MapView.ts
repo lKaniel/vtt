@@ -244,7 +244,7 @@ export class MapView {
 
   /** Outside the tokens mode, clicks go to the editor instead of tokens and doors. */
   private onEditor(): void {
-    const editing = this.editor.active;
+    const editing = this.editor.active || this.fogBrush.active;
     this.tokens.container.eventMode = editing ? 'none' : 'passive';
     this.chunks.walls.eventMode = editing ? 'none' : 'passive';
     if (this.mode !== this.session.mode || this.tool !== this.session.tool) this.editor.cancel();

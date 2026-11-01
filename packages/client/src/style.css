@@ -3924,11 +3924,24 @@ button.pip:hover {
 .scene-settings .scene-check {
   justify-content: flex-start;
 }
+.scene-settings .scene-check input {
+  width: auto;
+  margin: 0;
+  flex: none;
+}
+.scene-settings .scene-check span {
+  flex: 1;
+  text-align: left;
+  color: var(--text);
+}
 .scene-settings input[type='number'] {
   width: 80px;
 }
 .fog-tools {
   align-items: center;
+}
+.scene-name {
+  color: var(--muted);
 }
 .fog-label {
   font-family: var(--display);
