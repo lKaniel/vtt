@@ -20,7 +20,7 @@ const goblin = ActorSchema.parse({ id: 'goblin', name: 'Goblin', monster: 'gobli
 const bram = ActorSchema.parse({
   id: 'bram',
   name: 'Bram',
-  controllers: ['player2'],
+  ownership: { default: 'limited', player2: 'owner' },
   stats: { maxHp: 28, abilities: { str: 16 } },
   hp: 20,
 });

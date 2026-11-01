@@ -42,7 +42,7 @@ export const token = (id: string, x = 50, y = 50): Token => ({
   color: '#fff',
   speed: 30,
   darkvision: 0,
-  controllers: ['ana'],
+  ownership: { default: 'limited', ana: 'owner' },
   hidden: false,
 });
 

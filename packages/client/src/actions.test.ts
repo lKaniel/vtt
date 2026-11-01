@@ -28,7 +28,6 @@ function wizard(): TokenView {
     size: 1,
     color: '#38f',
     speed: 30,
-    controllers: [],
     darkvision: 0,
     hidden: false,
     sheet: {

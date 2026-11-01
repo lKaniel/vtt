@@ -146,7 +146,7 @@ describe('Session', () => {
 
   describe('in combat', () => {
     beforeEach(() => {
-      ws.receive(welcome([token('hero'), { ...token('goblin', 150), controllers: [] }]));
+      ws.receive(welcome([token('hero'), { ...token('goblin', 150), ownership: undefined }]));
     });
 
     it('knows whose turn it is and how far each token may walk', () => {
@@ -317,7 +317,7 @@ describe('Session', () => {
     it('picks the creatures on screen for a new fight', () => {
       const sheet = { hp: 5, maxHp: 5 } as never;
       ws.receive({ t: 'token', token: { ...token('hero'), sheet } });
-      ws.receive({ t: 'token', token: { ...token('goblin', 150), controllers: [], health: 'hurt' } });
+      ws.receive({ t: 'token', token: { ...token('goblin', 150), ownership: undefined, health: 'hurt' } });
       ws.receive({ t: 'token', token: { ...token('far', 5000), health: 'unhurt' } });
       ws.receive({ t: 'token', token: { ...token('lurker', 250), hidden: true, health: 'unhurt' } });
       ws.receive({ t: 'token', token: token('barrel', 350) });

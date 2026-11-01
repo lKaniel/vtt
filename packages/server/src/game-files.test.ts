@@ -75,7 +75,13 @@ function state(tokens: (Token | TokenEntry)[], extra: Partial<GameState> = {}): 
 
 describe('crossCheck', () => {
   it('reports observers who are not at the table', () => {
-    const token = TokenSchema.parse({ id: 'w', name: 'W', x: 0, y: 0, observers: ['ghost'] });
+    const token = TokenSchema.parse({
+      id: 'w',
+      name: 'W',
+      x: 0,
+      y: 0,
+      ownership: { default: 'limited', ghost: 'observer' },
+    });
     expect(crossCheck(state([token]))).toEqual([
       { file: 'scenes/main/tokens.json', message: 'token "w": unknown player "ghost"' },
     ]);
@@ -127,7 +133,7 @@ describe('crossCheck', () => {
     const tokens: TokenEntry[] = [
       { id: 'a', x: 0, y: 0, actor: 'nobody' },
       { id: 'b', x: 0, y: 0, actor: 'odd', delta: { name: null } },
-      { id: 'c', x: 0, y: 0, actor: 'odd', delta: { observers: ['ghost'] } },
+      { id: 'c', x: 0, y: 0, actor: 'odd', delta: { ownership: { default: 'limited', ghost: 'observer' } } },
     ];
     expect(
       crossCheck(state(tokens, { actors: new Map([['odd', odd]]) })).map((i) => `${i.file}: ${i.message}`),

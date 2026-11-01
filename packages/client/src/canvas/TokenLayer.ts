@@ -1,4 +1,14 @@
-import { canObserveToken, currentTurn, hasCondition, isGm, type Health, type Point, type TokenView } from '@vtt/shared';
+import {
+  canObserve,
+  currentTurn,
+  hasCondition,
+  isGm,
+  isParty,
+  ownersOf,
+  type Health,
+  type Point,
+  type TokenView,
+} from '@vtt/shared';
 import { Assets, Container, Graphics, Sprite as PixiSprite, Text, type Texture } from 'pixi.js';
 import { BarTween } from '../bar-tween.ts';
 import { cutoutOf, portraitOf } from '../icon-art.ts';
@@ -108,7 +118,7 @@ export class TokenLayer {
     const out: Viewer[] = [];
     for (const t of this.session.tokens.values()) {
       const view = this.views.get(t.id);
-      if (view && canObserveToken(t, you)) out.push({ token: t, at: [view.root.x, view.root.y] });
+      if (view && canObserve(t, you)) out.push({ token: t, at: [view.root.x, view.root.y] });
     }
     return out;
   }
@@ -196,8 +206,8 @@ export class TokenLayer {
 
   private ringColor(token: TokenView): string {
     const you = this.session.you;
-    if (you && token.controllers.includes(you.id)) return you.color;
-    return token.controllers.length > 0 ? ALLY_RIM : OTHER_RIM;
+    if (you && ownersOf(token).includes(you.id)) return you.color;
+    return isParty(token) ? ALLY_RIM : OTHER_RIM;
   }
 
   private create(token: TokenView): Sprite {

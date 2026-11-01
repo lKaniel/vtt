@@ -23,10 +23,17 @@ describe('the GM token editor', () => {
 });
 
 describe('ownership in the editor', () => {
-  it('moves a player between owner, observer and none', () => {
-    const t = { controllers: ['ana'], observers: ['bo'] };
-    expect(setOwnership(t, 'bo', 'owner')).toEqual({ controllers: ['ana', 'bo'] });
-    expect(setOwnership(t, 'ana', 'observer')).toEqual({ controllers: [], observers: ['bo', 'ana'] });
-    expect(setOwnership(t, 'bo', 'none')).toEqual({ controllers: ['ana'] });
+  it('sets one player’s level, or everyone’s default', () => {
+    const t = { ownership: { default: 'limited' as const, ana: 'owner' as const, bo: 'observer' as const } };
+    expect(setOwnership(t, 'bo', 'owner').ownership).toEqual({ default: 'limited', ana: 'owner', bo: 'owner' });
+    expect(setOwnership(t, 'bo', 'limited').ownership).toEqual({ default: 'limited', ana: 'owner' });
+    expect(setOwnership(t, 'default', 'none').ownership).toEqual({ default: 'none', ana: 'owner', bo: 'observer' });
+  });
+
+  it('leaves a document that says nothing special without ownership', () => {
+    expect(
+      setOwnership({ ownership: { default: 'limited' as const, ana: 'owner' as const } }, 'ana', 'limited'),
+    ).toEqual({});
+    expect(setOwnership({}, 'ana', 'owner')).toEqual({ ownership: { default: 'limited', ana: 'owner' } });
   });
 });

@@ -182,7 +182,6 @@ describe('the Actors list', () => {
       size: 1,
       color: '#b04a3a',
       speed: 30,
-      controllers: [],
       darkvision: 0,
       hidden: false,
     });

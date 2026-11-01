@@ -1,4 +1,13 @@
-import { DamageTypeSchema, omitKey, type Ability, type DamageType, type Ownership, type Stats } from '@vtt/shared';
+import {
+  DamageTypeSchema,
+  omitKey,
+  type Ability,
+  type DamageType,
+  type Level,
+  type Ownership,
+  type Stats,
+  withLevel,
+} from '@vtt/shared';
 
 // The GM's token editor works on a draft copy of the token; these helpers
 // keep the draft tidy and turn it into the patch the server applies.
@@ -24,16 +33,15 @@ function withField<T extends object>(obj: T, key: string, value: unknown): T {
   return empty ? omitKey(obj, key) : { ...obj, [key]: value };
 }
 
-/** The draft with `player` owning the token, observing it, or neither; an empty observer list goes away. */
-export function setOwnership<D extends { controllers: string[]; observers?: string[] }>(
-  draft: D,
-  player: string,
-  level: Ownership,
-): D {
-  const without = (list: readonly string[] = []) => list.filter((p) => p !== player);
-  const controllers = level === 'owner' ? [...without(draft.controllers), player] : without(draft.controllers);
-  const observers = level === 'observer' ? [...without(draft.observers), player] : without(draft.observers);
-  return withField({ ...draft, controllers }, 'observers', observers);
+/**
+ * The draft with `player`'s level set, or everyone's when `player` is
+ * "default"; ownership that says no more than "everyone sees it" goes away.
+ */
+export function setOwnership<D extends { ownership?: Ownership }>(draft: D, player: string, level: Level): D {
+  const ownership =
+    player === 'default' ? { ...(draft.ownership ?? {}), default: level } : withLevel(draft.ownership, player, level);
+  const plain = Object.keys(ownership).length === 1 && ownership.default === 'limited';
+  return withField(draft, 'ownership', plain ? undefined : ownership);
 }
 
 /** The draft with one `stats` field set or cleared; an empty `stats` goes away. */

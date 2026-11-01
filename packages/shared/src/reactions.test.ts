@@ -13,7 +13,7 @@ const hero = (data: object = {}) =>
     name: 'Hero',
     x: at(0, 0)[0],
     y: at(0, 0)[1],
-    controllers: ['ana'],
+    ownership: { default: 'limited', ana: 'owner' },
     stats: { level: 1 },
     ...data,
   });
@@ -37,7 +37,7 @@ describe('opportunity attacks', () => {
     const disengaged = hero({ effects: [{ id: 'd', name: 'Disengaged', disengaged: true }] });
     expect(opportunityAttackers({ mover: disengaged, path: away, others, gridSize: G, reacted: [] })).toEqual([]);
     expect(opportunityAttackers({ mover: hero(), path: away, others, gridSize: G, reacted: ['near'] })).toEqual([]);
-    const friend = fighters([goblin('pal', 1, { controllers: ['bo'] })]);
+    const friend = fighters([goblin('pal', 1, { ownership: { default: 'limited', bo: 'owner' } })]);
     expect(opportunityAttackers({ mover: hero(), path: away, others: friend, gridSize: G, reacted: [] })).toEqual([]);
   });
 });

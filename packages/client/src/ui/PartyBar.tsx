@@ -1,4 +1,4 @@
-import { canObserveToken, isGm, isPartyToken } from '@vtt/shared';
+import { canObserve, isGm, isParty } from '@vtt/shared';
 import type { Session } from '../session.ts';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 
@@ -7,7 +7,7 @@ export function PartyBar({ session }: Readonly<{ session: Session }>) {
   const you = session.you;
   // Players see the tokens they own or observe; the GM sees the whole party.
   const mine = [...session.tokens.values()].filter((t) =>
-    you && isGm(you) ? isPartyToken(t) : !!you && canObserveToken(t, you),
+    you && isGm(you) ? isParty(t) : !!you && canObserve(t, you),
   );
   if (mine.length === 0) return null;
   const turn = session.turnToken()?.id;

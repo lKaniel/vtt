@@ -201,7 +201,7 @@ describe('characterToken', () => {
       name: 'Tordek',
       speed: 25,
       darkvision: 60,
-      controllers: ['kaniel'],
+      ownership: { default: 'limited', kaniel: 'owner' },
       stats: {
         rules: '2014',
         class: 'cleric',

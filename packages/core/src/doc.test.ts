@@ -21,8 +21,9 @@ describe('ownership', () => {
     expect(levelFor(ownership, 'someone')).toBe('limited');
   });
 
-  it('treats a document without ownership as unseen by players', () => {
-    expect(levelFor(undefined, 'kaniel')).toBe('none');
+  it('lets everyone see, but not read, a document that says nothing', () => {
+    expect(levelFor(undefined, 'kaniel')).toBe('limited');
+    expect(levelFor(OwnershipSchema.parse({ kaniel: 'owner' }), 'someone')).toBe('limited');
   });
 
   it('rejects unknown levels', () => {

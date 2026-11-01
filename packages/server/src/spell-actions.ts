@@ -290,7 +290,7 @@ export class SpellActions {
         speed: monster.speed,
         darkvision: monster.darkvision,
         monster: monster.id,
-        controllers: caster.token.controllers,
+        ownership: caster.token.ownership,
         summon: { by: caster.token.id, spell: spell.id, concentration: spell.concentration },
         leader: spell.summon!.turn === 'shared' ? caster.token.id : undefined,
       }),

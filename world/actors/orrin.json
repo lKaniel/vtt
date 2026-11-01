@@ -2,7 +2,6 @@
   "id": "orrin",
   "name": "Orrin",
   "color": "#3a7ad0",
-  "controllers": ["player1"],
   "light": {
     "bright": 10,
     "dim": 10
@@ -35,5 +34,9 @@
       "item": "quarterstaff",
       "equipped": true
     }
-  ]
+  ],
+  "ownership": {
+    "default": "limited",
+    "player1": "owner"
+  }
 }

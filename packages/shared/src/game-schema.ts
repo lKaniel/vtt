@@ -11,7 +11,7 @@ const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digi
 /** game.json */
 export const GameSchema = z.object({
   id,
-  /** Folder format: 3 = actors split from tokens. Older folders are moved up when the server starts. */
+  /** Folder format: 3 = actors split from tokens, 4 = ownership levels. Older folders are moved up when the server starts. */
   format: z.number().int().positive().optional(),
   name: z.string().min(1),
   /** Rules edition: "2014" (SRD 5.1) or "2024" (SRD 5.2). Characters can override it. */

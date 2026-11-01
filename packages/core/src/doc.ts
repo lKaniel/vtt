@@ -13,13 +13,16 @@ import { DocSchema, IdSchema } from './ops.ts';
 export const LevelSchema = z.enum(['none', 'limited', 'observer', 'owner']);
 export type Level = z.infer<typeof LevelSchema>;
 
-/** `default` for everyone, plus a level per account id. */
-export const OwnershipSchema = z.object({ default: LevelSchema.default('none') }).catchall(LevelSchema);
+/** `default` for everyone (limited unless it says otherwise), plus a level per account id. */
+export const OwnershipSchema = z.object({ default: LevelSchema.default('limited') }).catchall(LevelSchema);
 export type Ownership = z.infer<typeof OwnershipSchema>;
 
-/** The level `account` has on a document. Roles (a GM sees everything) are applied on top of this. */
+/**
+ * The level `account` has on a document; one that says nothing is seen but
+ * not read. Roles (a GM sees everything) are applied on top of this.
+ */
 export function levelFor(ownership: Ownership | undefined, account: string): Level {
-  if (!ownership) return 'none';
+  if (!ownership) return 'limited';
   return ownership[account] ?? ownership.default;
 }
 

@@ -1,6 +1,6 @@
 import type { Content } from './content.ts';
 import { resolveCreature, type Creature } from './creature.ts';
-import { canObserveToken } from './permissions.ts';
+import { canObserve } from './permissions.ts';
 import type { Player, Token } from './schema.ts';
 import { sensesOf, type Senses } from './senses.ts';
 
@@ -31,7 +31,7 @@ export function viewToken(token: Token, player: Player, content: Content): Token
   if (!sheet) return token;
   const art = token.monster ? content.monsters.get(token.monster)?.img : undefined;
   const look = art ? { art } : {};
-  if (canObserveToken(token, player)) {
+  if (canObserve(token, player)) {
     const senses = sensesOf(token, token.monster ? content.monsters.get(token.monster) : undefined);
     return { ...token, ...look, sheet, senses };
   }

@@ -264,7 +264,7 @@ function tokenIssues(t: Actor, players: Set<string>, world: World): string[] {
   const edition = editionOf(t, world);
   const srd = srdFor(edition);
   return [
-    ...[...t.controllers, ...(t.observers ?? []), ...(t.visibleTo ?? [])]
+    ...[...Object.keys(t.ownership ?? {}).filter((k) => k !== 'default'), ...(t.visibleTo ?? [])]
       .filter((c) => !players.has(c))
       .map((c) => `unknown player "${c}"`),
     ...(t.monster && !srd.monsters.has(t.monster) ? [`unknown monster "${t.monster}" in the ${edition} rules`] : []),

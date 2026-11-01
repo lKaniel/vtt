@@ -2,7 +2,6 @@
   "id": "vesper",
   "name": "Vesper",
   "color": "#7a5ad0",
-  "controllers": ["player1"],
   "darkvision": 60,
   "stats": {
     "class": "Illusionist",
@@ -33,5 +32,9 @@
     {
       "item": "thieves-tools"
     }
-  ]
+  ],
+  "ownership": {
+    "default": "limited",
+    "player1": "owner"
+  }
 }

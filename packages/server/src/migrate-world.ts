@@ -1,7 +1,8 @@
-import { cp, mkdir, readdir, readFile, rm } from 'node:fs/promises';
+import { cp, mkdir, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { writeJson } from './json-files.ts';
+import { readJsonFile } from './migrate-files.ts';
 
 // Storage v2 moves a world folder (world.json, chunks/, tokens/) to the game
 // layout (game.json, scenes/<id>/<collection>.json). The conversion works on
@@ -147,15 +148,6 @@ export function migrateWorld(legacy: LegacyWorld, opts: MigrateOptions = {}): { 
 const LEGACY = ['world.json', 'chunks', 'tokens'];
 /** Kept in place (the new layout has them too), but copied into the backup. */
 const SHARED = ['actors', 'combat.json', 'game.json', 'scenes'];
-
-async function readJsonFile(dir: string, rel: string): Promise<unknown> {
-  const text = await readFile(join(dir, rel), 'utf8');
-  try {
-    return JSON.parse(text) as unknown;
-  } catch (e) {
-    throw new Error(`${rel} can't be migrated: ${(e as Error).message}`, { cause: e });
-  }
-}
 
 async function readFolder(dir: string, sub: string): Promise<Map<string, unknown>> {
   const out = new Map<string, unknown>();

@@ -136,9 +136,13 @@ describe('account api', () => {
     expect(joined).toMatchObject({ status: 200, json: { player: { id: 'dee', role: 'player' } } });
     expect(store.world.players.map((p) => p.id)).toContain('dee');
     const token = store.tokens.get(id)!;
-    expect(token).toMatchObject({ name: 'Vex', controllers: ['dee'], stats: { class: 'sorcerer', level: 1 } });
+    expect(token).toMatchObject({
+      name: 'Vex',
+      ownership: { default: 'limited', dee: 'owner' },
+      stats: { class: 'sorcerer', level: 1 },
+    });
     expect(token).toMatchObject({ actor: id, linked: true });
-    expect(store.actors.get(id)).toMatchObject({ name: 'Vex', controllers: ['dee'] });
+    expect(store.actors.get(id)).toMatchObject({ name: 'Vex', ownership: { default: 'limited', dee: 'owner' } });
     await store.flush();
     const saved = JSON.parse(await readFile(join(worldDir, 'game.json'), 'utf8')) as { players: Json[] };
     expect(saved.players.map((p) => p.id)).toContain('dee');

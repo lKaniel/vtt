@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canSeeToken, chunksInRect, findPath, roll, segmentsIntersect, TokenSchema, type Wall } from './index.ts';
+import { chunksInRect, findPath, roll, segmentsIntersect, type Wall } from './index.ts';
 
 const G = 100;
 
@@ -72,17 +72,5 @@ describe('chunksInRect', () => {
       '0_-1',
       '0_0',
     ]);
-  });
-});
-
-describe('canSeeToken', () => {
-  const gm = { id: 'gm', name: 'GM', role: 'gm' as const, color: '#fff' };
-  const ana = { id: 'ana', name: 'Ana', role: 'player' as const, color: '#fff' };
-  const bo = { id: 'bo', name: 'Bo', role: 'player' as const, color: '#fff' };
-  it('hides illusions from players they were not woven for', () => {
-    const t = TokenSchema.parse({ id: 'ghost', name: 'Ghost', x: 0, y: 0, visibleTo: ['ana'] });
-    expect(canSeeToken(t, gm)).toBe(true);
-    expect(canSeeToken(t, ana)).toBe(true);
-    expect(canSeeToken(t, bo)).toBe(false);
   });
 });

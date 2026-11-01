@@ -44,17 +44,20 @@ you add maps, place tokens, and prepare encounters.
 - Rules and geometry live in `shared` so the server can enforce them and the
   client can preview them with the same code. Don't duplicate them.
 - The server is authoritative: clients send intents, the server validates
-  and broadcasts each player's filtered view (`canSeeToken`, `viewToken`).
+  and broadcasts each player's filtered view (`canSee`, `viewToken`).
 - Edits are document ops (see `docs/edits.md`): a client sends an `ops`
-  transaction (GM only until step 5), the server checks it against the file
-  schemas (`doc-checks.ts`) and applies it all or nothing. Every message is
+  transaction, the server checks each op against the sender's ownership
+  (`op-permissions.ts`) and the file schemas (`doc-checks.ts`) and applies
+  it all or nothing. Each client is sent only the documents it may read
+  (`doc-feed.ts`). Every message is
   one undo step (`undo.ts`): edits per user, game actions GM-undoable. Copy,
   cut, paste, duplicate and delete go through one registry, `EDIT_KINDS` in
   `shared/edit-kinds.ts`; a new document type adds itself there and gets a
   sample in `server/edit-commands.test.ts`, never its own clipboard code.
 - Who may do what lives in `permissions.ts`: seat roles (gm, trusted, player,
-  observer) and token ownership (`controllers` own, `observers` look). Check
-  with its helpers (`isGm`, `canControlToken`, `canEditToken`), never `role === 'gm'`.
+  observer) and Foundry-style `ownership` levels on documents (none, limited,
+  observer, owner). Check with its helpers (`isGm`, `canSee`, `canObserve`,
+  `canControl`, `canEdit`), never `role === 'gm'` or the levels by hand.
 - Combat rules: `creature.ts` (stats from monster/gear), `attack.ts` (rolls,
   damage, range), `combat.ts` (initiative, turns). The server applies them
   in `combat-actions.ts`; a rule violation throws `Refusal`.

@@ -43,7 +43,7 @@ describe('the GM tools', () => {
     ws.receive(welcome());
     session.openSheet({ kind: 'token', id: 'hero' }, true);
     expect(session.sheet?.edit).toBe(false);
-    const trusted = welcome([token('hero'), { ...token('goblin'), controllers: [] }]);
+    const trusted = welcome([token('hero'), { ...token('goblin'), ownership: undefined }]);
     ws.receive({ ...trusted, you: { id: 'ana', name: 'Ana', role: 'trusted', color: '#f00' } } as ServerMessage);
     expect(session.canEdit('hero')).toBe(true);
     expect(session.canEdit('goblin')).toBe(false);

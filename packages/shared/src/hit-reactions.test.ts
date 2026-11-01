@@ -12,7 +12,7 @@ const pc = (cls: string, data: object = {}) =>
     name: 'PC',
     x: 50,
     y: 50,
-    controllers: ['ana'],
+    ownership: { default: 'limited', ana: 'owner' },
     stats: { class: cls, level: 5, abilities: { dex: 14 }, spells: cls === 'wizard' ? ['shield'] : [] },
     ...data,
   });

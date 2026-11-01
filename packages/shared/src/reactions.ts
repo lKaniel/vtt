@@ -1,12 +1,13 @@
 import { tokenDistance } from './attack.ts';
 import type { Creature } from './creature.ts';
 import { canAct } from './effects.ts';
+import { isParty } from './permissions.ts';
 import type { Point, Token } from './schema.ts';
 
 // Reactions: what a creature may do out of turn, once between its own
 // turns. Opportunity attacks come from enemies whose reach a creature leaves.
 
-const onSide = (t: Pick<Token, 'controllers'>) => t.controllers.length > 0;
+const onSide = (t: Pick<Token, 'ownership'>) => isParty(t);
 
 /** How far a creature's melee attacks reach, or 0 without any. */
 function reachOf(sheet: Creature): number {

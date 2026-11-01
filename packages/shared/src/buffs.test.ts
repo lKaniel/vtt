@@ -12,7 +12,7 @@ const cleric = TokenSchema.parse({
   name: 'Cleric',
   x: 50,
   y: 150,
-  controllers: ['ana'],
+  ownership: { default: 'limited', ana: 'owner' },
   stats: { class: 'cleric', level: 5, abilities: { wis: 16, dex: 14, con: 12 } },
 });
 const ally = (patch: Partial<Token> = {}) =>
@@ -21,7 +21,7 @@ const ally = (patch: Partial<Token> = {}) =>
     name: 'Bo',
     x: 50,
     y: 50,
-    controllers: ['bo'],
+    ownership: { default: 'limited', bo: 'owner' },
     stats: { class: 'fighter', level: 3, abilities: { dex: 14, con: 14 } },
     ...patch,
   });

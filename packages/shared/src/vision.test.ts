@@ -21,8 +21,20 @@ describe('visibilityPolygon', () => {
 
 describe('tokensVisibleTo', () => {
   const player = { id: 'p1', name: 'P1', role: 'player' as const, color: '#fff' };
-  const hero = TokenSchema.parse({ id: 'hero', name: 'Hero', x: 50, y: 50, controllers: ['p1'] });
-  const ally = TokenSchema.parse({ id: 'ally', name: 'Ally', x: 5050, y: 50, controllers: ['p2'] });
+  const hero = TokenSchema.parse({
+    id: 'hero',
+    name: 'Hero',
+    x: 50,
+    y: 50,
+    ownership: { default: 'limited', p1: 'owner' },
+  });
+  const ally = TokenSchema.parse({
+    id: 'ally',
+    name: 'Ally',
+    x: 5050,
+    y: 50,
+    ownership: { default: 'limited', p2: 'owner' },
+  });
   const orc = (x: number, y: number) => TokenSchema.parse({ id: 'orc', name: 'Orc', x, y });
   const ctx = (
     darkness: number,

@@ -1,7 +1,8 @@
 import {
   applyDamage,
   attackRange,
-  canControlToken,
+  canControl,
+  isParty,
   currentTurn,
   deathSave,
   isDying,
@@ -83,7 +84,7 @@ export class CombatActions {
     const combat = this.store.combat;
     if (!combat) throw new Refusal('There is no fight going on');
     const token = this.store.tokens.get(currentTurn(combat) ?? '');
-    if (token && !canControlToken(token, player)) throw new Refusal("It's not your turn");
+    if (token && !canControl(token, player)) throw new Refusal("It's not your turn");
     if (token) this.endOfTurn(token);
     this.advance();
   }
@@ -245,7 +246,7 @@ export class CombatActions {
 
   /** Another creature on the attacker's side stands within 5 ft of the target. */
   private allyNear(attacker: Token, target: Token): boolean {
-    const side = (t: Token) => t.controllers.length > 0;
+    const side = (t: Token) => isParty(t);
     return [...this.store.tokens.values()].some(
       (t) =>
         t.id !== attacker.id &&
@@ -308,7 +309,7 @@ export class CombatActions {
 
   equip(player: Player, id: string, index: number, equipped: boolean): void {
     const token = this.store.tokens.get(id);
-    if (!token || !canControlToken(token, player)) throw new Refusal('No such token');
+    if (!token || !canControl(token, player)) throw new Refusal('No such token');
     const inventory = token.inventory ?? [];
     if (!inventory[index]) throw new Refusal(`${token.name} has no such item`);
     this.store.setToken({ ...token, inventory: inventory.map((e, i) => (i === index ? { ...e, equipped } : e)) });

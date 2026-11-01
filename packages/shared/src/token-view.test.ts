@@ -10,7 +10,7 @@ const hero = TokenSchema.parse({
   name: 'Hero',
   x: 0,
   y: 0,
-  controllers: ['ana'],
+  ownership: { default: 'limited', ana: 'owner' },
   stats: { maxHp: 12 },
   inventory: [{ item: 'dagger', equipped: true }],
 });

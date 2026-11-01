@@ -23,7 +23,14 @@ describe('freeSquare', () => {
 describe('characterOnMap', () => {
   it('places a new token for the character', () => {
     const token = characterOnMap(vex, undefined, [450, 450]);
-    expect(token).toMatchObject({ id: 'vex', name: 'Vex', x: 450, y: 450, controllers: ['dee'], darkvision: 60 });
+    expect(token).toMatchObject({
+      id: 'vex',
+      name: 'Vex',
+      x: 450,
+      y: 450,
+      ownership: { default: 'limited', dee: 'owner' },
+      darkvision: 60,
+    });
     expect(token).toMatchObject({ actor: 'vex', linked: true });
   });
 
@@ -33,7 +40,7 @@ describe('characterOnMap', () => {
       x: 900,
       hp: 2,
       inventory: [{ item: 'dagger' }],
-      controllers: ['dee', 'gm-friend'],
+      ownership: { default: 'limited', dee: 'owner', 'gm-friend': 'owner' },
       hotbar: ['spell:fire-bolt'],
     });
     const after = characterOnMap({ ...vex, name: 'Vex the Bold', level: 2 }, before, [0, 0]);
@@ -42,7 +49,7 @@ describe('characterOnMap', () => {
       x: 900,
       hp: 2,
       inventory: [{ item: 'dagger' }],
-      controllers: ['dee', 'gm-friend'],
+      ownership: { default: 'limited', dee: 'owner', 'gm-friend': 'owner' },
       hotbar: ['spell:fire-bolt'],
       stats: { level: 2 },
     });
