@@ -31,7 +31,9 @@ async function gameFiles(dir: string): Promise<{ known: string[]; unknown: strin
   const top = await names(dir, '.');
   const all = [...top.filter((n) => n.endsWith('.json')), ...(await names(dir, 'actors')).map((n) => `actors/${n}`)];
   for (const scene of await names(dir, 'scenes')) {
-    all.push(...(await names(dir, `scenes/${scene}`)).map((n) => `scenes/${scene}/${n}`));
+    // fog/ holds explored fog of war, which the server keeps (see fog-store.ts).
+    const files = (await names(dir, `scenes/${scene}`)).filter((n) => n !== 'fog');
+    all.push(...files.map((n) => `scenes/${scene}/${n}`));
   }
   const known = all
     .filter((rel) => classify(rel))

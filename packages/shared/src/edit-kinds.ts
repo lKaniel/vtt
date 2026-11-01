@@ -56,6 +56,21 @@ export const EDIT_KINDS: Kinds = {
 interface Source {
   get(coll: string, id: string): Doc | undefined;
   all(coll: string): Doc[];
+  /** Every collection with documents in it; with it, pasted tokens get ids no scene uses. */
+  collections?(): string[];
+}
+
+/** The source with a token id taken when any scene has a token by that id: token ids are the game's. */
+function tokenIdsAcrossScenes(src: Source): Source {
+  const tokenColls = src.collections?.().filter((c) => c.endsWith('/tokens'));
+  if (!tokenColls) return src;
+  return {
+    all: (coll) => src.all(coll),
+    get: (coll, id) =>
+      coll.endsWith('/tokens')
+        ? (src.get(coll, id) ?? tokenColls.map((c) => src.get(c, id)).find(Boolean))
+        : src.get(coll, id),
+  };
 }
 
 /** Copies documents (and what sits in them) for the clipboard. */
@@ -65,7 +80,7 @@ export function copyRefs(src: Source, refs: readonly DocRef[]): Clip {
 
 /** The ops that paste a copy onto `scene`, moved by `offset`, with fresh ids. */
 export function pasteAt(src: Source, clip: Clip, at: { scene: string; offset: Point }): { ops: Op[]; ids: string[] } {
-  return pasteOps(src, EDIT_KINDS, clip, at);
+  return pasteOps(tokenIdsAcrossScenes(src), EDIT_KINDS, clip, at);
 }
 
 /** The ops that delete documents and what sits in them. */

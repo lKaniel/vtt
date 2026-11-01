@@ -107,4 +107,21 @@ export class LightingFilter extends Filter {
   set fog(value: number) {
     this.uniforms.uFog = value;
   }
+
+  /** What empty space shows (a scene's background colour, "#rrggbb"); the default when unset. */
+  set voidColor(hex: string | undefined) {
+    const v = this.uniforms.uVoid as Float32Array;
+    const [r, g, b] = hexToRgb(hex ?? DEFAULT_VOID);
+    v[0] = r;
+    v[1] = g;
+    v[2] = b;
+  }
+}
+
+const DEFAULT_VOID = '#1b1d22';
+
+function hexToRgb(hex: string): [number, number, number] {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  const n = m ? parseInt(m[1]!, 16) : 0x1b1d22;
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }

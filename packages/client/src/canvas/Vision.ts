@@ -1,8 +1,7 @@
 import {
-  ambientLevel,
   isGm,
-  feetToPx,
   sensesOf,
+  SIGHT_SQUARES,
   tokenLights,
   visibilityPolygon,
   type LightSource,
@@ -12,19 +11,19 @@ import {
   type TokenView,
   type Wall,
 } from '@vtt/shared';
-import { Container, Graphics, type Application } from 'pixi.js';
+import type { Application } from 'pixi.js';
 import type { Session } from '../session.ts';
-import { FogMemory } from './lighting/FogMemory.ts';
+import { FogLayer } from './lighting/FogLayer.ts';
 import { LightingFilter } from './lighting/LightingFilter.ts';
 import { LightMap, type LightScene } from './lighting/LightMap.ts';
 import { SightMap } from './lighting/SightMap.ts';
 
-/** How far a token can see when nothing blocks it, in squares. */
-const SIGHT_SQUARES = 40;
 /** How much darkness the GM sees, relative to players. */
 const GM_DARKNESS = 0.5;
 /** Tokens never get darker than this share of their colour, so the party stays readable at night. */
 const TOKEN_FLOOR = 0.5;
+/** How strongly the GM's fog brush view hides unexplored ground: enough to tell it, not to hide the map. */
+const GM_FOG = 0.6;
 
 export interface Viewer {
   token: TokenView;
@@ -48,9 +47,9 @@ export class Vision {
   readonly tokenFilter: LightingFilter;
   private light: LightMap;
   private sight: SightMap;
-  private explored: FogMemory;
-  /** What the last stamp of explored ground was made from, so it isn't repeated. */
-  private stamped = '';
+  private explored = new FogLayer();
+  /** The session's fog version last drawn. */
+  private fogVersion = -1;
   private polyCache = new Map<string, number[]>();
   private wallsVersion = 0;
 
@@ -59,7 +58,6 @@ export class Vision {
     private session: Session,
   ) {
     this.light = new LightMap(app.renderer);
-    this.explored = new FogMemory(app.renderer, () => session.world?.chunkSize ?? 2000);
     this.sight = new SightMap(app.renderer, this.explored.layer);
     const maps = { light: this.light.texture, sight: this.sight.texture };
     this.mapFilter = new LightingFilter({ ...maps, fog: 1, floor: 0, opaque: 1 });
@@ -80,13 +78,6 @@ export class Vision {
     this.wallsVersion++;
     this.polyCache.clear();
     this.light.wallsChanged();
-  }
-
-  /** Loads the explored squares remembered for this world and player. */
-  loadExplored(): void {
-    const world = this.session.world;
-    if (world) this.explored.load(`vtt-fog:${world.name}:${this.session.playerId}`);
-    this.stamped = '';
   }
 
   destroy(): void {
@@ -112,7 +103,7 @@ export class Vision {
    * Redraws light and sight for the current camera. Returns true when a
    * light on screen is animated, so the caller keeps calling every frame.
    */
-  render(camera: Camera, walls: readonly Wall[], viewers: Viewer[], settled: boolean): boolean {
+  render(camera: Camera, walls: readonly Wall[], viewers: Viewer[]): boolean {
     const world = this.session.world;
     const you = this.session.you;
     if (!world || !you) return false;
@@ -140,13 +131,15 @@ export class Vision {
       now: performance.now(),
     };
     this.light.render(scene, transform);
-    const eyes = viewers.map((v) => ({ at: v.at, senses: sensesOfView(v.token) }));
+    // The GM's fog brush shows what the players explored instead of what the GM's tokens see.
+    const brushing = gm && !!this.session.fogBrush;
+    const eyes = brushing ? [] : viewers.map((v) => ({ at: v.at, senses: sensesOfView(v.token) }));
     const sightRadius = SIGHT_SQUARES * world.gridSize;
-    this.explored.show(view);
-    if (settled && !gm) this.markExplored(eyes, lights, polygon);
+    this.showExplored();
     const darkness = lights.filter((l) => l.darkness);
     this.sight.render({ view, gridSize: world.gridSize, viewers: eyes, darkness, sightRadius, polygon }, transform);
-    this.mapFilter.fog = !gm && world.vision ? 1 : 0;
+    this.mapFilter.fog = fogStrength(gm, brushing, world.vision);
+    this.mapFilter.voidColor = world.background;
     return this.light.animated(scene);
   }
 
@@ -160,56 +153,18 @@ export class Vision {
     ];
   }
 
-  /** Paints what your tokens can make out now into the explored memory. */
-  private markExplored(eyes: Eye[], lights: LightSource[], polygon: Polygon): void {
-    const world = this.session.world!;
-    const sight = SIGHT_SQUARES * world.gridSize;
-    const key = `${JSON.stringify(eyes.map((e) => e.at))}|${this.wallsVersion}|${lights.length}|${world.darkness}`;
-    if (eyes.length === 0 || key === this.stamped) return;
-    this.stamped = key;
-    const shape = new Container();
-    const dark = ambientLevel(world.darkness) === 'dark';
-    for (const e of eyes) shape.addChild(...visibleFrom(e, { dark, lights, polygon, sight, gridSize: world.gridSize }));
-    const xs = eyes.map((e) => e.at[0]);
-    const ys = eyes.map((e) => e.at[1]);
-    const bounds = { x: Math.min(...xs) - sight, y: Math.min(...ys) - sight, w: 0, h: 0 };
-    bounds.w = Math.max(...xs) + sight - bounds.x;
-    bounds.h = Math.max(...ys) + sight - bounds.y;
-    this.explored.stamp(shape, bounds, (key) => this.session.chunks.has(key));
-    shape.destroy({ children: true });
+  /** Draws explored ground as the server last sent it. */
+  private showExplored(): void {
+    if (this.fogVersion === this.session.fogVersion) return;
+    this.fogVersion = this.session.fogVersion;
+    this.explored.show(this.session.shownFog());
   }
 }
 
-type Polygon = (at: Point, radius: number) => number[];
-interface Eye {
-  at: Point;
-  senses: Senses;
-}
-
-/**
- * What one token can make out, in white: everything in sight by day; at night
- * only what its senses reach and what lights it can see fall on.
- */
-function visibleFrom(
-  eye: Eye,
-  ctx: { dark: boolean; lights: LightSource[]; polygon: Polygon; sight: number; gridSize: number },
-): Container[] {
-  const inSight = ctx.polygon(eye.at, ctx.sight);
-  if (!ctx.dark) return [new Graphics().poly(inSight).fill(0xffffff)];
-  const s = eye.senses;
-  const sense = feetToPx(Math.max(s.darkvision, s.blindsight, s.truesight, s.devilsSight), ctx.gridSize);
-  const out: Container[] = [];
-  if (sense > 0) out.push(new Graphics().poly(ctx.polygon(eye.at, sense)).fill(0xffffff));
-  for (const l of ctx.lights) {
-    const reach = feetToPx(l.bright + l.dim, ctx.gridSize);
-    if (l.darkness || reach <= 0 || Math.hypot(l.x - eye.at[0], l.y - eye.at[1]) > ctx.sight + reach) continue;
-    const lit = new Container();
-    const mask = new Graphics().poly(inSight).fill(0xffffff);
-    lit.addChild(new Graphics().poly(ctx.polygon([l.x, l.y], reach)).fill(0xffffff), mask);
-    lit.mask = mask;
-    out.push(lit);
-  }
-  return out;
+/** How much the map is hidden outside sight: fully for players with fog of war, partly while the GM paints fog. */
+function fogStrength(gm: boolean, brushing: boolean, vision: boolean): number {
+  if (brushing) return GM_FOG;
+  return !gm && vision ? 1 : 0;
 }
 
 /** A token's senses as the server worked them out, or from its own fields if it didn't. */

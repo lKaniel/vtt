@@ -22,13 +22,13 @@ const lights = [{ id: 'lamp', x: 550, y: 150, bright: 10, dim: 0 }];
 const hero = { id: 'hero', name: 'Hero', x: 150, y: 150, controllers: ['ana'] };
 const goblin = { id: 'goblin', name: 'Goblin', x: 550, y: 150 };
 
-async function folder(files: Record<string, unknown>): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'vtt-world-'));
+async function folder(files: Record<string, unknown>, dir?: string): Promise<string> {
+  const into = dir ?? (await mkdtemp(join(tmpdir(), 'vtt-world-')));
   for (const [rel, data] of Object.entries(files)) {
-    await mkdir(dirname(join(dir, rel)), { recursive: true });
-    await writeFile(join(dir, rel), JSON.stringify(data));
+    await mkdir(dirname(join(into, rel)), { recursive: true });
+    await writeFile(join(into, rel), JSON.stringify(data));
   }
-  return dir;
+  return into;
 }
 
 /**
@@ -44,6 +44,22 @@ export function makeWorld(): Promise<string> {
     'scenes/main/lights.json': lights,
     'scenes/main/tokens.json': [hero, goblin],
   });
+}
+
+/**
+ * The test game with a second scene, "cellar": a lit room far from the
+ * origin, with Ana's scout and a rat in it.
+ */
+export async function makeTwoScenes(): Promise<string> {
+  const cellar = {
+    'scenes/cellar/scene.json': { name: 'Cellar', darkness: 0 },
+    'scenes/cellar/walls.json': [{ id: 'cw', a: [0, 0], b: [0, 1000] }],
+    'scenes/cellar/tokens.json': [
+      { id: 'scout', name: 'Scout', x: 150, y: 150, controllers: ['ana'] },
+      { id: 'rat', name: 'Rat', x: 550, y: 150 },
+    ],
+  };
+  return folder(cellar, await makeWorld());
 }
 
 /** The same table in the old world layout (chunks/, tokens/), with an actor and a fight. */

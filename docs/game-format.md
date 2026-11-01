@@ -7,12 +7,13 @@ hand or with Claude updates every connected client live.
 ```
 world/                      the example game (another folder: VTT_GAME)
   game.json                 the game: name, rules, active scene, players, format
-  scenes/<scene>/
-    scene.json              grid, camera start, time of day, vision
+  scenes/<scene>/           one folder per scene; a game has as many as you like
+    scene.json              name, grid, camera start, time of day, fog of war
     tiles.json              the scene's tiles, as one list
     walls.json              walls, doors and windows
     lights.json             placed lights
     tokens.json             tokens on the scene: where each actor stands
+    fog/<player>.json       explored fog of war, kept by the server (don't edit)
   actors/<id>.json          creatures' sheets: the Actors list
   combat.json               the fight in progress, if any
   assets/                   images referenced by tiles and tokens
@@ -52,9 +53,13 @@ right, `y` grows down, negative values are fine.
 }
 ```
 
-`scene` is the folder in `scenes/` everyone plays on. At least one player must
-have `"role": "gm"`. Changing the seats (a role, a new player) reaches
-everyone live; changing anything else reconnects everyone.
+`scene` is the folder in `scenes/` the game is on: where everyone plays unless
+a seat says otherwise. A seat's own `"scene"` puts that seat on another scene:
+the GM looking at a scene to prepare it, or a player the GM sent elsewhere (a
+split party). The GM's Scenes tab writes both ("Play here" sets `scene` and
+clears every seat's own). At least one player must have `"role": "gm"`.
+Changes reach everyone live: whoever's seat, scene or settings changed starts
+over on their scene; a seat that's gone is disconnected.
 
 Players whose `id` matches an account (see the README) are that account's
 seat. The server adds one when an account first joins, so you can change its
@@ -85,10 +90,36 @@ Roles, like Foundry's user roles (the GM changes them in the Players tab):
 account appear. `darkness` (0 to 1, default 0) is the time of day: up to 0.3
 is daylight, up to 0.6 is dim light (dusk, moonlight) and above that is
 darkness, where only lights and senses like darkvision show anything.
-`vision` (default `true`) hides what players' tokens can't see behind fog of
-war. `chunkSize` (default 2000, a multiple of `gridSize`) is how big the
+`vision` (default `true`) is fog of war: players see only what their tokens
+can. `chunkSize` (default 2000, a multiple of `gridSize`) is how big the
 pieces are that the server streams to each camera; it has nothing to do with
 how the scene is stored.
+
+Optional, all set from the Scenes tab too:
+
+| Field                  | What it does                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `name`                 | What the Scenes list and the top bar show (the folder name otherwise).          |
+| `sort`                 | Order in the Scenes list (a sort key, see `sort-key.ts`); the editor writes it. |
+| `exploration`          | With fog of war, players keep seeing (dimmed) where they have been. Default on. |
+| `grid`                 | `"square"` (default) or `"none"`: no grid lines; tokens still stand on squares. |
+| `gridColor`            | Grid line colour, default `"#000000"`.                                          |
+| `gridOpacity`          | 0 to 1, default 0.16.                                                           |
+| `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                            |
+| `darknessFollowsClock` | Saved for world time (a later step); does nothing yet.                          |
+
+Every scene is live at once: the rules (moves, doors, fights, spells) work
+on whichever scene the player acting is on.
+
+### Explored fog of war
+
+With `vision` and `exploration` on, the server works out what each player's
+tokens have seen and keeps it per player per scene in
+`scenes/<scene>/fog/<player>.json` (cells a quarter of a square wide, in
+blocks; see `shared/src/fog.ts`). It follows the player to another device.
+The GM's fog tools (Reveal and Hide brushes, Reset) change it, and Ctrl+Z
+undoes them. Delete the file to make a player forget a scene; changing
+`gridSize` starts the fog over. `check-game` ignores the `fog/` folder.
 
 ## Tiles and walls
 

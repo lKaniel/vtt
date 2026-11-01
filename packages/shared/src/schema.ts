@@ -27,6 +27,8 @@ export const PlayerSchema = z.object({
   name: z.string().min(1),
   role: RoleSchema,
   color: z.string().default('#8a8a8a'),
+  /** The scene this seat is on when it isn't the game's (the GM sent them, or the GM is looking elsewhere). */
+  scene: id.optional(),
 });
 export type Player = z.infer<typeof PlayerSchema>;
 
@@ -40,8 +42,19 @@ export const SceneSettingsSchema = z.object({
   start: PointSchema.default([0, 0]),
   /** How dark unlit areas are: 0 is full daylight, 1 is pitch black. */
   darkness: z.number().min(0).max(1).default(0),
-  /** When true, players only see what their tokens can see. */
+  /** Fog of war: when true, players only see what their tokens can see. */
   vision: z.boolean().default(true),
+  /** With fog of war, players keep seeing (dimmed) where they have been. Default true. */
+  exploration: z.boolean().optional(),
+  /** "square" (the default) or "none": no grid lines drawn, tokens still stand on squares. */
+  grid: z.enum(['square', 'none']).optional(),
+  /** Grid line colour (default black) and opacity (default 0.16). */
+  gridColor: z.string().optional(),
+  gridOpacity: z.number().min(0).max(1).optional(),
+  /** What shows where nothing is drawn, e.g. "#1b1d22". */
+  background: z.string().optional(),
+  /** The time of day follows the game clock (world time, a later step); stored, not used yet. */
+  darknessFollowsClock: z.boolean().optional(),
 });
 
 /** The table settings the rules and the client use: the game's, plus those of the scene being played. */

@@ -22,7 +22,7 @@ import {
 
 import { dropMessage, type DragPayload } from './drops.ts';
 import { refOf } from './editor/selection.ts';
-import { TileSession } from './session-tiles.ts';
+import { SceneSession } from './session-scenes.ts';
 import { withOffer } from './reactions.ts';
 import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
@@ -59,13 +59,15 @@ export interface SessionEvents {
   editor: () => void;
   /** What is selected in the editor changed. */
   selection: () => void;
+  /** Explored fog of war changed. */
+  fog: () => void;
 }
 
 /**
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends TileSession {
+export class Session extends SceneSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -188,6 +190,10 @@ export class Session extends TileSession {
       this.setPrimary(this.selected && ids.includes(this.selected) ? this.selected : ids[0]);
     } else this.changed();
     this.emit('selection');
+  }
+
+  protected fogChanged(): void {
+    this.emit('fog');
   }
 
   protected editorChanged(): void {
@@ -454,6 +460,7 @@ export class Session extends TileSession {
     this.chat = msg.chat;
     this.combat = msg.combat;
     this.welcomeEdits(msg);
+    this.welcomeScenes(msg);
     this.players = msg.players ?? [];
     this.actors.clear();
     for (const a of msg.actors ?? []) this.actors.set(a.id, a);

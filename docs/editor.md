@@ -35,6 +35,30 @@ tokens and door handles don't take clicks.
   of the selection, by the same offset) by the rules. Clicking empty ground
   deselects, so walking is by dragging, or "Move … here" in the ground menu.
 
+## Scenes
+
+The Scenes tab in the GM's side panel (`ui/ScenesTab.tsx`) lists the game's
+scenes with who is on each. View looks at a scene, and edits it, without
+moving anyone; Play here moves the game there with every seat; Send… puts
+one player on a scene of their own. Add, Copy (everything on it, token ids
+made new) and Delete (with everything on it) are document ops
+(`shared/scenes.ts`), so Ctrl+Z undoes them; the server deletes what is on
+a deleted scene in the same step (`server/scene-ops.ts`) and won't delete
+the scene the game is on. Settings: name, grid (squares or no lines, size,
+colour, opacity), darkness, background, fog of war, remembering explored
+ground. Scenes aren't in `EDIT_KINDS`: a scene isn't a placeable, and the
+list's buttons build their own ops.
+
+## Fog of war
+
+The GM's Fog row (bottom left, on scenes with fog of war) has Reveal and
+Hide brushes, a brush size, whose fog (all players or one) and Reset. With
+a brush on, the map shows what those players explored (unexplored ground
+darkened) and tokens don't take clicks; drag to paint. A stroke is sent
+when you let go, as one edit (`fog` message), so one Ctrl+Z takes it back
+without losing what players explored since. Players' explored ground comes
+from the server (`canvas/lighting/FogLayer.ts`).
+
 ## Tiles: layers and groups
 
 Tiles work like Figma's layers (rules in `shared/tiles.ts`, format in

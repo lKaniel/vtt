@@ -1,5 +1,5 @@
 import { OpError, type Doc, type Validate } from '@vtt/core';
-import { ActorSchema, CombatSchema, GameSchema, isGm, SceneSchema, type Game } from '@vtt/shared';
+import { ActorSchema, CombatSchema, GameSchema, isGm, SceneSchema, type Game, type Scene } from '@vtt/shared';
 import type { z } from 'zod';
 import { fromDoc, toDoc } from './doc-sync.ts';
 import { ITEM_SCHEMAS } from './game-files.ts';
@@ -19,10 +19,15 @@ interface Rule {
 
 const NAMED: Record<string, Rule> = {
   [GAME]: { type: 'game', schema: GameSchema, extra: keepsGm },
-  [SCENES]: { type: 'scene', schema: SceneSchema, bare: true },
+  [SCENES]: { type: 'scene', schema: SceneSchema, bare: true, extra: wholeChunks },
   [ACTORS]: { type: 'actor', schema: ActorSchema },
   [COMBAT]: { type: 'combat', schema: CombatSchema, bare: true },
 };
+
+/** As game-files.ts checks scene.json. */
+function wholeChunks(scene: Scene): void {
+  if (scene.chunkSize % scene.gridSize !== 0) throw new OpError('chunkSize must be a multiple of gridSize');
+}
 
 function keepsGm(game: Game): void {
   if (!game.players.some(isGm)) throw new OpError('The table needs a GM');

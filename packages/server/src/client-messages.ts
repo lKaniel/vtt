@@ -1,5 +1,5 @@
 import { OpSchema } from '@vtt/core';
-import { DoorStateSchema, EditionSchema, MapEditSchema, PointSchema, RoleSchema } from '@vtt/shared';
+import { DoorStateSchema, EditionSchema, FogEditSchema, MapEditSchema, PointSchema, RoleSchema } from '@vtt/shared';
 import type { RawData } from 'ws';
 import { z } from 'zod';
 
@@ -71,8 +71,12 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     t: z.literal('ops'),
     txn: z.string().min(1).max(80),
     label: z.string().max(40).optional(),
-    ops: z.array(OpSchema).min(1).max(2000),
+    ops: z.array(OpSchema).min(1).max(20000),
   }),
+  z.object({ t: z.literal('viewScene'), scene: z.string() }),
+  z.object({ t: z.literal('activateScene'), scene: z.string() }),
+  z.object({ t: z.literal('sendPlayer'), player: z.string(), scene: z.string().optional() }),
+  z.object({ t: z.literal('fog'), edit: FogEditSchema }),
   z.object({ t: z.literal('undo'), card: z.string().optional() }),
   z.object({ t: z.literal('redo') }),
 ]);

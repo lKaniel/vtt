@@ -23,20 +23,24 @@ export const GameSchema = z.object({
 export type Game = z.infer<typeof GameSchema>;
 
 /** scenes/<id>/scene.json */
-export const SceneSchema = SceneSettingsSchema.extend({ name: z.string().min(1).optional() });
+export const SceneSchema = SceneSettingsSchema.extend({
+  name: z.string().min(1).optional(),
+  /** Fractional key ordering the Scenes list (see sort-key.ts in core). */
+  sort: z.string().optional(),
+});
 export type Scene = z.infer<typeof SceneSchema>;
 
 /** The table settings for `scene` of `game`. */
 export function worldOf(game: Game, scene: Scene): World {
-  const { gridSize, chunkSize, start, darkness, vision } = scene;
-  return { name: game.name, rules: game.rules, players: game.players, gridSize, chunkSize, start, darkness, vision };
+  const { name: _name, sort: _sort, ...settings } = scene;
+  return { ...settings, name: game.name, rules: game.rules, players: game.players };
 }
 
 /** Puts changed table settings back where they are stored. */
 export function splitWorld(world: World, game: Game, scene: Scene): { game: Game; scene: Scene } {
-  const { name, rules, players, gridSize, chunkSize, start, darkness, vision } = world;
+  const { name, rules, players, ...settings } = world;
   return {
     game: { ...game, name, rules, players },
-    scene: { ...scene, gridSize, chunkSize, start, darkness, vision },
+    scene: { ...scene, ...settings },
   };
 }

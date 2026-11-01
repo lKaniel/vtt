@@ -3,8 +3,6 @@ import {
   canControl,
   isGm,
   tokensVisibleTo,
-  findPath,
-  roll,
   editionOf,
   srdFor,
   viewToken,
@@ -33,10 +31,18 @@ import { checkOps } from './op-permissions.ts';
 import { Refusal, Table } from './table.ts';
 import type { GameStore } from './game-store.ts';
 import { History } from './undo.ts';
+import { SceneActions, sceneOf } from './scene-actions.ts';
+import { FogKeeper } from './fog-keeper.ts';
+import { chatMessage } from './chat-command.ts';
+import { TokenMoves } from './token-moves.ts';
 
 interface Client {
   ws: WebSocket;
   player: Player;
+  /** The scene this client is on (see scene-actions.ts). */
+  scene: string;
+  /** What the client was last welcomed with, to tell when it needs a fresh welcome. */
+  start: string;
   /** Chunks this client is looking at. */
   chunks: Set<string>;
   /** Tokens this client currently knows about. */
@@ -46,9 +52,6 @@ interface Client {
 }
 
 const CHAT_HISTORY = 200;
-const ROLL_COMMANDS = new Set(['/r', '/roll', '/gmr']);
-/** How far a path search may wander past the start-goal box, in squares. */
-const PATH_MARGIN = 12;
 
 /**
  * The live game. Clients send intents ("move here", "open this door"); the
@@ -65,9 +68,10 @@ export class Game {
   private reactions: Reactions;
   private features: FeatureActions;
   private gm: GmActions;
-  /** world.json minus the seats, to tell a role change from a new grid. */
-  private settings: string;
   private map: MapActions;
+  private scenes: SceneActions;
+  private fog: FogKeeper;
+  private moves: TokenMoves;
   private history: History;
 
   constructor(
@@ -92,39 +96,45 @@ export class Game {
     });
     this.features = new FeatureActions(table);
     this.gm = new GmActions(table);
-    this.settings = worldSettings(store.world);
     this.map = new MapActions(table);
+    this.scenes = new SceneActions(store);
+    this.fog = new FogKeeper(store);
+    this.moves = new TokenMoves(store, this.combat, this.zones, this.reactions);
     this.history = new History(store, (ids, undone) => this.markCards(ids, undone));
     this.listen(store);
   }
 
   /** Passes changes in the game on to the clients that may see them. */
   private listen(store: GameStore): void {
-    store.on('chunk', (key, chunk) => {
-      for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
+    store.fog.on('fog', (scene, player, keys, full) => this.onFog(scene, player, keys, full));
+    store.on('chunk', (key, chunk, scene) => {
+      this.fog.mapChanged(scene);
+      for (const c of this.on(scene)) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
       // A door or a light changed: what everyone can see may have too.
-      this.refreshAll();
+      this.refreshAll(scene);
     });
-    store.on('chunkGone', (key) => {
-      for (const c of this.clients)
+    store.on('chunkGone', (key, scene) => {
+      this.fog.mapChanged(scene);
+      for (const c of this.on(scene))
         if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk: { tiles: [], walls: [], lights: [] } });
-      this.refreshAll();
+      this.refreshAll(scene);
     });
-    store.on('token', (token, path) => this.refreshAll(token.id, path));
-    store.on('tokenGone', (id) => {
+    store.on('token', (token, path, scene) => this.refreshAll(scene, token.id, path));
+    store.on('tokenGone', (id, scene) => {
       this.combat.forget(id);
-      this.refreshAll();
+      this.refreshAll(scene);
     });
     store.on('actor', (actor) => this.toGms({ t: 'actor', actor }));
     store.on('actorGone', (id) => this.toGms({ t: 'actorGone', id }));
     store.on('combat', (combat) => {
       for (const c of this.clients) this.send(c, { t: 'combat', combat: combat ?? null });
     });
-    store.on('lighting', (darkness) => {
-      for (const c of this.clients) this.send(c, { t: 'lighting', darkness });
-      this.refreshAll();
+    store.on('lighting', (darkness, scene) => {
+      for (const c of this.on(scene)) this.send(c, { t: 'lighting', darkness });
+      this.refreshAll(scene);
     });
     store.on('world', (world) => this.onWorld(world));
+    store.on('scene', () => this.onWorld(this.store.world));
     // Each client gets the documents it may read; players also keep their filtered views above.
     store.on('docs', (all, by, txn) => {
       for (const c of this.clients) {
@@ -135,25 +145,41 @@ export class Game {
   }
 
   /**
-   * Role and seat changes reach everyone live with a fresh welcome; anything
-   * else (grid, rules) or a seat that's gone needs a reconnect.
+   * The seats, the game's settings or a scene changed: each client whose
+   * seat, scene or settings differ now starts over with a fresh welcome (a
+   * seat that's gone is closed).
    */
   private onWorld(world: World): void {
-    const settings = worldSettings(world);
-    const same = settings === this.settings;
-    this.settings = settings;
     for (const c of this.clients) {
       const player = world.players.find((p) => p.id === c.player.id);
-      if (!same || !player) {
-        c.ws.close(4000, 'world settings changed');
+      if (!player) {
+        c.ws.close(4000, 'your seat is gone');
         continue;
       }
       c.player = player;
-      c.visible = this.visibleTo(player);
-      // The client starts over and asks for its chunks again.
-      c.chunks = new Set();
-      this.welcome(c);
+      c.scene = sceneOf(player, this.store);
+      if (this.startOf(c) !== c.start) this.restart(c);
     }
+  }
+
+  /** Sends a client a fresh welcome; it asks for its chunks again. */
+  private restart(c: Client): void {
+    c.visible = this.visibleTo(c.player, c.scene);
+    c.chunks = new Set();
+    this.welcome(c);
+  }
+
+  /** Everything a welcome depends on, short of the documents. */
+  private startOf(c: Client): string {
+    const { players, ...world } = this.store.inScene(c.scene, () => this.store.world);
+    // The GM's welcome lists the seats too.
+    const seats = isGm(c.player) ? players : undefined;
+    return JSON.stringify([c.scene, this.store.activeScene, c.player, world, this.store.sceneName(c.scene), seats]);
+  }
+
+  /** The clients on a scene. */
+  private on(scene: string): Client[] {
+    return [...this.clients].filter((c) => c.scene === scene);
   }
 
   findPlayer(id: string): Player | undefined {
@@ -162,7 +188,9 @@ export class Game {
 
   connect(ws: WebSocket, player: Player): void {
     const feed = new DocFeed(this.store.access);
-    const client: Client = { ws, player, chunks: new Set(), visible: this.visibleTo(player), feed };
+    const scene = sceneOf(player, this.store);
+    const visible = this.visibleTo(player, scene);
+    const client: Client = { ws, player, scene, start: '', chunks: new Set(), visible, feed };
     this.clients.add(client);
     this.welcome(client);
     ws.on('message', (data) => {
@@ -176,43 +204,70 @@ export class Game {
 
   /** Everything a client needs to start (or start over) with its current seat. */
   private welcome(c: Client): void {
-    const { players: _players, ...world } = this.store.world;
+    c.start = this.startOf(c);
+    const { players: _players, ...world } = this.store.inScene(c.scene, () => this.store.world);
     const info: WorldInfo = world;
     const player = c.player;
     const gm = isGm(player);
+    const tokens = this.store.inScene(c.scene, () => [...c.visible].map((id) => this.store.tokens.get(id)!));
     this.send(c, {
       t: 'welcome',
       world: info,
       you: player,
-      tokens: [...c.visible].map((id) => this.view(this.store.tokens.get(id)!, player)),
+      tokens: tokens.map((t) => this.view(t, player)),
       chat: this.chat.filter((m) => !m.gmOnly || gm),
       combat: this.store.combat ?? null,
-      scene: this.store.activeScene,
+      scene: c.scene,
+      sceneName: this.store.sceneName(c.scene),
+      active: this.store.activeScene,
       history: this.history.state(player),
       docs: c.feed.start(player),
       ...(gm ? { players: this.store.world.players, actors: [...this.store.actors.values()] } : {}),
     });
-  }
-
-  private visibleTo(player: Player): Set<string> {
-    return tokensVisibleTo(player, [...this.store.tokens.values()], {
-      world: this.store.world,
-      lights: this.store.lights(),
-      wallsBetween: (a, b) => this.store.wallsBetween(a, b),
-      monster: (t) => srdFor(editionOf(t, this.store.world)).monsters.get(t.monster ?? ''),
+    this.store.inScene(c.scene, () => {
+      this.fog.explore(player);
+      for (const fog of this.fog.snapshot(player)) this.send(c, { t: 'fog', ...fog, full: true });
     });
   }
 
+  private visibleTo(player: Player, scene: string): Set<string> {
+    return this.store.inScene(scene, () =>
+      tokensVisibleTo(player, [...this.store.tokens.values()], {
+        world: this.store.world,
+        lights: this.store.lights(),
+        wallsBetween: (a, b) => this.store.wallsBetween(a, b),
+        monster: (t) => srdFor(editionOf(t, this.store.world)).monsters.get(t.monster ?? ''),
+      }),
+    );
+  }
+
   /**
-   * Recomputes what each client may see and sends the difference. `changed`
-   * is a token whose data changed; `path` is set when it walked.
+   * Recomputes what each client on `scene` may see and sends the difference.
+   * `changed` is a token whose data changed; `path` is set when it walked.
    */
-  private refreshAll(changed?: string, path?: Point[]): void {
-    for (const c of this.clients) {
+  private refreshAll(scene: string, changed?: string, path?: Point[]): void {
+    for (const c of this.on(scene)) {
       const before = c.visible;
-      c.visible = this.visibleTo(c.player);
-      for (const msg of this.visibilityChanges(c, before, changed, path)) this.send(c, msg);
+      c.visible = this.visibleTo(c.player, scene);
+      const msgs = this.store.inScene(scene, () => this.visibilityChanges(c, before, changed, path));
+      for (const msg of msgs) this.send(c, msg);
     }
+    this.exploreOn(scene);
+  }
+
+  /** Marks what each player on `scene` sees now as explored (see fog-keeper.ts). */
+  private exploreOn(scene: string): void {
+    const players = new Map(this.on(scene).map((c) => [c.player.id, c.player]));
+    this.store.inScene(scene, () => {
+      for (const player of players.values()) this.fog.explore(player);
+    });
+  }
+
+  /** Sends changed fog blocks to the player whose fog it is and to the GMs, on that scene. */
+  private onFog(scene: string, player: string, keys: string[], full: boolean): void {
+    const map = this.store.inScene(scene, () => this.store.fog.map(scene, player, this.fog.cell()));
+    const msg: ServerMessage = { t: 'fog', player, ...map.encode(keys), ...(full ? { full } : {}) };
+    for (const c of this.on(scene)) if (c.player.id === player || isGm(c.player)) this.send(c, msg);
   }
 
   private visibilityChanges(c: Client, before: Set<string>, changed?: string, path?: Point[]): ServerMessage[] {
@@ -230,7 +285,12 @@ export class Game {
     return viewToken(token, player, srdFor(editionOf(token, this.store.world)));
   }
 
+  /** Runs a message on the scene the client is on. */
   private handle(c: Client, msg: ClientMessage): void {
+    this.store.inScene(c.scene, () => this.handleHere(c, msg));
+  }
+
+  private handleHere(c: Client, msg: ClientMessage): void {
     if (msg.t === 'ops') return this.onOps(c, msg);
     try {
       if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);
@@ -278,9 +338,9 @@ export class Game {
       case 'view':
         return this.onView(c, msg.chunks);
       case 'move':
-        return this.onMove(c, msg.token, msg.to);
+        return this.moves.move(c.player, (id) => c.visible.has(id), msg.token, msg.to);
       case 'door':
-        return this.onDoor(c, msg);
+        return this.moves.door(c.player, msg);
       case 'chat':
         return this.onChat(c, msg.text.trim());
       case 'combatStart':
@@ -308,7 +368,7 @@ export class Game {
       case 'relinkToken':
         return this.gm.relink(c.player, msg.token, msg.how);
       case 'hotbar':
-        return this.onHotbar(c, msg.token, msg.slots);
+        return this.moves.hotbar(c.player, (id) => c.visible.has(id), msg.token, msg.slots);
       case 'spawn':
         return this.gm.spawn(c.player, msg.from, msg.at, msg.hidden);
       case 'saveActor':
@@ -322,8 +382,14 @@ export class Game {
       case 'darkness':
         return this.map.darkness(c.player, msg.darkness);
       default:
-        return undefined;
+        return this.dispatchScenes(c, msg);
     }
+  }
+
+  /** Moving between scenes, and the fog on them. */
+  private dispatchScenes(c: Client, msg: ClientMessage): void {
+    if (msg.t === 'fog') this.fog.edit(c.player, msg.edit);
+    else this.scenes.dispatch(c.player, msg);
   }
 
   /** Spells, features, effects and rests. */
@@ -367,51 +433,11 @@ export class Game {
     c.chunks = next;
   }
 
-  private onMove(c: Client, id: string, to: Point): void {
-    const token = this.store.tokens.get(id);
-    if (!token || !c.visible.has(token.id)) return this.fail(c, 'No such token');
-    if (!canControl(token, c.player)) return this.fail(c, `You don't control ${token.name}`);
-    const g = this.store.world.gridSize;
-    const m = PATH_MARGIN * g;
-    const walls = this.store.wallsIn({
-      x: Math.min(token.x, to[0]) - m,
-      y: Math.min(token.y, to[1]) - m,
-      w: Math.abs(token.x - to[0]) + 2 * m,
-      h: Math.abs(token.y - to[1]) + 2 * m,
-    });
-    const path = findPath([token.x, token.y], to, walls, { gridSize: g, margin: PATH_MARGIN });
-    if (!path) return this.fail(c, `${token.name} can't get there`);
-    const [x, y] = path.points.at(-1)!;
-    if (path.points.length < 2) return;
-    const walker = this.combat.move(token, path.feet);
-    this.store.setToken({ ...walker, x, y }, path.points);
-    this.zones.moved(token.id, path.points);
-    this.reactions.moved(token, path.points);
-  }
-
-  private onHotbar(c: Client, id: string, slots: (string | null)[]): void {
-    const token = this.store.tokens.get(id);
-    if (!token || !c.visible.has(id)) return this.fail(c, 'No such token');
-    if (!canControl(token, c.player)) return this.fail(c, `You don't control ${token.name}`);
-    this.store.setToken({ ...token, hotbar: slots });
-  }
-
-  private onDoor(c: Client, msg: Extract<ClientMessage, { t: 'door' }>): void {
-    const chunk = this.store.chunks.get(msg.chunk);
-    const wall = chunk?.walls.find((w) => w.id === msg.wall);
-    if (!chunk || !wall?.door) return this.fail(c, 'No such door');
-    if (c.player.role === 'observer') return this.fail(c, 'Observers only watch');
-    const touchesLock = wall.door === 'locked' || msg.state === 'locked';
-    if (touchesLock && !isGm(c.player)) return this.fail(c, 'The door is locked');
-    const walls = chunk.walls.map((w) => (w === wall ? { ...w, door: msg.state } : w));
-    this.store.setChunk(msg.chunk, { ...chunk, walls });
-  }
-
   private onChat(c: Client, text: string): void {
     if (!text) return;
     let message: ChatMessage;
     try {
-      message = this.chatMessage(c.player, text);
+      message = chatMessage(c.player, text);
     } catch (e) {
       return this.fail(c, (e as Error).message);
     }
@@ -426,15 +452,6 @@ export class Game {
       if (message.gmOnly && !isGm(other.player) && other !== sender) continue;
       this.send(other, { t: 'chat', message });
     }
-  }
-
-  /** Plain text, or a roll for "/r 1d20+5", "/roll ..." and the GM-only "/gmr ...". Throws on a bad formula. */
-  private chatMessage(player: Player, text: string): ChatMessage {
-    const base = { id: randomUUID(), time: Date.now(), from: player.name, color: player.color };
-    const space = text.indexOf(' ');
-    const command = space > 0 ? text.slice(0, space).toLowerCase() : '';
-    if (!ROLL_COMMANDS.has(command)) return { ...base, text };
-    return { ...base, roll: roll(text.slice(space + 1)), gmOnly: command === '/gmr' || undefined };
   }
 
   /** A message from the game itself: initiative, attack results. */
@@ -455,10 +472,4 @@ export class Game {
   private send(c: Client, msg: ServerMessage): void {
     if (c.ws.readyState === c.ws.OPEN) c.ws.send(JSON.stringify(msg));
   }
-}
-
-/** world.json minus what changes live: the seats and the time of day. */
-function worldSettings(world: World): string {
-  const { players: _players, darkness: _darkness, ...settings } = world;
-  return JSON.stringify(settings);
 }

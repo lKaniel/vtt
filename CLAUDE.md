@@ -8,9 +8,10 @@ you add maps, place tokens, and prepare encounters.
 
 - Read `docs/game-format.md` before editing. Coordinates are pixels;
   tokens sit on square centres (`(col + 0.5) * gridSize`).
-- `game.json` names the active scene; its content is in
-  `scenes/<scene>/`: `scene.json` (grid, darkness) and one list per
-  collection, `tiles.json`, `walls.json`, `lights.json`, `tokens.json`.
+- `game.json` names the active scene; each scene is a folder
+  `scenes/<scene>/`: `scene.json` (name, grid, darkness, fog) and one list per
+  collection, `tiles.json`, `walls.json`, `lights.json`, `tokens.json`. A new
+  scene is a new folder with a `scene.json`. Leave `fog/` alone (the server's).
 - A creature's sheet is an actor (`actors/<id>.json`); a token in
   `tokens.json` is an actor standing there: `{ "id", "x", "y", "actor",
 "linked" }`. Characters are linked (they share the actor's HP); monsters
@@ -34,8 +35,15 @@ you add maps, place tokens, and prepare encounters.
   state should be built on it.
 - `GameStore` (`server/src/game-store.ts`) holds the game folder as core
   documents: hand edits become ops, changes are written back per collection
-  file. It still offers the old maps (`tokens`, `chunks`) the game code reads;
-  the server cuts chunks from the scene by position (`groupChunks`).
+  file. Every scene is kept live (`scene-state.ts`: chunks cut by position,
+  resolved tokens). `store.tokens`, `chunks`, `world`, `setToken` and the
+  rest read "the current scene": the one `store.inScene(id, fn)` names, else
+  the game's. `Game` runs each client message inside `inScene(client.scene)`,
+  so rules code never takes a scene argument. Seats sit on a scene
+  (`sceneOf` in `scene-actions.ts`).
+- Explored fog of war is not a document: `fog-store.ts` keeps it per scene
+  and player (bitmaps from `shared/fog.ts`), `fog-keeper.ts` explores after
+  anything changes what a player sees, and GM fog edits join undo steps.
 - Tokens are stored as entries (placement + `actor`, `linked`, `delta`);
   `token-link.ts` in shared merges them with their actor (`resolveToken`) so
   rules code sees one `Token`, and `splitToken` puts a changed token back
