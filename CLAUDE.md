@@ -27,7 +27,10 @@ with `pnpm check-game data/games/<id>`.
   drags them onto the map from the Actors tab.
 - Creatures: `"monster": "<srd id>"` for a stat block, or `stats` + `inventory`
   for a character (see "Creatures" in the format doc). Monster and item ids
-  are in `packages/system-dnd5e/content/srd/`; `check-game` flags unknown ones.
+  are in `packages/system-dnd5e/content/srd/`, or in a pack the game turns on
+  (game.json `packs`, see `docs/packs.md`); `check-game` flags unknown ones.
+- Pictures from an asset pack are `pack://<pack>/<path>`; the game's own are
+  `/assets/<path>`.
 - Keep ids lowercase with dashes, unique within their list (a scene's walls, its tokens).
 
 ## Code

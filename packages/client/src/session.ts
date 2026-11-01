@@ -18,7 +18,7 @@ import { openSocket, refusalOf } from './session-socket.ts';
 
 import { dropMessage, type DragPayload } from './drops.ts';
 import { refOf } from './editor/selection.ts';
-import { SceneSession } from './session-scenes.ts';
+import { PackSession } from './session-packs.ts';
 import { withOffer } from './reactions.ts';
 import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
@@ -63,7 +63,7 @@ export interface SessionEvents {
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends SceneSession {
+export class Session extends PackSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -312,9 +312,13 @@ export class Session extends SceneSession {
     this.send({ t: 'spawn', from, at, hidden: this.spawnHidden });
   }
 
-  /** Something dragged from the Actors list or Compendium was dropped on the map at `p`. */
+  /** Something dragged from the Actors list, the Compendium or the Assets tab was dropped on the map at `p`. */
   drop(payload: DragPayload, p: Point): void {
     if (!this.world) return;
+    if (payload.kind === 'media') {
+      const size = payload.w && payload.h ? { w: payload.w, h: payload.h } : undefined;
+      return this.placeMedia(payload.src, p, size);
+    }
     const ctx = { tokens: this.tokens.values(), gridSize: this.world.gridSize, rules: toEdition(this.world.rules) };
     const msg = dropMessage(payload, p, { ...ctx, hidden: this.spawnHidden });
     if ('error' in msg) this.showError(msg.error);

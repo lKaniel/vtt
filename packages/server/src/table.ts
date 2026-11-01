@@ -17,7 +17,6 @@ import {
   removeEffects,
   resolveCreature,
   rollSave,
-  srdFor,
   type Token,
   type TurnBudget,
   type TurnInfo,
@@ -25,6 +24,7 @@ import {
 } from '@vtt/system-dnd5e';
 import { canControl, hasLineOfSight, isGm, type Player, type Point, type Rng } from '@vtt/shared';
 import type { GameStore } from './game-store.ts';
+import { contentFor } from './game-packs.ts';
 
 /** A request the rules don't allow; its message goes back to the player. */
 export class Refusal extends Error {}
@@ -50,7 +50,7 @@ export class Table {
   ) {}
 
   content(token: Token): Content {
-    return srdFor(editionOf(token, this.store.world));
+    return contentFor(this.store, token);
   }
 
   sheetOf(token: Token): Creature | undefined {

@@ -1,4 +1,4 @@
-import type { Doc, Op } from '@vtt/core';
+import type { Doc, MediaEntry, Op, PackCompendium, PackInfo } from '@vtt/core';
 import type { Roll } from './dice.ts';
 import type { Chunk, DoorState, Point, Role, World } from './schema.ts';
 import type { FogEdit } from './fog-edit.ts';
@@ -73,7 +73,15 @@ export type EngineClientMessage =
   | { t: 'fog'; edit: FogEdit }
   /** Undo your latest edit (the GM: or the latest game action); `card` undoes the action that chat card reports. */
   | { t: 'undo'; card?: string }
-  | { t: 'redo' };
+  | { t: 'redo' }
+  /** GM: the packs this game may use (answered with `packs`). */
+  | { t: 'packs' }
+  /** GM: the pictures, sounds and videos of the game's assets and its packs (answered with `media`). */
+  | { t: 'media' }
+  /** GM: one compendium's documents, to copy into the game (answered with `compendium`). */
+  | { t: 'compendium'; pack: string; compendium: string }
+  /** GM: a file for the game's assets/uploads/, base64 (answered with `media`). */
+  | { t: 'upload'; name: string; data: string };
 
 /** What the engine tells clients, whatever system the game plays. */
 export type EngineServerMessage =
@@ -97,4 +105,10 @@ export type EngineServerMessage =
   /** Your undo (or redo) went through. */
   | { t: 'undone'; label: string; redo: boolean }
   /** The GM undid (or redid) the game action these chat cards report. */
-  | { t: 'chatUndone'; ids: string[]; undone: boolean };
+  | { t: 'chatUndone'; ids: string[]; undone: boolean }
+  /** The rules content of the game's packs (monsters, items, spells for D&D): sent on joining and when it changes. */
+  | { t: 'packContent'; compendia: PackCompendium[] }
+  /** GM: the packs the game may use; `problems` are packs the server couldn't read. */
+  | { t: 'packs'; packs: PackInfo[]; problems: string[] }
+  | { t: 'media'; entries: MediaEntry[] }
+  | { t: 'compendium'; pack: string; compendium: string; docs: unknown[] };

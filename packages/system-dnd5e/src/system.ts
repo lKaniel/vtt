@@ -1,6 +1,7 @@
-import type { SystemDefinition } from '@vtt/core';
+import type { PackCompendium, SystemDefinition } from '@vtt/core';
 import type { Perceiver } from '@vtt/shared';
-import { editionOf, srdFor, toEdition } from './content.ts';
+import { editionOf, toEdition } from './content.ts';
+import { CONTENT_TYPES, contentWith, packContentIssues, SRD_PACKS } from './packs.ts';
 import { perceiverOf } from './perception.ts';
 import { type Actor, ActorSchema, type Token, TokenSchema } from './token-schema.ts';
 
@@ -12,10 +13,10 @@ import { type Actor, ActorSchema, type Token, TokenSchema } from './token-schema
 /** What a creature sheet refers to by id: a monster, items and spells. */
 type Sheet = Pick<Token, 'monster' | 'inventory' | 'stats'>;
 
-/** References from a sheet to SRD content the edition doesn't have. */
-function contentIssues(sheet: Sheet, rules: string): string[] {
+/** References from a sheet to content the edition (and the game's packs) doesn't have. */
+function contentIssues(sheet: Sheet, rules: string, packs?: readonly PackCompendium[]): string[] {
   const edition = editionOf(sheet, { rules });
-  const srd = srdFor(edition);
+  const srd = contentWith(edition, packs);
   const monster = sheet.monster && !srd.monsters.has(sheet.monster) ? [sheet.monster] : [];
   return [
     ...monster.map((m) => `unknown monster "${m}" in the ${edition} rules`),
@@ -28,7 +29,7 @@ function contentIssues(sheet: Sheet, rules: string): string[] {
 
 export interface Dnd5eSystem extends SystemDefinition<Token, Actor> {
   /** A token's senses and conditions, for vision and fog. */
-  perceiver: (token: Token, rules: string | undefined) => Perceiver;
+  perceiver: (token: Token, rules: string | undefined, packs?: readonly PackCompendium[]) => Perceiver;
 }
 
 export const dnd5e: Dnd5eSystem = {
@@ -41,9 +42,12 @@ export const dnd5e: Dnd5eSystem = {
   tokenSchema: TokenSchema,
   actorSchema: ActorSchema,
   tokenIssues: contentIssues,
-  perceiver: (token, rules) => {
+  packs: SRD_PACKS,
+  contentTypes: CONTENT_TYPES,
+  packContentIssues,
+  perceiver: (token, rules, packs) => {
     const monster = token.monster
-      ? srdFor(editionOf(token, { rules: toEdition(rules) })).monsters.get(token.monster)
+      ? contentWith(editionOf(token, { rules: toEdition(rules) }), packs).monsters.get(token.monster)
       : undefined;
     return perceiverOf(token, monster);
   },

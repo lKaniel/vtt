@@ -1,12 +1,5 @@
-import {
-  type Actor,
-  type Creature,
-  type Edition,
-  omitKey,
-  resolveCreature,
-  srdFor,
-  type TokenView,
-} from '@vtt/system-dnd5e';
+import { type Actor, type Creature, type Edition, omitKey, resolveCreature, type TokenView } from '@vtt/system-dnd5e';
+import { gameContent } from '../content.ts';
 
 /** What a sheet shows and edits: an actor, or a token (an actor with a position). */
 export type Draft = Actor & Partial<Pick<TokenView, 'x' | 'y' | 'sheet' | 'health' | 'actor'>>;
@@ -17,7 +10,7 @@ export type Update = (fn: (d: Draft) => Draft, now?: boolean) => void;
 export function previewSheet(draft: Draft, rules: Edition): Creature | undefined {
   const as = (d: Draft) => {
     try {
-      return resolveCreature({ x: 0, y: 0, ...d, stats: d.stats ?? {} }, srdFor(rules));
+      return resolveCreature({ x: 0, y: 0, ...d, stats: d.stats ?? {} }, gameContent(rules));
     } catch {
       return undefined;
     }

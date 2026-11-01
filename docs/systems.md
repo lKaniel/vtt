@@ -60,8 +60,12 @@ creature views, chat cards).
   second system they would move behind the definition (actions as system
   handlers, sheets as system UI), and `GameStore.system` would be typed as
   any `SystemDefinition`.
-- Content still comes from the bundled SRD (`srdFor`). Asset packs (the next
-  step) turn it into the default packs `dnd5e-srd-2014` and `dnd5e-srd-2024`.
+- Rules content is the SRD plus the game's packs: `contentWith(edition,
+compendia)` on the server (`game-packs.ts` `contentFor`) and `gameContent`
+  on the client. The SRD is the system's own packs `dnd5e-srd-2014` and
+  `dnd5e-srd-2024` (`SystemDefinition.packs`), always on; see
+  [packs.md](packs.md). The character creator and level-up still read the
+  bare SRD (`srdFor`).
 - World time (step 13): the clock (`game.time`, calendar) belongs to the
   engine; when an effect, concentration or a rest ends is the system's call,
   so effect expiry by world time goes in `system-dnd5e/src/effects.ts`

@@ -10,6 +10,8 @@ export default defineConfig({
       '/ws': { target: server, ws: true },
       '/api': server,
       '/assets': server,
+      '/packs': server,
+      '^/games/[^/]+/assets/': server,
     },
   },
 });

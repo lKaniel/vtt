@@ -18,7 +18,11 @@ beforeAll(async () => {
   await writeFile(join(dir, 'other', 'assets', 'map.png'), 'other png');
   await writeFile(join(dir, 'client', 'index.html'), '<h1>vtt</h1>');
   await writeFile(join(dir, 'secret.txt'), 'nope');
+  await mkdir(join(dir, 'packs', 'forest', 'media'), { recursive: true });
+  await writeFile(join(dir, 'packs', 'forest', 'media', 'big oak.webp'), 'oak');
   const handle = httpHandler({
+    packFile: (pack, path) =>
+      pack === 'forest' && path.startsWith('media/') ? join(dir, 'packs', pack, path) : undefined,
     // The home game is "home"; "other" is a game made in the lobby.
     assetsDir: (game) => ({ other: join(dir, 'other', 'assets'), home: join(dir, 'assets') })[game ?? 'home'],
     clientDir: join(dir, 'client'),
@@ -48,6 +52,13 @@ describe('httpHandler', () => {
   it('serves each game its own assets', async () => {
     expect(await (await fetch(`${base}/games/other/assets/map.png`)).text()).toBe('other png');
     expect(await (await fetch(`${base}/games/nope/assets/map.png`)).text()).toBe('<h1>vtt</h1>');
+  });
+
+  it('serves pack media, and nothing else of a pack', async () => {
+    const res = await fetch(`${base}/packs/forest/media/big%20oak.webp`);
+    expect(res.headers.get('content-type')).toBe('image/webp');
+    expect(await res.text()).toBe('oak');
+    expect(await (await fetch(`${base}/packs/forest/pack.json`)).text()).toBe('<h1>vtt</h1>');
   });
 
   it('falls back to the client for unknown paths', async () => {

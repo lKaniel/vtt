@@ -32,6 +32,11 @@ function freeSceneId(src: Source, name: string): string {
   return freeId(slugify(name), (id) => !!src.get(SCENES, id), { bare: true });
 }
 
+/** A free id for a scene called `name`, and the sort key that puts it last. */
+export function appendedScene(src: Source, name: string): { id: string; sort: string } {
+  return { id: freeSceneId(src, name), sort: lastKey(src) };
+}
+
 /** A new, empty scene called `name` at the end of the list. */
 export function newSceneOps(src: Source, name: string): { id: string; ops: Op[] } {
   const id = freeSceneId(src, name);

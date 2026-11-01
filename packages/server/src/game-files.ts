@@ -1,4 +1,4 @@
-import { defaultEdition } from '@vtt/core';
+import { defaultEdition, type PackCompendium } from '@vtt/core';
 import { basename } from 'node:path';
 import {
   type Actor,
@@ -28,6 +28,8 @@ import {
 import type { z } from 'zod';
 import { toDoc } from './doc-sync.ts';
 import { SYSTEMS } from './systems.ts';
+import { contentCompendia, gamePackIssues } from './game-packs.ts';
+import type { PackStore } from './pack-store.ts';
 
 // Reading and validating single game files (storage v2). Shared by the
 // server and the `check-game` command so both report the same problems.
@@ -224,6 +226,8 @@ interface Refs {
   players: Set<string>;
   world: World;
   system: Dnd5eSystem | undefined;
+  /** The rules content of the game's packs. */
+  content: readonly PackCompendium[];
 }
 
 /**
@@ -231,22 +235,30 @@ interface Refs {
  * player. `system` checks what tokens refer to (monsters, spells); by
  * default the one game.json names.
  */
-export function crossCheck(state: GameState, system = SYSTEMS.get(state.game.system)): Issue[] {
+export function crossCheck(state: GameState, system = SYSTEMS.get(state.game.system), packs?: PackStore): Issue[] {
   const { game, scenes, actors, combat } = state;
   const out: Issue[] = [];
   if (!system) out.push({ file: 'game.json', message: `this server has no "${game.system}" system` });
+  const content = system ? contentCompendia(packs, game, system) : [];
+  out.push(...packWarnings(game, system, packs));
   const active = scenes.get(game.scene);
   if (!active) out.push({ file: 'game.json', message: `scene "${game.scene}" has no folder in scenes/` });
   const players = new Set(game.players.map((p) => p.id));
   for (const [id, s] of scenes) {
-    const refs = { players, world: worldOf(game, s.scene), system };
+    const refs = { players, world: worldOf(game, s.scene), system, content };
     out.push(...sceneTokenIssues(id, s, state, refs), ...sceneTileIssues(id, s.tiles));
   }
-  const refs = { players, world: worldOf(game, active?.scene ?? SceneSchema.parse({})), system };
+  const refs = { players, world: worldOf(game, active?.scene ?? SceneSchema.parse({})), system, content };
   for (const a of actors.values()) {
     out.push(...tokenIssues(a, refs).map((message) => ({ file: `actors/${a.id}.json`, message })));
   }
   return [...out, ...combatIssues(combat, active?.tokens ?? [])];
+}
+
+/** Packs game.json names that the server lacks or can't read. */
+function packWarnings(game: GameState['game'], system: Dnd5eSystem | undefined, packs?: PackStore): Issue[] {
+  const issues = system ? gamePackIssues(packs, game, system) : [];
+  return issues.map((message) => ({ file: 'game.json', message, warning: true }));
 }
 
 /** Initiative entries for tokens that aren't on the game's scene. */
@@ -282,11 +294,11 @@ function entryIssues(entry: TokenEntry, actor: Actor | undefined, refs: Refs): s
 }
 
 /** References from a token or actor to players and to content its system doesn't have. */
-function tokenIssues(t: Actor, { players, world, system }: Refs): string[] {
+function tokenIssues(t: Actor, { players, world, system, content }: Refs): string[] {
   return [
     ...[...Object.keys(t.ownership ?? {}).filter((k) => k !== 'default'), ...(t.visibleTo ?? [])]
       .filter((c) => !players.has(c))
       .map((c) => `unknown player "${c}"`),
-    ...(system?.tokenIssues(t, world.rules ?? defaultEdition(system)) ?? []),
+    ...(system?.tokenIssues(t, world.rules ?? defaultEdition(system), content) ?? []),
   ];
 }

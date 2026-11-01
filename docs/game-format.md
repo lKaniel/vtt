@@ -16,7 +16,7 @@ world/                      the example game (another folder: VTT_GAME); lobby g
     fog/<player>.json       explored fog of war, kept by the server (don't edit)
   actors/<id>.json          creatures' sheets: the Actors list
   combat.json               the fight in progress, if any
-  assets/                   images referenced by tiles and tokens
+  assets/                   images referenced by tiles and tokens (uploads in assets/uploads/)
 ```
 
 Run `pnpm check-game` after editing. It reports every problem with the file
@@ -61,7 +61,9 @@ the GM looking at a scene to prepare it, or a player the GM sent elsewhere (a
 split party). The GM's Scenes tab writes both ("Play here" sets `scene` and
 clears every seat's own). At least one player must have `"role": "gm"`.
 `system` is the rulebook the game runs on; `"dnd5e"` (the default) is the only
-one so far.
+one so far. `packs` lists the installed asset packs the game uses (see
+[packs.md](packs.md)); tiles and tokens refer to their files as
+`pack://<pack>/<path>`, and tokens can use their monsters.
 Changes reach everyone live: whoever's seat, scene or settings changed starts
 over on their scene; a seat that's gone is disconnected.
 

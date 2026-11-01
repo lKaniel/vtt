@@ -3,6 +3,7 @@ import type { DiceTerm } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '../session.ts';
 import { ActorsTab } from './ActorsTab.tsx';
+import { AssetsTab } from './AssetsTab.tsx';
 import { CompendiumTab } from './CompendiumTab.tsx';
 import { PlayersTab } from './PlayersTab.tsx';
 import { ScenesTab } from './ScenesTab.tsx';
@@ -11,8 +12,8 @@ import { targetText } from '../spell-text.ts';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
-/** The GM's side panel has tabs, like a VTT sidebar: the log, the scenes, the Actors list, the Compendium and the seats. */
-const TABS = ['Adventure log', 'Scenes', 'Actors', 'Compendium', 'Players'] as const;
+/** The GM's side panel has tabs, like a VTT sidebar: the log, the scenes, the Actors list, the Compendium, assets and packs, and the seats. */
+const TABS = ['Adventure log', 'Scenes', 'Actors', 'Compendium', 'Assets', 'Players'] as const;
 type Tab = (typeof TABS)[number];
 
 export function ChatPanel({ session }: Readonly<{ session: Session }>) {
@@ -44,7 +45,13 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
 
 /** The GM's tabs other than the log. */
 function Library({ tab, session }: Readonly<{ tab: Exclude<Tab, 'Adventure log'>; session: Session }>) {
-  const Panel = { Scenes: ScenesTab, Actors: ActorsTab, Compendium: CompendiumTab, Players: PlayersTab }[tab];
+  const Panel = {
+    Scenes: ScenesTab,
+    Actors: ActorsTab,
+    Compendium: CompendiumTab,
+    Assets: AssetsTab,
+    Players: PlayersTab,
+  }[tab];
   return <Panel session={session} />;
 }
 

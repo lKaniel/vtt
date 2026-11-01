@@ -14,6 +14,18 @@ const TYPES: Record<string, string> = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.avif': 'image/avif',
+  '.mp3': 'audio/mpeg',
+  '.ogg': 'audio/ogg',
+  '.oga': 'audio/ogg',
+  '.opus': 'audio/ogg',
+  '.wav': 'audio/wav',
+  '.flac': 'audio/flac',
+  '.m4a': 'audio/mp4',
+  '.webm': 'video/webm',
+  '.mp4': 'video/mp4',
+  '.m4v': 'video/mp4',
 };
 
 export interface HttpOptions {
@@ -24,6 +36,8 @@ export interface HttpOptions {
   assetsDir: (game?: string) => string | undefined;
   /** The built client; unknown paths fall back to its index.html. */
   clientDir: string;
+  /** The file of an installed pack's media (`/packs/<pack>/<path>`), or undefined if it has none there. */
+  packFile?: (pack: string, path: string) => string | undefined;
   /** The home game's seats, for taking one without an account. */
   players: () => readonly Player[] | Promise<readonly Player[]>;
   /** Account routes; answers true when it handled the request. */
@@ -34,6 +48,10 @@ export interface HttpOptions {
 async function serveFile(res: ServerResponse, root: string, urlPath: string): Promise<boolean> {
   const path = normalize(join(root, decodeURIComponent(urlPath)));
   if (path !== root && !path.startsWith(root + sep)) return false;
+  return servePath(res, path);
+}
+
+async function servePath(res: ServerResponse, path: string): Promise<boolean> {
   const info = await stat(path).catch(() => undefined);
   if (!info?.isFile()) return false;
   res.writeHead(200, { 'content-type': TYPES[extname(path).toLowerCase()] ?? 'application/octet-stream' });
@@ -50,6 +68,13 @@ async function serveAsset(res: ServerResponse, opts: HttpOptions, path: string):
   return !!dir && serveFile(res, dir, rest);
 }
 
+/** /packs/<pack>/<path>: media of an installed pack (see pack-store.ts). */
+async function servePack(res: ServerResponse, opts: HttpOptions, path: string): Promise<boolean> {
+  const match = /^\/packs\/([a-z0-9-]+)\/(.+)$/.exec(path);
+  const file = match && opts.packFile?.(match[1]!, decodeURIComponent(match[2]!));
+  return !!file && servePath(res, file);
+}
+
 /** Plain HTTP: the home game's seat list, game assets and the built client. */
 export function httpHandler(opts: HttpOptions): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
   return async (req, res) => {
@@ -64,6 +89,7 @@ export function httpHandler(opts: HttpOptions): (req: IncomingMessage, res: Serv
     }
     const served =
       (await serveAsset(res, opts, url.pathname)) ||
+      (await servePack(res, opts, url.pathname)) ||
       (await serveFile(res, opts.clientDir, url.pathname)) ||
       (await serveFile(res, opts.clientDir, 'index.html'));
     if (!served) res.writeHead(404).end('Not found. In development, open the Vite dev server instead.');

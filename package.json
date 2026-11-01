@@ -16,7 +16,8 @@
     "format:check": "prettier --check .",
     "coverage": "vitest run --coverage",
     "quality": "pnpm coverage && fallow",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm quality && pnpm check-game"
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm quality && pnpm check-game",
+    "import-foundry": "pnpm --filter @vtt/server import-foundry"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

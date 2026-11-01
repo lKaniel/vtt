@@ -1,4 +1,5 @@
-import { type ClientMessage, type Edition, type InventoryEntry, srdFor, type TokenView } from '@vtt/system-dnd5e';
+import type { ClientMessage, Edition, InventoryEntry, TokenView } from '@vtt/system-dnd5e';
+import { gameContent } from './content.ts';
 import type { Point } from '@vtt/shared';
 
 // Dragging from the GM's Actors list and Compendium onto the map: creatures
@@ -11,7 +12,12 @@ export type DragPayload =
   | { kind: 'monster'; id: string; rules: Edition }
   | { kind: 'actor'; id: string }
   | { kind: 'item'; id: string }
-  | { kind: 'spell'; id: string; rules: Edition };
+  | { kind: 'spell'; id: string; rules: Edition }
+  /** A picture from the Assets tab, placed as a tile; `w` and `h` are its size in pixels when known. */
+  | { kind: 'media'; src: string; w?: number; h?: number };
+
+/** What the server places or hands out (everything but media, which the client makes a tile of). */
+export type ServerDrop = Exclude<DragPayload, { kind: 'media' }>;
 
 export interface DropContext {
   tokens: Iterable<TokenView>;
@@ -33,7 +39,7 @@ export function tokenAt(tokens: Iterable<TokenView>, p: Point, gridSize: number)
 }
 
 /** What dropping `payload` at `p` asks the server for, or why it can't. */
-export function dropMessage(payload: DragPayload, p: Point, ctx: DropContext): ClientMessage | { error: string } {
+export function dropMessage(payload: ServerDrop, p: Point, ctx: DropContext): ClientMessage | { error: string } {
   if (payload.kind === 'monster' || payload.kind === 'actor') {
     const from = payload.kind === 'monster' ? payload : { kind: payload.kind, id: payload.id };
     return { t: 'spawn', from, at: p, hidden: ctx.hidden };
@@ -53,7 +59,7 @@ function giveItem(token: TokenView, item: string): ClientMessage {
 
 function teachSpell(token: TokenView, spell: { id: string }, worldRules: Edition) {
   const rules = token.stats?.rules ?? worldRules;
-  if (!srdFor(rules).spells.has(spell.id)) {
+  if (!gameContent(rules).spells.has(spell.id)) {
     return { error: `${token.name} plays by the ${rules} rules, which have no such spell` };
   }
   const spells = token.stats?.spells ?? [];

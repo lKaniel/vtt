@@ -1,7 +1,11 @@
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ActorSchema, dnd5e, type Token, type TokenEntry, TokenSchema } from '@vtt/system-dnd5e';
 import { GameSchema, SceneSchema, TileSchema } from '@vtt/shared';
 import { classify, crossCheck, parseFile, type GameState } from './game-files.ts';
+import { PackStore } from './pack-store.ts';
 
 describe('classify', () => {
   it('recognises game files and ignores the rest', () => {
@@ -83,6 +87,26 @@ describe('crossCheck', () => {
     ]);
     expect(crossCheck({ ...state([token]), game: { ...state([]).game, system: 'gurps' } })).toEqual([
       { file: 'game.json', message: 'this server has no "gurps" system' },
+    ]);
+  });
+
+  it('lets tokens refer to the monsters of the packs the game uses, and warns about packs it lacks', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'vtt-packs-'));
+    await mkdir(join(dir, 'goblins'));
+    const manifest = { id: 'goblins', name: 'Goblins', compendia: [{ id: 'm', type: 'monster', path: 'm.json' }] };
+    await writeFile(join(dir, 'goblins', 'pack.json'), JSON.stringify(manifest));
+    const warlord = { id: 'goblin-warlord', name: 'Warlord', ac: 17, hp: 45, cr: 3 };
+    const abilities = { str: 12, dex: 16, con: 12, int: 10, wis: 10, cha: 14 };
+    await writeFile(join(dir, 'goblins', 'm.json'), JSON.stringify([{ ...warlord, abilities }]));
+    const packs = new PackStore(dir);
+    await packs.load();
+    const token = TokenSchema.parse({ id: 'w', name: 'W', x: 0, y: 0, monster: 'goblin-warlord' });
+    const game = { ...state([]).game, packs: ['goblins', 'gone'] };
+    expect(crossCheck({ ...state([token]), game }, dnd5e, packs)).toEqual([
+      { file: 'game.json', message: 'pack "gone" is not installed on this server (data/packs/gone/)', warning: true },
+    ]);
+    expect(crossCheck({ ...state([token]), game }, dnd5e).map((i) => i.message)).toEqual([
+      'token "w": unknown monster "goblin-warlord" in the 2014 rules',
     ]);
   });
 

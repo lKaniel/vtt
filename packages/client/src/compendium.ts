@@ -1,9 +1,10 @@
-import { type Edition, type Item, type Monster, type Spell, srdFor } from '@vtt/system-dnd5e';
+import type { Edition, Item, Monster, Spell } from '@vtt/system-dnd5e';
+import { gameContent } from './content.ts';
 import type { DragPayload } from './drops.ts';
 import { spellTip } from './tooltip.ts';
 
-// The GM's Compendium: the bundled SRD monsters, gear and spells as
-// searchable lists. Every entry can be dragged onto the map.
+// The GM's Compendium: the SRD monsters, gear and spells, and those of the
+// game's packs, as searchable lists. Every entry can be dragged onto the map.
 
 export const CATEGORIES = ['monsters', 'weapons', 'armor', 'gear', 'spells'] as const;
 export type Category = (typeof CATEGORIES)[number];
@@ -44,7 +45,7 @@ function spellEntry(s: Spell, rules: Edition): Entry {
 const ITEM_TYPE = { weapons: 'weapon', armor: 'armor', gear: 'gear' } as const;
 
 function entries(category: Category, rules: Edition): Entry[] {
-  const srd = srdFor(rules);
+  const srd = gameContent(rules);
   if (category === 'monsters') return [...srd.monsters.values()].map((m) => monsterEntry(m, rules));
   if (category === 'spells') return [...srd.spells.values()].map((s) => spellEntry(s, rules));
   return [...srd.items.values()].filter((i) => i.type === ITEM_TYPE[category]).map(itemEntry);

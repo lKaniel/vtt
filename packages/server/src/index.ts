@@ -28,6 +28,7 @@ const assetsDir = (game?: string) => {
 
 const handleRequest = httpHandler({
   assetsDir,
+  packFile: (pack, path) => hub.packs.mediaFile(pack, path),
   clientDir: clientDist,
   players: async () => (hub.homeId ? (await hub.info(hub.homeId)).players : []),
   api: apiHandler({ accounts, characters, hub }),
