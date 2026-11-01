@@ -1,85 +1,88 @@
-import { feetToPx, type Point, type Wall } from '@vtt/shared';
+import type { Doc } from '@vtt/core';
+import { handlesOf, hitTest, marqueeHits, shapeOf, type Hittable, type Point, type View } from '@vtt/shared';
 import { Container, Graphics } from 'pixi.js';
-import { LIGHT_PRESETS, pickAt, snapPoint, wallEdit, type Picked } from '../map-tools.ts';
+import { EditorController, type EditorHost } from '../editor/controller.ts';
+import type { MenuTarget } from '../editor/menus.ts';
+import { previewDoc } from '../editor/preview.ts';
+import { keyOf, type Mods } from '../editor/selection.ts';
 import type { Session } from '../session.ts';
-import { lightColor } from './lighting/light-style.ts';
+import { DrawTools } from './DrawTools.ts';
+import { drawHandles, drawLight, drawMarquee, drawOutline, drawWall, type DrawCtx } from './editor-draw.ts';
 
-/** How close (screen pixels) the pointer must be to pick a wall or light. */
-const PICK_PX = 14;
-const WALL_COLOR = 0x6fd0ff;
-const DOOR_COLOR = 0xffb050;
-const WINDOW_COLOR = 0xa0f0ff;
-const ERASE_COLOR = 0xff5a4a;
+/** How close (screen pixels) the pointer must be to pick a wall, light or handle. */
+const PICK_PX = 10;
+const HANDLE_PX = 9;
+/** Screen pixels a press may wander before it is a drag. */
+const SLOP_PX = 5;
 
 export interface PointerInfo {
   at: Point;
   button: number;
-  /** Shift turns off snapping to the grid. */
-  free: boolean;
+  mods: Mods;
 }
 
+type TokenPlace = (id: string) => { at: Point; r: number } | undefined;
+
 /**
- * The GM's map tools on the canvas: click corner to corner to draw walls,
- * doors and windows; click to place a light or drag one to move it; click a
- * wall or light to erase it. Draws walls, lights and previews above the map
- * while a tool is in use.
+ * The map editor on the canvas, for every mode: click and marquee
+ * selection, dragging the selection or its handles, the drawing tools, and
+ * the overlay that shows walls, lights, the selection and the marquee. The
+ * gestures themselves are in editor/controller.ts; this class says what is
+ * where and draws it.
  */
 export class MapEditor {
   readonly container = new Container();
   private g = new Graphics();
-  /** Where the wall being drawn starts. */
-  private chain?: Point;
+  private controller: EditorController;
+  private tools: DrawTools;
   private hover?: Point;
   private free = false;
-  private dragging?: Picked;
   private zoom = 1;
 
-  constructor(private session: Session) {
+  constructor(
+    private session: Session,
+    private tokenPlace: TokenPlace,
+  ) {
     this.container.addChild(this.g);
     this.container.eventMode = 'none';
+    this.controller = new EditorController(this.host());
+    this.tools = new DrawTools(session);
   }
 
+  /** A mode other than tokens is in use: the map's own clicks (tokens, doors) step aside. */
   get active(): boolean {
-    return !!this.session.mapTool;
+    return this.session.mode !== 'tokens';
   }
 
-  /** Put away a half-drawn wall or a dragged light. */
-  cancel(): void {
-    this.chain = this.dragging = undefined;
+  /** Puts away a half-drawn wall or a drag; true if there was one. */
+  cancel(): boolean {
+    const had = this.tools.busy || this.controller.busy;
+    this.tools.cancel();
+    this.controller.cancel();
     this.redraw();
+    return had;
   }
 
-  /** True when the tool used the press; otherwise the map pans as usual. */
+  /** A left press: true when the editor took it. */
   pointerDown(p: PointerInfo): boolean {
-    const tool = this.session.mapTool;
-    if (!tool) return false;
-    if (p.button === 2) {
-      const had = !!(this.chain ?? this.dragging);
-      this.cancel();
-      return had;
-    }
     if (p.button !== 0) return false;
-    if (tool === 'erase') this.erase(p.at);
-    else if (tool === 'light') this.pressLight(p);
-    else this.pressWall(tool, p);
+    this.session.closeMenu();
+    if (this.tools.drawing) this.tools.press(p.at, p.mods.shift);
+    else this.controller.down(p.at, p.mods);
     this.redraw();
     return true;
   }
 
-  pointerMove(at: Point, free: boolean): void {
-    if (!this.active) return;
+  pointerMove(at: Point, mods: Mods): void {
     this.hover = at;
-    this.free = free;
-    this.redraw();
+    this.free = mods.shift;
+    this.controller.move(at, mods);
+    if (this.active || this.controller.busy) this.redraw();
   }
 
   pointerUp(p: PointerInfo): void {
-    const picked = this.dragging;
-    this.dragging = undefined;
-    if (!picked || p.button !== 0) return;
-    const to = this.lightSpot(p);
-    if (Math.hypot(to[0] - picked.at[0], to[1] - picked.at[1]) > 1)
-      this.session.editMap({ op: 'moveLight', chunk: picked.chunk, id: picked.id, to });
+    if (p.button !== 0 || !this.controller.busy) return;
+    this.controller.up(p.at, p.mods);
     this.redraw();
   }
 
@@ -88,109 +91,123 @@ export class MapEditor {
     this.redraw();
   }
 
-  private get grid(): number {
-    return this.session.world?.gridSize ?? 100;
+  /** What a right click at `at` opens a menu on; selects the thing clicked if it wasn't. */
+  menuTarget(at: Point): MenuTarget {
+    const mode = this.session.mode;
+    if (mode === 'tokens') return this.tokenMenuTarget(at);
+    const hit = this.pick(at);
+    if (hit && !this.session.selection.includes(hit)) this.session.setSelection([hit]);
+    return { mode, at, docs: hit ? this.session.selectedDocs() : [] };
   }
 
-  private pick(at: Point): Picked | undefined {
-    return pickAt(this.session.chunks, at, PICK_PX / this.zoom);
+  // What is where ---------------------------------------------------------------
+
+  private get ctx(): DrawCtx & View {
+    return { px: 1 / this.zoom, gridSize: this.session.world?.gridSize ?? 100 };
   }
 
-  private erase(at: Point): void {
-    const picked = this.pick(at);
-    if (picked) this.session.editMap({ op: 'remove', chunk: picked.chunk, id: picked.id });
+  /** The documents of the current mode, bottom to top, as a drag in progress shows them. */
+  private modeDocs(): { key: string; doc: Doc }[] {
+    const coll = this.session.modeColl();
+    const preview = this.controller.preview();
+    const ctx = { mode: this.session.mode, gridSize: this.ctx.gridSize };
+    return this.session.docs.all(coll).map((doc) => {
+      const key = keyOf({ coll, id: doc.id });
+      return { key, doc: previewDoc(key, doc, preview, ctx) };
+    });
   }
 
-  /** Lights snap to square corners and centres; shift places them anywhere. */
-  private lightSpot(p: { at: Point; free: boolean }): Point {
-    return snapPoint(p.at, p.free ? 1 : this.grid / 2, true);
+  private items(): Hittable[] {
+    if (this.session.mode === 'tokens') return this.tokenItems(false);
+    return this.modeDocs().map(({ key, doc }) => ({ key, shape: shapeOf(doc, this.ctx) }));
   }
 
-  private pressLight(p: PointerInfo): void {
-    const picked = this.pick(p.at);
-    if (picked?.kind === 'light') {
-      this.dragging = picked;
-      return;
+  /** Tokens as discs where they are drawn: those you control, or all of them for a menu. */
+  private tokenItems(all: boolean): Hittable[] {
+    const out: Hittable[] = [];
+    for (const t of this.session.tokens.values()) {
+      const place = this.tokenPlace(t.id);
+      if (place && (all || this.session.canControl(t)))
+        out.push({ key: t.id, shape: { kind: 'circle', c: place.at, r: place.r } });
     }
-    const { label: _label, ...light } = LIGHT_PRESETS[this.session.lightPreset];
-    const [x, y] = this.lightSpot(p);
-    this.session.editMap({ op: 'addLight', light: { ...light, x, y } });
+    return out;
   }
 
-  private pressWall(tool: 'wall' | 'door' | 'window', p: PointerInfo): void {
-    const at = snapPoint(p.at, this.grid, !p.free);
-    const from = this.chain;
-    if (!from) {
-      this.chain = at;
-      return;
+  private pick(at: Point): string | undefined {
+    if (this.session.mode === 'tokens') return undefined;
+    return hitTest(this.items(), at, PICK_PX * this.ctx.px);
+  }
+
+  private pickHandle(at: Point): { key: string; handle: string } | undefined {
+    const reach = HANDLE_PX * this.ctx.px;
+    for (const { ref, doc } of this.session.selectedDocs().reverse()) {
+      const handle = handlesOf(doc, this.ctx).find((h) => Math.hypot(h.at[0] - at[0], h.at[1] - at[1]) <= reach);
+      if (handle) return { key: keyOf(ref), handle: handle.id };
     }
-    if (from[0] === at[0] && from[1] === at[1]) return;
-    this.session.editMap(wallEdit(tool, from, at));
-    // Walls chain on from where the last one ended; a door is one piece.
-    this.chain = tool === 'door' ? undefined : at;
+    return undefined;
   }
 
-  // Drawing ------------------------------------------------------------------
+  private tokenMenuTarget(at: Point): MenuTarget {
+    const s = this.session;
+    const id = hitTest(this.tokenItems(true), at, 0);
+    const token = id ? s.tokens.get(id) : undefined;
+    if (token && s.canControl(token)) {
+      if (!s.isSelected(token.id)) s.select(token.id);
+      return { mode: 'tokens', at, docs: s.selectedDocs(), token };
+    }
+    const selected = s.selected ? s.tokens.get(s.selected) : undefined;
+    return { mode: 'tokens', at, docs: [], token: selected && s.canControl(selected) ? selected : undefined };
+  }
+
+  private host(): EditorHost {
+    const s = this.session;
+    return {
+      pick: (p) => this.pick(p),
+      pickHandle: (p) => this.pickHandle(p),
+      inRect: (r, mode) => {
+        const hits = marqueeHits(this.items(), r, mode);
+        return s.mode === 'tokens' ? hits.map((id) => s.tokenKey(id)) : hits;
+      },
+      selection: () => s.selection,
+      setSelection: (keys) => s.setSelection(keys),
+      slop: () => SLOP_PX * this.ctx.px,
+      commitMove: (keys, delta, free) => s.moveSelection(keys, delta, free),
+      commitHandle: (key, handle, to, free) => s.reshape(key, handle, to, free),
+    };
+  }
+
+  // Drawing ---------------------------------------------------------------------
 
   redraw(): void {
     const g = this.g.clear();
-    if (!this.active) return;
-    const px = 1 / this.zoom;
-    this.drawWalls(g, px);
-    this.drawLights(g, px);
-    this.drawHover(g, px);
+    const ctx = this.ctx;
+    if (this.active) this.drawMode(g, ctx);
+    this.tools.draw(g, this.hover, this.free, ctx);
+    const preview = this.controller.preview();
+    if (preview?.kind === 'marquee') drawMarquee(g, preview.rect, ctx);
   }
 
-  private drawWalls(g: Graphics, px: number): void {
-    for (const c of this.session.chunks.values()) {
-      for (const w of c.walls) {
-        const color = wallColor(w);
-        g.moveTo(...w.a)
-          .lineTo(...w.b)
-          .stroke({ width: 3 * px, color, alpha: 0.9 });
-        for (const end of [w.a, w.b]) g.circle(end[0], end[1], 4 * px).fill(color);
+  private drawMode(g: Graphics, ctx: DrawCtx & View): void {
+    const docs = this.modeDocs();
+    for (const { doc } of docs) {
+      if (doc.type === 'wall') drawWall(g, doc, ctx);
+      else if (doc.type === 'light') drawLight(g, doc, ctx);
+    }
+    this.drawSelection(g, docs, ctx);
+  }
+
+  /** Outlines the selection and what is under the pointer; handles on the selection unless it is being moved. */
+  private drawSelection(g: Graphics, docs: { key: string; doc: Doc }[], ctx: DrawCtx & View): void {
+    const hovered = this.hover && !this.controller.busy && !this.tools.drawing ? this.pick(this.hover) : undefined;
+    const selected = new Set(this.session.selection);
+    const handles = this.controller.preview()?.kind !== 'move';
+    for (const { key, doc } of docs) {
+      if (!selected.has(key)) {
+        if (key === hovered) drawOutline(g, doc, ctx, true);
+        continue;
       }
+      drawOutline(g, doc, ctx);
+      if (handles) drawHandles(g, doc, ctx);
     }
   }
-
-  private drawLights(g: Graphics, px: number): void {
-    for (const c of this.session.chunks.values()) {
-      for (const l of c.lights) {
-        const color = l.darkness ? 0x3a2a5a : lightColor(l);
-        const reach = feetToPx(l.bright + l.dim, this.grid);
-        g.circle(l.x, l.y, reach).stroke({ width: 1.5 * px, color, alpha: 0.5 });
-        g.circle(l.x, l.y, 11 * px)
-          .fill({ color: 0x15120f, alpha: 0.85 })
-          .stroke({ width: 2 * px, color });
-        g.circle(l.x, l.y, 5 * px).fill(color);
-      }
-    }
-  }
-
-  private drawHover(g: Graphics, px: number): void {
-    const hover = this.hover;
-    const tool = this.session.mapTool;
-    if (!hover || !tool) return;
-    if (tool === 'erase') {
-      const picked = this.pick(hover);
-      if (picked) g.circle(picked.at[0], picked.at[1], 12 * px).stroke({ width: 3 * px, color: ERASE_COLOR });
-      return;
-    }
-    if (tool === 'light') {
-      const at = this.lightSpot({ at: hover, free: this.free });
-      g.circle(at[0], at[1], 7 * px).stroke({ width: 2 * px, color: 0xffffff, alpha: 0.8 });
-      return;
-    }
-    const at = snapPoint(hover, this.grid, !this.free);
-    g.circle(at[0], at[1], 6 * px).fill({ color: 0xffffff, alpha: 0.9 });
-    if (this.chain)
-      g.moveTo(...this.chain)
-        .lineTo(...at)
-        .stroke({ width: 4 * px, color: tool === 'door' ? DOOR_COLOR : WALL_COLOR, alpha: 0.8 });
-  }
-}
-
-function wallColor(w: Wall): number {
-  if (w.door) return DOOR_COLOR;
-  return w.sight === false ? WINDOW_COLOR : WALL_COLOR;
 }

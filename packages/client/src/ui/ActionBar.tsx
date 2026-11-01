@@ -397,7 +397,7 @@ function hint(session: Session, token: TokenView | undefined): string {
   if (aiming)
     return `Click ${aiming.need - aiming.picks.length} more target(s) for ${aiming.spell.name} · right click or Esc to cancel`;
   if (!token) return 'Click one of your characters to select them';
-  return 'Click to walk · 1–0 for actions · C for the sheet · Space ends your turn';
+  return 'Drag to walk · Right click for more · 1–0 for actions · C for the sheet · Space ends your turn';
 }
 
 /** While a spell is aimed: which slot to cast it with, what to summon, and casting with fewer targets. */

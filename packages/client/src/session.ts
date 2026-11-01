@@ -13,7 +13,6 @@ import {
   type Player,
   type Point,
   type ReactionOffer,
-  type Rect,
   type ServerMessage,
   type SpawnSource,
   type Token,
@@ -22,8 +21,8 @@ import {
 } from '@vtt/shared';
 
 import { dropMessage, type DragPayload } from './drops.ts';
-import { EditSession } from './session-edits.ts';
-import type { LightPreset, MapTool } from './map-tools.ts';
+import { refOf } from './editor/selection.ts';
+import { EditorSession } from './session-editor.ts';
 import { withOffer } from './reactions.ts';
 import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
 
@@ -56,15 +55,17 @@ export interface SessionEvents {
   chat: (message: ChatMessage) => void;
   /** The time of day changed. */
   lighting: () => void;
-  /** GM: a map tool was picked or put away. */
-  mapTool: () => void;
+  /** The editor's mode, tool, menu or documents changed. */
+  editor: () => void;
+  /** What is selected in the editor changed. */
+  selection: () => void;
 }
 
 /**
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends EditSession {
+export class Session extends EditorSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -92,11 +93,6 @@ export class Session extends EditSession {
   sheet?: SheetTarget & { edit: boolean };
   /** GM only: creatures dropped on the map arrive hidden from the players. */
   spawnHidden = false;
-  /** GM: the map tool in use, and the light the light tool places. */
-  mapTool?: MapTool;
-  lightPreset: LightPreset = 'torch';
-  /** The part of the world on screen, kept up to date by the map. */
-  viewRect?: Rect;
   /** Bumped on every change; React re-renders on it. */
   version = 0;
 
@@ -169,24 +165,38 @@ export class Session extends EditSession {
     this.send({ t: 'view', chunks: keys });
   }
 
-  setMapTool(tool: MapTool | undefined): void {
-    this.mapTool = tool;
-    if (tool) this.select(undefined);
-    this.emit('mapTool');
-    this.changed();
-  }
-
-  setLightPreset(preset: LightPreset): void {
-    this.lightPreset = preset;
-    this.changed();
-  }
-
+  /** Selects one token alone (or none), the one the action bar and the keys act with. */
   select(id: string | undefined): void {
-    if (this.selected === id) return;
+    if (this.mode === 'tokens') this.selection = id ? [this.tokenKey(id)] : [];
+    this.setPrimary(id);
+    this.emit('selection');
+  }
+
+  /** Makes a token the one you act with, keeping the rest of the selection. */
+  setPrimary(id: string | undefined): void {
+    if (this.selected === id) return this.changed();
     this.selected = id;
     if (this.armed ?? this.aiming) this.arm(undefined);
     this.emit('select', id);
     this.changed();
+  }
+
+  /** In the tokens mode the selected token stays the one you act with while it is still selected. */
+  protected selectionChanged(): void {
+    if (this.mode === 'tokens') {
+      const ids = this.selection.map((key) => refOf(key).id);
+      this.setPrimary(this.selected && ids.includes(this.selected) ? this.selected : ids[0]);
+    } else this.changed();
+    this.emit('selection');
+  }
+
+  protected editorChanged(): void {
+    this.emit('editor');
+    this.changed();
+  }
+
+  protected knownTokens(): Iterable<TokenView> {
+    return this.tokens.values();
   }
 
   /** Readies an attack of the selected token; the next token clicked is the target. */
@@ -311,18 +321,8 @@ export class Session extends EditSession {
     else this.send(msg);
   }
 
-  /** The centre of the screen, where Compendium buttons place things. */
-  viewCentre(): Point {
-    const r = this.viewRect;
-    return r ? [r.x + r.w / 2, r.y + r.h / 2] : (this.world?.start ?? [0, 0]);
-  }
-
-  /** Visible creatures (tokens with stats) on screen: who joins a fight the GM starts. */
-  fightersInView(): string[] {
-    const r = this.viewRect;
-    if (!r) return [];
-    const inView = (t: TokenView) => t.x >= r.x && t.x <= r.x + r.w && t.y >= r.y && t.y <= r.y + r.h;
-    return [...this.tokens.values()].filter((t) => (t.sheet ?? t.health) && !t.hidden && inView(t)).map((t) => t.id);
+  protected startPoint(): Point {
+    return this.world?.start ?? [0, 0];
   }
 
   /** The token whose turn it is in the fight. */
@@ -352,6 +352,7 @@ export class Session extends EditSession {
   }
 
   protected editTargets(): DocRef[] {
+    if (this.selection.length) return this.selection.map(refOf);
     if (this.selected) return [{ coll: `${this.scene}/tokens`, id: this.selected }];
     if (this.sheet?.kind === 'actor') return [{ coll: 'actors', id: this.sheet.id }];
     return [];
@@ -481,6 +482,7 @@ export class Session extends EditSession {
 
   private onTokenGone(id: string): boolean {
     if (!this.tokens.delete(id)) return false;
+    if (this.mode === 'tokens') this.pruneSelection((key) => key !== this.tokenKey(id));
     if (this.selected === id) this.select(undefined);
     if (this.sheet?.kind === 'token' && this.sheet.id === id) this.sheet = undefined;
     this.emit('tokenGone', id);

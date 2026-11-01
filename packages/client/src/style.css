@@ -3678,3 +3678,78 @@ button.pip:hover {
   max-width: calc(100vw - 32px);
   flex-wrap: wrap;
 }
+
+/* ---------- Map editor: context menu and inspector ---------- */
+
+.context-menu {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 6px;
+}
+.context-menu button {
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--gold-bright);
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.context-menu button:hover,
+.context-menu button:focus-visible {
+  background: rgba(232, 211, 166, 0.14);
+  outline: none;
+}
+.context-menu button.danger {
+  color: #ff8a7a;
+}
+
+.inspector {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 250px;
+  padding: 10px 12px;
+}
+.inspector-head {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--display);
+  color: var(--gold-bright);
+}
+.inspector-type,
+.inspector-note {
+  font-size: 12px;
+  color: var(--gold-dim);
+  margin: 0;
+}
+.inspector-field {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--gold-dim);
+}
+.inspector-field input:not([type='checkbox']),
+.inspector-field select {
+  font: inherit;
+  color: var(--gold-bright);
+  background: #1c150f;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  padding: 3px 6px;
+  min-width: 0;
+}
+.inspector-field input[type='checkbox'] {
+  justify-self: start;
+  accent-color: var(--gold);
+}

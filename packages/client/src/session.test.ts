@@ -38,18 +38,14 @@ describe('Session', () => {
     expect(lit).toHaveBeenCalled();
   });
 
-  it('picks a map tool, which puts away any readied action, and sends map edits', () => {
+  it('sends map edits, darkness, and keeps the light preset', () => {
     ws.receive(welcome());
-    session.setMapTool('wall');
-    expect(session.mapTool).toBe('wall');
     session.editMap({ op: 'remove', chunk: '0_0', id: 'w' });
     expect(ws.sent.at(-1)).toEqual({ t: 'mapEdit', edit: { op: 'remove', chunk: '0_0', id: 'w' } });
     session.setLightPreset('campfire');
     expect(session.lightPreset).toBe('campfire');
     session.setDarkness(0.4);
     expect(ws.sent.at(-1)).toEqual({ t: 'darkness', darkness: 0.4 });
-    session.setMapTool(undefined);
-    expect(session.mapTool).toBeUndefined();
   });
 
   it('keeps only chunks in view', () => {
