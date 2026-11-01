@@ -1,7 +1,7 @@
 import { omitKey, resolveCreature, srdFor, type Actor, type Creature, type Edition, type TokenView } from '@vtt/shared';
 
 /** What a sheet shows and edits: an actor, or a token (an actor with a position). */
-export type Draft = Actor & Partial<Pick<TokenView, 'x' | 'y' | 'sheet' | 'health'>>;
+export type Draft = Actor & Partial<Pick<TokenView, 'x' | 'y' | 'sheet' | 'health' | 'actor'>>;
 /** Changes the draft; `now` saves at once instead of after typing stops. */
 export type Update = (fn: (d: Draft) => Draft, now?: boolean) => void;
 

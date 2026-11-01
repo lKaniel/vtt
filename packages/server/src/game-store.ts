@@ -5,6 +5,7 @@ import {
   anchorChunk,
   chunksInRect,
   groupChunks,
+  resolveToken,
   splitWorld,
   tokenLights,
   worldOf,
@@ -20,14 +21,18 @@ import {
   type Rect,
   type Scene,
   type Token,
+  type TokenEntry,
   type Wall,
   type World,
 } from '@vtt/shared';
 import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
 import { FileWriter } from './file-writer.ts';
-import { classify, crossCheck, pathOf, type FileKind, type GameFile } from './game-files.ts';
+import { classify, crossCheck, pathOf } from './game-files.ts';
 import { readEntry, readFolder, stateOf, type FolderEntry } from './game-folder.ts';
+import { migrateActorsFolder } from './migrate-actors.ts';
 import { migrateFolder } from './migrate-world.ts';
+import { ACTORS, COMBAT, docsOf, FIGHT, fileOf, GAME, MAP, SCENES, scopeOf, TYPE } from './store-colls.ts';
+import { putOps, relinkOps, tokenOps, unlinkActorOps, type Relink } from './token-ops.ts';
 
 interface StoreEvents {
   world: [World];
@@ -41,49 +46,6 @@ interface StoreEvents {
   actor: [Actor];
   actorGone: [string];
   combat: [Combat | undefined];
-}
-
-// Collections in the document store. A scene's placeables live in
-// "<scene>/<collection>", e.g. "crossroads/walls".
-const GAME = 'game';
-const SCENES = 'scenes';
-const ACTORS = 'actors';
-const COMBAT = 'combat';
-const FIGHT = 'current';
-const MAP: MapCollection[] = ['tiles', 'walls', 'lights'];
-const TYPE = { tiles: 'tile', walls: 'wall', lights: 'light', tokens: 'token' } as const;
-
-/** Where a file's documents go, and which of them it covers (all of `coll`, or just `only`). */
-function docsOf(file: GameFile): { coll: string; only?: string; docs: Doc[] } {
-  switch (file.kind) {
-    case 'game':
-      return { coll: GAME, docs: [toDoc('game', file.data)] };
-    case 'combat':
-      return { coll: COMBAT, docs: [toDoc('combat', file.data, FIGHT)] };
-    case 'actor':
-      return { coll: ACTORS, only: file.id, docs: [toDoc('actor', file.data)] };
-    case 'scene':
-      return { coll: SCENES, only: file.scene, docs: [toDoc('scene', file.data, file.scene)] };
-    case 'collection':
-      return { coll: `${file.scene}/${file.coll}`, docs: file.data.map((item) => toDoc(TYPE[file.coll], item)) };
-  }
-}
-
-/** The file a document is saved in. */
-function fileOf(coll: string, id: string): FileKind {
-  if (coll === GAME || coll === COMBAT) return { kind: coll };
-  if (coll === ACTORS) return { kind: 'actor', id };
-  if (coll === SCENES) return { kind: 'scene', scene: id };
-  const [scene, name] = coll.split('/') as [string, keyof typeof TYPE];
-  return { kind: 'collection', scene, coll: name };
-}
-
-/** The document collection a deleted file emptied, and which of its documents it held. */
-function scopeOf(kind: FileKind): { coll: string; only?: string } | undefined {
-  if (kind.kind === 'game' || kind.kind === 'scene') return undefined;
-  if (kind.kind === 'actor') return { coll: ACTORS, only: kind.id };
-  if (kind.kind === 'combat') return { coll: COMBAT };
-  return { coll: `${kind.scene}/${kind.coll}` };
 }
 
 interface Touched {
@@ -112,9 +74,9 @@ export class GameStore extends EventEmitter<StoreEvents> {
   world!: World;
   /** The active scene's map, cut into streaming chunks. */
   readonly chunks = new Map<string, Chunk>();
-  /** Tokens on the active scene. */
+  /** Tokens on the active scene, each merged with its actor (see token-link.ts). */
   readonly tokens = new Map<string, Token>();
-  /** The GM's Actors list: creatures ready to be placed, from actors/. */
+  /** Creatures' sheets, from actors/: what tokens stand for, and the GM's Actors list. */
   readonly actors = new Map<string, Actor>();
   /** The fight in progress, from combat.json. */
   combat?: Combat;
@@ -140,6 +102,11 @@ export class GameStore extends EventEmitter<StoreEvents> {
     if (migrated) {
       console.log(`[game] moved the old world files to the game layout; originals kept in ${migrated.backup}`);
       for (const note of migrated.notes) console.log(`[game]   ${note}`);
+    }
+    const split = await migrateActorsFolder(this.dir);
+    if (split) {
+      console.log(`[game] gave the creatures on the map actors (format 3); originals kept in ${split.backup}`);
+      for (const note of split.notes) console.log(`[game]   ${note}`);
     }
     const entries = await readFolder(this.dir);
     const game = entries.find((e) => e.kind.kind === 'game');
@@ -239,10 +206,19 @@ export class GameStore extends EventEmitter<StoreEvents> {
     this.commit(this.worldOps({ ...this.world, players: [...this.world.players, player] }), { quiet: true });
   }
 
+  /**
+   * Saves a changed token: a linked token's sheet goes to its actor (so its
+   * other tokens change too), an unlinked one keeps what differs as its delta.
+   */
   setToken(token: Token, path?: Point[]): void {
-    const ops = this.putOps(this.sceneColl('tokens'), toDoc('token', token));
+    const ops = tokenOps(this.docs, this.sceneColl('tokens'), token, this.actors);
     if (ops.length) this.commit(ops, { path });
     else this.emit('token', token, path);
+  }
+
+  /** Changes a token's tie to its actor. The caller checks the token has an actor. */
+  relinkToken(id: string, how: Relink): void {
+    this.commit(relinkOps(this.docs, this.sceneColl('tokens'), { id, how }, this.actors));
   }
 
   /** Deletes a token (a summon that vanished). */
@@ -254,8 +230,10 @@ export class GameStore extends EventEmitter<StoreEvents> {
     this.commit(this.putOps(ACTORS, toDoc('actor', actor)));
   }
 
+  /** Deletes an actor; its tokens on every scene keep its sheet as their own. */
   removeActor(id: string): void {
-    this.commit(this.deleteOps(ACTORS, id));
+    const scenes = this.docs.all(SCENES).map((d) => d.id);
+    this.commit([...unlinkActorOps(this.docs, scenes, id, this.actors.get(id)), ...this.deleteOps(ACTORS, id)]);
   }
 
   setCombat(combat: Combat | undefined): void {
@@ -290,8 +268,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
   }
 
   private putOps(coll: string, doc: Doc): Op[] {
-    const old = this.docs.get(coll, doc.id);
-    return diffOps(coll, old ? [old] : [], [doc]);
+    return putOps(this.docs, coll, doc);
   }
 
   private deleteOps(coll: string, id: string): Op[] {
@@ -324,16 +301,41 @@ export class GameStore extends EventEmitter<StoreEvents> {
 
   private project(touched: readonly Touched[], opts: CommitOptions): void {
     const keys = new Set<string>();
+    const moved = new Set<string>();
+    const actors = new Set<string>();
     let world = false;
     for (const t of touched) {
       if (t.coll === GAME || t.coll === SCENES) world = true;
-      else if (t.coll === ACTORS) this.projectActor(t.id);
+      else if (t.coll === ACTORS) actors.add(t.id);
       else if (t.coll === COMBAT) this.projectCombat();
-      else if (t.coll === this.sceneColl('tokens')) this.projectToken(t.id, opts.path);
+      else if (t.coll === this.sceneColl('tokens')) moved.add(t.id);
       else this.chunkKeys(t, keys);
     }
+    this.projectCreatures(actors, moved, opts.path);
     if (world) this.refreshWorld({ live: true, quiet: opts.quiet });
     if (keys.size) this.refreshChunks(keys, true);
+  }
+
+  /** Actors first, then the tokens that moved and those standing for a changed actor. */
+  private projectCreatures(actors: ReadonlySet<string>, moved: ReadonlySet<string>, path?: Point[]): void {
+    for (const id of actors) this.projectActor(id);
+    for (const id of moved) this.projectToken(id, path);
+    for (const id of this.tokensOf(actors)) if (!moved.has(id)) this.projectToken(id);
+  }
+
+  /** Ids of the active scene's tokens that stand for one of `actors`. */
+  private tokensOf(actors: ReadonlySet<string>): string[] {
+    if (!actors.size) return [];
+    const docs = this.docs.all(this.sceneColl('tokens'));
+    return docs.filter((d) => typeof d.actor === 'string' && actors.has(d.actor)).map((d) => d.id);
+  }
+
+  /** The creature a stored token is, or undefined (and a message) when it can't be put together. */
+  private resolve(doc: Doc): Token | undefined {
+    const entry = fromDoc<TokenEntry>(doc);
+    const { token, errors } = resolveToken(entry, entry.actor ? this.actors.get(entry.actor) : undefined);
+    if (!token) console.error(`[game] token "${entry.id}" left out: ${errors.join('; ')}`);
+    return token;
   }
 
   private projectActor(id: string): void {
@@ -351,8 +353,9 @@ export class GameStore extends EventEmitter<StoreEvents> {
 
   private projectToken(id: string, path?: Point[]): void {
     const doc = this.docs.get(this.sceneColl('tokens'), id);
-    if (doc) this.tokens.set(id, fromDoc<Token>(doc));
-    if (doc) this.emit('token', this.tokens.get(id)!, path);
+    const token = doc && this.resolve(doc);
+    if (token) this.tokens.set(id, token);
+    if (token) this.emit('token', token, path);
     else if (this.tokens.delete(id)) this.emit('tokenGone', id);
   }
 
@@ -388,11 +391,14 @@ export class GameStore extends EventEmitter<StoreEvents> {
 
   /** Rebuilds everything that depends on which scene is active. */
   private refreshScene(): void {
-    this.tokens.clear();
-    for (const doc of this.docs.all(this.sceneColl('tokens'))) this.tokens.set(doc.id, fromDoc<Token>(doc));
-    this.refreshChunks(undefined, false);
     this.actors.clear();
     for (const doc of this.docs.all(ACTORS)) this.actors.set(doc.id, fromDoc<Actor>(doc));
+    this.tokens.clear();
+    for (const doc of this.docs.all(this.sceneColl('tokens'))) {
+      const token = this.resolve(doc);
+      if (token) this.tokens.set(doc.id, token);
+    }
+    this.refreshChunks(undefined, false);
     const fight = this.docs.get(COMBAT, FIGHT);
     this.combat = fight && fromDoc<Combat>(fight, false);
   }

@@ -38,3 +38,4 @@ export * from './character-rules.ts';
 export * from './character.ts';
 export * from './character-check.ts';
 export * from './character-token.ts';
+export * from './token-link.ts';

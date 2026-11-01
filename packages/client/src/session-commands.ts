@@ -94,4 +94,9 @@ export abstract class Commands {
   deleteActor(id: string): void {
     this.send({ t: 'deleteActor', actor: id });
   }
+
+  /** GM: link a token to its actor, unlink it, or save or reset an unlinked copy's changes. */
+  relinkToken(token: string, how: 'link' | 'unlink' | 'save' | 'reset'): void {
+    this.send({ t: 'relinkToken', token, how });
+  }
 }

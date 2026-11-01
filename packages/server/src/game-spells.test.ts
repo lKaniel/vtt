@@ -363,7 +363,7 @@ describe('class features', () => {
     expect(tok('hero').spent?.slots).toEqual([2, 1]);
     expect(tok('bo').spent).toBeUndefined();
     gm.receive({ t: 'rest', tokens: ['hero'], kind: 'long' });
-    expect(tok('hero')).toMatchObject({ spent: undefined, hp: undefined });
+    expect([tok('hero').spent, tok('hero').hp]).toEqual([undefined, undefined]);
     const ana = join_('ana');
     ana.receive({ t: 'rest', tokens: ['hero'], kind: 'long' });
     expect(errors(ana)[0]).toMatch(/GM/);

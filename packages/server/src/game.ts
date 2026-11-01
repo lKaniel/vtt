@@ -247,6 +247,8 @@ export class Game {
         return this.gm.edit(c.player, msg.token, msg.patch);
       case 'deleteToken':
         return this.gm.delete(c.player, msg.token);
+      case 'relinkToken':
+        return this.gm.relink(c.player, msg.token, msg.how);
       case 'hotbar':
         return this.onHotbar(c, msg.token, msg.slots);
       case 'spawn':

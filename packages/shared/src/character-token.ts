@@ -29,13 +29,24 @@ function ringSquares(col: number, row: number, ring: number): [number, number][]
 }
 
 /**
- * The character's token: a new one at `at`, or `existing` with its build
+ * The character's token, linked to an actor of the same id: a new one at `at`, or `existing` with its build
  * (name, stats, speed, senses) refreshed. Play state stays as it is:
  * position, hit points, inventory, effects, spent slots, hotbar.
  */
 export function characterOnMap(c: Character, existing: Token | undefined, at: Point): Token {
   const { inventory, controllers, ...build } = characterToken(c);
-  if (!existing) return TokenSchema.parse({ id: c.id, x: at[0], y: at[1], ...build, inventory, controllers });
+  if (!existing) {
+    return TokenSchema.parse({
+      id: c.id,
+      x: at[0],
+      y: at[1],
+      ...build,
+      inventory,
+      controllers,
+      actor: c.id,
+      linked: true,
+    });
+  }
   return TokenSchema.parse({
     ...existing,
     ...build,

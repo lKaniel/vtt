@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { TokenSchema } from '@vtt/shared';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld, savedToken } from './test/fixtures.ts';
 import { GameStore } from './game-store.ts';
@@ -80,6 +81,27 @@ describe('spawning', () => {
     expect(await savedToken(dir, 'goblin-2')).toMatchObject({ monster: 'goblin' });
   });
 
+  it('keeps a stock actor per monster in the Monsters folder, and places unlinked copies of it', async () => {
+    const gm = seat('gm');
+    const goblin = { t: 'spawn', from: { kind: 'monster', id: 'goblin', rules: '2014' } } as const;
+    gm.receive({ ...goblin, at: [720, 480] });
+    gm.receive({ ...goblin, at: [820, 480] });
+    // The map's own "goblin" actor isn't the stock one (migrated from a hand-made token).
+    const stock = [...store.actors.values()].filter((a) => a.monster === 'goblin');
+    expect(stock).toMatchObject([{ id: 'goblin-2', name: 'Goblin', folder: 'Monsters' }]);
+    expect(store.tokens.get('goblin-3')).toMatchObject({ actor: 'goblin-2', linked: false, name: 'Goblin 3' });
+    await store.flush();
+    const entries = (await readJson('scenes/main/tokens.json')) as { id: string }[];
+    expect(entries.find((e) => e.id === 'goblin-3')).toEqual({
+      id: 'goblin-3',
+      x: 850,
+      y: 450,
+      actor: 'goblin-2',
+      linked: false,
+      delta: { name: 'Goblin 3' },
+    });
+  });
+
   it('refuses a monster that is not in the book', () => {
     const gm = seat('gm');
     gm.receive({ t: 'spawn', from: { kind: 'monster', id: 'tarrasque-jr', rules: '2014' }, at: [0, 0] });
@@ -92,7 +114,44 @@ describe('spawning', () => {
     gm.receive({ t: 'spawn', from: { kind: 'actor', id: 'bandit' }, at: [950, 950] });
     gm.receive({ t: 'spawn', from: { kind: 'actor', id: 'bandit' }, at: [1050, 950] });
     expect(store.tokens.get('bandit')).toMatchObject({ name: 'Bandit', monster: 'bandit', x: 950, y: 950 });
-    expect(store.tokens.get('bandit-2')).toMatchObject({ name: 'Bandit 2', x: 1050 });
+    expect(store.tokens.get('bandit-2')).toMatchObject({ name: 'Bandit 2', x: 1050, actor: 'bandit', linked: false });
+  });
+
+  it('places a character’s actor as linked tokens that keep its name', () => {
+    const gm = seat('gm');
+    gm.receive({ t: 'spawn', from: { kind: 'actor', id: 'hero' }, at: [950, 950] });
+    expect(store.tokens.get('hero-2')).toMatchObject({ name: 'Hero', actor: 'hero', linked: true });
+    expect(store.actors.get('hero')!.name).toBe('Hero');
+  });
+});
+
+describe('linking tokens to actors', () => {
+  it('unlinks, saves, resets and links a token for the GM', () => {
+    const gm = seat('gm');
+    gm.receive({ t: 'relinkToken', token: 'hero', how: 'unlink' });
+    gm.receive({ t: 'editToken', token: 'hero', patch: { hp: 2 } });
+    expect(store.actors.get('hero')!.hp).toBeUndefined();
+    gm.receive({ t: 'relinkToken', token: 'hero', how: 'reset' });
+    expect(store.tokens.get('hero')!.hp).toBeUndefined();
+    gm.receive({ t: 'relinkToken', token: 'hero', how: 'link' });
+    expect(store.tokens.get('hero')!.linked).toBe(true);
+    expect(gm.take('error')).toEqual([]);
+  });
+
+  it('refuses what makes no sense, and players', () => {
+    const gm = seat('gm');
+    const ana = seat('ana');
+    store.setToken(TokenSchema.parse({ id: 'rock', name: 'Rock', x: 0, y: 0 }));
+    gm.receive({ t: 'relinkToken', token: 'rock', how: 'link' });
+    gm.receive({ t: 'relinkToken', token: 'hero', how: 'save' });
+    gm.receive({ t: 'relinkToken', token: 'nope', how: 'link' });
+    ana.receive({ t: 'relinkToken', token: 'hero', how: 'unlink' });
+    expect(gm.take('error').map((e) => e.message)).toEqual([
+      'Rock has no actor',
+      'Hero is linked: its changes are already its actor’s',
+      'No such token',
+    ]);
+    expect(ana.take('error').map((e) => e.message)).toEqual(['Only the GM can do that']);
   });
 });
 
@@ -130,7 +189,7 @@ describe('the Actors list', () => {
     const gm = new FakeSocket();
     game.connect(gm.asWebSocket, game.findPlayer('gm')!);
     const [welcome] = gm.take('welcome');
-    expect(welcome!.actors!.map((a) => a.id)).toEqual(['bandit']);
+    expect(welcome!.actors!.map((a) => a.id)).toEqual(['goblin', 'hero', 'bandit']);
     expect(welcome!.players!.map((p) => p.id)).toEqual(['gm', 'ana', 'bo']);
     const ana = new FakeSocket();
     game.connect(ana.asWebSocket, game.findPlayer('ana')!);

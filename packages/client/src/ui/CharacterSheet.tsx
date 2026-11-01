@@ -312,6 +312,51 @@ function SheetFoot(props: Readonly<SheetProps>) {
   );
 }
 
+/**
+ * A token's tie to its actor: a linked token shares the actor's hit points
+ * and effects; an unlinked copy has its own, and can save its changes to the
+ * actor or start over from it.
+ */
+function ActorLinkButtons({ session, id, linked }: Readonly<{ session: Session; id: string; linked: boolean }>) {
+  const relink = (how: 'link' | 'unlink' | 'save' | 'reset') => session.relinkToken(id, how);
+  if (linked) {
+    return (
+      <button
+        className="btn small"
+        onClick={() => relink('unlink')}
+        title="Shares its actor's hit points and effects; unlink to make it a copy with its own"
+      >
+        Unlink
+      </button>
+    );
+  }
+  return (
+    <>
+      <button
+        className="btn small"
+        onClick={() => relink('save')}
+        title="Save this copy's stats, gear and looks to its actor (its wounds and name stay its own)"
+      >
+        Save to actor
+      </button>
+      <button
+        className="btn small"
+        onClick={() => relink('reset')}
+        title="Start over from the actor, keeping only its name"
+      >
+        Reset
+      </button>
+      <button
+        className="btn small"
+        onClick={() => relink('link')}
+        title="Share the actor's hit points and effects from now on"
+      >
+        Link
+      </button>
+    </>
+  );
+}
+
 /** Keeping, placing and deleting creatures is the GM's. */
 function GmFootButtons({ session, kind, value }: Readonly<SheetProps>) {
   const [confirm, setConfirm] = useState(false);
@@ -329,12 +374,17 @@ function GmFootButtons({ session, kind, value }: Readonly<SheetProps>) {
     session.saveActor(actorFromToken({ x: 0, y: 0, ...value }, id));
     session.showError(`Saved ${value.name} to the Actors list`);
   };
+  const tokenButtons = value.actor ? (
+    <ActorLinkButtons session={session} id={value.id} linked={value.linked === true} />
+  ) : (
+    <button className="btn small" onClick={saveAsActor} title="Keep a copy in the Actors list">
+      Save as actor
+    </button>
+  );
   return (
     <>
       {kind === 'token' ? (
-        <button className="btn small" onClick={saveAsActor} title="Keep a copy in the Actors list">
-          Save as actor
-        </button>
+        tokenButtons
       ) : (
         <button
           className="btn small"

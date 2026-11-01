@@ -2,7 +2,7 @@
 import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import type { ServerMessage } from '@vtt/shared';
+import { ActorSchema, resolveToken, TokenEntrySchema, type ServerMessage, type Token } from '@vtt/shared';
 import type { WebSocket } from 'ws';
 
 const players = [
@@ -99,8 +99,12 @@ export class FakeSocket {
   }
 }
 
-/** A token as saved in the test game's scene file, or undefined. */
-export async function savedToken(dir: string, id: string): Promise<unknown> {
-  const tokens = JSON.parse(await readFile(join(dir, 'scenes/main/tokens.json'), 'utf8')) as { id: string }[];
-  return tokens.find((t) => t.id === id);
+/** A token as saved in the test game's files (its entry merged with its actor), or undefined. */
+export async function savedToken(dir: string, id: string): Promise<Token | undefined> {
+  const read = async (rel: string) => JSON.parse(await readFile(join(dir, rel), 'utf8')) as unknown;
+  const tokens = (await read('scenes/main/tokens.json')) as unknown[];
+  const raw = tokens.map((t) => TokenEntrySchema.parse(t)).find((t) => t.id === id);
+  if (!raw) return undefined;
+  const actor = raw.actor ? ActorSchema.parse(await read(`actors/${raw.actor}.json`)) : undefined;
+  return resolveToken(raw, actor).token;
 }

@@ -1,0 +1,19 @@
+{
+  "id": "innkeeper",
+  "name": "Innkeeper",
+  "color": "#a08060",
+  "stats": {
+    "maxHp": 9,
+    "abilities": {
+      "str": 11,
+      "dex": 10,
+      "con": 12
+    }
+  },
+  "inventory": [
+    {
+      "item": "club",
+      "equipped": true
+    }
+  ]
+}

@@ -24,6 +24,7 @@ describe('characterOnMap', () => {
   it('places a new token for the character', () => {
     const token = characterOnMap(vex, undefined, [450, 450]);
     expect(token).toMatchObject({ id: 'vex', name: 'Vex', x: 450, y: 450, controllers: ['dee'], darkvision: 60 });
+    expect(token).toMatchObject({ actor: 'vex', linked: true });
   });
 
   it('updates the build of an existing token but keeps how it is doing in play', () => {

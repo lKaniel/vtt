@@ -6,14 +6,14 @@ hand or with Claude updates every connected client live.
 
 ```
 world/                      the example game (another folder: VTT_GAME)
-  game.json                 the game: name, rules, active scene, players
+  game.json                 the game: name, rules, active scene, players, format
   scenes/<scene>/
     scene.json              grid, camera start, time of day, vision
     tiles.json              the scene's tiles, as one list
     walls.json              walls, doors and windows
     lights.json             placed lights
-    tokens.json             tokens on the scene
-  actors/<id>.json          the GM's Actors list: creatures ready to be placed
+    tokens.json             tokens on the scene: where each actor stands
+  actors/<id>.json          creatures' sheets: the Actors list
   combat.json               the fight in progress, if any
   assets/                   images referenced by tiles and tokens
 ```
@@ -58,9 +58,13 @@ everyone live; changing anything else reconnects everyone.
 
 Players whose `id` matches an account (see the README) are that account's
 seat. The server adds one when an account first joins, so you can change its
-`role` here afterwards. A character brought from an account becomes a token
-whose `id` is the character's id, with the account in `controllers`; saving
-or levelling the character updates that token's name, stats and senses.
+`role` here afterwards. A character brought from an account becomes an actor
+and a linked token, both with the character's id and the account in
+`controllers`; saving or levelling the character updates its name, stats and
+senses.
+
+`format` is the folder's format; the server sets it when it moves an older
+folder up (see the end of this page). Leave it as it is.
 
 Roles, like Foundry's user roles (the GM changes them in the Players tab):
 
@@ -146,28 +150,74 @@ Walls stop light like they stop sight. A token carries a light with the same
 fields in `light`. Magical darkness puts out every other light, and only
 devil's sight, truesight, blindsight and tremorsense work inside it.
 
-## Tokens
+## Actors and tokens
 
-`tokens.json` lists the scene's tokens, each one like this:
+A creature's sheet is an **actor**, one file per actor in `actors/<id>.json`.
+A **token** is an actor standing on a scene: an entry in the scene's
+`tokens.json` that says where, and which actor:
+
+```json
+{ "id": "bram", "x": 650, "y": 650, "actor": "bram", "linked": true }
+```
+
+- **Linked** tokens (characters, named villains, a companion) read and write
+  their actor: damage on the token is damage on the actor, and every token of
+  it shows the same hit points and effects.
+- **Unlinked** tokens (goblins, bandits) are copies. Each keeps only what
+  differs from its actor in `delta`: its wounds, its effects, a numbered
+  name. `null` in `delta` removes a field the actor has. The actor stays the
+  clean template, so three goblins from one actor each have their own hit
+  points:
+
+```json
+[
+  { "id": "goblin-1", "x": 2850, "y": 1650, "actor": "goblin", "linked": false },
+  {
+    "id": "goblin-2",
+    "x": 3250,
+    "y": 1450,
+    "actor": "goblin",
+    "linked": false,
+    "hidden": true,
+    "delta": { "name": "Goblin 2", "hp": 3 }
+  }
+]
+```
+
+Leave out `linked` and a token is linked unless its actor is a monster (an
+actor can say otherwise with its own `"linked"`). Only `x`, `y`, `hidden`,
+`visibleTo`, `summon` and `leader` belong to the token itself; everything
+else on a token with an actor goes in `delta`, and `check-game` says so.
+
+A token without `actor` carries its whole sheet itself, with the actor fields
+below written straight on it. Summons are like that; they vanish when their
+spell ends.
+
+In the game the GM places actors from the Actors tab (monster actors as
+numbered unlinked copies, the rest linked), and the token sheet's edit mode
+has **Unlink**, or for a copy **Save to actor** (its stats, gear and looks
+become the actor's; its wounds and name stay its own), **Reset** (start over
+from the actor) and **Link**. Deleting an actor leaves its tokens carrying
+its sheet themselves.
+
+An actor looks like this; the fields below are an actor's (or a token's
+without one):
 
 ```json
 {
   "id": "bram",
   "name": "Bram",
-  "x": 650,
-  "y": 650,
   "size": 1,
   "color": "#c0603a",
   "speed": 30,
-  "controllers": ["player2"],
-  "hidden": false
+  "controllers": ["player2"]
 }
 ```
 
 | Field         | Meaning                                                                 |
 | ------------- | ----------------------------------------------------------------------- |
-| `id`          | Lowercase letters, digits, dashes. Unique in the scene.                 |
-| `x`, `y`      | Centre of the token in pixels (a square centre).                        |
+| `id`          | Lowercase letters, digits, dashes. An actor's must match its file name. |
+| `x`, `y`      | A token's centre in pixels (a square centre).                           |
 | `size`        | In squares: 1 medium, 2 large, 3 huge. Default 1.                       |
 | `color`       | Disc colour behind the placeholder when there is no picture.            |
 | `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency.     |
@@ -177,8 +227,9 @@ devil's sight, truesight, blindsight and tremorsense work inside it.
 | `darkvision`  | Range in feet. Also `blindsight`, `tremorsense`, `truesight`.           |
 | `devilsSight` | Sees in magical and nonmagical darkness to this range, in feet.         |
 | `light`       | A light it carries, like a placed light: `{ "bright": 20, "dim": 20 }`. |
-| `hidden`      | `true` = only the GM sees it.                                           |
-| `visibleTo`   | If set, only these players (and the GM) see it. Used for illusions.     |
+| `hidden`      | A token's: `true` = only the GM sees it.                                |
+| `visibleTo`   | A token's: only these players (and the GM) see it. Used for illusions.  |
+| `folder`      | An actor's: groups it in the Actors list.                               |
 
 Senses missing on a token come from its monster's stat block. Players see a
 creature when one of their tokens has a clear line to it and it is lit (even
@@ -302,20 +353,19 @@ just write an effect into the token.
 Players only receive the stats of tokens they control. For everyone else
 they're told how hurt the creature looks (unhurt, hurt, bloodied, down).
 
-## Actors
+## The Actors list
 
-`actors/` holds the GM's Actors list: creatures that aren't on the map yet.
-An actor is a token without `x` and `y`, plus an optional `folder` that
-groups it in the list. Dragging one onto the map in the game copies it into
-the scene's `tokens.json` with a free id (`bandit`, `bandit-2`, ...) and a numbered name.
+`actors/` doubles as the GM's Actors list, grouped by `folder`. Creatures for
+later (an ambush, reinforcements) are actors with no token yet:
 
 ```json
 { "id": "bandit", "name": "Bandit", "folder": "Road", "monster": "bandit" }
 ```
 
-The GM also places SRD monsters straight from the Compendium, and can save
-any token as an actor. Both write these files, and `check-game` checks
-actors like tokens.
+Dragging one onto the map adds a token for it to the scene's `tokens.json`
+with a free id (`bandit`, `bandit-2`, ...). Placing an SRD monster from the
+Compendium uses its stock actor in the Monsters folder, made the first time.
+The GM can also save a token without an actor as a new actor.
 
 ## combat.json
 
@@ -352,3 +402,15 @@ copied to `.v1-backup/<time>/` first and nothing is deleted from there. A
 broken old file stops the move before anything changes, and old files that
 turn up next to a moved game (a token file restored from git, say) are
 added to its active scene the next time the server starts.
+
+## Format 3: actors split from tokens
+
+Before format 3 every token in `tokens.json` carried its whole sheet. The
+server moves such a folder up when it starts (or run `pnpm migrate-world`):
+a character or other one-of-a-kind creature gets an actor of the same id and
+a linked token; monsters become unlinked tokens of one actor per monster
+(`goblin`, reusing an Actors-list actor of the same monster), keeping what
+was their own in `delta`. Each moved token is exactly the creature it was.
+Summons and tokens that already have an actor are left as they are. The
+scenes, actors and `game.json` are copied to `.v2-backup/<time>/` first, and
+`game.json` gets `"format": 3` last.

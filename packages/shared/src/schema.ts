@@ -177,12 +177,20 @@ export const TokenSchema = z.object({
   leader: id.optional(),
   /** How its controller arranged the action bar: one tile reference per slot ("spell:fire-bolt"), or null. */
   hotbar: z.array(z.string().max(80).nullable()).max(60).optional(),
+  /** The actor this token stands for (see token-link.ts); missing on a token that carries its own sheet. */
+  actor: id.optional(),
+  /** Linked tokens share their actor's hit points and effects; unlinked ones are copies with their own. */
+  linked: z.boolean().optional(),
 });
 export type Token = z.infer<typeof TokenSchema>;
 
 /**
- * A creature kept in the GM's Actors list, ready to be placed on the map:
- * a token without a position. `folder` groups it in the list.
+ * A creature's sheet, in the GM's Actors list (actors/<id>.json): what its
+ * tokens look like and are, without a position. `folder` groups it in the
+ * list; `linked` says whether new tokens of it share its hit points and
+ * effects (default: linked unless it is a monster).
  */
-export const ActorSchema = TokenSchema.omit({ x: true, y: true }).extend({ folder: z.string().min(1).optional() });
+export const ActorSchema = TokenSchema.omit({ x: true, y: true, actor: true }).extend({
+  folder: z.string().min(1).optional(),
+});
 export type Actor = z.infer<typeof ActorSchema>;

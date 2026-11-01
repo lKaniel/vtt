@@ -62,9 +62,28 @@ export function tokenFromMonster(
   });
 }
 
-/** A copy of an actor standing on the map. */
+/** The stock actor of a monster from the `rules` book, kept in the GM's Monsters folder. */
+export function actorFromMonster(monster: Monster, rules: Edition, worldRules: Edition): Actor {
+  return ActorSchema.parse({
+    id: monster.id,
+    name: monster.name,
+    folder: 'Monsters',
+    size: monster.size,
+    speed: monster.speed,
+    darkvision: monster.darkvision,
+    monster: monster.id,
+    ...(rules === worldRules ? {} : { stats: { rules } }),
+  });
+}
+
+/** Whether new tokens of an actor share its state: as it says, else unless it's a monster. */
+export function linksByDefault(actor: Pick<Actor, 'linked' | 'monster'>): boolean {
+  return actor.linked ?? !actor.monster;
+}
+
+/** A token of an actor standing on the map: linked to it, or an unlinked copy (see token-link.ts). */
 export function tokenFromActor(actor: Actor, place: Placement): Token {
-  const { folder: _folder, ...rest } = actor;
+  const { folder: _folder, linked: _linked, ...rest } = actor;
   return TokenSchema.parse({
     ...rest,
     id: place.id,
@@ -72,6 +91,8 @@ export function tokenFromActor(actor: Actor, place: Placement): Token {
     x: place.at[0],
     y: place.at[1],
     hidden: place.hidden ?? rest.hidden,
+    actor: actor.id,
+    linked: linksByDefault(actor),
   });
 }
 
