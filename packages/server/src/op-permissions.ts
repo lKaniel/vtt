@@ -1,5 +1,6 @@
-import { docPatch, type Change, type Doc, type Op, type Patch } from '@vtt/core';
-import { canControl, canEdit, canObserve, canSee, isGm, lockedPatchKeys, sameJson, type Player } from '@vtt/shared';
+import { type Change, type Doc, docPatch, type Op, type Patch } from '@vtt/core';
+import { canControl, canEdit, canObserve, canSee, isGm, lockedPatchKeys, type Player } from '@vtt/shared';
+import { sameJson } from '@vtt/system-dnd5e';
 import type { DocAccess, OwnedDoc } from './store-access.ts';
 import { Refusal } from './table.ts';
 

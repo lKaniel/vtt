@@ -1,28 +1,26 @@
 import {
   applyDamage,
+  type Attack,
+  type AttackLog,
   attackRange,
-  canControl,
-  isParty,
   currentTurn,
   deathSave,
+  endOfTurnSaves,
   isDying,
+  leaveCombat,
   lightAttack,
+  nextTurn,
   offHandCost,
   offHandProblem,
-  endOfTurnSaves,
-  leaveCombat,
-  nextTurn,
   resolveWeaponAttack,
   smiteProblem,
   startCombat,
   tickEffects,
-  tokenDistance,
-  type Attack,
-  type AttackLog,
-  type Player,
   type Token,
+  tokenDistance,
   type WeaponAttackOutcome,
-} from '@vtt/shared';
+} from '@vtt/system-dnd5e';
+import { canControl, isParty, type Player } from '@vtt/shared';
 import { Refusal, requireGm, type Cost, type Fighter, type Table } from './table.ts';
 
 /** An attack that has been rolled but not yet landed: its target may still react (shield). */

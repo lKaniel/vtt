@@ -1,4 +1,5 @@
-import type { Character, GameDetail, Role } from '@vtt/shared';
+import type { Character } from '@vtt/system-dnd5e';
+import type { GameDetail, Role } from '@vtt/shared';
 import { useCallback, useState } from 'react';
 import { api, type Account } from '../account-api.ts';
 import { characterSummary } from '../creator.ts';

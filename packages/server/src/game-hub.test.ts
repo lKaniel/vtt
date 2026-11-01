@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -62,6 +62,20 @@ describe('the games on a server', () => {
 
   it('refuses a game without a name or system', async () => {
     await expect(hub.create({ name: '', system: 'dnd5e', rules: '2014' }, kaniel)).rejects.toThrow(/name/);
+  });
+
+  it('runs each game on the system its game.json names', async () => {
+    const { store } = await hub.open('test');
+    expect(store.system.id).toBe('dnd5e');
+    const dir = join(dataDir, 'games', 'odd');
+    await mkdir(join(dir, 'scenes', 'main'), { recursive: true });
+    const game = { id: 'odd', name: 'Odd', system: 'gurps', scene: 'main', players: [kaniel] };
+    await writeFile(join(dir, 'game.json'), JSON.stringify(game));
+    await writeFile(join(dir, 'scenes', 'main', 'scene.json'), '{}');
+    await hub.close();
+    hub = await startHub();
+    expect(await hub.info('odd')).toMatchObject({ system: 'gurps' });
+    await expect(hub.open('odd')).rejects.toThrow('This server has no "gurps" system.');
   });
 
   it('finds the games made before, after a restart', async () => {

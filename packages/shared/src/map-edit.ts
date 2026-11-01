@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { chunkOf } from './chunks.ts';
-import { DoorStateSchema, LightSchema, PointSchema, type Chunk, type PlacedLight, type Wall } from './schema.ts';
+import { type Chunk, DoorStateSchema, LightSchema, type PlacedLight, PointSchema, type Wall } from './schema.ts';
 
 // The GM's map tools: drawing walls, doors and windows, placing lights, and
 // erasing them. Each edit names what changes; applyMapEdit works out which

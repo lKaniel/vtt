@@ -1,4 +1,5 @@
-import { uniqueId, type Actor, type TokenView } from '@vtt/shared';
+import type { Actor, TokenView } from '@vtt/system-dnd5e';
+import { uniqueId } from '@vtt/shared';
 import { useState } from 'react';
 import { DRAG_TYPE, type DragPayload } from '../drops.ts';
 import type { Session } from '../session.ts';

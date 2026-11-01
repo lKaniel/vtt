@@ -1,4 +1,4 @@
-import type { Attack, FeatureSheet, Item, Spell, TokenView, TurnBudget } from '@vtt/shared';
+import type { Attack, FeatureSheet, Item, Spell, TokenView, TurnBudget } from '@vtt/system-dnd5e';
 import { attackArt, featureArt, spellArt } from './icon-art.ts';
 import { attackIcon, featureIcon, spellIcon, type Icon } from './icons.ts';
 import { lowestSlot } from './spell-text.ts';

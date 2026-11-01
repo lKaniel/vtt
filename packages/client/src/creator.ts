@@ -1,22 +1,22 @@
 import {
   ABILITIES,
-  issuesByStep,
-  isImprovementLevel,
-  newCharacter,
-  partsOf,
-  pointBuyCost,
-  POINT_BUY_BUDGET,
-  spellLimits,
-  abilityScores,
-  abilityMod,
-  averageHitDie,
   type Ability,
+  abilityMod,
+  abilityScores,
+  averageHitDie,
   type Character,
   type CreatorStep,
   type Edition,
+  isImprovementLevel,
+  issuesByStep,
+  newCharacter,
+  partsOf,
+  POINT_BUY_BUDGET,
+  pointBuyCost,
   type Spell,
+  spellLimits,
   type SpellLimits,
-} from '@vtt/shared';
+} from '@vtt/system-dnd5e';
 
 // The character creator's state changes, kept out of React so they can be
 // tested. Each takes a character and returns the changed copy.

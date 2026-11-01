@@ -1,15 +1,5 @@
-import {
-  areaShape,
-  attackRange,
-  findPath,
-  hasLineOfSight,
-  snapToGrid,
-  tokenDistance,
-  type Attack,
-  type Point,
-  type Token,
-  type Wall,
-} from '@vtt/shared';
+import { areaShape, type Attack, attackRange, type Token, tokenDistance } from '@vtt/system-dnd5e';
+import { findPath, hasLineOfSight, type Point, snapToGrid, type Wall } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
 import { previewLabel } from '../spell-text.ts';
 import { needsClearPath, type Aiming } from '../targeting.ts';

@@ -35,8 +35,21 @@ describe('the lobby', () => {
   it('lists the games an account may enter, with the systems a new one can use', async () => {
     const admin = await signUp('kaniel');
     const res = await admin('GET', '/api/games');
-    expect(res.json.systems).toMatchObject([{ id: 'dnd5e' }]);
-    expect(res.json.games).toMatchObject([{ id: 'test', name: 'Test', you: null, members: 3, open: true, home: true }]);
+    expect(res.json.systems).toMatchObject([
+      { id: 'dnd5e', name: 'Dungeons & Dragons 5e', editions: [{ id: '2014' }, { id: '2024' }] },
+    ]);
+    expect(res.json.games).toMatchObject([
+      {
+        id: 'test',
+        name: 'Test',
+        systemName: 'Dungeons & Dragons 5e',
+        rules: '2014',
+        you: null,
+        members: 3,
+        open: true,
+        home: true,
+      },
+    ]);
     expect((await api.client()('GET', '/api/games')).status).toBe(401);
   });
 

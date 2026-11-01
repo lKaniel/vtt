@@ -1,4 +1,4 @@
-import { isGm, RoleSchema, type Role } from '@vtt/shared';
+import { isGm, type Role, RoleSchema } from '@vtt/shared';
 import type { Session } from '../session.ts';
 
 /** How each role reads on screen, and what it lets a seat do. */

@@ -67,7 +67,8 @@ All under `/api/`, signed in:
 
 Code: `server/src/game-hub.ts` (games, loading, invites), `lobby-api.ts`
 (the routes), `socket-join.ts` (who a connection is), `shared/src/lobby.ts`
-(systems, new-game checks, member changes), client `ui/LobbyScreens.tsx` and
+(new-game checks, member changes), `server/src/systems.ts` (the systems a
+game can run on), client `ui/LobbyScreens.tsx` and
 `ui/GamePage.tsx`.
 
 ## Not done yet
@@ -75,4 +76,4 @@ Code: `server/src/game-hub.ts` (games, loading, invites), `lobby-api.ts`
 - Seat passwords and approving join requests (an invite link seats at once).
 - Backing a game up from the lobby (copy its folder).
 - Asset packs per game (a later step), and a system other than D&D 5e (the
-  system seam is the next step).
+  seam is in place, see [systems.md](systems.md)).

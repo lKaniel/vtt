@@ -1,4 +1,4 @@
-import { newCharacter, type Character, type Edition } from '@vtt/shared';
+import { type Character, type Edition, newCharacter } from '@vtt/system-dnd5e';
 import { useState } from 'react';
 import { api, ApiError } from '../account-api.ts';
 import { creatorSteps, setEdition, type StepId, type StepInfo } from '../creator.ts';

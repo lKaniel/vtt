@@ -1,6 +1,7 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { ActorSchema, type Chunk, type Token } from '@vtt/shared';
+import { ActorSchema, type Token } from '@vtt/system-dnd5e';
+import type { Chunk } from '@vtt/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { GameStore } from './game-store.ts';
 import { makeLegacyWorld, makeWorld } from './test/fixtures.ts';

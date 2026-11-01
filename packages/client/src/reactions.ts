@@ -1,4 +1,4 @@
-import type { ReactionOffer, ServerMessage } from '@vtt/shared';
+import type { ReactionOffer, ServerMessage } from '@vtt/system-dnd5e';
 
 type ReactionMessage = Extract<ServerMessage, { t: 'reactionOffer' | 'reactionGone' }>;
 

@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { isGm, type DocChange, type Player } from '@vtt/shared';
+import { type DocChange, isGm, type Player } from '@vtt/shared';
 import { sendsDoc } from './op-permissions.ts';
 import type { DocAccess } from './store-access.ts';
 

@@ -1,4 +1,5 @@
-import { isGm, levelOf, srdFor, type Level } from '@vtt/shared';
+import { isGm, type Level, levelOf } from '@vtt/shared';
+import { editionOf, srdFor, toEdition } from '@vtt/system-dnd5e';
 import { useState } from 'react';
 import { setOwnership, setStat } from '../token-edit.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
@@ -145,7 +146,7 @@ function RulesFields({ session, value, update }: Readonly<SheetProps>) {
     (key: Parameters<typeof setStat>[1], now = false) =>
     (v: unknown) =>
       update((d) => setStat(d, key, v), now);
-  const rules = value.stats?.rules ?? session.world?.rules ?? '2014';
+  const rules = editionOf(value, session.world ?? {});
   return (
     <div className="ed-col">
       <h4>Rules</h4>
@@ -164,7 +165,7 @@ function RulesFields({ session, value, update }: Readonly<SheetProps>) {
       </datalist>
       <Field label="Rules" wide>
         <select value={value.stats?.rules ?? ''} onChange={(e) => stat('rules', true)(e.target.value || undefined)}>
-          <option value="">World ({session.world?.rules})</option>
+          <option value="">World ({toEdition(session.world?.rules)})</option>
           <option value="2014">2014 (SRD 5.1)</option>
           <option value="2024">2024 (SRD 5.2)</option>
         </select>

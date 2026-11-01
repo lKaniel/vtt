@@ -1,4 +1,4 @@
-import { itemCost, srdFor, type TokenView } from '@vtt/shared';
+import { itemCost, srdFor, type TokenView } from '@vtt/system-dnd5e';
 import { actionTiles, type ActionTile } from './actions.ts';
 import { itemArt } from './icon-art.ts';
 import { itemIcon } from './icons.ts';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GameSchema, newGameIssues, nextSeatColor, SYSTEMS, systemOf, membersAfter } from './index.ts';
+import { GameSchema, membersAfter, newGameIssues, nextSeatColor } from './index.ts';
 
 const seats = [
   { id: 'kaniel', name: 'Kaniel', role: 'gm' as const, color: '#e0b040' },
@@ -7,12 +7,6 @@ const seats = [
 ];
 
 describe('systems', () => {
-  it('lists D&D 5e with its two rules editions', () => {
-    expect(SYSTEMS.map((s) => s.id)).toEqual(['dnd5e']);
-    expect(systemOf('dnd5e')?.editions.map((e) => e.id)).toEqual(['2014', '2024']);
-    expect(systemOf('pathfinder')).toBeUndefined();
-  });
-
   it('is what an old game.json without one plays', () => {
     const game = GameSchema.parse({ id: 'old', name: 'Old', scene: 'main', players: seats });
     expect(game.system).toBe('dnd5e');
@@ -21,9 +15,20 @@ describe('systems', () => {
 
 describe('a new game', () => {
   it('needs a name, a known system and one of its editions', () => {
-    expect(newGameIssues({ name: 'Lost Mine', system: 'dnd5e', rules: '2024' })).toEqual([]);
-    expect(newGameIssues({ name: '  ', system: 'dnd5e', rules: '2014' })).toEqual(['Give the game a name.']);
-    expect(newGameIssues({ name: 'X', system: 'gurps', rules: '2014' })).toEqual(['Pick a system.']);
+    const systems = [
+      {
+        id: 'dnd5e',
+        name: 'D&D',
+        editions: [
+          { id: '2014', name: '2014' },
+          { id: '2024', name: '2024' },
+        ],
+      },
+    ];
+    expect(newGameIssues({ name: 'Lost Mine', system: 'dnd5e', rules: '2024' }, systems)).toEqual([]);
+    expect(newGameIssues({ name: '  ', system: 'dnd5e', rules: '2014' }, systems)).toEqual(['Give the game a name.']);
+    expect(newGameIssues({ name: 'X', system: 'gurps', rules: '2014' }, systems)).toEqual(['Pick a system.']);
+    expect(newGameIssues({ name: 'X', system: 'dnd5e', rules: '1977' }, systems)).toEqual(['D&D has no 1977 rules.']);
   });
 
   it('gives each new seat a colour nobody else has', () => {

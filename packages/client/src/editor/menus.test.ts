@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import type { TokenView } from '@vtt/shared';
+import type { TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it, vi } from 'vitest';
 import { menuFor, registerMenu, type MenuApi, type MenuTarget } from './menus.ts';
 

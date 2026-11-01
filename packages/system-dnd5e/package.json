@@ -1,0 +1,18 @@
+{
+  "name": "@vtt/system-dnd5e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "import-srd": "node --experimental-strip-types scripts/import-srd.ts"
+  },
+  "dependencies": {
+    "@vtt/core": "workspace:*",
+    "@vtt/shared": "workspace:*",
+    "zod": "^4.6.7"
+  }
+}

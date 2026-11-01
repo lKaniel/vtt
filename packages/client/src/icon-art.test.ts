@@ -1,4 +1,4 @@
-import { srdFor, type Attack, type FeatureSheet, type TokenView } from '@vtt/shared';
+import { type Attack, type FeatureSheet, srdFor, type TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import { attackArt, diceArt, featureArt, itemArt, cutoutOf, portraitOf, spellArt } from './icon-art.ts';
 

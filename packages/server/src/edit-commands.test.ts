@@ -1,5 +1,6 @@
 import type { Doc, Op } from '@vtt/core';
-import { copyRefs, deleteRefs, EDIT_KINDS, pasteAt, type ServerMessage } from '@vtt/shared';
+import { copyRefs, deleteRefs, EDIT_KINDS, pasteAt } from '@vtt/shared';
+import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';

@@ -1,21 +1,18 @@
 import {
   ambientLevel,
   canObserve,
-  editionOf,
   exploredRasters,
   fogCell,
-  isGm,
-  rasterStroke,
-  sensesOf,
-  SIGHT_SQUARES,
-  srdFor,
-  visibilityPolygon,
   type FogEdit,
   type FogEye,
+  isGm,
   type Player,
   type Point,
-  type Token,
+  rasterStroke,
+  SIGHT_SQUARES,
+  visibilityPolygon,
 } from '@vtt/shared';
+import type { Token } from '@vtt/system-dnd5e';
 import type { GameStore } from './game-store.ts';
 import { requireGm } from './table.ts';
 
@@ -94,7 +91,6 @@ export class FogKeeper {
   }
 
   private eyeOf(token: Token): FogEye {
-    const monster = token.monster ? srdFor(editionOf(token, this.store.world)).monsters.get(token.monster) : undefined;
-    return { at: [token.x, token.y], senses: sensesOf(token, monster) };
+    return { at: [token.x, token.y], senses: this.store.system.perceiver(token, this.store.world.rules).senses };
   }
 }

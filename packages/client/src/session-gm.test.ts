@@ -1,4 +1,4 @@
-import type { ServerMessage } from '@vtt/shared';
+import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Session } from './session.ts';
 import { closeSession, openSession, token, welcome, type FakeWebSocket } from './session.fixtures.ts';

@@ -1,16 +1,16 @@
 import type { Doc } from '@vtt/core';
 import {
+  type Hittable,
   hitTest,
   isGroup,
   isTileLocked,
+  type MarqueeMode,
   pickUnit,
+  type Point,
   tileBounds,
   tileChildren,
   tileOrder,
   withDescendants,
-  type Hittable,
-  type MarqueeMode,
-  type Point,
 } from '@vtt/shared';
 import { keyOf, refOf } from './selection.ts';
 

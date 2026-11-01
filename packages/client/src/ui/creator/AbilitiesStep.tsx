@@ -1,13 +1,13 @@
 import {
   ABILITIES,
+  type Ability,
   abilityMod,
   abilityName,
   abilityScores,
+  type Character,
   partsOf,
   STANDARD_ARRAY,
-  type Ability,
-  type Character,
-} from '@vtt/shared';
+} from '@vtt/system-dnd5e';
 import {
   adjustPointBuy,
   assignStandard,

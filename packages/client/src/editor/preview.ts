@@ -3,15 +3,15 @@ import {
   applyPatch,
   applyTileEdit,
   dragHandle,
+  type EditorMode,
   isGroup,
   moveBy,
+  type Rect,
   scaleGroupEdit,
   snapDelta,
   tileBounds,
   withDescendants,
   withGroupBounds,
-  type EditorMode,
-  type Rect,
 } from '@vtt/shared';
 import { keyOf, refOf } from './selection.ts';
 import type { Preview } from './controller.ts';

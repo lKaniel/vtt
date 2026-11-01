@@ -1,5 +1,6 @@
 import { join } from 'node:path';
-import { deltaOf, placementFields, sameJson, sheetFields, templateFields, uniqueId } from '@vtt/shared';
+import { deltaOf, placementFields, sameJson, sheetFields, templateFields } from '@vtt/system-dnd5e';
+import { uniqueId } from '@vtt/shared';
 import { writeJson } from './json-files.ts';
 import { backUp, isObject, readActors, readJsonFile, names, readTokenFiles } from './migrate-files.ts';
 

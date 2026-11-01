@@ -1,4 +1,4 @@
-import { ChangeLog, type Change, type Doc, type Op } from '@vtt/core';
+import { type Change, ChangeLog, type Doc, type Op } from '@vtt/core';
 
 // What GameStore keeps for undo: the step being recorded and who changed
 // each document last, so a refused undo can say who got there first.

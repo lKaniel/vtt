@@ -1,4 +1,4 @@
-import { canControl, findPath, isGm, type DoorState, type Player, type Point } from '@vtt/shared';
+import { canControl, type DoorState, findPath, isGm, type Player, type Point } from '@vtt/shared';
 import type { CombatActions } from './combat-actions.ts';
 import type { GameStore } from './game-store.ts';
 import type { Reactions } from './reactions.ts';

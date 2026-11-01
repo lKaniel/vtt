@@ -1,4 +1,5 @@
-import { newGameIssues, systemOf, type Edition, type GameSummary, type SystemInfo } from '@vtt/shared';
+import { type GameSummary, newGameIssues } from '@vtt/shared';
+import type { SystemInfo } from '@vtt/core';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, type Account } from '../account-api.ts';
 import { inviteCode, lastPlayedText, PENDING_INVITE } from '../lobby.ts';
@@ -43,10 +44,7 @@ export function LobbyHead({
   );
 }
 
-export const systemLine = (g: { system: string; rules: Edition }, systems: readonly SystemInfo[] = []) => {
-  const system = systems.find((s) => s.id === g.system) ?? systemOf(g.system);
-  return `${system?.name ?? g.system}, ${g.rules} rules`;
-};
+export const systemLine = (g: Pick<GameSummary, 'systemName' | 'rules'>) => `${g.systemName}, ${g.rules} rules`;
 
 /** Your games, a new game, and joining one by its invite link. */
 export function GamesScreen({ account, go }: Readonly<{ account: Account; go: Go }>) {
@@ -66,7 +64,7 @@ export function GamesScreen({ account, go }: Readonly<{ account: Account; go: Go
       <div className="lobby-body">
         <div className="roster lobby-games">
           {data?.games.map((g) => (
-            <GameCard key={g.id} g={g} systems={data.systems} now={now} onOpen={() => go({ name: 'game', id: g.id })} />
+            <GameCard key={g.id} g={g} now={now} onOpen={() => go({ name: 'game', id: g.id })} />
           ))}
           {data && !data.games.length && <p className="account-empty">No games yet: make one, or join by invite.</p>}
         </div>
@@ -85,16 +83,11 @@ function standing(g: GameSummary): string {
   return g.open ? 'Open to everyone' : 'Not a member';
 }
 
-function GameCard({
-  g,
-  systems,
-  now,
-  onOpen,
-}: Readonly<{ g: GameSummary; systems: SystemInfo[]; now: number; onOpen: () => void }>) {
+function GameCard({ g, now, onOpen }: Readonly<{ g: GameSummary; now: number; onOpen: () => void }>) {
   return (
     <button className="roster-card lobby-card" onClick={onOpen}>
       <span className="roster-name">{g.name}</span>
-      <span className="roster-line">{systemLine(g, systems)}</span>
+      <span className="roster-line">{systemLine(g)}</span>
       <span className="roster-stats">
         <span>{standing(g)}</span>
         <span>
@@ -112,9 +105,9 @@ function NewGameForm({ systems, onMade }: Readonly<{ systems: SystemInfo[]; onMa
   const [name, setName] = useState('');
   const [system, setSystem] = useState(systems[0]?.id ?? '');
   const editions = systems.find((s) => s.id === system)?.editions ?? [];
-  const [rules, setRules] = useState<Edition>(editions[0]?.id ?? '2014');
+  const [rules, setRules] = useState(editions[0]?.id ?? '');
   const [error, setError] = useState<string>();
-  const issues = newGameIssues({ name, system, rules });
+  const issues = newGameIssues({ name, system, rules }, systems);
 
   const create = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
@@ -144,7 +137,7 @@ function NewGameForm({ systems, onMade }: Readonly<{ systems: SystemInfo[]; onMa
       </label>
       <label className="auth-field">
         <span>Rules</span>
-        <select value={rules} onChange={(e) => setRules(e.target.value as Edition)}>
+        <select value={rules} onChange={(e) => setRules(e.target.value)}>
           {editions.map((ed) => (
             <option key={ed.id} value={ed.id}>
               {ed.name}

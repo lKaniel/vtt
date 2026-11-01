@@ -16,7 +16,7 @@
         // Pixi and React drawing code is checked in the browser, not in unit
         // tests, so untested-risk (CRAP) doesn't apply. The cyclomatic and
         // cognitive limits above still do. Keep game logic out of these
-        // folders: it belongs in packages/shared, where it gets tested.
+        // folders: it belongs in packages/shared or a system package, where it gets tested.
         "files": ["packages/client/src/canvas/**", "packages/client/src/ui/**"],
         "maxCrap": 160,
       },

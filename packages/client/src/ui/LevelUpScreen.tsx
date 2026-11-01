@@ -1,14 +1,14 @@
 import {
   ABILITIES,
+  type Ability,
   abilityName,
   abilityScores,
+  type Character,
   characterIssues,
   characterMaxHp,
   levelUp,
   partsOf,
-  type Ability,
-  type Character,
-} from '@vtt/shared';
+} from '@vtt/system-dnd5e';
 import { useState } from 'react';
 import { api } from '../account-api.ts';
 import { characterSummary, levelUpPlan, spellChoices } from '../creator.ts';

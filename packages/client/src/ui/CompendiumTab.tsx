@@ -1,13 +1,14 @@
 import {
-  abilityMod,
   ABILITIES,
+  abilityMod,
   actorFromToken,
-  srdFor,
-  tokenFromMonster,
-  uniqueId,
   type Edition,
   type Monster,
-} from '@vtt/shared';
+  srdFor,
+  toEdition,
+  tokenFromMonster,
+} from '@vtt/system-dnd5e';
+import { uniqueId } from '@vtt/shared';
 import { useState } from 'react';
 import { CATEGORIES, compendium, crText, type Category, type Entry } from '../compendium.ts';
 import type { Session } from '../session.ts';
@@ -29,7 +30,7 @@ const SHOWN = 120;
 
 export function CompendiumTab({ session }: Readonly<{ session: Session }>) {
   const [category, setCategory] = useState<Category>('monsters');
-  const [rules, setRules] = useState<Edition>(session.world?.rules ?? '2014');
+  const [rules, setRules] = useState<Edition>(toEdition(session.world?.rules));
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string>();
   const list = compendium(category, rules, query);
@@ -170,7 +171,7 @@ function MonsterButtons({
     const token = tokenFromMonster(
       monster,
       { id, name: monster.name, at: [0, 0], rules: drag.rules },
-      session.world?.rules ?? '2014',
+      session.world?.rules,
     );
     session.saveActor(actorFromToken(token, id, 'Monsters'));
   };

@@ -1,4 +1,4 @@
-import { abilityScores, characterMaxHp, characterIssues, type Character } from '@vtt/shared';
+import { abilityScores, type Character, characterIssues, characterMaxHp } from '@vtt/system-dnd5e';
 import { useState } from 'react';
 import { api, type SessionInfo } from '../account-api.ts';
 import { characterSummary } from '../creator.ts';

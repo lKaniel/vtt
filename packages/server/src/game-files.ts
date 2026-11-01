@@ -1,30 +1,33 @@
+import { defaultEdition } from '@vtt/core';
 import { basename } from 'node:path';
 import {
+  type Actor,
   ActorSchema,
+  type Combat,
   CombatSchema,
-  editionOf,
-  GameSchema,
-  PlacedLightSchema,
+  type Dnd5eSystem,
   resolveToken,
+  type TokenEntry,
+  TokenEntrySchema,
+} from '@vtt/system-dnd5e';
+import {
+  type Game,
+  GameSchema,
+  type PlacedLight,
+  PlacedLightSchema,
+  type Scene,
   SceneSchema,
-  srdFor,
+  type Tile,
   TileSchema,
   tileTreeIssues,
-  TokenEntrySchema,
-  WallSchema,
-  worldOf,
-  type Actor,
-  type Combat,
-  type Game,
-  type PlacedLight,
-  type Scene,
-  type Tile,
-  type TokenEntry,
   type Wall,
+  WallSchema,
   type World,
+  worldOf,
 } from '@vtt/shared';
 import type { z } from 'zod';
 import { toDoc } from './doc-sync.ts';
+import { SYSTEMS } from './systems.ts';
 
 // Reading and validating single game files (storage v2). Shared by the
 // server and the `check-game` command so both report the same problems.
@@ -216,25 +219,42 @@ export interface Issue {
   warning?: boolean;
 }
 
-/** Problems that need the whole game, e.g. a token controlled by an unknown player. */
-export function crossCheck(state: GameState): Issue[] {
+/** What token references are checked against: the seats and the game's system. */
+interface Refs {
+  players: Set<string>;
+  world: World;
+  system: Dnd5eSystem | undefined;
+}
+
+/**
+ * Problems that need the whole game, e.g. a token controlled by an unknown
+ * player. `system` checks what tokens refer to (monsters, spells); by
+ * default the one game.json names.
+ */
+export function crossCheck(state: GameState, system = SYSTEMS.get(state.game.system)): Issue[] {
   const { game, scenes, actors, combat } = state;
   const out: Issue[] = [];
+  if (!system) out.push({ file: 'game.json', message: `this server has no "${game.system}" system` });
   const active = scenes.get(game.scene);
   if (!active) out.push({ file: 'game.json', message: `scene "${game.scene}" has no folder in scenes/` });
   const players = new Set(game.players.map((p) => p.id));
-  for (const [id, s] of scenes) out.push(...sceneTokenIssues(id, s, state, players), ...sceneTileIssues(id, s.tiles));
-  const world = worldOf(game, active?.scene ?? SceneSchema.parse({}));
+  for (const [id, s] of scenes) {
+    const refs = { players, world: worldOf(game, s.scene), system };
+    out.push(...sceneTokenIssues(id, s, state, refs), ...sceneTileIssues(id, s.tiles));
+  }
+  const refs = { players, world: worldOf(game, active?.scene ?? SceneSchema.parse({})), system };
   for (const a of actors.values()) {
-    out.push(...tokenIssues(a, players, world).map((message) => ({ file: `actors/${a.id}.json`, message })));
+    out.push(...tokenIssues(a, refs).map((message) => ({ file: `actors/${a.id}.json`, message })));
   }
-  const onScene = new Set(active?.tokens.map((t) => t.id));
-  for (const e of combat?.order ?? []) {
-    if (!onScene.has(e.token)) {
-      out.push({ file: 'combat.json', message: `unknown token "${e.token}" in the initiative order` });
-    }
-  }
-  return out;
+  return [...out, ...combatIssues(combat, active?.tokens ?? [])];
+}
+
+/** Initiative entries for tokens that aren't on the game's scene. */
+function combatIssues(combat: Combat | undefined, tokens: readonly TokenEntry[]): Issue[] {
+  const onScene = new Set(tokens.map((t) => t.id));
+  return (combat?.order ?? [])
+    .filter((e) => !onScene.has(e.token))
+    .map((e) => ({ file: 'combat.json', message: `unknown token "${e.token}" in the initiative order` }));
 }
 
 /** Problems with how the tiles of one scene nest. */
@@ -244,15 +264,9 @@ function sceneTileIssues(id: string, tiles: readonly Tile[]): Issue[] {
 }
 
 /** Problems with the tokens of one scene. */
-function sceneTokenIssues(
-  id: string,
-  s: { scene: Scene } & SceneItems,
-  state: GameState,
-  players: Set<string>,
-): Issue[] {
-  const world = worldOf(state.game, s.scene);
+function sceneTokenIssues(id: string, s: SceneItems, state: GameState, refs: Refs): Issue[] {
   return s.tokens.flatMap((t) =>
-    entryIssues(t, t.actor ? state.actors.get(t.actor) : undefined, players, world).map((m) => ({
+    entryIssues(t, t.actor ? state.actors.get(t.actor) : undefined, refs).map((m) => ({
       file: `scenes/${id}/tokens.json`,
       message: `token "${t.id}": ${m}`,
     })),
@@ -260,25 +274,19 @@ function sceneTokenIssues(
 }
 
 /** What is wrong with a stored token, leaving out what its actor's own file is reported for. */
-function entryIssues(entry: TokenEntry, actor: Actor | undefined, players: Set<string>, world: World): string[] {
+function entryIssues(entry: TokenEntry, actor: Actor | undefined, refs: Refs): string[] {
   const { token, errors } = resolveToken(entry, actor);
   if (!token) return errors;
-  const inherited = new Set(actor ? tokenIssues(actor, players, world) : []);
-  return tokenIssues(token, players, world).filter((m) => !inherited.has(m));
+  const inherited = new Set(actor ? tokenIssues(actor, refs) : []);
+  return tokenIssues(token, refs).filter((m) => !inherited.has(m));
 }
 
-/** References from a token or actor to players and SRD content that don't exist. */
-function tokenIssues(t: Actor, players: Set<string>, world: World): string[] {
-  const edition = editionOf(t, world);
-  const srd = srdFor(edition);
+/** References from a token or actor to players and to content its system doesn't have. */
+function tokenIssues(t: Actor, { players, world, system }: Refs): string[] {
   return [
     ...[...Object.keys(t.ownership ?? {}).filter((k) => k !== 'default'), ...(t.visibleTo ?? [])]
       .filter((c) => !players.has(c))
       .map((c) => `unknown player "${c}"`),
-    ...(t.monster && !srd.monsters.has(t.monster) ? [`unknown monster "${t.monster}" in the ${edition} rules`] : []),
-    ...(t.inventory ?? []).filter((e) => !srd.items.has(e.item)).map((e) => `unknown item "${e.item}"`),
-    ...(t.stats?.spells ?? [])
-      .filter((s) => !srd.spells.has(s))
-      .map((s) => `unknown spell "${s}" in the ${edition} rules`),
+    ...(system?.tokenIssues(t, world.rules ?? defaultEdition(system)) ?? []),
   ];
 }

@@ -1,34 +1,29 @@
 import {
   afterDamage,
-  damagedWhileDown,
-  isDead,
-  isDying,
   canAct,
-  canControl,
-  isGm,
+  type Combat,
   concentrationDc,
+  type Content,
+  type Creature,
   currentTurn,
+  damagedWhileDown,
   dropConcentration,
   editionOf,
   forcedMove,
   freshTurn,
-  hasLineOfSight,
+  isDead,
+  isDying,
   leaveCombat,
   removeEffects,
   resolveCreature,
   rollSave,
   srdFor,
-  type Combat,
-  type Content,
-  type Creature,
-  type Player,
-  type Point,
-  type Rng,
   type Token,
   type TurnBudget,
   type TurnInfo,
   type UsedEffect,
-} from '@vtt/shared';
+} from '@vtt/system-dnd5e';
+import { canControl, hasLineOfSight, isGm, type Player, type Point, type Rng } from '@vtt/shared';
 import type { GameStore } from './game-store.ts';
 
 /** A request the rules don't allow; its message goes back to the player. */

@@ -1,4 +1,5 @@
-import { currentTurn, isParty } from '@vtt/shared';
+import { currentTurn } from '@vtt/system-dnd5e';
+import { isParty } from '@vtt/shared';
 import type { Session } from '../session.ts';
 import { Face, HpBar } from './Portrait.tsx';
 

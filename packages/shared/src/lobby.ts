@@ -1,47 +1,27 @@
+import type { SystemInfo } from '@vtt/core';
 import { isGm } from './permissions.ts';
 import type { Player, Role } from './schema.ts';
-import type { Edition } from './stats-schema.ts';
 
-// Games on a server: the systems a game can run on, what a new game needs,
-// and changing who is in one. The lobby (server/lobby-api.ts) applies these;
-// the client shows the same checks before it sends.
+// Games on a server: what a new game needs, and changing who is in one. The
+// lobby (server/lobby-api.ts) applies these; the client shows the same
+// checks before it sends. Which systems a game can run on is up to the
+// server: the SystemDefinitions it registered (server/systems.ts).
 
-export interface SystemInfo {
-  id: string;
-  name: string;
-  /** The rules editions the system can play, the first being the default. */
-  editions: { id: Edition; name: string }[];
-}
-
-/** Every system a game can run on. Only D&D 5e for now (see the system seam, a later step). */
-export const SYSTEMS: readonly SystemInfo[] = [
-  {
-    id: 'dnd5e',
-    name: 'Dungeons & Dragons 5e',
-    editions: [
-      { id: '2014', name: '2014 rules (SRD 5.1)' },
-      { id: '2024', name: '2024 rules (SRD 5.2)' },
-    ],
-  },
-];
-
+/** What games from before systems existed play. */
 export const DEFAULT_SYSTEM = 'dnd5e';
-
-export function systemOf(id: string): SystemInfo | undefined {
-  return SYSTEMS.find((s) => s.id === id);
-}
 
 export interface NewGame {
   name: string;
   system: string;
-  rules: Edition;
+  /** One of the system's rules editions. */
+  rules: string;
 }
 
-/** What is wrong with a new game, if anything. */
-export function newGameIssues(game: NewGame): string[] {
+/** What is wrong with a new game on a server with `systems`, if anything. */
+export function newGameIssues(game: NewGame, systems: readonly SystemInfo[]): string[] {
   const issues: string[] = [];
   if (!game.name.trim()) issues.push('Give the game a name.');
-  const system = systemOf(game.system);
+  const system = systems.find((s) => s.id === game.system);
   if (!system) issues.push('Pick a system.');
   else if (!system.editions.some((e) => e.id === game.rules)) issues.push(`${system.name} has no ${game.rules} rules.`);
   return issues;
@@ -71,7 +51,9 @@ export interface GameSummary {
   id: string;
   name: string;
   system: string;
-  rules: Edition;
+  /** The system's name, as the server that has it calls it. */
+  systemName: string;
+  rules: string;
   /** Your role there, or null when you have no seat yet. */
   you: Role | null;
   members: number;

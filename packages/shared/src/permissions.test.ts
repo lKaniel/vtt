@@ -7,12 +7,13 @@ import {
   isParty,
   levelOf,
   lockedPatchKeys,
+  NO_SENSES,
   ownersOf,
+  type PlacedToken,
+  type Player,
   PlayerSchema,
-  TokenSchema,
   tokensVisibleTo,
   withLevel,
-  type Player,
 } from './index.ts';
 
 const player = (id: string, role: Player['role']): Player => PlayerSchema.parse({ id, name: id, role });
@@ -22,7 +23,13 @@ const tess = player('tess', 'trusted');
 const otto = player('otto', 'observer');
 const bo = player('bo', 'player');
 
-const token = (id: string, more: object = {}) => TokenSchema.parse({ id, name: id, x: 0, y: 0, ...more });
+type Tok = PlacedToken & { darkvision?: number };
+const token = (id: string, more: Partial<Tok> = {}): Tok => ({ id, x: 0, y: 0, ...more });
+const perceiver = (t: Tok) => ({
+  senses: { ...NO_SENSES, darkvision: t.darkvision ?? 0 },
+  blinded: false,
+  invisible: false,
+});
 const hero = token('hero', { ownership: { default: 'limited', ana: 'owner', tess: 'owner', otto: 'owner' } });
 const scout = token('scout', { ownership: { default: 'limited', ana: 'owner', bo: 'observer' } });
 const goblin = token('goblin');
@@ -106,7 +113,7 @@ describe('editing a document', () => {
 
 describe('what observers see', () => {
   it('lets a token observer see through its eyes', () => {
-    const dark = { world: { darkness: 1, vision: true, gridSize: 100 }, lights: [], wallsBetween: () => [] };
+    const dark = { world: { darkness: 1, vision: true, gridSize: 100 }, lights: [], wallsBetween: () => [], perceiver };
     const lookout = token('lookout', { darkvision: 60, ownership: { default: 'limited', bo: 'observer' } });
     const far = token('far', { x: 300 });
     expect(tokensVisibleTo(bo, [lookout, far], dark)).toEqual(new Set(['lookout', 'far']));

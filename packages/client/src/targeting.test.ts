@@ -1,4 +1,4 @@
-import { srdFor } from '@vtt/shared';
+import { srdFor } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import { aimFor, aimSpell, castMessage, needsClearPath, pick } from './targeting.ts';
 

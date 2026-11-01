@@ -1,5 +1,6 @@
 import { OpSchema } from '@vtt/core';
-import { DoorStateSchema, EditionSchema, FogEditSchema, MapEditSchema, PointSchema, RoleSchema } from '@vtt/shared';
+import { DoorStateSchema, FogEditSchema, MapEditSchema, PointSchema, RoleSchema } from '@vtt/shared';
+import { EditionSchema } from '@vtt/system-dnd5e';
 import type { RawData } from 'ws';
 import { z } from 'zod';
 

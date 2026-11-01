@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyMapEdit, ChunkSchema, MapEditSchema, type Chunk } from './index.ts';
+import { applyMapEdit, type Chunk, ChunkSchema, MapEditSchema } from './index.ts';
 
 const SIZE = 2000;
 const empty = (): Chunk => ChunkSchema.parse({});

@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { isGroup, tileOrder, type Chunk } from '@vtt/shared';
+import { type Chunk, isGroup, tileOrder } from '@vtt/shared';
 import { fromDoc } from './doc-sync.ts';
 
 // The tiles a scene streams to clients: groups only hold tiles, so they

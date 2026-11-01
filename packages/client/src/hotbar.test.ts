@@ -1,4 +1,4 @@
-import { srdFor, type Attack, type TokenView } from '@vtt/shared';
+import { type Attack, srdFor, type TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import {
   HOTBAR_SIZE,

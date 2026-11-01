@@ -1,6 +1,6 @@
-import { DocStore, type Doc } from '@vtt/core';
-import { describe, expect, it } from 'vitest';
+import { type Doc, DocStore } from '@vtt/core';
 import { copyRefs, deleteRefs, EDIT_KINDS, pasteAt } from './edit-kinds.ts';
+import { describe, expect, it } from 'vitest';
 
 const doc = (id: string, type: string, extra: Record<string, unknown> = {}): Doc => ({ id, type, rev: 0, ...extra });
 

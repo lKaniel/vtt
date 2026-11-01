@@ -1,4 +1,5 @@
-import { srdFor, type ClientMessage, type Edition, type InventoryEntry, type Point, type TokenView } from '@vtt/shared';
+import { type ClientMessage, type Edition, type InventoryEntry, srdFor, type TokenView } from '@vtt/system-dnd5e';
+import type { Point } from '@vtt/shared';
 
 // Dragging from the GM's Actors list and Compendium onto the map: creatures
 // are placed where they land, items and spells go to the creature they land on.

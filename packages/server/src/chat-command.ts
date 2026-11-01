@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { roll, type ChatMessage, type Player } from '@vtt/shared';
+import { type Player, roll } from '@vtt/shared';
+import type { ChatMessage } from '@vtt/system-dnd5e';
 
 const ROLL_COMMANDS = new Set(['/r', '/roll', '/gmr']);
 

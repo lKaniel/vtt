@@ -1,4 +1,12 @@
-import { omitKey, resolveCreature, srdFor, type Actor, type Creature, type Edition, type TokenView } from '@vtt/shared';
+import {
+  type Actor,
+  type Creature,
+  type Edition,
+  omitKey,
+  resolveCreature,
+  srdFor,
+  type TokenView,
+} from '@vtt/system-dnd5e';
 
 /** What a sheet shows and edits: an actor, or a token (an actor with a position). */
 export type Draft = Actor & Partial<Pick<TokenView, 'x' | 'y' | 'sheet' | 'health' | 'actor'>>;

@@ -1,4 +1,4 @@
-import type { FeatureSheet, Item, TokenView, TurnBudget } from '@vtt/shared';
+import type { FeatureSheet, Item, TokenView, TurnBudget } from '@vtt/system-dnd5e';
 import { useState } from 'react';
 import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, type Tab } from '../actions.ts';
 import { slotChoices } from '../charges.ts';

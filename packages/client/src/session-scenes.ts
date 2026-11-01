@@ -2,16 +2,16 @@ import type { Doc, Patch } from '@vtt/core';
 import {
   duplicateSceneOps,
   FOG_BYTES,
+  type FogEdit,
   FogMap,
   isGm,
   newSceneOps,
-  sceneList,
-  unionFog,
-  type FogEdit,
   type Player,
   type Point,
-  type ServerMessage,
+  sceneList,
+  unionFog,
 } from '@vtt/shared';
+import type { ServerMessage } from '@vtt/system-dnd5e';
 import { TileSession } from './session-tiles.ts';
 
 // Scenes and fog of war on the client: the Scenes list's commands (as ops,

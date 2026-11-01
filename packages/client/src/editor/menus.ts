@@ -1,5 +1,6 @@
 import type { Doc, DocRef, Patch } from '@vtt/core';
-import type { EditorMode, MapEdit, Point, TokenView, ZOrder } from '@vtt/shared';
+import type { EditorMode, MapEdit, Point, ZOrder } from '@vtt/shared';
+import type { TokenView } from '@vtt/system-dnd5e';
 import { LIGHT_PRESETS, type LightPreset } from '../map-tools.ts';
 
 // Right-click menus. Each kind of thing registers the entries it adds, so a

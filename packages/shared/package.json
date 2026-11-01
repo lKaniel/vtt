@@ -7,8 +7,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p .",
-    "import-srd": "node --experimental-strip-types scripts/import-srd.ts"
+    "typecheck": "tsc -p ."
   },
   "dependencies": {
     "@vtt/core": "workspace:*",

@@ -1,4 +1,4 @@
-import type { ReactionOffer } from '@vtt/shared';
+import type { ReactionOffer } from '@vtt/system-dnd5e';
 import type { Session } from '../session.ts';
 
 const CHOICE_LABELS: Record<string, string> = {

@@ -1,23 +1,15 @@
 import {
-  clipboardText,
-  DocStore,
-  parseClipboard,
   type Clip,
+  clipboardText,
   type Doc,
   type DocRef,
+  DocStore,
   type Op,
+  parseClipboard,
   type Patch,
 } from '@vtt/core';
-import {
-  applyPatch,
-  copyRefs,
-  deleteRefs,
-  pasteAt,
-  pasteOffsetTo,
-  type HistoryState,
-  type Point,
-  type ServerMessage,
-} from '@vtt/shared';
+import { applyPatch, copyRefs, deleteRefs, type HistoryState, pasteAt, pasteOffsetTo, type Point } from '@vtt/shared';
+import type { ServerMessage } from '@vtt/system-dnd5e';
 import { Commands } from './session-commands.ts';
 
 // Copy, cut, paste, duplicate, delete, undo and redo, for every kind of

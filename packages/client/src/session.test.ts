@@ -1,4 +1,4 @@
-import { srdFor, type ServerMessage } from '@vtt/shared';
+import { type ServerMessage, srdFor } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Session } from './session.ts';
 import {

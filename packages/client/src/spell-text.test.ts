@@ -1,4 +1,4 @@
-import { srdFor, type TokenView } from '@vtt/shared';
+import { srdFor, type TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import { lowestSlot, previewLabel, targetText } from './spell-text.ts';
 

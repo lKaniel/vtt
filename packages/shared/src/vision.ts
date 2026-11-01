@@ -1,5 +1,5 @@
 import { segmentsIntersect, wallsInRect } from './geometry.ts';
-import type { Light, Point, Token, Wall } from './schema.ts';
+import type { Light, PlacedToken, Point, Wall } from './schema.ts';
 
 // Line of sight and lighting. The server uses line-of-sight checks to decide
 // which tokens each player may know about; the client uses the polygons to
@@ -24,7 +24,7 @@ export interface LightSource extends Light {
 }
 
 /** Lights carried by tokens, as placed light sources. */
-export function tokenLights(tokens: Iterable<Token>): LightSource[] {
+export function tokenLights(tokens: Iterable<Pick<PlacedToken, 'x' | 'y' | 'light' | 'hidden'>>): LightSource[] {
   const out: LightSource[] = [];
   for (const t of tokens) if (t.light && !t.hidden) out.push({ ...t.light, x: t.x, y: t.y });
   return out;

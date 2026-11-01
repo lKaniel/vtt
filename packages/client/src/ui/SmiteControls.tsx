@@ -1,4 +1,4 @@
-import type { TokenView } from '@vtt/shared';
+import type { TokenView } from '@vtt/system-dnd5e';
 import type { Session } from '../session.ts';
 import { ORDINAL } from '../spell-text.ts';
 

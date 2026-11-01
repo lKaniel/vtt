@@ -1,6 +1,6 @@
-import { DocStore, type Doc } from '@vtt/core';
+import { type Doc, DocStore } from '@vtt/core';
+import { copyRefs, duplicateSceneOps, gridSizePatch, newSceneOps, pasteAt, sceneList } from './index.ts';
 import { describe, expect, it } from 'vitest';
-import { duplicateSceneOps, gridSizePatch, newSceneOps, pasteAt, copyRefs, sceneList } from './index.ts';
 
 function store(): DocStore {
   const docs = new DocStore();

@@ -1,6 +1,6 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { ActorSchema, resolveToken, TokenEntrySchema, TokenSchema } from '@vtt/shared';
+import { ActorSchema, resolveToken, TokenEntrySchema, TokenSchema } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import { migrateActorsFolder, splitTokens } from './migrate-actors.ts';
 import { makeWorld } from './test/fixtures.ts';

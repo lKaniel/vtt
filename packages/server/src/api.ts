@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { characterIssues, characterOnMap, CharacterSchema, uniqueId, type Character } from '@vtt/shared';
+import { type Character, characterIssues, characterOnMap, CharacterSchema } from '@vtt/system-dnd5e';
+import { uniqueId } from '@vtt/shared';
 import { z } from 'zod';
 import { AccountError, type Account, type AccountStore } from './accounts.ts';
 import type { CharacterStore } from './characters.ts';

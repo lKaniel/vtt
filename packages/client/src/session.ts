@@ -1,25 +1,20 @@
 import type { DocRef } from '@vtt/core';
-import { openSocket, refusalOf } from './session-socket.ts';
+import { canControl, canEdit, type Chunk, isGm, type Player, type Point, type WorldInfo } from '@vtt/shared';
 import {
-  canControl,
-  canEdit,
-  currentTurn,
-  featureSpell,
-  isGm,
   type Actor,
-  type Chunk,
   type ChatMessage,
   type ClientMessage,
   type Combat,
-  type Player,
-  type Point,
+  currentTurn,
+  featureSpell,
   type ReactionOffer,
   type ServerMessage,
   type SpawnSource,
+  toEdition,
   type Token,
   type TokenView,
-  type WorldInfo,
-} from '@vtt/shared';
+} from '@vtt/system-dnd5e';
+import { openSocket, refusalOf } from './session-socket.ts';
 
 import { dropMessage, type DragPayload } from './drops.ts';
 import { refOf } from './editor/selection.ts';
@@ -320,7 +315,7 @@ export class Session extends SceneSession {
   /** Something dragged from the Actors list or Compendium was dropped on the map at `p`. */
   drop(payload: DragPayload, p: Point): void {
     if (!this.world) return;
-    const ctx = { tokens: this.tokens.values(), gridSize: this.world.gridSize, rules: this.world.rules };
+    const ctx = { tokens: this.tokens.values(), gridSize: this.world.gridSize, rules: toEdition(this.world.rules) };
     const msg = dropMessage(payload, p, { ...ctx, hidden: this.spawnHidden });
     if ('error' in msg) this.showError(msg.error);
     else this.send(msg);

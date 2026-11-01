@@ -1,14 +1,5 @@
-import {
-  canObserve,
-  currentTurn,
-  hasCondition,
-  isGm,
-  isParty,
-  ownersOf,
-  type Health,
-  type Point,
-  type TokenView,
-} from '@vtt/shared';
+import { canObserve, isGm, isParty, ownersOf, type Point } from '@vtt/shared';
+import { currentTurn, hasCondition, type Health, type TokenView } from '@vtt/system-dnd5e';
 import {
   Assets,
   Container,

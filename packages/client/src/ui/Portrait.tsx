@@ -1,4 +1,4 @@
-import type { TokenView } from '@vtt/shared';
+import type { TokenView } from '@vtt/system-dnd5e';
 import { effectIcon } from '../icons.ts';
 import { portraitOf } from '../icon-art.ts';
 import { effectTone, hpBar } from '../vitals.ts';

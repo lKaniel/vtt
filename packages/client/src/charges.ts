@@ -1,4 +1,4 @@
-import { omitKey, type Spell, type Token } from '@vtt/shared';
+import { omitKey, type Spell, type Token } from '@vtt/system-dnd5e';
 
 // Spell slots and feature charges: which slot levels a spell can use, and
 // turning clicks on the sheet's pips back into what the token has spent.

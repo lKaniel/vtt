@@ -1,4 +1,5 @@
-import { ABILITIES, abilityMod, actorFromToken, uniqueId, type Creature, type Edition } from '@vtt/shared';
+import { ABILITIES, abilityMod, actorFromToken, type Creature, type Edition, editionOf } from '@vtt/system-dnd5e';
+import { uniqueId } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Session, SheetTarget } from '../session.ts';
 import { listText, parseList, setAbility, setStat, tokenPatch } from '../token-edit.ts';
@@ -58,7 +59,7 @@ function SheetWindow({
     if (target.kind === 'token') session.editToken(live.id, tokenPatch(liveRef.current, draft));
     else session.saveActor(draft);
   });
-  const rules = value.stats?.rules ?? session.world?.rules ?? '2014';
+  const rules = editionOf(value, session.world ?? {});
   const sheet = sheetOf(session, target, live, previewSheet(value, rules));
   if (!sheet) return null;
   const props: SheetProps = { session, kind: target.kind, value, update, sheet, edit: target.edit };

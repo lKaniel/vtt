@@ -1,21 +1,18 @@
+import { type Character, characterOnMap, freeSquare } from '@vtt/system-dnd5e';
 import {
-  EditionSchema,
-  freeSquare,
+  type GameDetail,
+  type GameSummary,
   isGm,
   membersAfter,
   nextSeatColor,
   ownersOf,
-  RoleSchema,
-  type Character,
-  type GameDetail,
-  type GameSummary,
   type Player,
   type Point,
-  SYSTEMS,
+  RoleSchema,
 } from '@vtt/shared';
-import { characterOnMap } from '@vtt/shared';
 import { z } from 'zod';
 import type { Account, AccountStore } from './accounts.ts';
+import { SYSTEMS } from './systems.ts';
 import type { CharacterStore } from './characters.ts';
 import type { GameHub, GameInfo } from './game-hub.ts';
 import type { GameStore } from './game-store.ts';
@@ -32,7 +29,7 @@ export interface LobbyDeps {
   hub: GameHub;
 }
 
-const NewGameInput = z.object({ name: z.string().max(80), system: z.string(), rules: EditionSchema });
+const NewGameInput = z.object({ name: z.string().max(80), system: z.string(), rules: z.string().min(1) });
 const JoinInput = z.object({ character: z.string().optional() });
 const RoleInput = z.object({ role: RoleSchema });
 const OpenInput = z.object({ open: z.boolean() });
@@ -44,6 +41,7 @@ function summary(info: GameInfo, account: Account): GameSummary {
     id: info.id,
     name: info.name,
     system: info.system,
+    systemName: SYSTEMS.get(info.system)?.name ?? info.system,
     rules: info.rules,
     you: seatOf(info, account)?.role ?? null,
     members: info.players.length,
@@ -108,7 +106,7 @@ export class LobbyRoutes implements Routes {
     if (call.method !== 'GET') throw new HttpError(405, 'Method not allowed.');
     const all = await Promise.all(this.deps.hub.ids().map((id) => this.deps.hub.info(id)));
     const games = all.filter((g) => canSeeGame(g, account)).map((g) => summary(g, account));
-    send(call.res, 200, { games, systems: SYSTEMS });
+    send(call.res, 200, { games, systems: SYSTEMS.infos() });
   }
 
   private async visible(id: string, account: Account): Promise<GameInfo> {

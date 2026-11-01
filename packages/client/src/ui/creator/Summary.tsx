@@ -2,12 +2,12 @@ import {
   ABILITIES,
   abilityMod,
   abilityScores,
+  type Character,
   characterMaxHp,
   characterSkills,
   partsOf,
   skillName,
-  type Character,
-} from '@vtt/shared';
+} from '@vtt/system-dnd5e';
 import { characterSummary } from '../../creator.ts';
 import { StepHead } from './Parts.tsx';
 import type { StepProps } from './OriginSteps.tsx';

@@ -1,16 +1,15 @@
 import {
   isGm,
-  sensesOf,
-  SIGHT_SQUARES,
-  tokenLights,
-  visibilityPolygon,
   type LightSource,
   type Point,
   type Rect,
   type Senses,
-  type TokenView,
+  SIGHT_SQUARES,
+  tokenLights,
+  visibilityPolygon,
   type Wall,
 } from '@vtt/shared';
+import { sensesOf, type TokenView } from '@vtt/system-dnd5e';
 import type { Application } from 'pixi.js';
 import type { Session } from '../session.ts';
 import { FogLayer } from './lighting/FogLayer.ts';

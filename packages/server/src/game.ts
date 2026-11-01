@@ -2,19 +2,14 @@ import { randomUUID } from 'node:crypto';
 import {
   canControl,
   isGm,
-  tokensVisibleTo,
-  editionOf,
-  srdFor,
-  viewToken,
-  type ChatMessage,
   type Player,
   type Point,
   type Rng,
-  type ServerMessage,
-  type Token,
+  tokensVisibleTo,
   type World,
   type WorldInfo,
 } from '@vtt/shared';
+import { type ChatMessage, editionOf, type ServerMessage, srdFor, type Token, viewToken } from '@vtt/system-dnd5e';
 import { OpError } from '@vtt/core';
 import type { WebSocket } from 'ws';
 import { parseClientMessage, type ClientMessage } from './client-messages.ts';
@@ -236,7 +231,7 @@ export class Game {
         world: this.store.world,
         lights: this.store.lights(),
         wallsBetween: (a, b) => this.store.wallsBetween(a, b),
-        monster: (t) => srdFor(editionOf(t, this.store.world)).monsters.get(t.monster ?? ''),
+        perceiver: (t) => this.store.system.perceiver(t, this.store.world.rules),
       }),
     );
   }

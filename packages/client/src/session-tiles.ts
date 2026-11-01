@@ -1,4 +1,4 @@
-import { freeId, type Doc, type Op, type Patch } from '@vtt/core';
+import { type Doc, freeId, type Op, type Patch } from '@vtt/core';
 import {
   applyPatch,
   applyTileEdit,
@@ -10,16 +10,16 @@ import {
   moveIntoEdit,
   nestEdit,
   placeNewTile,
+  type Point,
+  type Rect,
   reorderEdit,
   scaleGroupEdit,
   snapDelta,
   tileBounds,
-  ungroupEdit,
-  withDescendants,
-  type Point,
-  type Rect,
   type TileEdit,
   type TileTexture,
+  ungroupEdit,
+  withDescendants,
   type ZOrder,
 } from '@vtt/shared';
 import { refOf } from './editor/selection.ts';

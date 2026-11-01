@@ -14,9 +14,10 @@
   "dependencies": {
     "@vtt/core": "workspace:*",
     "@vtt/shared": "workspace:*",
+    "@vtt/system-dnd5e": "workspace:*",
+    "tsx": "^4.23.15",
     "ws": "^8.22.0",
-    "zod": "^4.6.7",
-    "tsx": "^4.23.15"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/ws": "^8.18.2"

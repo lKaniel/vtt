@@ -1,14 +1,14 @@
 import {
+  type Clip,
   copyDocs,
   deleteOps,
-  pasteOffset,
-  pasteOps,
-  type Clip,
   type Doc,
   type DocRef,
   type Kind,
   type Kinds,
   type Op,
+  pasteOffset,
+  pasteOps,
 } from '@vtt/core';
 
 // The game's document types as edit commands see them (see clipboard.ts in

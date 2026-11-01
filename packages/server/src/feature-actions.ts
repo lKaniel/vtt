@@ -1,17 +1,16 @@
+import { canControl, type Player } from '@vtt/shared';
 import {
-  canControl,
   editionOf,
   featureProblem,
+  type FeatureUse,
   itemCost,
   itemProblem,
   removeEffects,
   rest,
+  type Token,
   useFeature,
   useItem,
-  type FeatureUse,
-  type Player,
-  type Token,
-} from '@vtt/shared';
+} from '@vtt/system-dnd5e';
 import { Refusal, requireGm, type Cost, type Table } from './table.ts';
 
 /** Class features, rests, and ending effects by hand. */

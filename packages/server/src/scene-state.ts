@@ -1,25 +1,22 @@
 import type { Doc, DocStore } from '@vtt/core';
 import {
   anchorChunk,
+  type Chunk,
   chunksInRect,
+  type Game,
   groupChunks,
   isGroup,
-  resolveToken,
-  tokenLights,
-  worldOf,
-  type Actor,
-  type Chunk,
-  type Game,
   type LightSource,
   type MapCollection,
   type Point,
   type Rect,
   type Scene,
-  type Token,
-  type TokenEntry,
+  tokenLights,
   type Wall,
   type World,
+  worldOf,
 } from '@vtt/shared';
+import { type Actor, resolveToken, type Token, type TokenEntry } from '@vtt/system-dnd5e';
 import { fromDoc } from './doc-sync.ts';
 import { drawnTiles, reordersTiles } from './scene-map.ts';
 import { MAP } from './store-colls.ts';

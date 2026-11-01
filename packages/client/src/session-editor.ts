@@ -1,14 +1,6 @@
 import type { Doc, DocRef, Patch } from '@vtt/core';
-import {
-  dragHandle,
-  MODES,
-  moveBy,
-  snapDelta,
-  type EditorMode,
-  type Point,
-  type Rect,
-  type TokenView,
-} from '@vtt/shared';
+import { dragHandle, type EditorMode, MODES, moveBy, type Point, type Rect, snapDelta } from '@vtt/shared';
+import type { TokenView } from '@vtt/system-dnd5e';
 import { keyOf, refOf } from './editor/selection.ts';
 import type { MenuItem } from './editor/menus.ts';
 import type { LightPreset } from './map-tools.ts';
