@@ -38,6 +38,8 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   deleteActor: { label: 'actor delete' },
   mapEdit: { label: 'map edit' },
   darkness: { label: 'time of day' },
+  clock: { label: 'time change', action: true },
+  turnBased: { label: 'turn-based mode', action: true },
   fog: { label: 'fog edit' },
   hotbar: { label: 'action bar change' },
   rollTable: { label: 'table roll' },
@@ -57,6 +59,22 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   removeEffect: { label: 'effect removal', action: true },
   rest: { label: 'rest', action: true },
 };
+
+const CLOCK_LABELS: Record<string, string> = {
+  start: 'clock start',
+  stop: 'clock stop',
+  skip: 'time skip',
+  set: 'date change',
+  speed: 'clock speed',
+  calendar: 'calendar change',
+};
+
+/** "Undid the …": an edit can name itself, a clock change says what it did. */
+function labelOf(msg: ClientMessage, label: string): string {
+  if (msg.t === 'ops') return msg.label ?? label;
+  if (msg.t === 'clock') return CLOCK_LABELS[msg.action.do] ?? label;
+  return label;
+}
 
 function trimmed(list: Step[]): Step[] {
   return list.length > LIMIT ? list.slice(-LIMIT) : list;
@@ -81,6 +99,11 @@ export class History {
       fn();
       return false;
     }
+    return this.step(player, { label: labelOf(msg, kind.label), action: !!kind.action }, fn);
+  }
+
+  /** Runs `fn`, recording what it changed as one step by `player`; true if it changed anything. */
+  step(player: Player, kind: { label: string; action: boolean }, fn: () => void): boolean {
     let error: Error | undefined;
     let fog: FogChange[] = [];
     this.cards = [];
@@ -97,10 +120,7 @@ export class History {
     this.cards = undefined;
     // A message refused half way still keeps what it did before that.
     const changed = changes.length > 0 || fog.length > 0;
-    if (changed) {
-      const label = msg.t === 'ops' ? (msg.label ?? kind.label) : kind.label;
-      this.push(player.id, { seq: ++this.seq, label, action: !!kind.action, changes, fog, cards }, true);
-    }
+    if (changed) this.push(player.id, { seq: ++this.seq, ...kind, changes, fog, cards }, true);
     if (error) throw error;
     return changed;
   }

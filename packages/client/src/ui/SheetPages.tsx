@@ -4,6 +4,7 @@ import { pipLeft, withSlotsLeft, withUsesLeft } from '../charges.ts';
 import { dragTile } from '../hotbar.ts';
 import { attackArt, featureArt, itemArt, spellArt } from '../icon-art.ts';
 import { attackIcon, effectIcon, featureIcon, itemIcon, spellIcon } from '../icons.ts';
+import { effectLeft } from '../session-time.ts';
 import { ORDINAL } from '../spell-text.ts';
 import { setStat } from '../token-edit.ts';
 import { attackTip, featureTip, itemTip, spellTip } from '../tooltip.ts';
@@ -325,6 +326,7 @@ export function FeaturesPage({ sheet, edit, update }: Readonly<SheetProps>) {
 export function EffectsPage({ session, value, kind }: Readonly<SheetProps>) {
   const effects = value.effects ?? [];
   const gm = session.isGm();
+  const left = { now: session.gameTime(), fighting: !!session.combat };
   if (!effects.length && !value.concentration) return <p className="muted">Nothing is affecting {value.name}.</p>;
   return (
     <ul className="rows">
@@ -344,7 +346,7 @@ export function EffectsPage({ session, value, kind }: Readonly<SheetProps>) {
           <IconFace icon={effectIcon(e)} size={16} />
           <span className="row-name">{e.name}</span>
           <span className="row-detail">
-            {[e.conditions?.join(', '), e.rounds !== undefined && `${e.rounds} rd`].filter(Boolean).join(' · ')}
+            {[e.conditions?.join(', '), effectLeft(e, left)].filter(Boolean).join(' · ')}
           </span>
           {gm && kind === 'token' && <RemoveButton onClick={() => session.removeEffect(value.id, e.id)} />}
         </li>

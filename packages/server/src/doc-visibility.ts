@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { canObserve, canSee, isGm, type Player, sceneCollOf } from '@vtt/shared';
+import { canObserve, canSee, CLOCK_COLL, isGm, type Player, sceneCollOf } from '@vtt/shared';
 import type { DocAccess, OwnedDoc } from './store-access.ts';
 
 // Which documents a player is sent (doc-feed.ts), and how much of them.
@@ -7,7 +7,7 @@ import type { DocAccess, OwnedDoc } from './store-access.ts';
 // the journal entries they may see (limited: the title only), the roll
 // tables shared with them, the playlists playing now, and on the scene they
 // are on, what is drawn there for them: drawings, templates, notes, sounds
-// and the regions the GM shows.
+// and the regions the GM shows. Everyone gets the game clock.
 
 export interface Viewer {
   player: Player;
@@ -37,7 +37,7 @@ const observed = (v: Viewer, owned: OwnedDoc) => canSee(owned, v.player) && canO
 
 /** Whether a player is sent a document at all. */
 export function sendsTo(v: Viewer, access: DocAccess, coll: string, doc: Doc): boolean {
-  if (isGm(v.player)) return true;
+  if (isGm(v.player) || coll === CLOCK_COLL) return true;
   if (coll === 'actors' || coll.endsWith('/tokens')) return observed(v, access.owned(coll, doc));
   if (coll === 'journals') return canSee(access.owned(coll, doc), v.player);
   if (coll === 'tables') return observed(v, access.owned(coll, doc));

@@ -26,6 +26,8 @@ export const CombatSchema = z.object({
   reacted: z.array(z.string()).default([]),
   /** Budgets of creatures acting on the current turn alongside it (summons, companions). */
   side: z.record(z.string(), TurnBudgetSchema).default({}),
+  /** Turn-based mode outside a fight: the party takes turns, and no one is fighting. */
+  peaceful: z.boolean().optional(),
 });
 export type Combat = z.infer<typeof CombatSchema>;
 

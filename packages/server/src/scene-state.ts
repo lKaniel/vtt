@@ -4,6 +4,12 @@ import {
   anchorChunk,
   type Chunk,
   chunksInRect,
+  type Clock,
+  CLOCK_COLL,
+  CLOCK_ID,
+  ClockSchema,
+  darknessAt,
+  timeNow,
   type Game,
   groupChunks,
   isGroup,
@@ -41,8 +47,10 @@ export interface SceneEvents {
 export class SceneState {
   readonly chunks = new Map<string, Chunk>();
   readonly tokens = new Map<string, Token>();
-  world: World;
   scene: Scene;
+  /** The game's settings and this scene's, with the darkness the scene has set. */
+  private base: World;
+  private clock?: { doc: Doc | undefined; clock: Clock };
 
   constructor(
     readonly id: string,
@@ -51,7 +59,22 @@ export class SceneState {
     private events: SceneEvents,
   ) {
     this.scene = fromDoc<Scene>(docs.get('scenes', id)!, false);
-    this.world = worldOf(fromDoc<Game>(docs.all('game')[0]!), this.scene);
+    this.base = worldOf(fromDoc<Game>(docs.all('game')[0]!), this.scene);
+  }
+
+  /** The settings the scene is played with: on a scene that follows the clock, darkness is the time of day. */
+  get world(): World {
+    if (!this.scene.darknessFollowsClock) return this.base;
+    const clock = this.gameClock();
+    return { ...this.base, darkness: darknessAt(clock.calendar, timeNow(clock, Date.now())) };
+  }
+
+  private gameClock(): Clock {
+    const doc = this.docs.get(CLOCK_COLL, CLOCK_ID);
+    if (!this.clock || this.clock.doc !== doc) {
+      this.clock = { doc, clock: ClockSchema.parse(doc ? fromDoc(doc, false) : {}) };
+    }
+    return this.clock.clock;
   }
 
   coll(name: SceneCollection): string {
@@ -62,7 +85,7 @@ export class SceneState {
   settle(game: Game): boolean {
     const before = this.world.chunkSize;
     this.scene = fromDoc<Scene>(this.docs.get('scenes', this.id)!, false);
-    this.world = worldOf(game, this.scene);
+    this.base = worldOf(game, this.scene);
     if (before === this.world.chunkSize) return false;
     this.refreshChunks(undefined, false);
     return true;

@@ -63,7 +63,7 @@ export const TokenSchema = z.object({
   /** Spells, conditions and features currently affecting the token. */
   effects: z.array(EffectSchema).optional(),
   /** The spell this creature is concentrating on. */
-  concentration: z.object({ spell: id, name: z.string() }).optional(),
+  concentration: z.object({ spell: id, name: z.string(), endsAt: z.number().optional() }).optional(),
   /** Spell slots and feature uses spent since the last rest. */
   spent: z
     .object({
@@ -74,7 +74,9 @@ export const TokenSchema = z.object({
     })
     .optional(),
   /** Set on creatures a spell or feature brought in; they vanish when it ends. */
-  summon: z.object({ by: id, spell: id, concentration: z.boolean().default(false) }).optional(),
+  summon: z
+    .object({ by: id, spell: id, concentration: z.boolean().default(false), endsAt: z.number().optional() })
+    .optional(),
   /** Acts on this token's turn instead of its own (summons, companions). */
   leader: id.optional(),
   /** How its controller arranged the action bar: one tile reference per slot ("spell:fire-bolt"), or null. */

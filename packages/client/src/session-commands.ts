@@ -1,5 +1,5 @@
 import type { Actor, ClientMessage } from '@vtt/system-dnd5e';
-import type { DoorState, MapEdit, Point, Role } from '@vtt/shared';
+import type { ClockAction, DoorState, MapEdit, Point, Role } from '@vtt/shared';
 
 /**
  * The plain requests a client sends the server, each one message. Session
@@ -22,6 +22,16 @@ export abstract class Commands {
 
   setDarkness(darkness: number): void {
     this.send({ t: 'darkness', darkness });
+  }
+
+  /** GM: start, stop or skip the clock, set the date, change the calendar. */
+  clockAction(action: ClockAction): void {
+    this.send({ t: 'clock', action });
+  }
+
+  /** GM: turn-based mode outside a fight. */
+  setTurnBased(on: boolean): void {
+    this.send({ t: 'turnBased', on });
   }
 
   say(text: string): void {

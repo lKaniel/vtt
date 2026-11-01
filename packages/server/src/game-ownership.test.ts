@@ -138,10 +138,12 @@ describe('documents sent to players', () => {
     expect(ids(seat('ana').take('welcome')[0]!.docs).sort((a, b) => a.localeCompare(b))).toEqual([
       'actors:hero',
       'main/tokens:hero',
+      'time:clock',
     ]);
-    expect(ids(seat('bo').take('welcome')[0]!.docs)).toEqual(['main/tokens:scout']);
+    // Everyone knows the game clock.
+    expect(ids(seat('bo').take('welcome')[0]!.docs)).toEqual(['main/tokens:scout', 'time:clock']);
     expect(ids(seat('cy').take('welcome')[0]!.docs).sort((a, b) => a.localeCompare(b))).toEqual(
-      ['actors:hero', 'main/tokens:hero', 'main/tokens:scout'].sort((a, b) => a.localeCompare(b)),
+      ['actors:hero', 'main/tokens:hero', 'main/tokens:scout', 'time:clock'].sort((a, b) => a.localeCompare(b)),
     );
   });
 

@@ -1,5 +1,6 @@
 import type { Doc, MediaEntry, Op, PackCompendium, PackInfo } from '@vtt/core';
 import type { Roll } from './dice.ts';
+import type { ClockAction } from './clock.ts';
 import type { Chunk, DoorState, Point, Role, World } from './schema.ts';
 import type { FogEdit } from './fog-edit.ts';
 import type { MapEdit } from './map-edit.ts';
@@ -58,6 +59,8 @@ export type EngineClientMessage =
   | { t: 'mapEdit'; edit: MapEdit }
   /** GM: the time of day, 0 daylight to 1 pitch black. */
   | { t: 'darkness'; darkness: number }
+  /** GM: start, stop or skip the game clock, set the date or change the calendar (see clock.ts). */
+  | { t: 'clock'; action: ClockAction }
   /**
    * GM: one edit as a transaction of document ops, all or nothing (paste,
    * cut, delete). `txn` comes back on the resulting `docs` or a `reject`.

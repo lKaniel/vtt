@@ -136,6 +136,8 @@ export const EffectSchema = EffectTemplateSchema.extend({
   save: z.object({ ability: AbilitySchema, dc: z.number().int() }).optional(),
   /** Only attacks by this token get `advantageAgainst` (vex). */
   onlyFor: z.string().optional(),
+  /** Game-clock second it ends (see durations.ts); in a fight its `rounds` count instead. */
+  endsAt: z.number().optional(),
 });
 export type Effect = z.infer<typeof EffectSchema>;
 
