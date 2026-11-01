@@ -167,6 +167,8 @@ export class Game {
         c.ws.close(4000, 'your seat is gone');
         continue;
       }
+      if (JSON.stringify(c.player.settings) !== JSON.stringify(player.settings))
+        this.send(c, { t: 'you', you: player });
       c.player = player;
       c.scene = sceneOf(player, this.store);
       if (startOf(this.store, c) !== c.start) this.restart(c);
@@ -185,9 +187,7 @@ export class Game {
     return [...this.clients].filter((c) => c.scene === scene);
   }
 
-  findPlayer(id: string): Player | undefined {
-    return this.store.world.players.find((p) => p.id === id);
-  }
+  findPlayer = (id: string): Player | undefined => this.store.world.players.find((p) => p.id === id);
 
   connect(ws: WebSocket, player: Player): void {
     const scene = sceneOf(player, this.store);

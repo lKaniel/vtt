@@ -34,6 +34,11 @@ export abstract class Commands {
     this.send({ t: 'turnBased', on });
   }
 
+  /** Your own options for this game (automation.ts); they replace the old ones. */
+  setSeatSettings(settings: Record<string, string>): void {
+    this.send({ t: 'seatSettings', settings });
+  }
+
   say(text: string): void {
     this.send({ t: 'chat', text });
   }

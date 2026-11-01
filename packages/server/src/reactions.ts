@@ -1,5 +1,6 @@
-import { canControl, isGridless, type Player, type Point } from '@vtt/shared';
+import { canControl, isGm, isGridless, type Player, type Point } from '@vtt/shared';
 import {
+  automationOf,
   type Effect,
   halved,
   hitReactions,
@@ -42,10 +43,27 @@ export class Reactions {
     const { world } = this.table.store;
     const scale = { gridSize: world.gridSize, gridless: isGridless(world) };
     for (const reactor of opportunityAttackers({ mover, path, others, ...scale, reacted: combat.reacted })) {
-      const sheet = others.find((o) => o.token.id === reactor)!.sheet;
+      const { token, sheet } = others.find((o) => o.token.id === reactor)!;
       const choices = sheet.attacks.filter((a) => a.kind === 'melee').map((a) => a.name);
-      this.offer({ id: randomUUID(), reactor, target: mover.id, kind: 'opportunity', choices });
+      this.opportunity(token, mover, choices);
     }
+  }
+
+  /** Offers an opportunity attack, or takes or skips it as the reactor's player asked (automation.ts). */
+  private opportunity(reactor: Token, mover: Token, choices: string[]): void {
+    const player = this.decider(reactor);
+    const how = automationOf(player?.settings).opportunity;
+    if (how === 'never' || !choices.length) return;
+    if (how === 'auto' && player) {
+      return this.combat.reactionAttack(player, { attacker: reactor.id, target: mover.id, attack: choices[0]! });
+    }
+    this.offer({ id: randomUUID(), reactor: reactor.id, target: mover.id, kind: 'opportunity', choices });
+  }
+
+  /** Whose settings say how a creature reacts: a player who controls it, else the GM. */
+  private decider(reactor: Token): Player | undefined {
+    const seats = this.table.store.world.players.filter((p) => canControl(reactor, p));
+    return seats.find((p) => !isGm(p)) ?? seats[0];
   }
 
   /** An attack is about to hit: offer its target shield or uncanny dodge. True when the hit waits. */
@@ -53,6 +71,7 @@ export class Reactions {
     const combat = this.table.store.combat;
     const target = hit.target.token.id;
     if (!combat || combat.reacted.includes(target)) return false;
+    if (automationOf(this.decider(hit.target.token)?.settings).hitReactions === 'never') return false;
     const choices = hitReactions(hit.target, hit.outcome.roll);
     if (!choices.length) return false;
     const id = randomUUID();

@@ -429,6 +429,9 @@ export class Session extends PackSession {
       case 'reactionGone':
         this.reactions = withOffer(this.reactions, msg);
         return true;
+      case 'you':
+        this.you = msg.you;
+        return true;
       case 'chatUndone':
         this.chat = this.chat.map((m) => (msg.ids.includes(m.id) ? { ...m, undone: msg.undone || undefined } : m));
         return true;

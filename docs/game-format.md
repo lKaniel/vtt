@@ -86,6 +86,10 @@ over on their scene; a seat that's gone is disconnected.
 Players whose `id` matches an account (see the README) are that account's
 seat: the game's members are its seats (see `docs/lobby.md`). The server adds
 one when an account joins, so you can change its `role` here afterwards.
+A seat's `settings` are the player's own options, set from the gear in the
+top bar: `opportunity` (`ask`, `auto`, `never`: how opportunity attacks are
+offered) and `hitReactions` (`ask`, `never`: shield and uncanny dodge). A
+creature reacts by the settings of a player who controls it, else the GM's.
 Removing a seat deletes its explored fog. A character brought from an account becomes an actor
 and a linked token, both with the character's id and the account as
 `owner` in `ownership`; saving or levelling the character updates its name, stats and
@@ -564,6 +568,17 @@ ends it when the bearer attacks or casts; `endsOnDamage` ends it when the bearer
 takes damage, and `saveOnDamage` gives it another save (with advantage) then;
 `worsens` (with `repeatSave`) swaps the conditions for these on a failed save. A hidden trap or a GM ruling can
 just write an effect into the token.
+
+`changes` changes any statistic by key, like Foundry's Active Effects (and
+DAE): `[{ "key": "abilities.str", "mode": "override", "value": 19 }]`. Keys:
+`abilities.<str…cha>` and `proficiency` (changed first, so attacks, saves and
+AC follow), `ac`, `maxHp`, `speed`, `initiative`, `toHit` (every attack roll),
+`saves.all`, `saves.<str…cha>`, and `resistances`, `immunities`,
+`vulnerabilities` (the value is a damage type, added to the list). `mode` is
+`add` (the default), `multiply`, `downgrade` (at most), `upgrade` (at least)
+or `override`; they apply in that order. A feature's `passive` effect takes
+`changes` too (a belt of giant strength as a homemade feature). In the sheet's
+edit mode, the Effects page makes and edits effects with changes by hand.
 
 Players only receive the stats of tokens they control. For everyone else
 they're told how hurt the creature looks (unhurt, hurt, bloodied, down).

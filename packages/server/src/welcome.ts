@@ -3,6 +3,7 @@ import type { ChatMessage, ServerMessage, Token, TokenView } from '@vtt/system-d
 import type { DocFeed } from './doc-feed.ts';
 import type { GameStore } from './game-store.ts';
 import { packContent } from './game-packs.ts';
+import { withoutSettings } from './seat-settings.ts';
 
 // What a client is sent when it joins, or starts over because its seat,
 // scene or the game's settings changed (see Game.onWorld).
@@ -21,8 +22,16 @@ export function startOf(store: GameStore, c: Joining): string {
   // The time of day changes without starting over (a `lighting` message).
   const { players, darkness: _darkness, ...world } = store.inScene(c.scene, () => store.world);
   // The GM's welcome lists the seats too.
-  const seats = isGm(c.player) ? players : undefined;
-  const parts = [c.scene, store.activeScene, c.player, world, store.sceneName(c.scene), seats, store.campaign.packs];
+  const seats = isGm(c.player) ? players.map(withoutSettings) : undefined;
+  const parts = [
+    c.scene,
+    store.activeScene,
+    withoutSettings(c.player),
+    world,
+    store.sceneName(c.scene),
+    seats,
+    store.campaign.packs,
+  ];
   return JSON.stringify(parts);
 }
 

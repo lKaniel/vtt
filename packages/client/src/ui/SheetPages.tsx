@@ -13,8 +13,7 @@ import { carriedDrag, carriedLook } from '../carried.ts';
 import { DRAG_TYPE } from '../drops.ts';
 import { dragTile } from '../hotbar.ts';
 import { attackArt, featureArt, spellArt } from '../icon-art.ts';
-import { attackIcon, effectIcon, featureIcon, spellIcon } from '../icons.ts';
-import { effectLeft } from '../session-time.ts';
+import { attackIcon, featureIcon, spellIcon } from '../icons.ts';
 import { ORDINAL } from '../spell-text.ts';
 import { setStat } from '../token-edit.ts';
 import { attackTip, featureTip, spellTip } from '../tooltip.ts';
@@ -25,7 +24,6 @@ import { type Draft, withKey } from './sheet-model.ts';
 import { RemoveButton } from './SheetDetails.tsx';
 import { EditButton, isOwn, NewButton, useOwnEditor } from './own/OwnEditor.tsx';
 import { TipCard } from './Tip.tsx';
-import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 
@@ -389,37 +387,5 @@ function FeatureRow({
       {edit && (granted || mine) && <RemoveButton onClick={remove} />}
       <TipCard tip={featureTip(f)} />
     </li>
-  );
-}
-
-export function EffectsPage({ session, value, kind }: Readonly<SheetProps>) {
-  const effects = value.effects ?? [];
-  const gm = session.isGm();
-  const left = { now: session.gameTime(), fighting: !!session.combat };
-  if (!effects.length && !value.concentration) return <p className="muted">Nothing is affecting {value.name}.</p>;
-  return (
-    <ul className="rows">
-      {value.concentration && (
-        <li className="row">
-          <IconFace icon={{ glyph: 'eye', tint: 'arcane' }} size={16} />
-          <span className="row-name">Concentrating on {value.concentration.name}</span>
-          {kind === 'token' && (
-            <Button variant="outline" size="sm" onClick={() => session.dropConcentration(value.id)}>
-              Stop
-            </Button>
-          )}
-        </li>
-      )}
-      {effects.map((e) => (
-        <li key={e.id} className="row">
-          <IconFace icon={effectIcon(e)} size={16} />
-          <span className="row-name">{e.name}</span>
-          <span className="row-detail">
-            {[e.conditions?.join(', '), effectLeft(e, left)].filter(Boolean).join(' · ')}
-          </span>
-          {gm && kind === 'token' && <RemoveButton onClick={() => session.removeEffect(value.id, e.id)} />}
-        </li>
-      ))}
-    </ul>
   );
 }
