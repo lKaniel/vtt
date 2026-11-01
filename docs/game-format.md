@@ -5,8 +5,8 @@ and writes game changes (token moves, doors) back to it. Editing a file by
 hand or with Claude updates every connected client live.
 
 ```
-world/                      the example game (another folder: VTT_GAME)
-  game.json                 the game: name, rules, active scene, players, format
+world/                      the example game (another folder: VTT_GAME); lobby games are data/games/<id>/
+  game.json                 the game: name, system, rules, active scene, players, format
   scenes/<scene>/           one folder per scene; a game has as many as you like
     scene.json              name, grid, camera start, time of day, fog of war
     tiles.json              the scene's tiles, as one list
@@ -45,6 +45,7 @@ right, `y` grows down, negative values are fine.
   "id": "example",
   "name": "The crossroads",
   "rules": "2014",
+  "system": "dnd5e",
   "scene": "crossroads",
   "players": [
     { "id": "gm", "name": "GM", "role": "gm", "color": "#e0b040" },
@@ -58,12 +59,15 @@ a seat says otherwise. A seat's own `"scene"` puts that seat on another scene:
 the GM looking at a scene to prepare it, or a player the GM sent elsewhere (a
 split party). The GM's Scenes tab writes both ("Play here" sets `scene` and
 clears every seat's own). At least one player must have `"role": "gm"`.
+`system` is the rulebook the game runs on; `"dnd5e"` (the default) is the only
+one so far.
 Changes reach everyone live: whoever's seat, scene or settings changed starts
 over on their scene; a seat that's gone is disconnected.
 
 Players whose `id` matches an account (see the README) are that account's
-seat. The server adds one when an account first joins, so you can change its
-`role` here afterwards. A character brought from an account becomes an actor
+seat: the game's members are its seats (see `docs/lobby.md`). The server adds
+one when an account joins, so you can change its `role` here afterwards.
+Removing a seat deletes its explored fog. A character brought from an account becomes an actor
 and a linked token, both with the character's id and the account as
 `owner` in `ownership`; saving or levelling the character updates its name, stats and
 senses.

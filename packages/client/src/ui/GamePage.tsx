@@ -86,6 +86,8 @@ function MemberRow({
 }>) {
   const gm = game.you === 'gm';
   const self = p.id === me;
+  // A game always keeps a GM: the only one can't step down or leave.
+  const lastGm = p.role === 'gm' && game.players.filter((x) => x.role === 'gm').length === 1;
   return (
     <li className="lobby-member">
       <span className={p.online ? 'lobby-dot on' : 'lobby-dot'} title={p.online ? 'Playing now' : 'Away'} />
@@ -94,7 +96,12 @@ function MemberRow({
         {self && ' (you)'}
       </span>
       {gm ? (
-        <select value={p.role} onChange={(e) => onChange(e.target.value as Role)}>
+        <select
+          value={p.role}
+          disabled={lastGm}
+          title={lastGm ? 'The game needs a GM' : undefined}
+          onChange={(e) => onChange(e.target.value as Role)}
+        >
           {Object.entries(ROLE_NAMES).map(([role, r]) => (
             <option key={role} value={role}>
               {r.name}
@@ -104,7 +111,7 @@ function MemberRow({
       ) : (
         <span className="menu-note">{ROLE_NAMES[p.role].name}</span>
       )}
-      {(gm || self) && (
+      {(gm || self) && !lastGm && (
         <button className="btn small" onClick={() => onChange(null)}>
           {self ? 'Leave' : 'Remove'}
         </button>

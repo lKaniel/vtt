@@ -2,9 +2,12 @@
 
 ## Editing the world from chat
 
-The game is plain JSON in `world/` (or the folder in `VTT_GAME`).
-The running server hot-reloads any file you change, so editing files is how
-you add maps, place tokens, and prepare encounters.
+The game is plain JSON in `world/` (or the folder in `VTT_GAME`), the
+server's home game. Games made in the lobby are folders in
+`data/games/<id>/` with the same layout (see `docs/lobby.md`). The running
+server hot-reloads any file you change in a loaded game, so editing files is
+how you add maps, place tokens, and prepare encounters. Check another game
+with `pnpm check-game data/games/<id>`.
 
 - Read `docs/game-format.md` before editing. Coordinates are pixels;
   tokens sit on square centres (`(col + 0.5) * gridSize`).
