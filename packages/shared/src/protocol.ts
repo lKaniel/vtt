@@ -46,6 +46,8 @@ export type EngineClientMessage =
   /** The chunks this client's camera can see; the server streams them. */
   | { t: 'view'; chunks: string[] }
   | { t: 'move'; token: string; to: Point }
+  /** Lay your ruler through these waypoints, shown live to everyone on your scene; none puts it away (see ruler.ts). */
+  | { t: 'ruler'; points: Point[] }
   | { t: 'door'; chunk: string; wall: string; state: DoorState }
   | { t: 'chat'; text: string }
   /** Change token fields; `null` removes one (e.g. `hp: null` heals fully). The GM may edit any token, a trusted player the ones they own. */
@@ -101,6 +103,8 @@ export type EngineServerMessage =
   | { t: 'fog'; player: string; cell: number; blocks: Record<string, string>; full?: boolean }
   | { t: 'tokenGone'; id: string }
   | { t: 'moved'; id: string; path: Point[] }
+  /** Someone else on your scene laid their ruler through these waypoints; none: they put it away. */
+  | { t: 'ruler'; player: string; name: string; color: string; points: Point[] }
   /** The time of day changed. */
   | { t: 'lighting'; darkness: number }
   | { t: 'error'; message: string }

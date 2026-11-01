@@ -1,4 +1,4 @@
-import { chunkKey, type EditorMode, onLevel, type Point, type Rect, type Wall } from '@vtt/shared';
+import { type EditorMode, onLevel, type Point, type Rect, type Wall } from '@vtt/shared';
 import {
   Application,
   Container,
@@ -16,12 +16,13 @@ import { cuesOf } from '../feedback.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
 import { CameraMotion } from './camera-motion.ts';
 import { EffectsLayer } from './EffectsLayer.ts';
-import { drawGrid } from './grid.ts';
+import { chunksInView, drawGrid } from './grid.ts';
 import { FogBrush } from './FogBrush.ts';
 import { ItemLayer } from './ItemLayer.ts';
 import { dropToken, listenToDrops } from './sidebar-drops.ts';
 import { MapEditor } from './MapEditor.ts';
 import { PathPreview, showPreview } from './PathPreview.ts';
+import { RulerLayer } from './RulerLayer.ts';
 import { TokenLayer } from './TokenLayer.ts';
 import { Vision } from './Vision.ts';
 
@@ -30,10 +31,6 @@ extensions.add(CullerPlugin);
 const WHEEL_ZOOM_SPEED = 0.0015;
 /** Below these zoom levels the matching detail is skipped, so a zoomed-out map stays cheap. */
 const LOD = { labels: 0.45, doors: 0.25 };
-/** Extra chunks loaded around the screen, so panning doesn't show holes. */
-const CHUNK_MARGIN = 1;
-/** Beyond this many chunks across, keep what's loaded instead of asking for more. */
-const MAX_CHUNK_SPAN = 24;
 const DRAG_THRESHOLD = 5;
 
 interface Drag {
@@ -68,6 +65,7 @@ export class MapView {
   private editor: MapEditor;
   private fogBrush: FogBrush;
   private items: ItemLayer;
+  private rulers: RulerLayer;
   private vision?: Vision;
   /** The scene last shown, so a new one starts at its own camera start. */
   private shownScene?: string;
@@ -105,6 +103,7 @@ export class MapView {
     this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
     this.fogBrush = new FogBrush(session);
     this.items = new ItemLayer(session);
+    this.rulers = new RulerLayer(session);
   }
 
   async init(host: HTMLElement): Promise<void> {
@@ -125,6 +124,7 @@ export class MapView {
     this.ground.addChild(this.chunks.ground, this.grid, this.items.container, this.chunks.walls);
     this.camera.addChild(this.ground, this.tokens.container, this.effects.container);
     this.overhead.addChild(this.preview.container, this.effects.labels, this.editor.container, this.fogBrush.container);
+    this.overhead.addChild(this.rulers.container);
     // Previews are drawn over tokens; clicks must still reach the tokens below.
     this.overhead.eventMode = 'none';
     this.vision = new Vision(this.app, this.session);
@@ -232,6 +232,9 @@ export class MapView {
       s.on('chat', (message) => {
         this.effects.play(cuesOf(message), performance.now());
       }),
+      s.on('rulers', () => {
+        this.rulers.redraw();
+      }),
       s.on('lighting', visionChanged),
       s.on('fog', visionChanged),
       s.on('editor', () => {
@@ -323,6 +326,7 @@ export class MapView {
     this.editor.setZoom(this.zoom);
     this.items.setZoom(this.zoom);
     this.fogBrush.setZoom(this.zoom);
+    this.rulers.setZoom(this.zoom);
     this.tokens.showLabels(this.zoom >= LOD.labels);
     this.chunks.showDoors(this.zoom >= LOD.doors);
   }
@@ -339,15 +343,8 @@ export class MapView {
   }
 
   private requestChunks(): void {
-    const size = this.session.world!.chunkSize;
-    const r = this.visibleRect();
-    const cx0 = Math.floor(r.x / size) - CHUNK_MARGIN;
-    const cy0 = Math.floor(r.y / size) - CHUNK_MARGIN;
-    const cx1 = Math.floor((r.x + r.w) / size) + CHUNK_MARGIN;
-    const cy1 = Math.floor((r.y + r.h) / size) + CHUNK_MARGIN;
-    if (Math.max(cx1 - cx0, cy1 - cy0) > MAX_CHUNK_SPAN) return;
-    const keys: string[] = [];
-    for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) keys.push(chunkKey(cx, cy));
+    const keys = chunksInView(this.visibleRect(), this.session.world!.chunkSize);
+    if (!keys) return;
     const id = keys.join(' ');
     if (id === this.viewId) return;
     this.viewId = id;

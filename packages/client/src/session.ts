@@ -20,6 +20,8 @@ import { dropOnMap } from './session-drops.ts';
 import { refOf } from './editor/selection.ts';
 import { PackSession } from './session-packs.ts';
 import { withOffer } from './reactions.ts';
+import { Rulers } from './rulers.ts';
+import type { SessionEvents } from './session-events.ts';
 import { aimFor, aimSpell, castMessage, pick, scrollAiming, type Aiming } from './targeting.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
@@ -31,33 +33,6 @@ export interface SheetTarget {
 }
 
 const CHAT_HISTORY = 200;
-
-export interface SessionEvents {
-  /** Anything the UI shows changed. */
-  change: () => void;
-  welcome: () => void;
-  chunk: (key: string) => void;
-  chunkGone: (key: string) => void;
-  token: (token: Token) => void;
-  tokenGone: (id: string) => void;
-  moved: (id: string, path: Point[]) => void;
-  select: (id: string | undefined) => void;
-  /** The fight started, ended or moved on. */
-  combat: () => void;
-  /** An attack or spell was readied or put away. */
-  armed: () => void;
-  focus: (point: Point) => void;
-  /** A chat message arrived live (not the history sent on joining). */
-  chat: (message: ChatMessage) => void;
-  /** The time of day changed. */
-  lighting: () => void;
-  /** The editor's mode, tool, menu or documents changed. */
-  editor: () => void;
-  /** What is selected in the editor changed. */
-  selection: () => void;
-  /** Explored fog of war changed. */
-  fog: () => void;
-}
 
 /**
  * The connection to the game server plus everything this player knows about
@@ -91,6 +66,11 @@ export class Session extends PackSession {
   sheet?: SheetTarget & { edit: boolean };
   /** GM only: creatures dropped on the map arrive hidden from the players. */
   spawnHidden = false;
+  /** Your ruler and the ones the others on your scene are laying. */
+  readonly rulers = new Rulers(
+    (msg) => this.send(msg),
+    () => this.emit('rulers'),
+  );
   /** Bumped on every change; React re-renders on it. */
   version = 0;
 
@@ -429,6 +409,9 @@ export class Session extends PackSession {
       case 'reactionGone':
         this.reactions = withOffer(this.reactions, msg);
         return true;
+      case 'ruler':
+        this.rulers.receive(msg);
+        return false;
       case 'chatUndone':
         this.chat = this.chat.map((m) => (msg.ids.includes(m.id) ? { ...m, undone: msg.undone || undefined } : m));
         return true;
@@ -458,6 +441,7 @@ export class Session extends PackSession {
     for (const t of msg.tokens) this.tokens.set(t.id, t);
     this.chat = msg.chat;
     this.combat = msg.combat;
+    this.rulers.reset();
     this.welcomeEdits(msg);
     this.welcomeScenes(msg);
     this.players = msg.players ?? [];

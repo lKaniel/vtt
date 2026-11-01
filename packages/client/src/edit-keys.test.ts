@@ -64,6 +64,11 @@ describe('editorKey', () => {
     expect(editorKey(key('m'), false)).toEqual({ mode: 'templates' });
   });
 
+  it('picks up the ruler with R', () => {
+    expect(editorKey(key('r'), false)).toEqual({ mode: 'templates', tool: 'ruler' });
+    expect(editorKey(key('R', { shift: true }), true)).toEqual({ mode: 'templates', tool: 'ruler' });
+  });
+
   it('nudges with the arrows outside the tokens mode (where they walk)', () => {
     expect(editorKey(key('ArrowLeft'), true)).toEqual({ nudge: [-1, 0], big: false });
     expect(editorKey(key('ArrowDown', { shift: true }), true)).toEqual({ nudge: [0, 1], big: true });
