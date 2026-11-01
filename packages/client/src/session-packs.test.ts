@@ -148,7 +148,9 @@ describe('the GM’s asset browser', () => {
     ws.receive(gmWelcome());
     ws.receive({
       t: 'docs',
-      changes: [{ coll: 'journals', id: 'lore', doc: { type: 'journal', id: 'lore', rev: 1, name: 'Lore', pages: [] } }],
+      changes: [
+        { coll: 'journals', id: 'lore', doc: { type: 'journal', id: 'lore', rev: 1, name: 'Lore', pages: [] } },
+      ],
     });
     session.importEntry('journal', { id: 'lore', name: 'Lore', pages: [{ id: 'p', name: 'Gods', text: 'Many' }] });
     expect(sent()).toMatchObject({

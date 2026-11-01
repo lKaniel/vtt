@@ -4,6 +4,7 @@ import type { TokenView } from '@vtt/system-dnd5e';
 import { keyOf, refOf } from './editor/selection.ts';
 import type { MenuItem } from './editor/menus.ts';
 import type { LightPreset } from './map-tools.ts';
+import type { ItemTool } from './editor/shape-tools.ts';
 import { EditSession } from './session-edits.ts';
 
 // The map editor's state: which mode and tool, what is selected, and the open
@@ -11,7 +12,7 @@ import { EditSession } from './session-edits.ts';
 // EditSession, so undo, redo and the server's checks apply as for any edit.
 
 /** What a press does in the current mode: select (and move, reshape), or draw. */
-export type EditorTool = 'select' | 'tile' | 'wall' | 'door' | 'window' | 'place';
+export type EditorTool = 'select' | 'tile' | 'wall' | 'door' | 'window' | 'place' | ItemTool;
 
 /** A context menu on screen. */
 export interface OpenMenu {
@@ -71,9 +72,14 @@ export abstract class EditorSession extends EditSession {
     return this.mode === 'tokens' && this.selection.includes(this.tokenKey(id));
   }
 
-  /** Changes mode (the GM's; players stay on tokens), letting go of the selection. */
+  /** Whether this client may work in `mode` (players: tokens alone, unless a subclass says more). */
+  protected mayUse(mode: string): boolean {
+    return this.isGm() || mode === 'tokens';
+  }
+
+  /** Changes mode (players only to those they may use), letting go of the selection. */
   setMode(mode: EditorMode, tool: EditorTool = 'select'): void {
-    const next = this.isGm() ? mode : 'tokens';
+    const next = this.mayUse(mode) ? mode : 'tokens';
     this.setSelection([]);
     this.mode = next;
     this.tool = next === 'tokens' ? 'select' : tool;

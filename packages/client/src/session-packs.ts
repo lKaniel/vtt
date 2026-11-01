@@ -122,7 +122,7 @@ export abstract class PackSession extends SceneSession {
       this.showError(`That prefab can't be placed: ${parsed.error.issues[0]?.message ?? 'broken'}`);
       return;
     }
-    const clip = { docs: parsed.data.tiles.map((t) => ({ ...t, type: 'tile', rev: 0 }) as Doc) };
+    const clip = { docs: parsed.data.tiles.map((t) => ({ ...t, type: 'tile', rev: 0 })) };
     const offset = pasteOffsetTo(clip, this.viewCentre(), this.gridSize());
     this.sendChanges('prefab', pasteAt(this.docs, clip, { scene: this.scene, offset }).ops);
   }
