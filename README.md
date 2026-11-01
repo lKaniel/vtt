@@ -50,6 +50,16 @@ on, shared live between players.
   on the token (`hotbar`); new abilities fill the gaps.
 - **Moving.** Click where to go, drag your token there, or step with the
   arrow keys.
+- **Undo and redo (Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y, or ↶ ↷ in the top bar).**
+  Everyone undoes their own edits, 100 steps kept on the server, so a reload
+  keeps them. The GM can also undo the latest game action (a move, attack,
+  spell, rest), from the chat card's _Undo_ or with Ctrl+Z; the dice aren't
+  rolled again and the card stays marked "undone". Undo is refused, naming
+  who, when someone has changed the same thing since.
+- **Copy, cut, paste, duplicate, delete (GM: Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+D,
+  Delete).** On the selected token, or the actor whose sheet is open. Paste
+  lands at the pointer on the grid with fresh ids, through the system
+  clipboard, so it works across browser tabs.
 - **Both editions.** Worlds play 2014 rules by default (`"rules"` in
   `game.json`), and any character can opt into 2024 rules with
   `"stats": { "rules": "2024" }`. Monsters come from SRD 5.1 or 5.2 to match;

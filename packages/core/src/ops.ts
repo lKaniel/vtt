@@ -37,6 +37,17 @@ export type Op = z.infer<typeof OpSchema>;
 /** An op that can't be applied, with a message for whoever sent it. */
 export class OpError extends Error {}
 
+/** A document has moved on (or come back) since the op was made: someone else changed it. */
+export class RevisionError extends OpError {
+  constructor(
+    readonly coll: string,
+    readonly id: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
 /** Checks (and may normalise) each document before it is written. */
 export type Validate = (coll: string, doc: Doc) => Doc;
 
@@ -56,9 +67,9 @@ function unpatch(doc: Doc, patch: Patch): Patch {
   return back;
 }
 
-function checkRev(doc: Doc, rev: number | undefined): void {
+function checkRev(coll: string, doc: Doc, rev: number | undefined): void {
   if (rev !== undefined && rev !== doc.rev) {
-    throw new OpError(`${doc.id} has changed since (revision ${doc.rev}, not ${rev})`);
+    throw new RevisionError(coll, doc.id, `${doc.id} has changed since (revision ${doc.rev}, not ${rev})`);
   }
 }
 
@@ -82,17 +93,33 @@ export class DocStore {
   }
 
   /**
+   * Sets documents as another store has them, without checks or revisions
+   * of its own: how a client follows the server. A change without `doc` is
+   * a deletion.
+   */
+  mirror(changes: readonly { coll: string; id: string; doc?: Doc }[]): void {
+    for (const { coll, id, doc } of changes) this.commit(coll, id, doc ?? null);
+  }
+
+  /** The names of the collections that hold documents. */
+  collections(): string[] {
+    return [...this.colls].filter(([, docs]) => docs.size).map(([name]) => name);
+  }
+
+  /**
    * Apply every op or none. Returns the inverse transaction: applying it puts
    * the documents back, unless someone has changed them in between.
+   * `validate` replaces the store's own check for this transaction (ops
+   * that came from a client get the stricter one).
    */
-  apply(ops: readonly Op[]): Op[] {
+  apply(ops: readonly Op[], { validate = this.validate }: { validate?: Validate } = {}): Op[] {
     const staged = new Map<string, { coll: string; id: string; doc: Doc | null }>();
     const read = (coll: string, id: string): Doc | undefined => {
       const hit = staged.get(slot(coll, id));
       return hit ? (hit.doc ?? undefined) : this.get(coll, id);
     };
     const write = (coll: string, id: string, doc: Doc | null): void => {
-      staged.set(slot(coll, id), { coll, id, doc: doc && this.validate(coll, doc) });
+      staged.set(slot(coll, id), { coll, id, doc: doc && validate(coll, doc) });
     };
     const inverse = ops.map((op) => this.stage(op, read, write)).reverse();
     for (const { coll, id, doc } of staged.values()) this.commit(coll, id, doc);
@@ -112,7 +139,7 @@ export class DocStore {
     }
     const doc = read(op.coll, op.id);
     if (!doc) throw new OpError(`${op.id} is not in ${op.coll}`);
-    checkRev(doc, op.rev);
+    checkRev(op.coll, doc, op.rev);
     if (op.op === 'delete') {
       write(op.coll, op.id, null);
       return { op: 'create', coll: op.coll, doc };

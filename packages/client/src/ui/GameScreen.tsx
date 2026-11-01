@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { MapView } from '../canvas/MapView.ts';
+import { editKey } from '../edit-keys.ts';
 import { hotbarTiles } from '../hotbar.ts';
 import { Session } from '../session.ts';
 import { stepTarget } from '../stepping.ts';
@@ -32,6 +33,7 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId?: string; 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target)) return;
+      if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
       if (e.key === 'Escape' && session.mapTool) session.setMapTool(undefined);
       else if (e.key === 'c') toggleSheet(session);
       else if (e.key === 'e') toggleEditor(session);
@@ -40,6 +42,8 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId?: string; 
     addEventListener('keydown', onKey);
     return () => removeEventListener('keydown', onKey);
   }, [session]);
+
+  useEffect(() => listenToClipboard(session), [session]);
 
   return (
     <div className="game">
@@ -53,6 +57,7 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId?: string; 
         <span className="you" style={{ color: session.you?.color }}>
           {session.you?.name}
         </span>
+        <UndoButtons session={session} />
         <button className="link" onClick={onLeave}>
           Leave
         </button>
@@ -69,9 +74,83 @@ export function GameScreen({ playerId, onLeave }: Readonly<{ playerId?: string; 
   );
 }
 
+/** Typing in a field keeps the field's own undo, copy and paste. */
 function isTyping(target: EventTarget | null): boolean {
   return (
-    target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLSelectElement ||
+    target instanceof HTMLTextAreaElement ||
+    (target instanceof HTMLElement && target.isContentEditable)
+  );
+}
+
+/** Undo, redo, duplicate and delete; true when the key was one of the edit keys. */
+function runEditKey(session: Session, e: KeyboardEvent): boolean {
+  const command = editKey(e);
+  if (!command) return false;
+  // Copy, cut and paste arrive as clipboard events, which can reach the system clipboard.
+  if (command === 'clipboard') return true;
+  e.preventDefault();
+  if (command === 'undo') session.undo();
+  else if (command === 'redo') session.redo();
+  else if (command === 'duplicate') session.duplicate();
+  else session.deleteSelected();
+  return true;
+}
+
+/**
+ * Ctrl+C, Ctrl+X and Ctrl+V copy the selection through the system
+ * clipboard (as JSON), so it pastes into another scene or browser tab.
+ * Text selected on the page and text fields copy as usual.
+ */
+function listenToClipboard(session: Session): () => void {
+  const ours = () => !isTyping(document.activeElement) && !getSelection()?.toString();
+  const onCopy = (e: ClipboardEvent) => {
+    if (!ours()) return;
+    const text = e.type === 'cut' ? session.cut() : session.copy();
+    if (!text) return;
+    e.clipboardData?.setData('text/plain', text);
+    e.preventDefault();
+  };
+  const onPaste = (e: ClipboardEvent) => {
+    if (!ours()) return;
+    session.paste(e.clipboardData?.getData('text/plain'));
+    e.preventDefault();
+  };
+  document.addEventListener('copy', onCopy);
+  document.addEventListener('cut', onCopy);
+  document.addEventListener('paste', onPaste);
+  return () => {
+    document.removeEventListener('copy', onCopy);
+    document.removeEventListener('cut', onCopy);
+    document.removeEventListener('paste', onPaste);
+  };
+}
+
+/** ↶ and ↷ in the top bar, named after what they would undo or redo. */
+function UndoButtons({ session }: Readonly<{ session: Session }>) {
+  const { undo, redo } = session.history;
+  return (
+    <span className="undo-buttons">
+      <button
+        className="icon-button"
+        disabled={!undo}
+        onClick={() => session.undo()}
+        title={undo ? `Undo the ${undo} (Ctrl+Z)` : 'Nothing to undo'}
+        aria-label="Undo"
+      >
+        ↶
+      </button>
+      <button
+        className="icon-button"
+        disabled={!redo}
+        onClick={() => session.redo()}
+        title={redo ? `Redo the ${redo} (Ctrl+Shift+Z)` : 'Nothing to redo'}
+        aria-label="Redo"
+      >
+        ↷
+      </button>
+    </span>
   );
 }
 
@@ -137,5 +216,5 @@ function Toast({ session }: Readonly<{ session: Session }>) {
     };
   }, [error]);
   if (!error || dismissed === error.at) return null;
-  return <div className="toast">{error.message}</div>;
+  return <div className={error.info ? 'toast toast-info' : 'toast'}>{error.message}</div>;
 }

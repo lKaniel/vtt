@@ -1,3 +1,4 @@
+import type { DocRef } from '@vtt/core';
 import {
   canControlToken,
   canEditToken,
@@ -21,7 +22,7 @@ import {
 } from '@vtt/shared';
 
 import { dropMessage, type DragPayload } from './drops.ts';
-import { Commands } from './session-commands.ts';
+import { EditSession } from './session-edits.ts';
 import type { LightPreset, MapTool } from './map-tools.ts';
 import { withOffer } from './reactions.ts';
 import { aimFor, aimSpell, castMessage, pick, type Aiming } from './targeting.ts';
@@ -63,7 +64,7 @@ export interface SessionEvents {
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends Commands {
+export class Session extends EditSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -81,7 +82,8 @@ export class Session extends Commands {
   reactions: ReactionOffer[] = [];
   /** The spell the selected token is aiming, and what it has picked so far. */
   aiming?: Aiming;
-  error?: { message: string; at: number };
+  /** The toast: an error, or with `info` news such as "Undid the move". */
+  error?: { message: string; at: number; info?: boolean };
   /** GM only: everyone at the table. */
   players: Player[] = [];
   /** GM only: the Actors list. */
@@ -349,8 +351,23 @@ export class Session extends Commands {
     return !!this.you && canControlToken(token, this.you);
   }
 
+  protected editTargets(): DocRef[] {
+    if (this.selected) return [{ coll: `${this.scene}/tokens`, id: this.selected }];
+    if (this.sheet?.kind === 'actor') return [{ coll: 'actors', id: this.sheet.id }];
+    return [];
+  }
+
+  protected gridSize(): number {
+    return this.world?.gridSize ?? 100;
+  }
+
   showError(message: string): void {
     this.error = { message, at: Date.now() };
+    this.changed();
+  }
+
+  showNotice(message: string): void {
+    this.error = { message, at: Date.now(), info: true };
     this.changed();
   }
 
@@ -406,8 +423,11 @@ export class Session extends Commands {
       case 'reactionGone':
         this.reactions = withOffer(this.reactions, msg);
         return true;
+      case 'chatUndone':
+        this.chat = this.chat.map((m) => (msg.ids.includes(m.id) ? { ...m, undone: msg.undone || undefined } : m));
+        return true;
       default:
-        return false;
+        return this.applyEdit(msg);
     }
   }
 
@@ -432,6 +452,7 @@ export class Session extends Commands {
     for (const t of msg.tokens) this.tokens.set(t.id, t);
     this.chat = msg.chat;
     this.combat = msg.combat;
+    this.welcomeEdits(msg);
     this.players = msg.players ?? [];
     this.actors.clear();
     for (const a of msg.actors ?? []) this.actors.set(a.id, a);

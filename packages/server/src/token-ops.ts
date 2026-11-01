@@ -8,14 +8,17 @@ import {
   standaloneEntry,
   unlinkToken,
   type Actor,
+  type Chunk,
+  type ChunkChange,
   type Token,
   type TokenEntry,
 } from '@vtt/shared';
 import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
-import { ACTORS } from './store-colls.ts';
+import { ACTORS, MAP, TYPE } from './store-colls.ts';
 
 // The ops that store tokens and their actors (see token-link.ts in shared):
 // a changed token is split into its entry and, for linked tokens, its actor.
+// Also the ops for map edits given as whole chunks.
 
 /** What the GM can do to a token's tie to its actor. */
 export type Relink = 'link' | 'unlink' | 'save' | 'reset';
@@ -69,5 +72,38 @@ export function unlinkActorOps(docs: DocStore, scenes: readonly string[], id: st
         const { token } = resolveToken(fromDoc<TokenEntry>(d), actor);
         return token ? putOps(docs, coll, toDoc('token', standaloneEntry(token))) : [];
       });
+  });
+}
+
+/** Before a client's deletes of actors: ops that leave those actors' tokens carrying their sheets. */
+export function actorDeleteOps(
+  docs: DocStore,
+  scenes: readonly string[],
+  ops: readonly Op[],
+  actors: ReadonlyMap<string, Actor>,
+): Op[] {
+  return ops.flatMap((op) =>
+    op.op === 'delete' && op.coll === ACTORS ? unlinkActorOps(docs, scenes, op.id, actors.get(op.id)) : [],
+  );
+}
+
+/** Ops that save map edits given as whole chunks on `scene`: items that left them are deleted. */
+export function chunkOps(
+  docs: DocStore,
+  scene: string,
+  changes: readonly ChunkChange[],
+  chunks: ReadonlyMap<string, Chunk>,
+): Op[] {
+  return MAP.flatMap((coll) => {
+    const name = `${scene}/${coll}`;
+    const items = (chunk: Chunk | undefined): { id: string }[] => chunk?.[coll] ?? [];
+    const wanted = changes.flatMap((c) => items(c.chunk)).map((item) => toDoc(TYPE[coll], item));
+    const ids = new Set(wanted.map((d) => d.id));
+    const current = changes.flatMap((c) => items(chunks.get(c.key))).map((item) => item.id);
+    const gone = current.filter((id) => !ids.has(id) && docs.get(name, id));
+    return [
+      ...wanted.flatMap((doc) => putOps(docs, name, doc)),
+      ...gone.map((id): Op => ({ op: 'delete', coll: name, id })),
+    ];
   });
 }

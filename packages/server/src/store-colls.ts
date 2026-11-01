@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import type { MapCollection } from '@vtt/shared';
+import type { MapCollection, World } from '@vtt/shared';
 import { toDoc } from './doc-sync.ts';
 import type { FileKind, GameFile } from './game-files.ts';
 
@@ -45,4 +45,9 @@ export function scopeOf(kind: FileKind): { coll: string; only?: string } | undef
   if (kind.kind === 'actor') return { coll: ACTORS, only: kind.id };
   if (kind.kind === 'combat') return { coll: COMBAT };
   return { coll: `${kind.scene}/${kind.coll}` };
+}
+
+/** True when two table settings differ in nothing but the time of day. */
+export function onlyDarknessChanged(a: World, b: World): boolean {
+  return JSON.stringify({ ...a, darkness: 0 }) === JSON.stringify({ ...b, darkness: 0 });
 }

@@ -363,6 +363,7 @@ export class MapView {
     const p: Point = [e.global.x, e.global.y];
     if (this.drag) this.dragTo(this.drag, p);
     this.hoverPoint = this.screenToWorld(p[0], p[1]);
+    this.session.pointer = this.hoverPoint;
     this.editor.pointerMove(this.hoverPoint, e.shiftKey);
     this.updatePreview(false);
   }

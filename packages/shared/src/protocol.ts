@@ -1,3 +1,4 @@
+import type { Doc, Op } from '@vtt/core';
 import type { Combat } from './combat.ts';
 import type { Roll } from './dice.ts';
 import type { Actor, Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
@@ -74,6 +75,23 @@ export interface ChatMessage {
   spell?: SpellLog;
   /** Set on GM-only messages. */
   gmOnly?: boolean;
+  /** The GM undid the action this card reports. */
+  undone?: boolean;
+}
+
+/** A document as it is now after a change; `doc` is missing when it was deleted. */
+export interface DocChange {
+  coll: string;
+  id: string;
+  doc?: Doc;
+}
+
+/** What Ctrl+Z and Ctrl+Shift+Z would do for you now, by name ("token edit", "move"). */
+export interface HistoryState {
+  undo?: string;
+  redo?: string;
+  /** GM only: the chat card of the latest game action, which can be undone from it. */
+  card?: string;
 }
 
 /** What the GM places on the map: a monster from one edition's book, or a copy of an actor. */
@@ -149,7 +167,15 @@ export type ClientMessage =
   /** GM: draw or erase walls, doors, windows and lights. */
   | { t: 'mapEdit'; edit: MapEdit }
   /** GM: the time of day, 0 daylight to 1 pitch black. */
-  | { t: 'darkness'; darkness: number };
+  | { t: 'darkness'; darkness: number }
+  /**
+   * GM: one edit as a transaction of document ops, all or nothing (paste,
+   * cut, delete). `txn` comes back on the resulting `docs` or a `reject`.
+   */
+  | { t: 'ops'; txn: string; label?: string; ops: Op[] }
+  /** Undo your latest edit (the GM: or the latest game action); `card` undoes the action that chat card reports. */
+  | { t: 'undo'; card?: string }
+  | { t: 'redo' };
 
 export type ServerMessage =
   | {
@@ -159,9 +185,14 @@ export type ServerMessage =
       tokens: TokenView[];
       chat: ChatMessage[];
       combat: Combat | null;
+      /** The scene everyone is on. */
+      scene: string;
       /** GM only: everyone at the table and the Actors list. */
       players?: Player[];
       actors?: Actor[];
+      /** GM only: every document of the game, by collection; `docs` messages keep it up to date. */
+      docs?: Record<string, Doc[]>;
+      history: HistoryState;
     }
   | { t: 'chunk'; key: string; chunk: Chunk }
   | { t: 'token'; token: TokenView }
@@ -177,4 +208,13 @@ export type ServerMessage =
   | { t: 'error'; message: string }
   /** A reaction you may take now; `reactionGone` once it's taken, declined or too late. */
   | { t: 'reactionOffer'; offer: ReactionOffer }
-  | { t: 'reactionGone'; id: string };
+  | { t: 'reactionGone'; id: string }
+  /** GM only: documents changed, by `by` (a player id; none for a hand edit of the files). */
+  | { t: 'docs'; changes: DocChange[]; by?: string; txn?: string }
+  /** Your `ops` transaction was refused; nothing in it was applied. */
+  | { t: 'reject'; txn: string; reason: string }
+  | ({ t: 'history' } & HistoryState)
+  /** Your undo (or redo) went through. */
+  | { t: 'undone'; label: string; redo: boolean }
+  /** The GM undid (or redid) the game action these chat cards report. */
+  | { t: 'chatUndone'; ids: string[]; undone: boolean };

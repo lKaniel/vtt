@@ -48,6 +48,22 @@ describe('DocStore.apply', () => {
     expect(() => store.apply([{ op: 'delete', coll: 'walls', id: 'nope' }])).toThrow(OpError);
   });
 
+  it('mirrors documents as another store has them', () => {
+    const store = storeWith(wall('w1'), wall('w2'));
+    store.mirror([
+      { coll: 'walls', id: 'w1', doc: { ...wall('w1'), rev: 7 } },
+      { coll: 'walls', id: 'w2' },
+    ]);
+    expect(store.all('walls')).toEqual([{ ...wall('w1'), rev: 7 }]);
+  });
+
+  it('lists the collections that hold documents', () => {
+    const store = storeWith(wall('w1'));
+    store.apply([{ op: 'create', coll: 'lights', doc: wall('l1') }]);
+    store.apply([{ op: 'delete', coll: 'lights', id: 'l1' }]);
+    expect(store.collections()).toEqual(['walls']);
+  });
+
   it('deletes documents', () => {
     const store = storeWith(wall('w1'), wall('w2'));
     store.apply([{ op: 'delete', coll: 'walls', id: 'w1' }]);

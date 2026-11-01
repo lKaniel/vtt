@@ -65,7 +65,11 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
           <p className="muted">Type to chat. Roll with /r 1d20+5, or /gmr for a GM-only roll.</p>
         )}
         {session.chat.map((m) => (
-          <Message key={m.id} m={m} />
+          <Message
+            key={m.id}
+            m={m}
+            onUndo={session.isGm() && session.history.card === m.id ? () => session.undoCard(m.id) : undefined}
+          />
         ))}
       </div>
       <div className="dice">
@@ -84,17 +88,25 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
 }
 
 function kindOf(m: ChatMessage): string {
-  if (m.attack) return 'msg msg-attack';
-  if (m.spell) return 'msg msg-spell';
-  return m.roll ? 'msg msg-roll' : 'msg';
+  const undone = m.undone ? ' msg-undone' : '';
+  if (m.attack) return `msg msg-attack${undone}`;
+  if (m.spell) return `msg msg-spell${undone}`;
+  return (m.roll ? 'msg msg-roll' : 'msg') + undone;
 }
 
-function Message({ m }: Readonly<{ m: ChatMessage }>) {
+/** A chat card; `onUndo` (GM, latest game action only) puts a button on it to undo what it reports. */
+function Message({ m, onUndo }: Readonly<{ m: ChatMessage; onUndo?: () => void }>) {
   return (
     <div className={kindOf(m)}>
       <span className="msg-from" style={{ color: m.color }}>
         {m.from}
         {m.gmOnly && <span className="muted"> (to GM)</span>}
+        {m.undone && <span className="muted"> (undone)</span>}
+        {onUndo && (
+          <button className="link msg-undo" onClick={onUndo} title="Undo this action (the dice are not rolled again)">
+            Undo
+          </button>
+        )}
       </span>
       {m.text && <span className="msg-text">{m.text}</span>}
       {m.attack && <AttackLine a={m.attack} />}

@@ -17,6 +17,7 @@ import {
   type World,
   type WorldInfo,
 } from '@vtt/shared';
+import { OpError, type Doc } from '@vtt/core';
 import type { WebSocket } from 'ws';
 import { parseClientMessage, type ClientMessage } from './client-messages.ts';
 import { CombatActions } from './combat-actions.ts';
@@ -27,8 +28,9 @@ import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
 import { Reactions } from './reactions.ts';
 import { Zones } from './zones.ts';
-import { Refusal, Table } from './table.ts';
+import { Refusal, requireGm, Table } from './table.ts';
 import type { GameStore } from './game-store.ts';
+import { History } from './undo.ts';
 
 interface Client {
   ws: WebSocket;
@@ -62,6 +64,7 @@ export class Game {
   /** world.json minus the seats, to tell a role change from a new grid. */
   private settings: string;
   private map: MapActions;
+  private history: History;
 
   constructor(
     private store: GameStore,
@@ -87,6 +90,12 @@ export class Game {
     this.gm = new GmActions(table);
     this.settings = worldSettings(store.world);
     this.map = new MapActions(table);
+    this.history = new History(store, (ids, undone) => this.markCards(ids, undone));
+    this.listen(store);
+  }
+
+  /** Passes changes in the game on to the clients that may see them. */
+  private listen(store: GameStore): void {
     store.on('chunk', (key, chunk) => {
       for (const c of this.clients) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
       // A door or a light changed: what everyone can see may have too.
@@ -112,6 +121,8 @@ export class Game {
       this.refreshAll();
     });
     store.on('world', (world) => this.onWorld(world));
+    // Documents are only sent as such to GMs for now; players get their filtered views above.
+    store.on('docs', (changes, by, txn) => this.toGms({ t: 'docs', changes, by, txn }));
   }
 
   /**
@@ -166,8 +177,17 @@ export class Game {
       tokens: [...c.visible].map((id) => this.view(this.store.tokens.get(id)!, player)),
       chat: this.chat.filter((m) => !m.gmOnly || gm),
       combat: this.store.combat ?? null,
-      ...(gm ? { players: this.store.world.players, actors: [...this.store.actors.values()] } : {}),
+      scene: this.store.activeScene,
+      history: this.history.state(player),
+      ...(gm
+        ? { players: this.store.world.players, actors: [...this.store.actors.values()], docs: this.allDocs() }
+        : {}),
     });
+  }
+
+  private allDocs(): Record<string, Doc[]> {
+    const docs = this.store.docs;
+    return Object.fromEntries(docs.collections().map((coll) => [coll, docs.all(coll)]));
   }
 
   private visibleTo(player: Player): Set<string> {
@@ -207,12 +227,46 @@ export class Game {
   }
 
   private handle(c: Client, msg: ClientMessage): void {
+    if (msg.t === 'ops') return this.onOps(c, msg);
     try {
-      this.dispatch(c, msg);
+      if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);
+      else if (this.history.run(c.player, msg, () => this.dispatch(c, msg))) this.sendHistory();
     } catch (e) {
       if (!(e instanceof Refusal)) throw e;
       this.fail(c, e.message);
     }
+  }
+
+  /** A transaction of document ops (GM only for now): all of it, or a reject saying why not. */
+  private onOps(c: Client, msg: Extract<ClientMessage, { t: 'ops' }>): void {
+    try {
+      requireGm(c.player);
+      if (this.history.run(c.player, msg, () => this.store.applyOps(msg.ops, msg.txn))) this.sendHistory();
+    } catch (e) {
+      if (!(e instanceof Refusal || e instanceof OpError)) throw e;
+      this.send(c, { t: 'reject', txn: msg.txn, reason: e.message });
+    }
+  }
+
+  private onUndo(c: Client, msg: Extract<ClientMessage, { t: 'undo' | 'redo' }>): void {
+    try {
+      const redo = msg.t === 'redo';
+      const label = redo ? this.history.redo(c.player) : this.history.undo(c.player, msg.card);
+      this.send(c, { t: 'undone', label, redo });
+    } finally {
+      // A refused undo still drops the step that can't be undone.
+      this.sendHistory();
+    }
+  }
+
+  private sendHistory(): void {
+    for (const c of this.clients) this.send(c, { t: 'history', ...this.history.state(c.player) });
+  }
+
+  /** The GM undid (or redid) the action these chat cards report. */
+  private markCards(ids: string[], undone: boolean): void {
+    for (const m of this.chat) if (ids.includes(m.id)) m.undone = undone || undefined;
+    for (const c of this.clients) this.send(c, { t: 'chatUndone', ids, undone });
   }
 
   private dispatch(c: Client, msg: ClientMessage): void {
@@ -381,7 +435,9 @@ export class Game {
 
   /** A message from the game itself: initiative, attack results. */
   private narrate(content: Pick<ChatMessage, 'text' | 'attack' | 'spell'>): void {
-    this.post({ id: randomUUID(), time: Date.now(), from: 'Combat', color: '#c8b48a', ...content });
+    const id = randomUUID();
+    this.history.noteCard(id);
+    this.post({ id, time: Date.now(), from: 'Combat', color: '#c8b48a', ...content });
   }
 
   private toGms(msg: ServerMessage): void {
