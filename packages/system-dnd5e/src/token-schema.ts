@@ -14,6 +14,8 @@ export const TokenSchema = z.object({
   /** Centre of the token, in pixels. */
   x: z.number(),
   y: z.number(),
+  /** Feet above the ground (the scene's levels, flying); none = 0. */
+  elevation: z.number().optional(),
   /** Size in squares (1 = medium, 2 = large). */
   size: z.number().positive().default(1),
   color: z.string().default('#b04a3a'),

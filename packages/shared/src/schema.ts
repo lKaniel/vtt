@@ -192,6 +192,8 @@ export interface PlacedToken {
   id: string;
   x: number;
   y: number;
+  /** Feet above the ground: which of the scene's levels it is on. */
+  elevation?: number;
   ownership?: Ownership;
   hidden?: boolean;
   visibleTo?: string[];

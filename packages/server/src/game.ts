@@ -22,6 +22,8 @@ import { FogKeeper } from './fog-keeper.ts';
 import { chatMessage } from './chat-command.ts';
 import { TokenMoves } from './token-moves.ts';
 import { isPackMessage, PackActions } from './pack-actions.ts';
+import { EntryActions, isEntryMessage } from './entry-actions.ts';
+import { RegionActions } from './region-actions.ts';
 import { startOf, welcomeOf } from './welcome.ts';
 import { contentFor, packContent } from './game-packs.ts';
 
@@ -63,6 +65,7 @@ export class Game {
   private moves: TokenMoves;
   private history: History;
   private packs: PackActions;
+  private entries: EntryActions;
 
   constructor(
     private store: GameStore,
@@ -89,9 +92,17 @@ export class Game {
     this.map = new MapActions(table);
     this.scenes = new SceneActions(store);
     this.fog = new FogKeeper(store);
-    this.moves = new TokenMoves(store, this.combat, this.zones, this.reactions);
+    const regions = new RegionActions(table, (text, gmOnly) => this.post(this.card(text, gmOnly)));
+    this.moves = new TokenMoves(store, { combat: this.combat, zones: this.zones, reactions: this.reactions, regions });
     this.history = new History(store, (ids, undone) => this.markCards(ids, undone));
     this.packs = new PackActions(store);
+    this.entries = new EntryActions(store, rng, {
+      post: (message) => this.post(message),
+      show: (entry, page) => {
+        for (const c of this.clients)
+          if (!isGm(c.player)) this.send(c, { t: 'showJournal', entry, ...(page && { page }) });
+      },
+    });
     this.listen(store);
   }
 
@@ -357,6 +368,7 @@ export class Game {
   /** Moving between scenes, and the fog on them. */
   private dispatchScenes(c: Client, msg: ClientMessage): void {
     if (msg.t === 'fog') this.fog.edit(c.player, msg.edit);
+    else if (isEntryMessage(msg)) this.entries.handle(c.player, msg);
     else this.scenes.dispatch(c.player, msg);
   }
 
@@ -424,9 +436,14 @@ export class Game {
 
   /** A message from the game itself: initiative, attack results. */
   private narrate(content: Pick<ChatMessage, 'text' | 'attack' | 'spell'>): void {
-    const id = randomUUID();
-    this.history.noteCard(id);
-    this.post({ id, time: Date.now(), from: 'Combat', color: '#c8b48a', ...content });
+    const card = this.card(content.text ?? '');
+    this.history.noteCard(card.id);
+    this.post({ ...card, ...content });
+  }
+
+  /** A chat card from the game itself, part of the action being recorded. */
+  private card(text: string, gmOnly = false): ChatMessage {
+    return { id: randomUUID(), time: Date.now(), from: 'Combat', color: '#c8b48a', text, ...(gmOnly && { gmOnly }) };
   }
 
   private toGms(msg: ServerMessage): void {

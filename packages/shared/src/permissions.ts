@@ -12,7 +12,19 @@ export interface Owned {
 }
 
 /** Fields only the GM may change, even on a document a trusted player owns. */
-const GM_ONLY_FIELDS = ['id', 'x', 'y', 'ownership', 'hidden', 'visibleTo', 'summon', 'leader', 'actor', 'linked'];
+const GM_ONLY_FIELDS = [
+  'id',
+  'x',
+  'y',
+  'elevation',
+  'ownership',
+  'hidden',
+  'visibleTo',
+  'summon',
+  'leader',
+  'actor',
+  'linked',
+];
 
 const RANK: Record<Level, number> = { none: 0, limited: 1, observer: 2, owner: 3 };
 const atLeast = (level: Level, min: Level) => RANK[level] >= RANK[min];

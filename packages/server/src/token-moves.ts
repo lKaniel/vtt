@@ -2,6 +2,7 @@ import { canControl, type DoorState, findPath, isGm, type Player, type Point } f
 import type { CombatActions } from './combat-actions.ts';
 import type { GameStore } from './game-store.ts';
 import type { Reactions } from './reactions.ts';
+import type { RegionActions } from './region-actions.ts';
 import { Refusal } from './table.ts';
 import type { Zones } from './zones.ts';
 
@@ -9,12 +10,18 @@ import type { Zones } from './zones.ts';
 const PATH_MARGIN = 12;
 
 /** Walking tokens, opening doors and arranging action bars, on the scene the store is told to read. */
+/** What a walk sets off: the fight's movement, lasting zones, reactions and regions. */
+export interface MoveRules {
+  combat: CombatActions;
+  zones: Zones;
+  reactions: Reactions;
+  regions: RegionActions;
+}
+
 export class TokenMoves {
   constructor(
     private store: GameStore,
-    private combat: CombatActions,
-    private zones: Zones,
-    private reactions: Reactions,
+    private rules: MoveRules,
   ) {}
 
   /** Walks a token you control along the shortest way there; `seen` is what you know of. */
@@ -28,14 +35,16 @@ export class TokenMoves {
       w: Math.abs(token.x - to[0]) + 2 * m,
       h: Math.abs(token.y - to[1]) + 2 * m,
     });
-    const path = findPath([token.x, token.y], to, walls, { gridSize: g, margin: PATH_MARGIN });
+    const { combat, zones, reactions, regions } = this.rules;
+    const path = findPath([token.x, token.y], to, walls, { gridSize: g, margin: PATH_MARGIN, cost: regions.cost() });
     if (!path) throw new Refusal(`${token.name} can't get there`);
     const [x, y] = path.points.at(-1)!;
     if (path.points.length < 2) return;
-    const walker = this.combat.move(token, path.feet);
+    const walker = combat.move(token, path.feet);
     this.store.setToken({ ...walker, x, y }, path.points);
-    this.zones.moved(token.id, path.points);
-    this.reactions.moved(token, path.points);
+    zones.moved(token.id, path.points);
+    reactions.moved(token, path.points);
+    regions.entered(token.id, path.points);
   }
 
   hotbar(player: Player, seen: (id: string) => boolean, id: string, slots: (string | null)[]): void {

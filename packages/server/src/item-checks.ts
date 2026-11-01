@@ -44,7 +44,11 @@ function noteIssues(items: Items, refs: SceneRefs): [string, string][] {
     .map((n) => ['notes', `note "${n.id}": unknown journal entry "${n.entry}"`]);
 }
 
-type Behavior = { type: string; scene?: string; to?: unknown };
+interface Behavior {
+  type: string;
+  scene?: string;
+  to?: unknown;
+}
 
 function regionIssues(items: Items, refs: SceneRefs, levels: ReadonlySet<string>): [string, string][] {
   const regions = (items.regions ?? []) as readonly { id: string; behaviors?: Behavior[] }[];

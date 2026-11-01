@@ -50,12 +50,18 @@ export class SceneActions {
   }
 
   private place(who: string, scene: string): void {
-    const away = scene === this.store.activeScene ? undefined : scene;
-    const players = this.store.world.players.map((p) => {
-      if (p.id !== who) return p;
-      const { scene: _old, ...seat } = p;
-      return away ? { ...seat, scene: away } : seat;
-    });
-    this.store.setGame({ players });
+    moveSeats(this.store, [who], scene);
   }
+}
+
+/** Puts seats on `scene` (on a scene of their own, unless it is the game's). */
+export function moveSeats(store: GameStore, who: readonly string[], scene: string): void {
+  if (!who.length) return;
+  const away = scene === store.activeScene ? undefined : scene;
+  const players = store.world.players.map((p) => {
+    if (!who.includes(p.id)) return p;
+    const { scene: _old, ...seat } = p;
+    return away ? { ...seat, scene: away } : seat;
+  });
+  store.setGame({ players });
 }

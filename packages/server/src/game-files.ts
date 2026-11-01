@@ -118,17 +118,19 @@ function classifyScene(scene: string, file: string): FileKind | null {
   return file.endsWith('.json') && isCollection(name) ? { kind: 'collection', scene, coll: name } : null;
 }
 
+/** A file with one document in a folder of the game: an actor, a journal entry, a roll table, a playlist. */
+function classifyEntry(folder: string, file: string): FileKind | null {
+  const id = basename(file, '.json');
+  if (folder === 'actors') return { kind: 'actor', id };
+  return isEntryColl(folder) ? { kind: 'entry', coll: folder, id } : null;
+}
+
 /** Classifies a path relative to the game folder, or null for files we ignore. */
 export function classify(rel: string): FileKind | null {
   const parts = rel.split(/[\\/]/);
   if (parts.length === 1 && parts[0] === 'game.json') return { kind: 'game' };
   if (parts.length === 1 && parts[0] === 'combat.json') return { kind: 'combat' };
-  if (parts.length === 2 && parts[0] === 'actors' && parts[1]!.endsWith('.json')) {
-    return { kind: 'actor', id: basename(parts[1]!, '.json') };
-  }
-  if (parts.length === 2 && isEntryColl(parts[0]!) && parts[1]!.endsWith('.json')) {
-    return { kind: 'entry', coll: parts[0], id: basename(parts[1]!, '.json') };
-  }
+  if (parts.length === 2 && parts[1]!.endsWith('.json')) return classifyEntry(parts[0]!, parts[1]!);
   if (parts.length === 3 && parts[0] === 'scenes') return classifyScene(parts[1]!, parts[2]!);
   return null;
 }
