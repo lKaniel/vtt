@@ -8,3 +8,5 @@ coverage
 .v1-backup/
 .v2-backup/
 .v3-backup/
+packages/e2e/test-results/
+packages/e2e/playwright-report/

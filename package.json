@@ -11,6 +11,7 @@
     "migrate-world": "pnpm --filter @vtt/server migrate-world",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
+    "e2e": "pnpm --filter @vtt/e2e test",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
