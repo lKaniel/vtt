@@ -10,8 +10,6 @@ import { Refusal, requireGm, type Table } from './table.ts';
 export type HudMessage =
   { t: 'condition'; token: string; condition: Condition; on: boolean } | { t: 'combatant'; token: string; on: boolean };
 
-export const isHudMessage = (msg: { t: string }): msg is HudMessage => msg.t === 'condition' || msg.t === 'combatant';
-
 const label = (c: Condition) => c[0]!.toUpperCase() + c.slice(1);
 
 export class HudActions {

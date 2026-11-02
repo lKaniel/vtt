@@ -10,9 +10,6 @@ import { type Fighter, Refusal, requireGm, type Table } from './table.ts';
 
 export type CheckMessage = Extract<ClientMessage, { t: 'requestCheck' | 'rollCheck' }>;
 
-export const isCheckMessage = (msg: ClientMessage): msg is CheckMessage =>
-  msg.t === 'requestCheck' || msg.t === 'rollCheck';
-
 export interface CheckCards {
   readonly all: readonly ChatMessage[];
   post: (card: ChatMessage) => void;

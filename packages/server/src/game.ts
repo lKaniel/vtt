@@ -1,17 +1,14 @@
-import { canControl, HOUR, isGm, type Player, type Point, type Rng, tokensVisibleTo, type World } from '@vtt/shared';
+import { canControl, isGm, type Player, type Point, type Rng, tokensVisibleTo, type World } from '@vtt/shared';
 import { type ChatMessage, type ServerMessage, type Token } from '@vtt/system-dnd5e';
 import { OpError } from '@vtt/core';
 import type { WebSocket } from 'ws';
 import { parseClientMessage, type ClientMessage } from './client-messages.ts';
-import { CombatActions, isTurnMessage } from './combat-actions.ts';
-import { checkAction, isCheckMessage, isSheetMessage, sheetAction } from './sheet-actions.ts';
+import { CombatActions } from './combat-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
-import { isDropMessage } from './sheet-drop-actions.ts';
 import { DamageActions } from './damage-actions.ts';
-import { HudActions, isHudMessage } from './hud-actions.ts';
+import { HudActions } from './hud-actions.ts';
 import { Pause } from './pause.ts';
-import { castFeature } from './feature-casting.ts';
 import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
 import { Reactions } from './reactions.ts';
@@ -27,12 +24,13 @@ import { FogKeeper } from './fog-keeper.ts';
 import { actedBy, ChatLog, gameCard } from './chat-log.ts';
 import { tokenMoves, type TokenMoves } from './token-moves.ts';
 import { isPackMessage, PackActions } from './pack-actions.ts';
-import { EntryActions, isEntryMessage } from './entry-actions.ts';
+import { EntryActions } from './entry-actions.ts';
 import { startOf, welcomeOf } from './welcome.ts';
 import { packContent } from './game-packs.ts';
 import { WorldClock } from './world-clock.ts';
 import { isPresenceMessage, Presence } from './presence.ts';
-import { chunkMessage, type Client, streamChunks, viewFor, visibilityChanges } from './game-client.ts';
+import { chunkMessage, type Client, viewFor, visibilityChanges } from './game-client.ts';
+import { gameRoutes, route, type Routes, type Step } from './game-routes.ts';
 
 /**
  * The live game. Clients send intents ("move here", "open this door"); the
@@ -71,6 +69,8 @@ export class Game {
   readonly clock: WorldClock;
   /** The seat whose message is being handled: the cards it makes follow its roll mode. */
   private acting?: Client;
+  /** Where each message goes (game-routes.ts). */
+  private routes: Routes;
 
   /** `now`: the server's time in ms, which the game clock runs by. */
   constructor(
@@ -115,6 +115,12 @@ export class Game {
     this.entries = new EntryActions(store, rng, {
       post: (message) => this.chat.post(actedBy(message, this.acting)),
       toPlayers,
+    });
+    this.routes = gameRoutes({
+      ...{ store, table, chat: this.chat, moves: this.moves, combat: this.combat, spells: this.spells },
+      ...{ features: this.features, reactions: this.reactions, clock: this.clock, gm: this.gm, map: this.map },
+      ...{ fog: this.fog, scenes: this.scenes, entries: this.entries, damage: this.damage, hud: this.hud },
+      onChat: (c, text) => this.onChat(c, text),
     });
     this.listen(store);
   }
@@ -339,102 +345,15 @@ export class Game {
     for (const c of this.clients) this.send(c, { t: 'history', ...this.history.state(c.player) });
   }
 
-  private dispatch(c: Client, msg: ClientMessage): void {
-    switch (msg.t) {
-      case 'view':
-        return streamChunks(c, msg.chunks, this.store, (msg) => this.send(c, msg));
-      case 'move':
-        return this.moves.move(c.player, (id) => c.visible.has(id), msg.token, msg.to);
-      case 'door':
-      case 'trigger':
-        return this.moves.use(c.player, (id) => c.visible.has(id), msg);
-      case 'chat':
-        return this.onChat(c, msg.text.trim());
-      case 'combatStart':
-        return this.combat.start(c.player, msg.tokens, msg.shared);
-      case 'combatEnd':
-        return this.combat.end(c.player);
-      case 'endTurn':
-        return this.combat.endTurn(c.player);
-      case 'attack':
-        return this.combat.attack(c.player, (id) => c.visible.has(id), msg);
-      default:
-        return this.dispatchMagic(c, msg);
-    }
-  }
-
-  /** The GM's tools. */
-  private dispatchGm(c: Client, msg: ClientMessage): void {
-    switch (msg.t) {
-      case 'editToken':
-        return this.gm.edit(c.player, msg.token, msg.patch);
-      case 'deleteToken':
-        return this.gm.delete(c.player, msg.token);
-      case 'relinkToken':
-        return this.gm.relink(c.player, msg.token, msg.how);
-      case 'hotbar':
-      case 'animation':
-        return this.moves.arrange(c.player, (id) => c.visible.has(id), msg);
-      case 'spawn':
-        return this.gm.spawn(c.player, msg.from, msg.at, msg.hidden);
-      case 'saveActor':
-        return this.gm.saveActor(c.player, msg.actor);
-      case 'deleteActor':
-        return this.gm.deleteActor(c.player, msg.actor);
-      case 'setRole':
-        return this.gm.setRole(c.player, msg.player, msg.role);
-      case 'mapEdit':
-        return this.map.edit(c.player, msg.edit);
-      case 'darkness':
-        return this.map.darkness(c.player, msg.darkness);
-      default:
-        return this.dispatchScenes(c, msg);
-    }
-  }
-
-  /** Moving between scenes, and the fog on them. */
-  private dispatchScenes(c: Client, msg: ClientMessage): void {
-    if (msg.t === 'fog') this.fog.edit(c.player, msg.edit);
-    else if (msg.t === 'clock') this.clock.act(c.player, msg.action);
-    else if (isTurnMessage(msg)) this.combat.turnAction(c.player, (id) => c.visible.has(id), msg);
-    else if (isSheetMessage(msg)) sheetAction(this.table, c.player, msg);
-    else if (isCheckMessage(msg)) checkAction(this.table, this.chat, c.player, msg);
-    else if (isEntryMessage(msg)) this.entries.handle(c, msg);
-    else if (msg.t === 'applyDamage') this.damage.apply(c.player, (id) => c.visible.has(id), msg);
-    else if (isHudMessage(msg)) this.hud.handle(c.player, (id) => c.visible.has(id), msg);
-    else if (isDropMessage(msg)) this.gm.drops.handle(c.player, (id) => c.visible.has(id), msg);
-    else this.scenes.dispatch(c.player, msg);
-  }
-
-  /** Spells, features, effects and rests. */
-  private dispatchMagic(c: Client, msg: ClientMessage): void {
-    switch (msg.t) {
-      case 'cast':
-        return this.spells.cast(c.player, (id) => c.visible.has(id), msg);
-      case 'feature':
-        return this.useFeature(c, msg);
-      case 'useItem':
-        return this.features.useItem(c.player, msg.token, msg.item);
-      case 'react':
-        return this.reactions.react(c.player, msg.offer, msg.choice);
-      case 'dropConcentration':
-        return this.features.dropConcentration(c.player, msg.token);
-      case 'removeEffect':
-        return this.features.removeEffect(c.player, msg.token, msg.effect);
-      case 'rest':
-        this.features.rest(c.player, msg.tokens, msg.kind);
-        return this.clock.skip(msg.kind === 'long' ? 8 * HOUR : HOUR);
-      default:
-        return this.dispatchGm(c, msg);
-    }
-  }
-
-  /** Features aimed like spells go through the spell rules; the rest act on their user. */
-  private useFeature(c: Client, msg: Extract<ClientMessage, { t: 'feature' }>): void {
-    if (this.features.aimed(msg.token, msg.feature)) {
-      return castFeature(this, c.player, (id) => c.visible.has(id), msg);
-    }
-    this.features.use(c.player, msg.token, msg.feature);
+  /** Hands a step of the game to its route (game-routes.ts). */
+  private dispatch(c: Client, msg: Step): void {
+    const from = {
+      client: c,
+      player: c.player,
+      canSee: (id: string) => c.visible.has(id),
+      reply: (m: ServerMessage) => this.send(c, m),
+    };
+    route(this.routes, from, msg);
   }
 
   private onChat(c: Client, text: string): void {

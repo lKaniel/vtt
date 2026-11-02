@@ -14,17 +14,13 @@ import {
 import type { ClientMessage } from './client-messages.ts';
 import { Refusal, requireGm, type Table } from './table.ts';
 
-export { checkAction, isCheckMessage } from './check-actions.ts';
+export { checkAction } from './check-actions.ts';
 
 // What an owner may do on their sheet without the GM's edit mode: equip
 // gear, count coins, pack things into containers, attune to magic items,
 // spend hit dice; and the GM's exhaustion and experience awards.
 
 type SheetMessage = Extract<ClientMessage, { t: 'equip' | 'carry' | 'hitDie' | 'exhaustion' | 'awardXp' }>;
-
-export function isSheetMessage(msg: ClientMessage): msg is SheetMessage {
-  return ['equip', 'carry', 'hitDie', 'exhaustion', 'awardXp'].includes(msg.t);
-}
 
 export function sheetAction(table: Table, player: Player, msg: SheetMessage): void {
   if (msg.t === 'hitDie' || msg.t === 'exhaustion') return vigour(table, player, msg);
