@@ -5,6 +5,7 @@ import type { Session } from '../session.ts';
 import { Face, HpBar } from './Portrait.tsx';
 import { Button } from './kit/button.tsx';
 import { EncounterButton } from './EncounterPanel.tsx';
+import { RequestCheckButton } from './RequestCheck.tsx';
 import { Toggle } from './kit/toggle.tsx';
 
 const SHARED_KEY = 'vtt.sharedTurns';
@@ -143,6 +144,7 @@ function IdleBar({ session, onStart }: StartProps) {
       </Button>
       <RestButtons session={session} />
       <EncounterButton session={session} />
+      <RequestCheckButton session={session} />
     </div>
   );
 }
