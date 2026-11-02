@@ -14,6 +14,8 @@ import {
 import type { ClientMessage } from './client-messages.ts';
 import { Refusal, requireGm, type Table } from './table.ts';
 
+export { checkAction, isCheckMessage } from './check-actions.ts';
+
 // What an owner may do on their sheet without the GM's edit mode: equip
 // gear, count coins, pack things into containers, attune to magic items,
 // spend hit dice; and the GM's exhaustion and experience awards.

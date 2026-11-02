@@ -11,6 +11,7 @@ import type { SheetProps } from './CharacterSheet.tsx';
 import { NumberInput } from './EditorFields.tsx';
 import { IconFace } from './Icon.tsx';
 import { LegendaryPanel } from './LegendaryPanel.tsx';
+import { ChecksPanel } from './ChecksPanel.tsx';
 import { withKey } from './sheet-model.ts';
 import { RemoveButton } from './SheetDetails.tsx';
 import { EditButton, isOwn, NewButton, useOwnEditor } from './own/OwnEditor.tsx';
@@ -196,6 +197,7 @@ export function FeaturesPage(props: Readonly<SheetProps>) {
   const empty = edit ? 'Features come from the class and level (Details tab).' : 'No features.';
   return (
     <>
+      <ChecksPanel {...props} />
       {sheet.features.length ? (
         <ul className="rows">
           {sheet.features.map((f) => (
