@@ -1,6 +1,5 @@
 import { type Character, type Edition, newCharacter } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { api, ApiError } from '../account-api.ts';
 import { creatorSteps, setEdition, type StepId, type StepInfo } from '../creator.ts';
 import { AbilitiesStep } from './creator/AbilitiesStep.tsx';
 import { EquipmentStep } from './creator/KitStep.tsx';
@@ -9,6 +8,8 @@ import { SkillsStep, SpellPicker } from './creator/PickSteps.tsx';
 import { IdentityStep, Summary } from './creator/Summary.tsx';
 import { Button } from './kit/button.tsx';
 import { Toggle } from './kit/toggle.tsx';
+import { useHomebrewClasses } from './creator/use-homebrew.ts';
+import { useSaveCharacter } from './creator/use-save.ts';
 
 /** A placeholder id until the server gives the character its own. */
 const NEW = 'new';
@@ -41,8 +42,8 @@ export function CharacterCreator({
 }>) {
   const [c, set] = useState<Character>(() => initial ?? newCharacter({ id: NEW, owner, rules }));
   const [stepId, setStep] = useState<StepId>('species');
-  const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
+  const { busy, error, save } = useSaveCharacter(onDone);
+  const homebrew = useHomebrewClasses();
   const steps = creatorSteps(c);
   const index = Math.max(
     0,
@@ -52,18 +53,6 @@ export function CharacterCreator({
   const problems = steps.flatMap((s) => s.issues);
   const View = STEP_VIEWS[step.id];
 
-  const save = async () => {
-    setBusy(true);
-    try {
-      await api.saveCharacter({ ...c, id: c.id === NEW ? '' : c.id });
-      onDone();
-    } catch (e) {
-      setError(e instanceof ApiError && e.issues.length ? e.issues.join(' ') : (e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
     <div className="cc">
       <header className="cc-head">
@@ -72,7 +61,7 @@ export function CharacterCreator({
       </header>
       <StepNav steps={steps} current={step.id} onPick={setStep} />
       <main className="cc-main frame">
-        <View c={c} set={set} />
+        <View c={c} set={set} homebrew={homebrew} />
         {step.issues.length > 0 && <p className="cc-issues">{step.issues.join(' ')}</p>}
       </main>
       <Summary c={c} />
@@ -88,7 +77,11 @@ export function CharacterCreator({
         {index < steps.length - 1 ? (
           <Button onClick={() => setStep(steps[index + 1]!.id)}>Next</Button>
         ) : (
-          <Button disabled={busy || problems.length > 0} title={problems.join(' ')} onClick={() => void save()}>
+          <Button
+            disabled={busy || problems.length > 0}
+            title={problems.join(' ')}
+            onClick={() => save({ ...c, id: c.id === NEW ? '' : c.id })}
+          >
             {initial ? 'Save changes' : 'Create character'}
           </Button>
         )}

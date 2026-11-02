@@ -16,10 +16,17 @@ const cache = new WeakMap<Own, WeakMap<Content, Content>>();
 const joined = <T extends { id: string }>(base: ReadonlyMap<string, T>, mine: readonly T[] = []) =>
   mine.length ? new Map([...base, ...mine.map((x) => [x.id, x] as const)]) : base;
 
+/** `base` with `mine` filling in what it lacks (the game's copy wins). */
+const under = <T extends { id: string }>(base: ReadonlyMap<string, T>, mine: readonly T[] | undefined) =>
+  mine?.length ? new Map([...mine.map((x) => [x.id, x] as const), ...base]) : base;
+
+const LISTS = ['items', 'spells', 'monsters', 'classes'] as const;
+const hasOwnContent = (own: NonNullable<Sheet['own']>) => LISTS.some((k) => !!own[k]?.length);
+
 /** `content` plus the sheet's own items and spells (they win over a compendium entry of the same id). */
 export function withOwn(content: Content, sheet: Sheet): Content {
   const own = sheet.own;
-  if (!own?.items?.length && !own?.spells?.length && !own?.monsters?.length) return content;
+  if (!own || !hasOwnContent(own)) return content;
   const known = cache.get(own) ?? new WeakMap<Content, Content>();
   cache.set(own, known);
   const hit = known.get(content);
@@ -29,6 +36,7 @@ export function withOwn(content: Content, sheet: Sheet): Content {
     items: joined(content.items, own.items),
     spells: joined(content.spells, own.spells),
     monsters: joined(content.monsters, own.monsters),
+    classes: under(content.classes, own.classes),
   };
   known.set(content, mine);
   return mine;
