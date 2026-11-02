@@ -41,6 +41,14 @@ describe('aiming a spell', () => {
     expect(aimFor(going, 'flame-blade', { slot: 2, free: false })).toMatchObject({ mode: 'creatures', repeat: true });
   });
 
+  it('picks the first form a shape-shifting spell allows, and sends the one chosen', () => {
+    const poly = spell('polymorph');
+    const caster = { edition: '2014', caster: { level: 9, spells: [poly] }, effects: [] } as never;
+    const aiming = aimFor(caster, 'polymorph', { slot: 4, free: false })!;
+    expect(aiming.form).toBeDefined();
+    expect(castMessage('wiz', { ...aiming, form: 'cat', picks: ['gob'] })).toMatchObject({ form: 'cat' });
+  });
+
   it('asks for as many creatures as the spell has targets or beams at that slot', () => {
     expect(aimSpell(spell('fire-bolt'), 0, 5)).toMatchObject({ mode: 'creatures', need: 1 });
     expect(aimSpell(spell('magic-missile'), 2, 5)).toMatchObject({ mode: 'creatures', need: 4 });

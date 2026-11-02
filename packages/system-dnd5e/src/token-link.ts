@@ -28,7 +28,7 @@ const PLACEMENT = [
   'linked',
 ] as const;
 /** What a copy keeps as its own when its changes are saved to the actor or reset. */
-const INSTANCE = ['name', 'hp', 'tempHp', 'deathSaves', 'effects', 'concentration', 'spent'];
+const INSTANCE = ['name', 'hp', 'tempHp', 'trueForm', 'deathSaves', 'effects', 'concentration', 'spent'];
 const isPlacement = (key: string) => (PLACEMENT as readonly string[]).includes(key);
 
 type Fields = Record<string, unknown>;

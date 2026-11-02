@@ -1,11 +1,11 @@
 import type { Doc } from '@vtt/core';
-import { canObserve, canSee, CLOCK_COLL, isGm, type Player, sceneCollOf } from '@vtt/shared';
+import { canObserve, canSee, CLOCK_COLL, isGm, isScriptMacro, type Player, sceneCollOf } from '@vtt/shared';
 import type { DocAccess, OwnedDoc } from './store-access.ts';
 
 // Which documents a player is sent (doc-feed.ts), and how much of them.
 // The GM gets everything. A player gets the actors and tokens they observe,
 // the journal entries they may see (limited: the title only), the roll
-// tables and macros shared with them (and their own macros), the playlists playing now, and on the scene they
+// tables and chat macros shared with them (and their own macros; script macros are the GM's alone), the playlists playing now, and on the scene they
 // are on, what is drawn there for them: drawings, templates, notes, sounds
 // and the regions the GM shows. Everyone gets the game clock.
 
@@ -35,12 +35,16 @@ function playing(doc: Doc): boolean {
 
 const observed = (v: Viewer, owned: OwnedDoc) => canSee(owned, v.player) && canObserve(owned, v.player);
 
+/** Roll tables and chat macros shared with the player; script macros are the GM's alone. */
+const sidebarSent = (v: Viewer, access: DocAccess, coll: string, doc: Doc) =>
+  !(coll === 'macros' && isScriptMacro(doc)) && observed(v, access.owned(coll, doc));
+
 /** Whether a player is sent a document at all. */
 export function sendsTo(v: Viewer, access: DocAccess, coll: string, doc: Doc): boolean {
   if (isGm(v.player) || coll === CLOCK_COLL) return true;
   if (coll === 'actors' || coll.endsWith('/tokens')) return observed(v, access.owned(coll, doc));
   if (coll === 'journals') return canSee(access.owned(coll, doc), v.player);
-  if (coll === 'tables' || coll === 'macros') return observed(v, access.owned(coll, doc));
+  if (coll === 'tables' || coll === 'macros') return sidebarSent(v, access, coll, doc);
   if (coll === 'playlists') return playing(doc);
   const at = sceneCollOf(coll);
   const rule = at && SCENE_RULES[at.name];

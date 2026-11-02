@@ -1,4 +1,5 @@
-import type { Spell, TokenView } from '@vtt/system-dnd5e';
+import { formChoices, type Spell, type TokenView } from '@vtt/system-dnd5e';
+import { gameContent } from '../content.ts';
 import { slotChoices } from '../charges.ts';
 import type { Session } from '../session.ts';
 import { ORDINAL } from '../spell-text.ts';
@@ -22,6 +23,7 @@ export function AimingControls({ session, token }: Readonly<{ session: Session; 
         <SlotChoices session={session} aiming={aiming} caster={token.sheet.caster} />
       )}
       <SpellOptions session={session} aiming={aiming} />
+      {spell.transform && <FormChoice session={session} aiming={aiming} token={token} />}
       {aiming.mode === 'creatures' && aiming.picks.length > 0 && (
         <Button size="sm" onClick={() => session.confirmCast()}>
           Cast at {aiming.picks.length}
@@ -56,6 +58,20 @@ function SpellOptions({ session, aiming }: Readonly<{ session: Session; aiming: 
         />
       )}
     </>
+  );
+}
+
+/** The creature a shape-shifting spell (polymorph) turns its targets into. */
+function FormChoice({ session, aiming, token }: Readonly<{ session: Session; aiming: Aiming; token: TokenView }>) {
+  const content = gameContent(token.sheet?.edition ?? '2014');
+  const forms = formChoices(aiming.spell, content, token.sheet?.caster?.level ?? 1);
+  return (
+    <SelectField
+      value={aiming.form ?? ''}
+      aria-label="Form"
+      onValueChange={(m) => session.chooseForm(m)}
+      options={forms.map((m) => ({ value: m.id, label: `${m.name} (CR ${m.cr})` }))}
+    />
   );
 }
 

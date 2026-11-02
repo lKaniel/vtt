@@ -1,4 +1,13 @@
-import { canControl, canObserve, macroLines, type Macro, type Player, type RollMode } from '@vtt/shared';
+import {
+  canControl,
+  canObserve,
+  isGm,
+  isScriptMacro,
+  macroLines,
+  type Macro,
+  type Player,
+  type RollMode,
+} from '@vtt/shared';
 import type { ChatMessage } from '@vtt/system-dnd5e';
 import { chatMessage } from './chat-command.ts';
 import { fromDoc } from './doc-sync.ts';
@@ -23,8 +32,12 @@ export interface RunMacro {
 function macroFor(store: GameStore, player: Player, id: string): Macro {
   const doc = store.docs.get('macros', id);
   const owned = doc && store.access.owned('macros', doc);
-  if (!doc || !owned || !canObserve(owned, player)) throw new Refusal('No such macro');
-  return fromDoc<Macro>(doc);
+  if (!doc || !owned || !canObserve(owned, player) || (isScriptMacro(doc) && !isGm(player))) {
+    throw new Refusal('No such macro');
+  }
+  const macro = fromDoc<Macro>(doc);
+  if (isScriptMacro(macro)) throw new Refusal(`${macro.name} is a script: it runs in your browser`);
+  return macro;
 }
 
 /** Who the lines are said by: the token's name, when the seat controls it. */

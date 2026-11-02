@@ -23,7 +23,7 @@ world/                      the example game (another folder: VTT_GAME); lobby g
   journals/<id>.json        journal entries: handouts and the GM's notes
   tables/<id>.json          roll tables
   playlists/<id>.json       music
-  macros/<id>.json          chat macros for the hotbar
+  macros/<id>.json          chat and script macros for the hotbar
   combat.json               the fight in progress, if any
   time.json                 the game clock and its calendar (made on first start)
   assets/                   images referenced by tiles and tokens (uploads in assets/uploads/)
@@ -471,7 +471,9 @@ have an `img` for its hotbar tile. Players are sent the macros shared with
 them (`ownership`) and their own: a macro with `author` is that player's,
 who may change and remove it. Anyone drags a macro from the Macros tab onto
 the hotbar, where it sits as `"macro:<id>"`; run from a token it speaks with
-the token's name.
+the token's name. A `"script"` macro's `command` is JavaScript the GM runs in
+their own browser (see `docs/scripting.md`); only the GM writes, is sent or
+runs those.
 
 ```json
 { "id": "rally", "name": "Rally", "kind": "chat", "command": "To me!\n/r 1d6 inspiration" }
@@ -517,7 +519,8 @@ actor can say otherwise with its own `"linked"`). Only `x`, `y`, `hidden`,
 everything else on a token with an actor goes in `delta`, and `check-game`
 says so. `banished` is the server's: a creature sent away by a spell
 (banishment, blink, maze) is hidden with it and shown again when the spell
-ends.
+ends. `trueForm` is the server's as well: a creature polymorphed in 2014 keeps
+its own hit points there until it changes back.
 
 A token without `actor` carries its whole sheet itself, with the actor fields
 below written straight on it. Summons are like that; they vanish when their
