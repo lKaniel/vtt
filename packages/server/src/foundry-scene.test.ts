@@ -235,6 +235,26 @@ describe('a Foundry scene', () => {
     ]);
   });
 
+  it('keeps when a light shines: only at night, only by day', () => {
+    const lamps = {
+      ...v11,
+      lights: [
+        { x: 0, y: 0, config: { bright: 20, darkness: { min: 0.55, max: 1 } } },
+        { x: 0, y: 0, config: { bright: 20, darkness: { min: 0, max: 1 } } },
+      ],
+    };
+    expect(foundryScene(lamps, media).scene.lights).toEqual([
+      { id: 'light-1', x: 0, y: 0, bright: 20, dim: 0, activeAt: [0.55, 1] },
+      { id: 'light-2', x: 0, y: 0, bright: 20, dim: 0 },
+    ]);
+  });
+
+  it('follows the game clock where SmallTime linked the darkness to the time of day', () => {
+    const linked = { ...v11, flags: { smalltime: { 'darkness-link': true } } };
+    expect(foundryScene(linked, media).scene.darknessFollowsClock).toBe(true);
+    expect(foundryScene(v11, media).scene.darknessFollowsClock).toBeUndefined();
+  });
+
   it('reads the v12 darkness level', () => {
     expect(
       foundryScene({ ...v11, darkness: undefined, environment: { darknessLevel: 0.4 } }, media).scene.darkness,
@@ -266,7 +286,14 @@ describe('Foundry v14 scenes', () => {
     tiles: [
       { texture: { src: 'modules/levels-3d-preview/assets/blank.webp' }, x: 0, y: 0, width: 100, height: 100 },
       { texture: { src: 'modules/levels-3d-preview/assets/blank.webp' }, x: 100, y: 0, width: 100, height: 100 },
-      { texture: { src: 'modules/caves/tiles/barrel.png' }, x: 200, y: 0, width: 100, height: 100 },
+      {
+        texture: { src: 'modules/caves/tiles/barrel.png' },
+        x: 200,
+        y: 0,
+        width: 100,
+        height: 100,
+        flags: { 'monks-active-tiles': { active: true, actions: [{ action: 'teleport' }, { action: 'playsound' }] } },
+      },
     ],
   };
 
@@ -282,5 +309,12 @@ describe('Foundry v14 scenes', () => {
       'pack://caves/media/tiles/barrel.png',
     ]);
     expect(skipped).toContain('2 3D Canvas model tiles (3D only, they show as blank squares)');
+  });
+
+  it("says which tiles had Monk's Active Tiles triggers, which stay behind", () => {
+    const { skipped } = foundryScene(v14, media);
+    expect(skipped).toContain(
+      "Monk's Active Tiles triggers on 1 tile (teleport, playsound): the tile comes, not what it does",
+    );
   });
 });

@@ -58,6 +58,11 @@ What comes along:
   Data folder is the one the world sits in (`Data/worlds/<world>`), or the
   one given.
 - The **rules edition**: a dnd5e world set to the modern rules plays 2024.
+- **Time**: the game clock starts where Foundry's stood, on Simple
+  Calendar's calendar and date when the world uses it, with SmallTime's
+  dawn and dusk. Scenes SmallTime darkens with the time of day follow the
+  clock, and a light that shines only at night (or only by day) keeps
+  that band.
 
 ### D&D 5e sheets
 

@@ -28,6 +28,7 @@ const scene = {
       fontSize: 32,
       textColor: '#ffffff',
     },
+    { x: 700, y: 800, shape: { type: 'r', width: 0, height: 0 }, text: 'Stairs down', fontSize: 8 },
     { x: 0, y: 0, shape: { type: 'p', points: [0, 0] } },
   ],
   notes: [
@@ -96,6 +97,7 @@ describe('Foundry placeables', () => {
         fontSize: 32,
         textColor: '#ffffff',
       },
+      { id: 'drawing-6', shape: 'text', x: 700, y: 800, w: 1, h: 1, text: 'Stairs down', fontSize: 8 },
     ]);
     for (const d of out.drawings) DrawingSchema.parse(d);
   });

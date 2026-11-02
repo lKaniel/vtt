@@ -16,6 +16,7 @@ import { foundryMacros } from './foundry-macros.ts';
 import { type ConvertedEntries, foundryEntries } from './foundry-entries.ts';
 import { dataFolderOf, FoundryMedia } from './foundry-media.ts';
 import { foundryGrid, foundryScene, type MediaLookup } from './foundry-scene.ts';
+import { foundryClock } from './foundry-time.ts';
 import { readJson, writeJson } from './json-files.ts';
 import { FORMAT } from './migrate-ownership.ts';
 import { SYSTEMS } from './systems.ts';
@@ -195,7 +196,8 @@ function leftBehind(world: World, system: ActorSystem): string[] {
 export async function importFoundryWorld(from: string, game: string, opts: WorldImportOptions): Promise<WorldReport> {
   const world = await readWorld(from);
   const system = systemFor(world);
-  const rules = system.foundry?.rules(settingsOf(world.docs.settings)) ?? defaultEdition(system);
+  const setting = settingsOf(world.docs.settings);
+  const rules = system.foundry?.rules(setting) ?? defaultEdition(system);
   const media = new FoundryMedia({ dir: from, id: world.id }, opts.dataDir ?? dataFolderOf(from));
   const folderOf = folderNames(world.docs.folders);
   const { docs } = world;
@@ -232,6 +234,8 @@ export async function importFoundryWorld(from: string, game: string, opts: World
     players: [opts.gm],
   };
   await writeJson(join(game, 'game.json'), file);
+  const clock = foundryClock(setting);
+  if (clock) await writeJson(join(game, 'time.json'), clock);
   return {
     name,
     scenes: scenes.length,

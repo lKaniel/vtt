@@ -53,7 +53,8 @@ export class FoundryMedia {
   /** Our URL for a Foundry path: a copied file's, or a web address as it is. */
   readonly lookup: MediaLookup = (raw) => {
     if (/^https?:\/\//.test(raw)) return raw;
-    const path = decoded(raw).replace(/^\/+/, '').replace(/\\/g, '/');
+    // Tokenizer and Foundry's uploads add a cache-busting `?1693669309657` to the path.
+    const path = decoded(raw.split(/[?#]/)[0]!).replace(/^\/+/, '').replace(/\\/g, '/');
     const file = this.used.get(path) ?? this.find(path);
     if (!file) return undefined;
     this.used.set(path, file);

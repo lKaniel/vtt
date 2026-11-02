@@ -125,6 +125,7 @@ describe('foundrySheet', () => {
         { name: 'Lucky Coin', type: 'loot', system: { weight: { value: 0.1 }, description: { value: 'Shiny.' } } },
         { name: 'Fire Bolt', type: 'spell', system: {} },
         { name: 'Shield', type: 'spell', system: {} },
+        { name: 'Hunter’s Mark', type: 'spell', system: {} },
         { name: 'Glimmer of Amar', type: 'spell', system: {} },
         { name: 'Arcane Recovery', type: 'feat', system: { type: { value: 'class' } } },
         { name: 'Second Wind', type: 'feat', system: {} },
@@ -142,7 +143,7 @@ describe('foundrySheet', () => {
           { class: 'fighter', level: 1 },
         ],
         skills: ['arcana', 'perception'],
-        spells: ['fire-bolt', 'shield'],
+        spells: ['fire-bolt', 'shield', 'hunters-mark'],
       },
       inventory: [
         { item: 'dagger', equipped: true, qty: 2 },

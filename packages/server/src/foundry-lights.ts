@@ -23,6 +23,8 @@ export const FoundryLight = z.object({
       luminosity: num,
       attenuation: num,
       alpha: num,
+      /** The darkness it shines in (v10+): 0.55 to 1 is "only at night". */
+      darkness: z.object({ min: num, max: num }).optional().catch(undefined),
     })
     .optional()
     .catch(undefined),
@@ -85,11 +87,17 @@ function lightDepth(l: FoundryLightData): Pick<Light, 'luminosity' | 'attenuatio
   };
 }
 
+/** When it shines, if not always: the band of the scene's darkness it is on in. */
+function lightTime(l: FoundryLightData): Pick<PlacedLight, 'activeAt'> {
+  const band: [number, number] = [unit(l.config?.darkness?.min ?? 0), unit(l.config?.darkness?.max ?? 1)];
+  return band[0] > 0 || band[1] < 1 ? { activeAt: band } : {};
+}
+
 /** One light without its id, or undefined if it sheds none; radii in feet. */
 function lightOf(l: FoundryLightData, feet: (units: number) => number): Omit<PlacedLight, 'id'> | undefined {
   const [bright, dim] = [feet(l.config?.bright ?? l.bright ?? 0), feet(l.config?.dim ?? l.dim ?? 0)];
   if (!bright && !dim) return undefined;
-  return { x: l.x, y: l.y, bright, dim, ...lightLook(l), ...lightAim(l), ...lightDepth(l) };
+  return { x: l.x, y: l.y, bright, dim, ...lightLook(l), ...lightAim(l), ...lightDepth(l), ...lightTime(l) };
 }
 
 /** A scene's lights as ours, numbered; `feet` turns Foundry's grid units into feet. */

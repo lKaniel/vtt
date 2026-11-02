@@ -21,12 +21,13 @@ type WeaponProperty = z.infer<typeof WeaponPropertySchema>;
 
 const GEAR_TYPES = new Set(['weapon', 'equipment', 'consumable', 'tool', 'loot', 'backpack', 'container']);
 
-/** The names an SRD id might have: "Leather Armor" is leather, "Crossbow, light" is light-crossbow. */
+/** The names an SRD id might have: "Leather Armor" is leather, "Crossbow, light" is light-crossbow,
+ * "Hunter's Mark" is hunters-mark (but "Healer's Kit" is healer-s-kit). */
 function candidates(name: string): string[] {
   const slug = slugify(name);
   const [a, b] = name.split(',');
   const turned = b ? [slugify(`${b} ${a}`)] : [];
-  return [slug, slug.replace(/-armor$/, ''), ...turned];
+  return [slug, slug.replace(/-armor$/, ''), slugify(name.replace(/['’]/g, '')), ...turned];
 }
 
 /** The id under which `map` has something called `name`. */
