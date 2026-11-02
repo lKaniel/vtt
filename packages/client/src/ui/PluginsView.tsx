@@ -1,6 +1,7 @@
 import type { PluginInfo } from '@vtt/core';
 import { useEffect } from 'react';
 import type { Session } from '../session.ts';
+import { t } from '../i18n/index.ts';
 import { Checkbox } from './kit/checkbox.tsx';
 
 /**
@@ -26,10 +27,7 @@ export function PluginsView({ session }: Readonly<{ session: Session }>) {
           <PluginRow key={p.id} session={session} plugin={p} />
         ))}
       </ul>
-      <p className="muted lib-hint">
-        Install plugins in the server&apos;s data/plugins/ folder. They run in every player&apos;s browser, so install
-        only code you trust. Players load one when they next join.
-      </p>
+      <p className="muted lib-hint">{t('plugins.hint')}</p>
     </div>
   );
 }
@@ -42,7 +40,7 @@ function PluginRow({ session, plugin }: Readonly<{ session: Session; plugin: Plu
         <Checkbox
           checked={plugin.enabled}
           onCheckedChange={(on) => session.setPluginEnabled(plugin.id, on === true)}
-          aria-label={`Use ${plugin.name}`}
+          aria-label={t('plugins.use', { name: plugin.name })}
         />
         <span className="lib-text">
           <span className="lib-name">{plugin.name}</span>

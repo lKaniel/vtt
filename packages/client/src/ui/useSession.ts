@@ -1,3 +1,4 @@
+import { useLanguage } from '../i18n/index.ts';
 import { useSyncExternalStore } from 'react';
 import type { Session } from '../session.ts';
 
@@ -7,5 +8,7 @@ export function useSession(session: Session): Session {
     (cb) => session.on('change', cb),
     () => session.version,
   );
+  // A new language redraws whatever shows the session.
+  useLanguage();
   return session;
 }

@@ -52,7 +52,7 @@ describe('plugins at the table', () => {
   it('are loaded by everyone at a game that turned them on', async () => {
     await start(['turn-alert']);
     expect(seat('ana').take('welcome')[0]?.plugins).toEqual([
-      { id: 'turn-alert', name: 'Turn alert', main: '/plugins/turn-alert/main.js', styles: [] },
+      { id: 'turn-alert', name: 'Turn alert', main: '/plugins/turn-alert/main.js', styles: [], languages: [] },
     ]);
   });
 

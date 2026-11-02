@@ -24,7 +24,8 @@ export function pluginLoads(store: PluginStore | undefined, game: GameFile): Plu
     const m = store?.get(id);
     if (!m || !fits(m, game)) return [];
     const url = (path: string) => `/plugins/${id}/${path}`;
-    return [{ id, name: m.name, main: url(m.main), styles: m.styles.map(url) }];
+    const languages = m.languages.map((l) => ({ lang: l.lang, name: l.name, url: url(l.path) }));
+    return [{ id, name: m.name, main: url(m.main), styles: m.styles.map(url), languages }];
   });
 }
 

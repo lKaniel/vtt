@@ -2,6 +2,7 @@ import type { Doc, Op, Patch, PluginLoad } from '@vtt/core';
 import type { Player, Point } from '@vtt/shared';
 import type { ClientMessage, TokenView } from '@vtt/system-dnd5e';
 import type { SessionEvents } from '../session-events.ts';
+import { i18n } from '../i18n/index.ts';
 import { Hooks, type HookFn } from './hooks.ts';
 import { PluginLoader } from './plugins.ts';
 import { runScript } from './run-script.ts';
@@ -54,6 +55,12 @@ export interface VttApi {
   runMacro(idOrName: string, token?: string): Promise<void>;
   /** Any client message, as the table's own screens send them (see client-messages.ts). */
   send(msg: ClientMessage): void;
+  /** Translations (docs/i18n.md): words by key in the player's language; a plugin adds its own. */
+  readonly i18n: {
+    t(key: string, vars?: Readonly<Record<string, string | number>>): string;
+    lang(): string;
+    add(lang: string, words: Readonly<Record<string, string>>): void;
+  };
 }
 
 /** Session news passed on as hooks: [session event, hook name]. */
@@ -128,6 +135,11 @@ function makeApi(s: ScriptSession, hooks: Hooks): VttApi {
     notify: (text: string) => s.showNotice(text),
     runMacro: (key: string, token?: string) => s.runMacro(byName('macros', key)?.id ?? key, token),
     send: (msg: ClientMessage) => s.send(msg),
+    i18n: Object.freeze({
+      t: (key: string, vars?: Readonly<Record<string, string | number>>) => i18n.t(key, vars),
+      lang: () => i18n.lang,
+      add: (lang: string, words: Readonly<Record<string, string>>) => i18n.add(lang, words),
+    }),
   });
 }
 

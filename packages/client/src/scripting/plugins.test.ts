@@ -5,7 +5,13 @@ import { PluginLoader } from './plugins.ts';
 // plugin its game turned on, and calls its default export with `vtt`.
 
 const vtt = { tag: 'api' };
-const plugin = (id: string, styles: string[] = []) => ({ id, name: id, main: `/plugins/${id}/main.js`, styles });
+const plugin = (id: string, styles: string[] = []) => ({
+  id,
+  name: id,
+  main: `/plugins/${id}/main.js`,
+  styles,
+  languages: [],
+});
 
 function loaderWith(modules: Record<string, unknown>) {
   const failed = vi.fn();
@@ -45,6 +51,14 @@ describe('the plugin loader', () => {
       ['broken', 'bad'],
     ]);
     expect(fine).toHaveBeenCalled();
+  });
+
+  it('offers the languages a plugin brings before starting it', async () => {
+    const order: string[] = [];
+    const { loader } = loaderWith({ '/plugins/de/main.js': { default: () => order.push('start') } });
+    loader.offerLanguage = (lang, name, url) => order.push(`${lang} ${name} ${url}`);
+    await loader.load([{ ...plugin('de'), languages: [{ lang: 'de', name: 'Deutsch', url: '/plugins/de/de.json' }] }]);
+    expect(order).toEqual(['de Deutsch /plugins/de/de.json', 'start']);
   });
 
   it('takes a module without a default export as one that set itself up', async () => {
