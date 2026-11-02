@@ -37,7 +37,7 @@ describe('turns', () => {
 
   it('starts a fight with shared party turns when asked', () => {
     ws.receive(welcome());
-    session.startCombat(['hero'], true);
+    session.requests.startCombat(['hero'], true);
     expect(ws.sent.at(-1)).toEqual({ t: 'combatStart', tokens: ['hero'], shared: true });
   });
 });

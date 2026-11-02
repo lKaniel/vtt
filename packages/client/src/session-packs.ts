@@ -32,7 +32,7 @@ export interface PackHost {
   send(msg: ClientMessage): void;
   readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
   readonly editor: { viewCentre(): Point };
-  saveActor(actor: Actor): void;
+  readonly requests: { saveActor(actor: Actor): void };
   showError(message: string): void;
   showNotice(message: string): void;
 }
@@ -142,7 +142,7 @@ export class Packs implements SessionPart {
     }
     const actor = parsed.data;
     const id = this.s.actors.has(actor.id) ? uniqueId(actor.name, (x) => this.s.actors.has(x)) : actor.id;
-    this.s.saveActor({ ...actor, id, ...(folder ? { folder } : {}) });
+    this.s.requests.saveActor({ ...actor, id, ...(folder ? { folder } : {}) });
   }
 
   /** A journal entry, roll table or playlist from a compendium joins the sidebar, under a free id. */

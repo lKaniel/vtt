@@ -23,8 +23,7 @@ export interface ScriptSession {
   on<K extends keyof SessionEvents>(event: K, fn: SessionEvents[K]): () => void;
   isGm(): boolean;
   send(msg: ClientMessage): void;
-  say(text: string): void;
-  move(token: string, to: Point): void;
+  readonly requests: { say(text: string): void; move(token: string, to: Point): void };
   readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
   showNotice(message: string): void;
   showError(message: string): void;
@@ -123,8 +122,8 @@ function makeApi(s: ScriptSession, hooks: Hooks): VttApi {
     token: (key: string) => s.tokens.get(key) ?? tokens().find((t) => t.name === key),
     selected: () => (s.selected ? s.tokens.get(s.selected) : undefined),
     targets: () => [...s.targets.mine],
-    chat: (text: string) => s.say(text),
-    move: (token: string, x: number, y: number) => s.move(token, [x, y]),
+    chat: (text: string) => s.requests.say(text),
+    move: (token: string, x: number, y: number) => s.requests.move(token, [x, y]),
     docs: (coll: string) => s.docs.all(coll),
     doc: (coll: string, id: string) => s.docs.get(coll, id),
     edit: (ops: readonly Op[], label?: string) => s.edits.sendChanges(label ?? 'script', ops),

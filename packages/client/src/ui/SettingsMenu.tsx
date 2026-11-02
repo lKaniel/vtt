@@ -67,7 +67,7 @@ function AutomationRow<K extends keyof Automation>({
 /** Your own options for this game, kept on your seat: how much of the rules runs itself for you. */
 export function SettingsMenu({ session }: Readonly<{ session: Session }>) {
   const automation = automationOf(session.you?.settings);
-  const set = (patch: Partial<Automation>) => session.setSeatSettings({ ...automation, ...patch });
+  const set = (patch: Partial<Automation>) => session.requests.setSeatSettings({ ...automation, ...patch });
   return (
     <Popover>
       <PopoverTrigger asChild>

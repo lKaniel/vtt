@@ -48,11 +48,11 @@ describe('Session', () => {
 
   it('sends map edits, darkness, and keeps the light preset', () => {
     ws.receive(welcome());
-    session.editMap({ op: 'remove', chunk: '0_0', id: 'w' });
+    session.requests.editMap({ op: 'remove', chunk: '0_0', id: 'w' });
     expect(ws.sent.at(-1)).toEqual({ t: 'mapEdit', edit: { op: 'remove', chunk: '0_0', id: 'w' } });
     session.editor.setLightPreset('campfire');
     expect(session.editor.lightPreset).toBe('campfire');
-    session.setDarkness(0.4);
+    session.requests.setDarkness(0.4);
     expect(ws.sent.at(-1)).toEqual({ t: 'darkness', darkness: 0.4 });
   });
 
@@ -136,7 +136,7 @@ describe('Session', () => {
 
   it('collects chat and errors', () => {
     ws.receive(welcome());
-    session.say('hello');
+    session.requests.say('hello');
     expect(ws.sent.at(-1)).toEqual({ t: 'chat', text: 'hello' });
     ws.receive({ t: 'chat', message: { id: '1', time: 0, from: 'Ana', color: '#f00', text: 'hello' } });
     ws.receive({ t: 'error', message: 'nope' });
@@ -401,13 +401,13 @@ describe('Session', () => {
     });
 
     it('sends features, rests and dropped concentration', () => {
-      session.useFeature('hero', 'second-wind');
+      session.requests.useFeature('hero', 'second-wind');
       expect(ws.sent.at(-1)).toEqual({ t: 'feature', token: 'hero', feature: 'second-wind' });
-      session.rest(['hero'], 'long');
+      session.requests.rest(['hero'], 'long');
       expect(ws.sent.at(-1)).toEqual({ t: 'rest', tokens: ['hero'], kind: 'long' });
-      session.dropConcentration('hero');
+      session.requests.dropConcentration('hero');
       expect(ws.sent.at(-1)).toEqual({ t: 'dropConcentration', token: 'hero' });
-      session.removeEffect('hero', 'bless-wiz');
+      session.requests.removeEffect('hero', 'bless-wiz');
       expect(ws.sent.at(-1)).toEqual({ t: 'removeEffect', token: 'hero', effect: 'bless-wiz' });
     });
 
@@ -423,10 +423,10 @@ describe('Session', () => {
     });
 
     it('sends turn, combat and equipment requests', () => {
-      session.endTurn();
-      session.startCombat(['hero', 'goblin']);
-      session.endCombat();
-      session.equip('hero', 2, true);
+      session.requests.endTurn();
+      session.requests.startCombat(['hero', 'goblin']);
+      session.requests.endCombat();
+      session.requests.equip('hero', 2, true);
       expect(ws.sent.slice(-4)).toEqual([
         { t: 'endTurn' },
         { t: 'combatStart', tokens: ['hero', 'goblin'] },

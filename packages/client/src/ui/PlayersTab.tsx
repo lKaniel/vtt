@@ -28,7 +28,7 @@ export function PlayersTab({ session }: Readonly<{ session: Session }>) {
                 aria-label={`${p.name}'s role`}
                 disabled={lastGm}
                 title={lastGm ? 'The table needs a GM' : ROLE_NAMES[p.role].about}
-                onValueChange={(r) => session.setRole(p.id, r as Role)}
+                onValueChange={(r) => session.requests.setRole(p.id, r as Role)}
                 options={RoleSchema.options.map((r) => ({ value: r, label: ROLE_NAMES[r].name }))}
               />
             </li>

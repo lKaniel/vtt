@@ -38,7 +38,8 @@ export function EffectsPage(props: Readonly<SheetProps>) {
     fighting: !!session.combat,
     nameOf: (id: string) => session.tokens.get(id)?.name,
   };
-  const remove = (id: string) => (edit ? update((d) => removeEffect(d, id), true) : session.removeEffect(value.id, id));
+  const remove = (id: string) =>
+    edit ? update((d) => removeEffect(d, id), true) : session.requests.removeEffect(value.id, id);
   const create = () => {
     const made = newEffect(value);
     update(() => made.draft, true);
@@ -79,7 +80,7 @@ function ConcentrationRow({ session, value, kind }: Readonly<SheetProps>) {
       <IconFace icon={{ glyph: 'eye', tint: 'arcane' }} size={16} />
       <span className="row-name">Concentrating on {value.concentration!.name}</span>
       {kind === 'token' && (
-        <Button variant="outline" size="sm" onClick={() => session.dropConcentration(value.id)}>
+        <Button variant="outline" size="sm" onClick={() => session.requests.dropConcentration(value.id)}>
           Stop
         </Button>
       )}

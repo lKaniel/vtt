@@ -47,7 +47,7 @@ export function CalendarEditor({ session }: Readonly<{ session: Session }>) {
         <Button variant="ghost" disabled={!changed} onClick={() => setDraft(saved)}>
           Undo changes
         </Button>
-        <Button disabled={!changed} onClick={() => session.clockAction({ do: 'calendar', calendar: draft })}>
+        <Button disabled={!changed} onClick={() => session.requests.clockAction({ do: 'calendar', calendar: draft })}>
           Save calendar
         </Button>
       </div>

@@ -54,9 +54,9 @@ describe('Session reactions', () => {
     session.connect();
     socket.onmessage?.({ data: JSON.stringify({ t: 'reactionOffer', offer: offer('a') }) });
     expect(session.reactions).toHaveLength(1);
-    session.takeReaction('a', 'Scimitar');
+    session.requests.takeReaction('a', 'Scimitar');
     expect(sent.at(-1)).toEqual({ t: 'react', offer: 'a', choice: 'Scimitar' });
-    session.takeReaction('a');
+    session.requests.takeReaction('a');
     expect(sent.at(-1)).toEqual({ t: 'react', offer: 'a' });
     socket.onmessage?.({ data: JSON.stringify({ t: 'reactionGone', id: 'a' }) });
     expect(session.reactions).toEqual([]);

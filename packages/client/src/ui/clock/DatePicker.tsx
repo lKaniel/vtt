@@ -60,7 +60,7 @@ export function DatePicker({ session }: Readonly<{ session: Session }>) {
         </Label>
         <Button
           className="ml-auto"
-          onClick={() => session.clockAction({ do: 'set', time: secondsOf(calendar, draft) })}
+          onClick={() => session.requests.clockAction({ do: 'set', time: secondsOf(calendar, draft) })}
         >
           Set date &amp; time
         </Button>

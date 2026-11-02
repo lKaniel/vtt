@@ -24,7 +24,7 @@ export function ClockControls({ session }: Readonly<{ session: Session }>) {
       <Button
         className="w-28"
         variant={running ? 'outline' : 'default'}
-        onClick={() => session.clockAction({ do: running ? 'stop' : 'start' })}
+        onClick={() => session.requests.clockAction({ do: running ? 'stop' : 'start' })}
         title={running ? 'Stop the clock' : 'Let time run (it holds still in fights and turn-based mode)'}
       >
         {running ? <PauseIcon /> : <PlayIcon />}
@@ -35,7 +35,7 @@ export function ClockControls({ session }: Readonly<{ session: Session }>) {
       <ToggleGroup
         type="single"
         value={String(clock.speed)}
-        onValueChange={(v) => v && session.clockAction({ do: 'speed', speed: Number(v) })}
+        onValueChange={(v) => v && session.requests.clockAction({ do: 'speed', speed: Number(v) })}
         className="w-full"
       >
         {SPEEDS.map((s) => (
@@ -52,7 +52,7 @@ export function ClockControls({ session }: Readonly<{ session: Session }>) {
             variant="outline"
             size="sm"
             className="flex-1 px-1"
-            onClick={() => session.clockAction({ do: 'skip', seconds: s.seconds })}
+            onClick={() => session.requests.clockAction({ do: 'skip', seconds: s.seconds })}
           >
             {s.label}
           </Button>
@@ -76,7 +76,7 @@ function ModeToggle({ session }: Readonly<{ session: Session }>) {
     <ToggleGroup
       type="single"
       value={mode === 'turns' ? 'turns' : 'free'}
-      onValueChange={(v) => v && session.setTurnBased(v === 'turns')}
+      onValueChange={(v) => v && session.requests.setTurnBased(v === 'turns')}
       className="w-full"
     >
       <ToggleGroupItem value="free" title="Time runs by the clock">

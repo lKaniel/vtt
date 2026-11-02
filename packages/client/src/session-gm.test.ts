@@ -68,33 +68,33 @@ describe('the GM tools', () => {
 
   it("sends the GM's role changes", () => {
     ws.receive(gmWelcome());
-    session.setRole('ana', 'trusted');
+    session.requests.setRole('ana', 'trusted');
     expect(ws.sent.at(-1)).toEqual({ t: 'setRole', player: 'ana', role: 'trusted' });
   });
 
   it('saves a hotbar layout', () => {
     ws.receive(welcome());
-    session.setHotbar('hero', ['spell:fire-bolt', null]);
+    session.requests.setHotbar('hero', ['spell:fire-bolt', null]);
     expect(ws.sent.at(-1)).toEqual({ t: 'hotbar', token: 'hero', slots: ['spell:fire-bolt', null] });
   });
 
   it("asks to pack, attune and count a creature's gear", () => {
     ws.receive(welcome());
-    session.carry('hero', { kind: 'stow', item: 1, into: 0 });
+    session.requests.carry('hero', { kind: 'stow', item: 1, into: 0 });
     expect(ws.sent.at(-1)).toEqual({ t: 'carry', token: 'hero', change: { kind: 'stow', item: 1, into: 0 } });
   });
 
   it('spends hit dice and sets exhaustion', () => {
     ws.receive(welcome());
-    session.spendHitDie('hero');
+    session.requests.spendHitDie('hero');
     expect(ws.sent.at(-1)).toEqual({ t: 'hitDie', token: 'hero' });
-    session.setExhaustion('hero', 2);
+    session.requests.setExhaustion('hero', 2);
     expect(ws.sent.at(-1)).toEqual({ t: 'exhaustion', token: 'hero', level: 2 });
   });
 
   it('asks for checks and rolls them', () => {
     ws.receive(gmWelcome());
-    session.requestCheck({ tokens: ['hero'], ability: 'dex', skill: 'stealth', kind: 'group', dc: 12 });
+    session.requests.requestCheck({ tokens: ['hero'], ability: 'dex', skill: 'stealth', kind: 'group', dc: 12 });
     expect(ws.sent.at(-1)).toEqual({
       t: 'requestCheck',
       tokens: ['hero'],
@@ -103,25 +103,25 @@ describe('the GM tools', () => {
       kind: 'group',
       dc: 12,
     });
-    session.rollCheck('hero', { ability: 'dex' }, 'card-1');
+    session.requests.rollCheck('hero', { ability: 'dex' }, 'card-1');
     expect(ws.sent.at(-1)).toEqual({ t: 'rollCheck', token: 'hero', ability: 'dex', card: 'card-1' });
-    session.rollCheck('hero', { ability: 'str', skill: 'athletics' });
+    session.requests.rollCheck('hero', { ability: 'str', skill: 'athletics' });
     expect(ws.sent.at(-1)).toEqual({ t: 'rollCheck', token: 'hero', ability: 'str', skill: 'athletics' });
   });
 
   it('awards experience', () => {
     ws.receive(gmWelcome());
-    session.awardXp(['hero'], 150);
+    session.requests.awardXp(['hero'], 150);
     expect(ws.sent.at(-1)).toEqual({ t: 'awardXp', tokens: ['hero'], xp: 150 });
   });
 
   it('takes legendary and lair actions', () => {
     ws.receive(gmWelcome());
-    session.legendary('dragon', 'tail-attack', 'hero');
+    session.requests.legendary('dragon', 'tail-attack', 'hero');
     expect(ws.sent.at(-1)).toEqual({ t: 'legendary', token: 'dragon', option: 'tail-attack', target: 'hero' });
-    session.legendary('dragon', 'detect');
+    session.requests.legendary('dragon', 'detect');
     expect(ws.sent.at(-1)).toEqual({ t: 'legendary', token: 'dragon', option: 'detect' });
-    session.lairAction('dragon', 'grasp');
+    session.requests.lairAction('dragon', 'grasp');
     expect(ws.sent.at(-1)).toEqual({ t: 'lair', token: 'dragon', action: 'grasp' });
   });
 
@@ -166,14 +166,14 @@ describe('the GM tools', () => {
 describe('the GM tools send', () => {
   it('edits, deletions, spawns and actors', () => {
     ws.receive(welcome());
-    session.editToken('hero', {});
-    session.editToken('hero', { hp: 3 });
-    session.deleteToken('hero');
+    session.requests.editToken('hero', {});
+    session.requests.editToken('hero', { hp: 3 });
+    session.requests.deleteToken('hero');
     session.drops.setHidden(false);
     session.drops.spawn({ kind: 'actor', id: 'bandit' }, [5, 5]);
-    session.saveActor({ ...token('bandit') });
-    session.deleteActor('bandit');
-    session.relinkToken('hero', 'unlink');
+    session.requests.saveActor({ ...token('bandit') });
+    session.requests.deleteActor('bandit');
+    session.requests.relinkToken('hero', 'unlink');
     expect(ws.sent.slice(-6)).toEqual([
       { t: 'editToken', token: 'hero', patch: { hp: 3 } },
       { t: 'deleteToken', token: 'hero' },

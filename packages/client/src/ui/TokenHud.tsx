@@ -62,7 +62,7 @@ type Props = Readonly<{ session: Session; token: TokenView }>;
 /** Hit points, temporary hit points and elevation. */
 function Numbers({ session, token }: Props) {
   const sheet = token.sheet;
-  const edit = (patch: Record<string, unknown>) => session.editToken(token.id, patch);
+  const edit = (patch: Record<string, unknown>) => session.requests.editToken(token.id, patch);
   return (
     <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1">
       {sheet && (
@@ -103,7 +103,7 @@ function GmToggles({ session, token }: Props) {
       <Toggle
         variant="plate"
         pressed={token.hidden}
-        onPressedChange={(hidden) => session.editToken(token.id, { hidden })}
+        onPressedChange={(hidden) => session.requests.editToken(token.id, { hidden })}
       >
         Hidden
       </Toggle>

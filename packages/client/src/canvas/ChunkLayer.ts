@@ -109,7 +109,7 @@ export class ChunkLayer {
       e.stopPropagation();
       const s = this.session;
       const acting = s.selected ? s.tokens.get(s.selected) : undefined;
-      s.useTile(tile.id, acting && s.canControl(acting) ? acting.id : undefined);
+      s.requests.useTile(tile.id, acting && s.canControl(acting) ? acting.id : undefined);
     });
   }
 
@@ -137,9 +137,9 @@ export class ChunkLayer {
   /** Click opens or closes; shift-click lets the GM lock or unlock. */
   private toggle(key: string, wall: Wall, shift: boolean): void {
     const isGm = this.session.isGm();
-    if (isGm && shift) this.session.setDoor(key, wall.id, wall.door === 'locked' ? 'closed' : 'locked');
+    if (isGm && shift) this.session.requests.setDoor(key, wall.id, wall.door === 'locked' ? 'closed' : 'locked');
     else if (wall.door === 'locked') this.session.showError('The door is locked');
-    else this.session.setDoor(key, wall.id, wall.door === 'open' ? 'closed' : 'open');
+    else this.session.requests.setDoor(key, wall.id, wall.door === 'open' ? 'closed' : 'open');
   }
 }
 

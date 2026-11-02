@@ -36,7 +36,7 @@ import { Fog, type FogEvents } from './session-fog.ts';
 import { Draw, Levels } from './session-items.ts';
 import { Editor, type EditorEvents } from './session-editor.ts';
 import { mayEditRefs } from './authorship.ts';
-import { Commands } from './session-commands.ts';
+import { Requests } from './session-requests.ts';
 import { type EditEvents, Edits } from './session-edits.ts';
 import { WorldTime } from './session-time.ts';
 import { Tiles } from './session-tiles.ts';
@@ -66,7 +66,7 @@ type PartEvents = EditEvents &
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends Commands {
+export class Session {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -90,6 +90,8 @@ export class Session extends Commands {
   players: Player[] = [];
   /** GM only: the Actors list. */
   readonly actors = new Map<string, Actor>();
+  /** The plain requests to the server: move, end turn, rest, save an actor... */
+  readonly requests = new Requests(this);
   /** The decks, hands and piles you were sent (session-cards.ts). */
   readonly cards = new Cards(this);
   /** The creatures you target (T), and the others'. */
@@ -171,9 +173,7 @@ export class Session extends Commands {
   readonly scripts: ScriptHost = new ScriptHost(this);
 
   /** `gameId` is the game to join (else the home game), as the player this browser joined it as. */
-  constructor(readonly gameId?: string) {
-    super();
-  }
+  constructor(readonly gameId?: string) {}
 
   on<K extends keyof SessionEvents>(event: K, fn: SessionEvents[K]): () => void {
     const set = this.listeners.get(event) ?? new Set();

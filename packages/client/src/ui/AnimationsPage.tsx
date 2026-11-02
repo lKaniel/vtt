@@ -22,7 +22,7 @@ export function AnimationsPage({ session, kind, value, update, sheet }: Readonly
   const chosen = value.animations ?? {};
   const pick = (ref: string, animation: string) => {
     if (kind === 'token') {
-      session.setAnimation(value.id, ref, animation || undefined);
+      session.requests.setAnimation(value.id, ref, animation || undefined);
       return;
     }
     const { [ref]: _old, ...rest } = chosen;

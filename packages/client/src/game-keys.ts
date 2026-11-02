@@ -147,7 +147,7 @@ function step(session: Session, e: Key): boolean {
   const to = token && id && session.world && stepTarget(token, id, session.world.gridSize);
   if (!token || !to) return false;
   e.preventDefault();
-  session.move(token.id, to);
+  session.requests.move(token.id, to);
   return true;
 }
 
@@ -181,7 +181,7 @@ export function listenToKeys(session: Session): () => void {
 /** Space let go: a tap of it (no panning) ends your turn when Space is the end-turn key. */
 export function spaceReleased(session: Session, e: Key): void {
   if (e.key !== ' ' || !spaceKey.release() || isTyping(e.target)) return;
-  if (actionOf(e, currentKeys()) === 'endTurn' && session.turns.mine()) session.endTurn();
+  if (actionOf(e, currentKeys()) === 'endTurn' && session.turns.mine()) session.requests.endTurn();
 }
 
 /** Space held makes a left drag pan the map (see space-pan.ts); returns the cleanup. */
@@ -209,7 +209,7 @@ function handleGameKey(session: Session, e: Key): void {
   }
   if (id === 'endTurn' && session.turns.mine()) {
     e.preventDefault();
-    session.endTurn();
+    session.requests.endTurn();
     return;
   }
   if (id?.startsWith('hotbar-')) pressSlot(session, id.slice(7));

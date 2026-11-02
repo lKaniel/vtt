@@ -56,7 +56,7 @@ export function linkTarget(session: Session, link: ContentLink): LinkTarget {
 }
 
 /** An inline roll: sends its chat command. */
-export const rollClick = (session: Session, command: string) => () => session.say(command);
+export const rollClick = (session: Session, command: string) => () => session.requests.say(command);
 
 /** An inline check: the GM asks it of the selected creatures or the party; a player rolls it for theirs. */
 export function checkClick(session: Session, ref: CheckRef): (() => void) | undefined {
@@ -65,7 +65,7 @@ export function checkClick(session: Session, ref: CheckRef): (() => void) | unde
   if (session.isGm()) {
     const all = [...session.tokens.values()].filter((t) => t.sheet !== undefined);
     const tokens = askedOf(all, (id) => session.editor.isSelected(id), isParty).map((t) => t.id);
-    return () => session.requestCheck({ tokens, ...check, kind: 'each', ...(ref.dc && { dc: ref.dc }) });
+    return () => session.requests.requestCheck({ tokens, ...check, kind: 'each', ...(ref.dc && { dc: ref.dc }) });
   }
-  return () => session.selected && session.rollCheck(session.selected, check);
+  return () => session.selected && session.requests.rollCheck(session.selected, check);
 }

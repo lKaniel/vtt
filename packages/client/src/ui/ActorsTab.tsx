@@ -31,7 +31,7 @@ export function ActorsTab({ session }: Readonly<{ session: Session }>) {
   const actors = [...session.actors.values()].filter((a) => matches(a.name, query));
   const newActor = () => {
     const id = uniqueId('New actor', (x) => session.actors.has(x));
-    session.saveActor({
+    session.requests.saveActor({
       id,
       name: 'New actor',
       size: 1,
@@ -99,7 +99,7 @@ function TokenRow({ session, token }: Readonly<{ session: Session; token: TokenV
         size="icon-sm"
         title={token.hidden ? 'Reveal to players' : 'Hide from players'}
         aria-label={token.hidden ? 'Reveal to players' : 'Hide from players'}
-        onClick={() => session.editToken(token.id, { hidden: !token.hidden })}
+        onClick={() => session.requests.editToken(token.id, { hidden: !token.hidden })}
       >
         {token.hidden ? <EyeOffIcon /> : <EyeIcon />}
       </Button>
