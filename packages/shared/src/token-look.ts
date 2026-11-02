@@ -2,11 +2,15 @@ import { z } from 'zod';
 
 // How a token looks on the map, the same in every game system: when its
 // name and bars show (Foundry's display modes), how big its picture is drawn
-// in its square, whether it is mirrored, and a coloured ring round it.
+// in its square, whether it is mirrored, a coloured ring round it and a
+// colour filter over it.
 
 /** When a token's name or bars show: never, while you control it, on hover (for owners or anyone), to owners, or always. */
 export const DisplayModeSchema = z.enum(['never', 'control', 'ownerHover', 'hover', 'owner', 'always']);
 export type DisplayMode = z.infer<typeof DisplayModeSchema>;
+
+/** A colour filter over a token's picture: stone grey, old sepia, inverted, a pale ghost, a dark shadow. */
+export const TOKEN_FILTERS = ['grayscale', 'sepia', 'invert', 'ghost', 'shadow'] as const;
 
 /** The look fields a system adds to its token schema. */
 export const TokenLookSchema = {
@@ -23,6 +27,8 @@ export const TokenLookSchema = {
   randomImg: z.boolean().optional(),
   /** A coloured ring round its picture, on a background colour, like Foundry's token rings. */
   ring: z.object({ color: z.string().optional(), background: z.string().optional() }).optional(),
+  /** A colour filter over its picture (see TOKEN_FILTERS). */
+  filter: z.enum(TOKEN_FILTERS).optional(),
 };
 export type TokenLook = { [K in keyof typeof TokenLookSchema]?: z.infer<(typeof TokenLookSchema)[K]> };
 

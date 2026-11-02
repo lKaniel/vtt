@@ -26,6 +26,7 @@ import { PathPreview, showPreview } from './PathPreview.ts';
 import { PresenceLayer } from './PresenceLayer.ts';
 import { RulerLayer } from './RulerLayer.ts';
 import { TokenLayer } from './TokenLayer.ts';
+import { WeatherLayer } from './WeatherLayer.ts';
 import { Vision } from './Vision.ts';
 
 extensions.add(CullerPlugin);
@@ -69,6 +70,7 @@ export class MapView {
   private items: ItemLayer;
   private rulers: RulerLayer;
   private presence: PresenceLayer;
+  private weather: WeatherLayer;
   private vision?: Vision;
   /** The scene last shown, so a new one starts at its own camera start. */
   private shownScene?: string;
@@ -108,6 +110,7 @@ export class MapView {
     this.items = new ItemLayer(session);
     this.rulers = new RulerLayer(session);
     this.presence = new PresenceLayer(session, (id) => this.tokens.placeOf(id));
+    this.weather = new WeatherLayer(session);
   }
 
   async init(host: HTMLElement): Promise<void> {
@@ -135,13 +138,11 @@ export class MapView {
     this.ground.filters = [this.vision.mapFilter];
     this.tokens.container.filters = [this.vision.tokenFilter];
     this.chunks.roofs.filters = [this.vision.roofFilter];
-    this.app.stage.addChild(this.camera, this.overhead);
+    this.app.stage.addChild(this.camera, this.weather.container, this.overhead);
     this.listenToInput();
     this.listenToSession();
     this.unsubscribe.push(this.presence.attach(this.app.canvas));
-    this.app.ticker.add((t) => {
-      this.tick(t.deltaMS / 1000);
-    });
+    this.app.ticker.add((t) => this.tick(t.deltaMS / 1000));
     this.tokens.redrawAll();
   }
 
@@ -301,6 +302,7 @@ export class MapView {
     this.effects.tick(now);
     this.presence.tick(dt, now);
     this.chunks.tick(dt);
+    this.weather.tick(dt, this.app.screen);
     if (!this.session.world) return;
     if (this.cam.step(dt)) this.dirty = true;
     // One more render after a walk ends, to mark what the token now sees as explored.

@@ -10,11 +10,13 @@ import { SelectField } from './kit/select.tsx';
 import { ColorInput } from './kit/color-input.tsx';
 import { Slider } from './kit/slider.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
+import { WeatherFields } from './WeatherFields.tsx';
 
 /**
  * GM: the game's scenes. View looks at one (to prepare it) without moving
  * anyone; Play here moves the game there with everyone. Each scene can be
- * copied, deleted (Ctrl+Z brings it back) and set up: grid, lighting, fog.
+ * copied, deleted (Ctrl+Z brings it back) and set up: grid, lighting, fog,
+ * weather.
  */
 export function ScenesTab({ session }: Readonly<{ session: Session }>) {
   const [name, setName] = useState('');
@@ -193,6 +195,7 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
           onBlur={(e) => edit({ background: e.target.value })}
         />
       </label>
+      <WeatherFields value={doc.weather} edit={edit} />
       <NavFields doc={doc} edit={edit} />
       <Check label="Fog of war" value={flag(doc, 'vision', true)} onChange={(v) => edit({ vision: v })} />
       <Check

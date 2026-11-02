@@ -30,5 +30,7 @@ describe('a token’s look', () => {
     expect(look.safeParse({ displayBars: 'hover', scale: 2, ring: { color: '#e0b040' } }).success).toBe(true);
     expect(look.safeParse({ scale: 9 }).success).toBe(false);
     expect(look.safeParse({ displayName: 'sometimes' }).success).toBe(false);
+    expect(look.safeParse({ filter: 'grayscale' }).success).toBe(true);
+    expect(look.safeParse({ filter: 'rainbow' }).success).toBe(false);
   });
 });

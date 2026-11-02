@@ -1,12 +1,12 @@
 import type { Chunk, Point } from '@vtt/shared';
-import { Assets, Container, Sprite, type Texture, TilingSprite } from 'pixi.js';
+import { Assets, BlurFilter, Container, Sprite, type Texture, TilingSprite } from 'pixi.js';
 import { type GifSource, GifSprite } from 'pixi.js/gif';
 import { assetUrl } from '../assets.ts';
 import { easeAlpha, roofAlpha, scrollOffset, tileMedia } from './tile-motion.ts';
 
 // One picture tile on the map: a still picture, an animated GIF or a looping
 // silent video, sliding when it scrolls and fading when it is a roof over
-// one of your creatures.
+// one of your creatures; tinted, and with a soft drop shadow, when it has them.
 
 export type ImageTile = Extract<Chunk['tiles'][number], { kind: 'image' }>;
 
@@ -34,6 +34,25 @@ function viewOf(tile: ImageTile, picture: Texture | GifSource): Sprite | TilingS
   return tiling;
 }
 
+/** A sized view of the picture, tinted when the tile is. */
+function sizedView(tile: ImageTile, picture: Texture | GifSource): Sprite | TilingSprite | GifSprite {
+  const view = viewOf(tile, picture);
+  if (!(view instanceof TilingSprite)) view.setSize(tile.w, tile.h);
+  if (tile.tint) view.tint = tile.tint;
+  return view;
+}
+
+/** A blurred black copy of the picture, offset down and right. */
+function shadowView(tile: ImageTile, picture: Texture | GifSource): Container | undefined {
+  if (!tile.shadow) return undefined;
+  const shadow = sizedView(tile, picture);
+  shadow.tint = 0x000000;
+  shadow.alpha = tile.shadow.alpha;
+  shadow.position.set(tile.shadow.offset, tile.shadow.offset);
+  if (tile.shadow.blur > 0) shadow.filters = [new BlurFilter({ strength: tile.shadow.blur })];
+  return shadow;
+}
+
 export function imageTile(tile: ImageTile): TileView {
   const root = new Container();
   root.position.set(tile.x, tile.y);
@@ -41,8 +60,9 @@ export function imageTile(tile: ImageTile): TileView {
   load(tile)
     .then((picture) => {
       if (root.destroyed) return;
-      view = viewOf(tile, picture);
-      if (!(view instanceof TilingSprite)) view.setSize(tile.w, tile.h);
+      view = sizedView(tile, picture);
+      const shadow = shadowView(tile, picture);
+      if (shadow) root.addChild(shadow);
       root.addChild(view);
     })
     .catch(() => {

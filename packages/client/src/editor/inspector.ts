@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { TileTextureSchema, WALL_PRESETS, type WallRules, wallPreset } from '@vtt/shared';
+import { TileTextureSchema, TOKEN_FILTERS, WALL_PRESETS, type WallRules, wallPreset } from '@vtt/shared';
 import { type Field, type FieldValue, flag, MIXED, options, plain } from './field-kit.ts';
 import { ITEM_FIELDS } from './item-fields.ts';
 import { doorFields, presetPatch, wallRuleFields } from './wall-fields.ts';
@@ -63,6 +63,30 @@ function scrollField(axis: 'x' | 'y', label: string): Field {
   };
 }
 
+const SHADOW = { offset: 12, blur: 8, alpha: 0.5 };
+const shadowOf = (d: Doc) => d.shadow as typeof SHADOW | undefined;
+const hasShadow = (d: Doc) => isImage(d) && !!shadowOf(d);
+
+/** One number of a picture's drop shadow. */
+function shadowField(part: keyof typeof SHADOW, label: string): Field {
+  return {
+    ...plain(`shadow.${part}`, label, 'number', { when: hasShadow }),
+    get: (d) => shadowOf(d)?.[part],
+    patch: (value, doc) => ({ shadow: { ...SHADOW, ...(doc && shadowOf(doc)), [part]: Number(value) || 0 } }),
+  };
+}
+
+const SHADOW_FIELDS: Field[] = [
+  {
+    ...plain('shadow', 'Drop shadow', 'check', { when: isImage }),
+    get: (d) => !!shadowOf(d),
+    patch: (value) => ({ shadow: value === true ? SHADOW : null }),
+  },
+  shadowField('offset', 'Shadow offset (px)'),
+  shadowField('blur', 'Shadow blur (px)'),
+  shadowField('alpha', 'Shadow darkness (0-1)'),
+];
+
 const TILE_FIELDS: Field[] = [
   plain('name', 'Name', 'text'),
   plain('x', 'X', 'number', { when: drawn }),
@@ -78,9 +102,14 @@ const TILE_FIELDS: Field[] = [
   plain('occludedAlpha', 'Opacity under it (0-1)', 'number', { when: (d) => isImage(d) && d.overhead === true }),
   scrollField('x', 'Scrolls across (px/s)'),
   scrollField('y', 'Scrolls down (px/s)'),
+  plain('tint', 'Tint', 'color', { when: isImage }),
+  ...SHADOW_FIELDS,
 ];
 
-const TOKEN_FIELDS: Field[] = [{ ...plain('hidden', 'Hidden from players', 'check'), get: (d) => d.hidden === true }];
+const TOKEN_FIELDS: Field[] = [
+  { ...plain('hidden', 'Hidden from players', 'check'), get: (d) => d.hidden === true },
+  plain('filter', 'Colour filter', 'select', { options: options('', ...TOKEN_FILTERS) }),
+];
 
 const FIELDS: Record<string, Field[]> = {
   wall: WALL_FIELDS,

@@ -151,6 +151,24 @@ never fades.
 Every scene is live at once: the rules (moves, doors, fights, spells) work
 on whichever scene the player acting is on.
 
+### Weather
+
+`weather` lays rain, snow, cloud shadows, fog, embers or birds over the map,
+like FXMaster: a list of layers, each `{ "kind", "density" (0-1, default
+0.5), "wind" (-1 to 1, sideways), "tint" }`. A storm is rain under dark
+clouds:
+
+```json
+"weather": [
+  { "kind": "rain", "density": 0.9, "wind": 0.4 },
+  { "kind": "clouds", "density": 0.7, "tint": "#5a606c" }
+]
+```
+
+The GM adds layers from presets (rain, snow, clouds, fog, embers, birds,
+storm, blizzard, wildfire) in the scene's settings. Players who turned
+animations down see it half as thick, or not at all.
+
 ### Explored fog of war
 
 With `vision` and `exploration` on, the server works out what each player's
@@ -239,6 +257,9 @@ pixels.
   GM's: the selected token). `occludedAlpha` is how opaque it stays then, 0
   (gone, the default) to 1. The Foundry importer makes roofs of overhead,
   roof and Better Roofs tiles.
+- `"tint": "#88aaff"` colours an image tile's picture (moonlight, a sickly
+  swamp), and `"shadow": {}` gives it a soft drop shadow (trees, roofs,
+  floating rocks), optionally `{ "offset": 12, "blur": 8, "alpha": 0.5 }`.
 - A wall is a line from `a` to `b` that stops movement, sight, light and
   sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.
   Open doors stop nothing.
@@ -507,6 +528,7 @@ without one):
 | `scale`                      | How big its picture is drawn in its square, 0.2 to 3. Default 1.                                                                                    |
 | `mirrorX`, `mirrorY`         | Flip its picture left to right, or upside down.                                                                                                     |
 | `ring`                       | A ring round its picture: `{ "color": "#e0b040", "background": "#202020" }`.                                                                        |
+| `filter`                     | A colour filter over its picture: `grayscale` (petrified), `sepia`, `invert`, `ghost` (pale, see-through) or `shadow` (dark).                       |
 | `randomImg`                  | With `"img": "/assets/tokens/goblin-*.webp"`: each new unlinked copy picks one of the files the `*` pattern matches.                                |
 | `speed`                      | Walking speed in feet. Default 30.                                                                                                                  |
 | `ownership`                  | Who may see, read and act with it; see Ownership below.                                                                                             |
