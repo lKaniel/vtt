@@ -120,6 +120,12 @@ export abstract class ActionSession extends PackSession {
     this.changed();
   }
 
+  /** Changes the aimed spell's option (a damage type, enlarge or reduce). */
+  chooseOption(choice: string): void {
+    if (this.aiming) this.aiming = { ...this.aiming, choice };
+    this.changed();
+  }
+
   pickTarget(id: string): void {
     if (!this.aiming) return;
     const { aiming, done } = pick(this.aiming, id);

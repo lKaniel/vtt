@@ -28,6 +28,12 @@ function zoneOf(id: string, point?: [number, number]) {
 }
 
 describe('lasting zones', () => {
+  it('remember the spell, its slot and the option chosen on casting', () => {
+    const chosen = { ...spell('spiritual-weapon'), chosen: 'fist' };
+    const [repeat] = lastingEffects(cleric, chosen, 4);
+    expect(repeat).toMatchObject({ spell: 'spiritual-weapon', slot: 4, repeat: { slot: 4, choice: 'fist' } });
+  });
+
   it('catch foes around the caster of spirit guardians, sparing allies and the caster', () => {
     const z = zoneOf('spirit-guardians');
     const s = spell('spirit-guardians');

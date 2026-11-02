@@ -80,6 +80,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     targets: z.array(z.string()).max(20),
     point: PointSchema.optional(),
     summon: z.string().optional(),
+    choice: z.string().optional(),
   }),
   z.object({
     t: z.literal('feature'),

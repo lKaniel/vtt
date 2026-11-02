@@ -69,7 +69,7 @@ function SpellEffectFields({ spell, change }: Readonly<{ spell: Spell; change: (
   const setRoll = (v: string) => {
     if (v.startsWith('attack-')) change({ attack: v.slice(7) as Spell['attack'], save: undefined });
     else if (v.startsWith('save-'))
-      change({ attack: undefined, save: { ability: v.slice(5) as never, onSave: 'half' } });
+      change({ attack: undefined, save: { ability: v.slice(5) as never, onSave: 'half', onCast: true } });
     else change({ attack: undefined, save: undefined });
   };
   const hit = spell.damage[0];
