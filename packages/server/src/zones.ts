@@ -1,4 +1,4 @@
-import { inZone, type Token, withChoice, type ZoneHit, zonesOf } from '@vtt/system-dnd5e';
+import { inZone, type Spell, type Token, withChoice, type ZoneHit, zonesOf } from '@vtt/system-dnd5e';
 import { inTemplate, isParty, type Point } from '@vtt/shared';
 import type { SpellActions } from './spell-actions.ts';
 import type { Table } from './table.ts';
@@ -9,6 +9,9 @@ function spared({ bearer, effect }: ZoneHit, token: Token): boolean {
   if (token.id === bearer.id) return true;
   return effect.zone.spares === 'allies' && isParty(token) === isParty(bearer);
 }
+
+/** Whether the zone's spell does anything to a creature in it (darkness and walls don't). */
+const lands = (s: Spell) => !!s.attack || !!s.save || s.damage.length > 0 || !!s.effect || !!s.heal;
 
 /**
  * Lasting areas in a fight: a creature that starts its turn in one, or walks
@@ -61,7 +64,7 @@ export class Zones {
     const known = this.table.content(z.bearer).spells.get(z.effect.zone.spell);
     const spell = known && withChoice(known, z.effect.zone.choice);
     const sheet = this.table.sheetOf(victim);
-    if (!combat || !spell || !sheet || sheet.hp <= 0) return;
+    if (!combat || !spell || !lands(spell) || !sheet || sheet.hp <= 0) return;
     const key = `${combat.round}:${combat.turn}:${z.effect.id}:${victim.id}`;
     if (this.hit.has(key)) return;
     this.hit.add(key);
