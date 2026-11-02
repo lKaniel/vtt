@@ -35,7 +35,9 @@ What comes along:
 - **Scenes**, all of them, the active one as the game's scene: background,
   tiles, walls and doors, lights, drawings, map notes, measured templates,
   ambient sounds and regions (see "Importing from Foundry VTT" in packs.md
-  for how each is read), and the scene's playlist.
+  for how each is read), and the scene's playlist. The foreground picture
+  becomes a roof tile that never fades; whether a scene is in the
+  navigation bar, its name there and its thumbnail come along too.
 - **Foundry v14** scenes: the background comes from the lowest floor that
   has one (v14 keeps it in the scene's `levels`), templates that v14 stores
   as regions become templates again, and 3D Canvas model tiles (blank

@@ -1,5 +1,15 @@
 import { type Doc, DocStore } from '@vtt/core';
-import { copyRefs, duplicateSceneOps, gridSizePatch, newSceneOps, pasteAt, sceneList } from './index.ts';
+import {
+  copyRefs,
+  duplicateSceneOps,
+  gridSizePatch,
+  navLabel,
+  navScenes,
+  newSceneOps,
+  pasteAt,
+  sceneList,
+  sceneThumb,
+} from './index.ts';
 import { describe, expect, it } from 'vitest';
 
 function store(): DocStore {
@@ -61,5 +71,50 @@ describe('scenes', () => {
     const clip = copyRefs(docs, [{ coll: 'cellar/tokens', id: 'rat' }]);
     const { ids } = pasteAt(docs, clip, { scene: 'main', offset: [0, 0] });
     expect(ids).toEqual(['rat-1']);
+  });
+});
+
+describe('the scene navigation bar', () => {
+  const nav = () => {
+    const docs = store();
+    const put = (coll: string, doc: Partial<Doc> & { id: string; type: string }) =>
+      docs.apply([{ op: 'create', coll, doc: { rev: 0, ...doc } }]);
+    put('scenes', { type: 'scene', id: 'road', name: 'The Road', sort: 'c', navigation: true, navName: 'Road' });
+    put('scenes', { type: 'scene', id: 'tower', name: 'Tower', sort: 'd', navigation: true, thumb: '/assets/t.webp' });
+    put('road/tiles', {
+      type: 'tile',
+      id: 'bg',
+      kind: 'image',
+      x: 0,
+      y: 0,
+      w: 9,
+      h: 9,
+      src: '/assets/road.webp',
+      background: true,
+    });
+    return docs;
+  };
+
+  it('shows the scenes marked for it, and the game’s and yours, in the list’s order', () => {
+    expect(navScenes(nav(), { active: 'main', here: 'main' }).map((d) => d.id)).toEqual(['main', 'road', 'tower']);
+    expect(navScenes(nav(), { active: 'main', here: 'cellar' }).map((d) => d.id)).toEqual([
+      'main',
+      'cellar',
+      'road',
+      'tower',
+    ]);
+  });
+
+  it('labels a scene by its navigation name, else its name', () => {
+    const docs = nav();
+    expect(navLabel(docs.get('scenes', 'road')!)).toBe('Road');
+    expect(navLabel(docs.get('scenes', 'tower')!)).toBe('Tower');
+  });
+
+  it('pictures a scene by its thumbnail, else its background tile', () => {
+    const docs = nav();
+    expect(sceneThumb(docs, 'tower')).toBe('/assets/t.webp');
+    expect(sceneThumb(docs, 'road')).toBe('/assets/road.webp');
+    expect(sceneThumb(docs, 'main')).toBeUndefined();
   });
 });

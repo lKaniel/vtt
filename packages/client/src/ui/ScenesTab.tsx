@@ -1,5 +1,6 @@
 import type { Doc, Patch } from '@vtt/core';
-import { gridSizePatch, isGm } from '@vtt/shared';
+import { gridSizePatch, isGm, sceneThumb } from '@vtt/shared';
+import { assetUrl } from '../assets.ts';
 import { useState } from 'react';
 import type { Session } from '../session.ts';
 import { Button } from './kit/button.tsx';
@@ -63,9 +64,11 @@ function SceneRow({
   const here = session.scene === id;
   const active = session.activeScene === id;
   const seats = session.seatsOn(id).filter((p) => !isGm(p));
+  const thumb = sceneThumb(session.docs, id);
   return (
     <li className={`scene-row${here ? ' here' : ''}`}>
       <div className="scene-head">
+        {thumb && <img src={assetUrl(thumb)} alt="" className="h-8 w-12 rounded-sm object-cover" />}
         <span className="row-name">{nameOf(doc)}</span>
         {active && <span className="scene-badge">Game</span>}
         {here && <span className="scene-badge you">You</span>}
@@ -190,6 +193,7 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
           onBlur={(e) => edit({ background: e.target.value })}
         />
       </label>
+      <NavFields doc={doc} edit={edit} />
       <Check label="Fog of war" value={flag(doc, 'vision', true)} onChange={(v) => edit({ vision: v })} />
       <Check
         label="Remember explored ground"
@@ -203,6 +207,31 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
         title="Saved now; takes effect once the game has world time"
       />
     </div>
+  );
+}
+
+/** The navigation bar: whether the scene is in it, its name there, and its picture. */
+function NavFields({ doc, edit }: Readonly<{ doc: Doc; edit: (patch: Patch) => void }>) {
+  const text = (key: string) => (e: React.FocusEvent<HTMLInputElement>) => {
+    const v = e.target.value.trim();
+    if (v !== str(doc, key, '')) edit({ [key]: v || null });
+  };
+  return (
+    <>
+      <Check
+        label="In the navigation bar"
+        value={flag(doc, 'navigation', false)}
+        onChange={(v) => edit({ navigation: v || null })}
+      />
+      <label>
+        <span>Name in the bar</span>
+        <Input defaultValue={str(doc, 'navName', '')} placeholder={nameOf(doc)} onBlur={text('navName')} />
+      </label>
+      <label>
+        <span>Thumbnail</span>
+        <Input defaultValue={str(doc, 'thumb', '')} placeholder="The background's picture" onBlur={text('thumb')} />
+      </label>
+    </>
   );
 }
 
