@@ -10,6 +10,12 @@ const LONGEST = 5000;
 /** An on-target video covers this many times the target's radius. */
 const ON_TARGET = 3;
 
+interface Path {
+  from: Place;
+  to: Place;
+  ranged: boolean;
+}
+
 interface Place {
   at: Point;
   r: number;
@@ -26,7 +32,7 @@ function videoElement(url: string): HTMLVideoElement {
 }
 
 /** Lays the sprite out once the video knows its size. */
-function layout(sprite: Sprite, video: HTMLVideoElement, from: Place, to: Place, ranged: boolean): void {
+function layout(sprite: Sprite, video: HTMLVideoElement, { from, to, ranged }: Path): void {
   const w = video.videoWidth || 1;
   const h = video.videoHeight || 1;
   if (ranged) {
@@ -53,7 +59,7 @@ export function videoFx(url: string, from: Place, to: Place, ranged: boolean): F
     view: sprite,
     update(ms) {
       if (!placed && video.videoWidth) {
-        layout(sprite, video, from, to, ranged);
+        layout(sprite, video, { from, to, ranged });
         placed = true;
         sprite.visible = true;
       }

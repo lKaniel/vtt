@@ -179,9 +179,7 @@ export class Game {
   }
 
   /** The clients on a scene. */
-  private on(scene: string): Client[] {
-    return [...this.clients].filter((c) => c.scene === scene);
-  }
+  private on = (scene: string): Client[] => [...this.clients].filter((c) => c.scene === scene);
 
   findPlayer = (id: string): Player | undefined => this.store.world.players.find((p) => p.id === id);
 

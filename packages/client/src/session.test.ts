@@ -69,6 +69,14 @@ describe('Session', () => {
     expect(lit).toHaveBeenCalled();
   });
 
+  it('sends the animation picked for an attack, and none for the default', () => {
+    ws.receive(welcome());
+    session.setAnimation('hero', 'attack:Dagger', 'flame-blade');
+    expect(ws.sent.at(-1)).toEqual({ t: 'animation', token: 'hero', ref: 'attack:Dagger', animation: 'flame-blade' });
+    session.setAnimation('hero', 'attack:Dagger');
+    expect(ws.sent.at(-1)).toEqual({ t: 'animation', token: 'hero', ref: 'attack:Dagger' });
+  });
+
   it('sends your settings and takes your changed seat without starting over', () => {
     ws.receive(welcome());
     session.setSeatSettings({ opportunity: 'auto' });

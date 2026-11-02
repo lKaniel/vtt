@@ -60,7 +60,7 @@ export const isRangedVideo = (src: string): boolean => /ranged|_\d+ft_/i.test(sr
 /** How much of the animations a player wants to see (their own option, kept in this browser). */
 export type Motion = 'full' | 'reduced' | 'off';
 
-export const MOTIONS: readonly Motion[] = ['full', 'reduced', 'off'];
+const MOTIONS: readonly Motion[] = ['full', 'reduced', 'off'];
 
 /** This browser's choice of how much animation to play. */
 export const currentMotion = (): Motion => readPref('motion', MOTIONS, 'full');
