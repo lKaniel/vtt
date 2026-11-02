@@ -38,6 +38,8 @@ export interface HttpOptions {
   clientDir: string;
   /** The file of an installed pack's media (`/packs/<pack>/<path>`), or undefined if it has none there. */
   packFile?: (pack: string, path: string) => string | undefined;
+  /** The file of an installed plugin (`/plugins/<plugin>/<path>`), or undefined if it has none there. */
+  pluginFile?: (plugin: string, path: string) => string | undefined;
   /** The home game's seats, for taking one without an account; `locked` ones have a password. */
   players: () => readonly SeatInfo[] | Promise<readonly SeatInfo[]>;
   /** Account routes; answers true when it handled the request. */
@@ -70,10 +72,13 @@ async function serveAsset(res: ServerResponse, opts: HttpOptions, path: string):
   return !!dir && serveFile(res, dir, rest);
 }
 
-/** /packs/<pack>/<path>: media of an installed pack (see pack-store.ts). */
-async function servePack(res: ServerResponse, opts: HttpOptions, path: string): Promise<boolean> {
-  const match = /^\/packs\/([a-z0-9-]+)\/(.+)$/.exec(path);
-  const file = match && opts.packFile?.(match[1]!, decodeURIComponent(match[2]!));
+type Lookup = ((id: string, path: string) => string | undefined) | undefined;
+
+/** /packs/<pack>/<path> (media of an installed pack, pack-store.ts) and /plugins/<plugin>/<path> (plugin-store.ts). */
+async function serveInstalled(res: ServerResponse, opts: HttpOptions, path: string): Promise<boolean> {
+  const match = /^\/(packs|plugins)\/([a-z0-9-]+)\/(.+)$/.exec(path);
+  const lookup: Lookup = match?.[1] === 'packs' ? opts.packFile : opts.pluginFile;
+  const file = match && lookup?.(match[2]!, decodeURIComponent(match[3]!));
   return !!file && servePath(res, file);
 }
 
@@ -97,7 +102,7 @@ export function httpHandler(opts: HttpOptions): (req: IncomingMessage, res: Serv
     }
     const served =
       (await serveAsset(res, opts, url.pathname)) ||
-      (await servePack(res, opts, url.pathname)) ||
+      (await serveInstalled(res, opts, url.pathname)) ||
       (await serveFile(res, opts.clientDir, url.pathname)) ||
       (await serveFile(res, opts.clientDir, 'index.html'));
     if (!served) res.writeHead(404).end('Not found. In development, open the Vite dev server instead.');

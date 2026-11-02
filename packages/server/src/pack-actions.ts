@@ -5,6 +5,7 @@ import { isGm, type Player } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import type { ClientMessage } from './client-messages.ts';
 import { gamePackIssues, packInfos } from './game-packs.ts';
+import { gamePluginIssues, pluginInfos } from './game-plugins.ts';
 import type { GameStore } from './game-store.ts';
 import { filesUnder } from './pack-store.ts';
 import { Refusal } from './table.ts';
@@ -14,8 +15,8 @@ import { Refusal } from './table.ts';
 // game's assets/uploads/. Turning a pack on or off is an op on game.json
 // (`packs`), so it undoes like any edit.
 
-type PackMessage = Extract<ClientMessage, { t: 'packs' | 'media' | 'compendium' | 'upload' }>;
-const KINDS = new Set(['packs', 'media', 'compendium', 'upload']);
+type PackMessage = Extract<ClientMessage, { t: 'packs' | 'plugins' | 'media' | 'compendium' | 'upload' }>;
+const KINDS = new Set(['packs', 'plugins', 'media', 'compendium', 'upload']);
 
 export const isPackMessage = (msg: ClientMessage): msg is PackMessage => KINDS.has(msg.t);
 
@@ -34,6 +35,7 @@ export class PackActions {
   }
 
   private async answer(player: Player, msg: PackMessage): Promise<ServerMessage> {
+    if (msg.t === 'plugins') return this.plugins(player);
     if (!isGm(player)) throw new Refusal('Only the GM can browse packs');
     switch (msg.t) {
       case 'packs':
@@ -49,6 +51,15 @@ export class PackActions {
         return { t: 'media', entries: await this.media() };
       }
     }
+  }
+
+  /** The plugins the game may use, read again so ones copied in show up. */
+  private async plugins(player: Player): Promise<ServerMessage> {
+    if (!isGm(player)) throw new Refusal('Only the GM can manage plugins');
+    const { store } = this;
+    await store.plugins?.load();
+    const problems = [...(store.plugins?.problems ?? []), ...gamePluginIssues(store.plugins, store.campaign)];
+    return { t: 'plugins', plugins: pluginInfos(store.plugins, store.campaign), problems };
   }
 
   private async list(): Promise<ServerMessage> {

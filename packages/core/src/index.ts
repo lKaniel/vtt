@@ -8,3 +8,4 @@ export * from './sort-key.ts';
 export * from './tree.ts';
 export * from './system.ts';
 export * from './packs.ts';
+export * from './plugins.ts';

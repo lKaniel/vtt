@@ -76,6 +76,23 @@ describe('the scripting API', () => {
   });
 });
 
+describe('plugins', () => {
+  it('load when the table welcomes you', async () => {
+    const start = vi.fn();
+    session.scripts.plugins.importModule = () => Promise.resolve({ default: start });
+    const base = welcome([]) as Extract<ServerMessage, { t: 'welcome' }>;
+    ws.receive({ ...base, plugins: [{ id: 'alert', name: 'Alert', main: '/plugins/alert/main.js', styles: [] }] });
+    await vi.waitFor(() => expect(start).toHaveBeenCalledWith(session.scripts.vtt));
+  });
+
+  it('show their failure as an error', async () => {
+    session.scripts.plugins.importModule = () => Promise.reject(new Error('404'));
+    const base = welcome([]) as Extract<ServerMessage, { t: 'welcome' }>;
+    ws.receive({ ...base, plugins: [{ id: 'alert', name: 'Alert', main: '/plugins/alert/main.js', styles: [] }] });
+    await vi.waitFor(() => expect(session.error?.message).toBe('Plugin alert failed: 404'));
+  });
+});
+
 describe('script macros', () => {
   it('run in the GM’s browser with vtt and the token, never on the server', async () => {
     joinAsGm([{ ...heal, command: 'vtt.chat("healing " + token)' }]);

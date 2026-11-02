@@ -188,6 +188,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('undo'), card: z.string().optional() }),
   z.object({ t: z.literal('redo') }),
   z.object({ t: z.literal('packs') }),
+  z.object({ t: z.literal('plugins') }),
   z.object({ t: z.literal('media') }),
   z.object({ t: z.literal('compendium'), pack: z.string().max(80), compendium: z.string().max(80) }),
   z.object({ t: z.literal('upload'), name: z.string().min(1).max(200), data: z.string().max(MAX_UPLOAD_BASE64) }),

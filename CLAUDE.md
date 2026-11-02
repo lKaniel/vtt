@@ -124,6 +124,9 @@ with `pnpm check-game data/games/<id>`.
   hooks, the `vtt` API and the GM-only script macros. The API acts only
   through the session (what a click would send), never around the server;
   a new ability goes in `script-api.ts` as a call to a session method.
+  Plugins (`docs/plugins.md`) are folders in `data/plugins/<id>/` that a game
+  turns on in game.json `plugins`; their code gets the same `vtt`. Never
+  commit someone's private plugin.
 - Map editor (`docs/editor.md`): modes, selection, handles, menus and the
   inspector work the same for every placeable. Hit-testing and shapes stay
   in `shared/hit-test.ts` and `placeables.ts` (one boundary for a later

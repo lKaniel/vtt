@@ -18,6 +18,7 @@ beforeAll(async () => {
   await writeFile(join(dir, 'other', 'assets', 'map.png'), 'other png');
   await writeFile(join(dir, 'client', 'index.html'), '<h1>vtt</h1>');
   await writeFile(join(dir, 'secret.txt'), 'nope');
+  await writeFile(join(dir, 'main.js'), 'export default () => {};');
   await mkdir(join(dir, 'packs', 'forest', 'media'), { recursive: true });
   await writeFile(join(dir, 'packs', 'forest', 'media', 'big oak.webp'), 'oak');
   const handle = httpHandler({
@@ -25,6 +26,7 @@ beforeAll(async () => {
       pack === 'forest' && path.startsWith('media/') ? join(dir, 'packs', pack, path) : undefined,
     // The home game is "home"; "other" is a game made in the lobby.
     assetsDir: (game) => ({ other: join(dir, 'other', 'assets'), home: join(dir, 'assets') })[game ?? 'home'],
+    pluginFile: (plugin, path) => (plugin === 'turn-alert' && path === 'main.js' ? join(dir, 'main.js') : undefined),
     clientDir: join(dir, 'client'),
     players: () => [
       { id: 'gm', name: 'GM', role: 'gm', color: '#fff' },
@@ -65,6 +67,13 @@ describe('httpHandler', () => {
     expect(res.headers.get('content-type')).toBe('image/webp');
     expect(await res.text()).toBe('oak');
     expect(await (await fetch(`${base}/packs/forest/pack.json`)).text()).toBe('<h1>vtt</h1>');
+  });
+
+  it('serves the files of installed plugins as modules', async () => {
+    const res = await fetch(`${base}/plugins/turn-alert/main.js`);
+    expect(res.headers.get('content-type')).toBe('text/javascript');
+    expect(await res.text()).toBe('export default () => {};');
+    expect(await (await fetch(`${base}/plugins/turn-alert/secret.txt`)).text()).toBe('<h1>vtt</h1>');
   });
 
   it('falls back to the client for unknown paths', async () => {

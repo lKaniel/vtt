@@ -1,4 +1,4 @@
-import type { Doc, DocRef } from '@vtt/core';
+import type { Doc, DocRef, PluginLoad } from '@vtt/core';
 import { canControl, canEdit, type Chunk, isGm, type Player, type Point, type WorldInfo } from '@vtt/shared';
 import {
   type Actor,
@@ -86,7 +86,9 @@ export class Session extends HudSession {
   private listeners = new Map<keyof SessionEvents, Set<(...args: never[]) => void>>();
   private closed = false;
   private retry?: ReturnType<typeof setTimeout>;
-  /** Hooks, the scripting API (`vtt`) and script macros: docs/scripting.md. */
+  /** The plugins the game turned on, to load (docs/plugins.md). */
+  pluginLoads: readonly PluginLoad[] = [];
+  /** Hooks, the scripting API (`vtt`), script macros and plugins: docs/scripting.md. */
   readonly scripts: ScriptHost = new ScriptHost(this);
 
   /** `gameId` is the game to join (else the home game); `playerId` a home game seat, else the account's. */
@@ -399,6 +401,7 @@ export class Session extends HudSession {
     this.welcomeEdits(msg);
     this.welcomeScenes(msg);
     this.players = msg.players ?? [];
+    this.pluginLoads = msg.plugins ?? [];
     this.actors.clear();
     for (const a of msg.actors ?? []) this.actors.set(a.id, a);
     // A new role may take edit mode away (or the creature out of sight).

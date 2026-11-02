@@ -20,6 +20,7 @@ import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
 import { FileWriter } from './file-writer.ts';
 import { FogStore } from './fog-store.ts';
 import type { PackStore } from './pack-store.ts';
+import type { PluginStore } from './plugin-store.ts';
 import { classify, crossCheck, pathOf } from './game-files.ts';
 import { readEntry, readFolder, stateOf, type FolderEntry } from './game-folder.ts';
 import { upgradeFolder } from './migrate-all.ts';
@@ -92,6 +93,8 @@ export class GameStore extends EventEmitter<StoreEvents> {
   private watcher?: FSWatcher;
   /** The step being recorded for undo, and who changed each document last. */
   readonly history = new StoreHistory();
+  /** The plugins installed on the server (the hub sets it). */
+  plugins?: PluginStore;
 
   /**
    * `system`: the rules the game plays (game.json `system`), D&D 5e unless
@@ -321,10 +324,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
     const scenes = this.docs.all(SCENES).map((d) => d.id);
     const made = new Set(ops.flatMap((op) => (op.op === 'create' && op.coll === SCENES ? [op.doc.id] : [])));
     const validate = clientCheck((id) => made.has(id) || !!this.docs.get(SCENES, id));
-    const extra = [
-      ...actorDeleteOps(this.docs, scenes, ops, this.actors),
-      ...sceneDeleteOps(this.docs, this.game, ops),
-    ];
+    const extra = actorDeleteOps(this.docs, scenes, ops, this.actors).concat(sceneDeleteOps(this.docs, this.game, ops));
     this.commit([...extra, ...ops], { validate, txn });
   }
 
