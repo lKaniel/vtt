@@ -217,16 +217,12 @@
   background: none;
   border-bottom: 1px solid var(--hairline);
 }
-.join-seat,
 .roster-card {
   border: 0;
   border-image: var(--slim-rim);
   border-style: solid;
   border-width: 6px;
   background: var(--slim-fill);
-}
-.join-seat {
-  padding: 10px 18px;
 }
 .roster-card {
   padding: 14px 12px 12px;

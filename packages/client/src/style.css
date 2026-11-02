@@ -113,36 +113,6 @@ h4 {
   text-align: center;
   letter-spacing: 0.08em;
 }
-.join-error {
-  color: var(--bad);
-}
-.join-list {
-  display: grid;
-  gap: 12px;
-}
-.join-seat {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  background: linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
-  border: 1px solid var(--gold-dim);
-  border-left: 6px solid;
-  border-radius: 6px;
-  text-align: left;
-}
-.join-seat:hover {
-  border-top-color: var(--gold);
-  border-right-color: var(--gold);
-  border-bottom-color: var(--gold);
-}
-.join-name {
-  font-family: var(--display);
-  font-size: 18px;
-}
-.join-role {
-  color: var(--muted);
-}
 
 /* ---------- Game screen ---------- */
 
@@ -1645,16 +1615,6 @@ h4 {
   text-shadow: 0 2px 8px #000;
   background: url('/art/ui/header-plaque.webp') center / 100% 100% no-repeat;
 }
-.join-seat {
-  padding: 18px 26px;
-  background: none;
-  border: 0;
-  border-radius: 0;
-  border-image: url('/art/ui/seat-card.webp') 40 fill / 12px stretch;
-}
-.join-seat:hover {
-  filter: brightness(1.2);
-}
 .join {
   position: relative;
   z-index: 0;
@@ -2144,28 +2104,6 @@ h4 {
   padding: 40px 46px 36px;
   border-image: url('/art/ui/panel-large.webp') 110 fill / 38px stretch;
 }
-.ed-head {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-}
-.ed-head > div {
-  flex: 1;
-}
-.ed-face {
-  width: 56px;
-  height: 56px;
-  border: 2px solid var(--gold);
-  border-radius: 50%;
-}
-.ed-cols {
-  display: grid;
-  grid-template-columns: 1fr 1.15fr 1fr;
-  gap: 22px;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
-}
 .ed-col h4 {
   margin: 12px 0 6px;
   font-size: 14px;
@@ -2203,31 +2141,6 @@ h4 {
   margin: 4px 0;
   cursor: pointer;
 }
-.ed-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 12px;
-}
-.ed-abilities {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 4px;
-}
-.ed-abilities .ed-field > span {
-  text-align: center;
-}
-.ed-abilities input {
-  padding: 4px 2px;
-  text-align: center;
-}
-.ed-hp {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.ed-hp input {
-  width: 90px;
-}
 .ed-list .row {
   padding: 3px 6px;
   font-size: 13px;
@@ -2257,22 +2170,8 @@ h4 {
 .ed-remove:hover {
   color: var(--bad);
 }
-.ed-foot {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding-top: 12px;
-  margin-top: 10px;
-  border-top: 1px solid var(--gold-dim);
-}
 .ed-spacer {
   flex: 1;
-}
-
-@media (max-width: 900px) {
-  .ed-cols {
-    grid-template-columns: 1fr;
-  }
 }
 .ab-edit {
   padding: 0;
@@ -2282,22 +2181,6 @@ h4 {
 .ab-edit:hover {
   color: #fff4dc;
 }
-/* Name and summary share one line, above the ornament in the frame's top edge. */
-.ed-head > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  align-items: baseline;
-}
-.ed-head {
-  padding-bottom: 26px;
-  border-bottom: 0;
-}
-.ed-face {
-  width: 44px;
-  height: 44px;
-}
-
 /* ---------- Character sheet: edit mode and dragging ---------- */
 
 .sheet-head-tools {
@@ -2693,11 +2576,6 @@ button.pip:hover {
     0 0 24px rgba(232, 180, 90, 0.35),
     0 3px 6px #000;
 }
-.menu-sub {
-  margin: 0;
-  font-style: italic;
-  color: var(--muted);
-}
 .menu-list {
   display: grid;
   gap: 10px;
@@ -2733,7 +2611,6 @@ button.pip:hover {
 }
 .auth-field input,
 .auth-field select,
-.lobby-link,
 .lobby-member select,
 .cc-abilities input,
 .cc-abilities select {
@@ -2754,9 +2631,6 @@ button.pip:hover {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-}
-.auth-switch {
-  justify-self: center;
 }
 
 /* Account: the roster. */
@@ -2788,10 +2662,6 @@ button.pip:hover {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-.account-seat {
-  font-style: italic;
-  color: var(--muted);
 }
 .roster {
   display: grid;
@@ -2866,17 +2736,6 @@ button.pip:hover {
 .roster-plus {
   font-size: 54px;
   line-height: 1;
-}
-.account-foot {
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: min(1100px, calc(100vw - 32px));
-  padding: 12px 18px;
-  transform: translateX(-50%);
 }
 .account-empty {
   flex: 1;
@@ -2982,16 +2841,6 @@ button.pip:hover {
 .lobby-dot.on {
   background: #7cc47c;
   box-shadow: 0 0 6px #7cc47c;
-}
-.lobby-link {
-  width: 100%;
-  font-size: 13px;
-}
-.lobby-check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
 }
 .lobby-danger {
   display: grid;

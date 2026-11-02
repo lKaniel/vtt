@@ -51,12 +51,13 @@ export class FeatureActions {
   /** Uses up one of an item: a potion is drunk, a torch lit. */
   useItem(player: Player, id: string, itemId: string): void {
     const { token, sheet } = this.table.actor(player, id);
-    const item = this.table.content(token).items.get(itemId);
-    const problem = itemProblem(token, item);
+    const items = this.table.content(token).items;
+    const item = items.get(itemId);
+    const problem = itemProblem(token, item, items);
     if (problem) throw new Refusal(`${token.name} ${problem}`);
     const cost = itemCost(item!, editionOf(token, this.store.world));
     this.table.check(token, cost);
-    const out = useItem(token, sheet, itemId, this.table.rng);
+    const out = useItem(token, sheet, item!, this.table.rng);
     this.table.pay(token, cost);
     this.store.setToken(out.token);
     if (out.lit) return this.table.note(`${token.name} lights a ${out.lit}`);

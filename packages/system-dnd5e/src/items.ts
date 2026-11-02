@@ -1,4 +1,3 @@
-import { srdFor } from './content.ts';
 import { type Rng, roll } from '@vtt/shared';
 import type { Creature } from './creature.ts';
 import type { Token } from './token-schema.ts';
@@ -14,13 +13,16 @@ export function itemCost(item: Item, edition: Edition): 'action' | 'bonus' {
 
 const carries = (token: Token, id: string) => !!token.inventory?.some((e) => e.item === id);
 
-/** Why `token` can't use `item` now, or undefined if it can. */
-export function itemProblem(token: Token, item: Item | undefined): string | undefined {
+/** Why `token` can't use `item` now, or undefined if it can. `items`: the game's content, which names the fuel. */
+export function itemProblem(
+  token: Token,
+  item: Item | undefined,
+  items: ReadonlyMap<string, Item>,
+): string | undefined {
   if (!item || !carries(token, item.id)) return "doesn't carry that";
   if (item.type !== 'gear' || !item.use) return `${item.name} can't be used like that`;
   const fuel = item.use.fuel;
-  if (fuel && !carries(token, fuel))
-    return `has no ${srdFor('2014').items.get(fuel)?.name ?? fuel} for the ${item.name}`;
+  if (fuel && !carries(token, fuel)) return `has no ${items.get(fuel)?.name ?? fuel} for the ${item.name}`;
   return undefined;
 }
 
@@ -41,14 +43,13 @@ function consume(token: Token, id: string): Token {
   return { ...token, inventory: inventory.map((e, i) => (i === at ? { ...e, qty: e.qty - 1 } : e)) };
 }
 
-/** Uses up one of the item `id` and applies what it does. Check `itemProblem` first. */
-export function useItem(token: Token, sheet: Creature, id: string, rng: Rng = Math.random): ItemUse {
-  const item = srdFor('2014').items.get(id);
-  const use = item?.type === 'gear' ? item.use : undefined;
-  const next = consume(token, use?.fuel ?? id);
+/** Uses up one of `item` (as the game's content has it) and applies what it does. Check `itemProblem` first. */
+export function useItem(token: Token, sheet: Creature, item: Item, rng: Rng = Math.random): ItemUse {
+  const use = item.type === 'gear' ? item.use : undefined;
+  const next = consume(token, use?.fuel ?? item.id);
   if (use?.light) {
     const { endsAt: _endsAt, ...light } = use.light;
-    const name = light.name ?? item!.name;
+    const name = light.name ?? item.name;
     return { token: { ...next, light: { ...light, name } }, lit: name };
   }
   const heal = use?.heal;
