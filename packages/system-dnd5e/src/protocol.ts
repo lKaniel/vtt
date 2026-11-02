@@ -137,6 +137,8 @@ export type ClientMessage =
   | { t: 'useItem'; token: string; item: string }
   /** Take a reaction that was offered, with this attack; no attack declines it. */
   | { t: 'react'; offer: string; choice?: string }
+  /** Apply the roll on a chat card to these creatures: in full, half, double, or as healing. */
+  | { t: 'applyDamage'; card: string; tokens: string[]; how: 'full' | 'half' | 'double' | 'heal' }
   | { t: 'dropConcentration'; token: string }
   /** GM: end one effect on a token. */
   | { t: 'removeEffect'; token: string; effect: string }

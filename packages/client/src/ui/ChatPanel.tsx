@@ -3,6 +3,7 @@ import type { DiceTerm } from '@vtt/shared';
 import { MinusIcon, PlusIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '../session.ts';
+import type { ApplyHow } from '../session-actions.ts';
 import { ActorsTab } from './ActorsTab.tsx';
 import { AssetsTab } from './AssetsTab.tsx';
 import { CompendiumTab } from './CompendiumTab.tsx';
@@ -116,6 +117,7 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
           <Message
             key={m.id}
             m={m}
+            onApply={(how) => session.applyRoll(m.id, how)}
             onUndo={session.isGm() && session.history.card === m.id ? () => session.undoCard(m.id) : undefined}
           />
         ))}
@@ -155,8 +157,16 @@ function kindOf(m: ChatMessage): string {
   return (m.roll ? 'msg msg-roll' : 'msg') + undone;
 }
 
-/** A chat card; `onUndo` (GM, latest game action only) puts a button on it to undo what it reports. */
-function Message({ m, onUndo }: Readonly<{ m: ChatMessage; onUndo?: () => void }>) {
+interface MessageProps {
+  m: ChatMessage;
+  /** Applies the card's roll to your targets or selection. */
+  onApply: (how: ApplyHow) => void;
+  /** GM, latest game action only: undoes what the card reports. */
+  onUndo?: () => void;
+}
+
+/** A chat card; a roll gets buttons to apply it (in full, half, double, as healing). */
+function Message({ m, onApply, onUndo }: Readonly<MessageProps>) {
   return (
     <div className={kindOf(m)}>
       <span className="msg-from" style={{ color: m.color }}>
@@ -187,9 +197,37 @@ function Message({ m, onUndo }: Readonly<{ m: ChatMessage; onUndo?: () => void }
             ))}
           </span>
           <span className="roll-total">{m.roll.total}</span>
+          {m.label && <span className="muted">{m.label}</span>}
         </span>
       )}
+      {m.roll && <ApplyButtons onApply={onApply} />}
     </div>
+  );
+}
+
+const APPLY: { how: ApplyHow; label: string; title: string }[] = [
+  { how: 'full', label: 'Apply', title: 'Deal it to your targets, or the selected creatures' },
+  { how: 'half', label: '½', title: 'Deal half (a save for half)' },
+  { how: 'double', label: '×2', title: 'Deal double' },
+  { how: 'heal', label: 'Heal', title: 'Heal them by it' },
+];
+
+function ApplyButtons({ onApply }: Readonly<{ onApply: (how: ApplyHow) => void }>) {
+  return (
+    <span className="mt-1 flex gap-1" data-slot="apply-roll">
+      {APPLY.map((a) => (
+        <Button
+          key={a.how}
+          variant="outline"
+          size="sm"
+          className="h-6 px-2"
+          title={a.title}
+          onClick={() => onApply(a.how)}
+        >
+          {a.label}
+        </Button>
+      ))}
+    </span>
   );
 }
 

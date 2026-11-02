@@ -1,5 +1,5 @@
 import { canControl, HOUR, isGm, type Player, type Point, type Rng, tokensVisibleTo, type World } from '@vtt/shared';
-import { type ChatMessage, type ServerMessage, type Token, viewToken } from '@vtt/system-dnd5e';
+import { type ChatMessage, type ServerMessage, type Token } from '@vtt/system-dnd5e';
 import { OpError } from '@vtt/core';
 import type { WebSocket } from 'ws';
 import { parseClientMessage, type ClientMessage } from './client-messages.ts';
@@ -8,6 +8,7 @@ import { gearAction } from './carry-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
 import { isDropMessage } from './sheet-drop-actions.ts';
+import { DamageActions } from './damage-actions.ts';
 import { castFeature } from './feature-casting.ts';
 import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
@@ -27,10 +28,10 @@ import { isPackMessage, PackActions } from './pack-actions.ts';
 import { EntryActions, isEntryMessage } from './entry-actions.ts';
 import { RegionActions } from './region-actions.ts';
 import { startOf, welcomeOf } from './welcome.ts';
-import { contentFor, packContent } from './game-packs.ts';
+import { packContent } from './game-packs.ts';
 import { WorldClock } from './world-clock.ts';
 import { isPresenceMessage, Presence } from './presence.ts';
-import { chunkMessage, type Client, streamChunks } from './game-client.ts';
+import { chunkMessage, type Client, streamChunks, viewFor, visibilityChanges } from './game-client.ts';
 
 /**
  * The live game. Clients send intents ("move here", "open this door"); the
@@ -58,6 +59,7 @@ export class Game {
   private history: History;
   private packs: PackActions;
   private entries: EntryActions;
+  private damage: DamageActions;
   private presence = new Presence<Client>(
     () => this.clients,
     (c, msg) => this.send(c, msg),
@@ -99,6 +101,7 @@ export class Game {
     this.history = new History(store, (ids, undone) => this.chat.undone(ids, undone));
     this.clock = new WorldClock(table, { now, step: (fn) => this.timePasses(fn) });
     this.packs = new PackActions(store);
+    this.damage = new DamageActions(table, () => this.chat.all);
     this.entries = new EntryActions(store, rng, {
       post: (message) => this.chat.post(actedBy(message, this.acting)),
       show: (entry, page) => {
@@ -211,7 +214,7 @@ export class Game {
     const parts = {
       chat: this.chat.all,
       history: this.history.state(player),
-      view: (t: Token) => this.view(t, player),
+      view: (t: Token) => viewFor(this.store, t, player),
       now: this.clock.serverTime(),
     };
     for (const msg of welcomeOf(this.store, c, parts)) this.send(c, msg);
@@ -242,7 +245,7 @@ export class Game {
     for (const c of this.on(scene)) {
       const before = c.visible;
       c.visible = this.visibleTo(c.player, scene);
-      const msgs = this.store.inScene(scene, () => this.visibilityChanges(c, before, changed, path));
+      const msgs = this.store.inScene(scene, () => visibilityChanges(this.store, c, before, { changed, path }));
       for (const msg of msgs) this.send(c, msg);
     }
     this.exploreOn(scene);
@@ -261,21 +264,6 @@ export class Game {
     const map = this.store.inScene(scene, () => this.store.fog.map(scene, player, this.fog.cell()));
     const msg: ServerMessage = { t: 'fog', player, ...map.encode(keys), ...(full ? { full } : {}) };
     for (const c of this.on(scene)) if (c.player.id === player || isGm(c.player)) this.send(c, msg);
-  }
-
-  private visibilityChanges(c: Client, before: Set<string>, changed?: string, path?: Point[]): ServerMessage[] {
-    const out: ServerMessage[] = [];
-    for (const id of before) if (!c.visible.has(id)) out.push({ t: 'tokenGone', id });
-    for (const id of c.visible) {
-      const token = this.view(this.store.tokens.get(id)!, c.player);
-      if (!before.has(id)) out.push({ t: 'token', token });
-      else if (id === changed) out.push(path ? { t: 'moved', id, path } : { t: 'token', token });
-    }
-    return out;
-  }
-
-  private view(token: Token, player: Player) {
-    return viewToken(token, player, contentFor(this.store, token));
   }
 
   /** Runs a message on the scene the client is on. */
@@ -405,6 +393,7 @@ export class Game {
     else if (msg.t === 'turnBased') this.combat.turnBased(c.player, msg.on);
     else if (msg.t === 'equip' || msg.t === 'carry') gearAction(this.table, c.player, msg);
     else if (isEntryMessage(msg)) this.entries.handle(c.player, msg);
+    else if (msg.t === 'applyDamage') this.damage.apply(c.player, (id) => c.visible.has(id), msg);
     else if (isDropMessage(msg)) this.gm.drops.handle(c.player, (id) => c.visible.has(id), msg);
     else this.scenes.dispatch(c.player, msg);
   }

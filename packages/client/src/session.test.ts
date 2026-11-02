@@ -60,6 +60,19 @@ describe('Session', () => {
     expect(session.toggleTargetAtPointer()).toBe(false);
   });
 
+  it('applies a chat roll to your targets, else the selected creatures', () => {
+    ws.receive(welcome([token('hero'), token('goblin', 250, 50)]));
+    session.applyRoll('card', 'half');
+    expect(ws.sent.at(-1)).not.toMatchObject({ t: 'applyDamage' });
+    expect(session.error?.message).toMatch(/target or select/i);
+    session.select('hero');
+    session.applyRoll('card', 'heal');
+    expect(ws.sent.at(-1)).toEqual({ t: 'applyDamage', card: 'card', tokens: ['hero'], how: 'heal' });
+    session.targets.toggle('goblin');
+    session.applyRoll('card', 'half');
+    expect(ws.sent.at(-1)).toEqual({ t: 'applyDamage', card: 'card', tokens: ['goblin'], how: 'half' });
+  });
+
   it('follows the time of day without reconnecting', () => {
     ws.receive(welcome());
     const lit = vi.fn();
