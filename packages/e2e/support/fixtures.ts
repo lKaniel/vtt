@@ -2,7 +2,7 @@
 // `server` is a fresh server per test, `baseURL` points at it, and `seat`
 // brings another person (their own browser) to the table.
 
-import { test as base, expect, type Page } from '@playwright/test';
+import { chromium, test as base, expect, type Browser, type Page } from '@playwright/test';
 import { startServer, type RunningServer, type ServerOptions } from './server.ts';
 import { atTable, type JoinOptions } from './table.ts';
 
@@ -24,16 +24,18 @@ export const test = base.extend<Fixtures>({
   baseURL: async ({ server }, use) => {
     await use(server.url);
   },
-  seat: async ({ browser, server, viewport }, use) => {
-    const contexts: Awaited<ReturnType<typeof browser.newContext>>[] = [];
+  // Each person gets a browser of their own: two WebGL tables in one browser
+  // share its (software) GPU and starve each other.
+  seat: async ({ server, viewport }, use) => {
+    const browsers: Browser[] = [];
     await use(async (player, options) => {
-      const context = await browser.newContext({ baseURL: server.url, viewport });
-      contexts.push(context);
-      const page = await context.newPage();
+      const browser = await chromium.launch();
+      browsers.push(browser);
+      const page = await browser.newPage({ baseURL: server.url, viewport });
       await atTable(page, player, options);
       return page;
     });
-    await Promise.all(contexts.map((c) => c.close()));
+    await Promise.all(browsers.map((b) => b.close()));
   },
 });
 

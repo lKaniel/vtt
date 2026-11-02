@@ -13,7 +13,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     ...devices['Desktop Chrome'],
-    viewport: { width: 1400, height: 900 },
+    viewport: { width: 1024, height: 640 },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
