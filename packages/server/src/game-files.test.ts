@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ActorSchema, dnd5e, type Token, type TokenEntry, TokenSchema } from '@vtt/system-dnd5e';
-import { GameSchema, SceneSchema, TileSchema } from '@vtt/shared';
+import { GameSchema, SceneSchema, TileSchema, type Wall } from '@vtt/shared';
 import { classify, crossCheck, parseFile, type GameState } from './game-files.ts';
 import { PackStore } from './pack-store.ts';
 
@@ -149,6 +149,20 @@ describe('crossCheck', () => {
       { file: 'scenes/main/tiles.json', message: 'tile "a" is inside itself' },
       { file: 'scenes/main/tiles.json', message: 'tile "b" is inside itself' },
       { file: 'scenes/main/tiles.json', message: 'group "empty" holds no tiles', warning: true },
+    ]);
+  });
+
+  it('reports walls and lights fastened to a tile the scene lacks', () => {
+    const tiles = [TileSchema.parse({ id: 'hut', kind: 'rect', color: '#000', x: 0, y: 0, w: 1, h: 1 })];
+    const walls = [
+      { id: 'w1', a: [0, 0], b: [1, 0], tile: 'hut' },
+      { id: 'w2', a: [0, 0], b: [1, 0], tile: 'gone' },
+    ] as Wall[];
+    const lights = [{ id: 'l1', x: 0, y: 0, bright: 5, dim: 5, tile: 'shed' }];
+    const scene = { scene: SceneSchema.parse({}), tiles, walls, lights, tokens: [] };
+    expect(crossCheck({ ...state([]), scenes: new Map([['main', scene]]) })).toEqual([
+      { file: 'scenes/main/walls.json', message: 'wall "w2": tile "gone" is not a tile here' },
+      { file: 'scenes/main/lights.json', message: 'light "l1": tile "shed" is not a tile here' },
     ]);
   });
 

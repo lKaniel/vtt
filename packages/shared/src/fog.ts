@@ -279,6 +279,8 @@ function fromBase64(data: string): Uint8Array {
 export interface FogEye {
   at: Point;
   senses: Senses;
+  /** Feet up: walls lower than this don't stop it. */
+  elevation?: number;
 }
 
 export interface FogContext {
@@ -302,11 +304,11 @@ export function exploredRasters(eyes: readonly FogEye[], ctx: FogContext): Raste
 }
 
 function eyeRasters(eye: FogEye, ctx: FogContext): Raster[] {
-  const sight = rasterize(ctx.polygon(eye.at, ctx.sight), ctx.cell);
+  const sight = rasterize(ctx.polygon(eye.at, ctx.sight, 'sight', eye.elevation), ctx.cell);
   if (!ctx.dark) return [sight];
   const s = eye.senses;
   const sense = feetToPx(Math.max(s.darkvision, s.blindsight, s.truesight, s.devilsSight), ctx.gridSize);
-  const out = sense > 0 ? [rasterize(ctx.polygon(eye.at, sense), ctx.cell)] : [];
+  const out = sense > 0 ? [rasterize(ctx.polygon(eye.at, sense, 'sight', eye.elevation), ctx.cell)] : [];
   for (const l of ctx.lights) {
     const reach = feetToPx(l.bright + l.dim, ctx.gridSize);
     if (l.darkness || reach <= 0 || Math.hypot(l.x - eye.at[0], l.y - eye.at[1]) > ctx.sight + reach) continue;

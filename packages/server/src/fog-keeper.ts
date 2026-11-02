@@ -14,6 +14,7 @@ import {
   SIGHT_SQUARES,
   tokenLevel,
   visibilityPolygon,
+  wallsAt,
 } from '@vtt/shared';
 import type { Token } from '@vtt/system-dnd5e';
 import type { GameStore } from './game-store.ts';
@@ -77,9 +78,9 @@ export class FogKeeper {
   private sightOn(level: string | undefined, lights: readonly LightSource[]) {
     const store = this.store;
     const world = store.world;
-    const polygon: ReachPolygon = (at, r, kind = 'sight') => {
+    const polygon: ReachPolygon = (at, r, kind = 'sight', elevation) => {
       const walls = store.wallsIn({ x: at[0] - r, y: at[1] - r, w: 2 * r, h: 2 * r });
-      const here = walls.filter((w) => onLevel(w, level));
+      const here = wallsAt(walls, elevation).filter((w) => onLevel(w, level));
       return visibilityPolygon(at, r, here, { kind, gridSize: world.gridSize });
     };
     return {
@@ -116,6 +117,7 @@ export class FogKeeper {
     const levels = this.store.world.levels;
     return {
       at: [token.x, token.y],
+      ...(token.elevation !== undefined && { elevation: token.elevation }),
       level: levels?.length ? tokenLevel(levels, token) : undefined,
       senses: this.store.system.perceiver(token, this.store.world.rules, packContent(this.store)).senses,
     };

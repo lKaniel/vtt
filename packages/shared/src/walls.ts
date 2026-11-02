@@ -15,8 +15,11 @@ export interface WallSense {
   gridSize: number;
 }
 
-/** The area a sense (sight by default) reaches from a point within a radius, stopped by walls. */
-export type ReachPolygon = (at: Point, radius: number, kind?: WallSenseKind) => number[];
+/**
+ * The area a sense (sight by default) reaches from a point within a radius,
+ * stopped by walls; from `elevation` feet only the walls standing there stop it.
+ */
+export type ReachPolygon = (at: Point, radius: number, kind?: WallSenseKind, elevation?: number) => number[];
 
 /** How `wall` restricts `kind` (an open door restricts nothing). */
 export function restriction(wall: WallRules, kind: WallKind): SenseRestriction {
@@ -82,4 +85,10 @@ export function wallPreset(wall: WallRules): WallPreset | 'custom' {
   const same = (p: WallRules) => RULE_KEYS.every((k) => (wall[k] ?? 'normal') === (p[k] ?? 'normal'));
   const found = (Object.keys(WALL_PRESETS) as WallPreset[]).find((k) => k !== 'door' && same(WALL_PRESETS[k]));
   return found ?? 'custom';
+}
+
+/** The walls that stand at `elevation` (feet): bottom up to, not including, top. Undefined: every wall. */
+export function wallsAt<W extends Pick<Wall, 'height'>>(walls: readonly W[], elevation: number | undefined): W[] {
+  if (elevation === undefined) return [...walls];
+  return walls.filter((w) => (w.height?.bottom ?? -Infinity) <= elevation && elevation < (w.height?.top ?? Infinity));
 }

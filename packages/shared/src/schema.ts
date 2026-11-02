@@ -146,6 +146,9 @@ export type DrawnTile = z.infer<typeof DrawnTileSchema>;
 export const DoorStateSchema = z.enum(['closed', 'open', 'locked']);
 export type DoorState = z.infer<typeof DoorStateSchema>;
 
+/** A wall or light fastened to a tile (a prefab house): moving, copying or deleting the tile takes it along. */
+const onTile = { tile: id.optional() };
+
 /** How a wall stops movement: it does, or it doesn't (an illusory or ethereal wall). */
 export const MoveRestrictionSchema = z.enum(['none', 'normal']);
 /**
@@ -192,7 +195,16 @@ export type WallRules = z.infer<typeof WallRulesSchema>;
 
 export const WallSchema = z.preprocess(
   oldWindow,
-  z.object({ id, a: PointSchema, b: PointSchema, ...WallRulesSchema.shape, ...onLevel }),
+  z.object({
+    id,
+    a: PointSchema,
+    b: PointSchema,
+    ...WallRulesSchema.shape,
+    /** Feet above the ground the wall stands between (Wall Height): a creature above `top` passes over. */
+    height: z.object({ bottom: z.number().optional(), top: z.number().optional() }).optional(),
+    ...onTile,
+    ...onLevel,
+  }),
 );
 export type Wall = z.infer<typeof WallSchema>;
 
@@ -213,6 +225,7 @@ export const PlacedLightSchema = LightSchema.extend({
   id,
   x: z.number(),
   y: z.number(),
+  ...onTile,
   ...onLevel,
   /** Shines only while the scene's darkness is in this band ("only at night"). */
   activeAt: DarknessBandSchema.optional(),

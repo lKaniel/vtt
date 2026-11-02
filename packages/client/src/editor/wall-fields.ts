@@ -54,6 +54,20 @@ export function doorFields(): Field[] {
   ];
 }
 
+/** Feet the wall stands from or up to (Wall Height); empty: no limit. */
+function height(end: 'bottom' | 'top', label: string): Field {
+  const of = (d: Doc) => (d.height ?? {}) as Record<string, number>;
+  return {
+    ...plain(`height.${end}`, label, 'number'),
+    get: (d) => of(d)[end] ?? '',
+    patch: (value, doc) => {
+      const { [end]: _old, ...rest } = doc ? of(doc) : {};
+      const next = value === '' ? rest : { ...rest, [end]: Number(value) };
+      return { height: Object.keys(next).length ? next : null };
+    },
+  };
+}
+
 export function wallRuleFields(): Field[] {
   return [
     rule('move', 'Movement', ['none', 'normal']),
@@ -69,5 +83,7 @@ export function wallRuleFields(): Field[] {
       }),
       get: (d) => (d.dir as string | undefined) ?? '',
     },
+    height('bottom', 'Stands from (ft)'),
+    height('top', 'Stands up to (ft)'),
   ];
 }

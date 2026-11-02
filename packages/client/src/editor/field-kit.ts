@@ -18,8 +18,8 @@ export interface Field {
   patch: (value: FieldValue, doc?: Doc) => Patch;
   /** Shown only when this holds for every selected document. */
   when?: (doc: Doc) => boolean;
-  /** A select whose options the session fills in: the game's journal entries, or the scene's levels. */
-  choices?: 'journals' | 'levels';
+  /** A select whose options the session fills in: the game's journal entries, the scene's levels or its tiles. */
+  choices?: 'journals' | 'levels' | 'tiles';
 }
 
 export function plain(key: string, label: string, kind: FieldKind, extra: Partial<Field> = {}): Field {

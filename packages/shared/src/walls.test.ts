@@ -13,6 +13,7 @@ import {
   WallSchema,
   wallFor,
   wallPreset,
+  wallsAt,
   wallsCrossed,
 } from './index.ts';
 
@@ -156,5 +157,26 @@ describe('door sounds', () => {
     expect(doorSoundOf(door('open'))).toBe('wood');
     expect(doorSoundOf(door('open', { doorSound: 'iron' }))).toBe('iron');
     expect(doorSoundOf(door('open', { doorSound: 'none' }))).toBeUndefined();
+  });
+});
+
+describe('wall height', () => {
+  const low = wall(300, { height: { top: 5 } });
+  const high = wall(300, { height: { bottom: 20 } });
+
+  it('stands only between its bottom and top', () => {
+    expect(wallsAt([low, high, wall(0)], 0).map((w) => w.id)).toEqual(['w300', 'w0']);
+    expect(wallsAt([low, high, wall(0)], 10).map((w) => w.id)).toEqual(['w0']);
+    expect(wallsAt([low, high, wall(0)], 30).map((w) => w.id)).toEqual(['w300', 'w0']);
+    expect(wallsAt([low], undefined)).toEqual([low]);
+  });
+
+  it('lets a flier see and fly over a low wall', () => {
+    const v = {
+      'sight-0': hasLineOfSight([0, 0], [400, 0], wallsAt([low], 0)),
+      'sight-30': hasLineOfSight([0, 0], [400, 0], wallsAt([low], 30)),
+    };
+    expect(v).toEqual({ 'sight-0': false, 'sight-30': true });
+    expect(movementBlocked([0, 0], [400, 0], wallsAt([low], 30))).toBe(false);
   });
 });

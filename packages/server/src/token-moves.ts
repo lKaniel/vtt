@@ -8,6 +8,7 @@ import {
   type Player,
   type Point,
   walkPath,
+  wallsAt,
 } from '@vtt/shared';
 import { inTheWay, type Token } from '@vtt/system-dnd5e';
 import type { CombatActions } from './combat-actions.ts';
@@ -44,12 +45,13 @@ export class TokenMoves {
     const token = this.controlled(player, seen, id);
     const g = this.store.world.gridSize;
     const m = PATH_MARGIN * g;
-    const walls = this.store.wallsIn({
+    const around = this.store.wallsIn({
       x: Math.min(token.x, to[0]) - m,
       y: Math.min(token.y, to[1]) - m,
       w: Math.abs(token.x - to[0]) + 2 * m,
       h: Math.abs(token.y - to[1]) + 2 * m,
     });
+    const walls = wallsAt(around, token.elevation);
     const { combat, zones, reactions, regions } = this.rules;
     const path = walkPath([token.x, token.y], to, walls, {
       gridSize: g,

@@ -20,7 +20,15 @@ const v11 = {
   grid: { size: 200, type: 1, distance: 5 },
   darkness: 0.7,
   walls: [
-    { _id: 'w1', c: [1000, 800, 1400, 800], move: 20, sight: 20, door: 0, ds: 0 },
+    {
+      _id: 'w1',
+      c: [1000, 800, 1400, 800],
+      move: 20,
+      sight: 20,
+      door: 0,
+      ds: 0,
+      flags: { 'wall-height': { top: 10, bottom: null } },
+    },
     { _id: 'w2', c: [1400, 800, 1400, 1000], move: 20, sight: 20, door: 1, ds: 2 },
     { _id: 'w3', c: [1400, 1000, 1600, 1000], move: 20, sight: 0, door: 0 },
     { _id: 'w4', c: [1600, 1000, 1800, 1000], move: 0, sight: 0, sound: 20 },
@@ -84,7 +92,7 @@ describe('a Foundry scene', () => {
   it('turns walls, doors and windows into ours with what each one stops, leaving out walls that stop nothing', () => {
     const { scene, skipped } = foundryScene(v11, media);
     expect(scene.walls).toEqual([
-      { id: 'wall-1', a: [1000, 800], b: [1400, 800] },
+      { id: 'wall-1', a: [1000, 800], b: [1400, 800], height: { top: 10 } },
       { id: 'wall-2', a: [1400, 800], b: [1400, 1000], door: 'locked' },
       { id: 'wall-3', a: [1400, 1000], b: [1600, 1000], sight: 'none', light: 'none' },
       { id: 'wall-4', a: [1600, 1000], b: [1800, 1000], move: 'none', sight: 'none', light: 'none' },
