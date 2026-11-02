@@ -80,7 +80,15 @@ const defenses = {
   vulnerabilities: z.array(DamageTypeSchema).default([]),
 };
 
-const itemBase = { id, name: z.string().min(1), weight: z.number().nonnegative().default(0) };
+const itemBase = {
+  id,
+  name: z.string().min(1),
+  weight: z.number().nonnegative().default(0),
+  /** A magic item that only works for a creature attuned to it (three at most). */
+  attunement: z.boolean().optional(),
+  /** What it adds while equipped (and attuned, if it needs that): a ring of protection's +1. */
+  bonus: z.object({ ac: z.number().int().optional(), saves: z.number().int().optional() }).optional(),
+};
 
 export const ItemSchema = z.discriminatedUnion('type', [
   z.object({
@@ -107,6 +115,8 @@ export const ItemSchema = z.discriminatedUnion('type', [
     type: z.literal('gear'),
     ...itemBase,
     description: z.string().optional(),
+    /** Holds other gear: `capacity` in pounds; a bag of holding's contents weigh nothing. */
+    container: z.object({ capacity: z.number().positive(), weightless: z.boolean().optional() }).optional(),
     /** What using it does; items without it can't be used from the action bar. */
     use: z
       .object({
@@ -183,10 +193,31 @@ export const StatsSchema = z.object({
 export type Stats = z.infer<typeof StatsSchema>;
 
 export const InventoryEntrySchema = z.object({
+  /** Names the entry when other entries are inside it (a backpack). */
+  id: id.optional(),
   item: id,
+  /** The id of the container entry it is carried in. */
+  in: id.optional(),
+  /** Attuned to this magic item (see `attunement` on the item). */
+  attuned: z.boolean().optional(),
   /** For a spell scroll: the spell written on it. */
   spell: id.optional(),
   equipped: z.boolean().default(false),
   qty: z.number().int().positive().default(1),
 });
 export type InventoryEntry = z.infer<typeof InventoryEntrySchema>;
+
+/** At most this many attuned magic items. */
+export const MAX_ATTUNED = 3;
+
+/** What a creature carries; no more than three attuned items. */
+export const InventorySchema = z
+  .array(InventoryEntrySchema)
+  .refine((list) => list.filter((e) => e.attuned).length <= MAX_ATTUNED, `at most ${MAX_ATTUNED} attuned items`);
+
+const coins = z.number().int().nonnegative().optional();
+/** Coins carried, by kind. */
+export const CurrencySchema = z.object({ cp: coins, sp: coins, ep: coins, gp: coins, pp: coins });
+export type Currency = z.infer<typeof CurrencySchema>;
+export const COINS = ['pp', 'gp', 'ep', 'sp', 'cp'] as const;
+export type Coin = (typeof COINS)[number];

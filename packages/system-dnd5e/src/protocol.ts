@@ -12,7 +12,7 @@ import type {
 import type { Combat } from './combat.ts';
 import type { Area } from './spell-schema.ts';
 import type { CompendiumDrop, SheetArea } from './sheet-drops.ts';
-import type { Ability, DamageType, Edition } from './stats-schema.ts';
+import type { Ability, Currency, DamageType, Edition } from './stats-schema.ts';
 import type { Actor } from './token-schema.ts';
 import type { TokenView } from './token-view.ts';
 
@@ -95,6 +95,12 @@ export interface ReactionOffer {
   total?: number;
 }
 
+/** A change to what a creature carries; `item` and `into` are inventory indexes. */
+export type CarryChange =
+  | { kind: 'coins'; currency: Currency }
+  | { kind: 'stow'; item: number; into: number | null }
+  | { kind: 'attune'; item: number; on: boolean };
+
 export type ClientMessage =
   | EngineClientMessage
   /** GM: roll initiative for these tokens and start a fight. */
@@ -107,6 +113,8 @@ export type ClientMessage =
   | { t: 'attack'; attacker: string; target: string; attack: string; smite?: number }
   /** `item` is the index in the token's inventory. */
   | { t: 'equip'; token: string; item: number; equipped: boolean }
+  /** An owner's own gear: coins, packing it into containers (`into` null takes it out), attunement. */
+  | { t: 'carry'; token: string; change: CarryChange }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
   | {
       t: 'cast';
