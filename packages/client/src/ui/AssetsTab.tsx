@@ -207,7 +207,7 @@ function MediaTile({ session, media }: Readonly<{ session: Session; media: Media
           title="Show to players"
           onClick={(e) => {
             e.stopPropagation();
-            session.showImage(media.src, media.name);
+            session.journal.showImage(media.src, media.name);
           }}
         >
           <EyeIcon />

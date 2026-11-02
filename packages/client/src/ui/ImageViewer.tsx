@@ -4,10 +4,10 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dia
 
 /** A picture the GM showed you, open until you close it. */
 export function ImageViewer({ session }: Readonly<{ session: Session }>) {
-  const shown = session.shownImage;
+  const shown = session.journal.shownImage;
   if (!shown) return null;
   return (
-    <Dialog open onOpenChange={(open) => !open && session.closeImage()}>
+    <Dialog open onOpenChange={(open) => !open && session.journal.closeImage()}>
       <DialogContent data-slot="image-viewer" className="w-[min(960px,calc(100vw-32px))] items-center">
         <DialogTitle>{shown.title ?? 'The GM shows you'}</DialogTitle>
         <DialogDescription className="sr-only">A picture the GM showed the table.</DialogDescription>

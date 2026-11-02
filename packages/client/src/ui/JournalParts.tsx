@@ -21,7 +21,7 @@ interface PartProps {
 }
 
 const patch = (session: Session, doc: Doc, fields: Record<string, unknown>) =>
-  session.patchEntry('journals', doc.id, fields);
+  session.journal.patchEntry('journals', doc.id, fields);
 
 /** The GM's buttons to date the entry and to make it a quest (or not). */
 export function EntryTools({ session, doc }: Readonly<PartProps>) {

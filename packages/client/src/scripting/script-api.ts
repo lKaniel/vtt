@@ -28,7 +28,7 @@ export interface ScriptSession {
   changeDocs(ops: readonly Op[], label?: string): void;
   showNotice(message: string): void;
   showError(message: string): void;
-  runMacro(macro: string, token?: string): Promise<void>;
+  readonly journal: { runMacro(macro: string, token?: string): Promise<void> };
 }
 
 export interface VttApi {
@@ -133,7 +133,7 @@ function makeApi(s: ScriptSession, hooks: Hooks): VttApi {
       s.changeDocs([{ op: 'update', coll, id, patch, ...(rev === undefined ? {} : { rev }) }], label);
     },
     notify: (text: string) => s.showNotice(text),
-    runMacro: (key: string, token?: string) => s.runMacro(byName('macros', key)?.id ?? key, token),
+    runMacro: (key: string, token?: string) => s.journal.runMacro(byName('macros', key)?.id ?? key, token),
     send: (msg: ClientMessage) => s.send(msg),
     i18n: Object.freeze({
       t: (key: string, vars?: Readonly<Record<string, string | number>>) => i18n.t(key, vars),

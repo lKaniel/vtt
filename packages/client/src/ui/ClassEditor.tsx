@@ -31,7 +31,7 @@ export function ClassEditor({ session, doc, onClose }: Readonly<{ session: Sessi
   const set: Set = (patch) => setDraft({ ...draft, ...patch });
   const issues = homebrewIssues({ ...draft, kind: 'class' });
   const save = () => {
-    session.patchEntry('homebrew', doc.id, classPatch(draft), 'edit class');
+    session.journal.patchEntry('homebrew', doc.id, classPatch(draft), 'edit class');
     onClose();
   };
   return (

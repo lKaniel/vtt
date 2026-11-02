@@ -38,7 +38,7 @@ function contentTarget(session: Session, link: ContentLink): LinkTarget {
 function docTarget(session: Session, link: ContentLink): LinkTarget {
   if (link.kind === 'journal') {
     const name = nameOf(session.docs.get('journals', link.id));
-    return name ? { name, open: () => session.openJournal(link.id, link.page) } : {};
+    return name ? { name, open: () => session.journal.open(link.id, link.page) } : {};
   }
   if (link.kind === 'actor') {
     const actor = session.actors.get(link.id);

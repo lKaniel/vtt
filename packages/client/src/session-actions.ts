@@ -30,6 +30,7 @@ export abstract class ActionSession extends PackSession {
   rollMode: RollMode = loadRollMode();
 
   protected abstract notify(event: 'armed' | 'targets' | 'lighting'): void;
+  protected abstract changed(): void;
 
   /** Applies the roll on a chat card to your targets, else the creatures selected (see damage-actions.ts on the server). */
   applyRoll(card: string, how: ApplyHow): void {

@@ -34,7 +34,7 @@ describe('what a link in journal text points at', () => {
     const target = linkTarget(session, { kind: 'journal', id: 'lore', page: 'p1' });
     expect(target.name).toBe('Lore');
     target.open?.();
-    expect(session.journal).toEqual({ entry: 'lore', page: 'p1' });
+    expect(session.journal.current).toEqual({ entry: 'lore', page: 'p1' });
     expect(linkTarget(session, { kind: 'journal', id: 'secret' }).open).toBeUndefined();
   });
 

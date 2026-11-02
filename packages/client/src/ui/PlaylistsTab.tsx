@@ -22,7 +22,7 @@ export function PlaylistsTab({ session }: Readonly<{ session: Session }>) {
   const lists = session.docs.all('playlists').sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
   return (
     <div className="scenes-tab">
-      <Button variant="outline" size="sm" onClick={() => session.createEntry('playlist')}>
+      <Button variant="outline" size="sm" onClick={() => session.journal.createEntry('playlist')}>
         New playlist
       </Button>
       <ul className="rows">
@@ -46,7 +46,7 @@ function PlaylistRow({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
           value={typeof doc.mode === 'string' ? doc.mode : 'sequence'}
           aria-label="Order"
           className="h-7 text-xs"
-          onValueChange={(mode) => session.patchEntry('playlists', doc.id, { mode })}
+          onValueChange={(mode) => session.journal.patchEntry('playlists', doc.id, { mode })}
           options={[
             { value: 'sequence', label: 'In order' },
             { value: 'shuffle', label: 'Shuffle' },
@@ -56,7 +56,7 @@ function PlaylistRow({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
         <Button
           variant="outline"
           size="sm"
-          onClick={() => (playing ? session.stopPlaylist(doc.id) : session.playPlaylist(doc.id))}
+          onClick={() => (playing ? session.journal.stopPlaylist(doc.id) : session.journal.playPlaylist(doc.id))}
         >
           {playing ? 'Stop' : 'Play'}
         </Button>
@@ -65,7 +65,7 @@ function PlaylistRow({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
         {tracks.map((t) => (
           <li key={t.id} className={`lib-row${t.playing ? ' here' : ''}`}>
             <span className="lib-name">{t.name}</span>
-            <Button variant="outline" size="sm" onClick={() => session.playPlaylist(doc.id, t.id)}>
+            <Button variant="outline" size="sm" onClick={() => session.journal.playPlaylist(doc.id, t.id)}>
               ▶
             </Button>
           </li>
@@ -89,7 +89,7 @@ function AddTrack({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
         .at(-1)
         ?.replace(/\.[^.]*$/, '') ?? 'Track';
     const id = `track-${tracks.length + 1}`;
-    session.patchEntry('playlists', doc.id, { tracks: [...tracks, { id, name, src: file }] });
+    session.journal.patchEntry('playlists', doc.id, { tracks: [...tracks, { id, name, src: file }] });
     setSrc('');
   };
   return (

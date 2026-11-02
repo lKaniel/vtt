@@ -20,7 +20,7 @@ interface Page {
 
 /** The journal entry open in the viewer: its pages as tabs; the GM edits them. */
 export function JournalViewer({ session }: Readonly<{ session: Session }>) {
-  const open = session.journal;
+  const open = session.journal.current;
   const doc = open && session.docs.get('journals', open.entry);
   if (!open || !doc) return null;
   return <Entry key={`${doc.id}:${open.page ?? ''}`} session={session} doc={doc} start={open.page} />;
@@ -31,7 +31,7 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
   const [pageId, setPageId] = useState(start ?? pages[0]?.id);
   const page = pages.find((p) => p.id === pageId) ?? pages[0];
   const gm = session.isGm();
-  const setPages = (next: Page[]) => session.patchEntry('journals', doc.id, { pages: next });
+  const setPages = (next: Page[]) => session.journal.patchEntry('journals', doc.id, { pages: next });
   const addPage = () => {
     const id = `page-${pages.length + 1}`;
     setPages([...pages, { id, name: `Page ${pages.length + 1}`, kind: 'text', text: '' }]);
@@ -41,7 +41,7 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
     <div className="journal frame" role="dialog" aria-label={String(doc.name)}>
       <header className="chat-head">
         <span>{String(doc.name)}</span>
-        <Button variant="close" onClick={() => session.closeJournal()} aria-label="Close" title="Close" />
+        <Button variant="close" onClick={() => session.journal.close()} aria-label="Close" title="Close" />
       </header>
       <div className="mb-2 flex items-end gap-1">
         <Tabs value={page?.id ?? ''} onValueChange={setPageId} className="min-w-0 flex-1">

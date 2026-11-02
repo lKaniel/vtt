@@ -33,7 +33,7 @@ export function dropToken(s: Session, id: string, at: Point | undefined): void {
 /** In the tokens mode, a click on a map note opens its journal entry. */
 export function openNote(s: Session, items: ItemLayer, at: Point): boolean {
   const note = s.mode === 'tokens' ? items.noteAt(at) : undefined;
-  if (note) s.openJournal(note.entry, note.page);
+  if (note) s.journal.open(note.entry, note.page);
   return !!note;
 }
 

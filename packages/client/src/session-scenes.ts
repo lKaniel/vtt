@@ -12,7 +12,7 @@ import {
   unionFog,
 } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
-import { JournalSession } from './session-journal.ts';
+import { ItemSession } from './session-items.ts';
 
 // Scenes and fog of war on the client: the Scenes list's commands (as ops,
 // so undo works on them), moving people between scenes, the explored fog the
@@ -24,7 +24,7 @@ export type FogBrush = 'reveal' | 'hide';
 /** Default brush radius, in squares. */
 const BRUSH_SQUARES = 2;
 
-export abstract class SceneSession extends JournalSession {
+export abstract class SceneSession extends ItemSession {
   /** The scene the game is on. */
   activeScene = '';
   sceneName = '';
@@ -64,6 +64,11 @@ export abstract class SceneSession extends JournalSession {
 
   activateScene(scene: string): void {
     this.send({ t: 'activateScene', scene });
+  }
+
+  /** Your seat's colour and picture; a null avatar takes it away. */
+  setProfile(profile: { color?: string; avatar?: string | null }): void {
+    this.send({ t: 'profile', ...profile });
   }
 
   /** Sends one seat to a scene, or (no scene) back to the game's. */

@@ -43,7 +43,7 @@ function Entries({ session }: Readonly<{ session: Session }>) {
   return (
     <div className="scenes-tab">
       {gm && (
-        <Button variant="outline" size="sm" onClick={() => session.createEntry('journal')}>
+        <Button variant="outline" size="sm" onClick={() => session.journal.createEntry('journal')}>
           New entry
         </Button>
       )}
@@ -56,7 +56,7 @@ function Entries({ session }: Readonly<{ session: Session }>) {
             onDragStart={(e) => startDrag(e, { kind: 'journal', id: doc.id, name: nameOf(doc) })}
             title={gm ? 'Drag onto the map to pin a note' : undefined}
           >
-            <Button variant="link" onClick={() => session.openJournal(doc.id)}>
+            <Button variant="link" onClick={() => session.journal.open(doc.id)}>
               {nameOf(doc)}
             </Button>
             {gm && (
@@ -66,7 +66,7 @@ function Entries({ session }: Readonly<{ session: Session }>) {
                   size="sm"
                   title={shared(doc) ? 'Players can read it: hide it again' : 'Let the players read it'}
                   onClick={() =>
-                    session.patchEntry('journals', doc.id, {
+                    session.journal.patchEntry('journals', doc.id, {
                       ownership: shared(doc) ? null : { default: 'observer' },
                     })
                   }
@@ -77,7 +77,7 @@ function Entries({ session }: Readonly<{ session: Session }>) {
                   variant="outline"
                   size="sm"
                   title="Open it on every player's screen"
-                  onClick={() => session.showJournal(doc.id)}
+                  onClick={() => session.journal.show(doc.id)}
                 >
                   Show
                 </Button>

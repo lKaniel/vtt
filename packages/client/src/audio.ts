@@ -97,8 +97,8 @@ export class SoundScape {
     const doc = s.docs.get('playlists', channel.playlist);
     if (!doc) return;
     const next = nextTrack(doc as unknown as Playlist, channel.track, Math.random);
-    if (next) s.playPlaylist(channel.playlist, next);
-    else s.stopPlaylist(channel.playlist);
+    if (next) s.journal.playPlaylist(channel.playlist, next);
+    else s.journal.stopPlaylist(channel.playlist);
   }
 }
 

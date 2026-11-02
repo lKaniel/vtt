@@ -9,8 +9,6 @@ function api(gm = true) {
     canEdit: () => gm,
     canEditSelection: () => gm,
     createItem: vi.fn(),
-    openJournal: vi.fn(),
-    showJournal: vi.fn(),
     copy: vi.fn(() => undefined),
     cut: vi.fn(() => undefined),
     paste: vi.fn(),
@@ -29,7 +27,7 @@ function api(gm = true) {
     lightPreset: 'torch' as const,
     targets: { mine: new Set<string>(), toggle: vi.fn() },
     hud: { open: vi.fn(), observing: undefined as string | undefined, observe: vi.fn() },
-    showImage: vi.fn(),
+    journal: { open: vi.fn(), show: vi.fn(), showImage: vi.fn() },
     piles: { open: vi.fn() },
   } satisfies MenuApi;
 }
@@ -129,11 +127,11 @@ describe('context menus', () => {
       token: { id: 'k', name: 'Kara', img: '/assets/kara.png' } as TokenView,
     };
     pick(token, a, 'Show art to players').run();
-    expect(a.showImage).toHaveBeenCalledWith('/assets/kara.png', 'Kara');
+    expect(a.journal.showImage).toHaveBeenCalledWith('/assets/kara.png', 'Kara');
     expect(labels(token, api(false))).not.toContain('Show art to players');
     const tile = { ...on({ id: 't', type: 'tile', rev: 1, kind: 'image', src: '/assets/map.png' }), mode: 'tiles' };
     pick(tile as MenuTarget, a, 'Show to players').run();
-    expect(a.showImage).toHaveBeenCalledWith('/assets/map.png');
+    expect(a.journal.showImage).toHaveBeenCalledWith('/assets/map.png');
   });
 
   it('a token opens its HUD where the menu was', () => {
@@ -255,9 +253,9 @@ describe('context menus', () => {
     const a = api();
     const note: Doc = { id: 'n', type: 'note', rev: 1, x: 0, y: 0, entry: 'lore', page: 'p1' };
     pick({ ...on(note), mode: 'notes' }, a, 'Open journal entry').run();
-    expect(a.openJournal).toHaveBeenCalledWith('lore', 'p1');
+    expect(a.journal.open).toHaveBeenCalledWith('lore', 'p1');
     pick({ ...on(note), mode: 'notes' }, a, 'Show to players').run();
-    expect(a.showJournal).toHaveBeenCalledWith('lore', 'p1');
+    expect(a.journal.show).toHaveBeenCalledWith('lore', 'p1');
     expect(labels({ ...on(note), mode: 'notes' }, api(false))).toEqual(['Open journal entry']);
   });
 
