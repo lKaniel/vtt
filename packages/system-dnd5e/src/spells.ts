@@ -198,6 +198,14 @@ function riderOf({ spell, caster }: Cast): Partial<Effect> | undefined {
   return undefined;
 }
 
+/** Numbers an effect takes from its caster: the modifier for heroism, the save DC for sanctuary. */
+function casterNumbers(cast: Cast, turnTempHp: Effect['turnTempHp'], sanctuary: Effect['sanctuary']): Partial<Effect> {
+  return {
+    ...(turnTempHp !== undefined && { turnTempHp: turnTempHp === 'mod' ? cast.mod : turnTempHp }),
+    ...(sanctuary === true && { sanctuary: cast.dc }),
+  };
+}
+
 function effectFor(cast: Cast): Effect | undefined {
   const { spell, caster, dc } = cast;
   if (!spell.effect && !spell.rider) return undefined;
@@ -207,7 +215,7 @@ function effectFor(cast: Cast): Effect | undefined {
     ...(forCaster && { onlyFor: caster.token.id }),
     spell: spell.id,
     slot: cast.slot,
-    ...(turnTempHp !== undefined && { turnTempHp: turnTempHp === 'mod' ? cast.mod : turnTempHp }),
+    ...casterNumbers(cast, turnTempHp, template.sanctuary),
     id: `${spell.id}-${caster.token.id}`,
     name: template.name ?? spell.name,
     source: caster.token.id,

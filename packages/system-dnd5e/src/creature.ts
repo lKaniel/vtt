@@ -1,3 +1,4 @@
+import type { Senses } from '@vtt/shared';
 import type { Content } from './content.ts';
 import { withBasicActions } from './basic-actions.ts';
 import { encumbrance, itemWorks } from './carrying.ts';
@@ -18,6 +19,7 @@ import { legendaryParts, type LegendaryParts } from './legendary.ts';
 import { characterLevel, type ClassLevel, classLevels } from './multiclass.ts';
 import { withOwn } from './own-content.ts';
 import { exhausted } from './vigour.ts';
+import { sensesOf } from './perception.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Condition, Effect } from './spell-schema.ts';
 import {
@@ -64,6 +66,8 @@ export interface Creature extends Affected, LegendaryParts {
   weaponMastery: boolean;
   caster?: CasterSheet;
   features: FeatureSheet[];
+  /** What it perceives with (mirror image doesn't fool blindsight or truesight). */
+  senses?: Senses;
 }
 
 /** Proficiency bonus by challenge rating. */
@@ -113,6 +117,7 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     caster: casterSheet(token, { abilities, proficiency }, content),
     ...legendaryParts(token, monster),
     features,
+    senses: sensesOf(token, monster),
   };
   return withCarrying(applyEffects(withItemBonuses(base, token, content)), token, { monster, content });
 }

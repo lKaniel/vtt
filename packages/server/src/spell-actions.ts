@@ -24,6 +24,7 @@ import {
   characterLevel,
 } from '@vtt/system-dnd5e';
 import { isGridless, type Player, type Point } from '@vtt/shared';
+import { castBreaksSanctuary, passSanctuaries } from './spell-wards.ts';
 import { summon } from './spell-summons.ts';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
 
@@ -80,7 +81,9 @@ export class SpellActions {
     const spell = chosen(caster, known, req.choice);
     this.table.check(caster.token, plan.cost);
     const targets = this.aim(caster, spell, { ...req, slot: plan.slot }, { canSee, again: plan.again });
+    passSanctuaries(this.table, caster, spell, targets);
     this.table.pay(caster.token, plan.cost);
+    castBreaksSanctuary(this.table, caster, spell, targets);
     if (!plan.again) this.begin(caster, spell, plan.spend, !!reader);
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
     if (spell.teleport) this.teleport(caster.token.id, req.point!);

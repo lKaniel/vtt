@@ -489,8 +489,11 @@ A **token** is an actor standing on a scene: an entry in the scene's
 
 Leave out `linked` and a token is linked unless its actor is a monster (an
 actor can say otherwise with its own `"linked"`). Only `x`, `y`, `hidden`,
-`visibleTo`, `summon` and `leader` belong to the token itself; everything
-else on a token with an actor goes in `delta`, and `check-game` says so.
+`banished`, `visibleTo`, `summon` and `leader` belong to the token itself;
+everything else on a token with an actor goes in `delta`, and `check-game`
+says so. `banished` is the server's: a creature sent away by a spell
+(banishment, blink, maze) is hidden with it and shown again when the spell
+ends.
 
 A token without `actor` carries its whole sheet itself, with the actor fields
 below written straight on it. Summons are like that; they vanish when their

@@ -6,6 +6,7 @@ import type { Effect } from './spell-schema.ts';
 import type { Attack, Damage, DamageType } from './stats-schema.ts';
 import type { Rng } from '@vtt/shared';
 import { divineSmite, hitRiders, markDamage, withWeaponBonus } from './riders.ts';
+import { mirrorImage, weakenedDamage } from './wards.ts';
 
 // One attack with a weapon or natural weapon, with everything that changes
 // it: conditions, bless, sneak attack, rage, and 2024 weapon masteries.
@@ -36,6 +37,8 @@ export interface WeaponAttackOutcome {
   graze?: { amount: number; type: DamageType };
   /** Feet the push mastery moves the target away. */
   push?: number;
+  /** The attack went at one of the target's mirror images: "hit" destroys it. */
+  decoy?: 'hit' | 'missed';
   /** Effects the attack leaves on the target (masteries). */
   targetEffects: Effect[];
   used: UsedEffect[];
@@ -114,22 +117,45 @@ export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.ra
   const mods = attackModifiers(attacker, target, { within5 });
   const disadvantage = mods.disadvantage || input.range === 'long';
   const sneak = canSneak(input, mods.advantage, disadvantage);
-  const result = rollAttack(
+  const rolled = rollAttack(
     attack,
     target.sheet,
     { ...mods, disadvantage, extraDamage: extraDamage({ ...input, attack }, sneak) },
     rng,
   );
+  const { result, decoy } = landing(input, attack, rolled, rng);
   const mastery = result.hit ? masteryOnHit(input, rng) : { effects: [], notes: [] };
   const riders = result.hit ? hitRiders({ id: attacker.token.id, sheet: attacker.sheet }, 'force').used : [];
   return {
     roll: result,
     sneak: sneak && result.hit,
     smote: !!input.smite && result.hit && attack.kind === 'melee',
-    graze: result.hit ? undefined : grazeDamage(input),
+    graze: result.hit || decoy ? undefined : grazeDamage(input),
     push: result.hit ? pushOnHit(input) : undefined,
+    decoy,
     targetEffects: mastery.effects,
     used: [...mods.used, ...riders],
-    notes: [...(sneak && result.hit ? ['sneak attack'] : []), ...mastery.notes],
+    notes: outcomeNotes(sneak && result.hit, mastery.notes, decoy),
   };
+}
+
+function outcomeNotes(sneak: boolean, mastery: string[], decoy: 'hit' | 'missed' | undefined): string[] {
+  return [...(sneak ? ['sneak attack'] : []), ...mastery, ...(decoy ? [DECOY_NOTES[decoy]] : [])];
+}
+
+const DECOY_NOTES = {
+  hit: 'it strikes a duplicate, which vanishes',
+  missed: 'it goes at a duplicate and misses',
+};
+
+/** The rolled attack as it lands: on a mirror image instead of the target, or with weakened damage. */
+function landing(
+  { attacker, target }: WeaponAttackInput,
+  attack: Attack,
+  rolled: AttackRoll,
+  rng: Rng,
+): { result: AttackRoll; decoy?: 'hit' | 'missed' } {
+  const decoy = mirrorImage(attacker.sheet, target.sheet, rolled, rng);
+  if (decoy) return { result: { ...rolled, hit: false, crit: false, damage: [] }, decoy };
+  return { result: { ...rolled, damage: weakenedDamage(attacker.sheet, attack, rolled.damage, rng) } };
 }
