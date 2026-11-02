@@ -101,12 +101,12 @@ describe('the game keys', () => {
     const sheet = { effects: [], caster: { level: 5, spells: [spell] } };
     ws.receive({ t: 'token', token: { ...token('hero'), sheet } as never });
     gameKey(session, press('1'));
-    expect(session.aiming).toBeUndefined();
+    expect(session.actions.aiming).toBeUndefined();
     session.select('hero');
     gameKey(session, press('1'));
-    expect(session.aiming?.spell.id).toBe('magic-missile');
+    expect(session.actions.aiming?.spell.id).toBe('magic-missile');
     gameKey(session, press('1'));
-    expect(session.aiming).toBeUndefined();
+    expect(session.actions.aiming).toBeUndefined();
   });
 
   it('leaves keys the page already handled alone', () => {
@@ -126,9 +126,9 @@ describe('action bar tiles', () => {
 
   it('readies an attack tile, and a second press puts it away', () => {
     activateTile(session, hero(), tile('attack'));
-    expect(session.armed).toBe('Longsword');
+    expect(session.actions.armed).toBe('Longsword');
     activateTile(session, hero(), tile('attack'));
-    expect(session.armed).toBeUndefined();
+    expect(session.actions.armed).toBeUndefined();
   });
 
   it('uses a potion tile at once', () => {

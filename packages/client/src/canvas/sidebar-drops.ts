@@ -39,8 +39,8 @@ export function openNote(s: Session, items: ItemLayer, at: Point): boolean {
 
 /** A left click on the map with an action ready: casts an aimed area spell, or puts the action away. */
 export function clickGround(s: Session, p: Point): void {
-  if (s.armed) return s.arm(undefined);
-  const aiming = s.aiming;
-  if (aiming?.mode === 'point') return s.castAt(p);
-  if (aiming) s.aim(undefined);
+  if (s.actions.armed) return s.actions.arm(undefined);
+  const aiming = s.actions.aiming;
+  if (aiming?.mode === 'point') return s.actions.castAt(p);
+  if (aiming) s.actions.aim(undefined);
 }

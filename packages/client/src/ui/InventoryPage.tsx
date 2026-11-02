@@ -158,5 +158,5 @@ function Slot({
 /** Reads a scroll: the token is selected and the scroll's spell aimed. */
 function readScroll(session: SheetProps['session'], token: string, spell: string): void {
   session.select(token);
-  session.aimScroll(spell);
+  session.actions.aimScroll(spell);
 }

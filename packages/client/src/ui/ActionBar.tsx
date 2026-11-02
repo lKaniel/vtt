@@ -219,8 +219,8 @@ function Hotbar({
 }
 
 function isActive(session: Session, tile: ActionTile): boolean {
-  if (tile.kind === 'attack') return session.armed === tile.name;
-  return tile.kind === 'spell' && session.aiming?.spell.id === tile.spell.id;
+  if (tile.kind === 'attack') return session.actions.armed === tile.name;
+  return tile.kind === 'spell' && session.actions.aiming?.spell.id === tile.spell.id;
 }
 
 function tipFor(tile: ActionTile) {
@@ -324,8 +324,8 @@ function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenVi
 }
 
 function hint(session: Session, token: TokenView | undefined): string {
-  if (session.armed) return `Click a target for ${session.armed} · right click or Esc to cancel`;
-  const aiming = session.aiming;
+  if (session.actions.armed) return `Click a target for ${session.actions.armed} · right click or Esc to cancel`;
+  const aiming = session.actions.aiming;
   if (aiming?.mode === 'point') return `Click where ${aiming.spell.name} goes · right click or Esc to cancel`;
   if (aiming)
     return `Click ${aiming.need - aiming.picks.length} more target(s) for ${aiming.spell.name} · right click or Esc to cancel`;

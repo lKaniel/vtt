@@ -369,7 +369,7 @@ export class MapView {
     if (this.grabMap(e, p)) return;
     this.presence.down(p, at, e);
     // An aimed spell or readied attack keeps the left click for itself.
-    const acting = !!(this.session.armed ?? this.session.aiming) && !this.editor.active;
+    const acting = !!(this.session.actions.armed ?? this.session.actions.aiming) && !this.editor.active;
     if (!acting && this.fogBrush.down(at, e.button)) return;
     if (!acting && e.button === 0 && openNote(this.session, this.items, at)) return;
     if (!acting && this.editor.pointerDown({ at, button: e.button, mods: modsOf(e) })) return;
@@ -431,7 +431,7 @@ export class MapView {
    * pointer (or of the ground).
    */
   private rightClick(screen: Point, at: Point): void {
-    if (this.editor.finish() || this.editor.cancel() || this.session.cancelAction()) return;
+    if (this.editor.finish() || this.editor.cancel() || this.session.actions.cancelAction()) return;
     const rect = this.app.canvas.getBoundingClientRect();
     const onScreen: Point = [screen[0] + rect.left, screen[1] + rect.top];
     const target = { ...this.editor.menuTarget(at), screen: onScreen };
@@ -446,7 +446,7 @@ export class MapView {
   /** The token whose path shows: while it is dragged, or aiming a spell or attack. */
   private pathToken() {
     const s = this.session;
-    const showing = !!(this.drag?.token ?? s.armed ?? s.aiming) && !this.drag?.panning;
+    const showing = !!(this.drag?.token ?? s.actions.armed ?? s.actions.aiming) && !this.drag?.panning;
     return showing && s.selected ? s.tokens.get(s.selected) : undefined;
   }
 

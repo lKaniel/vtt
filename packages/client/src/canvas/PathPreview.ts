@@ -186,8 +186,8 @@ export function showPreview(
     force: at.force,
     cost: regionCost(regions, world.darkness),
   };
-  const attack = token.sheet?.attacks.find((a) => a.name === session.armed);
-  if (session.aiming) preview.showSpell(token, hover, session.aiming, ctx);
+  const attack = token.sheet?.attacks.find((a) => a.name === session.actions.armed);
+  if (session.actions.aiming) preview.showSpell(token, hover, session.actions.aiming, ctx);
   else if (attack) preview.showAttack(token, hover, attack, ctx);
   else {
     const walk = walkOptions(world, token, session.tokens.values());

@@ -72,8 +72,8 @@ function foeOptions(s: Session, target: string): MenuItem[] {
   const attacks = (self.sheet?.attacks ?? []).map((a) => ({
     label: `Attack: ${a.name}`,
     run: () => {
-      s.arm(a.name);
-      s.attack(target);
+      s.actions.arm(a.name);
+      s.actions.attack(target);
     },
   }));
   const walkUp = {

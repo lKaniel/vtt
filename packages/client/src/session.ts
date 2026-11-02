@@ -15,16 +15,15 @@ import {
   type ChatMessage,
   type ClientMessage,
   type Combat,
-  actsNow,
   currentTurn,
   type ReactionOffer,
   type ServerMessage,
   type SpawnSource,
   type Token,
-  takers,
   type TokenView,
 } from '@vtt/system-dnd5e';
 import { openSocket, refusalOf } from './session-socket.ts';
+import { isMyTurn, movementLeft, turnToken } from './turns.ts';
 
 import type { DragPayload } from './drops.ts';
 import { dropOnMap } from './session-drops.ts';
@@ -33,7 +32,9 @@ import { withOffer } from './reactions.ts';
 import { Presence } from './presence.ts';
 import { Rulers } from './rulers.ts';
 import type { SessionEvents } from './session-events.ts';
-import { ActionSession } from './session-actions.ts';
+import { Actions } from './session-actions.ts';
+import { SceneSession } from './session-scenes.ts';
+import { Targets } from './targets.ts';
 import { Hud } from './session-hud.ts';
 import { Journal } from './session-journal.ts';
 import { Packs } from './session-packs.ts';
@@ -59,7 +60,7 @@ const isPresenceNews = (msg: ServerMessage): msg is PresenceNews => PRESENCE.has
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends ActionSession {
+export class Session extends SceneSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -83,6 +84,18 @@ export class Session extends ActionSession {
   spawnHidden = false;
   /** The decks, hands and piles you were sent (session-cards.ts). */
   readonly cards = new Cards(this);
+  /** The creatures you target (T), and the others'. */
+  readonly targets = new Targets({
+    send: (msg) => this.send(msg),
+    changed: () => this.notify('targets'),
+    you: () => this.you,
+  });
+  /** The selected creature's readied attack or aimed spell, and your roll mode. */
+  readonly actions = new Actions(this, {
+    changed: () => this.changed(),
+    armed: () => this.notify('armed'),
+    gridSize: () => this.gridSize(),
+  });
   readonly piles = new Piles(this, () => this.changed());
   readonly hud = new Hud(this, { changed: () => this.changed(), lit: () => this.notify('lighting') });
   readonly journal = new Journal(this, {
@@ -197,7 +210,7 @@ export class Session extends ActionSession {
   setPrimary(id: string | undefined): void {
     if (this.selected === id) return this.changed();
     this.selected = id;
-    if (this.armed ?? this.aiming) this.arm(undefined);
+    if (this.actions.armed ?? this.actions.aiming) this.actions.arm(undefined);
     this.emit('select', id);
     this.changed();
   }
@@ -267,28 +280,17 @@ export class Session extends ActionSession {
 
   /** The token whose turn it is in the fight. */
   turnToken(): TokenView | undefined {
-    const id = this.combat ? currentTurn(this.combat) : undefined;
-    return id ? this.tokens.get(id) : undefined;
+    return turnToken(this.combat, this.tokens);
   }
 
   /** One of your creatures may act now (its turn, or it shares the party's). */
   isMyTurn(): boolean {
-    const combat = this.combat;
-    if (!combat) return false;
-    return takers(combat).some((id) => {
-      const token = this.tokens.get(id);
-      return !!token && actsNow(combat, id) && this.canControl(token);
-    });
+    return isMyTurn(this.combat, this.tokens, (t) => this.canControl(t));
   }
 
   /** Feet the token may still walk: unlimited outside a fight, nothing when it's not its turn. */
   movementLeft(id: string): number {
-    const combat = this.combat;
-    if (!combat?.order.some((e) => e.token === id)) return Infinity;
-    if (!actsNow(combat, id)) return 0;
-    if (currentTurn(combat) === id) return combat.left.move;
-    const token = this.tokens.get(id);
-    return combat.side[id]?.move ?? token?.sheet?.speed ?? token?.speed ?? 0;
+    return movementLeft(this.combat, this.tokens, id);
   }
 
   focus(point: Point): void {
@@ -449,7 +451,7 @@ export class Session extends ActionSession {
     this.emit('welcome');
     for (const t of msg.tokens) this.emit('token', t);
     if (this.view.length) this.send({ t: 'view', chunks: this.view });
-    this.send({ t: 'rollMode', mode: this.rollMode });
+    this.send({ t: 'rollMode', mode: this.actions.rollMode });
   }
 
   private reopenSheet(sheet: SheetTarget & { edit: boolean }): void {

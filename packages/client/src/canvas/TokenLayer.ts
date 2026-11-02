@@ -202,8 +202,8 @@ export class TokenLayer {
   }
 
   private isTarget(token: TokenView): boolean {
-    if (this.session.aiming?.mode === 'creatures') return true;
-    return !!this.session.armed && this.session.selected !== token.id;
+    if (this.session.actions.aiming?.mode === 'creatures') return true;
+    return !!this.session.actions.armed && this.session.selected !== token.id;
   }
 
   /** Gold for the creatures whose turn it is; your colour (or ally/foe) when selected or under the pointer. */
@@ -254,8 +254,8 @@ export class TokenLayer {
       e.stopPropagation();
       const t = this.session.tokens.get(token.id);
       if (!t) return;
-      if (this.session.aiming?.mode === 'creatures') return this.session.pickTarget(t.id);
-      if (this.isTarget(t)) return this.session.attack(t.id);
+      if (this.session.actions.aiming?.mode === 'creatures') return this.session.actions.pickTarget(t.id);
+      if (this.isTarget(t)) return this.session.actions.attack(t.id);
       const click = clickToken(this.session, t.id);
       if (click.kind === 'prompt') return this.session.openMenu([e.clientX, e.clientY], click.items);
       if (click.kind === 'select') this.press(t.id, e);
