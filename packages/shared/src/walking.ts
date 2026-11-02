@@ -1,4 +1,5 @@
 import { distToSegment, movementBlocked, wallsInRect } from './geometry.ts';
+import { gridKind } from './grid.ts';
 import { MinHeap } from './min-heap.ts';
 import { findPath, type Path, type PathOptions } from './pathfinding.ts';
 import type { Point, Wall } from './schema.ts';
@@ -16,7 +17,7 @@ export interface Body {
 }
 
 export interface WalkOptions extends PathOptions {
-  /** True: walk anywhere, measured in feet. False: square to square. */
+  /** True: walk anywhere, measured in feet. False: cell to cell (squares, or `lattice`). */
   gridless: boolean;
   /** The walker's own radius, in pixels. */
   radius: number;
@@ -27,9 +28,9 @@ export interface WalkOptions extends PathOptions {
 /** Room for rounding, in pixels: creatures may touch, not overlap. */
 const EPS = 0.5;
 
-/** Whether a scene is played without a grid: always, unless it asks for squares. */
+/** Whether a scene is played without a grid: always, unless it asks for squares or hexes. */
 export function isGridless(scene: { grid?: string }): boolean {
-  return scene.grid !== 'square';
+  return gridKind(scene) === 'none';
 }
 
 /** The footprint of a token `size` squares across standing at x, y. */

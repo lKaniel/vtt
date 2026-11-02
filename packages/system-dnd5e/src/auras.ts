@@ -1,4 +1,4 @@
-import { isParty } from '@vtt/shared';
+import { type GridKind, isParty } from '@vtt/shared';
 import { tokenDistance } from './attack.ts';
 import type { Creature } from './creature.ts';
 import { ownEffects } from './creature.ts';
@@ -65,15 +65,14 @@ function reached(
     .map((b) => b.token)
     .filter((t) => {
       const near =
-        t.id === bearer.token.id ||
-        tokenDistance(bearer.token, t, ground.gridSize, ground.gridless) <= effect.aura.radius;
+        t.id === bearer.token.id || tokenDistance(bearer.token, t, ground.gridSize, ground.grid) <= effect.aura.radius;
       return near && touches(effect.aura, bearer.token, t);
     });
 }
 
 interface Ground {
   gridSize: number;
-  gridless?: boolean;
+  grid?: GridKind;
 }
 
 /** Every aura copy each creature on the scene should have now, by token id. */

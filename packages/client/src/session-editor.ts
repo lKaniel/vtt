@@ -129,7 +129,7 @@ export abstract class EditorSession extends EditSession {
 
   /** Moves documents by `delta`, snapped as the mode snaps (Shift: free), in one step. */
   moveSelection(keys: readonly string[], delta: Point, free: boolean): void {
-    const d = snapDelta(delta, this.mode, this.gridSize(), free);
+    const d = snapDelta(delta, this.mode, this.moveGrid(), free);
     if (!d[0] && !d[1]) return;
     this.patchEach('move', keys, (doc) => moveBy(doc, d));
   }

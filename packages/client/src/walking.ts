@@ -4,16 +4,18 @@ import {
   type EditorMode,
   isGridless,
   type Point,
-  snapToGrid,
+  sceneLattice,
+  snapToCell,
   type WalkOptions,
   type WorldInfo,
 } from '@vtt/shared';
 
 type Scene = Pick<WorldInfo, 'gridSize' | 'grid'>;
 
-/** Where a click at `hover` sends a token: the very point, or its square on a grid. */
+/** Where a click at `hover` sends a token: the very point, or its cell on a grid. */
 export function aimPoint(hover: Point, world: Scene): Point {
-  return isGridless(world) ? hover : snapToGrid(hover, world.gridSize);
+  const lattice = sceneLattice(world);
+  return lattice ? snapToCell(hover, lattice) : hover;
 }
 
 /** How `mover` walks, around the creatures this player knows of: the same rules the server walks it by. */
@@ -22,6 +24,7 @@ export function walkOptions(world: Scene, mover: Token, tokens: Iterable<TokenVi
   return {
     gridSize: g,
     gridless: isGridless(world),
+    lattice: sceneLattice(world),
     radius: bodyOf(mover, g).r,
     bodies: inTheWay(mover, tokens).map((t) => bodyOf(t, g)),
   };

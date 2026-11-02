@@ -45,7 +45,8 @@ Everything is in **pixels** on one unbounded plane per scene. `x` grows
 right, `y` grows down, negative values are fine.
 
 - `gridSize` pixels make 5 ft (default 100), with or without a grid.
-- Scenes have no grid unless `grid` is `"square"`. Without one, tokens walk
+- Scenes have no grid unless `grid` is `"square"`, `"hex-rows"` or
+  `"hex-cols"`. Without one, tokens walk
   to any point, around walls and around other creatures (no one walks
   through or stops inside another), and distances are plain feet as the
   crow flies. Creatures within half a square of each other's edge count as
@@ -54,6 +55,14 @@ right, `y` grows down, negative values are fine.
   `c*gridSize` to `(c+1)*gridSize`, its centre is `(c + 0.5) * gridSize`,
   and tokens walk square centre to square centre (with `gridSize: 100` a
   token sits at `x: 550`, not `x: 500`), every square 5 ft, diagonals too.
+- With `"grid": "hex-rows"` (pointy tops, rows) or `"hex-cols"` (flat tops,
+  columns) tokens walk hex centre to hex centre, every hex 5 ft, and reach
+  and range count hexes. `gridSize` is the distance between two
+  neighbouring hexes' centres. In rows, hex `[q, r]` (row `r`, each row
+  half a hex right of the one above) has its centre at
+  `x = gridSize * (q + r / 2 + 0.5)`, `y = gridSize * (0.866 * r + 0.577)`,
+  so hex `[0, 0]` fits in the map's top left corner; columns are the same
+  with x and y swapped. `grid.ts` in shared has the maths (`latticeOf`).
 - Walls usually run along square edges, so their ends are multiples of
   `gridSize`; the editor snaps to them even when no grid is drawn.
 
@@ -129,21 +138,21 @@ how the scene is stored.
 
 Optional, all set from the Scenes tab too:
 
-| Field                  | What it does                                                                                                           |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `name`                 | What the Scenes list and the top bar show (the folder name otherwise).                                                 |
-| `sort`                 | Order in the Scenes list (a sort key, see `sort-key.ts`); the editor writes it.                                        |
-| `exploration`          | With fog of war, players keep seeing (dimmed) where they have been. Default on.                                        |
-| `grid`                 | `"none"` (default): no grid, free movement in feet. `"square"`: grid lines, square moves.                              |
-| `gridColor`            | Grid line colour, default `"#000000"`.                                                                                 |
-| `gridOpacity`          | 0 to 1, default 0.16.                                                                                                  |
-| `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                                                                   |
-| `darknessFollowsClock` | The darkness follows the game clock's time of day (see time.json); `darkness` is ignored. New scenes start with it on. |
-| `levels`               | Floors of the scene, see "Scene levels" below.                                                                         |
-| `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.                                         |
-| `navigation`           | `true`: the scene is in the GM's navigation bar under the top bar.                                                     |
-| `navName`              | Its name in that bar (default `name`).                                                                                 |
-| `thumb`                | A small picture for the bar and the Scenes list (default the background tile's picture).                               |
+| Field                  | What it does                                                                                                                 |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | What the Scenes list and the top bar show (the folder name otherwise).                                                       |
+| `sort`                 | Order in the Scenes list (a sort key, see `sort-key.ts`); the editor writes it.                                              |
+| `exploration`          | With fog of war, players keep seeing (dimmed) where they have been. Default on.                                              |
+| `grid`                 | `"none"` (default): no grid, free movement in feet. `"square"`: grid lines, square moves. `"hex-rows"`, `"hex-cols"`: hexes. |
+| `gridColor`            | Grid line colour, default `"#000000"`.                                                                                       |
+| `gridOpacity`          | 0 to 1, default 0.16.                                                                                                        |
+| `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                                                                         |
+| `darknessFollowsClock` | The darkness follows the game clock's time of day (see time.json); `darkness` is ignored. New scenes start with it on.       |
+| `levels`               | Floors of the scene, see "Scene levels" below.                                                                               |
+| `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.                                               |
+| `navigation`           | `true`: the scene is in the GM's navigation bar under the top bar.                                                           |
+| `navName`              | Its name in that bar (default `name`).                                                                                       |
+| `thumb`                | A small picture for the bar and the Scenes list (default the background tile's picture).                                     |
 
 The navigation bar always holds the game's scene and the one the GM is on;
 a click looks at a scene, its play button moves the game there. A

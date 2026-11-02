@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { latticeOf } from '@vtt/shared';
 import { applyDamage, type Attack, attackRange, type Creature, critDice, rollAttack, tokenDistance } from './index.ts';
 import type { Rng } from '@vtt/shared';
 
@@ -137,13 +138,27 @@ describe('distance and range', () => {
 
   it('without a grid, measures the ground between them, creatures a step apart being 5 ft apart', () => {
     const free = (x: number, y: number, size = 1) => ({ x, y, size });
-    expect(tokenDistance(free(0, 0), free(100, 0), G, true)).toBe(5);
-    expect(tokenDistance(free(0, 0), free(71, 71), G, true)).toBe(5);
-    expect(tokenDistance(free(0, 0), free(150, 0), G, true)).toBe(5);
-    expect(tokenDistance(free(0, 0), free(160, 0), G, true)).toBe(6);
-    expect(tokenDistance(free(0, 0), free(200, 0), G, true)).toBe(8);
-    expect(tokenDistance(free(0, 0), free(300, 400), G, true)).toBe(23);
-    expect(tokenDistance(free(0, 0), free(450, 0, 2), G, true)).toBe(18);
+    expect(tokenDistance(free(0, 0), free(100, 0), G, 'none')).toBe(5);
+    expect(tokenDistance(free(0, 0), free(71, 71), G, 'none')).toBe(5);
+    expect(tokenDistance(free(0, 0), free(150, 0), G, 'none')).toBe(5);
+    expect(tokenDistance(free(0, 0), free(160, 0), G, 'none')).toBe(6);
+    expect(tokenDistance(free(0, 0), free(200, 0), G, 'none')).toBe(8);
+    expect(tokenDistance(free(0, 0), free(300, 400), G, 'none')).toBe(23);
+    expect(tokenDistance(free(0, 0), free(450, 0, 2), G, 'none')).toBe(18);
+  });
+
+  it('on hexes, counts the hexes between them, 5 ft each', () => {
+    const hex = latticeOf('hex-rows', G);
+    const on = (q: number, r: number, size = 1) => {
+      const [x, y] = hex.centre([q, r]);
+      return { x, y, size };
+    };
+    expect(tokenDistance(on(0, 0), on(1, 0), G, 'hex-rows')).toBe(5);
+    expect(tokenDistance(on(0, 0), on(1, -1), G, 'hex-rows')).toBe(5);
+    expect(tokenDistance(on(0, 0), on(2, 2), G, 'hex-rows')).toBe(20);
+    expect(tokenDistance(on(0, 0), on(3, 0, 2), G, 'hex-rows')).toBe(10);
+    const [x, y] = latticeOf('hex-cols', G).centre([0, 3]);
+    expect(tokenDistance(on(0, 0), { x, y, size: 1 }, G, 'hex-cols')).toBe(15);
   });
 
   it('allows melee within reach and ranged out to long range with disadvantage', () => {

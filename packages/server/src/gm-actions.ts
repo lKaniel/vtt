@@ -162,7 +162,7 @@ export class GmActions {
         name,
         [...tokens.values()].map((t) => t.name),
       ),
-      at: placeToken(at, size, this.store.world.gridSize),
+      at: placeToken(at, size, this.store.world),
       hidden,
     };
   }

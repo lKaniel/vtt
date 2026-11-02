@@ -1,4 +1,4 @@
-import type { Point } from '@vtt/shared';
+import { gridKind, type Lattice, placeToken, type Point, sceneLattice } from '@vtt/shared';
 import {
   abilityMod,
   joinCombat,
@@ -30,7 +30,7 @@ export function summon(
   const monster = built ?? table.content(caster.token).monsters.get(choice.monster);
   if (!monster) throw new Refusal(`There is no ${choice.monster} in the bestiary`);
   const count = summonCount(choice, cast);
-  const spots = freeSpots(table, snapTo(table, req.point!, monster.size), monster.size, count);
+  const spots = freeSpots(table, placeToken(req.point!, monster.size, table.store.world), monster.size, count);
   const tokens = spots.map(([x, y], i) =>
     TokenSchema.parse({
       id: freeId(table, choice.monster, i),
@@ -75,13 +75,15 @@ function freeId(table: Table, base: string, from: number): string {
   return `${base}-${n}`;
 }
 
-/** `count` squares around `start` with no token on them, nearest first. */
+/** `count` spots around `start` with no token on them, nearest first: squares, or hexes on a hex grid. */
 function freeSpots(table: Table, start: Point, size: number, count: number): Point[] {
-  const g = table.store.world.gridSize * size;
+  const world = table.store.world;
+  const hexes = gridKind(world).startsWith('hex') ? sceneLattice(world) : undefined;
+  const ring = (n: number) => (hexes ? hexRing(hexes, start, n) : ringAround(start, n, world.gridSize * size));
   const taken = new Set([...table.store.tokens.values()].map((t) => `${t.x},${t.y}`));
   const out: Point[] = [];
-  for (let ring = 0; out.length < count && ring < 10; ring++) {
-    for (const p of ringAround(start, ring, g)) {
+  for (let n = 0; out.length < count && n < 10; n++) {
+    for (const p of ring(n)) {
       if (out.length < count && !taken.has(`${p[0]},${p[1]}`)) {
         out.push(p);
         taken.add(`${p[0]},${p[1]}`);
@@ -91,11 +93,17 @@ function freeSpots(table: Table, start: Point, size: number, count: number): Poi
   return out;
 }
 
-/** A point moved onto the grid square (or corner) where a creature of `size` squares stands. */
-function snapTo(table: Table, [x, y]: Point, size: number): Point {
-  const g = table.store.world.gridSize;
-  const axis = (v: number) => (size % 2 ? (Math.floor(v / g) + 0.5) * g : Math.round(v / g) * g);
-  return [axis(x), axis(y)];
+/** The centres of the hexes `ring` steps from the hex at `c`. */
+function hexRing(hexes: Lattice, c: Point, ring: number): Point[] {
+  const at = hexes.cellOf(c);
+  const out: Point[] = [];
+  for (let dq = -ring; dq <= ring; dq++) {
+    for (let dr = -ring; dr <= ring; dr++) {
+      const cell: Point = [at[0] + dq, at[1] + dr];
+      if (hexes.distance(at, cell) === ring) out.push(hexes.centre(cell));
+    }
+  }
+  return out;
 }
 
 /** The squares on the edge of a square ring `ring` steps out from `c`. */

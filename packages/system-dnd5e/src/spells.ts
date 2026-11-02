@@ -4,7 +4,7 @@ import type { Creature } from './creature.ts';
 import { abilityMod } from './creature-math.ts';
 import { isDead, makesDeathSaves } from './deaths.ts';
 import { markDamage } from './riders.ts';
-import { type Rng, roll, type Roll } from '@vtt/shared';
+import { type GridKind, type Rng, roll, type Roll } from '@vtt/shared';
 import { attackModifiers, d20Formula, rollSave, type SaveRoll, type UsedEffect } from './effects.ts';
 import type { Token } from './token-schema.ts';
 import type { Effect, Spell } from './spell-schema.ts';
@@ -115,8 +115,8 @@ export interface CastInput {
   /** One entry per target or beam, in order; the same creature may appear more than once. */
   targets: readonly CastSide[];
   gridSize: number;
-  /** The scene has no grid: distances are measured as the crow flies. */
-  gridless?: boolean;
+  /** The scene's grid (default square; none: distances as the crow flies). */
+  grid?: GridKind;
 }
 
 export interface DamageDealt {
@@ -175,7 +175,7 @@ interface Cast {
   attackBonus: number;
   mod: number;
   gridSize: number;
-  gridless?: boolean;
+  grid?: GridKind;
   rng: Rng;
 }
 
@@ -229,7 +229,7 @@ function effectFor(cast: Cast): Effect | undefined {
 
 /** Attack roll against the target: hit or miss, and one-shot effects it used. */
 function spellAttack(cast: Cast, target: CastSide, used: UsedEffect[]) {
-  const within5 = tokenDistance(cast.caster.token, target.token, cast.gridSize, cast.gridless) <= 5;
+  const within5 = tokenDistance(cast.caster.token, target.token, cast.gridSize, cast.grid) <= 5;
   const mods = attackModifiers(cast.caster, target, { within5 });
   used.push(...mods.used);
   const attack = roll(d20Formula(cast.attackBonus, mods.bonus, mods), cast.rng);
@@ -379,7 +379,7 @@ function drainOf(cast: Cast, results: readonly CastResult[]): number | undefined
  * one after another, each seeing the damage dealt before it.
  */
 export function resolveCast(input: CastInput, rng: Rng = Math.random): CastOutcome {
-  const { caster, slot, gridSize, gridless } = input;
+  const { caster, slot, gridSize, grid } = input;
   const book = caster.sheet.caster;
   const mod = book ? abilityMod(caster.sheet.abilities[book.ability]) : 0;
   const cast: Cast = {
@@ -390,7 +390,7 @@ export function resolveCast(input: CastInput, rng: Rng = Math.random): CastOutco
     attackBonus: book?.attack ?? 0,
     mod,
     gridSize,
-    gridless,
+    grid,
     rng,
   };
   if (!cast.spell.attack && cast.spell.beams === 1 && !cast.spell.rider)

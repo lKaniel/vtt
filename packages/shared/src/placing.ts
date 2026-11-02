@@ -1,4 +1,5 @@
 import type { Point } from './schema.ts';
+import { gridKind, latticeOf, snapToCell } from './grid.ts';
 
 // Names, ids and squares for things put on a scene: tokens, actors, games.
 
@@ -25,8 +26,14 @@ export function uniqueName(name: string, names: Iterable<string>): string {
   return `${name} ${n}`;
 }
 
-/** Where a token of `size` squares dropped at `p` stands: odd sizes on a square centre, even ones on a corner. */
-export function placeToken(p: Point, size: number, gridSize: number): Point {
+/**
+ * Where a token of `size` cells dropped at `p` stands: on hexes, on a hex
+ * centre; otherwise odd sizes on a square centre and even ones on a corner.
+ */
+export function placeToken(p: Point, size: number, scene: { gridSize: number; grid?: string }): Point {
+  const { gridSize } = scene;
+  const kind = gridKind(scene);
+  if (kind === 'hex-rows' || kind === 'hex-cols') return snapToCell(p, latticeOf(kind, gridSize));
   const offset = Math.round(size) % 2 === 1 ? 0.5 : 0;
   const snap = (v: number) => (Math.round(v / gridSize - offset) + offset) * gridSize;
   return [snap(p[0]), snap(p[1])];

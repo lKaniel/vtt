@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { latticeOf } from './grid.ts';
 import { measureRuler } from './ruler.ts';
 import { regionCost } from './regions.ts';
 import type { Region } from './scene-items.ts';
@@ -105,5 +106,16 @@ describe('measuring on a square grid', () => {
     // Squares 1..8 entered; 3, 4 and 5 are in the mud.
     expect(m.feet).toBe(40);
     expect(m.cost).toBe(55);
+  });
+});
+
+describe('measuring on hexes', () => {
+  const hex = latticeOf('hex-rows', g);
+  const hexes = { ...squares, lattice: hex };
+
+  it('snaps waypoints to hex centres and counts every hex as 5 ft', () => {
+    const m = measureRuler([hex.centre([0, 0]), [hex.centre([3, 2])[0] + 10, hex.centre([3, 2])[1] - 5]], hexes);
+    expect(m.points).toEqual([hex.centre([0, 0]), hex.centre([3, 2])]);
+    expect(m.feet).toBe(25);
   });
 });

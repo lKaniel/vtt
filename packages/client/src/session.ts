@@ -1,5 +1,15 @@
 import type { Doc, DocRef, PluginLoad } from '@vtt/core';
-import { canControl, canEdit, type Chunk, isGm, type Player, type Point, type WorldInfo } from '@vtt/shared';
+import {
+  canControl,
+  canEdit,
+  type Chunk,
+  isGm,
+  type MoveGrid,
+  type Player,
+  type Point,
+  sceneLattice,
+  type WorldInfo,
+} from '@vtt/shared';
 import {
   type Actor,
   type ChatMessage,
@@ -283,6 +293,10 @@ export class Session extends HudSession {
 
   protected gridSize(): number {
     return this.world?.gridSize ?? 100;
+  }
+
+  moveGrid(): MoveGrid {
+    return (this.world && sceneLattice(this.world)) ?? this.gridSize();
   }
 
   protected runScript(doc: Doc, token?: string): Promise<void> {

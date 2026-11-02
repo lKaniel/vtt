@@ -145,7 +145,7 @@ export class MapEditor {
   private modeDocs(): { key: string; doc: Doc }[] {
     const coll = this.session.modeColl();
     const preview = this.controller.preview();
-    const ctx = { mode: this.session.mode, gridSize: this.ctx.gridSize };
+    const ctx = { mode: this.session.mode, gridSize: this.ctx.gridSize, grid: this.session.moveGrid() };
     const docs = this.session.docs.all(coll);
     if (this.session.mode === 'tiles')
       return previewTiles(docs, coll, preview, ctx).map((doc) => ({ key: keyOf({ coll, id: doc.id }), doc }));

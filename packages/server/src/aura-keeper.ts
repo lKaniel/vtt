@@ -1,4 +1,4 @@
-import { isGridless } from '@vtt/shared';
+import { gridKind } from '@vtt/shared';
 import { auraEffects, withAuras, withBanishment } from '@vtt/system-dnd5e';
 import type { Table } from './table.ts';
 import { changeShapes } from './spell-forms.ts';
@@ -21,7 +21,7 @@ class AuraKeeper {
       return sheet ? [{ token, sheet }] : [];
     });
     const world = store.world;
-    const want = auraEffects(bearers, { gridSize: world.gridSize, gridless: isGridless(world) });
+    const want = auraEffects(bearers, { gridSize: world.gridSize, grid: gridKind(world) });
     for (const token of tokens) {
       const next = withAuras(token, want.get(token.id) ?? []);
       if (next) store.setToken(next);
