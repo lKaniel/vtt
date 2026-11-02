@@ -4,8 +4,12 @@ import {
   type Attack,
   type AttackLog,
   attackRange,
+  actsNow,
+  type Combat,
   currentTurn,
   deathSave,
+  endTurns,
+  firstTurn,
   endOfTurnSaves,
   isDying,
   isLairTurn,
@@ -14,6 +18,7 @@ import {
   leaveCombat,
   lightAttack,
   nextTurn,
+  takers,
   offHandCost,
   offHandProblem,
   resolveWeaponAttack,
@@ -64,29 +69,34 @@ export class CombatActions {
     return this.table.store;
   }
 
-  start(player: Player, ids: readonly string[]): void {
+  /** GM: a fight; `shared`: party members next to each other share a turn (BG3). */
+  start(player: Player, ids: readonly string[], shared = false): void {
     requireGm(player);
     this.open(
       ids.map((id) => this.table.fighter(id)),
       'Roll for initiative!',
-      false,
+      { peaceful: false, shared },
     );
   }
 
   /** Rolls initiative for `fighters` and starts the first turn. */
-  private open(fighters: Fighter[], heading: string, peaceful: boolean): void {
+  private open(
+    fighters: Fighter[],
+    heading: string,
+    { peaceful, shared }: { peaceful: boolean; shared: boolean },
+  ): void {
     const rolled = startCombat(
       fighters.map((f) => ({ token: f.token.id, bonus: f.sheet.initiative, speed: f.sheet.speed })),
       this.table.rng,
     );
     const lairs = peaceful ? [] : fighters.filter((f) => f.sheet.lair).map((f) => f.token.id);
-    const combat = peaceful ? { ...rolled, peaceful } : withLair(rolled, lairs);
+    const fight = peaceful ? { ...rolled, peaceful } : withLair(rolled, lairs);
+    const combat = shared ? firstTurn({ ...fight, shared }, this.table.turnInfo) : fight;
     this.store.setCombat(combat);
     const names = new Map(fighters.map((f) => [f.token.id, f.token.name]));
     const order = combat.order.map((e) => `${names.get(e.token) ?? 'Lair'} ${e.initiative}`).join(', ');
     this.table.note(`${heading} ${order}`);
-    const first = currentTurn(combat);
-    if (first) this.startOfTurn(first);
+    for (const id of takers(combat)) this.startOfTurn(id);
   }
 
   end(player: Player): void {
@@ -109,18 +119,24 @@ export class CombatActions {
       return sheet && sheet.hp > 0 ? [{ token: t, sheet }] : [];
     });
     if (!fighters.length) throw new Refusal('There is no one in the party here to take turns');
-    this.open(fighters, 'Turn-based mode:', true);
+    this.open(fighters, 'Turn-based mode:', { peaceful: true, shared: true });
   }
 
   endTurn(player: Player): void {
     const combat = this.store.combat;
     if (!combat) throw new Refusal('There is no fight going on');
-    const current = currentTurn(combat);
-    if (isLairTurn(current)) requireGm(player);
-    const token = this.store.tokens.get(current ?? '');
-    if (token && !canControl(token, player)) throw new Refusal("It's not your turn");
-    if (token) this.endOfTurn(token);
-    this.advance();
+    if (isLairTurn(currentTurn(combat))) requireGm(player);
+    const acting = takers(combat).flatMap((id) => this.store.tokens.get(id) ?? []);
+    const mine = acting.filter((t) => actsNow(combat, t.id) && canControl(t, player));
+    if (acting.length && !mine.length) throw new Refusal("It's not your turn");
+    for (const token of mine) this.endOfTurn(token);
+    const after = endTurns(
+      this.store.combat!,
+      mine.map((t) => t.id),
+      this.table.turnInfo,
+    );
+    if (after.turn === combat.turn && after.round === combat.round) this.store.setCombat(after);
+    else this.advance();
   }
 
   /** Passes the turn on; a dying character's turn is only its death save, so it passes again. */
@@ -128,11 +144,18 @@ export class CombatActions {
     for (let guard = 0; guard < 100; guard++) {
       const next = nextTurn(this.store.combat!, this.table.turnInfo);
       this.store.setCombat(next);
-      const starting = currentTurn(next);
-      if (!starting) return;
-      this.startOfTurn(starting);
-      if (!this.deathSaveFor(starting)) return;
+      if (!currentTurn(next) || !this.beginTurn(next)) return;
     }
+  }
+
+  /** Starts the turn of everyone taking it; true when it is over already (all of them dying). */
+  private beginTurn(combat: Combat): boolean {
+    const all = takers(combat);
+    for (const id of all) this.startOfTurn(id);
+    const over = all.filter((id) => this.deathSaveFor(id));
+    if (over.length === all.length) return true;
+    if (over.length) this.store.setCombat(endTurns(this.store.combat!, over, this.table.turnInfo));
+    return false;
   }
 
   /** Rolls a dying character's death save; true when its turn is over (it didn't wake). */

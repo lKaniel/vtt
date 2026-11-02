@@ -1,5 +1,5 @@
 import { canObserve, displays, isGm, isParty, ownersOf, type Point, type TokenLook } from '@vtt/shared';
-import { currentTurn, hasCondition, type Health, type TokenView } from '@vtt/system-dnd5e';
+import { actsNow, hasCondition, type Health, type TokenView } from '@vtt/system-dnd5e';
 import {
   Assets,
   Container,
@@ -204,11 +204,11 @@ export class TokenLayer {
     return !!this.session.armed && this.session.selected !== token.id;
   }
 
-  /** Gold for the creature whose turn it is; your colour (or ally/foe) when selected or under the pointer. */
+  /** Gold for the creatures whose turn it is; your colour (or ally/foe) when selected or under the pointer. */
   private ringOf(view: Sprite): Ring | undefined {
     const { token } = view;
     const combat = this.session.combat;
-    if (combat && currentTurn(combat) === token.id) return { color: TURN_COLOR, strong: true };
+    if (combat && actsNow(combat, token.id)) return { color: TURN_COLOR, strong: true };
     if (this.session.selected === token.id || this.session.isSelected(token.id))
       return { color: this.session.you?.color ?? TURN_COLOR, strong: true };
     return view.hover ? { color: this.ringColor(token), strong: false } : undefined;

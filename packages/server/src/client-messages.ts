@@ -43,7 +43,11 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('door'), chunk: z.string(), wall: z.string(), state: DoorStateSchema }),
   z.object({ t: z.literal('trigger'), tile: z.string(), token: z.string().optional() }),
   z.object({ t: z.literal('chat'), text: z.string().min(1).max(2000) }),
-  z.object({ t: z.literal('combatStart'), tokens: z.array(z.string()).min(1).max(100) }),
+  z.object({
+    t: z.literal('combatStart'),
+    tokens: z.array(z.string()).min(1).max(100),
+    shared: z.boolean().optional(),
+  }),
   z.object({ t: z.literal('combatEnd') }),
   z.object({ t: z.literal('turnBased'), on: z.boolean() }),
   z.object({ t: z.literal('clock'), action: ClockActionSchema }),

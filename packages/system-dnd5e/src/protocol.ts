@@ -108,7 +108,7 @@ export type CarryChange =
 export type ClientMessage =
   | EngineClientMessage
   /** GM: roll initiative for these tokens and start a fight. */
-  | { t: 'combatStart'; tokens: string[] }
+  | { t: 'combatStart'; tokens: string[]; shared?: boolean }
   | { t: 'combatEnd' }
   /** GM: turn-based mode outside a fight: the party takes turns, 6 seconds a round (fights are always turn-based). */
   | { t: 'turnBased'; on: boolean }
