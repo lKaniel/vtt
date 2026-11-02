@@ -11,7 +11,7 @@ export function dropOnMap(s: Session, payload: DragPayload, p: Point): void {
   if (!s.world) return;
   if (payload.kind === 'media') {
     const size = payload.w && payload.h ? { w: payload.w, h: payload.h } : undefined;
-    return s.placeMedia(payload.src, p, size);
+    return s.packs.placeMedia(payload.src, p, size);
   }
   if (payload.kind === 'journal') {
     return s.createItem({ mode: 'notes', data: { x: p[0], y: p[1], entry: payload.id, label: payload.name } });

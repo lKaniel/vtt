@@ -3,7 +3,7 @@ import { characterLevel, type ClientMessage, featureSpell } from '@vtt/system-dn
 /** How a chat roll is applied: in full, half, double, or as healing. */
 export type ApplyHow = Extract<ClientMessage, { t: 'applyDamage' }>['how'];
 import type { Point, RollMode } from '@vtt/shared';
-import { PackSession } from './session-packs.ts';
+import { SceneSession } from './session-scenes.ts';
 import { aimAtTargets, aimFor, aimSpell, castMessage, pick, scrollAiming, type Aiming } from './targeting.ts';
 import { Targets } from './targets.ts';
 import { loadRollMode, saveRollMode } from './roll-mode.ts';
@@ -13,7 +13,7 @@ import { tokenAt } from './drops.ts';
 // spell or feature, which go straight at your targets when you have them,
 // and who sees the rolls they make (your roll mode).
 
-export abstract class ActionSession extends PackSession {
+export abstract class ActionSession extends SceneSession {
   /** The attack the selected token will make on the next token clicked. */
   armed?: string;
   /** Slot level to Divine Smite with on the armed attack. */

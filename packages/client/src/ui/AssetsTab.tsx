@@ -26,7 +26,7 @@ const KIND_LABEL: Record<MediaKind, string> = { image: 'Pictures', audio: 'Sound
 export function AssetsTab({ session }: Readonly<{ session: Session }>) {
   const [view, setView] = useState<View>('media');
   useEffect(() => {
-    session.requestPacks();
+    session.packs.request();
   }, [session]);
   return (
     <div className="lib assets">
@@ -65,7 +65,7 @@ function UploadButton({ session }: Readonly<{ session: Session }>) {
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     for (const file of e.target.files ?? []) {
       void readBase64(file).then(
-        (data) => session.upload(file.name, data),
+        (data) => session.packs.upload(file.name, data),
         () => session.showError(`Could not read ${file.name}`),
       );
     }
@@ -98,7 +98,7 @@ function MediaFilters({
   source: string | undefined;
   setSource: (s: string | undefined) => void;
 }>) {
-  const packs = session.packs.filter((p) => p.enabled && !p.builtin);
+  const packs = session.packs.list.filter((p) => p.enabled && !p.builtin);
   return (
     <div className="lib-filter">
       <Input
@@ -138,9 +138,9 @@ function MediaView({ session }: Readonly<{ session: Session }>) {
   const [tag, setTag] = useState<string>();
   // Fresh each time: packs may have been turned on, or files added, since.
   useEffect(() => {
-    session.requestMedia();
+    session.packs.requestMedia();
   }, [session]);
-  const base = searchMedia(session.media, {
+  const base = searchMedia(session.packs.media, {
     query,
     ...(kind ? { kind } : {}),
     ...(source === undefined ? {} : { pack: source }),
@@ -194,7 +194,7 @@ function MediaTile({ session, media }: Readonly<{ session: Session; media: Media
       title={title}
       draggable
       onDragStart={(e) => startDrag(e, { kind: 'media', src: media.src, ...size })}
-      onClick={() => session.placeMedia(media.src, session.viewCentre(), size)}
+      onClick={() => session.packs.placeMedia(media.src, session.viewCentre(), size)}
     >
       <Preview media={media} onSize={setSize} />
       <span className="asset-name">{media.name}</span>
@@ -263,15 +263,15 @@ function Preview({ media, onSize }: Readonly<{ media: MediaEntry; onSize: (size:
 function PacksView({ session }: Readonly<{ session: Session }>) {
   return (
     <div className="lib-scroll">
-      {session.packProblems.length > 0 && (
+      {session.packs.problems.length > 0 && (
         <ul className="asset-problems">
-          {session.packProblems.map((p) => (
+          {session.packs.problems.map((p) => (
             <li key={p}>{p}</li>
           ))}
         </ul>
       )}
       <ul className="lib-list">
-        {session.packs.map((p) => (
+        {session.packs.list.map((p) => (
           <PackRow key={p.id} session={session} pack={p} />
         ))}
       </ul>
@@ -293,7 +293,7 @@ function PackRow({ session, pack }: Readonly<{ session: Session; pack: PackInfo 
         <Checkbox
           checked={pack.enabled}
           disabled={pack.builtin}
-          onCheckedChange={(on) => session.setPackEnabled(pack.id, on === true)}
+          onCheckedChange={(on) => session.packs.setPackEnabled(pack.id, on === true)}
           aria-label={`Use ${pack.name}`}
         />
         <button className="lib-text" onClick={() => setOpen(!open)}>
@@ -332,9 +332,9 @@ function CompendiumView({
   compendium,
 }: Readonly<{ session: Session; pack: PackInfo; compendium: PackInfo['compendia'][number] }>) {
   const [open, setOpen] = useState(false);
-  const docs = session.compendiumDocs(pack.id, compendium.id);
+  const docs = session.packs.compendiumDocs(pack.id, compendium.id);
   const toggle = () => {
-    if (!open) session.openCompendium(pack.id, compendium.id);
+    if (!open) session.packs.openCompendium(pack.id, compendium.id);
     setOpen(!open);
   };
   const label = `${compendium.name ?? compendium.id} (${compendium.type})`;
@@ -370,8 +370,8 @@ function CompendiumView({
 
 /** Copies one compendium document into the game, as its type goes in. */
 function importDoc(session: Session, type: string, doc: unknown, folder: string): void {
-  if (type === 'scene') session.importScene(doc);
-  else if (type === 'prefab') session.importPrefab(doc);
-  else if (type === 'journal' || type === 'rolltable' || type === 'playlist') session.importEntry(type, doc);
-  else session.importActor(doc, folder);
+  if (type === 'scene') session.packs.importScene(doc);
+  else if (type === 'prefab') session.packs.importPrefab(doc);
+  else if (type === 'journal' || type === 'rolltable' || type === 'playlist') session.packs.importEntry(type, doc);
+  else session.packs.importActor(doc, folder);
 }

@@ -71,9 +71,9 @@ function VideoPicker({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   useEffect(() => {
-    if (open && !session.media.length) session.requestMedia();
+    if (open && !session.packs.media.length) session.packs.requestMedia();
   }, [open, session]);
-  const found = videoChoices(session.media, query);
+  const found = videoChoices(session.packs.media, query);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
