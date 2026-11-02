@@ -585,6 +585,7 @@ better of STR and DEX, ranged weapons DEX), proficiency from `level`:
 | `level`                                        | Character level, sets proficiency.                                                                                                                   |
 | `class`                                        | Shown on the character sheet.                                                                                                                        |
 | `classes`                                      | A multiclassed character: `[{ "class": "fighter", "level": 3, "subclass"? }, ...]`, first class first, instead of `class` and `level`.               |
+| `xp`                                           | Experience points. The GM's Encounter panel awards them; the sheet's title shows the XP to the next level, or the level reached.                     |
 | `abilities`                                    | `str dex con int wis cha` scores; missing ones are 10 (or the monster's).                                                                            |
 | `maxHp`                                        | Hit point maximum.                                                                                                                                   |
 | `ac`, `proficiency`                            | Override the computed values.                                                                                                                        |
@@ -620,6 +621,17 @@ token's edition). A `class` named after an SRD class (Wizard, Fighter, ...)
 gives that class's spell slots, spellcasting ability and features by `level`,
 from `classes-5.x.json`. A homebrew class or a monster that casts uses
 `"spellcasting": { "ability": "int", "progression": "full" | "half" | "third" | "pact", "level": 5 }`.
+
+**Encounters and experience.** The GM's Encounter button (beside Start
+combat) weighs the monsters on the scene against the party: the
+player-owned characters with class levels. In 2014 rules the monsters' XP
+(by challenge rating) is multiplied by their number (one step more for a
+party under three, one less for six or more) and measured against the
+easy, medium, hard and deadly thresholds; in 2024 their XP is measured
+against the low, moderate and high budgets, and past high is "beyond".
+Monsters can be left out with their toggles. Award XP splits the
+monsters' XP evenly, adds it to each character's `stats.xp` and says in
+chat who has enough for a new level.
 
 **Multiclassing.** `stats.classes` splits a character's levels over several
 classes. Proficiency, cantrips and scroll reading follow the total level;

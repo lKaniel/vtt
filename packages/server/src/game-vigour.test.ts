@@ -62,3 +62,17 @@ describe('exhaustion', () => {
     expect(hero().exhaustion).toBeUndefined();
   });
 });
+
+describe('experience', () => {
+  it('is awarded by the GM to each character named, and says who can level up', () => {
+    store.setToken(TokenSchema.parse({ ...hero(), stats: { ...hero().stats, xp: 2600 } }));
+    join_('ana').receive({ t: 'awardXp', tokens: ['hero'], xp: 100 });
+    expect(hero().stats?.xp).toBe(2600);
+    const gm = join_('gm');
+    gm.receive({ t: 'awardXp', tokens: ['hero'], xp: 100 });
+    expect(hero().stats?.xp).toBe(2700);
+    expect(JSON.stringify(gm.take('chat'))).toMatch(/Hero gains 100 XP.*can reach level 4/);
+    gm.receive({ t: 'awardXp', tokens: ['goblin'], xp: 50 });
+    expect(gm.take('error')[0]?.message).toMatch(/characters/);
+  });
+});

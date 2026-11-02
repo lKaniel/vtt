@@ -93,6 +93,12 @@ describe('the GM tools', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'exhaustion', token: 'hero', level: 2 });
   });
 
+  it('awards experience', () => {
+    ws.receive(gmWelcome());
+    session.awardXp(['hero'], 150);
+    expect(ws.sent.at(-1)).toEqual({ t: 'awardXp', tokens: ['hero'], xp: 150 });
+  });
+
   it('takes legendary and lair actions', () => {
     ws.receive(gmWelcome());
     session.legendary('dragon', 'tail-attack', 'hero');
