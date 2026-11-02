@@ -1,6 +1,7 @@
 import type { Point } from './schema.ts';
 import type { Senses } from './senses.ts';
 import { feetToPx, type LightSource } from './vision.ts';
+import { lightReach } from './light-shape.ts';
 import type { ReachPolygon } from './walls.ts';
 
 // Explored fog of war: where a player's tokens have seen, as a bitmap of
@@ -312,7 +313,7 @@ function eyeRasters(eye: FogEye, ctx: FogContext): Raster[] {
   for (const l of ctx.lights) {
     const reach = feetToPx(l.bright + l.dim, ctx.gridSize);
     if (l.darkness || reach <= 0 || Math.hypot(l.x - eye.at[0], l.y - eye.at[1]) > ctx.sight + reach) continue;
-    out.push(intersect(rasterize(ctx.polygon([l.x, l.y], reach, 'light'), ctx.cell), sight));
+    out.push(intersect(rasterize(lightReach(l, ctx.gridSize, ctx.polygon), ctx.cell), sight));
   }
   return out;
 }

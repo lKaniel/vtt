@@ -246,16 +246,23 @@ rules: `bright` light, then `dim` light beyond it.
 ]
 ```
 
-| Field       | Meaning                                                                          |
-| ----------- | -------------------------------------------------------------------------------- |
-| `color`     | Colour of the light; default a warm white.                                       |
-| `animation` | `"flicker"` for flames, `"pulse"` for magic.                                     |
-| `darkness`  | Magical darkness (the Darkness spell) of radius `bright + dim` instead of light. |
+| Field            | Meaning                                                                          |
+| ---------------- | -------------------------------------------------------------------------------- |
+| `color`          | Colour of the light; default a warm white.                                       |
+| `animation`      | `"flicker"` for flames, `"pulse"` for magic.                                     |
+| `darkness`       | Magical darkness (the Darkness spell) of radius `bright + dim` instead of light. |
+| `angle`          | Degrees of a beam (a lantern, a lighthouse); left out, it shines all round.      |
+| `rotation`       | Which way the beam faces, degrees clockwise from facing south (down the map).    |
+| `walls`          | `false`: it shines through walls (a magical glow).                               |
+| `luminosity`     | How strongly it lights, 0 to 1 (default 1).                                      |
+| `attenuation`    | How softly it fades at its edges, 0 (a hard edge) to 1 (default 0.5).            |
+| `colorIntensity` | How much of `color` it casts, 0 (plain warm light) to 1 (default).               |
 
 The GM can also draw walls, doors and windows, place, drag and erase lights,
 and set the time of day from the map tools in the game (bottom left).
 
-Walls stop light like they stop sight. A token carries a light with the same
+Walls stop light like they stop sight (a light whose `walls` is `false`
+ignores them; a beam lights, and lets you see, only inside its angle). A token carries a light with the same
 fields in `light`. A placed light with `activeAt: [from, to]` shines only
 while the darkness is in that band (`[0.6, 1]` lamps lit at night; a band
 written high to low wraps round, `[0.8, 0.2]` dusk to dawn). Everything with

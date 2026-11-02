@@ -1,7 +1,8 @@
-import { gridSizePatch, type Light, type PlacedLight, type SceneEntry, type Tile, type Wall } from '@vtt/shared';
+import { gridSizePatch, type SceneEntry, type Tile, type Wall } from '@vtt/shared';
 import { z } from 'zod';
 import { foundryList } from './foundry-lists.ts';
 import { foundryPlaceables } from './foundry-placeables.ts';
+import { FoundryLight, foundryLights } from './foundry-lights.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
 
 // A Foundry VTT scene (from a module's compendium, a world, or "Export
@@ -12,25 +13,6 @@ import { FoundryWall, wallOf } from './foundry-walls.ts';
 
 const num = z.number().optional().catch(undefined);
 const str = z.string().optional().catch(undefined);
-
-const FoundryLight = z.object({
-  x: z.number(),
-  y: z.number(),
-  config: z
-    .object({
-      bright: num,
-      dim: num,
-      color: str.nullable(),
-      negative: z.boolean().optional(),
-      animation: z.object({ type: str.nullable() }).optional(),
-    })
-    .optional()
-    .catch(undefined),
-  bright: num,
-  dim: num,
-  tintColor: str.nullable(),
-  lightAnimation: z.object({ type: str.nullable() }).optional().catch(undefined),
-});
 
 const FoundryTile = z.object({
   texture: z.object({ src: str.nullable() }).optional().catch(undefined),
@@ -135,7 +117,7 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     ...(s.backgroundColor ? { background: s.backgroundColor } : {}),
     tiles: [...background, ...tilesOf(s, lookupIn(media), skipped)],
     walls: wallsOf(s, grid, skipped),
-    lights: lightsOf(s, grid),
+    lights: foundryLights(s.lights, feetIn(grid)),
     ...placeables,
   };
   const tokens = s.tokens?.length ?? 0;
@@ -197,40 +179,4 @@ function wallsOf(s: FoundryScene, grid: Grid, skipped: string[]): Wall[] {
   const inert = s.walls.length - walls.length;
   if (inert) skipped.push(`${plural(inert, 'wall')} that ${inert === 1 ? 'stops' : 'stop'} nothing`);
   return walls.map((wall, i) => ({ id: `wall-${i + 1}`, ...wall }));
-}
-
-const ANIMATIONS: Record<string, Light['animation']> = {
-  torch: 'flicker',
-  flame: 'flicker',
-  fairy: 'pulse',
-  pulse: 'pulse',
-};
-
-type FoundryLightData = FoundryScene['lights'][number];
-
-/** A light's colour, animation and whether it is darkness. */
-function lightLook(l: FoundryLightData): Pick<Light, 'color' | 'animation' | 'darkness'> {
-  const c = l.config ?? {};
-  const color = c.color ?? l.tintColor;
-  const animation = ANIMATIONS[c.animation?.type ?? l.lightAnimation?.type ?? ''];
-  return {
-    ...(color ? { color } : {}),
-    ...(animation ? { animation } : {}),
-    ...(c.negative ? { darkness: true } : {}),
-  };
-}
-
-/** One light without its id, or undefined if it sheds none; radii in feet. */
-function lightOf(
-  l: FoundryLightData,
-  feet: (units: number | undefined) => number,
-): Omit<PlacedLight, 'id'> | undefined {
-  const [bright, dim] = [feet(l.config?.bright ?? l.bright), feet(l.config?.dim ?? l.dim)];
-  if (!bright && !dim) return undefined;
-  return { x: l.x, y: l.y, bright, dim, ...lightLook(l) };
-}
-
-function lightsOf(s: FoundryScene, grid: Grid): PlacedLight[] {
-  const feet = (units: number | undefined) => feetIn(grid)(units ?? 0);
-  return s.lights.flatMap((l) => lightOf(l, feet) ?? []).map((light, i) => ({ id: `light-${i + 1}`, ...light }));
 }

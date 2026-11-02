@@ -157,4 +157,12 @@ describe('exploredRasters', () => {
     expect(map.explored([1000, 150])).toBe(true);
     expect(map.explored([1500, 0])).toBe(false);
   });
+
+  it('shows only what a beam falls on at night', () => {
+    const map = new FogMap(CELL);
+    const beam = { ...ctx(true), lights: [{ id: 'l', x: 1000, y: 0, bright: 10, dim: 0, angle: 90, rotation: 0 }] };
+    for (const r of exploredRasters([eye(0)], beam)) map.add(r);
+    expect(map.explored([1000, 80])).toBe(true);
+    expect(map.explored([1000, -80])).toBe(false);
+  });
 });

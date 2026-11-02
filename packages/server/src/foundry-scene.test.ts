@@ -126,6 +126,39 @@ describe('a Foundry scene', () => {
     ]);
   });
 
+  it('keeps a light’s beam, strength, softness, colour strength and whether walls stop it', () => {
+    const lantern = {
+      ...v11,
+      lights: [
+        {
+          x: 0,
+          y: 0,
+          rotation: 90,
+          walls: false,
+          config: { bright: 20, dim: 0, color: '#3060ff', angle: 60, luminosity: 0.25, attenuation: 0.8, alpha: 0.2 },
+        },
+        { x: 0, y: 0, config: { bright: 20, dim: 0, angle: 360, luminosity: 0.5, attenuation: 0.5, alpha: 0.5 } },
+      ],
+    };
+    expect(foundryScene(lantern, media).scene.lights).toEqual([
+      {
+        id: 'light-1',
+        x: 0,
+        y: 0,
+        bright: 20,
+        dim: 0,
+        color: '#3060ff',
+        angle: 60,
+        rotation: 90,
+        walls: false,
+        luminosity: 0.5,
+        attenuation: 0.8,
+        colorIntensity: 0.4,
+      },
+      { id: 'light-2', x: 0, y: 0, bright: 20, dim: 0 },
+    ]);
+  });
+
   it('reads the older (v9) fields too, and scales lights from other grid units', () => {
     const v9 = {
       name: 'Old Keep',

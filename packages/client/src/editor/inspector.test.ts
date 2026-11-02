@@ -16,7 +16,19 @@ const field = (docs: Doc[], key: string) => fieldsFor(docs).find((f) => f.key ==
 
 describe('the inspector', () => {
   it('shows the fields of the selection, or none for a mixed bag of types', () => {
-    expect(fieldsFor([light]).map((f) => f.key)).toEqual(['bright', 'dim', 'color', 'animation', 'darkness', 'tile']);
+    expect(fieldsFor([light]).map((f) => f.key)).toEqual([
+      'bright',
+      'dim',
+      'color',
+      'colorIntensity',
+      'luminosity',
+      'attenuation',
+      'angle',
+      'animation',
+      'darkness',
+      'walls',
+      'tile',
+    ]);
     expect(fieldsFor([light, wall()])).toEqual([]);
     expect(fieldsFor([])).toEqual([]);
   });
@@ -120,6 +132,17 @@ describe('the inspector', () => {
     expect(field([light], 'bright').patch('15')).toEqual({ bright: 15 });
     expect(field([light], 'darkness').patch(true)).toEqual({ darkness: true });
     expect(field([light], 'darkness').patch(false)).toEqual({ darkness: null });
+  });
+
+  it('aims a beam, and lets a light shine through walls', () => {
+    const beam = { ...light, angle: 60 };
+    expect(fieldsFor([beam]).map((f) => f.key)).toContain('rotation');
+    expect(field([beam], 'rotation').patch('90')).toEqual({ rotation: 90 });
+    const through = field([light], 'walls');
+    expect(commonValue([light], through)).toBe(false);
+    expect(through.patch(true)).toEqual({ walls: false });
+    expect(through.patch(false)).toEqual({ walls: null });
+    expect(commonValue([{ ...light, walls: false }], through)).toBe(true);
   });
 
   it('shows rect tile fields for rect tiles and the picture for image tiles', () => {
