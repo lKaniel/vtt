@@ -19,6 +19,8 @@ export const TokenLookSchema = {
   /** Flips its picture left to right, or upside down. */
   mirrorX: z.boolean().optional(),
   mirrorY: z.boolean().optional(),
+  /** Each new token of it picks one of the files its `img` pattern (with `*`) matches, like Foundry's wildcard images. */
+  randomImg: z.boolean().optional(),
   /** A coloured ring round its picture, on a background colour, like Foundry's token rings. */
   ring: z.object({ color: z.string().optional(), background: z.string().optional() }).optional(),
 };

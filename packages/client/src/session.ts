@@ -105,7 +105,7 @@ export class Session extends HudSession {
     for (const fn of this.listeners.get(event) ?? []) (fn as (...a: Parameters<SessionEvents[K]>) => void)(...args);
   }
 
-  protected notify(event: 'armed' | 'targets'): void {
+  protected notify(event: 'armed' | 'targets' | 'lighting'): void {
     this.emit(event);
   }
 

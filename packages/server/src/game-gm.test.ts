@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TokenSchema } from '@vtt/system-dnd5e';
@@ -106,6 +106,22 @@ describe('spawning', () => {
     const gm = seat('gm');
     gm.receive({ t: 'spawn', from: { kind: 'monster', id: 'tarrasque-jr', rules: '2014' }, at: [0, 0] });
     expect(gm.take('error')[0]!.message).toMatch(/No monster "tarrasque-jr"/);
+  });
+
+  it('gives each new copy one of the pictures a wildcard image matches', async () => {
+    await mkdir(join(dir, 'assets', 'tokens'), { recursive: true });
+    for (const f of ['goblin-a.webp', 'goblin-b.webp', 'orc.webp'])
+      await writeFile(join(dir, 'assets', 'tokens', f), '');
+    game = new Game(store);
+    await new Promise((r) => setTimeout(r, 50));
+    const gm = seat('gm');
+    const img = '/assets/tokens/goblin-*.webp';
+    gm.receive({
+      t: 'saveActor',
+      actor: { id: 'imp', name: 'Imp', monster: 'goblin', img, randomImg: true, linked: false },
+    });
+    gm.receive({ t: 'spawn', from: { kind: 'actor', id: 'imp' }, at: [950, 950] });
+    expect(['/assets/tokens/goblin-a.webp', '/assets/tokens/goblin-b.webp']).toContain(store.tokens.get('imp')?.img);
   });
 
   it('places copies of an actor', () => {

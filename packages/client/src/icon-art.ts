@@ -1,5 +1,6 @@
 import type { Attack, FeatureSheet, Item, Spell, TokenView } from '@vtt/system-dnd5e';
 import { assetUrl } from './assets.ts';
+import { isWildcard } from '@vtt/core';
 import manifest from './icon-art.json';
 
 // Painted icons in public/art/icons, listed in icon-art.json. Anything
@@ -42,8 +43,9 @@ export const itemArt = (item: Item | undefined) => (item ? art('items', item.id)
 /** A painted die for the quick-roll buttons; there is no d100, so it borrows the d10. */
 export const diceArt = (die: string) => `/art/icons/dice/${die === 'd100' ? 'd10' : die}.webp`;
 
-/** A token's own picture, else its monster's painted token, if it has either. */
-export const cutoutOf = (token: TokenView): string | undefined => (token.img ? assetUrl(token.img) : token.art);
+/** A token's own picture, else its monster's painted token, if it has either. A wildcard pattern no token picked from yet isn't a picture. */
+export const cutoutOf = (token: TokenView): string | undefined =>
+  token.img && !isWildcard(token.img) ? assetUrl(token.img) : token.art;
 
 /** The picture to show for a token, or a hooded stranger for creatures without one. */
 export const portraitOf = (token: TokenView) => cutoutOf(token) ?? '/art/ui/portrait-default.webp';

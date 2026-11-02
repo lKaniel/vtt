@@ -59,15 +59,8 @@ export class PackActions {
     return { t: 'packs', packs: packInfos(store.packs, store.campaign, store.system), problems };
   }
 
-  /** The game's own assets, then the media of each pack it uses. */
-  private async media(): Promise<MediaEntry[]> {
-    const own = await filesUnder(join(this.store.dir, 'assets'));
-    const entries = own.flatMap((rel) => mediaEntry(`/assets/${rel}`, rel) ?? []);
-    const packs = this.store.packs;
-    if (!packs) return entries;
-    const on = enabledPacks(packs.list(), this.store.campaign.packs, this.store.system.id);
-    for (const pack of on) entries.push(...(await packs.media(pack.id)));
-    return entries;
+  private media(): Promise<MediaEntry[]> {
+    return gameMedia(this.store);
   }
 
   /** A compendium of the system's packs or of an installed pack the game may use. */
@@ -91,4 +84,15 @@ export class PackActions {
     const base = freeId(slugify(name.slice(0, dot)) || 'upload', (id) => taken.has(`${id}.${ext}`), { bare: true });
     await writeFile(join(dir, `${base}.${ext}`), Buffer.from(data, 'base64'));
   }
+}
+
+/** The game's own assets, then the media of each pack it uses. */
+export async function gameMedia(store: GameStore): Promise<MediaEntry[]> {
+  const own = await filesUnder(join(store.dir, 'assets'));
+  const entries = own.flatMap((rel) => mediaEntry(`/assets/${rel}`, rel) ?? []);
+  const packs = store.packs;
+  if (!packs) return entries;
+  const on = enabledPacks(packs.list(), store.campaign.packs, store.system.id);
+  for (const pack of on) entries.push(...(await packs.media(pack.id)));
+  return entries;
 }

@@ -46,6 +46,9 @@ export interface MenuApi {
   readonly targets: { readonly mine: ReadonlySet<string>; toggle(id: string): void };
   /** Opens the token HUD beside a creature (see session-hud.ts). */
   openHud(token: string, screen: Point): void;
+  /** GM: the creature whose eyes the map shows. */
+  readonly observing?: string;
+  observe(token: string | undefined): void;
 }
 
 /** What the menu was opened on. */
@@ -122,8 +125,15 @@ registerMenu('token', (t, api) => {
       run: () => api.editSelection({ hidden: hidden ? null : true }, hidden ? 'reveal' : 'hide'),
     },
     targetEntry(id, api),
+    api.isGm() && observeEntry(id, api),
   ];
 });
+
+/** GM: see the map as this creature's players do (light, sight, fog), or stop. */
+const observeEntry = (id: string, api: MenuApi): MenuItem =>
+  api.observing === id
+    ? { label: 'Stop seeing through its eyes', run: () => api.observe(undefined) }
+    : { label: 'See through its eyes', run: () => api.observe(id) };
 
 /** Target a creature, or stop (see targets.ts). */
 const targetEntry = (id: string, api: MenuApi): MenuItem => ({
