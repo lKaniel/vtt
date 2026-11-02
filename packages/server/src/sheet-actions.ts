@@ -1,6 +1,9 @@
 import { canControl, type Player } from '@vtt/shared';
 import {
   attuneProblem,
+  characterLevel,
+  gainXp,
+  levelForXp,
   type CarryChange,
   hitDieProblem,
   putInside,
@@ -13,16 +16,17 @@ import { Refusal, requireGm, type Table } from './table.ts';
 
 // What an owner may do on their sheet without the GM's edit mode: equip
 // gear, count coins, pack things into containers, attune to magic items,
-// spend hit dice; and the GM's exhaustion.
+// spend hit dice; and the GM's exhaustion and experience awards.
 
-type SheetMessage = Extract<ClientMessage, { t: 'equip' | 'carry' | 'hitDie' | 'exhaustion' }>;
+type SheetMessage = Extract<ClientMessage, { t: 'equip' | 'carry' | 'hitDie' | 'exhaustion' | 'awardXp' }>;
 
 export function isSheetMessage(msg: ClientMessage): msg is SheetMessage {
-  return msg.t === 'equip' || msg.t === 'carry' || msg.t === 'hitDie' || msg.t === 'exhaustion';
+  return ['equip', 'carry', 'hitDie', 'exhaustion', 'awardXp'].includes(msg.t);
 }
 
 export function sheetAction(table: Table, player: Player, msg: SheetMessage): void {
   if (msg.t === 'hitDie' || msg.t === 'exhaustion') return vigour(table, player, msg);
+  if (msg.t === 'awardXp') return awardXp(table, player, msg);
   const token = table.store.tokens.get(msg.token);
   if (!token || !canControl(token, player)) throw new Refusal('No such token');
   const change: CarryChange | { kind: 'equip'; item: number; on: boolean } =
@@ -84,4 +88,20 @@ function vigour(table: Table, player: Player, msg: Extract<SheetMessage, { t: 'h
   const out = spendHitDie(token, sheet, table.rng);
   table.store.setToken(out.token);
   table.note(`${token.name} spends a hit die and regains ${out.healed} HP`);
+}
+
+/** The GM gives each named character `xp`, and says who has enough for a new level. */
+function awardXp(table: Table, player: Player, msg: Extract<SheetMessage, { t: 'awardXp' }>): void {
+  requireGm(player);
+  const heroes = msg.tokens.map((id) => table.fighter(id).token);
+  const other = heroes.find((t) => t.monster !== undefined || !characterLevel(t.stats));
+  if (other) throw new Refusal(`Experience goes to characters, and ${other.name} isn't one`);
+  for (const token of heroes) {
+    const next = gainXp(token, msg.xp);
+    table.store.setToken(next);
+    const level = characterLevel(token.stats)!;
+    const reach = levelForXp(next.stats!.xp!);
+    const more = reach > level ? ` and can reach level ${reach}` : '';
+    table.note(`${token.name} gains ${msg.xp} XP${more}`);
+  }
 }

@@ -55,6 +55,11 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('lair'), token: z.string(), action: z.string() }),
   z.object({ t: z.literal('exhaustion'), token: z.string(), level: z.number().int().min(0).max(6) }),
   z.object({
+    t: z.literal('awardXp'),
+    tokens: z.array(z.string()).min(1).max(20),
+    xp: z.number().int().min(1).max(1_000_000),
+  }),
+  z.object({
     t: z.literal('carry'),
     token: z.string(),
     change: z.discriminatedUnion('kind', [

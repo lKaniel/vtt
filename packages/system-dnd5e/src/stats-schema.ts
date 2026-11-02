@@ -202,6 +202,8 @@ export const StatsSchema = z.object({
   /** Follow the other edition's rules than the world, e.g. a 2024 class in a 2014 game. */
   rules: EditionSchema.optional(),
   level: z.number().int().min(1).max(20).optional(),
+  /** Experience points earned. */
+  xp: z.number().int().min(0).optional(),
   class: z.string().optional(),
   /** A multiclassed character's classes, the first one taken at 1st level; instead of `class` and `level`. */
   classes: z.array(ClassLevelSchema).min(1).optional(),
