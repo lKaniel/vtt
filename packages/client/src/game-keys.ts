@@ -105,7 +105,7 @@ function backOutOfEditor(session: Session): boolean {
 /** T in the tokens mode targets the creature under the pointer, or lets them all go over empty ground (see targets.ts). */
 function targetKey(session: Session, e: Key): boolean {
   if (session.mode !== 'tokens' || e.shiftKey || !actionOf(e, currentKeys(), ['target'])) return false;
-  return session.toggleTargetAtPointer();
+  return session.actions.toggleTargetAtPointer();
 }
 
 /** T, Shift+T, W, L, D, N and M switch modes (those this seat may use), R picks up the ruler; the arrows nudge outside the tokens mode. */
@@ -154,7 +154,7 @@ function step(session: Session, e: Key): boolean {
 /** Esc closes the sheet, puts away a readied attack or spell, or lets go of the selection. */
 function backOut(session: Session): void {
   if (session.sheet) session.openSheet(undefined);
-  else if (session.armed ?? session.aiming) session.arm(undefined);
+  else if (session.actions.armed ?? session.actions.aiming) session.actions.arm(undefined);
   else session.select(undefined);
 }
 

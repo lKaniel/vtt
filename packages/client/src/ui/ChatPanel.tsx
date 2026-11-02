@@ -170,7 +170,7 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
             key={m.id}
             m={m}
             session={session}
-            onApply={(how) => session.applyRoll(m.id, how)}
+            onApply={(how) => session.actions.applyRoll(m.id, how)}
             onUndo={session.isGm() && session.history.card === m.id ? () => session.undoCard(m.id) : undefined}
           />
         ))}
@@ -194,8 +194,8 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
           className="w-[7.25rem] flex-none"
           aria-label="Who sees your rolls"
           title="Who sees your rolls and the results of your attacks and spells"
-          value={session.rollMode}
-          onValueChange={(m) => session.setRollMode(m as RollMode)}
+          value={session.actions.rollMode}
+          onValueChange={(m) => session.actions.setRollMode(m as RollMode)}
           options={ROLL_MODE_OPTIONS}
         />
       </form>

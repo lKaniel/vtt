@@ -226,36 +226,36 @@ describe('Session', () => {
 
     it('arms an attack, then fires it at the clicked target', () => {
       session.select('hero');
-      session.arm('Longsword');
-      expect(session.armed).toBe('Longsword');
-      session.attack('goblin');
+      session.actions.arm('Longsword');
+      expect(session.actions.armed).toBe('Longsword');
+      session.actions.attack('goblin');
       expect(ws.sent.at(-1)).toEqual({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Longsword' });
-      expect(session.armed).toBeUndefined();
+      expect(session.actions.armed).toBeUndefined();
     });
 
     it('fires an armed attack at once at your one target', () => {
       session.select('hero');
       session.targets.toggle('goblin');
-      session.arm('Longsword');
+      session.actions.arm('Longsword');
       expect(ws.sent.at(-1)).toEqual({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Longsword' });
-      expect(session.armed).toBeUndefined();
+      expect(session.actions.armed).toBeUndefined();
     });
 
     it('smites with a chosen slot on the armed attack, then forgets the choice', () => {
       session.select('hero');
-      session.arm('Longsword');
-      session.setSmite(2);
-      session.attack('goblin');
+      session.actions.arm('Longsword');
+      session.actions.setSmite(2);
+      session.actions.attack('goblin');
       expect(ws.sent.at(-1)).toMatchObject({ t: 'attack', attack: 'Longsword', smite: 2 });
-      session.arm('Longsword');
-      expect(session.smite).toBeUndefined();
+      session.actions.arm('Longsword');
+      expect(session.actions.smite).toBeUndefined();
     });
 
     it('drops the armed attack when the selection changes', () => {
       session.select('hero');
-      session.arm('Longsword');
+      session.actions.arm('Longsword');
       session.select(undefined);
-      expect(session.armed).toBeUndefined();
+      expect(session.actions.armed).toBeUndefined();
     });
 
     describe('spells', () => {
@@ -276,12 +276,12 @@ describe('Session', () => {
       });
 
       it('aims a spell at creatures and casts once enough are picked', () => {
-        session.aim('magic-missile', 1);
-        expect(session.aiming).toMatchObject({ need: 3 });
-        session.pickTarget('goblin');
-        session.pickTarget('goblin');
+        session.actions.aim('magic-missile', 1);
+        expect(session.actions.aiming).toMatchObject({ need: 3 });
+        session.actions.pickTarget('goblin');
+        session.actions.pickTarget('goblin');
         expect(ws.sent.at(-1)).not.toMatchObject({ t: 'cast' });
-        session.pickTarget('orc');
+        session.actions.pickTarget('orc');
         expect(ws.sent.at(-1)).toEqual({
           t: 'cast',
           caster: 'hero',
@@ -289,14 +289,14 @@ describe('Session', () => {
           slot: 1,
           targets: ['goblin', 'goblin', 'orc'],
         });
-        expect(session.aiming).toBeUndefined();
+        expect(session.actions.aiming).toBeUndefined();
       });
 
       it('aims a spell at your targets and casts when they are all it needs', () => {
         session.targets.toggle('goblin');
-        session.aim('magic-missile', 1);
+        session.actions.aim('magic-missile', 1);
         expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', targets: ['goblin', 'goblin', 'goblin'] });
-        expect(session.aiming).toBeUndefined();
+        expect(session.actions.aiming).toBeUndefined();
       });
 
       it('aims a feature like a spell and uses it on the picked creature', () => {
@@ -309,9 +309,9 @@ describe('Session', () => {
           spell: { targets: 1, range: 60 },
         };
         ws.receive({ t: 'token', token: { ...wizard(), sheet: { features: [inspiration] } as never } });
-        session.aimFeature('bardic-inspiration');
-        expect(session.aiming).toMatchObject({ mode: 'creatures', need: 1, feature: 'bardic-inspiration' });
-        session.pickTarget('orc');
+        session.actions.aimFeature('bardic-inspiration');
+        expect(session.actions.aiming).toMatchObject({ mode: 'creatures', need: 1, feature: 'bardic-inspiration' });
+        session.actions.pickTarget('orc');
         expect(ws.sent.at(-1)).toEqual({
           t: 'feature',
           token: 'hero',
@@ -321,15 +321,15 @@ describe('Session', () => {
       });
 
       it('casts with fewer targets on confirm', () => {
-        session.aim('magic-missile', 1);
-        session.pickTarget('goblin');
-        session.confirmCast();
+        session.actions.aim('magic-missile', 1);
+        session.actions.pickTarget('goblin');
+        session.actions.confirmCast();
         expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', targets: ['goblin'] });
       });
 
       it('casts an area spell at the clicked point', () => {
-        session.aim('fireball', 3);
-        session.castAt([250, 150]);
+        session.actions.aim('fireball', 3);
+        session.actions.castAt([250, 150]);
         expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'fireball', point: [250, 150] });
       });
 
@@ -339,9 +339,9 @@ describe('Session', () => {
           t: 'token',
           token: { ...wizard(), sheet: { caster: { level: 5, spells: [familiar] }, effects: [] } as never },
         });
-        session.aim('find-familiar', 1);
-        session.chooseSummon('owl');
-        session.castAt([150, 50]);
+        session.actions.aim('find-familiar', 1);
+        session.actions.chooseSummon('owl');
+        session.actions.castAt([150, 50]);
         expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'find-familiar', summon: 'owl', point: [150, 50] });
       });
 
@@ -351,10 +351,10 @@ describe('Session', () => {
           t: 'token',
           token: { ...wizard(), sheet: { caster: { level: 5, spells: [energy] }, effects: [] } as never },
         });
-        session.aim('protection-from-energy', 3);
-        expect(session.aiming?.choice).toBe('acid');
-        session.chooseOption('fire');
-        session.pickTarget('wiz');
+        session.actions.aim('protection-from-energy', 3);
+        expect(session.actions.aiming?.choice).toBe('acid');
+        session.actions.chooseOption('fire');
+        session.actions.pickTarget('wiz');
         expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'protection-from-energy', choice: 'fire' });
       });
 
@@ -367,36 +367,36 @@ describe('Session', () => {
             sheet: { edition: '2014', caster: { level: 9, spells: [poly] }, effects: [] } as never,
           },
         });
-        session.aim('polymorph', 4);
-        session.chooseForm('cat');
-        session.pickTarget('wiz');
+        session.actions.aim('polymorph', 4);
+        session.actions.chooseForm('cat');
+        session.actions.pickTarget('wiz');
         expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'polymorph', form: 'cat' });
       });
 
       it('casts for free when asked, keeping the choice when the slot changes', () => {
-        session.aim('fireball', 3);
-        session.setFreeCast(true);
-        session.aim('fireball', 4, session.aiming?.free);
-        session.castAt([250, 150]);
+        session.actions.aim('fireball', 3);
+        session.actions.setFreeCast(true);
+        session.actions.aim('fireball', 4, session.actions.aiming?.free);
+        session.actions.castAt([250, 150]);
         expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'fireball', slot: 4, free: true });
       });
 
       it('cancels an aimed spell or readied attack, and says whether there was one', () => {
-        session.aim('fireball', 3);
-        expect(session.cancelAction()).toBe(true);
-        expect(session.aiming).toBeUndefined();
-        session.arm('Longsword');
-        expect(session.cancelAction()).toBe(true);
-        expect(session.armed).toBeUndefined();
-        expect(session.cancelAction()).toBe(false);
+        session.actions.aim('fireball', 3);
+        expect(session.actions.cancelAction()).toBe(true);
+        expect(session.actions.aiming).toBeUndefined();
+        session.actions.arm('Longsword');
+        expect(session.actions.cancelAction()).toBe(true);
+        expect(session.actions.armed).toBeUndefined();
+        expect(session.actions.cancelAction()).toBe(false);
       });
 
       it('puts away a readied attack when aiming a spell, and the other way round', () => {
-        session.arm('Longsword');
-        session.aim('fireball', 3);
-        expect(session.armed).toBeUndefined();
-        session.arm('Longsword');
-        expect(session.aiming).toBeUndefined();
+        session.actions.arm('Longsword');
+        session.actions.aim('fireball', 3);
+        expect(session.actions.armed).toBeUndefined();
+        session.actions.arm('Longsword');
+        expect(session.actions.aiming).toBeUndefined();
       });
     });
 

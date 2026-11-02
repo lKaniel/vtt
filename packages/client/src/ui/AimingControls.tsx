@@ -12,7 +12,7 @@ import { Toggle } from './kit/toggle.tsx';
 
 /** While a spell is aimed: which slot to cast it with, what to summon, its option, and casting with fewer targets. */
 export function AimingControls({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
-  const aiming = session.aiming;
+  const aiming = session.actions.aiming;
   if (!aiming) return null;
   const { spell } = aiming;
   return (
@@ -25,7 +25,7 @@ export function AimingControls({ session, token }: Readonly<{ session: Session; 
       <SpellOptions session={session} aiming={aiming} />
       {spell.transform && <FormChoice session={session} aiming={aiming} token={token} />}
       {aiming.mode === 'creatures' && aiming.picks.length > 0 && (
-        <Button size="sm" onClick={() => session.confirmCast()}>
+        <Button size="sm" onClick={() => session.actions.confirmCast()}>
           Cast at {aiming.picks.length}
         </Button>
       )}
@@ -42,7 +42,7 @@ function SpellOptions({ session, aiming }: Readonly<{ session: Session; aiming: 
         <SelectField
           value={aiming.summon ?? ''}
           aria-label="What to summon"
-          onValueChange={(m) => session.chooseSummon(m)}
+          onValueChange={(m) => session.actions.chooseSummon(m)}
           options={spell.summon.options.map((o) => ({ value: o.monster, label: summonLabel(o) }))}
         />
       )}
@@ -50,7 +50,7 @@ function SpellOptions({ session, aiming }: Readonly<{ session: Session; aiming: 
         <SelectField
           value={aiming.choice ?? ''}
           aria-label={`${spell.name} option`}
-          onValueChange={(c) => session.chooseOption(c)}
+          onValueChange={(c) => session.actions.chooseOption(c)}
           options={spell.choices.map((c) => ({ value: c.id, label: c.name }))}
         />
       )}
@@ -66,7 +66,7 @@ function FormChoice({ session, aiming, token }: Readonly<{ session: Session; aim
     <SelectField
       value={aiming.form ?? ''}
       aria-label="Form"
-      onValueChange={(m) => session.chooseForm(m)}
+      onValueChange={(m) => session.actions.chooseForm(m)}
       options={forms.map((m) => ({ value: m.id, label: `${m.name} (CR ${m.cr})` }))}
     />
   );
@@ -81,10 +81,10 @@ function SlotChoices({
   const { spell, free } = aiming;
   const choices = slotChoices(spell, caster).filter((c) => free === true || c.left > 0);
   const backToSlots = () => {
-    session.setFreeCast(false);
+    session.actions.setFreeCast(false);
     const current = choices.find((c) => c.level === aiming.slot);
     const first = choices.find((c) => c.left > 0);
-    if (!current?.left && first) session.aim(spell.id, first.level);
+    if (!current?.left && first) session.actions.aim(spell.id, first.level);
   };
   return (
     <span className="slot-choices" role="group" aria-label="Spell slot">
@@ -93,7 +93,7 @@ function SlotChoices({
         <Toggle
           key={c.level}
           pressed={c.level === aiming.slot}
-          onPressedChange={() => session.aim(spell.id, c.level, free)}
+          onPressedChange={() => session.actions.aim(spell.id, c.level, free)}
           title={free ? `Cast at ${ORDINAL[c.level]} level for free` : `Use a ${ORDINAL[c.level]}-level slot`}
         >
           {ORDINAL[c.level]}
@@ -102,7 +102,7 @@ function SlotChoices({
       ))}
       <Toggle
         pressed={free}
-        onPressedChange={() => (free ? backToSlots() : session.setFreeCast(true))}
+        onPressedChange={() => (free ? backToSlots() : session.actions.setFreeCast(true))}
         title="Cast without spending a spell slot"
       >
         Free

@@ -17,8 +17,8 @@ describe('Session actions', () => {
   it('tells the server its roll mode on joining and when it changes', () => {
     ws.receive(welcome());
     expect(ws.sent).toContainEqual({ t: 'rollMode', mode: 'public' });
-    session.setRollMode('blind');
-    expect(session.rollMode).toBe('blind');
+    session.actions.setRollMode('blind');
+    expect(session.actions.rollMode).toBe('blind');
     expect(ws.sent.at(-1)).toEqual({ t: 'rollMode', mode: 'blind' });
   });
 
@@ -37,24 +37,24 @@ describe('Session actions', () => {
   it('targets the creature under the pointer with T, and lets them all go over empty ground', () => {
     ws.receive(welcome([token('hero'), token('goblin', 250, 50)]));
     session.pointer = [240, 60];
-    expect(session.toggleTargetAtPointer()).toBe(true);
+    expect(session.actions.toggleTargetAtPointer()).toBe(true);
     expect([...session.targets.mine]).toEqual(['goblin']);
     session.pointer = [650, 650];
-    expect(session.toggleTargetAtPointer()).toBe(true);
+    expect(session.actions.toggleTargetAtPointer()).toBe(true);
     expect(session.targets.mine.size).toBe(0);
-    expect(session.toggleTargetAtPointer()).toBe(false);
+    expect(session.actions.toggleTargetAtPointer()).toBe(false);
   });
 
   it('applies a chat roll to your targets, else the selected creatures', () => {
     ws.receive(welcome([token('hero'), token('goblin', 250, 50)]));
-    session.applyRoll('card', 'half');
+    session.actions.applyRoll('card', 'half');
     expect(ws.sent.at(-1)).not.toMatchObject({ t: 'applyDamage' });
     expect(session.error?.message).toMatch(/target or select/i);
     session.select('hero');
-    session.applyRoll('card', 'heal');
+    session.actions.applyRoll('card', 'heal');
     expect(ws.sent.at(-1)).toEqual({ t: 'applyDamage', card: 'card', tokens: ['hero'], how: 'heal' });
     session.targets.toggle('goblin');
-    session.applyRoll('card', 'half');
+    session.actions.applyRoll('card', 'half');
     expect(ws.sent.at(-1)).toEqual({ t: 'applyDamage', card: 'card', tokens: ['goblin'], how: 'half' });
   });
 });

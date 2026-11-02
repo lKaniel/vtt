@@ -6,7 +6,7 @@ import { Toggle } from './kit/toggle.tsx';
 /** While a melee attack is readied by a 2014 paladin: which slot, if any, to Divine Smite with on a hit. */
 export function SmiteControls({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
   const sheet = token.sheet;
-  const attack = sheet?.attacks.find((a) => a.name === session.armed);
+  const attack = sheet?.attacks.find((a) => a.name === session.actions.armed);
   const caster = sheet?.caster;
   if (attack?.kind !== 'melee' || !caster || !sheet.features.some((f) => f.id === 'divine-smite')) return null;
   const levels = caster.left.flatMap((left, i) => (left > 0 ? [i + 1] : []));
@@ -18,8 +18,8 @@ export function SmiteControls({ session, token }: Readonly<{ session: Session; t
         {levels.map((level) => (
           <Toggle
             key={level}
-            pressed={session.smite === level}
-            onPressedChange={(on) => session.setSmite(on ? level : undefined)}
+            pressed={session.actions.smite === level}
+            onPressedChange={(on) => session.actions.setSmite(on ? level : undefined)}
             title={`On a hit, spend a ${ORDINAL[level]}-level slot for radiant damage`}
           >
             {ORDINAL[level]}
