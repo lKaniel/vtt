@@ -25,6 +25,7 @@ import {
 } from '@vtt/system-dnd5e';
 import { isGridless, type Player, type Point } from '@vtt/shared';
 import { castBreaksSanctuary, passSanctuaries } from './spell-wards.ts';
+import { shaped } from './spell-forms.ts';
 import { summon } from './spell-summons.ts';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
 
@@ -40,6 +41,8 @@ export interface CastRequest {
   scroll?: boolean;
   /** The spell's option (see Spell `choices`); a lasting spell used again keeps the one it was cast with. */
   choice?: string;
+  /** The monster a shape-shifting spell turns its targets into (polymorph). */
+  form?: string;
 }
 
 /** What casting costs: the action, slot and slot spent; using a lasting spell again needs no slot. */
@@ -78,9 +81,10 @@ export class SpellActions {
     const known = this.table.content(actor.token).spells.get(req.spell);
     if (!known) throw new Refusal(`There is no spell called ${req.spell}`);
     const { caster, plan, reader } = this.prepare(actor, known, req);
-    const spell = chosen(caster, known, req.choice);
+    const picked = chosen(caster, known, req.choice);
     this.table.check(caster.token, plan.cost);
-    const targets = this.aim(caster, spell, { ...req, slot: plan.slot }, { canSee, again: plan.again });
+    const targets = this.aim(caster, picked, { ...req, slot: plan.slot }, { canSee, again: plan.again });
+    const spell = shaped(this.table, caster, picked, { form: req.form, targets });
     passSanctuaries(this.table, caster, spell, targets);
     this.table.pay(caster.token, plan.cost);
     castBreaksSanctuary(this.table, caster, spell, targets);

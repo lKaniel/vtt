@@ -59,11 +59,31 @@
     }
   },
   "animal-shapes": {
-    "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs creatures turned into another stat block."
+    "2014": {
+      "transform": {
+        "types": ["beast"],
+        "maxCr": 4,
+        "maxSize": 2,
+        "keepMind": true,
+        "hp": "replace"
       }
+    },
+    "2024": {
+      "transform": {
+        "types": ["beast"],
+        "maxCr": 4,
+        "maxSize": 2,
+        "keepMind": true,
+        "hp": "temp"
+      }
+    },
+    "both": {
+      "automated": true,
+      "targets": 10,
+      "effect": {
+        "name": "Animal Shape"
+      },
+      "gmNote": "Every target takes the same form here; cast again for a different one."
     }
   },
   "animate-dead": {
@@ -3211,12 +3231,26 @@
     }
   },
   "polymorph": {
-    "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a creature turned into another stat block."
+    "2014": {
+      "transform": {
+        "types": ["beast"],
+        "maxCr": "target",
+        "hp": "replace"
       }
+    },
+    "2024": {
+      "transform": {
+        "types": ["beast"],
+        "maxCr": "target",
+        "hp": "temp"
+      }
+    },
+    "both": {
+      "automated": true,
+      "effect": {
+        "name": "Polymorphed"
+      },
+      "gmNote": "A willing target can choose to fail the save. Shapechangers and creatures at 0 hit points are unaffected. In its new form it can’t speak or cast spells."
     }
   },
   "power-word-heal": {
@@ -3785,10 +3819,27 @@
     }
   },
   "shapechange": {
+    "2014": {
+      "transform": {
+        "notTypes": ["construct", "undead"],
+        "maxCr": "caster",
+        "keepMind": true,
+        "hp": "replace"
+      }
+    },
+    "2024": {
+      "transform": {
+        "notTypes": ["construct", "undead"],
+        "maxCr": "caster",
+        "keepMind": true,
+        "hp": "temp"
+      },
+      "gmNote": "You keep your Spellcasting feature in 2024; changing to another form is a new casting here."
+    },
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a creature turned into another stat block."
+      "automated": true,
+      "effect": {
+        "name": "Shapechanged"
       }
     }
   },
@@ -4269,12 +4320,28 @@
     }
   },
   "true-polymorph": {
-    "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a creature turned into another stat block."
+    "2014": {
+      "save": {
+        "ability": "wis",
+        "onSave": "none"
+      },
+      "transform": {
+        "maxCr": "target",
+        "hp": "replace"
       }
+    },
+    "2024": {
+      "transform": {
+        "maxCr": "target",
+        "hp": "temp"
+      }
+    },
+    "both": {
+      "automated": true,
+      "effect": {
+        "name": "Truly Polymorphed"
+      },
+      "gmNote": "Creature into creature only; objects are by hand. Kept up for the full hour it lasts until dispelled: make the effect permanent by hand."
     }
   },
   "true-resurrection": {

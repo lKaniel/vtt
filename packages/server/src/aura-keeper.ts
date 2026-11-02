@@ -1,6 +1,7 @@
 import { isGridless } from '@vtt/shared';
 import { auraEffects, withAuras, withBanishment } from '@vtt/system-dnd5e';
 import type { Table } from './table.ts';
+import { changeShapes } from './spell-forms.ts';
 import { ZonePlacing } from './zone-placements.ts';
 import { ZoneTemplates } from './zone-templates.ts';
 
@@ -36,7 +37,7 @@ function banishments(table: Table): void {
   }
 }
 
-/** What every step brings in line after it runs: lasting spell zones' templates, lights and walls, banishments, then auras. */
+/** What every step brings in line after it runs: lasting spell zones' templates, lights and walls, shapes, banishments, then auras. */
 export class AfterStep {
   readonly zoneTemplates: ZoneTemplates;
   private auras: AuraKeeper;
@@ -51,6 +52,7 @@ export class AfterStep {
   sync(): void {
     this.zoneTemplates.sync();
     this.placing.sync();
+    changeShapes(this.table);
     banishments(this.table);
     this.auras.sync();
   }

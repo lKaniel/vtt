@@ -350,6 +350,21 @@ describe('Session', () => {
         expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'protection-from-energy', choice: 'fire' });
       });
 
+      it('casts a shape-shifting spell with the form the player picked', () => {
+        const poly = srdFor('2014').spells.get('polymorph')!;
+        ws.receive({
+          t: 'token',
+          token: {
+            ...wizard(),
+            sheet: { edition: '2014', caster: { level: 9, spells: [poly] }, effects: [] } as never,
+          },
+        });
+        session.aim('polymorph', 4);
+        session.chooseForm('cat');
+        session.pickTarget('wiz');
+        expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'polymorph', form: 'cat' });
+      });
+
       it('casts for free when asked, keeping the choice when the slot changes', () => {
         session.aim('fireball', 3);
         session.setFreeCast(true);

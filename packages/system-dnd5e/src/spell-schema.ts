@@ -113,6 +113,13 @@ const modifiers = {
   bonusActions: z.array(id).optional(),
   /** Saving throws of these abilities have disadvantage (bestow curse, contagion). */
   saveDisadvantageFor: z.array(AbilitySchema).optional(),
+  /**
+   * The bearer is in another creature's shape (polymorph): its stat block is the
+   * monster's. `hp` "replace": the form's hit points stand in for its own
+   * (2014); "temp": it keeps its own and gains the form's as temporary ones
+   * (2024). `keepMind`: it keeps its Intelligence, Wisdom and Charisma.
+   */
+  form: z.object({ monster: id, hp: z.enum(['replace', 'temp']), keepMind: z.boolean().optional() }).optional(),
   /** The bearer is sent off the map while it lasts: its token is hidden (banishment, maze). */
   banished: z.boolean().optional(),
   /** At the end of each of the bearer's turns a d20 of 11 or more sends it away until its next turn (blink). */
@@ -311,6 +318,22 @@ export const SpellSchema = z.object({
   /** Left on each creature hit, or failing its save. */
   effect: EffectTemplateSchema.optional(),
   summon: SummonSchema.optional(),
+  /**
+   * Turns the target into another creature the caster picks (polymorph): of
+   * these `types` (missing: any but `notTypes`), with a challenge rating up to
+   * `maxCr` — a number, the target's own CR or level, or the caster's level —
+   * and at most `maxSize` squares. `hp` and `keepMind` as on the effect's `form`.
+   */
+  transform: z
+    .object({
+      types: z.array(z.string()).optional(),
+      notTypes: z.array(z.string()).optional(),
+      maxCr: z.union([z.number().nonnegative(), z.enum(['target', 'caster'])]),
+      maxSize: z.number().positive().optional(),
+      hp: z.enum(['replace', 'temp']),
+      keepMind: z.boolean().optional(),
+    })
+    .optional(),
   /** Moves the caster up to this many feet to a point they can see (misty step). */
   teleport: z.number().positive().optional(),
   /** Feet each creature hit (or failing its save) is moved: positive pushes away from the caster, negative pulls closer. */

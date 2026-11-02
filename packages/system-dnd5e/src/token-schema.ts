@@ -84,6 +84,8 @@ export const TokenSchema = z.object({
   monster: id.optional(),
   /** Character stats, or overrides for the monster's stat block. */
   stats: StatsSchema.optional(),
+  /** What a creature in another shape (polymorph) gets back when it changes back: its own hit points (missing: unhurt). */
+  trueForm: z.object({ mode: z.enum(['replace', 'temp']), hp: z.number().int().optional() }).optional(),
   /** Current hit points; missing means unhurt. */
   hp: z.number().int().optional(),
   /** A character's death saves while at 0 hp; cleared once it's healed. */

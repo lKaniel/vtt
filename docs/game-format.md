@@ -517,7 +517,8 @@ actor can say otherwise with its own `"linked"`). Only `x`, `y`, `hidden`,
 everything else on a token with an actor goes in `delta`, and `check-game`
 says so. `banished` is the server's: a creature sent away by a spell
 (banishment, blink, maze) is hidden with it and shown again when the spell
-ends.
+ends. `trueForm` is the server's as well: a creature polymorphed in 2014 keeps
+its own hit points there until it changes back.
 
 A token without `actor` carries its whole sheet itself, with the actor fields
 below written straight on it. Summons are like that; they vanish when their

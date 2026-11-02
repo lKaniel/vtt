@@ -1,6 +1,7 @@
 import {
   characterLevel,
   type ClientMessage,
+  formChoices,
   type Creature,
   scaledSpell,
   type Spell,
@@ -24,6 +25,8 @@ export interface Aiming {
   summon?: string;
   /** The spell's option (see Spell `choices`): a damage type, enlarge or reduce. */
   choice?: string;
+  /** For shape-shifting spells (polymorph): the monster its targets turn into. */
+  form?: string;
   /** Cast without spending a slot. */
   free?: boolean;
   /** Uses a lasting spell again (spiritual weapon): no new slot. */
@@ -46,7 +49,7 @@ export function aimSpell(spell: Spell, slot: number, casterLevel: number): Aimin
 
 /** Aims one of a creature's spells; a lasting spell that's going is used again with its slot (spiritual weapon). */
 export function aimFor(
-  sheet: Pick<Creature, 'caster' | 'effects'> | undefined,
+  sheet: (Pick<Creature, 'caster' | 'effects'> & Partial<Pick<Creature, 'edition'>>) | undefined,
   spellId: string | undefined,
   { slot, free }: { slot: number; free: boolean },
 ): Aiming | undefined {
@@ -62,7 +65,17 @@ export function aimFor(
       ...(going.choice && { choice: going.choice }),
     };
   const conjure = spell.attackOnCast ? {} : { mode: 'self' as const, need: 0 };
-  return { ...aimSpell(spell, slot, caster.level), ...conjure, ...(free && { free }) };
+  return { ...aimSpell(spell, slot, caster.level), ...conjure, ...(free && { free }), ...firstForm(spell, sheet) };
+}
+
+/** The form a shape-shifting spell (polymorph) starts on: the first it allows. */
+function firstForm(
+  spell: Spell,
+  { edition, caster }: Partial<Pick<Creature, 'edition' | 'caster'>>,
+): Pick<Aiming, 'form'> {
+  if (!spell.transform) return {};
+  const form = formChoices(spell, gameContent(edition ?? '2014'), caster?.level ?? 1)[0]?.id;
+  return form ? { form } : {};
 }
 
 /** Aims the spell on a scroll: at the spell's own level, with no slot. */
@@ -109,6 +122,7 @@ export function castMessage(caster: string, aiming: Aiming, point?: Point): Clie
     ...(point && { point }),
     ...(aiming.summon && { summon: aiming.summon }),
     ...(aiming.choice && { choice: aiming.choice }),
+    ...(aiming.form && { form: aiming.form }),
     ...(aiming.free && { free: true }),
     ...(aiming.repeat && { repeat: true }),
     ...(aiming.scroll && { scroll: true }),
