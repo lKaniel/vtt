@@ -71,7 +71,15 @@ function GameBody({
           </Button>
         )}
         {me && <ClaudeKey game={id} />}
-        {game.manage && <BackupsPanel game={game} />}
+        {game.manage && (
+          <BackupsPanel
+            game={game}
+            onRestored={() => {
+              onChanged();
+              characters.reload();
+            }}
+          />
+        )}
         {admin && !game.home && <DeleteGame game={game} onDeleted={() => go({ name: 'setup' })} />}
       </aside>
     </div>

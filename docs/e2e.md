@@ -12,8 +12,9 @@ E2E_NO_BUILD=1 pnpm e2e     # skip the build when the client is already built
 
 The first time on a new machine, `pnpm --filter @vtt/e2e exec playwright install chromium`
 fetches the browser. CI runs the suite as its own `e2e` job and keeps the
-report and traces of a failed run as the `e2e-report` artifact
-(`npx playwright show-trace <trace.zip>` replays one).
+report and traces of a failed run as `e2e-report-*` artifacts
+(`npx playwright show-trace <trace.zip>` replays one). It runs one test at a
+time per machine, split over three machines (`--shard`).
 
 ## How a spec runs
 

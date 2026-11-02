@@ -66,3 +66,8 @@ export async function say(page: Page, text: string): Promise<void> {
 
 /** The sidebar's adventure log, where chat and rolls appear. */
 export const chatLog = (page: Page) => page.getByRole('complementary');
+
+/** How `page`'s player sees creature `id`'s wounds (unhurt, hurt, bloodied, down), or undefined. */
+export function healthSeen(page: Page, id: string): Promise<string | undefined> {
+  return page.evaluate((key) => (vtt.token(key) as { health?: string } | undefined)?.health, id);
+}
