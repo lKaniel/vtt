@@ -12,6 +12,7 @@ const FoundryLook = z
   .object({
     displayName: num,
     displayBars: num,
+    randomImg: z.boolean().optional().catch(undefined),
     texture: z.object({ scaleX: num, scaleY: num }).optional().catch(undefined),
     scale: num,
     mirrorX: z.boolean().optional().catch(undefined),
@@ -72,5 +73,5 @@ function ringOf(l: z.infer<typeof FoundryLook>): TokenLook {
 /** The look fields of a Foundry token or prototype token. */
 export function foundryTokenLook(data: unknown): TokenLook {
   const l = FoundryLook.parse(data);
-  return { ...modes(l), ...sizing(l), ...ringOf(l) };
+  return { ...modes(l), ...(l.randomImg ? { randomImg: true } : {}), ...sizing(l), ...ringOf(l) };
 }

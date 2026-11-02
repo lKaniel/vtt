@@ -1,4 +1,4 @@
-import type { Point } from '@vtt/shared';
+import { isGm, type Point } from '@vtt/shared';
 import type { Condition, TokenView } from '@vtt/system-dnd5e';
 import { ActionSession } from './session-actions.ts';
 
@@ -16,6 +16,8 @@ export abstract class HudSession extends ActionSession {
   hud?: OpenHud;
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
+  /** GM: the creature whose eyes the map shows, as its players would see. */
+  observing?: string;
 
   abstract canControl(token: TokenView): boolean;
 
@@ -23,6 +25,14 @@ export abstract class HudSession extends ActionSession {
   openHud(token: string, screen: Point): void {
     const t = this.tokens.get(token);
     this.hud = t && this.canControl(t) ? { token, screen } : undefined;
+    this.changed();
+  }
+
+  /** GM: sees through a creature's eyes (light, sight and fog as its players get them), or stops. */
+  observe(token: string | undefined): void {
+    const gm = !!this.you && isGm(this.you);
+    this.observing = gm && token && this.tokens.has(token) ? token : undefined;
+    this.notify('lighting');
     this.changed();
   }
 
@@ -50,5 +60,6 @@ export abstract class HudSession extends ActionSession {
   /** The HUD's creature is gone: close it. */
   protected hudTokenGone(id: string): void {
     if (this.hud?.token === id) this.hud = undefined;
+    if (this.observing === id) this.observing = undefined;
   }
 }

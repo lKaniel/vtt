@@ -30,6 +30,8 @@ import type { Relink } from './token-ops.ts';
 import { Refusal, requireGm, type Table } from './table.ts';
 import { packContent } from './game-packs.ts';
 import { SheetDrops } from './sheet-drop-actions.ts';
+import { gameMedia } from './pack-actions.ts';
+import { isWildcard, pickWildcard } from '@vtt/core';
 
 /**
  * The GM's tools: editing any token, placing new ones, keeping the Actors
@@ -40,8 +42,21 @@ export class GmActions {
   /** Drag and drop onto sheets, for editors and (handing items over) players. */
   readonly drops: SheetDrops;
 
+  /** The game's picture files as last read, for wildcard token images; read again after each use. */
+  private media: readonly string[] = [];
+
   constructor(private table: Table) {
     this.drops = new SheetDrops(table);
+    this.readMedia();
+  }
+
+  private readMedia(): void {
+    gameMedia(this.store).then(
+      (entries) => {
+        this.media = entries.map((e) => e.src);
+      },
+      () => undefined,
+    );
   }
 
   private get store() {
@@ -127,7 +142,15 @@ export class GmActions {
   /** A new token of `actor`: unlinked copies get numbered names, linked tokens keep the actor's. */
   private tokenOf(actor: Actor, at: Point, hidden?: boolean): Token {
     const token = tokenFromActor(actor, this.placement(actor.name, actor.size, at, hidden));
-    return token.linked ? { ...token, name: actor.name } : token;
+    if (token.linked) return { ...token, name: actor.name };
+    return actor.randomImg && actor.img && isWildcard(actor.img) ? { ...token, img: this.pickImg(actor.img) } : token;
+  }
+
+  /** One of the pictures a wildcard pattern matches (the pattern itself when none does yet). */
+  private pickImg(pattern: string): string {
+    const img = pickWildcard(pattern, this.media, this.table.rng) ?? pattern;
+    this.readMedia();
+    return img;
   }
 
   /** A free id and name for a new creature, and its square. */

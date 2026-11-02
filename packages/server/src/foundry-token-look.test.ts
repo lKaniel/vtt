@@ -6,12 +6,14 @@ describe('a Foundry token’s look', () => {
     const look = foundryTokenLook({
       displayName: 20,
       displayBars: 40,
+      randomImg: true,
       texture: { scaleX: -1.5, scaleY: 1.5 },
       ring: { enabled: true, colors: { ring: '#e0b040', background: '#202020' } },
     });
     expect(look).toEqual({
       displayName: 'ownerHover',
       displayBars: 'owner',
+      randomImg: true,
       scale: 1.5,
       mirrorX: true,
       ring: { color: '#e0b040', background: '#202020' },

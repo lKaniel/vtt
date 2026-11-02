@@ -122,14 +122,16 @@ export class TokenLayer {
     redrawStatus(view);
   }
 
-  /** Your tokens (owned or observed), which see for you, where they're drawn right now. The GM has none. */
+  /** Your tokens (owned or observed), which see for you, where they're drawn right now. The GM has none, unless seeing through one. */
   viewers(): Viewer[] {
     const you = this.session.you;
-    if (!you || isGm(you)) return [];
+    if (!you) return [];
+    const observing = this.session.observing;
+    const sees = (t: TokenView) => (isGm(you) ? t.id === observing : canObserve(t, you));
     const out: Viewer[] = [];
     for (const t of this.session.tokens.values()) {
       const view = this.views.get(t.id);
-      if (view && canObserve(t, you)) out.push({ token: t, at: [view.root.x, view.root.y] });
+      if (view && sees(t)) out.push({ token: t, at: [view.root.x, view.root.y] });
     }
     return out;
   }

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   enabledPacks,
+  isWildcard,
+  pickWildcard,
+  wildcardMatches,
   type MediaEntry,
   mediaKind,
   mediaTags,
@@ -88,5 +91,21 @@ describe('the packs a game uses', () => {
   it('are the ones its game.json names, of its system or of none', () => {
     expect(enabledPacks(installed, ['goblins', 'stars', 'gone'], 'dnd5e').map((p) => p.id)).toEqual(['goblins']);
     expect(enabledPacks(installed, undefined, 'dnd5e')).toEqual([]);
+  });
+});
+
+describe('wildcard pictures', () => {
+  it('pick one of the files a pattern matches', () => {
+    const files = [
+      '/assets/tokens/goblin-1.webp',
+      '/assets/tokens/goblin-2.webp',
+      '/assets/tokens/orc.webp',
+      '/assets/tokens/x/goblin-3.webp',
+    ];
+    expect(isWildcard('/assets/tokens/goblin-*.webp')).toBe(true);
+    expect(isWildcard('/assets/tokens/orc.webp')).toBe(false);
+    expect(wildcardMatches('/assets/tokens/goblin-*.webp', files)).toEqual(files.slice(0, 2));
+    expect(pickWildcard('/assets/tokens/goblin-*.webp', files, () => 0.99)).toBe(files[1]);
+    expect(pickWildcard('pack://p/a*.png', files, () => 0)).toBeUndefined();
   });
 });

@@ -126,7 +126,8 @@ export class Vision {
       w: width / camera.zoom,
       h: height / camera.zoom,
     };
-    const gm = isGm(you);
+    // A GM seeing through a creature's eyes gets its players' darkness and fog.
+    const gm = isGm(you) && !this.session.observing;
     const polygon = this.polygon(walls, world.gridSize);
     const lights = this.lights(viewers);
     const scene: LightScene = {

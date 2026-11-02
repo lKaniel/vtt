@@ -118,7 +118,8 @@ account appear. `darkness` (0 to 1, default 0) is the time of day: up to 0.3
 is daylight, up to 0.6 is dim light (dusk, moonlight) and above that is
 darkness, where only lights and senses like darkvision show anything.
 `vision` (default `true`) is fog of war: players see only what their tokens
-can. `chunkSize` (default 2000, a multiple of `gridSize`) is how big the
+can. The GM can check what a creature sees with "See through its eyes" in
+its right-click menu (light, sight and fog as its players get them). `chunkSize` (default 2000, a multiple of `gridSize`) is how big the
 pieces are that the server streams to each camera; it has nothing to do with
 how the scene is stored.
 
@@ -484,6 +485,7 @@ without one):
 | `scale`                      | How big its picture is drawn in its square, 0.2 to 3. Default 1.                                                                                    |
 | `mirrorX`, `mirrorY`         | Flip its picture left to right, or upside down.                                                                                                     |
 | `ring`                       | A ring round its picture: `{ "color": "#e0b040", "background": "#202020" }`.                                                                        |
+| `randomImg`                  | With `"img": "/assets/tokens/goblin-*.webp"`: each new unlinked copy picks one of the files the `*` pattern matches.                                |
 | `speed`                      | Walking speed in feet. Default 30.                                                                                                                  |
 | `ownership`                  | Who may see, read and act with it; see Ownership below.                                                                                             |
 | `darkvision`                 | Range in feet. Also `blindsight`, `tremorsense`, `truesight`.                                                                                       |
