@@ -47,7 +47,9 @@ function budgetOf(session: Session, token: TokenView): TurnBudget | undefined {
 export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onSheet: () => void }>) {
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
   return (
-    <footer className="actionbar-wrap">
+    // The footer is as wide as its widest row; the map beside the narrower
+    // rows (around the hint and the aiming panel) must still take clicks.
+    <footer className="actionbar-wrap pointer-events-none *:pointer-events-auto">
       <div className="hint">{hint(session, token)}</div>
       {token && <AimingControls session={session} token={token} />}
       {token && <SmiteControls session={session} token={token} />}
