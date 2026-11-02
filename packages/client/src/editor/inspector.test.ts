@@ -27,6 +27,7 @@ describe('the inspector', () => {
       'animation',
       'darkness',
       'walls',
+      'lasts',
       'tile',
     ]);
     expect(fieldsFor([light, wall()])).toEqual([]);
@@ -37,6 +38,14 @@ describe('the inspector', () => {
     const bright = field([light, light], 'bright');
     expect(commonValue([light, light], bright)).toBe(20);
     expect(commonValue([light, { ...light, bright: 10 }], bright)).toBe(MIXED);
+  });
+
+  it('sets how many hours a light burns (a campfire), relighting it, or forever', () => {
+    const lasts = field([light], 'lasts');
+    expect(commonValue([{ ...light, lasts: 8 * 3600 }], lasts)).toBe(8);
+    expect(commonValue([light], lasts)).toBeUndefined();
+    expect(lasts.patch(2)).toEqual({ lasts: 7200, endsAt: null });
+    expect(lasts.patch(0)).toEqual({ lasts: null, endsAt: null });
   });
 
   it('turns a wall into a door, window or terrain wall, and back', () => {

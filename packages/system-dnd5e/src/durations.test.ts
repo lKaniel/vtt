@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HOUR, MINUTE } from '@vtt/shared';
-import { expireEffects, lastingEnds, nextEnd, roundsLeft, stampDurations } from './durations.ts';
+import { burnOut, expireEffects, lastingEnds, lightOf, nextEnd, roundsLeft, stampDurations } from './durations.ts';
 import { type Token, TokenSchema } from './token-schema.ts';
 import type { Effect } from './spell-schema.ts';
 
@@ -66,5 +66,39 @@ describe('time running out', () => {
     const caster = token({ id: 'b', concentration: { spell: 'bless', name: 'Bless', endsAt: 30 } });
     expect(nextEnd([t, caster])).toBe(30);
     expect(nextEnd([token()])).toBeUndefined();
+  });
+});
+
+describe('lights that burn out', () => {
+  it('gives a lit torch its end time, then puts it out when the hour is up', () => {
+    const lit = token({ light: { name: 'Torch', bright: 20, dim: 20, lasts: 3600 } });
+    const stamped = stampDurations(lit, 100, () => undefined);
+    expect(stamped.light).toMatchObject({ endsAt: 3700 });
+    expect(burnOut(stamped, 3699).out).toBeUndefined();
+    const { token: dark, out } = burnOut(stamped, 3700);
+    expect(out).toMatchObject({ name: 'Torch' });
+    expect(dark.light).toBeUndefined();
+  });
+
+  it('leaves a light that burns forever alone', () => {
+    const lamp = token({ light: { bright: 10, dim: 10 } });
+    expect(stampDurations(lamp, 0, () => undefined)).toBe(lamp);
+    expect(burnOut(lamp, 1e9).out).toBeUndefined();
+  });
+});
+
+describe('lights from effects', () => {
+  it('shines with the light an effect gives (the Light spell) when it carries none', () => {
+    const glowing = token({ effects: [{ id: 'e', name: 'Light', light: { bright: 20, dim: 20 } }] });
+    expect(lightOf(glowing)).toMatchObject({ bright: 20, dim: 20 });
+    expect(lightOf(token())).toBeUndefined();
+  });
+
+  it('shines with the brighter of its own light and its effects', () => {
+    const t = token({
+      light: { bright: 5, dim: 5 },
+      effects: [{ id: 'e', name: 'Light', light: { bright: 20, dim: 20 } }],
+    });
+    expect(lightOf(t)).toMatchObject({ bright: 20 });
   });
 });

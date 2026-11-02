@@ -261,6 +261,12 @@ export const LightSchema = z.object({
   attenuation: z.number().min(0).max(1).optional(),
   /** How much of its colour it casts, 0 (plain warm light) to 1 (default). */
   colorIntensity: z.number().min(0).max(1).optional(),
+  /** What gives it, e.g. "Torch": named when it burns out. */
+  name: z.string().optional(),
+  /** Game seconds it burns once lit (a torch: 3600); missing: it never goes out (see light-time.ts). */
+  lasts: z.number().positive().optional(),
+  /** Game-clock second it goes out, worked out from `lasts` when it is lit. */
+  endsAt: z.number().optional(),
 });
 export type Light = z.infer<typeof LightSchema>;
 

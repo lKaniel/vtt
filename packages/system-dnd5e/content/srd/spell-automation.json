@@ -2832,10 +2832,11 @@
   },
   "light": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "utility",
-        "why": "An object sheds light: give the token a light by hand."
+      "automated": true,
+      "save": null,
+      "effect": {
+        "name": "Light",
+        "light": { "bright": 20, "dim": 20, "color": "#fff1c8", "colorIntensity": 0.3 }
       }
     }
   },

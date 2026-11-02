@@ -48,3 +48,31 @@ describe('using items', () => {
     expect(itemProblem(t, potion)).toBeUndefined();
   });
 });
+
+describe('lighting what you carry', () => {
+  it('lights a torch: one fewer torch, and the token sheds its light for an hour', () => {
+    const t = pc('2014', { inventory: [{ item: 'torch', qty: 3 }] });
+    const out = useItem(t, sheet(t), 'torch');
+    expect(out.token.inventory).toEqual([expect.objectContaining({ item: 'torch', qty: 2 })]);
+    expect(out.token.light).toMatchObject({ name: 'Torch', bright: 20, dim: 20, lasts: 3600 });
+    expect(out.lit).toBe('Torch');
+  });
+
+  it('fills a lantern from a flask of oil and keeps the lantern', () => {
+    const t = pc('2014', { inventory: [{ item: 'lantern-hooded' }, { item: 'oil-flask', qty: 2 }] });
+    expect(itemProblem(t, srdFor('2014').items.get('lantern-hooded'))).toBeUndefined();
+    const out = useItem(t, sheet(t), 'lantern-hooded');
+    expect(out.token.inventory).toEqual([
+      expect.objectContaining({ item: 'lantern-hooded', qty: 1 }),
+      expect.objectContaining({ item: 'oil-flask', qty: 1 }),
+    ]);
+    expect(out.token.light).toMatchObject({ bright: 30, dim: 30, lasts: 6 * 3600 });
+  });
+
+  it("won't light a lantern without oil", () => {
+    const t = pc('2014', { inventory: [{ item: 'lantern-hooded' }] });
+    expect(itemProblem(t, srdFor('2014').items.get('lantern-hooded'))).toBe(
+      'has no Flask of Oil for the Lantern, Hooded',
+    );
+  });
+});

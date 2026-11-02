@@ -27,7 +27,7 @@ export function PartyBar({ session }: Readonly<{ session: Session }>) {
             <span className="member-info">
               <span className="member-name">{t.name}</span>
               <HpBar token={t} />
-              <EffectBadges token={t} />
+              <EffectBadges token={t} at={{ now: session.gameTime(), fighting: !!session.combat }} />
             </span>
           </button>
         );

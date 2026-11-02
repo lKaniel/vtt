@@ -13,7 +13,7 @@ import {
   type Wall,
   wallsAt,
 } from '@vtt/shared';
-import { sensesOf, type TokenView } from '@vtt/system-dnd5e';
+import { lightOf, sensesOf, type TokenView } from '@vtt/system-dnd5e';
 import type { Application } from 'pixi.js';
 import type { Session } from '../session.ts';
 import { FogLayer } from './lighting/FogLayer.ts';
@@ -162,8 +162,10 @@ export class Vision {
       onLevel(l, level) && activeAt(l.activeAt, darkness);
     return [
       ...[...this.session.chunks.values()].flatMap((c) => c.lights.filter(shines)),
-      ...tokenLights(viewers.map((v) => ({ ...v.token, x: v.at[0], y: v.at[1] }))),
-      ...tokenLights([...this.session.tokens.values()].filter((t) => !yours.has(t.id))),
+      ...tokenLights(viewers.map((v) => ({ ...v.token, light: lightOf(v.token), x: v.at[0], y: v.at[1] }))),
+      ...tokenLights(
+        [...this.session.tokens.values()].filter((t) => !yours.has(t.id)).map((t) => ({ ...t, light: lightOf(t) })),
+      ),
     ];
   }
 

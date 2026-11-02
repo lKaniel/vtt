@@ -321,6 +321,9 @@ rules: `bright` light, then `dim` light beyond it.
 | `luminosity`     | How strongly it lights, 0 to 1 (default 1).                                      |
 | `attenuation`    | How softly it fades at its edges, 0 (a hard edge) to 1 (default 0.5).            |
 | `colorIntensity` | How much of `color` it casts, 0 (plain warm light) to 1 (default).               |
+| `lasts`          | Game seconds it burns once lit (a campfire: 28800); left out, it never goes out. |
+| `endsAt`         | The game-clock second it goes out; the server works it out from `lasts`.         |
+| `name`           | What gives it ("Torch"), named in the chat when it burns out.                    |
 
 The GM can also draw walls, doors and windows, place, drag and erase lights,
 and set the time of day from the map tools in the game (bottom left).
@@ -946,7 +949,12 @@ the party takes turns), the clock holds still and each round adds 6 seconds;
 `round` is the fight round it last counted. A short rest lets 1 hour pass, a
 long rest 8. Everything that lasts has its end on the clock: effects
 (`endsAt`), concentration and summons (`concentration.endsAt`,
-`summon.endsAt`), templates. Skipping time ends them; in a fight, effects that
+`summon.endsAt`), templates, and lights with `lasts` (placed ones and the
+light a token carries: a lit torch burns for an hour, a lantern for 6). Gear
+with `"use": { "light": {…}, "fuel": "oil-flask" }` is lit from the action bar:
+the token carries that light, and the torch (or the fuel) is used up. An effect
+with `light` (the Light spell) makes its bearer shine while it lasts. Skipping
+time ends them; in a fight, effects that
 last rounds count down on their maker's turns instead. Every change to the
 clock, and what it ended, can be undone.
 

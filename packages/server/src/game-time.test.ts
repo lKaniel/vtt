@@ -154,6 +154,38 @@ describe('what lasts runs out', () => {
     expect(store.docs.all('main/templates')).toEqual([]);
   });
 
+  it('burns a lit torch down: the light goes out after an hour', () => {
+    const ana = seat('ana');
+    store.setToken({ ...tok('hero'), inventory: [{ item: 'torch', qty: 2, equipped: false }] });
+    ana.receive({ t: 'useItem', token: 'hero', item: 'torch' });
+    expect(said(ana)).toContain('Hero lights a Torch');
+    expect(tok('hero').light).toMatchObject({ name: 'Torch', bright: 20, endsAt: HOUR });
+    seat('gm').receive({ t: 'clock', action: { do: 'skip', seconds: HOUR } });
+    expect(tok('hero').light).toBeUndefined();
+    expect(said(ana)).toContain("Hero's Torch burns out");
+  });
+
+  it('makes the target of the Light spell shine for an hour', () => {
+    const ana = seat('ana');
+    store.setToken({ ...tok('hero'), stats: { ...tok('hero').stats!, spells: ['light'] } });
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'light', slot: 0, targets: ['hero'] });
+    expect(errors(ana)).toEqual([]);
+    expect(store.lights().filter((l) => l.x === 50 && l.y === 50)).toEqual([expect.objectContaining({ bright: 20 })]);
+    seat('gm').receive({ t: 'clock', action: { do: 'skip', seconds: HOUR } });
+    expect(store.lights().filter((l) => l.x === 50 && l.y === 50)).toEqual([]);
+  });
+
+  it('puts out placed lights that burn for a while (a campfire), and leaves the rest', () => {
+    const gm = seat('gm');
+    const fire = { id: 'fire', type: 'light', rev: 0, x: 0, y: 0, bright: 20, dim: 20, lasts: 8 * HOUR };
+    gm.receive({ t: 'ops', txn: 't', ops: [{ op: 'create', coll: 'main/lights', doc: fire }] });
+    gm.receive({ t: 'clock', action: { do: 'skip', seconds: HOUR } });
+    expect(store.docs.get('main/lights', 'fire')).toMatchObject({ endsAt: 8 * HOUR });
+    gm.receive({ t: 'clock', action: { do: 'skip', seconds: 7 * HOUR } });
+    expect(store.docs.get('main/lights', 'fire')).toBeUndefined();
+    expect(store.docs.get('main/lights', 'lamp')).toBeDefined();
+  });
+
   it('runs out while the clock runs', () => {
     const ana = seat('ana');
     seat('gm').receive({ t: 'clock', action: { do: 'start' } });

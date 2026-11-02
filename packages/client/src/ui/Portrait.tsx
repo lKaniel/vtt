@@ -1,5 +1,6 @@
 import type { TokenView } from '@vtt/system-dnd5e';
 import { effectIcon } from '../icons.ts';
+import { effectBadge, effectLeft } from '../session-time.ts';
 import { portraitOf } from '../icon-art.ts';
 import { effectTone, hpBar } from '../vitals.ts';
 import { IconFace } from './Icon.tsx';
@@ -20,8 +21,16 @@ export function HpBar({ token, showLabel = true }: Readonly<{ token: TokenView; 
   );
 }
 
-/** Small badges for concentration and each effect on the creature. */
-export function EffectBadges({ token }: Readonly<{ token: TokenView }>) {
+/** The game time now and whether a fight is on: what an effect's time left is counted in. */
+export interface EffectClock {
+  now: number;
+  fighting: boolean;
+}
+
+type Timed = NonNullable<TokenView['effects']>[number];
+
+/** Small badges for concentration and each effect on the creature, with the rounds or game time it has left. */
+export function EffectBadges({ token, at }: Readonly<{ token: TokenView; at?: EffectClock }>) {
   const effects = token.effects ?? [];
   if (!effects.length && !token.concentration) return null;
   return (
@@ -32,17 +41,23 @@ export function EffectBadges({ token }: Readonly<{ token: TokenView }>) {
         </span>
       )}
       {effects.map((e) => (
-        <span key={e.id} className={`badge ${effectTone(e)}`} title={effectTitle(e)}>
+        <span key={e.id} className={`badge ${effectTone(e)}`} title={effectTitle(e, at)}>
           <IconFace icon={effectIcon(e)} size={12} />
-          {e.rounds !== undefined && <span className="badge-rounds">{e.rounds}</span>}
+          <BadgeTime effect={e} at={at} />
         </span>
       ))}
     </span>
   );
 }
 
-function effectTitle(e: NonNullable<TokenView['effects']>[number]): string {
+function BadgeTime({ effect, at }: Readonly<{ effect: Timed; at?: EffectClock }>) {
+  const text = at ? effectBadge(effect, at) : effect.rounds?.toString();
+  return text === undefined ? null : <span className="badge-rounds">{text}</span>;
+}
+
+function effectTitle(e: Timed, at?: EffectClock): string {
   const conditions = e.conditions?.length ? ` (${e.conditions.join(', ')})` : '';
-  const rounds = e.rounds === undefined ? '' : `, ${e.rounds} rounds left`;
-  return `${e.name}${conditions}${rounds}`;
+  const left = at ? effectLeft(e, at) : e.rounds !== undefined && `${e.rounds} rd`;
+  const time = left ? `, ${left}` : '';
+  return `${e.name}${conditions}${time}`;
 }
