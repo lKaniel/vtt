@@ -5,12 +5,12 @@ import { Button } from './kit/button.tsx';
 
 /** The right-click menu the map opened, at the pointer. A click elsewhere closes it. */
 export function ContextMenu({ session }: Readonly<{ session: Session }>) {
-  const menu = session.menu;
+  const menu = session.editor.menu;
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!menu) return;
     const away = (e: PointerEvent) => {
-      if (!box.current?.contains(e.target as Node)) session.closeMenu();
+      if (!box.current?.contains(e.target as Node)) session.editor.closeMenu();
     };
     addEventListener('pointerdown', away, true);
     return () => removeEventListener('pointerdown', away, true);
@@ -29,7 +29,7 @@ export function ContextMenu({ session }: Readonly<{ session: Session }>) {
           size="sm"
           className={cn('w-full justify-start font-body text-sm', item.danger ? 'text-[#ffb3a8]' : 'text-foreground')}
           onClick={() => {
-            session.closeMenu();
+            session.editor.closeMenu();
             item.run();
           }}
         >

@@ -187,8 +187,8 @@ describe('the GM tools send', () => {
 
   it('places things at the centre of the screen', () => {
     ws.receive(welcome());
-    expect(session.viewCentre()).toEqual([0, 0]);
-    session.viewRect = { x: 100, y: 200, w: 400, h: 200 };
-    expect(session.viewCentre()).toEqual([300, 300]);
+    expect(session.editor.viewCentre()).toEqual([0, 0]);
+    session.editor.viewRect = { x: 100, y: 200, w: 400, h: 200 };
+    expect(session.editor.viewCentre()).toEqual([300, 300]);
   });
 });

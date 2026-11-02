@@ -35,7 +35,8 @@ import type { SessionEvents } from './session-events.ts';
 import { Actions, type ActionEvents } from './session-actions.ts';
 import { Fog, type FogEvents } from './session-fog.ts';
 import { Draw, Levels } from './session-items.ts';
-import { EditorSession } from './session-editor.ts';
+import { Editor, type EditorEvents } from './session-editor.ts';
+import { EditSession } from './session-edits.ts';
 import { Tiles } from './session-tiles.ts';
 import { isTableNews, type TableNews, withChat } from './session-news.ts';
 import type { SessionPart } from './session-part.ts';
@@ -49,7 +50,7 @@ import { Cards } from './session-cards.ts';
 import { ScriptHost } from './scripting/script-api.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
-type PartEvents = ActionEvents & HudEvents & JournalEvents & PackEvents & FogEvents & SceneEvents;
+type PartEvents = EditorEvents & ActionEvents & HudEvents & JournalEvents & PackEvents & FogEvents & SceneEvents;
 
 /** What a character sheet shows: a token on the map or (GM only) an actor in the list. */
 export interface SheetTarget {
@@ -61,7 +62,7 @@ export interface SheetTarget {
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends EditorSession {
+export class Session extends EditSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -100,6 +101,9 @@ export class Session extends EditorSession {
     heard: (src, volume) => this.emit('sound', src, volume),
     reseat: (you) => (this.you = you),
     createImageTile: (r, src) => this.tiles.createImage(r, src),
+    selectionChanged: () => this.selectionChanged(),
+    startPoint: () => this.world?.start ?? [0, 0],
+    mayEdit: (refs) => this.mayEdit(refs),
   };
   /** The selected creature's readied attack or aimed spell, and your roll mode. */
   readonly actions = new Actions(this, this.ev);
@@ -112,7 +116,8 @@ export class Session extends EditorSession {
   readonly draw = new Draw(this, this.ev);
   readonly levels = new Levels(this, this.ev);
   readonly turns = new Turns(this);
-  readonly tiles = new Tiles(this, this.ev);
+  readonly tiles: Tiles = new Tiles(this, this.ev);
+  readonly editor: Editor = new Editor(this, this.ev);
   /** The parts that take messages, the welcome and departures. */
   private readonly parts: SessionPart[] = [this.journal, this.packs, this.scenes, this.fog, this.hud, this.piles];
   /** The GM paused the game: players can't act until it resumes. */
@@ -212,7 +217,7 @@ export class Session extends EditorSession {
 
   /** Selects one token alone (or none), the one the action bar and the keys act with. */
   select(id: string | undefined): void {
-    if (this.mode === 'tokens') this.selection = id ? [this.tokenKey(id)] : [];
+    if (this.editor.mode === 'tokens') this.editor.selection = id ? [this.editor.tokenKey(id)] : [];
     this.setPrimary(id);
     this.emit('selection');
   }
@@ -228,8 +233,8 @@ export class Session extends EditorSession {
 
   /** In the tokens mode the selected token stays the one you act with while it is still selected. */
   protected selectionChanged(): void {
-    if (this.mode === 'tokens') {
-      const ids = this.selection.map((key) => refOf(key).id);
+    if (this.editor.mode === 'tokens') {
+      const ids = this.editor.selection.map((key) => refOf(key).id);
       this.setPrimary(this.selected && ids.includes(this.selected) ? this.selected : ids[0]);
     } else this.changed();
     this.emit('selection');
@@ -240,8 +245,8 @@ export class Session extends EditorSession {
     this.changed();
   }
 
-  protected knownTokens(): Iterable<TokenView> {
-    return this.tokens.values();
+  protected docsChanged(): void {
+    this.editor.docsChanged();
   }
 
   // GM tools ---------------------------------------------------------------
@@ -281,10 +286,6 @@ export class Session extends EditorSession {
     dropOnMap(this, payload, p);
   }
 
-  protected startPoint(): Point {
-    return this.world?.start ?? [0, 0];
-  }
-
   focus(point: Point): void {
     this.emit('focus', point);
   }
@@ -299,7 +300,7 @@ export class Session extends EditorSession {
   }
 
   protected editTargets(): DocRef[] {
-    if (this.selection.length) return this.selection.map(refOf);
+    if (this.editor.selection.length) return this.editor.selection.map(refOf);
     if (this.selected) return [{ coll: `${this.scene}/tokens`, id: this.selected }];
     if (this.sheet?.kind === 'actor') return [{ coll: 'actors', id: this.sheet.id }];
     return [];
@@ -466,7 +467,7 @@ export class Session extends EditorSession {
     if (!this.tokens.delete(id)) return false;
     this.targets.forget(id);
     for (const part of this.parts) part.gone?.(id);
-    if (this.mode === 'tokens') this.pruneSelection((key) => key !== this.tokenKey(id));
+    if (this.editor.mode === 'tokens') this.editor.pruneSelection((key) => key !== this.editor.tokenKey(id));
     if (this.selected === id) this.select(undefined);
     if (this.sheet?.kind === 'token' && this.sheet.id === id) this.sheet = undefined;
     this.emit('tokenGone', id);

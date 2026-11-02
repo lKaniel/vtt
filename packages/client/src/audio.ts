@@ -44,7 +44,7 @@ export class SoundScape {
   /** Where you hear from: the token you act with (or your first), or the GM's view. */
   private listener(): Point | undefined {
     const s = this.session;
-    if (s.isGm()) return s.viewCentre();
+    if (s.isGm()) return s.editor.viewCentre();
     const acting = s.selected ? s.tokens.get(s.selected) : undefined;
     const t = acting ?? [...s.tokens.values()].find((x) => s.canControl(x));
     return t && [t.x, t.y];

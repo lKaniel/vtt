@@ -36,7 +36,7 @@ function runEditKey(session: Session, e: Key): boolean {
   if (command === 'clipboard') return true;
   if (isLayerKey(command)) return runLayerKey(session, command, e);
   e.preventDefault();
-  if (command === 'selectAll') session.selectAll();
+  if (command === 'selectAll') session.editor.selectAll();
   else if (command === 'undo') session.undo();
   else if (command === 'redo') session.redo();
   else if (command === 'duplicate') session.duplicate();
@@ -49,7 +49,7 @@ const isLayerKey = (k: EditKey): k is LayerKey => LAYER_KEYS.has(k);
 
 /** Group, ungroup, z-order and lock: tiles only. */
 function runLayerKey(session: Session, command: LayerKey, e: Key): boolean {
-  if (session.mode !== 'tiles' || !session.isGm()) return false;
+  if (session.editor.mode !== 'tiles' || !session.isGm()) return false;
   e.preventDefault();
   if (command === 'group') session.tiles.group();
   else if (command === 'ungroup') session.tiles.ungroup();
@@ -93,35 +93,35 @@ export function listenToClipboard(session: Session): () => void {
  * there was nothing of the editor's to back out of.
  */
 function backOutOfEditor(session: Session): boolean {
-  if (session.menu) session.closeMenu();
+  if (session.editor.menu) session.editor.closeMenu();
   else if (session.rulers.clear()) return true;
-  else if (session.mode === 'tokens') return false;
-  else if (session.tool !== 'select') session.setTool('select');
-  else if (session.selection.length) session.setSelection([]);
-  else session.setMode('tokens');
+  else if (session.editor.mode === 'tokens') return false;
+  else if (session.editor.tool !== 'select') session.editor.setTool('select');
+  else if (session.editor.selection.length) session.editor.setSelection([]);
+  else session.editor.setMode('tokens');
   return true;
 }
 
 /** T in the tokens mode targets the creature under the pointer, or lets them all go over empty ground (see targets.ts). */
 function targetKey(session: Session, e: Key): boolean {
-  if (session.mode !== 'tokens' || e.shiftKey || !actionOf(e, currentKeys(), ['target'])) return false;
+  if (session.editor.mode !== 'tokens' || e.shiftKey || !actionOf(e, currentKeys(), ['target'])) return false;
   return session.actions.toggleTargetAtPointer();
 }
 
 /** T, Shift+T, W, L, D, N and M switch modes (those this seat may use), R picks up the ruler; the arrows nudge outside the tokens mode. */
 function runEditorKey(session: Session, e: Key): boolean {
-  const key = editorKey(e, session.mode !== 'tokens');
+  const key = editorKey(e, session.editor.mode !== 'tokens');
   if (!key || ('mode' in key && !switches(session, key))) return false;
   e.preventDefault();
-  if ('mode' in key) session.setMode(key.mode, key.tool);
-  else session.nudge(key.nudge, key.big);
+  if ('mode' in key) session.editor.setMode(key.mode, key.tool);
+  else session.editor.nudge(key.nudge, key.big);
   return true;
 }
 
 /** Whether a mode key changes anything: a mode this seat may use, or a tool it isn't holding. */
 function switches(session: Session, key: Extract<EditorKey, { mode: unknown }>): boolean {
-  if (!session.canUseMode(key.mode)) return false;
-  return key.mode !== session.mode || (!!key.tool && key.tool !== session.tool);
+  if (!session.editor.canUseMode(key.mode)) return false;
+  return key.mode !== session.editor.mode || (!!key.tool && key.tool !== session.editor.tool);
 }
 
 /** C opens the selected creature's sheet, or closes the open one. */

@@ -46,7 +46,7 @@ export class ItemLayer {
   private shown(): Doc[] {
     const s = this.session;
     const colls: string[] = [...ALWAYS];
-    if (s.isGm() && s.mode === 'sounds') colls.push('sounds');
+    if (s.isGm() && s.editor.mode === 'sounds') colls.push('sounds');
     const level = s.levels.current;
     return colls.flatMap((c) => s.docs.all(`${s.scene}/${c}`)).filter((d) => onLevel(d as { level?: string }, level));
   }

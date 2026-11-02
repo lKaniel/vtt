@@ -21,8 +21,6 @@ export interface MenuItem {
 export interface MenuApi {
   isGm(): boolean;
   canEdit(id: string): boolean;
-  /** Copy, cut and delete may work on the selection (the GM's, or a player's own drawings). */
-  canEditSelection(): boolean;
   /** The shape tools (see session-items.ts). */
   readonly draw: { create(draft: Draft): void };
   copy(): string | undefined;
@@ -30,15 +28,19 @@ export interface MenuApi {
   paste(): void;
   duplicate(): void;
   deleteSelected(): void;
-  editSelection(patch: Patch, label?: string): void;
-  selectAll(): void;
-  setSelection(keys: string[]): void;
   openSheet(target: { kind: 'token'; id: string }, edit?: boolean): void;
   move(token: string, to: Point): void;
   editMap(edit: MapEdit): void;
   /** The tiles mode's commands (see session-tiles.ts). */
   readonly tiles: { group(): void; ungroup(): void; reorder(how: ZOrder): void; toggleLock(): void };
-  readonly lightPreset: LightPreset;
+  /** The editor's selection and tools (see session-editor.ts). */
+  readonly editor: {
+    /** Copy, cut and delete may work on the selection (the GM's, or a player's own drawings). */
+    canEditSelection(): boolean;
+    editSelection(patch: Patch, label?: string): void;
+    selectAll(): void;
+    readonly lightPreset: LightPreset;
+  };
   /** The creatures you target (see targets.ts). */
   readonly targets: { readonly mine: ReadonlySet<string>; toggle(id: string): void };
   /** The token HUD, and the GM's view through a creature's eyes (see session-hud.ts). */
@@ -108,7 +110,7 @@ function toClipboard(text: string | undefined): void {
 const allDocs = (t: MenuTarget, test: (doc: Doc) => boolean): boolean => t.docs.every((d) => test(d.doc));
 
 registerMenu('selection', (_t, api) =>
-  api.canEditSelection()
+  api.editor.canEditSelection()
     ? [
         { label: 'Copy', run: () => toClipboard(api.copy()) },
         { label: 'Cut', run: () => toClipboard(api.cut()) },
@@ -128,7 +130,7 @@ registerMenu('token', (t, api) => {
     api.canEdit(id) && { label: 'Edit sheet', run: () => api.openSheet({ kind: 'token', id }, true) },
     api.isGm() && {
       label: hidden ? 'Reveal to players' : 'Hide from players',
-      run: () => api.editSelection({ hidden: hidden ? null : true }, hidden ? 'reveal' : 'hide'),
+      run: () => api.editor.editSelection({ hidden: hidden ? null : true }, hidden ? 'reveal' : 'hide'),
     },
     targetEntry(id, api),
     api.isGm() && observeEntry(id, api),
@@ -146,7 +148,7 @@ const openEntry = (token: TokenView | undefined, id: string, api: MenuApi): Menu
 /** GM: makes a token a pile of loot or a merchant (see system-dnd5e piles.ts), locks it, or makes it a token again. */
 function pileEntries(pile: TokenView['pile'], api: MenuApi): MenuItem[] {
   const set = (to: Partial<NonNullable<TokenView['pile']>> | null, label: string) => () =>
-    api.editSelection({ pile: to }, label);
+    api.editor.editSelection({ pile: to }, label);
   if (!pile) {
     return [
       { label: 'Make it a pile of loot', run: set({ kind: 'loot' }, 'pile') },
@@ -199,15 +201,15 @@ const WALL_KINDS: { label: string; is: (d: Doc) => boolean; patch: Patch }[] = (
 registerMenu('wall', (t, api) => {
   const kinds = WALL_KINDS.filter((k) => !allDocs(t, k.is)).map((k) => ({
     label: k.label,
-    run: () => api.editSelection(k.patch),
+    run: () => api.editor.editSelection(k.patch),
   }));
   if (!allDocs(t, (d) => !!d.door)) return kinds;
   const locked = allDocs(t, (d) => d.door === 'locked');
   const open = allDocs(t, (d) => d.door === 'open');
   return [
     ...kinds,
-    { label: open ? 'Close' : 'Open', run: () => api.editSelection({ door: open ? 'closed' : 'open' }) },
-    { label: locked ? 'Unlock' : 'Lock', run: () => api.editSelection({ door: locked ? 'closed' : 'locked' }) },
+    { label: open ? 'Close' : 'Open', run: () => api.editor.editSelection({ door: open ? 'closed' : 'open' }) },
+    { label: locked ? 'Unlock' : 'Lock', run: () => api.editor.editSelection({ door: locked ? 'closed' : 'locked' }) },
   ];
 });
 
@@ -217,11 +219,11 @@ registerMenu('light', (t, api) => {
   return [
     {
       label: steady ? 'Flicker' : 'Hold steady',
-      run: () => api.editSelection({ animation: steady ? 'flicker' : null }),
+      run: () => api.editor.editSelection({ animation: steady ? 'flicker' : null }),
     },
     {
       label: dark ? 'Make it light' : 'Make it magical darkness',
-      run: () => api.editSelection({ darkness: dark ? null : true }),
+      run: () => api.editor.editSelection({ darkness: dark ? null : true }),
     },
   ];
 });
@@ -245,7 +247,7 @@ registerMenu('tile', (t, api) => {
     { label: locked ? 'Unlock' : 'Lock', run: () => api.tiles.toggleLock() },
     pictures && {
       label: ground ? 'Make it an object' : 'Make it ground',
-      run: () => api.editSelection({ background: ground ? null : true }),
+      run: () => api.editor.editSelection({ background: ground ? null : true }),
     },
     showTileEntry(t, api),
   ];
@@ -267,7 +269,7 @@ for (const type of ITEM_TYPES)
     return [
       {
         label: hidden ? 'Reveal to players' : 'Hide from players',
-        run: () => api.editSelection({ hidden: hidden ? null : true }, hidden ? 'reveal' : 'hide'),
+        run: () => api.editor.editSelection({ hidden: hidden ? null : true }, hidden ? 'reveal' : 'hide'),
       },
     ];
   });
@@ -287,10 +289,10 @@ registerMenu('region', (t, api) => {
   const off = allDocs(t, (d) => d.disabled === true);
   const shown = allDocs(t, (d) => d.visible === true);
   return [
-    { label: off ? 'Turn on' : 'Turn off', run: () => api.editSelection({ disabled: off ? null : true }) },
+    { label: off ? 'Turn on' : 'Turn off', run: () => api.editor.editSelection({ disabled: off ? null : true }) },
     {
       label: shown ? 'Hide its outline' : 'Show its outline',
-      run: () => api.editSelection({ visible: shown ? null : true }),
+      run: () => api.editor.editSelection({ visible: shown ? null : true }),
     },
   ];
 });
@@ -301,7 +303,7 @@ const PLAYER_PASTE = new Set(['drawings', 'templates']);
 registerMenu('ground', (t, api) => {
   const gm = api.isGm();
   const token = t.token;
-  const { label: _l, ...light } = LIGHT_PRESETS[api.lightPreset];
+  const { label: _l, ...light } = LIGHT_PRESETS[api.editor.lightPreset];
   return [
     (gm || PLAYER_PASTE.has(t.mode)) && { label: 'Paste here', run: () => api.paste() },
     gm &&
@@ -311,11 +313,11 @@ registerMenu('ground', (t, api) => {
       },
     gm &&
       t.mode === 'lights' && {
-        label: `Place ${LIGHT_PRESETS[api.lightPreset].label.toLowerCase()} here`,
+        label: `Place ${LIGHT_PRESETS[api.editor.lightPreset].label.toLowerCase()} here`,
         run: () => api.editMap({ op: 'addLight', light: { ...light, x: t.at[0], y: t.at[1] } }),
       },
     !!t.under && targetEntry(t.under.id, api),
     t.mode === 'tokens' && !!token && { label: `Move ${token.name} here`, run: () => api.move(token.id, t.at) },
-    { label: 'Select all', run: () => api.selectAll() },
+    { label: 'Select all', run: () => api.editor.selectAll() },
   ];
 });

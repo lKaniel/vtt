@@ -38,19 +38,19 @@ const lastOps = () => (ws.sent as Sent[]).filter((m) => m.t === 'ops').at(-1);
 describe('editor modes', () => {
   it('starts on tokens; a mode change drops the selection and picks the select tool', () => {
     ws.receive(gmWelcome());
-    expect(session.mode).toBe('tokens');
-    session.setMode('walls', 'door');
-    expect(session.tool).toBe('door');
-    session.setSelection(['main/walls#w1']);
-    session.setMode('lights');
-    expect(session.tool).toBe('select');
-    expect(session.selection).toEqual([]);
+    expect(session.editor.mode).toBe('tokens');
+    session.editor.setMode('walls', 'door');
+    expect(session.editor.tool).toBe('door');
+    session.editor.setSelection(['main/walls#w1']);
+    session.editor.setMode('lights');
+    expect(session.editor.tool).toBe('select');
+    expect(session.editor.selection).toEqual([]);
   });
 
   it('players stay on tokens', () => {
     ws.receive(welcome());
-    session.setMode('walls');
-    expect(session.mode).toBe('tokens');
+    session.editor.setMode('walls');
+    expect(session.editor.mode).toBe('tokens');
   });
 });
 
@@ -58,50 +58,50 @@ describe('selection', () => {
   it('selecting a token selects it in the tokens mode too, and back', () => {
     ws.receive(gmWelcome());
     session.select('hero');
-    expect(session.selection).toEqual(['main/tokens#hero']);
-    session.setSelection(['main/tokens#orc', 'main/tokens#hero']);
+    expect(session.editor.selection).toEqual(['main/tokens#hero']);
+    session.editor.setSelection(['main/tokens#orc', 'main/tokens#hero']);
     expect(session.selected).toBe('hero');
-    session.setSelection(['main/tokens#orc']);
+    session.editor.setSelection(['main/tokens#orc']);
     expect(session.selected).toBe('orc');
-    session.setSelection([]);
+    session.editor.setSelection([]);
     expect(session.selected).toBeUndefined();
   });
 
   it('select all takes everything in the mode', () => {
     ws.receive(gmWelcome());
-    session.setMode('walls');
-    session.selectAll();
-    expect(session.selection).toEqual(['main/walls#w1', 'main/walls#w2']);
+    session.editor.setMode('walls');
+    session.editor.selectAll();
+    expect(session.editor.selection).toEqual(['main/walls#w1', 'main/walls#w2']);
   });
 
   it('players select all of their own tokens only', () => {
     ws.receive(welcome([token('hero'), { ...token('orc'), ownership: { default: 'limited' } }]));
-    session.selectAll();
-    expect(session.selection).toEqual(['main/tokens#hero']);
+    session.editor.selectAll();
+    expect(session.editor.selection).toEqual(['main/tokens#hero']);
   });
 
   it('a token that goes away leaves the selection', () => {
     ws.receive(gmWelcome());
-    session.setSelection(['main/tokens#orc', 'main/tokens#hero']);
+    session.editor.setSelection(['main/tokens#orc', 'main/tokens#hero']);
     ws.receive({ t: 'tokenGone', id: 'orc' });
-    expect(session.selection).toEqual(['main/tokens#hero']);
+    expect(session.editor.selection).toEqual(['main/tokens#hero']);
   });
 
   it('deleted documents leave the selection', () => {
     ws.receive(gmWelcome());
-    session.setMode('walls');
-    session.selectAll();
+    session.editor.setMode('walls');
+    session.editor.selectAll();
     ws.receive({ t: 'docs', changes: [{ coll: 'main/walls', id: 'w1' }] });
-    expect(session.selection).toEqual(['main/walls#w2']);
+    expect(session.editor.selection).toEqual(['main/walls#w2']);
   });
 });
 
 describe('edits from the editor', () => {
   it('moves the selection by whole squares in one transaction', () => {
     ws.receive(gmWelcome());
-    session.setMode('walls');
-    session.selectAll();
-    session.moveSelection(session.selection, [130, 20], false);
+    session.editor.setMode('walls');
+    session.editor.selectAll();
+    session.editor.moveSelection(session.editor.selection, [130, 20], false);
     expect(lastOps()).toMatchObject({
       label: 'move',
       ops: [
@@ -113,16 +113,16 @@ describe('edits from the editor', () => {
 
   it('does nothing for a move that snaps to nowhere', () => {
     ws.receive(gmWelcome());
-    session.setMode('walls');
-    session.selectAll();
-    session.moveSelection(session.selection, [20, 20], false);
+    session.editor.setMode('walls');
+    session.editor.selectAll();
+    session.editor.moveSelection(session.editor.selection, [20, 20], false);
     expect(lastOps()).toBeUndefined();
   });
 
   it('shows an edit at once and takes it back when the server refuses it', () => {
     ws.receive(gmWelcome());
-    session.setMode('lights');
-    session.reshape('main/lights#torch', 'dim', [100, 1100], false);
+    session.editor.setMode('lights');
+    session.editor.reshape('main/lights#torch', 'dim', [100, 1100], false);
     expect(session.docs.get('main/lights', 'torch')).toMatchObject({ dim: 30, rev: 2 });
     const txn = lastOps()!.txn!;
     ws.receive({ t: 'reject', txn, reason: 'No' });
@@ -131,17 +131,17 @@ describe('edits from the editor', () => {
 
   it('a second edit before the echo is made against the revision the first one makes', () => {
     ws.receive(gmWelcome());
-    session.setMode('lights');
-    session.selectAll();
-    session.nudge([1, 0], false);
-    session.nudge([1, 0], false);
+    session.editor.setMode('lights');
+    session.editor.selectAll();
+    session.editor.nudge([1, 0], false);
+    session.editor.nudge([1, 0], false);
     expect(lastOps()?.ops?.[0]).toMatchObject({ rev: 2, patch: { x: 102 } });
   });
 
   it('keeps the server copy once the edit is confirmed', () => {
     ws.receive(gmWelcome());
-    session.setMode('lights');
-    session.reshape('main/lights#torch', 'bright', [500, 100], false);
+    session.editor.setMode('lights');
+    session.editor.reshape('main/lights#torch', 'bright', [500, 100], false);
     const txn = lastOps()!.txn!;
     const confirmed = doc('torch', 'light', { rev: 3, x: 100, y: 100, bright: 20, dim: 20 });
     ws.receive({ t: 'docs', txn, changes: [{ coll: 'main/lights', id: 'torch', doc: confirmed }] });
@@ -151,26 +151,26 @@ describe('edits from the editor', () => {
 
   it('nudges by a pixel, or a square with shift', () => {
     ws.receive(gmWelcome());
-    session.setMode('lights');
-    session.selectAll();
-    session.nudge([1, 0], false);
+    session.editor.setMode('lights');
+    session.editor.selectAll();
+    session.editor.nudge([1, 0], false);
     expect(lastOps()?.ops?.[0]?.patch).toEqual({ x: 101 });
-    session.nudge([0, -1], true);
+    session.editor.nudge([0, -1], true);
     expect(lastOps()?.ops?.[0]?.patch).toEqual({ y: 0 });
   });
 
   it('edits fields of the whole selection', () => {
     ws.receive(gmWelcome());
-    session.setMode('walls');
-    session.selectAll();
-    session.editSelection({ door: 'closed', sight: null });
+    session.editor.setMode('walls');
+    session.editor.selectAll();
+    session.editor.editSelection({ door: 'closed', sight: null });
     expect(lastOps()).toMatchObject({ label: 'edit', ops: [{ patch: { door: 'closed', sight: null } }, { id: 'w2' }] });
   });
 
   it('delete and copy work on the selection of any mode', () => {
     ws.receive(gmWelcome());
-    session.setMode('walls');
-    session.setSelection(['main/walls#w2']);
+    session.editor.setMode('walls');
+    session.editor.setSelection(['main/walls#w2']);
     expect(JSON.parse(session.copy()!)).toMatchObject({ docs: [{ id: 'w2', type: 'wall' }] });
     session.deleteSelected();
     expect(lastOps()).toMatchObject({ label: 'delete', ops: [{ op: 'delete', coll: 'main/walls', id: 'w2' }] });

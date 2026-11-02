@@ -39,7 +39,7 @@ function RequestCheck({ session }: Readonly<{ session: Session }>) {
   const [dc, setDc] = useState(0);
   const [kind, setKind] = useState<CheckRequestKind>('each');
   const all = [...session.tokens.values()].filter((t) => t.sheet !== undefined);
-  const who = askedOf(all, (id) => session.isSelected(id), isParty);
+  const who = askedOf(all, (id) => session.editor.isSelected(id), isParty);
   const contest = kind === 'contest';
   const ready = contest ? who.length === 2 : who.length > 0;
   const send = () =>

@@ -67,12 +67,12 @@ const patchOf = (id: string) => lastOps()?.ops?.find((o) => o.id === id)?.patch;
 
 beforeEach(() => {
   ws.receive(gmWelcome());
-  session.setMode('tiles');
+  session.editor.setMode('tiles');
 });
 
 describe('moving tiles', () => {
   it('moves what is in a group with it, and not the group itself', () => {
-    session.moveSelection([key('camp')], [100, 0], false);
+    session.editor.moveSelection([key('camp')], [100, 0], false);
     expect(
       lastOps()
         ?.ops?.map((o) => o.id)
@@ -82,7 +82,7 @@ describe('moving tiles', () => {
   });
 
   it('takes the walls and lights fastened to the tiles along', () => {
-    session.moveSelection([key('camp')], [100, 0], false);
+    session.editor.moveSelection([key('camp')], [100, 0], false);
     const ops = lastOps()!.ops!;
     expect(ops.find((o) => o.id === 'tent-wall')).toMatchObject({
       coll: 'main/walls',
@@ -93,18 +93,18 @@ describe('moving tiles', () => {
   });
 
   it('a tile dropped on another goes inside it, on top', () => {
-    session.moveSelection([key('crate')], [-800, -800], false);
+    session.editor.moveSelection([key('crate')], [-800, -800], false);
     expect(patchOf('crate')).toMatchObject({ x: 1200, y: 1200, parent: 'house' });
   });
 
   it('nudges a group with the arrow keys', () => {
-    session.setSelection([key('camp')]);
-    session.nudge([0, 1], false);
+    session.editor.setSelection([key('camp')]);
+    session.editor.nudge([0, 1], false);
     expect(patchOf('fire')).toEqual({ y: 101 });
   });
 
   it('resizing a group scales the tiles in it', () => {
-    session.reshape(key('camp'), 'e', [700, 150], false);
+    session.editor.reshape(key('camp'), 'e', [700, 150], false);
     expect(patchOf('fire')).toEqual({ x: 500, w: 200 });
     expect(patchOf('camp')).toBeUndefined();
   });
@@ -112,18 +112,18 @@ describe('moving tiles', () => {
 
 describe('grouping', () => {
   it('groups the selection in one step and selects the group', () => {
-    session.setSelection([key('house'), key('crate')]);
+    session.editor.setSelection([key('house'), key('crate')]);
     session.tiles.group();
     const ops = lastOps()!;
     expect(ops.label).toBe('group');
     expect(ops.ops?.[0]).toMatchObject({ op: 'create', doc: { id: 'group', kind: 'group' } });
     expect(patchOf('house')).toMatchObject({ parent: 'group' });
-    expect(session.selection).toEqual([key('group')]);
+    expect(session.editor.selection).toEqual([key('group')]);
     expect(session.docs.get('main/tiles', 'group')).toBeDefined();
   });
 
   it('takes a group back when the server refuses it', () => {
-    session.setSelection([key('house'), key('crate')]);
+    session.editor.setSelection([key('house'), key('crate')]);
     session.tiles.group();
     ws.receive({ t: 'reject', txn: lastOps()!.txn!, reason: 'No' });
     expect(session.docs.get('main/tiles', 'group')).toBeUndefined();
@@ -131,23 +131,23 @@ describe('grouping', () => {
   });
 
   it('ungroups, selecting what was in the group', () => {
-    session.setSelection([key('camp')]);
+    session.editor.setSelection([key('camp')]);
     session.tiles.ungroup();
     expect(lastOps()?.ops?.at(-1)).toEqual({ op: 'delete', coll: 'main/tiles', id: 'camp' });
-    expect(session.selection.toSorted((a, b) => a.localeCompare(b))).toEqual([key('fire'), key('tent')]);
+    expect(session.editor.selection.toSorted((a, b) => a.localeCompare(b))).toEqual([key('fire'), key('tent')]);
   });
 });
 
 describe('order and locks', () => {
   it('brings the selection to the front', () => {
-    session.setSelection([key('house')]);
+    session.editor.setSelection([key('house')]);
     session.tiles.reorder('front');
     expect(patchOf('house')).toEqual({ sort: expect.any(String) as string });
     expect((patchOf('house')!.sort as string) > 'D').toBe(true);
   });
 
   it('locks and unlocks the selection', () => {
-    session.setSelection([key('house'), key('crate')]);
+    session.editor.setSelection([key('house'), key('crate')]);
     session.tiles.toggleLock();
     expect(lastOps()).toMatchObject({ label: 'lock', ops: [{ patch: { locked: true } }, { patch: { locked: true } }] });
     session.tiles.toggleLock();
@@ -165,7 +165,7 @@ describe('drawing tiles', () => {
     session.tiles.create({ x: 1100, y: 1100, w: 200, h: 100 }, 'wood');
     const op = lastOps()?.ops?.[0];
     expect(op).toMatchObject({ op: 'create', doc: { kind: 'rect', texture: 'wood', parent: 'house', x: 1100 } });
-    expect(session.selection).toEqual([key(op!.doc!.id)]);
+    expect(session.editor.selection).toEqual([key(op!.doc!.id)]);
   });
 
   it('draws the preset picked last', () => {

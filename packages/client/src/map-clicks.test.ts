@@ -54,7 +54,7 @@ describe('map clicks', () => {
   const moves = () => ws.sent.filter((m) => (m as { t: string }).t === 'move');
 
   it('walks every selected creature you control to a clicked spot, in formation', () => {
-    session.setSelection([session.tokenKey('hero'), session.tokenKey('ally')]);
+    session.editor.setSelection([session.editor.tokenKey('hero'), session.editor.tokenKey('ally')]);
     session.setPrimary('hero');
     expect(moveSelectionTo(session, [450, 450])).toBe(true);
     expect(moves()).toContainEqual({ t: 'move', token: 'hero', to: [450, 450] });

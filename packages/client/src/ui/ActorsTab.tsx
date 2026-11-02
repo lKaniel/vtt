@@ -159,7 +159,7 @@ function ActorRow({ session, actor }: Readonly<{ session: Session; actor: Actor 
         size="icon-sm"
         title="Place at the centre of the screen"
         aria-label="Place at the centre of the screen"
-        onClick={() => session.spawn({ kind: 'actor', id: actor.id }, session.viewCentre())}
+        onClick={() => session.spawn({ kind: 'actor', id: actor.id }, session.editor.viewCentre())}
       >
         <PlusIcon />
       </Button>

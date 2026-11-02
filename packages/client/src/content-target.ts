@@ -64,7 +64,7 @@ export function checkClick(session: Session, ref: CheckRef): (() => void) | unde
   if (!check) return undefined;
   if (session.isGm()) {
     const all = [...session.tokens.values()].filter((t) => t.sheet !== undefined);
-    const tokens = askedOf(all, (id) => session.isSelected(id), isParty).map((t) => t.id);
+    const tokens = askedOf(all, (id) => session.editor.isSelected(id), isParty).map((t) => t.id);
     return () => session.requestCheck({ tokens, ...check, kind: 'each', ...(ref.dc && { dc: ref.dc }) });
   }
   return () => session.selected && session.rollCheck(session.selected, check);

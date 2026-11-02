@@ -26,10 +26,10 @@ export function LayersPanel({ session }: Readonly<{ session: Session }>) {
   const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
   const [over, setOver] = useState<{ id: string; zone: DropZone }>();
   const [renaming, setRenaming] = useState<string>();
-  const coll = session.modeColl('tiles');
+  const coll = session.editor.modeColl('tiles');
   const tiles = session.tiles.all();
   const rows = layerRows(tiles, folded);
-  const selected = new Set(session.selection.map((k) => refOf(k).id));
+  const selected = new Set(session.editor.selection.map((k) => refOf(k).id));
 
   const fold = (id: string) => {
     const next = new Set(folded);
@@ -37,7 +37,7 @@ export function LayersPanel({ session }: Readonly<{ session: Session }>) {
     setFolded(next);
   };
   const select = (row: LayerRow, e: React.MouseEvent) =>
-    session.setSelection(clickSelect(session.selection, keyOf({ coll, id: row.id }), modsOf(e)));
+    session.editor.setSelection(clickSelect(session.editor.selection, keyOf({ coll, id: row.id }), modsOf(e)));
   const startDrag = (row: LayerRow, e: DragEvent<HTMLElement>) => {
     const ids = selected.has(row.id) ? [...selected] : [row.id];
     e.dataTransfer.setData(DRAG, JSON.stringify(ids));
@@ -159,7 +159,7 @@ function kindMark(row: LayerRow): string {
 }
 
 function rename(session: Session, id: string, name: string): void {
-  const doc = session.docs.get(session.modeColl('tiles'), id);
+  const doc = session.docs.get(session.editor.modeColl('tiles'), id);
   if (!doc || (doc.name ?? '') === name) return;
   session.tiles.edit([id], { name: name || null }, 'rename');
 }

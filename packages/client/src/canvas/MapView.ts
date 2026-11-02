@@ -259,9 +259,9 @@ export class MapView {
     this.tokens.container.eventMode = editing ? 'none' : 'passive';
     this.chunks.walls.eventMode = editing ? 'none' : 'passive';
     this.chunks.ground.eventMode = editing ? 'none' : 'passive';
-    if (this.mode !== this.session.mode || this.tool !== this.session.tool) this.editor.cancel();
-    this.mode = this.session.mode;
-    this.tool = this.session.tool;
+    if (this.mode !== this.session.editor.mode || this.tool !== this.session.editor.tool) this.editor.cancel();
+    this.mode = this.session.editor.mode;
+    this.tool = this.session.editor.tool;
     this.editor.redraw();
     this.updatePreview(true);
   }
@@ -325,7 +325,7 @@ export class MapView {
       layer.position.set(width / 2 - this.center[0] * this.zoom, height / 2 - this.center[1] * this.zoom);
     }
     const view = this.visibleRect();
-    this.session.viewRect = view;
+    this.session.editor.viewRect = view;
     // Lighting covers the whole screen, even where nothing is drawn yet.
     this.ground.filterArea = new Rectangle(view.x, view.y, view.w, view.h);
     this.tokens.container.filterArea = this.chunks.roofs.filterArea = this.ground.filterArea;
@@ -365,7 +365,7 @@ export class MapView {
   private onPointerDown(e: FederatedPointerEvent): void {
     const p: Point = [e.global.x, e.global.y];
     const at = this.screenToWorld(p[0], p[1]);
-    if (e.button !== 2) this.session.closeMenu();
+    if (e.button !== 2) this.session.editor.closeMenu();
     if (this.grabMap(e, p)) return;
     this.presence.down(p, at, e);
     // An aimed spell or readied attack keeps the left click for itself.
@@ -435,7 +435,7 @@ export class MapView {
     const rect = this.app.canvas.getBoundingClientRect();
     const onScreen: Point = [screen[0] + rect.left, screen[1] + rect.top];
     const target = { ...this.editor.menuTarget(at), screen: onScreen };
-    this.session.openMenu(onScreen, menuFor(target, this.session));
+    this.session.editor.openMenu(onScreen, menuFor(target, this.session));
   }
 
   /** A fling glides on; a drag that stopped before letting go stays put. */

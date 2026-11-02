@@ -65,11 +65,11 @@ export class MapEditor {
 
   /** A mode other than tokens is in use: the map's own clicks (tokens, doors) step aside. */
   get active(): boolean {
-    return this.session.mode !== 'tokens';
+    return this.session.editor.mode !== 'tokens';
   }
 
   private get measuring(): boolean {
-    return this.session.mode === 'templates' && this.session.tool === 'ruler';
+    return this.session.editor.mode === 'templates' && this.session.editor.tool === 'ruler';
   }
 
   /** Puts away a half-drawn wall, a drag or your ruler; true if there was one. */
@@ -92,7 +92,7 @@ export class MapEditor {
   /** A left press: true when the editor took it. */
   pointerDown(p: PointerInfo): boolean {
     if (p.button !== 0) return false;
-    this.session.closeMenu();
+    this.session.editor.closeMenu();
     if (this.measuring) this.session.rulers.press(this.rulerPoint(p.at));
     else if (this.tools.drawing) this.tools.press(p.at, p.mods.shift);
     else this.controller.down(p.at, p.mods);
@@ -118,7 +118,7 @@ export class MapEditor {
 
   /** Drags snap unless Shift is held, or the scene has no grid and these are tokens. */
   private dragMods(mods: Mods): Mods {
-    return dragsFreely(this.session.mode, this.session.world) ? { ...mods, shift: true } : mods;
+    return dragsFreely(this.session.editor.mode, this.session.world) ? { ...mods, shift: true } : mods;
   }
 
   setZoom(zoom: number): void {
@@ -128,11 +128,11 @@ export class MapEditor {
 
   /** What a right click at `at` opens a menu on; selects the thing clicked if it wasn't. */
   menuTarget(at: Point): MenuTarget {
-    const mode = this.session.mode;
+    const mode = this.session.editor.mode;
     if (mode === 'tokens') return this.tokenMenuTarget(at);
     const hit = this.pick(at);
-    if (hit && !this.session.selection.includes(hit)) this.session.setSelection([hit]);
-    return { mode, at, docs: hit ? this.session.selectedDocs() : [] };
+    if (hit && !this.session.editor.selection.includes(hit)) this.session.editor.setSelection([hit]);
+    return { mode, at, docs: hit ? this.session.editor.selectedDocs() : [] };
   }
 
   // What is where ---------------------------------------------------------------
@@ -143,11 +143,11 @@ export class MapEditor {
 
   /** The documents of the current mode, bottom to top, as a drag in progress shows them (groups span their tiles). */
   private modeDocs(): { key: string; doc: Doc }[] {
-    const coll = this.session.modeColl();
+    const coll = this.session.editor.modeColl();
     const preview = this.controller.preview();
-    const ctx = { mode: this.session.mode, gridSize: this.ctx.gridSize, grid: this.session.moveGrid() };
+    const ctx = { mode: this.session.editor.mode, gridSize: this.ctx.gridSize, grid: this.session.moveGrid() };
     const docs = this.session.docs.all(coll);
-    if (this.session.mode === 'tiles')
+    if (this.session.editor.mode === 'tiles')
       return previewTiles(docs, coll, preview, ctx).map((doc) => ({ key: keyOf({ coll, id: doc.id }), doc }));
     return docs.map((doc) => {
       const key = keyOf({ coll, id: doc.id });
@@ -159,27 +159,27 @@ export class MapEditor {
   private tileItems(): TileItems {
     const s = this.session;
     const tiles = s.tiles.all();
-    const selected = s.selection.map((k) => refOf(k).id);
-    return new TileItems(withGroupBounds(tiles), s.modeColl('tiles'), TileItems.scopeOf(tiles, selected));
+    const selected = s.editor.selection.map((k) => refOf(k).id);
+    return new TileItems(withGroupBounds(tiles), s.editor.modeColl('tiles'), TileItems.scopeOf(tiles, selected));
   }
 
   private items(): Hittable[] {
-    if (this.session.mode === 'tokens') return this.tokenItems(false);
-    if (this.session.mode === 'tiles') return this.tileItems().pick;
+    if (this.session.editor.mode === 'tokens') return this.tokenItems(false);
+    if (this.session.editor.mode === 'tiles') return this.tileItems().pick;
     return this.modeDocs().map(({ key, doc }) => ({ key, shape: shapeOf(doc, this.ctx) }));
   }
 
   private inRect(r: Rect, mode: MarqueeMode): string[] {
     const s = this.session;
-    if (s.mode === 'tiles') return marqueeHits(this.tileItems().units(mode), r, mode);
+    if (s.editor.mode === 'tiles') return marqueeHits(this.tileItems().units(mode), r, mode);
     const hits = marqueeHits(this.items(), r, mode);
-    return s.mode === 'tokens' ? hits.map((id) => s.tokenKey(id)) : hits;
+    return s.editor.mode === 'tokens' ? hits.map((id) => s.editor.tokenKey(id)) : hits;
   }
 
   /** The selection as drawn: groups with the bounds of what is in them. */
   private shownSelection(): { ref: { coll: string; id: string }; doc: Doc }[] {
-    const docs = this.session.selectedDocs();
-    if (this.session.mode !== 'tiles') return docs;
+    const docs = this.session.editor.selectedDocs();
+    if (this.session.editor.mode !== 'tiles') return docs;
     const shown = new Map(withGroupBounds(this.session.tiles.all()).map((d) => [d.id, d]));
     return docs.map(({ ref, doc }) => ({ ref, doc: shown.get(doc.id) ?? doc }));
   }
@@ -203,7 +203,7 @@ export class MapEditor {
   }
 
   private pick(at: Point): string | undefined {
-    if (this.session.mode === 'tokens') return undefined;
+    if (this.session.editor.mode === 'tokens') return undefined;
     return hitTest(this.items(), at, PICK_PX * this.ctx.px);
   }
 
@@ -221,8 +221,8 @@ export class MapEditor {
     const id = hitTest(this.tokenItems(true), at, 0);
     const token = id ? s.tokens.get(id) : undefined;
     if (token && s.canControl(token)) {
-      if (!s.isSelected(token.id)) s.select(token.id);
-      return { mode: 'tokens', at, docs: s.selectedDocs(), token };
+      if (!s.editor.isSelected(token.id)) s.select(token.id);
+      return { mode: 'tokens', at, docs: s.editor.selectedDocs(), token };
     }
     const selected = s.selected ? s.tokens.get(s.selected) : undefined;
     const mine = selected && s.canControl(selected) ? selected : undefined;
@@ -235,15 +235,15 @@ export class MapEditor {
       pick: (p) => this.pick(p),
       pickHandle: (p) => this.pickHandle(p),
       inRect: (r, mode) => this.inRect(r, mode),
-      draggable: (key) => s.mode !== 'tiles' || this.tileItems().draggable(key),
-      enter: (key, at) => (s.mode === 'tiles' ? this.tileItems().enter(key, at) : undefined),
-      selection: () => s.selection,
-      setSelection: (keys) => s.setSelection(keys),
+      draggable: (key) => s.editor.mode !== 'tiles' || this.tileItems().draggable(key),
+      enter: (key, at) => (s.editor.mode === 'tiles' ? this.tileItems().enter(key, at) : undefined),
+      selection: () => s.editor.selection,
+      setSelection: (keys) => s.editor.setSelection(keys),
       slop: () => SLOP_PX * this.ctx.px,
-      commitMove: (keys, delta, free) => s.moveSelection(keys, delta, free),
-      commitHandle: (key, handle, to, free) => s.reshape(key, handle, to, free),
+      commitMove: (keys, delta, free) => s.editor.moveSelection(keys, delta, free),
+      commitHandle: (key, handle, to, free) => s.editor.reshape(key, handle, to, free),
       // In the tokens mode a plain click on the ground walks the selection there.
-      clickEmpty: (at, mods) => s.mode === 'tokens' && !mods.shift && !mods.ctrl && moveSelectionTo(s, at),
+      clickEmpty: (at, mods) => s.editor.mode === 'tokens' && !mods.shift && !mods.ctrl && moveSelectionTo(s, at),
     };
   }
 
@@ -271,7 +271,7 @@ export class MapEditor {
   private drawSelection(g: Graphics, docs: { key: string; doc: Doc }[], ctx: DrawCtx & View): void {
     const idle = !this.controller.busy && !this.tools.drawing && !this.measuring;
     const hovered = this.hover && idle ? this.pick(this.hover) : undefined;
-    const selected = new Set(this.session.selection);
+    const selected = new Set(this.session.editor.selection);
     const handles = this.controller.preview()?.kind !== 'move';
     for (const { key, doc } of docs) {
       if (!selected.has(key)) {

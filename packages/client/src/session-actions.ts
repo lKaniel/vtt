@@ -21,7 +21,7 @@ export interface ActionHost {
   readonly pointer?: Point;
   readonly you?: Player;
   readonly targets: Targets;
-  isSelected(id: string): boolean;
+  readonly editor: { isSelected(id: string): boolean };
   send(msg: ClientMessage): void;
   showError(message: string): void;
 }
@@ -52,7 +52,7 @@ export class Actions {
 
   /** Applies the roll on a chat card to your targets, else the creatures selected (see damage-actions.ts on the server). */
   applyRoll(card: string, how: ApplyHow): void {
-    const picked = [...this.s.tokens.keys()].filter((id) => this.s.isSelected(id));
+    const picked = [...this.s.tokens.keys()].filter((id) => this.s.editor.isSelected(id));
     const tokens = this.s.targets.mine.size ? [...this.s.targets.mine] : picked;
     if (!tokens.length) return this.s.showError('Target or select the creatures to apply it to');
     this.s.send({ t: 'applyDamage', card, tokens, how });

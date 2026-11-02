@@ -50,8 +50,8 @@ describe('Session', () => {
     ws.receive(welcome());
     session.editMap({ op: 'remove', chunk: '0_0', id: 'w' });
     expect(ws.sent.at(-1)).toEqual({ t: 'mapEdit', edit: { op: 'remove', chunk: '0_0', id: 'w' } });
-    session.setLightPreset('campfire');
-    expect(session.lightPreset).toBe('campfire');
+    session.editor.setLightPreset('campfire');
+    expect(session.editor.lightPreset).toBe('campfire');
     session.setDarkness(0.4);
     expect(ws.sent.at(-1)).toEqual({ t: 'darkness', darkness: 0.4 });
   });
@@ -418,8 +418,8 @@ describe('Session', () => {
       ws.receive({ t: 'token', token: { ...token('far', 5000), health: 'unhurt' } });
       ws.receive({ t: 'token', token: { ...token('lurker', 250), hidden: true, health: 'unhurt' } });
       ws.receive({ t: 'token', token: token('barrel', 350) });
-      session.viewRect = { x: 0, y: 0, w: 1000, h: 1000 };
-      expect(session.fightersInView()).toEqual(['hero', 'goblin']);
+      session.editor.viewRect = { x: 0, y: 0, w: 1000, h: 1000 };
+      expect(session.editor.fightersInView()).toEqual(['hero', 'goblin']);
     });
 
     it('sends turn, combat and equipment requests', () => {

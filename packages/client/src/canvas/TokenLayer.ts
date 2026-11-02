@@ -211,7 +211,7 @@ export class TokenLayer {
     const { token } = view;
     const combat = this.session.combat;
     if (combat && actsNow(combat, token.id)) return { color: TURN_COLOR, strong: true };
-    if (this.session.selected === token.id || this.session.isSelected(token.id))
+    if (this.session.selected === token.id || this.session.editor.isSelected(token.id))
       return { color: this.session.you?.color ?? TURN_COLOR, strong: true };
     return view.hover ? { color: this.ringColor(token), strong: false } : undefined;
   }
@@ -257,7 +257,7 @@ export class TokenLayer {
       if (this.session.actions.aiming?.mode === 'creatures') return this.session.actions.pickTarget(t.id);
       if (this.isTarget(t)) return this.session.actions.attack(t.id);
       const click = clickToken(this.session, t.id);
-      if (click.kind === 'prompt') return this.session.openMenu([e.clientX, e.clientY], click.items);
+      if (click.kind === 'prompt') return this.session.editor.openMenu([e.clientX, e.clientY], click.items);
       if (click.kind === 'select') this.press(t.id, e);
     });
     this.container.addChild(root);
@@ -290,12 +290,12 @@ export class TokenLayer {
     // Space held: the press pans the map (MapView) instead.
     if (spaceKey.held) return;
     const s = this.session;
-    s.closeMenu();
+    s.editor.closeMenu();
     if (e.shiftKey || e.ctrlKey || e.metaKey) {
-      s.setSelection(clickSelect(s.selection, s.tokenKey(id), modsOf(e)));
+      s.editor.setSelection(clickSelect(s.editor.selection, s.editor.tokenKey(id), modsOf(e)));
       return;
     }
-    if (s.isSelected(id)) s.setPrimary(id);
+    if (s.editor.isSelected(id)) s.setPrimary(id);
     else s.select(id);
     if (this.isDoubleClick(id)) {
       if (s.tokens.get(id)?.pile) s.piles.open(id);

@@ -119,19 +119,19 @@ const TOOLS: Partial<Record<EditorMode, { tool: EditorTool; label: string; hint:
 /** The editor modes down the left side (players: tokens, drawings and templates), each mode's tools, and the GM's map settings. */
 export function MapTools({ session }: Readonly<{ session: Session }>) {
   const gm = session.isGm();
-  const tools = TOOLS[session.mode];
-  const modes = MODES.filter((m) => session.canUseMode(m.mode));
+  const tools = TOOLS[session.editor.mode];
+  const modes = MODES.filter((m) => session.editor.canUseMode(m.mode));
   return (
     <div className="map-tools frame">
       <div className="map-tools-row" role="toolbar" aria-label="Editor mode">
         {modes.map(({ mode, label, key, hint, icon: Icon }) => (
           <Toggle
             key={mode}
-            pressed={session.mode === mode}
+            pressed={session.editor.mode === mode}
             title={key ? `${label}: ${hint} (${key})` : `${label}: ${hint}`}
             aria-label={label}
             className="w-7 px-0 [&_svg]:size-4"
-            onPressedChange={() => session.setMode(mode)}
+            onPressedChange={() => session.editor.setMode(mode)}
           >
             <Icon />
           </Toggle>
@@ -142,19 +142,19 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
           {tools.map(({ tool, label, hint }) => (
             <Toggle
               key={tool}
-              pressed={session.tool === tool}
+              pressed={session.editor.tool === tool}
               title={hint}
-              onPressedChange={() => session.setTool(tool)}
+              onPressedChange={() => session.editor.setTool(tool)}
             >
               {label}
             </Toggle>
           ))}
         </div>
       )}
-      {session.mode === 'lights' && <LightPresets session={session} />}
-      {session.mode === 'tiles' && <TilePresets session={session} />}
-      {session.mode === 'tiles' && <LayersPanel session={session} />}
-      {session.mode === 'drawings' && <DrawStyle session={session} />}
+      {session.editor.mode === 'lights' && <LightPresets session={session} />}
+      {session.editor.mode === 'tiles' && <TilePresets session={session} />}
+      {session.editor.mode === 'tiles' && <LayersPanel session={session} />}
+      {session.editor.mode === 'drawings' && <DrawStyle session={session} />}
       {gm && <SceneTools session={session} />}
     </div>
   );
@@ -217,8 +217,8 @@ function FogTools({ session }: Readonly<{ session: Session }>) {
 function LightPresets({ session }: Readonly<{ session: Session }>) {
   return (
     <SelectField
-      value={session.lightPreset}
-      onValueChange={(id) => session.setLightPreset(id as LightPreset)}
+      value={session.editor.lightPreset}
+      onValueChange={(id) => session.editor.setLightPreset(id as LightPreset)}
       title="The light the Place tool and the menu put down"
       options={Object.entries(LIGHT_PRESETS).map(([id, l]) => ({
         value: id,
