@@ -43,7 +43,7 @@ export interface SystemDefinition<TToken = unknown, TActor = unknown> extends Sy
   foundry?: FoundrySheets;
 }
 
-/** A system's reading of Foundry VTT actors (see server/src/foundry-world.ts). */
+/** A system's reading of Foundry VTT actors (see server/src/foundry/foundry-world.ts). */
 export interface FoundrySheets {
   /** The Foundry system whose actors it reads, e.g. "dnd5e". */
   system: string;

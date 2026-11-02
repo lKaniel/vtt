@@ -1,9 +1,9 @@
 import { type Chunk, chunkFor, isGm, type Player, type Point, type RollMode } from '@vtt/shared';
 import { type ServerMessage, type Token, viewToken } from '@vtt/system-dnd5e';
 import type { WebSocket } from 'ws';
-import type { DocFeed } from './doc-feed.ts';
-import type { GameStore } from './game-store.ts';
-import { contentFor } from './game-packs.ts';
+import type { DocFeed } from './store/doc-feed.ts';
+import type { GameStore } from './store/game-store.ts';
+import { contentFor } from './library/game-packs.ts';
 
 // A connection to the live game (game.ts), and what it is sent as its camera moves.
 

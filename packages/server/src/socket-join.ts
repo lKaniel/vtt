@@ -1,8 +1,8 @@
 import type { IncomingMessage } from 'node:http';
 import type { Player } from '@vtt/shared';
-import type { GameHub } from './game-hub.ts';
-import { sessionToken } from './http-json.ts';
-import type { SessionStore } from './sessions.ts';
+import type { GameHub } from './library/game-hub.ts';
+import { sessionToken } from './http/http-json.ts';
+import type { SessionStore } from './http/sessions.ts';
 
 /**
  * Who a WebSocket upgrade is for, and at which game: `?game=` (the home game

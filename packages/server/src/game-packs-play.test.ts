@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { GameStore } from './game-store.ts';
-import { PackStore } from './pack-store.ts';
+import { GameStore } from './store/game-store.ts';
+import { PackStore } from './library/pack-store.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
 
 let dir: string;

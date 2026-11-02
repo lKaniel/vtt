@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { Op } from '@vtt/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { GameStore } from './game-store.ts';
+import { GameStore } from './store/game-store.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
 
 // Ownership levels on the ops message, undo and the documents each player

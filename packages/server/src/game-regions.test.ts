@@ -2,7 +2,7 @@ import type { Doc } from '@vtt/core';
 import { TokenSchema } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { GameStore } from './game-store.ts';
+import { GameStore } from './store/game-store.ts';
 import { FakeSocket, makeTwoScenes } from './test/fixtures.ts';
 
 // Regions at work: walking into one runs its behaviours. The hero stands in

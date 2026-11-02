@@ -114,7 +114,7 @@ All under `/api/`, signed in:
 | `POST games/<id>/backups/<backup>/restore`              | GM, admin          | puts a backup back (backing up the game as it is first)                           |
 | `GET games/<id>/export`                                 | GM, admin          | the game folder as a zip                                                          |
 
-Code: `server/src/sessions.ts` (sessions, admin password), `lobby-api.ts`
+Code: `server/src/http/sessions.ts` (sessions, admin password), `lobby-api.ts`
 (games, joining, players), `character-api.ts` (characters, Claude keys),
 `game-hub.ts` (games, loading), `socket-join.ts` (who a connection is),
 `game-access.ts` (player passwords, Claude keys), `migrate-accounts.ts`,

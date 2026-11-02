@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { ActorSchema, resolveToken, type ServerMessage, type Token, TokenEntrySchema } from '@vtt/system-dnd5e';
 import type { WebSocket } from 'ws';
-import { BridgeSocket } from '../mcp-seat.ts';
+import { BridgeSocket } from '../mcp/mcp-seat.ts';
 
 const players = [
   { id: 'gm', name: 'GM', role: 'gm' },

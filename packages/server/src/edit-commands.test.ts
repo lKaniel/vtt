@@ -4,7 +4,7 @@ import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
-import { GameStore } from './game-store.ts';
+import { GameStore } from './store/game-store.ts';
 
 // The rule every document type follows: copy then paste, cut then undo,
 // delete then undo then redo, and duplicate leave the game exactly right.

@@ -1,13 +1,13 @@
 import { createServer } from 'node:http';
 import { join, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
-import { apiHandler } from './api.ts';
-import { CharacterStore } from './characters.ts';
-import { GameHub } from './game-hub.ts';
-import { httpHandler } from './http.ts';
-import { migrateAccounts } from './migrate-accounts.ts';
+import { apiHandler } from './http/api.ts';
+import { CharacterStore } from './library/characters.ts';
+import { GameHub } from './library/game-hub.ts';
+import { httpHandler } from './http/http.ts';
+import { migrateAccounts } from './migrate/migrate-accounts.ts';
 import { dataDirFor, repoRoot, gameDirFromArgs } from './paths.ts';
-import { SessionStore } from './sessions.ts';
+import { SessionStore } from './http/sessions.ts';
 import { socketSeat } from './socket-join.ts';
 
 const PORT = Number(process.env.PORT ?? 3001);

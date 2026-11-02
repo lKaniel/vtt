@@ -1,10 +1,10 @@
 import { chatFor, type HistoryState, isGm, type Player, type WorldInfo } from '@vtt/shared';
 import type { ChatMessage, ServerMessage, Token, TokenView } from '@vtt/system-dnd5e';
-import type { DocFeed } from './doc-feed.ts';
-import type { GameStore } from './game-store.ts';
-import { packContent } from './game-packs.ts';
-import { pluginLoads } from './game-plugins.ts';
-import { withoutSettings } from './seat-settings.ts';
+import type { DocFeed } from './store/doc-feed.ts';
+import type { GameStore } from './store/game-store.ts';
+import { packContent } from './library/game-packs.ts';
+import { pluginLoads } from './library/game-plugins.ts';
+import { withoutSettings } from './actions/seat-settings.ts';
 
 // What a client is sent when it joins, or starts over because its seat,
 // scene or the game's settings changed (see Game.onWorld).

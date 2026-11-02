@@ -1,7 +1,7 @@
 import { TokenSchema } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { GameStore } from './game-store.ts';
+import { GameStore } from './store/game-store.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
 
 // BG3's shared party turns: party members next to each other in the order

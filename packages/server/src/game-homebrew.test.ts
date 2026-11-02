@@ -1,8 +1,8 @@
 import type { Doc, Op } from '@vtt/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { contentFor } from './game-packs.ts';
-import { GameStore } from './game-store.ts';
+import { contentFor } from './library/game-packs.ts';
+import { GameStore } from './store/game-store.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
 
 // The GM's homebrew classes: documents in homebrew/ the game's tokens use

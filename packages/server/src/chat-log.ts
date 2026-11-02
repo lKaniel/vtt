@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { chatFor, type Player, type RollMode, withMode } from '@vtt/shared';
 import type { ChatMessage, ServerMessage } from '@vtt/system-dnd5e';
-import { chatMessage } from './chat-command.ts';
+import { chatMessage } from './actions/chat-command.ts';
 
 // The game's chat: the last 200 messages, sent to everyone allowed to read
 // each one, and cards the game itself posts (initiative, attacks, time).

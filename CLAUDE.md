@@ -54,7 +54,7 @@ with `pnpm check-game data/games/<id>`.
 - `packages/core` is the new document layer from the redesign (docs, ops with
   undo, sort keys, trees, migrations). It knows nothing about D&D; new game
   state should be built on it.
-- `GameStore` (`server/src/game-store.ts`) holds the game folder as core
+- `GameStore` (`server/src/store/game-store.ts`) holds the game folder as core
   documents: hand edits become ops, changes are written back per collection
   file. Every scene is kept live (`scene-state.ts`: chunks cut by position,
   resolved tokens). `store.tokens`, `chunks`, `world`, `setToken` and the
