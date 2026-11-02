@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Session } from './session.ts';
 import { closeSession, openSession, token, welcome, type FakeWebSocket } from './session.fixtures.ts';
 
-// The token HUD (session-hud.ts) and the GM's pause.
+// The token HUD (session-hud.ts, `session.hud`) and the GM's pause.
 
 let session: Session;
 let ws: FakeWebSocket;
@@ -16,22 +16,22 @@ afterEach(() => closeSession(session));
 describe('Token HUD', () => {
   it('opens beside a creature you control and closes when it goes', () => {
     ws.receive(welcome([token('hero'), { ...token('goblin'), ownership: { default: 'limited' } }]));
-    session.openHud('goblin', [10, 20]);
-    expect(session.hud).toBeUndefined();
-    session.openHud('hero', [10, 20]);
-    expect(session.hud).toEqual({ token: 'hero', screen: [10, 20] });
-    session.closeHud();
-    expect(session.hud).toBeUndefined();
-    session.openHud('hero', [10, 20]);
+    session.hud.open('goblin', [10, 20]);
+    expect(session.hud.current).toBeUndefined();
+    session.hud.open('hero', [10, 20]);
+    expect(session.hud.current).toEqual({ token: 'hero', screen: [10, 20] });
+    session.hud.close();
+    expect(session.hud.current).toBeUndefined();
+    session.hud.open('hero', [10, 20]);
     ws.receive({ t: 'tokenGone', id: 'hero' });
-    expect(session.hud).toBeUndefined();
+    expect(session.hud.current).toBeUndefined();
   });
 
   it('puts conditions on, adds to the fight and edits fields', () => {
     ws.receive(welcome());
-    session.setCondition('hero', 'prone', true);
+    session.hud.setCondition('hero', 'prone', true);
     expect(ws.sent.at(-1)).toEqual({ t: 'condition', token: 'hero', condition: 'prone', on: true });
-    session.setCombatant('hero', false);
+    session.hud.setCombatant('hero', false);
     expect(ws.sent.at(-1)).toEqual({ t: 'combatant', token: 'hero', on: false });
     session.editToken('hero', { elevation: 10 });
     expect(ws.sent.at(-1)).toEqual({ t: 'editToken', token: 'hero', patch: { elevation: 10 } });
@@ -55,18 +55,18 @@ describe('Observe as', () => {
 
   it('lets the GM see through one creature’s eyes until they stop or it goes', () => {
     ws.receive(asGm());
-    session.observe('goblin');
-    expect(session.observing).toBe('goblin');
-    session.observe(undefined);
-    expect(session.observing).toBeUndefined();
-    session.observe('goblin');
+    session.hud.observe('goblin');
+    expect(session.hud.observing).toBe('goblin');
+    session.hud.observe(undefined);
+    expect(session.hud.observing).toBeUndefined();
+    session.hud.observe('goblin');
     ws.receive({ t: 'tokenGone', id: 'goblin' });
-    expect(session.observing).toBeUndefined();
+    expect(session.hud.observing).toBeUndefined();
   });
 
   it('is only for the GM', () => {
     ws.receive(welcome());
-    session.observe('hero');
-    expect(session.observing).toBeUndefined();
+    session.hud.observe('hero');
+    expect(session.hud.observing).toBeUndefined();
   });
 });

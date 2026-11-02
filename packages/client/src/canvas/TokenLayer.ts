@@ -128,7 +128,7 @@ export class TokenLayer {
   viewers(): Viewer[] {
     const you = this.session.you;
     if (!you) return [];
-    const observing = this.session.observing;
+    const observing = this.session.hud.observing;
     const sees = (t: TokenView) => (isGm(you) ? t.id === observing : canObserve(t, you));
     const out: Viewer[] = [];
     for (const t of this.session.tokens.values()) {

@@ -44,11 +44,12 @@ export interface MenuApi {
   readonly lightPreset: LightPreset;
   /** The creatures you target (see targets.ts). */
   readonly targets: { readonly mine: ReadonlySet<string>; toggle(id: string): void };
-  /** Opens the token HUD beside a creature (see session-hud.ts). */
-  openHud(token: string, screen: Point): void;
-  /** GM: the creature whose eyes the map shows. */
-  readonly observing?: string;
-  observe(token: string | undefined): void;
+  /** The token HUD, and the GM's view through a creature's eyes (see session-hud.ts). */
+  readonly hud: {
+    open(token: string, screen: Point): void;
+    readonly observing?: string;
+    observe(token: string | undefined): void;
+  };
   /** GM: opens a picture on every player's screen. */
   showImage(src: string, title?: string): void;
   /** The pile window (see session-piles.ts). */
@@ -167,12 +168,12 @@ function pileEntries(pile: TokenView['pile'], api: MenuApi): MenuItem[] {
 
 /** GM: see the map as this creature's players do (light, sight, fog), or stop. */
 const observeEntry = (id: string, api: MenuApi): MenuItem =>
-  api.observing === id
-    ? { label: 'Stop seeing through its eyes', run: () => api.observe(undefined) }
-    : { label: 'See through its eyes', run: () => api.observe(id) };
+  api.hud.observing === id
+    ? { label: 'Stop seeing through its eyes', run: () => api.hud.observe(undefined) }
+    : { label: 'See through its eyes', run: () => api.hud.observe(id) };
 
 const hudEntry = (id: string, screen: Point | undefined, api: MenuApi): Entry =>
-  !!screen && { label: 'Token HUD', run: () => api.openHud(id, screen) };
+  !!screen && { label: 'Token HUD', run: () => api.hud.open(id, screen) };
 
 /** GM: show a creature's picture to the players. */
 function artEntry(token: TokenView | undefined, api: MenuApi): Entry {

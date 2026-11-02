@@ -16,14 +16,14 @@ const HEIGHT = 330;
 
 /** The HUD the map's menu opened. A click elsewhere or Esc closes it. */
 export function TokenHud({ session }: Readonly<{ session: Session }>) {
-  const hud = session.hud;
+  const hud = session.hud.current;
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!hud) return;
     const away = (e: PointerEvent) => {
-      if (!box.current?.contains(e.target as Node)) session.closeHud();
+      if (!box.current?.contains(e.target as Node)) session.hud.close();
     };
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && session.closeHud();
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && session.hud.close();
     addEventListener('pointerdown', away, true);
     addEventListener('keydown', esc);
     return () => {
@@ -46,7 +46,7 @@ export function TokenHud({ session }: Readonly<{ session: Session }>) {
     >
       <div className="flex items-center justify-between">
         <strong className="font-display text-sm text-gold-bright">{token.name}</strong>
-        <Button variant="ghost" size="icon-sm" aria-label="Close" onClick={() => session.closeHud()}>
+        <Button variant="ghost" size="icon-sm" aria-label="Close" onClick={() => session.hud.close()}>
           <XIcon />
         </Button>
       </div>
@@ -107,7 +107,11 @@ function GmToggles({ session, token }: Props) {
       >
         Hidden
       </Toggle>
-      <Toggle variant="plate" pressed={fighting === true} onPressedChange={(on) => session.setCombatant(token.id, on)}>
+      <Toggle
+        variant="plate"
+        pressed={fighting === true}
+        onPressedChange={(on) => session.hud.setCombatant(token.id, on)}
+      >
         In combat
       </Toggle>
     </div>
@@ -126,7 +130,7 @@ function Conditions({ session, token }: Props) {
           key={c}
           className="h-6 px-2 text-xs"
           pressed={has.has(c)}
-          onPressedChange={(on) => session.setCondition(token.id, c, on)}
+          onPressedChange={(on) => session.hud.setCondition(token.id, c, on)}
         >
           {nameOf(c)}
         </Toggle>
