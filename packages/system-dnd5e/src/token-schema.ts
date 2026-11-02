@@ -22,6 +22,26 @@ export const OwnSchema = z.object({
 });
 export type Own = z.infer<typeof OwnSchema>;
 
+/**
+ * A pile of things on the map, like the Item Piles module: loot anyone near
+ * it may take from, or a merchant's stock bought at `buy` times its price
+ * and sold to at `sell` times (see piles.ts).
+ */
+export const PileSchema = z.object({
+  kind: z.enum(['loot', 'merchant']).default('loot'),
+  buy: z.number().nonnegative().default(1),
+  sell: z.number().nonnegative().default(0.5),
+  /** Feet from the pile a creature must stand within to trade. */
+  reach: z.number().positive().default(10),
+  /** Only the GM may open it. */
+  locked: z.boolean().optional(),
+  /** A loot pile stays on the map once empty (a chest); otherwise it goes. */
+  keepEmpty: z.boolean().optional(),
+  /** A merchant whose stock never runs out. */
+  infinite: z.boolean().optional(),
+});
+export type Pile = z.infer<typeof PileSchema>;
+
 export const TokenSchema = z.object({
   id,
   name: z.string().min(1),
@@ -79,6 +99,8 @@ export const TokenSchema = z.object({
   tempHp: z.number().int().positive().optional(),
   inventory: InventorySchema.optional(),
   currency: CurrencySchema.optional(),
+  /** Set on a token that is a pile of loot or a merchant rather than a creature. */
+  pile: PileSchema.optional(),
   own: OwnSchema.optional(),
   /** Spells, conditions and features currently affecting the token. */
   effects: z.array(EffectSchema).optional(),

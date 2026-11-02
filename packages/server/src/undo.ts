@@ -36,6 +36,7 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   spawn: { label: 'new creature' },
   drop: { label: 'drop' },
   give: { label: 'hand-over', action: true },
+  trade: { label: 'trade', action: true },
   saveActor: { label: 'actor edit' },
   deleteActor: { label: 'actor delete' },
   mapEdit: { label: 'map edit' },

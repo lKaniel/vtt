@@ -1,5 +1,20 @@
 {
   "$comment": "Hand-written automation merged over spells-5.1.json (2014) and spells-5.2.json (2024) at load. Each spell id maps to fields for both editions and/or for one edition.",
+  "acid-arrow": {
+    "both": {
+      "effect": {
+        "name": "Acid",
+        "turnDamage": [
+          {
+            "dice": "2d4",
+            "type": "acid"
+          }
+        ],
+        "rounds": 1
+      },
+      "gmNote": "On a miss it still takes half the first damage. A higher slot adds 1d4 to the later damage too."
+    }
+  },
   "acid-splash": {
     "2014": {
       "targets": 2
@@ -111,10 +126,66 @@
   },
   "arcane-hand": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a choice of hand action each turn."
-      }
+      "automated": true,
+      "targets": 1,
+      "attack": "melee",
+      "damage": [
+        {
+          "dice": "4d8",
+          "type": "force"
+        }
+      ],
+      "upcast": {
+        "damage": "2d8"
+      },
+      "repeat": "bonus",
+      "choices": [
+        {
+          "id": "fist",
+          "name": "Clenched fist",
+          "set": {}
+        },
+        {
+          "id": "forceful",
+          "name": "Forceful hand",
+          "set": {
+            "attack": null,
+            "damage": [],
+            "save": {
+              "ability": "str"
+            },
+            "push": 10
+          }
+        },
+        {
+          "id": "grasping",
+          "name": "Grasping hand",
+          "set": {
+            "attack": null,
+            "damage": [],
+            "save": {
+              "ability": "str"
+            },
+            "effect": {
+              "name": "Grasped",
+              "conditions": ["grappled"]
+            }
+          }
+        },
+        {
+          "id": "interposing",
+          "name": "Interposing hand",
+          "set": {
+            "attack": null,
+            "damage": [],
+            "effect": {
+              "name": "Interposing Hand",
+              "ac": 2
+            }
+          }
+        }
+      ],
+      "gmNote": "Forceful and grasping are contested Strength checks (a save here). A grasped creature is crushed for 2d6 + your modifier on later turns. Interposing: target yourself."
     }
   },
   "arcane-lock": {
@@ -218,11 +289,113 @@
   },
   "bestow-curse": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a choice of curse."
-      }
+      "automated": true,
+      "save": {
+        "ability": "wis",
+        "onSave": "none"
+      },
+      "effect": {
+        "name": "Cursed"
+      },
+      "choices": [
+        {
+          "id": "str",
+          "name": "Strength weakness",
+          "set": {
+            "effect": {
+              "name": "Curse: Strength",
+              "saveDisadvantageFor": ["str"]
+            }
+          }
+        },
+        {
+          "id": "dex",
+          "name": "Dexterity weakness",
+          "set": {
+            "effect": {
+              "name": "Curse: Dexterity",
+              "saveDisadvantageFor": ["dex"]
+            }
+          }
+        },
+        {
+          "id": "con",
+          "name": "Constitution weakness",
+          "set": {
+            "effect": {
+              "name": "Curse: Constitution",
+              "saveDisadvantageFor": ["con"]
+            }
+          }
+        },
+        {
+          "id": "int",
+          "name": "Intelligence weakness",
+          "set": {
+            "effect": {
+              "name": "Curse: Intelligence",
+              "saveDisadvantageFor": ["int"]
+            }
+          }
+        },
+        {
+          "id": "wis",
+          "name": "Wisdom weakness",
+          "set": {
+            "effect": {
+              "name": "Curse: Wisdom",
+              "saveDisadvantageFor": ["wis"]
+            }
+          }
+        },
+        {
+          "id": "cha",
+          "name": "Charisma weakness",
+          "set": {
+            "effect": {
+              "name": "Curse: Charisma",
+              "saveDisadvantageFor": ["cha"]
+            }
+          }
+        },
+        {
+          "id": "against-you",
+          "name": "Hindered against you",
+          "set": {
+            "effect": {
+              "name": "Curse: hindered",
+              "disadvantage": true,
+              "forCaster": true
+            }
+          }
+        },
+        {
+          "id": "will",
+          "name": "Wasted turns",
+          "set": {
+            "effect": {
+              "name": "Curse: wasted turns"
+            }
+          }
+        },
+        {
+          "id": "harm",
+          "name": "Extra necrotic damage",
+          "set": {
+            "effect": {
+              "name": "Curse: necrotic",
+              "markDamage": [
+                {
+                  "dice": "1d8",
+                  "type": "necrotic"
+                }
+              ],
+              "forCaster": true
+            }
+          }
+        }
+      ],
+      "gmNote": "Weakness also means disadvantage on that ability’s checks. Wasted turns: a Wis save each turn or it does nothing."
     }
   },
   "black-tentacles": {
@@ -263,7 +436,24 @@
         "conditions": ["blinded"],
         "repeatSave": true
       },
-      "gmNote": "Deafened instead, if the caster chose that."
+      "choices": [
+        {
+          "id": "blinded",
+          "name": "Blinded",
+          "set": {}
+        },
+        {
+          "id": "deafened",
+          "name": "Deafened",
+          "set": {
+            "effect": {
+              "name": "Deafened",
+              "conditions": ["deafened"],
+              "repeatSave": true
+            }
+          }
+        }
+      ]
     },
     "2014": {
       "upcast": {
@@ -333,10 +523,92 @@
   },
   "chromatic-orb": {
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs the damage type chosen on casting."
-      }
+      "automated": true,
+      "attack": "ranged",
+      "damage": [
+        {
+          "dice": "3d8",
+          "type": "acid"
+        }
+      ],
+      "upcast": {
+        "damage": "1d8"
+      },
+      "choices": [
+        {
+          "id": "acid",
+          "name": "Acid",
+          "set": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "type": "acid"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cold",
+          "name": "Cold",
+          "set": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "type": "cold"
+              }
+            ]
+          }
+        },
+        {
+          "id": "fire",
+          "name": "Fire",
+          "set": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "type": "fire"
+              }
+            ]
+          }
+        },
+        {
+          "id": "lightning",
+          "name": "Lightning",
+          "set": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "type": "lightning"
+              }
+            ]
+          }
+        },
+        {
+          "id": "poison",
+          "name": "Poison",
+          "set": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "type": "poison"
+              }
+            ]
+          }
+        },
+        {
+          "id": "thunder",
+          "name": "Thunder",
+          "set": {
+            "damage": [
+              {
+                "dice": "3d8",
+                "type": "thunder"
+              }
+            ]
+          }
+        }
+      ],
+      "gmNote": "If two damage dice match, the orb leaps to another creature within 30 ft: cast it at that one too."
     }
   },
   "clairvoyance": {
@@ -393,10 +665,65 @@
         "name": "Commanded",
         "rounds": 1
       },
-      "gmNote": "The target follows your one-word command on its next turn (approach, drop, flee, grovel: prone, halt); the GM plays it."
+      "gmNote": "Approach, drop and flee are played out on the target’s next turn by the GM.",
+      "choices": [
+        {
+          "id": "approach",
+          "name": "Approach",
+          "set": {
+            "effect": {
+              "name": "Commanded: approach",
+              "rounds": 1
+            }
+          }
+        },
+        {
+          "id": "drop",
+          "name": "Drop",
+          "set": {
+            "effect": {
+              "name": "Commanded: drop",
+              "rounds": 1
+            }
+          }
+        },
+        {
+          "id": "flee",
+          "name": "Flee",
+          "set": {
+            "effect": {
+              "name": "Commanded: flee",
+              "rounds": 1
+            }
+          }
+        },
+        {
+          "id": "grovel",
+          "name": "Grovel",
+          "set": {
+            "effect": {
+              "name": "Commanded: grovel",
+              "conditions": ["prone"],
+              "rounds": 1
+            }
+          }
+        },
+        {
+          "id": "halt",
+          "name": "Halt",
+          "set": {
+            "effect": {
+              "name": "Commanded: halt",
+              "conditions": ["incapacitated"],
+              "immobile": true,
+              "rounds": 1
+            }
+          }
+        }
+      ]
     },
     "2014": {
-      "gmNote": "The target follows your one-word command on its next turn (approach, drop, flee, grovel: prone, halt); the GM plays it. Undead are unaffected."
+      "gmNote": "Approach, drop and flee are played out on the target’s next turn by the GM. Undead are unaffected."
     }
   },
   "commune": {
@@ -525,10 +852,46 @@
       "gmNote": "A unicorn needs a 9th-level slot."
     },
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a choice of healing or searing light per creature."
-      }
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "sphere",
+        "size": 10
+      },
+      "save": {
+        "ability": "dex",
+        "onSave": "half"
+      },
+      "damage": [
+        {
+          "dice": "6d12",
+          "type": "radiant"
+        }
+      ],
+      "upcast": {
+        "damage": "1d12",
+        "heal": "1d12"
+      },
+      "choices": [
+        {
+          "id": "searing",
+          "name": "Searing light",
+          "set": {}
+        },
+        {
+          "id": "healing",
+          "name": "Healing light",
+          "set": {
+            "area": null,
+            "save": null,
+            "damage": [],
+            "targets": 6,
+            "heal": "4d12",
+            "healMod": true
+          }
+        }
+      ],
+      "gmNote": "The pillar lasts: move it up to 30 ft on your turn and bathe creatures that enter it, choosing a light for each."
     }
   },
   "conjure-elemental": {
@@ -555,10 +918,83 @@
       "gmNote": "If your concentration breaks the elemental stays, hostile: take it over as the GM."
     },
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs the damage type chosen on casting."
-      }
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "sphere",
+        "size": 10
+      },
+      "zone": {
+        "onCast": false
+      },
+      "save": {
+        "ability": "dex",
+        "onSave": "none"
+      },
+      "damage": [
+        {
+          "dice": "8d8",
+          "type": "lightning"
+        }
+      ],
+      "upcast": {
+        "damage": "1d8"
+      },
+      "effect": {
+        "conditions": ["restrained"],
+        "repeatSave": true
+      },
+      "choices": [
+        {
+          "id": "air",
+          "name": "Air",
+          "set": {
+            "damage": [
+              {
+                "dice": "8d8",
+                "type": "lightning"
+              }
+            ]
+          }
+        },
+        {
+          "id": "earth",
+          "name": "Earth",
+          "set": {
+            "damage": [
+              {
+                "dice": "8d8",
+                "type": "thunder"
+              }
+            ]
+          }
+        },
+        {
+          "id": "fire",
+          "name": "Fire",
+          "set": {
+            "damage": [
+              {
+                "dice": "8d8",
+                "type": "fire"
+              }
+            ]
+          }
+        },
+        {
+          "id": "water",
+          "name": "Water",
+          "set": {
+            "damage": [
+              {
+                "dice": "8d8",
+                "type": "cold"
+              }
+            ]
+          }
+        }
+      ],
+      "gmNote": "It holds one creature at a time; a restrained one takes 4d8 when it fails its repeated save."
     }
   },
   "conjure-fey": {
@@ -645,10 +1081,75 @@
       }
     },
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs extra damage of a chosen type on attacks."
-      }
+      "automated": true,
+      "targets": 0,
+      "effect": {
+        "hitDamage": [
+          {
+            "dice": "2d8",
+            "type": "acid"
+          }
+        ]
+      },
+      "choices": [
+        {
+          "id": "acid",
+          "name": "Acid",
+          "set": {
+            "effect": {
+              "hitDamage": [
+                {
+                  "dice": "2d8",
+                  "type": "acid"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cold",
+          "name": "Cold",
+          "set": {
+            "effect": {
+              "hitDamage": [
+                {
+                  "dice": "2d8",
+                  "type": "cold"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "fire",
+          "name": "Fire",
+          "set": {
+            "effect": {
+              "hitDamage": [
+                {
+                  "dice": "2d8",
+                  "type": "fire"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "lightning",
+          "name": "Lightning",
+          "set": {
+            "effect": {
+              "hitDamage": [
+                {
+                  "dice": "2d8",
+                  "type": "lightning"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "gmNote": "Only against creatures within 15 ft of you, and spell attacks count too; +1d8 per slot above 4th. The area is difficult terrain for enemies."
     }
   },
   "conjure-woodland-beings": {
@@ -714,12 +1215,94 @@
     }
   },
   "contagion": {
-    "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a choice of disease or ability."
-      }
+    "both": {},
+    "2024": {
+      "automated": true,
+      "save": {
+        "ability": "con",
+        "onSave": "none"
+      },
+      "damage": [
+        {
+          "dice": "11d8",
+          "type": "necrotic"
+        }
+      ],
+      "effect": {
+        "conditions": ["poisoned"],
+        "saveDisadvantageFor": ["str"]
+      },
+      "choices": [
+        {
+          "id": "str",
+          "name": "Strength",
+          "set": {
+            "effect": {
+              "conditions": ["poisoned"],
+              "saveDisadvantageFor": ["str"]
+            }
+          }
+        },
+        {
+          "id": "dex",
+          "name": "Dexterity",
+          "set": {
+            "effect": {
+              "conditions": ["poisoned"],
+              "saveDisadvantageFor": ["dex"]
+            }
+          }
+        },
+        {
+          "id": "con",
+          "name": "Constitution",
+          "set": {
+            "effect": {
+              "conditions": ["poisoned"],
+              "saveDisadvantageFor": ["con"]
+            }
+          }
+        },
+        {
+          "id": "int",
+          "name": "Intelligence",
+          "set": {
+            "effect": {
+              "conditions": ["poisoned"],
+              "saveDisadvantageFor": ["int"]
+            }
+          }
+        },
+        {
+          "id": "wis",
+          "name": "Wisdom",
+          "set": {
+            "effect": {
+              "conditions": ["poisoned"],
+              "saveDisadvantageFor": ["wis"]
+            }
+          }
+        },
+        {
+          "id": "cha",
+          "name": "Charisma",
+          "set": {
+            "effect": {
+              "conditions": ["poisoned"],
+              "saveDisadvantageFor": ["cha"]
+            }
+          }
+        }
+      ],
+      "gmNote": "It repeats the save at the end of its turns: three successes end it, three failures make it last 7 days."
+    },
+    "2014": {
+      "automated": true,
+      "attack": "melee",
+      "effect": {
+        "conditions": ["poisoned"]
+      },
+      "gmNote": "After three failed Con saves at the end of its turns the target catches the disease you chose; after three successes it recovers."
     }
   },
   "contingency": {
@@ -856,10 +1439,11 @@
   },
   "death-ward": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a creature dropping to 0 HP to stay at 1 instead."
-      }
+      "automated": true,
+      "effect": {
+        "deathWard": true
+      },
+      "gmNote": "It also stops one instant-death effect: remove the effect by hand when it does."
     }
   },
   "delayed-blast-fireball": {
@@ -958,19 +1542,23 @@
   },
   "dispel-evil-and-good": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs disadvantage only against some creature types."
-      }
+      "automated": true,
+      "targets": 0,
+      "save": null,
+      "effect": {
+        "name": "Warded",
+        "disadvantageAgainst": true,
+        "fromTypes": ["aberration", "celestial", "elemental", "fey", "fiend", "undead"]
+      },
+      "gmNote": "End it early to send one such creature home (Cha save) or break its charm or possession."
     }
   },
   "dispel-magic": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs spell effects that can be ended by level."
-      }
+      "automated": true,
+      "targets": 1,
+      "dispels": true,
+      "gmNote": "On an object or a placed area, end its spell by hand."
     }
   },
   "divination": {
@@ -1016,11 +1604,40 @@
   },
   "divine-word": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs effects that depend on the target’s hit points."
-      }
+      "automated": true,
+      "targets": 12,
+      "save": {
+        "ability": "cha",
+        "onSave": "none"
+      },
+      "hpTiers": [
+        {
+          "atMost": 20,
+          "kill": true
+        },
+        {
+          "atMost": 30,
+          "effect": {
+            "conditions": ["blinded", "deafened", "stunned"],
+            "rounds": 600
+          }
+        },
+        {
+          "atMost": 40,
+          "effect": {
+            "conditions": ["blinded", "deafened"],
+            "rounds": 100
+          }
+        },
+        {
+          "atMost": 50,
+          "effect": {
+            "conditions": ["deafened"],
+            "rounds": 10
+          }
+        }
+      ],
+      "gmNote": "A celestial, elemental, fey or fiend that fails is also sent back to its plane: remove it by hand."
     }
   },
   "dragons-breath": {
@@ -1102,11 +1719,43 @@
   },
   "enlarge-reduce": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a choice of enlarge or reduce, and size changes."
-      }
+      "automated": true,
+      "save": {
+        "ability": "con",
+        "onSave": "none"
+      },
+      "effect": {
+        "name": "Enlarged"
+      },
+      "choices": [
+        {
+          "id": "enlarge",
+          "name": "Enlarge",
+          "set": {
+            "effect": {
+              "name": "Enlarged",
+              "hitDamage": [
+                {
+                  "dice": "1d4",
+                  "type": "weapon"
+                }
+              ],
+              "saveAdvantage": ["str"]
+            }
+          }
+        },
+        {
+          "id": "reduce",
+          "name": "Reduce",
+          "set": {
+            "effect": {
+              "name": "Reduced",
+              "saveDisadvantageFor": ["str"]
+            }
+          }
+        }
+      ],
+      "gmNote": "Change the token’s size by hand. Reduced weapon attacks deal 1d4 less. A willing target needn’t save."
     }
   },
   "ensnaring-strike": {
@@ -1114,7 +1763,21 @@
       "automated": true,
       "targets": 1,
       "range": 5,
-      "gmNote": "Cast right after a weapon hit. The restrained target takes 1d6 piercing at the start of each of its turns and can use its action to escape (Athletics vs your DC)."
+      "gmNote": "Cast right after a weapon hit. The target can use its action to escape (Athletics vs your DC).",
+      "save": {
+        "ability": "str",
+        "onSave": "none"
+      },
+      "effect": {
+        "name": "Ensnared",
+        "conditions": ["restrained"],
+        "turnDamage": [
+          {
+            "dice": "1d6",
+            "type": "piercing"
+          }
+        ]
+      }
     }
   },
   "entangle": {
@@ -1144,19 +1807,95 @@
   },
   "expeditious-retreat": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs Dash as a bonus action each turn."
+      "automated": true,
+      "targets": 0,
+      "effect": {
+        "bonusActions": ["dash"]
       }
     }
   },
   "eyebite": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a choice of asleep, panicked or sickened."
-      }
+      "automated": true,
+      "targets": 1,
+      "range": 60,
+      "save": {
+        "ability": "wis",
+        "onSave": "none"
+      },
+      "repeat": "action",
+      "effect": {
+        "conditions": ["unconscious"]
+      },
+      "choices": [
+        {
+          "id": "asleep",
+          "name": "Asleep",
+          "set": {
+            "effect": {
+              "name": "Asleep",
+              "conditions": ["unconscious"],
+              "endsOnDamage": true
+            }
+          }
+        },
+        {
+          "id": "panicked",
+          "name": "Panicked",
+          "set": {
+            "effect": {
+              "name": "Panicked",
+              "conditions": ["frightened"]
+            }
+          }
+        },
+        {
+          "id": "sickened",
+          "name": "Sickened",
+          "set": {
+            "effect": {
+              "name": "Sickened",
+              "disadvantage": true
+            }
+          }
+        }
+      ],
+      "gmNote": "Panicked creatures Dash away from you. Each later turn, target another creature with your action."
+    },
+    "2024": {
+      "choices": [
+        {
+          "id": "asleep",
+          "name": "Asleep",
+          "set": {
+            "effect": {
+              "name": "Asleep",
+              "conditions": ["unconscious"],
+              "endsOnDamage": true
+            }
+          }
+        },
+        {
+          "id": "panicked",
+          "name": "Panicked",
+          "set": {
+            "effect": {
+              "name": "Panicked",
+              "conditions": ["frightened"]
+            }
+          }
+        },
+        {
+          "id": "sickened",
+          "name": "Sickened",
+          "set": {
+            "effect": {
+              "name": "Sickened",
+              "conditions": ["poisoned"]
+            }
+          }
+        }
+      ]
     }
   },
   "fabricate": {
@@ -1344,18 +2083,47 @@
     }
   },
   "fire-shield": {
-    "2014": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs damage that hits back on a melee hit, and a choice of warm or chill shield."
-      }
-    },
-    "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs damage that hits back on a melee hit, and a choice of warm or chill shield."
-      }
+    "2014": {},
+    "2024": {},
+    "both": {
+      "automated": true,
+      "targets": 0,
+      "area": null,
+      "damage": null,
+      "save": null,
+      "effect": {
+        "name": "Warm Shield",
+        "resistances": ["cold"],
+        "retaliate": [
+          {
+            "dice": "2d8",
+            "type": "fire"
+          }
+        ]
+      },
+      "choices": [
+        {
+          "id": "warm",
+          "name": "Warm shield",
+          "set": {}
+        },
+        {
+          "id": "chill",
+          "name": "Chill shield",
+          "set": {
+            "effect": {
+              "name": "Chill Shield",
+              "resistances": ["fire"],
+              "retaliate": [
+                {
+                  "dice": "2d8",
+                  "type": "cold"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   },
   "fire-storm": {
@@ -1372,10 +2140,27 @@
   },
   "flame-blade": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a lasting weapon whose attacks come later, not on casting."
-      }
+      "automated": true,
+      "targets": 1,
+      "range": 5,
+      "attack": "melee",
+      "damage": [
+        {
+          "dice": "3d6",
+          "type": "fire"
+        }
+      ],
+      "repeat": "action",
+      "attackOnCast": false
+    },
+    "2014": {
+      "gmNote": "A higher slot adds 1d6 per two levels above 2nd. The blade sheds light."
+    },
+    "2024": {
+      "upcast": {
+        "damage": "1d6"
+      },
+      "gmNote": "Add your spellcasting modifier to the damage. The blade sheds light."
     }
   },
   "flaming-sphere": {
@@ -1481,10 +2266,11 @@
   },
   "freedom-of-movement": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs immunity to conditions."
-      }
+      "automated": true,
+      "effect": {
+        "conditionImmunities": ["paralyzed", "restrained"]
+      },
+      "gmNote": "Difficult terrain doesn’t slow the target, and it slips grapples with 5 ft of movement."
     }
   },
   "gaseous-form": {
@@ -1503,6 +2289,21 @@
         ]
       },
       "gmNote": "It can only fly, can’t attack or cast spells, and passes through cracks."
+    },
+    "2024": {
+      "effect": {
+        "name": "Gaseous Form",
+        "resistances": ["bludgeoning", "piercing", "slashing"],
+        "saveAdvantage": ["str", "dex", "con"],
+        "conditionImmunities": ["prone"],
+        "changes": [
+          {
+            "key": "speed",
+            "mode": "override",
+            "value": 10
+          }
+        ]
+      }
     }
   },
   "gate": {
@@ -1725,9 +2526,31 @@
   },
   "heroes-feast": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "A feast an hour before the fight; give its benefits as an effect by hand."
+      "automated": true,
+      "targets": 12,
+      "cures": ["poisoned"],
+      "effect": {
+        "conditionImmunities": ["frightened", "poisoned"]
+      },
+      "gmNote": "Its hit point maximum and hit points rise by 2d10: add them by hand. Takes an hour to eat."
+    },
+    "2014": {
+      "effect": {
+        "conditionImmunities": ["frightened", "poisoned"],
+        "saveAdvantage": ["wis"],
+        "changes": [
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "poison"
+          }
+        ]
+      }
+    },
+    "2024": {
+      "effect": {
+        "conditionImmunities": ["frightened", "poisoned"],
+        "resistances": ["poison"]
       }
     }
   },
@@ -1735,12 +2558,12 @@
     "both": {
       "automated": true,
       "effect": {
-        "turnTempHp": "mod"
+        "turnTempHp": "mod",
+        "conditionImmunities": ["frightened"]
       },
       "upcast": {
         "targets": 1
-      },
-      "gmNote": "The target is also immune to being frightened."
+      }
     }
   },
   "hex": {
@@ -1908,7 +2731,8 @@
       "automated": true,
       "save": {
         "ability": "wis",
-        "onSave": "none"
+        "onSave": "none",
+        "onCast": false
       },
       "effect": {
         "name": "Dancing",
@@ -1917,7 +2741,7 @@
         "immobile": true,
         "repeatSave": true
       },
-      "gmNote": "There is no save when cast (the engine rolls one): only creatures immune to charm resist. It also has disadvantage on Dexterity saves."
+      "gmNote": "It also has disadvantage on Dexterity saves."
     }
   },
   "jump": {
@@ -2100,10 +2924,11 @@
   },
   "mass-heal": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs one healing pool shared between targets."
-      }
+      "automated": true,
+      "targets": 12,
+      "heal": "700",
+      "healShared": true,
+      "cures": ["blinded", "deafened"]
     }
   },
   "mass-healing-word": {
@@ -2159,10 +2984,18 @@
   },
   "mind-blank": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs immunity to conditions."
-      }
+      "automated": true,
+      "effect": {
+        "conditionImmunities": ["charmed"],
+        "changes": [
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "psychic"
+          }
+        ]
+      },
+      "gmNote": "It also blocks reading thoughts and divination."
     }
   },
   "minor-illusion": {
@@ -2254,9 +3087,47 @@
       "automated": false
     },
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs damage at the start of the target’s turns."
+      "automated": true,
+      "save": {
+        "ability": "int",
+        "onSave": "none"
+      },
+      "effect": {
+        "name": "Phantasm",
+        "turnDamage": [
+          {
+            "dice": "1d8",
+            "type": "psychic"
+          }
+        ]
+      },
+      "gmNote": "The damage only comes while it is in or next to the phantasm; a Study action (Investigation vs your DC) ends it."
+    }
+  },
+  "phantasmal-killer": {
+    "2014": {
+      "effect": {
+        "conditions": ["frightened"],
+        "repeatSave": true,
+        "turnDamage": [
+          {
+            "dice": "4d10",
+            "type": "psychic"
+          }
+        ]
+      }
+    },
+    "2024": {
+      "effect": {
+        "name": "Phantasmal Killer",
+        "disadvantage": true,
+        "repeatSave": true,
+        "turnDamage": [
+          {
+            "dice": "4d10",
+            "type": "psychic"
+          }
+        ]
       }
     }
   },
@@ -2320,18 +3191,40 @@
     }
   },
   "power-word-kill": {
-    "2014": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs effects that depend on the target’s hit points."
-      }
+    "2014": {},
+    "both": {
+      "automated": true,
+      "hpTiers": [
+        {
+          "atMost": 100,
+          "kill": true
+        }
+      ]
     }
   },
   "power-word-stun": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs effects that depend on the target’s hit points."
+      "automated": true,
+      "save": {
+        "ability": "con",
+        "onSave": "none",
+        "onCast": false
+      },
+      "hpTiers": [
+        {
+          "atMost": 150,
+          "effect": {
+            "conditions": ["stunned"],
+            "repeatSave": true
+          }
+        }
+      ]
+    },
+    "2024": {
+      "effect": {
+        "name": "Stunned speed",
+        "immobile": true,
+        "rounds": 1
       }
     }
   },
@@ -2412,18 +3305,68 @@
   },
   "protection-from-energy": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs the damage type chosen on casting."
-      }
+      "automated": true,
+      "effect": {
+        "resistances": ["acid"]
+      },
+      "choices": [
+        {
+          "id": "acid",
+          "name": "Acid",
+          "set": {
+            "effect": {
+              "resistances": ["acid"]
+            }
+          }
+        },
+        {
+          "id": "cold",
+          "name": "Cold",
+          "set": {
+            "effect": {
+              "resistances": ["cold"]
+            }
+          }
+        },
+        {
+          "id": "fire",
+          "name": "Fire",
+          "set": {
+            "effect": {
+              "resistances": ["fire"]
+            }
+          }
+        },
+        {
+          "id": "lightning",
+          "name": "Lightning",
+          "set": {
+            "effect": {
+              "resistances": ["lightning"]
+            }
+          }
+        },
+        {
+          "id": "thunder",
+          "name": "Thunder",
+          "set": {
+            "effect": {
+              "resistances": ["thunder"]
+            }
+          }
+        }
+      ]
     }
   },
   "protection-from-evil-and-good": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs disadvantage only against some creature types."
-      }
+      "automated": true,
+      "effect": {
+        "name": "Protected",
+        "disadvantageAgainst": true,
+        "fromTypes": ["aberration", "celestial", "elemental", "fey", "fiend", "undead"]
+      },
+      "gmNote": "Those creatures also can’t charm, frighten or possess the target."
     }
   },
   "protection-from-poison": {
@@ -2481,9 +3424,10 @@
   "regenerate": {
     "both": {
       "effect": {
-        "name": "Regenerating"
+        "name": "Regenerating",
+        "turnHeal": 1
       },
-      "gmNote": "It regains 1 HP at the start of each of its turns, and severed limbs regrow."
+      "gmNote": "Severed body parts regrow after 2 minutes."
     }
   },
   "reincarnate": {
@@ -2496,10 +3440,10 @@
   },
   "remove-curse": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Ends curses; remove the curse’s effect by hand."
-      }
+      "automated": true,
+      "targets": 1,
+      "dispels": ["bestow-curse"],
+      "gmNote": "It also frees a cursed item’s wielder."
     }
   },
   "resilient-sphere": {
@@ -2584,11 +3528,21 @@
     }
   },
   "resistance": {
-    "both": {
+    "both": {},
+    "2024": {
+      "automated": false,
       "manual": {
         "kind": "gm",
         "why": "A die added to one save (2014) or damage reduced once per turn (2024): not tracked yet."
       }
+    },
+    "2014": {
+      "automated": true,
+      "targets": 1,
+      "effect": {
+        "saveBonus": "1d4"
+      },
+      "gmNote": "Only one save gets the die: end the effect after it."
     }
   },
   "resurrection": {
@@ -2670,7 +3624,22 @@
         "damage": "1d6"
       },
       "automated": true,
-      "gmNote": "Cast right after a melee hit. The target burns for 1d6 fire at the start of each of its turns until it makes a Con save."
+      "gmNote": "Cast right after a melee hit.",
+      "save": {
+        "ability": "con",
+        "onSave": "none",
+        "onCast": false
+      },
+      "effect": {
+        "name": "Burning",
+        "turnDamage": [
+          {
+            "dice": "1d6",
+            "type": "fire"
+          }
+        ],
+        "repeatSave": true
+      }
     }
   },
   "secret-chest": {
@@ -2829,10 +3798,103 @@
   },
   "sorcerous-burst": {
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs the damage type chosen on casting."
-      }
+      "automated": true,
+      "targets": 1,
+      "attack": "ranged",
+      "cantrip": "dice",
+      "damage": [
+        {
+          "dice": "1d8",
+          "type": "acid"
+        }
+      ],
+      "choices": [
+        {
+          "id": "acid",
+          "name": "Acid",
+          "set": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "type": "acid"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cold",
+          "name": "Cold",
+          "set": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "type": "cold"
+              }
+            ]
+          }
+        },
+        {
+          "id": "fire",
+          "name": "Fire",
+          "set": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "type": "fire"
+              }
+            ]
+          }
+        },
+        {
+          "id": "lightning",
+          "name": "Lightning",
+          "set": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "type": "lightning"
+              }
+            ]
+          }
+        },
+        {
+          "id": "poison",
+          "name": "Poison",
+          "set": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "type": "poison"
+              }
+            ]
+          }
+        },
+        {
+          "id": "psychic",
+          "name": "Psychic",
+          "set": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "type": "psychic"
+              }
+            ]
+          }
+        },
+        {
+          "id": "thunder",
+          "name": "Thunder",
+          "set": {
+            "damage": [
+              {
+                "dice": "1d8",
+                "type": "thunder"
+              }
+            ]
+          }
+        }
+      ],
+      "gmNote": "Each 8 rolled adds another d8 (up to your spellcasting modifier): add them by hand."
     }
   },
   "spare-the-dying": {
@@ -3135,10 +4197,22 @@
     }
   },
   "true-strike": {
-    "both": {
+    "both": {},
+    "2024": {
+      "automated": false,
       "manual": {
         "kind": "gm",
         "why": "Needs advantage against one target for the caster only (2014) or a weapon attack inside a spell (2024)."
+      }
+    },
+    "2014": {
+      "automated": true,
+      "targets": 1,
+      "effect": {
+        "advantageAgainst": true,
+        "forCaster": true,
+        "once": true,
+        "rounds": 1
       }
     }
   },
@@ -3270,6 +4344,32 @@
         "conditions": ["restrained"]
       },
       "gmNote": "A restrained creature can use its action for a Strength check to break free; the web is difficult terrain."
+    }
+  },
+  "weird": {
+    "2014": {
+      "effect": {
+        "conditions": ["frightened"],
+        "repeatSave": true,
+        "turnDamage": [
+          {
+            "dice": "4d10",
+            "type": "psychic"
+          }
+        ]
+      }
+    },
+    "2024": {
+      "effect": {
+        "conditions": ["frightened"],
+        "repeatSave": true,
+        "turnDamage": [
+          {
+            "dice": "5d10",
+            "type": "psychic"
+          }
+        ]
+      }
     }
   },
   "wind-walk": {

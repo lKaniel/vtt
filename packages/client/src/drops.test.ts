@@ -5,7 +5,8 @@ import { dropMessage, sheetDropMessage, tokenAt, type DropContext } from './drop
 const token = (data: object): TokenView => TokenSchema.parse({ id: 't', name: 'T', x: 150, y: 150, ...data });
 const hero = token({ id: 'hero', name: 'Hero', inventory: [{ item: 'dagger', qty: 1 }] });
 const ogre = token({ id: 'ogre', name: 'Ogre', x: 500, y: 500, size: 2 });
-const ctx: DropContext = { tokens: [hero, ogre], gridSize: 100, hidden: false };
+const chest = token({ id: 'chest', name: 'Chest', x: 900, y: 150, pile: {} });
+const ctx: DropContext = { tokens: [hero, ogre, chest], gridSize: 100, hidden: false };
 
 describe('finding the creature under the pointer', () => {
   it('uses each token’s size', () => {
@@ -53,7 +54,14 @@ describe('dropping on the map', () => {
       spell: 'shield',
     });
     expect(dropMessage(carried, [150, 150], ctx)).toBeUndefined();
-    expect(dropMessage(carried, [900, 900], ctx)).toEqual({ error: 'Hand it to a creature' });
+  });
+
+  it('drops a carried item on the ground, or puts it in the pile it lands on', () => {
+    const dagger = { kind: 'carried', from: 'hero', item: 'dagger' } as const;
+    expect(dropMessage(dagger, [900, 900], ctx)).toEqual({ t: 'trade', from: 'hero', item: 0 });
+    expect(dropMessage(dagger, [900, 150], ctx)).toEqual({ t: 'trade', from: 'hero', to: 'chest', item: 0 });
+    const scroll = { kind: 'carried', from: 'hero', item: 'spell-scroll', spell: 'shield' } as const;
+    expect(dropMessage(scroll, [900, 900], ctx)).toEqual({ error: 'Hero doesn’t carry that' });
   });
 });
 

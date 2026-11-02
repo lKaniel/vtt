@@ -1,6 +1,6 @@
 import { isGm, type Point } from '@vtt/shared';
-import type { Condition, TokenView } from '@vtt/system-dnd5e';
-import { ActionSession } from './session-actions.ts';
+import type { Condition } from '@vtt/system-dnd5e';
+import { PileSession } from './session-piles.ts';
 
 // The token HUD: a panel beside one creature you control, with its
 // conditions, hit points, elevation and (GM) visibility and place in the
@@ -12,14 +12,12 @@ export interface OpenHud {
   screen: Point;
 }
 
-export abstract class HudSession extends ActionSession {
+export abstract class HudSession extends PileSession {
   hud?: OpenHud;
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
   /** GM: the creature whose eyes the map shows, as its players would see. */
   observing?: string;
-
-  abstract canControl(token: TokenView): boolean;
 
   /** Opens the HUD beside a creature you control. */
   openHud(token: string, screen: Point): void {
@@ -61,5 +59,6 @@ export abstract class HudSession extends ActionSession {
   protected hudTokenGone(id: string): void {
     if (this.hud?.token === id) this.hud = undefined;
     if (this.observing === id) this.observing = undefined;
+    this.pileGone(id);
   }
 }

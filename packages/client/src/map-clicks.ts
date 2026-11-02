@@ -5,7 +5,8 @@ import type { Session } from './session.ts';
 // What a plain left click on the map does in the tokens mode (no spell aimed,
 // no attack readied): on empty ground the selected creatures walk there; on a
 // creature you control it becomes the selection; on a foe in a fight you are
-// asked whether to attack it or walk up to it; on anyone else nothing.
+// asked whether to attack it or walk up to it; on a pile of loot or a
+// merchant whether to open it or walk up to it; on anyone else nothing.
 
 interface Placed {
   id: string;
@@ -89,11 +90,21 @@ function walkUpTo(s: Session, id: string, target: string): void {
   if (self && other) s.move(id, walkUpPoint(bodyOf(self, g), bodyOf(other, g)));
 }
 
+/** A pile of loot or a merchant: open its window, or walk up to it. */
+function pileOptions(s: Session, id: string): MenuItem[] {
+  const self = s.selected ? s.tokens.get(s.selected) : undefined;
+  const name = s.tokens.get(id)?.name ?? 'it';
+  const open = { label: `Open ${name}`, run: () => s.openPile(id) };
+  if (!self || !s.canControl(self)) return [open];
+  return [open, { label: 'Walk up to it', run: () => walkUpTo(s, self.id, id) }];
+}
+
 /** What a plain left click on a creature does (see the top of this file). */
 export function clickToken(s: Session, id: string): TokenClick {
   const t = s.tokens.get(id);
   if (!t) return { kind: 'none' };
   if (s.canControl(t)) return { kind: 'select' };
+  if (t.pile) return { kind: 'prompt', items: pileOptions(s, id) };
   if (!isFoeInFight(s, id)) return { kind: 'none' };
   const items = foeOptions(s, id);
   return items.length ? { kind: 'prompt', items } : { kind: 'none' };

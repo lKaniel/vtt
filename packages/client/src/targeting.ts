@@ -22,6 +22,8 @@ export interface Aiming {
   need: number;
   /** For summons: the monster to bring. */
   summon?: string;
+  /** The spell's option (see Spell `choices`): a damage type, enlarge or reduce. */
+  choice?: string;
   /** Cast without spending a slot. */
   free?: boolean;
   /** Uses a lasting spell again (spiritual weapon): no new slot. */
@@ -33,7 +35,7 @@ export interface Aiming {
 }
 
 export function aimSpell(spell: Spell, slot: number, casterLevel: number): Aiming {
-  const base = { spell, slot, picks: [] };
+  const base = { spell, slot, picks: [], ...(spell.choices && { choice: spell.choices[0]!.id }) };
   if (spell.area || spell.teleport || spell.summon) {
     return { ...base, mode: 'point', need: 0, summon: spell.summon?.options[0]?.monster };
   }
@@ -53,8 +55,14 @@ export function aimFor(
   const spell = caster.spells.find((s) => s.id === spellId);
   if (!spell) return undefined;
   const going = effects.find((e) => e.repeat?.spell === spellId)?.repeat;
-  if (going) return { ...aimSpell(spell, going.slot, caster.level), repeat: true };
-  return { ...aimSpell(spell, slot, caster.level), ...(free && { free }) };
+  if (going)
+    return {
+      ...aimSpell(spell, going.slot, caster.level),
+      repeat: true,
+      ...(going.choice && { choice: going.choice }),
+    };
+  const conjure = spell.attackOnCast ? {} : { mode: 'self' as const, need: 0 };
+  return { ...aimSpell(spell, slot, caster.level), ...conjure, ...(free && { free }) };
 }
 
 /** Aims the spell on a scroll: at the spell's own level, with no slot. */
@@ -100,6 +108,7 @@ export function castMessage(caster: string, aiming: Aiming, point?: Point): Clie
     targets: aiming.picks,
     ...(point && { point }),
     ...(aiming.summon && { summon: aiming.summon }),
+    ...(aiming.choice && { choice: aiming.choice }),
     ...(aiming.free && { free: true }),
     ...(aiming.repeat && { repeat: true }),
     ...(aiming.scroll && { scroll: true }),

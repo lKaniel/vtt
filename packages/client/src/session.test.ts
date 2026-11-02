@@ -335,6 +335,19 @@ describe('Session', () => {
         expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'find-familiar', summon: 'owl', point: [150, 50] });
       });
 
+      it('casts with the option the player picked', () => {
+        const energy = srdFor('2014').spells.get('protection-from-energy')!;
+        ws.receive({
+          t: 'token',
+          token: { ...wizard(), sheet: { caster: { level: 5, spells: [energy] }, effects: [] } as never },
+        });
+        session.aim('protection-from-energy', 3);
+        expect(session.aiming?.choice).toBe('acid');
+        session.chooseOption('fire');
+        session.pickTarget('wiz');
+        expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'protection-from-energy', choice: 'fire' });
+      });
+
       it('casts for free when asked, keeping the choice when the slot changes', () => {
         session.aim('fireball', 3);
         session.setFreeCast(true);

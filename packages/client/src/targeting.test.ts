@@ -30,6 +30,17 @@ describe('aiming a spell', () => {
     expect(aimSpell(spell('find-familiar'), 1, 5)).toMatchObject({ mode: 'point', summon: 'bat' });
   });
 
+  it('conjures a lasting weapon without a target, then attacks with it', () => {
+    const blade = spell('flame-blade');
+    const caster = { caster: { level: 5, spells: [blade] }, effects: [] } as never;
+    expect(aimFor(caster, 'flame-blade', { slot: 2, free: false })).toMatchObject({ mode: 'self', need: 0 });
+    const going = {
+      caster: { level: 5, spells: [blade] },
+      effects: [{ repeat: { spell: 'flame-blade', slot: 2 } }],
+    } as never;
+    expect(aimFor(going, 'flame-blade', { slot: 2, free: false })).toMatchObject({ mode: 'creatures', repeat: true });
+  });
+
   it('asks for as many creatures as the spell has targets or beams at that slot', () => {
     expect(aimSpell(spell('fire-bolt'), 0, 5)).toMatchObject({ mode: 'creatures', need: 1 });
     expect(aimSpell(spell('magic-missile'), 2, 5)).toMatchObject({ mode: 'creatures', need: 4 });
