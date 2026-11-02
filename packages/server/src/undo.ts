@@ -60,6 +60,7 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   feature: { label: 'feature use', action: true },
   useItem: { label: 'item use', action: true },
   react: { label: 'reaction', action: true },
+  applyDamage: { label: 'applied roll', action: true },
   dropConcentration: { label: 'dropped concentration', action: true },
   removeEffect: { label: 'effect removal', action: true },
   rest: { label: 'rest', action: true },

@@ -21,6 +21,8 @@ export interface ChatEntry {
   color: string;
   text?: string;
   roll?: Roll;
+  /** What a roll is for, written after its formula ("/r 8d6 fire"); a system may read it (a damage type). */
+  label?: string;
   /** The player who made it; none for the game's own cards. */
   by?: string;
   /** Who may read it (see roll-modes.ts); none: everyone. */

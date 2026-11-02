@@ -12,5 +12,12 @@ export function chatMessage(player: Player, text: string, mode: RollMode = 'publ
   const command = space > 0 ? text.slice(0, space).toLowerCase() : '';
   const rolled = rollModeOf(command, mode);
   if (!rolled) return { ...base, text };
-  return withMode({ ...base, roll: roll(text.slice(space + 1)) }, rolled, player.id);
+  const { formula, label } = splitLabel(text.slice(space + 1));
+  return withMode({ ...base, roll: roll(formula), ...(label && { label }) }, rolled, player.id);
+}
+
+/** "2d6 + 1 fire" → the formula and what it is for; words after the last number or die are the label. */
+function splitLabel(text: string): { formula: string; label?: string } {
+  const m = /^(.*[\d)])\s+([a-z][a-z' -]*)$/i.exec(text.trim());
+  return m ? { formula: m[1]!, label: m[2]!.trim().toLowerCase() } : { formula: text };
 }

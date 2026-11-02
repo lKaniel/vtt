@@ -81,6 +81,12 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   }),
   z.object({ t: z.literal('useItem'), token: z.string(), item: z.string() }),
   z.object({ t: z.literal('react'), offer: z.string(), choice: z.string().optional() }),
+  z.object({
+    t: z.literal('applyDamage'),
+    card: z.string(),
+    tokens: z.array(z.string()).min(1).max(50),
+    how: z.enum(['full', 'half', 'double', 'heal']),
+  }),
   z.object({ t: z.literal('dropConcentration'), token: z.string() }),
   z.object({ t: z.literal('removeEffect'), token: z.string(), effect: z.string() }),
   z.object({ t: z.literal('seatSettings'), settings: z.record(z.string().max(40), z.string().max(40)) }),
