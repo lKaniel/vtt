@@ -92,38 +92,38 @@ describe('pack content in the client', () => {
 describe('the GM’s asset browser', () => {
   it('asks for the packs, the media and a compendium, and keeps the answers', () => {
     ws.receive(gmWelcome());
-    session.requestPacks();
+    session.packs.request();
     expect(sent()).toEqual({ t: 'packs' });
     ws.receive({ t: 'packs', packs: [forest], problems: ['broken/pack.json: id'] });
-    expect(session.packs.map((p) => p.id)).toEqual(['forest']);
-    expect(session.packProblems).toEqual(['broken/pack.json: id']);
-    session.requestMedia();
+    expect(session.packs.list.map((p) => p.id)).toEqual(['forest']);
+    expect(session.packs.problems).toEqual(['broken/pack.json: id']);
+    session.packs.requestMedia();
     expect(sent()).toEqual({ t: 'media' });
     ws.receive({ t: 'media', entries: [{ src: '/assets/a.png', name: 'a', kind: 'image', tags: [] }] });
-    expect(session.media).toHaveLength(1);
-    session.openCompendium('forest', 'glades');
+    expect(session.packs.media).toHaveLength(1);
+    session.packs.openCompendium('forest', 'glades');
     expect(sent()).toEqual({ t: 'compendium', pack: 'forest', compendium: 'glades' });
     ws.receive({ t: 'compendium', pack: 'forest', compendium: 'glades', docs: [{ id: 'g' }] });
-    expect(session.compendiumDocs('forest', 'glades')).toEqual([{ id: 'g' }]);
+    expect(session.packs.compendiumDocs('forest', 'glades')).toEqual([{ id: 'g' }]);
     const before = ws.sent.length;
-    session.openCompendium('forest', 'glades');
+    session.packs.openCompendium('forest', 'glades');
     expect(ws.sent).toHaveLength(before);
   });
 
   it('turns packs on and off on game.json', () => {
     ws.receive(gmWelcome());
-    session.setPackEnabled('goblins', true);
+    session.packs.setPackEnabled('goblins', true);
     expect(sent()).toMatchObject({
       t: 'ops',
       ops: [{ op: 'update', coll: 'game', id: 'test', rev: 3, patch: { packs: ['forest', 'goblins'] } }],
     });
-    session.setPackEnabled('forest', false);
+    session.packs.setPackEnabled('forest', false);
     expect(sent()).toMatchObject({ ops: [{ patch: { packs: ['goblins'] } }] });
   });
 
   it('lists the plugins and turns them on and off on game.json', () => {
     ws.receive(gmWelcome());
-    session.requestPlugins();
+    session.packs.requestPlugins();
     expect(sent()).toEqual({ t: 'plugins' });
     const alert = {
       id: 'alert',
@@ -135,16 +135,16 @@ describe('the GM’s asset browser', () => {
       languages: [],
     };
     ws.receive({ t: 'plugins', plugins: [{ ...alert, enabled: false }], problems: ['x/plugin.json: name'] });
-    expect(session.pluginList.map((p) => p.id)).toEqual(['alert']);
-    expect(session.pluginProblems).toEqual(['x/plugin.json: name']);
-    session.setPluginEnabled('alert', true);
+    expect(session.packs.plugins.map((p) => p.id)).toEqual(['alert']);
+    expect(session.packs.pluginProblems).toEqual(['x/plugin.json: name']);
+    session.packs.setPluginEnabled('alert', true);
     expect(sent()).toMatchObject({ ops: [{ op: 'update', coll: 'game', patch: { plugins: ['alert'] } }] });
-    expect(session.pluginList[0]?.enabled).toBe(true);
+    expect(session.packs.plugins[0]?.enabled).toBe(true);
   });
 
   it('uploads a file', () => {
     ws.receive(gmWelcome());
-    session.upload('map.png', 'AAAA');
+    session.packs.upload('map.png', 'AAAA');
     expect(sent()).toEqual({ t: 'upload', name: 'map.png', data: 'AAAA' });
   });
 
@@ -165,7 +165,7 @@ describe('the GM’s asset browser', () => {
 
   it('imports a scene from a compendium as a new scene', () => {
     ws.receive(gmWelcome());
-    session.importScene({ id: 'cave', name: 'Goblin Cave', walls: [{ id: 'w', a: [0, 0], b: [100, 0] }] });
+    session.packs.importScene({ id: 'cave', name: 'Goblin Cave', walls: [{ id: 'w', a: [0, 0], b: [100, 0] }] });
     expect(sent()).toMatchObject({
       t: 'ops',
       label: 'scene import',
@@ -175,14 +175,14 @@ describe('the GM’s asset browser', () => {
       ],
     });
     const before = ws.sent.length;
-    session.importScene({ id: 'broken' });
+    session.packs.importScene({ id: 'broken' });
     expect(ws.sent).toHaveLength(before);
     expect(session.error?.message).toMatch(/can't be imported/);
   });
 
   it('adds an actor from a compendium to the Actors list under a free id', () => {
     ws.receive(gmWelcome());
-    session.importActor({ id: 'bandit-chief', name: 'Bandit Chief', monster: 'bandit' }, 'Bandits');
+    session.packs.importActor({ id: 'bandit-chief', name: 'Bandit Chief', monster: 'bandit' }, 'Bandits');
     expect(sent()).toMatchObject({
       t: 'saveActor',
       actor: { id: 'bandit-chief', name: 'Bandit Chief', folder: 'Bandits' },
@@ -197,18 +197,22 @@ describe('the GM’s asset browser', () => {
         { coll: 'journals', id: 'lore', doc: { type: 'journal', id: 'lore', rev: 1, name: 'Lore', pages: [] } },
       ],
     });
-    session.importEntry('journal', { id: 'lore', name: 'Lore', pages: [{ id: 'p', name: 'Gods', text: 'Many' }] });
+    session.packs.importEntry('journal', {
+      id: 'lore',
+      name: 'Lore',
+      pages: [{ id: 'p', name: 'Gods', text: 'Many' }],
+    });
     expect(sent()).toMatchObject({
       t: 'ops',
       label: 'journal import',
       ops: [{ op: 'create', coll: 'journals', doc: { id: 'lore-2', type: 'journal', name: 'Lore' } }],
     });
-    session.importEntry('rolltable', { id: 'loot', name: 'Loot', results: [{ text: 'Gold' }] });
+    session.packs.importEntry('rolltable', { id: 'loot', name: 'Loot', results: [{ text: 'Gold' }] });
     expect(sent()).toMatchObject({ ops: [{ op: 'create', coll: 'tables', doc: { id: 'loot', type: 'rolltable' } }] });
-    session.importEntry('playlist', { id: 'inn', name: 'Inn', tracks: [] });
+    session.packs.importEntry('playlist', { id: 'inn', name: 'Inn', tracks: [] });
     expect(sent()).toMatchObject({ ops: [{ op: 'create', coll: 'playlists', doc: { id: 'inn', type: 'playlist' } }] });
     const before = ws.sent.length;
-    session.importEntry('rolltable', { id: 'empty', name: 'Empty', results: [] });
+    session.packs.importEntry('rolltable', { id: 'empty', name: 'Empty', results: [] });
     expect(ws.sent).toHaveLength(before);
     expect(session.error?.message).toMatch(/can't be imported/);
   });
@@ -216,7 +220,7 @@ describe('the GM’s asset browser', () => {
   it('places a tile prefab in the middle of the screen, on whole squares as a paste is', () => {
     ws.receive(gmWelcome());
     session.viewRect = { x: 1000, y: 1000, w: 400, h: 400 };
-    session.importPrefab({
+    session.packs.importPrefab({
       id: 'cart',
       name: 'Cart',
       tiles: [

@@ -11,19 +11,19 @@ import { Checkbox } from './kit/checkbox.tsx';
  */
 export function PluginsView({ session }: Readonly<{ session: Session }>) {
   useEffect(() => {
-    session.requestPlugins();
+    session.packs.requestPlugins();
   }, [session]);
   return (
     <div className="lib-scroll">
-      {session.pluginProblems.length > 0 && (
+      {session.packs.pluginProblems.length > 0 && (
         <ul className="asset-problems">
-          {session.pluginProblems.map((p) => (
+          {session.packs.pluginProblems.map((p) => (
             <li key={p}>{p}</li>
           ))}
         </ul>
       )}
       <ul className="lib-list">
-        {session.pluginList.map((p) => (
+        {session.packs.plugins.map((p) => (
           <PluginRow key={p.id} session={session} plugin={p} />
         ))}
       </ul>
@@ -39,7 +39,7 @@ function PluginRow({ session, plugin }: Readonly<{ session: Session; plugin: Plu
       <div className="lib-main pack-head">
         <Checkbox
           checked={plugin.enabled}
-          onCheckedChange={(on) => session.setPluginEnabled(plugin.id, on === true)}
+          onCheckedChange={(on) => session.packs.setPluginEnabled(plugin.id, on === true)}
           aria-label={t('plugins.use', { name: plugin.name })}
         />
         <span className="lib-text">

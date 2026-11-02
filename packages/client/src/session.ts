@@ -36,6 +36,7 @@ import type { SessionEvents } from './session-events.ts';
 import { ActionSession } from './session-actions.ts';
 import { Hud } from './session-hud.ts';
 import { Journal } from './session-journal.ts';
+import { Packs } from './session-packs.ts';
 import { Piles } from './session-piles.ts';
 import { Cards } from './session-cards.ts';
 import { ScriptHost } from './scripting/script-api.ts';
@@ -89,6 +90,11 @@ export class Session extends ActionSession {
     updates: (label, updates) => this.sendUpdates(label, updates),
     runScript: (doc, token) => this.scripts.run(doc, token),
     heard: (src, volume) => this.emit('sound', src, volume),
+  });
+  readonly packs = new Packs(this, {
+    updates: (label, updates) => this.sendUpdates(label, updates),
+    gridSize: () => this.gridSize(),
+    createImageTile: (r, src) => this.createImageTile(r, src),
   });
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
@@ -388,8 +394,13 @@ export class Session extends ActionSession {
         this.chat = this.chat.map((m) => (msg.ids.includes(m.id) ? { ...m, undone: msg.undone || undefined } : m));
         return true;
       default:
-        return this.journal.receive(msg) ?? this.applyEdit(msg);
+        return this.applyParts(msg);
     }
+  }
+
+  /** A message for one of the session's parts, else an edit. */
+  private applyParts(msg: ServerMessage): boolean {
+    return this.journal.receive(msg) ?? this.packs.receive(msg) ?? this.applyEdit(msg);
   }
 
   /** Someone else's ruler, cursor, ping or targets: drawn over the map, nothing the UI re-renders for. */
