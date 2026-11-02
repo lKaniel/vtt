@@ -5,7 +5,7 @@ import type { DocAccess, OwnedDoc } from './store-access.ts';
 // Which documents a player is sent (doc-feed.ts), and how much of them.
 // The GM gets everything. A player gets the actors and tokens they observe,
 // the journal entries they may see (limited: the title only), the roll
-// tables shared with them, the playlists playing now, and on the scene they
+// tables and macros shared with them (and their own macros), the playlists playing now, and on the scene they
 // are on, what is drawn there for them: drawings, templates, notes, sounds
 // and the regions the GM shows. Everyone gets the game clock.
 
@@ -40,7 +40,7 @@ export function sendsTo(v: Viewer, access: DocAccess, coll: string, doc: Doc): b
   if (isGm(v.player) || coll === CLOCK_COLL) return true;
   if (coll === 'actors' || coll.endsWith('/tokens')) return observed(v, access.owned(coll, doc));
   if (coll === 'journals') return canSee(access.owned(coll, doc), v.player);
-  if (coll === 'tables') return observed(v, access.owned(coll, doc));
+  if (coll === 'tables' || coll === 'macros') return observed(v, access.owned(coll, doc));
   if (coll === 'playlists') return playing(doc);
   const at = sceneCollOf(coll);
   const rule = at && SCENE_RULES[at.name];

@@ -110,6 +110,8 @@ export type EngineClientMessage =
   | { t: 'upload'; name: string; data: string }
   /** Roll on a roll table into chat (players: tables shared with them); `gmOnly` whispers the result to the GM. */
   | { t: 'rollTable'; table: string; gmOnly?: boolean }
+  /** Run a macro you may see: its chat lines are posted as if you typed them, said by `token` when you control it. */
+  | { t: 'runMacro'; macro: string; token?: string }
   /** GM: share a journal entry with every player and open it (at `page`) on their screens. */
   | { t: 'showJournal'; entry: string; page?: string }
   /** GM: open a picture on every player's screen. */

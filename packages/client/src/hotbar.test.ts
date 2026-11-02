@@ -2,6 +2,7 @@ import { type Attack, srdFor, type TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import {
   HOTBAR_SIZE,
+  hotbarSlots,
   hotbarTiles,
   moveOnHotbar,
   placeOnHotbar,
@@ -104,6 +105,23 @@ describe('the hotbar', () => {
     expect(moved[1]).toBeNull();
     expect(moved[6]).toBe('spell:fire-bolt');
     expect(removeFromHotbar(slots, 0)[0]).toBeNull();
+  });
+});
+
+describe('macros on the hotbar', () => {
+  const macros = (id: string) => (id === 'hail' ? { id: 'hail', name: 'Hail', img: 'hail.webp' } : undefined);
+
+  it('shows a macro placed on the bar, free to run, with its picture', () => {
+    const tile = hotbarTiles(wizard(['macro:hail']), macros)[0]!;
+    expect(tile).toMatchObject({ kind: 'macro', name: 'Hail', hotkey: '1', spent: false });
+    expect(tile.icon.art).toContain('hail.webp');
+    expect(tileRef(tile)).toBe('macro:hail');
+    expect(costOf(tile)).toBe('free');
+  });
+
+  it('keeps a macro the bar can no longer find out of the slots it saves', () => {
+    expect(hotbarSlots(wizard(['macro:gone']), macros)[0]).toBe('attack:Quarterstaff');
+    expect(hotbarSlots(wizard(['macro:hail']), macros)[0]).toBe('macro:hail');
   });
 });
 

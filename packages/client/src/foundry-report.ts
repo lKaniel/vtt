@@ -13,6 +13,7 @@ export function importSummary(r: FoundryImportReport): string {
     `${r.journals} journal ${r.journals === 1 ? 'entry' : 'entries'}`,
     plural(r.tables, 'table'),
     plural(r.playlists, 'playlist'),
+    ...(r.macros ? [plural(r.macros, 'macro')] : []),
     plural(r.media, 'file'),
   ].join(', ');
 }

@@ -1,12 +1,13 @@
 import { itemCost, SPELL_SCROLL, type TokenView } from '@vtt/system-dnd5e';
 import { gameContent } from './content.ts';
-import { actionTiles, type ActionTile } from './actions.ts';
+import { actionTiles, type ActionTile, type MacroLookup } from './actions.ts';
+import { assetUrl } from './assets.ts';
 import { itemArt, spellArt } from './icon-art.ts';
 import { itemIcon, spellIcon } from './icons.ts';
 
 // The "everything" page of the action bar is a hotbar the player arranges:
 // a list of slots saved on the token (`hotbar`), each naming a tile by
-// reference ("spell:fire-bolt", "item:potion-of-healing") or empty.
+// reference ("spell:fire-bolt", "item:potion-of-healing", "macro:<id>") or empty.
 // Anything the creature can do that isn't on the bar yet fills the gaps.
 
 export const HOTBAR_SIZE = 30;
@@ -19,6 +20,7 @@ export function tileRef(tile: ActionTile): string {
   if (tile.kind === 'attack') return `attack:${tile.name}`;
   if (tile.kind === 'spell') return `${tile.scroll ? 'scroll' : 'spell'}:${tile.spell.id}`;
   if (tile.kind === 'feature') return `feature:${tile.feature.id}`;
+  if (tile.kind === 'macro') return `macro:${tile.macro.id}`;
   return `item:${tile.item.id}`;
 }
 
@@ -56,19 +58,28 @@ function scrollTile(token: TokenView, id: string): ActionTile | undefined {
   };
 }
 
-/** A tile placed on the bar by hand: an item or a scroll. */
-function placedTile(token: TokenView, ref: string): ActionTile | undefined {
+/** A macro the seat may run, as a tile. */
+function macroTile(id: string, macros: MacroLookup | undefined): ActionTile | undefined {
+  const macro = macros?.(id);
+  if (!macro) return undefined;
+  const icon = { glyph: 'swirl' as const, tint: 'arcane' as const, ...(macro.img && { art: assetUrl(macro.img) }) };
+  return { kind: 'macro', name: macro.name, icon, spent: false, macro };
+}
+
+/** A tile placed on the bar by hand: an item, a scroll or a macro. */
+function placedTile(token: TokenView, ref: string, macros: MacroLookup | undefined): ActionTile | undefined {
   if (ref.startsWith('item:')) return itemTile(token, ref.slice(5));
   if (ref.startsWith('scroll:')) return scrollTile(token, ref.slice(7));
+  if (ref.startsWith('macro:')) return macroTile(ref.slice(6), macros);
   return undefined;
 }
 
 /** The bar's slots, padded to HOTBAR_SIZE, with hotkeys 1-0 on the first ten. */
-export function hotbarTiles(token: TokenView): (ActionTile | null)[] {
+export function hotbarTiles(token: TokenView, macros?: MacroLookup): (ActionTile | null)[] {
   const auto = new Map(actionTiles(token).map((t) => [tileRef(t), t]));
   const resolve = (ref: string | null) => {
     if (!ref) return undefined;
-    return placedTile(token, ref) ?? auto.get(ref);
+    return placedTile(token, ref, macros) ?? auto.get(ref);
   };
   const slots: (ActionTile | null)[] = (token.hotbar ?? []).map((ref) => resolve(ref) ?? null);
   const placed = new Set(slots.filter((t) => t !== null).map(tileRef));
@@ -83,7 +94,8 @@ export function hotbarTiles(token: TokenView): (ActionTile | null)[] {
 }
 
 /** The refs of the bar as it's shown, ready to be changed and saved. */
-export const hotbarSlots = (token: TokenView): Slots => hotbarTiles(token).map((t) => (t ? tileRef(t) : null));
+export const hotbarSlots = (token: TokenView, macros?: MacroLookup): Slots =>
+  hotbarTiles(token, macros).map((t) => (t ? tileRef(t) : null));
 
 const padded = (slots: Slots, n: number): Slots => [
   ...slots,

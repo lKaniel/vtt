@@ -10,6 +10,7 @@ import {
   MinusIcon,
   MusicIcon,
   PlusIcon,
+  SquareTerminalIcon,
   ScrollTextIcon,
   UsersIcon,
   type LucideIcon,
@@ -24,6 +25,7 @@ import { CompendiumTab } from './CompendiumTab.tsx';
 import { JournalTab } from './JournalTab.tsx';
 import { PlaylistsTab } from './PlaylistsTab.tsx';
 import { TablesTab } from './TablesTab.tsx';
+import { MacrosTab } from './MacrosTab.tsx';
 import { PlayersTab } from './PlayersTab.tsx';
 import { ScenesTab } from './ScenesTab.tsx';
 import { diceArt } from '../icon-art.ts';
@@ -37,7 +39,7 @@ import type { RollMode } from '@vtt/shared';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
-/** The side panel has tabs, like a VTT sidebar: the log and journal for everyone; for the GM the scenes, Actors, Compendium, tables, music, assets and packs, and the seats; the Compendium for trusted players. */
+/** The side panel has tabs, like a VTT sidebar: the log, journal and macros for everyone; for the GM the scenes, Actors, Compendium, tables, music, assets and packs, and the seats; the Compendium for trusted players. */
 const TABS = [
   'Adventure log',
   'Journal',
@@ -45,12 +47,13 @@ const TABS = [
   'Actors',
   'Compendium',
   'Tables',
+  'Macros',
   'Music',
   'Assets',
   'Players',
 ] as const;
 type Tab = (typeof TABS)[number];
-const PLAYER_TABS: readonly Tab[] = ['Adventure log', 'Journal'];
+const PLAYER_TABS: readonly Tab[] = ['Adventure log', 'Journal', 'Macros'];
 
 /** Each tab is an icon in one slim row; its name is the panel's title and the icon's tooltip. */
 const TAB_ICONS: Record<Tab, LucideIcon> = {
@@ -60,6 +63,7 @@ const TAB_ICONS: Record<Tab, LucideIcon> = {
   Actors: UsersIcon,
   Compendium: LibraryIcon,
   Tables: DicesIcon,
+  Macros: SquareTerminalIcon,
   Music: MusicIcon,
   Assets: ImageIcon,
   Players: ArmchairIcon,
@@ -110,6 +114,7 @@ function Library({ tab, session }: Readonly<{ tab: Exclude<Tab, 'Adventure log'>
   const Panel = {
     Journal: JournalTab,
     Tables: TablesTab,
+    Macros: MacrosTab,
     Music: PlaylistsTab,
     Scenes: ScenesTab,
     Actors: ActorsTab,

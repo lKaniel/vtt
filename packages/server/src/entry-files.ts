@@ -1,13 +1,14 @@
-import { JournalSchema, PlaylistSchema, RollTableSchema } from '@vtt/shared';
+import { JournalSchema, MacroSchema, PlaylistSchema, RollTableSchema } from '@vtt/shared';
 import type { z } from 'zod';
 
 // The game's sidebar documents with a file each, like actors: journal
-// entries, roll tables and playlists (see journals.ts in shared).
+// entries, roll tables, playlists and macros (see journals.ts in shared).
 
 export const ENTRY_COLLS = {
   journals: { type: 'journal', schema: JournalSchema },
   tables: { type: 'rolltable', schema: RollTableSchema },
   playlists: { type: 'playlist', schema: PlaylistSchema },
+  macros: { type: 'macro', schema: MacroSchema },
 } as const;
 
 export type EntryColl = keyof typeof ENTRY_COLLS;

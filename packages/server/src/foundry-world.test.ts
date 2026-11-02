@@ -127,6 +127,10 @@ beforeEach(async () => {
     '!playlists!P1': { _id: 'P1', name: 'Rain', sounds: ['N1'] },
     '!playlists.sounds!P1.N1': { _id: 'N1', name: 'Rain', path: 'worlds/lost-keep/music/rain.ogg' },
   });
+  await db('macros', {
+    '!macros!M1': { _id: 'M1', name: 'Hail', type: 'chat', command: 'Well met!' },
+    '!macros!M2': { _id: 'M2', name: 'Sword', type: 'script', command: 'dnd5e.documents.macro.rollItem("Sword")' },
+  });
   await db('items', { '!items!I9': { _id: 'I9', name: 'Longsword', type: 'weapon' } });
   await db('settings', { '!settings!X1': { _id: 'X1', key: 'dnd5e.rulesVersion', value: '"legacy"' } });
   await db('users', {
@@ -226,6 +230,13 @@ describe('importFoundryWorld', () => {
     expect(await readJson(join(dir, 'playlists/rain.json'))).toMatchObject({
       tracks: [{ src: '/assets/foundry/worlds/lost-keep/music/rain.ogg' }],
     });
+  });
+
+  it('brings chat macros and says the item-roll macros are the hotbar’s', async () => {
+    const { dir, report } = await imported();
+    expect(await readJson(join(dir, 'macros/hail.json'))).toMatchObject({ name: 'Hail', command: 'Well met!' });
+    expect(report.macros).toBe(1);
+    expect(report.skipped).toContain('1 macro that rolls an item from the hotbar: our hotbar does that already');
   });
 
   it('makes a game that passes check-game', async () => {

@@ -9,8 +9,14 @@ import { fromDoc } from './doc-sync.ts';
 /** What a stored document is, for deciding who may touch it. */
 export type OwnedDoc = Owned & { name?: unknown; hidden?: boolean; visibleTo?: string[] };
 
-/** Journal entries and roll tables: missing ownership means only the GM sees them. */
-const SIDEBAR = new Set(['journals', 'tables']);
+/** Journal entries, roll tables and macros: missing ownership means only the GM sees them. */
+const SIDEBAR = new Set(['journals', 'tables', 'macros']);
+
+/** A sidebar entry's ownership: the GM's alone when it has none; a macro's author owns it. */
+function sidebarOwnership(doc: Doc): OwnedDoc['ownership'] {
+  const own = (doc.ownership as OwnedDoc['ownership']) ?? { default: 'none' };
+  return typeof doc.author === 'string' ? { ...own, [doc.author]: 'owner' } : own;
+}
 
 export interface DocAccess {
   get(coll: string, id: string): Doc | undefined;
@@ -34,8 +40,7 @@ export class StoreAccess implements DocAccess {
 
   owned(coll: string, doc: Doc): OwnedDoc {
     // Sidebar entries without ownership are the GM's alone.
-    if (SIDEBAR.has(coll))
-      return { ...doc, ownership: (doc.ownership as OwnedDoc['ownership']) ?? { default: 'none' } };
+    if (SIDEBAR.has(coll)) return { ...doc, ownership: sidebarOwnership(doc) };
     if (!coll.endsWith('/tokens')) return doc as OwnedDoc;
     const entry = fromDoc<TokenEntry>(doc);
     return resolveToken(entry, entry.actor ? this.actors.get(entry.actor) : undefined).token ?? entry;

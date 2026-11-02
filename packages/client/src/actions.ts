@@ -20,7 +20,20 @@ export type ActionTile =
   | (TileBase & { kind: 'spell'; spell: Spell; slot: number | undefined; scroll?: boolean; uses?: string })
   | (TileBase & { kind: 'feature'; feature: FeatureSheet; uses?: string })
   /** An item put on the bar by hand; `uses` is how many are carried. */
-  | (TileBase & { kind: 'item'; item: Item; uses?: string; cost?: 'action' | 'bonus' });
+  | (TileBase & { kind: 'item'; item: Item; uses?: string; cost?: 'action' | 'bonus' })
+  /** A macro put on the bar by hand: runs its chat lines. */
+  | (TileBase & { kind: 'macro'; macro: MacroCard });
+
+/** What the hotbar shows of a macro document. */
+export interface MacroCard {
+  id: string;
+  name: string;
+  img?: string;
+  command?: string;
+}
+
+/** Finds a macro the seat may run, by id. */
+export type MacroLookup = (id: string) => MacroCard | undefined;
 
 export type Cost = 'action' | 'bonus' | 'reaction' | 'free' | 'long';
 
@@ -85,6 +98,7 @@ export function filterTiles(tiles: ActionTile[], tab: Tab): ActionTile[] {
 }
 
 export function costOf(tile: ActionTile): Cost {
+  if (tile.kind === 'macro') return 'free';
   if (tile.kind === 'item') return tile.cost ?? 'action';
   if (tile.kind === 'attack') return tile.attack.offHand ? 'bonus' : 'action';
   if (tile.kind === 'feature') return tile.feature.action ?? 'free';

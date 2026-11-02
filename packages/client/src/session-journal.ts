@@ -9,9 +9,10 @@ import {
   stopPatch,
 } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
+import type { MacroCard } from './actions.ts';
 import { ItemSession } from './session-items.ts';
 
-// Journal entries, roll tables and playlists: the sidebar's own documents.
+// Journal entries, roll tables, playlists and macros: the sidebar's own documents.
 // Entries open in a viewer (a map note opens its entry; the GM can show one
 // to every player, and a picture too); the GM rolls on tables and starts and stops playlists.
 
@@ -25,6 +26,7 @@ const NEW: Record<EntryType, Record<string, unknown>> = {
   journal: { name: 'New entry', pages: [] },
   rolltable: { name: 'New table', results: [{ text: 'Something' }] },
   playlist: { name: 'New playlist', mode: 'sequence', tracks: [] },
+  macro: { name: 'New macro', kind: 'chat', command: '' },
 };
 
 /** A picture the GM showed. */
@@ -92,12 +94,37 @@ export abstract class JournalSession extends ItemSession {
     if (p) this.patchEntry('playlists', id, stopPatch(p as unknown as Playlist), 'stop music');
   }
 
-  /** GM: a new journal entry, table or playlist, ready to fill in. */
+  /** A new journal entry, table, playlist or macro, ready to fill in; a player's macro is signed as theirs. */
   createEntry(type: EntryType): void {
     const { coll } = ENTRY_TYPES[type];
     const id = freeId(type, (x) => !!this.docs.get(coll, x));
-    const doc = { id, type, rev: 0, ...NEW[type] } as Doc;
+    const author = type === 'macro' && !this.isGm() && this.you ? { author: this.you.id } : {};
+    const doc = { id, type, rev: 0, ...NEW[type], ...author } as Doc;
     this.sendChanges('new', [{ op: 'create', coll, doc }]);
+  }
+
+  /** Runs a macro's chat lines, said by `token` when you control it. */
+  runMacro(macro: string, token?: string): void {
+    this.send({ t: 'runMacro', macro, ...(token ? { token } : {}) });
+  }
+
+  /** A macro you were sent, as the hotbar shows it. */
+  readonly macroOf = (id: string): MacroCard | undefined => {
+    const doc = this.docs.get('macros', id);
+    if (!doc) return undefined;
+    const text = (k: string) => (typeof doc[k] === 'string' ? doc[k] : undefined);
+    const img = text('img');
+    return { id, name: text('name') ?? id, command: text('command') ?? '', ...(img && { img }) };
+  };
+
+  /** Removes a macro (yours, or any for the GM). */
+  deleteMacro(id: string): void {
+    this.sendChanges('delete macro', [{ op: 'delete', coll: 'macros', id }]);
+  }
+
+  /** Whether you may change a macro: the GM any, a player their own. */
+  canEditMacro(id: string): boolean {
+    return this.isGm() || (!!this.you && this.docs.get('macros', id)?.author === this.you.id);
   }
 
   /** Changes one sidebar document's fields. */

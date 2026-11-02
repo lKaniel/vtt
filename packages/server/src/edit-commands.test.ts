@@ -83,6 +83,10 @@ const SAMPLES: Record<string, { coll: string; doc: Doc }> = {
       tracks: [{ id: 'lute', name: 'Lute', src: 'lute.ogg' }],
     },
   },
+  macro: {
+    coll: 'macros',
+    doc: { id: 'hail', type: 'macro', rev: 0, name: 'Hail', kind: 'chat', command: 'Well met!' },
+  },
 };
 
 beforeEach(async () => {

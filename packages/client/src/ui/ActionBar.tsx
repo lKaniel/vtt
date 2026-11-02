@@ -19,7 +19,7 @@ import type { Session } from '../session.ts';
 import type { Aiming } from '../targeting.ts';
 import { ORDINAL } from '../spell-text.ts';
 import { SmiteControls } from './SmiteControls.tsx';
-import { attackTip, featureTip, itemTip, spellTip } from '../tooltip.ts';
+import { attackTip, featureTip, itemTip, macroTip, spellTip } from '../tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 import { TipCard } from './Tip.tsx';
@@ -50,6 +50,7 @@ export function activateTile(session: Session, token: TokenView, tile: ActionTil
   if (tile.kind === 'attack') session.arm(session.armed === tile.name ? undefined : tile.name);
   else if (tile.kind === 'spell') aimTile(session, tile);
   else if (tile.kind === 'feature') activateFeature(session, token, tile.feature);
+  else if (tile.kind === 'macro') session.runMacro(tile.macro.id, token.id);
   else readyItem(session, token, tile.item);
 }
 
@@ -212,7 +213,7 @@ function Hotbar({
     box.classList.remove('drop-target');
     landOn(box);
     const drag = JSON.parse(data) as TileDrag;
-    const slots = hotbarSlots(token);
+    const slots = hotbarSlots(token, session.macroOf);
     save('ref' in drag ? placeOnHotbar(slots, drag.ref, i) : moveOnHotbar(slots, drag.from, i));
   };
   const onDragOver = (e: React.DragEvent) => {
@@ -227,7 +228,7 @@ function Hotbar({
   };
   return (
     <div className="ab-grid">
-      {hotbarTiles(token).map((tile, i) => (
+      {hotbarTiles(token, session.macroOf).map((tile, i) => (
         <span key={i} className="ab-slot" onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop(i)}>
           {tile ? (
             <Tile
@@ -236,11 +237,11 @@ function Hotbar({
               tile={tile}
               budget={budget}
               onDragStart={(e) => dragTile(e, { from: i })}
-              // An item dragged off the bar leaves it.
+              // An item or macro dragged off the bar leaves it.
               onDragEnd={(e) =>
                 e.dataTransfer.dropEffect === 'none' &&
-                tile.kind === 'item' &&
-                save(removeFromHotbar(hotbarSlots(token), i))
+                (tile.kind === 'item' || tile.kind === 'macro') &&
+                save(removeFromHotbar(hotbarSlots(token, session.macroOf), i))
               }
             />
           ) : (
@@ -261,6 +262,7 @@ function tipFor(tile: ActionTile) {
   if (tile.kind === 'attack') return attackTip(tile.attack);
   if (tile.kind === 'spell') return spellTip(tile.spell);
   if (tile.kind === 'item') return itemTip(tile.item, tile.item.id, false);
+  if (tile.kind === 'macro') return macroTip(tile.macro);
   return featureTip(tile.feature);
 }
 
