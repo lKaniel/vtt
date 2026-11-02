@@ -154,39 +154,42 @@ function Browser({ session, s }: Readonly<{ session: Session; s: State }>) {
 function Toolbar({ s }: Readonly<{ s: State }>) {
   const picked = Object.values(s.search.picks).filter(Boolean).length;
   return (
-    <div className="flex items-center gap-1.5">
+    <>
       <SearchBox category={s.category} query={s.search.query} onQuery={(query) => s.narrow({ query })} />
-      {!BOOKLESS.includes(s.category) && (
-        <SelectField
-          className="w-20 flex-none"
-          value={s.rules}
-          onValueChange={s.pickRules}
-          aria-label={t('compendium.rules')}
-          options={[
-            { value: '2014', label: '2014' },
-            { value: '2024', label: '2024' },
-          ]}
-        />
-      )}
-      <Toggle
-        variant="plate"
-        pressed={s.filters}
-        onPressedChange={s.toggleFilters}
-        aria-label={t('compendium.filters')}
-        title={t('compendium.filters')}
-      >
-        <FilterIcon />
-        {picked > 0 && picked}
-      </Toggle>
-      <ToggleGroup type="single" value={s.view} onValueChange={s.pickView} aria-label={t('compendium.view')}>
-        <ToggleGroupItem value="list" aria-label={t('compendium.view.list')} title={t('compendium.view.list')}>
-          <ListIcon />
-        </ToggleGroupItem>
-        <ToggleGroupItem value="grid" aria-label={t('compendium.view.grid')} title={t('compendium.view.grid')}>
-          <LayoutGridIcon />
-        </ToggleGroupItem>
-      </ToggleGroup>
-    </div>
+      <div className="flex items-center gap-1.5">
+        {!BOOKLESS.includes(s.category) && (
+          <SelectField
+            className="w-24 flex-none"
+            value={s.rules}
+            onValueChange={s.pickRules}
+            aria-label={t('compendium.rules')}
+            options={[
+              { value: '2014', label: '2014' },
+              { value: '2024', label: '2024' },
+            ]}
+          />
+        )}
+        <Toggle
+          className="ml-auto"
+          variant="plate"
+          pressed={s.filters}
+          onPressedChange={s.toggleFilters}
+          aria-label={t('compendium.filters')}
+          title={t('compendium.filters')}
+        >
+          <FilterIcon />
+          {picked > 0 && picked}
+        </Toggle>
+        <ToggleGroup type="single" value={s.view} onValueChange={s.pickView} aria-label={t('compendium.view')}>
+          <ToggleGroupItem value="list" aria-label={t('compendium.view.list')} title={t('compendium.view.list')}>
+            <ListIcon />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="grid" aria-label={t('compendium.view.grid')} title={t('compendium.view.grid')}>
+            <LayoutGridIcon />
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+    </>
   );
 }
 
@@ -229,7 +232,7 @@ function SearchBox({
       ? t('compendium.searchAll')
       : t('compendium.search', { what: t(`compendium.cat.${category}`).toLowerCase() });
   return (
-    <div className="relative min-w-0 flex-1">
+    <div className="relative">
       <SearchIcon className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
       <Input
         type="search"
