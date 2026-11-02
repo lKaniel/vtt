@@ -17,6 +17,7 @@ import { SpellActions } from './spell-actions.ts';
 import { Reactions } from './reactions.ts';
 import { ZoneTemplates } from './zone-templates.ts';
 import { Zones } from './zones.ts';
+import { AuraKeeper } from './aura-keeper.ts';
 import { DocFeed } from './doc-feed.ts';
 import { checkOps } from './op-permissions.ts';
 import { Refusal, Table } from './table.ts';
@@ -50,6 +51,7 @@ export class Game {
   readonly table: Table;
   private zones: Zones;
   private zoneTemplates: ZoneTemplates;
+  private auras: AuraKeeper;
   private reactions: Reactions;
   private features: FeatureActions;
   private gm: GmActions;
@@ -81,6 +83,7 @@ export class Game {
     this.table = table;
     this.spells = new SpellActions(table, (spell) => this.narrate({ spell }));
     this.zoneTemplates = new ZoneTemplates(table);
+    this.auras = new AuraKeeper(table);
     this.zones = new Zones(table, this.spells, this.zoneTemplates);
     this.combat = new CombatActions(
       table,
@@ -301,6 +304,7 @@ export class Game {
     step();
     this.clock.settle();
     this.zoneTemplates.sync();
+    this.auras.sync();
   }
 
   /** The clock ran on: what ran out ends, as a step the GM can undo. */

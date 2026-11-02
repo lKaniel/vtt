@@ -75,6 +75,8 @@ const modifiers = {
   meleeDamage: z.number().int().optional(),
   /** Saving throws the bearer makes with advantage. */
   saveAdvantage: z.array(AbilitySchema).optional(),
+  /** Conditions that can't hold the bearer while it lasts (aura of courage: frightened). */
+  conditionImmunities: z.array(ConditionSchema).optional(),
   /** Damage the bearer adds to its weapon hits (divine favor; with `once`, a smite). */
   hitDamage: z.array(RiderDamageSchema).optional(),
   /** Damage `onlyFor` adds when it hits the bearer with an attack (hunter's mark, hex). */
@@ -112,11 +114,28 @@ const modifiers = {
     .optional(),
 };
 
+/**
+ * An effect that reaches out from its bearer, like Active Auras: creatures
+ * within `radius` feet (the bearer too, with `self`) get it while they stay.
+ */
+export const AuraSchema = z.object({
+  radius: z.number().positive(),
+  /** Whom it touches: the bearer's side, the other side, or everyone. */
+  who: z.enum(['allies', 'enemies', 'all']).default('allies'),
+  /** The bearer gets it too (default: yes, for allies and all). */
+  self: z.boolean().optional(),
+  /** Only while the bearer is conscious (default true). */
+  conscious: z.boolean().optional(),
+});
+export type Aura = z.infer<typeof AuraSchema>;
+
 /** An effect as a spell or feature describes it, before it lands on anyone. */
 export const EffectTemplateSchema = z.object({
   /** Shown on the token; defaults to the spell or feature name. */
   name: z.string().optional(),
   ...modifiers,
+  /** It gives off an aura (auras.ts): it lands on the creatures around instead of only on its bearer. */
+  aura: AuraSchema.optional(),
   /** How long it lasts in rounds; missing means until removed or the spell ends. */
   rounds: z.number().int().positive().optional(),
   /** Ends the first time it changes an attack roll (guiding bolt, vicious mockery). */
@@ -148,6 +167,8 @@ export const EffectSchema = EffectTemplateSchema.extend({
   onlyFor: z.string().optional(),
   /** Game-clock second it ends (see durations.ts); in a fight its `rounds` count instead. */
   endsAt: z.number().optional(),
+  /** Put here by an aura ("<bearer>:<effect>"); the server takes it off when the aura no longer reaches. */
+  auraFrom: z.string().optional(),
 });
 export type Effect = z.infer<typeof EffectSchema>;
 
@@ -291,6 +312,8 @@ export const FeatureSchema = z.object({
   grantAttacks: z.number().int().positive().optional(),
   /** For a `passive` effect's `speed`: the bonus by class level (unarmored movement). */
   speed: LevelTableSchema.optional(),
+  /** For a `passive` effect's `aura`: its radius in feet by class level (aura of protection). */
+  auraRadius: LevelTableSchema.optional(),
   /** Using it gives the creature its speed again as movement (Dash). */
   dash: z.boolean().optional(),
   /** Basic actions (by id) this feature lets the creature take as a bonus action (cunning action). */

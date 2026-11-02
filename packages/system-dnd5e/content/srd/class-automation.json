@@ -415,6 +415,38 @@
             "targets": 1,
             "range": 5
           }
+        },
+        "aura-of-protection": {
+          "auraRadius": [
+            [6, 10],
+            [18, 30]
+          ],
+          "passive": {
+            "name": "Aura of Protection",
+            "aura": {
+              "radius": 10
+            },
+            "changes": [
+              {
+                "key": "saves.all",
+                "mode": "add",
+                "value": "max(1,@cha)"
+              }
+            ]
+          }
+        },
+        "aura-of-courage": {
+          "auraRadius": [
+            [10, 10],
+            [18, 30]
+          ],
+          "passive": {
+            "name": "Aura of Courage",
+            "aura": {
+              "radius": 10
+            },
+            "conditionImmunities": ["frightened"]
+          }
         }
       }
     },
