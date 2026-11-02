@@ -1,6 +1,7 @@
 import { SettingsIcon } from 'lucide-react';
 import { useState } from 'react';
 import { currentMotion, type Motion, setMotion } from '../animations.ts';
+import { currentDice, type DiceChoice, setDice } from '../dice-throw.ts';
 import { type Automation, automationOf } from '@vtt/system-dnd5e';
 import type { Session } from '../session.ts';
 import { Button } from './kit/button.tsx';
@@ -87,6 +88,7 @@ export function SettingsMenu({ session }: Readonly<{ session: Session }>) {
         />
         <Separator />
         <MotionRow />
+        <DiceRow />
       </PopoverContent>
     </Popover>
   );
@@ -112,6 +114,24 @@ function MotionRow() {
         ))}
       </ToggleGroup>
       <span className="muted text-xs font-normal">Kept in this browser. Reduced plays only the hits.</span>
+    </Label>
+  );
+}
+
+/** Whether rolls throw 3D dice across this browser's screen. */
+function DiceRow() {
+  const [dice, choose] = useState(currentDice);
+  const set = (d: DiceChoice) => {
+    setDice(d);
+    choose(d);
+  };
+  return (
+    <Label className="flex-col items-stretch gap-1">
+      3D dice
+      <ToggleGroup type="single" value={dice} onValueChange={(v) => v && set(v as DiceChoice)}>
+        <ToggleGroupItem value="on">Throw them</ToggleGroupItem>
+        <ToggleGroupItem value="off">Off</ToggleGroupItem>
+      </ToggleGroup>
     </Label>
   );
 }
