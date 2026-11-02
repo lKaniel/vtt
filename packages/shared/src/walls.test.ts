@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  doorSoundOf,
+  doorSwings,
   hasLineOfSight,
   movementBlocked,
   pointInPolygon,
   restriction,
+  sideOf,
   soundVolume,
   visibilityPolygon,
   type Wall,
   WallSchema,
+  wallFor,
   wallPreset,
   wallsCrossed,
 } from './index.ts';
@@ -93,5 +97,64 @@ describe('wall restrictions', () => {
     const open = soundVolume(sound, [400, 0], hearing([]));
     expect(soundVolume(sound, [400, 0], hearing([wall(300, { sound: 'none' })]))).toBeCloseTo(open);
     expect(soundVolume(sound, [400, 0], hearing([wall(300)]))).toBeLessThan(open);
+  });
+});
+
+describe('one-way walls', () => {
+  // A wall from (300, -500) down to (300, 500): looking from a to b, left is +x (east), right is -x (west).
+  const oneWay = (dir: 'left' | 'right') => wall(300, { dir });
+
+  it('stop only what comes from their side', () => {
+    expect(hasLineOfSight([0, 0], [400, 0], [oneWay('right')])).toBe(false);
+    expect(hasLineOfSight([400, 0], [0, 0], [oneWay('right')])).toBe(true);
+    expect(hasLineOfSight([400, 0], [0, 0], [oneWay('left')])).toBe(false);
+    expect(movementBlocked([0, 0], [400, 0], [oneWay('left')])).toBe(false);
+    expect(movementBlocked([400, 0], [0, 0], [oneWay('left')])).toBe(true);
+  });
+
+  it('show what is past them only from the open side', () => {
+    expect(pointInPolygon([400, 0], visibilityPolygon([0, 0], 1000, [oneWay('left')]))).toBe(true);
+    expect(pointInPolygon([400, 0], visibilityPolygon([0, 0], 1000, [oneWay('right')]))).toBe(false);
+  });
+
+  it('names the side a point is on', () => {
+    expect(sideOf(oneWay('left'), [400, 0])).toBe('left');
+    expect(sideOf(oneWay('left'), [0, 0])).toBe('right');
+  });
+});
+
+describe('secret doors', () => {
+  const secret = wall(300, { door: 'closed', secret: true });
+
+  it('look like plain walls to players until they are opened', () => {
+    expect(wallFor(secret, false)).toEqual({ id: 'w300', a: [300, -500], b: [300, 500] });
+    expect(wallFor(secret, true)).toBe(secret);
+    expect(wallFor({ ...secret, door: 'open' }, false)).toEqual({
+      id: 'w300',
+      a: [300, -500],
+      b: [300, 500],
+      door: 'open',
+    });
+    expect(wallFor(wall(0, { door: 'closed' }), false)).toEqual(wall(0, { door: 'closed' }));
+  });
+});
+
+describe('door sounds', () => {
+  const chunk = (...walls: Wall[]) => ({ tiles: [], walls, lights: [] });
+  const door = (state: 'open' | 'closed' | 'locked', extra: Partial<Wall> = {}) => wall(0, { door: state, ...extra });
+
+  it('tells which doors swung open, shut, or were locked and unlocked', () => {
+    expect(doorSwings(chunk(door('closed')), chunk(door('open')))).toEqual([{ wall: door('open'), swing: 'open' }]);
+    expect(doorSwings(chunk(door('open')), chunk(door('closed')))[0]!.swing).toBe('close');
+    expect(doorSwings(chunk(door('closed')), chunk(door('locked')))[0]!.swing).toBe('lock');
+    expect(doorSwings(chunk(door('locked')), chunk(door('closed')))[0]!.swing).toBe('unlock');
+    expect(doorSwings(chunk(door('closed')), chunk(door('closed')))).toEqual([]);
+    expect(doorSwings(undefined, chunk(door('open')))).toEqual([]);
+  });
+
+  it('sound wooden unless the door says otherwise', () => {
+    expect(doorSoundOf(door('open'))).toBe('wood');
+    expect(doorSoundOf(door('open', { doorSound: 'iron' }))).toBe('iron');
+    expect(doorSoundOf(door('open', { doorSound: 'none' }))).toBeUndefined();
   });
 });

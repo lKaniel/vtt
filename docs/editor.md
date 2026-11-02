@@ -156,7 +156,9 @@ them, as one undo step.
 A wall's Kind picks one of the usual kinds (wall, door, window, terrain,
 invisible, ethereal); below it, Movement, Sight, Light and Sound set what it
 stops one by one (`editor/wall-fields.ts`, rules in `shared/walls.ts`), and a
-proximity sense asks from how many feet it passes.
+proximity sense asks from how many feet it passes. One way makes the wall
+stop things from one side only (an arrow shows the way through); doors also
+get Secret and Sound.
 
 ## How it fits together
 

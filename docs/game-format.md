@@ -206,6 +206,15 @@ pixels.
     wall is `limited` for sight, light and sound; an invisible barrier has
     sight, light and sound `none`; an illusory wall is `"move": "none"`.
   - Old files with `"sight": false` still load, as a window.
+- `"dir": "left"` or `"right"` makes a one-way wall: it stops movement,
+  sight, light and sound only when they come from that side, looking from
+  `a` to `b` (with `a` north of `b`, left is east). The editor draws an
+  arrow the way things get through.
+- `"secret": true` on a door: players are sent a plain wall until it is
+  opened, and only the GM can open it.
+- `doorSound` is what a door sounds like when it swings or its lock turns:
+  `"wood"` (the default), `"stone"`, `"iron"`, `"gate"`, `"none"`, or an
+  audio file. It is heard within 100 ft, quieter through walls.
 
   ```json
   { "id": "hedge", "a": [0, 0], "b": [500, 0], "sight": "limited", "light": "limited", "sound": "limited" }

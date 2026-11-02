@@ -30,7 +30,7 @@ import { startOf, welcomeOf } from './welcome.ts';
 import { contentFor, packContent } from './game-packs.ts';
 import { WorldClock } from './world-clock.ts';
 import { isPresenceMessage, Presence } from './presence.ts';
-import { type Client, streamChunks } from './game-client.ts';
+import { chunkMessage, type Client, streamChunks } from './game-client.ts';
 
 /**
  * The live game. Clients send intents ("move here", "open this door"); the
@@ -114,7 +114,7 @@ export class Game {
     store.fog.on('fog', (scene, player, keys, full) => this.onFog(scene, player, keys, full));
     store.on('chunk', (key, chunk, scene) => {
       this.fog.mapChanged(scene);
-      for (const c of this.on(scene)) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
+      for (const c of this.on(scene)) if (c.chunks.has(key)) this.send(c, chunkMessage(c, key, chunk));
       // A door or a light changed: what everyone can see may have too.
       this.refreshAll(scene);
     });

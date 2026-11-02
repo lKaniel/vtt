@@ -29,7 +29,16 @@ describe('the inspector', () => {
 
   it('turns a wall into a door, window or terrain wall, and back', () => {
     const kind = field([wall()], 'kind');
-    const reset = { door: null, move: null, sight: null, light: null, sound: null, threshold: null };
+    const reset = {
+      door: null,
+      secret: null,
+      doorSound: null,
+      move: null,
+      sight: null,
+      light: null,
+      sound: null,
+      threshold: null,
+    };
     expect(commonValue([wall(), wall({ door: 'open' })], kind)).toBe(MIXED);
     expect(commonValue([wall({ sight: 'none', light: 'none' })], kind)).toBe('window');
     expect(commonValue([wall({ sight: 'proximity' })], kind)).toBe('custom');
@@ -56,16 +65,32 @@ describe('the inspector', () => {
     expect(reach.patch(15, near)).toEqual({ threshold: { sight: 5, light: 15 } });
   });
 
-  it('offers the door state only when every wall is a door', () => {
-    expect(fieldsFor([wall()]).map((f) => f.key)).toEqual(['kind', 'move', 'sight', 'light', 'sound']);
+  it('offers the door state, secrecy and sound only when every wall is a door', () => {
+    expect(fieldsFor([wall()]).map((f) => f.key)).toEqual(['kind', 'move', 'sight', 'light', 'sound', 'dir']);
     expect(fieldsFor([wall({ door: 'open' })]).map((f) => f.key)).toEqual([
       'kind',
       'door',
+      'secret',
+      'doorSound',
       'move',
       'sight',
       'light',
       'sound',
+      'dir',
     ]);
+  });
+
+  it('makes a wall one-way, and a door secret or quiet', () => {
+    const dir = field([wall()], 'dir');
+    expect(commonValue([wall()], dir)).toBe('');
+    expect(dir.patch('left')).toEqual({ dir: 'left' });
+    expect(dir.patch('')).toEqual({ dir: null });
+    const door = wall({ door: 'closed' });
+    expect(field([door], 'secret').patch(true)).toEqual({ secret: true });
+    const sound = field([door], 'doorSound');
+    expect(commonValue([door], sound)).toBe('wood');
+    expect(sound.patch('wood')).toEqual({ doorSound: null });
+    expect(sound.patch('none')).toEqual({ doorSound: 'none' });
   });
 
   it('turns field input into a patch: empty removes, numbers stay numbers, checks set or remove', () => {

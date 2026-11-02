@@ -10,6 +10,7 @@ import { lightColor } from './lighting/light-style.ts';
 export const WALL_COLOR = 0x6fd0ff;
 export const DOOR_COLOR = 0xffb050;
 const WINDOW_COLOR = 0xa0f0ff;
+const SECRET_COLOR = 0xc890ff;
 const SELECT_COLOR = 0xffe08a;
 const HOVER_COLOR = 0xffffff;
 const HANDLE_FILL = 0x15120f;
@@ -21,7 +22,7 @@ export interface DrawCtx {
 }
 
 function wallColor(w: Doc): number {
-  if (w.door) return DOOR_COLOR;
+  if (w.door) return w.secret ? SECRET_COLOR : DOOR_COLOR;
   return restriction(w as WallRules, 'sight') === 'normal' ? WALL_COLOR : WINDOW_COLOR;
 }
 
@@ -32,6 +33,33 @@ export function drawWall(g: Graphics, w: Doc, { px }: DrawCtx): void {
     .lineTo(...b)
     .stroke({ width: 3 * px, color, alpha: 0.9 });
   for (const end of [a, b]) g.circle(end[0], end[1], 4 * px).fill(color);
+  if (w.dir === 'left' || w.dir === 'right') drawOneWay(g, { a, b, dir: w.dir }, px, color);
+}
+
+/** An arrow across a one-way wall, the way things get through: from its open side to the side it stops. */
+function drawOneWay(
+  g: Graphics,
+  { a, b, dir }: { a: Point; b: Point; dir: 'left' | 'right' },
+  px: number,
+  color: number,
+): void {
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+  const [dx, dy] = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+  const sign = dir === 'left' ? 1 : -1;
+  const [nx, ny] = [dy * sign, -dx * sign];
+  const [mx, my] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  const s = 12 * px;
+  g.moveTo(mx - nx * s, my - ny * s)
+    .lineTo(mx + nx * s, my + ny * s)
+    .stroke({ width: 2 * px, color });
+  g.poly([
+    mx + nx * s * 1.6,
+    my + ny * s * 1.6,
+    mx + nx * s + dx * s * 0.6,
+    my + ny * s + dy * s * 0.6,
+    mx + nx * s - dx * s * 0.6,
+    my + ny * s - dy * s * 0.6,
+  ]).fill(color);
 }
 
 export function drawLight(g: Graphics, l: Doc, { px, gridSize }: DrawCtx): void {

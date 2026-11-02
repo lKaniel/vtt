@@ -179,6 +179,12 @@ export const WallRulesSchema = z.object({
   light: SenseRestrictionSchema.optional(),
   sound: SenseRestrictionSchema.optional(),
   threshold: ThresholdSchema.optional(),
+  /** A one-way wall: it stops only what comes from this side, looking from `a` to `b`. */
+  dir: z.enum(['left', 'right']).optional(),
+  /** A secret door: players see a plain wall until it is opened, and can't open it themselves. */
+  secret: z.boolean().optional(),
+  /** What a door sounds like: wood (the default), stone, iron, gate, none, or an audio file. */
+  doorSound: z.string().min(1).optional(),
 });
 export type WallRules = z.infer<typeof WallRulesSchema>;
 
