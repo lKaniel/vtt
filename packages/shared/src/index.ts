@@ -4,6 +4,7 @@ export * from './game-schema.ts';
 export * from './geometry.ts';
 export * from './hit-test.ts';
 export * from './pathfinding.ts';
+export * from './grid.ts';
 export * from './dice.ts';
 export * from './permissions.ts';
 export * from './vision.ts';

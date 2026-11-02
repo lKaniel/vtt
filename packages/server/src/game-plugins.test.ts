@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Game } from './game.ts';
 import { GameStore } from './game-store.ts';
 import { PluginStore } from './plugin-store.ts';
@@ -63,7 +63,8 @@ describe('plugins at the table', () => {
     expect(ana.take('welcome')[0]?.plugins).toEqual([]);
     gm.sent = [];
     gm.receive({ t: 'plugins' });
-    await new Promise((done) => setTimeout(done, 20));
+    // The list is read from disk: wait for the answer, however long the disk takes.
+    await vi.waitFor(() => expect(gm.sent.some((m) => m.t === 'plugins')).toBe(true));
     expect(gm.take('plugins')[0]).toMatchObject({ plugins: [{ id: 'turn-alert', enabled: false }], problems: [] });
     const rev = store.docs.get('game', store.campaign.id)!.rev;
     gm.receive({
@@ -79,7 +80,7 @@ describe('plugins at the table', () => {
     const ana = seat('ana');
     ana.sent = [];
     ana.receive({ t: 'plugins' });
-    await new Promise((done) => setTimeout(done, 20));
+    await vi.waitFor(() => expect(ana.sent.some((m) => m.t === 'error')).toBe(true));
     expect(ana.take('error')[0]?.message).toBe('Only the GM can manage plugins');
   });
 });

@@ -32,7 +32,7 @@ import {
   tokenDistance,
   type WeaponAttackOutcome,
 } from '@vtt/system-dnd5e';
-import { canControl, isGridless, isParty, type Player } from '@vtt/shared';
+import { canControl, gridKind, isParty, type Player } from '@vtt/shared';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
 import { breakSanctuary, loseImage, passSanctuary } from './spell-wards.ts';
 export { isTurnMessage } from './legendary-actions.ts';
@@ -322,7 +322,7 @@ export class CombatActions {
         attack,
         range,
         gridSize: this.store.world.gridSize,
-        gridless: isGridless(this.store.world),
+        grid: gridKind(this.store.world),
         allyNearTarget: this.allyNear(attacker.token, target.token),
         sneakUsed,
         smite,
@@ -364,7 +364,7 @@ export class CombatActions {
   /** Feet between two creatures, as the scene measures them. */
   private distance(a: Token, b: Token): number {
     const { world } = this.store;
-    return tokenDistance(a, b, world.gridSize, isGridless(world));
+    return tokenDistance(a, b, world.gridSize, gridKind(world));
   }
 
   private applyOutcome(

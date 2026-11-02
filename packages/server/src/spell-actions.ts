@@ -23,7 +23,7 @@ import {
   spendResistance,
   characterLevel,
 } from '@vtt/system-dnd5e';
-import { isGridless, type Player, type Point } from '@vtt/shared';
+import { gridKind, isGridless, placeToken, type Player, type Point } from '@vtt/shared';
 import { castBreaksSanctuary, passSanctuaries } from './spell-wards.ts';
 import { shaped } from './spell-forms.ts';
 import { summon } from './spell-summons.ts';
@@ -158,8 +158,8 @@ export class SpellActions {
   ): void {
     const fighter = this.table.fighter(casterId);
     const caster = reader ? { ...fighter, sheet: { ...fighter.sheet, caster: reader } } : fighter;
-    const gridless = isGridless(this.store.world);
-    const outcome = resolveCast({ spell, slot, caster, targets, gridSize: this.grid, gridless }, this.table.rng);
+    const grid = gridKind(this.store.world);
+    const outcome = resolveCast({ spell, slot, caster, targets, gridSize: this.grid, grid }, this.table.rng);
     this.apply(outcome);
     const pushed = this.push(caster.token, outcome);
     const drained = this.drain(casterId, outcome.drained);
@@ -203,7 +203,7 @@ export class SpellActions {
   private creatureTarget(caster: Fighter, spell: Spell, id: string, canSee: (id: string) => boolean): Fighter {
     if (!canSee(id)) throw new Refusal('No such target');
     const target = this.table.fighter(id);
-    const feet = tokenDistance(caster.token, target.token, this.grid, isGridless(this.store.world));
+    const feet = tokenDistance(caster.token, target.token, this.grid, gridKind(this.store.world));
     if (feet > Math.max(5, spell.range)) throw new Refusal(`${target.token.name} is out of range (${feet} ft)`);
     if (!this.table.clearShot([caster.token.x, caster.token.y], [target.token.x, target.token.y])) {
       throw new Refusal(`${caster.token.name} has no clear path to ${target.token.name}`);
@@ -338,14 +338,8 @@ export class SpellActions {
 
   private teleport(id: string, point: Point): void {
     const token = this.store.tokens.get(id)!;
-    const [x, y] = isGridless(this.store.world) ? point : this.snap(point, token.size);
+    const [x, y] = isGridless(this.store.world) ? point : placeToken(point, token.size, this.store.world);
     this.store.setToken({ ...token, x, y });
-  }
-
-  private snap([x, y]: Point, size: number): Point {
-    const g = this.grid;
-    const axis = (v: number) => (size % 2 ? (Math.floor(v / g) + 0.5) * g : Math.round(v / g) * g);
-    return [axis(x), axis(y)];
   }
 
   private log(

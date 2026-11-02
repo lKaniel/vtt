@@ -1,4 +1,4 @@
-import { isGridless, measureRuler, type Point, type Region, regionCost } from '@vtt/shared';
+import { isGridless, sceneLattice, measureRuler, type Point, type Region, regionCost } from '@vtt/shared';
 import { Container, Graphics } from 'pixi.js';
 import { rulerLabels } from '../rulers.ts';
 import type { Session } from '../session.ts';
@@ -52,6 +52,7 @@ export class RulerLayer {
     const m = measureRuler(points, {
       gridSize: world.gridSize,
       gridless: isGridless(world),
+      lattice: sceneLattice(world),
       cost: regionCost(regions, world.darkness),
     });
     this.drawLine(m.points, color);

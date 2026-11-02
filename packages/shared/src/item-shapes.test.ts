@@ -1,5 +1,6 @@
 import type { Doc } from '@vtt/core';
 import { describe, expect, it } from 'vitest';
+import { latticeOf } from './grid.ts';
 import { dragHandle, handlesOf, MODES, moveBy, shapeOf, snapDelta, type View } from './placeables.ts';
 
 const view: View = { gridSize: 100, px: 1 };
@@ -48,6 +49,16 @@ describe('the new editor modes', () => {
     expect(snapDelta([140, 60], 'notes', 100, false)).toEqual([150, 50]);
     expect(snapDelta([140, 60], 'templates', 100, false)).toEqual([150, 50]);
     expect(snapDelta([140, 60], 'regions', 100, false)).toEqual([100, 100]);
+  });
+
+  it('move tokens hex to hex on hexes, and the rest as on squares', () => {
+    const hex = latticeOf('hex-rows', 100);
+    const [d0, d1] = [hex.centre([0, 0]), hex.centre([1, 1])];
+    const moved = snapDelta([d1[0] - d0[0] + 12, d1[1] - d0[1] - 9], 'tokens', hex, false);
+    expect(moved[0]).toBeCloseTo(d1[0] - d0[0]);
+    expect(moved[1]).toBeCloseTo(d1[1] - d0[1]);
+    expect(snapDelta([140, 60], 'walls', hex, false)).toEqual([100, 100]);
+    expect(snapDelta([140, 60], 'tokens', hex, true)).toEqual([140, 60]);
   });
 });
 

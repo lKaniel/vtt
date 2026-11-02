@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { TileTriggerSchema } from './trigger-schema.ts';
 import { WeatherSchema } from './weather.ts';
 import { WeatherCycleSchema } from './weather-cycle.ts';
+import { GRID_KINDS } from './grid.ts';
 
 // The items in a game folder are described here (game.json and scene.json in
 // game-schema.ts). The checker, the server and docs/game-format.md all follow
@@ -75,9 +76,10 @@ export const SceneSettingsSchema = z.object({
   /**
    * "none" (the default): no grid, tokens walk anywhere and distances are
    * plain feet. "square": grid lines, tokens walk square to square, every
-   * square (diagonals too) 5 ft.
+   * square (diagonals too) 5 ft. "hex-rows" (pointy top) and "hex-cols"
+   * (flat top): tokens walk hex to hex, every hex 5 ft (see grid.ts).
    */
-  grid: z.enum(['square', 'none']).optional(),
+  grid: z.enum(GRID_KINDS).optional(),
   /** Grid line colour (default black) and opacity (default 0.16). */
   gridColor: z.string().optional(),
   gridOpacity: z.number().min(0).max(1).optional(),

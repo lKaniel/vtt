@@ -5,6 +5,7 @@ import {
   type DoorState,
   isGm,
   isGridless,
+  sceneLattice,
   type Player,
   type Point,
   walkPath,
@@ -63,6 +64,7 @@ export class TokenMoves {
     const path = walkPath([token.x, token.y], to, walls, {
       gridSize: g,
       gridless: isGridless(this.store.world),
+      lattice: sceneLattice(this.store.world),
       radius: bodyOf(token, g).r,
       bodies: this.others(token, seen).map((t) => bodyOf(t, g)),
       margin: PATH_MARGIN,

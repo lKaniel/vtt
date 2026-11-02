@@ -159,6 +159,8 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
           options={[
             { value: 'none', label: 'None: walk anywhere, distances in feet' },
             { value: 'square', label: 'Squares: walk square to square' },
+            { value: 'hex-rows', label: 'Hexes in rows (pointy top)' },
+            { value: 'hex-cols', label: 'Hexes in columns (flat top)' },
           ]}
         />
       </label>

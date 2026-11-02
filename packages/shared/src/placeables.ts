@@ -5,6 +5,7 @@ import { itemDrag, itemHandles, type ItemMode, ITEM_MODES, itemShape, itemStep, 
 import type { Shape } from './hit-test.ts';
 import type { Point } from './schema.ts';
 import { feetToPx } from './vision.ts';
+import type { Lattice } from './grid.ts';
 
 // What the map editor needs to know about each kind of placeable: its shape
 // for picking, its handles and what dragging one does, and how it moves.
@@ -78,7 +79,19 @@ function moveStep(mode: EditorMode, gridSize: number): number {
 
 const roundTo = (v: number, step: number): number => Math.round(v / step) * step;
 
-export function snapDelta(d: Point, mode: EditorMode, gridSize: number, free: boolean): Point {
+/** `d` rounded to a step from one cell's centre to another's. */
+function cellStep(d: Point, lattice: Lattice): Point {
+  const o = lattice.centre([0, 0]);
+  const to = lattice.centre(lattice.cellOf([o[0] + d[0], o[1] + d[1]]));
+  return [to[0] - o[0], to[1] - o[1]];
+}
+
+/** What a move snaps to: the square size, or the scene's cells (on hexes, tokens then move hex to hex). */
+export type MoveGrid = number | Lattice;
+
+export function snapDelta(d: Point, mode: EditorMode, grid: MoveGrid, free: boolean): Point {
+  if (typeof grid !== 'number' && grid.kind !== 'square' && mode === 'tokens' && !free) return cellStep(d, grid);
+  const gridSize = typeof grid === 'number' ? grid : grid.size;
   const step = free ? 1 : moveStep(mode, gridSize);
   return [roundTo(d[0], step), roundTo(d[1], step)];
 }

@@ -1,5 +1,5 @@
 import type { Creature } from './creature.ts';
-import { type Rng, roll, type Roll } from '@vtt/shared';
+import { type GridKind, type Lattice, latticeOf, type Rng, roll, type Roll } from '@vtt/shared';
 import { d20Formula } from './effects.ts';
 import type { Attack, Damage, DamageType } from './stats-schema.ts';
 
@@ -82,19 +82,28 @@ interface Placed {
 }
 
 /**
- * Feet between two tokens. On a grid: between their nearest squares, every
- * square (diagonals too) 5 ft. Without one: the ground between their edges
- * plus 5 ft for the target's own space, less half a square of slack, so
- * creatures standing within a step of each other are 5 ft apart.
+ * Feet between two tokens. On squares: between their nearest squares, every
+ * square (diagonals too) 5 ft. On hexes: the hexes between their centres,
+ * less what a large creature covers. Without a grid: the ground between
+ * their edges plus 5 ft for the target's own space, less half a square of
+ * slack, so creatures standing within a step of each other are 5 ft apart.
  */
-export function tokenDistance(a: Placed, b: Placed, gridSize: number, gridless = false): number {
-  if (gridless) {
+export function tokenDistance(a: Placed, b: Placed, gridSize: number, grid: GridKind = 'square'): number {
+  if (grid === 'none') {
     const gap = Math.hypot(a.x - b.x, a.y - b.y) - ((a.size + b.size) / 2) * gridSize;
     return 5 + Math.round(Math.max(0, (gap / gridSize) * 5 - 2.5));
   }
+  if (grid !== 'square') return hexDistance(a, b, latticeOf(grid, gridSize));
   const half = ((a.size + b.size) / 2) * gridSize;
   const gap = (d: number) => Math.round(Math.max(0, Math.abs(d) - half) / gridSize);
   return (Math.max(gap(a.x - b.x), gap(a.y - b.y)) + 1) * 5;
+}
+
+/** Hexes between two tokens' centres, less the hexes a creature larger than one covers around its centre. */
+function hexDistance(a: Placed, b: Placed, hex: Lattice): number {
+  const cells = hex.distance(hex.cellOf([a.x, a.y]), hex.cellOf([b.x, b.y]));
+  const spread = (t: Placed) => Math.ceil((t.size - 1) / 2);
+  return Math.max(1, cells - spread(a) - spread(b)) * 5;
 }
 
 /** Whether a target this many feet away is within normal range, long range or out of reach. */

@@ -1,7 +1,8 @@
 import { areaShape, type Attack, attackRange, type Token, tokenDistance } from '@vtt/system-dnd5e';
 import {
   hasLineOfSight,
-  isGridless,
+  gridKind,
+  type GridKind,
   type Point,
   type Region,
   regionCost,
@@ -24,8 +25,8 @@ const AREA_COLOR = 0xff9040;
 
 interface PreviewContext {
   gridSize: number;
-  /** No grid: aim at the very point and measure as the crow flies. */
-  gridless: boolean;
+  /** The scene's grid (none: aim at the very point and measure as the crow flies). */
+  grid: GridKind;
   walls: readonly Wall[];
   zoom: number;
   force: boolean;
@@ -80,7 +81,7 @@ export class PathPreview {
   showAttack(token: Token, hover: Point, attack: Attack, ctx: PreviewContext): void {
     const target = this.aim(hover, ctx);
     if (!this.needsRedraw(`attack:${attack.name}:${target[0]},${target[1]}:${token.x},${token.y}`, ctx.force)) return;
-    const feet = tokenDistance(token, { x: target[0], y: target[1], size: 1 }, ctx.gridSize, ctx.gridless);
+    const feet = tokenDistance(token, { x: target[0], y: target[1], size: 1 }, ctx.gridSize, ctx.grid);
     const blocked = !hasLineOfSight([token.x, token.y], target, ctx.walls, { kind: 'sight', gridSize: ctx.gridSize });
     const range = blocked ? 'out' : attackRange(attack, feet);
     const color = { normal: OK_COLOR, long: LONG_RANGE_COLOR, out: BLOCKED_COLOR }[range];
@@ -129,7 +130,7 @@ export class PathPreview {
 
   /** The hovered point, whole pixels without a grid, its square's centre on one. */
   private aim(hover: Point, ctx: PreviewContext): Point {
-    const [x, y] = aimPoint(hover, { gridSize: ctx.gridSize, grid: ctx.gridless ? 'none' : 'square' });
+    const [x, y] = aimPoint(hover, { gridSize: ctx.gridSize, grid: ctx.grid });
     return [Math.round(x), Math.round(y)];
   }
 
@@ -179,7 +180,7 @@ export function showPreview(
   const regions = session.docs.all(`${session.scene}/regions`) as unknown as Region[];
   const ctx = {
     gridSize: world.gridSize,
-    gridless: isGridless(world),
+    grid: gridKind(world),
     walls: at.walls,
     zoom: at.zoom,
     force: at.force,
