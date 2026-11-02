@@ -105,6 +105,7 @@ describe('foundrySheet', () => {
       type: 'character',
       system: {
         abilities: abilities(10, 14, 14, 17, 12, 8),
+        details: { originalClass: 'w1' },
         attributes: {
           hp: { value: 20, max: 20, temp: 3 },
           ac: { calc: 'default' },
@@ -114,8 +115,9 @@ describe('foundrySheet', () => {
         traits: { size: 'med' },
       },
       items: [
-        { name: 'Wizard', type: 'class', system: { levels: 3 } },
-        { name: 'Fighter', type: 'class', system: { levels: 1 } },
+        { _id: 'f1', name: 'Fighter', type: 'class', system: { levels: 1, identifier: 'fighter' } },
+        { _id: 'w1', name: 'Wizard', type: 'class', system: { levels: 3, identifier: 'wizard' } },
+        { name: 'School of Evocation', type: 'subclass', system: { classIdentifier: 'wizard' } },
         { name: 'Dagger', type: 'weapon', system: { equipped: true, quantity: 2 } },
         { name: 'Leather Armor', type: 'equipment', system: { equipped: true } },
         { name: 'Crossbow, light', type: 'weapon', system: {} },
@@ -135,8 +137,10 @@ describe('foundrySheet', () => {
       stats: {
         abilities: { str: 10, dex: 14, con: 14, int: 17, wis: 12, cha: 8 },
         maxHp: 20,
-        class: 'Wizard',
-        level: 4,
+        classes: [
+          { class: 'wizard', level: 3, subclass: 'school-of-evocation' },
+          { class: 'fighter', level: 1 },
+        ],
         skills: ['arcana', 'perception'],
         spells: ['fire-bolt', 'shield'],
       },
@@ -149,11 +153,26 @@ describe('foundrySheet', () => {
       ],
       own: { items: [{ type: 'gear', id: 'lucky-coin', name: 'Lucky Coin', weight: 0.1, description: 'Shiny.' }] },
     });
-    expect(skipped).toEqual([
-      'classes: one class per sheet here, so Wizard 3 / Fighter 1 became Wizard 4',
-      'spell "Glimmer of Amar", which the 2014 rules have no match for',
-    ]);
+    expect(skipped).toEqual(['spell "Glimmer of Amar", which the 2014 rules have no match for']);
     expect(ActorSchema.safeParse({ id: 'mira', name: 'Mira', ...s }).success).toBe(true);
+  });
+
+  it('keeps one class as class and level, and names homebrew classes by their slug', () => {
+    const hunter = {
+      name: 'Vex',
+      type: 'character',
+      system: {},
+      items: [{ name: 'Blood Hunter', type: 'class', system: { levels: 5 } }],
+    };
+    expect(sheet(hunter).sheet.stats).toMatchObject({ class: 'Blood Hunter', level: 5 });
+    const multi = {
+      ...hunter,
+      items: [...hunter.items, { name: 'Artificer', type: 'class', system: { levels: 2 } }],
+    };
+    expect(sheet(multi).sheet.stats?.classes).toEqual([
+      { class: 'blood-hunter', level: 5 },
+      { class: 'artificer', level: 2 },
+    ]);
   });
 
   it('reads 2024 content when the game plays 2024 rules', () => {
