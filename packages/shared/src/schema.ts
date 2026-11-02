@@ -28,6 +28,8 @@ export const PlayerSchema = z.object({
   name: z.string().min(1),
   role: RoleSchema,
   color: z.string().default('#8a8a8a'),
+  /** The seat's picture (`/assets/…`, `pack://…`), beside its chat. */
+  avatar: z.string().max(500).optional(),
   /** The scene this seat is on when it isn't the game's (the GM sent them, or the GM is looking elsewhere). */
   scene: id.optional(),
   /** The seat's own options for this game, as its system names them (D&D: how reactions are offered). */

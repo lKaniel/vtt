@@ -13,7 +13,7 @@ import { ItemSession } from './session-items.ts';
 
 // Journal entries, roll tables and playlists: the sidebar's own documents.
 // Entries open in a viewer (a map note opens its entry; the GM can show one
-// to every player); the GM rolls on tables and starts and stops playlists.
+// to every player, and a picture too); the GM rolls on tables and starts and stops playlists.
 
 /** A journal entry open in the viewer. */
 export interface OpenJournal {
@@ -27,9 +27,17 @@ const NEW: Record<EntryType, Record<string, unknown>> = {
   playlist: { name: 'New playlist', mode: 'sequence', tracks: [] },
 };
 
+/** A picture the GM showed. */
+export interface ShownImage {
+  src: string;
+  title?: string;
+}
+
 export abstract class JournalSession extends ItemSession {
   /** The entry open in the viewer. */
   journal?: OpenJournal;
+  /** The picture the GM showed you, open until you close it. */
+  shownImage?: ShownImage;
 
   protected abstract changed(): void;
 
@@ -46,6 +54,21 @@ export abstract class JournalSession extends ItemSession {
   /** GM: opens an entry for every player (and lets them see it). */
   showJournal(entry: string, page?: string): void {
     this.send({ t: 'showJournal', entry, ...(page ? { page } : {}) });
+  }
+
+  /** GM: opens a picture on every player's screen. */
+  showImage(src: string, title?: string): void {
+    this.send({ t: 'showImage', src, ...(title ? { title } : {}) });
+  }
+
+  closeImage(): void {
+    this.shownImage = undefined;
+    this.changed();
+  }
+
+  /** Your seat's colour and picture; a null avatar takes it away. */
+  setProfile(profile: { color?: string; avatar?: string | null }): void {
+    this.send({ t: 'profile', ...profile });
   }
 
   /** Rolls on a table; `gmOnly` whispers the result to the GM. */
@@ -86,6 +109,10 @@ export abstract class JournalSession extends ItemSession {
   protected abstract heard(src: string, volume: number): void;
 
   protected override applyEdit(msg: ServerMessage): boolean {
+    if (msg.t === 'showImage') {
+      this.shownImage = msg.title ? { src: msg.src, title: msg.title } : { src: msg.src };
+      return true;
+    }
     if (msg.t === 'sound') {
       this.heard(msg.src, msg.volume ?? 1);
       return false;

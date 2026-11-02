@@ -99,10 +99,10 @@ export class Game {
     this.map = new MapActions(table);
     this.scenes = new SceneActions(store);
     this.fog = new FogKeeper(store);
-    const show = (entry: string, page?: string) => {
-      for (const c of this.clients)
-        if (!isGm(c.player)) this.send(c, { t: 'showJournal', entry, ...(page && { page }) });
+    const toPlayers = (msg: ServerMessage) => {
+      for (const c of this.clients) if (!isGm(c.player)) this.send(c, msg);
     };
+    const show = (entry: string, page?: string) => toPlayers({ t: 'showJournal', entry, ...(page && { page }) });
     const say = (text: string, gmOnly: boolean) => this.chat.post(gameCard(text, gmOnly));
     const scene = (msg: ServerMessage) => this.on(store.currentScene).forEach((c) => this.send(c, msg));
     const rules = { combat: this.combat, zones: this.zones, reactions: this.reactions };
@@ -114,7 +114,7 @@ export class Game {
     this.hud = new HudActions(table, this.combat);
     this.entries = new EntryActions(store, rng, {
       post: (message) => this.chat.post(actedBy(message, this.acting)),
-      show,
+      toPlayers,
     });
     this.listen(store);
   }

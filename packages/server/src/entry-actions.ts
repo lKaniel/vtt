@@ -1,23 +1,27 @@
 import { randomUUID } from 'node:crypto';
 import { canObserve, drawFrom, drawnPatch, isGm, type Player, type Rng, type RollTable } from '@vtt/shared';
-import type { ChatMessage } from '@vtt/system-dnd5e';
+import type { ChatMessage, ServerMessage } from '@vtt/system-dnd5e';
+import { signedBy } from './seat-settings.ts';
 import { fromDoc } from './doc-sync.ts';
 import type { GameStore } from './game-store.ts';
 import { Refusal } from './table.ts';
 
 // Sidebar documents in play: rolling on a roll table into chat, and the GM
-// showing a journal entry to the players (it is shared with them, then
+// showing a journal entry or a picture to the players (it is shared with them, then
 // opened on their screens).
 
 type EntryMessage =
-  { t: 'rollTable'; table: string; gmOnly?: boolean } | { t: 'showJournal'; entry: string; page?: string };
+  | { t: 'rollTable'; table: string; gmOnly?: boolean }
+  | { t: 'showJournal'; entry: string; page?: string }
+  | { t: 'showImage'; src: string; title?: string };
 
-export const isEntryMessage = (msg: { t: string }): msg is EntryMessage =>
-  msg.t === 'rollTable' || msg.t === 'showJournal';
+const ENTRY_MESSAGES = new Set(['rollTable', 'showJournal', 'showImage']);
+export const isEntryMessage = (msg: { t: string }): msg is EntryMessage => ENTRY_MESSAGES.has(msg.t);
 
 interface Out {
   post(message: ChatMessage): void;
-  show(entry: string, page?: string): void;
+  /** Sends every player (not the GM) a message. */
+  toPlayers(msg: Extract<ServerMessage, { t: 'showJournal' | 'showImage' }>): void;
 }
 
 export class EntryActions {
@@ -29,7 +33,8 @@ export class EntryActions {
 
   handle(player: Player, msg: EntryMessage): void {
     if (msg.t === 'rollTable') this.roll(player, msg.table, !!msg.gmOnly);
-    else this.show(player, msg.entry, msg.page);
+    else if (msg.t === 'showJournal') this.show(player, msg.entry, msg.page);
+    else this.showImage(player, msg.src, msg.title);
   }
 
   private roll(player: Player, id: string, gmOnly: boolean): void {
@@ -42,14 +47,20 @@ export class EntryActions {
     const patch = drawnPatch(table, drawn.index);
     if (patch) this.store.applyOps([{ op: 'update', coll: 'tables', id, patch }]);
     const text = `${table.name}: ${table.results[drawn.index]!.text} (${drawn.roll} on 1d${drawn.of})`;
-    const base = { id: randomUUID(), time: Date.now(), from: player.name, color: player.color };
+    const base = { ...signedBy(player), id: randomUUID(), time: Date.now() };
     this.out.post({ ...base, by: player.id, text, ...(gmOnly && { mode: 'gm' as const }) });
   }
 
   private show(player: Player, id: string, page?: string): void {
     if (!isGm(player)) throw new Refusal('Only the GM can show journal entries');
     if (!shareEntry(this.store, id)) throw new Refusal('No such journal entry');
-    this.out.show(id, page);
+    this.out.toPlayers({ t: 'showJournal', entry: id, ...(page && { page }) });
+  }
+
+  /** GM: a picture (an asset, a token's art) opens on the players' screens. */
+  private showImage(player: Player, src: string, title?: string): void {
+    if (!isGm(player)) throw new Refusal('Only the GM can show pictures');
+    this.out.toPlayers({ t: 'showImage', src, ...(title && { title }) });
   }
 }
 

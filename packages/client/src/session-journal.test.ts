@@ -102,4 +102,20 @@ describe('the sidebar documents in the session', () => {
     session.createEntry('playlist');
     expect(last()).toMatchObject({ ops: [{ op: 'create', coll: 'playlists', doc: { tracks: [] } }] });
   });
+
+  it('opens a picture the GM shows, and the GM shows one', () => {
+    ws.receive(welcome());
+    ws.receive({ t: 'showImage', src: '/assets/map.png', title: 'Old map' });
+    expect(session.shownImage).toEqual({ src: '/assets/map.png', title: 'Old map' });
+    session.closeImage();
+    expect(session.shownImage).toBeUndefined();
+    session.showImage('/assets/map.png');
+    expect(ws.sent.at(-1)).toEqual({ t: 'showImage', src: '/assets/map.png' });
+  });
+
+  it('sets your colour and picture', () => {
+    ws.receive(welcome());
+    session.setProfile({ color: '#3366ff', avatar: null });
+    expect(ws.sent.at(-1)).toEqual({ t: 'profile', color: '#3366ff', avatar: null });
+  });
 });
