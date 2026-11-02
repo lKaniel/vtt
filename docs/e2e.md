@@ -22,7 +22,11 @@ time per machine, split over three machines (`--shard`).
   a temporary folder as the home game, its own data folder (`VTT_DATA`) and a
   free port. Tests never see each other's changes and run in parallel.
   `test.use({ serverOptions: { adminPassword } })` starts it with
-  `VTT_ADMIN_PASSWORD`. `server.gameDir` and `server.dataDir` are there for
+  `VTT_ADMIN_PASSWORD`, `prepare: (gameDir) => …` edits the game's files
+  first (`support/files.ts`), and `seed` seeds the server's dice
+  (`support/seeded-random.ts`) so a roll comes out the same every run. A spec
+  never depends on luck: seed the dice and set the odds (an AC 1 goblin).
+  `server.gameDir` and `server.dataDir` are there for
   specs that check what was written to disk.
 - **Getting to the table** (`support/table.ts`) goes through the same screens a
   person uses: `joinGame` (join screen), `enterTable` (_Enter the game_), or
