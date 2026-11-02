@@ -15,6 +15,7 @@ export default defineConfig({
       '/mcp': server,
       '/assets': server,
       '/packs': server,
+      '/plugins': server,
       '^/games/[^/]+/assets/': server,
     },
   },

@@ -34,6 +34,7 @@ const assetsDir = (game?: string) => {
 const handleRequest = httpHandler({
   assetsDir,
   packFile: (pack, path) => hub.packs.mediaFile(pack, path),
+  pluginFile: (plugin, path) => hub.plugins.file(plugin, path),
   clientDir: clientDist,
   players: async () => {
     if (!hub.homeId) return [];

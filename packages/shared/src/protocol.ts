@@ -1,4 +1,4 @@
-import type { Doc, MediaEntry, Op, PackCompendium, PackInfo } from '@vtt/core';
+import type { Doc, MediaEntry, Op, PackCompendium, PackInfo, PluginInfo } from '@vtt/core';
 import type { Roll } from './dice.ts';
 import type { ClockAction } from './clock.ts';
 import type { Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
@@ -102,6 +102,8 @@ export type EngineClientMessage =
   | { t: 'redo' }
   /** GM: the packs this game may use (answered with `packs`). */
   | { t: 'packs' }
+  /** GM: the plugins this game may use (answered with `plugins`). */
+  | { t: 'plugins' }
   /** GM: the pictures, sounds and videos of the game's assets and its packs (answered with `media`). */
   | { t: 'media' }
   /** GM: one compendium's documents, to copy into the game (answered with `compendium`). */
@@ -160,6 +162,8 @@ export type EngineServerMessage =
   | { t: 'packContent'; compendia: PackCompendium[] }
   /** GM: the packs the game may use; `problems` are packs the server couldn't read. */
   | { t: 'packs'; packs: PackInfo[]; problems: string[] }
+  /** GM: the plugins the game may use; `problems` are plugins the server couldn't read or this game can't load. */
+  | { t: 'plugins'; plugins: PluginInfo[]; problems: string[] }
   | { t: 'media'; entries: MediaEntry[] }
   | { t: 'compendium'; pack: string; compendium: string; docs: unknown[] }
   /** The GM shows you a journal entry: open it (at `page`). */

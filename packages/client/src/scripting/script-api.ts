@@ -1,8 +1,9 @@
-import type { Doc, Op, Patch } from '@vtt/core';
+import type { Doc, Op, Patch, PluginLoad } from '@vtt/core';
 import type { Player, Point } from '@vtt/shared';
 import type { ClientMessage, TokenView } from '@vtt/system-dnd5e';
 import type { SessionEvents } from '../session-events.ts';
 import { Hooks, type HookFn } from './hooks.ts';
+import { PluginLoader } from './plugins.ts';
 import { runScript } from './run-script.ts';
 
 // The scripting API (docs/scripting.md): what a GM's script macro or a
@@ -17,6 +18,7 @@ export interface ScriptSession {
   readonly targets: { readonly mine: ReadonlySet<string> };
   readonly docs: { get(coll: string, id: string): Doc | undefined; all(coll: string): Doc[] };
   combat: unknown;
+  readonly pluginLoads: readonly PluginLoad[];
   on<K extends keyof SessionEvents>(event: K, fn: SessionEvents[K]): () => void;
   isGm(): boolean;
   send(msg: ClientMessage): void;
@@ -68,10 +70,11 @@ const BRIDGED: [keyof SessionEvents, string][] = [
 
 const macroName = (doc: Doc) => (typeof doc.name === 'string' ? doc.name : doc.id);
 
-/** The hooks and the `vtt` object of one session, and the runner of its script macros. */
+/** The hooks and the `vtt` object of one session, the runner of its script macros and its plugins. */
 export class ScriptHost {
   readonly hooks: Hooks;
   readonly vtt: VttApi;
+  readonly plugins: PluginLoader;
 
   constructor(private readonly session: ScriptSession) {
     this.hooks = new Hooks((hook, e) => session.showError(`A ${hook} hook failed: ${messageOf(e)}`));
@@ -80,6 +83,9 @@ export class ScriptHost {
       session.on(event, (...args: unknown[]) => this.hooks.call(hook, ...args));
     }
     session.on('combat', () => this.hooks.call('combat', session.combat));
+    this.plugins = new PluginLoader(this.vtt, (id, message) => session.showError(`Plugin ${id} failed: ${message}`));
+    // Plugins load once the table is ready, so their main runs with the scene and documents in.
+    session.on('welcome', () => void this.plugins.load(session.pluginLoads));
   }
 
   /** Runs a script macro for `token`; its failure shows as an error, named for the macro. */

@@ -3,6 +3,7 @@ import type { ChatMessage, ServerMessage, Token, TokenView } from '@vtt/system-d
 import type { DocFeed } from './doc-feed.ts';
 import type { GameStore } from './game-store.ts';
 import { packContent } from './game-packs.ts';
+import { pluginLoads } from './game-plugins.ts';
 import { withoutSettings } from './seat-settings.ts';
 
 // What a client is sent when it joins, or starts over because its seat,
@@ -31,6 +32,7 @@ export function startOf(store: GameStore, c: Joining): string {
     store.sceneName(c.scene),
     seats,
     store.campaign.packs,
+    store.campaign.plugins,
   ];
   return JSON.stringify(parts);
 }
@@ -64,6 +66,7 @@ export function welcomeOf(store: GameStore, c: Joining, parts: WelcomeParts): Se
     history: parts.history,
     docs: c.feed.start(player),
     serverTime: parts.now,
+    plugins: pluginLoads(store.plugins, store.campaign),
     ...(parts.paused && { paused: true }),
     ...(gm ? { players: store.world.players, actors: [...store.actors.values()] } : {}),
   };

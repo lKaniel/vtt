@@ -2,8 +2,8 @@
 
 Script macros let the GM run JavaScript at the table, like Foundry's
 script macros. A script talks to the game through **`vtt`**, the
-scripting API. It listens for things that happen through **hooks**. The
-same API is what plugins will use.
+scripting API. It listens for things that happen through **hooks**. Plugins
+([plugins.md](plugins.md)) get the same API.
 
 ## Script macros
 

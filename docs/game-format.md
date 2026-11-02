@@ -81,6 +81,8 @@ clears every seat's own). At least one player must have `"role": "gm"`.
 one so far. `packs` lists the installed asset packs the game uses (see
 [packs.md](packs.md)); tiles and tokens refer to their files as
 `pack://<pack>/<path>`, and tokens can use their monsters.
+`plugins` lists the installed plugins every client at the game loads (see
+[plugins.md](plugins.md)).
 Changes reach everyone live: whoever's seat, scene or settings changed starts
 over on their scene; a seat that's gone is disconnected.
 

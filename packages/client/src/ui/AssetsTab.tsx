@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { assetUrl } from '../assets.ts';
 import type { Session } from '../session.ts';
 import { startDrag } from './ActorsTab.tsx';
+import { PluginsView } from './PluginsView.tsx';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Toggle } from './kit/toggle.tsx';
@@ -13,9 +14,10 @@ import { Checkbox } from './kit/checkbox.tsx';
 // The GM's Assets tab: the pictures, sounds and videos of the game and the
 // packs it uses (search, tags, upload; drag a picture onto the map to make
 // it a tile), and the packs themselves: turn installed packs on for this
-// game, and copy scenes and actors in from their compendia.
+// game, and copy scenes and actors in from their compendia; and the plugins
+// it loads (PluginsView.tsx).
 
-type View = 'media' | 'packs';
+type View = 'media' | 'packs' | 'plugins';
 /** Thumbnails shown at once; typing narrows the rest. */
 const SHOWN = 150;
 const TAGS = 14;
@@ -35,8 +37,13 @@ export function AssetsTab({ session }: Readonly<{ session: Session }>) {
         <Toggle pressed={view === 'packs'} onPressedChange={() => setView('packs')}>
           Packs
         </Toggle>
+        <Toggle pressed={view === 'plugins'} onPressedChange={() => setView('plugins')}>
+          Plugins
+        </Toggle>
       </nav>
-      {view === 'media' ? <MediaView session={session} /> : <PacksView session={session} />}
+      {view === 'media' && <MediaView session={session} />}
+      {view === 'packs' && <PacksView session={session} />}
+      {view === 'plugins' && <PluginsView session={session} />}
     </div>
   );
 }

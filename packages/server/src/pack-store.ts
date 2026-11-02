@@ -9,6 +9,7 @@ import {
   packRef,
 } from '@vtt/core';
 import { readJson } from './json-files.ts';
+import { type Found, readManifests } from './manifests.ts';
 
 // The asset packs installed on this server: data/packs/<id>/, each with a
 // pack.json (see core/packs.ts). Installed by hand or by the Foundry import
@@ -53,10 +54,8 @@ export class PackStore {
   async load(): Promise<void> {
     const packs = new Map<string, Installed>();
     const problems: string[] = [];
-    const names = await readdir(this.dir).catch(() => [] as string[]);
-    for (const name of [...names].sort((a, b) => a.localeCompare(b))) {
-      const pack = await this.read(name, problems);
-      if (pack) packs.set(pack.manifest.id, pack);
+    for (const found of await readManifests(this.dir, 'pack.json', PackManifestSchema, problems)) {
+      packs.set(found.manifest.id, await this.withCompendia(found, problems));
     }
     this.packs = packs;
     this.problems = problems;
@@ -64,22 +63,9 @@ export class PackStore {
     this.revision++;
   }
 
-  private async read(name: string, problems: string[]): Promise<Installed | undefined> {
-    const dir = join(this.dir, name);
-    const raw = await readJson(join(dir, 'pack.json'));
-    if (raw === undefined) return undefined;
-    const parsed = PackManifestSchema.safeParse(raw);
-    const where = `${name}/pack.json`;
-    if (!parsed.success) {
-      const issue = parsed.error.issues[0]!;
-      problems.push(`${where}: ${issue.path.join('.')} ${issue.message}`);
-      return undefined;
-    }
-    const manifest = parsed.data;
-    if (manifest.id !== name) {
-      problems.push(`${where}: its id is "${manifest.id}" but its folder is "${name}"`);
-      return undefined;
-    }
+  /** A pack with its compendia read; one that can't be read is reported. */
+  private async withCompendia({ manifest, dir }: Found<PackManifest>, problems: string[]): Promise<Installed> {
+    const where = `${manifest.id}/pack.json`;
     const compendia: PackCompendium[] = [];
     for (const info of manifest.compendia) {
       const docs = await readJson(join(dir, info.path));

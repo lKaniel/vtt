@@ -97,6 +97,19 @@ describe('the GM’s asset browser', () => {
     expect(sent()).toMatchObject({ ops: [{ patch: { packs: ['goblins'] } }] });
   });
 
+  it('lists the plugins and turns them on and off on game.json', () => {
+    ws.receive(gmWelcome());
+    session.requestPlugins();
+    expect(sent()).toEqual({ t: 'plugins' });
+    const alert = { id: 'alert', name: 'Alert', version: '1.0.0', system: null, main: 'main.js', styles: [] };
+    ws.receive({ t: 'plugins', plugins: [{ ...alert, enabled: false }], problems: ['x/plugin.json: name'] });
+    expect(session.pluginList.map((p) => p.id)).toEqual(['alert']);
+    expect(session.pluginProblems).toEqual(['x/plugin.json: name']);
+    session.setPluginEnabled('alert', true);
+    expect(sent()).toMatchObject({ ops: [{ op: 'update', coll: 'game', patch: { plugins: ['alert'] } }] });
+    expect(session.pluginList[0]?.enabled).toBe(true);
+  });
+
   it('uploads a file', () => {
     ws.receive(gmWelcome());
     session.upload('map.png', 'AAAA');

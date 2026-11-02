@@ -23,6 +23,8 @@ export const GameSchema = z.object({
   players: z.array(PlayerSchema).min(1),
   /** Installed asset packs the game uses (data/packs/<id>/); the system's own packs are always on. */
   packs: z.array(id).optional(),
+  /** Installed plugins the game uses (data/plugins/<id>/), loaded by every client: docs/plugins.md. */
+  plugins: z.array(id).optional(),
 });
 export type Game = z.infer<typeof GameSchema>;
 
