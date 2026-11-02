@@ -1,6 +1,7 @@
 import type { Ownership } from '@vtt/core';
 import { z } from 'zod';
 import { TileTriggerSchema } from './trigger-schema.ts';
+import { WeatherSchema } from './weather.ts';
 
 // The items in a game folder are described here (game.json and scene.json in
 // game-schema.ts). The checker, the server and docs/game-format.md all follow
@@ -87,6 +88,8 @@ export const SceneSettingsSchema = z.object({
   levels: z.array(SceneLevelSchema).optional(),
   /** A playlist that starts when the game moves to this scene. */
   playlist: id.optional(),
+  /** Rain, snow, clouds, fog, embers or birds over the map, in layers (see weather.ts). */
+  weather: z.array(WeatherSchema).optional(),
 });
 
 /** The table settings the rules and the client use: the game's, plus those of the scene being played. */
@@ -150,6 +153,16 @@ const ImageTileSchema = z.object({
   occludedAlpha: z.number().min(0).max(1).optional(),
   /** Pixels a second the picture slides by inside the tile (running water, clouds). */
   scroll: z.object({ x: z.number(), y: z.number() }).optional(),
+  /** A soft shadow under the picture (trees, roofs): `offset` pixels down and right, blurred `blur` pixels. */
+  shadow: z
+    .object({
+      offset: z.number().default(12),
+      blur: z.number().nonnegative().default(8),
+      alpha: z.number().min(0).max(1).default(0.5),
+    })
+    .optional(),
+  /** A colour multiplied into the picture, e.g. "#88aaff" for moonlight. */
+  tint: z.string().optional(),
 });
 /** A group of tiles: no picture or rect of its own, it spans what is in it. */
 const GroupTileSchema = z.object({ kind: z.literal('group'), ...tileTree });

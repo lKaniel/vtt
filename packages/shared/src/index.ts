@@ -31,6 +31,7 @@ export * from './templates.ts';
 export * from './regions.ts';
 export * from './trigger-schema.ts';
 export * from './triggers.ts';
+export * from './weather.ts';
 export * from './ruler.ts';
 export * from './sounds.ts';
 export * from './roll-tables.ts';

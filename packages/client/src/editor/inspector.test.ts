@@ -150,7 +150,15 @@ describe('the inspector', () => {
     const image: Doc = { id: 'i', type: 'tile', rev: 1, kind: 'image', x: 0, y: 0, w: 1, h: 1, src: 'a.png' };
     const both = ['name', 'x', 'y', 'w', 'h', 'background', 'locked'];
     expect(fieldsFor([rect]).map((f) => f.key)).toEqual([...both, 'color', 'texture']);
-    expect(fieldsFor([image]).map((f) => f.key)).toEqual([...both, 'src', 'overhead', 'scroll.x', 'scroll.y']);
+    expect(fieldsFor([image]).map((f) => f.key)).toEqual([
+      ...both,
+      'src',
+      'overhead',
+      'scroll.x',
+      'scroll.y',
+      'tint',
+      'shadow',
+    ]);
     expect(fieldsFor([rect, image]).map((f) => f.key)).toEqual(both);
   });
 
@@ -163,6 +171,18 @@ describe('the inspector', () => {
     expect(commonValue([image], field([image], 'scroll.x'))).toBe(0);
   });
 
+  it('tints a picture and gives it a drop shadow, then sizes the shadow', () => {
+    const image: Doc = { id: 'i', type: 'tile', rev: 1, kind: 'image', x: 0, y: 0, w: 1, h: 1, src: 'a.png' };
+    expect(field([image], 'shadow').patch(true)).toEqual({ shadow: { offset: 12, blur: 8, alpha: 0.5 } });
+    expect(field([image], 'shadow').patch(false)).toEqual({ shadow: null });
+    const shaded = { ...image, shadow: { offset: 12, blur: 8, alpha: 0.5 } };
+    expect(fieldsFor([shaded]).map((f) => f.key)).toEqual(expect.arrayContaining(['shadow.offset', 'shadow.blur']));
+    expect(field([shaded], 'shadow.offset').patch('20', shaded)).toEqual({
+      shadow: { offset: 20, blur: 8, alpha: 0.5 },
+    });
+    expect(commonValue([shaded], field([shaded], 'shadow.blur'))).toBe(8);
+  });
+
   it('shows a group its name and lock only', () => {
     const group: Doc = { id: 'g', type: 'tile', rev: 1, kind: 'group' };
     expect(fieldsFor([group]).map((f) => f.key)).toEqual(['name', 'locked']);
@@ -171,6 +191,7 @@ describe('the inspector', () => {
   it('lets the GM hide tokens', () => {
     const token: Doc = { id: 'k', type: 'token', rev: 1, x: 0, y: 0 };
     expect(commonValue([token], field([token], 'hidden'))).toBe(false);
+    expect(field([token], 'filter').patch('sepia')).toEqual({ filter: 'sepia' });
   });
 
   it('edits drawings: line, fill, and the words of a text box', () => {

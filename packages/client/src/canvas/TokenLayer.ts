@@ -14,7 +14,7 @@ import { clickSelect, modsOf } from '../editor/selection.ts';
 import { cutoutOf, portraitOf } from '../icon-art.ts';
 import { clickToken } from '../map-clicks.ts';
 import type { Session } from '../session.ts';
-import { drawTokenRing, faceScale, onlookerOf } from './token-face.ts';
+import { applyTokenFilter, drawTokenRing, faceScale, onlookerOf } from './token-face.ts';
 import type { Viewer } from './Vision.ts';
 
 /** Token walking speed when animating a move, pixels per second. */
@@ -87,6 +87,7 @@ export class TokenLayer {
     const cutout = cutoutOf(token) && !token.ring;
     drawPlaceholder(view, cutout ? undefined : (token.ring?.background ?? token.color));
     showTexture(view.face, portraitOf(token), cutout ? box : r * 2, token);
+    applyTokenFilter(view.face, token.filter);
     const { label, faint } = describe(token);
     view.label.text = label;
     view.label.position.set(0, r * 1.15);
