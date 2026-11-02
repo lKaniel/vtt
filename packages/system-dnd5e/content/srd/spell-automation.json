@@ -3627,7 +3627,7 @@
       "automated": false,
       "manual": {
         "kind": "gm",
-        "why": "A die added to one save (2014) or damage reduced once per turn (2024): not tracked yet."
+        "why": "Damage reduced once per turn: not tracked yet."
       }
     },
     "2014": {
@@ -4300,7 +4300,7 @@
       "automated": false,
       "manual": {
         "kind": "gm",
-        "why": "Needs advantage against one target for the caster only (2014) or a weapon attack inside a spell (2024)."
+        "why": "Needs a weapon attack made as part of a spell."
       }
     },
     "2014": {
