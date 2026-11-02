@@ -14,6 +14,7 @@ import {
   topKeys,
 } from '@vtt/shared';
 import type { ChatMessage } from '@vtt/system-dnd5e';
+import type { EngineClientMessage } from '@vtt/shared';
 import { fromDoc } from './doc-sync.ts';
 import type { GameStore } from './game-store.ts';
 import { signedBy } from './seat-settings.ts';
@@ -25,12 +26,10 @@ import { Refusal } from './table.ts';
 // These are the only ways a player moves cards (op-permissions.ts keeps
 // them from writing `cards`), and each tells the table in chat.
 
-export type CardMessage =
-  | { t: 'drawCards'; from: string; to: string; n?: number }
-  | { t: 'passCards'; from: string; to: string; cards: string[] }
-  | { t: 'shuffleCards'; stack: string }
-  | { t: 'dealCards'; from: string; to: string[]; n?: number }
-  | { t: 'resetCards'; deck: string };
+export type CardMessage = Extract<
+  EngineClientMessage,
+  { t: 'drawCards' | 'passCards' | 'shuffleCards' | 'dealCards' | 'resetCards' }
+>;
 
 export const CARD_MESSAGES = new Set(['drawCards', 'passCards', 'shuffleCards', 'dealCards', 'resetCards']);
 

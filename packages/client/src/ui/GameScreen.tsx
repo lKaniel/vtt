@@ -40,17 +40,7 @@ export function GameScreen({
   const host = useRef<HTMLDivElement>(null);
   useSession(session);
 
-  useEffect(() => {
-    const map = new MapView(session);
-    let live = true;
-    // Connect once the map listens, so it sees the first world snapshot.
-    void map.init(host.current!).then(() => live && session.connect());
-    return () => {
-      live = false;
-      session.close();
-      map.destroy();
-    };
-  }, [session]);
+  useEffect(() => openMap(session, host.current!), [session]);
 
   useEffect(() => listenToKeys(session), [session]);
   useEffect(() => listenToSpace(session), [session]);
@@ -66,24 +56,7 @@ export function GameScreen({
     // The party portraits move down under the scene navigation bar while it shows.
     <div className="game has-[[data-slot=scene-nav]]:[&_.party]:top-[84px]!">
       <div className="map" ref={host} />
-      <header className="topbar frame">
-        <span
-          className={`status status-${session.status}`}
-          title={session.status === 'open' ? 'Connected' : session.status}
-        />
-        <strong className="world-name">{session.world?.name ?? 'Connecting…'}</strong>
-        {session.sceneName && <span className="scene-name">{session.sceneName}</span>}
-        <ClockBar session={session} />
-        <span className="you" style={{ color: session.you?.color }}>
-          {session.you?.name}
-        </span>
-        <PauseButton session={session} />
-        <UndoButtons session={session} />
-        <SettingsMenu session={session} />
-        <Button variant="link" onClick={onLeave}>
-          Leave
-        </Button>
-      </header>
+      <TopBar session={session} onLeave={onLeave} />
       <SceneNav session={session} />
       <TurnOrder session={session} onStart={(shared) => session.startCombat(session.fightersInView(), shared)} />
       <PartyBar session={session} />
@@ -102,6 +75,30 @@ export function GameScreen({
       <PauseBanner session={session} />
       <ObserveBanner session={session} />
     </div>
+  );
+}
+
+/** The bar across the top: connection, game and scene, clock, you, pause, undo, settings, leave. */
+function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () => void }>) {
+  return (
+    <header className="topbar frame">
+      <span
+        className={`status status-${session.status}`}
+        title={session.status === 'open' ? 'Connected' : session.status}
+      />
+      <strong className="world-name">{session.world?.name ?? 'Connecting…'}</strong>
+      {session.sceneName && <span className="scene-name">{session.sceneName}</span>}
+      <ClockBar session={session} />
+      <span className="you" style={{ color: session.you?.color }}>
+        {session.you?.name}
+      </span>
+      <PauseButton session={session} />
+      <UndoButtons session={session} />
+      <SettingsMenu session={session} />
+      <Button variant="link" onClick={onLeave}>
+        Leave
+      </Button>
+    </header>
   );
 }
 
@@ -272,6 +269,18 @@ function backOut(session: Session): void {
   if (session.sheet) session.openSheet(undefined);
   else if (session.armed ?? session.aiming) session.arm(undefined);
   else session.select(undefined);
+}
+
+/** The map in `host`, and the connection once it listens (so it sees the first world snapshot); returns the cleanup. */
+function openMap(session: Session, host: HTMLDivElement): () => void {
+  const map = new MapView(session);
+  let live = true;
+  void map.init(host).then(() => live && session.connect());
+  return () => {
+    live = false;
+    session.close();
+    map.destroy();
+  };
 }
 
 /** The game's keys: the editor's, targeting, sheets, then the game's own (handleGameKey). */
