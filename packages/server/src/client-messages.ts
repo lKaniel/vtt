@@ -95,6 +95,12 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('deleteToken'), token: z.string() }),
   z.object({ t: z.literal('relinkToken'), token: z.string(), how: z.enum(['link', 'unlink', 'save', 'reset']) }),
   z.object({
+    t: z.literal('animation'),
+    token: z.string(),
+    ref: z.string().max(90),
+    animation: z.string().max(300).optional(),
+  }),
+  z.object({
     t: z.literal('hotbar'),
     token: z.string(),
     slots: z.array(z.string().max(80).nullable()).max(60),

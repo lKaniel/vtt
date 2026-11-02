@@ -44,6 +44,7 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   turnBased: { label: 'turn-based mode', action: true },
   fog: { label: 'fog edit' },
   hotbar: { label: 'action bar change' },
+  animation: { label: 'animation choice' },
   rollTable: { label: 'table roll' },
   showJournal: { label: 'journal share' },
   move: { label: 'move', action: true },

@@ -37,6 +37,8 @@ export interface AttackLog {
   parts: { roll: Roll; type: DamageType; dealt: number }[];
   /** e.g. "long range: disadvantage", "Goblin is down". */
   notes: string[];
+  /** The animation the attacker picked for this attack (animations.ts); missing plays the default. */
+  animation?: string;
 }
 
 /** One target's part of a spell, as the chat log shows it. */
@@ -72,6 +74,8 @@ export interface SpellLog {
   slot: number;
   results: SpellTargetLog[];
   notes: string[];
+  /** The animation the caster picked for this spell; missing plays the default. */
+  animation?: string;
 }
 
 export interface ChatMessage extends ChatEntry {
@@ -150,6 +154,8 @@ export type ClientMessage =
   | { t: 'rest'; tokens: string[]; kind: 'short' | 'long' }
   /** Save how a creature you control has its action bar arranged. */
   | { t: 'hotbar'; token: string; slots: (string | null)[] }
+  /** Picks the animation for one of a creature's attacks or spells (`ref` "attack:<name>" or "spell:<id>"); none plays the default. */
+  | { t: 'animation'; token: string; ref: string; animation?: string }
   /** Something from the Compendium dropped on a sheet (a token's or, for the GM, an actor's) you may edit. */
   | { t: 'drop'; what: CompendiumDrop; onto: { kind: 'token' | 'actor'; id: string }; area?: SheetArea }
   /** Hand the stack of an item a creature you control carries (a scroll: of that spell) to a creature you see. */

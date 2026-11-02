@@ -112,6 +112,14 @@ describe('casting spells', () => {
     expect(errors(ana)[0]).toMatch(/already used/);
   });
 
+  it('tells the map which animation the caster chose for the spell', () => {
+    const { ana } = fight(['hero', 'goblin', 'goblin2', 'bo']);
+    ana.receive({ t: 'animation', token: 'hero', ref: 'spell:fire-bolt', animation: 'frost-orb' });
+    dice = [face(15), face(1, 10), face(1, 10)];
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'fire-bolt', slot: 0, targets: ['goblin'] });
+    expect(spellLogs(ana)[0]).toMatchObject({ animation: 'frost-orb' });
+  });
+
   it('spends a spell slot and refuses when none are left', () => {
     const ana = join_('ana');
     dice = Array<number>(6).fill(face(1, 4));

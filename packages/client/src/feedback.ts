@@ -1,5 +1,6 @@
 import type { AttackLog, ChatMessage, DamageType, SpellLog, SpellTargetLog } from '@vtt/system-dnd5e';
 import type { Point } from '@vtt/shared';
+import { type Animation, animationOf, isRangedVideo, type Motion } from './animations.ts';
 
 // What the map plays when an attack or spell comes through chat: a timeline
 // of cues (swing, missile, burst, flinch, floating number). Cues name tokens
@@ -17,7 +18,16 @@ export type Where = string | Point;
 export type Cue = { at: number } & (
   | { kind: 'lunge'; token: string; toward: string }
   | { kind: 'slash'; from: string; to: string; element: Element }
-  | { kind: 'missile'; from: string; to: Where; element: Element; style: 'arrow' | 'orb'; duration: number }
+  | {
+      kind: 'missile';
+      from: string;
+      to: Where;
+      element: Element;
+      style: 'arrow' | 'orb';
+      duration: number;
+      /** A crackling bolt; missing: only lightning crackles. */
+      jagged?: boolean;
+    }
   /** `radius` in feet. */
   | { kind: 'burst'; where: Where; radius: number; element: Element }
   /** A cone or line from the caster toward `to`, `length` feet long. */
@@ -29,6 +39,8 @@ export type Cue = { at: number } & (
   /** Healing or a blessing settling on a creature. */
   | { kind: 'glow'; token: string; element: Element }
   | { kind: 'number'; token: string; text: string; tone: Tone }
+  /** A video (a JB2A pack's): stretched from `from` to `to` when `ranged`, else played on `to`. */
+  | { kind: 'video'; from: string; to: string; src: string; ranged: boolean }
 );
 
 /** When a blow lands after it starts, ms. */
@@ -41,6 +53,9 @@ const CHANNEL = 260;
 const STAGGER = 140;
 /** A named effect shows a moment after the damage number. */
 const NOTE_DELAY = 180;
+/** When a video projectile reaches its target, and when an on-target video peaks, ms. */
+const VIDEO_FLIGHT = 700;
+const VIDEO_PEAK = 350;
 /** A teleport or summon puff, in feet. */
 const PUFF = 5;
 
@@ -70,10 +85,63 @@ export function elementColor(element: Element): number {
 }
 
 /** The cues for one chat message; plain chat plays nothing. */
-export function cuesOf(message: ChatMessage): Cue[] {
-  if (message.attack) return attackCues(message.attack);
-  if (message.spell) return spellCues(message.spell);
+export function cuesOf(message: ChatMessage, motion: Motion = 'full'): Cue[] {
+  if (message.attack) return trimmed(attackCues(message.attack), motion);
+  if (message.spell) return trimmed(spellCues(message.spell), motion);
   return [];
+}
+
+/** What stays when animations are reduced (the landing) or off (the numbers). */
+const KEPT: Record<Exclude<Motion, 'full'>, ReadonlySet<Cue['kind']>> = {
+  reduced: new Set(['impact', 'glow', 'number']),
+  off: new Set(['number']),
+};
+
+/** The cues a player wants, starting at once when the lead-up is cut. */
+function trimmed(cues: Cue[], motion: Motion): Cue[] {
+  if (motion === 'full') return cues;
+  const kept = cues.filter((c) => KEPT[motion].has(c.kind));
+  const first = Math.min(...kept.map((c) => c.at));
+  return kept.map((c) => ({ ...c, at: c.at - first }));
+}
+
+/** The cues that carry a blow from `from` to `to`, starting at `at`, and when it lands. */
+function delivered(
+  anim: Animation,
+  { from, to, element, at }: { from: string; to: string; element: Element; at: number },
+): { cues: Cue[]; lands: number } {
+  const how = anim.delivery;
+  switch (how) {
+    case 'swing':
+      return {
+        cues: [
+          { at, kind: 'lunge', token: from, toward: to },
+          { at: at + SWING, kind: 'slash', from, to, element },
+        ],
+        lands: at + IMPACT.melee,
+      };
+    case 'arrow':
+    case 'orb':
+    case 'bolt': {
+      const style = how === 'arrow' ? 'arrow' : 'orb';
+      const duration = IMPACT[style];
+      const missile: Cue = { at, kind: 'missile', from, to, element, style, duration };
+      return { cues: [how === 'bolt' ? { ...missile, jagged: true } : missile], lands: at + duration };
+    }
+    case 'fall':
+      return { cues: [{ at, kind: 'glow', token: to, element }], lands: at + IMPACT.melee };
+    case 'video':
+      return video(anim.src!, { from, to, at });
+    case 'none':
+      return { cues: [], lands: at };
+  }
+}
+
+/** A video blow: a projectile lands when it arrives, anything else as it peaks. */
+function video(src: string, { from, to, at }: { from: string; to: string; at: number }) {
+  const ranged = isRangedVideo(src);
+  const cues: Cue[] = [{ at, kind: 'video', from, to, src, ranged }];
+  return { cues, lands: at + (ranged ? VIDEO_FLIGHT : VIDEO_PEAK) };
 }
 
 /** Weapons glow in their first magical damage type, else they're plain steel. */
@@ -82,18 +150,13 @@ function weaponElement(log: AttackLog): Element {
 }
 
 function attackCues(log: AttackLog): Cue[] {
-  const element = weaponElement(log);
+  const chosen = animationOf(log.animation);
+  const element = chosen?.element ?? weaponElement(log);
   const { attackerId: from, targetId: to } = log;
-  const melee = log.kind === 'melee';
-  const lands = melee ? IMPACT.melee : IMPACT.arrow;
-  const delivery: Cue[] = melee
-    ? [
-        { at: 0, kind: 'lunge', token: from, toward: to },
-        { at: SWING, kind: 'slash', from, to, element },
-      ]
-    : [{ at: 0, kind: 'missile', from, to, element, style: 'arrow', duration: IMPACT.arrow }];
+  const how = chosen ?? { delivery: log.kind === 'melee' ? 'swing' : 'arrow' };
+  const { cues, lands } = delivered(how, { from, to, element, at: 0 });
   const outcome = { target: to, targetId: to, hit: log.hit, crit: log.crit, damage: log.damage };
-  return [...delivery, ...landing(outcome, lands, element)];
+  return [...cues, ...landing(outcome, lands, element)];
 }
 
 /** What happens to a target when the blow arrives at `at`. */
@@ -121,9 +184,10 @@ function spellElement(log: SpellLog): Element {
 }
 
 function spellCues(log: SpellLog): Cue[] {
-  const element = spellElement(log);
+  const chosen = animationOf(log.animation);
+  const element = chosen?.element ?? spellElement(log);
   const channel: Cue = { at: 0, kind: 'channel', token: log.casterId, element };
-  const body = log.area ? areaCues(log, element) : targetCues(log, element);
+  const body = log.area ? areaCues(log, element) : targetCues(log, element, chosen);
   return [channel, ...body];
 }
 
@@ -151,12 +215,16 @@ function areaCues(log: SpellLog, element: Element): Cue[] {
 }
 
 /** Bolts or touches, one per target or beam, one after another; otherwise it just lands. */
-function targetCues(log: SpellLog, element: Element): Cue[] {
+function targetCues(log: SpellLog, element: Element, chosen: Animation | undefined): Cue[] {
   const from = log.casterId;
   const puff: Cue[] = log.point ? [{ at: CHANNEL, kind: 'burst', where: log.point, radius: PUFF, element }] : [];
   const each = log.results.flatMap((r, i): Cue[] => {
     const start = CHANNEL + i * STAGGER;
     const to = r.targetId;
+    if (chosen && to !== from) {
+      const { cues, lands } = delivered(chosen, { from, to, element, at: start });
+      return [...cues, ...landing(r, lands, element)];
+    }
     if (log.attackKind === 'melee') {
       return [{ at: start, kind: 'slash', from, to, element }, ...landing(r, start + IMPACT.melee, element)];
     }

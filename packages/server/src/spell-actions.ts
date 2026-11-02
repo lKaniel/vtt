@@ -1,4 +1,5 @@
 import {
+  animationRef,
   type CasterSheet,
   type CastingTime,
   type CastOutcome,
@@ -378,6 +379,7 @@ export class SpellActions {
       spell: spell.name,
       casterId: caster.token.id,
       spellId: spell.id,
+      animation: caster.token.animations?.[animationRef('spell', spell.id)],
       damageType: spell.damage[0]?.type,
       attackKind: spell.attack,
       point,

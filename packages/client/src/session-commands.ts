@@ -39,6 +39,11 @@ export abstract class Commands {
     this.send({ t: 'seatSettings', settings });
   }
 
+  /** Picks the animation for one of a creature's attacks or spells; none goes back to the default. */
+  setAnimation(token: string, ref: string, animation?: string): void {
+    this.send({ t: 'animation', token, ref, animation });
+  }
+
   say(text: string): void {
     this.send({ t: 'chat', text });
   }

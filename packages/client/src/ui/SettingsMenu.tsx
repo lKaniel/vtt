@@ -1,4 +1,6 @@
 import { SettingsIcon } from 'lucide-react';
+import { useState } from 'react';
+import { currentMotion, type Motion, setMotion } from '../animations.ts';
 import { type Automation, automationOf } from '@vtt/system-dnd5e';
 import type { Session } from '../session.ts';
 import { Button } from './kit/button.tsx';
@@ -80,7 +82,33 @@ export function SettingsMenu({ session }: Readonly<{ session: Session }>) {
           value={automation.hitReactions}
           onChange={(hitReactions) => set({ hitReactions })}
         />
+        <Separator />
+        <MotionRow />
       </PopoverContent>
     </Popover>
+  );
+}
+
+const MOTION_LABELS: Record<Motion, string> = { full: 'Full', reduced: 'Reduced', off: 'Numbers only' };
+
+/** How much of the attack and spell animations this browser plays. */
+function MotionRow() {
+  const [motion, choose] = useState(currentMotion);
+  const set = (m: Motion) => {
+    setMotion(m);
+    choose(m);
+  };
+  return (
+    <Label className="flex-col items-stretch gap-1">
+      Animations
+      <ToggleGroup type="single" value={motion} onValueChange={(v) => v && set(v as Motion)}>
+        {(Object.keys(MOTION_LABELS) as Motion[]).map((m) => (
+          <ToggleGroupItem key={m} value={m}>
+            {MOTION_LABELS[m]}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+      <span className="muted text-xs font-normal">Kept in this browser. Reduced plays only the hits.</span>
+    </Label>
   );
 }

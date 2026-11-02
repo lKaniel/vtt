@@ -1,4 +1,5 @@
 import {
+  animationRef,
   applyDamage,
   type Attack,
   type AttackLog,
@@ -321,6 +322,7 @@ export class CombatActions {
       damage: total,
       parts: result.damage.map((d, i) => ({ ...d, dealt: dealt[i]! })),
       notes,
+      animation: attacker.token.animations?.[animationRef('attack', name)],
     });
   }
 
