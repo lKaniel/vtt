@@ -94,13 +94,17 @@ export abstract class JournalSession extends ItemSession {
     if (p) this.patchEntry('playlists', id, stopPatch(p as unknown as Playlist), 'stop music');
   }
 
-  /** A new journal entry, table, playlist or macro, ready to fill in; a player's macro is signed as theirs. */
-  createEntry(type: EntryType): void {
+  /**
+   * A new journal entry (opened to fill in), table, playlist or macro; `fields`
+   * set more (a quest, a date). A player's macro is signed as theirs.
+   */
+  createEntry(type: EntryType, fields: Record<string, unknown> = {}): void {
     const { coll } = ENTRY_TYPES[type];
     const id = freeId(type, (x) => !!this.docs.get(coll, x));
     const author = type === 'macro' && !this.isGm() && this.you ? { author: this.you.id } : {};
-    const doc = { id, type, rev: 0, ...NEW[type], ...author } as Doc;
+    const doc = { id, type, rev: 0, ...NEW[type], ...author, ...fields } as Doc;
     this.sendChanges('new', [{ op: 'create', coll, doc }]);
+    if (type === 'journal') this.openJournal(id);
   }
 
   /** Runs a macro's chat lines, said by `token` when you control it. */

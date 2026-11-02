@@ -29,8 +29,39 @@ export const JournalPageSchema = z.object({
 });
 export type JournalPage = z.infer<typeof JournalPageSchema>;
 
-export const JournalSchema = z.object({ ...sidebar, pages: z.array(JournalPageSchema).default([]) });
+export const ObjectiveSchema = z.object({ text: z.string().min(1), done: z.boolean().optional() });
+export type Objective = z.infer<typeof ObjectiveSchema>;
+
+/** A quest: an entry the quest log lists by status, with objectives to tick off. */
+export const QuestSchema = z.object({
+  status: z.enum(['active', 'done', 'failed']).default('active'),
+  objectives: z.array(ObjectiveSchema).default([]),
+});
+export type Quest = z.infer<typeof QuestSchema>;
+
+export const JournalSchema = z.object({
+  ...sidebar,
+  pages: z.array(JournalPageSchema).default([]),
+  /** Makes the entry a quest in the quest log. */
+  quest: QuestSchema.optional(),
+  /** A calendar note: the game time (seconds, see clock.ts) it is dated to. */
+  date: z.number().int().optional(),
+});
 export type Journal = z.infer<typeof JournalSchema>;
+
+/** How many of a quest's objectives are done. */
+export function questProgress(quest: Quest): { done: number; total: number } {
+  return { done: quest.objectives.filter((o) => o.done).length, total: quest.objectives.length };
+}
+
+/** The quest with objective `i` ticked off, or not any more. */
+export function toggleObjective(quest: Quest, i: number): Quest {
+  const objectives = quest.objectives.map((o, j) => {
+    if (j !== i) return o;
+    return o.done ? { text: o.text } : { ...o, done: true };
+  });
+  return { ...quest, objectives };
+}
 
 export const TableResultSchema = z.object({
   text: z.string().min(1),

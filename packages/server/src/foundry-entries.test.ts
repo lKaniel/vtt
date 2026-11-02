@@ -19,7 +19,12 @@ describe('Foundry sidebar documents', () => {
             { _id: 'Pg3', name: 'Video', type: 'video' },
           ],
         },
-        { _id: 'Jx2', name: 'Old style', content: '<p>v9 text</p>' },
+        {
+          _id: 'Jx2',
+          name: 'Old style',
+          content:
+            '<p>See @UUID[JournalEntry.Jx1.JournalEntryPage.Pg2]{the map} and @JournalEntry[Jx1]{the well}, not @UUID[JournalEntry.Gone]{this}.</p>',
+        },
       ],
       tables: [
         {
@@ -59,13 +64,26 @@ describe('Foundry sidebar documents', () => {
       {
         id: 'old-style',
         name: 'Old style',
-        pages: [{ id: 'text', name: 'Text', kind: 'text', text: '<p>v9 text</p>' }],
+        pages: [
+          {
+            id: 'text',
+            name: 'Text',
+            kind: 'text',
+            text: '<p>See @journal[the-old-well#map]{the map} and @journal[the-old-well]{the well}, not @UUID[JournalEntry.Gone]{this}.</p>',
+          },
+        ],
       },
     ]);
     for (const j of out.journals) JournalSchema.parse(j);
     expect(out.entries('Jx1')).toBe('the-old-well');
     expect(out.pages('Pg1')).toBe('history');
     expect(out.skipped).toContain('journal "The Old Well": 1 page of a kind we have no match for (video)');
+  });
+
+  it('point links between entries at the entries as we named them', () => {
+    expect(out.journals[1]!.pages[0]!.text).toBe(
+      '<p>See @journal[the-old-well#map]{the map} and @journal[the-old-well]{the well}, not @UUID[JournalEntry.Gone]{this}.</p>',
+    );
   });
 
   it('bring roll tables with their weights', () => {

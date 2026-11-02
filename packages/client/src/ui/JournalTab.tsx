@@ -1,7 +1,10 @@
 import type { Doc } from '@vtt/core';
+import { useState } from 'react';
 import type { Session } from '../session.ts';
 import { startDrag } from './ActorsTab.tsx';
 import { Button } from './kit/button.tsx';
+import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
+import { CalendarNotes, QuestLog } from './JournalViews.tsx';
 
 const nameOf = (doc: Doc) => (typeof doc.name === 'string' ? doc.name : doc.id);
 const shared = (doc: Doc) => {
@@ -9,13 +12,32 @@ const shared = (doc: Doc) => {
   return level === 'observer' || level === 'owner';
 };
 
+type View = 'entries' | 'quests' | 'calendar';
+
+/** Journal entries, the quest log, or the calendar with its dated notes. */
+export function JournalTab({ session }: Readonly<{ session: Session }>) {
+  const [view, setView] = useState<View>('entries');
+  return (
+    <div className="flex flex-col gap-2">
+      <ToggleGroup type="single" value={view} onValueChange={(v) => v && setView(v as View)}>
+        <ToggleGroupItem value="entries">Entries</ToggleGroupItem>
+        <ToggleGroupItem value="quests">Quests</ToggleGroupItem>
+        <ToggleGroupItem value="calendar">Calendar</ToggleGroupItem>
+      </ToggleGroup>
+      {view === 'entries' && <Entries session={session} />}
+      {view === 'quests' && <QuestLog session={session} />}
+      {view === 'calendar' && <CalendarNotes session={session} />}
+    </div>
+  );
+}
+
 /**
  * Journal entries: handouts and the GM's notes. Everyone opens the entries
  * they may see; the GM adds them, shares them with the players (their pages
  * then show), shows one on every player's screen, and drags one onto the map
  * to pin a note that opens it.
  */
-export function JournalTab({ session }: Readonly<{ session: Session }>) {
+function Entries({ session }: Readonly<{ session: Session }>) {
   const gm = session.isGm();
   const entries = session.docs.all('journals').sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
   return (

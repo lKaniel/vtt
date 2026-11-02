@@ -20,6 +20,8 @@ interface CalendarMonthProps extends Omit<React.ComponentProps<'div'>, 'onSelect
   onPage: (by: number) => void;
   /** Months in a year: adds year buttons that page this many months. */
   yearStep?: number;
+  /** Days with something on them (calendar notes): a dot under the number. */
+  marked?: ReadonlySet<number>;
 }
 
 /**
@@ -37,6 +39,7 @@ function CalendarMonth({
   onSelect,
   onPage,
   yearStep,
+  marked,
   className,
   ...props
 }: Readonly<CalendarMonthProps>) {
@@ -68,7 +71,14 @@ function CalendarMonth({
           <div key={`blank-${i}`} aria-hidden />
         ))}
         {Array.from({ length: days }, (_, i) => (
-          <Day key={i + 1} day={i + 1} selected={selected === i + 1} today={today === i + 1} onSelect={onSelect} />
+          <Day
+            key={i + 1}
+            day={i + 1}
+            selected={selected === i + 1}
+            today={today === i + 1}
+            marked={marked?.has(i + 1) ?? false}
+            onSelect={onSelect}
+          />
         ))}
       </div>
     </div>
@@ -88,12 +98,15 @@ function PageButton({
   );
 }
 
-function Day({
-  day,
-  selected,
-  today,
-  onSelect,
-}: Readonly<{ day: number; selected: boolean; today: boolean; onSelect: (day: number) => void }>) {
+interface DayProps {
+  day: number;
+  selected: boolean;
+  today: boolean;
+  marked: boolean;
+  onSelect: (day: number) => void;
+}
+
+function Day({ day, selected, today, marked, onSelect }: Readonly<DayProps>) {
   return (
     <button
       type="button"
@@ -109,6 +122,12 @@ function Day({
       )}
     >
       {day}
+      {marked && (
+        <span
+          data-slot="calendar-mark"
+          className="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-gold"
+        />
+      )}
     </button>
   );
 }

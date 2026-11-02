@@ -41,3 +41,19 @@ export function dayPart(calendar: Calendar, hour: number): DayPart {
   if (Math.abs(hour - calendar.sunset) < half) return 'dusk';
   return hour > calendar.sunrise && hour < calendar.sunset ? 'day' : 'night';
 }
+
+/** The entries dated to each day of a month (see journals.ts `date`), by day of the month. */
+export function notesByDay<T extends Record<string, unknown>>(
+  calendar: Calendar,
+  notes: readonly T[],
+  page: MonthRef,
+): Map<number, T[]> {
+  const days = new Map<number, T[]>();
+  for (const note of notes) {
+    if (typeof note.date !== 'number') continue;
+    const d = dateOf(calendar, note.date);
+    if (d.year !== page.year || d.month !== page.month) continue;
+    days.set(d.day, [...(days.get(d.day) ?? []), note]);
+  }
+  return days;
+}

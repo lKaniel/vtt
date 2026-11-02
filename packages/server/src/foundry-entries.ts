@@ -176,11 +176,30 @@ function playlistOf(p: z.infer<typeof FoundryPlaylist>, id: string, media: Media
   return { id, name: p.name, ...inFolder(maps.folderOf, p.folder), mode: MODES[p.mode ?? 0] ?? 'sequence', tracks };
 }
 
+const ENTRY_LINK = /@UUID\[JournalEntry\.(\w+)(?:\.JournalEntryPage\.(\w+))?\]|@JournalEntry\[(\w+)\]/g;
+
+/** Links between Foundry entries (@UUID[JournalEntry.x.JournalEntryPage.y]) as our links to the entries we made. */
+function relink(text: string, maps: Maps): string {
+  return text.replace(ENTRY_LINK, (link: string, uuid?: string, page?: string, old?: string) => {
+    const entry = maps.entries.get(uuid ?? old ?? '');
+    if (!entry) return link;
+    const ours = page && maps.pages.get(page);
+    return '@journal[' + entry + (ours ? '#' + ours : '') + ']';
+  });
+}
+
+const relinked = (journal: Journal, maps: Maps): Journal => ({
+  ...journal,
+  pages: journal.pages.map((p) => (p.text ? { ...p, text: relink(p.text, maps) } : p)),
+});
+
 /** Converts the sidebar documents of a Foundry folder; `media` finds the copied files, `folderOf` names folders. */
 export function foundryEntries(raw: RawEntries, media: MediaLookup, folderOf?: FolderLookup): ConvertedEntries {
   const maps: Maps = { entries: new Map(), pages: new Map(), playlists: new Map(), skipped: [], folderOf };
   const [journalId, tableId, playlistId] = [ids(), ids(), ids()];
-  const journals = each(FoundryJournal, raw.journals).map((j) => journalOf(j, journalId(j.name, 'entry'), media, maps));
+  const journals = each(FoundryJournal, raw.journals)
+    .map((j) => journalOf(j, journalId(j.name, 'entry'), media, maps))
+    .map((j) => relinked(j, maps));
   const tables = each(FoundryTable, raw.tables)
     .filter((t) => t.results.length)
     .map((t) => tableOf(t, tableId(t.name, 'table'), folderOf));
