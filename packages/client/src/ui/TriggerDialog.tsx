@@ -52,7 +52,7 @@ function choicesOf(session: Session, field: StepField, step: Step): Option[] {
         .filter((d) => !!d.door)
         .map(named),
     journals: () => session.docs.all('journals').map(named),
-    scenes: () => session.sceneList().map(named),
+    scenes: () => session.scenes.list().map(named),
     levels: () => (session.world?.levels ?? []).map((l) => ({ value: l.id, label: l.name })),
     target: () =>
       session.docs.all(`${scene}/${(step.target as { coll?: string } | undefined)?.coll ?? 'tiles'}`).map(named),

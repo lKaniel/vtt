@@ -24,7 +24,7 @@ export function ScenesTab({ session }: Readonly<{ session: Session }>) {
   const add = (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    session.createScene(name.trim());
+    session.scenes.create(name.trim());
     setName('');
   };
   return (
@@ -36,7 +36,7 @@ export function ScenesTab({ session }: Readonly<{ session: Session }>) {
         </Button>
       </form>
       <ul className="rows">
-        {session.sceneList().map((doc) => (
+        {session.scenes.list().map((doc) => (
           <SceneRow
             key={doc.id}
             session={session}
@@ -64,8 +64,8 @@ function SceneRow({
 }: Readonly<{ session: Session; doc: Doc; open: boolean; onToggle: () => void }>) {
   const id = doc.id;
   const here = session.scene === id;
-  const active = session.activeScene === id;
-  const seats = session.seatsOn(id).filter((p) => !isGm(p));
+  const active = session.scenes.active === id;
+  const seats = session.scenes.seatsOn(id).filter((p) => !isGm(p));
   const thumb = sceneThumb(session.docs, id);
   return (
     <li className={`scene-row${here ? ' here' : ''}`}>
@@ -85,10 +85,10 @@ function SceneRow({
         </div>
       )}
       <div className="scene-actions">
-        <Button variant="outline" size="sm" disabled={here} onClick={() => session.viewScene(id)}>
+        <Button variant="outline" size="sm" disabled={here} onClick={() => session.scenes.view(id)}>
           View
         </Button>
-        <Button variant="outline" size="sm" disabled={active} onClick={() => session.activateScene(id)}>
+        <Button variant="outline" size="sm" disabled={active} onClick={() => session.scenes.activate(id)}>
           Play here
         </Button>
         <SendPlayer session={session} scene={id} />
@@ -98,7 +98,7 @@ function SceneRow({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => session.duplicateScene(id)}
+          onClick={() => session.scenes.duplicate(id)}
           title="A copy with everything on it"
         >
           Copy
@@ -108,7 +108,7 @@ function SceneRow({
           size="sm"
           disabled={active}
           title={active ? 'Play another scene first' : 'Delete it and everything on it (Ctrl+Z undoes)'}
-          onClick={() => session.deleteScene(id)}
+          onClick={() => session.scenes.delete(id)}
         >
           Delete
         </Button>
@@ -120,7 +120,7 @@ function SceneRow({
 
 /** Sends one player to this scene on their own. */
 function SendPlayer({ session, scene }: Readonly<{ session: Session; scene: string }>) {
-  const elsewhere = session.players.filter((p) => !isGm(p) && !session.seatsOn(scene).includes(p));
+  const elsewhere = session.players.filter((p) => !isGm(p) && !session.scenes.seatsOn(scene).includes(p));
   if (!elsewhere.length) return null;
   return (
     <SelectField
@@ -128,7 +128,7 @@ function SendPlayer({ session, scene }: Readonly<{ session: Session; scene: stri
       aria-label="Send a player here"
       placeholder="Send…"
       className="h-8 text-xs"
-      onValueChange={(id) => session.sendPlayer(id, scene === session.activeScene ? undefined : scene)}
+      onValueChange={(id) => session.scenes.sendPlayer(id, scene === session.scenes.active ? undefined : scene)}
       options={elsewhere.map((p) => ({ value: p.id, label: p.name }))}
     />
   );
@@ -139,7 +139,7 @@ const str = (doc: Doc, key: string, fallback: string) => (typeof doc[key] === 's
 const flag = (doc: Doc, key: string, fallback: boolean) => (typeof doc[key] === 'boolean' ? doc[key] : fallback);
 
 function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
-  const edit = (patch: Patch) => session.editScene(doc.id, patch);
+  const edit = (patch: Patch) => session.scenes.edit(doc.id, patch);
   return (
     <div className="scene-settings">
       <label>

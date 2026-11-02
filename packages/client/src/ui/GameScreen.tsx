@@ -81,7 +81,7 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
         title={session.status === 'open' ? 'Connected' : session.status}
       />
       <strong className="world-name">{session.world?.name ?? 'Connecting…'}</strong>
-      {session.sceneName && <span className="scene-name">{session.sceneName}</span>}
+      {session.scenes.name && <span className="scene-name">{session.scenes.name}</span>}
       <ClockBar session={session} />
       <span className="you" style={{ color: session.you?.color }}>
         {session.you?.name}

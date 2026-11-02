@@ -140,7 +140,7 @@ export class Vision {
     };
     this.light.render(scene, transform);
     // The GM's fog brush shows what the players explored instead of what the GM's tokens see.
-    const brushing = gm && !!this.session.fogBrush;
+    const brushing = gm && !!this.session.fog.brush;
     const eyes = brushing
       ? []
       : viewers.map((v) => ({ at: v.at, senses: sensesOfView(v.token), elevation: v.token.elevation }));
@@ -171,9 +171,9 @@ export class Vision {
 
   /** Draws explored ground as the server last sent it. */
   private showExplored(): void {
-    if (this.fogVersion === this.session.fogVersion) return;
-    this.fogVersion = this.session.fogVersion;
-    this.explored.show(this.session.shownFog());
+    if (this.fogVersion === this.session.fog.version) return;
+    this.fogVersion = this.session.fog.version;
+    this.explored.show(this.session.fog.shown());
   }
 }
 

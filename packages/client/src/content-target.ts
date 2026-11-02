@@ -46,7 +46,7 @@ function docTarget(session: Session, link: ContentLink): LinkTarget {
   }
   const name = nameOf(session.docs.get('scenes', link.id));
   if (!name) return {};
-  return session.isGm() ? { name, open: () => session.viewScene(link.id) } : { name };
+  return session.isGm() ? { name, open: () => session.scenes.view(link.id) } : { name };
 }
 
 /** What a link names, and what clicking it does (nothing: it isn't there, or not for you). */

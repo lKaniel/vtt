@@ -1,3 +1,4 @@
+import type { SessionPart } from './session-part.ts';
 import { isGm, type Player, type Point } from '@vtt/shared';
 import type { ClientMessage, Condition, TokenView } from '@vtt/system-dnd5e';
 
@@ -27,7 +28,7 @@ export interface HudEvents {
 }
 
 /** The token HUD and the GM's borrowed eyes, as `session.hud`. */
-export class Hud {
+export class Hud implements SessionPart {
   /** The HUD on screen. */
   current?: OpenHud;
   /** GM: the creature whose eyes the map shows, as its players would see. */

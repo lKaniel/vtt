@@ -172,16 +172,16 @@ const BRUSHES = [
  */
 function FogTools({ session }: Readonly<{ session: Session }>) {
   const seats = session.players.filter((p) => p.role !== 'gm');
-  const picked = session.fogPlayers?.[0] ?? '';
+  const picked = session.fog.players?.[0] ?? '';
   return (
     <div className="map-tools-row fog-tools" role="toolbar" aria-label="Fog of war">
       <span className="fog-label">Fog</span>
       {BRUSHES.map(({ brush, label, hint }) => (
         <Toggle
           key={brush}
-          pressed={session.fogBrush === brush}
+          pressed={session.fog.brush === brush}
           title={hint}
-          onPressedChange={(on) => session.setFogBrush(on ? brush : undefined)}
+          onPressedChange={(on) => session.fog.setBrush(on ? brush : undefined)}
         >
           {label}
         </Toggle>
@@ -190,23 +190,23 @@ function FogTools({ session }: Readonly<{ session: Session }>) {
         className="w-20"
         min={1}
         max={10}
-        value={[session.fogBrushSize]}
-        title={`Brush: ${session.fogBrushSize} squares across each way`}
+        value={[session.fog.brushSize]}
+        title={`Brush: ${session.fog.brushSize} squares across each way`}
         aria-label="Brush size"
-        onValueChange={([n]) => session.setFogBrushSize(n!)}
+        onValueChange={([n]) => session.fog.setBrushSize(n!)}
       />
       <SelectField
         value={picked}
         aria-label="Whose fog"
         title="Whose fog the brushes and reset change, and the map shows"
-        onValueChange={(id) => session.setFogPlayers(id ? [id] : undefined)}
+        onValueChange={(id) => session.fog.setPlayers(id ? [id] : undefined)}
         options={[{ value: '', label: 'All players' }, ...seats.map((p) => ({ value: p.id, label: p.name }))]}
       />
       <Button
         variant="outline"
         size="sm"
         title="Forget what they explored here (Ctrl+Z undoes)"
-        onClick={() => session.resetFog()}
+        onClick={() => session.fog.reset()}
       >
         Reset
       </Button>

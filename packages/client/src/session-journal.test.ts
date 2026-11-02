@@ -132,7 +132,7 @@ describe('the sidebar documents in the session', () => {
 
   it('sets your colour and picture', () => {
     ws.receive(welcome());
-    session.setProfile({ color: '#3366ff', avatar: null });
+    session.scenes.setProfile({ color: '#3366ff', avatar: null });
     expect(ws.sent.at(-1)).toEqual({ t: 'profile', color: '#3366ff', avatar: null });
   });
 });

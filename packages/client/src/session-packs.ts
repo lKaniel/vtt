@@ -1,3 +1,4 @@
+import type { SessionPart } from './session-part.ts';
 import type { Doc, DocRef, DocStore, MediaEntry, Op, PackInfo, Patch, PluginInfo } from '@vtt/core';
 import {
   ENTRY_TYPES,
@@ -46,7 +47,7 @@ export interface PackEvents {
 }
 
 /** The game's packs, plugins, media and compendia, as `session.packs`. */
-export class Packs {
+export class Packs implements SessionPart {
   /** GM: the packs the game may use, once asked for. */
   list: PackInfo[] = [];
   /** GM: packs the server could not read. */

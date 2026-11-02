@@ -13,7 +13,7 @@ export function ProfileRow({ session }: Readonly<{ session: Session }>) {
   if (!you) return null;
   const save = () => {
     const next = avatar.trim();
-    if (next !== (you.avatar ?? '')) session.setProfile({ avatar: next || null });
+    if (next !== (you.avatar ?? '')) session.scenes.setProfile({ avatar: next || null });
   };
   return (
     <div className="flex flex-col gap-2" data-slot="profile">
@@ -22,7 +22,7 @@ export function ProfileRow({ session }: Readonly<{ session: Session }>) {
         <ColorInput
           aria-label="Your colour"
           defaultValue={you.color}
-          onBlur={(e) => e.target.value !== you.color && session.setProfile({ color: e.target.value })}
+          onBlur={(e) => e.target.value !== you.color && session.scenes.setProfile({ color: e.target.value })}
         />
       </Label>
       <Label className="flex-col items-stretch gap-1">

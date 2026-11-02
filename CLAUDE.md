@@ -113,7 +113,9 @@ with `pnpm check-game data/games/<id>`.
 - The client's `Session` (`client/src/session.ts`) is moving from a chain
   of `session-*.ts` subclasses to parts it holds: a new area is a class
   that takes a small host interface (like `Cards` in `session-cards.ts`,
-  reached as `session.cards`), never one more link in the chain.
+  reached as `session.cards`), never one more link in the chain. Parts
+  that take server messages, the welcome or token departures implement
+  `SessionPart` (`session-part.ts`) and join `Session.parts`.
 - UI components: every screen is built from the component library in
   `packages/client/src/ui/kit` (shadcn/ui on Radix and Tailwind, restyled in
   the game's bronze and iron look; tokens in `client/src/index.css`). Use
