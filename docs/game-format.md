@@ -603,6 +603,21 @@ edit it too:
 | `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"`, `"scroll:fireball"` or `null`.                                                                                |
 | `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                                                                                                                               |
 
+**Legendary creatures.** A monster's stat block can carry `legendary`
+(`{ "actions": 3, "options": [{ "id", "name", "cost"?, "attack"?, "description"? }] }`),
+`legendaryResistance` (uses per day) and `lair`
+(`{ "actions": [{ "id", "name", "description"? }] }`); any creature can be
+given the same fields in its `stats`, which win over the stat block. The SRD
+monsters bring their legendary actions and resistance; the SRD has no lair
+actions, so lairs are yours to write. The GM spends legendary actions from
+the sheet's Features page at the end of another creature's turn (an option
+with `attack` strikes the one targeted creature); the pool comes back at the
+start of the creature's turn. Legendary resistance turns a failed save into
+a success by itself and comes back on a long rest. A creature with a `lair`
+gives the fight a Lair turn on initiative 20 (losing ties), when the GM takes
+one lair action. Uses are kept in `spent.uses` (`legendary`,
+`legendary-resistance`).
+
 Effect modifiers: `senses` (e.g. `{ "darkvision": 60 }` or
 `{ "seeInvisible": true }`), `conditions` (e.g. `["prone"]`, `["paralyzed"]`),
 `attackBonus` and `saveBonus` (dice like `"1d4"` or `"-1d4"`), `ac`, `speed`,

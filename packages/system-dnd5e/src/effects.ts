@@ -111,6 +111,8 @@ export interface SaveRoll {
   roll?: Roll;
   total: number;
   success: boolean;
+  /** A failed save turned into a success with legendary resistance. */
+  legendary?: boolean;
 }
 
 /** "1d20+3+1d4", or "2d20kh1-1" with advantage. */

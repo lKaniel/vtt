@@ -47,7 +47,31 @@
     "resistances": [],
     "immunities": [],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The aboleth makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-swipe",
+          "name": "Tail Swipe",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The aboleth makes one tail attack."
+        },
+        {
+          "id": "psychic-drain",
+          "name": "Psychic Drain",
+          "cost": 2,
+          "description": "One creature charmed by the aboleth takes 10 (3d6) psychic damage, and the aboleth regains hit points equal to the damage the creature takes."
+        }
+      ]
+    }
   },
   {
     "id": "acolyte",
@@ -152,7 +176,32 @@
     "resistances": [],
     "immunities": ["acid"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-blue-dragon",
@@ -219,7 +268,32 @@
     "resistances": [],
     "immunities": ["lightning"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 20 Dexterity saving throw or take 14 (2d6 + 7) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-brass-dragon",
@@ -282,7 +356,32 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-bronze-dragon",
@@ -345,7 +444,32 @@
     "resistances": [],
     "immunities": ["lightning"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 20 Dexterity saving throw or take 14 (2d6 + 7) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-copper-dragon",
@@ -408,7 +532,32 @@
     "resistances": [],
     "immunities": ["acid"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-gold-dragon",
@@ -471,7 +620,32 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 22 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-green-dragon",
@@ -538,7 +712,32 @@
     "resistances": [],
     "immunities": ["poison"],
     "vulnerabilities": [],
-    "conditionImmunities": ["poisoned"]
+    "conditionImmunities": ["poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-red-dragon",
@@ -605,7 +804,32 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 22 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-silver-dragon",
@@ -668,7 +892,32 @@
     "resistances": [],
     "immunities": ["cold"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 21 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-white-dragon",
@@ -735,7 +984,32 @@
     "resistances": [],
     "immunities": ["cold"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "air-elemental",
@@ -840,7 +1114,32 @@
     "resistances": [],
     "immunities": ["acid"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 23 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "ancient-blue-dragon",
@@ -907,7 +1206,32 @@
     "resistances": [],
     "immunities": ["lightning"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 24 Dexterity saving throw or take 16 (2d6 + 9) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "ancient-brass-dragon",
@@ -970,7 +1294,32 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 22 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "ancient-bronze-dragon",
@@ -1033,7 +1382,32 @@
     "resistances": [],
     "immunities": ["lightning"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 24 Dexterity saving throw or take 16 (2d6 + 9) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "ancient-copper-dragon",
@@ -1096,7 +1470,32 @@
     "resistances": [],
     "immunities": ["acid"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 23 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "ancient-gold-dragon",
@@ -1159,7 +1558,32 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 25 Dexterity saving throw or take 17 (2d6 + 10) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "ancient-green-dragon",
@@ -1226,7 +1650,32 @@
     "resistances": [],
     "immunities": ["poison"],
     "vulnerabilities": [],
-    "conditionImmunities": ["poisoned"]
+    "conditionImmunities": ["poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 23 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "ancient-red-dragon",
@@ -1293,7 +1742,32 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 25 Dexterity saving throw or take 17 (2d6 + 10) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "ancient-silver-dragon",
@@ -1356,7 +1830,32 @@
     "resistances": [],
     "immunities": ["cold"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 25 Dexterity saving throw or take 17 (2d6 + 10) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "ancient-white-dragon",
@@ -1423,7 +1922,32 @@
     "resistances": [],
     "immunities": ["cold"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "detect",
+          "name": "Detect",
+          "cost": 1,
+          "description": "The dragon makes a Wisdom (Perception) check."
+        },
+        {
+          "id": "tail-attack",
+          "name": "Tail Attack",
+          "cost": 1,
+          "attack": "Tail",
+          "description": "The dragon makes a tail attack."
+        },
+        {
+          "id": "wing-attack",
+          "name": "Wing Attack",
+          "cost": 2,
+          "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 22 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "androsphinx",
@@ -1462,7 +1986,31 @@
     "resistances": [],
     "immunities": ["psychic", "bludgeoning", "piercing", "slashing"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "frightened"]
+    "conditionImmunities": ["charmed", "frightened"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "claw-attack",
+          "name": "Claw Attack",
+          "cost": 1,
+          "attack": "Claw",
+          "description": "The sphinx makes one claw attack."
+        },
+        {
+          "id": "teleport",
+          "name": "Teleport",
+          "cost": 2,
+          "description": "The sphinx magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see."
+        },
+        {
+          "id": "cast-a-spell",
+          "name": "Cast a Spell",
+          "cost": 3,
+          "description": "The sphinx casts a spell from its list of prepared spells, using a spell slot as normal."
+        }
+      ]
+    }
   },
   {
     "id": "animated-armor",
@@ -7448,7 +7996,31 @@
     "resistances": ["bludgeoning", "piercing", "slashing"],
     "immunities": ["psychic"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "frightened"]
+    "conditionImmunities": ["charmed", "frightened"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "claw-attack",
+          "name": "Claw Attack",
+          "cost": 1,
+          "attack": "Claw",
+          "description": "The sphinx makes one claw attack."
+        },
+        {
+          "id": "teleport",
+          "name": "Teleport",
+          "cost": 2,
+          "description": "The sphinx magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see."
+        },
+        {
+          "id": "cast-a-spell",
+          "name": "Cast a Spell",
+          "cost": 3,
+          "description": "The sphinx casts a spell from its list of prepared spells, using a spell slot as normal."
+        }
+      ]
+    }
   },
   {
     "id": "half-red-dragon-veteran",
@@ -8531,7 +9103,31 @@
     "resistances": [],
     "immunities": ["lightning", "bludgeoning", "piercing", "slashing"],
     "vulnerabilities": [],
-    "conditionImmunities": ["frightened", "paralyzed"]
+    "conditionImmunities": ["frightened", "paralyzed"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "tentacle-attack-or-fling",
+          "name": "Tentacle Attack or Fling",
+          "cost": 1,
+          "attack": "Tentacle",
+          "description": "The kraken makes one tentacle attack or uses its Fling."
+        },
+        {
+          "id": "lightning-storm-legendary",
+          "name": "Lightning Storm",
+          "cost": 2,
+          "description": "The kraken uses Lightning Storm."
+        },
+        {
+          "id": "ink-cloud",
+          "name": "Ink Cloud",
+          "cost": 3,
+          "description": "While underwater, the kraken expels an ink cloud in a 60-foot radius. The cloud spreads around corners, and that area is heavily obscured to creatures other than the kraken. Each creature other than the kraken that ends its turn there must succeed on a DC 23 Constitution saving throw, taking 16 (3d10) poison damage on a failed save, or half as much damage on a successful one. A strong current disperses the cloud, which otherwise disappears at the end of the kraken's next turn."
+        }
+      ]
+    }
   },
   {
     "id": "lamia",
@@ -8658,7 +9254,38 @@
     "resistances": ["cold", "lightning", "necrotic"],
     "immunities": ["poison", "bludgeoning", "piercing", "slashing"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "frightened", "paralyzed", "poisoned"]
+    "conditionImmunities": ["charmed", "frightened", "paralyzed", "poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "cantrip",
+          "name": "Cantrip",
+          "cost": 1,
+          "description": "The lich casts a cantrip."
+        },
+        {
+          "id": "paralyzing-touch-legendary",
+          "name": "Paralyzing Touch",
+          "cost": 2,
+          "attack": "Paralyzing Touch",
+          "description": "The lich uses its Paralyzing Touch."
+        },
+        {
+          "id": "frightening-gaze",
+          "name": "Frightening Gaze",
+          "cost": 2,
+          "description": "The lich fixes its gaze on one creature it can see within 10 feet of it. The target must succeed on a DC 18 Wisdom saving throw against this magic or become frightened for 1 minute. The frightened target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a target's saving throw is successful or the effect ends for it, the target is immune to the lich's gaze for the next 24 hours."
+        },
+        {
+          "id": "disrupt-life",
+          "name": "Disrupt Life",
+          "cost": 3,
+          "description": "Each non-undead creature within 20 feet of the lich must make a DC 18 Constitution saving throw against this magic, taking 21 (6d6) necrotic damage on a failed save, or half as much damage on a successful one."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "lion",
@@ -9633,7 +10260,43 @@
     "resistances": [],
     "immunities": ["necrotic", "poison", "bludgeoning", "piercing", "slashing"],
     "vulnerabilities": ["fire"],
-    "conditionImmunities": ["charmed", "frightened", "paralyzed", "poisoned"]
+    "conditionImmunities": ["charmed", "frightened", "paralyzed", "poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "attack",
+          "name": "Attack",
+          "cost": 1,
+          "attack": "Rotting Fist",
+          "description": "The mummy lord makes one attack with its rotting fist or uses its Dreadful Glare."
+        },
+        {
+          "id": "blinding-dust",
+          "name": "Blinding Dust",
+          "cost": 1,
+          "description": "Blinding dust and sand swirls magically around the mummy lord. Each creature within 5 feet of the mummy lord must succeed on a DC 16 Constitution saving throw or be blinded until the end of the creature's next turn."
+        },
+        {
+          "id": "blasphemous-word",
+          "name": "Blasphemous Word",
+          "cost": 2,
+          "description": "The mummy lord utters a blasphemous word. Each non-undead creature within 10 feet of the mummy lord that can hear the magical utterance must succeed on a DC 16 Constitution saving throw or be stunned until the end of the mummy lord's next turn."
+        },
+        {
+          "id": "channel-negative-energy",
+          "name": "Channel Negative Energy",
+          "cost": 2,
+          "description": "The mummy lord magically unleashes negative energy. Creatures within 60 feet of the mummy lord, including ones behind barriers and around corners, can't regain hit points until the end of the mummy lord's next turn."
+        },
+        {
+          "id": "whirlwind-of-sand",
+          "name": "Whirlwind of Sand",
+          "cost": 2,
+          "description": "The mummy lord magically transforms into a whirlwind of sand, moves up to 60 feet, and reverts to its normal form. While in whirlwind form, the mummy lord is immune to all damage, and it can't be grappled, petrified, knocked prone, restrained, or stunned. Equipment worn or carried by the mummy lord remain in its possession."
+        }
+      ]
+    }
   },
   {
     "id": "nalfeshnee",
@@ -12056,7 +12719,30 @@
     "resistances": ["radiant", "bludgeoning", "piercing", "slashing"],
     "immunities": ["necrotic", "poison"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "frightened", "poisoned"]
+    "conditionImmunities": ["charmed", "frightened", "poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "teleport",
+          "name": "Teleport",
+          "cost": 1,
+          "description": "The solar magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see."
+        },
+        {
+          "id": "searing-burst",
+          "name": "Searing Burst",
+          "cost": 2,
+          "description": "The solar emits magical, divine energy. Each creature of its choice in a 10-foot radius must make a DC 23 Dexterity saving throw, taking 14 (4d6) fire damage plus 14 (4d6) radiant damage on a failed save, or half as much damage on a successful one."
+        },
+        {
+          "id": "blinding-gaze",
+          "name": "Blinding Gaze",
+          "cost": 3,
+          "description": "The solar targets one creature it can see within 30 feet of it. If the target can see it, the target must succeed on a DC 15 Constitution saving throw or be blinded until magic such as the *lesser restoration* spell removes the blindness."
+        }
+      ]
+    }
   },
   {
     "id": "specter",
@@ -13095,7 +13781,33 @@
     "resistances": [],
     "immunities": ["fire", "poison", "bludgeoning", "piercing", "slashing"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "frightened", "paralyzed", "poisoned"]
+    "conditionImmunities": ["charmed", "frightened", "paralyzed", "poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "attack",
+          "name": "Attack",
+          "cost": 1,
+          "attack": "Claw",
+          "description": "The tarrasque makes one claw attack or tail attack."
+        },
+        {
+          "id": "move",
+          "name": "Move",
+          "cost": 1,
+          "description": "The tarrasque moves up to half its speed."
+        },
+        {
+          "id": "chomp",
+          "name": "Chomp",
+          "cost": 2,
+          "attack": "Bite",
+          "description": "The tarrasque makes one bite attack or uses its Swallow."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "thug",
@@ -13495,7 +14207,31 @@
     "resistances": [],
     "immunities": ["poison"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "paralyzed", "poisoned"]
+    "conditionImmunities": ["charmed", "paralyzed", "poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "hooves-legendary",
+          "name": "Hooves",
+          "cost": 1,
+          "attack": "Hooves",
+          "description": "The unicorn makes one attack with its hooves."
+        },
+        {
+          "id": "shimmering-shield",
+          "name": "Shimmering Shield",
+          "cost": 2,
+          "description": "The unicorn creates a shimmering, magical field around itself or another creature it can see within 60 feet of it. The target gains a +2 bonus to AC until the end of the unicorn's next turn."
+        },
+        {
+          "id": "heal-self",
+          "name": "Heal Self",
+          "cost": 3,
+          "description": "The unicorn magically regains 11 (2d8 + 2) hit points."
+        }
+      ]
+    }
   },
   {
     "id": "vampire",
@@ -13520,7 +14256,33 @@
     "resistances": ["necrotic", "bludgeoning", "piercing", "slashing"],
     "immunities": [],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "move",
+          "name": "Move",
+          "cost": 1,
+          "description": "The vampire moves up to its speed without provoking opportunity attacks."
+        },
+        {
+          "id": "legendary-unarmed-strike",
+          "name": "Unarmed Strike",
+          "cost": 1,
+          "attack": "Unarmed Strike (Vampire Form Only)",
+          "description": "The vampire makes one unarmed strike."
+        },
+        {
+          "id": "legendary-bite",
+          "name": "Bite",
+          "cost": 2,
+          "attack": "Bite (Bat or Vampire Form Only)",
+          "description": "The vampire makes one bite attack."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "vampire-spawn",

@@ -10,6 +10,7 @@ import { featureTip, spellTip } from '../tooltip.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { NumberInput } from './EditorFields.tsx';
 import { IconFace } from './Icon.tsx';
+import { LegendaryPanel } from './LegendaryPanel.tsx';
 import { withKey } from './sheet-model.ts';
 import { RemoveButton } from './SheetDetails.tsx';
 import { EditButton, isOwn, NewButton, useOwnEditor } from './own/OwnEditor.tsx';
@@ -206,6 +207,7 @@ export function FeaturesPage(props: Readonly<SheetProps>) {
       )}
       {edit && <NewButton label="New feature" onClick={() => own.create('feature')} />}
       {own.dialog}
+      <LegendaryPanel {...props} />
     </>
   );
 }

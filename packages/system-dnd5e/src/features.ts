@@ -1,4 +1,5 @@
 import { type FeatureSheet, levelValue } from './classes.ts';
+import { keptResistance } from './legendary.ts';
 import type { Creature } from './creature.ts';
 import { hitDiceOf, restedExhaustion, restedHitDice } from './vigour.ts';
 import { type Rng, roll } from '@vtt/shared';
@@ -98,10 +99,15 @@ function restUses(token: Token, sheet: Creature): Record<string, number> | undef
   return Object.keys(out).length ? out : undefined;
 }
 
+function withResistance(uses: Record<string, number> | undefined, token: Token): Record<string, number> | undefined {
+  const all = { ...uses, ...keptResistance(token) };
+  return Object.keys(all).length ? all : undefined;
+}
+
 /** A short rest gives back short-rest features and pact slots; a long rest gives back everything. */
 export function rest(token: Token, sheet: Creature, kind: 'short' | 'long'): Token {
   if (kind === 'long') return longRest(token, sheet);
-  const uses = restUses(token, sheet);
+  const uses = withResistance(restUses(token, sheet), token);
   const slots = sheet.caster?.pact ? undefined : token.spent?.slots;
   const hitDice = token.spent?.hitDice;
   return { ...token, spent: uses || slots || hitDice ? { slots, uses, hitDice } : undefined };

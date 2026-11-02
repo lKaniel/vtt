@@ -7,6 +7,9 @@ import {
   deathSave,
   endOfTurnSaves,
   isDying,
+  isLairTurn,
+  refreshLegendary,
+  withLair,
   leaveCombat,
   lightAttack,
   nextTurn,
@@ -21,6 +24,8 @@ import {
   type WeaponAttackOutcome,
 } from '@vtt/system-dnd5e';
 import { canControl, isGridless, isParty, type Player } from '@vtt/shared';
+import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
+export { isTurnMessage } from './legendary-actions.ts';
 import { Refusal, requireGm, type Cost, type Fighter, type Table } from './table.ts';
 
 /** An attack that has been rolled but not yet landed: its target may still react (shield). */
@@ -73,10 +78,11 @@ export class CombatActions {
       fighters.map((f) => ({ token: f.token.id, bonus: f.sheet.initiative, speed: f.sheet.speed })),
       this.table.rng,
     );
-    const combat = peaceful ? { ...rolled, peaceful } : rolled;
+    const lairs = peaceful ? [] : fighters.filter((f) => f.sheet.lair).map((f) => f.token.id);
+    const combat = peaceful ? { ...rolled, peaceful } : withLair(rolled, lairs);
     this.store.setCombat(combat);
     const names = new Map(fighters.map((f) => [f.token.id, f.token.name]));
-    const order = combat.order.map((e) => `${names.get(e.token)} ${e.initiative}`).join(', ');
+    const order = combat.order.map((e) => `${names.get(e.token) ?? 'Lair'} ${e.initiative}`).join(', ');
     this.table.note(`${heading} ${order}`);
     const first = currentTurn(combat);
     if (first) this.startOfTurn(first);
@@ -108,7 +114,9 @@ export class CombatActions {
   endTurn(player: Player): void {
     const combat = this.store.combat;
     if (!combat) throw new Refusal('There is no fight going on');
-    const token = this.store.tokens.get(currentTurn(combat) ?? '');
+    const current = currentTurn(combat);
+    if (isLairTurn(current)) requireGm(player);
+    const token = this.store.tokens.get(current ?? '');
     if (token && !canControl(token, player)) throw new Refusal("It's not your turn");
     if (token) this.endOfTurn(token);
     this.advance();
@@ -151,6 +159,8 @@ export class CombatActions {
 
   /** Effects made by the creature whose turn starts count down a round. */
   private startOfTurn(id: string): void {
+    const own = this.store.tokens.get(id);
+    if (own && refreshLegendary(own) !== own) this.store.setToken(refreshLegendary(own));
     for (const t of [...this.store.tokens.values()]) {
       const after = tickEffects(t, id);
       if (after !== t) this.store.setToken(after);
@@ -203,6 +213,19 @@ export class CombatActions {
     if (lightAttack(attack)) this.markUsed(attacker.token, 'light-attack');
     if (attack.offHand && cost === 'free') this.markUsed(attacker.token, 'nick');
     this.resolve({ attacker, target, attack, range }, { smite: req.smite, reaction: false });
+  }
+
+  /** Turn-based mode on or off, or the GM's legendary action (its attack made out of turn) or lair action. */
+  turnAction(player: Player, canSee: (id: string) => boolean, msg: TurnMessage): void {
+    if (msg.t === 'turnBased') return this.turnBased(player, msg.on);
+    legendaryAction(this.table, player, msg, (attacker, targetId, name) => {
+      if (!canSee(targetId)) throw new Refusal('No such target');
+      const target = this.table.fighter(targetId);
+      const attack = this.attackOf(attacker, { attacker: attacker.token.id, target: targetId, attack: name });
+      const range = attackRange(attack, this.distance(attacker.token, target.token));
+      if (range === 'out') throw new Refusal(`${target.token.name} is out of range`);
+      this.resolve({ attacker, target, attack, range }, { smite: undefined, reaction: true });
+    });
   }
 
   /** An opportunity attack: the reaction the creature had, not its action, and the target was in reach as it left. */

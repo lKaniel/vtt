@@ -57,6 +57,17 @@ describe('castProblem', () => {
 });
 
 describe('resolveCast', () => {
+  it('lets a legendary creature turn a failed save into a success', () => {
+    const dragon = TokenSchema.parse({ id: 'd', name: 'Dragon', x: 450, y: 50, monster: 'adult-black-dragon' });
+    const rng = rngOf([...Array<number>(8).fill(face(3, 6)), face(1, 20)]);
+    const out = resolveCast(
+      { spell: spell('fireball'), slot: 3, caster: side(wizard), targets: [side(dragon)], gridSize: 100 },
+      rng,
+    );
+    expect(out.results[0]?.save).toMatchObject({ success: true, legendary: true });
+    expect(out.results[0]?.damage).toBe(12);
+  });
+
   it('rolls a spell attack and damage on a hit', () => {
     // d20 of 15 + 7 hits AC 15; 2d10 roll 4 and 6.
     const rng = rngOf([face(15, 20), face(4, 10), face(6, 10)]);

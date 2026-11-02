@@ -15,6 +15,7 @@ import {
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
 import { changed, changedBase, changedList } from './effect-changes.ts';
+import { legendaryParts, type LegendaryParts } from './legendary.ts';
 import { withOwn } from './own-content.ts';
 import { exhausted } from './vigour.ts';
 import type { Token } from './token-schema.ts';
@@ -35,7 +36,7 @@ import {
 } from './stats-schema.ts';
 
 /** A token's game statistics, with everything derived from its gear, class and effects worked out. */
-export interface Creature extends Affected {
+export interface Creature extends Affected, LegendaryParts {
   /** The rules it plays by. */
   edition: Edition;
   abilities: Abilities;
@@ -106,6 +107,7 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     ...effectParts(token, features, content.edition),
     ...classParts(token, cls),
     caster: casterSheet(token, { abilities, proficiency }, content),
+    ...legendaryParts(token, monster),
     features,
   };
   return withCarrying(applyEffects(withItemBonuses(base, token, content)), token, { monster, content });

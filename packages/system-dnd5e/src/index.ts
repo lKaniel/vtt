@@ -42,3 +42,4 @@ export * from './sheet-drops.ts';
 export * from './automation.ts';
 export * from './carrying.ts';
 export * from './vigour.ts';
+export * from './legendary.ts';
