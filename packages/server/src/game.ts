@@ -399,7 +399,7 @@ export class Game {
     else if (msg.t === 'clock') this.clock.act(c.player, msg.action);
     else if (isTurnMessage(msg)) this.combat.turnAction(c.player, (id) => c.visible.has(id), msg);
     else if (isSheetMessage(msg)) sheetAction(this.table, c.player, msg);
-    else if (isEntryMessage(msg)) this.entries.handle(c.player, msg);
+    else if (isEntryMessage(msg)) this.entries.handle(c, msg);
     else if (msg.t === 'applyDamage') this.damage.apply(c.player, (id) => c.visible.has(id), msg);
     else if (isHudMessage(msg)) this.hud.handle(c.player, (id) => c.visible.has(id), msg);
     else if (isDropMessage(msg)) this.gm.drops.handle(c.player, (id) => c.visible.has(id), msg);

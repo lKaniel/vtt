@@ -83,7 +83,7 @@ export interface ConvertedEntries {
 const plural = (n: number, what: string) => `${n} ${what}${n === 1 ? '' : 's'}`;
 
 /** Parses what it can of a list, leaving out what it can't. */
-function each<T extends z.ZodType>(schema: T, list: unknown[] | undefined): z.infer<T>[] {
+export function each<T extends z.ZodType>(schema: T, list: unknown[] | undefined): z.infer<T>[] {
   return (list ?? []).flatMap((x) => {
     const parsed = schema.safeParse(x);
     return parsed.success ? [parsed.data] : [];
@@ -91,7 +91,7 @@ function each<T extends z.ZodType>(schema: T, list: unknown[] | undefined): z.in
 }
 
 /** Ids from names, each one free in its list. */
-function ids() {
+export function ids() {
   const taken = new Set<string>();
   return (name: string, fallback: string) => {
     const id = freeId(slugify(name) || fallback, (x) => taken.has(x), { bare: true });
@@ -118,7 +118,7 @@ interface Maps {
 export type FolderLookup = (foundryId: string | null | undefined) => string | undefined;
 
 /** `folder` when the Foundry document was in one. */
-const inFolder = (folderOf: FolderLookup | undefined, id: string | null | undefined) => {
+export const inFolder = (folderOf: FolderLookup | undefined, id: string | null | undefined) => {
   const folder = folderOf?.(id);
   return folder ? { folder } : {};
 };

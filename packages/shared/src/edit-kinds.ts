@@ -78,6 +78,7 @@ export const EDIT_KINDS: Kinds = {
   journal: { coll: () => 'journals' },
   rolltable: { coll: () => 'tables' },
   playlist: { coll: () => 'playlists' },
+  macro: { coll: () => 'macros' },
 };
 
 interface Source {

@@ -1,21 +1,24 @@
 import { randomUUID } from 'node:crypto';
 import { canObserve, drawFrom, drawnPatch, isGm, type Player, type Rng, type RollTable } from '@vtt/shared';
+import { macroMessages, type RunMacro, type Seat } from './macro-actions.ts';
 import type { ChatMessage, ServerMessage } from '@vtt/system-dnd5e';
 import { signedBy } from './seat-settings.ts';
 import { fromDoc } from './doc-sync.ts';
 import type { GameStore } from './game-store.ts';
 import { Refusal } from './table.ts';
 
-// Sidebar documents in play: rolling on a roll table into chat, and the GM
+// Sidebar documents in play: rolling on a roll table into chat, running a
+// macro (macro-actions.ts), and the GM
 // showing a journal entry or a picture to the players (it is shared with them, then
 // opened on their screens).
 
 type EntryMessage =
   | { t: 'rollTable'; table: string; gmOnly?: boolean }
   | { t: 'showJournal'; entry: string; page?: string }
-  | { t: 'showImage'; src: string; title?: string };
+  | { t: 'showImage'; src: string; title?: string }
+  | RunMacro;
 
-const ENTRY_MESSAGES = new Set(['rollTable', 'showJournal', 'showImage']);
+const ENTRY_MESSAGES = new Set(['rollTable', 'showJournal', 'showImage', 'runMacro']);
 export const isEntryMessage = (msg: { t: string }): msg is EntryMessage => ENTRY_MESSAGES.has(msg.t);
 
 interface Out {
@@ -31,8 +34,10 @@ export class EntryActions {
     private out: Out,
   ) {}
 
-  handle(player: Player, msg: EntryMessage): void {
-    if (msg.t === 'rollTable') this.roll(player, msg.table, !!msg.gmOnly);
+  handle(seat: Seat, msg: EntryMessage): void {
+    const { player } = seat;
+    if (msg.t === 'runMacro') for (const m of macroMessages(this.store, seat, msg)) this.out.post(m);
+    else if (msg.t === 'rollTable') this.roll(player, msg.table, !!msg.gmOnly);
     else if (msg.t === 'showJournal') this.show(player, msg.entry, msg.page);
     else this.showImage(player, msg.src, msg.title);
   }

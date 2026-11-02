@@ -12,6 +12,7 @@ import {
   type PlacedActor,
 } from './foundry-actors.ts';
 import { type FoundryDoc, readFoundryDb } from './foundry-db.ts';
+import { foundryMacros } from './foundry-macros.ts';
 import { type ConvertedEntries, foundryEntries } from './foundry-entries.ts';
 import { dataFolderOf, FoundryMedia } from './foundry-media.ts';
 import { foundryGrid, foundryScene, type MediaLookup } from './foundry-scene.ts';
@@ -168,7 +169,7 @@ const names = (docs: FoundryDoc[]) => {
 
 /** What the world has that has no place in a game here. */
 function leftBehind(world: World, system: ActorSystem): string[] {
-  const { items, users, macros, cards } = world.docs;
+  const { items, users, cards } = world.docs;
   const players = users.filter((u) => typeof u.role !== 'number' || u.role < 4);
   return [
     ...(system.foundry?.system === world.system
@@ -186,7 +187,6 @@ function leftBehind(world: World, system: ActorSystem): string[] {
           `Foundry users (${names(players)}): invite your players with the game's invite link; their characters are actors to give them`,
         ]
       : []),
-    ...(macros.length ? [`${plural(macros.length, 'macro')}: scripts are Foundry's own`] : []),
     ...(cards.length ? [`${plural(cards.length, 'card stack')}: we have no cards yet`] : []),
   ];
 }
@@ -204,8 +204,9 @@ export async function importFoundryWorld(from: string, game: string, opts: World
     media.lookup,
     folderOf,
   );
+  const macros = foundryMacros(docs.macros, media.lookup, folderOf);
   const actors = foundryActors(docs.actors, { system, sheets: system.foundry, rules, media: media.lookup, folderOf });
-  const skipped = [...entries.skipped, ...actors.skipped];
+  const skipped = [...entries.skipped, ...actors.skipped, ...macros.skipped];
   const scenes = convertScenes(
     docs.scenes,
     { media: media.lookup, entries, actors: actors.byFoundryId, system },
@@ -217,6 +218,7 @@ export async function importFoundryWorld(from: string, game: string, opts: World
   await writeEach(join(game, 'journals'), entries.journals);
   await writeEach(join(game, 'tables'), entries.tables);
   await writeEach(join(game, 'playlists'), entries.playlists);
+  await writeEach(join(game, 'macros'), macros.macros);
   const name = opts.name?.trim() ? opts.name.trim() : world.title;
   const active = scenes.find((s) => s.active) ?? scenes[0];
   if (!active) await writeJson(join(game, 'scenes/main/scene.json'), { name: 'Main', darkness: 0 });
@@ -238,6 +240,7 @@ export async function importFoundryWorld(from: string, game: string, opts: World
     journals: entries.journals.length,
     tables: entries.tables.length,
     playlists: entries.playlists.length,
+    macros: macros.macros.length,
     media: await media.copyTo(game),
     skipped,
   };

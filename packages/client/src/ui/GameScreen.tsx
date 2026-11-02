@@ -290,7 +290,7 @@ function handleGameKey(session: Session, e: KeyboardEvent): void {
     return;
   }
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
-  const tile = token && hotbarTiles(token).find((t) => t?.hotkey === e.key);
+  const tile = token && hotbarTiles(token, session.macroOf).find((t) => t?.hotkey === e.key);
   if (token && tile && canActivate(tile)) activateTile(session, token, tile);
 }
 

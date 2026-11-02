@@ -32,6 +32,7 @@ describe('the edit kinds', () => {
       'drawing',
       'journal',
       'light',
+      'macro',
       'note',
       'playlist',
       'region',

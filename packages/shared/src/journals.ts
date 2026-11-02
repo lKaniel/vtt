@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { IdSchema as id, TileSchema } from './schema.ts';
 
 // The game's sidebar documents beyond actors: journal entries (handouts and
-// the GM's notes, which map notes open), roll tables and playlists. Each is
-// one file: journals/<id>.json, tables/<id>.json, playlists/<id>.json.
+// the GM's notes, which map notes open), roll tables, playlists and macros.
+// Each is one file: journals/<id>.json, tables/<id>.json, playlists/<id>.json,
+// macros/<id>.json.
 
 const sidebar = {
   id,
@@ -73,6 +74,29 @@ export const PlaylistSchema = z.object({
 });
 export type Playlist = z.infer<typeof PlaylistSchema>;
 
+/** What a macro does: chat posts each line of `command` as if typed in chat. */
+export const MACRO_KINDS = ['chat'] as const;
+
+export const MacroSchema = z.object({
+  ...sidebar,
+  kind: z.enum(MACRO_KINDS).default('chat'),
+  /** Chat lines, one per line: plain text, or a chat command such as "/r 1d20+5". */
+  command: z.string().max(4000).default(''),
+  /** Its picture on the hotbar: an asset path or pack:// reference. */
+  img: z.string().optional(),
+  /** The player who made it, who may change it; the GM's own have none. */
+  author: z.string().optional(),
+});
+export type Macro = z.infer<typeof MacroSchema>;
+
+/** The chat lines a macro posts: its command's lines, without the blank ones. */
+export function macroLines(command: string): string[] {
+  return command
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 /** A compendium's tile prefab: tiles drawn together (a cart, a market stall), placed as one. */
 export const PrefabSchema = z.object({
   id,
@@ -86,5 +110,6 @@ export const ENTRY_TYPES = {
   journal: { coll: 'journals', schema: JournalSchema },
   rolltable: { coll: 'tables', schema: RollTableSchema },
   playlist: { coll: 'playlists', schema: PlaylistSchema },
+  macro: { coll: 'macros', schema: MacroSchema },
 } as const;
 export type EntryType = keyof typeof ENTRY_TYPES;

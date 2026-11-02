@@ -26,6 +26,8 @@ export interface FoundryImportReport {
   journals: number;
   tables: number;
   playlists: number;
+  /** Chat macros. */
+  macros?: number;
   /** Pictures and sounds copied. */
   media: number;
   /** What could not come along, one line each. */

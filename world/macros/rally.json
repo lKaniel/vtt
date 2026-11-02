@@ -1,0 +1,7 @@
+{
+  "id": "rally",
+  "name": "Rally",
+  "kind": "chat",
+  "command": "To me, friends! Hold the line!\n/r 1d6 inspiration",
+  "ownership": { "default": "observer" }
+}

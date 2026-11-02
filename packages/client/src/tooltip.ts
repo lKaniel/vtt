@@ -81,6 +81,11 @@ export function featureTip(f: FeatureSheet): Tip {
   };
 }
 
+/** A macro on the hotbar: its chat lines. */
+export function macroTip(m: { name: string; command?: string }): Tip {
+  return { title: m.name, subtitle: 'Macro', facts: ['Posts to chat'], body: m.command ?? '' };
+}
+
 /** Weapons and armor can be worn; `id` names items missing from the SRD. */
 export function itemTip(item: Item | undefined, id: string, equipped: boolean): Tip {
   if (!item) return { title: id, subtitle: 'item', facts: [], body: '' };

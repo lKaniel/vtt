@@ -119,3 +119,42 @@ describe('the sidebar documents in the session', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'profile', color: '#3366ff', avatar: null });
   });
 });
+
+describe('macros in the session', () => {
+  const hail: Doc = { id: 'hail', type: 'macro', rev: 1, name: 'Hail', kind: 'chat', command: 'Hi', img: 'h.webp' };
+
+  function joinWith(role: 'gm' | 'player', macros: Doc[]): string {
+    const base = welcome([]) as Extract<ServerMessage, { t: 'welcome' }>;
+    const you = role === 'gm' ? { id: 'gm', name: 'GM', role, color: '#fc0' } : base.you;
+    ws.receive({ ...base, you, docs: { macros } });
+    return you.id;
+  }
+
+  it('make a player’s macro signed as theirs, and the GM’s unsigned', () => {
+    const me = joinWith('player', []);
+    session.createEntry('macro');
+    expect(last()).toMatchObject({ ops: [{ op: 'create', coll: 'macros', doc: { kind: 'chat', author: me } }] });
+    closeSession(session);
+    ({ session, ws } = openSession());
+    joinWith('gm', []);
+    session.createEntry('macro');
+    expect((last().ops as { doc: Doc }[])[0]?.doc.author).toBeUndefined();
+  });
+
+  it('run a macro for a token, and show it on the hotbar', () => {
+    joinWith('player', [hail]);
+    session.runMacro('hail', 'bram');
+    expect(last()).toEqual({ t: 'runMacro', macro: 'hail', token: 'bram' });
+    expect(session.macroOf('hail')).toEqual({ id: 'hail', name: 'Hail', command: 'Hi', img: 'h.webp' });
+    expect(session.macroOf('gone')).toBeUndefined();
+  });
+
+  it('let a player change and remove only their own', () => {
+    const me = joinWith('player', [hail, { ...hail, id: 'mine', author: 'x' }]);
+    expect(session.canEditMacro('hail')).toBe(false);
+    ws.receive({ t: 'docs', changes: [{ coll: 'macros', id: 'own', doc: { ...hail, id: 'own', author: me } }] });
+    expect(session.canEditMacro('own')).toBe(true);
+    session.deleteMacro('own');
+    expect(last()).toMatchObject({ ops: [{ op: 'delete', coll: 'macros', id: 'own' }] });
+  });
+});

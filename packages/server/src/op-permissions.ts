@@ -45,9 +45,9 @@ function checkUpdate(player: Player, access: DocAccess, op: Extract<Op, { op: 'u
   if (!may(owned, player)) throw new Refusal(`You can't edit ${nameOf(owned, op.id)}`);
 }
 
-/** Drawings and templates: a player adds their own (`author`), and changes or removes only those. */
+/** Drawings, templates and macros: a player adds their own (`author`), and changes or removes only those. */
 const AUTHORED = new Set(['drawings', 'templates']);
-const authored = (coll: string) => AUTHORED.has(sceneCollOf(coll)?.name ?? '');
+const authored = (coll: string) => coll === 'macros' || AUTHORED.has(sceneCollOf(coll)?.name ?? '');
 
 /** True when the op is on a player's own drawing or template and allowed; throws when it isn't. */
 function checkAuthored(player: Player, access: DocAccess, op: Op): boolean {

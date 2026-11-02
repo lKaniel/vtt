@@ -23,6 +23,7 @@ world/                      the example game (another folder: VTT_GAME); lobby g
   journals/<id>.json        journal entries: handouts and the GM's notes
   tables/<id>.json          roll tables
   playlists/<id>.json       music
+  macros/<id>.json          chat macros for the hotbar
   combat.json               the fight in progress, if any
   time.json                 the game clock and its calendar (made on first start)
   assets/                   images referenced by tiles and tokens (uploads in assets/uploads/)
@@ -393,7 +394,7 @@ to 1, default 0.5), `walls` (default true: each wall between muffles it),
 `activeAt`, `name`. A player hears them from their token, the GM from the
 middle of the screen.
 
-## Journal entries, roll tables and playlists
+## Journal entries, roll tables, playlists and macros
 
 One file each, in `journals/`, `tables/` and `playlists/` (schemas in
 `shared/journals.ts`). Each has `id`, `name`, and may have `folder`, `sort`
@@ -418,6 +419,18 @@ has `mode` (`"sequence"`, `"shuffle"`, `"together"`), `volume`, and
 `tracks` (`id`, `name`, `src`, `volume`, `repeat`, `playing`); players are
 sent the playlists that are playing, and the GM's client moves on to the
 next track when one ends.
+
+A macro (`macros/<id>.json`) is a `kind` (`"chat"`) and a `command`: chat
+lines, one per line, posted as if typed, so `/r 1d20+5 stealth` rolls. It may
+have an `img` for its hotbar tile. Players are sent the macros shared with
+them (`ownership`) and their own: a macro with `author` is that player's,
+who may change and remove it. Anyone drags a macro from the Macros tab onto
+the hotbar, where it sits as `"macro:<id>"`; run from a token it speaks with
+the token's name.
+
+```json
+{ "id": "rally", "name": "Rally", "kind": "chat", "command": "To me!\n/r 1d6 inspiration" }
+```
 
 ## Actors and tokens
 

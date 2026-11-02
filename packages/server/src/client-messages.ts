@@ -26,6 +26,7 @@ const MAX_TARGETS = 50;
 
 const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('rollTable'), table: z.string(), gmOnly: z.boolean().optional() }),
+  z.object({ t: z.literal('runMacro'), macro: z.string().max(80), token: z.string().max(80).optional() }),
   z.object({ t: z.literal('showJournal'), entry: z.string(), page: z.string().optional() }),
   z.object({ t: z.literal('showImage'), src: z.string().min(1).max(500), title: z.string().max(200).optional() }),
   z.object({
