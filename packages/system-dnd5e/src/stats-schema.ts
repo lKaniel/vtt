@@ -189,12 +189,22 @@ export const MonsterSchema = z.object({
 });
 export type Monster = z.infer<typeof MonsterSchema>;
 
+/** Levels in one class of a multiclassed character. */
+export const ClassLevelSchema = z.object({
+  class: z.string().min(1),
+  level: z.number().int().min(1).max(20),
+  subclass: z.string().optional(),
+});
+export type ClassLevelEntry = z.infer<typeof ClassLevelSchema>;
+
 /** Stats written on a token. Each one overrides the monster's or the computed value. */
 export const StatsSchema = z.object({
   /** Follow the other edition's rules than the world, e.g. a 2024 class in a 2014 game. */
   rules: EditionSchema.optional(),
   level: z.number().int().min(1).max(20).optional(),
   class: z.string().optional(),
+  /** A multiclassed character's classes, the first one taken at 1st level; instead of `class` and `level`. */
+  classes: z.array(ClassLevelSchema).min(1).optional(),
   abilities: AbilitiesSchema.partial().optional(),
   ac: z.number().int().optional(),
   maxHp: z.number().int().positive().optional(),
@@ -211,7 +221,7 @@ export const StatsSchema = z.object({
   spellcasting: z
     .object({
       ability: z.enum(ABILITIES),
-      progression: z.enum(['full', 'half', 'pact']).default('full'),
+      progression: z.enum(['full', 'half', 'third', 'pact']).default('full'),
       /** Caster level for slots and cantrips; defaults to `level`. */
       level: z.number().int().min(1).max(20).optional(),
     })

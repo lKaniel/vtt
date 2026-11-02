@@ -53,7 +53,7 @@ describe('exhaustion under the 2024 rules', () => {
 describe('hit dice', () => {
   it('are one per level, of the class die', () => {
     const t = fighter({ spent: { hitDice: 1 } });
-    expect(hitDiceOf(t, sheetOf(t))).toEqual({ die: 10, total: 4, left: 3 });
+    expect(hitDiceOf(t, sheetOf(t))).toMatchObject({ die: 10, total: 4, left: 3 });
     expect(hitDiceOf(goblin, sheetOf(goblin))).toBeUndefined();
   });
 

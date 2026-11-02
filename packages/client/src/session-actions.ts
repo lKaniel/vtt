@@ -1,4 +1,4 @@
-import { type ClientMessage, featureSpell } from '@vtt/system-dnd5e';
+import { characterLevel, type ClientMessage, featureSpell } from '@vtt/system-dnd5e';
 
 /** How a chat roll is applied: in full, half, double, or as healing. */
 export type ApplyHow = Extract<ClientMessage, { t: 'applyDamage' }>['how'];
@@ -78,7 +78,12 @@ export abstract class ActionSession extends PackSession {
     const token = this.selected ? this.tokens.get(this.selected) : undefined;
     const feature = token?.sheet?.features.find((f) => f.id === featureId);
     this.armed = undefined;
-    this.aimed(feature && { ...aimSpell(featureSpell(feature), 0, token?.stats?.level ?? 1), feature: feature.id });
+    this.aimed(
+      feature && {
+        ...aimSpell(featureSpell(feature), 0, feature.classLevel ?? characterLevel(token?.stats) ?? 1),
+        feature: feature.id,
+      },
+    );
   }
 
   /** Readies the spell on a scroll the selected token carries. */

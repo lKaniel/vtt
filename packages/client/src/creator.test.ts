@@ -161,6 +161,41 @@ describe('levelUpPlan', () => {
   });
 });
 
+describe('levelling up into another class', () => {
+  const fighter = CharacterSchema.parse({
+    ...fresh('2014'),
+    class: 'fighter',
+    level: 2,
+    hpRolls: [6],
+    base: { str: 15, dex: 14, con: 13, int: 13, wis: 10, cha: 8 },
+  });
+
+  it('plans the first level of the new class', () => {
+    expect(levelUpPlan(fighter, 'wizard')).toMatchObject({
+      level: 3,
+      classLevel: 1,
+      hitDie: 6,
+      improvement: false,
+      newCantrips: 3,
+      newSpells: 6,
+    });
+    expect(levelUpPlan({ ...fighter, base: { ...fighter.base, int: 10 } }, 'wizard').problem).toMatch(
+      /Intelligence 13/,
+    );
+  });
+
+  it('picks spells from that class’s list', () => {
+    const choices = spellChoices(fighter, 1, 'wizard');
+    expect(choices.cantrips.some((s) => s.id === 'fire-bolt')).toBe(true);
+    expect(toggleSpell(fighter, 'fire-bolt', 1, 'wizard').spells).toEqual(['fire-bolt']);
+  });
+
+  it('names every class in the summary', () => {
+    const c = levelUp(fighter, { hp: 4, class: 'wizard' });
+    expect(characterSummary(c)).toBe('Level 3 Human Fighter 2 / Wizard 1');
+  });
+});
+
 describe('characterSummary', () => {
   it('names the level, species and class', () => {
     expect(characterSummary({ ...chooseSpecies(fresh(), 'dwarf'), subspecies: 'hill-dwarf' })).toBe(

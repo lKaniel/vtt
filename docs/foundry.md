@@ -72,13 +72,15 @@ v1 to v5 field names):
   Armor", "Crossbow, light"); other items become the sheet's own items
   (weapons and armor with their numbers), other features the sheet's own
   features with their text. The class's own features come with the class.
+  A multiclassed character keeps every class (`stats.classes`, the
+  original class first, with its subclass); classes the SRD doesn't have,
+  like a Blood Hunter, keep their name and levels.
 
 ### What stays behind
 
 The import lists it all; mainly:
 
-- Spells the SRD doesn't have, a second class (one class per sheet here:
-  the levels are added up), active effects and Foundry's automation.
+- Spells the SRD doesn't have, active effects and Foundry's automation.
 - Items in the Items sidebar (drag items from the Compendium instead),
   macros, card stacks, chat, combats and the explored fog.
 - Foundry users and their passwords: invite your players with the game's

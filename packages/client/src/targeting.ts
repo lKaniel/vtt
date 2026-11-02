@@ -1,4 +1,11 @@
-import { type ClientMessage, type Creature, scaledSpell, type Spell, type TokenView } from '@vtt/system-dnd5e';
+import {
+  characterLevel,
+  type ClientMessage,
+  type Creature,
+  scaledSpell,
+  type Spell,
+  type TokenView,
+} from '@vtt/system-dnd5e';
 import { gameContent } from './content.ts';
 import type { Point } from '@vtt/shared';
 
@@ -61,7 +68,8 @@ export function scrollAiming(token: TokenView | undefined, spellId: string | und
   return spell && aimScroll(spell, readerLevel(token));
 }
 
-const readerLevel = (token: TokenView | undefined): number => token?.sheet?.caster?.level ?? token?.stats?.level ?? 1;
+const readerLevel = (token: TokenView | undefined): number =>
+  token?.sheet?.caster?.level ?? characterLevel(token?.stats) ?? 1;
 
 const hasBeams = (spell: Spell): boolean => (spell.beams ?? 1) > 1 || spell.cantrip === 'beams';
 

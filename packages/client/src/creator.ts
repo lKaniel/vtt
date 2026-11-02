@@ -5,10 +5,12 @@ import {
   abilityScores,
   averageHitDie,
   type Character,
+  characterClasses,
   type CreatorStep,
   type Edition,
   isImprovementLevel,
   issuesByStep,
+  multiclassProblem,
   newCharacter,
   partsOf,
   POINT_BUY_BUDGET,
@@ -16,6 +18,7 @@ import {
   type Spell,
   spellLimits,
   type SpellLimits,
+  totalLevel,
 } from '@vtt/system-dnd5e';
 
 // The character creator's state changes, kept out of React so they can be
@@ -107,22 +110,23 @@ export interface SpellChoices {
   spells: Spell[];
 }
 
-/** The class spells `c` may pick at `level` (its own by default), cantrips apart. */
-export function spellChoices(c: Character, level = c.level): SpellChoices {
+/** The spells `c` may pick from `classId`'s list (its first class by default) at that class's `level`, cantrips apart. */
+export function spellChoices(c: Character, level = c.level, classId = c.class): SpellChoices {
   const parts = partsOf(c);
-  const ability = parts.cls?.spellcasting?.ability;
+  const ability = parts.book.content.classes.get(classId)?.spellcasting?.ability;
   const mod = ability ? abilityMod(abilityScores(c, parts)[ability]) : 0;
-  const limits = spellLimits({ classId: c.class, level, edition: c.rules, mod });
+  const limits = spellLimits({ classId, level, edition: c.rules, mod });
   const list = [...parts.book.content.spells.values()]
-    .filter((s) => s.classes.includes(c.class) && s.level <= limits.maxLevel)
+    .filter((s) => s.classes.includes(classId) && s.level <= limits.maxLevel)
     .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
   return { limits, cantrips: list.filter((s) => s.level === 0), spells: list.filter((s) => s.level > 0) };
 }
 
-export function toggleSpell(c: Character, id: string, level = c.level): Character {
-  const { limits, cantrips } = spellChoices(c, level);
+export function toggleSpell(c: Character, id: string, level = c.level, classId = c.class): Character {
+  const { limits, cantrips, spells } = spellChoices(c, level, classId);
   const isCantrip = cantrips.some((s) => s.id === id);
-  const sameKind = c.spells.filter((s) => cantrips.some((x) => x.id === s) === isCantrip);
+  const kind = isCantrip ? cantrips : spells;
+  const sameKind = c.spells.filter((s) => kind.some((x) => x.id === s));
   const max = isCantrip ? limits.cantrips : limits.spells;
   if (c.spells.includes(id)) return { ...c, spells: c.spells.filter((s) => s !== id) };
   return sameKind.length < max ? { ...c, spells: [...c.spells, id] } : c;
@@ -185,7 +189,11 @@ function spellsLeft(c: Character): string[] {
 // ---- Level up -----------------------------------------------------------
 
 export interface LevelUpPlan {
+  /** The character's level after this one. */
   level: number;
+  /** The class gaining the level, and its level in that class after. */
+  classId: string;
+  classLevel: number;
   hitDie: number;
   average: number;
   /** An ability score improvement is due. */
@@ -194,31 +202,45 @@ export interface LevelUpPlan {
   subclass: boolean;
   newCantrips: number;
   newSpells: number;
+  /** Why the character can't take this class (multiclassing prerequisites). */
+  problem?: string;
 }
 
-export function levelUpPlan(c: Character): LevelUpPlan {
+/** What a level in `classId` (the first class by default) brings. */
+export function levelUpPlan(c: Character, classId = c.class): LevelUpPlan {
   const parts = partsOf(c);
-  const level = c.level + 1;
-  const hitDie = parts.cls?.hitDie ?? 8;
-  const now = spellChoices(c).limits;
-  const next = spellChoices(c, level).limits;
+  const taken = characterClasses(c).find((k) => k.class === classId);
+  const classLevel = (taken?.level ?? 0) + 1;
+  const hitDie = parts.book.content.classes.get(classId)?.hitDie ?? 8;
+  const now = taken ? spellChoices(c, taken.level, classId).limits : { cantrips: 0, spells: 0 };
+  const next = spellChoices(c, classLevel, classId).limits;
+  const options = parts.book.origins.classes.find((o) => o.id === classId);
+  const current = characterClasses(c).map((k) => k.class);
+  const problem = multiclassProblem(abilityScores(c, parts), current, classId, parts.book.content);
   return {
-    level,
+    level: totalLevel(c) + 1,
+    classId,
+    classLevel,
     hitDie,
     average: averageHitDie(hitDie),
-    improvement: isImprovementLevel(c.class, level),
-    subclass: !c.subclass && level >= (parts.options?.subclassLevel ?? 99),
+    improvement: isImprovementLevel(classId, classLevel),
+    subclass: !taken?.subclass && classLevel >= (options?.subclassLevel ?? 99),
     newCantrips: Math.max(0, next.cantrips - now.cantrips),
     newSpells: Math.max(0, next.spells - now.spells),
+    ...(problem && { problem }),
   };
 }
 
-/** "Level 3 Hill dwarf Cleric", for lists of characters. */
+/** "Level 3 Hill dwarf Cleric", or "Level 3 Human Fighter 2 / Wizard 1", for lists of characters. */
 export function characterSummary(c: Character): string {
   const p = partsOf(c);
   const species = p.subspecies?.name ?? p.species?.name ?? c.species;
-  const cls = p.cls?.name ?? c.class;
+  const name = (id: string) => p.book.content.classes.get(id)?.name ?? id;
+  if (c.multiclass.length) {
+    const classes = characterClasses(c).map((k) => `${name(k.class)} ${k.level}`);
+    return `Level ${totalLevel(c)} ${species} ${classes.join(' / ')}`;
+  }
   const sub = p.options?.subclasses.find((s) => s.id === c.subclass)?.name;
-  const line = `Level ${c.level} ${species} ${cls}`;
+  const line = `Level ${c.level} ${species} ${name(c.class)}`;
   return sub ? `${line} (${sub})` : line;
 }

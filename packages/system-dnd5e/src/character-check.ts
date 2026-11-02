@@ -1,23 +1,18 @@
-import { abilityScores, type Character, type Parts, partsOf } from './character.ts';
-import { isImprovementLevel, POINT_BUY_BUDGET, pointBuyCost, spellLimits, STANDARD_ARRAY } from './character-rules.ts';
-import { abilityMod } from './creature-math.ts';
+import { abilityScores, type Character, characterClasses, type Parts, partsOf, totalLevel } from './character.ts';
+import { multiclassProblem } from './multiclass.ts';
+import {
+  isImprovementLevel,
+  POINT_BUY_BUDGET,
+  pointBuyCost,
+  type SpellLimits,
+  spellLimits,
+  STANDARD_ARRAY,
+} from './character-rules.ts';
+import { abilityMod, abilityName } from './creature-math.ts';
 import { ABILITIES, type Ability } from './stats-schema.ts';
 
 // Whether a character follows the rules of its edition. The creator shows
 // these as hints; the server refuses to save a character that has any.
-
-const ABILITY_NAMES: Record<Ability, string> = {
-  str: 'Strength',
-  dex: 'Dexterity',
-  con: 'Constitution',
-  int: 'Intelligence',
-  wis: 'Wisdom',
-  cha: 'Charisma',
-};
-
-export function abilityName(a: Ability): string {
-  return ABILITY_NAMES[a];
-}
 
 function listNames(abilities: readonly Ability[]): string {
   const names = abilities.map(abilityName);
@@ -46,7 +41,7 @@ export function issuesByStep(c: Character): Record<CreatorStep, string[]> {
   if (Object.values(missing).some((m) => m.length)) return { ...missing, ...none };
   return {
     ...missing,
-    class: subclassIssues(c, p),
+    class: [...subclassIssues(c, p), ...multiclassIssues(c, p)],
     abilities: [...scoreIssues(c), ...bonusIssues(c, p)],
     skills: skillIssues(c, p),
     spells: spellIssues(c, p),
@@ -102,12 +97,20 @@ function skillIssues(c: Character, p: Parts): string[] {
   return out;
 }
 
+/** Ability score improvements the classes give at their levels. */
+function improvementsDue(c: Character): number {
+  return characterClasses(c).reduce(
+    (n, k) => n + Array.from({ length: k.level }, (_, i) => i + 1).filter((l) => isImprovementLevel(k.class, l)).length,
+    0,
+  );
+}
+
 function levelIssues(c: Character, p: Parts): string[] {
   const out: string[] = [];
-  const die = p.cls!.hitDie;
-  if (c.hpRolls.length !== c.level - 1) out.push('Roll or take average hit points for each level after 1st.');
+  const die = Math.max(p.cls!.hitDie, ...c.multiclass.map((m) => p.book.content.classes.get(m.class)?.hitDie ?? 0));
+  if (c.hpRolls.length !== totalLevel(c) - 1) out.push('Roll or take average hit points for each level after 1st.');
   for (const r of c.hpRolls) if (r > die) out.push(`A d${die} can't roll ${r}.`);
-  const due = Array.from({ length: c.level }, (_, i) => i + 1).filter((l) => isImprovementLevel(c.class, l)).length;
+  const due = improvementsDue(c);
   if (c.improvements.length !== due || c.improvements.some((b) => sum(b) !== 2)) {
     out.push(`Take ${due} ability score improvement${due === 1 ? '' : 's'} (2 points each).`);
   }
@@ -115,26 +118,61 @@ function levelIssues(c: Character, p: Parts): string[] {
 }
 
 function subclassIssues(c: Character, p: Parts): string[] {
-  const { subclasses, subclassLevel } = p.options!;
-  if (c.subclass && !subclasses.some((s) => s.id === c.subclass)) return [`Unknown subclass "${c.subclass}".`];
-  if (!c.subclass && c.level >= subclassLevel && subclasses.length) return [`Choose a ${p.cls!.name} subclass.`];
-  return [];
+  return characterClasses(c).flatMap((k) => {
+    const options = p.book.origins.classes.find((o) => o.id === k.class);
+    if (!options) return [];
+    const { subclasses, subclassLevel } = options;
+    if (k.subclass && !subclasses.some((s) => s.id === k.subclass)) return [`Unknown subclass "${k.subclass}".`];
+    if (!k.subclass && k.level >= subclassLevel && subclasses.length) {
+      return [`Choose a ${p.book.content.classes.get(k.class)?.name ?? k.class} subclass.`];
+    }
+    return [];
+  });
+}
+
+/** Each class taken after the first needs its prerequisites, and the earlier classes' too. */
+function multiclassIssues(c: Character, p: Parts): string[] {
+  const scores = abilityScores(c, p);
+  const taken = [c.class];
+  const out: string[] = [];
+  for (const m of c.multiclass) {
+    if (!p.book.content.classes.has(m.class)) out.push(`Unknown class "${m.class}".`);
+    else if (taken.includes(m.class)) out.push(`${m.class} is listed twice.`);
+    else {
+      const problem = multiclassProblem(scores, taken, m.class, p.book.content);
+      if (problem) out.push(`${problem}.`);
+    }
+    taken.push(m.class);
+  }
+  return out;
+}
+
+/** Spell limits of each class at its level; a multiclassed caster picks from each list. */
+function classSpellLimits(c: Character, p: Parts): { classId: string; limits: SpellLimits }[] {
+  const scores = abilityScores(c, p);
+  return characterClasses(c).map((k) => {
+    const ability = p.book.content.classes.get(k.class)?.spellcasting?.ability;
+    const mod = ability ? abilityMod(scores[ability]) : 0;
+    return { classId: k.class, limits: spellLimits({ classId: k.class, level: k.level, edition: c.rules, mod }) };
+  });
 }
 
 function spellIssues(c: Character, p: Parts): string[] {
-  const mod = p.cls!.spellcasting ? abilityMod(abilityScores(c, p)[p.cls!.spellcasting.ability]) : 0;
-  const limits = spellLimits({ classId: c.class, level: c.level, edition: c.rules, mod });
+  const perClass = classSpellLimits(c, p);
   const spells = c.spells.map((id) => ({ id, spell: p.book.content.spells.get(id) }));
   const out: string[] = [];
   for (const { id, spell } of spells) {
     if (!spell) out.push(`Unknown spell "${id}".`);
-    else if (!spell.classes.includes(c.class) || spell.level > limits.maxLevel) {
-      out.push(`${spell.name} isn't a level ${limits.maxLevel} or lower ${c.class} spell.`);
+    else if (!perClass.some((k) => spell.classes.includes(k.classId) && spell.level <= k.limits.maxLevel)) {
+      const k = perClass[0]!;
+      out.push(`${spell.name} isn't a level ${k.limits.maxLevel} or lower ${k.classId} spell.`);
     }
   }
+  const cantripLimit = perClass.reduce((n, k) => n + k.limits.cantrips, 0);
+  const spellLimit = perClass.reduce((n, k) => n + k.limits.spells, 0);
   const cantrips = spells.filter((s) => s.spell?.level === 0).length;
-  if (cantrips > limits.cantrips) out.push(`Choose at most ${limits.cantrips} cantrips.`);
-  if (spells.length - cantrips > limits.spells) out.push(`Choose at most ${limits.spells} spells.`);
+  if (cantrips > cantripLimit) out.push(`Choose at most ${cantripLimit} cantrips.`);
+  if (spells.length - cantrips > spellLimit) out.push(`Choose at most ${spellLimit} spells.`);
   return out;
 }
 
@@ -143,19 +181,29 @@ export interface LevelUpChoice {
   /** Hit points this level adds before Constitution: a roll or the average. */
   hp: number;
   improvement?: Partial<Record<Ability, number>>;
+  /** The class gaining the level: the first class by default, or another to multiclass into. */
+  class?: string;
+  /** The subclass of the class gaining the level, when it reaches the subclass level. */
   subclass?: string;
   /** The full spell list after levelling, when it changed. */
   spells?: string[];
 }
 
 export function levelUp(c: Character, choice: LevelUpChoice): Character {
-  const level = c.level + 1;
-  return {
+  const common = {
     ...c,
-    level,
     hpRolls: [...c.hpRolls, choice.hp],
     improvements: choice.improvement ? [...c.improvements, choice.improvement] : c.improvements,
-    subclass: choice.subclass ?? c.subclass,
     spells: choice.spells ?? c.spells,
+  };
+  const into = choice.class ?? c.class;
+  if (into === c.class) return { ...common, level: c.level + 1, subclass: choice.subclass ?? c.subclass };
+  const known = c.multiclass.some((m) => m.class === into);
+  const multiclass = known ? c.multiclass : [...c.multiclass, { class: into, level: 0 }];
+  return {
+    ...common,
+    multiclass: multiclass.map((m) =>
+      m.class === into ? { ...m, level: m.level + 1, ...(choice.subclass && { subclass: choice.subclass }) } : m,
+    ),
   };
 }

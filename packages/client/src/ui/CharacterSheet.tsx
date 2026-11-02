@@ -6,6 +6,8 @@ import {
   type Edition,
   editionOf,
   type SheetArea,
+  characterLevel,
+  classesText,
 } from '@vtt/system-dnd5e';
 import { uniqueId } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
@@ -134,8 +136,8 @@ function Pages(props: Readonly<SheetProps & { rules: Edition }>) {
 }
 
 function SheetHead({ session, kind, value, update, edit }: Readonly<SheetProps>) {
-  const level = value.stats?.level;
-  const title = [level && `Level ${level}`, value.stats?.class ?? value.monster, kind === 'actor' && '(actor)']
+  const level = characterLevel(value.stats);
+  const title = [level && `Level ${level}`, classesText(value.stats) ?? value.monster, kind === 'actor' && '(actor)']
     .filter(Boolean)
     .join(' ');
   const editable = kind === 'actor' ? session.isGm() : session.canEdit(value.id);

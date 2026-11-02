@@ -113,24 +113,52 @@ interface Classes {
   skipped: string[];
 }
 
-function classesOf(items: Loose[], srd: Content): Classes {
+interface FoundryClass {
+  name: string;
+  levels: number;
+  id: string;
+  /** Foundry's identifier, which its subclass items point at. */
+  key?: string;
+  first: boolean;
+}
+
+function foundryClass(i: Loose, srd: Content, original: string | undefined): FoundryClass {
+  const name = str(i.name)!;
+  const id = byName(srd.classes, name) ?? slugify(name);
+  const key = str(at(i, 'system.identifier'));
+  return {
+    name,
+    levels: Math.max(1, num(at(i, 'system.levels')) ?? 1),
+    id,
+    key,
+    first: !!original && i._id === original,
+  };
+}
+
+/** Subclass ids by the identifier of the class they belong to. */
+function subclassesOf(items: Loose[]): Map<string, string> {
+  const subs = items.filter((i) => i.type === 'subclass' && str(i.name));
+  return new Map(subs.map((i) => [str(at(i, 'system.classIdentifier')) ?? '', slugify(str(i.name)!)]));
+}
+
+/** Its classes, the original one first: one is `class` and `level`, several are `classes`. */
+function classesOf(items: Loose[], srd: Content, sys: Loose): Classes {
+  const original = str(at(sys, 'details.originalClass'));
   const classes = items
     .filter((i) => i.type === 'class' && str(i.name))
-    .map((i) => ({ name: str(i.name)!, levels: Math.max(1, num(at(i, 'system.levels')) ?? 1) }))
-    .sort((a, b) => b.levels - a.levels);
+    .map((i) => foundryClass(i, srd, original))
+    .sort((a, b) => Number(b.first) - Number(a.first));
   const main = classes[0];
   if (!main) return { stats: {}, srd: [], skipped: [] };
-  const level = Math.min(
-    20,
-    classes.reduce((n, c) => n + c.levels, 0),
-  );
-  const multi = classes.length > 1;
-  const named = classes.map((c) => `${c.name} ${c.levels}`).join(' / ');
-  return {
-    stats: { class: main.name, level },
-    srd: classes.flatMap((c) => byName(srd.classes, c.name) ?? []),
-    skipped: multi ? [`classes: one class per sheet here, so ${named} became ${main.name} ${level}`] : [],
-  };
+  const srdIds = classes.flatMap((c) => byName(srd.classes, c.name) ?? []);
+  if (classes.length === 1)
+    return { stats: { class: main.name, level: Math.min(20, main.levels) }, srd: srdIds, skipped: [] };
+  const subs = subclassesOf(items);
+  const entries = classes.map((c) => {
+    const subclass = subs.get(c.key ?? c.id);
+    return { class: c.id, level: Math.min(20, c.levels), ...(subclass && { subclass }) };
+  });
+  return { stats: { classes: entries }, srd: srdIds, skipped: [] };
 }
 
 function spellsOf(items: Loose[], srd: Content): { spells: string[]; skipped: string[] } {
@@ -181,7 +209,7 @@ function statsOf({ sys, items, npc, srd }: Read, classes: Classes, spells: strin
     ...opt('maxHp', maxHp !== undefined && maxHp > 0 && Math.round(maxHp)),
     ...opt('ac', acOf(sys)),
     ...classes.stats,
-    ...(npc && !classes.stats.level ? { proficiency: prof } : {}),
+    ...(npc && !classes.stats.level && !classes.stats.classes ? { proficiency: prof } : {}),
     ...defensesOf(sys),
     ...opt('skills', skills.length > 0 && skills),
     ...opt('spells', spells.length > 0 && spells),
@@ -193,7 +221,7 @@ function statsOf({ sys, items, npc, srd }: Read, classes: Classes, spells: strin
 function builtSheet(data: Loose, srd: Content): ConvertedSheet {
   const read: Read = { sys: obj(data.system), items: list(data.items).map(obj), npc: data.type === 'npc', srd };
   const { sys, items, npc } = read;
-  const classes = classesOf(items, srd);
+  const classes = classesOf(items, srd, read.sys);
   const spells = spellsOf(items, srd);
   const gear = gearOf(npc ? items.filter((i) => i.type !== 'weapon') : items, srd);
   const features = featuresOf(items, srd, classes.srd);

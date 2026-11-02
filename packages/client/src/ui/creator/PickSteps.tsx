@@ -63,11 +63,17 @@ export function SkillsStep({ c, set }: Readonly<StepProps>) {
 }
 
 /** Picks cantrips and spells for the character at `level`; the creator and level up share it. */
-export function SpellPicker({ c, set, level = c.level }: Readonly<StepProps & { level?: number }>) {
-  const { limits, cantrips, spells } = spellChoices(c, level);
+export function SpellPicker({
+  c,
+  set,
+  level = c.level,
+  classId = c.class,
+}: Readonly<StepProps & { level?: number; classId?: string }>) {
+  const { limits, cantrips, spells } = spellChoices(c, level, classId);
   const [focus, setFocus] = useState<Spell>();
   const count = (list: Spell[]) => c.spells.filter((id) => list.some((s) => s.id === id)).length;
-  const verb = c.rules === '2014' && c.class === 'wizard' ? 'in your spellbook' : 'known or prepared';
+  const verb = c.rules === '2014' && classId === 'wizard' ? 'in your spellbook' : 'known or prepared';
+  const grid = { c, set, level, classId, onFocus: setFocus };
   return (
     <div className="cc-split">
       <div>
@@ -80,10 +86,8 @@ export function SpellPicker({ c, set, level = c.level }: Readonly<StepProps & { 
             </span>
           }
         />
-        {limits.cantrips > 0 && (
-          <SpellGrid title="Cantrips" list={cantrips} c={c} set={set} level={level} onFocus={setFocus} />
-        )}
-        <SpellGrid title="Spells" list={spells} c={c} set={set} level={level} onFocus={setFocus} />
+        {limits.cantrips > 0 && <SpellGrid title="Cantrips" list={cantrips} {...grid} />}
+        <SpellGrid title="Spells" list={spells} {...grid} />
       </div>
       <aside className="cc-aside">
         {focus ? (
@@ -108,8 +112,11 @@ function SpellGrid({
   c,
   set,
   level,
+  classId,
   onFocus,
-}: Readonly<StepProps & { title: string; list: Spell[]; level: number; onFocus: (s: Spell) => void }>) {
+}: Readonly<
+  StepProps & { title: string; list: Spell[]; level: number; classId: string; onFocus: (s: Spell) => void }
+>) {
   return (
     <section className="cc-spells">
       <h3>{title}</h3>
@@ -118,7 +125,7 @@ function SpellGrid({
           <button
             key={s.id}
             className={c.spells.includes(s.id) ? 'cc-spell on' : 'cc-spell'}
-            onClick={() => set(toggleSpell(c, s.id, level))}
+            onClick={() => set(toggleSpell(c, s.id, level, classId))}
             onMouseEnter={() => onFocus(s)}
             onFocus={() => onFocus(s)}
           >

@@ -36,7 +36,12 @@ export const CharacterSchema = z.object({
   class: id,
   subclass: id.optional(),
   background: id,
+  /** Levels in `class`, the class taken at 1st level. */
   level: z.number().int().min(1).max(20).default(1),
+  /** Levels in other classes, in the order they were taken. */
+  multiclass: z
+    .array(z.object({ class: id, level: z.number().int().min(1).max(19), subclass: id.optional() }))
+    .default([]),
   /** Scores before any bonus, from point buy, the standard array, rolls or typed in. */
   base: z.object({ str: score, dex: score, con: score, int: score, wis: score, cha: score }),
   method: z.enum(['point-buy', 'standard', 'roll', 'manual']).default('point-buy'),
@@ -90,6 +95,16 @@ export function partsOf(c: Character): Parts {
   };
 }
 
+/** The character's level: its levels in every class. */
+export function totalLevel(c: Pick<Character, 'level' | 'multiclass'>): number {
+  return c.multiclass.reduce((n, m) => n + m.level, c.level);
+}
+
+/** Every class of the character with its levels and subclass, the first one first. */
+export function characterClasses(c: Character): { class: string; level: number; subclass?: string }[] {
+  return [{ class: c.class, level: c.level, ...(c.subclass && { subclass: c.subclass }) }, ...c.multiclass];
+}
+
 export function abilityScores(c: Character, parts = partsOf(c)): Abilities {
   const fixed = [parts.species?.bonuses ?? {}, parts.subspecies?.bonuses ?? {}];
   return addScores(c.base, ...fixed, c.bonusPicks, ...c.improvements);
@@ -105,7 +120,7 @@ export function characterMaxHp(c: Character, parts = partsOf(c)): number {
   const con = abilityMod(abilityScores(c, parts).con);
   const die = parts.cls?.hitDie ?? 8;
   const later = c.hpRolls.reduce((sum, roll) => sum + Math.max(1, roll + con), 0);
-  return hitPointsAtLevel1(die, con) + later + (hasToughness(parts) ? c.level : 0);
+  return hitPointsAtLevel1(die, con) + later + (hasToughness(parts) ? totalLevel(c) : 0);
 }
 
 export function characterSkills(c: Character, parts = partsOf(c)): string[] {
@@ -156,8 +171,7 @@ export function characterToken(c: Character, parts = partsOf(c)): Omit<Token, 'i
     hidden: false,
     stats: {
       rules: c.rules,
-      class: c.class,
-      level: c.level,
+      ...(c.multiclass.length ? { classes: characterClasses(c) } : { class: c.class, level: c.level }),
       abilities: abilityScores(c, parts),
       maxHp: characterMaxHp(c, parts),
       skills: characterSkills(c, parts),

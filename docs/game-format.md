@@ -547,6 +547,7 @@ better of STR and DEX, ranged weapons DEX), proficiency from `level`:
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `level`                                        | Character level, sets proficiency.                                                                                                                   |
 | `class`                                        | Shown on the character sheet.                                                                                                                        |
+| `classes`                                      | A multiclassed character: `[{ "class": "fighter", "level": 3, "subclass"? }, ...]`, first class first, instead of `class` and `level`.               |
 | `abilities`                                    | `str dex con int wis cha` scores; missing ones are 10 (or the monster's).                                                                            |
 | `maxHp`                                        | Hit point maximum.                                                                                                                                   |
 | `ac`, `proficiency`                            | Override the computed values.                                                                                                                        |
@@ -581,7 +582,22 @@ knows or has prepared (from `spells-5.1.json` or `spells-5.2.json`, by the
 token's edition). A `class` named after an SRD class (Wizard, Fighter, ...)
 gives that class's spell slots, spellcasting ability and features by `level`,
 from `classes-5.x.json`. A homebrew class or a monster that casts uses
-`"spellcasting": { "ability": "int", "progression": "full" | "half" | "pact", "level": 5 }`.
+`"spellcasting": { "ability": "int", "progression": "full" | "half" | "third" | "pact", "level": 5 }`.
+
+**Multiclassing.** `stats.classes` splits a character's levels over several
+classes. Proficiency, cantrips and scroll reading follow the total level;
+each class gives its features at its own level (their tables, like rage
+damage, read that level); extra attack is the best of the classes and sneak
+attack follows rogue levels. Saving throws come from the first class. Spell
+slots come from the combined caster level (full casters count every level,
+half casters half, rounded down in 2014 and up in 2024 or for classes that
+cast from 1st level, third casters a third), unless only one class casts,
+which keeps its own table. A warlock's pact slots are added apart and come
+back on a short rest. Spell attacks and DCs use the first casting class's
+ability. Hit dice are one pool per die; spending takes the biggest first.
+In the level-up screen a player picks the class gaining the level; taking a
+new one needs 13 in its main abilities and in the current classes' (a
+class's `multiclass: { all, any }` in `class-automation.json`).
 
 ```json
 "stats": {

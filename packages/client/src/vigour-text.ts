@@ -18,6 +18,6 @@ export function exhaustionText(level: number, edition: Edition): string {
   return STEPS_2014.slice(0, level).join(' · ');
 }
 
-export function hitDiceText({ die, total, left }: HitDice): string {
-  return `${left}/${total} d${die}`;
+export function hitDiceText({ dice }: HitDice): string {
+  return dice.map(({ die, total, left }) => `${left}/${total} d${die}`).join(' · ');
 }
