@@ -258,6 +258,7 @@ export class TokenLayer {
       if (this.isTarget(t)) return this.session.actions.attack(t.id);
       const click = clickToken(this.session, t.id);
       if (click.kind === 'prompt') return this.session.editor.openMenu([e.clientX, e.clientY], click.items);
+      if (click.kind === 'walk') return click.run();
       if (click.kind === 'select') this.press(t.id, e);
     });
     this.container.addChild(root);

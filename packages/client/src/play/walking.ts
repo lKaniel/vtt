@@ -48,8 +48,9 @@ interface Pointer {
 
 /**
  * The token whose path or aim the map previews: the selected one while it is
- * dragged or aims a spell or attack, or while the pointer rests on open
- * ground and you control it (its walk there, as in BG3).
+ * dragged or aims a spell or attack, or while the pointer rests on the map
+ * (not on one of your own creatures) and you control it: its walk there, or
+ * up to what the pointer snaps to, as in BG3.
  */
 export function previewToken(s: Session, p: Pointer): TokenView | undefined {
   const token = s.selected ? s.tokens.get(s.selected) : undefined;
@@ -61,5 +62,7 @@ export function previewToken(s: Session, p: Pointer): TokenView | undefined {
 function walksOnHover(s: Session, token: TokenView, { hover, drag, editing }: Pointer): boolean {
   if (drag || editing || !hover || !s.world) return false;
   if (s.editor.mode !== 'tokens' || !s.canControl(token)) return false;
-  return !tokenAt(s.tokens.values(), hover, s.world.gridSize);
+  // Over one of your own creatures a click selects it: no walk to show.
+  const under = tokenAt(s.tokens.values(), hover, s.world.gridSize);
+  return !under || !s.canControl(under);
 }

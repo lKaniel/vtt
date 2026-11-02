@@ -3,6 +3,7 @@ import { Circle, Container, Graphics } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
 import { drawDoor, drawWalls, drawWallShadows } from './art/walls.ts';
 import type { Session } from '../session/session.ts';
+import { clickTile, openDoor } from '../play/interact.ts';
 import { imageTile, type TileView } from './tile-draw.ts';
 import { type RoofEyes, roofWatchers } from './tile-motion.ts';
 
@@ -107,9 +108,7 @@ export class ChunkLayer {
     drawn.on('pointerdown', (e) => e.stopPropagation());
     drawn.on('pointertap', (e) => {
       e.stopPropagation();
-      const s = this.session;
-      const acting = s.selected ? s.tokens.get(s.selected) : undefined;
-      s.requests.useTile(tile.id, acting && s.canControl(acting) ? acting.id : undefined);
+      clickTile(this.session, tile.id);
     });
   }
 
@@ -129,17 +128,9 @@ export class ChunkLayer {
     });
     door.on('pointertap', (e) => {
       e.stopPropagation();
-      this.toggle(key, wall, e.shiftKey);
+      openDoor(this.session, key, wall, e.shiftKey);
     });
     return door;
-  }
-
-  /** Click opens or closes; shift-click lets the GM lock or unlock. */
-  private toggle(key: string, wall: Wall, shift: boolean): void {
-    const isGm = this.session.isGm();
-    if (isGm && shift) this.session.requests.setDoor(key, wall.id, wall.door === 'locked' ? 'closed' : 'locked');
-    else if (wall.door === 'locked') this.session.showError('The door is locked');
-    else this.session.requests.setDoor(key, wall.id, wall.door === 'open' ? 'closed' : 'open');
   }
 }
 

@@ -3,11 +3,13 @@
 // goblin-1 is moved next to Bram (south of him) before the server starts;
 // Bram is in the tavern, Orrin beside him to the east.
 
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { placeToken } from '../support/files.ts';
 import { expect, test } from '../support/fixtures.ts';
 import { screenOf } from '../support/map.ts';
-import { GM, atTable, chatLog } from '../support/table.ts';
+import { GM, PLAYER_2, atTable, chatLog, placeSeen } from '../support/table.ts';
 
 const BRAM: [number, number] = [650, 650];
 const GOBLIN: [number, number] = [650, 750];
@@ -17,6 +19,7 @@ test.use({ serverOptions: { prepare: (dir) => placeToken(dir, 'goblin-1', ...GOB
 
 interface Shown {
   token: string;
+  to: [number, number];
   feet: number | null;
   warnings: { kind: string; text: string }[];
 }
@@ -69,3 +72,47 @@ test('in a fight, the preview warns of an opportunity attack from a foe you walk
     })
     .toContain('Opportunity attack: Goblin');
 });
+
+test.describe('the pointer snaps to what it is near', () => {
+  // Orrin steps into the cellar, out of the way of the tavern door; the goblin waits in the tavern.
+  test.use({
+    serverOptions: {
+      prepare: async (dir) => {
+        await placeToken(dir, 'orrin', 1000, 400);
+        await placeToken(dir, 'goblin-1', 800, 450);
+      },
+    },
+  });
+
+  test('hovering the goblin previews walking up to it', async ({ page }) => {
+    await atTable(page, PLAYER_2);
+    const last = await watchPreviews(page);
+    const bram = await screenOf(page, ...BRAM);
+    await page.mouse.click(bram.x, bram.y);
+    await pointAt(page, [815, 470]);
+    await expect
+      .poll(async () => {
+        const to = (await last())?.to;
+        return to && Math.round(Math.hypot(to[0] - 800, to[1] - 450));
+      })
+      .toBe(102);
+  });
+
+  test('clicking the tavern door walks Bram up to it and opens it', async ({ page, server }) => {
+    await atTable(page, PLAYER_2);
+    const bram = await screenOf(page, ...BRAM);
+    await page.mouse.click(bram.x, bram.y);
+    const door = await screenOf(page, 750, 800);
+    await page.mouse.click(door.x, door.y);
+    await expect.poll(async () => (await doorOnDisk(server.gameDir))?.door).toBe('open');
+    await expect.poll(() => placeSeen(page, 'bram')).toEqual([750, 746]);
+  });
+});
+
+async function doorOnDisk(gameDir: string): Promise<{ door?: string } | undefined> {
+  const walls = JSON.parse(await readFile(join(gameDir, 'scenes/crossroads/walls.json'), 'utf8')) as {
+    id: string;
+    door?: string;
+  }[];
+  return walls.find((w) => w.id === 'tavern-door');
+}

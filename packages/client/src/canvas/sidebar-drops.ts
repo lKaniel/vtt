@@ -1,5 +1,6 @@
 import type { Point } from '@vtt/shared';
 import { DRAG_TYPE, type DragPayload } from '../play/drops.ts';
+import { snapFor } from '../play/interact.ts';
 import { moveSelectionTo } from '../play/map-clicks.ts';
 import type { Session } from '../session/session.ts';
 import type { ItemLayer } from './ItemLayer.ts';
@@ -37,10 +38,24 @@ export function openNote(s: Session, items: ItemLayer, at: Point): boolean {
   return !!note;
 }
 
-/** A left click on the map with an action ready: casts an aimed area spell, or puts the action away. */
+/**
+ * A left click on the map with an action ready. Next to a creature it goes at
+ * that creature (the pointer snaps to it); an aimed area spell is cast at the
+ * point, centred on a creature it snaps to; otherwise the action is put away.
+ */
 export function clickGround(s: Session, p: Point): void {
-  if (s.actions.armed) return s.actions.arm(undefined);
+  const near = snapFor(s, p);
   const aiming = s.actions.aiming;
-  if (aiming?.mode === 'point') return s.actions.castAt(p);
+  if (near?.kind === 'token' && aimsAtCreatures(s)) return clickCreature(s, near.id);
+  if (aiming?.mode === 'point') return s.actions.castAt(near?.kind === 'token' ? near.at : p);
+  if (s.actions.armed) return s.actions.arm(undefined);
   if (aiming) s.actions.aim(undefined);
+}
+
+const aimsAtCreatures = (s: Session) => !!s.actions.armed || s.actions.aiming?.mode === 'creatures';
+
+/** An attack or spell aimed at creatures, sent at the one the pointer snapped to. */
+function clickCreature(s: Session, id: string): void {
+  if (s.actions.aiming) s.actions.pickTarget(id);
+  else s.actions.attack(id);
 }

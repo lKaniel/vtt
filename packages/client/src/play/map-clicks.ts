@@ -6,7 +6,7 @@ import type { Session } from '../session/session.ts';
 // no attack readied): on empty ground the selected creatures walk there; on a
 // creature you control it becomes the selection; on a foe in a fight you are
 // asked whether to attack it or walk up to it; on a pile of loot or a
-// merchant whether to open it or walk up to it; on anyone else nothing.
+// merchant whether to open it or walk up to it; anyone else you walk up to.
 
 interface Placed {
   id: string;
@@ -55,7 +55,8 @@ export function moveSelectionTo(s: Session, at: Point, lead?: string): boolean {
   return true;
 }
 
-export type TokenClick = { kind: 'select' } | { kind: 'none' } | { kind: 'prompt'; items: MenuItem[] };
+export type TokenClick =
+  { kind: 'select' } | { kind: 'none' } | { kind: 'prompt'; items: MenuItem[] } | { kind: 'walk'; run: () => void };
 
 /** A foe in the fight going on: someone in the turn order the players don't own. */
 function isFoeInFight(s: Session, id: string): boolean {
@@ -99,13 +100,20 @@ function pileOptions(s: Session, id: string): MenuItem[] {
   return [open, { label: 'Walk up to it', run: () => walkUpTo(s, self.id, id) }];
 }
 
+/** Walking up to `target` with the creature you act with, if you have one. */
+function walkUpClick(s: Session, target: string): TokenClick {
+  const self = s.selected ? s.tokens.get(s.selected) : undefined;
+  if (!self || self.id === target || !s.canControl(self)) return { kind: 'none' };
+  return { kind: 'walk', run: () => walkUpTo(s, self.id, target) };
+}
+
 /** What a plain left click on a creature does (see the top of this file). */
 export function clickToken(s: Session, id: string): TokenClick {
   const t = s.tokens.get(id);
   if (!t) return { kind: 'none' };
   if (s.canControl(t)) return { kind: 'select' };
   if (t.pile) return { kind: 'prompt', items: pileOptions(s, id) };
-  if (!isFoeInFight(s, id)) return { kind: 'none' };
+  if (!isFoeInFight(s, id)) return walkUpClick(s, id);
   const items = foeOptions(s, id);
   return items.length ? { kind: 'prompt', items } : { kind: 'none' };
 }
