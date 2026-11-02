@@ -21,7 +21,7 @@ import { withOffer } from './reactions.ts';
 import { Presence } from './presence.ts';
 import { Rulers } from './rulers.ts';
 import type { SessionEvents } from './session-events.ts';
-import { ActionSession } from './session-actions.ts';
+import { HudSession } from './session-hud.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
 
@@ -41,7 +41,7 @@ const isPresenceNews = (msg: ServerMessage): msg is PresenceNews => PRESENCE.has
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends ActionSession {
+export class Session extends HudSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -328,6 +328,9 @@ export class Session extends ActionSession {
       case 'reactionGone':
         this.reactions = withOffer(this.reactions, msg);
         return true;
+      case 'paused':
+        this.paused = msg.on;
+        return true;
       case 'chatUndone':
         this.chat = this.chat.map((m) => (msg.ids.includes(m.id) ? { ...m, undone: msg.undone || undefined } : m));
         return true;
@@ -365,6 +368,7 @@ export class Session extends ActionSession {
     for (const t of msg.tokens) this.tokens.set(t.id, t);
     this.chat = msg.chat;
     this.combat = msg.combat;
+    this.paused = !!msg.paused;
     this.rulers.reset();
     this.presence.reset();
     this.targets.reset((id) => this.tokens.has(id));
@@ -400,6 +404,7 @@ export class Session extends ActionSession {
   private onTokenGone(id: string): boolean {
     if (!this.tokens.delete(id)) return false;
     this.targets.forget(id);
+    this.hudTokenGone(id);
     if (this.mode === 'tokens') this.pruneSelection((key) => key !== this.tokenKey(id));
     if (this.selected === id) this.select(undefined);
     if (this.sheet?.kind === 'token' && this.sheet.id === id) this.sheet = undefined;

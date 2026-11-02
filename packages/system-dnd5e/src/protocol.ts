@@ -10,7 +10,7 @@ import type {
   WorldInfo,
 } from '@vtt/shared';
 import type { Combat } from './combat.ts';
-import type { Area } from './spell-schema.ts';
+import type { Area, Condition } from './spell-schema.ts';
 import type { CompendiumDrop, SheetArea } from './sheet-drops.ts';
 import type { Ability, Currency, DamageType, Edition } from './stats-schema.ts';
 import type { Actor } from './token-schema.ts';
@@ -141,6 +141,10 @@ export type ClientMessage =
   | { t: 'useItem'; token: string; item: string }
   /** Take a reaction that was offered, with this attack; no attack declines it. */
   | { t: 'react'; offer: string; choice?: string }
+  /** Put a condition on a creature you control, or take it off (the token HUD). */
+  | { t: 'condition'; token: string; condition: Condition; on: boolean }
+  /** GM: add a creature to the fight (starting one) or take it out. */
+  | { t: 'combatant'; token: string; on: boolean }
   /** Apply the roll on a chat card to these creatures: in full, half, double, or as healing. */
   | { t: 'applyDamage'; card: string; tokens: string[]; how: 'full' | 'half' | 'double' | 'heal' }
   | { t: 'dropConcentration'; token: string }
@@ -182,6 +186,8 @@ export type ServerMessage =
       history: HistoryState;
       /** The server's clock (ms) as it sent this, so the game clock reads the same everywhere. */
       serverTime?: number;
+      /** The GM paused the game: players can't act. */
+      paused?: boolean;
     }
   | { t: 'token'; token: TokenView }
   | { t: 'chat'; message: ChatMessage }
