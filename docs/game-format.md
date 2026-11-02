@@ -137,6 +137,15 @@ Optional, all set from the Scenes tab too:
 | `darknessFollowsClock` | The darkness follows the game clock's time of day (see time.json); `darkness` is ignored. |
 | `levels`               | Floors of the scene, see "Scene levels" below.                                            |
 | `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.            |
+| `navigation`           | `true`: the scene is in the GM's navigation bar under the top bar.                        |
+| `navName`              | Its name in that bar (default `name`).                                                    |
+| `thumb`                | A small picture for the bar and the Scenes list (default the background tile's picture).  |
+
+The navigation bar always holds the game's scene and the one the GM is on;
+a click looks at a scene, its play button moves the game there. A
+foreground picture (Foundry's scene foreground) is an image tile drawn over
+everything: `"overhead": true, "occludedAlpha": 1` makes it a roof that
+never fades.
 
 Every scene is live at once: the rules (moves, doors, fights, spells) work
 on whichever scene the player acting is on.
@@ -576,6 +585,7 @@ better of STR and DEX, ranged weapons DEX), proficiency from `level`:
 | `level`                                        | Character level, sets proficiency.                                                                                                                   |
 | `class`                                        | Shown on the character sheet.                                                                                                                        |
 | `classes`                                      | A multiclassed character: `[{ "class": "fighter", "level": 3, "subclass"? }, ...]`, first class first, instead of `class` and `level`.               |
+| `xp`                                           | Experience points. The GM's Encounter panel awards them; the sheet's title shows the XP to the next level, or the level reached.                     |
 | `abilities`                                    | `str dex con int wis cha` scores; missing ones are 10 (or the monster's).                                                                            |
 | `maxHp`                                        | Hit point maximum.                                                                                                                                   |
 | `ac`, `proficiency`                            | Override the computed values.                                                                                                                        |
@@ -648,6 +658,17 @@ token's edition). A `class` named after an SRD class (Wizard, Fighter, ...)
 gives that class's spell slots, spellcasting ability and features by `level`,
 from `classes-5.x.json`. A homebrew class or a monster that casts uses
 `"spellcasting": { "ability": "int", "progression": "full" | "half" | "third" | "pact", "level": 5 }`.
+
+**Encounters and experience.** The GM's Encounter button (beside Start
+combat) weighs the monsters on the scene against the party: the
+player-owned characters with class levels. In 2014 rules the monsters' XP
+(by challenge rating) is multiplied by their number (one step more for a
+party under three, one less for six or more) and measured against the
+easy, medium, hard and deadly thresholds; in 2024 their XP is measured
+against the low, moderate and high budgets, and past high is "beyond".
+Monsters can be left out with their toggles. Award XP splits the
+monsters' XP evenly, adds it to each character's `stats.xp` and says in
+chat who has enough for a new level.
 
 **Multiclassing.** `stats.classes` splits a character's levels over several
 classes. Proficiency, cantrips and scroll reading follow the total level;

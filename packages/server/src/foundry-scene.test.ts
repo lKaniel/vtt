@@ -81,6 +81,33 @@ describe('a Foundry scene', () => {
     });
   });
 
+  it('keeps the navigation bar settings, the thumbnail and the foreground picture (as a roof that never fades)', () => {
+    const lookup = (p: string) => `pack://caves/${p}`;
+    const data = {
+      ...v11,
+      navigation: true,
+      navName: 'Cave',
+      thumb: 'worlds/w/thumbs/cave.webp',
+      foreground: 'f.webp',
+    };
+    const { scene } = foundryScene(data, lookup);
+    expect(scene).toMatchObject({ navigation: true, navName: 'Cave', thumb: 'pack://caves/worlds/w/thumbs/cave.webp' });
+    expect(scene.tiles.find((t) => t.id === 'foreground')).toEqual({
+      id: 'foreground',
+      name: 'Foreground',
+      kind: 'image',
+      x: 1000,
+      y: 800,
+      w: 4000,
+      h: 3000,
+      src: 'pack://caves/f.webp',
+      overhead: true,
+      occludedAlpha: 1,
+      locked: true,
+    });
+    expect(foundryScene({ ...v11, navigation: false }, media).scene).not.toHaveProperty('navigation');
+  });
+
   it('makes roofs of overhead, roof and Better Roofs tiles, and keeps videos', () => {
     const tile = { texture: { src: 'modules/caves/tiles/barrel.png' }, x: 0, y: 0, width: 100, height: 100 };
     const roofs = {

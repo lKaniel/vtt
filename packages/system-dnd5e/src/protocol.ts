@@ -134,6 +134,8 @@ export type ClientMessage =
   | { t: 'hitDie'; token: string }
   /** GM: sets a creature's exhaustion, 0 for none. */
   | { t: 'exhaustion'; token: string; level: number }
+  /** GM: gives each of these characters `xp` experience points. */
+  | { t: 'awardXp'; tokens: string[]; xp: number }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
   | {
       t: 'cast';
