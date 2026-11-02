@@ -71,8 +71,17 @@ describe('map clicks', () => {
     expect(clickToken(session, 'ally')).toEqual({ kind: 'select' });
   });
 
-  it('a click on someone you cannot control does nothing outside a fight', () => {
+  it('a click on someone you cannot control walks you up to them outside a fight', () => {
     session.select('hero');
+    const click = clickToken(session, 'goblin');
+    expect(click.kind).toBe('walk');
+    if (click.kind === 'walk') click.run();
+    const walk = moves().at(-1) as { to: [number, number] };
+    expect(walk).toMatchObject({ t: 'move', token: 'hero' });
+    expect(walk.to[0]).toBeGreaterThan(440);
+  });
+
+  it('a click on someone else does nothing with nothing of yours selected', () => {
     expect(clickToken(session, 'goblin')).toEqual({ kind: 'none' });
   });
 
@@ -95,12 +104,12 @@ describe('map clicks', () => {
   it('in a fight, a creature that is not in it is left alone', () => {
     ws.receive({ t: 'combat', combat: fight(1) });
     session.select('hero');
-    expect(clickToken(session, 'bard')).toEqual({ kind: 'none' });
+    expect(clickToken(session, 'bard').kind).toBe('walk');
   });
 
   it('turn-based mode outside a fight is not a fight', () => {
     ws.receive({ t: 'combat', combat: { ...fight(1), peaceful: true } });
     session.select('hero');
-    expect(clickToken(session, 'goblin')).toEqual({ kind: 'none' });
+    expect(clickToken(session, 'goblin').kind).toBe('walk');
   });
 });

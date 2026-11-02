@@ -1,5 +1,6 @@
 import { areaShape, type Attack, attackRange, type Token, tokenDistance, type TokenView } from '@vtt/system-dnd5e';
 import {
+  bodyOf,
   hasLineOfSight,
   gridKind,
   type GridKind,
@@ -18,6 +19,8 @@ import { aimPoint, walkOptions } from '../play/walking.ts';
 import { needsClearPath, type Aiming } from '../play/targeting.ts';
 import { type WalkPlan, type WalkWarning, walkWarnings } from '../play/walk-warnings.ts';
 import { t } from '../i18n/index.ts';
+import { snapFor } from '../play/interact.ts';
+import { interactSpot, type Snap } from '../play/snapping.ts';
 
 /** What the walk preview needs besides the scene: who and what the player knows of, and the movement left. */
 type WalkContext = Omit<WalkPlan, 'mover' | 'path' | 'gridSize' | 'grid'>;
@@ -45,6 +48,8 @@ interface PreviewContext {
   force: boolean;
   /** What a step through each point costs (difficult ground the player knows of). */
   cost?: (p: Point) => number;
+  /** What the pointer snapped to: aims go at a creature's centre. */
+  snap?: Snap;
 }
 
 /** The path a selected token would walk to the hovered square, with its length in feet. */
@@ -140,7 +145,9 @@ export class PathPreview {
   showAttack(token: Token, hover: Point, attack: Attack, ctx: PreviewContext): void {
     const target = this.aim(hover, ctx);
     if (!this.needsRedraw(`attack:${attack.name}:${target[0]},${target[1]}:${token.x},${token.y}`, ctx.force)) return;
-    const feet = tokenDistance(token, { x: target[0], y: target[1], size: 1 }, ctx.gridSize, ctx.grid);
+    const foe = ctx.snap?.kind === 'token' ? ctx.snap : undefined;
+    const size = foe ? (foe.r * 2) / ctx.gridSize : 1;
+    const feet = tokenDistance(token, { x: target[0], y: target[1], size }, ctx.gridSize, ctx.grid);
     const blocked = !hasLineOfSight([token.x, token.y], target, ctx.walls, { kind: 'sight', gridSize: ctx.gridSize });
     const range = blocked ? 'out' : attackRange(attack, feet);
     const color = { normal: OK_COLOR, long: LONG_RANGE_COLOR, out: BLOCKED_COLOR }[range];
@@ -148,7 +155,8 @@ export class PathPreview {
     this.line.stroke({ width: 4, color, alpha: 0.8 });
     this.line.circle(target[0], target[1], ctx.gridSize * 0.4).stroke({ width: 6, color });
     const note = { normal: '', long: ' · disadvantage', out: blocked ? ' · no clear shot' : ' · out of range' }[range];
-    this.setLabel(`${attack.name} · ${feet} ft${note}`, color);
+    const at = foe ? ' → ' + foe.name : '';
+    this.setLabel(`${attack.name}${at} · ${feet} ft${note}`, color);
     this.placeLabel(target, ctx);
   }
 
@@ -253,9 +261,12 @@ export function showPreview(
     cost: regionCost(regions, world.darkness),
   };
   const attack = token.sheet?.attacks.find((a) => a.name === session.actions.armed);
-  if (session.actions.aiming) preview.showSpell(token, hover, session.actions.aiming, ctx);
-  else if (attack) preview.showAttack(token, hover, attack, ctx);
-  else {
+  if (session.actions.aiming || attack) {
+    const snap = snapFor(session, hover);
+    const aim = snap?.kind === 'token' ? snap.at : hover;
+    if (session.actions.aiming) preview.showSpell(token, aim, session.actions.aiming, { ...ctx, snap });
+    else preview.showAttack(token, aim, attack!, { ...ctx, snap });
+  } else {
     const walk = walkOptions(world, token, session.tokens.values());
     const plan = {
       tokens: session.tokens.values(),
@@ -264,9 +275,17 @@ export function showPreview(
       combat: session.combat,
       budget: session.turns.movementLeft(token.id),
     };
-    const shown = preview.show(token, hover, { ...ctx, walk, plan });
+    const shown = preview.show(token, walkTarget(session, token, hover), { ...ctx, walk, plan });
     if (shown) session.scripts.hooks.call('walkPreview', shown);
   }
+}
+
+/** Where a click at `hover` walks `token`: up to the creature, door or tile the pointer snaps to, else the point. */
+function walkTarget(s: Session, token: TokenView, hover: Point): Point {
+  const snap = snapFor(s, hover);
+  const g = s.world?.gridSize ?? 100;
+  const other = snap && !(snap.kind === 'token' && snap.id === token.id);
+  return other ? interactSpot(bodyOf(token, g), snap, g) : hover;
 }
 
 /** A warning in words, for the lines under the label. */

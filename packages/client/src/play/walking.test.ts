@@ -51,8 +51,12 @@ describe('previewToken', () => {
     expect(previewToken(session, open)?.id).toBe('hero');
   });
 
-  it('shows nothing over a creature, while panning or pressing, or in another editor mode', () => {
-    expect(previewToken(session, { ...open, hover: [550, 50] })).toBeUndefined();
+  it('shows the walk up to a creature you hover, but nothing over one of your own', () => {
+    expect(previewToken(session, { ...open, hover: [550, 50] })?.id).toBe('hero');
+    expect(previewToken(session, { ...open, hover: [50, 50] })).toBeUndefined();
+  });
+
+  it('shows nothing while panning or pressing, or in another editor mode', () => {
     expect(previewToken(session, { ...open, drag: { token: false, panning: true } })).toBeUndefined();
     expect(previewToken(session, { ...open, drag: { token: false, panning: false } })).toBeUndefined();
     expect(previewToken(session, { ...open, editing: true })).toBeUndefined();

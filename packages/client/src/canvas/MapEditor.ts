@@ -18,6 +18,7 @@ import { previewDoc, previewTiles } from '../editor/preview.ts';
 import { keyOf, refOf, type Mods } from '../editor/selection.ts';
 import { TileItems } from '../editor/tile-items.ts';
 import type { Session } from '../session/session.ts';
+import { clickSnapped } from '../play/interact.ts';
 import { moveSelectionTo } from '../play/map-clicks.ts';
 import { dragsFreely } from '../play/walking.ts';
 import { DrawTools } from './DrawTools.ts';
@@ -243,7 +244,8 @@ export class MapEditor {
       commitMove: (keys, delta, free) => s.editor.moveSelection(keys, delta, free),
       commitHandle: (key, handle, to, free) => s.editor.reshape(key, handle, to, free),
       // In the tokens mode a plain click on the ground walks the selection there.
-      clickEmpty: (at, mods) => s.editor.mode === 'tokens' && !mods.shift && !mods.ctrl && moveSelectionTo(s, at),
+      clickEmpty: (at, mods) =>
+        s.editor.mode === 'tokens' && !mods.shift && !mods.ctrl && (clickSnapped(s, at) || moveSelectionTo(s, at)),
     };
   }
 
