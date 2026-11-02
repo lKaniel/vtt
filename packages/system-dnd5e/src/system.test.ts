@@ -35,6 +35,11 @@ describe('the D&D 5e system', () => {
     expect(dnd5e.tokenIssues(made, '2014')).toEqual(['unknown item "lost-coin"']);
   });
 
+  it('names gear in a container it lacks', () => {
+    const lost = token({ inventory: [{ item: 'rope', in: 'pack' }] });
+    expect(dnd5e.tokenIssues(lost, '2014')).toEqual(['item "rope" is in "pack", which is not a container it carries']);
+  });
+
   it('works out how a token perceives from its stat block', () => {
     const goblin = token({ monster: 'goblin' });
     expect(dnd5e.perceiver(goblin, '2014').senses.darkvision).toBe(60);

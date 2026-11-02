@@ -1,5 +1,6 @@
 import type { Content } from './content.ts';
 import { withBasicActions } from './basic-actions.ts';
+import { encumbrance, itemWorks } from './carrying.ts';
 import { offHandAttacks } from './two-weapon.ts';
 import { makesDeathSaves } from './deaths.ts';
 import {
@@ -106,7 +107,31 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     caster: casterSheet(token, { abilities, proficiency }, content),
     features,
   };
-  return applyEffects(base);
+  return withCarrying(applyEffects(withItemBonuses(base, token, content)), token, { monster, content });
+}
+
+/** Equipped (and attuned) magic items' bonuses to AC and saving throws. */
+function withItemBonuses(c: Creature, token: Token, content: Content): Creature {
+  const bonuses = (token.inventory ?? []).flatMap((e) => {
+    const item = content.items.get(e.item);
+    return item?.bonus && itemWorks(e, item) ? [item.bonus] : [];
+  });
+  if (!bonuses.length) return c;
+  const ac = bonuses.reduce((n, b) => n + (b.ac ?? 0), 0);
+  const save = bonuses.reduce((n, b) => n + (b.saves ?? 0), 0);
+  const saves = Object.fromEntries(ABILITIES.map((a) => [a, c.saves[a] + save])) as Creature['saves'];
+  return { ...c, ac: c.ac + ac, saves };
+}
+
+/** A character carrying more than its capacity moves 5 ft at most (monsters don't count their loot). */
+function withCarrying(
+  c: Creature,
+  token: Token,
+  { monster, content }: { monster?: Monster; content: Content },
+): Creature {
+  if (monster) return c;
+  const { over } = encumbrance(token, c.abilities.str, content);
+  return over ? { ...c, speed: Math.min(c.speed, 5) } : c;
 }
 
 /** Ability scores and proficiency after the changes of the token's effects and always-on features. */

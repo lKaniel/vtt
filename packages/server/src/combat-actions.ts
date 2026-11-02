@@ -339,14 +339,6 @@ export class CombatActions {
     this.store.setToken({ ...token, effects });
   }
 
-  equip(player: Player, id: string, index: number, equipped: boolean): void {
-    const token = this.store.tokens.get(id);
-    if (!token || !canControl(token, player)) throw new Refusal('No such token');
-    const inventory = token.inventory ?? [];
-    if (!inventory[index]) throw new Refusal(`${token.name} has no such item`);
-    this.store.setToken({ ...token, inventory: inventory.map((e, i) => (i === index ? { ...e, equipped } : e)) });
-  }
-
   /** A token disappeared from the world: take it out of the fight. */
   forget(id: string): void {
     const combat = this.store.combat;

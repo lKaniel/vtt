@@ -1,4 +1,4 @@
-import type { Actor, ClientMessage } from '@vtt/system-dnd5e';
+import type { Actor, CarryChange, ClientMessage } from '@vtt/system-dnd5e';
 import type { ClockAction, DoorState, MapEdit, Point, Role } from '@vtt/shared';
 
 /**
@@ -83,6 +83,11 @@ export abstract class Commands {
 
   equip(token: string, item: number, equipped: boolean): void {
     this.send({ t: 'equip', token, item, equipped });
+  }
+
+  /** Coins, packing and attunement on a creature the player controls. */
+  carry(token: string, change: CarryChange): void {
+    this.send({ t: 'carry', token, change });
   }
 
   /** GM: change what a seat may do at the table. */

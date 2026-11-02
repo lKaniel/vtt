@@ -10,7 +10,9 @@
 - `items.json`: weapons, armor and gear, shared by both editions (weapon
   masteries only apply under the 2024 rules). Gear with `use` can be used from
   the action bar: `{ "heal": "2d4+2", "potion": true }` (a potion is an action
-  in 2014, a bonus action in 2024).
+  in 2014, a bonus action in 2024). Containers carry `"container": { "capacity": 30 }`
+  (pounds; `"weightless": true` for a bag of holding), magic items `"attunement": true`
+  and `"bonus": { "ac": 1, "saves": 1 }`.
 
 Monsters, spells and classes are converted from the `@opencharacter/5e-srd-5.1`
 and `@opencharacter/5e-srd-5.2` npm packages (also CC-BY-4.0):

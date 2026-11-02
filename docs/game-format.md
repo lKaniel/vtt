@@ -517,6 +517,29 @@ better of STR and DEX, ranged weapons DEX), proficiency from `level`:
 | `attacks`                                      | Extra attacks: `{ "name", "kind": "melee"\|"ranged", "toHit", "reach" or "range": [normal, long], "damage": [{ "dice": "1d6+2", "type": "fire" }] }` |
 | `resistances`, `immunities`, `vulnerabilities` | Damage types, e.g. `["fire"]`.                                                                                                                       |
 
+**Coins, containers and attunement.** `currency` holds the coins carried,
+`{ "pp": 1, "gp": 40, "ep": 0, "sp": 12, "cp": 30 }` (fifty coins weigh a
+pound). An entry is packed into a container entry by naming it: give the
+container an `id` and the packed entries `"in": "<that id>"`. Containers are
+gear with `"container": { "capacity": 30 }` in pounds (backpack, pouch, sack,
+chest); with `"weightless": true` (bag of holding) what is inside weighs
+nothing. A character carrying more than Strength × 15 lb (doubled per size
+above medium, halved for tiny) moves 5 ft at most; monsters don't count their
+loot. Magic items with `"attunement": true` work only while the entry is
+`"attuned": true` (three at most, the file is refused with a fourth), and an
+item's `"bonus": { "ac": 1, "saves": 1 }` counts while it is equipped (and
+attuned, if it needs that). Owners pack, attune and count coins from the
+sheet without edit mode.
+
+```json
+"currency": { "gp": 25, "sp": 8 },
+"inventory": [
+  { "id": "pack", "item": "backpack" },
+  { "item": "rope", "in": "pack" },
+  { "item": "ring-of-protection", "equipped": true, "attuned": true }
+]
+```
+
 **Spells and features.** `stats.spells` lists the spell ids a character
 knows or has prepared (from `spells-5.1.json` or `spells-5.2.json`, by the
 token's edition). A `class` named after an SRD class (Wizard, Fighter, ...)

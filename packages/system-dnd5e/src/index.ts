@@ -40,3 +40,4 @@ export * from './durations.ts';
 export * from './own-content.ts';
 export * from './sheet-drops.ts';
 export * from './automation.ts';
+export * from './carrying.ts';

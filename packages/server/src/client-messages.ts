@@ -8,7 +8,7 @@ import {
   RoleSchema,
   ROLL_MODES,
 } from '@vtt/shared';
-import { EditionSchema } from '@vtt/system-dnd5e';
+import { CurrencySchema, EditionSchema } from '@vtt/system-dnd5e';
 import type { RawData } from 'ws';
 import { z } from 'zod';
 
@@ -19,6 +19,7 @@ const MAX_UPLOAD_BASE64 = Math.ceil((20 * 1024 * 1024 * 4) / 3) + 4;
 
 /** Waypoints a ruler may have. */
 const MAX_RULER_POINTS = 64;
+const index = z.number().int().nonnegative();
 
 /** Tokens one player may target at once. */
 const MAX_TARGETS = 50;
@@ -48,6 +49,15 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     smite: z.number().int().min(1).max(9).optional(),
   }),
   z.object({ t: z.literal('equip'), token: z.string(), item: z.number().int().nonnegative(), equipped: z.boolean() }),
+  z.object({
+    t: z.literal('carry'),
+    token: z.string(),
+    change: z.discriminatedUnion('kind', [
+      z.object({ kind: z.literal('coins'), currency: CurrencySchema }),
+      z.object({ kind: z.literal('stow'), item: index, into: index.nullable() }),
+      z.object({ kind: z.literal('attune'), item: index, on: z.boolean() }),
+    ]),
+  }),
   z.object({
     t: z.literal('cast'),
     caster: z.string(),
