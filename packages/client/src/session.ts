@@ -5,11 +5,13 @@ import {
   type ChatMessage,
   type ClientMessage,
   type Combat,
+  actsNow,
   currentTurn,
   type ReactionOffer,
   type ServerMessage,
   type SpawnSource,
   type Token,
+  takers,
   type TokenView,
 } from '@vtt/system-dnd5e';
 import { openSocket, refusalOf } from './session-socket.ts';
@@ -238,16 +240,24 @@ export class Session extends HudSession {
     return id ? this.tokens.get(id) : undefined;
   }
 
+  /** One of your creatures may act now (its turn, or it shares the party's). */
   isMyTurn(): boolean {
-    const token = this.turnToken();
-    return !!token && this.canControl(token);
+    const combat = this.combat;
+    if (!combat) return false;
+    return takers(combat).some((id) => {
+      const token = this.tokens.get(id);
+      return !!token && actsNow(combat, id) && this.canControl(token);
+    });
   }
 
   /** Feet the token may still walk: unlimited outside a fight, nothing when it's not its turn. */
   movementLeft(id: string): number {
     const combat = this.combat;
     if (!combat?.order.some((e) => e.token === id)) return Infinity;
-    return currentTurn(combat) === id ? combat.left.move : 0;
+    if (!actsNow(combat, id)) return 0;
+    if (currentTurn(combat) === id) return combat.left.move;
+    const token = this.tokens.get(id);
+    return combat.side[id]?.move ?? token?.sheet?.speed ?? token?.speed ?? 0;
   }
 
   focus(point: Point): void {

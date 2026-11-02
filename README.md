@@ -54,6 +54,11 @@ on, shared live between players.
   creature on screen. Only the creature whose turn it is can move, within
   what's left of its speed (the path preview shows `feet / left`). Space or
   _End turn_ passes the turn; creatures at 0 HP are skipped.
+- **Shared party turns (BG3).** With _Party acts together_ on (beside Start
+  combat, remembered in the GM's browser), party members next to each other
+  in the order act on one turn, in any order, each with their own movement
+  and actions. The turn passes on once each of them has ended theirs.
+  Turn-based mode always plays this way.
 - **Attacks.** Press 1-8 or click a hotbar slot, hover a target to see range
   (long range shows disadvantage), click to attack. The server rolls to hit
   against AC, crits on a 20, applies resistances, vulnerabilities and

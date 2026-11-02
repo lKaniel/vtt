@@ -352,7 +352,7 @@ export class Game {
       case 'chat':
         return this.onChat(c, msg.text.trim());
       case 'combatStart':
-        return this.combat.start(c.player, msg.tokens);
+        return this.combat.start(c.player, msg.tokens, msg.shared);
       case 'combatEnd':
         return this.combat.end(c.player);
       case 'endTurn':

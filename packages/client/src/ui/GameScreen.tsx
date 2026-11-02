@@ -93,7 +93,7 @@ export function GameScreen({
         </Button>
       </header>
       <SceneNav session={session} />
-      <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />
+      <TurnOrder session={session} onStart={(shared) => session.startCombat(session.fightersInView(), shared)} />
       <PartyBar session={session} />
       <MapTools session={session} />
       <Inspector session={session} />

@@ -83,8 +83,9 @@ export abstract class Commands {
     this.send({ t: 'endTurn' });
   }
 
-  startCombat(tokens: string[]): void {
-    this.send({ t: 'combatStart', tokens });
+  /** GM: a fight; `shared`: party members next to each other share a turn (BG3). */
+  startCombat(tokens: string[], shared = false): void {
+    this.send({ t: 'combatStart', tokens, ...(shared && { shared }) });
   }
 
   endCombat(): void {

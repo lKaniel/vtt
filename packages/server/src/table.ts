@@ -5,6 +5,7 @@ import {
   concentrationDc,
   type Content,
   type Creature,
+  actsNow,
   currentTurn,
   damagedWhileDown,
   dropConcentration,
@@ -24,7 +25,7 @@ import {
   isLairTurn,
   lairOwner,
 } from '@vtt/system-dnd5e';
-import { canControl, hasLineOfSight, isGm, type Player, type Point, type Rng } from '@vtt/shared';
+import { canControl, hasLineOfSight, isGm, isParty, type Player, type Point, type Rng } from '@vtt/shared';
 import type { GameStore } from './game-store.ts';
 import { contentFor } from './game-packs.ts';
 
@@ -92,17 +93,17 @@ export class Table {
     const token = this.store.tokens.get(id);
     if (!token) return undefined;
     const sheet = this.sheetOf(token);
-    return { speed: sheet?.speed ?? token.speed, active: !sheet || sheet.hp > 0 || isDying(token) };
+    const active = !sheet || sheet.hp > 0 || isDying(token);
+    return { speed: sheet?.speed ?? token.speed, active, party: isParty(token) && !token.leader };
   };
 
   // ---- Turn budgets -------------------------------------------------------
 
   /** Whose budget `token` spends: "left" on its own turn, else its id in `side` on its leader's turn. Throws when it's neither. */
   private budgetKey(combat: Combat, token: Token): string {
-    const current = currentTurn(combat);
-    if (current === token.id) return 'left';
-    if (token.leader && token.leader === current) return token.id;
-    throw new Refusal(`It's not ${token.name}'s turn`);
+    const acts = actsNow(combat, token.id) || (!!token.leader && actsNow(combat, token.leader));
+    if (!acts) throw new Refusal(`It's not ${token.name}'s turn`);
+    return currentTurn(combat) === token.id ? 'left' : token.id;
   }
 
   /** What `token` has left this turn, or undefined outside a fight. */

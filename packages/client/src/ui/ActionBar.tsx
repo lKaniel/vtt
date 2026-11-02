@@ -1,4 +1,4 @@
-import type { FeatureSheet, Item, TokenView, TurnBudget } from '@vtt/system-dnd5e';
+import { actsNow, type FeatureSheet, type Item, type TokenView, type TurnBudget } from '@vtt/system-dnd5e';
 import { useState } from 'react';
 import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, type Tab } from '../actions.ts';
 import { slotChoices } from '../charges.ts';
@@ -342,7 +342,7 @@ function Resources({ token, budget }: Readonly<{ token: TokenView; budget: TurnB
 function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
   const combat = session.combat;
   if (!combat) return <div className="ab-end" />;
-  const mine = session.isMyTurn() && (session.turnToken()?.id === token.id || !!combat.side[token.id]);
+  const mine = session.isMyTurn() && (actsNow(combat, token.id) || !!combat.side[token.id]);
   return (
     <div className="ab-end">
       <button
