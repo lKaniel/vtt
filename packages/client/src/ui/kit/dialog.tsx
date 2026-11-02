@@ -23,7 +23,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'art-panel fixed top-1/2 left-1/2 z-[1001] flex max-h-[calc(100vh-48px)] w-[min(460px,calc(100vw-32px))] -translate-1/2 flex-col gap-3 overflow-y-auto px-7 py-6 font-body text-popover-foreground shadow-[0_20px_60px_rgba(0,0,0,0.8)] outline-none',
+          'art-panel fixed top-1/2 left-1/2 z-[1001] flex max-h-[calc(100vh-48px)] w-[min(460px,calc(100vw-32px))] -translate-1/2 flex-col gap-3 overflow-y-auto px-5 py-4 font-body text-popover-foreground shadow-[0_20px_60px_rgba(0,0,0,0.8)] outline-none',
           className,
         )}
         {...props}
