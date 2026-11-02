@@ -15,6 +15,8 @@ export interface ServerOptions {
   adminPassword?: string;
   /** Changes the game's files before the server starts (an encounter set up by hand). */
   prepare?: (gameDir: string) => Promise<void>;
+  /** Seeds the server's dice (support/seeded-random.ts), so a spec rolls the same numbers every run. */
+  seed?: number;
 }
 
 export interface RunningServer {
@@ -76,7 +78,10 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
   delete env.VTT_ADMIN_PASSWORD;
   delete env.VTT_MCP_KEY;
   if (options.adminPassword) env.VTT_ADMIN_PASSWORD = options.adminPassword;
-  const child = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
+  const seeded =
+    options.seed === undefined ? [] : ['--import', join(repoRoot, 'packages/e2e/support/seeded-random.ts')];
+  if (options.seed !== undefined) env.E2E_RANDOM_SEED = String(options.seed);
+  const child = spawn(process.execPath, ['--import', 'tsx', ...seeded, 'src/index.ts'], {
     cwd: join(repoRoot, 'packages/server'),
     env,
     stdio: ['ignore', 'pipe', 'pipe'],

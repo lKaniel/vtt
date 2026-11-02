@@ -5,7 +5,8 @@
   "duplicates": { "minOccurrences": 2 },
   // The component library (shadcn/ui in the game's look): every part is kept
   // ready for the next screen that needs it, used or not yet.
-  "entry": ["packages/client/src/ui/kit/*.tsx"],
+  // The kit, and the module an e2e server preloads (node --import) to seed its dice.
+  "entry": ["packages/client/src/ui/kit/*.tsx", "packages/e2e/support/seeded-random.ts"],
   "ignoreExports": [{ "file": "packages/client/src/ui/kit/*.tsx", "exports": ["*"] }],
   "health": {
     // Same ceilings as ESLint's complexity rules, so both tools agree.
