@@ -61,6 +61,16 @@ export default tseslint.config(
     files: ['**/*.test.ts'],
     rules: { 'max-lines-per-function': 'off', 'max-nested-callbacks': 'off' },
   },
+  {
+    // End-to-end specs: test files, run by Node, with made-up test passwords.
+    files: ['packages/e2e/**/*.ts'],
+    languageOptions: { globals: globals.node },
+    rules: {
+      'max-lines-per-function': 'off',
+      'max-nested-callbacks': 'off',
+      'sonarjs/no-hardcoded-passwords': 'off',
+    },
+  },
   { files: ['**/*.js'], extends: [tseslint.configs.disableTypeChecked] },
   prettier,
 );

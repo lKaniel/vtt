@@ -158,6 +158,9 @@ with `pnpm check-game data/games/<id>`.
 - Keep functions small and flat: ESLint and fallow enforce complexity 12,
   nesting depth 3, 4 params, 80-line functions. Split code rather than
   disabling a rule; a suppression needs a `--` reason.
+- End-to-end tests (`docs/e2e.md`): `packages/e2e`, Playwright against a
+  fresh server per test (a copy of `world/`). A new screen or flow gets a
+  spec; find things by role and name, read the table through `vtt`.
 - Before committing: `pnpm check` (format, lint, typecheck, tests with
   coverage, fallow, check-game). `pnpm format` fixes formatting.
 - Version control is jj (colocated with git): `jj describe`, `jj new`,
