@@ -1,4 +1,3 @@
-import { LightSchema } from '@vtt/shared';
 import { z } from 'zod';
 import { LightSchema, WallRulesSchema } from '@vtt/shared';
 import { ABILITIES, DamageSchema, DamageTypeSchema } from './stats-schema.ts';
