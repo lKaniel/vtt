@@ -98,14 +98,14 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
 
 /** ↶ and ↷ in the top bar, named after what they would undo or redo. */
 function UndoButtons({ session }: Readonly<{ session: Session }>) {
-  const { undo, redo } = session.history;
+  const { undo, redo } = session.edits.history;
   return (
     <span className="undo-buttons">
       <Button
         variant="ghost"
         size="icon-sm"
         disabled={!undo}
-        onClick={() => session.undo()}
+        onClick={() => session.edits.undo()}
         title={undo ? `Undo the ${undo} (Ctrl+Z)` : 'Nothing to undo'}
         aria-label="Undo"
       >
@@ -115,7 +115,7 @@ function UndoButtons({ session }: Readonly<{ session: Session }>) {
         variant="ghost"
         size="icon-sm"
         disabled={!redo}
-        onClick={() => session.redo()}
+        onClick={() => session.edits.redo()}
         title={redo ? `Redo the ${redo} (Ctrl+Shift+Z)` : 'Nothing to redo'}
         aria-label="Redo"
       >

@@ -40,13 +40,13 @@ export function ActorsTab({ session }: Readonly<{ session: Session }>) {
       darkvision: 0,
       hidden: false,
     });
-    session.openSheet({ kind: 'actor', id }, true);
+    session.sheets.open({ kind: 'actor', id }, true);
   };
   return (
     <div className="lib">
       <Input className="lib-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search…" />
       <label className="ed-check lib-hidden">
-        <Checkbox checked={session.spawnHidden} onCheckedChange={(on) => session.setSpawnHidden(on === true)} />
+        <Checkbox checked={session.drops.hidden} onCheckedChange={(on) => session.drops.setHidden(on === true)} />
         <span>Place new creatures hidden</span>
       </label>
       <div className="lib-scroll">
@@ -82,7 +82,7 @@ function TokenRow({ session, token }: Readonly<{ session: Session; token: TokenV
       <button
         className="lib-main"
         onClick={show}
-        onDoubleClick={() => session.openSheet({ kind: 'token', id: token.id }, true)}
+        onDoubleClick={() => session.sheets.open({ kind: 'token', id: token.id }, true)}
       >
         <Face token={token} className="lib-face" />
         <span className="lib-text">
@@ -108,7 +108,7 @@ function TokenRow({ session, token }: Readonly<{ session: Session; token: TokenV
         size="icon-sm"
         title="Edit"
         aria-label="Edit"
-        onClick={() => session.openSheet({ kind: 'token', id: token.id }, true)}
+        onClick={() => session.sheets.open({ kind: 'token', id: token.id }, true)}
       >
         <PencilIcon />
       </Button>
@@ -144,7 +144,7 @@ function ActorFolders({ session, actors }: Readonly<{ session: Session; actors: 
 }
 
 function ActorRow({ session, actor }: Readonly<{ session: Session; actor: Actor }>) {
-  const edit = () => session.openSheet({ kind: 'actor', id: actor.id }, true);
+  const edit = () => session.sheets.open({ kind: 'actor', id: actor.id }, true);
   return (
     <li className="lib-row" draggable onDragStart={(e) => startDrag(e, { kind: 'actor', id: actor.id })}>
       <button className="lib-main" onClick={edit} title="Drag onto the map to place a copy">
@@ -159,7 +159,7 @@ function ActorRow({ session, actor }: Readonly<{ session: Session; actor: Actor 
         size="icon-sm"
         title="Place at the centre of the screen"
         aria-label="Place at the centre of the screen"
-        onClick={() => session.spawn({ kind: 'actor', id: actor.id }, session.editor.viewCentre())}
+        onClick={() => session.drops.spawn({ kind: 'actor', id: actor.id }, session.editor.viewCentre())}
       >
         <PlusIcon />
       </Button>

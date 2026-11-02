@@ -100,7 +100,7 @@ function Who({ session, token }: Readonly<{ session: Session; token: TokenView }
         <button
           className="ab-name ab-edit"
           title="Edit sheet (E)"
-          onClick={() => session.openSheet({ kind: 'token', id: token.id }, true)}
+          onClick={() => session.sheets.open({ kind: 'token', id: token.id }, true)}
         >
           {token.name} ✎
         </button>
@@ -108,7 +108,7 @@ function Who({ session, token }: Readonly<{ session: Session; token: TokenView }
         <div className="ab-name">{token.name}</div>
       )}
       <HpBar token={token} />
-      <EffectBadges token={token} at={{ now: session.gameTime(), fighting: !!session.combat }} />
+      <EffectBadges token={token} at={{ now: session.time.now(), fighting: !!session.combat }} />
     </div>
   );
 }

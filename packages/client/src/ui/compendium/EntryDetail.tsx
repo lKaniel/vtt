@@ -68,7 +68,7 @@ export function EntryDetail({ session, entry }: Readonly<{ session: Session; ent
             variant="outline"
             size="sm"
             disabled={!selected}
-            onClick={() => selected && session.drop(entry.drag, [selected.x, selected.y])}
+            onClick={() => selected && session.drops.onMap(entry.drag, [selected.x, selected.y])}
           >
             {selected ? t('compendium.giveTo', { name: selected.name }) : t('compendium.selectToGive')}
           </Button>
@@ -94,7 +94,7 @@ function MonsterButtons({
   };
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => session.spawn(drag, session.editor.viewCentre())}>
+      <Button variant="outline" size="sm" onClick={() => session.drops.spawn(drag, session.editor.viewCentre())}>
         {t('compendium.place')}
       </Button>
       <Button variant="outline" size="sm" onClick={addToActors}>

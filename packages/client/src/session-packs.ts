@@ -30,7 +30,7 @@ export interface PackHost {
   readonly actors: ReadonlyMap<string, Actor>;
   readonly scene: string;
   send(msg: ClientMessage): void;
-  sendChanges(label: string, ops: readonly Op[]): void;
+  readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
   readonly editor: { viewCentre(): Point };
   saveActor(actor: Actor): void;
   showError(message: string): void;
@@ -129,7 +129,7 @@ export class Packs implements SessionPart {
       this.s.showError(`That scene can't be imported: ${parsed.error.issues[0]?.message ?? 'broken'}`);
       return;
     }
-    this.s.sendChanges('scene import', importSceneOps(this.s.docs, parsed.data).ops);
+    this.s.edits.sendChanges('scene import', importSceneOps(this.s.docs, parsed.data).ops);
     this.s.showNotice(`Imported "${parsed.data.name}" into Scenes`);
   }
 
@@ -157,7 +157,7 @@ export class Packs implements SessionPart {
     const taken = (x: string) => !!this.s.docs.get(coll, x);
     const id = taken(data.id) ? uniqueId(data.name, taken) : data.id;
     const doc = { ...data, id, type, rev: 0 } as Doc;
-    this.s.sendChanges(`${type} import`, [{ op: 'create', coll, doc }]);
+    this.s.edits.sendChanges(`${type} import`, [{ op: 'create', coll, doc }]);
     this.s.showNotice(`Imported "${data.name}"`);
   }
 
@@ -170,7 +170,7 @@ export class Packs implements SessionPart {
     }
     const clip = { docs: parsed.data.tiles.map((t) => ({ ...t, type: 'tile', rev: 0 })) };
     const offset = pasteOffsetTo(clip, this.s.editor.viewCentre(), this.on.gridSize());
-    this.s.sendChanges('prefab', pasteAt(this.s.docs, clip, { scene: this.s.scene, offset }).ops);
+    this.s.edits.sendChanges('prefab', pasteAt(this.s.docs, clip, { scene: this.s.scene, offset }).ops);
   }
 
   /** A message for the packs: whether the screen changed, or undefined when it is someone else's. */

@@ -23,7 +23,7 @@ export interface DrawHost {
   readonly you?: Player;
   readonly scene: string;
   readonly editor: { readonly mode: EditorMode; setSelection(keys: string[]): void };
-  sendChanges(label: string, ops: readonly Op[]): void;
+  readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
 }
 
 /** What the drawing and level parts tell the session. */
@@ -53,7 +53,7 @@ export class Draw {
     const coll = `${this.s.scene}/${name}`;
     const id = freeId(type, (x) => !!this.s.docs.get(coll, x));
     const doc = { id, type, rev: 0, ...this.lookOf(type), ...data, ...signature(this.s.you, type) } as Doc;
-    this.s.sendChanges('draw', [{ op: 'create', coll, doc }]);
+    this.s.edits.sendChanges('draw', [{ op: 'create', coll, doc }]);
     if (this.s.editor.mode === mode) this.s.editor.setSelection([`${coll}#${id}`]);
   }
 

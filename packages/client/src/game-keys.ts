@@ -37,10 +37,10 @@ function runEditKey(session: Session, e: Key): boolean {
   if (isLayerKey(command)) return runLayerKey(session, command, e);
   e.preventDefault();
   if (command === 'selectAll') session.editor.selectAll();
-  else if (command === 'undo') session.undo();
-  else if (command === 'redo') session.redo();
-  else if (command === 'duplicate') session.duplicate();
-  else session.deleteSelected();
+  else if (command === 'undo') session.edits.undo();
+  else if (command === 'redo') session.edits.redo();
+  else if (command === 'duplicate') session.edits.duplicate();
+  else session.edits.deleteSelected();
   return true;
 }
 
@@ -67,14 +67,14 @@ export function listenToClipboard(session: Session): () => void {
   const ours = () => !isTyping(document.activeElement) && !getSelection()?.toString();
   const onCopy = (e: ClipboardEvent) => {
     if (!ours()) return;
-    const text = e.type === 'cut' ? session.cut() : session.copy();
+    const text = e.type === 'cut' ? session.edits.cut() : session.edits.copy();
     if (!text) return;
     e.clipboardData?.setData('text/plain', text);
     e.preventDefault();
   };
   const onPaste = (e: ClipboardEvent) => {
     if (!ours()) return;
-    session.paste(e.clipboardData?.getData('text/plain'));
+    session.edits.paste(e.clipboardData?.getData('text/plain'));
     e.preventDefault();
   };
   document.addEventListener('copy', onCopy);
@@ -126,8 +126,8 @@ function switches(session: Session, key: Extract<EditorKey, { mode: unknown }>):
 
 /** C opens the selected creature's sheet, or closes the open one. */
 export function toggleSheet(session: Session): void {
-  if (session.sheet) session.openSheet(undefined);
-  else if (session.selected) session.openSheet({ kind: 'token', id: session.selected });
+  if (session.sheets.current) session.sheets.open(undefined);
+  else if (session.selected) session.sheets.open({ kind: 'token', id: session.selected });
 }
 
 /**
@@ -135,9 +135,9 @@ export function toggleSheet(session: Session): void {
  * creature's sheet for editing: for the GM, and trusted players on their own tokens.
  */
 function toggleEditor(session: Session): void {
-  if (session.sheet) session.setSheetEdit(!session.sheet.edit);
+  if (session.sheets.current) session.sheets.setEdit(!session.sheets.current.edit);
   else if (session.selected && session.canEdit(session.selected))
-    session.openSheet({ kind: 'token', id: session.selected }, true);
+    session.sheets.open({ kind: 'token', id: session.selected }, true);
 }
 
 /** Arrow keys walk the selected creature one square. */
@@ -153,7 +153,7 @@ function step(session: Session, e: Key): boolean {
 
 /** Esc closes the sheet, puts away a readied attack or spell, or lets go of the selection. */
 function backOut(session: Session): void {
-  if (session.sheet) session.openSheet(undefined);
+  if (session.sheets.current) session.sheets.open(undefined);
   else if (session.actions.armed ?? session.actions.aiming) session.actions.arm(undefined);
   else session.select(undefined);
 }

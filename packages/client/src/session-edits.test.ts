@@ -65,10 +65,10 @@ describe('edit commands', () => {
   it('copies the selected token and pastes it at the pointer as a new one', () => {
     ws.receive(gmWelcome());
     session.select('hero');
-    const text = session.copy();
+    const text = session.edits.copy();
     expect(JSON.parse(text!)).toMatchObject({ type: 'vtt/documents' });
     session.pointer = [420, 380];
-    session.paste(text);
+    session.edits.paste(text);
     expect(lastOps()).toMatchObject({
       label: 'paste',
       ops: [{ op: 'create', coll: 'main/tokens', doc: { id: 'hero-1', x: 450, y: 350, actor: 'hero' } }],
@@ -77,36 +77,36 @@ describe('edit commands', () => {
 
   it('pastes what it copied last when the system clipboard holds something else', () => {
     ws.receive(gmWelcome());
-    session.openSheet({ kind: 'actor', id: 'hero' });
-    session.copy();
-    session.paste('just some text');
+    session.sheets.open({ kind: 'actor', id: 'hero' });
+    session.edits.copy();
+    session.edits.paste('just some text');
     expect(lastOps()).toMatchObject({ ops: [{ op: 'create', coll: 'actors', doc: { id: 'hero-1' } }] });
   });
 
   it('cuts as one transaction', () => {
     ws.receive(gmWelcome());
     session.select('hero');
-    expect(session.cut()).toBeDefined();
+    expect(session.edits.cut()).toBeDefined();
     expect(lastOps()).toMatchObject({ label: 'cut', ops: [{ op: 'delete', coll: 'main/tokens', id: 'hero' }] });
   });
 
   it('duplicates one square over, and deletes', () => {
     ws.receive(gmWelcome());
     session.select('hero');
-    session.duplicate();
+    session.edits.duplicate();
     expect(lastOps()).toMatchObject({ label: 'duplicate', ops: [{ doc: { id: 'hero-1', x: 250, y: 250 } }] });
-    session.deleteSelected();
+    session.edits.deleteSelected();
     expect(lastOps()).toMatchObject({ label: 'delete', ops: [{ op: 'delete', id: 'hero' }] });
   });
 
   it('does nothing without a selection, or for players', () => {
     ws.receive(gmWelcome());
-    expect(session.copy()).toBeUndefined();
-    session.duplicate();
+    expect(session.edits.copy()).toBeUndefined();
+    session.edits.duplicate();
     ws.receive(welcome());
     session.select('hero');
-    expect(session.copy()).toBeUndefined();
-    session.paste();
+    expect(session.edits.copy()).toBeUndefined();
+    session.edits.paste();
     expect(lastOps()).toBeUndefined();
   });
 
@@ -120,13 +120,13 @@ describe('edit commands', () => {
 describe('undo and redo', () => {
   it('asks the server, and shows what it undid', () => {
     ws.receive(gmWelcome());
-    expect(session.history).toEqual({ undo: 'move' });
-    session.undo();
-    session.redo();
-    session.undoCard('card-1');
+    expect(session.edits.history).toEqual({ undo: 'move' });
+    session.edits.undo();
+    session.edits.redo();
+    session.edits.undoCard('card-1');
     expect(sent().slice(-3)).toEqual([{ t: 'undo' }, { t: 'redo' }, { t: 'undo', card: 'card-1' }]);
     ws.receive({ t: 'history', redo: 'move' });
-    expect(session.history).toEqual({ redo: 'move' });
+    expect(session.edits.history).toEqual({ redo: 'move' });
     ws.receive({ t: 'undone', label: 'move', redo: false });
     expect(session.error).toMatchObject({ message: 'Undid the move', info: true });
     ws.receive({ t: 'undone', label: 'move', redo: true });

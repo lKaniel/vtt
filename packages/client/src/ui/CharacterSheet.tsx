@@ -10,7 +10,8 @@ import {
 import { xpLine } from '../encounter-view.ts';
 import { uniqueId } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
-import type { Session, SheetTarget } from '../session.ts';
+import type { Session } from '../session.ts';
+import type { SheetTarget } from '../session-sheets.ts';
 import { tokenPatch } from '../token-edit.ts';
 import { previewSheet, type Draft, type Update } from './sheet-model.ts';
 import { Details } from './SheetDetails.tsx';
@@ -50,15 +51,15 @@ export function CharacterSheet({
   session,
   onPopOut,
 }: Readonly<{ session: Session; onPopOut: (target: SheetTarget & { edit: boolean }) => void }>) {
-  const target = session.sheet;
+  const target = session.sheets.current;
   const live = target && liveOf(session, target);
   if (!target || !live) return null;
   const controls: SheetControls = {
-    setEdit: (edit) => session.setSheetEdit(edit),
-    close: () => session.openSheet(undefined),
+    setEdit: (edit) => session.sheets.setEdit(edit),
+    close: () => session.sheets.open(undefined),
     popOut: () => {
       onPopOut(target);
-      session.openSheet(undefined);
+      session.sheets.open(undefined);
     },
   };
   return (
@@ -288,7 +289,7 @@ function GmFootButtons({ session, kind, value }: Readonly<SheetProps>) {
     }
     if (kind === 'token') session.deleteToken(value.id);
     else session.deleteActor(value.id);
-    session.openSheet(undefined);
+    session.sheets.open(undefined);
   };
   const saveAsActor = () => {
     const id = uniqueId(value.name, (x) => session.actors.has(x));
@@ -310,7 +311,7 @@ function GmFootButtons({ session, kind, value }: Readonly<SheetProps>) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => session.spawn({ kind: 'actor', id: value.id }, session.editor.viewCentre())}
+          onClick={() => session.drops.spawn({ kind: 'actor', id: value.id }, session.editor.viewCentre())}
         >
           Place on map
         </Button>

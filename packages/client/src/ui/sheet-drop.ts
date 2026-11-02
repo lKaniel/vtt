@@ -2,7 +2,6 @@ import type { SheetArea } from '@vtt/system-dnd5e';
 import type React from 'react';
 import { DRAG_TYPE, type DragPayload } from '../drops.ts';
 import type { Session } from '../session.ts';
-import { dropOnOpenSheet } from '../session-drops.ts';
 
 // The character sheet as a drop target: compendium entries, pictures and
 // other creatures' items. Parts of the sheet say which area they are with
@@ -28,7 +27,7 @@ export function sheetDropTarget(session: Session): Pick<React.DOMAttributes<HTML
       const data = e.dataTransfer.getData(DRAG_TYPE);
       if (!data) return;
       e.preventDefault();
-      dropOnOpenSheet(session, JSON.parse(data) as DragPayload, areaOf(e.target));
+      session.drops.onSheet(JSON.parse(data) as DragPayload, areaOf(e.target));
     },
   };
 }

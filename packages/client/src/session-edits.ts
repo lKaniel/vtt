@@ -10,24 +10,17 @@ import {
 } from '@vtt/core';
 import {
   applyPatch,
-  type Clock,
-  CLOCK_COLL,
-  CLOCK_ID,
-  ClockSchema,
   copyRefs,
   deleteRefs,
-  formatDate,
   type HistoryState,
-  type MoveGrid,
   type Player,
   pasteAt,
   pasteOffsetTo,
   type Point,
-  timeNow,
 } from '@vtt/shared';
-import type { ServerMessage } from '@vtt/system-dnd5e';
+import type { ClientMessage, ServerMessage } from '@vtt/system-dnd5e';
 import { mayEditRefs, pastableBy } from './authorship.ts';
-import { Commands } from './session-commands.ts';
+import type { SessionPart, Welcome } from './session-part.ts';
 
 // Copy, cut, paste, duplicate, delete, undo and redo, for every kind of
 // document: the registry in shared (edit-kinds.ts) turns them into ops, the
@@ -41,86 +34,67 @@ interface Shown {
   after?: Doc;
 }
 
-export abstract class EditSession extends Commands {
-  /** The game's documents as this client knows them (GM only for now), kept up to date by `docs` messages. */
-  docs = new DocStore();
+/** What the edit commands need of the session. */
+export interface EditHost {
+  /** The document mirror: the welcome replaces it. */
+  docs: DocStore;
+  readonly you?: Player;
+  readonly scene: string;
+  /** Where the pointer is on the map: pastes land there. */
+  readonly pointer?: Point;
+  readonly editor: { viewCentre(): Point };
+  send(msg: ClientMessage): void;
+  showError(message: string): void;
+}
+
+/** What the edits tell the session. */
+export interface EditEvents {
+  /** The document mirror changed. */
+  docsChanged(): void;
+  /** What the edit commands work on: the selected token, or the actor whose sheet is open. */
+  editTargets(): DocRef[];
+  gridSize(): number;
+  /** News such as "Undid the move". */
+  notice(message: string): void;
+}
+
+export class Edits implements SessionPart {
   /** What undo and redo would do now. */
   history: HistoryState = {};
-  /** The scene everyone is on. */
-  scene = '';
-  abstract you?: Player;
-  /** Where the pointer is on the map: pastes land there. */
-  pointer?: Point;
   /** The last copy, for when the system clipboard can't be read or holds something else. */
   private clip?: Clip;
   private txns = 0;
   /** Edits shown before the server confirmed them: the documents as they were, by transaction. */
   private pending = new Map<string, Shown[]>();
-  /** How far the server's clock (ms) is ahead of this browser's. */
-  private serverOffset = 0;
 
-  /** The game clock and its calendar (time.json). */
-  clock(): Clock {
-    const doc = this.docs.get(CLOCK_COLL, CLOCK_ID);
-    const { type: _t, rev: _r, id: _id, ...data } = doc ?? { type: '', rev: 0, id: '' };
-    return ClockSchema.parse(data);
-  }
-
-  /** Game seconds now. */
-  gameTime(): number {
-    return timeNow(this.clock(), Date.now() + this.serverOffset);
-  }
-
-  /** "Monday, 3 March 1492 DR, 14:05" */
-  dateText(): string {
-    return formatDate(this.clock().calendar, this.gameTime());
-  }
-
-  /** What the edit commands work on: the selected token, or the actor whose sheet is open. */
-  protected abstract editTargets(): DocRef[];
-  protected abstract gridSize(): number;
-  /** What editor moves snap to: the scene's squares or hexes. */
-  abstract moveGrid(): MoveGrid;
-  abstract isGm(): boolean;
-  abstract readonly editor: { viewCentre(): Point };
-  abstract showError(message: string): void;
-  abstract showNotice(message: string): void;
-  /** The document mirror changed. */
-  protected abstract docsChanged(): void;
+  constructor(
+    private readonly s: EditHost,
+    private readonly on: EditEvents,
+  ) {}
 
   undo(): void {
-    this.send({ t: 'undo' });
+    this.s.send({ t: 'undo' });
   }
 
   redo(): void {
-    this.send({ t: 'redo' });
+    this.s.send({ t: 'redo' });
   }
 
   /** GM: undo the game action this chat card reports (only the latest can be). */
   undoCard(card: string): void {
-    this.send({ t: 'undo', card });
+    this.s.send({ t: 'undo', card });
   }
 
-  /** Whether this client may copy, cut, duplicate and delete these (see authorship.ts). */
-  protected mayEdit(refs: readonly DocRef[]): boolean {
-    return mayEditRefs(this.you, this.docs, refs);
-  }
-
-  /** What of a clip this client may paste, as it pastes it; undefined for nothing. */
-  private pastable(clip: Clip): Clip | undefined {
-    return pastableBy(this.you, clip);
-  }
-
-  /** The edit targets, if this client may edit them all; else none. */
+  /** The edit targets, if this client may edit them all (see authorship.ts); else none. */
   private editable(): DocRef[] {
-    const refs = this.editTargets();
-    return this.mayEdit(refs) ? refs : [];
+    const refs = this.on.editTargets();
+    return mayEditRefs(this.s.you, this.s.docs, refs) ? refs : [];
   }
 
   /** Copies what is selected; the text to put on the system clipboard, or undefined when there is nothing. */
   copy(): string | undefined {
     const refs = this.editable();
-    const clip = copyRefs(this.docs, refs);
+    const clip = copyRefs(this.s.docs, refs);
     if (!clip.docs.length) return undefined;
     this.clip = clip;
     return clipboardText(clip);
@@ -129,36 +103,36 @@ export abstract class EditSession extends Commands {
   /** Copy plus delete, in one transaction so one undo puts it back. */
   cut(): string | undefined {
     const text = this.copy();
-    if (text) this.sendOps('cut', deleteRefs(this.docs, this.editable()));
+    if (text) this.sendOps('cut', deleteRefs(this.s.docs, this.editable()));
     return text;
   }
 
   /** Pastes `text` from the system clipboard (or the last copy) at the pointer, keeping its layout. */
   paste(text?: string): void {
     const found = (text ? parseClipboard(text) : undefined) ?? this.clip;
-    const clip = found && this.pastable(found);
+    const clip = found && pastableBy(this.s.you, found);
     if (!clip) return;
-    const offset = pasteOffsetTo(clip, this.pointer ?? this.editor.viewCentre(), this.gridSize());
-    this.sendOps('paste', pasteAt(this.docs, clip, { scene: this.scene, offset }).ops);
+    const offset = pasteOffsetTo(clip, this.s.pointer ?? this.s.editor.viewCentre(), this.on.gridSize());
+    this.sendOps('paste', pasteAt(this.s.docs, clip, { scene: this.s.scene, offset }).ops);
   }
 
   /** A copy of what is selected, one square over. */
   duplicate(): void {
-    const clip = this.pastable(copyRefs(this.docs, this.editable()));
+    const clip = pastableBy(this.s.you, copyRefs(this.s.docs, this.editable()));
     if (!clip) return;
-    const g = this.gridSize();
-    this.sendOps('duplicate', pasteAt(this.docs, clip, { scene: this.scene, offset: [g, g] }).ops);
+    const g = this.on.gridSize();
+    this.sendOps('duplicate', pasteAt(this.s.docs, clip, { scene: this.s.scene, offset: [g, g] }).ops);
   }
 
   deleteSelected(): void {
     const refs = this.editable();
-    if (refs.length) this.sendOps('delete', deleteRefs(this.docs, refs));
+    if (refs.length) this.sendOps('delete', deleteRefs(this.s.docs, refs));
   }
 
   private sendOps(label: string, ops: Op[]): string | undefined {
     if (!ops.length) return undefined;
     const txn = `${label}-${++this.txns}`;
-    this.send({ t: 'ops', txn, label, ops });
+    this.s.send({ t: 'ops', txn, label, ops });
     return txn;
   }
 
@@ -166,37 +140,32 @@ export abstract class EditSession extends Commands {
    * Patches documents as this client has them, in one transaction, and shows
    * the result at once; a refusal puts them back.
    */
-  protected sendUpdates(label: string, updates: readonly { ref: DocRef; patch: Patch }[]): void {
+  sendUpdates(label: string, updates: readonly { ref: DocRef; patch: Patch }[]): void {
     const ops = updates.flatMap(({ ref, patch }): Op[] => {
-      const doc = this.docs.get(ref.coll, ref.id);
+      const doc = this.s.docs.get(ref.coll, ref.id);
       if (!doc || !Object.keys(patch).length) return [];
       return [{ op: 'update', coll: ref.coll, id: ref.id, rev: doc.rev, patch }];
     });
     this.sendChanges(label, ops);
   }
 
-  /** Sends document ops in one transaction (one undo step), as a script asks: see sendChanges. */
-  changeDocs(ops: readonly Op[], label = 'script'): void {
-    this.sendChanges(label, ops);
-  }
-
   /**
-   * Sends a transaction of creates, updates and deletes and shows it at
-   * once, as the server will leave the documents; a refusal puts them back.
+   * Sends a transaction of creates, updates and deletes (one undo step) and
+   * shows it at once, as the server will leave the documents; a refusal puts them back.
    */
   sendChanges(label: string, ops: readonly Op[]): void {
     const shown = ops.map((op) => this.optimistic(op));
     const txn = this.sendOps(label, [...ops]);
     if (!txn) return;
     this.pending.set(txn, shown);
-    this.docs.mirror(shown.map(({ coll, id, after }) => ({ coll, id, doc: after })));
-    this.docsChanged();
+    this.s.docs.mirror(shown.map(({ coll, id, after }) => ({ coll, id, doc: after })));
+    this.on.docsChanged();
   }
 
   /** A document before and after an op, as the server applies it. */
   private optimistic(op: Op): Shown {
     if (op.op === 'create') return { coll: op.coll, id: op.doc.id, after: { ...op.doc, rev: op.doc.rev + 1 } };
-    const before = this.docs.get(op.coll, op.id);
+    const before = this.s.docs.get(op.coll, op.id);
     if (op.op === 'delete' || !before) return { coll: op.coll, id: op.id, before };
     // The server bumps the revision once per update, so a second edit before the echo still matches.
     return { coll: op.coll, id: op.id, before, after: { ...applyPatch(before, op.patch), rev: before.rev + 1 } };
@@ -206,23 +175,23 @@ export abstract class EditSession extends Commands {
   private takeBack(txn: string): void {
     const shown = this.pending.get(txn) ?? [];
     this.pending.delete(txn);
-    const current = shown.filter((s) => this.docs.get(s.coll, s.id)?.rev === s.after?.rev);
+    const current = shown.filter((s) => this.s.docs.get(s.coll, s.id)?.rev === s.after?.rev);
     if (!current.length) return;
-    this.docs.mirror(current.map(({ coll, id, before }) => ({ coll, id, doc: before })));
-    this.docsChanged();
+    this.s.docs.mirror(current.map(({ coll, id, before }) => ({ coll, id, doc: before })));
+    this.on.docsChanged();
   }
 
-  /** Applies the edit messages; true when it was one of them. */
-  protected applyEdit(msg: ServerMessage): boolean {
+  /** The edit messages; undefined for any other. */
+  receive(msg: ServerMessage): boolean | undefined {
     switch (msg.t) {
       case 'docs':
         if (msg.txn) this.pending.delete(msg.txn);
-        this.docs.mirror(msg.changes);
-        this.docsChanged();
+        this.s.docs.mirror(msg.changes);
+        this.on.docsChanged();
         return true;
       case 'reject':
         this.takeBack(msg.txn);
-        this.showError(msg.reason);
+        this.s.showError(msg.reason);
         return true;
       case 'history': {
         const { t: _t, ...state } = msg;
@@ -230,20 +199,18 @@ export abstract class EditSession extends Commands {
         return true;
       }
       case 'undone':
-        this.showNotice(`${msg.redo ? 'Redid' : 'Undid'} the ${msg.label}`);
+        this.on.notice(`${msg.redo ? 'Redid' : 'Undid'} the ${msg.label}`);
         return true;
       default:
-        return false;
+        return undefined;
     }
   }
 
-  protected welcomeEdits(msg: Extract<ServerMessage, { t: 'welcome' }>): void {
-    this.docs = new DocStore();
+  welcome(msg: Welcome): void {
+    this.s.docs = new DocStore();
     this.pending.clear();
     for (const [coll, docs] of Object.entries(msg.docs ?? {}))
-      this.docs.mirror(docs.map((doc) => ({ coll, id: doc.id, doc })));
-    this.scene = msg.scene;
+      this.s.docs.mirror(docs.map((doc) => ({ coll, id: doc.id, doc })));
     this.history = msg.history;
-    this.serverOffset = msg.serverTime === undefined ? 0 : msg.serverTime - Date.now();
   }
 }

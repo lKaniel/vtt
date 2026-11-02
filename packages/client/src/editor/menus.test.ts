@@ -8,12 +8,14 @@ function api(gm = true) {
     isGm: () => gm,
     canEdit: () => gm,
     draw: { create: vi.fn() },
-    copy: vi.fn(() => undefined),
-    cut: vi.fn(() => undefined),
-    paste: vi.fn(),
-    duplicate: vi.fn(),
-    deleteSelected: vi.fn(),
-    openSheet: vi.fn(),
+    edits: {
+      copy: vi.fn(() => undefined),
+      cut: vi.fn(() => undefined),
+      paste: vi.fn(),
+      duplicate: vi.fn(),
+      deleteSelected: vi.fn(),
+    },
+    sheets: { open: vi.fn() },
     move: vi.fn(),
     editMap: vi.fn(),
     tiles: { group: vi.fn(), ungroup: vi.fn(), reorder: vi.fn(), toggleLock: vi.fn() },
@@ -61,10 +63,10 @@ describe('context menus', () => {
     pick(on(wall()), a, 'Duplicate').run();
     pick(on(wall()), a, 'Copy').run();
     pick(on(wall()), a, 'Cut').run();
-    expect(a.deleteSelected).toHaveBeenCalled();
-    expect(a.duplicate).toHaveBeenCalled();
-    expect(a.copy).toHaveBeenCalled();
-    expect(a.cut).toHaveBeenCalled();
+    expect(a.edits.deleteSelected).toHaveBeenCalled();
+    expect(a.edits.duplicate).toHaveBeenCalled();
+    expect(a.edits.copy).toHaveBeenCalled();
+    expect(a.edits.cut).toHaveBeenCalled();
     expect(pick(on(wall()), a, 'Delete').danger).toBe(true);
   });
 
@@ -85,7 +87,7 @@ describe('context menus', () => {
       token: { id: 'k', name: 'Kara' } as TokenView,
     };
     pick(target, a, 'Edit sheet').run();
-    expect(a.openSheet).toHaveBeenCalledWith({ kind: 'token', id: 'k' }, true);
+    expect(a.sheets.open).toHaveBeenCalledWith({ kind: 'token', id: 'k' }, true);
     pick(target, a, 'Hide from players').run();
     expect(a.editor.editSelection).toHaveBeenCalledWith({ hidden: true }, 'hide');
     expect(labels(target, api(false))).toEqual(['Open sheet', 'Target']);
@@ -193,7 +195,7 @@ describe('context menus', () => {
     pick({ ...on(), mode: 'tokens', token: kara }, api(false), 'Move Kara here').run();
     pick(on(), a, 'Paste here').run();
     pick(on(), a, 'Select all').run();
-    expect(a.paste).toHaveBeenCalled();
+    expect(a.edits.paste).toHaveBeenCalled();
     expect(a.editor.selectAll).toHaveBeenCalled();
   });
 

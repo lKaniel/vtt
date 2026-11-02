@@ -35,7 +35,7 @@ export interface CardHost {
   readonly docs: DocStore;
   readonly you?: Player;
   send(msg: ClientMessage): void;
-  sendChanges(label: string, ops: readonly Op[]): void;
+  readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
 }
 
 /** Your cards, as `session.cards`. */
@@ -86,6 +86,6 @@ export class Cards {
     const ownership = { default: SEEN[kind], ...(opts.owner && { [opts.owner]: 'owner' }) };
     const cards = opts.standard ? standardDeck(id) : [];
     const doc = { id, type: 'cards', rev: 0, name, kind, cards, ownership } as Doc;
-    this.s.sendChanges('new cards', [{ op: 'create', coll: 'cards', doc }]);
+    this.s.edits.sendChanges('new cards', [{ op: 'create', coll: 'cards', doc }]);
   }
 }

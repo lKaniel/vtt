@@ -27,7 +27,7 @@ function lookOf(session: Session): Look {
   const mode = turnMode(session.combat);
   if (mode === 'fight') return 'fight';
   if (mode === 'turns') return 'turns';
-  return session.clock().since === undefined ? 'stopped' : 'running';
+  return session.time.clock().since === undefined ? 'stopped' : 'running';
 }
 
 /** Re-renders every second while the clock runs, so the time shown keeps up. */
@@ -47,10 +47,10 @@ export function ClockBar({ session }: Readonly<{ session: Session }>) {
   const label = (
     <>
       <span aria-hidden className={cn('size-1.5 rounded-full', LOOKS[look].dot)} />
-      {shortDate(session.clock().calendar, session.gameTime())}
+      {shortDate(session.time.clock().calendar, session.time.now())}
     </>
   );
-  const title = `${session.dateText()}. ${LOOKS[look].title}`;
+  const title = `${session.time.dateText()}. ${LOOKS[look].title}`;
   if (!session.isGm()) {
     return (
       <span className="inline-flex items-center gap-1.5 whitespace-nowrap" title={title}>
@@ -76,7 +76,7 @@ export function ClockBar({ session }: Readonly<{ session: Session }>) {
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
           </TabsList>
           <TabsContent value="date">
-            <DatePicker key={session.clock().time} session={session} />
+            <DatePicker key={session.time.clock().time} session={session} />
           </TabsContent>
           <TabsContent value="calendar">
             <CalendarEditor session={session} />
@@ -91,8 +91,8 @@ const two = (n: number) => String(n).padStart(2, '0');
 
 /** The sky, the weekday, the long date and the time, and whether time runs. */
 function ClockHeader({ session, look }: Readonly<{ session: Session; look: Look }>) {
-  const { calendar } = session.clock();
-  const d = dateOf(calendar, session.gameTime());
+  const { calendar } = session.time.clock();
+  const d = dateOf(calendar, session.time.now());
   const era = calendar.era ? ` ${calendar.era}` : '';
   return (
     <div className="flex items-center gap-4">

@@ -12,8 +12,8 @@ const draftOf = ({ year, month, day, hour, minute }: CalendarDate): Draft => ({ 
 
 /** Pick a day on the month's page and a time, then set the clock to it. */
 export function DatePicker({ session }: Readonly<{ session: Session }>) {
-  const { calendar } = session.clock();
-  const now = dateOf(calendar, session.gameTime());
+  const { calendar } = session.time.clock();
+  const now = dateOf(calendar, session.time.now());
   const [draft, setDraft] = useState<Draft>(() => draftOf(now));
   const [page, setPage] = useState({ year: now.year, month: now.month });
   const grid = monthGrid(calendar, page);

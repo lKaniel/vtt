@@ -96,8 +96,8 @@ export function MonthPicker({
 }
 
 export function CalendarNotes({ session }: Readonly<{ session: Session }>) {
-  const { calendar } = session.clock();
-  const now = dateOf(calendar, session.gameTime());
+  const { calendar } = session.time.clock();
+  const now = dateOf(calendar, session.time.now());
   const [day, setDay] = useState<DayRef | undefined>({ year: now.year, month: now.month, day: now.day });
   const notes = session.docs.all('journals');
   const list = day ? (notesByDay(calendar, notes, day).get(day.day) ?? []) : [];
