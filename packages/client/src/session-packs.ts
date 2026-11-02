@@ -31,7 +31,7 @@ export interface PackHost {
   readonly scene: string;
   send(msg: ClientMessage): void;
   sendChanges(label: string, ops: readonly Op[]): void;
-  viewCentre(): Point;
+  readonly editor: { viewCentre(): Point };
   saveActor(actor: Actor): void;
   showError(message: string): void;
   showNotice(message: string): void;
@@ -169,7 +169,7 @@ export class Packs implements SessionPart {
       return;
     }
     const clip = { docs: parsed.data.tiles.map((t) => ({ ...t, type: 'tile', rev: 0 })) };
-    const offset = pasteOffsetTo(clip, this.s.viewCentre(), this.on.gridSize());
+    const offset = pasteOffsetTo(clip, this.s.editor.viewCentre(), this.on.gridSize());
     this.s.sendChanges('prefab', pasteAt(this.s.docs, clip, { scene: this.s.scene, offset }).ops);
   }
 

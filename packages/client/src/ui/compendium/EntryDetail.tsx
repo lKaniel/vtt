@@ -94,7 +94,7 @@ function MonsterButtons({
   };
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => session.spawn(drag, session.viewCentre())}>
+      <Button variant="outline" size="sm" onClick={() => session.spawn(drag, session.editor.viewCentre())}>
         {t('compendium.place')}
       </Button>
       <Button variant="outline" size="sm" onClick={addToActors}>

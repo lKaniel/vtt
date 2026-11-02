@@ -41,7 +41,7 @@ export function walkUpPoint(from: Body, to: Body): Point {
 
 /** The selected creatures you control, and the one that leads them (the one you act with). */
 function selectedGroup(s: Session): { group: Placed[]; lead?: string } {
-  const group = [...s.tokens.values()].filter((t) => s.isSelected(t.id) && s.canControl(t));
+  const group = [...s.tokens.values()].filter((t) => s.editor.isSelected(t.id) && s.canControl(t));
   const lead = group.some((t) => t.id === s.selected) ? s.selected : group[0]?.id;
   return { group, lead };
 }

@@ -41,12 +41,13 @@ function changed(doc: Doc, patch: Patch): Patch {
 /** What the tiles need of the session: documents, the editor's mode and selection, and a way to the server. */
 export interface TileHost {
   readonly docs: DocStore;
-  readonly mode: EditorMode;
-  readonly selection: string[];
-  modeColl(mode?: EditorMode): string;
-  selectedDocs(): { ref: DocRef; doc: Doc }[];
-  editSelection(patch: Patch, label?: string): void;
-  setSelection(keys: string[]): void;
+  readonly editor: {
+    readonly selection: string[];
+    modeColl(mode?: EditorMode): string;
+    selectedDocs(): { ref: DocRef; doc: Doc }[];
+    editSelection(patch: Patch, label?: string): void;
+    setSelection(keys: string[]): void;
+  };
   sendChanges(label: string, ops: readonly Op[]): void;
 }
 
@@ -69,17 +70,17 @@ export class Tiles {
 
   /** The scene's tile documents. */
   all(): Doc[] {
-    return this.s.docs.all(this.s.modeColl('tiles'));
+    return this.s.docs.all(this.s.editor.modeColl('tiles'));
   }
 
   /** The tile ids in a list of selection keys. */
   private tileIds(keys: readonly string[]): string[] {
-    const coll = this.s.modeColl('tiles');
+    const coll = this.s.editor.modeColl('tiles');
     return keys.map(refOf).flatMap((r) => (r.coll === coll ? [r.id] : []));
   }
 
   private tileKeys(ids: readonly string[]): string[] {
-    return ids.map((id) => `${this.s.modeColl('tiles')}#${id}`);
+    return ids.map((id) => `${this.s.editor.modeColl('tiles')}#${id}`);
   }
 
   setPreset(preset: TileTexture): void {
@@ -96,7 +97,7 @@ export class Tiles {
   /** Arrow keys in the tiles mode. */
   nudge(dir: Point, big: boolean): void {
     const step = big ? this.on.gridSize() : 1;
-    this.shiftTiles(this.tileIds(this.s.selection), [dir[0] * step, dir[1] * step]);
+    this.shiftTiles(this.tileIds(this.s.editor.selection), [dir[0] * step, dir[1] * step]);
   }
 
   /** Drags a handle of a group (the tiles mode); false when `key` is no group. */
@@ -129,7 +130,7 @@ export class Tiles {
 
   /** Moving tiles moves the walls and lights fastened to them. */
   private fastenedMoves(ids: readonly string[], d: Point): Op[] {
-    const coll = this.s.modeColl('tiles');
+    const coll = this.s.editor.modeColl('tiles');
     const along = attachedTo(
       this.s.docs,
       EDIT_KINDS,
@@ -146,35 +147,35 @@ export class Tiles {
 
   /** Ctrl+G: puts the selected tiles in a new group, and selects it. */
   group(): void {
-    const ids = this.tileIds(this.s.selection);
+    const ids = this.tileIds(this.s.editor.selection);
     if (!ids.length) return;
     const tiles = this.all();
     const id = freeId('group', (i) => tiles.some((t) => t.id === i), { bare: true });
     this.sendTileEdit('group', groupEdit(tiles, ids, id));
-    this.s.setSelection(this.tileKeys([id]));
+    this.s.editor.setSelection(this.tileKeys([id]));
   }
 
   /** Ctrl+Shift+G: takes the selected groups apart, selecting what was in them. */
   ungroup(): void {
-    const ids = this.tileIds(this.s.selection);
+    const ids = this.tileIds(this.s.editor.selection);
     const edit = ungroupEdit(this.all(), ids);
     if (!edit.deletes.length) return;
     const kept = ids.filter((id) => !edit.deletes.includes(id));
     const freed = edit.updates.filter((u) => 'parent' in u.patch).map((u) => u.id);
     this.sendTileEdit('ungroup', edit);
-    this.s.setSelection(this.tileKeys([...kept, ...freed]));
+    this.s.editor.setSelection(this.tileKeys([...kept, ...freed]));
   }
 
   /** Ctrl+[ and Ctrl+]: moves the selection down or up among its siblings. */
   reorder(how: ZOrder): void {
-    this.sendTileEdit('reorder', reorderEdit(this.all(), this.tileIds(this.s.selection), how));
+    this.sendTileEdit('reorder', reorderEdit(this.all(), this.tileIds(this.s.editor.selection), how));
   }
 
   /** Locks the selection (clicks and marquees pass through it), or unlocks it if it all was. */
   toggleLock(): void {
-    const docs = this.s.selectedDocs();
+    const docs = this.s.editor.selectedDocs();
     const all = docs.length > 0 && docs.every((d) => d.doc.locked === true);
-    this.s.editSelection({ locked: all ? null : true }, all ? 'unlock' : 'lock');
+    this.s.editor.editSelection({ locked: all ? null : true }, all ? 'unlock' : 'lock');
   }
 
   /** Sets fields on some tiles (the layers panel's lock and rename), in one step. */
@@ -195,7 +196,7 @@ export class Tiles {
     const base: Doc = { id, type: 'tile', rev: 0, kind: 'rect', color: look.color, texture: preset, ...r };
     const doc = placeNewTile(tiles, look.background ? { ...base, background: true } : base);
     this.sendTileEdit('draw', { creates: [doc], updates: [], deletes: [] });
-    this.s.setSelection(this.tileKeys([id]));
+    this.s.editor.setSelection(this.tileKeys([id]));
   }
 
   /** A picture tile; it goes inside a container tile it lands on, like a drawn one. */
@@ -206,12 +207,12 @@ export class Tiles {
     const id = freeId(/^[a-z0-9]/.test(name) ? name : 'image', (i) => tiles.some((t) => t.id === i), { bare: true });
     const doc = placeNewTile(tiles, { id, type: 'tile', rev: 0, kind: 'image', src, ...r });
     this.sendTileEdit('place', { creates: [doc], updates: [], deletes: [] });
-    this.s.setSelection(this.tileKeys([id]));
+    this.s.editor.setSelection(this.tileKeys([id]));
   }
 
   /** Sends a tile edit as one transaction, shown at once. */
   private sendTileEdit(label: string, edit: TileEdit, more: readonly Op[] = []): void {
-    const coll = this.s.modeColl('tiles');
+    const coll = this.s.editor.modeColl('tiles');
     const ops: Op[] = [
       ...edit.creates.map((doc): Op => ({ op: 'create', coll, doc })),
       ...edit.updates.flatMap(({ id, patch }): Op[] => {

@@ -22,13 +22,12 @@ export interface DrawHost {
   readonly docs: DocStore;
   readonly you?: Player;
   readonly scene: string;
-  readonly mode: EditorMode;
+  readonly editor: { readonly mode: EditorMode; setSelection(keys: string[]): void };
   sendChanges(label: string, ops: readonly Op[]): void;
-  setSelection(keys: string[]): void;
 }
 
 /** What the drawing and level parts tell the session. */
-export interface EditorEvents {
+export interface ToolEvents {
   /** A tool setting changed: the editor's tools redraw. */
   editorChanged(): void;
 }
@@ -40,7 +39,7 @@ export class Draw {
 
   constructor(
     private readonly s: DrawHost,
-    private readonly on: EditorEvents,
+    private readonly on: ToolEvents,
   ) {}
 
   setStyle(style: Partial<ItemStyle>): void {
@@ -55,7 +54,7 @@ export class Draw {
     const id = freeId(type, (x) => !!this.s.docs.get(coll, x));
     const doc = { id, type, rev: 0, ...this.lookOf(type), ...data, ...signature(this.s.you, type) } as Doc;
     this.s.sendChanges('draw', [{ op: 'create', coll, doc }]);
-    if (this.s.mode === mode) this.s.setSelection([`${coll}#${id}`]);
+    if (this.s.editor.mode === mode) this.s.editor.setSelection([`${coll}#${id}`]);
   }
 
   private lookOf(type: string): Record<string, unknown> {
@@ -81,7 +80,7 @@ export class Levels {
 
   constructor(
     private readonly s: LevelHost,
-    private readonly on: EditorEvents,
+    private readonly on: ToolEvents,
   ) {}
 
   /**

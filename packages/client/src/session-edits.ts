@@ -82,7 +82,7 @@ export abstract class EditSession extends Commands {
   /** What editor moves snap to: the scene's squares or hexes. */
   abstract moveGrid(): MoveGrid;
   abstract isGm(): boolean;
-  abstract viewCentre(): Point;
+  abstract readonly editor: { viewCentre(): Point };
   abstract showError(message: string): void;
   abstract showNotice(message: string): void;
   /** The document mirror changed. */
@@ -138,7 +138,7 @@ export abstract class EditSession extends Commands {
     const found = (text ? parseClipboard(text) : undefined) ?? this.clip;
     const clip = found && this.pastable(found);
     if (!clip) return;
-    const offset = pasteOffsetTo(clip, this.pointer ?? this.viewCentre(), this.gridSize());
+    const offset = pasteOffsetTo(clip, this.pointer ?? this.editor.viewCentre(), this.gridSize());
     this.sendOps('paste', pasteAt(this.docs, clip, { scene: this.scene, offset }).ops);
   }
 

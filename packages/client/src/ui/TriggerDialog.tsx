@@ -214,7 +214,7 @@ export function TriggerDialog({
   );
   const problem = problemOf(steps, on);
   const save = (patch: Patch) => {
-    session.editEach(() => patch, on === 'tile' ? 'trigger' : 'behaviours');
+    session.editor.editEach(() => patch, on === 'tile' ? 'trigger' : 'behaviours');
     onClose();
   };
   return (

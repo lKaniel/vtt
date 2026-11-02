@@ -219,7 +219,7 @@ describe('the GM’s asset browser', () => {
 
   it('places a tile prefab in the middle of the screen, on whole squares as a paste is', () => {
     ws.receive(gmWelcome());
-    session.viewRect = { x: 1000, y: 1000, w: 400, h: 400 };
+    session.editor.viewRect = { x: 1000, y: 1000, w: 400, h: 400 };
     session.packs.importPrefab({
       id: 'cart',
       name: 'Cart',

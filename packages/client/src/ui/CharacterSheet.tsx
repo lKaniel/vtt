@@ -310,7 +310,7 @@ function GmFootButtons({ session, kind, value }: Readonly<SheetProps>) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => session.spawn({ kind: 'actor', id: value.id }, session.viewCentre())}
+          onClick={() => session.spawn({ kind: 'actor', id: value.id }, session.editor.viewCentre())}
         >
           Place on map
         </Button>

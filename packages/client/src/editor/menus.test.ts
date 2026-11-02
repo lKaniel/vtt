@@ -7,21 +7,17 @@ function api(gm = true) {
   return {
     isGm: () => gm,
     canEdit: () => gm,
-    canEditSelection: () => gm,
     draw: { create: vi.fn() },
     copy: vi.fn(() => undefined),
     cut: vi.fn(() => undefined),
     paste: vi.fn(),
     duplicate: vi.fn(),
     deleteSelected: vi.fn(),
-    editSelection: vi.fn(),
-    selectAll: vi.fn(),
-    setSelection: vi.fn(),
     openSheet: vi.fn(),
     move: vi.fn(),
     editMap: vi.fn(),
     tiles: { group: vi.fn(), ungroup: vi.fn(), reorder: vi.fn(), toggleLock: vi.fn() },
-    lightPreset: 'torch' as const,
+    editor: { canEditSelection: () => gm, editSelection: vi.fn(), selectAll: vi.fn(), lightPreset: 'torch' as const },
     targets: { mine: new Set<string>(), toggle: vi.fn() },
     hud: { open: vi.fn(), observing: undefined as string | undefined, observe: vi.fn() },
     journal: { open: vi.fn(), show: vi.fn(), showImage: vi.fn() },
@@ -53,9 +49,9 @@ describe('context menus', () => {
   it('doors open, close, lock and unlock', () => {
     const a = api();
     pick(on(wall({ door: 'closed' })), a, 'Open').run();
-    expect(a.editSelection).toHaveBeenCalledWith({ door: 'open' });
+    expect(a.editor.editSelection).toHaveBeenCalledWith({ door: 'open' });
     pick(on(wall({ door: 'locked' })), a, 'Unlock').run();
-    expect(a.editSelection).toHaveBeenLastCalledWith({ door: 'closed' });
+    expect(a.editor.editSelection).toHaveBeenLastCalledWith({ door: 'closed' });
     expect(labels(on(wall({ door: 'open' })), a)).toContain('Close');
   });
 
@@ -77,7 +73,7 @@ describe('context menus', () => {
     const light: Doc = { id: 'l', type: 'light', rev: 1, animation: 'flicker', darkness: true };
     pick(on(light), a, 'Hold steady').run();
     pick(on(light), a, 'Make it light').run();
-    expect(a.editSelection.mock.calls).toEqual([[{ animation: null }], [{ darkness: null }]]);
+    expect(a.editor.editSelection.mock.calls).toEqual([[{ animation: null }], [{ darkness: null }]]);
     expect(labels(on({ ...light, animation: undefined, darkness: undefined }), a)).toContain('Flicker');
   });
 
@@ -91,7 +87,7 @@ describe('context menus', () => {
     pick(target, a, 'Edit sheet').run();
     expect(a.openSheet).toHaveBeenCalledWith({ kind: 'token', id: 'k' }, true);
     pick(target, a, 'Hide from players').run();
-    expect(a.editSelection).toHaveBeenCalledWith({ hidden: true }, 'hide');
+    expect(a.editor.editSelection).toHaveBeenCalledWith({ hidden: true }, 'hide');
     expect(labels(target, api(false))).toEqual(['Open sheet', 'Target']);
   });
 
@@ -104,11 +100,11 @@ describe('context menus', () => {
     };
     expect(labels(pile, api(false))).toEqual(['Open Chest', 'Target']);
     pick(pile, a, 'Lock it').run();
-    expect(a.editSelection).toHaveBeenCalledWith({ pile: { kind: 'loot', locked: true } }, 'lock');
+    expect(a.editor.editSelection).toHaveBeenCalledWith({ pile: { kind: 'loot', locked: true } }, 'lock');
     pick(pile, a, 'Make it a merchant').run();
-    expect(a.editSelection).toHaveBeenCalledWith({ pile: { kind: 'merchant' } }, 'merchant');
+    expect(a.editor.editSelection).toHaveBeenCalledWith({ pile: { kind: 'merchant' } }, 'merchant');
     pick(pile, a, 'Stop being a pile').run();
-    expect(a.editSelection).toHaveBeenCalledWith({ pile: null }, 'not a pile');
+    expect(a.editor.editSelection).toHaveBeenCalledWith({ pile: null }, 'not a pile');
     pick(pile, a, 'Open Chest').run();
     expect(a.piles.open).toHaveBeenCalledWith('p');
     const kara: MenuTarget = { ...pile, token: { id: 'k', name: 'Kara' } as TokenView };
@@ -198,7 +194,7 @@ describe('context menus', () => {
     pick(on(), a, 'Paste here').run();
     pick(on(), a, 'Select all').run();
     expect(a.paste).toHaveBeenCalled();
-    expect(a.selectAll).toHaveBeenCalled();
+    expect(a.editor.selectAll).toHaveBeenCalled();
   });
 
   it('takes entries other code registers, and lets them go', () => {
@@ -240,7 +236,7 @@ describe('context menus', () => {
       pick(onTiles(tile('a', { locked: true, background: true })), a, 'Unlock').run();
       expect(a.tiles.toggleLock).toHaveBeenCalled();
       pick(onTiles(tile('a', { background: true })), a, 'Make it an object').run();
-      expect(a.editSelection).toHaveBeenCalledWith({ background: null });
+      expect(a.editor.editSelection).toHaveBeenCalledWith({ background: null });
       pick(onTiles(tile('a')), a, 'Bring forward').run();
       expect(a.tiles.reorder).toHaveBeenCalledWith('forward');
     });
@@ -260,9 +256,9 @@ describe('context menus', () => {
     const a = api();
     const region: Doc = { id: 'r', type: 'region', rev: 1, points: [], behaviors: [] };
     pick(on(region), a, 'Turn off').run();
-    expect(a.editSelection).toHaveBeenCalledWith({ disabled: true });
+    expect(a.editor.editSelection).toHaveBeenCalledWith({ disabled: true });
     pick(on(region), a, 'Hide from players').run();
-    expect(a.editSelection).toHaveBeenLastCalledWith({ hidden: true }, 'hide');
+    expect(a.editor.editSelection).toHaveBeenLastCalledWith({ hidden: true }, 'hide');
     expect(labels(on({ ...region, disabled: true, hidden: true }), a)).toEqual(
       expect.arrayContaining(['Turn on', 'Reveal to players']),
     );
@@ -275,7 +271,8 @@ describe('context menus', () => {
   });
 
   it('gives a player copy, cut and delete on their own drawings, and paste in the drawings mode', () => {
-    const a = { ...api(false), canEditSelection: () => true };
+    const base = api(false);
+    const a = { ...base, editor: { ...base.editor, canEditSelection: () => true } };
     const mine: Doc = { id: 'd', type: 'drawing', rev: 1, author: 'ana' };
     expect(labels({ ...on(mine), mode: 'drawings' }, a)).toEqual(['Copy', 'Cut', 'Duplicate', 'Delete']);
     expect(labels({ mode: 'drawings', at: [0, 0], docs: [] }, a)).toContain('Paste here');

@@ -46,7 +46,7 @@ const lastOps = () =>
 describe('shape tools in the session', () => {
   it('make a drawing in the style picked, select it, and sign it for a player', () => {
     joinAs('player');
-    session.setMode('drawings', 'rect');
+    session.editor.setMode('drawings', 'rect');
     session.draw.setStyle({ stroke: '#00ff00' });
     session.draw.create({ mode: 'drawings', data: { shape: 'rect', x: 0, y: 0, w: 100, h: 100 } });
     expect(lastOps()).toMatchObject({
@@ -58,7 +58,7 @@ describe('shape tools in the session', () => {
         },
       ],
     });
-    expect(session.selection).toEqual(['main/drawings#drawing-1']);
+    expect(session.editor.selection).toEqual(['main/drawings#drawing-1']);
   });
 
   it('give templates the colour of who placed them', () => {
@@ -69,15 +69,15 @@ describe('shape tools in the session', () => {
 
   it('let players into the drawings and templates modes only, and delete or copy only what they drew', () => {
     joinAs('player');
-    session.setMode('notes');
-    expect(session.mode).toBe('tokens');
-    session.setMode('drawings');
-    expect(session.mode).toBe('drawings');
-    session.setSelection(['main/drawings#gms']);
+    session.editor.setMode('notes');
+    expect(session.editor.mode).toBe('tokens');
+    session.editor.setMode('drawings');
+    expect(session.editor.mode).toBe('drawings');
+    session.editor.setSelection(['main/drawings#gms']);
     session.deleteSelected();
     expect(lastOps()).toBeUndefined();
     expect(session.copy()).toBeUndefined();
-    session.setSelection(['main/drawings#mine']);
+    session.editor.setSelection(['main/drawings#mine']);
     expect(session.copy()).toBeDefined();
     session.deleteSelected();
     expect(lastOps()).toMatchObject({ label: 'delete', ops: [{ op: 'delete', id: 'mine' }] });
@@ -85,8 +85,8 @@ describe('shape tools in the session', () => {
 
   it("paste a player's copy as their own", () => {
     joinAs('player');
-    session.setMode('drawings');
-    session.setSelection(['main/drawings#mine']);
+    session.editor.setMode('drawings');
+    session.editor.setSelection(['main/drawings#mine']);
     const text = session.copy();
     session.paste(text);
     expect(lastOps()).toMatchObject({
@@ -121,12 +121,12 @@ describe('shape tools in the session', () => {
 
   it('let the inspector edit only what this seat may', () => {
     joinAs('player');
-    session.setMode('drawings');
-    session.setSelection(['main/drawings#gms']);
-    expect(session.canEditSelection()).toBe(false);
-    session.setSelection(['main/drawings#mine']);
-    expect(session.canEditSelection()).toBe(true);
-    session.editEach((doc) => ({ stroke: doc.id === 'mine' ? '#123456' : '#000000' }));
+    session.editor.setMode('drawings');
+    session.editor.setSelection(['main/drawings#gms']);
+    expect(session.editor.canEditSelection()).toBe(false);
+    session.editor.setSelection(['main/drawings#mine']);
+    expect(session.editor.canEditSelection()).toBe(true);
+    session.editor.editEach((doc) => ({ stroke: doc.id === 'mine' ? '#123456' : '#000000' }));
     expect(lastOps()).toMatchObject({ ops: [{ op: 'update', id: 'mine', patch: { stroke: '#123456' } }] });
   });
 });

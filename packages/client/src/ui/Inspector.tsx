@@ -35,12 +35,12 @@ function withChoices(field: Field, session: Session): Field {
 
 /** The panel of the selection's fields (the GM's, or a player's own drawings); a change is one undo step for the whole selection. */
 export function Inspector({ session }: Readonly<{ session: Session }>) {
-  if (!session.selection.length || !session.canEditSelection()) return null;
-  const docs = session.selectedDocs().map((d) => d.doc);
+  if (!session.editor.selection.length || !session.editor.canEditSelection()) return null;
+  const docs = session.editor.selectedDocs().map((d) => d.doc);
   const fields = fieldsFor(docs)
     .filter((f) => session.isGm() || !GM_FIELDS.has(f.key))
     .map((f) => withChoices(f, session));
-  const count = session.selection.length;
+  const count = session.editor.selection.length;
   return (
     <div className="inspector frame" aria-label="Inspector">
       <div className="inspector-head">
@@ -56,7 +56,7 @@ export function Inspector({ session }: Readonly<{ session: Session }>) {
             key={`${field.key}:${shown}`}
             field={field}
             value={value}
-            onChange={(v) => session.editEach((doc) => field.patch(v, doc))}
+            onChange={(v) => session.editor.editEach((doc) => field.patch(v, doc))}
           />
         );
       })}

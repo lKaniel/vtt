@@ -22,8 +22,8 @@ export class DrawTools {
   constructor(private session: Session) {}
 
   get drawing(): boolean {
-    const tool = this.session.tool;
-    return this.session.mode !== 'tokens' && tool !== 'select' && tool !== 'ruler';
+    const tool = this.session.editor.tool;
+    return this.session.editor.mode !== 'tokens' && tool !== 'select' && tool !== 'ruler';
   }
 
   /** A wall, tile or shape is half drawn. */
@@ -46,7 +46,7 @@ export class DrawTools {
 
   /** The shape tool for the current tool, made afresh when the tool changes. */
   private shapes(): ShapeDraft | undefined {
-    const tool = this.session.tool;
+    const tool = this.session.editor.tool;
     if (!isItemTool(tool)) return undefined;
     if (this.draft?.tool !== tool) this.draft = new ShapeDraft(tool);
     return this.draft;
@@ -68,7 +68,7 @@ export class DrawTools {
       if (done) this.session.draw.create(done);
       return;
     }
-    const tool = this.session.tool;
+    const tool = this.session.editor.tool;
     if (tool === 'tile') {
       this.box = snapPoint(at, this.grid, !free);
       return;
@@ -93,7 +93,7 @@ export class DrawTools {
   }
 
   draw(g: Graphics, hover: Point | undefined, free: boolean, ctx: DrawCtx): void {
-    const tool = this.session.tool;
+    const tool = this.session.editor.tool;
     if (!hover || !this.drawing) return;
     const shapes = this.shapes();
     if (shapes) return drawDraft(g, { data: shapes.preview(hover, this.snap(free)), tool: shapes.tool, hover }, ctx);
@@ -130,7 +130,7 @@ export class DrawTools {
   }
 
   private placeLight(at: Point, free: boolean): void {
-    const { label: _label, ...light } = LIGHT_PRESETS[this.session.lightPreset];
+    const { label: _label, ...light } = LIGHT_PRESETS[this.session.editor.lightPreset];
     const [x, y] = this.lightSpot(at, free);
     this.session.editMap({ op: 'addLight', light: { ...light, x, y } });
   }

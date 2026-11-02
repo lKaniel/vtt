@@ -194,7 +194,7 @@ function MediaTile({ session, media }: Readonly<{ session: Session; media: Media
       title={title}
       draggable
       onDragStart={(e) => startDrag(e, { kind: 'media', src: media.src, ...size })}
-      onClick={() => session.packs.placeMedia(media.src, session.viewCentre(), size)}
+      onClick={() => session.packs.placeMedia(media.src, session.editor.viewCentre(), size)}
     >
       <Preview media={media} onSize={setSize} />
       <span className="asset-name">{media.name}</span>

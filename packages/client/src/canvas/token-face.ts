@@ -14,12 +14,12 @@ export function faceScale(look: TokenLook, fit: number): { x: number; y: number 
 
 interface Looking {
   you?: Player;
-  isSelected: (id: string) => boolean;
+  editor: { isSelected(id: string): boolean };
 }
 
 /** Whether you own the token (the GM owns them all), have it selected, and point at it. */
 export function onlookerOf(s: Looking, token: { id: string; ownership?: Ownership }, hovered: boolean): Onlooker {
-  return { owner: !!s.you && canControl(token, s.you), controlled: s.isSelected(token.id), hovered };
+  return { owner: !!s.you && canControl(token, s.you), controlled: s.editor.isSelected(token.id), hovered };
 }
 
 /** A token ring: a band of its colour round the picture. */

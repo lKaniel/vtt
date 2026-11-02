@@ -10,7 +10,7 @@ describe('a token’s face', () => {
   it('knows how you stand to it: owner, selected, hovered', () => {
     const session = {
       you: { id: 'p1', name: 'P', role: 'player' as const, color: '#fff' },
-      isSelected: (id: string) => id === 'a',
+      editor: { isSelected: (id: string) => id === 'a' },
     };
     const mine = { id: 'a', ownership: { default: 'none' as const, p1: 'owner' as const } };
     expect(onlookerOf(session, mine, false)).toEqual({ owner: true, controlled: true, hovered: false });

@@ -88,7 +88,7 @@ describe('the game keys', () => {
     expect(group.prevented).toBe(false);
     const gm = welcome([token('hero')]);
     ws.receive({ ...gm, you: { ...(gm as { you: object }).you, role: 'gm' } } as never);
-    session.setMode('tiles');
+    session.editor.setMode('tiles');
     for (const key of ['g', 'l', ']']) {
       const e = press(key, { ctrlKey: true, shiftKey: key !== 'g' });
       gameKey(session, e);
