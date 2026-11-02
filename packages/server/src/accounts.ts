@@ -1,16 +1,14 @@
-import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
 import { z } from 'zod';
 import { readJson, readJsonDir, writeJson } from './json-files.ts';
+import { checkSecret, hashSecret, sameText } from './secrets.ts';
 
 // Accounts and sign-in sessions, kept as JSON in the server's data folder:
 // accounts/<id>.json (a salted scrypt hash, never the password) and
 // sessions.json. Self-hosted for friends, so there's no e-mail or recovery:
 // the admin can delete an account file to reset it.
 
-const hashPassword = promisify(scrypt) as (password: string, salt: string, length: number) => Promise<Buffer>;
-const KEY_LENGTH = 64;
 const SESSION_DAYS = 30;
 
 const AccountFileSchema = z.object({
@@ -18,7 +16,7 @@ const AccountFileSchema = z.object({
   name: z.string(),
   salt: z.string(),
   hash: z.string(),
-  /** The first account on a server runs it: it sits at worlds as the GM. */
+  /** The server's admin: the first account, or (with an admin password) whoever gave it. */
   admin: z.boolean().default(false),
   created: z.number(),
 });
@@ -43,7 +41,26 @@ export class AccountStore {
   private accounts = new Map<string, AccountFile>();
   private sessions = new Map<string, z.infer<typeof SessionSchema>>();
 
-  constructor(readonly dir: string) {}
+  constructor(
+    readonly dir: string,
+    /** The admin password (VTT_ADMIN_PASSWORD): set, it is the way to become admin, not being first. */
+    private adminPassword?: string,
+  ) {}
+
+  /** Whether becoming admin takes the admin password. */
+  get adminLocked(): boolean {
+    return !!this.adminPassword;
+  }
+
+  /** Makes the account the server's admin if `password` is the admin password; false if it isn't. */
+  async unlockAdmin(id: string, password: string): Promise<boolean> {
+    const file = this.accounts.get(id);
+    if (!file || !this.adminPassword || !sameText(password, this.adminPassword)) return false;
+    const admin = { ...file, admin: true };
+    this.accounts.set(id, admin);
+    await writeJson(join(this.dir, 'accounts', `${id}.json`), admin);
+    return true;
+  }
 
   async load(): Promise<void> {
     for (const raw of await readJsonDir(join(this.dir, 'accounts'))) {
@@ -72,10 +89,10 @@ export class AccountStore {
     }
     if (this.accounts.has(id)) throw new AccountError('That username is taken.');
     if (input.password.length < 6) throw new AccountError('Use a password of at least 6 characters.');
-    const salt = randomBytes(16).toString('base64url');
-    const hash = (await hashPassword(input.password, salt, KEY_LENGTH)).toString('base64url');
+    const { salt, hash } = await hashSecret(input.password);
     const name = input.name.trim().slice(0, 40) || input.username;
-    const file: AccountFile = { id, name, salt, hash, admin: this.accounts.size === 0, created: Date.now() };
+    const admin = !this.adminPassword && this.accounts.size === 0;
+    const file: AccountFile = { id, name, salt, hash, admin, created: Date.now() };
     this.accounts.set(id, file);
     await writeJson(join(this.dir, 'accounts', `${id}.json`), file);
     return publicAccount(file);
@@ -85,8 +102,7 @@ export class AccountStore {
   async login(username: string, password: string): Promise<Account | undefined> {
     const file = this.accounts.get(username.trim().toLowerCase());
     if (!file) return undefined;
-    const hash = await hashPassword(password, file.salt, KEY_LENGTH);
-    return timingSafeEqual(hash, Buffer.from(file.hash, 'base64url')) ? publicAccount(file) : undefined;
+    return (await checkSecret(password, file)) ? publicAccount(file) : undefined;
   }
 
   /** A new session token for the account, kept for 30 days. */

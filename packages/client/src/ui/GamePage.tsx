@@ -11,6 +11,7 @@ import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
+import { ApprovalPanel, SeatPassword } from './GameAccess.tsx';
 
 // One game's page in the lobby: its members and their roles, the invite
 // link, and the door to the table.
@@ -41,6 +42,7 @@ export function GamePage({
           <aside className="lobby-side">
             <EnterGame game={game} characters={characters} go={go} />
             {gm && <InvitePanel game={game} onChanged={reload} />}
+            {gm && <ApprovalPanel game={game} onChanged={reload} />}
             {(gm || account.admin) && !game.home && <DeleteGame game={game} onDeleted={() => go({ name: 'games' })} />}
           </aside>
         </div>
@@ -70,7 +72,14 @@ function Members({
       <h2 className="lobby-heading">At the table</h2>
       <ul className="lobby-member-list">
         {game.players.map((p) => (
-          <MemberRow key={p.id} p={p} game={game} me={account.id} onChange={(role) => void change(p.id, role)} />
+          <MemberRow
+            key={p.id}
+            p={p}
+            game={game}
+            me={account.id}
+            onChange={(role) => void change(p.id, role)}
+            onChanged={onChanged}
+          />
         ))}
       </ul>
       {error && <p className="menu-error">{error}</p>}
@@ -83,11 +92,13 @@ function MemberRow({
   game,
   me,
   onChange,
+  onChanged,
 }: Readonly<{
   p: GameDetail['players'][number];
   game: GameDetail;
   me: string;
   onChange: (role: Role | null) => void;
+  onChanged: () => void;
 }>) {
   const gm = game.you === 'gm';
   const self = p.id === me;
@@ -100,18 +111,8 @@ function MemberRow({
         {p.name}
         {self && ' (you)'}
       </span>
-      {gm ? (
-        <SelectField
-          value={p.role}
-          disabled={lastGm}
-          title={lastGm ? 'The game needs a GM' : undefined}
-          aria-label={`${p.name}'s role`}
-          onValueChange={(r) => onChange(r as Role)}
-          options={Object.entries(ROLE_NAMES).map(([role, r]) => ({ value: role, label: r.name }))}
-        />
-      ) : (
-        <span className="menu-note">{ROLE_NAMES[p.role].name}</span>
-      )}
+      <RoleField p={p} gm={gm} lastGm={lastGm} onChange={onChange} />
+      {gm && game.home && <SeatPassword game={game} seat={p} onChanged={onChanged} />}
       {(gm || self) && !lastGm && (
         <Button variant="outline" size="sm" onClick={() => onChange(null)}>
           {self ? 'Leave' : 'Remove'}
@@ -121,13 +122,34 @@ function MemberRow({
   );
 }
 
+/** A member's role: a picker for the GM, plain text for everyone else. */
+function RoleField({
+  p,
+  gm,
+  lastGm,
+  onChange,
+}: Readonly<{ p: GameDetail['players'][number]; gm: boolean; lastGm: boolean; onChange: (role: Role) => void }>) {
+  if (!gm) return <span className="menu-note">{ROLE_NAMES[p.role].name}</span>;
+  return (
+    <SelectField
+      value={p.role}
+      disabled={lastGm}
+      title={lastGm ? 'The game needs a GM' : undefined}
+      aria-label={`${p.name}'s role`}
+      onValueChange={(r) => onChange(r as Role)}
+      options={Object.entries(ROLE_NAMES).map(([role, r]) => ({ value: role, label: r.name }))}
+    />
+  );
+}
+
 function EnterGame({ game, characters, go }: Readonly<{ game: GameDetail; characters: Character[]; go: Go }>) {
   const [picked, setPicked] = useState('');
   const [error, setError] = useState<string>();
   const enter = async () => {
     try {
-      await api.joinGame(game.id, picked || undefined);
-      go({ name: 'play', game: game.id });
+      const { pending } = await api.joinGame(game.id, picked || undefined);
+      if (pending) setError('The GM approves who joins: they have your request now.');
+      else go({ name: 'play', game: game.id });
     } catch (e) {
       setError((e as Error).message);
     }

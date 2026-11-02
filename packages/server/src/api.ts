@@ -33,6 +33,7 @@ const sessionCookie = (token: string, maxAge: number) =>
   `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
 
 const Credentials = z.object({ username: z.string().max(64), password: z.string().max(200) });
+const AdminInput = z.object({ password: z.string().max(200) });
 const SignUp = Credentials.extend({ name: z.string().max(80).default('') });
 /** What a client sends for a character: everything but who owns it and its id. */
 const CharacterInput = CharacterSchema.omit({ id: true, owner: true });
@@ -61,7 +62,7 @@ class AccountRoutes implements Routes {
   constructor(private deps: ApiDeps) {}
 
   handles(route: string | undefined): boolean {
-    return ['session', 'register', 'login', 'logout', 'characters'].includes(route ?? '');
+    return ['session', 'register', 'login', 'logout', 'admin', 'characters'].includes(route ?? '');
   }
 
   async serve(call: Call): Promise<void> {
@@ -75,6 +76,8 @@ class AccountRoutes implements Routes {
         return this.login(call);
       case 'POST logout':
         return this.logout(call);
+      case 'POST admin':
+        return this.unlockAdmin(call);
       default:
         if (call.parts[0] === 'characters') return this.characters(call);
         throw new HttpError(405, 'Method not allowed.');
@@ -90,7 +93,18 @@ class AccountRoutes implements Routes {
     const account = this.deps.accounts.sessionAccount(call.token) ?? null;
     const id = this.deps.hub.homeId;
     const home = id ? await this.deps.hub.info(id) : undefined;
-    send(call.res, 200, { account, home: home ? { id: home.id, name: home.name, rules: home.rules } : null });
+    const homeInfo = home ? { id: home.id, name: home.name, rules: home.rules } : null;
+    send(call.res, 200, { account, home: homeInfo, adminLock: this.deps.accounts.adminLocked });
+  }
+
+  /** Becomes the server's admin with the admin password (when the server has one). */
+  private async unlockAdmin(call: Call): Promise<void> {
+    const account = this.account(call);
+    const { password } = await parseBody(call.req, AdminInput);
+    if (!(await this.deps.accounts.unlockAdmin(account.id, password))) {
+      throw new HttpError(403, 'That is not the admin password.');
+    }
+    send(call.res, 200, { account: this.deps.accounts.get(account.id) });
   }
 
   private async register(call: Call): Promise<void> {

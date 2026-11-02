@@ -94,6 +94,11 @@ export interface GameSummary {
 
 /** A game's page in the lobby: who is in it and, for its GMs, the invite code. */
 export interface GameDetail extends GameSummary {
-  players: (Pick<Player, 'id' | 'name' | 'role' | 'color'> & { online: boolean })[];
+  /** `locked`: the seat has a password (taken without an account). */
+  players: (Pick<Player, 'id' | 'name' | 'role' | 'color'> & { online: boolean; locked?: boolean })[];
   invite?: string;
+  /** GM: joining asks the GM first. */
+  approval?: boolean;
+  /** GM: accounts asking to join. */
+  requests?: { id: string; name: string; at: number }[];
 }

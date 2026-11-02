@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { api, type SessionInfo } from '../account-api.ts';
 import type { Route } from '../route.ts';
 import { ROLE_NAMES } from './PlayersTab.tsx';
+import { rememberSeatKey } from '../seat-key.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 
@@ -140,8 +141,9 @@ export function AuthScreen({
 
 /** The home game's fixed seats: the old way in, for quick games and testing. */
 export function SeatsScreen({ go, onJoin }: Readonly<{ go: (to: Route) => void; onJoin: (id: string) => void }>) {
-  const [players, setPlayers] = useState<Player[]>();
+  const [players, setPlayers] = useState<(Player & { locked?: boolean })[]>();
   const [error, setError] = useState<string>();
+  const [asking, setAsking] = useState<Player>();
 
   useEffect(() => {
     fetch('/api/players')
@@ -155,15 +157,45 @@ export function SeatsScreen({ go, onJoin }: Readonly<{ go: (to: Route) => void; 
       {error && <p className="menu-error">{error}</p>}
       <div className="join-list">
         {players?.map((p) => (
-          <button key={p.id} className="join-seat" style={{ borderColor: p.color }} onClick={() => onJoin(p.id)}>
+          <button
+            key={p.id}
+            className="join-seat"
+            style={{ borderColor: p.color }}
+            onClick={() => (p.locked ? setAsking(p) : onJoin(p.id))}
+          >
             <span className="join-name">{p.name}</span>
-            <span className="join-role">{ROLE_NAMES[p.role].name}</span>
+            <span className="join-role">
+              {ROLE_NAMES[p.role].name}
+              {p.locked && ' · password'}
+            </span>
           </button>
         ))}
       </div>
+      {asking && <SeatKeyForm seat={asking} onJoin={onJoin} />}
       <Button variant="outline" className="menu-back" onClick={() => go({ name: 'menu' })}>
         Back
       </Button>
     </MenuShell>
+  );
+}
+
+/** The password of a locked seat, kept for this tab and sent as it connects (seat-key.ts). */
+function SeatKeyForm({ seat, onJoin }: Readonly<{ seat: Player; onJoin: (id: string) => void }>) {
+  const [key, setKey] = useState('');
+  const sit = (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    rememberSeatKey(seat.id, key);
+    onJoin(seat.id);
+  };
+  return (
+    <form className="auth frame" onSubmit={sit} data-slot="seat-key">
+      <label className="auth-field">
+        <span>{seat.name}'s password</span>
+        <Input type="password" autoFocus value={key} onChange={(e) => setKey(e.target.value)} />
+      </label>
+      <Button type="submit" disabled={!key}>
+        Take the seat
+      </Button>
+    </form>
   );
 }

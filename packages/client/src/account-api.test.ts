@@ -52,7 +52,7 @@ describe('account api client', () => {
     await api.createGame({ name: 'Lost Mine', system: 'dnd5e', rules: '2014' });
     await api.joinGame('lost-mine', 'vex-1');
     await api.newInvite('lost-mine');
-    expect(await api.acceptInvite('abc')).toBe('lost-mine');
+    expect(await api.acceptInvite('abc')).toEqual({ game: 'lost-mine' });
     await api.setMember('lost-mine', 'bo', 'trusted');
     await api.setMember('lost-mine', 'bo', null);
     await api.deleteGame('lost-mine');
@@ -64,6 +64,25 @@ describe('account api client', () => {
       ['PUT', '/api/games/lost-mine/members/bo'],
       ['DELETE', '/api/games/lost-mine/members/bo'],
       ['DELETE', '/api/games/lost-mine'],
+    ]);
+  });
+
+  it('asks to join, answers requests, locks seats and unlocks the admin', async () => {
+    const fetch = answer(200, { game: 'lost-mine', pending: true });
+    expect(await api.acceptInvite('abc')).toEqual({ game: 'lost-mine', pending: true });
+    await api.setApproval('lost-mine', true);
+    await api.answerRequest('lost-mine', 'bo', false);
+    await api.setSeatPassword('test', 'ana', 'secret');
+    await api.unlockAdmin('open sesame');
+    const calls = fetch.mock.calls.map((c) => {
+      const init = (c as unknown[])[1] as RequestInit;
+      return [(c as unknown[])[0], init.method, init.body];
+    });
+    expect(calls.slice(1)).toEqual([
+      ['/api/games/lost-mine/approval', 'PUT', JSON.stringify({ approval: true })],
+      ['/api/games/lost-mine/requests/bo', 'POST', JSON.stringify({ approve: false })],
+      ['/api/games/test/members/ana/password', 'PUT', JSON.stringify({ password: 'secret' })],
+      ['/api/admin', 'POST', JSON.stringify({ password: 'open sesame' })],
     ]);
   });
 });
