@@ -28,9 +28,7 @@ function api(gm = true) {
     toggleLock: vi.fn(),
     lightPreset: 'torch' as const,
     targets: { mine: new Set<string>(), toggle: vi.fn() },
-    openHud: vi.fn(),
-    observing: undefined as string | undefined,
-    observe: vi.fn(),
+    hud: { open: vi.fn(), observing: undefined as string | undefined, observe: vi.fn() },
     showImage: vi.fn(),
     piles: { open: vi.fn() },
   } satisfies MenuApi;
@@ -147,7 +145,7 @@ describe('context menus', () => {
       screen: [300, 200],
     };
     pick(target, a, 'Token HUD').run();
-    expect(a.openHud).toHaveBeenCalledWith('k', [300, 200]);
+    expect(a.hud.open).toHaveBeenCalledWith('k', [300, 200]);
   });
 
   it('the GM sees through a creature’s eyes from its menu, and stops', () => {
@@ -158,10 +156,10 @@ describe('context menus', () => {
       token: { id: 'k' } as TokenView,
     };
     pick(target, a, 'See through its eyes').run();
-    expect(a.observe).toHaveBeenCalledWith('k');
-    a.observing = 'k';
+    expect(a.hud.observe).toHaveBeenCalledWith('k');
+    a.hud.observing = 'k';
     pick(target, a, 'Stop seeing through its eyes').run();
-    expect(a.observe).toHaveBeenCalledWith(undefined);
+    expect(a.hud.observe).toHaveBeenCalledWith(undefined);
     expect(labels(target, api(false))).not.toContain('See through its eyes');
   });
 

@@ -33,7 +33,8 @@ import { withOffer } from './reactions.ts';
 import { Presence } from './presence.ts';
 import { Rulers } from './rulers.ts';
 import type { SessionEvents } from './session-events.ts';
-import { HudSession } from './session-hud.ts';
+import { ActionSession } from './session-actions.ts';
+import { Hud } from './session-hud.ts';
 import { Piles } from './session-piles.ts';
 import { Cards } from './session-cards.ts';
 import { ScriptHost } from './scripting/script-api.ts';
@@ -56,7 +57,7 @@ const isPresenceNews = (msg: ServerMessage): msg is PresenceNews => PRESENCE.has
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends HudSession {
+export class Session extends ActionSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -81,6 +82,9 @@ export class Session extends HudSession {
   /** The decks, hands and piles you were sent (session-cards.ts). */
   readonly cards = new Cards(this);
   readonly piles = new Piles(this, () => this.changed());
+  readonly hud = new Hud(this, { changed: () => this.changed(), lit: () => this.notify('lighting') });
+  /** The GM paused the game: players can't act until it resumes. */
+  paused = false;
   /** Your ruler and the ones the others on your scene are laying. */
   readonly rulers = new Rulers(
     (msg) => this.send(msg),
@@ -286,6 +290,11 @@ export class Session extends HudSession {
     return !!this.you && canControl(token, this.you);
   }
 
+  /** GM: pauses the game, or lets it go on. */
+  setPaused(on: boolean): void {
+    this.send({ t: 'pause', on });
+  }
+
   protected editTargets(): DocRef[] {
     if (this.selection.length) return this.selection.map(refOf);
     if (this.selected) return [{ coll: `${this.scene}/tokens`, id: this.selected }];
@@ -450,7 +459,7 @@ export class Session extends HudSession {
   private onTokenGone(id: string): boolean {
     if (!this.tokens.delete(id)) return false;
     this.targets.forget(id);
-    this.hudTokenGone(id);
+    this.hud.gone(id);
     this.piles.gone(id);
     if (this.mode === 'tokens') this.pruneSelection((key) => key !== this.tokenKey(id));
     if (this.selected === id) this.select(undefined);

@@ -3,7 +3,7 @@ import { Button } from './kit/button.tsx';
 
 /** GM: whose eyes the map shows (see session-hud.ts), with a way back. */
 export function ObserveBanner({ session }: Readonly<{ session: Session }>) {
-  const token = session.observing ? session.tokens.get(session.observing) : undefined;
+  const token = session.hud.observing ? session.tokens.get(session.hud.observing) : undefined;
   if (!token) return null;
   return (
     <div
@@ -12,7 +12,7 @@ export function ObserveBanner({ session }: Readonly<{ session: Session }>) {
       className="fixed bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 px-4 py-1.5 text-sm text-gold-bright art-panel"
     >
       Seeing through {token.name}’s eyes
-      <Button size="sm" variant="ghost" onClick={() => session.observe(undefined)}>
+      <Button size="sm" variant="ghost" onClick={() => session.hud.observe(undefined)}>
         Stop
       </Button>
     </div>
