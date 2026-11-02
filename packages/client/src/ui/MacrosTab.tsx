@@ -1,10 +1,13 @@
 import type { Doc } from '@vtt/core';
+import { isScriptMacro } from '@vtt/shared';
 import { useState } from 'react';
 import { TILE_DRAG } from '../hotbar.ts';
 import type { Session } from '../session.ts';
+import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Textarea } from './kit/textarea.tsx';
+import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
 
 const nameOf = (doc: Doc) => (typeof doc.name === 'string' ? doc.name : doc.id);
 const textOf = (doc: Doc, key: string) => (typeof doc[key] === 'string' ? doc[key] : '');
@@ -63,10 +66,11 @@ function MacroRow({ session, doc, open, onToggle }: Readonly<RowProps>) {
         {nameOf(doc)}
       </Button>
       <span className="row-actions">
-        <Button variant="outline" size="sm" onClick={() => session.runMacro(doc.id, session.selected)}>
+        {isScriptMacro(doc) && <Badge title="JavaScript, run in your browser">script</Badge>}
+        <Button variant="outline" size="sm" onClick={() => void session.runMacro(doc.id, session.selected)}>
           Run
         </Button>
-        {session.isGm() && (
+        {session.isGm() && !isScriptMacro(doc) && (
           <Button
             variant="outline"
             size="sm"
@@ -77,15 +81,26 @@ function MacroRow({ session, doc, open, onToggle }: Readonly<RowProps>) {
           </Button>
         )}
       </span>
-      {open && session.canEditMacro(doc.id) && <MacroEditor key={doc.rev} session={session} doc={doc} />}
+      {open && session.canEditMacro(doc.id) && <MacroEditor session={session} doc={doc} />}
     </li>
   );
 }
+
+const HINT = {
+  chat: 'Each line goes to chat as if you typed it: words, or a roll such as "/r 2d6+3 fire".',
+  script:
+    'JavaScript, run in your browser with `vtt` (the scripting API) and `token` (the creature it is run for). Players never see or run it.',
+};
+const PLACEHOLDER = {
+  chat: 'Well met, friends!\n/r 1d20+5 persuasion',
+  script: 'for (const t of vtt.tokens()) vtt.chat(`${t.name} is here`);',
+};
 
 function MacroEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
   const [name, setName] = useState(nameOf(doc));
   const [command, setCommand] = useState(textOf(doc, 'command'));
   const [img, setImg] = useState(textOf(doc, 'img'));
+  const kind = isScriptMacro(doc) ? 'script' : 'chat';
   const patch = (p: Record<string, unknown>) => session.patchEntry('macros', doc.id, p);
   return (
     <div className="table-edit">
@@ -95,10 +110,21 @@ function MacroEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
         onChange={(e) => setName(e.target.value)}
         onBlur={() => name.trim() && patch({ name: name.trim() })}
       />
+      {session.isGm() && (
+        <ToggleGroup
+          type="single"
+          value={kind}
+          onValueChange={(v) => v && patch(v === 'script' ? { kind: v, ownership: null } : { kind: v })}
+        >
+          <ToggleGroupItem value="chat">Chat</ToggleGroupItem>
+          <ToggleGroupItem value="script">Script</ToggleGroupItem>
+        </ToggleGroup>
+      )}
       <Textarea
         value={command}
-        aria-label="Chat lines"
-        placeholder={'Well met, friends!\n/r 1d20+5 persuasion'}
+        aria-label={kind === 'script' ? 'Script' : 'Chat lines'}
+        className={kind === 'script' ? 'font-mono text-xs' : undefined}
+        placeholder={PLACEHOLDER[kind]}
         onChange={(e) => setCommand(e.target.value)}
         onBlur={() => patch({ command })}
       />
@@ -109,7 +135,7 @@ function MacroEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
         onChange={(e) => setImg(e.target.value)}
         onBlur={() => patch({ img: img.trim() || null })}
       />
-      <p className="muted">Each line goes to chat as if you typed it: words, or a roll such as "/r 2d6+3 fire".</p>
+      <p className="muted">{HINT[kind]}</p>
       <Button variant="outline" size="sm" onClick={() => session.deleteMacro(doc.id)}>
         Delete
       </Button>

@@ -1,4 +1,4 @@
-import type { DocRef } from '@vtt/core';
+import type { Doc, DocRef } from '@vtt/core';
 import { canControl, canEdit, type Chunk, isGm, type Player, type Point, type WorldInfo } from '@vtt/shared';
 import {
   type Actor,
@@ -24,6 +24,7 @@ import { Presence } from './presence.ts';
 import { Rulers } from './rulers.ts';
 import type { SessionEvents } from './session-events.ts';
 import { HudSession } from './session-hud.ts';
+import { ScriptHost } from './scripting/script-api.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
 
@@ -85,6 +86,8 @@ export class Session extends HudSession {
   private listeners = new Map<keyof SessionEvents, Set<(...args: never[]) => void>>();
   private closed = false;
   private retry?: ReturnType<typeof setTimeout>;
+  /** Hooks, the scripting API (`vtt`) and script macros: docs/scripting.md. */
+  readonly scripts: ScriptHost = new ScriptHost(this);
 
   /** `gameId` is the game to join (else the home game); `playerId` a home game seat, else the account's. */
   constructor(
@@ -134,6 +137,7 @@ export class Session extends HudSession {
 
   close(): void {
     this.closed = true;
+    this.scripts.hooks.clear();
     clearTimeout(this.retry);
     this.ws?.close();
   }
@@ -277,6 +281,10 @@ export class Session extends HudSession {
 
   protected gridSize(): number {
     return this.world?.gridSize ?? 100;
+  }
+
+  protected runScript(doc: Doc, token?: string): Promise<void> {
+    return this.scripts.run(doc, token);
   }
 
   showError(message: string): void {

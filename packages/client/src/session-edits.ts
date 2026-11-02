@@ -169,6 +169,11 @@ export abstract class EditSession extends Commands {
     this.sendChanges(label, ops);
   }
 
+  /** Sends document ops in one transaction (one undo step), as a script asks: see sendChanges. */
+  changeDocs(ops: readonly Op[], label = 'script'): void {
+    this.sendChanges(label, ops);
+  }
+
   /**
    * Sends a transaction of creates, updates and deletes and shows it at
    * once, as the server will leave the documents; a refusal puts them back.

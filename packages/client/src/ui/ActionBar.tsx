@@ -47,7 +47,7 @@ export function activateTile(session: Session, token: TokenView, tile: ActionTil
   if (tile.kind === 'attack') session.arm(session.armed === tile.name ? undefined : tile.name);
   else if (tile.kind === 'spell') aimTile(session, tile);
   else if (tile.kind === 'feature') activateFeature(session, token, tile.feature);
-  else if (tile.kind === 'macro') session.runMacro(tile.macro.id, token.id);
+  else if (tile.kind === 'macro') void session.runMacro(tile.macro.id, token.id);
   else readyItem(session, token, tile.item);
 }
 

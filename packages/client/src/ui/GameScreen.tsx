@@ -28,6 +28,7 @@ import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
 import { SettingsMenu } from './SettingsMenu.tsx';
 import { Button } from './kit/button.tsx';
+import { exposeApi } from '../scripting/script-api.ts';
 
 export function GameScreen({
   playerId,
@@ -67,6 +68,7 @@ export function GameScreen({
   }, [session]);
 
   useEffect(() => listenToClipboard(session), [session]);
+  useEffect(() => exposeApi(session.scripts.vtt), [session]);
   useEffect(() => blockNativeMenu(document), []);
   useEffect(() => {
     const sound = new SoundScape(session);
