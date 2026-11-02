@@ -289,7 +289,7 @@ export class MapView {
 
   /** The walls on the level shown (and those on every level). */
   private allWalls(): Wall[] {
-    const level = this.session.level;
+    const level = this.session.levels.current;
     return [...this.session.chunks.values()].flatMap((c) => c.walls.filter((w) => onLevel(w, level)));
   }
 

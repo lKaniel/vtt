@@ -19,12 +19,14 @@ import {
   formatDate,
   type HistoryState,
   type MoveGrid,
+  type Player,
   pasteAt,
   pasteOffsetTo,
   type Point,
   timeNow,
 } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
+import { mayEditRefs, pastableBy } from './authorship.ts';
 import { Commands } from './session-commands.ts';
 
 // Copy, cut, paste, duplicate, delete, undo and redo, for every kind of
@@ -46,6 +48,7 @@ export abstract class EditSession extends Commands {
   history: HistoryState = {};
   /** The scene everyone is on. */
   scene = '';
+  abstract you?: Player;
   /** Where the pointer is on the map: pastes land there. */
   pointer?: Point;
   /** The last copy, for when the system clipboard can't be read or holds something else. */
@@ -98,14 +101,14 @@ export abstract class EditSession extends Commands {
     this.send({ t: 'undo', card });
   }
 
-  /** Whether this client may copy, cut, duplicate and delete these (the GM: anything). */
-  protected mayEdit(_refs: readonly DocRef[]): boolean {
-    return this.isGm();
+  /** Whether this client may copy, cut, duplicate and delete these (see authorship.ts). */
+  protected mayEdit(refs: readonly DocRef[]): boolean {
+    return mayEditRefs(this.you, this.docs, refs);
   }
 
   /** What of a clip this client may paste, as it pastes it; undefined for nothing. */
-  protected pastable(clip: Clip): Clip | undefined {
-    return this.isGm() ? clip : undefined;
+  private pastable(clip: Clip): Clip | undefined {
+    return pastableBy(this.you, clip);
   }
 
   /** The edit targets, if this client may edit them all; else none. */

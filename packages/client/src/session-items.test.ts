@@ -47,8 +47,8 @@ describe('shape tools in the session', () => {
   it('make a drawing in the style picked, select it, and sign it for a player', () => {
     joinAs('player');
     session.setMode('drawings', 'rect');
-    session.setItemStyle({ stroke: '#00ff00' });
-    session.createItem({ mode: 'drawings', data: { shape: 'rect', x: 0, y: 0, w: 100, h: 100 } });
+    session.draw.setStyle({ stroke: '#00ff00' });
+    session.draw.create({ mode: 'drawings', data: { shape: 'rect', x: 0, y: 0, w: 100, h: 100 } });
     expect(lastOps()).toMatchObject({
       label: 'draw',
       ops: [
@@ -63,7 +63,7 @@ describe('shape tools in the session', () => {
 
   it('give templates the colour of who placed them', () => {
     joinAs('player');
-    session.createItem({ mode: 'templates', data: { shape: 'circle', x: 0, y: 0, distance: 20 } });
+    session.draw.create({ mode: 'templates', data: { shape: 'circle', x: 0, y: 0, distance: 20 } });
     expect(lastOps()?.ops?.[0]?.doc).toMatchObject({ type: 'template', color: '#f00', author: 'ana' });
   });
 
@@ -97,7 +97,7 @@ describe('shape tools in the session', () => {
 
   it('let the GM put notes down without signing them', () => {
     joinAs('gm');
-    session.createItem({ mode: 'notes', data: { x: 50, y: 50 } });
+    session.draw.create({ mode: 'notes', data: { x: 50, y: 50 } });
     const doc = lastOps()?.ops?.[0]?.doc;
     expect(doc).toMatchObject({ id: 'note-1', type: 'note', x: 50, y: 50 });
     expect(doc?.author).toBeUndefined();
@@ -110,13 +110,13 @@ describe('shape tools in the session', () => {
     ];
     const base = welcome([{ ...token('hero'), elevation: 12 }]) as Extract<ServerMessage, { t: 'welcome' }>;
     ws.receive({ ...base, world: { ...base.world, levels } });
-    expect(session.level).toBe('loft');
+    expect(session.levels.current).toBe('loft');
     ws.receive({ ...base, world: { ...base.world, levels }, you: { id: 'gm', name: 'GM', role: 'gm', color: '#fc0' } });
-    expect(session.level).toBeUndefined();
-    session.setViewLevel('ground');
-    expect(session.level).toBe('ground');
+    expect(session.levels.current).toBeUndefined();
+    session.levels.setView('ground');
+    expect(session.levels.current).toBe('ground');
     ws.receive({ ...base });
-    expect(session.level).toBeUndefined();
+    expect(session.levels.current).toBeUndefined();
   });
 
   it('let the inspector edit only what this seat may', () => {

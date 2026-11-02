@@ -1,14 +1,13 @@
-import { type Clip, type Doc, type DocRef, freeId } from '@vtt/core';
-import { ITEM_MODES, type Player, tokenLevel, type WorldInfo } from '@vtt/shared';
+import { type Doc, type DocStore, freeId, type Op } from '@vtt/core';
+import { type EditorMode, ITEM_MODES, type Player, tokenLevel, type WorldInfo } from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
+import { signature } from './authorship.ts';
 import type { Draft } from './editor/shape-tools.ts';
-import { refOf } from './editor/selection.ts';
-import { TileSession } from './session-tiles.ts';
 
 // Drawings, notes, templates, regions and sounds made with the shape tools
-// (editor/shape-tools.ts): the look new ones get, and what players may do.
-// Players draw and place templates of their own: those carry their id as
-// `author`, and they may copy, paste, change and delete only those.
+// (editor/shape-tools.ts) and the look new ones get, as `session.draw`; and
+// the scene level the map shows, as `session.levels`. Who may change what
+// they make is authorship.ts.
 
 /** How new drawings look. */
 export interface ItemStyle {
@@ -18,88 +17,88 @@ export interface ItemStyle {
   fillAlpha?: number;
 }
 
-/** What players may make and change themselves. */
-const AUTHORED = new Set(['drawing', 'template']);
+/** What the shape tools need of the session: documents, your seat, the scene and the editor. */
+export interface DrawHost {
+  readonly docs: DocStore;
+  readonly you?: Player;
+  readonly scene: string;
+  readonly mode: EditorMode;
+  sendChanges(label: string, ops: readonly Op[]): void;
+  setSelection(keys: string[]): void;
+}
 
-export abstract class ItemSession extends TileSession {
-  itemStyle: ItemStyle = { stroke: '#ffffff', strokeWidth: 4 };
+/** What the drawing and level parts tell the session. */
+export interface EditorEvents {
+  /** A tool setting changed: the editor's tools redraw. */
+  editorChanged(): void;
+}
 
+/** What the shape tools make, as `session.draw`. */
+export class Draw {
+  /** The look new drawings get. */
+  style: ItemStyle = { stroke: '#ffffff', strokeWidth: 4 };
+
+  constructor(
+    private readonly s: DrawHost,
+    private readonly on: EditorEvents,
+  ) {}
+
+  setStyle(style: Partial<ItemStyle>): void {
+    this.style = { ...this.style, ...style };
+    this.on.editorChanged();
+  }
+
+  /** Makes what a shape tool drew, in the look picked, and selects it. */
+  create({ mode, data }: Draft): void {
+    const { coll: name, type } = ITEM_MODES[mode];
+    const coll = `${this.s.scene}/${name}`;
+    const id = freeId(type, (x) => !!this.s.docs.get(coll, x));
+    const doc = { id, type, rev: 0, ...this.lookOf(type), ...data, ...signature(this.s.you, type) } as Doc;
+    this.s.sendChanges('draw', [{ op: 'create', coll, doc }]);
+    if (this.s.mode === mode) this.s.setSelection([`${coll}#${id}`]);
+  }
+
+  private lookOf(type: string): Record<string, unknown> {
+    if (type === 'drawing') return { ...this.style };
+    if (type === 'template') return { color: this.s.you?.color ?? '#ffcc00' };
+    return {};
+  }
+}
+
+/** What the levels need of the session: the world, the tokens and who you act with. */
+export interface LevelHost {
+  readonly world?: WorldInfo;
+  readonly selected?: string;
+  readonly tokens: ReadonlyMap<string, TokenView>;
+  isGm(): boolean;
+  canControl(token: TokenView): boolean;
+}
+
+/** The scene level the map shows, as `session.levels`. */
+export class Levels {
   /** GM: the scene level picked to view and edit; none = every level. */
-  viewLevel?: string;
+  view?: string;
 
-  abstract you?: Player;
-  abstract world?: WorldInfo;
-  abstract selected?: string;
-  abstract readonly tokens: ReadonlyMap<string, TokenView>;
+  constructor(
+    private readonly s: LevelHost,
+    private readonly on: EditorEvents,
+  ) {}
 
   /**
    * The level the map shows: the GM's pick, or for a player the level of the
    * token they act with (else their first). None on a scene without levels.
    */
-  get level(): string | undefined {
-    const levels = this.world?.levels;
+  get current(): string | undefined {
+    const levels = this.s.world?.levels;
     if (!levels?.length) return undefined;
-    if (this.isGm()) return this.viewLevel;
-    const acting = this.selected ? this.tokens.get(this.selected) : undefined;
-    const eye = acting ?? [...this.tokens.values()].find((t) => this.canControl(t));
+    if (this.s.isGm()) return this.view;
+    const acting = this.s.selected ? this.s.tokens.get(this.s.selected) : undefined;
+    const eye = acting ?? [...this.s.tokens.values()].find((t) => this.s.canControl(t));
     return eye ? tokenLevel(levels, eye) : undefined;
   }
 
-  setViewLevel(level: string | undefined): void {
-    this.viewLevel = level;
-    this.editorChanged();
-  }
-
-  setItemStyle(style: Partial<ItemStyle>): void {
-    this.itemStyle = { ...this.itemStyle, ...style };
-    this.editorChanged();
-  }
-
-  /** Makes what a shape tool drew, in the look picked, and selects it. */
-  createItem({ mode, data }: Draft): void {
-    const { coll: name, type } = ITEM_MODES[mode];
-    const coll = `${this.scene}/${name}`;
-    const id = freeId(type, (x) => !!this.docs.get(coll, x));
-    const doc = { id, type, rev: 0, ...this.lookOf(type), ...data, ...this.signature(type) } as Doc;
-    this.sendChanges('draw', [{ op: 'create', coll, doc }]);
-    if (this.mode === mode) this.setSelection([`${coll}#${id}`]);
-  }
-
-  private lookOf(type: string): Record<string, unknown> {
-    if (type === 'drawing') return { ...this.itemStyle };
-    if (type === 'template') return { color: this.you?.color ?? '#ffcc00' };
-    return {};
-  }
-
-  /** Players sign what they make. */
-  private signature(type: string): Record<string, unknown> {
-    return !this.isGm() && this.you && AUTHORED.has(type) ? { author: this.you.id } : {};
-  }
-
-  /** Whether the inspector may change what is selected. */
-  canEditSelection(): boolean {
-    return this.mayEdit(this.selection.map(refOf));
-  }
-
-  /** The GM edits anything; a player only drawings and templates of their own. */
-  protected override mayEdit(refs: readonly DocRef[]): boolean {
-    if (this.isGm()) return true;
-    if (!refs.length || !this.you) return false;
-    return refs.every((ref) => {
-      const doc = this.docs.get(ref.coll, ref.id);
-      return !!doc && AUTHORED.has(doc.type) && doc.author === this.you!.id;
-    });
-  }
-
-  /** A player's paste: only drawings and templates, signed as theirs. */
-  protected override pastable(clip: Clip): Clip | undefined {
-    if (this.isGm()) return clip;
-    const docs = clip.docs.filter((d) => AUTHORED.has(d.type)).map((d) => ({ ...d, author: this.you?.id }));
-    return docs.length && this.you ? { docs } : undefined;
-  }
-
-  /** Whether a player may work in `mode` (the GM: any). */
-  protected override mayUse(mode: string): boolean {
-    return this.isGm() || mode === 'tokens' || mode === 'drawings' || mode === 'templates';
+  setView(level: string | undefined): void {
+    this.view = level;
+    this.on.editorChanged();
   }
 }

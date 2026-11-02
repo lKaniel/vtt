@@ -191,6 +191,6 @@ export function showPreview(
   else if (attack) preview.showAttack(token, hover, attack, ctx);
   else {
     const walk = walkOptions(world, token, session.tokens.values());
-    preview.show(token, hover, { ...ctx, budget: session.movementLeft(token.id), walk });
+    preview.show(token, hover, { ...ctx, budget: session.turns.movementLeft(token.id), walk });
   }
 }

@@ -280,27 +280,27 @@ const WIDTHS = [2, 4, 8, 16];
 
 /** How new drawings look: line colour and width, and a fill. */
 function DrawStyle({ session }: Readonly<{ session: Session }>) {
-  const style = session.itemStyle;
+  const style = session.draw.style;
   return (
     <div className="map-tools-row" role="toolbar" aria-label="Drawing style">
       <ColorInput
         value={style.stroke}
         title="Line colour"
         aria-label="Line colour"
-        onChange={(e) => session.setItemStyle({ stroke: e.target.value })}
+        onChange={(e) => session.draw.setStyle({ stroke: e.target.value })}
       />
       <SelectField
         value={String(style.strokeWidth)}
         title="Line width"
         aria-label="Line width"
-        onValueChange={(w) => session.setItemStyle({ strokeWidth: Number(w) })}
+        onValueChange={(w) => session.draw.setStyle({ strokeWidth: Number(w) })}
         options={WIDTHS.map((w) => ({ value: String(w), label: `${w} px` }))}
       />
       <label className="map-tools-check" title="Fill boxes, ellipses and polygons">
         <Checkbox
           checked={!!style.fill}
           onCheckedChange={(on) =>
-            session.setItemStyle({ fill: on === true ? style.stroke : undefined, fillAlpha: 0.3 })
+            session.draw.setStyle({ fill: on === true ? style.stroke : undefined, fillAlpha: 0.3 })
           }
         />
         Fill
@@ -315,10 +315,10 @@ function LevelPicker({ session }: Readonly<{ session: Session }>) {
   if (!levels.length) return null;
   return (
     <SelectField
-      value={session.viewLevel ?? ''}
+      value={session.levels.view ?? ''}
       aria-label="Level"
       title="The floor shown: walls, lights, tiles and drawings on others are left out"
-      onValueChange={(id) => session.setViewLevel(id || undefined)}
+      onValueChange={(id) => session.levels.setView(id || undefined)}
       options={[{ value: '', label: 'Every level' }, ...levels.map((l) => ({ value: l.id, label: l.name }))]}
     />
   );

@@ -47,7 +47,7 @@ export class ItemLayer {
     const s = this.session;
     const colls: string[] = [...ALWAYS];
     if (s.isGm() && s.mode === 'sounds') colls.push('sounds');
-    const level = s.level;
+    const level = s.levels.current;
     return colls.flatMap((c) => s.docs.all(`${s.scene}/${c}`)).filter((d) => onLevel(d as { level?: string }, level));
   }
 

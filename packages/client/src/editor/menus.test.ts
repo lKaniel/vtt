@@ -8,7 +8,7 @@ function api(gm = true) {
     isGm: () => gm,
     canEdit: () => gm,
     canEditSelection: () => gm,
-    createItem: vi.fn(),
+    draw: { create: vi.fn() },
     copy: vi.fn(() => undefined),
     cut: vi.fn(() => undefined),
     paste: vi.fn(),
@@ -274,7 +274,7 @@ describe('context menus', () => {
   it('puts a note down on the ground in the notes mode', () => {
     const a = api();
     pick({ mode: 'notes', at: [100, 200], docs: [] }, a, 'Put a note here').run();
-    expect(a.createItem).toHaveBeenCalledWith({ mode: 'notes', data: { x: 100, y: 200 } });
+    expect(a.draw.create).toHaveBeenCalledWith({ mode: 'notes', data: { x: 100, y: 200 } });
   });
 
   it('gives a player copy, cut and delete on their own drawings, and paste in the drawings mode', () => {

@@ -181,7 +181,7 @@ export function listenToKeys(session: Session): () => void {
 /** Space let go: a tap of it (no panning) ends your turn when Space is the end-turn key. */
 export function spaceReleased(session: Session, e: Key): void {
   if (e.key !== ' ' || !spaceKey.release() || isTyping(e.target)) return;
-  if (actionOf(e, currentKeys()) === 'endTurn' && session.isMyTurn()) session.endTurn();
+  if (actionOf(e, currentKeys()) === 'endTurn' && session.turns.mine()) session.endTurn();
 }
 
 /** Space held makes a left drag pan the map (see space-pan.ts); returns the cleanup. */
@@ -207,7 +207,7 @@ function handleGameKey(session: Session, e: Key): void {
     spaceKey.press();
     return;
   }
-  if (id === 'endTurn' && session.isMyTurn()) {
+  if (id === 'endTurn' && session.turns.mine()) {
     e.preventDefault();
     session.endTurn();
     return;

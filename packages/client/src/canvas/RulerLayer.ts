@@ -85,7 +85,7 @@ export class RulerLayer {
     const s = this.session;
     for (const t of s.tokens.values()) {
       if (Math.hypot(t.x - start[0], t.y - start[1]) > 1) continue;
-      const left = s.movementLeft(t.id);
+      const left = s.turns.movementLeft(t.id);
       return Number.isFinite(left) ? left : t.speed;
     }
     return undefined;
