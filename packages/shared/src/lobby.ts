@@ -17,6 +17,31 @@ export interface NewGame {
   rules: string;
 }
 
+/** A Foundry VTT world brought in as a new game: what came along, and what didn't. */
+export interface FoundryImportReport {
+  name: string;
+  scenes: number;
+  actors: number;
+  tokens: number;
+  journals: number;
+  tables: number;
+  playlists: number;
+  /** Pictures and sounds copied. */
+  media: number;
+  /** What could not come along, one line each. */
+  skipped: string[];
+}
+
+/** Asking the server to import a Foundry world folder on its disk (the admin only). */
+export interface FoundryImportInput {
+  /** The world's folder, the one with world.json. */
+  folder: string;
+  /** The game's name; the world's title if missing. */
+  name?: string;
+  /** Foundry's Data folder, for files outside the world; found from the world's place if missing. */
+  dataDir?: string;
+}
+
 /** What is wrong with a new game on a server with `systems`, if anything. */
 export function newGameIssues(game: NewGame, systems: readonly SystemInfo[]): string[] {
   const issues: string[] = [];

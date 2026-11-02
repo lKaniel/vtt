@@ -10,7 +10,8 @@
     "typecheck": "tsc -p .",
     "check-game": "tsx src/check.ts",
     "migrate-world": "tsx src/migrate-cli.ts",
-    "import-foundry": "tsx src/foundry-cli.ts"
+    "import-foundry": "tsx src/foundry-cli.ts",
+    "import-foundry-world": "tsx src/foundry-world-cli.ts"
   },
   "dependencies": {
     "@vtt/core": "workspace:*",

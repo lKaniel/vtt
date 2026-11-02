@@ -1,8 +1,9 @@
-import { copyFile, mkdir, readFile, rm, stat } from 'node:fs/promises';
+import { copyFile, mkdir, rm, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { freeId, mediaKind, type PackManifest, packRef, slugify } from '@vtt/core';
 import type { SceneEntry } from '@vtt/shared';
 import { z } from 'zod';
+import { type FoundryDoc, readFoundryDb } from './foundry-db.ts';
 import { foundryEntries } from './foundry-entries.ts';
 import { foundryScene, type MediaLookup, type SceneLookups } from './foundry-scene.ts';
 import { readJson, writeJson } from './json-files.ts';
@@ -11,11 +12,12 @@ import { filesUnder } from './pack-store.ts';
 // Imports an unzipped Foundry VTT module, world or system folder as an
 // asset pack: its pictures, sounds and videos are copied into the pack's
 // media/ (folders kept, so they become tags), and the scenes of its
-// old-style compendia (.db files, Foundry v10 and before), of a world's
-// data/scenes.db and of "Export Data" files (fvtt-Scene-*.json) become a
-// scene compendium; journal entries, roll tables and playlists become
-// compendia of their own (map notes keep pointing at their entries). Foundry v11+ compendia are LevelDB databases, which
-// can't be read yet. Run it with `pnpm import-foundry <folder>`.
+// compendia (NeDB files up to v10, LevelDB folders from v11, adventures
+// included), of a world's data/ and of "Export Data" files
+// (fvtt-Scene-*.json) become a scene compendium; journal entries, roll
+// tables and playlists become compendia of their own (map notes keep
+// pointing at their entries). Run it with `pnpm import-foundry <folder>`.
+// A whole world as a game to play is foundry-world.ts.
 
 const KINDS = ['module', 'world', 'system'] as const;
 type Kind = (typeof KINDS)[number];
@@ -28,7 +30,6 @@ const FoundryPackSchema = z.object({
   type: z.string().optional(),
   entity: z.string().optional(),
 });
-type FoundryPack = z.infer<typeof FoundryPackSchema>;
 
 const FoundryManifestSchema = z.object({
   /** `id` since v10, `name` before. */
@@ -118,24 +119,6 @@ async function copyMedia(src: Source, packDir: string, id: string): Promise<{ co
   return { count: files.length, lookup: (path) => refs.get(path.replace(/^\/+/, '')) };
 }
 
-/** The live documents of a NeDB file (one JSON per line; later lines replace earlier ones). */
-async function readNedb(path: string): Promise<unknown[]> {
-  const byId = new Map<string, Record<string, unknown>>();
-  const text = await readFile(path, 'utf8');
-  for (const line of text.split('\n')) {
-    let doc: Record<string, unknown>;
-    try {
-      doc = JSON.parse(line) as Record<string, unknown>;
-    } catch {
-      continue;
-    }
-    const id = typeof doc._id === 'string' ? doc._id : String(byId.size);
-    if (doc.$$deleted) byId.delete(id);
-    else byId.set(id, doc);
-  }
-  return [...byId.values()];
-}
-
 const isDir = (path: string) =>
   stat(path).then(
     (s) => s.isDirectory(),
@@ -152,10 +135,10 @@ const TYPES: Record<string, keyof RawDocs> = {
 
 /** A world's data/ files, by the raw list they go in. */
 const WORLD_FILES: Record<keyof RawDocs, string> = {
-  scenes: 'scenes.db',
-  journals: 'journal.db',
-  tables: 'tables.db',
-  playlists: 'playlists.db',
+  scenes: 'scenes',
+  journals: 'journal',
+  tables: 'tables',
+  playlists: 'playlists',
 };
 
 interface RawDocs {
@@ -165,37 +148,47 @@ interface RawDocs {
   playlists: unknown[];
 }
 
-/** The raw documents of one Foundry compendium, or why it was left out. */
-async function compendiumDocs(src: Source, pack: FoundryPack): Promise<{ docs: unknown[]; skipped?: string }> {
-  const path = join(src.dir, pack.path);
-  if (path.endsWith('.db')) return { docs: await readNedb(path).catch(() => []) };
-  if (await isDir(path)) {
-    const why =
-      'a Foundry v11+ database, which cannot be read yet (export its documents with "Export Data" and import again)';
-    return { docs: [], skipped: `compendium "${pack.name}": ${why}` };
-  }
-  return { docs: await readNedb(`${path}.db`).catch(() => []) };
+/** What an Adventure (a module's ready-to-play campaign) holds, by the raw list it goes in. */
+const ADVENTURE_FIELDS: Record<keyof RawDocs, string> = {
+  scenes: 'scenes',
+  journals: 'journal',
+  tables: 'tables',
+  playlists: 'playlists',
+};
+
+/** The scenes, journal entries, tables and playlists inside adventures. */
+function adventureDocs(adventures: FoundryDoc[], out: RawDocs): void {
+  for (const adventure of adventures)
+    for (const [into, field] of Object.entries(ADVENTURE_FIELDS) as [keyof RawDocs, string][]) {
+      const docs = adventure[field];
+      if (Array.isArray(docs)) out[into].push(...(docs as unknown[]));
+    }
 }
 
 const ONLY = 'only scenes, journal entries, roll tables and playlists are imported so far';
 
-/** Every raw document the folder has: in its compendia, a world's data/, and scene exports. */
-async function rawDocs(src: Source, skipped: string[]): Promise<RawDocs> {
-  const out: RawDocs = { scenes: [], journals: [], tables: [], playlists: [] };
+/** The documents of the module's compendia we bring along (adventures opened up). */
+async function compendiumDocs(src: Source, out: RawDocs, skipped: string[]): Promise<void> {
   for (const pack of src.manifest.packs ?? []) {
     const type = pack.type ?? pack.entity ?? '?';
     const into = TYPES[type];
-    if (!into) {
+    if (!into && type !== 'Adventure') {
       skipped.push(`compendium "${pack.name}" (${type}): ${ONLY}`);
       continue;
     }
-    const found = await compendiumDocs(src, pack);
-    out[into].push(...found.docs);
-    if (found.skipped) skipped.push(found.skipped);
+    const docs = await readFoundryDb(join(src.dir, pack.path));
+    if (into) out[into].push(...docs);
+    else adventureDocs(docs, out);
   }
+}
+
+/** Every raw document the folder has: in its compendia, a world's data/, and scene exports. */
+async function rawDocs(src: Source, skipped: string[]): Promise<RawDocs> {
+  const out: RawDocs = { scenes: [], journals: [], tables: [], playlists: [] };
+  await compendiumDocs(src, out, skipped);
   if (src.kind === 'world')
     for (const [into, file] of Object.entries(WORLD_FILES) as [keyof RawDocs, string][])
-      out[into].push(...(await readNedb(join(src.dir, 'data', file)).catch(() => [])));
+      out[into].push(...(await readFoundryDb(join(src.dir, 'data', file))));
   const exports = (await filesUnder(src.dir)).filter((rel) => /(^|\/)fvtt-Scene-[^/]*\.json$/.test(rel));
   for (const rel of exports) out.scenes.push(await readJson(join(src.dir, rel)));
   for (const key of Object.keys(out) as (keyof RawDocs)[])

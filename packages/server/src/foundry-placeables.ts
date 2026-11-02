@@ -1,6 +1,7 @@
 import type { Drawing, Note, Point, Region, RegionBehavior, Sound, Template } from '@vtt/shared';
 import { z } from 'zod';
 import { foundryList } from './foundry-lists.ts';
+import { isTemplateRegion, templateFromRegion } from './foundry-template-regions.ts';
 
 // The drawings, map notes, measured templates, ambient sounds and (v12)
 // regions of a Foundry scene, as ours. Foundry measures templates and sounds
@@ -222,11 +223,23 @@ function soundsOf(s: z.infer<typeof FoundryPlaceables>, look: PlaceableLookups, 
   return { sounds: numbered('sound', sounds) as Sound[], skipped };
 }
 
+/** v14's templates, which it keeps among the regions; and the scene with only the real regions left. */
+function splitTemplates(data: unknown, feet: (units: number) => number, px: number) {
+  const raw = (data && typeof data === 'object' ? data : {}) as { regions?: unknown; levels?: unknown };
+  const regions = Array.isArray(raw.regions) ? (raw.regions as unknown[]) : [];
+  const scale = { feet: (pixels: number) => feet(pixels / px) };
+  const templates = regions.filter(isTemplateRegion).map((r) => templateFromRegion(r, scale));
+  // A v14 scene (it has floors) keeps its templates as regions; its old list is what the migration left.
+  const old = Array.isArray(raw.levels) ? { templates: [] } : {};
+  return { templates, rest: { ...raw, ...old, regions: regions.filter((r) => !isTemplateRegion(r)) } };
+}
+
 /** Converts the placeables of one Foundry scene. */
 export function foundryPlaceables(data: unknown, look: PlaceableLookups): ConvertedPlaceables {
-  const s = FoundryPlaceables.parse(data);
   const feet = (units: number) => Math.round((units * 5) / look.grid.distance);
   const px = look.grid.size / look.grid.distance;
+  const v14 = splitTemplates(data, feet, px);
+  const s = FoundryPlaceables.parse(v14.rest);
   const unknown: string[] = [];
   const { sounds, skipped } = soundsOf(s, look, feet);
   const regions = numbered(
@@ -241,10 +254,7 @@ export function foundryPlaceables(data: unknown, look: PlaceableLookups): Conver
       'note',
       s.notes.map((n) => noteOf(n, look)),
     ),
-    templates: numbered(
-      'template',
-      s.templates.map((t) => templateOf(t, feet, px)),
-    ),
+    templates: numbered('template', [...s.templates.map((t) => templateOf(t, feet, px)), ...v14.templates]),
     sounds,
     regions,
     skipped,

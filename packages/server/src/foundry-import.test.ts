@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { importFoundry } from './foundry-import.ts';
 import { PackStore } from './pack-store.ts';
+import { writeLevelDb } from './test/leveldb-writer.ts';
 
 let src: string;
 let packsDir: string;
@@ -52,7 +53,10 @@ beforeEach(async () => {
     [JSON.stringify(cave), JSON.stringify({ _id: 'bbb', name: 'Gone' }), JSON.stringify(deleted)].join('\n'),
   );
   await put('packs/monsters.db', `${JSON.stringify({ _id: 'm', name: 'Goblin' })}\n`);
-  await put('packs/newer/000005.ldb', 'leveldb');
+  await writeLevelDb(join(src, 'packs/newer'), {
+    '!scenes!ccc': { ...cave, _id: 'ccc', name: 'Upper Cave', walls: ['w1'], tiles: [], notes: [] },
+    '!scenes.walls!ccc.w1': { _id: 'w1', c: [0, 0, 100, 0] },
+  });
   await put(
     'packs/lore.db',
     JSON.stringify({
@@ -91,11 +95,11 @@ describe('importing a Foundry module', () => {
 
   it('turns the scenes of its old-style compendia and scene exports into a scene compendium', async () => {
     const report = await importFoundry(src, packsDir);
-    expect(report.scenes).toBe(2);
+    expect(report.scenes).toBe(3);
     const packs = new PackStore(packsDir);
     await packs.load();
     const scenes = packs.compendium('goblin-maps', 'scenes')!;
-    expect(scenes.docs.map((s) => (s as { id: string }).id)).toEqual(['goblin-cave', 'goblin-cave-2']);
+    expect(scenes.docs.map((s) => (s as { id: string }).id)).toEqual(['goblin-cave', 'upper-cave', 'goblin-cave-2']);
     expect(scenes.docs[0]).toMatchObject({
       tiles: [
         { id: 'background', src: 'pack://goblin-maps/media/maps/cave.webp' },
@@ -122,7 +126,6 @@ describe('importing a Foundry module', () => {
     const { skipped } = await importFoundry(src, packsDir);
     expect(skipped).toEqual([
       'compendium "monsters" (Actor): only scenes, journal entries, roll tables and playlists are imported so far',
-      'compendium "newer": a Foundry v11+ database, which cannot be read yet (export its documents with "Export Data" and import again)',
     ]);
   });
 
@@ -143,6 +146,21 @@ describe('importing a Foundry module', () => {
     await writeFile(join(world, 'data', 'scenes.db'), JSON.stringify(keep));
     const report = await importFoundry(world, packsDir);
     expect(report).toMatchObject({ id: 'my-campaign', media: 1, scenes: 1 });
+  });
+
+  it('opens up a v11+ Adventure compendium: its scenes and journal entries come along', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'foundry-adventure-'));
+    await writeFile(
+      join(dir, 'module.json'),
+      JSON.stringify({ id: 'lost-mine', packs: [{ name: 'adv', type: 'Adventure', path: 'packs/adv' }] }),
+    );
+    await writeLevelDb(join(dir, 'packs/adv'), {
+      '!adventures!a1': { _id: 'a1', name: 'Lost Mine', scenes: ['s9'], journal: ['j9'] },
+      '!adventures.scenes!a1.s9': { ...cave, _id: 's9', name: 'Mine', walls: [], tiles: [], notes: [] },
+      '!adventures.journal!a1.j9': { _id: 'j9', name: 'Intro', pages: [] },
+    });
+    const report = await importFoundry(dir, packsDir);
+    expect(report).toMatchObject({ scenes: 1, documents: 1 });
   });
 
   it('refuses a folder that is no Foundry module, world or system', async () => {

@@ -37,6 +37,7 @@ describe('AccountStore', () => {
     expect(await accounts.register({ username: 'bo', password: 'hunter22', name: 'Bo' })).toMatchObject({
       admin: false,
     });
+    expect(accounts.admin()).toMatchObject({ id: 'ana' });
   });
 
   it('refuses taken names, bad names and short passwords', async () => {
