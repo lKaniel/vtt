@@ -1,21 +1,23 @@
-import { type Doc, freeId, type Patch } from '@vtt/core';
+import { type Doc, type DocRef, type DocStore, freeId, type Op, type Patch } from '@vtt/core';
 import {
   ENTRY_TYPES,
   isScriptMacro,
   type EntryType,
+  isGm,
+  type Player,
   playPatch,
   type Playlist,
   resetPatch,
   type RollTable,
   stopPatch,
 } from '@vtt/shared';
-import type { ServerMessage } from '@vtt/system-dnd5e';
+import type { ClientMessage, ServerMessage } from '@vtt/system-dnd5e';
 import type { MacroCard } from './actions.ts';
-import { ItemSession } from './session-items.ts';
 
 // Journal entries, roll tables, playlists and macros: the sidebar's own documents.
 // Entries open in a viewer (a map note opens its entry; the GM can show one
 // to every player, and a picture too); the GM rolls on tables and starts and stops playlists.
+// Reached as `session.journal`.
 
 /** A journal entry open in the viewer. */
 export interface OpenJournal {
@@ -37,62 +39,84 @@ export interface ShownImage {
   title?: string;
 }
 
-export abstract class JournalSession extends ItemSession {
+/** What the journal needs of the session: its documents, your seat, and a way to the server. */
+export interface JournalHost {
+  readonly docs: DocStore;
+  readonly you?: Player;
+  send(msg: ClientMessage): void;
+  sendChanges(label: string, ops: readonly Op[]): void;
+}
+
+/** What the journal hands back to the session. */
+export interface JournalEvents {
+  changed(): void;
+  /** Sends field patches as one undo step. */
+  updates(label: string, updates: readonly { ref: DocRef; patch: Patch }[]): void;
+  /** Runs a script macro in this browser (the GM's: players are never sent scripts). */
+  runScript(doc: Doc, token?: string): Promise<void>;
+  /** A trigger played a sound for the scene. */
+  heard(src: string, volume: number): void;
+}
+
+/** The sidebar's own documents and the entry viewer, as `session.journal`. */
+export class Journal {
   /** The entry open in the viewer. */
-  journal?: OpenJournal;
+  current?: OpenJournal;
   /** The picture the GM showed you, open until you close it. */
   shownImage?: ShownImage;
 
-  protected abstract changed(): void;
+  constructor(
+    private readonly s: JournalHost,
+    private readonly on: JournalEvents,
+  ) {}
 
-  openJournal(entry: string, page?: string): void {
-    this.journal = page ? { entry, page } : { entry };
-    this.changed();
+  private gm(): boolean {
+    return !!this.s.you && isGm(this.s.you);
   }
 
-  closeJournal(): void {
-    this.journal = undefined;
-    this.changed();
+  open(entry: string, page?: string): void {
+    this.current = page ? { entry, page } : { entry };
+    this.on.changed();
+  }
+
+  close(): void {
+    this.current = undefined;
+    this.on.changed();
   }
 
   /** GM: opens an entry for every player (and lets them see it). */
-  showJournal(entry: string, page?: string): void {
-    this.send({ t: 'showJournal', entry, ...(page ? { page } : {}) });
+  show(entry: string, page?: string): void {
+    this.s.send({ t: 'showJournal', entry, ...(page ? { page } : {}) });
   }
 
   /** GM: opens a picture on every player's screen. */
   showImage(src: string, title?: string): void {
-    this.send({ t: 'showImage', src, ...(title ? { title } : {}) });
+    this.s.send({ t: 'showImage', src, ...(title ? { title } : {}) });
   }
 
   closeImage(): void {
     this.shownImage = undefined;
-    this.changed();
-  }
-
-  /** Your seat's colour and picture; a null avatar takes it away. */
-  setProfile(profile: { color?: string; avatar?: string | null }): void {
-    this.send({ t: 'profile', ...profile });
+    this.on.changed();
   }
 
   /** Rolls on a table; `gmOnly` whispers the result to the GM. */
   rollTable(table: string, gmOnly = false): void {
-    this.send({ t: 'rollTable', table, ...(gmOnly ? { gmOnly } : {}) });
+    this.s.send({ t: 'rollTable', table, ...(gmOnly ? { gmOnly } : {}) });
   }
 
   resetTable(id: string): void {
-    const t = this.docs.get('tables', id);
+    const t = this.s.docs.get('tables', id);
     if (t) this.patchEntry('tables', id, resetPatch(t as unknown as RollTable), 'table reset');
   }
 
   /** Starts a playlist, at `track` or its first. */
   playPlaylist(id: string, track?: string): void {
-    const p = this.docs.get('playlists', id);
+    const p = this.s.docs.get('playlists', id);
     if (p) this.patchEntry('playlists', id, playPatch(p as unknown as Playlist, track), 'music');
   }
 
   stopPlaylist(id: string): void {
-    const p = this.docs.get('playlists', id);
+    const p = this.s.docs.get('playlists', id);
     if (p) this.patchEntry('playlists', id, stopPatch(p as unknown as Playlist), 'stop music');
   }
 
@@ -102,26 +126,23 @@ export abstract class JournalSession extends ItemSession {
    */
   createEntry(type: EntryType, fields: Record<string, unknown> = {}): void {
     const { coll } = ENTRY_TYPES[type];
-    const id = freeId(type, (x) => !!this.docs.get(coll, x));
-    const author = type === 'macro' && !this.isGm() && this.you ? { author: this.you.id } : {};
+    const id = freeId(type, (x) => !!this.s.docs.get(coll, x));
+    const author = type === 'macro' && !this.gm() && this.s.you ? { author: this.s.you.id } : {};
     const doc = { id, type, rev: 0, ...NEW[type], ...author, ...fields } as Doc;
-    this.sendChanges('new', [{ op: 'create', coll, doc }]);
-    if (type === 'journal') this.openJournal(id);
+    this.s.sendChanges('new', [{ op: 'create', coll, doc }]);
+    if (type === 'journal') this.open(id);
   }
 
   /** Runs a macro for `token`: a chat macro's lines on the server, said by `token` when you control it; a script here. */
   async runMacro(macro: string, token?: string): Promise<void> {
-    const doc = this.docs.get('macros', macro);
-    if (doc && isScriptMacro(doc)) return this.runScript(doc, token);
-    this.send({ t: 'runMacro', macro, ...(token ? { token } : {}) });
+    const doc = this.s.docs.get('macros', macro);
+    if (doc && isScriptMacro(doc)) return this.on.runScript(doc, token);
+    this.s.send({ t: 'runMacro', macro, ...(token ? { token } : {}) });
   }
-
-  /** Runs a script macro in this browser (the GM's: players are never sent scripts). */
-  protected abstract runScript(doc: Doc, token?: string): Promise<void>;
 
   /** A macro you were sent, as the hotbar shows it. */
   readonly macroOf = (id: string): MacroCard | undefined => {
-    const doc = this.docs.get('macros', id);
+    const doc = this.s.docs.get('macros', id);
     if (!doc) return undefined;
     const text = (k: string) => (typeof doc[k] === 'string' ? doc[k] : undefined);
     const img = text('img');
@@ -130,39 +151,37 @@ export abstract class JournalSession extends ItemSession {
 
   /** Removes a macro (yours, or any for the GM). */
   deleteMacro(id: string): void {
-    this.sendChanges('delete macro', [{ op: 'delete', coll: 'macros', id }]);
+    this.s.sendChanges('delete macro', [{ op: 'delete', coll: 'macros', id }]);
   }
 
   /** Whether you may change a macro: the GM any, a player their own. */
   canEditMacro(id: string): boolean {
-    return this.isGm() || (!!this.you && this.docs.get('macros', id)?.author === this.you.id);
+    return this.gm() || (!!this.s.you && this.s.docs.get('macros', id)?.author === this.s.you.id);
   }
 
   /** GM: a new homebrew document (a class), its fields ready (see homebrew.ts in the system). */
   createHomebrew(fields: { id: string; kind: string; name: string } & Record<string, unknown>): void {
     const doc = { ...fields, type: 'homebrew', rev: 0 } as Doc;
-    this.sendChanges('new homebrew', [{ op: 'create', coll: 'homebrew', doc }]);
+    this.s.sendChanges('new homebrew', [{ op: 'create', coll: 'homebrew', doc }]);
   }
 
   /** Changes one sidebar document's fields. */
   patchEntry(coll: string, id: string, patch: Patch, label = 'edit'): void {
-    this.sendUpdates(label, [{ ref: { coll, id }, patch }]);
+    this.on.updates(label, [{ ref: { coll, id }, patch }]);
   }
 
-  /** A trigger played a sound for the scene. */
-  protected abstract heard(src: string, volume: number): void;
-
-  protected override applyEdit(msg: ServerMessage): boolean {
+  /** A message for the journal: whether the screen changed, or undefined when it is someone else's. */
+  receive(msg: ServerMessage): boolean | undefined {
     if (msg.t === 'showImage') {
       this.shownImage = msg.title ? { src: msg.src, title: msg.title } : { src: msg.src };
       return true;
     }
     if (msg.t === 'sound') {
-      this.heard(msg.src, msg.volume ?? 1);
+      this.on.heard(msg.src, msg.volume ?? 1);
       return false;
     }
-    if (msg.t !== 'showJournal') return super.applyEdit(msg);
-    this.openJournal(msg.entry, msg.page);
+    if (msg.t !== 'showJournal') return undefined;
+    this.open(msg.entry, msg.page);
     return true;
   }
 }

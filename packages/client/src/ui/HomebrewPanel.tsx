@@ -21,7 +21,7 @@ export function HomebrewPanel({ session }: Readonly<{ session: Session }>) {
   const create = () => {
     const id = slugify(name);
     if (!id || taken(id)) return;
-    session.createHomebrew({ ...blankClass(id, name.trim()), ownership: { default: 'observer' } });
+    session.journal.createHomebrew({ ...blankClass(id, name.trim()), ownership: { default: 'observer' } });
     setName('');
     setOpen(id);
   };
@@ -52,7 +52,9 @@ export function HomebrewPanel({ session }: Readonly<{ session: Session }>) {
                 size="sm"
                 title={shared(doc) ? 'Players’ sheets can read it: hide it again' : 'Let the players’ sheets read it'}
                 onClick={() =>
-                  session.patchEntry('homebrew', doc.id, { ownership: shared(doc) ? null : { default: 'observer' } })
+                  session.journal.patchEntry('homebrew', doc.id, {
+                    ownership: shared(doc) ? null : { default: 'observer' },
+                  })
                 }
               >
                 {shared(doc) ? 'Shared' : 'Share'}

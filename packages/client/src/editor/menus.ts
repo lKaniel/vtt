@@ -24,8 +24,6 @@ export interface MenuApi {
   /** Copy, cut and delete may work on the selection (the GM's, or a player's own drawings). */
   canEditSelection(): boolean;
   createItem(draft: Draft): void;
-  openJournal(entry: string, page?: string): void;
-  showJournal(entry: string, page?: string): void;
   copy(): string | undefined;
   cut(): string | undefined;
   paste(): void;
@@ -50,8 +48,12 @@ export interface MenuApi {
     readonly observing?: string;
     observe(token: string | undefined): void;
   };
-  /** GM: opens a picture on every player's screen. */
-  showImage(src: string, title?: string): void;
+  /** Journal entries and pictures (see session-journal.ts); show is the GM's, for every player. */
+  readonly journal: {
+    open(entry: string, page?: string): void;
+    show(entry: string, page?: string): void;
+    showImage(src: string, title?: string): void;
+  };
   /** The pile window (see session-piles.ts). */
   readonly piles: { open(token: string): void };
 }
@@ -178,7 +180,7 @@ const hudEntry = (id: string, screen: Point | undefined, api: MenuApi): Entry =>
 /** GM: show a creature's picture to the players. */
 function artEntry(token: TokenView | undefined, api: MenuApi): Entry {
   const src = token?.img ?? token?.art;
-  return api.isGm() && !!src && { label: 'Show art to players', run: () => api.showImage(src, token?.name) };
+  return api.isGm() && !!src && { label: 'Show art to players', run: () => api.journal.showImage(src, token?.name) };
 }
 
 /** Target a creature, or stop (see targets.ts). */
@@ -253,7 +255,7 @@ registerMenu('tile', (t, api) => {
 /** GM: show one picture tile to the players. */
 function showTileEntry(t: MenuTarget, api: MenuApi): Entry {
   const src = t.docs.length === 1 ? t.docs[0]!.doc.src : undefined;
-  return api.isGm() && typeof src === 'string' && { label: 'Show to players', run: () => api.showImage(src) };
+  return api.isGm() && typeof src === 'string' && { label: 'Show to players', run: () => api.journal.showImage(src) };
 }
 
 const ITEM_TYPES = ['drawing', 'note', 'template', 'region', 'sound'];
@@ -277,8 +279,8 @@ registerMenu('note', (t, api) => {
   if (!entry) return [];
   const page = typeof note?.page === 'string' ? note.page : undefined;
   return [
-    { label: 'Open journal entry', run: () => api.openJournal(entry, page) },
-    api.isGm() && { label: 'Show to players', run: () => api.showJournal(entry, page) },
+    { label: 'Open journal entry', run: () => api.journal.open(entry, page) },
+    api.isGm() && { label: 'Show to players', run: () => api.journal.show(entry, page) },
   ];
 });
 

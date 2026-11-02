@@ -1,4 +1,4 @@
-import type { Doc, DocRef, PluginLoad } from '@vtt/core';
+import type { DocRef, PluginLoad } from '@vtt/core';
 import {
   canControl,
   canEdit,
@@ -35,6 +35,7 @@ import { Rulers } from './rulers.ts';
 import type { SessionEvents } from './session-events.ts';
 import { ActionSession } from './session-actions.ts';
 import { Hud } from './session-hud.ts';
+import { Journal } from './session-journal.ts';
 import { Piles } from './session-piles.ts';
 import { Cards } from './session-cards.ts';
 import { ScriptHost } from './scripting/script-api.ts';
@@ -83,6 +84,12 @@ export class Session extends ActionSession {
   readonly cards = new Cards(this);
   readonly piles = new Piles(this, () => this.changed());
   readonly hud = new Hud(this, { changed: () => this.changed(), lit: () => this.notify('lighting') });
+  readonly journal = new Journal(this, {
+    changed: () => this.changed(),
+    updates: (label, updates) => this.sendUpdates(label, updates),
+    runScript: (doc, token) => this.scripts.run(doc, token),
+    heard: (src, volume) => this.emit('sound', src, volume),
+  });
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
   /** Your ruler and the ones the others on your scene are laying. */
@@ -198,10 +205,6 @@ export class Session extends ActionSession {
     this.emit('selection');
   }
 
-  protected heard(src: string, volume: number): void {
-    this.emit('sound', src, volume);
-  }
-
   protected fogChanged(): void {
     this.emit('fog');
   }
@@ -310,10 +313,6 @@ export class Session extends ActionSession {
     return (this.world && sceneLattice(this.world)) ?? this.gridSize();
   }
 
-  protected runScript(doc: Doc, token?: string): Promise<void> {
-    return this.scripts.run(doc, token);
-  }
-
   showError(message: string): void {
     this.error = { message, at: Date.now() };
     this.changed();
@@ -389,7 +388,7 @@ export class Session extends ActionSession {
         this.chat = this.chat.map((m) => (msg.ids.includes(m.id) ? { ...m, undone: msg.undone || undefined } : m));
         return true;
       default:
-        return this.applyEdit(msg);
+        return this.journal.receive(msg) ?? this.applyEdit(msg);
     }
   }
 

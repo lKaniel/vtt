@@ -26,7 +26,7 @@ export function MacrosTab({ session }: Readonly<{ session: Session }>) {
   return (
     <div className="scenes-tab">
       {canMake && (
-        <Button variant="outline" size="sm" onClick={() => session.createEntry('macro')}>
+        <Button variant="outline" size="sm" onClick={() => session.journal.createEntry('macro')}>
           {t('macros.new')}
         </Button>
       )}
@@ -55,7 +55,8 @@ interface RowProps {
 
 /** One macro: its name opens the editor (for whoever may change it); drag the row onto the hotbar. */
 function MacroRow({ session, doc, open, onToggle }: Readonly<RowProps>) {
-  const share = () => session.patchEntry('macros', doc.id, { ownership: shared(doc) ? null : { default: 'observer' } });
+  const share = () =>
+    session.journal.patchEntry('macros', doc.id, { ownership: shared(doc) ? null : { default: 'observer' } });
   return (
     <li
       className="scene-row"
@@ -68,7 +69,7 @@ function MacroRow({ session, doc, open, onToggle }: Readonly<RowProps>) {
       </Button>
       <span className="row-actions">
         {isScriptMacro(doc) && <Badge title={t('macros.scriptHint')}>{t('macros.script')}</Badge>}
-        <Button variant="outline" size="sm" onClick={() => void session.runMacro(doc.id, session.selected)}>
+        <Button variant="outline" size="sm" onClick={() => void session.journal.runMacro(doc.id, session.selected)}>
           {t('macros.run')}
         </Button>
         {session.isGm() && !isScriptMacro(doc) && (
@@ -82,7 +83,7 @@ function MacroRow({ session, doc, open, onToggle }: Readonly<RowProps>) {
           </Button>
         )}
       </span>
-      {open && session.canEditMacro(doc.id) && <MacroEditor session={session} doc={doc} />}
+      {open && session.journal.canEditMacro(doc.id) && <MacroEditor session={session} doc={doc} />}
     </li>
   );
 }
@@ -97,7 +98,7 @@ function MacroEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
   const [command, setCommand] = useState(textOf(doc, 'command'));
   const [img, setImg] = useState(textOf(doc, 'img'));
   const kind = isScriptMacro(doc) ? 'script' : 'chat';
-  const patch = (p: Record<string, unknown>) => session.patchEntry('macros', doc.id, p);
+  const patch = (p: Record<string, unknown>) => session.journal.patchEntry('macros', doc.id, p);
   return (
     <div className="table-edit">
       <Input
@@ -132,7 +133,7 @@ function MacroEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
         onBlur={() => patch({ img: img.trim() || null })}
       />
       <p className="muted">{t(`macros.help.${kind}`)}</p>
-      <Button variant="outline" size="sm" onClick={() => session.deleteMacro(doc.id)}>
+      <Button variant="outline" size="sm" onClick={() => session.journal.deleteMacro(doc.id)}>
         {t('macros.delete')}
       </Button>
     </div>

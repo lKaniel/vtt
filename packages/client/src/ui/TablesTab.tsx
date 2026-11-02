@@ -39,7 +39,7 @@ export function TablesTab({ session }: Readonly<{ session: Session }>) {
   const tables = session.docs.all('tables').sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
   return (
     <div className="scenes-tab">
-      <Button variant="outline" size="sm" onClick={() => session.createEntry('rolltable')}>
+      <Button variant="outline" size="sm" onClick={() => session.journal.createEntry('rolltable')}>
         New table
       </Button>
       <ul className="rows">
@@ -49,19 +49,19 @@ export function TablesTab({ session }: Readonly<{ session: Session }>) {
               {nameOf(doc)}
             </Button>
             <span className="row-actions">
-              <Button variant="outline" size="sm" onClick={() => session.rollTable(doc.id)}>
+              <Button variant="outline" size="sm" onClick={() => session.journal.rollTable(doc.id)}>
                 Roll
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 title="Only you see the result"
-                onClick={() => session.rollTable(doc.id, true)}
+                onClick={() => session.journal.rollTable(doc.id, true)}
               >
                 GM roll
               </Button>
               {resultsOf(doc).some((r) => r.drawn) && (
-                <Button variant="outline" size="sm" onClick={() => session.resetTable(doc.id)}>
+                <Button variant="outline" size="sm" onClick={() => session.journal.resetTable(doc.id)}>
                   Reset
                 </Button>
               )}
@@ -78,7 +78,7 @@ function TableEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
   const [text, setText] = useState(toText(resultsOf(doc)));
   const save = () => {
     const results = fromText(text, resultsOf(doc));
-    if (results.length) session.patchEntry('tables', doc.id, { results });
+    if (results.length) session.journal.patchEntry('tables', doc.id, { results });
   };
   return (
     <div className="table-edit">
@@ -86,7 +86,9 @@ function TableEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
       <label className="map-tools-check">
         <Checkbox
           checked={doc.replacement === false}
-          onCheckedChange={(on) => session.patchEntry('tables', doc.id, { replacement: on === true ? false : null })}
+          onCheckedChange={(on) =>
+            session.journal.patchEntry('tables', doc.id, { replacement: on === true ? false : null })
+          }
         />
         Each result once (until reset)
       </label>

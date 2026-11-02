@@ -111,14 +111,14 @@ describe('plugins', () => {
 describe('script macros', () => {
   it('run in the GM’s browser with vtt and the token, never on the server', async () => {
     joinAsGm([{ ...heal, command: 'vtt.chat("healing " + token)' }]);
-    await session.runMacro('heal', 'hero');
+    await session.journal.runMacro('heal', 'hero');
     expect(last()).toEqual({ t: 'chat', text: 'healing hero' });
     expect(ws.sent.some((m) => (m as { t: string }).t === 'runMacro')).toBe(false);
   });
 
   it('show their error instead of breaking the table', async () => {
     joinAsGm([{ ...heal, command: 'throw new Error("no potions")' }]);
-    await session.runMacro('heal');
+    await session.journal.runMacro('heal');
     expect(session.error?.message).toBe('Heal: no potions');
   });
 

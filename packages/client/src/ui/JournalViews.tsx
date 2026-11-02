@@ -15,7 +15,7 @@ const nameOf = (doc: Doc) => (typeof doc.name === 'string' ? doc.name : doc.id);
 
 function EntryLink({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
   return (
-    <Button variant="link" onClick={() => session.openJournal(doc.id)}>
+    <Button variant="link" onClick={() => session.journal.open(doc.id)}>
       {nameOf(doc)}
     </Button>
   );
@@ -24,7 +24,7 @@ function EntryLink({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
 export function QuestLog({ session }: Readonly<{ session: Session }>) {
   const groups = questsBy(session.docs.all('journals'));
   const create = () =>
-    session.createEntry('journal', { name: 'New quest', quest: { status: 'active', objectives: [] } });
+    session.journal.createEntry('journal', { name: 'New quest', quest: { status: 'active', objectives: [] } });
   return (
     <div className="flex flex-col gap-2" data-slot="quest-log">
       {session.isGm() && (
@@ -101,7 +101,8 @@ export function CalendarNotes({ session }: Readonly<{ session: Session }>) {
   const [day, setDay] = useState<DayRef | undefined>({ year: now.year, month: now.month, day: now.day });
   const notes = session.docs.all('journals');
   const list = day ? (notesByDay(calendar, notes, day).get(day.day) ?? []) : [];
-  const create = (d: DayRef) => session.createEntry('journal', { name: 'New note', date: secondsOf(calendar, d) });
+  const create = (d: DayRef) =>
+    session.journal.createEntry('journal', { name: 'New note', date: secondsOf(calendar, d) });
   return (
     <div className="flex flex-col gap-2" data-slot="calendar-notes">
       <MonthPicker

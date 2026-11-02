@@ -178,7 +178,7 @@ function Hotbar({
     box.classList.remove('drop-target');
     landOn(box);
     const drag = JSON.parse(data) as TileDrag;
-    const slots = hotbarSlots(token, session.macroOf);
+    const slots = hotbarSlots(token, session.journal.macroOf);
     save('ref' in drag ? placeOnHotbar(slots, drag.ref, i) : moveOnHotbar(slots, drag.from, i));
   };
   const onDragOver = (e: React.DragEvent) => {
@@ -193,7 +193,7 @@ function Hotbar({
   };
   return (
     <div className="ab-grid">
-      {hotbarTiles(token, session.macroOf).map((tile, i) => (
+      {hotbarTiles(token, session.journal.macroOf).map((tile, i) => (
         <span key={i} className="ab-slot" onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop(i)}>
           {tile ? (
             <Tile
@@ -206,7 +206,7 @@ function Hotbar({
               onDragEnd={(e) =>
                 e.dataTransfer.dropEffect === 'none' &&
                 (tile.kind === 'item' || tile.kind === 'macro') &&
-                save(removeFromHotbar(hotbarSlots(token, session.macroOf), i))
+                save(removeFromHotbar(hotbarSlots(token, session.journal.macroOf), i))
               }
             />
           ) : (

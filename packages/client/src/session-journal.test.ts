@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Session } from './session.ts';
 import { closeSession, openSession, welcome, type FakeWebSocket } from './session.fixtures.ts';
 
-// Journal entries, roll tables and playlists in the sidebar.
+// Journal entries, roll tables and playlists in the sidebar (session-journal.ts, `session.journal`).
 
 let session: Session;
 let ws: FakeWebSocket;
@@ -53,25 +53,25 @@ const last = () => ws.sent.at(-1) as Record<string, unknown>;
 describe('the sidebar documents in the session', () => {
   it('open a journal entry, and when the GM shows one', () => {
     joinAs('player');
-    session.openJournal('lore');
-    expect(session.journal).toEqual({ entry: 'lore' });
-    session.closeJournal();
-    expect(session.journal).toBeUndefined();
+    session.journal.open('lore');
+    expect(session.journal.current).toEqual({ entry: 'lore' });
+    session.journal.close();
+    expect(session.journal.current).toBeUndefined();
     ws.receive({ t: 'showJournal', entry: 'lore', page: 'p1' });
-    expect(session.journal).toEqual({ entry: 'lore', page: 'p1' });
+    expect(session.journal.current).toEqual({ entry: 'lore', page: 'p1' });
   });
 
   it('let the GM show an entry, and roll on a table', () => {
     joinAs('gm');
-    session.showJournal('lore', 'p1');
+    session.journal.show('lore', 'p1');
     expect(last()).toEqual({ t: 'showJournal', entry: 'lore', page: 'p1' });
-    session.rollTable('loot', true);
+    session.journal.rollTable('loot', true);
     expect(last()).toEqual({ t: 'rollTable', table: 'loot', gmOnly: true });
   });
 
   it('put drawn results back in a table', () => {
     joinAs('gm');
-    session.resetTable('loot');
+    session.journal.resetTable('loot');
     expect(last()).toMatchObject({
       t: 'ops',
       label: 'table reset',
@@ -81,31 +81,31 @@ describe('the sidebar documents in the session', () => {
 
   it('start a playlist, play a track and stop', () => {
     joinAs('gm');
-    session.playPlaylist('inn');
+    session.journal.playPlaylist('inn');
     expect(last()).toMatchObject({ ops: [{ patch: { tracks: [{ id: 'lute', playing: true }, { id: 'harp' }] } }] });
-    session.playPlaylist('inn', 'harp');
+    session.journal.playPlaylist('inn', 'harp');
     expect(last()).toMatchObject({ ops: [{ patch: { tracks: [{ id: 'lute' }, { id: 'harp', playing: true }] } }] });
-    session.stopPlaylist('inn');
+    session.journal.stopPlaylist('inn');
     expect(last()).toMatchObject({ label: 'stop music' });
   });
 
   it('make new entries, tables and playlists for the GM', () => {
     joinAs('gm');
-    session.createEntry('journal');
+    session.journal.createEntry('journal');
     expect(last()).toMatchObject({
       ops: [{ op: 'create', coll: 'journals', doc: { id: 'journal-1', name: 'New entry', pages: [] } }],
     });
-    session.createEntry('rolltable');
+    session.journal.createEntry('rolltable');
     expect(last()).toMatchObject({
       ops: [{ op: 'create', coll: 'tables', doc: { results: [{ text: 'Something' }] } }],
     });
-    session.createEntry('playlist');
+    session.journal.createEntry('playlist');
     expect(last()).toMatchObject({ ops: [{ op: 'create', coll: 'playlists', doc: { tracks: [] } }] });
   });
 
   it('make and save homebrew classes for the GM', () => {
     joinAs('gm');
-    session.createHomebrew({ id: 'seer', kind: 'class', name: 'Seer' });
+    session.journal.createHomebrew({ id: 'seer', kind: 'class', name: 'Seer' });
     expect(last()).toMatchObject({
       ops: [{ op: 'create', coll: 'homebrew', doc: { id: 'seer', type: 'homebrew', kind: 'class', name: 'Seer' } }],
     });
@@ -113,20 +113,20 @@ describe('the sidebar documents in the session', () => {
 
   it('make quests and dated notes, and open them', () => {
     joinAs('gm');
-    session.createEntry('journal', { name: 'New quest', quest: { status: 'active', objectives: [] } });
+    session.journal.createEntry('journal', { name: 'New quest', quest: { status: 'active', objectives: [] } });
     expect(last()).toMatchObject({
       ops: [{ op: 'create', coll: 'journals', doc: { name: 'New quest', quest: { status: 'active' } } }],
     });
-    expect(session.journal).toEqual({ entry: 'journal-1' });
+    expect(session.journal.current).toEqual({ entry: 'journal-1' });
   });
 
   it('opens a picture the GM shows, and the GM shows one', () => {
     ws.receive(welcome());
     ws.receive({ t: 'showImage', src: '/assets/map.png', title: 'Old map' });
-    expect(session.shownImage).toEqual({ src: '/assets/map.png', title: 'Old map' });
-    session.closeImage();
-    expect(session.shownImage).toBeUndefined();
-    session.showImage('/assets/map.png');
+    expect(session.journal.shownImage).toEqual({ src: '/assets/map.png', title: 'Old map' });
+    session.journal.closeImage();
+    expect(session.journal.shownImage).toBeUndefined();
+    session.journal.showImage('/assets/map.png');
     expect(ws.sent.at(-1)).toEqual({ t: 'showImage', src: '/assets/map.png' });
   });
 
@@ -149,29 +149,29 @@ describe('macros in the session', () => {
 
   it('make a player’s macro signed as theirs, and the GM’s unsigned', () => {
     const me = joinWith('player', []);
-    session.createEntry('macro');
+    session.journal.createEntry('macro');
     expect(last()).toMatchObject({ ops: [{ op: 'create', coll: 'macros', doc: { kind: 'chat', author: me } }] });
     closeSession(session);
     ({ session, ws } = openSession());
     joinWith('gm', []);
-    session.createEntry('macro');
+    session.journal.createEntry('macro');
     expect((last().ops as { doc: Doc }[])[0]?.doc.author).toBeUndefined();
   });
 
   it('run a macro for a token, and show it on the hotbar', () => {
     joinWith('player', [hail]);
-    void session.runMacro('hail', 'bram');
+    void session.journal.runMacro('hail', 'bram');
     expect(last()).toEqual({ t: 'runMacro', macro: 'hail', token: 'bram' });
-    expect(session.macroOf('hail')).toEqual({ id: 'hail', name: 'Hail', command: 'Hi', img: 'h.webp' });
-    expect(session.macroOf('gone')).toBeUndefined();
+    expect(session.journal.macroOf('hail')).toEqual({ id: 'hail', name: 'Hail', command: 'Hi', img: 'h.webp' });
+    expect(session.journal.macroOf('gone')).toBeUndefined();
   });
 
   it('let a player change and remove only their own', () => {
     const me = joinWith('player', [hail, { ...hail, id: 'mine', author: 'x' }]);
-    expect(session.canEditMacro('hail')).toBe(false);
+    expect(session.journal.canEditMacro('hail')).toBe(false);
     ws.receive({ t: 'docs', changes: [{ coll: 'macros', id: 'own', doc: { ...hail, id: 'own', author: me } }] });
-    expect(session.canEditMacro('own')).toBe(true);
-    session.deleteMacro('own');
+    expect(session.journal.canEditMacro('own')).toBe(true);
+    session.journal.deleteMacro('own');
     expect(last()).toMatchObject({ ops: [{ op: 'delete', coll: 'macros', id: 'own' }] });
   });
 });

@@ -218,6 +218,6 @@ function handleGameKey(session: Session, e: Key): void {
 /** Uses the selected creature's action bar tile in slot `hotkey` ("1".."0"). */
 function pressSlot(session: Session, hotkey: string): void {
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
-  const tile = token && hotbarTiles(token, session.macroOf).find((t) => t?.hotkey === hotkey);
+  const tile = token && hotbarTiles(token, session.journal.macroOf).find((t) => t?.hotkey === hotkey);
   if (token && tile && canActivate(tile)) activateTile(session, token, tile);
 }
