@@ -206,14 +206,14 @@ describe('Session', () => {
     it('knows whose turn it is and how far each token may walk', () => {
       ws.receive({ t: 'combat', combat: fight(0) });
       expect(session.combat?.round).toBe(1);
-      expect(session.turnToken()?.id).toBe('goblin');
-      expect(session.isMyTurn()).toBe(false);
-      expect(session.movementLeft('hero')).toBe(0);
+      expect(session.turns.current()?.id).toBe('goblin');
+      expect(session.turns.mine()).toBe(false);
+      expect(session.turns.movementLeft('hero')).toBe(0);
       ws.receive({ t: 'combat', combat: fight(1, 20) });
-      expect(session.isMyTurn()).toBe(true);
-      expect(session.movementLeft('hero')).toBe(20);
+      expect(session.turns.mine()).toBe(true);
+      expect(session.turns.movementLeft('hero')).toBe(20);
       ws.receive({ t: 'combat', combat: null });
-      expect(session.movementLeft('hero')).toBe(Infinity);
+      expect(session.turns.movementLeft('hero')).toBe(Infinity);
     });
 
     it('selects and finds your creature when its turn starts', () => {

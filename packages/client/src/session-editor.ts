@@ -5,6 +5,7 @@ import { keyOf, refOf } from './editor/selection.ts';
 import type { MenuItem } from './editor/menus.ts';
 import type { LightPreset } from './map-tools.ts';
 import type { ItemTool } from './editor/shape-tools.ts';
+import { mayUseMode } from './authorship.ts';
 import { EditSession } from './session-edits.ts';
 
 // The map editor's state: which mode and tool, what is selected, and the open
@@ -72,9 +73,14 @@ export abstract class EditorSession extends EditSession {
     return this.mode === 'tokens' && this.selection.includes(this.tokenKey(id));
   }
 
-  /** Whether this client may work in `mode` (players: tokens alone, unless a subclass says more). */
-  protected mayUse(mode: string): boolean {
-    return this.isGm() || mode === 'tokens';
+  /** Whether this client may work in `mode` (see authorship.ts). */
+  private mayUse(mode: string): boolean {
+    return mayUseMode(this.you, mode);
+  }
+
+  /** Whether the inspector may change what is selected. */
+  canEditSelection(): boolean {
+    return this.mayEdit(this.selection.map(refOf));
   }
 
   /** Whether this seat may switch to `mode`. */

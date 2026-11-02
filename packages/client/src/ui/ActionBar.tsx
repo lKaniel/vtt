@@ -39,7 +39,7 @@ const TAB_LABEL: Record<Tab, string> = {
 function budgetOf(session: Session, token: TokenView): TurnBudget | undefined {
   const combat = session.combat;
   if (!combat) return undefined;
-  if (session.turnToken()?.id === token.id) return combat.left;
+  if (session.turns.current()?.id === token.id) return combat.left;
   return combat.side[token.id];
 }
 
@@ -309,7 +309,7 @@ function Resources({ token, budget }: Readonly<{ token: TokenView; budget: TurnB
 function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
   const combat = session.combat;
   if (!combat) return <div className="ab-end" />;
-  const mine = session.isMyTurn() && (actsNow(combat, token.id) || !!combat.side[token.id]);
+  const mine = session.turns.mine() && (actsNow(combat, token.id) || !!combat.side[token.id]);
   return (
     <div className="ab-end">
       <button

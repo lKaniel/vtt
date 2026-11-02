@@ -23,7 +23,7 @@ import {
   type TokenView,
 } from '@vtt/system-dnd5e';
 import { openSocket, refusalOf } from './session-socket.ts';
-import { isMyTurn, movementLeft, turnToken } from './turns.ts';
+import { Turns } from './turns.ts';
 
 import type { DragPayload } from './drops.ts';
 import { dropOnMap } from './session-drops.ts';
@@ -34,7 +34,8 @@ import { Rulers } from './rulers.ts';
 import type { SessionEvents } from './session-events.ts';
 import { Actions, type ActionEvents } from './session-actions.ts';
 import { Fog, type FogEvents } from './session-fog.ts';
-import { ItemSession } from './session-items.ts';
+import { Draw, Levels } from './session-items.ts';
+import { TileSession } from './session-tiles.ts';
 import { isTableNews, type TableNews, withChat } from './session-news.ts';
 import type { SessionPart } from './session-part.ts';
 import { type SceneEvents, Scenes } from './session-scenes.ts';
@@ -59,7 +60,7 @@ export interface SheetTarget {
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends ItemSession {
+export class Session extends TileSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -84,11 +85,7 @@ export class Session extends ItemSession {
   /** The decks, hands and piles you were sent (session-cards.ts). */
   readonly cards = new Cards(this);
   /** The creatures you target (T), and the others'. */
-  readonly targets = new Targets({
-    send: (msg) => this.send(msg),
-    changed: () => this.notify('targets'),
-    you: () => this.you,
-  });
+  readonly targets = new Targets(this.wire(() => this.notify('targets')));
   /** What the parts may ask of the session beyond its public face. */
   private readonly ev: PartEvents = {
     changed: () => this.changed(),
@@ -111,6 +108,9 @@ export class Session extends ItemSession {
   readonly packs = new Packs(this, this.ev);
   readonly scenes = new Scenes(this, this.ev);
   readonly fog = new Fog(this, this.ev);
+  readonly draw = new Draw(this, this.ev);
+  readonly levels = new Levels(this, this.ev);
+  readonly turns = new Turns(this);
   /** The parts that take messages, the welcome and departures. */
   private readonly parts: SessionPart[] = [this.journal, this.packs, this.scenes, this.fog, this.hud, this.piles];
   /** The GM paused the game: players can't act until it resumes. */
@@ -121,12 +121,7 @@ export class Session extends ItemSession {
     () => this.emit('rulers'),
   );
   /** The others' cursors and everyone's pings; yours go to the table from here. */
-  readonly presence = new Presence({
-    send: (msg) => this.send(msg),
-    changed: () => this.emit('presence'),
-    focus: (at) => this.focus(at),
-    you: () => this.you,
-  });
+  readonly presence = new Presence(this.wire(() => this.emit('presence')));
   /** Bumped on every change; React re-renders on it. */
   version = 0;
 
@@ -156,6 +151,16 @@ export class Session extends ItemSession {
 
   private emit<K extends keyof SessionEvents>(event: K, ...args: Parameters<SessionEvents[K]>): void {
     for (const fn of this.listeners.get(event) ?? []) (fn as (...a: Parameters<SessionEvents[K]>) => void)(...args);
+  }
+
+  /** The table as the targets and presence see it: a way to the server, your seat, and the camera. */
+  private wire(changed: () => void) {
+    return {
+      send: (m: ClientMessage) => this.send(m),
+      changed,
+      you: () => this.you,
+      focus: (at: Point) => this.focus(at),
+    };
   }
 
   protected notify(event: 'armed' | 'targets' | 'lighting'): void {
@@ -276,21 +281,6 @@ export class Session extends ItemSession {
 
   protected startPoint(): Point {
     return this.world?.start ?? [0, 0];
-  }
-
-  /** The token whose turn it is in the fight. */
-  turnToken(): TokenView | undefined {
-    return turnToken(this.combat, this.tokens);
-  }
-
-  /** One of your creatures may act now (its turn, or it shares the party's). */
-  isMyTurn(): boolean {
-    return isMyTurn(this.combat, this.tokens, (t) => this.canControl(t));
-  }
-
-  /** Feet the token may still walk: unlimited outside a fight, nothing when it's not its turn. */
-  movementLeft(id: string): number {
-    return movementLeft(this.combat, this.tokens, id);
   }
 
   focus(point: Point): void {
@@ -420,7 +410,7 @@ export class Session extends ItemSession {
     const before = this.combat ? `${this.combat.round}:${currentTurn(this.combat)}` : '';
     this.combat = combat;
     this.emit('combat');
-    const token = this.turnToken();
+    const token = this.turns.current();
     if (!combat || !token || !this.canControl(token)) return;
     if (before === `${combat.round}:${token.id}`) return;
     this.select(token.id);

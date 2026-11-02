@@ -40,7 +40,7 @@ export class DrawTools {
   /** Ends a line, polygon or region being drawn (a right click); true if it did. */
   finish(): boolean {
     const done = this.draft?.busy ? this.draft.finish() : undefined;
-    if (done) this.session.createItem(done);
+    if (done) this.session.draw.create(done);
     return !!done;
   }
 
@@ -65,7 +65,7 @@ export class DrawTools {
     const shapes = this.shapes();
     if (shapes) {
       const done = shapes.press(at, this.snap(free));
-      if (done) this.session.createItem(done);
+      if (done) this.session.draw.create(done);
       return;
     }
     const tool = this.session.tool;
@@ -82,7 +82,7 @@ export class DrawTools {
     const shapes = this.shapes();
     if (shapes) {
       const done = shapes.release(at, this.snap(free));
-      if (done) this.session.createItem(done);
+      if (done) this.session.draw.create(done);
       return;
     }
     const start = this.box;

@@ -23,7 +23,8 @@ export interface MenuApi {
   canEdit(id: string): boolean;
   /** Copy, cut and delete may work on the selection (the GM's, or a player's own drawings). */
   canEditSelection(): boolean;
-  createItem(draft: Draft): void;
+  /** The shape tools (see session-items.ts). */
+  readonly draw: { create(draft: Draft): void };
   copy(): string | undefined;
   cut(): string | undefined;
   paste(): void;
@@ -308,7 +309,7 @@ registerMenu('ground', (t, api) => {
     gm &&
       t.mode === 'notes' && {
         label: 'Put a note here',
-        run: () => api.createItem({ mode: 'notes', data: { x: t.at[0], y: t.at[1] } }),
+        run: () => api.draw.create({ mode: 'notes', data: { x: t.at[0], y: t.at[1] } }),
       },
     gm &&
       t.mode === 'lights' && {

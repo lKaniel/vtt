@@ -51,7 +51,7 @@ export class SoundScape {
   }
 
   private walls(): Wall[] {
-    const level = this.session.level;
+    const level = this.session.levels.current;
     return [...this.session.chunks.values()].flatMap((c) => c.walls.filter((w) => onLevel(w, level)));
   }
 
@@ -64,7 +64,7 @@ export class SoundScape {
       listener: this.listener(),
       gridSize: s.world?.gridSize ?? 100,
       darkness: s.world?.darkness ?? 0,
-      level: s.level,
+      level: s.levels.current,
       wallsBetween: () => walls,
     });
     const wanted = new Set(mix.map((c) => c.key));

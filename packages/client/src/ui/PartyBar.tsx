@@ -10,7 +10,7 @@ export function PartyBar({ session }: Readonly<{ session: Session }>) {
     you && isGm(you) ? isParty(t) : !!you && canObserve(t, you),
   );
   if (mine.length === 0) return null;
-  const turn = session.turnToken()?.id;
+  const turn = session.turns.current()?.id;
   return (
     <nav className="party">
       {mine.map((t) => {

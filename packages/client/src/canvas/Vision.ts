@@ -156,7 +156,7 @@ export class Vision {
   /** Every light, with your own tokens' lights where they're drawn mid-walk. */
   private lights(viewers: Viewer[]): LightSource[] {
     const yours = new Set(viewers.map((v) => v.token.id));
-    const level = this.session.level;
+    const level = this.session.levels.current;
     const darkness = this.session.world?.darkness ?? 0;
     const shines = (l: { level?: string; activeAt?: [number, number] }) =>
       onLevel(l, level) && activeAt(l.activeAt, darkness);

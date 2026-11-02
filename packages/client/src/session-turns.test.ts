@@ -26,13 +26,13 @@ describe('turns', () => {
       ],
     };
     ws.receive({ t: 'combat', combat });
-    expect(session.isMyTurn()).toBe(false);
-    expect(session.movementLeft('mage')).toBe(0);
+    expect(session.turns.mine()).toBe(false);
+    expect(session.turns.movementLeft('mage')).toBe(0);
     ws.receive({ t: 'combat', combat: { ...combat, group: ['mage'], side: { mage: { ...combat.left, move: 15 } } } });
-    expect(session.isMyTurn()).toBe(true);
-    expect(session.movementLeft('mage')).toBe(15);
+    expect(session.turns.mine()).toBe(true);
+    expect(session.turns.movementLeft('mage')).toBe(15);
     ws.receive({ t: 'combat', combat: { ...combat, group: ['mage'], done: ['mage'] } });
-    expect(session.isMyTurn()).toBe(false);
+    expect(session.turns.mine()).toBe(false);
   });
 
   it('starts a fight with shared party turns when asked', () => {
