@@ -1,4 +1,4 @@
-import type { Player, RollMode } from '@vtt/shared';
+import { type Chunk, chunkFor, isGm, type Player, type RollMode } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import type { WebSocket } from 'ws';
 import type { DocFeed } from './doc-feed.ts';
@@ -35,7 +35,15 @@ export function streamChunks(c: Client, chunks: string[], store: GameStore, send
   const next = new Set(chunks);
   for (const key of next) {
     if (c.chunks.has(key)) continue;
-    send({ t: 'chunk', key, chunk: store.chunks.get(key) ?? { tiles: [], walls: [], lights: [] } });
+    send(chunkMessage(c, key, store.chunks.get(key)));
   }
   c.chunks = next;
+}
+
+/**
+ * A map chunk as its message to one player: secret doors kept from all but the
+ * GM. A chunk with nothing in it is sent too, so the client knows the area is loaded.
+ */
+export function chunkMessage(to: { player: Player }, key: string, chunk: Chunk | undefined): ServerMessage {
+  return { t: 'chunk', key, chunk: chunkFor(chunk ?? { tiles: [], walls: [], lights: [] }, isGm(to.player)) };
 }

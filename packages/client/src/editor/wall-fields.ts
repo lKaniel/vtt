@@ -1,11 +1,11 @@
 import type { Doc, Patch } from '@vtt/core';
-import { WALL_PRESETS, type WallPreset } from '@vtt/shared';
-import { type Field, options, plain } from './field-kit.ts';
+import { DOOR_SOUNDS, WALL_PRESETS, type WallPreset } from '@vtt/shared';
+import { type Field, flag, options, plain } from './field-kit.ts';
 
 // The inspector's wall rules: what a wall stops (movement, sight, light,
 // sound) and, for proximity walls, from how close a sense gets through.
 
-const RULES = ['door', 'move', 'sight', 'light', 'sound', 'threshold'] as const;
+const RULES = ['door', 'secret', 'doorSound', 'move', 'sight', 'light', 'sound', 'threshold'] as const;
 const SENSES = [
   ['sight', 'Sight'],
   ['light', 'Light'],
@@ -40,10 +40,34 @@ function threshold(sense: string, label: string): Field {
   };
 }
 
+const isDoor = (d: Doc) => !!d.door;
+
+/** A door's secrecy and sound (wooden unless set). */
+export function doorFields(): Field[] {
+  return [
+    flag('secret', 'Secret (players see a wall)', { when: isDoor }),
+    {
+      ...plain('doorSound', 'Sound', 'select', { options: options(...DOOR_SOUNDS, 'none'), when: isDoor }),
+      get: (d) => (d.doorSound as string | undefined) ?? 'wood',
+      patch: (value) => ({ doorSound: value === 'wood' ? null : value }),
+    },
+  ];
+}
+
 export function wallRuleFields(): Field[] {
   return [
     rule('move', 'Movement', ['none', 'normal']),
     ...SENSES.map(([key, label]) => rule(key, label, ['none', 'normal', 'limited', 'proximity'])),
     ...SENSES.map(([key, label]) => threshold(key, label)),
+    {
+      ...plain('dir', 'One way', 'select', {
+        options: [
+          { value: '', label: 'both ways' },
+          { value: 'left', label: 'stops from the left' },
+          { value: 'right', label: 'stops from the right' },
+        ],
+      }),
+      get: (d) => (d.dir as string | undefined) ?? '',
+    },
   ];
 }

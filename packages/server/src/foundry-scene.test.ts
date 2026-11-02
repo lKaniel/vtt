@@ -26,6 +26,7 @@ const v11 = {
     { _id: 'w4', c: [1600, 1000, 1800, 1000], move: 0, sight: 0, sound: 20 },
     { _id: 'w5', c: [1800, 1000, 2000, 1000], move: 0, sight: 0, light: 0, sound: 0 },
     { _id: 'w6', c: [2000, 1000, 2200, 1000], move: 20, sight: 10, light: 30, sound: 0, threshold: { light: 10 } },
+    { _id: 'w7', c: [2200, 1000, 2400, 1000], dir: 2, door: 2, ds: 0, doorSound: 'ironBasic' },
   ],
   lights: [
     { _id: 'l1', x: 1100, y: 900, config: { bright: 20, dim: 40, color: '#ff9a40', animation: { type: 'torch' } } },
@@ -96,6 +97,15 @@ describe('a Foundry scene', () => {
         sound: 'none',
         threshold: { light: 10 },
       },
+      {
+        id: 'wall-6',
+        a: [2200, 1000],
+        b: [2400, 1000],
+        door: 'closed',
+        secret: true,
+        dir: 'right',
+        doorSound: 'iron',
+      },
     ]);
     expect(skipped).toContain('1 wall that stops nothing');
     expect(skipped).toContain('1 token (place the creatures from the Actors tab)');
@@ -123,7 +133,9 @@ describe('a Foundry scene', () => {
     const { scene } = foundryScene(v9, media);
     expect(scene).toMatchObject({ gridSize: 100, grid: 'none', darkness: 0 });
     expect(scene.tiles[0]).toMatchObject({ x: 300, y: 300 });
-    expect(scene.walls).toEqual([{ id: 'wall-1', a: [0, 0], b: [100, 0], door: 'open', sight: 'none', light: 'none' }]);
+    expect(scene.walls).toEqual([
+      { id: 'wall-1', a: [0, 0], b: [100, 0], door: 'open', secret: true, sight: 'none', light: 'none' },
+    ]);
     expect(scene.lights).toEqual([
       { id: 'light-1', x: 50, y: 50, bright: 5, dim: 10, color: '#ffffff', animation: 'pulse' },
     ]);

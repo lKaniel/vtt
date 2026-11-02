@@ -2,7 +2,7 @@ import type { Doc } from '@vtt/core';
 import { TileTextureSchema, WALL_PRESETS, type WallRules, wallPreset } from '@vtt/shared';
 import { type Field, type FieldValue, flag, MIXED, options, plain } from './field-kit.ts';
 import { ITEM_FIELDS } from './item-fields.ts';
-import { presetPatch, wallRuleFields } from './wall-fields.ts';
+import { doorFields, presetPatch, wallRuleFields } from './wall-fields.ts';
 
 export { type Field, type FieldValue, MIXED } from './field-kit.ts';
 
@@ -17,6 +17,7 @@ const WALL_FIELDS: Field[] = [
     patch: (value) => presetPatch(String(value)),
   },
   plain('door', 'Door', 'select', { options: options('closed', 'open', 'locked'), when: (d) => !!d.door }),
+  ...doorFields(),
   ...wallRuleFields(),
 ];
 

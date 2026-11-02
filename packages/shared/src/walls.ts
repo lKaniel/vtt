@@ -1,4 +1,4 @@
-import { distToSegment, segmentsIntersect } from './geometry.ts';
+import { distToSegment, passesOneWay, segmentsIntersect } from './geometry.ts';
 import type { Point, SenseRestriction, Wall, WallRules } from './schema.ts';
 
 // What each wall stops. A wall restricts movement, sight, light and sound
@@ -41,7 +41,7 @@ export function blockers(walls: readonly Wall[], from: Point, sense: WallSense):
   const out: Blocker[] = [];
   for (const wall of walls) {
     const r = restriction(wall, sense.kind);
-    if (r === 'none' || (r === 'proximity' && nearEnough(wall, from, sense))) continue;
+    if (r === 'none' || passesOneWay(wall, from) || (r === 'proximity' && nearEnough(wall, from, sense))) continue;
     out.push({ wall, limited: r === 'limited' });
   }
   return out;

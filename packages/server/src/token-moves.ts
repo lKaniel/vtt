@@ -87,7 +87,7 @@ export class TokenMoves {
   door(player: Player, msg: { chunk: string; wall: string; state: DoorState }): void {
     const chunk = this.store.chunks.get(msg.chunk);
     const wall = chunk?.walls.find((w) => w.id === msg.wall);
-    if (!chunk || !wall?.door) throw new Refusal('No such door');
+    if (!chunk || !wall?.door || (wall.secret && !isGm(player))) throw new Refusal('No such door');
     if (player.role === 'observer') throw new Refusal('Observers only watch');
     const touchesLock = wall.door === 'locked' || msg.state === 'locked';
     if (touchesLock && !isGm(player)) throw new Refusal('The door is locked');

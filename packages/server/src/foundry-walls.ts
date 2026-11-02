@@ -16,8 +16,12 @@ export const FoundryWall = z.object({
   sense: num,
   light: num,
   sound: num,
+  /** 0 both ways, 1 stops only from the left, 2 only from the right. */
+  dir: num,
+  /** 0 not a door, 1 a door, 2 a secret door. */
   door: num,
   ds: num,
+  doorSound: z.string().optional().catch(undefined),
   /** v11+: distances (grid units) within which a proximity wall lets a sense through. */
   threshold: z.object({ sight: num, light: num, sound: num }).nullable().optional().catch(undefined),
 });
@@ -53,11 +57,32 @@ function rulesOf(w: FoundryWallData, feet: (units: number) => number): WallRules
 
 const stopsNothing = (r: WallRules) => r.move === 'none' && SENSES.every((s) => r[s] === 'none');
 
+const DIRECTIONS = [undefined, 'left', 'right'] as const;
+
+/** Foundry's door sounds (woodBasic, stoneRocky, jail...) as the nearest of ours. */
+function doorSound(name: string | undefined): WallRules['doorSound'] {
+  if (!name) return undefined;
+  if (/^(wood|slidingWood)/.test(name)) return undefined;
+  if (/^stone|^magic/.test(name)) return 'stone';
+  return name === 'jail' ? 'gate' : 'iron';
+}
+
+/** Door state, secrecy and sound. */
+function doorOf(w: FoundryWallData): WallRules {
+  if (!w.door) return {};
+  const sound = doorSound(w.doorSound);
+  return {
+    door: DOOR_STATES[w.ds ?? 0] ?? 'closed',
+    ...(w.door === 2 && { secret: true }),
+    ...(sound && { doorSound: sound }),
+  };
+}
+
 /** One wall without its id, or undefined if it stops nothing. */
 export function wallOf(w: FoundryWallData, feet: (units: number) => number): Omit<Wall, 'id'> | undefined {
   const rules = rulesOf(w, feet);
   if (stopsNothing(rules)) return undefined;
   const [ax, ay, bx, by] = w.c;
-  const door = w.door ? { door: DOOR_STATES[w.ds ?? 0] ?? 'closed' } : {};
-  return { a: [ax, ay], b: [bx, by], ...door, ...rules };
+  const dir = DIRECTIONS[w.dir ?? 0];
+  return { a: [ax, ay], b: [bx, by], ...doorOf(w), ...rules, ...(dir && { dir }) };
 }
