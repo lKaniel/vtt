@@ -48,7 +48,7 @@ export class FeatureActions {
     });
   }
 
-  /** Uses up one of an item: a potion is drunk. */
+  /** Uses up one of an item: a potion is drunk, a torch lit. */
   useItem(player: Player, id: string, itemId: string): void {
     const { token, sheet } = this.table.actor(player, id);
     const item = this.table.content(token).items.get(itemId);
@@ -59,6 +59,7 @@ export class FeatureActions {
     const out = useItem(token, sheet, itemId, this.table.rng);
     this.table.pay(token, cost);
     this.store.setToken(out.token);
+    if (out.lit) return this.table.note(`${token.name} lights a ${out.lit}`);
     const detail = out.healed !== undefined ? ` and regains ${out.healed} HP` : '';
     this.table.note(`${token.name} uses ${item!.name}${detail}`);
   }

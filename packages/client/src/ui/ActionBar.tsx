@@ -139,7 +139,7 @@ function Who({ session, token }: Readonly<{ session: Session; token: TokenView }
         <div className="ab-name">{token.name}</div>
       )}
       <HpBar token={token} />
-      <EffectBadges token={token} />
+      <EffectBadges token={token} at={{ now: session.gameTime(), fighting: !!session.combat }} />
     </div>
   );
 }

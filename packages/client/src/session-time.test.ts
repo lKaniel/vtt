@@ -3,7 +3,7 @@ import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Session } from './session.ts';
 import { closeSession, fight, openSession, welcome, type FakeWebSocket } from './session.fixtures.ts';
-import { effectLeft, parseMonths, quickSkips, shortDate, turnMode } from './session-time.ts';
+import { effectBadge, effectLeft, parseMonths, quickSkips, shortDate, turnMode } from './session-time.ts';
 
 let session: Session;
 let ws: FakeWebSocket;
@@ -67,6 +67,17 @@ describe('how long an effect has left', () => {
     expect(effectLeft(e, { now: 40, fighting: true })).toBe('10 rd');
     expect(effectLeft(e, { now: 40, fighting: false })).toBe('1 min left');
     expect(effectLeft({}, { now: 0, fighting: false })).toBeUndefined();
+  });
+
+  it('puts rounds on a badge in a fight and the time left, short, out of one', () => {
+    const e = { id: 'e', name: 'Mage Armor', rounds: 4800, endsAt: 8 * 3600 };
+    expect(effectBadge(e, { now: 0, fighting: true })).toBe('4800');
+    expect(effectBadge(e, { now: 0, fighting: false })).toBe('8h');
+    expect(effectBadge(e, { now: 8 * 3600 - 300, fighting: false })).toBe('5m');
+    expect(effectBadge({ endsAt: 3 * 86400 }, { now: 0, fighting: false })).toBe('3d');
+    expect(effectBadge({ endsAt: 20 }, { now: 0, fighting: false })).toBe('20s');
+    expect(effectBadge({ rounds: 3 }, { now: 0, fighting: false })).toBe('3');
+    expect(effectBadge({}, { now: 0, fighting: false })).toBeUndefined();
   });
 
   it('offers the skips a GM wants most', () => {

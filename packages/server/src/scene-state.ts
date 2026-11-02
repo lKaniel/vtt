@@ -25,7 +25,7 @@ import {
   type World,
   worldOf,
 } from '@vtt/shared';
-import { type Actor, resolveToken, type Token, type TokenEntry } from '@vtt/system-dnd5e';
+import { type Actor, lightOf, resolveToken, type Token, type TokenEntry } from '@vtt/system-dnd5e';
 import { fromDoc } from './doc-sync.ts';
 import { drawnTiles, reordersTiles } from './scene-map.ts';
 import { MAP } from './store-colls.ts';
@@ -121,14 +121,14 @@ export class SceneState {
     });
   }
 
-  /** Every light shining on the scene: placed ones in their darkness band, and those tokens carry (on the token's level). */
+  /** Every light shining on the scene: placed ones in their darkness band, and those tokens carry or their effects give (on the token's level). */
   lights(): LightSource[] {
     const { darkness, levels } = this.world;
     const out: LightSource[] = [];
     for (const c of this.chunks.values()) out.push(...c.lights.filter((l) => activeAt(l.activeAt, darkness)));
     for (const t of this.tokens.values()) {
       const level = levels?.length ? tokenLevel(levels, t) : undefined;
-      out.push(...tokenLights([t]).map((l) => ({ ...l, ...(level && { level }) })));
+      out.push(...tokenLights([{ ...t, light: lightOf(t) }]).map((l) => ({ ...l, ...(level && { level }) })));
     }
     return out;
   }

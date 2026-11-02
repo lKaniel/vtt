@@ -1,3 +1,4 @@
+import { LightSchema } from '@vtt/shared';
 import { z } from 'zod';
 import { ABILITIES, DamageSchema, DamageTypeSchema } from './stats-schema.ts';
 import { EffectChangeSchema } from './effect-changes.ts';
@@ -160,6 +161,8 @@ export const EffectTemplateSchema = z.object({
   /** Shown on the token; defaults to the spell or feature name. */
   name: z.string().optional(),
   ...modifiers,
+  /** The bearer sheds this light while it lasts (the Light spell). */
+  light: LightSchema.optional(),
   /** It gives off an aura (auras.ts): it lands on the creatures around instead of only on its bearer. */
   aura: AuraSchema.optional(),
   /** How long it lasts in rounds; missing means until removed or the spell ends. */
