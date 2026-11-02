@@ -3,6 +3,8 @@ import { Container } from 'pixi.js';
 import { elementColor, IMPACT, type Cue, type Where } from '../feedback.ts';
 import { burst, channel, floatingText, missile, rise, slash, spray, type Fx } from './fx.ts';
 import type { TokenLayer } from './TokenLayer.ts';
+import { videoFx } from './video-fx.ts';
+import { assetUrl } from '../assets.ts';
 
 interface Playing {
   fx: Fx;
@@ -73,6 +75,8 @@ export class EffectsLayer {
         return this.impact(cue, now);
       case 'number':
         return this.number(cue, now);
+      case 'video':
+        return this.between(cue.from, cue.to, (a, b) => videoFx(assetUrl(cue.src), a, b, cue.ranged));
       default:
         return this.drawn(cue);
     }
@@ -93,13 +97,18 @@ export class EffectsLayer {
     return floatingText([place.at[0], place.at[1] - place.r], cue.text, cue.tone, scale);
   }
 
-  private drawn(cue: Exclude<Cue, { kind: 'lunge' | 'impact' | 'number' }>): Fx | undefined {
+  private drawn(cue: Exclude<Cue, { kind: 'lunge' | 'impact' | 'number' | 'video' }>): Fx | undefined {
     const color = elementColor(cue.element);
     switch (cue.kind) {
       case 'slash':
         return this.between(cue.from, cue.to, (a, b) => slash(a.at, b.at, b.r, color));
       case 'missile': {
-        const style = { color, style: cue.style, duration: cue.duration, jagged: cue.element === 'lightning' };
+        const style = {
+          color,
+          style: cue.style,
+          duration: cue.duration,
+          jagged: cue.jagged ?? cue.element === 'lightning',
+        };
         return this.between(cue.from, cue.to, (a, b) => missile(a.at, b.at, style));
       }
       case 'spray':

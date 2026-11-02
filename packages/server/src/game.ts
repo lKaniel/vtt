@@ -380,7 +380,8 @@ export class Game {
       case 'relinkToken':
         return this.gm.relink(c.player, msg.token, msg.how);
       case 'hotbar':
-        return this.moves.hotbar(c.player, (id) => c.visible.has(id), msg.token, msg.slots);
+      case 'animation':
+        return this.moves.arrange(c.player, (id) => c.visible.has(id), msg);
       case 'spawn':
         return this.gm.spawn(c.player, msg.from, msg.at, msg.hidden);
       case 'saveActor':

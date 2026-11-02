@@ -1,7 +1,9 @@
+import type { MediaEntry } from '@vtt/core';
 import type { AttackLog, ChatMessage, SpellLog, SpellTargetLog } from '@vtt/system-dnd5e';
 import type { Roll } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
 import { cuesOf, elementColor, IMPACT, type Cue } from './feedback.ts';
+import { videoChoices } from './animations.ts';
 
 const roll = (total: number): Roll => ({ formula: '1d20', terms: [], total });
 
@@ -183,3 +185,67 @@ describe('other messages', () => {
 function save(success: boolean) {
   return { ability: 'dex' as const, dc: 15, total: success ? 18 : 5, success };
 }
+
+describe('animations chosen per attack or spell', () => {
+  it('sends a melee attack as a burning arrow when the attacker picked one', () => {
+    const cues = cuesOf(message({ attack: attack({ animation: 'fire-arrow' }) }));
+    expect(kinds(cues)).toEqual(['missile', 'impact', 'number']);
+    expect(only(cues, 'missile')[0]).toMatchObject({ style: 'arrow', element: 'fire' });
+    expect(only(cues, 'impact')[0]).toMatchObject({ element: 'fire' });
+  });
+
+  it('turns a fire bolt into a frost orb, and lightning into a jagged bolt', () => {
+    const frost = cuesOf(message({ spell: spell({ animation: 'frost-orb' }) }));
+    expect(only(frost, 'missile')[0]).toMatchObject({ style: 'orb', element: 'cold' });
+    expect(only(frost, 'channel')[0]).toMatchObject({ element: 'cold' });
+    const bolt = cuesOf(message({ spell: spell({ animation: 'lightning' }) }));
+    expect(only(bolt, 'missile')[0]).toMatchObject({ element: 'lightning', jagged: true });
+  });
+
+  it('lets light fall on the target instead of flying at it', () => {
+    const cues = cuesOf(message({ spell: spell({ animation: 'holy-light' }) }));
+    expect(kinds(cues)).not.toContain('missile');
+    expect(only(cues, 'glow')[0]).toMatchObject({ token: 'goblin', element: 'radiant' });
+  });
+
+  it('plays the default for an animation it does not know', () => {
+    expect(cuesOf(message({ attack: attack({ animation: 'nope' }) }))).toEqual(cuesOf(message({ attack: attack() })));
+  });
+
+  it('plays only the landing when animations are reduced, and only numbers when off', () => {
+    const reduced = cuesOf(message({ attack: attack() }), 'reduced');
+    expect(kinds(reduced)).toEqual(['impact', 'number']);
+    expect(reduced[0]!.at).toBe(0);
+    expect(kinds(cuesOf(message({ spell: spell() }), 'off'))).toEqual(['number']);
+  });
+});
+
+describe('animations from a video pack (JB2A)', () => {
+  const ranged = 'pack://jb2a/media/Library/Cantrip/Fire_Bolt/FireBolt_01_Regular_Orange_30ft_1600x400.webm';
+  const onTarget = 'pack://jb2a/media/Library/Generic/Impact/Impact_01_Regular_Blue_400x400.webm';
+
+  it('stretches a ranged video from the caster to each target', () => {
+    const cues = cuesOf(message({ spell: spell({ animation: ranged }) }));
+    expect(only(cues, 'video')[0]).toMatchObject({ src: ranged, from: 'wiz', to: 'goblin', ranged: true });
+    expect(kinds(cues)).not.toContain('missile');
+    expect(kinds(cues)).toContain('number');
+  });
+
+  it('plays any other video on the target', () => {
+    const cues = cuesOf(message({ attack: attack({ animation: onTarget }) }));
+    expect(only(cues, 'video')[0]).toMatchObject({ src: onTarget, to: 'goblin', ranged: false });
+    expect(kinds(cues)).not.toContain('lunge');
+  });
+});
+
+describe('finding a video for an animation', () => {
+  it('matches every word of the search in the path, videos only', () => {
+    const media = [
+      { src: 'pack://jb2a/media/Fire_Bolt/FireBolt_01_30ft.webm', name: 'FireBolt_01_30ft', kind: 'video', tags: [] },
+      { src: 'pack://jb2a/media/Impact/Impact_Fire.webm', name: 'Impact_Fire', kind: 'video', tags: [] },
+      { src: 'pack://art/media/fire.png', name: 'fire', kind: 'image', tags: [] },
+    ] as MediaEntry[];
+    expect(videoChoices([...media], 'fire bolt').map((m) => m.name)).toEqual(['FireBolt_01_30ft']);
+    expect(videoChoices([...media], 'fire')).toHaveLength(2);
+  });
+});

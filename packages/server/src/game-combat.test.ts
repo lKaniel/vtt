@@ -119,6 +119,14 @@ describe('turns', () => {
 });
 
 describe('attacking', () => {
+  it('tells the map which animation the attacker chose for the attack', () => {
+    const { ana } = fight();
+    ana.receive({ t: 'animation', token: 'hero', ref: 'attack:Longsword', animation: 'flame-blade' });
+    dice = [d20(11), 0];
+    ana.receive({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Longsword' });
+    expect(ana.take('chat')[0]!.message.attack).toMatchObject({ animation: 'flame-blade' });
+  });
+
   it('rolls to hit, deals damage, logs it in chat and spends the action', () => {
     const { ana } = fight();
     // d20 of 11 + 5 hits AC 15; 1d8 rolls 1, +3.

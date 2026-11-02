@@ -1,3 +1,4 @@
+import { AnimationChoiceSchema } from './animations.ts';
 import { IdSchema as id, OwnershipSchema } from '@vtt/core';
 import { LightSchema } from '@vtt/shared';
 import { EffectSchema, FeatureSchema, SpellSchema } from './spell-schema.ts';
@@ -96,6 +97,8 @@ export const TokenSchema = z.object({
   leader: id.optional(),
   /** How its controller arranged the action bar: one tile reference per slot ("spell:fire-bolt"), or null. */
   hotbar: z.array(z.string().max(80).nullable()).max(60).optional(),
+  /** The animation its controller picked per attack or spell ("spell:fire-bolt" → "frost-orb", see animations.ts). */
+  animations: z.record(z.string().max(90), AnimationChoiceSchema).optional(),
   /** The actor this token stands for (see token-link.ts); missing on a token that carries its own sheet. */
   actor: id.optional(),
   /** Linked tokens share their actor's hit points and effects; unlinked ones are copies with their own. */

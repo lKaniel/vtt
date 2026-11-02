@@ -9,7 +9,7 @@ import {
   type Point,
   walkPath,
 } from '@vtt/shared';
-import { inTheWay, type Token } from '@vtt/system-dnd5e';
+import { AnimationChoiceSchema, type ClientMessage, inTheWay, type Token } from '@vtt/system-dnd5e';
 import type { CombatActions } from './combat-actions.ts';
 import type { GameStore } from './game-store.ts';
 import type { Reactions } from './reactions.ts';
@@ -79,9 +79,14 @@ export class TokenMoves {
     );
   }
 
-  hotbar(player: Player, seen: (id: string) => boolean, id: string, slots: (string | null)[]): void {
-    const token = this.controlled(player, seen, id);
-    this.store.setToken({ ...token, hotbar: slots });
+  /** A controller arranges their creature: its action bar, or the animation of one attack or spell. */
+  arrange(player: Player, seen: (id: string) => boolean, msg: Arrange): void {
+    const token = this.controlled(player, seen, msg.token);
+    if (msg.t === 'hotbar') return this.store.setToken({ ...token, hotbar: msg.slots });
+    if (msg.animation && !AnimationChoiceSchema.safeParse(msg.animation).success) {
+      throw new Refusal(`No animation "${msg.animation}"`);
+    }
+    this.store.setToken({ ...token, animations: withAnimation(token.animations, msg.ref, msg.animation) });
   }
 
   door(player: Player, msg: { chunk: string; wall: string; state: DoorState }): void {
@@ -101,4 +106,13 @@ export class TokenMoves {
     if (!canControl(token, player)) throw new Refusal(`You don't control ${token.name}`);
     return token;
   }
+}
+
+type Arrange = Extract<ClientMessage, { t: 'hotbar' | 'animation' }>;
+
+/** The choices with `ref` set to `animation`, or dropped (back to the default); none left is undefined. */
+function withAnimation(choices: Token['animations'], ref: string, animation: string | undefined): Token['animations'] {
+  const { [ref]: _old, ...rest } = choices ?? {};
+  const next = animation ? { ...rest, [ref]: animation } : rest;
+  return Object.keys(next).length ? next : undefined;
 }

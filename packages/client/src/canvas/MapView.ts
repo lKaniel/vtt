@@ -13,6 +13,7 @@ import { modsOf } from '../editor/selection.ts';
 import type { Session } from '../session.ts';
 import type { EditorTool } from '../session-editor.ts';
 import { cuesOf } from '../feedback.ts';
+import { currentMotion } from '../animations.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
 import { CameraMotion } from './camera-motion.ts';
 import { EffectsLayer } from './EffectsLayer.ts';
@@ -234,7 +235,7 @@ export class MapView {
         this.updatePreview(true);
       }),
       s.on('chat', (message) => {
-        this.effects.play(cuesOf(message), performance.now());
+        this.effects.play(cuesOf(message, currentMotion()), performance.now());
       }),
       s.on('rulers', () => {
         this.rulers.redraw();
