@@ -28,7 +28,7 @@ const BORROWED: Record<string, [Kind, string]> = {
 };
 
 /** A class feature's painting; Dash, Dodge and Disengage (and cunning-dash and the like) use the action icons. */
-export function featureArt(feature: FeatureSheet): string | undefined {
+export function featureArt(feature: Pick<FeatureSheet, 'id'>): string | undefined {
   const own = art('features', feature.id) ?? art('actions', feature.id);
   if (own) return own;
   const borrowed = BORROWED[feature.id];

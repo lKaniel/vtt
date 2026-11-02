@@ -60,7 +60,13 @@ function SelectContent({
   );
 }
 
-function SelectItem({ className, children, ...props }: Readonly<React.ComponentProps<typeof SelectPrimitive.Item>>) {
+/** One choice; `hint` (a count, a shortcut) shows beside it in the list but not in the trigger. */
+function SelectItem({
+  className,
+  children,
+  hint,
+  ...props
+}: Readonly<React.ComponentProps<typeof SelectPrimitive.Item> & { hint?: React.ReactNode }>) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -76,6 +82,7 @@ function SelectItem({ className, children, ...props }: Readonly<React.ComponentP
         </SelectPrimitive.ItemIndicator>
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+      {hint !== undefined && <span className="ml-auto pl-3 text-xs text-muted-foreground">{hint}</span>}
     </SelectPrimitive.Item>
   );
 }
@@ -87,7 +94,7 @@ interface SelectFieldProps {
   value: string;
   onValueChange: (value: string) => void;
   /** The choices; a value may be '' (none). */
-  options: readonly { value: string; label: React.ReactNode; disabled?: boolean }[];
+  options: readonly { value: string; label: React.ReactNode; hint?: React.ReactNode; disabled?: boolean }[];
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -115,7 +122,7 @@ function SelectField({
       </SelectTrigger>
       <SelectContent>
         {options.map((o) => (
-          <SelectItem key={o.value} value={wire(o.value)} disabled={o.disabled}>
+          <SelectItem key={o.value} value={wire(o.value)} disabled={o.disabled} hint={o.hint}>
             {o.label}
           </SelectItem>
         ))}
