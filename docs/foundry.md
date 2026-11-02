@@ -24,11 +24,11 @@ It becomes a new lobby game (`data/games/<id>/`, named after the world) with
 you as its GM; the box then lists what was left out. From a terminal:
 
 ```
-pnpm import-foundry-world <world folder> [--name <game name>] [--data <Foundry Data folder>] [--gm <account>]
+pnpm import-foundry-world <world folder> [--name <game name>] [--data <Foundry Data folder>]
 ```
 
-(the GM is the server's admin unless `--gm` names an account; a running
-server lists the game after a restart).
+(its GM is a `Gamemaster` player without a password; a running server lists
+the game after a restart).
 
 What comes along:
 
@@ -90,8 +90,7 @@ The import lists it all; mainly:
 - Spells the SRD doesn't have, active effects and Foundry's automation.
 - Items in the Items sidebar (drag items from the Compendium instead),
   macros, card stacks, chat, combats and the explored fog.
-- Foundry users and their passwords: invite your players with the game's
-  invite link.
+- Foundry users and their passwords: add your players on the game's page.
 - Data that Foundry modules keep in `flags` (Levels, Monk's, Tagger...).
 - Sheets of other Foundry systems: their actors keep only their name and
   picture, everything else still comes along.

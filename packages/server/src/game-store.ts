@@ -265,9 +265,10 @@ export class GameStore extends EventEmitter<StoreEvents> {
   }
 
   /**
-   * Seats a new player (an account joining). Connected clients are left
+   * Seats a new player (the GM adding one). Connected clients are left
    * alone: unlike a hand edit of game.json, this doesn't restart the table.
    */
+  // fallow-ignore-next-line unused-class-member -- lobby-api.ts calls it through GameHub's Running.store
   addPlayer(player: Player): void {
     if (this.world.players.some((p) => p.id === player.id)) return;
     this.commit(this.worldOps({ ...this.world, players: [...this.world.players, player] }), { quiet: true });

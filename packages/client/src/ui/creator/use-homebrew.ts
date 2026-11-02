@@ -1,20 +1,20 @@
 import type { Class } from '@vtt/system-dnd5e';
 import { useEffect, useState } from 'react';
-import { api } from '../../account-api.ts';
+import { api } from '../../server-api.ts';
 
-/** The GMs' homebrew classes this account may build with (none until they arrive, or if asking fails). */
-export function useHomebrewClasses(): readonly Class[] {
+/** The GM's homebrew classes you may build with at `game` (none until they arrive, or if asking fails). */
+export function useHomebrewClasses(game: string): readonly Class[] {
   const [classes, setClasses] = useState<readonly Class[]>([]);
   useEffect(() => {
     let live = true;
-    api.homebrew().then(
+    api.homebrew(game).then(
       (list) => live && setClasses(list),
       () => undefined,
     );
     return () => {
       live = false;
     };
-  }, []);
+  }, [game]);
   return classes;
 }
 

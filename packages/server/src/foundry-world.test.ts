@@ -259,7 +259,7 @@ describe('importFoundryWorld', () => {
       expect.arrayContaining([
         'scene "The Keep": token "Statue" stands for an actor that is not in the world, so it carries only its name and picture',
         '1 item in the Items sidebar (Longsword): drag items from the Compendium instead',
-        "Foundry users (Sam): invite your players with the game's invite link; their characters are actors to give them",
+        "Foundry users (Sam): add your players on the game's page; their characters are actors to give them",
       ]),
     );
   });

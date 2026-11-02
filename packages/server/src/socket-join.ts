@@ -1,29 +1,22 @@
 import type { IncomingMessage } from 'node:http';
 import type { Player } from '@vtt/shared';
-import type { AccountStore } from './accounts.ts';
 import type { GameHub } from './game-hub.ts';
 import { sessionToken } from './http-json.ts';
-
-/** Close code for a fixed seat whose password was wrong or missing. */
-const WRONG_SEAT_KEY = 4003;
+import type { SessionStore } from './sessions.ts';
 
 /**
  * Who a WebSocket upgrade is for, and at which game: `?game=` (the home game
- * by default), as the signed-in account. `?player=` sits at one of the home
- * game's fixed seats without an account, the old way in, with `&key=` when
- * the GM put a password on it; other games need the account's own seat.
- * Loads the game if it isn't yet.
+ * by default), as the player this browser joined it as on its join screen
+ * (sessions.ts). Loads the game if it isn't yet.
  */
 export async function socketSeat(
   req: IncomingMessage,
-  { accounts, hub }: { accounts: Pick<AccountStore, 'sessionAccount'>; hub: GameHub },
-): Promise<{ game: string; player: Player } | { refuse: number } | undefined> {
+  { sessions, hub }: { sessions: Pick<SessionStore, 'seatIn'>; hub: GameHub },
+): Promise<{ game: string; player: Player } | undefined> {
   const params = new URL(req.url ?? '/', 'http://localhost').searchParams;
   const game = params.get('game') ?? hub.homeId;
   if (!game || !hub.has(game)) return undefined;
-  const fixed = game === hub.homeId ? params.get('player') : null;
-  if (fixed && !(await hub.access.opens(game, fixed, params.get('key')))) return { refuse: WRONG_SEAT_KEY };
-  const id = fixed ?? accounts.sessionAccount(sessionToken(req))?.id;
+  const id = sessions.seatIn(sessionToken(req), game);
   if (!id) return undefined;
   const player = (await hub.open(game)).game.findPlayer(id);
   return player && { game, player };

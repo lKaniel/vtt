@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { api } from './account-api.ts';
+import { api } from './server-api.ts';
 import { mcpCommand } from './claude-bridge.ts';
 
 afterEach(() => {
@@ -13,18 +13,18 @@ describe('connecting Claude', () => {
     );
   });
 
-  it('asks the server for, makes and removes the account’s key', async () => {
+  it("asks the server for, makes and removes a player's key at a game", async () => {
     const fetch = vi.fn((_path: string, init: RequestInit) =>
       Promise.resolve(new Response(JSON.stringify(init.method === 'POST' ? { key: 'k' } : { has: true }))),
     );
     vi.stubGlobal('fetch', fetch);
-    expect(await api.hasMcpKey()).toBe(true);
-    expect(await api.newMcpKey()).toBe('k');
-    await api.dropMcpKey();
+    expect(await api.hasMcpKey('test')).toBe(true);
+    expect(await api.newMcpKey('test')).toBe('k');
+    await api.dropMcpKey('test');
     expect(fetch.mock.calls.map(([path, init]) => `${init.method} ${path}`)).toEqual([
-      'GET /api/mcp-key',
-      'POST /api/mcp-key',
-      'DELETE /api/mcp-key',
+      'GET /api/games/test/mcp-key',
+      'POST /api/games/test/mcp-key',
+      'DELETE /api/games/test/mcp-key',
     ]);
   });
 });

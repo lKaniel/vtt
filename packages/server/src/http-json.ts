@@ -1,10 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { z } from 'zod';
-import type { Account, AccountStore } from './accounts.ts';
+import { SESSION_MAX_AGE, type SessionStore } from './sessions.ts';
 
-// JSON over HTTP for the account and lobby routes (api.ts, lobby-api.ts).
+// JSON over HTTP for the session and lobby routes (api.ts, lobby-api.ts).
 
-export const SESSION_COOKIE = 'vtt_session';
+const SESSION_COOKIE = 'vtt_session';
 const MAX_BODY = 256 * 1024;
 
 export interface Call {
@@ -74,9 +74,14 @@ export async function parseBody<T>(req: IncomingMessage, schema: z.ZodType<T>): 
   return parsed.data;
 }
 
-/** The signed-in account, or a 401. */
-export function signedIn(accounts: Pick<AccountStore, 'sessionAccount'>, call: Call): Account {
-  const account = accounts.sessionAccount(call.token);
-  if (!account) throw new HttpError(401, 'Sign in first.');
-  return account;
+export const sessionCookie = (token: string, maxAge: number) =>
+  `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+
+/** The browser's session token, made (and its cookie set on the answer) if it has none yet. */
+export async function ensureSession(sessions: SessionStore, call: Call): Promise<string> {
+  if (call.token && sessions.get(call.token)) return call.token;
+  const token = await sessions.start();
+  call.res.setHeader('set-cookie', sessionCookie(token, SESSION_MAX_AGE));
+  call.token = token;
+  return token;
 }

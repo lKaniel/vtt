@@ -1,27 +1,27 @@
 import { useEffect, useState } from 'react';
-import { api } from '../account-api.ts';
+import { api } from '../server-api.ts';
 import { mcpCommand } from '../claude-bridge.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 
 /**
- * Lets Claude (Claude Code or Desktop) sit at your seats: makes a key and
- * shows the command that adds this server. The key is shown once; a new one
- * replaces it.
+ * Lets Claude (Claude Code or Desktop) play as your player at a game: makes
+ * a key and shows the command that adds this server. The key is shown once;
+ * a new one replaces it.
  */
-export function ClaudeKey() {
+export function ClaudeKey({ game }: Readonly<{ game: string }>) {
   const [has, setHas] = useState<boolean>();
   const [key, setKey] = useState<string>();
   useEffect(() => {
-    api.hasMcpKey().then(setHas, () => setHas(false));
-  }, []);
+    api.hasMcpKey(game).then(setHas, () => setHas(false));
+  }, [game]);
   const make = async () => {
-    setKey(await api.newMcpKey());
+    setKey(await api.newMcpKey(game));
     setHas(true);
   };
   const drop = async () => {
-    await api.dropMcpKey();
+    await api.dropMcpKey(game);
     setKey(undefined);
     setHas(false);
   };
@@ -31,7 +31,7 @@ export function ClaudeKey() {
         <Button variant="outline">Connect Claude</Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="flex w-[420px] flex-col gap-2" data-slot="claude-key">
-        <p>Claude can look at your games and act at your seats, with your rights, over MCP.</p>
+        <p>Claude can look at this game and act as your player, with its rights, over MCP.</p>
         {key ? (
           <>
             <p className="muted">Paste this in a terminal. The key is shown only now.</p>

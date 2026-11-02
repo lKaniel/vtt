@@ -101,11 +101,8 @@ export class Session extends HudSession {
   /** Hooks, the scripting API (`vtt`), script macros and plugins: docs/scripting.md. */
   readonly scripts: ScriptHost = new ScriptHost(this);
 
-  /** `gameId` is the game to join (else the home game); `playerId` a home game seat, else the account's. */
-  constructor(
-    readonly playerId?: string,
-    readonly gameId?: string,
-  ) {
+  /** `gameId` is the game to join (else the home game), as the player this browser joined it as. */
+  constructor(readonly gameId?: string) {
     super();
   }
 
@@ -132,7 +129,7 @@ export class Session extends HudSession {
   }
 
   connect(): void {
-    const ws = openSocket(location, this.gameId, this.playerId);
+    const ws = openSocket(location, this.gameId);
     this.ws = ws;
     this.status = 'connecting';
     this.changed();

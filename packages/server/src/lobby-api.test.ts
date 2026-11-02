@@ -2,7 +2,12 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { socketSeat } from './socket-join.ts';
 import { startApi, type ApiServer } from './test/api-server.ts';
+
+// Games Foundry style: everyone sees the games and their players, joins one
+// by picking a player (with its password, if it has one), and the admin
+// password opens Setup (making, importing, deleting games).
 
 let api: ApiServer;
 
@@ -16,28 +21,11 @@ afterEach(async () => {
 
 type Json = Record<string, unknown>;
 
-async function signUp(username: string) {
-  const call = api.client();
-  await call('POST', '/api/register', { username, password: 'hunter22', name: username.toUpperCase() });
-  return call;
-}
+const ws = (url: string, cookie = '') => ({ url, headers: { cookie } }) as never;
 
-const sorcerer = {
-  name: 'Vex',
-  rules: '2014',
-  species: 'tiefling',
-  class: 'sorcerer',
-  subclass: 'draconic-bloodline',
-  background: 'acolyte',
-  base: { str: 8, dex: 14, con: 14, int: 10, wis: 10, cha: 15 },
-  skills: ['arcana', 'deception'],
-  spells: ['fire-bolt', 'light', 'mage-hand', 'prestidigitation', 'magic-missile', 'shield'],
-};
-
-describe('the lobby', () => {
-  it('lists the games an account may enter, with the systems a new one can use', async () => {
-    const admin = await signUp('kaniel');
-    const res = await admin('GET', '/api/games');
+describe('the games list', () => {
+  it('shows every game to everyone, with the systems a new one can use', async () => {
+    const res = await api.client()('GET', '/api/games');
     expect(res.json.systems).toMatchObject([
       { id: 'dnd5e', name: 'Dungeons & Dragons 5e', editions: [{ id: '2014' }, { id: '2024' }] },
     ]);
@@ -49,107 +37,154 @@ describe('the lobby', () => {
         rules: '2014',
         you: null,
         members: 3,
-        open: true,
         home: true,
       },
     ]);
-    expect((await api.client()('GET', '/api/games')).status).toBe(401);
+    const ana = await api.joined('test', 'ana');
+    expect(((await ana('GET', '/api/games')).json.games as Json[])[0]).toMatchObject({ you: 'player' });
   });
 
-  it('creates a game with its creator as GM, private until they invite someone', async () => {
-    const kaniel = await signUp('kaniel');
-    const ana = await signUp('ana');
-    const made = await ana('POST', '/api/games', { name: 'Lost Mine', system: 'dnd5e', rules: '2024' });
+  it("shows a game's players to anyone, for its join screen", async () => {
+    const res = await api.client()('GET', '/api/games/test');
+    expect(res.json.game).toMatchObject({
+      manage: false,
+      players: [
+        { id: 'gm', role: 'gm', online: false },
+        { id: 'ana', role: 'player' },
+        { id: 'bo', role: 'player' },
+      ],
+    });
+    expect((res.json.game as Json).me).toBeUndefined();
+    expect((await api.client()('GET', '/api/games/nope')).status).toBe(404);
+  });
+});
+
+describe('joining a game', () => {
+  it('picks a player, and the game connection is that player', async () => {
+    const call = api.client();
+    const joined = await call('POST', '/api/games/test/join', { player: 'ana' });
+    expect(joined).toMatchObject({ status: 200, json: { player: { id: 'ana', role: 'player' } } });
+    expect((await call('GET', '/api/games/test')).json.game).toMatchObject({ me: 'ana', you: 'player' });
+    const cookie = `vtt_session=${[...(await sessionsOf())][0]}`;
+    expect(await socketSeat(ws('/ws?game=test', cookie), api)).toMatchObject({ game: 'test', player: { id: 'ana' } });
+    expect(await socketSeat(ws('/ws?game=test'), api)).toBeUndefined();
+    await call('POST', '/api/games/test/leave');
+    expect((await call('GET', '/api/games/test')).json.game).toMatchObject({ you: null });
+  });
+
+  it("asks for the player's password when it has one", async () => {
+    const gm = await api.joined('test', 'gm');
+    await gm('PUT', '/api/games/test/players/ana/password', { password: 'secret' });
+    const call = api.client();
+    expect((await call('POST', '/api/games/test/join', { player: 'ana' })).json.error).toMatch(/has a password/);
+    expect((await call('POST', '/api/games/test/join', { player: 'ana', password: 'nope' })).status).toBe(403);
+    expect((await call('POST', '/api/games/test/join', { player: 'ana', password: 'secret' })).status).toBe(200);
+    const players = ((await call('GET', '/api/games/test')).json.game as { players: Json[] }).players;
+    expect(players.find((p) => p.id === 'ana')).toMatchObject({ locked: true });
+    expect((await call('POST', '/api/games/test/join', { player: 'zed' })).status).toBe(404);
+  });
+
+  it('lets a player change their own password, but no one else’s', async () => {
+    const ana = await api.joined('test', 'ana');
+    expect((await ana('PUT', '/api/games/test/players/ana/password', { password: 'mine' })).status).toBe(200);
+    expect((await ana('PUT', '/api/games/test/players/bo/password', { password: 'x' })).status).toBe(403);
+    expect(api.hub.access.locked('test')).toEqual(['ana']);
+  });
+});
+
+describe('players', () => {
+  it('are added by the GM, with a role and a password', async () => {
+    const gm = await api.joined('test', 'gm');
+    const made = await gm('POST', '/api/games/test/players', { name: 'Cy Rus', role: 'trusted', password: 'pw' });
+    expect(made).toMatchObject({ status: 200, json: { player: { id: 'cy-rus', name: 'Cy Rus', role: 'trusted' } } });
+    expect((await gm('POST', '/api/games/test/players', { name: 'cy rus' })).json.error).toMatch(/of that name/);
+    expect((await api.client()('POST', '/api/games/test/join', { player: 'cy-rus', password: 'pw' })).status).toBe(200);
+    const ana = await api.joined('test', 'ana');
+    expect((await ana('POST', '/api/games/test/players', { name: 'Dee' })).status).toBe(403);
+  });
+
+  it('change role or leave at the GM’s word, and a game keeps a GM', async () => {
+    const gm = await api.joined('test', 'gm');
+    const bo = await api.joined('test', 'bo');
+    expect((await bo('PUT', '/api/games/test/players/bo', { role: 'gm' })).status).toBe(403);
+    expect((await gm('PUT', '/api/games/test/players/bo', { role: 'trusted' })).status).toBe(200);
+    expect((await gm('PUT', '/api/games/test/players/gm', { role: 'player' })).json.error).toMatch(/GM/);
+    expect((await gm('DELETE', '/api/games/test/players/bo')).status).toBe(200);
+    expect((await bo('GET', '/api/games/test')).json.game).toMatchObject({ you: null });
+  });
+
+  it('are managed by the admin in any game, without joining it', async () => {
+    const admin = await api.admin();
+    expect((await admin('GET', '/api/games/test')).json.game).toMatchObject({ manage: true });
+    expect((await admin('PUT', '/api/games/test/players/gm/password', { password: 'pw' })).status).toBe(200);
+  });
+});
+
+describe('Setup', () => {
+  it('makes games for the admin only, joined as its Gamemaster', async () => {
+    const ana = await api.joined('test', 'ana');
+    const input = { name: 'Lost Mine', system: 'dnd5e', rules: '2024' };
+    expect((await ana('POST', '/api/games', input)).status).toBe(403);
+    const admin = await api.admin();
+    const made = await admin('POST', '/api/games', input);
     expect(made).toMatchObject({ status: 200, json: { game: { id: 'lost-mine', you: 'gm', rules: '2024' } } });
-    const seen = await kaniel('GET', '/api/games');
-    // The admin sees every game; a third account doesn't see Ana's.
-    expect((seen.json.games as Json[]).map((g) => g.id)).toEqual(['test', 'lost-mine']);
-    const bo = await signUp('bo');
-    expect(((await bo('GET', '/api/games')).json.games as Json[]).map((g) => g.id)).toEqual(['test']);
-    expect((await bo('GET', '/api/games/lost-mine')).status).toBe(404);
-    expect((await bo('POST', '/api/games/lost-mine/join', {})).status).toBe(404);
+    expect((await admin('GET', '/api/games/lost-mine')).json.game).toMatchObject({
+      me: 'gamemaster',
+      players: [{ id: 'gamemaster', name: 'Gamemaster', role: 'gm' }],
+    });
   });
 
   it('explains what a new game is missing', async () => {
-    const ana = await signUp('ana');
-    const res = await ana('POST', '/api/games', { name: 'X', system: 'gurps', rules: '2014' });
+    const admin = await api.admin();
+    const res = await admin('POST', '/api/games', { name: 'X', system: 'gurps', rules: '2014' });
     expect(res).toMatchObject({ status: 400, json: { error: 'Pick a system.' } });
   });
 
-  it('lets a player in by the invite link, which only the GM sees and renews', async () => {
-    const ana = await signUp('ana');
-    const bo = await signUp('bo');
-    await ana('POST', '/api/games', { name: 'Lost Mine', system: 'dnd5e', rules: '2014' });
-    const { invite } = (await ana('POST', '/api/games/lost-mine/invite')).json as { invite: string };
-    expect((await ana('GET', '/api/games/lost-mine')).json.game).toMatchObject({ invite });
-    const joined = await bo('POST', `/api/invites/${invite}`);
-    expect(joined).toMatchObject({ status: 200, json: { game: 'lost-mine' } });
-    const detail = (await bo('GET', '/api/games/lost-mine')).json.game as Json;
-    expect(detail.you).toBe('player');
-    expect(detail.invite).toBeUndefined();
-    expect((detail.players as Json[]).map((p) => [p.id, p.role])).toEqual([
-      ['ana', 'gm'],
-      ['bo', 'player'],
-    ]);
-    expect((await bo('POST', '/api/games/lost-mine/invite')).status).toBe(403);
-    await ana('POST', '/api/games/lost-mine/invite');
-    expect((await (await signUp('cy'))('POST', `/api/invites/${invite}`)).status).toBe(404);
-  });
-
-  it('brings a roster character into the game as an actor the player owns', async () => {
-    const ana = await signUp('ana');
-    await ana('POST', '/api/games', { name: 'Lost Mine', system: 'dnd5e', rules: '2014' });
-    const id = ((await ana('POST', '/api/characters', sorcerer)).json.character as Json).id as string;
-    const joined = await ana('POST', '/api/games/lost-mine/join', { character: id });
-    expect(joined).toMatchObject({ status: 200, json: { player: { id: 'ana', role: 'gm' } } });
-    const { store } = await api.hub.open('lost-mine');
-    expect(store.tokens.get(id)).toMatchObject({ name: 'Vex', actor: id, linked: true });
-    expect(store.actors.get(id)?.ownership).toMatchObject({ ana: 'owner' });
-  });
-
-  it('seats any account at an open game: the admin as GM of the home game', async () => {
-    const kaniel = await signUp('kaniel');
-    const ana = await signUp('ana');
-    expect((await kaniel('POST', '/api/games/test/join', {})).json).toMatchObject({ player: { role: 'gm' } });
-    expect((await ana('POST', '/api/games/test/join', {})).json).toMatchObject({ player: { role: 'player' } });
-    await kaniel('PUT', '/api/games/test/open', { open: false });
-    expect((await (await signUp('cy'))('POST', '/api/games/test/join', {})).status).toBe(404);
-    expect((await ana('PUT', '/api/games/test/open', { open: true })).status).toBe(403);
-  });
-
-  it('lets the GM change roles and remove members, keeping a GM', async () => {
-    const ana = await signUp('ana');
-    const bo = await signUp('bo');
-    await ana('POST', '/api/games', { name: 'Lost Mine', system: 'dnd5e', rules: '2014' });
-    const { invite } = (await ana('POST', '/api/games/lost-mine/invite')).json as { invite: string };
-    await bo('POST', `/api/invites/${invite}`);
-    expect((await bo('PUT', '/api/games/lost-mine/members/bo', { role: 'gm' })).status).toBe(403);
-    expect((await ana('PUT', '/api/games/lost-mine/members/bo', { role: 'trusted' })).status).toBe(200);
-    expect((await ana('PUT', '/api/games/lost-mine/members/ana', { role: 'player' })).json.error).toMatch(/GM/);
-    expect((await ana('DELETE', '/api/games/lost-mine/members/bo')).status).toBe(200);
-    expect((await bo('GET', '/api/games/lost-mine')).status).toBe(404);
-  });
-
-  it('lets a member leave by themselves', async () => {
-    const kaniel = await signUp('kaniel');
-    const ana = await signUp('ana');
-    await kaniel('POST', '/api/games/test/join', {});
-    await ana('POST', '/api/games/test/join', {});
-    expect((await ana('DELETE', '/api/games/test/members/ana')).status).toBe(200);
-    expect((await ana('DELETE', '/api/games/test/members/gm')).status).toBe(403);
-  });
-
-  it('deletes a game for its GM or the admin, never for a player', async () => {
-    const kaniel = await signUp('kaniel');
-    const ana = await signUp('ana');
-    await ana('POST', '/api/games', { name: 'One', system: 'dnd5e', rules: '2014' });
-    await ana('POST', '/api/games', { name: 'Two', system: 'dnd5e', rules: '2014' });
-    expect((await ana('DELETE', '/api/games/one')).status).toBe(200);
-    expect((await kaniel('DELETE', '/api/games/two')).status).toBe(200);
+  it('deletes games, but never the one the server was started with', async () => {
+    const admin = await api.admin();
+    await admin('POST', '/api/games', { name: 'One', system: 'dnd5e', rules: '2014' });
+    const gm = await api.joined('one', 'gamemaster');
+    expect((await gm('DELETE', '/api/games/one')).status).toBe(403);
+    expect((await admin('DELETE', '/api/games/one')).status).toBe(200);
     expect(api.hub.ids()).toEqual(['test']);
-    expect((await kaniel('DELETE', '/api/games/test')).json.error).toMatch(/started with/);
+    expect((await admin('DELETE', '/api/games/test')).json.error).toMatch(/started with/);
   });
 });
+
+describe('the admin password', () => {
+  it('opens Setup for whoever gives it', async () => {
+    const call = api.client();
+    expect((await call('GET', '/api/session')).json).toMatchObject({ admin: false, adminPassword: true });
+    expect((await call('POST', '/api/admin', { password: 'nope' })).status).toBe(403);
+    expect((await call('POST', '/api/admin', { password: 'open sesame' })).status).toBe(200);
+    expect((await call('GET', '/api/session')).json).toMatchObject({ admin: true, home: { id: 'test' } });
+    await call('DELETE', '/api/admin');
+    expect((await call('GET', '/api/session')).json).toMatchObject({ admin: false });
+  });
+
+  it('leaves Setup open to anyone until one is set, and is set in Setup', async () => {
+    await api.close();
+    api = await startApi({ adminPassword: null });
+    const first = api.client();
+    expect((await first('GET', '/api/session')).json).toMatchObject({ admin: true, adminPassword: false });
+    expect((await first('PUT', '/api/admin', { password: 'castle' })).status).toBe(200);
+    expect((await first('GET', '/api/session')).json).toMatchObject({ admin: true, adminPassword: true });
+    const other = api.client();
+    expect((await other('GET', '/api/session')).json).toMatchObject({ admin: false });
+    expect((await other('PUT', '/api/admin', { password: 'mine' })).status).toBe(403);
+    expect((await other('POST', '/api/admin', { password: 'castle' })).status).toBe(200);
+  });
+
+  it('can’t be changed in Setup when the server sets it', async () => {
+    const admin = await api.admin();
+    expect((await admin('PUT', '/api/admin', { password: 'castle' })).json.error).toMatch(/VTT_ADMIN_PASSWORD/);
+  });
+});
+
+async function sessionsOf(): Promise<string[]> {
+  const { readFile } = await import('node:fs/promises');
+  return Object.keys(JSON.parse(await readFile(join(api.dataDir, 'sessions.json'), 'utf8')) as Json);
+}
 
 describe('importing a Foundry world', () => {
   async function foundryWorld(): Promise<string> {
@@ -167,8 +202,8 @@ describe('importing a Foundry world', () => {
     return dir;
   }
 
-  it('makes a new game from a world folder on the server, with the admin as its GM', async () => {
-    const kaniel = await signUp('kaniel');
+  it('makes a new game from a world folder on the server, joined as its Gamemaster', async () => {
+    const kaniel = await api.admin();
     const res = await kaniel('POST', '/api/games/import-foundry', { folder: await foundryWorld() });
     expect(res).toMatchObject({
       status: 200,
@@ -180,14 +215,13 @@ describe('importing a Foundry world', () => {
   });
 
   it("is the server admin's, since it reads the server's disk", async () => {
-    await signUp('kaniel');
-    const ana = await signUp('ana');
+    const ana = await api.joined('test', 'ana');
     const res = await ana('POST', '/api/games/import-foundry', { folder: await foundryWorld() });
     expect(res.status).toBe(403);
   });
 
   it('says what is wrong with a folder that is no world', async () => {
-    const kaniel = await signUp('kaniel');
+    const kaniel = await api.admin();
     const res = await kaniel('POST', '/api/games/import-foundry', { folder: tmpdir() });
     expect(res).toMatchObject({ status: 400, json: { error: expect.stringMatching(/world\.json/) as unknown } });
     expect(api.hub.ids()).toEqual(['test']);

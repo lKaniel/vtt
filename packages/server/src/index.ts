@@ -1,12 +1,13 @@
 import { createServer } from 'node:http';
 import { join, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
-import { AccountStore } from './accounts.ts';
 import { apiHandler } from './api.ts';
 import { CharacterStore } from './characters.ts';
 import { GameHub } from './game-hub.ts';
 import { httpHandler } from './http.ts';
+import { migrateAccounts } from './migrate-accounts.ts';
 import { dataDirFor, repoRoot, gameDirFromArgs } from './paths.ts';
+import { SessionStore } from './sessions.ts';
 import { socketSeat } from './socket-join.ts';
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -21,10 +22,11 @@ function adminPassword(value: string | undefined): string | undefined {
 
 const hub = new GameHub({ dataDir, home: homeDir });
 await hub.load();
-const accounts = new AccountStore(dataDir, adminPassword(process.env.VTT_ADMIN_PASSWORD));
-await accounts.load();
 const characters = new CharacterStore(dataDir);
 await characters.load();
+if (await migrateAccounts({ dataDir, hub, characters })) console.log('[server] accounts carried over to players');
+const sessions = new SessionStore(dataDir, adminPassword(process.env.VTT_ADMIN_PASSWORD));
+await sessions.load();
 
 const assetsDir = (game?: string) => {
   const dir = hub.dirOf(game ?? hub.homeId ?? '');
@@ -36,12 +38,7 @@ const handleRequest = httpHandler({
   packFile: (pack, path) => hub.packs.mediaFile(pack, path),
   pluginFile: (plugin, path) => hub.plugins.file(plugin, path),
   clientDir: clientDist,
-  players: async () => {
-    if (!hub.homeId) return [];
-    const locked = new Set(hub.access.lockedSeats(hub.homeId));
-    return (await hub.info(hub.homeId)).players.map((p) => ({ ...p, locked: locked.has(p.id) }));
-  },
-  api: apiHandler({ accounts, characters, hub, mcpKey: process.env.VTT_MCP_KEY }),
+  api: apiHandler({ sessions, characters, hub, mcpKey: process.env.VTT_MCP_KEY }),
 });
 
 const server = createServer((req, res) => {
@@ -56,11 +53,10 @@ const wss = new WebSocketServer({ noServer: true });
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
   if (url.pathname !== '/ws') return socket.destroy();
-  void socketSeat(req, { accounts, hub }).then(
+  void socketSeat(req, { sessions, hub }).then(
     (seat) =>
       wss.handleUpgrade(req, socket, head, (ws) => {
         if (!seat) return ws.close(4001, 'unknown player');
-        if ('refuse' in seat) return ws.close(seat.refuse, 'wrong seat password');
         try {
           hub.connect(seat.game, ws, seat.player);
         } catch {

@@ -81,7 +81,7 @@ export function latestSocket(): FakeWebSocket | undefined {
 export function openSession(): { session: Session; ws: FakeWebSocket } {
   vi.stubGlobal('WebSocket', FakeWebSocket);
   vi.stubGlobal('location', { protocol: 'http:', host: 'table:3000' });
-  const session = new Session('ana');
+  const session = new Session();
   session.connect();
   return { session, ws: lastSocket! };
 }

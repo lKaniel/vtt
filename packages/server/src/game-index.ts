@@ -2,24 +2,18 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import { readJson, writeJson } from './json-files.ts';
 
-// What the server keeps about each game besides its folder: the invite
-// link, whether every account may join (and whether the GM approves who
-// does), passwords on fixed seats, and when it was last played. Kept
-// in the data folder's games.json, so a game folder can be copied to
-// another server without its invite.
+// What the server keeps about each game besides its folder: its players'
+// passwords and Claude keys, and when it was last played. Kept in the data
+// folder's games.json, so a game folder can be copied to another server
+// without them. Fields of older servers (invites, open, approval) are dropped
+// as the file is read.
 
 const EntrySchema = z.object({
-  /** Invite code: anyone with the link joins as a player. */
-  invite: z.string().optional(),
-  /** Every account on the server may join, no invite needed. */
-  open: z.boolean().optional(),
   lastPlayed: z.number().optional(),
-  /** Joining (an invite, an open game) asks the GM, who approves or turns it down. */
-  approval: z.boolean().optional(),
-  /** Accounts waiting for the GM to let them in. */
-  requests: z.array(z.object({ id: z.string(), name: z.string(), at: z.number() })).optional(),
-  /** Passwords on fixed seats (taken without an account), hashed. */
+  /** Players' passwords, hashed: player id → salted scrypt hash. */
   seatKeys: z.record(z.string(), z.object({ salt: z.string(), hash: z.string() })).optional(),
+  /** Players' keys for Claude (mcp-http.ts): player id → SHA-256 of the key. */
+  mcpKeys: z.record(z.string(), z.string()).optional(),
 });
 export type IndexEntry = z.infer<typeof EntrySchema>;
 
@@ -50,10 +44,9 @@ export class GameIndex {
     return this.save();
   }
 
-  /** The game an invite code is for. */
-  byInvite(code: string): string | undefined {
-    for (const [id, e] of this.entries) if (code && e.invite === code) return id;
-    return undefined;
+  /** Every game's entry. */
+  all(): [string, IndexEntry][] {
+    return [...this.entries];
   }
 
   /** Resolves once everything is on disk. */

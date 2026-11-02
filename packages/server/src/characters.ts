@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { type Character, CharacterSchema } from '@vtt/system-dnd5e';
 import { readJsonDir, removeJson, writeJson } from './json-files.ts';
 
-/** Players' characters, one file each in the data folder's characters/. */
+/** Players' characters, one file each in the data folder's characters/; each belongs to a game and a player in it. */
 export class CharacterStore {
   private characters = new Map<string, Character>();
 
@@ -19,14 +19,20 @@ export class CharacterStore {
     return this.characters.has(id);
   }
 
-  /** The character, if `owner` owns it. */
-  owned(id: string, owner: string): Character | undefined {
+  /** The character, if `owner` plays it at `game`. */
+  owned(id: string, game: string, owner: string): Character | undefined {
     const c = this.characters.get(id);
-    return c?.owner === owner ? c : undefined;
+    return c?.owner === owner && c.game === game ? c : undefined;
   }
 
-  listFor(owner: string): Character[] {
-    return [...this.characters.values()].filter((c) => c.owner === owner).sort((a, b) => a.name.localeCompare(b.name));
+  listFor(game: string, owner: string): Character[] {
+    return this.all()
+      .filter((c) => c.owner === owner && c.game === game)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  all(): Character[] {
+    return [...this.characters.values()];
   }
 
   async save(c: Character): Promise<void> {

@@ -1,15 +1,13 @@
-import { toEdition, type Character } from '@vtt/system-dnd5e';
+import { toEdition } from '@vtt/system-dnd5e';
 import { useCallback, useEffect, useState } from 'react';
-import { api, type SessionInfo } from '../account-api.ts';
 import { parseRoute, routeHash, type Route } from '../route.ts';
-import { AccountScreen } from './AccountScreen.tsx';
+import { api, type SessionInfo } from '../server-api.ts';
 import { CharacterCreator } from './CharacterCreator.tsx';
+import { GamePage } from './GamePage.tsx';
 import { GameScreen } from './GameScreen.tsx';
 import { LevelUpScreen } from './LevelUpScreen.tsx';
-import { GamePage } from './GamePage.tsx';
-import { GamesScreen, InviteScreen } from './LobbyScreens.tsx';
-import { AuthScreen, MainMenu, SeatsScreen } from './MenuScreens.tsx';
-import { PENDING_INVITE } from '../lobby.ts';
+import { SetupScreen, useLoad } from './LobbyScreens.tsx';
+import { JoinScreen, MainMenu } from './MenuScreens.tsx';
 
 /** The route in the address bar, and a way to go somewhere else. */
 function useRoute(): [Route, (to: Route) => void] {
@@ -26,127 +24,75 @@ function useRoute(): [Route, (to: Route) => void] {
   return [route, go];
 }
 
-interface Loaded {
-  info: SessionInfo;
-  characters: Character[];
-}
-
-async function loadAccount(): Promise<Loaded> {
-  const info = await api.session();
-  return { info, characters: info.account ? await api.characters() : [] };
-}
-
-/** Who is signed in and their characters, refreshed on demand. */
-function useAccount() {
-  const [loaded, setLoaded] = useState<Loaded>();
+/** Whether this browser may use Setup, and the home game; refreshed on demand. */
+function useServer() {
+  const [info, setInfo] = useState<SessionInfo>();
   const [error, setError] = useState<string>();
-  const apply = useCallback((p: Promise<Loaded>) => {
-    return p.then(
-      (next) => {
-        setLoaded(next);
-        setError(undefined);
-      },
-      (e: unknown) => setError((e as Error).message),
-    );
-  }, []);
+  const refresh = useCallback(
+    () =>
+      api.session().then(
+        (next) => {
+          setInfo(next);
+          setError(undefined);
+        },
+        (e: unknown) => setError((e as Error).message),
+      ),
+    [],
+  );
   useEffect(() => {
-    void apply(loadAccount());
-  }, [apply]);
-  const refresh = useCallback(() => apply(loadAccount()), [apply]);
-  return { info: loaded?.info, characters: loaded?.characters ?? [], error, refresh };
+    void refresh();
+  }, [refresh]);
+  return { info, error, refresh };
 }
 
 export function App() {
   const [route, go] = useRoute();
-  const account = useAccount();
-  const [seat, setSeat] = useState(() => new URLSearchParams(location.search).get('player') ?? undefined);
-
-  const leaveSeat = () => {
-    const url = new URL(location.href);
-    url.searchParams.delete('player');
-    history.replaceState(null, '', url);
-    setSeat(undefined);
-    go(account.info?.account ? { name: 'games' } : { name: 'menu' });
-  };
-
-  if (seat) return <GameScreen playerId={seat} onLeave={leaveSeat} />;
-  return <Screen route={route} go={go} account={account} onSeat={setSeat} />;
-}
-
-interface ScreenProps {
-  route: Route;
-  go: (to: Route) => void;
-  account: ReturnType<typeof useAccount>;
-  onSeat: (id: string) => void;
-}
-
-/** Where to go once signed in: an invite that was waiting, else the lobby. */
-function afterSignIn(): Route {
-  const code = sessionStorage.getItem(PENDING_INVITE);
-  return code ? { name: 'invite', code } : { name: 'games' };
-}
-
-function Screen({ route, go, account, onSeat }: Readonly<ScreenProps>) {
-  const { info, refresh } = account;
-  const signedIn = !!info?.account;
-  const toLobby = () => {
-    void refresh();
-    go(afterSignIn());
-  };
+  const { info, error, refresh } = useServer();
   switch (route.name) {
-    case 'login':
-    case 'register':
-      return <AuthScreen mode={route.name} go={go} onSignedIn={toLobby} />;
-    case 'seats':
-      return <SeatsScreen go={go} onJoin={onSeat} />;
-    case 'invite':
-      return <InviteScreen code={route.code} signedIn={signedIn} go={go} />;
+    case 'setup':
+      return <SetupScreen info={info} refresh={refresh} go={go} />;
+    case 'join':
+      return <JoinScreen game={route.game} go={go} />;
+    case 'game':
+      return <GamePage key={route.game} game={route.game} admin={!!info?.admin} go={go} />;
+    case 'create':
+    case 'levelup':
+      return <CharacterRoute key={`${route.game}/${route.id ?? ''}`} route={route} go={go} />;
     case 'play':
-      return (
-        <GameScreen
-          key={route.game ?? ''}
-          gameId={route.game}
-          onLeave={() => go(route.game ? { name: 'game', id: route.game } : { name: 'games' })}
-        />
-      );
-    case 'menu':
-      return <MainMenu info={info} error={account.error} go={go} characters={account.characters.length} />;
+      return <PlayRoute game={route.game ?? info?.home?.id} go={go} />;
     default:
-      if (!signedIn) return <MainMenu info={info} error={account.error} go={go} />;
-      return <AccountRoutes route={route} go={go} account={account} onSaved={() => go({ name: 'account' })} />;
+      return <MainMenu info={info} error={error} go={go} />;
   }
 }
 
-function AccountRoutes({
-  route,
-  go,
-  account,
-  onSaved,
-}: Readonly<Omit<ScreenProps, 'onSeat'> & { onSaved: () => void }>) {
-  const { info, characters, refresh } = account;
-  const me = info!.account!;
-  const saved = () => {
-    void refresh();
-    onSaved();
-  };
-  if (route.name === 'games') return <GamesScreen account={me} go={go} />;
-  if (route.name === 'game') return <GamePage id={route.id} account={me} characters={characters} go={go} />;
-  if (route.name === 'create') {
-    const editing = route.id ? characters.find((c) => c.id === route.id) : undefined;
-    return (
-      <CharacterCreator
-        key={route.id ?? 'new'}
-        owner={me.id}
-        rules={toEdition(info!.home?.rules)}
-        initial={editing}
-        onDone={saved}
-        onCancel={() => go({ name: 'account' })}
-      />
-    );
-  }
+/** At the table; leaving goes back to the game's page. */
+function PlayRoute({ game, go }: Readonly<{ game?: string; go: (to: Route) => void }>) {
+  const leave = () => go(game ? { name: 'game', game } : { name: 'menu' });
+  return <GameScreen key={game ?? ''} gameId={game} onLeave={leave} />;
+}
+
+type CharacterRouteOf = Extract<Route, { name: 'create' | 'levelup' }>;
+
+/** The character creator or level-up for a character at a game, once the game and your characters there load. */
+function CharacterRoute({ route, go }: Readonly<{ route: CharacterRouteOf; go: (to: Route) => void }>) {
+  const { game: id } = route;
+  const load = useCallback(async () => ({ game: await api.game(id), characters: await api.characters(id) }), [id]);
+  const { data, error } = useLoad(load);
+  const back = () => go({ name: 'game', game: id });
+  if (error) return <p className="menu-error">{error}</p>;
+  if (!data?.game.me) return null;
+  const character = route.id ? data.characters.find((c) => c.id === route.id) : undefined;
   if (route.name === 'levelup') {
-    const c = characters.find((x) => x.id === route.id);
-    if (c) return <LevelUpScreen character={c} onDone={saved} onCancel={() => go({ name: 'account' })} />;
+    return character ? <LevelUpScreen game={id} character={character} onDone={back} onCancel={back} /> : null;
   }
-  return <AccountScreen info={info!} characters={characters} go={go} refresh={refresh} />;
+  return (
+    <CharacterCreator
+      game={id}
+      owner={data.game.me}
+      rules={toEdition(data.game.rules)}
+      initial={character}
+      onDone={back}
+      onCancel={back}
+    />
+  );
 }

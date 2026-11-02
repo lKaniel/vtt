@@ -1,18 +1,11 @@
-// Small pieces of the lobby screens (ui/LobbyScreens.tsx).
+import type { GameSummary } from '@vtt/shared';
+import type { Route } from './route.ts';
 
-/** Where an invite opened before signing in waits, so signing in can carry on with it. */
-export const PENDING_INVITE = 'vtt_invite';
+// Small pieces of the games screens (ui/MenuScreens.tsx, ui/LobbyScreens.tsx).
 
-/** The link to share for an invite code: this server's page, on the invite route. */
-export function inviteLink(href: string, code: string): string {
-  const url = new URL(href);
-  return `${url.origin}/#/invite/${code}`;
-}
-
-/** The code in a pasted invite link, or the text itself when it is just the code. */
-export function inviteCode(text: string): string {
-  const trimmed = text.trim();
-  return /#\/invite\/([^/?#\s]+)/.exec(trimmed)?.[1] ?? trimmed;
+/** Where a game's card leads: its page once you joined it, else its join screen. */
+export function gameRoute(g: Pick<GameSummary, 'id' | 'you'>): Route {
+  return g.you ? { name: 'game', game: g.id } : { name: 'join', game: g.id };
 }
 
 const HOUR = 3_600_000;

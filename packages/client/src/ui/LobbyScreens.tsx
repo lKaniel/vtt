@@ -1,18 +1,21 @@
 import { type GameSummary, newGameIssues } from '@vtt/shared';
 import type { SystemInfo } from '@vtt/core';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { api, type Account } from '../account-api.ts';
-import { inviteCode, lastPlayedText, PENDING_INVITE } from '../lobby.ts';
+import { t } from '../i18n/index.ts';
+import { lastPlayedText } from '../lobby.ts';
 import type { Route } from '../route.ts';
+import { api, type SessionInfo } from '../server-api.ts';
 import { FoundryImportForm } from './FoundryImport.tsx';
 import { ImportZip } from './GameArchive.tsx';
-import { ROLE_NAMES } from './PlayersTab.tsx';
+import { AdminPasswordForm, AdminUnlock } from './GameAccess.tsx';
+import { ROLE_NAMES } from './role-names.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { SelectField } from './kit/select.tsx';
 
-// The lobby: the games you can enter, making a game, joining by invite, and
-// each game's page with its members and the door to the table.
+// Setup, Foundry style: behind the server's admin password, the games on
+// this server with making, importing and deleting them, and the admin
+// password itself. Also the pieces the games screens share.
 
 type Go = (to: Route) => void;
 
@@ -51,33 +54,65 @@ export function LobbyHead({
 
 export const systemLine = (g: Pick<GameSummary, 'systemName' | 'rules'>) => `${g.systemName}, ${g.rules} rules`;
 
-/** Your games, a new game, and joining one by its invite link. */
-export function GamesScreen({ account, go }: Readonly<{ account: Account; go: Go }>) {
-  const { data, error, reload } = useLoad(api.games);
+/** Setup: the admin password first, then the games and making new ones. */
+export function SetupScreen({
+  info,
+  refresh,
+  go,
+}: Readonly<{ info?: SessionInfo; refresh: () => Promise<void>; go: Go }>) {
+  if (!info) return null;
+  if (!info.admin) {
+    return (
+      <div className="menu" data-slot="setup-locked">
+        <h1 className="menu-title">{t('setup.title')}</h1>
+        <div className="auth frame">
+          <p className="menu-note">{t('setup.locked')}</p>
+          <AdminUnlock onUnlocked={refresh} />
+        </div>
+        <Button variant="outline" className="menu-back" onClick={() => go({ name: 'menu' })}>
+          {t('join.back')}
+        </Button>
+      </div>
+    );
+  }
+  return <SetupBody info={info} refresh={refresh} go={go} />;
+}
+
+function SetupBody({ info, refresh, go }: Readonly<{ info: SessionInfo; refresh: () => Promise<void>; go: Go }>) {
+  const { data, error } = useLoad(api.games);
   const [now] = useState(() => Date.now());
+  const open = (id: string) => go({ name: 'game', game: id });
+  const lock = async () => {
+    await api.lockAdmin();
+    await refresh();
+    go({ name: 'menu' });
+  };
   return (
-    <div className="account lobby">
-      <LobbyHead kicker={`Signed in as ${account.name}`} title="Your games">
-        <Button variant="outline" onClick={() => go({ name: 'account' })}>
-          Your characters
-        </Button>
+    <div className="account lobby" data-slot="setup">
+      <LobbyHead kicker={t('setup.kicker')} title={t('setup.title')}>
         <Button variant="outline" onClick={() => go({ name: 'menu' })}>
-          Main menu
+          {t('setup.games')}
         </Button>
+        {info.adminPassword && (
+          <Button variant="outline" onClick={() => void lock()}>
+            {t('setup.lock')}
+          </Button>
+        )}
       </LobbyHead>
+      {!info.adminPassword && <p className="menu-error">{t('setup.noPassword')}</p>}
       {error && <p className="menu-error">{error}</p>}
       <div className="lobby-body">
         <div className="roster lobby-games">
           {data?.games.map((g) => (
-            <GameCard key={g.id} g={g} now={now} onOpen={() => go({ name: 'game', id: g.id })} />
+            <GameCard key={g.id} g={g} now={now} onOpen={() => open(g.id)} />
           ))}
-          {data && !data.games.length && <p className="account-empty">No games yet: make one, or join by invite.</p>}
+          {data && !data.games.length && <p className="account-empty">{t('setup.noGames')}</p>}
         </div>
         <aside className="lobby-side">
-          {data && <NewGameForm systems={data.systems} onMade={(id) => go({ name: 'game', id })} />}
-          <JoinByInvite go={go} onJoined={reload} />
-          <ImportZip onMade={(id) => go({ name: 'game', id })} />
-          {account.admin && <FoundryImportForm onMade={(id) => go({ name: 'game', id })} />}
+          {data && <NewGameForm systems={data.systems} onMade={open} />}
+          <ImportZip onMade={open} />
+          <FoundryImportForm onMade={open} />
+          {!info.adminFixed && <AdminPasswordForm has={info.adminPassword} onSaved={refresh} />}
         </aside>
       </div>
     </div>
@@ -86,24 +121,21 @@ export function GamesScreen({ account, go }: Readonly<{ account: Account; go: Go
 
 /** Your place in a game, for its card. */
 function standing(g: GameSummary): string {
-  if (g.you) return ROLE_NAMES[g.you].name;
-  return g.open ? 'Open to everyone' : 'Not a member';
+  return g.you ? ROLE_NAMES[g.you].name : t('lobby.notJoined');
 }
 
-function GameCard({ g, now, onOpen }: Readonly<{ g: GameSummary; now: number; onOpen: () => void }>) {
+export function GameCard({ g, now, onOpen }: Readonly<{ g: GameSummary; now: number; onOpen: () => void }>) {
   return (
     <button className="roster-card lobby-card" onClick={onOpen}>
       <span className="roster-name">{g.name}</span>
       <span className="roster-line">{systemLine(g)}</span>
       <span className="roster-stats">
         <span>{standing(g)}</span>
-        <span>
-          {g.members} member{g.members === 1 ? '' : 's'}
-        </span>
-        {g.online > 0 && <span className="lobby-online">{g.online} playing now</span>}
+        <span>{t(g.members === 1 ? 'lobby.player' : 'lobby.players', { n: g.members })}</span>
+        {g.online > 0 && <span className="lobby-online">{t('lobby.online', { n: g.online })}</span>}
       </span>
       <span className="menu-note">{lastPlayedText(g.lastPlayed, now)}</span>
-      {g.home && <span className="roster-rules">server game</span>}
+      {g.home && <span className="roster-rules">{t('lobby.home')}</span>}
     </button>
   );
 }
@@ -127,7 +159,7 @@ function NewGameForm({ systems, onMade }: Readonly<{ systems: SystemInfo[]; onMa
 
   return (
     <form className="auth frame lobby-form" onSubmit={(e) => void create(e)}>
-      <h2 className="lobby-heading">New game</h2>
+      <h2 className="lobby-heading">{t('setup.newGame')}</h2>
       <label className="auth-field">
         <span>Name</span>
         <Input value={name} placeholder="The Lost Mine" onChange={(e) => setName(e.target.value)} />
@@ -150,85 +182,11 @@ function NewGameForm({ systems, onMade }: Readonly<{ systems: SystemInfo[]; onMa
           options={editions.map((ed) => ({ value: ed.id, label: ed.name }))}
         />
       </label>
+      <p className="menu-note">{t('setup.newGameHint')}</p>
       {error && <p className="menu-error">{error}</p>}
       <Button type="submit" disabled={issues.length > 0}>
-        Create game
+        {t('setup.create')}
       </Button>
     </form>
-  );
-}
-
-/** An invite to a game whose GM approves who joins. */
-const ASKED_GM =
-  'The GM approves who joins: they have your request now. The game shows up in your list once they let you in.';
-
-function JoinByInvite({ go, onJoined }: Readonly<{ go: Go; onJoined: () => void }>) {
-  const [text, setText] = useState('');
-  const [error, setError] = useState<string>();
-  const join = async (e: { preventDefault: () => void }) => {
-    e.preventDefault();
-    try {
-      const { game: id, pending } = await api.acceptInvite(inviteCode(text));
-      if (pending) {
-        setError(ASKED_GM);
-        return;
-      }
-      onJoined();
-      go({ name: 'game', id });
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
-  return (
-    <form className="auth frame lobby-form" onSubmit={(e) => void join(e)}>
-      <h2 className="lobby-heading">Join a game</h2>
-      <label className="auth-field">
-        <span>Invite link or code</span>
-        <Input value={text} placeholder="Paste what the GM sent you" onChange={(e) => setText(e.target.value)} />
-      </label>
-      {error && <p className="menu-error">{error}</p>}
-      <Button type="submit" variant="outline" disabled={!inviteCode(text)}>
-        Join
-      </Button>
-    </form>
-  );
-}
-
-/** An invite link: joins once signed in, else asks to sign in first and comes back. */
-export function InviteScreen({ code, signedIn, go }: Readonly<{ code: string; signedIn: boolean; go: Go }>) {
-  const [error, setError] = useState<string>();
-  useEffect(() => {
-    if (!signedIn) {
-      sessionStorage.setItem(PENDING_INVITE, code);
-      return;
-    }
-    sessionStorage.removeItem(PENDING_INVITE);
-    api.acceptInvite(code).then(
-      ({ game: id, pending }) => (pending ? setError(ASKED_GM) : go({ name: 'game', id })),
-      (e: unknown) => setError((e as Error).message),
-    );
-  }, [code, signedIn, go]);
-  return (
-    <div className="menu">
-      <h1 className="menu-title">You are invited</h1>
-      {error && <p className="menu-error">{error}</p>}
-      {!signedIn && (
-        <nav className="menu-list">
-          <p className="menu-note">Sign in or make an account, and you will join the game.</p>
-          <Button size="xl" onClick={() => go({ name: 'login' })}>
-            Sign in
-          </Button>
-          <Button variant="menu" size="xl" onClick={() => go({ name: 'register' })}>
-            Create an account
-          </Button>
-        </nav>
-      )}
-      {signedIn && !error && <p className="menu-note">Joining…</p>}
-      {error && (
-        <Button variant="outline" className="menu-back" onClick={() => go({ name: 'games' })}>
-          Your games
-        </Button>
-      )}
-    </div>
   );
 }

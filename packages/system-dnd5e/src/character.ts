@@ -25,8 +25,10 @@ const Bonuses = z.partialRecord(z.enum(ABILITIES), z.number().int().min(-2).max(
 
 export const CharacterSchema = z.object({
   id,
-  /** The account that owns it. */
+  /** The player who plays it, in `game`. */
   owner: id,
+  /** The game it belongs to (characters from before games had their own players have none). */
+  game: id.optional(),
   name: z.string().trim().min(1).max(40),
   rules: EditionSchema.default('2014'),
   species: id,

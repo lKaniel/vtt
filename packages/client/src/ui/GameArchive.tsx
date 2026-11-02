@@ -1,6 +1,6 @@
 import type { BackupInfo, GameDetail } from '@vtt/shared';
 import { useCallback, useEffect, useState } from 'react';
-import { api } from '../account-api.ts';
+import { api } from '../server-api.ts';
 import { Button } from './kit/button.tsx';
 
 // Keeping a game safe, in the lobby: the GM's backups (made when the game
@@ -95,7 +95,7 @@ export function ImportZip({ onMade }: Readonly<{ onMade: (id: string) => void }>
   return (
     <div className="auth frame lobby-form" data-slot="import-zip">
       <h2 className="lobby-heading">Import a game</h2>
-      <p className="menu-note">A game downloaded as a zip from its page here becomes a new game you run.</p>
+      <p className="menu-note">A game downloaded as a zip from its page here becomes a new game, players and all.</p>
       <Button asChild variant="outline" disabled={busy}>
         <label>
           {busy ? 'Importing…' : 'Pick a zip'}

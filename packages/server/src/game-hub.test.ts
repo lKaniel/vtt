@@ -34,7 +34,7 @@ const exists = (path: string) =>
   );
 
 describe('the games on a server', () => {
-  it('starts with the game folder the server was started with, open to every account', async () => {
+  it('starts with the game folder the server was started with, at the top of the list', async () => {
     expect(hub.ids()).toEqual(['test']);
     expect(hub.homeId).toBe('test');
     expect(await hub.info('test')).toMatchObject({
@@ -42,7 +42,6 @@ describe('the games on a server', () => {
       name: 'Test',
       system: 'dnd5e',
       rules: '2014',
-      open: true,
     });
     expect(hub.isRunning('test')).toBe(false);
   });
@@ -58,7 +57,7 @@ describe('the games on a server', () => {
     expect(store.sceneIds()).toEqual([game.scene]);
     // Its daylight follows the game clock.
     expect(store.docs.get('scenes', 'main')).toMatchObject({ darknessFollowsClock: true });
-    expect(await hub.info(id)).toMatchObject({ open: false, players: [kaniel] });
+    expect(await hub.info(id)).toMatchObject({ players: [kaniel] });
     expect(await hub.create({ name: 'Lost Mine', system: 'dnd5e', rules: '2014' }, kaniel)).toBe('lost-mine-2');
   });
 
@@ -92,11 +91,11 @@ describe('the games on a server', () => {
 
   it('finds the games made before, after a restart', async () => {
     const id = await hub.create({ name: 'Lost Mine', system: 'dnd5e', rules: '2014' }, kaniel);
-    const code = await hub.invite(id);
+    await hub.access.setPassword(id, 'kaniel', 'secret');
     await hub.close();
     hub = await startHub();
     expect(hub.ids()).toEqual(['test', 'lost-mine']);
-    expect(hub.byInvite(code)).toBe(id);
+    expect(hub.access.locked(id)).toEqual(['kaniel']);
   });
 
   it('loads a game once for everyone, and unloads it when the last player has left', async () => {
@@ -117,19 +116,13 @@ describe('the games on a server', () => {
 
   it('changes who is in a game, cleaning up after a removed member', async () => {
     const { store } = await hub.open('test');
+    await hub.access.setPassword('test', 'bo', 'secret');
     await hub.setMembers(
       'test',
       store.world.players.filter((p) => p.id !== 'bo'),
     );
     expect((await hub.info('test')).players.map((p) => p.id)).toEqual(['gm', 'ana']);
-  });
-
-  it('renews invite links: the old one stops working', async () => {
-    const first = await hub.invite('test');
-    const second = await hub.invite('test');
-    expect(first).not.toBe(second);
-    expect(hub.byInvite(first)).toBeUndefined();
-    expect(hub.byInvite(second)).toBe('test');
+    expect(hub.access.locked('test')).toEqual([]);
   });
 
   it('deletes a game made in the lobby, but never the one it was started with', async () => {
@@ -140,10 +133,5 @@ describe('the games on a server', () => {
     expect(await exists(join(dataDir, 'games', id))).toBe(false);
     await expect(hub.remove('test')).rejects.toThrow(/started with/);
     expect(await exists(join(home, 'game.json'))).toBe(true);
-  });
-
-  it('opens and closes a game to every account', async () => {
-    await hub.setOpen('test', false);
-    expect((await hub.info('test')).open).toBe(false);
   });
 });

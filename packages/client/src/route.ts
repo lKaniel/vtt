@@ -2,61 +2,55 @@
 // the back button lands on the same screen.
 
 export type Route =
+  /** The games on this server, and the way to Setup. */
   | { name: 'menu' }
-  | { name: 'login' }
-  | { name: 'register' }
-  /** The lobby: your games, making one, joining by code. */
-  | { name: 'games' }
-  /** One game's page: members, invite link, entering it. */
-  | { name: 'game'; id: string }
-  /** An invite link someone shared. */
-  | { name: 'invite'; code: string }
-  /** The roster: your characters. */
-  | { name: 'account' }
-  /** The character creator: a new character, or `id` to edit one. */
-  | { name: 'create'; id?: string }
-  | { name: 'levelup'; id: string }
-  /** The home game's fixed seats, for joining without an account. */
-  | { name: 'seats' }
+  /** Setup (the admin password): making, importing and deleting games. */
+  | { name: 'setup' }
+  /** A game's join screen: pick your player. */
+  | { name: 'join'; game: string }
+  /** A game's page: entering it, your characters, and for its GM the players. */
+  | { name: 'game'; game: string }
+  /** The character creator at a game: a new character, or `id` to edit one. */
+  | { name: 'create'; game: string; id?: string }
+  | { name: 'levelup'; game: string; id: string }
   /** At the table: `game`, or the home game. */
   | { name: 'play'; game?: string };
 
-const SIMPLE = ['login', 'register', 'account', 'seats', 'games'] as const;
+const dec = decodeURIComponent;
 
-/** Routes that name something: #/<prefix>/<id>. */
-const NAMED: Record<string, (id: string) => Route> = {
-  edit: (id) => ({ name: 'create', id }),
-  level: (id) => ({ name: 'levelup', id }),
-  games: (id) => ({ name: 'game', id }),
-  invite: (code) => ({ name: 'invite', code }),
-  play: (game) => ({ name: 'play', game }),
+/** Routes by their first part, given the rest. */
+const PARSE: Record<string, (rest: string[]) => Route | undefined> = {
+  setup: () => ({ name: 'setup' }),
+  join: ([game]) => (game ? { name: 'join', game: dec(game) } : undefined),
+  games: ([game]) => (game ? { name: 'game', game: dec(game) } : undefined),
+  create: ([game]) => (game ? { name: 'create', game: dec(game) } : undefined),
+  edit: ([game, id]) => (game && id ? { name: 'create', game: dec(game), id: dec(id) } : undefined),
+  level: ([game, id]) => (game && id ? { name: 'levelup', game: dec(game), id: dec(id) } : undefined),
+  play: ([game]) => (game ? { name: 'play', game: dec(game) } : { name: 'play' }),
 };
 
 export function parseRoute(hash: string): Route {
-  const [name = '', id] = hash.replace(/^#\/?/, '').split('/');
-  if (name === 'create') return { name: 'create' };
-  if (name === 'play' && !id) return { name: 'play' };
-  const named = id ? NAMED[name] : undefined;
-  if (named) return named(decodeURIComponent(id!));
-  const simple = SIMPLE.find((s) => s === name);
-  return simple ? { name: simple } : { name: 'menu' };
+  const [name = '', ...rest] = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  return PARSE[name]?.(rest) ?? { name: 'menu' };
 }
+
+const enc = encodeURIComponent;
 
 export function routeHash(route: Route): string {
   switch (route.name) {
     case 'menu':
       return '#/';
-    case 'create':
-      return route.id ? `#/edit/${route.id}` : '#/create';
-    case 'levelup':
-      return `#/level/${route.id}`;
+    case 'setup':
+      return '#/setup';
+    case 'join':
+      return `#/join/${enc(route.game)}`;
     case 'game':
-      return `#/games/${route.id}`;
-    case 'invite':
-      return `#/invite/${route.code}`;
+      return `#/games/${enc(route.game)}`;
+    case 'create':
+      return route.id ? `#/edit/${enc(route.game)}/${enc(route.id)}` : `#/create/${enc(route.game)}`;
+    case 'levelup':
+      return `#/level/${enc(route.game)}/${enc(route.id)}`;
     case 'play':
-      return route.game ? `#/play/${route.game}` : '#/play';
-    default:
-      return `#/${route.name}`;
+      return route.game ? `#/play/${enc(route.game)}` : '#/play';
   }
 }

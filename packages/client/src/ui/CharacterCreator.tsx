@@ -28,12 +28,15 @@ const STEP_VIEWS: Record<StepId, (p: StepProps) => React.ReactNode> = {
 
 /** BG3-style character creation: steps on the left, choices in the middle, the sheet on the right. */
 export function CharacterCreator({
+  game,
   owner,
   rules,
   initial,
   onDone,
   onCancel,
 }: Readonly<{
+  /** The game the character belongs to. */
+  game: string;
   owner: string;
   rules: Edition;
   initial?: Character;
@@ -42,8 +45,8 @@ export function CharacterCreator({
 }>) {
   const [c, set] = useState<Character>(() => initial ?? newCharacter({ id: NEW, owner, rules }));
   const [stepId, setStep] = useState<StepId>('species');
-  const { busy, error, save } = useSaveCharacter(onDone);
-  const homebrew = useHomebrewClasses();
+  const { busy, error, save } = useSaveCharacter(game, onDone);
+  const homebrew = useHomebrewClasses(game);
   const steps = creatorSteps(c);
   const index = Math.max(
     0,
@@ -65,27 +68,17 @@ export function CharacterCreator({
         {step.issues.length > 0 && <p className="cc-issues">{step.issues.join(' ')}</p>}
       </main>
       <Summary c={c} />
-      <footer className="cc-foot">
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        {error && <span className="menu-error">{error}</span>}
-        <span className="cc-foot-space" />
-        <Button variant="outline" disabled={index === 0} onClick={() => setStep(steps[index - 1]!.id)}>
-          Back
-        </Button>
-        {index < steps.length - 1 ? (
-          <Button onClick={() => setStep(steps[index + 1]!.id)}>Next</Button>
-        ) : (
-          <Button
-            disabled={busy || problems.length > 0}
-            title={problems.join(' ')}
-            onClick={() => save({ ...c, id: c.id === NEW ? '' : c.id })}
-          >
-            {initial ? 'Save changes' : 'Create character'}
-          </Button>
-        )}
-      </footer>
+      <CreatorFoot
+        onCancel={onCancel}
+        error={error}
+        index={index}
+        steps={steps}
+        setStep={setStep}
+        saving={busy}
+        problems={problems}
+        editing={!!initial}
+        onSave={() => save({ ...c, id: c.id === NEW ? '' : c.id })}
+      />
     </div>
   );
 }
@@ -119,5 +112,48 @@ function StepNav({
         </button>
       ))}
     </nav>
+  );
+}
+
+/** Cancel, Back, and Next or the save at the last step. */
+function CreatorFoot({
+  onCancel,
+  error,
+  index,
+  steps,
+  setStep,
+  saving,
+  problems,
+  editing,
+  onSave,
+}: Readonly<{
+  onCancel: () => void;
+  error?: string;
+  index: number;
+  steps: readonly StepInfo[];
+  setStep: (id: StepId) => void;
+  saving: boolean;
+  problems: string[];
+  editing: boolean;
+  onSave: () => void;
+}>) {
+  return (
+    <footer className="cc-foot">
+      <Button variant="outline" onClick={onCancel}>
+        Cancel
+      </Button>
+      {error && <span className="menu-error">{error}</span>}
+      <span className="cc-foot-space" />
+      <Button variant="outline" disabled={index === 0} onClick={() => setStep(steps[index - 1]!.id)}>
+        Back
+      </Button>
+      {index < steps.length - 1 ? (
+        <Button onClick={() => setStep(steps[index + 1]!.id)}>Next</Button>
+      ) : (
+        <Button disabled={saving || problems.length > 0} title={problems.join(' ')} onClick={onSave}>
+          {editing ? 'Save changes' : 'Create character'}
+        </Button>
+      )}
+    </footer>
   );
 }

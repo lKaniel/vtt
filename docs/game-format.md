@@ -96,15 +96,15 @@ one so far. `packs` lists the installed asset packs the game uses (see
 Changes reach everyone live: whoever's seat, scene or settings changed starts
 over on their scene; a seat that's gone is disconnected.
 
-Players whose `id` matches an account (see the README) are that account's
-seat: the game's members are its seats (see `docs/lobby.md`). The server adds
-one when an account joins, so you can change its `role` here afterwards.
+`players` are the game's players: you join a game by picking one on its join
+screen (see `docs/lobby.md`), with its password if the GM gave it one (kept by
+the server, not here). Add one here, or on the game's page.
 A seat's `settings` are the player's own options, set from the gear in the
 top bar: `opportunity` (`ask`, `auto`, `never`: how opportunity attacks are
 offered) and `hitReactions` (`ask`, `never`: shield and uncanny dodge). A
 creature reacts by the settings of a player who controls it, else the GM's.
-Removing a seat deletes its explored fog. A character brought from an account becomes an actor
-and a linked token, both with the character's id and the account as
+Removing a seat deletes its explored fog. A player's character brought onto the map becomes an actor
+and a linked token, both with the character's id and the player as
 `owner` in `ownership`; saving or levelling the character updates its name, stats and
 senses.
 
@@ -126,8 +126,8 @@ Roles, like Foundry's user roles (the GM changes them in the Players tab):
 { "name": "Crossroads", "gridSize": 100, "start": [1000, 900], "darkness": 0.85 }
 ```
 
-`start` is where the camera opens, and where characters joining from an
-account appear. `darkness` (0 to 1, default 0) is the time of day: up to 0.3
+`start` is where the camera opens, and where characters brought in by
+their players appear. `darkness` (0 to 1, default 0) is the time of day: up to 0.3
 is daylight, up to 0.6 is dim light (dusk, moonlight) and above that is
 darkness, where only lights and senses like darkvision show anything.
 `vision` (default `true`) is fog of war: players see only what their tokens
@@ -809,10 +809,9 @@ Level tables are `[[level, value], ...]`. A character takes it like an SRD
 class (`"class": "illusionist"`), a subclass through `classes`
 (`[{ "class": "illusionist", "level": 3, "subclass": "dreamer" }]`). Shared
 (`ownership.default` `"observer"`) homebrew reaches the players' sheets;
-without ownership only the GM sees it. The account character creator and
-level-up screen offer the homebrew classes of the games an account sits in
-that its seat may read (two skills of any, the class's subclasses, no
-starting kit). A roster character keeps a copy of each one it takes
+without ownership only the GM sees it. The character creator and
+level-up screen offer the game's homebrew classes that the player may read (two skills of any, the class's subclasses, no
+starting kit). A player's character keeps a copy of each one it takes
 (`homebrew` in the character), refreshed from the game whenever it is saved,
 and its token carries the copy as `own.classes`, so it works in any game; a
 game's own class of that id wins over the copy.

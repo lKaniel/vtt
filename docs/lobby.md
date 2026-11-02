@@ -4,10 +4,9 @@ One server runs many games. Each is a folder in the [game format](game-format.md
 
 - The **home game** is the folder the server was started with: `world/` by
   default, or the folder given on the command line or in `VTT_GAME`. It stays
-  where it is, so hand edits (and Claude's) keep working, and the lobby can't
-  delete it. It is open to every account, and its fixed seats can still be
-  taken without an account (`?player=` / _Take a seat without an account_).
-- Games made in the lobby live in `data/games/<id>/` (next to the home game's
+  where it is, so hand edits (and Claude's) keep working, and Setup can't
+  delete it.
+- Games made in Setup live in `data/games/<id>/` (next to the home game's
   folder, or in `VTT_DATA`). Their id comes from the name.
 
 A game is loaded when someone needs it (a player connects or the lobby
@@ -16,44 +15,57 @@ edits to a loaded game hot-reload as before; an unloaded game simply reads its
 files the next time it loads.
 
 `data/games.json` keeps what the server knows about each game besides its
-folder: the invite code, whether it is open to every account, and when it was
-last played. It is the server's, not the game's, so copying a game folder to
-another server doesn't copy its invite.
+folder: its players' passwords and Claude keys (hashed), and when it was last
+played. It is the server's, not the game's, so copying a game folder to
+another server doesn't copy the passwords.
 
-## Members
+## Joining a game (Foundry style)
 
-A game's members are its seats (`players` in `game.json`): an account's seat
-has the account's id. Joining adds a seat; the game's GMs change roles and
-remove members from the game's page, or the Players tab at the table. A game
-always keeps at least one GM. Anyone can leave a game, except its only GM.
-Removing a member disconnects them, keeps their characters in the game as
-actors, and deletes their explored fog.
+There are no accounts. The main page lists every game on the server; picking
+one opens its **join screen**, where you pick your player from the game's
+players (`players` in `game.json`) and give that player's password if it has
+one. Your browser's session (the `vtt_session` cookie, `data/sessions.json`)
+remembers the player you joined each game as, so the game connection
+(`/ws?game=<id>`) needs nothing more. _Switch player_ on the game's page
+forgets it.
 
-Who sees a game in the lobby: its members, every account when the game is
-_open to everyone on this server_, and the server's admin (the first account),
-who can also delete any lobby game.
+A game's page has the door to the table, your characters there, your key for
+Claude, and the game's players. Its GM (or the server's admin) adds players
+(a name, a role, an optional password), changes their roles and passwords and
+removes them; anyone may set their own password. A game always keeps at least
+one GM. Removing a player disconnects them, keeps their characters in the
+game as actors, and deletes their explored fog. The in-game Players tab can
+add players too.
 
-## Invites
+## Setup and the admin password
 
-The GM makes an invite link on the game's page (`/#/invite/<code>`). Anyone
-who opens it joins as a player, signing in or making an account first if they
-need to. _New link_ replaces the code, so the old link stops working. Pasting
-a link or just its code into _Join a game_ does the same.
+**Setup** makes, imports and deletes games. It is behind the server's admin
+password: set in Setup (stored as a salted scrypt hash in `data/admin.json`)
+or by `VTT_ADMIN_PASSWORD` (which then wins and can't be changed in Setup).
+Without one, Setup is open to anyone who reaches the server. Whoever gives
+the admin password may also manage every game's players and backups, without
+joining it.
 
-## Approval and seat passwords
+A new game (made, imported from a zip or from a Foundry world) starts with a
+`Gamemaster` player without a password, and the browser that made it joins
+as that player. A zip keeps its game's players (not their passwords).
 
-_GM approves who joins_ on the game's page makes an invite link (or an open
-game) ask first: the account lands in the GM's request list and gets a seat
-as a player only once the GM lets it in. Turning it down drops the request.
+## Characters
 
-On the home game a GM can put a password on a fixed seat (one taken with
-_Take a seat without an account_). The seat then shows a lock, and the game
-connection needs `&key=<password>`; a wrong one is closed with code 4003.
-Passwords are stored as salted scrypt hashes in `games.json`.
+Characters belong to a game and the player who made them there
+(`data/characters/<id>.json`, with `game` and `owner`). The character creator
+and level-up are reached from the game's page. _Enter the game_ can bring one
+onto the map as a linked actor the player owns (or update the one there).
 
-The server's admin is the first account made, unless `VTT_ADMIN_PASSWORD`
-is set: then no account is admin until someone types that password on the
-account screen (`POST /api/admin`).
+## Servers from before (accounts)
+
+A server that still has `data/accounts/` is carried over once on start
+(`migrate-accounts.ts`), then that folder is renamed `accounts-old/`: the
+admin account's password becomes the admin password; each account's password
+becomes its player's password in every game it sat in (a seat had the
+account's id), and its Claude key that player's key; signed-in browsers stay
+signed in as those players; roster characters move into the game that has
+them as an actor, else their owner's home or first game.
 
 ## Backups and zip files
 
@@ -70,48 +82,48 @@ _Import a game_ in the lobby makes a new game from such a zip, with whoever
 imports it as its only seat (the GM); `game.json` may sit at the zip's root
 or in one folder inside it.
 
-## Entering a game
-
-_Enter the game_ takes your seat and, if you pick one, brings a roster
-character in as a linked actor you own (or updates the one already there).
-The game connection is `/ws?game=<id>`, signed in by the session cookie; a
-game's own pictures are served at `/games/<id>/assets/` (the home game's also
-at `/assets/`).
-
 ## HTTP API
 
 All under `/api/`, signed in:
 
-| Call                                                    | Who                  | Does                                                                              |
-| ------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------- |
-| `GET games`                                             | anyone               | your games and open ones, and the systems                                         |
-| `POST games` `{name, system, rules}`                    | anyone               | makes a game with you as GM                                                       |
-| `POST games/import-foundry` `{folder, name?, dataDir?}` | the admin            | makes a game from a Foundry world on the server's disk ([foundry.md](foundry.md)) |
-| `GET games/<id>`                                        | who can see it       | members (who is online), the invite for GMs                                       |
-| `DELETE games/<id>`                                     | GM, admin            | deletes a lobby game, files and all                                               |
-| `POST games/<id>/join` `{character?}`                   | member, or open game | takes your seat, brings the character                                             |
-| `POST games/<id>/invite`                                | GM                   | a new invite code                                                                 |
-| `PUT games/<id>/open` `{open}`                          | GM                   | open to every account, or not                                                     |
-| `PUT games/<id>/approval` `{approval}`                  | GM                   | joining asks the GM first, or not                                                 |
-| `POST games/<id>/requests/<account>` `{approve}`        | GM                   | lets a waiting account in as a player, or turns it down                           |
-| `PUT games/<id>/members/<id>/password` `{password}`     | GM                   | a password on a fixed seat, or (null) none                                        |
-| `GET games/<id>/backups`                                | GM                   | the backups, newest first                                                         |
-| `POST games/<id>/backups`                               | GM                   | backs up now                                                                      |
-| `POST games/<id>/backups/<backup>/restore`              | GM                   | puts a backup back (backing up the game as it is first)                           |
-| `GET games/<id>/export`                                 | GM                   | the game folder as a zip                                                          |
-| `POST games/import-zip` (zip body)                      | anyone               | makes a game from an exported zip with you as GM                                  |
-| `PUT games/<id>/members/<account>` `{role}`             | GM                   | changes a role                                                                    |
-| `DELETE games/<id>/members/<account>`                   | GM, or yourself      | removes a member                                                                  |
-| `POST invites/<code>`                                   | anyone               | joins the game as a player (or asks, with approval on)                            |
+| Call                                                    | Who                | Does                                                                              |
+| ------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------- |
+| `GET session`                                           | anyone             | whether this browser may use Setup, whether there is an admin password, home game |
+| `POST admin` `{password}`                               | anyone             | opens Setup with the admin password                                               |
+| `PUT admin` `{password}`                                | admin              | a new admin password, or (null) none                                              |
+| `DELETE admin`                                          | anyone             | closes Setup on this browser                                                      |
+| `POST logout`                                           | anyone             | forgets every game this browser joined                                            |
+| `GET games`                                             | anyone             | every game, and the systems                                                       |
+| `POST games` `{name, system, rules}`                    | admin              | makes a game, joined as its Gamemaster                                            |
+| `POST games/import-foundry` `{folder, name?, dataDir?}` | admin              | makes a game from a Foundry world on the server's disk ([foundry.md](foundry.md)) |
+| `POST games/import-zip` (zip body)                      | admin              | makes a game from an exported zip                                                 |
+| `GET games/<id>`                                        | anyone             | its players (who is online, who has a password), the one you joined as            |
+| `DELETE games/<id>`                                     | admin              | deletes a game, files and all                                                     |
+| `POST games/<id>/join` `{player, password}`             | anyone             | joins as that player                                                              |
+| `POST games/<id>/leave`                                 | anyone             | forgets the player this browser joined as                                         |
+| `POST games/<id>/players` `{name, role, password?}`     | GM, admin          | adds a player                                                                     |
+| `PUT games/<id>/players/<player>` `{role}`              | GM, admin          | changes a role                                                                    |
+| `DELETE games/<id>/players/<player>`                    | GM, admin          | removes a player                                                                  |
+| `PUT games/<id>/players/<player>/password` `{password}` | GM, admin, oneself | a password on a player, or (null) none                                            |
+| `GET/POST games/<id>/characters`, `PUT/DELETE …/<c>`    | a joined player    | your characters at the game                                                       |
+| `POST games/<id>/bring` `{character}`                   | a joined player    | brings your character onto the map                                                |
+| `GET games/<id>/homebrew`                               | a joined player    | the GM's homebrew classes you may build with                                      |
+| `GET/POST/DELETE games/<id>/mcp-key`                    | a joined player    | your key for Claude at the game                                                   |
+| `GET games/<id>/backups`                                | GM, admin          | the backups, newest first                                                         |
+| `POST games/<id>/backups`                               | GM, admin          | backs up now                                                                      |
+| `POST games/<id>/backups/<backup>/restore`              | GM, admin          | puts a backup back (backing up the game as it is first)                           |
+| `GET games/<id>/export`                                 | GM, admin          | the game folder as a zip                                                          |
 
-Code: `server/src/game-hub.ts` (games, loading, invites), `lobby-api.ts`
-(the routes), `socket-join.ts` (who a connection is), `game-access.ts` (approval, seat
-passwords), `backups.ts` and `game-archive.ts` (backups, zips), `shared/src/lobby.ts`
-(new-game checks, member changes), `server/src/systems.ts` (the systems a
-game can run on), client `ui/LobbyScreens.tsx` and
-`ui/GamePage.tsx`.
+Code: `server/src/sessions.ts` (sessions, admin password), `lobby-api.ts`
+(games, joining, players), `character-api.ts` (characters, Claude keys),
+`game-hub.ts` (games, loading), `socket-join.ts` (who a connection is),
+`game-access.ts` (player passwords, Claude keys), `migrate-accounts.ts`,
+`backups.ts` and `game-archive.ts` (backups, zips), `shared/src/lobby.ts`
+(new-game and new-player checks, player changes), `server/src/systems.ts`
+(the systems a game can run on), client `ui/MenuScreens.tsx` (games, join
+screen), `ui/LobbyScreens.tsx` (Setup) and `ui/GamePage.tsx`.
 
 ## Not done yet
 
-- Asset packs per game (a later step), and a system other than D&D 5e (the
-  seam is in place, see [systems.md](systems.md)).
+- Importing a Foundry world's users as players.
+- A system other than D&D 5e (the seam is in place, see [systems.md](systems.md)).

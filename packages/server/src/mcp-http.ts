@@ -3,7 +3,6 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import { isGm, type Player } from '@vtt/shared';
 import { z } from 'zod';
-import type { Account, AccountStore } from './accounts.ts';
 import type { GameHub } from './game-hub.ts';
 import { HttpError, parseBody, send } from './http-json.ts';
 import { answerRpc } from './mcp-protocol.ts';
@@ -12,21 +11,20 @@ import { repoRoot } from './paths.ts';
 import { sameText } from './secrets.ts';
 
 // The Claude bridge: POST /mcp speaks MCP (mcp-protocol.ts), so Claude Code
-// or Claude Desktop can sit at a live game. A caller shows a key: one an
-// account made on its page (its seats, with their rights), or the server's
+// or Claude Desktop can sit at a live game. A caller shows a key: one a
+// player made on its game's page (that player, with its rights), or the server's
 // own VTT_MCP_KEY, which sits as the home game's GM.
 //
 //   claude mcp add --transport http vtt http://localhost:3001/mcp \
 //     --header "Authorization: Bearer <key>"
 
 interface McpDeps {
-  accounts: AccountStore;
   hub: GameHub;
   mcpKey?: string;
 }
 
-/** Who a key sits as: an account (at its seats), or the server (as the home game's GM). */
-type Caller = { account: Account } | { server: true };
+/** Who a key sits as: one player at one game, or the server (as the home game's GM). */
+type Caller = { game: string; player: string } | { server: true };
 
 const GUIDE = join(repoRoot, 'docs/game-format.md');
 
@@ -34,18 +32,17 @@ function callerOf(req: IncomingMessage, deps: McpDeps): Caller | undefined {
   const key = /^Bearer\s+(\S+)$/i.exec(req.headers.authorization ?? '')?.[1];
   if (!key) return undefined;
   if (deps.mcpKey && sameText(key, deps.mcpKey)) return { server: true };
-  const account = deps.accounts.mcpAccount(key);
-  return account && { account };
+  return deps.hub.access.mcpSeat(key);
 }
 
 /** The caller's player in a game's seats. */
 function seatIn(players: readonly Player[], caller: Caller): Player | undefined {
-  return 'server' in caller ? players.find(isGm) : players.find((p) => p.id === caller.account.id);
+  return 'server' in caller ? players.find(isGm) : players.find((p) => p.id === caller.player);
 }
 
 function tableFor(hub: GameHub, caller: Caller): BridgeTable {
   const home = hub.homeId ? [hub.homeId] : [];
-  const ids = () => ('server' in caller ? home : hub.ids());
+  const ids = () => ('server' in caller ? home : [caller.game].filter((id) => hub.has(id)));
   const games = async () => {
     const infos = await Promise.all(ids().map((id) => hub.info(id)));
     return infos.flatMap((info) => {
@@ -79,7 +76,7 @@ export function mcpHandler(deps: McpDeps): (req: IncomingMessage, res: ServerRes
     }
     const caller = callerOf(req, deps);
     if (!caller) {
-      send(res, 401, { error: 'Make a key on your account page and send it as "Authorization: Bearer <key>".' });
+      send(res, 401, { error: 'Make a key on your game\'s page and send it as "Authorization: Bearer <key>".' });
       return true;
     }
     try {

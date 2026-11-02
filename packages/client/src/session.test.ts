@@ -21,9 +21,9 @@ beforeEach(() => {
 afterEach(() => closeSession(session));
 
 describe('Session', () => {
-  it('joins with the player id and takes the welcome', () => {
+  it('joins the home game and takes the welcome', () => {
     // eslint-disable-next-line sonarjs/no-clear-text-protocols -- the page was loaded over http
-    expect(ws.url).toBe('ws://table:3000/ws?player=ana');
+    expect(ws.url).toBe('ws://table:3000/ws');
     ws.receive(welcome());
     expect(session.status).toBe('open');
     expect(session.canControl(session.tokens.get('hero')!)).toBe(true);
@@ -173,11 +173,11 @@ describe('Session', () => {
     second.onclose?.({ code: 4001 });
     vi.advanceTimersByTime(1000);
     expect(latestSocket()).toBe(second);
-    expect(session.error?.message).toMatch(/no seat/);
+    expect(session.error?.message).toMatch(/not joined/);
     vi.useRealTimers();
   });
 
-  it('joins as the signed-in account when no seat is given', () => {
+  it('joins the home game when no game is given', () => {
     const own = new Session();
     own.connect();
     expect(latestSocket()!.url).toMatch(/\/ws$/);
@@ -185,7 +185,7 @@ describe('Session', () => {
   });
 
   it('joins the game it was opened for', () => {
-    const own = new Session(undefined, 'lost-mine');
+    const own = new Session('lost-mine');
     own.connect();
     expect(latestSocket()!.url).toMatch(/\/ws\?game=lost-mine$/);
     own.close();

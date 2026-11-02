@@ -185,7 +185,7 @@ function leftBehind(world: World, system: ActorSystem): string[] {
       : []),
     ...(players.length
       ? [
-          `Foundry users (${names(players)}): invite your players with the game's invite link; their characters are actors to give them`,
+          `Foundry users (${names(players)}): add your players on the game's page; their characters are actors to give them`,
         ]
       : []),
     ...(cards.length ? [`${plural(cards.length, 'card stack')}: we have no cards yet`] : []),
