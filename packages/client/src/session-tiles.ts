@@ -48,7 +48,7 @@ export interface TileHost {
     editSelection(patch: Patch, label?: string): void;
     setSelection(keys: string[]): void;
   };
-  sendChanges(label: string, ops: readonly Op[]): void;
+  readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
 }
 
 /** What the tiles tell the session. */
@@ -223,6 +223,6 @@ export class Tiles {
       ...edit.deletes.map((id): Op => ({ op: 'delete', coll, id })),
       ...more,
     ];
-    this.s.sendChanges(label, ops);
+    this.s.edits.sendChanges(label, ops);
   }
 }

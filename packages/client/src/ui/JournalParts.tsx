@@ -42,9 +42,9 @@ export function EntryTools({ session, doc }: Readonly<PartProps>) {
 }
 
 function DateButton({ session, doc }: Readonly<PartProps>) {
-  const { calendar } = session.clock();
+  const { calendar } = session.time.clock();
   const date = typeof doc.date === 'number' ? dateOf(calendar, doc.date) : undefined;
-  const today = dateOf(calendar, session.gameTime());
+  const today = dateOf(calendar, session.time.now());
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -72,7 +72,7 @@ function DateButton({ session, doc }: Readonly<PartProps>) {
 /** The day the entry is dated to, and its quest. */
 export function EntryHeader({ session, doc }: Readonly<PartProps>) {
   const quest = questOf(doc);
-  const { calendar } = session.clock();
+  const { calendar } = session.time.clock();
   return (
     <>
       {typeof doc.date === 'number' && (

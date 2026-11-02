@@ -171,8 +171,8 @@ describe('edits from the editor', () => {
     ws.receive(gmWelcome());
     session.editor.setMode('walls');
     session.editor.setSelection(['main/walls#w2']);
-    expect(JSON.parse(session.copy()!)).toMatchObject({ docs: [{ id: 'w2', type: 'wall' }] });
-    session.deleteSelected();
+    expect(JSON.parse(session.edits.copy()!)).toMatchObject({ docs: [{ id: 'w2', type: 'wall' }] });
+    session.edits.deleteSelected();
     expect(lastOps()).toMatchObject({ label: 'delete', ops: [{ op: 'delete', coll: 'main/walls', id: 'w2' }] });
   });
 });

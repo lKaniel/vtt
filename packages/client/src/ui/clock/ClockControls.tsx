@@ -17,7 +17,7 @@ const SPEEDS = [
 
 /** Start and stop time, real time or turns, how fast it runs, and letting time pass. */
 export function ClockControls({ session }: Readonly<{ session: Session }>) {
-  const clock = session.clock();
+  const clock = session.time.clock();
   const running = clock.running === true;
   return (
     <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2.5">

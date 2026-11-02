@@ -1,5 +1,20 @@
-import { type Calendar, DAY, dateOf, formatDuration, HOUR, MINUTE } from '@vtt/shared';
+import type { Doc } from '@vtt/core';
+import {
+  type Calendar,
+  type Clock,
+  CLOCK_COLL,
+  CLOCK_ID,
+  ClockSchema,
+  DAY,
+  dateOf,
+  formatDate,
+  formatDuration,
+  HOUR,
+  MINUTE,
+  timeNow,
+} from '@vtt/shared';
 import type { Combat, Effect } from '@vtt/system-dnd5e';
+import type { SessionPart, Welcome } from './session-part.ts';
 
 // World time in the client: what the clock bar offers, and how long an
 // effect has left (rounds in a fight, game time out of one).
@@ -64,4 +79,33 @@ export function shortDate(calendar: Calendar, time: number): string {
   const month = calendar.months[d.month]!.name.slice(0, 3);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.day} ${month} ${d.year}, ${pad(d.hour)}:${pad(d.minute)}`;
+}
+
+/** The game clock as this client reads it: time.json, run by the server's time. */
+export class WorldTime implements SessionPart {
+  /** How far the server's clock (ms) is ahead of this browser's. */
+  private serverOffset = 0;
+
+  constructor(private readonly s: { readonly docs: { get(coll: string, id: string): Doc | undefined } }) {}
+
+  /** The game clock and its calendar. */
+  clock(): Clock {
+    const doc = this.s.docs.get(CLOCK_COLL, CLOCK_ID);
+    const { type: _t, rev: _r, id: _id, ...data } = doc ?? { type: '', rev: 0, id: '' };
+    return ClockSchema.parse(data);
+  }
+
+  /** Game seconds now. */
+  now(): number {
+    return timeNow(this.clock(), Date.now() + this.serverOffset);
+  }
+
+  /** "Monday, 3 March 1492 DR, 14:05" */
+  dateText(): string {
+    return formatDate(this.clock().calendar, this.now());
+  }
+
+  welcome(msg: Welcome): void {
+    this.serverOffset = msg.serverTime === undefined ? 0 : msg.serverTime - Date.now();
+  }
 }

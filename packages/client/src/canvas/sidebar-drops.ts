@@ -20,7 +20,7 @@ export function listenToDrops(
     if (!data) return;
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
-    session.drop(JSON.parse(data) as DragPayload, toMap(e.clientX - rect.left, e.clientY - rect.top));
+    session.drops.onMap(JSON.parse(data) as DragPayload, toMap(e.clientX - rect.left, e.clientY - rect.top));
   });
 }
 

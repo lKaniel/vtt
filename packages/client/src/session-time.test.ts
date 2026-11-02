@@ -29,18 +29,18 @@ const welcomeWith = (clock: object, serverTime: number): ServerMessage => ({
 describe('the game clock in the client', () => {
   it('reads the clock and calendar the server sent', () => {
     ws.receive(welcomeWith({ time: 30 * 24 * HOUR + 9 * HOUR }, 50_000));
-    expect(session.clock().calendar.months).toHaveLength(12);
-    expect(session.gameTime()).toBe(30 * 24 * HOUR + 9 * HOUR);
-    expect(session.dateText()).toBe('Wednesday, 31 January 1, 09:00');
-    expect(shortDate(session.clock().calendar, session.gameTime())).toBe('31 Jan 1, 09:00');
+    expect(session.time.clock().calendar.months).toHaveLength(12);
+    expect(session.time.now()).toBe(30 * 24 * HOUR + 9 * HOUR);
+    expect(session.time.dateText()).toBe('Wednesday, 31 January 1, 09:00');
+    expect(shortDate(session.time.clock().calendar, session.time.now())).toBe('31 Jan 1, 09:00');
   });
 
   it('runs a running clock by the server’s time, not the browser’s', () => {
     // The server's clock is 10 s ahead; the clock started at its 40 s.
     ws.receive(welcomeWith({ time: 100, running: true, since: 40_000 }, 60_000));
-    expect(session.gameTime()).toBe(120);
+    expect(session.time.now()).toBe(120);
     vi.setSystemTime(53_000);
-    expect(session.gameTime()).toBe(123);
+    expect(session.time.now()).toBe(123);
   });
 
   it('sends the GM’s clock changes and turn-based mode', () => {

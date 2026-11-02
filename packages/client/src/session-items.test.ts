@@ -74,12 +74,12 @@ describe('shape tools in the session', () => {
     session.editor.setMode('drawings');
     expect(session.editor.mode).toBe('drawings');
     session.editor.setSelection(['main/drawings#gms']);
-    session.deleteSelected();
+    session.edits.deleteSelected();
     expect(lastOps()).toBeUndefined();
-    expect(session.copy()).toBeUndefined();
+    expect(session.edits.copy()).toBeUndefined();
     session.editor.setSelection(['main/drawings#mine']);
-    expect(session.copy()).toBeDefined();
-    session.deleteSelected();
+    expect(session.edits.copy()).toBeDefined();
+    session.edits.deleteSelected();
     expect(lastOps()).toMatchObject({ label: 'delete', ops: [{ op: 'delete', id: 'mine' }] });
   });
 
@@ -87,8 +87,8 @@ describe('shape tools in the session', () => {
     joinAs('player');
     session.editor.setMode('drawings');
     session.editor.setSelection(['main/drawings#mine']);
-    const text = session.copy();
-    session.paste(text);
+    const text = session.edits.copy();
+    session.edits.paste(text);
     expect(lastOps()).toMatchObject({
       label: 'paste',
       ops: [{ op: 'create', doc: { type: 'drawing', author: 'ana' } }],

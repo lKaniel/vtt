@@ -1,7 +1,6 @@
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Session } from './session.ts';
-import { dropOnOpenSheet } from './session-drops.ts';
 import { closeSession, openSession, token, welcome, type FakeWebSocket } from './session.fixtures.ts';
 
 let session: Session;
@@ -32,34 +31,34 @@ describe('the GM tools', () => {
 
   it('opens a sheet, switches it to editing, and closes it when the token goes', () => {
     ws.receive(gmWelcome());
-    session.openSheet({ kind: 'token', id: 'hero' });
-    expect(session.sheet).toEqual({ kind: 'token', id: 'hero', edit: false });
-    session.setSheetEdit(true);
-    expect(session.sheet?.edit).toBe(true);
+    session.sheets.open({ kind: 'token', id: 'hero' });
+    expect(session.sheets.current).toEqual({ kind: 'token', id: 'hero', edit: false });
+    session.sheets.setEdit(true);
+    expect(session.sheets.current?.edit).toBe(true);
     ws.receive({ t: 'tokenGone', id: 'hero' });
-    expect(session.sheet).toBeUndefined();
+    expect(session.sheets.current).toBeUndefined();
   });
 
   it('only lets the GM, or a trusted owner, edit a sheet', () => {
     ws.receive(welcome());
-    session.openSheet({ kind: 'token', id: 'hero' }, true);
-    expect(session.sheet?.edit).toBe(false);
+    session.sheets.open({ kind: 'token', id: 'hero' }, true);
+    expect(session.sheets.current?.edit).toBe(false);
     const trusted = welcome([token('hero'), { ...token('goblin'), ownership: undefined }]);
     ws.receive({ ...trusted, you: { id: 'ana', name: 'Ana', role: 'trusted', color: '#f00' } } as ServerMessage);
     expect(session.canEdit('hero')).toBe(true);
     expect(session.canEdit('goblin')).toBe(false);
-    session.openSheet({ kind: 'token', id: 'hero' }, true);
-    expect(session.sheet?.edit).toBe(true);
-    session.openSheet({ kind: 'actor', id: 'bandit' }, true);
-    expect(session.sheet?.edit).toBe(false);
+    session.sheets.open({ kind: 'token', id: 'hero' }, true);
+    expect(session.sheets.current?.edit).toBe(true);
+    session.sheets.open({ kind: 'actor', id: 'bandit' }, true);
+    expect(session.sheets.current?.edit).toBe(false);
   });
 
   it('leaves edit mode when a new role no longer allows it', () => {
     const trusted = { ...welcome(), you: { id: 'ana', name: 'Ana', role: 'trusted', color: '#f00' } } as ServerMessage;
     ws.receive(trusted);
-    session.openSheet({ kind: 'token', id: 'hero' }, true);
+    session.sheets.open({ kind: 'token', id: 'hero' }, true);
     ws.receive(welcome());
-    expect(session.sheet).toEqual({ kind: 'token', id: 'hero', edit: false });
+    expect(session.sheets.current).toEqual({ kind: 'token', id: 'hero', edit: false });
   });
 
   it('lets an observer seat watch but not act', () => {
@@ -128,35 +127,35 @@ describe('the GM tools', () => {
 
   it('sends drops and shows why one was refused', () => {
     ws.receive(gmWelcome());
-    session.spawnHidden = true;
-    session.drop({ kind: 'monster', id: 'goblin', rules: '2014' }, [10, 10]);
+    session.drops.hidden = true;
+    session.drops.onMap({ kind: 'monster', id: 'goblin', rules: '2014' }, [10, 10]);
     expect(ws.sent.at(-1)).toMatchObject({ t: 'spawn', hidden: true });
-    session.drop({ kind: 'item', id: 'dagger' }, [900, 900]);
+    session.drops.onMap({ kind: 'item', id: 'dagger' }, [900, 900]);
     expect(session.error?.message).toBe('Drop items on a creature');
   });
 
   it('sends what lands on the open sheet, with the part of it', () => {
     ws.receive(gmWelcome());
-    dropOnOpenSheet(session, { kind: 'item', id: 'dagger' });
+    session.drops.onSheet({ kind: 'item', id: 'dagger' });
     expect(ws.sent.at(-1)).not.toMatchObject({ t: 'drop' });
-    session.openSheet({ kind: 'token', id: 'hero' });
-    dropOnOpenSheet(session, { kind: 'spell', id: 'fireball', rules: '2014' }, 'inventory');
+    session.sheets.open({ kind: 'token', id: 'hero' });
+    session.drops.onSheet({ kind: 'spell', id: 'fireball', rules: '2014' }, 'inventory');
     expect(ws.sent.at(-1)).toEqual({
       t: 'drop',
       what: { kind: 'spell', id: 'fireball', rules: '2014' },
       onto: { kind: 'token', id: 'hero' },
       area: 'inventory',
     });
-    dropOnOpenSheet(session, { kind: 'monster', id: 'goblin', rules: '2014' });
+    session.drops.onSheet({ kind: 'monster', id: 'goblin', rules: '2014' });
     expect(session.error?.message).toBe('Drop creatures on the map');
-    session.openSheet({ kind: 'actor', id: 'bandit' });
-    dropOnOpenSheet(session, { kind: 'media', src: 'art/bandit.png' });
+    session.sheets.open({ kind: 'actor', id: 'bandit' });
+    session.drops.onSheet({ kind: 'media', src: 'art/bandit.png' });
     expect(ws.sent.at(-1)).toMatchObject({ t: 'saveActor', actor: { id: 'bandit', img: 'art/bandit.png' } });
   });
 
   it('pins a journal entry dropped on the map as a note', () => {
     ws.receive(gmWelcome());
-    session.drop({ kind: 'journal', id: 'lore', name: 'Lore' }, [40, 60]);
+    session.drops.onMap({ kind: 'journal', id: 'lore', name: 'Lore' }, [40, 60]);
     expect(ws.sent.at(-1)).toMatchObject({
       t: 'ops',
       ops: [{ op: 'create', doc: { type: 'note', x: 40, y: 60, entry: 'lore', label: 'Lore' } }],
@@ -170,8 +169,8 @@ describe('the GM tools send', () => {
     session.editToken('hero', {});
     session.editToken('hero', { hp: 3 });
     session.deleteToken('hero');
-    session.setSpawnHidden(false);
-    session.spawn({ kind: 'actor', id: 'bandit' }, [5, 5]);
+    session.drops.setHidden(false);
+    session.drops.spawn({ kind: 'actor', id: 'bandit' }, [5, 5]);
     session.saveActor({ ...token('bandit') });
     session.deleteActor('bandit');
     session.relinkToken('hero', 'unlink');

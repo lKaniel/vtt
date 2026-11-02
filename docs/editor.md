@@ -182,7 +182,7 @@ deletes with it (`attachedTo` in core's clipboard kinds).
   click, marquee, move, handle drag. `selection.ts` has the modifier rules.
 - `client/session-editor.ts`: mode, tool, selection and menu state; every
   change goes out as an `ops` transaction, shown at once and taken back if
-  the server refuses it (`sendUpdates` in `session-edits.ts`).
+  the server refuses it (`sendUpdates` in `session-edits.ts`, reached as `session.edits`).
 - `client/canvas/MapEditor.ts`: says what is where for the controller and
   draws walls, lights, the selection, handles and the marquee.
   `ItemLayer.ts` draws drawings, templates, notes and regions for everyone

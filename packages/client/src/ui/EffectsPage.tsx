@@ -34,7 +34,7 @@ export function EffectsPage(props: Readonly<SheetProps>) {
   const [open, setOpen] = useState<string>();
   const effects = value.effects ?? [];
   const left = {
-    now: session.gameTime(),
+    now: session.time.now(),
     fighting: !!session.combat,
     nameOf: (id: string) => session.tokens.get(id)?.name,
   };

@@ -299,7 +299,7 @@ export class TokenLayer {
     else s.select(id);
     if (this.isDoubleClick(id)) {
       if (s.tokens.get(id)?.pile) s.piles.open(id);
-      else s.openSheet({ kind: 'token', id });
+      else s.sheets.open({ kind: 'token', id });
     } else this.onGrab?.(id, [e.global.x, e.global.y]);
   }
 

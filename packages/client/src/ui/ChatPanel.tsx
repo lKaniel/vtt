@@ -171,7 +171,9 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
             m={m}
             session={session}
             onApply={(how) => session.actions.applyRoll(m.id, how)}
-            onUndo={session.isGm() && session.history.card === m.id ? () => session.undoCard(m.id) : undefined}
+            onUndo={
+              session.isGm() && session.edits.history.card === m.id ? () => session.edits.undoCard(m.id) : undefined
+            }
           />
         ))}
       </div>

@@ -45,7 +45,7 @@ export interface JournalHost {
   readonly docs: DocStore;
   readonly you?: Player;
   send(msg: ClientMessage): void;
-  sendChanges(label: string, ops: readonly Op[]): void;
+  readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
 }
 
 /** What the journal hands back to the session. */
@@ -130,7 +130,7 @@ export class Journal implements SessionPart {
     const id = freeId(type, (x) => !!this.s.docs.get(coll, x));
     const author = type === 'macro' && !this.gm() && this.s.you ? { author: this.s.you.id } : {};
     const doc = { id, type, rev: 0, ...NEW[type], ...author, ...fields } as Doc;
-    this.s.sendChanges('new', [{ op: 'create', coll, doc }]);
+    this.s.edits.sendChanges('new', [{ op: 'create', coll, doc }]);
     if (type === 'journal') this.open(id);
   }
 
@@ -152,7 +152,7 @@ export class Journal implements SessionPart {
 
   /** Removes a macro (yours, or any for the GM). */
   deleteMacro(id: string): void {
-    this.s.sendChanges('delete macro', [{ op: 'delete', coll: 'macros', id }]);
+    this.s.edits.sendChanges('delete macro', [{ op: 'delete', coll: 'macros', id }]);
   }
 
   /** Whether you may change a macro: the GM any, a player their own. */
@@ -163,7 +163,7 @@ export class Journal implements SessionPart {
   /** GM: a new homebrew document (a class), its fields ready (see homebrew.ts in the system). */
   createHomebrew(fields: { id: string; kind: string; name: string } & Record<string, unknown>): void {
     const doc = { ...fields, type: 'homebrew', rev: 0 } as Doc;
-    this.s.sendChanges('new homebrew', [{ op: 'create', coll: 'homebrew', doc }]);
+    this.s.edits.sendChanges('new homebrew', [{ op: 'create', coll: 'homebrew', doc }]);
   }
 
   /** Changes one sidebar document's fields. */

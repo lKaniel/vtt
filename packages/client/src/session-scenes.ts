@@ -12,7 +12,7 @@ export interface SceneHost {
   readonly docs: DocStore;
   readonly players: Player[];
   send(msg: ClientMessage): void;
-  sendChanges(label: string, ops: readonly Op[]): void;
+  readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
 }
 
 /** What the scenes hand back to the session. */
@@ -66,11 +66,11 @@ export class Scenes implements SessionPart {
   }
 
   create(name: string): void {
-    this.s.sendChanges('new scene', newSceneOps(this.s.docs, name).ops);
+    this.s.edits.sendChanges('new scene', newSceneOps(this.s.docs, name).ops);
   }
 
   duplicate(scene: string): void {
-    this.s.sendChanges('scene copy', duplicateSceneOps(this.s.docs, scene).ops);
+    this.s.edits.sendChanges('scene copy', duplicateSceneOps(this.s.docs, scene).ops);
   }
 
   /** Changes a scene's settings (name, grid, lighting, fog). */
@@ -80,7 +80,7 @@ export class Scenes implements SessionPart {
 
   /** Deletes a scene and everything on it; undo brings it all back. */
   delete(scene: string): void {
-    this.s.sendChanges('scene delete', [{ op: 'delete', coll: 'scenes', id: scene }]);
+    this.s.edits.sendChanges('scene delete', [{ op: 'delete', coll: 'scenes', id: scene }]);
   }
 
   receive(msg: ServerMessage): boolean | undefined {

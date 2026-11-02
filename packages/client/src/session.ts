@@ -1,4 +1,4 @@
-import type { DocRef, PluginLoad } from '@vtt/core';
+import { type DocRef, DocStore, type PluginLoad } from '@vtt/core';
 import {
   canControl,
   canEdit,
@@ -18,15 +18,14 @@ import {
   currentTurn,
   type ReactionOffer,
   type ServerMessage,
-  type SpawnSource,
   type Token,
   type TokenView,
 } from '@vtt/system-dnd5e';
 import { openSocket, refusalOf } from './session-socket.ts';
 import { Turns } from './turns.ts';
 
-import type { DragPayload } from './drops.ts';
-import { dropOnMap } from './session-drops.ts';
+import { type DropEvents, Drops } from './session-drops.ts';
+import { Sheets } from './session-sheets.ts';
 import { refOf } from './editor/selection.ts';
 import { withOffer } from './reactions.ts';
 import { Presence } from './presence.ts';
@@ -36,7 +35,10 @@ import { Actions, type ActionEvents } from './session-actions.ts';
 import { Fog, type FogEvents } from './session-fog.ts';
 import { Draw, Levels } from './session-items.ts';
 import { Editor, type EditorEvents } from './session-editor.ts';
-import { EditSession } from './session-edits.ts';
+import { mayEditRefs } from './authorship.ts';
+import { Commands } from './session-commands.ts';
+import { type EditEvents, Edits } from './session-edits.ts';
+import { WorldTime } from './session-time.ts';
 import { Tiles } from './session-tiles.ts';
 import { isTableNews, type TableNews, withChat } from './session-news.ts';
 import type { SessionPart } from './session-part.ts';
@@ -50,24 +52,32 @@ import { Cards } from './session-cards.ts';
 import { ScriptHost } from './scripting/script-api.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
-type PartEvents = EditorEvents & ActionEvents & HudEvents & JournalEvents & PackEvents & FogEvents & SceneEvents;
-
-/** What a character sheet shows: a token on the map or (GM only) an actor in the list. */
-export interface SheetTarget {
-  kind: 'token' | 'actor';
-  id: string;
-}
+type PartEvents = EditEvents &
+  DropEvents &
+  EditorEvents &
+  ActionEvents &
+  HudEvents &
+  JournalEvents &
+  PackEvents &
+  FogEvents &
+  SceneEvents;
 
 /**
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends EditSession {
+export class Session extends Commands {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
   readonly tokens = new Map<string, TokenView>();
   readonly chunks = new Map<string, Chunk>();
+  /** The game's documents as this client knows them (GM only for now), kept up to date by `docs` messages. */
+  docs = new DocStore();
+  /** The scene everyone is on. */
+  scene = '';
+  /** Where the pointer is on the map: pastes land there. */
+  pointer?: Point;
   chat: ChatMessage[] = [];
   selected?: string;
   /** The fight in progress, if any. */
@@ -80,10 +90,6 @@ export class Session extends EditSession {
   players: Player[] = [];
   /** GM only: the Actors list. */
   readonly actors = new Map<string, Actor>();
-  /** The open character sheet; `edit` is edit mode (the GM's, or a trusted owner's). */
-  sheet?: SheetTarget & { edit: boolean };
-  /** GM only: creatures dropped on the map arrive hidden from the players. */
-  spawnHidden = false;
   /** The decks, hands and piles you were sent (session-cards.ts). */
   readonly cards = new Cards(this);
   /** The creatures you target (T), and the others'. */
@@ -96,15 +102,23 @@ export class Session extends EditSession {
     editorChanged: () => this.editorChanged(),
     fogChanged: () => this.emit('fog'),
     gridSize: () => this.gridSize(),
-    updates: (label, updates) => this.sendUpdates(label, updates),
+    updates: (label, updates) => this.edits.sendUpdates(label, updates),
     runScript: (doc, token) => this.scripts.run(doc, token),
     heard: (src, volume) => this.emit('sound', src, volume),
     reseat: (you) => (this.you = you),
     createImageTile: (r, src) => this.tiles.createImage(r, src),
     selectionChanged: () => this.selectionChanged(),
     startPoint: () => this.world?.start ?? [0, 0],
-    mayEdit: (refs) => this.mayEdit(refs),
+    mayEdit: (refs) => mayEditRefs(this.you, this.docs, refs),
+    docsChanged: () => this.editor.docsChanged(),
+    editTargets: () => this.editTargets(),
+    notice: (message) => this.showNotice(message),
+    placeMedia: (src, at, size) => this.packs.placeMedia(src, at, size),
   };
+  /** Copy, paste, delete, undo and redo, and the edits shown before the server confirms them. */
+  readonly edits: Edits = new Edits(this, this.ev);
+  /** The game clock and calendar. */
+  readonly time = new WorldTime(this);
   /** The selected creature's readied attack or aimed spell, and your roll mode. */
   readonly actions = new Actions(this, this.ev);
   readonly piles = new Piles(this, this.ev);
@@ -116,10 +130,24 @@ export class Session extends EditSession {
   readonly draw = new Draw(this, this.ev);
   readonly levels = new Levels(this, this.ev);
   readonly turns = new Turns(this);
+  /** The open character sheet. */
+  readonly sheets = new Sheets(this, this.ev);
+  /** Spawning creatures and what is dropped on the map or the open sheet. */
+  readonly drops = new Drops(this, this.ev);
   readonly tiles: Tiles = new Tiles(this, this.ev);
   readonly editor: Editor = new Editor(this, this.ev);
   /** The parts that take messages, the welcome and departures. */
-  private readonly parts: SessionPart[] = [this.journal, this.packs, this.scenes, this.fog, this.hud, this.piles];
+  private readonly parts: SessionPart[] = [
+    this.edits,
+    this.time,
+    this.journal,
+    this.packs,
+    this.scenes,
+    this.fog,
+    this.hud,
+    this.piles,
+    this.sheets,
+  ];
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
   /** Your ruler and the ones the others on your scene are laying. */
@@ -245,18 +273,7 @@ export class Session extends EditSession {
     this.changed();
   }
 
-  protected docsChanged(): void {
-    this.editor.docsChanged();
-  }
-
   // GM tools ---------------------------------------------------------------
-
-  /** Opens a sheet (or closes it with undefined); only those who may edit it can open it for editing. */
-  openSheet(target: SheetTarget | undefined, edit = false): void {
-    const editable = target && (target.kind === 'actor' ? this.isGm() : this.canEdit(target.id));
-    this.sheet = target && { ...target, edit: edit && !!editable };
-    this.changed();
-  }
 
   isGm(): boolean {
     return !!this.you && isGm(this.you);
@@ -266,24 +283,6 @@ export class Session extends EditSession {
   canEdit(id: string): boolean {
     const token = this.tokens.get(id);
     return !!this.you && !!token && canEdit(token, this.you);
-  }
-
-  setSheetEdit(edit: boolean): void {
-    if (this.sheet) this.openSheet(this.sheet, edit);
-  }
-
-  setSpawnHidden(hidden: boolean): void {
-    this.spawnHidden = hidden;
-    this.changed();
-  }
-
-  spawn(from: SpawnSource, at: Point): void {
-    this.send({ t: 'spawn', from, at, hidden: this.spawnHidden });
-  }
-
-  /** Something dragged from the side panel or a sheet's inventory was dropped on the map at `p`. */
-  drop(payload: DragPayload, p: Point): void {
-    dropOnMap(this, payload, p);
   }
 
   focus(point: Point): void {
@@ -299,14 +298,15 @@ export class Session extends EditSession {
     this.send({ t: 'pause', on });
   }
 
-  protected editTargets(): DocRef[] {
+  private editTargets(): DocRef[] {
     if (this.editor.selection.length) return this.editor.selection.map(refOf);
     if (this.selected) return [{ coll: `${this.scene}/tokens`, id: this.selected }];
-    if (this.sheet?.kind === 'actor') return [{ coll: 'actors', id: this.sheet.id }];
+    const sheet = this.sheets.current;
+    if (sheet?.kind === 'actor') return [{ coll: 'actors', id: sheet.id }];
     return [];
   }
 
-  protected gridSize(): number {
+  private gridSize(): number {
     return this.world?.gridSize ?? 100;
   }
 
@@ -391,13 +391,13 @@ export class Session extends EditSession {
     }
   }
 
-  /** A message for one of the session's parts, else an edit. */
+  /** A message for one of the session's parts. */
   private applyParts(msg: ServerMessage): boolean {
     for (const part of this.parts) {
       const changed = part.receive?.(msg);
       if (changed !== undefined) return changed;
     }
-    return this.applyEdit(msg);
+    return false;
   }
 
   /** Someone else's ruler, cursor, ping or targets: drawn over the map, nothing the UI re-renders for. */
@@ -433,14 +433,13 @@ export class Session extends EditSession {
     this.rulers.reset();
     this.presence.reset();
     this.targets.reset((id) => this.tokens.has(id));
-    this.welcomeEdits(msg);
+    this.scene = msg.scene;
     for (const part of this.parts) part.welcome?.(msg);
     this.players = msg.players ?? [];
     this.pluginLoads = msg.plugins ?? [];
     this.actors.clear();
     for (const a of msg.actors ?? []) this.actors.set(a.id, a);
-    // A new role may take edit mode away (or the creature out of sight).
-    if (this.sheet) this.reopenSheet(this.sheet);
+    this.sheets.reopen();
     // A reconnect starts from scratch: ask for the chunks again.
     this.chunks.clear();
     this.emit('welcome');
@@ -449,18 +448,13 @@ export class Session extends EditSession {
     this.send({ t: 'rollMode', mode: this.actions.rollMode });
   }
 
-  private reopenSheet(sheet: SheetTarget & { edit: boolean }): void {
-    const there = sheet.kind === 'token' ? this.tokens.has(sheet.id) : this.actors.has(sheet.id);
-    this.openSheet(there ? sheet : undefined, sheet.edit);
-  }
-
   private onActor(msg: Extract<ServerMessage, { t: 'actor' | 'actorGone' }>): void {
     if (msg.t === 'actor') {
       this.actors.set(msg.actor.id, msg.actor);
       return;
     }
     this.actors.delete(msg.id);
-    if (this.sheet?.kind === 'actor' && this.sheet.id === msg.id) this.sheet = undefined;
+    this.sheets.close('actor', msg.id);
   }
 
   private onTokenGone(id: string): boolean {
@@ -469,7 +463,6 @@ export class Session extends EditSession {
     for (const part of this.parts) part.gone?.(id);
     if (this.editor.mode === 'tokens') this.editor.pruneSelection((key) => key !== this.editor.tokenKey(id));
     if (this.selected === id) this.select(undefined);
-    if (this.sheet?.kind === 'token' && this.sheet.id === id) this.sheet = undefined;
     this.emit('tokenGone', id);
     return true;
   }

@@ -11,7 +11,7 @@ import { MonthRows, WeekdayRows } from './CalendarRows.tsx';
 
 /** The GM's calendar: its name and era, its months and weekdays, when the sun rises and sets, how dark night is. */
 export function CalendarEditor({ session }: Readonly<{ session: Session }>) {
-  const saved = session.clock().calendar;
+  const saved = session.time.clock().calendar;
   const [draft, setDraft] = useState<Calendar>(saved);
   const set = (change: Partial<Calendar>) => setDraft({ ...draft, ...change });
   const changed = JSON.stringify(draft) !== JSON.stringify(saved);

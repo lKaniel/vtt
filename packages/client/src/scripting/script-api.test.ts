@@ -56,7 +56,7 @@ describe('the scripting API', () => {
 
   it('edits documents through the session in one undo step', () => {
     joinAsGm([heal]);
-    session.changeDocs([{ op: 'delete', coll: 'macros', id: 'heal' }]);
+    session.edits.sendChanges('script', [{ op: 'delete', coll: 'macros', id: 'heal' }]);
     expect(last()).toMatchObject({ t: 'ops', label: 'script', ops: [{ op: 'delete', id: 'heal' }] });
     expect(session.docs.get('macros', 'heal')).toBeUndefined();
   });

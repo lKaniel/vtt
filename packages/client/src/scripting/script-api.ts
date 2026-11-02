@@ -25,7 +25,7 @@ export interface ScriptSession {
   send(msg: ClientMessage): void;
   say(text: string): void;
   move(token: string, to: Point): void;
-  changeDocs(ops: readonly Op[], label?: string): void;
+  readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
   showNotice(message: string): void;
   showError(message: string): void;
   readonly journal: { runMacro(macro: string, token?: string): Promise<void> };
@@ -127,10 +127,12 @@ function makeApi(s: ScriptSession, hooks: Hooks): VttApi {
     move: (token: string, x: number, y: number) => s.move(token, [x, y]),
     docs: (coll: string) => s.docs.all(coll),
     doc: (coll: string, id: string) => s.docs.get(coll, id),
-    edit: (ops: readonly Op[], label?: string) => s.changeDocs(ops, label),
+    edit: (ops: readonly Op[], label?: string) => s.edits.sendChanges(label ?? 'script', ops),
     update: (coll: string, id: string, patch: Patch, label?: string) => {
       const rev = s.docs.get(coll, id)?.rev;
-      s.changeDocs([{ op: 'update', coll, id, patch, ...(rev === undefined ? {} : { rev }) }], label);
+      s.edits.sendChanges(label ?? 'script', [
+        { op: 'update', coll, id, patch, ...(rev === undefined ? {} : { rev }) },
+      ]);
     },
     notify: (text: string) => s.showNotice(text),
     runMacro: (key: string, token?: string) => s.journal.runMacro(byName('macros', key)?.id ?? key, token),

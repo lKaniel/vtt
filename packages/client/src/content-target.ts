@@ -42,7 +42,7 @@ function docTarget(session: Session, link: ContentLink): LinkTarget {
   }
   if (link.kind === 'actor') {
     const actor = session.actors.get(link.id);
-    return actor ? { name: actor.name, open: () => session.openSheet({ kind: 'actor', id: link.id }) } : {};
+    return actor ? { name: actor.name, open: () => session.sheets.open({ kind: 'actor', id: link.id }) } : {};
   }
   const name = nameOf(session.docs.get('scenes', link.id));
   if (!name) return {};

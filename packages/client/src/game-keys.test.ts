@@ -49,16 +49,16 @@ describe('the game keys', () => {
   it('opens and closes the selected creature’s sheet with C', () => {
     session.select('hero');
     gameKey(session, press('c'));
-    expect(session.sheet).toMatchObject({ kind: 'token', id: 'hero' });
+    expect(session.sheets.current).toMatchObject({ kind: 'token', id: 'hero' });
     gameKey(session, press('c'));
-    expect(session.sheet).toBeUndefined();
+    expect(session.sheets.current).toBeUndefined();
   });
 
   it('backs out with Esc: the sheet first, then the selection', () => {
     session.select('hero');
-    session.openSheet({ kind: 'token', id: 'hero' });
+    session.sheets.open({ kind: 'token', id: 'hero' });
     gameKey(session, press('Escape'));
-    expect(session.sheet).toBeUndefined();
+    expect(session.sheets.current).toBeUndefined();
     expect(session.selected).toBe('hero');
     gameKey(session, press('Escape'));
     expect(session.selected).toBeUndefined();
@@ -112,7 +112,7 @@ describe('the game keys', () => {
   it('leaves keys the page already handled alone', () => {
     session.select('hero');
     gameKey(session, { ...press('c'), defaultPrevented: true });
-    expect(session.sheet).toBeUndefined();
+    expect(session.sheets.current).toBeUndefined();
   });
 });
 

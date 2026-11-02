@@ -150,7 +150,7 @@ describe('the GM’s asset browser', () => {
 
   it('places a picture as a tile centred where it lands', () => {
     ws.receive(gmWelcome());
-    session.drop({ kind: 'media', src: 'pack://forest/media/oak.webp', w: 300, h: 200 }, [500, 500]);
+    session.drops.onMap({ kind: 'media', src: 'pack://forest/media/oak.webp', w: 300, h: 200 }, [500, 500]);
     expect(sent()).toMatchObject({
       t: 'ops',
       ops: [

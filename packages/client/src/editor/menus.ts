@@ -23,12 +23,15 @@ export interface MenuApi {
   canEdit(id: string): boolean;
   /** The shape tools (see session-items.ts). */
   readonly draw: { create(draft: Draft): void };
-  copy(): string | undefined;
-  cut(): string | undefined;
-  paste(): void;
-  duplicate(): void;
-  deleteSelected(): void;
-  openSheet(target: { kind: 'token'; id: string }, edit?: boolean): void;
+  /** Copy, cut, paste, duplicate and delete (see session-edits.ts). */
+  readonly edits: {
+    copy(): string | undefined;
+    cut(): string | undefined;
+    paste(): void;
+    duplicate(): void;
+    deleteSelected(): void;
+  };
+  readonly sheets: { open(target: { kind: 'token'; id: string }, edit?: boolean): void };
   move(token: string, to: Point): void;
   editMap(edit: MapEdit): void;
   /** The tiles mode's commands (see session-tiles.ts). */
@@ -112,10 +115,10 @@ const allDocs = (t: MenuTarget, test: (doc: Doc) => boolean): boolean => t.docs.
 registerMenu('selection', (_t, api) =>
   api.editor.canEditSelection()
     ? [
-        { label: 'Copy', run: () => toClipboard(api.copy()) },
-        { label: 'Cut', run: () => toClipboard(api.cut()) },
-        { label: 'Duplicate', run: () => api.duplicate() },
-        { label: 'Delete', run: () => api.deleteSelected(), danger: true },
+        { label: 'Copy', run: () => toClipboard(api.edits.copy()) },
+        { label: 'Cut', run: () => toClipboard(api.edits.cut()) },
+        { label: 'Duplicate', run: () => api.edits.duplicate() },
+        { label: 'Delete', run: () => api.edits.deleteSelected(), danger: true },
       ]
     : [],
 );
@@ -127,7 +130,7 @@ registerMenu('token', (t, api) => {
   return [
     openEntry(t.token, id, api),
     hudEntry(id, t.screen, api),
-    api.canEdit(id) && { label: 'Edit sheet', run: () => api.openSheet({ kind: 'token', id }, true) },
+    api.canEdit(id) && { label: 'Edit sheet', run: () => api.sheets.open({ kind: 'token', id }, true) },
     api.isGm() && {
       label: hidden ? 'Reveal to players' : 'Hide from players',
       run: () => api.editor.editSelection({ hidden: hidden ? null : true }, hidden ? 'reveal' : 'hide'),
@@ -143,7 +146,7 @@ registerMenu('token', (t, api) => {
 const openEntry = (token: TokenView | undefined, id: string, api: MenuApi): MenuItem =>
   token?.pile
     ? { label: `Open ${token.name}`, run: () => api.piles.open(id) }
-    : { label: 'Open sheet', run: () => api.openSheet({ kind: 'token', id }) };
+    : { label: 'Open sheet', run: () => api.sheets.open({ kind: 'token', id }) };
 
 /** GM: makes a token a pile of loot or a merchant (see system-dnd5e piles.ts), locks it, or makes it a token again. */
 function pileEntries(pile: TokenView['pile'], api: MenuApi): MenuItem[] {
@@ -305,7 +308,7 @@ registerMenu('ground', (t, api) => {
   const token = t.token;
   const { label: _l, ...light } = LIGHT_PRESETS[api.editor.lightPreset];
   return [
-    (gm || PLAYER_PASTE.has(t.mode)) && { label: 'Paste here', run: () => api.paste() },
+    (gm || PLAYER_PASTE.has(t.mode)) && { label: 'Paste here', run: () => api.edits.paste() },
     gm &&
       t.mode === 'notes' && {
         label: 'Put a note here',
