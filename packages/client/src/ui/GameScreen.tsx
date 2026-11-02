@@ -47,7 +47,7 @@ export function GameScreen({
       if (e.defaultPrevented || isTyping(e.target)) return;
       if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
       if (e.key === 'Escape' && backOutOfEditor(session)) return;
-      if (runEditorKey(session, e)) return;
+      if (targetKey(session, e) || runEditorKey(session, e)) return;
       if (e.key === 'c') toggleSheet(session);
       else if (e.key === 'e') toggleEditor(session);
       else handleGameKey(session, e);
@@ -207,6 +207,12 @@ function backOutOfEditor(session: Session): boolean {
   else if (session.selection.length) session.setSelection([]);
   else session.setMode('tokens');
   return true;
+}
+
+/** T in the tokens mode targets the creature under the pointer, or lets them all go over empty ground (see targets.ts). */
+function targetKey(session: Session, e: KeyboardEvent): boolean {
+  if (e.key.toLowerCase() !== 't' || e.shiftKey || session.mode !== 'tokens') return false;
+  return session.toggleTargetAtPointer();
 }
 
 /** T, Shift+T, W, L, D, N and M switch modes (those this seat may use), R picks up the ruler; the arrows nudge outside the tokens mode. */

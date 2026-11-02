@@ -1,4 +1,4 @@
-import { type HistoryState, isGm, type Player, type WorldInfo } from '@vtt/shared';
+import { chatFor, type HistoryState, isGm, type Player, type WorldInfo } from '@vtt/shared';
 import type { ChatMessage, ServerMessage, Token, TokenView } from '@vtt/system-dnd5e';
 import type { DocFeed } from './doc-feed.ts';
 import type { GameStore } from './game-store.ts';
@@ -46,7 +46,7 @@ export function welcomeOf(store: GameStore, c: Joining, parts: WelcomeParts): Se
     world: info,
     you: player,
     tokens: tokens.map((t) => parts.view(t, player)),
-    chat: parts.chat.filter((m) => !m.gmOnly || gm),
+    chat: parts.chat.flatMap((m) => chatFor(m, player) ?? []),
     combat: store.combat ?? null,
     scene: c.scene,
     sceneName: store.sceneName(c.scene),

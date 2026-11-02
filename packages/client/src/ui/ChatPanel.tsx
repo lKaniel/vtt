@@ -16,6 +16,9 @@ import { targetText } from '../spell-text.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
+import { SelectField } from './kit/select.tsx';
+import { HIDDEN_ROLL, modeNote, ROLL_MODE_OPTIONS } from '../roll-mode.ts';
+import type { RollMode } from '@vtt/shared';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
@@ -105,7 +108,9 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
     <>
       <div className="chat-list" ref={list}>
         {session.chat.length === 0 && (
-          <p className="muted">Type to chat. Roll with /r 1d20+5, or /gmr for a GM-only roll.</p>
+          <p className="muted">
+            Type to chat. Roll with /r 1d20+5; /gmr, /br and /sr roll once for the GM, blind or for yourself.
+          </p>
         )}
         {session.chat.map((m) => (
           <Message
@@ -123,8 +128,21 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
           </button>
         ))}
       </div>
-      <form onSubmit={submit}>
-        <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message or /r 2d20kh1+4" />
+      <form onSubmit={submit} className="flex gap-1.5">
+        <Input
+          className="min-w-0 flex-1"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Message or /r 2d20kh1+4"
+        />
+        <SelectField
+          className="w-[7.25rem] flex-none"
+          aria-label="Who sees your rolls"
+          title="Who sees your rolls and the results of your attacks and spells"
+          value={session.rollMode}
+          onValueChange={(m) => session.setRollMode(m as RollMode)}
+          options={ROLL_MODE_OPTIONS}
+        />
       </form>
     </>
   );
@@ -143,7 +161,7 @@ function Message({ m, onUndo }: Readonly<{ m: ChatMessage; onUndo?: () => void }
     <div className={kindOf(m)}>
       <span className="msg-from" style={{ color: m.color }}>
         {m.from}
-        {m.gmOnly && <span className="muted"> (to GM)</span>}
+        {modeNote(m) && <span className="muted"> ({modeNote(m)})</span>}
         {m.undone && <span className="muted"> (undone)</span>}
         {onUndo && (
           <Button
@@ -156,6 +174,7 @@ function Message({ m, onUndo }: Readonly<{ m: ChatMessage; onUndo?: () => void }
           </Button>
         )}
       </span>
+      {m.hidden && <span className="msg-text muted">{HIDDEN_ROLL}</span>}
       {m.text && <span className="msg-text">{m.text}</span>}
       {m.attack && <AttackLine a={m.attack} />}
       {m.spell && <SpellLine s={m.spell} />}
