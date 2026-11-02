@@ -65,6 +65,9 @@ describe('painted icon art', () => {
   it('draws only real pictures as cut-outs; the hooded stranger stays in a round frame', () => {
     expect(cutoutOf({ art: '/art/tokens/wolf.webp' } as TokenView)).toBe('/art/tokens/wolf.webp');
     expect(cutoutOf({ img: '/a.png' } as TokenView)).toBe('/a.png');
+    expect(cutoutOf({ img: '/assets/goblin-*.webp', art: '/art/tokens/goblin.webp' } as TokenView)).toBe(
+      '/art/tokens/goblin.webp',
+    );
     expect(cutoutOf({} as TokenView)).toBeUndefined();
   });
 });

@@ -16,6 +16,7 @@ import { Inspector } from './Inspector.tsx';
 import { JournalViewer } from './JournalViewer.tsx';
 import { MapTools } from './MapTools.tsx';
 import { PartyBar } from './PartyBar.tsx';
+import { ObserveBanner } from './ObserveBanner.tsx';
 import { PauseBanner, PauseButton } from './PauseBanner.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
 import { TokenHud } from './TokenHud.tsx';
@@ -101,6 +102,7 @@ export function GameScreen({
       <ContextMenu session={session} />
       <TokenHud session={session} />
       <PauseBanner session={session} />
+      <ObserveBanner session={session} />
     </div>
   );
 }

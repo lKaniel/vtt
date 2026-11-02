@@ -188,3 +188,19 @@ export function topTags(media: readonly MediaEntry[], n: number): string[] {
     .slice(0, n)
     .map(([tag]) => tag);
 }
+
+/** A picture path with `*` in it (Foundry's wildcard token images): each new token picks one file it matches. */
+export const isWildcard = (src: string): boolean => src.includes('*');
+
+/** The files (as `src`s) a wildcard pattern matches: `*` stands for any run of characters within one folder. */
+export function wildcardMatches(pattern: string, srcs: readonly string[]): string[] {
+  const escaped = pattern.split('*').map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp(`^${escaped.join('[^/]*')}$`);
+  return srcs.filter((s) => re.test(s));
+}
+
+/** One file a wildcard pattern matches, chosen with `random` (0 to 1), or undefined when none does. */
+export function pickWildcard(pattern: string, srcs: readonly string[], random = Math.random): string | undefined {
+  const found = wildcardMatches(pattern, srcs);
+  return found[Math.floor(random() * found.length)];
+}

@@ -46,3 +46,27 @@ describe('Token HUD', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'pause', on: true });
   });
 });
+
+describe('Observe as', () => {
+  const asGm = () => {
+    const w = welcome([token('hero'), token('goblin')]) as Extract<ReturnType<typeof welcome>, { t: 'welcome' }>;
+    return { ...w, you: { ...w.you, role: 'gm' as const } };
+  };
+
+  it('lets the GM see through one creature’s eyes until they stop or it goes', () => {
+    ws.receive(asGm());
+    session.observe('goblin');
+    expect(session.observing).toBe('goblin');
+    session.observe(undefined);
+    expect(session.observing).toBeUndefined();
+    session.observe('goblin');
+    ws.receive({ t: 'tokenGone', id: 'goblin' });
+    expect(session.observing).toBeUndefined();
+  });
+
+  it('is only for the GM', () => {
+    ws.receive(welcome());
+    session.observe('hero');
+    expect(session.observing).toBeUndefined();
+  });
+});

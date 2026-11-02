@@ -1,4 +1,4 @@
-import type { Attack, Damage, FeatureSheet, Item, Spell } from '@vtt/system-dnd5e';
+import { type Attack, type Damage, type FeatureSheet, type Item, manualNote, type Spell } from '@vtt/system-dnd5e';
 import { ORDINAL } from './spell-text.ts';
 
 // What the hover card on an action tile says.
@@ -56,7 +56,8 @@ export function spellTip(s: Spell): Tip {
     s.duration !== 'Instantaneous' && s.duration,
   ].filter((f): f is string => typeof f === 'string');
   const tip: Tip = { title: s.name, subtitle, facts, body: plainText(s.description) };
-  return s.automated ? tip : { ...tip, warning: 'Not automated: the GM applies it' };
+  const warning = manualNote(s);
+  return warning ? { ...tip, warning } : tip;
 }
 
 export function attackTip(a: Attack): Tip {

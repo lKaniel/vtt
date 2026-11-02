@@ -70,6 +70,13 @@ export function scaledSpell(spell: Spell, slot: number, casterLevel: number): Sp
   };
 }
 
+/** What the log and tooltips say about a spell the GM runs by hand, or undefined when it's automated. */
+export function manualNote(spell: Pick<Spell, 'automated' | 'manual'>): string | undefined {
+  if (spell.automated) return undefined;
+  if (!spell.manual) return 'Not automated: the GM applies it';
+  return `Not automated (${spell.manual.kind}): ${spell.manual.why}`;
+}
+
 const ORDINAL = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
 
 /** Why `sheet` can't cast `spell` with `slot` right now, or undefined if it can. */
@@ -233,8 +240,8 @@ function unrolled(cast: Cast, target: CastSide, base: Base): CastResult | undefi
   if (spell.tempHp) return shield(cast, target, base);
   if (spell.rider) return { ...base, effect: effectFor(cast) };
   if (spell.stabilize) return { ...base, stabilized: true };
-  if (spell.revive) return revive(target, base);
-  if (spell.cures) return { ...base, cured: cured(spell, target.token) };
+  if (spell.revive) return revive(target, base, spell.revive === 'full');
+  if (spell.cures) return { ...base, cured: cured(spell, target.token), effect: effectFor(cast) };
   return undefined;
 }
 
@@ -244,10 +251,10 @@ function cured(spell: Spell, token: Token): string[] | undefined {
   return ids.length ? ids : undefined;
 }
 
-/** A dead creature comes back with 1 hit point; a living or merely dying one is unchanged. */
-function revive(target: CastSide, base: Base): CastResult {
+/** A dead creature comes back with 1 hit point, or all of them; a living or merely dying one is unchanged. */
+function revive(target: CastSide, base: Base, full: boolean): CastResult {
   const dead = makesDeathSaves(target.token) ? isDead(target.token) : target.sheet.hp <= 0;
-  return dead ? { ...base, hp: 1, revived: true } : base;
+  return dead ? { ...base, hp: full ? target.sheet.maxHp : 1, revived: true } : base;
 }
 
 function oneTarget(cast: Cast, target: CastSide, used: UsedEffect[]): CastResult {

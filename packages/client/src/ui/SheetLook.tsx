@@ -66,6 +66,11 @@ export function LookFields({ value, update }: Readonly<Pick<SheetProps, 'value' 
         onChange={(v) => set('mirrorY', true)(v || undefined)}
       />
       <Check label="Ring" checked={!!ring} onChange={(v) => set('ring', true)(v ? {} : undefined)} />
+      <Check
+        label="Each copy picks a picture its * path matches"
+        checked={!!value.randomImg}
+        onChange={(v) => set('randomImg', true)(v || undefined)}
+      />
     </>
   );
 }

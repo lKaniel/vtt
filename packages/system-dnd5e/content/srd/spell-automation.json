@@ -1,5 +1,10 @@
 {
   "$comment": "Hand-written automation merged over spells-5.1.json (2014) and spells-5.2.json (2024) at load. Each spell id maps to fields for both editions and/or for one edition.",
+  "acid-splash": {
+    "2014": {
+      "targets": 2
+    }
+  },
   "aid": {
     "both": {
       "automated": true,
@@ -13,9 +18,156 @@
       }
     }
   },
+  "alarm": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Warns of intruders while resting."
+      }
+    }
+  },
+  "alter-self": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Changing your appearance or body (natural weapons are added by hand)."
+      }
+    }
+  },
   "animal-messenger": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "social",
+        "why": "Carries a message."
+      }
+    }
+  },
+  "animal-shapes": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs creatures turned into another stat block."
+      }
+    }
+  },
+  "animate-dead": {
+    "both": {
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "skeleton"
+          },
+          {
+            "monster": "zombie"
+          }
+        ]
+      },
+      "gmNote": "A higher slot animates two more creatures per slot level: cast it again for each. Control lasts 24 hours."
+    }
+  },
+  "animate-objects": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Its stat block comes with the spell and scales with the slot; it isn’t in the bestiary yet."
+      }
+    }
+  },
+  "antilife-shell": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "A barrier creatures can’t push into; the GM stops them."
+      }
+    }
+  },
+  "antimagic-field": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs an area that suppresses magic."
+      }
+    }
+  },
+  "antipathy-sympathy": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Attracts or repels a creature type for days."
+      }
+    }
+  },
+  "arcane-eye": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A scouting eye."
+      }
+    }
+  },
+  "arcane-hand": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a choice of hand action each turn."
+      }
+    }
+  },
+  "arcane-lock": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Locks a door or chest."
+      }
+    }
+  },
+  "arcane-sword": {
+    "both": {
+      "repeat": "bonus"
+    }
+  },
+  "arcanists-magic-aura": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Disguises an aura against detection."
+      }
+    }
+  },
+  "astral-projection": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Travel to the Astral Plane."
+      }
+    }
+  },
+  "augury": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Divination: an omen."
+      }
+    }
+  },
+  "aura-of-life": {
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs an aura that gives its effect to allies while they stand in it."
+      }
+    }
+  },
+  "awaken": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Gives a beast or plant intelligence."
+      }
     }
   },
   "bane": {
@@ -25,7 +177,11 @@
   },
   "banishment": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs creatures taken off the map while the caster concentrates."
+      }
     }
   },
   "barkskin": {
@@ -42,9 +198,54 @@
       }
     }
   },
+  "beacon-of-hope": {
+    "both": {
+      "automated": true,
+      "targets": 8,
+      "effect": {
+        "saveAdvantage": ["wis"]
+      },
+      "gmNote": "Targets also have advantage on death saves and regain the most possible from healing."
+    }
+  },
+  "befuddlement": {
+    "2024": {
+      "effect": {
+        "name": "Befuddled"
+      },
+      "gmNote": "The creature can’t cast spells or take the Magic action; it repeats the save every 30 days."
+    }
+  },
   "bestow-curse": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a choice of curse."
+      }
+    }
+  },
+  "black-tentacles": {
+    "both": {
+      "zone": {}
+    },
+    "2024": {
+      "area": {
+        "shape": "cube",
+        "size": 20
+      }
+    }
+  },
+  "blade-barrier": {
+    "both": {
+      "zone": {},
+      "gmNote": "The wall is drawn by the GM; it blocks sight (three-quarters cover) and is difficult terrain."
+    },
+    "2024": {
+      "area": {
+        "shape": "line",
+        "size": 100
+      }
     }
   },
   "bless": {
@@ -67,6 +268,14 @@
     "2014": {
       "upcast": {
         "targets": 1
+      }
+    }
+  },
+  "blink": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs random vanishing at the end of each turn."
       }
     }
   },
@@ -107,22 +316,139 @@
   },
   "calm-emotions": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "social",
+        "why": "Mostly makes hostile creatures indifferent; to end charm or fear in combat remove the effects by hand."
+      }
+    }
+  },
+  "chain-lightning": {
+    "both": {
+      "targets": 4,
+      "upcast": {
+        "targets": 1
+      }
+    }
+  },
+  "chromatic-orb": {
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs the damage type chosen on casting."
+      }
+    }
+  },
+  "clairvoyance": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Remote viewing."
+      }
+    }
+  },
+  "clone": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A spare body."
+      }
+    }
+  },
+  "cloudkill": {
+    "both": {
+      "zone": {},
+      "gmNote": "The cloud moves 10 ft away from you at the start of each of your turns: move its template."
+    }
+  },
+  "color-spray": {
+    "2014": {
+      "automated": true,
+      "area": {
+        "shape": "cone",
+        "size": 15
+      },
+      "save": null,
+      "hpPool": "6d10",
+      "upcast": {
+        "hpPool": "2d10"
+      },
+      "effect": {
+        "conditions": ["blinded"],
+        "rounds": 1
+      }
     }
   },
   "command": {
     "both": {
-      "automated": false
+      "automated": true,
+      "save": {
+        "ability": "wis",
+        "onSave": "none"
+      },
+      "upcast": {
+        "targets": 1
+      },
+      "effect": {
+        "name": "Commanded",
+        "rounds": 1
+      },
+      "gmNote": "The target follows your one-word command on its next turn (approach, drop, flee, grovel: prone, halt); the GM plays it."
+    },
+    "2014": {
+      "gmNote": "The target follows your one-word command on its next turn (approach, drop, flee, grovel: prone, halt); the GM plays it. Undead are unaffected."
+    }
+  },
+  "commune": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Divination: questions to a god."
+      }
+    }
+  },
+  "commune-with-nature": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Learns about the land around."
+      }
+    }
+  },
+  "comprehend-languages": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "Understanding languages."
+      }
     }
   },
   "compulsion": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Creatures are forced to move where the caster says; the GM moves them."
+      }
     }
   },
   "confusion": {
     "both": {
-      "automated": false
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "sphere",
+        "size": 10
+      },
+      "save": {
+        "ability": "wis",
+        "onSave": "none"
+      },
+      "effect": {
+        "name": "Confused",
+        "repeatSave": true
+      },
+      "gmNote": "Each confused creature rolls a d10 at the start of its turn for what it does, and can’t take reactions."
     }
   },
   "conjure-animals": {
@@ -150,26 +476,509 @@
         "turn": "own"
       },
       "automated": true
+    },
+    "2024": {
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "sphere",
+        "size": 10
+      },
+      "zone": {
+        "spares": "allies",
+        "onCast": false
+      },
+      "save": {
+        "ability": "dex",
+        "onSave": "none"
+      },
+      "damage": [
+        {
+          "dice": "3d10",
+          "type": "slashing"
+        }
+      ],
+      "upcast": {
+        "damage": "1d10"
+      },
+      "gmNote": "Move the pack (its template) up to 30 ft when you move. You have advantage on Strength saves within 5 ft of it."
+    }
+  },
+  "conjure-celestial": {
+    "2014": {
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "own",
+        "options": [
+          {
+            "monster": "couatl"
+          },
+          {
+            "monster": "pegasus"
+          },
+          {
+            "monster": "unicorn"
+          }
+        ]
+      },
+      "gmNote": "A unicorn needs a 9th-level slot."
+    },
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a choice of healing or searing light per creature."
+      }
+    }
+  },
+  "conjure-elemental": {
+    "2014": {
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "own",
+        "options": [
+          {
+            "monster": "air-elemental"
+          },
+          {
+            "monster": "earth-elemental"
+          },
+          {
+            "monster": "fire-elemental"
+          },
+          {
+            "monster": "water-elemental"
+          }
+        ]
+      },
+      "gmNote": "If your concentration breaks the elemental stays, hostile: take it over as the GM."
+    },
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs the damage type chosen on casting."
+      }
+    }
+  },
+  "conjure-fey": {
+    "2014": {
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "own",
+        "options": [
+          {
+            "monster": "green-hag"
+          },
+          {
+            "monster": "sea-hag"
+          },
+          {
+            "monster": "dryad"
+          },
+          {
+            "monster": "satyr"
+          },
+          {
+            "monster": "blink-dog"
+          }
+        ]
+      },
+      "gmNote": "If your concentration breaks the creature stays, hostile: take it over as the GM."
+    },
+    "2024": {
+      "automated": true,
+      "targets": 1,
+      "attack": "melee",
+      "damage": [
+        {
+          "dice": "3d12",
+          "type": "psychic"
+        }
+      ],
+      "upcast": {
+        "damage": "1d12"
+      },
+      "repeat": "bonus",
+      "effect": {
+        "conditions": ["frightened"],
+        "rounds": 1
+      },
+      "gmNote": "Add your spellcasting modifier to the damage. The spirit attacks from its own space: teleport it up to 30 ft first."
+    }
+  },
+  "conjure-minor-elementals": {
+    "2014": {
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "own",
+        "options": [
+          {
+            "monster": "gargoyle"
+          },
+          {
+            "monster": "azer"
+          },
+          {
+            "monster": "dust-mephit",
+            "count": 4
+          },
+          {
+            "monster": "ice-mephit",
+            "count": 4
+          },
+          {
+            "monster": "magma-mephit",
+            "count": 4
+          },
+          {
+            "monster": "magmin",
+            "count": 4
+          },
+          {
+            "monster": "steam-mephit",
+            "count": 8
+          }
+        ]
+      }
+    },
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs extra damage of a chosen type on attacks."
+      }
+    }
+  },
+  "conjure-woodland-beings": {
+    "2014": {
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "own",
+        "options": [
+          {
+            "monster": "dryad",
+            "count": 2
+          },
+          {
+            "monster": "satyr",
+            "count": 4
+          },
+          {
+            "monster": "sprite",
+            "count": 8
+          },
+          {
+            "monster": "blink-dog",
+            "count": 8
+          }
+        ]
+      }
+    },
+    "2024": {
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "emanation",
+        "size": 10
+      },
+      "zone": {
+        "spares": "allies",
+        "onCast": false
+      },
+      "save": {
+        "ability": "wis",
+        "onSave": "half"
+      },
+      "damage": [
+        {
+          "dice": "5d8",
+          "type": "force"
+        }
+      ],
+      "upcast": {
+        "damage": "1d8"
+      },
+      "gmNote": "You can also Disengage as a bonus action while it lasts."
     }
   },
   "contact-other-plane": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "utility",
+        "why": "Divination: questions to an otherworldly being."
+      }
     }
   },
   "contagion": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a choice of disease or ability."
+      }
+    }
+  },
+  "contingency": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Stores a spell for a trigger, set up in advance."
+      }
+    }
+  },
+  "continual-flame": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "An everlasting flame on an object; place a light by hand."
+      }
+    }
+  },
+  "control-water": {
+    "2014": {
+      "automated": false,
+      "manual": {
+        "kind": "utility",
+        "why": "Floods, parts or redirects water: terrain the GM changes."
+      }
+    },
+    "2024": {
+      "manual": {
+        "kind": "utility",
+        "why": "Floods, parts or redirects water: terrain the GM changes."
+      }
+    }
+  },
+  "control-weather": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Changes the weather over hours."
+      }
     }
   },
   "counterspell": {
     "2024": {
       "automated": false
+    },
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a reaction that interrupts another spell."
+      }
+    }
+  },
+  "create-food-and-water": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Food and water."
+      }
+    }
+  },
+  "create-or-destroy-water": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Makes or removes water."
+      }
+    }
+  },
+  "create-undead": {
+    "both": {
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "ghoul",
+            "count": 3
+          }
+        ]
+      },
+      "gmNote": "Only at night. Higher slots raise more ghouls, or ghasts, wights and mummies: swap them by hand. Control lasts 24 hours."
+    }
+  },
+  "creation": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Creates objects."
+      }
+    }
+  },
+  "dancing-lights": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Moving lights: place light sources from the map’s Lights tool."
+      }
+    }
+  },
+  "darkness": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs magical darkness placed on the map by a spell."
+      }
+    }
+  },
+  "darkvision": {
+    "2014": {
+      "automated": true,
+      "effect": {
+        "senses": {
+          "darkvision": 60
+        }
+      }
+    },
+    "2024": {
+      "automated": true,
+      "effect": {
+        "senses": {
+          "darkvision": 150
+        }
+      }
+    }
+  },
+  "daylight": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A sphere of daylight: place a light by hand."
+      }
+    }
+  },
+  "death-ward": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a creature dropping to 0 HP to stay at 1 instead."
+      }
+    }
+  },
+  "delayed-blast-fireball": {
+    "2024": {
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "sphere",
+        "size": 20
+      },
+      "save": {
+        "ability": "dex",
+        "onSave": "half"
+      },
+      "damage": [
+        {
+          "dice": "12d6",
+          "type": "fire"
+        }
+      ],
+      "upcast": {
+        "damage": "1d6"
+      }
+    },
+    "both": {
+      "gmNote": "Held back, the bead deals 1d6 more for each of your turns it waits."
+    }
+  },
+  "demiplane": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A door to a demiplane."
+      }
+    }
+  },
+  "detect-evil-and-good": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Senses creature types nearby."
+      }
+    }
+  },
+  "detect-magic": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Senses magic nearby."
+      }
+    }
+  },
+  "detect-poison-and-disease": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Senses poison and disease."
+      }
+    }
+  },
+  "detect-thoughts": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "Reading thoughts and probing minds."
+      }
+    }
+  },
+  "dimension-door": {
+    "both": {
+      "automated": true,
+      "targets": 0,
+      "teleport": 500,
+      "damage": null,
+      "save": null,
+      "attack": null,
+      "gmNote": "You can bring one willing creature: move it next to you by hand."
+    }
+  },
+  "disguise-self": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "Looking like someone else: deception."
+      }
+    }
+  },
+  "disintegrate": {
+    "2014": {
+      "area": null,
+      "gmNote": "A creature brought to 0 HP is turned to dust."
+    },
+    "both": {
+      "gmNote": "A creature brought to 0 HP is turned to dust."
     }
   },
   "dispel-evil-and-good": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs disadvantage only against some creature types."
+      }
+    }
+  },
+  "dispel-magic": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs spell effects that can be ended by level."
+      }
+    }
+  },
+  "divination": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Divination: a question answered."
+      }
     }
   },
   "divine-favor": {
@@ -207,7 +1016,60 @@
   },
   "divine-word": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs effects that depend on the target’s hit points."
+      }
+    }
+  },
+  "dragons-breath": {
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a spell handed to another creature, with a damage type chosen."
+      }
+    }
+  },
+  "dream": {
+    "2014": {
+      "automated": false,
+      "manual": {
+        "kind": "utility",
+        "why": "A message or nightmare in someone’s sleep, far away."
+      }
+    },
+    "2024": {
+      "manual": {
+        "kind": "utility",
+        "why": "A message or nightmare in someone’s sleep, far away."
+      }
+    }
+  },
+  "druidcraft": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Small nature tricks."
+      }
+    }
+  },
+  "earthquake": {
+    "2014": {
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "sphere",
+        "size": 100
+      },
+      "save": {
+        "ability": "dex",
+        "onSave": "none"
+      },
+      "effect": {
+        "conditions": ["prone"]
+      },
+      "gmNote": "Repeat the save at the end of each of your turns; concentrating creatures make a Con save; fissures and collapsing buildings are by hand."
     }
   },
   "eldritch-blast": {
@@ -222,9 +1084,29 @@
       ]
     }
   },
+  "elementalism": {
+    "2024": {
+      "manual": {
+        "kind": "utility",
+        "why": "Small elemental tricks."
+      }
+    }
+  },
+  "enhance-ability": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Advantage on ability checks of one ability; the table rolls checks."
+      }
+    }
+  },
   "enlarge-reduce": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a choice of enlarge or reduce, and size changes."
+      }
     }
   },
   "ensnaring-strike": {
@@ -245,12 +1127,44 @@
   },
   "enthrall": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "social",
+        "why": "Holding an audience’s attention."
+      }
+    }
+  },
+  "etherealness": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Stepping into the Ethereal Plane: hide the token by hand."
+      }
+    }
+  },
+  "expeditious-retreat": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs Dash as a bonus action each turn."
+      }
     }
   },
   "eyebite": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a choice of asleep, panicked or sickened."
+      }
+    }
+  },
+  "fabricate": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Crafts objects from materials."
+      }
     }
   },
   "faerie-fire": {
@@ -259,6 +1173,29 @@
         "name": "Faerie Fire",
         "advantageAgainst": true
       }
+    }
+  },
+  "faithful-hound": {
+    "both": {
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "sphere",
+        "size": 5
+      },
+      "zone": {
+        "spares": "allies",
+        "onCast": false
+      },
+      "save": null,
+      "attack": "melee",
+      "damage": [
+        {
+          "dice": "4d8",
+          "type": "piercing"
+        }
+      ],
+      "gmNote": "The hound bites one hostile creature within 5 ft of it at the start of your turn; it is invisible except to you."
     }
   },
   "false-life": {
@@ -275,6 +1212,39 @@
         "tempHp": 5
       },
       "automated": true
+    }
+  },
+  "fear": {
+    "both": {
+      "gmNote": "Frightened creatures drop what they hold and Dash away each turn; out of your sight, they save again."
+    }
+  },
+  "feather-fall": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Slows a fall; falling isn’t simulated."
+      }
+    }
+  },
+  "feeblemind": {
+    "2014": {
+      "effect": {
+        "name": "Feebleminded",
+        "changes": [
+          {
+            "key": "abilities.int",
+            "mode": "override",
+            "value": 1
+          },
+          {
+            "key": "abilities.cha",
+            "mode": "override",
+            "value": 1
+          }
+        ]
+      },
+      "gmNote": "The creature can’t cast spells or understand language; it repeats the save every 30 days."
     }
   },
   "find-familiar": {
@@ -324,6 +1294,90 @@
       "automated": true
     }
   },
+  "find-steed": {
+    "2014": {
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "warhorse"
+          },
+          {
+            "monster": "pony"
+          },
+          {
+            "monster": "camel"
+          },
+          {
+            "monster": "elk"
+          },
+          {
+            "monster": "mastiff"
+          }
+        ]
+      },
+      "gmNote": "The steed is a celestial, fey or fiend of your choice and lasts until it drops to 0 HP."
+    },
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Its stat block comes with the spell (2024 Otherworldly Steed); it isn’t in the bestiary yet."
+      }
+    }
+  },
+  "find-the-path": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Finds the way to a place."
+      }
+    }
+  },
+  "find-traps": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Senses traps."
+      }
+    }
+  },
+  "fire-shield": {
+    "2014": {
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs damage that hits back on a melee hit, and a choice of warm or chill shield."
+      }
+    },
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs damage that hits back on a melee hit, and a choice of warm or chill shield."
+      }
+    }
+  },
+  "fire-storm": {
+    "2014": {
+      "area": {
+        "shape": "cube",
+        "size": 10,
+        "width": 5
+      }
+    },
+    "both": {
+      "gmNote": "Up to ten 10-ft cubes, each touching another; this hits one cube."
+    }
+  },
+  "flame-blade": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a lasting weapon whose attacks come later, not on casting."
+      }
+    }
+  },
   "flaming-sphere": {
     "both": {
       "targets": 1,
@@ -346,6 +1400,192 @@
       "gmNote": "Creatures that end their turn within 5 ft of the sphere take its damage too."
     }
   },
+  "flesh-to-stone": {
+    "both": {
+      "effect": {
+        "conditions": ["restrained"],
+        "repeatSave": true
+      },
+      "gmNote": "After three failed saves the target is petrified, after three successes it’s free: swap the effect by hand."
+    }
+  },
+  "floating-disk": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Carries a load."
+      }
+    }
+  },
+  "fly": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "name": "Flying",
+        "changes": [
+          {
+            "key": "speed",
+            "mode": "upgrade",
+            "value": 60
+          }
+        ]
+      },
+      "upcast": {
+        "targets": 1
+      },
+      "gmNote": "The target falls when the spell ends, unless it can stop the fall."
+    }
+  },
+  "fog-cloud": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs an area that blocks sight."
+      }
+    }
+  },
+  "forbiddance": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Wards an area against travel and creature types for a day."
+      }
+    }
+  },
+  "forcecage": {
+    "both": {
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "cube",
+        "size": 20
+      },
+      "save": null,
+      "effect": {
+        "name": "Caged",
+        "immobile": true
+      },
+      "gmNote": "The cage blocks anything bigger than its bars (a box blocks everything, spells too). A creature can try to teleport out with a Charisma save."
+    }
+  },
+  "foresight": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "advantage": true,
+        "disadvantageAgainst": true,
+        "saveAdvantage": ["str", "dex", "con", "int", "wis", "cha"]
+      },
+      "gmNote": "The target also has advantage on ability checks and can’t be surprised."
+    }
+  },
+  "freedom-of-movement": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs immunity to conditions."
+      }
+    }
+  },
+  "gaseous-form": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "name": "Gaseous Form",
+        "resistances": ["bludgeoning", "piercing", "slashing"],
+        "saveAdvantage": ["str", "dex", "con"],
+        "changes": [
+          {
+            "key": "speed",
+            "mode": "override",
+            "value": 10
+          }
+        ]
+      },
+      "gmNote": "It can only fly, can’t attack or cast spells, and passes through cracks."
+    }
+  },
+  "gate": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A portal to another plane."
+      }
+    }
+  },
+  "gentle-repose": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Preserves a corpse."
+      }
+    }
+  },
+  "giant-insect": {
+    "2014": {
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "giant-centipede",
+            "count": 10
+          },
+          {
+            "monster": "giant-spider",
+            "count": 3
+          },
+          {
+            "monster": "giant-wasp",
+            "count": 5
+          },
+          {
+            "monster": "giant-scorpion"
+          }
+        ]
+      },
+      "gmNote": "The insects were ordinary ones you transformed; they act on your turn."
+    },
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Its stat block comes with the spell and scales with the slot; it isn’t in the bestiary yet."
+      }
+    }
+  },
+  "glibness": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "Lying convincingly."
+      }
+    }
+  },
+  "globe-of-invulnerability": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs an area that stops spells of lower level from outside."
+      }
+    }
+  },
+  "glyph-of-warding": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A trap set in advance: build it as a region with a behaviour."
+      }
+    }
+  },
+  "goodberry": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Berries that feed and heal 1 HP each, out of combat."
+      }
+    }
+  },
   "greater-restoration": {
     "both": {
       "automated": true,
@@ -355,7 +1595,43 @@
   },
   "guardian-of-faith": {
     "both": {
-      "automated": false
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "sphere",
+        "size": 10
+      },
+      "zone": {
+        "spares": "allies",
+        "onCast": false
+      },
+      "save": {
+        "ability": "dex",
+        "onSave": "half"
+      },
+      "damage": [
+        {
+          "dice": "20",
+          "type": "radiant"
+        }
+      ],
+      "gmNote": "The guardian vanishes once it has dealt 60 damage in all."
+    }
+  },
+  "guards-and-wards": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Wards a stronghold."
+      }
+    }
+  },
+  "guidance": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A bonus to one ability check; the table rolls checks."
+      }
     }
   },
   "guiding-bolt": {
@@ -378,7 +1654,24 @@
   },
   "hallow": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "utility",
+        "why": "Wards a place for a year."
+      }
+    }
+  },
+  "hallucinatory-terrain": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "An illusory landscape."
+      }
+    }
+  },
+  "harm": {
+    "both": {
+      "gmNote": "The target’s hit point maximum drops by the damage taken until a long rest."
     }
   },
   "haste": {
@@ -408,6 +1701,34 @@
         "heal": "10"
       },
       "cures": ["blinded", "deafened", "poisoned"]
+    }
+  },
+  "heat-metal": {
+    "2024": {
+      "automated": true,
+      "damage": [
+        {
+          "dice": "2d8",
+          "type": "fire"
+        }
+      ],
+      "upcast": {
+        "damage": "1d8"
+      }
+    },
+    "both": {
+      "automated": true,
+      "save": null,
+      "repeat": "bonus",
+      "gmNote": "The target drops the object or, if it can’t, has disadvantage on attacks and checks until your next turn. Each bonus action deals the damage again."
+    }
+  },
+  "heroes-feast": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A feast an hour before the fight; give its benefits as an effect by hand."
+      }
     }
   },
   "heroism": {
@@ -444,6 +1765,20 @@
       }
     }
   },
+  "hold-monster": {
+    "both": {
+      "effect": {
+        "conditions": ["paralyzed"],
+        "repeatSave": true
+      },
+      "upcast": {
+        "targets": 1
+      }
+    },
+    "2014": {
+      "gmNote": "Undead are unaffected."
+    }
+  },
   "hold-person": {
     "both": {
       "creatureTypes": ["humanoid"],
@@ -454,6 +1789,18 @@
         "conditions": ["paralyzed"],
         "repeatSave": true
       }
+    }
+  },
+  "holy-aura": {
+    "both": {
+      "automated": true,
+      "targets": 8,
+      "range": 30,
+      "effect": {
+        "disadvantageAgainst": true,
+        "saveAdvantage": ["str", "dex", "con", "int", "wis", "cha"]
+      },
+      "gmNote": "A fiend or undead that hits an affected creature in melee makes a Con save or is blinded."
     }
   },
   "hunters-mark": {
@@ -495,9 +1842,54 @@
       }
     }
   },
+  "ice-knife": {
+    "2024": {
+      "gmNote": "Hit or miss, the shard explodes: creatures within 5 ft make a Dex save or take 2d6 cold."
+    }
+  },
+  "identify": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Learns an item’s properties."
+      }
+    }
+  },
+  "illusory-script": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Secret writing."
+      }
+    }
+  },
   "imprisonment": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs creatures taken off the map."
+      }
+    }
+  },
+  "incendiary-cloud": {
+    "both": {
+      "zone": {},
+      "gmNote": "The cloud moves 10 ft away from you at the start of each of your turns: move its template."
+    }
+  },
+  "insect-plague": {
+    "both": {
+      "zone": {},
+      "gmNote": "The area is lightly obscured and difficult terrain."
+    }
+  },
+  "instant-summons": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Calls a marked object to your hand."
+      }
     }
   },
   "invisibility": {
@@ -511,15 +1903,98 @@
       }
     }
   },
+  "irresistible-dance": {
+    "2014": {
+      "automated": true,
+      "save": {
+        "ability": "wis",
+        "onSave": "none"
+      },
+      "effect": {
+        "name": "Dancing",
+        "advantageAgainst": true,
+        "disadvantage": true,
+        "immobile": true,
+        "repeatSave": true
+      },
+      "gmNote": "There is no save when cast (the engine rolls one): only creatures immune to charm resist. It also has disadvantage on Dexterity saves."
+    }
+  },
+  "jump": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Longer jumps; jumping isn’t simulated."
+      }
+    }
+  },
+  "knock": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Opens a lock."
+      }
+    }
+  },
+  "legend-lore": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Learns legends."
+      }
+    }
+  },
   "lesser-restoration": {
     "both": {
       "automated": true,
       "cures": ["blinded", "deafened", "paralyzed", "poisoned"]
     }
   },
+  "levitate": {
+    "both": {
+      "automated": true,
+      "save": {
+        "ability": "con",
+        "onSave": "none"
+      },
+      "effect": {
+        "name": "Levitating",
+        "immobile": true
+      },
+      "gmNote": "A willing target needn’t save. It floats up to 20 ft and moves only by pushing off walls or ceilings."
+    }
+  },
   "light": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "utility",
+        "why": "An object sheds light: give the token a light by hand."
+      }
+    }
+  },
+  "locate-animals-or-plants": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Finds animals or plants."
+      }
+    }
+  },
+  "locate-creature": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Finds a creature."
+      }
+    }
+  },
+  "locate-object": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Finds an object."
+      }
     }
   },
   "longstrider": {
@@ -541,14 +2016,30 @@
       }
     }
   },
+  "mage-hand": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A spectral hand that handles objects."
+      }
+    }
+  },
   "magic-circle": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "utility",
+        "why": "Wards a place against creature types, set up in advance."
+      }
     }
   },
   "magic-jar": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "utility",
+        "why": "Possessing another body."
+      }
     }
   },
   "magic-missile": {
@@ -567,6 +2058,14 @@
       "automated": true
     }
   },
+  "magic-mouth": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A message triggered later."
+      }
+    }
+  },
   "magic-weapon": {
     "both": {
       "effect": {
@@ -576,9 +2075,129 @@
       "gmNote": "A higher slot gives a bigger bonus: +2 or +3, adjust the effect by hand."
     }
   },
+  "magnificent-mansion": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "An extradimensional dwelling."
+      }
+    }
+  },
+  "major-image": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "An illusion the GM adjudicates."
+      }
+    }
+  },
+  "mass-cure-wounds": {
+    "both": {
+      "targets": 6,
+      "range": 60,
+      "area": null
+    }
+  },
+  "mass-heal": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs one healing pool shared between targets."
+      }
+    }
+  },
+  "mass-healing-word": {
+    "both": {
+      "targets": 6
+    }
+  },
   "mass-suggestion": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "social",
+        "why": "Suggestions to many creatures."
+      }
+    }
+  },
+  "maze": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs creatures taken off the map."
+      }
+    }
+  },
+  "meld-into-stone": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Hiding inside stone."
+      }
+    }
+  },
+  "mending": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Repairs an object."
+      }
+    }
+  },
+  "message": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "A whispered message: talking, no rules to run."
+      }
+    }
+  },
+  "meteor-swarm": {
+    "both": {
+      "gmNote": "Four meteors hit four points; a creature in several spheres is hit once. Cast at one point here."
+    }
+  },
+  "mind-blank": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs immunity to conditions."
+      }
+    }
+  },
+  "minor-illusion": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "An illusion the GM adjudicates."
+      }
+    }
+  },
+  "mirage-arcane": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Illusory terrain over miles."
+      }
+    }
+  },
+  "mirror-image": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs duplicates that can be hit instead of the caster."
+      }
+    }
+  },
+  "mislead": {
+    "both": {
+      "automated": true,
+      "targets": 0,
+      "effect": {
+        "conditions": ["invisible"],
+        "endsOnAttack": true
+      },
+      "gmNote": "Your illusory double appears where you stand; move it with your action."
     }
   },
   "misty-step": {
@@ -598,29 +2217,160 @@
       }
     }
   },
+  "move-earth": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Reshapes terrain over minutes."
+      }
+    }
+  },
+  "nondetection": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Hides a target from divination."
+      }
+    }
+  },
+  "pass-without-trace": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "+10 to Stealth checks; the table rolls checks."
+      }
+    }
+  },
+  "passwall": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A passage through stone."
+      }
+    }
+  },
   "phantasmal-force": {
     "both": {
       "automated": false
+    },
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs damage at the start of the target’s turns."
+      }
+    }
+  },
+  "phantom-steed": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A riding horse for travel."
+      }
+    }
+  },
+  "planar-ally": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "Bargaining with an otherworldly ally."
+      }
     }
   },
   "planar-binding": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "social",
+        "why": "Binding a creature to service."
+      }
     }
   },
   "plane-shift": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs creatures taken off the map."
+      }
+    }
+  },
+  "plant-growth": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Overgrowth or richer harvests: terrain the GM paints."
+      }
     }
   },
   "polymorph": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a creature turned into another stat block."
+      }
+    }
+  },
+  "power-word-heal": {
+    "2024": {
+      "automated": true,
+      "heal": "9999",
+      "cures": ["charmed", "frightened", "paralyzed", "poisoned", "stunned"],
+      "gmNote": "A prone target can use its reaction to stand up."
+    }
+  },
+  "power-word-kill": {
+    "2014": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs effects that depend on the target’s hit points."
+      }
+    }
+  },
+  "power-word-stun": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs effects that depend on the target’s hit points."
+      }
+    }
+  },
+  "prayer-of-healing": {
+    "both": {
+      "targets": 6
+    }
+  },
+  "prestidigitation": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Small magic tricks."
+      }
     }
   },
   "prismatic-spray": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a random ray per creature."
+      }
+    }
+  },
+  "prismatic-wall": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs walls placed on the map by a spell."
+      }
+    }
+  },
+  "private-sanctum": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Wards an area against scrying and teleport."
+      }
     }
   },
   "produce-flame": {
@@ -644,9 +2394,71 @@
       "gmNote": "Conjuring the flame is a bonus action; this conjures and hurls it at once."
     }
   },
+  "programmed-illusion": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "An illusion set to trigger later."
+      }
+    }
+  },
+  "project-image": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "An illusory double far away."
+      }
+    }
+  },
+  "protection-from-energy": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs the damage type chosen on casting."
+      }
+    }
+  },
+  "protection-from-evil-and-good": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs disadvantage only against some creature types."
+      }
+    }
+  },
+  "protection-from-poison": {
+    "both": {
+      "automated": true,
+      "cures": ["poisoned"],
+      "effect": {
+        "resistances": ["poison"],
+        "saveAdvantage": ["con"]
+      },
+      "gmNote": "Advantage only on saves against being poisoned."
+    }
+  },
+  "purify-food-and-drink": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Cleans food and water."
+      }
+    }
+  },
+  "raise-dead": {
+    "both": {
+      "automated": true,
+      "revive": true,
+      "gmNote": "Dead no longer than 10 days; uses up a 500 gp diamond. The creature takes a penalty to its rolls that fades with long rests."
+    }
+  },
   "ray-of-enfeeblement": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs halved or reduced weapon damage."
+      }
     }
   },
   "ray-of-frost": {
@@ -654,6 +2466,14 @@
       "effect": {
         "name": "Ray of Frost",
         "speed": -10,
+        "rounds": 1
+      }
+    }
+  },
+  "ray-of-sickness": {
+    "2024": {
+      "effect": {
+        "conditions": ["poisoned"],
         "rounds": 1
       }
     }
@@ -666,14 +2486,125 @@
       "gmNote": "It regains 1 HP at the start of each of its turns, and severed limbs regrow."
     }
   },
+  "reincarnate": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A new body for a dead creature, rolled on a table, out of combat."
+      }
+    }
+  },
+  "remove-curse": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Ends curses; remove the curse’s effect by hand."
+      }
+    }
+  },
   "resilient-sphere": {
     "both": {
-      "automated": false
+      "automated": true,
+      "save": {
+        "ability": "dex",
+        "onSave": "none"
+      },
+      "effect": {
+        "name": "Enclosed",
+        "immobile": true,
+        "changes": [
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "acid"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "bludgeoning"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "cold"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "fire"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "force"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "lightning"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "necrotic"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "piercing"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "poison"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "psychic"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "radiant"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "slashing"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "thunder"
+          }
+        ]
+      },
+      "gmNote": "Nothing passes the sphere in or out, and the creature inside can’t harm anything outside. A willing target needn’t save."
+    }
+  },
+  "resistance": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "A die added to one save (2014) or damage reduced once per turn (2024): not tracked yet."
+      }
+    }
+  },
+  "resurrection": {
+    "both": {
+      "automated": true,
+      "revive": "full",
+      "gmNote": "Dead no longer than a century; uses up a 1,000 gp diamond."
     }
   },
   "reverse-gravity": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Falling isn’t simulated."
+      }
     }
   },
   "revivify": {
@@ -681,6 +2612,22 @@
       "automated": true,
       "revive": true,
       "gmNote": "Only for a creature dead less than a minute; uses up a 300 gp diamond."
+    }
+  },
+  "rope-trick": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A hidden extradimensional space."
+      }
+    }
+  },
+  "sanctuary": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs attackers to save before attacking the target."
+      }
     }
   },
   "scorching-ray": {
@@ -701,7 +2648,11 @@
   },
   "scrying": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "utility",
+        "why": "Remote viewing of a creature."
+      }
     }
   },
   "searing-smite": {
@@ -722,9 +2673,56 @@
       "gmNote": "Cast right after a melee hit. The target burns for 1d6 fire at the start of each of its turns until it makes a Con save."
     }
   },
+  "secret-chest": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Hides a chest on another plane."
+      }
+    }
+  },
+  "see-invisibility": {
+    "both": {
+      "automated": true,
+      "targets": 0,
+      "effect": {
+        "senses": {
+          "seeInvisible": true
+        }
+      }
+    }
+  },
   "seeming": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "social",
+        "why": "Disguising many creatures."
+      }
+    }
+  },
+  "sending": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "A short message across any distance."
+      }
+    }
+  },
+  "sequester": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Hides a creature or object in suspended animation."
+      }
+    }
+  },
+  "shapechange": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a creature turned into another stat block."
+      }
     }
   },
   "shield": {
@@ -733,6 +2731,55 @@
         "name": "Shield",
         "ac": 5,
         "rounds": 1
+      }
+    }
+  },
+  "shillelagh": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Changes the weapon’s die and attack ability: not modelled yet."
+      }
+    }
+  },
+  "shining-smite": {
+    "2024": {
+      "targets": 1,
+      "range": 5,
+      "autoHit": true,
+      "damage": [
+        {
+          "dice": "2d6",
+          "type": "radiant"
+        }
+      ],
+      "upcast": {
+        "damage": "1d6"
+      },
+      "gmNote": "Cast right after a weapon hit. The target sheds light and can’t be invisible."
+    }
+  },
+  "silence": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs an area that deafens and stops verbal spells inside it."
+      }
+    }
+  },
+  "silent-image": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "An illusion the GM adjudicates."
+      }
+    }
+  },
+  "simulacrum": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A copy of a creature, made over 12 hours."
       }
     }
   },
@@ -780,11 +2827,71 @@
       "gmNote": "Also -2 to Dexterity saves, no reactions, one attack a turn, and an action or a bonus action but not both."
     }
   },
+  "sorcerous-burst": {
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs the damage type chosen on casting."
+      }
+    }
+  },
   "spare-the-dying": {
     "both": {
       "stabilize": true,
       "targets": 1,
       "automated": true
+    }
+  },
+  "speak-with-animals": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "Talking with animals."
+      }
+    }
+  },
+  "speak-with-dead": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "Questions to a corpse."
+      }
+    }
+  },
+  "speak-with-plants": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "Talking with plants."
+      }
+    }
+  },
+  "spider-climb": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Climbing walls and ceilings; climbing isn’t simulated."
+      }
+    }
+  },
+  "spike-growth": {
+    "both": {
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "sphere",
+        "size": 20
+      },
+      "zone": {
+        "onCast": false
+      },
+      "damage": [
+        {
+          "dice": "2d4",
+          "type": "piercing"
+        }
+      ],
+      "gmNote": "A creature takes 2d4 for every 5 ft it moves inside (this rolls once as it enters); the area is difficult terrain."
     }
   },
   "spirit-guardians": {
@@ -811,14 +2918,149 @@
       "repeat": "bonus"
     }
   },
+  "starry-wisp": {
+    "2024": {
+      "effect": {
+        "name": "Outlined",
+        "rounds": 1
+      },
+      "gmNote": "The target sheds dim light and can’t be invisible until the end of your next turn."
+    }
+  },
   "stinking-cloud": {
     "both": {
-      "automated": false
+      "automated": true,
+      "targets": 1,
+      "area": {
+        "shape": "sphere",
+        "size": 20
+      },
+      "zone": {},
+      "save": {
+        "ability": "con",
+        "onSave": "none"
+      },
+      "gmNote": "The cloud is heavily obscured. Creatures that don’t breathe or are immune to poison succeed."
+    },
+    "2014": {
+      "effect": {
+        "name": "Retching",
+        "conditions": ["incapacitated"],
+        "rounds": 1
+      }
+    },
+    "2024": {
+      "effect": {
+        "name": "Retching",
+        "conditions": ["poisoned", "incapacitated"],
+        "rounds": 1
+      }
+    }
+  },
+  "stone-shape": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Shapes stone."
+      }
+    }
+  },
+  "stoneskin": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "resistances": ["bludgeoning", "piercing", "slashing"]
+      }
+    },
+    "2014": {
+      "gmNote": "Only nonmagical bludgeoning, piercing and slashing damage is resisted."
+    }
+  },
+  "storm-of-vengeance": {
+    "both": {
+      "gmNote": "Later rounds bring acid rain, lightning bolts, hail and freezing wind: the GM rolls them each turn."
     }
   },
   "suggestion": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "social",
+        "why": "A suggested course of action the GM plays out."
+      }
+    }
+  },
+  "summon-dragon": {
+    "2024": {
+      "manual": {
+        "kind": "gm",
+        "why": "Its stat block comes with the spell and scales with the slot; it isn’t in the bestiary yet."
+      }
+    }
+  },
+  "sunbeam": {
+    "both": {
+      "repeat": "action",
+      "effect": {
+        "conditions": ["blinded"],
+        "rounds": 1
+      }
+    }
+  },
+  "sunburst": {
+    "both": {
+      "effect": {
+        "conditions": ["blinded"],
+        "repeatSave": true
+      }
+    }
+  },
+  "symbol": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A glyph trap set in advance: build it as a region with a behaviour."
+      }
+    }
+  },
+  "telekinesis": {
+    "2014": {
+      "manual": {
+        "kind": "gm",
+        "why": "Moving or holding a creature with a contested check."
+      }
+    }
+  },
+  "telepathic-bond": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "Telepathic link between creatures."
+      }
+    }
+  },
+  "teleport": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Long-distance teleport."
+      }
+    }
+  },
+  "teleportation-circle": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Long-distance teleport between circles."
+      }
+    }
+  },
+  "thaumaturgy": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "Minor wonders that impress; flavour and checks."
+      }
     }
   },
   "thunderwave": {
@@ -826,9 +3068,86 @@
       "push": 10
     }
   },
+  "time-stop": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Extra turns for the caster; run them by hand."
+      }
+    }
+  },
+  "tiny-hut": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A shelter for resting."
+      }
+    }
+  },
+  "tongues": {
+    "both": {
+      "manual": {
+        "kind": "social",
+        "why": "Understanding and speaking any language."
+      }
+    }
+  },
+  "transport-via-plants": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Travel between plants."
+      }
+    }
+  },
+  "tree-stride": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Travel between trees."
+      }
+    }
+  },
   "true-polymorph": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "gm",
+        "why": "Needs a creature turned into another stat block."
+      }
+    }
+  },
+  "true-resurrection": {
+    "both": {
+      "automated": true,
+      "revive": "full",
+      "gmNote": "Dead no longer than 200 years; uses up 25,000 gp of diamonds. A new body is made if none is left."
+    }
+  },
+  "true-seeing": {
+    "both": {
+      "automated": true,
+      "effect": {
+        "senses": {
+          "truesight": 120
+        }
+      }
+    }
+  },
+  "true-strike": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs advantage against one target for the caster only (2014) or a weapon attack inside a spell (2024)."
+      }
+    }
+  },
+  "unseen-servant": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "An invisible servant for chores."
+      }
     }
   },
   "vampiric-touch": {
@@ -868,6 +3187,79 @@
       }
     }
   },
+  "wall-of-force": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs walls placed on the map by a spell."
+      }
+    }
+  },
+  "wall-of-ice": {
+    "both": {
+      "gmNote": "Draw the wall by hand (panels, 10-ft squares). Walking through the frigid air where it broke takes 5d6 cold."
+    },
+    "2014": {
+      "area": {
+        "shape": "line",
+        "size": 100,
+        "width": 5
+      }
+    }
+  },
+  "wall-of-stone": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Needs walls placed on the map by a spell."
+      }
+    }
+  },
+  "wall-of-thorns": {
+    "both": {
+      "gmNote": "Draw the wall by hand; moving through it costs 4 ft per foot and deals the damage again."
+    }
+  },
+  "warding-bond": {
+    "both": {
+      "effect": {
+        "ac": 1,
+        "saveBonus": "1",
+        "resistances": [
+          "acid",
+          "bludgeoning",
+          "cold",
+          "fire",
+          "force",
+          "lightning",
+          "necrotic",
+          "piercing",
+          "poison",
+          "psychic",
+          "radiant",
+          "slashing",
+          "thunder"
+        ]
+      },
+      "gmNote": "You take the same damage as the target each time it is hurt."
+    }
+  },
+  "water-breathing": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Breathing underwater."
+      }
+    }
+  },
+  "water-walk": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Walking on liquids."
+      }
+    }
+  },
   "web": {
     "2014": {
       "automated": true,
@@ -880,9 +3272,42 @@
       "gmNote": "A restrained creature can use its action for a Strength check to break free; the web is difficult terrain."
     }
   },
+  "wind-walk": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Travel as clouds."
+      }
+    }
+  },
+  "wind-wall": {
+    "both": {
+      "gmNote": "Draw the wall by hand; it stops arrows, gas and small flying creatures."
+    }
+  },
+  "wish": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Anything: the GM decides."
+      }
+    }
+  },
+  "word-of-recall": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Teleports the party to a sanctuary."
+      }
+    }
+  },
   "zone-of-truth": {
     "both": {
-      "automated": false
+      "automated": false,
+      "manual": {
+        "kind": "social",
+        "why": "Creatures can’t lie."
+      }
     }
   }
 }
