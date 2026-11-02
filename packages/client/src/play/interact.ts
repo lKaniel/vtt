@@ -52,3 +52,27 @@ function approach(s: Session, snap: Snap): void {
   const spot = interactSpot(bodyOf(token, g), snap, g);
   if (Math.hypot(spot[0] - token.x, spot[1] - token.y) > 2) s.requests.move(token.id, spot);
 }
+
+/**
+ * A left click on the map with an action ready, as in BG3. Next to a creature
+ * it goes at that creature (the pointer snaps to it); otherwise it goes at
+ * the ground there: an area is centred on the point (or on a creature it
+ * snaps to), and an attack or a spell aimed at creatures is spent on empty
+ * ground (with any targets already picked). Right click or Esc puts it away.
+ */
+export function clickGround(s: Session, p: Point): void {
+  const near = snapFor(s, p);
+  const aiming = s.actions.aiming;
+  if (near?.kind === 'token' && aimsAtCreatures(s)) return clickCreature(s, near.id);
+  if (aiming?.mode === 'point') return s.actions.castAt(near?.kind === 'token' ? near.at : p);
+  if (s.actions.armed) return s.actions.attackAt(p);
+  if (aiming?.mode === 'creatures') s.actions.castAt(p);
+}
+
+const aimsAtCreatures = (s: Session) => !!s.actions.armed || s.actions.aiming?.mode === 'creatures';
+
+/** An attack or spell aimed at creatures, sent at the one the pointer snapped to. */
+function clickCreature(s: Session, id: string): void {
+  if (s.actions.aiming) s.actions.pickTarget(id);
+  else s.actions.attack(id);
+}

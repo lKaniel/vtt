@@ -126,8 +126,11 @@ export type ClientMessage =
   /** GM: turn-based mode outside a fight: the party takes turns, 6 seconds a round (fights are always turn-based). */
   | { t: 'turnBased'; on: boolean }
   | { t: 'endTurn' }
-  /** `smite`: spend a slot of this level on Divine Smite if the attack hits (2014 paladin). */
-  | { t: 'attack'; attacker: string; target: string; attack: string; smite?: number }
+  /**
+   * `smite`: spend a slot of this level on Divine Smite if the attack hits (2014 paladin).
+   * Without `target` the attack goes at `point`, empty ground, and hits nothing.
+   */
+  | { t: 'attack'; attacker: string; target?: string; point?: Point; attack: string; smite?: number }
   /** `item` is the index in the token's inventory. */
   | { t: 'equip'; token: string; item: number; equipped: boolean }
   /** An owner's own gear: coins, packing it into containers (`into` null takes it out), attunement. */

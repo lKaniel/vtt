@@ -159,7 +159,7 @@ export class Actions {
     else this.on.changed();
   }
 
-  /** Casts the aimed spell at a point (areas, teleports, summons). */
+  /** Casts the aimed spell at a point: areas, teleports and summons, or a spell aimed at creatures spent on empty ground. */
   castAt(point: Point): void {
     this.confirmCast(point);
   }
@@ -174,6 +174,13 @@ export class Actions {
   setSmite(slot: number | undefined): void {
     this.smite = slot;
     this.on.changed();
+  }
+
+  /** Spends the readied attack on empty ground at `point`: it hits nothing. */
+  attackAt(point: Point): void {
+    if (!this.s.selected || !this.armed) return;
+    this.s.send({ t: 'attack', attacker: this.s.selected, attack: this.armed, point });
+    this.arm(undefined);
   }
 
   attack(target: string): void {

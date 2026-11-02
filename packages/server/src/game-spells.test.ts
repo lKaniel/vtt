@@ -137,6 +137,15 @@ describe('casting spells', () => {
     expect(errors(ana)[0]).toMatch(/no 1st-level slots left/);
   });
 
+  it('casts at empty ground: the slot is spent and no one is hit', () => {
+    const ana = join_('ana');
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'magic-missile', slot: 1, targets: [], point: [150, 150] });
+    expect(spellLogs(ana)[0]!.results).toEqual([]);
+    expect(tok('hero').spent?.slots).toEqual([1]);
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'fire-bolt', slot: 0, targets: [], point: [9000, 50] });
+    expect(errors(ana)[0]).toMatch(/out of range|too far/);
+  });
+
   it('casts for free without spending a slot, and says so in the log', () => {
     const ana = join_('ana');
     dice = Array<number>(6).fill(face(1, 4));

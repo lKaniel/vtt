@@ -32,7 +32,8 @@ import {
   tokenDistance,
   type WeaponAttackOutcome,
 } from '@vtt/system-dnd5e';
-import { canControl, gridKind, isParty, type Player } from '@vtt/shared';
+import { canControl, gridKind, isParty, type Player, type Point } from '@vtt/shared';
+import { attackGround } from './ground-attack.ts';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
 import { breakSanctuary, loseImage, passSanctuary } from '../play/spell-wards.ts';
 import { Refusal, requireGm, type Cost, type Fighter, type Table } from '../play/table.ts';
@@ -53,6 +54,9 @@ export interface AttackRequest {
   attack: string;
   smite?: number;
 }
+
+/** An attack as a player asks for it: at a creature, or at empty ground (`point`). */
+export type AttackAsked = Omit<AttackRequest, 'target'> & { target?: string; point?: Point };
 
 /**
  * Combat rules on top of the world: starting fights, turns, movement
@@ -246,7 +250,9 @@ export class CombatActions {
     return stood;
   }
 
-  attack(player: Player, canSee: (id: string) => boolean, req: AttackRequest): void {
+  attack(player: Player, canSee: (id: string) => boolean, asked: AttackAsked): void {
+    if (!asked.target) return this.atGround(player, asked);
+    const req = { ...asked, target: asked.target };
     const attacker = this.table.actor(player, req.attacker);
     if (!canSee(req.target)) throw new Refusal('No such target');
     const target = this.table.fighter(req.target);
@@ -264,6 +270,16 @@ export class CombatActions {
     if (lightAttack(attack)) this.markUsed(attacker.token, 'light-attack');
     if (attack.offHand && cost === 'free') this.markUsed(attacker.token, 'nick');
     this.resolve({ attacker, target, attack, range }, { smite: req.smite, reaction: false });
+  }
+
+  /** An attack at empty ground: it costs what an attack costs and hits nothing. */
+  private atGround(player: Player, req: AttackAsked): void {
+    const attacker = this.table.actor(player, req.attacker);
+    const attack = this.attackOf(attacker, req);
+    if (!req.point) throw new Refusal(`Pick a target for ${attack.name}`);
+    const cost = this.attackCost(attacker, attack);
+    this.table.check(attacker.token, cost);
+    attackGround(this.table, { attacker, attack, point: req.point, cost }, this.logAttack);
   }
 
   /** Turn-based mode on or off, or the GM's legendary action (its attack made out of turn) or lair action. */
@@ -300,7 +316,7 @@ export class CombatActions {
     return offHandCost(attacker.sheet, attack, used);
   }
 
-  private attackOf(attacker: Fighter, req: AttackRequest): Fighter['sheet']['attacks'][number] {
+  private attackOf(attacker: Fighter, req: AttackAsked): Fighter['sheet']['attacks'][number] {
     const attack = attacker.sheet.attacks.find((a) => a.name === req.attack);
     if (!attack) throw new Refusal(`${attacker.token.name} has no attack called ${req.attack}`);
     const smiting = req.smite && smiteProblem(attacker.sheet, attack, req.smite);

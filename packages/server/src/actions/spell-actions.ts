@@ -194,7 +194,17 @@ export class SpellActions {
     if (spell.area) return this.areaTargets(caster, spell, req.point);
     const scaled = scaledSpell(spell, req.slot, caster.sheet.caster?.level ?? 1);
     if (scaled.targets === 0) return [this.table.fighter(caster.token.id)];
-    const most = scaled.beams > 1 ? scaled.beams : scaled.targets;
+    return this.picked(caster, spell, req, { most: scaled.beams > 1 ? scaled.beams : scaled.targets, canSee });
+  }
+
+  /** The creatures picked, at most `most`; none, at a point, casts it at empty ground, where it hits no one. */
+  private picked(
+    caster: Fighter,
+    spell: Spell,
+    req: CastRequest,
+    { most, canSee }: { most: number; canSee: (id: string) => boolean },
+  ): Fighter[] {
+    if (!req.targets.length && req.point) return this.atGround(caster, spell, req.point);
     if (!req.targets.length) throw new Refusal(`Pick a target for ${spell.name}`);
     if (req.targets.length > most) throw new Refusal(`${spell.name} can target at most ${most}`);
     return req.targets.map((id) => this.creatureTarget(caster, spell, id, canSee));
@@ -209,6 +219,11 @@ export class SpellActions {
       throw new Refusal(`${caster.token.name} has no clear path to ${target.token.name}`);
     }
     return target;
+  }
+
+  private atGround(caster: Fighter, spell: Spell, point: Point): Fighter[] {
+    this.checkPoint(caster, spell, point, spell.range);
+    return [];
   }
 
   private checkPoint(caster: Fighter, spell: Spell, point: Point | undefined, range: number): Point {

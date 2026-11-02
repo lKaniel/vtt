@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Chunk, Wall } from '@vtt/shared';
-import { clickSnapped, clickTile, openDoor } from './interact.ts';
+import { clickGround, clickSnapped, clickTile, openDoor } from './interact.ts';
 import { closeSession, openSession, token, welcome, type FakeWebSocket } from '../session/session.fixtures.ts';
 import type { Session } from '../session/session.ts';
 
@@ -57,5 +57,46 @@ describe('using doors and tiles from afar', () => {
     session.select(undefined);
     openDoor(session, '0_0', door, false);
     expect(sent()).toEqual([{ t: 'door', chunk: '0_0', wall: 'door', state: 'open' }]);
+  });
+});
+
+describe('a click on the ground with an action ready', () => {
+  let session: Session;
+  let ws: FakeWebSocket;
+  const sheet = { attacks: [{ name: 'Longsword' }], caster: undefined } as never;
+
+  beforeEach(() => {
+    ({ session, ws } = openSession());
+    ws.receive(welcome([token('hero'), { ...token('goblin', 550), ownership: undefined }]));
+    ws.receive({ t: 'token', token: { ...token('hero'), sheet } });
+    session.select('hero');
+  });
+
+  afterEach(() => closeSession(session));
+
+  it('attacks the empty ground there', () => {
+    session.actions.arm('Longsword');
+    clickGround(session, [150, 300]);
+    expect(ws.sent.at(-1)).toEqual({ t: 'attack', attacker: 'hero', attack: 'Longsword', point: [150, 300] });
+    expect(session.actions.armed).toBeUndefined();
+  });
+
+  it('attacks the creature it snaps to, just off its edge', () => {
+    session.actions.arm('Longsword');
+    clickGround(session, [550, 112]);
+    expect(ws.sent.at(-1)).toMatchObject({ t: 'attack', target: 'goblin' });
+  });
+
+  it('casts a spell aimed at creatures at the ground, with the targets picked so far', () => {
+    session.actions.aiming = {
+      spell: { id: 'magic-missile' } as never,
+      slot: 1,
+      mode: 'creatures',
+      picks: [],
+      need: 3,
+    };
+    clickGround(session, [150, 300]);
+    expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'magic-missile', targets: [], point: [150, 300] });
+    expect(session.actions.aiming).toBeUndefined();
   });
 });

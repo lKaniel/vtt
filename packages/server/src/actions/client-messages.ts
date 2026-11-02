@@ -83,7 +83,9 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({
     t: z.literal('attack'),
     attacker: z.string(),
-    target: z.string(),
+    /** The creature attacked; missing: the attack goes at `point`, empty ground. */
+    target: z.string().optional(),
+    point: PointSchema.optional(),
     attack: z.string(),
     smite: z.number().int().min(1).max(9).optional(),
   }),
