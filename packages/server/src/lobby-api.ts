@@ -14,10 +14,12 @@ import { z } from 'zod';
 import type { Account, AccountStore } from './accounts.ts';
 import { SYSTEMS } from './systems.ts';
 import type { CharacterStore } from './characters.ts';
+import { serveArchive } from './archive-api.ts';
 import type { GameAccess } from './game-access.ts';
+import { MAX_ZIP } from './game-archive.ts';
 import type { GameHub, GameInfo } from './game-hub.ts';
 import type { GameStore } from './game-store.ts';
-import { HttpError, parseBody, send, signedIn, type Call, type Routes } from './http-json.ts';
+import { HttpError, parseBody, readRaw, send, signedIn, type Call, type Routes } from './http-json.ts';
 
 // The lobby, as JSON over HTTP: the games an account can enter, making a
 // game, invite links, members and their roles, and taking a seat with a
@@ -119,6 +121,7 @@ export class LobbyRoutes implements Routes {
   private byPath(call: Call, info: GameInfo, account: Account): Promise<void> {
     const [, , sub, , extra] = call.parts;
     if (sub === 'requests') return this.answer(call, info, account);
+    if (sub === 'backups' || sub === 'export') return this.archive(call, info, account);
     if (sub === 'members' && extra === 'password') return this.seatPassword(call, info, account);
     if (sub === 'members') return this.member(call, info, account);
     throw new HttpError(405, 'Method not allowed.');
@@ -130,6 +133,7 @@ export class LobbyRoutes implements Routes {
     if (route === 'invites' && call.method === 'POST') return this.accept(call, account, id ?? '');
     if (!id) return this.games(call, account);
     if (id === 'import-foundry' && call.method === 'POST') return this.importFoundry(call, account);
+    if (id === 'import-zip' && call.method === 'POST') return this.importZip(call, account);
     return undefined;
   }
 
@@ -166,6 +170,18 @@ export class LobbyRoutes implements Routes {
     const gm: Player = { id: account.id, name: account.name, role: 'gm', color: nextSeatColor([]) };
     const { id, report } = await this.deps.hub.importFoundry(input.folder.trim(), gm, input);
     send(call.res, 200, { game: summary(await this.deps.hub.info(id), account), report });
+  }
+
+  /** A new game from a zip a GM exported, with the caller as its GM. */
+  private async importZip(call: Call, account: Account): Promise<void> {
+    const gm: Player = { id: account.id, name: account.name, role: 'gm', color: nextSeatColor([]) };
+    const id = await this.deps.hub.importZip(await readRaw(call.req, MAX_ZIP), gm);
+    send(call.res, 200, { game: summary(await this.deps.hub.info(id), account) });
+  }
+
+  private archive(call: Call, info: GameInfo, account: Account): Promise<void> {
+    this.requireGm(info, account);
+    return serveArchive(this.deps.hub, call, info);
   }
 
   private async remove(call: Call, info: GameInfo, account: Account): Promise<void> {

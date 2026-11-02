@@ -20,6 +20,8 @@ import {
 } from './http-json.ts';
 import { LobbyRoutes } from './lobby-api.ts';
 import { mcpHandler } from './mcp-http.ts';
+import { BackupError } from './backups.ts';
+import { ArchiveError } from './game-archive.ts';
 
 // The account side of the server, as JSON over HTTP: signing up and in, and
 // the player's characters (the roster). Games are lobby-api.ts. The game
@@ -42,6 +44,10 @@ const SignUp = Credentials.extend({ name: z.string().max(80).default('') });
 /** What a client sends for a character: everything but who owns it and its id. */
 const CharacterInput = CharacterSchema.omit({ id: true, owner: true });
 
+/** An error whose message is the answer: a 400. */
+const isRefusal = (e: unknown): e is Error =>
+  e instanceof AccountError || e instanceof HubError || e instanceof BackupError || e instanceof ArchiveError;
+
 /** Handles /api/ requests about accounts, characters and games; returns false for anything else. */
 export function apiHandler(deps: ApiDeps): (req: IncomingMessage, res: ServerResponse) => Promise<boolean> {
   const all: Routes[] = [new AccountRoutes(deps), new LobbyRoutes(deps)];
@@ -56,7 +62,7 @@ export function apiHandler(deps: ApiDeps): (req: IncomingMessage, res: ServerRes
     try {
       await routes.serve(call);
     } catch (e) {
-      if (e instanceof AccountError || e instanceof HubError) send(res, 400, { error: e.message });
+      if (isRefusal(e)) send(res, 400, { error: e.message });
       else if (e instanceof HttpError) send(res, e.status, { error: e.message, issues: e.issues });
       else throw e;
     }

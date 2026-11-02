@@ -52,8 +52,8 @@ on, shared live between players.
   (hurt, bloodied, down) for everyone else.
 - **Initiative and turns.** The GM's _Start combat_ rolls initiative for every
   creature on screen. Only the creature whose turn it is can move, within
-  what's left of its speed (the path preview shows `feet / left`). Space or
-  _End turn_ passes the turn; creatures at 0 HP are skipped.
+  what's left of its speed (the path preview shows `feet / left`). A tap of Space
+  or _End turn_ passes the turn (holding Space and dragging pans the map); creatures at 0 HP are skipped.
 - **Shared party turns (BG3).** With _Party acts together_ on (beside Start
   combat, remembered in the GM's browser), party members next to each other
   in the order act on one turn, in any order, each with their own movement
@@ -125,7 +125,10 @@ can visit many campaigns. Passwords are stored as salted scrypt hashes, and a si
 account, delete its file in `data/accounts/`. Set `VTT_ADMIN_PASSWORD` so that
 the admin is whoever types it on the account screen rather than the first
 account made. A GM can make joining wait for approval and lock fixed seats with
-a password (see [docs/lobby.md](docs/lobby.md)).
+a password (see [docs/lobby.md](docs/lobby.md)). Every game is backed up when it
+loads and every 15 minutes of play (when it changed) into `data/backups/`; its
+GM restores a backup or downloads the game as a zip from its lobby page, and
+anyone can make a new game from such a zip.
 
 The character creator follows the BG3 order: race or species, class,
 background, abilities (point buy, standard array, 4d6 or manual), skills,

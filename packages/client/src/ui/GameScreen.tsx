@@ -6,6 +6,7 @@ import { editKey, editorKey, type EditKey, type EditorKey, type LayerKey } from 
 import { hotbarTiles } from '../hotbar.ts';
 import { Session } from '../session.ts';
 import { actionOf, currentKeys } from '../keybinds.ts';
+import { spaceKey } from '../space-pan.ts';
 import { STEP_ACTIONS, stepTarget } from '../stepping.ts';
 import { activateTile, ActionBar, canActivate } from './ActionBar.tsx';
 import { Sheets } from './PoppedSheets.tsx';
@@ -51,22 +52,8 @@ export function GameScreen({
     };
   }, [session]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      // A dialog or popup that closed on this key (Esc) has already handled it.
-      if (e.defaultPrevented || isTyping(e.target)) return;
-      if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
-      if (e.key === 'Escape' && backOutOfEditor(session)) return;
-      if (targetKey(session, e) || runEditorKey(session, e)) return;
-      const sheetKey = actionOf(e, currentKeys(), ['sheet', 'editSheet']);
-      if (sheetKey === 'sheet') toggleSheet(session);
-      else if (sheetKey === 'editSheet') toggleEditor(session);
-      else handleGameKey(session, e);
-    };
-    addEventListener('keydown', onKey);
-    return () => removeEventListener('keydown', onKey);
-  }, [session]);
-
+  useEffect(() => listenToKeys(session), [session]);
+  useEffect(() => listenToSpace(session), [session]);
   useEffect(() => listenToClipboard(session), [session]);
   useEffect(() => exposeApi(session.scripts.vtt), [session]);
   useEffect(() => blockNativeMenu(document), []);
@@ -287,11 +274,49 @@ function backOut(session: Session): void {
   else session.select(undefined);
 }
 
-/** Esc backs out, 1-0 use the action bar's tiles, Space ends your turn (or the player's own keys, keybinds.ts). */
+/** The game's keys: the editor's, targeting, sheets, then the game's own (handleGameKey). */
+function listenToKeys(session: Session): () => void {
+  const onKey = (e: KeyboardEvent) => {
+    // A dialog or popup that closed on this key (Esc) has already handled it.
+    if (e.defaultPrevented || isTyping(e.target)) return;
+    if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
+    if (e.key === 'Escape' && backOutOfEditor(session)) return;
+    if (targetKey(session, e) || runEditorKey(session, e)) return;
+    const sheetKey = actionOf(e, currentKeys(), ['sheet', 'editSheet']);
+    if (sheetKey === 'sheet') toggleSheet(session);
+    else if (sheetKey === 'editSheet') toggleEditor(session);
+    else handleGameKey(session, e);
+  };
+  addEventListener('keydown', onKey);
+  return () => removeEventListener('keydown', onKey);
+}
+
+/** Space held makes a left drag pan the map; a tap of it (let go without panning) ends your turn when Space is the end-turn key. */
+function listenToSpace(session: Session): () => void {
+  const up = (e: KeyboardEvent) => {
+    if (e.key !== ' ' || !spaceKey.release() || isTyping(e.target)) return;
+    if (actionOf(e, currentKeys()) === 'endTurn' && session.isMyTurn()) session.endTurn();
+  };
+  const blur = () => spaceKey.reset();
+  addEventListener('keyup', up);
+  addEventListener('blur', blur);
+  return () => {
+    removeEventListener('keyup', up);
+    removeEventListener('blur', blur);
+  };
+}
+
+/** Esc backs out, 1-0 use the action bar's tiles, the end-turn key ends your turn (or the player's own keys, keybinds.ts); Space held pans, so a Space end-turn waits for its release. */
 function handleGameKey(session: Session, e: KeyboardEvent): void {
   if (step(session, e)) return;
   if (e.key === 'Escape') return backOut(session);
   const id = actionOf(e, currentKeys());
+  // Space pans while held unless the player gave it to something else.
+  if (e.key === ' ' && (!id || id === 'endTurn')) {
+    e.preventDefault();
+    spaceKey.press();
+    return;
+  }
   if (id === 'endTurn' && session.isMyTurn()) {
     e.preventDefault();
     session.endTurn();

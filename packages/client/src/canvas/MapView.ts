@@ -28,10 +28,11 @@ import { RulerLayer } from './RulerLayer.ts';
 import { TokenLayer } from './TokenLayer.ts';
 import { WeatherLayer } from './WeatherLayer.ts';
 import { Vision } from './Vision.ts';
+import { spaceKey } from '../space-pan.ts';
+import { listenToWheel } from './wheel-zoom.ts';
 
 extensions.add(CullerPlugin);
 
-const WHEEL_ZOOM_SPEED = 0.0015;
 /** Below these zoom levels the matching detail is skipped, so a zoomed-out map stays cheap. */
 const LOD = { labels: 0.45, doors: 0.25 };
 const DRAG_THRESHOLD = 5;
@@ -151,7 +152,6 @@ export class MapView {
     for (const off of this.unsubscribe) off();
     this.vision?.destroy();
     if ((this.app.renderer as unknown) !== undefined) {
-      this.app.canvas.removeEventListener('wheel', this.onWheel);
       this.app.destroy(true, { children: true });
     }
   }
@@ -175,11 +175,11 @@ export class MapView {
       this.editor.pointerUp({ at: this.screenToWorld(e.global.x, e.global.y), button: e.button, mods: modsOf(e) });
       this.drag = undefined;
     });
-    this.app.canvas.addEventListener('wheel', this.onWheel, { passive: false });
-    // Middle drag pans instead of the browser's auto-scroll (the game screen blocks the browser's right-click menu).
-    this.app.canvas.addEventListener('mousedown', (e) => {
-      if (e.button === 1) e.preventDefault();
-    });
+    this.unsubscribe.push(
+      listenToWheel(this.app.canvas, this.cam, this.app.screen, () => {
+        this.dirty = true;
+      }),
+    );
     listenToDrops(this.app.canvas, this.session, (x, y) => this.screenToWorld(x, y));
     this.app.renderer.on('resize', () => {
       this.vision?.resize();
@@ -362,19 +362,11 @@ export class MapView {
 
   // Input -------------------------------------------------------------------
 
-  private onWheel = (e: WheelEvent): void => {
-    e.preventDefault();
-    const rect = this.app.canvas.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
-    this.cam.zoomAt(this.cam.zoomGoal * Math.exp(-e.deltaY * WHEEL_ZOOM_SPEED), [sx, sy], this.app.screen);
-    this.dirty = true;
-  };
-
   private onPointerDown(e: FederatedPointerEvent): void {
     const p: Point = [e.global.x, e.global.y];
     const at = this.screenToWorld(p[0], p[1]);
     if (e.button !== 2) this.session.closeMenu();
+    if (this.grabMap(e, p)) return;
     this.presence.down(p, at, e);
     // An aimed spell or readied attack keeps the left click for itself.
     const acting = !!(this.session.armed ?? this.session.aiming) && !this.editor.active;
@@ -383,6 +375,15 @@ export class MapView {
     if (!acting && this.editor.pointerDown({ at, button: e.button, mods: modsOf(e) })) return;
     this.drag = { start: p, last: p, at: performance.now(), panning: e.button === 1, button: e.button };
     this.cam.hold();
+  }
+
+  /** Space held: a left drag pans, whatever is under the pointer. */
+  private grabMap(e: FederatedPointerEvent, p: Point): boolean {
+    if (e.button !== 0 || !spaceKey.held) return false;
+    spaceKey.panned();
+    this.drag = { start: p, last: p, at: performance.now(), panning: true, button: 0 };
+    this.cam.hold();
+    return true;
   }
 
   private onPointerMove(e: FederatedPointerEvent): void {

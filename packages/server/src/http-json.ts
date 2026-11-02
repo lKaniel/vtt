@@ -47,15 +47,20 @@ export function send(res: ServerResponse, status: number, body: unknown, cookie?
   res.end(JSON.stringify(body));
 }
 
-async function readBody(req: IncomingMessage): Promise<unknown> {
+/** The request's body as bytes, up to `max`. */
+export async function readRaw(req: IncomingMessage, max: number): Promise<Buffer> {
   let size = 0;
   const chunks: Buffer[] = [];
   for await (const chunk of req as AsyncIterable<Buffer>) {
     size += chunk.length;
-    if (size > MAX_BODY) throw new HttpError(413, 'Request too large.');
+    if (size > max) throw new HttpError(413, 'Request too large.');
     chunks.push(chunk);
   }
-  const text = Buffer.concat(chunks).toString('utf8');
+  return Buffer.concat(chunks);
+}
+
+async function readBody(req: IncomingMessage): Promise<unknown> {
+  const text = (await readRaw(req, MAX_BODY)).toString('utf8');
   try {
     return text ? (JSON.parse(text) as unknown) : {};
   } catch {
