@@ -52,22 +52,7 @@ export function GameScreen({
     };
   }, [session]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      // A dialog or popup that closed on this key (Esc) has already handled it.
-      if (e.defaultPrevented || isTyping(e.target)) return;
-      if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
-      if (e.key === 'Escape' && backOutOfEditor(session)) return;
-      if (targetKey(session, e) || runEditorKey(session, e)) return;
-      const sheetKey = actionOf(e, currentKeys(), ['sheet', 'editSheet']);
-      if (sheetKey === 'sheet') toggleSheet(session);
-      else if (sheetKey === 'editSheet') toggleEditor(session);
-      else handleGameKey(session, e);
-    };
-    addEventListener('keydown', onKey);
-    return () => removeEventListener('keydown', onKey);
-  }, [session]);
-
+  useGameKeys(session);
   useEffect(() => listenToClipboard(session), [session]);
   useEffect(() => exposeApi(session.scripts.vtt), [session]);
   useEffect(() => blockNativeMenu(document), []);
@@ -118,6 +103,25 @@ export function GameScreen({
       <ObserveBanner session={session} />
     </div>
   );
+}
+
+/** The map's keys: edit keys, targeting, the editor, sheets and the game's own. */
+function useGameKeys(session: Session): void {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // A dialog or popup that closed on this key (Esc) has already handled it.
+      if (e.defaultPrevented || isTyping(e.target)) return;
+      if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
+      if (e.key === 'Escape' && backOutOfEditor(session)) return;
+      if (targetKey(session, e) || runEditorKey(session, e)) return;
+      const sheetKey = actionOf(e, currentKeys(), ['sheet', 'editSheet']);
+      if (sheetKey === 'sheet') toggleSheet(session);
+      else if (sheetKey === 'editSheet') toggleEditor(session);
+      else handleGameKey(session, e);
+    };
+    addEventListener('keydown', onKey);
+    return () => removeEventListener('keydown', onKey);
+  }, [session]);
 }
 
 /** Typing in a field keeps the field's own undo, copy and paste. */
