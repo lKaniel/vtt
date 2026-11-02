@@ -132,6 +132,35 @@ export type Item = z.infer<typeof ItemSchema>;
 export type Weapon = Extract<Item, { type: 'weapon' }>;
 export type Armor = Extract<Item, { type: 'armor' }>;
 
+/** Legendary actions: how many per round, and what they can be spent on. */
+export const LegendarySchema = z.object({
+  actions: z.number().int().positive(),
+  options: z.array(
+    z.object({
+      id,
+      name: z.string().min(1),
+      cost: z.number().int().min(1).max(3).default(1),
+      /** The name of the attack it makes (a dragon's tail attack); without one it is described in chat. */
+      attack: z.string().optional(),
+      description: z.string().optional(),
+    }),
+  ),
+});
+export type Legendary = z.infer<typeof LegendarySchema>;
+
+/** Lair actions, one taken on initiative count 20 each round (losing ties). */
+export const LairSchema = z.object({
+  actions: z.array(z.object({ id, name: z.string().min(1), description: z.string().optional() })).min(1),
+});
+export type Lair = z.infer<typeof LairSchema>;
+
+const legendaryParts = {
+  legendary: LegendarySchema.optional(),
+  /** Failed saves it may turn into successes, per day. */
+  legendaryResistance: z.number().int().positive().optional(),
+  lair: LairSchema.optional(),
+};
+
 export const MonsterSchema = z.object({
   id,
   name: z.string().min(1),
@@ -154,6 +183,7 @@ export const MonsterSchema = z.object({
   attacks: z.array(AttackSchema).default([]),
   ...defenses,
   conditionImmunities: z.array(z.string()).default([]),
+  ...legendaryParts,
   /** Painted top-down token with a transparent background, set from content/token-art.json. */
   img: z.string().optional(),
 });
@@ -189,6 +219,8 @@ export const StatsSchema = z.object({
   resistances: z.array(DamageTypeSchema).optional(),
   immunities: z.array(DamageTypeSchema).optional(),
   vulnerabilities: z.array(DamageTypeSchema).optional(),
+  /** Legendary actions, resistance and a lair for any creature (a boss NPC), or overriding the monster's. */
+  ...legendaryParts,
 });
 export type Stats = z.infer<typeof StatsSchema>;
 

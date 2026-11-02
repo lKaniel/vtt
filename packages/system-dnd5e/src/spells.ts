@@ -1,3 +1,4 @@
+import { resistSave } from './legendary.ts';
 import { applyDamage, critDice, tokenDistance } from './attack.ts';
 import type { Creature } from './creature.ts';
 import { abilityMod } from './creature-math.ts';
@@ -216,7 +217,9 @@ function spellAttack(cast: Cast, target: CastSide, used: UsedEffect[]) {
 function landing(cast: Cast, target: CastSide, used: UsedEffect[]) {
   const { spell, rng } = cast;
   const attack = spell.attack && !spell.autoHit ? spellAttack(cast, target, used) : undefined;
-  const save = spell.save ? rollSave(target.sheet, spell.save.ability, cast.dc, rng) : undefined;
+  const save = spell.save
+    ? resistSave(target.sheet, rollSave(target.sheet, spell.save.ability, cast.dc, rng))
+    : undefined;
   const landed = (attack?.hit ?? true) && !save?.success;
   const half = save?.success === true && spell.save?.onSave === 'half';
   return { attack, save, landed, half };

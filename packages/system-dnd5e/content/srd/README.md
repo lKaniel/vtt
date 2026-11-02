@@ -3,7 +3,9 @@
 - `monsters-5.1.json`: monsters for the 2014 rules, from the System Reference
   Document 5.1 by Wizards of the Coast.
 - `monsters-5.2.json`: monsters for the 2024 rules, from the System Reference
-  Document 5.2 by Wizards of the Coast.
+  Document 5.2 by Wizards of the Coast. Legendary monsters carry their
+  `legendary` actions (5.1 options link their attack) and
+  `legendaryResistance`.
 - `spells-5.1.json`, `spells-5.2.json`: every SRD spell for each edition.
 - `classes-5.1.json`, `classes-5.2.json`: the SRD classes, their features by
   level and spellcasting tables.

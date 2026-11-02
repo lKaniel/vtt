@@ -21,6 +21,8 @@ import {
   type TurnBudget,
   type TurnInfo,
   type UsedEffect,
+  isLairTurn,
+  lairOwner,
 } from '@vtt/system-dnd5e';
 import { canControl, hasLineOfSight, isGm, type Player, type Point, type Rng } from '@vtt/shared';
 import type { GameStore } from './game-store.ts';
@@ -86,6 +88,7 @@ export class Table {
   }
 
   readonly turnInfo: TurnInfo = (id) => {
+    if (isLairTurn(id)) return this.store.tokens.has(lairOwner(id)) ? { speed: 0, active: true } : undefined;
     const token = this.store.tokens.get(id);
     if (!token) return undefined;
     const sheet = this.sheetOf(token);

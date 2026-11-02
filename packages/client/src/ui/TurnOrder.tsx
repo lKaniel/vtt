@@ -1,4 +1,4 @@
-import { currentTurn } from '@vtt/system-dnd5e';
+import { currentTurn, isLairTurn } from '@vtt/system-dnd5e';
 import { isParty } from '@vtt/shared';
 import type { Session } from '../session.ts';
 import { Face, HpBar } from './Portrait.tsx';
@@ -36,6 +36,7 @@ export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onS
       </span>
       <div className="turns">
         {combat.order.map((e) => {
+          if (isLairTurn(e.token)) return <LairTurn key={e.token} current={e.token === current} />;
           const t = session.tokens.get(e.token);
           if (!t) return null;
           const down = (t.sheet?.hp ?? 1) <= 0 || t.health === 'down';
@@ -65,6 +66,18 @@ export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onS
         </Button>
       )}
     </div>
+  );
+}
+
+/** The lair's turn on initiative 20. */
+function LairTurn({ current }: Readonly<{ current: boolean }>) {
+  return (
+    <span
+      className={`turn foe grid place-items-center font-display text-xs text-gold ${current ? 'current' : ''}`}
+      title="Lair actions: initiative 20"
+    >
+      Lair
+    </span>
   );
 }
 

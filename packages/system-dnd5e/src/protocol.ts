@@ -119,6 +119,10 @@ export type ClientMessage =
   | { t: 'equip'; token: string; item: number; equipped: boolean }
   /** An owner's own gear: coins, packing it into containers (`into` null takes it out), attunement. */
   | { t: 'carry'; token: string; change: CarryChange }
+  /** GM: a legendary action, between other creatures' turns; `target` for one that attacks. */
+  | { t: 'legendary'; token: string; option: string; target?: string }
+  /** GM: the lair action of `token`'s lair, on its turn at initiative 20. */
+  | { t: 'lair'; token: string; action: string }
   /** Spends one hit die to heal (outside fights). */
   | { t: 'hitDie'; token: string }
   /** GM: sets a creature's exhaustion, 0 for none. */

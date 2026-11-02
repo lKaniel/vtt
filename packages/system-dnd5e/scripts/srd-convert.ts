@@ -227,6 +227,41 @@ function otherSenses(f: Fields): Record<string, number> {
   return out;
 }
 
+/** The attack a legendary action makes (a dragon's tail attack), by the attack's name. */
+function legendaryAttack(pack: Pack, action: Entry): string | undefined {
+  const scripted = action as Entry & { actions?: { steps?: { use?: string; source?: string }[] }[] };
+  const steps = (scripted.actions ?? []).flatMap((a) => a.steps ?? []);
+  const source = steps.find((s) => s.use === 'monster-attack')?.source?.replace(/'/g, '');
+  return source ? (pack.text[`${source}.name`] ?? source.split('.').at(-1)) : undefined;
+}
+
+function legendaryOption(pack: Pack, ref: string): object | undefined {
+  const action = pack.entries.get(ref);
+  if (action?.fields?.kind !== 'legendary') return undefined;
+  const name = (pack.text[`${ref}.name`] ?? bare(ref)).replace(/ ?\(Costs? \d+ Actions?\)/i, '');
+  const description = pack.text[`${ref}.description`];
+  const attack = legendaryAttack(pack, action);
+  return {
+    id: ref.split('.').at(-1),
+    name,
+    cost: num(action.fields.legendaryCost) ?? 1,
+    ...(attack && { attack }),
+    ...(description && { description }),
+  };
+}
+
+/** Legendary actions per round and their options, and legendary resistance per day. */
+function legendaryParts(pack: Pack, f: Fields, refs: readonly string[]): object {
+  const actions = num(f.legendaryActions);
+  const options = refs.flatMap((r) => legendaryOption(pack, r) ?? []);
+  const resist = refs.map((r) => pack.entries.get(r)).find((e) => e?.id.endsWith('.legendary-resistance'));
+  const perDay = num(resist?.fields?.perDay);
+  return {
+    ...(actions && options.length && { legendary: { actions, options } }),
+    ...(perDay && { legendaryResistance: perDay }),
+  };
+}
+
 export function convertMonster(pack: Pack, m: Entry): object {
   const f = m.fields ?? {};
   const refs = [...(m.grants ?? []).map((g) => g.item), ...list(f.entries)];
@@ -249,5 +284,6 @@ export function convertMonster(pack: Pack, m: Entry): object {
     immunities: damageDefense(f, 'damageImmunities'),
     vulnerabilities: damageDefense(f, 'damageVulnerabilities'),
     conditionImmunities: defense('conditionImmunities'),
+    ...legendaryParts(pack, f, [...refs, ...list(f.ownCopies)]),
   };
 }

@@ -93,6 +93,16 @@ describe('the GM tools', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'exhaustion', token: 'hero', level: 2 });
   });
 
+  it('takes legendary and lair actions', () => {
+    ws.receive(gmWelcome());
+    session.legendary('dragon', 'tail-attack', 'hero');
+    expect(ws.sent.at(-1)).toEqual({ t: 'legendary', token: 'dragon', option: 'tail-attack', target: 'hero' });
+    session.legendary('dragon', 'detect');
+    expect(ws.sent.at(-1)).toEqual({ t: 'legendary', token: 'dragon', option: 'detect' });
+    session.lairAction('dragon', 'grasp');
+    expect(ws.sent.at(-1)).toEqual({ t: 'lair', token: 'dragon', action: 'grasp' });
+  });
+
   it('sends drops and shows why one was refused', () => {
     ws.receive(gmWelcome());
     session.spawnHidden = true;

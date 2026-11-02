@@ -35,7 +35,25 @@
     "resistances": [],
     "immunities": [],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "lash",
+          "name": "Lash",
+          "cost": 1,
+          "description": "The aboleth makes one Tentacle attack."
+        },
+        {
+          "id": "psychic-drain",
+          "name": "Psychic Drain",
+          "cost": 1,
+          "description": "If the aboleth has at least one creature Charmed or Grappled, it uses Consume Memories and regains 5 (1d10) Hit Points."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-black-dragon",
@@ -78,7 +96,31 @@
     "resistances": [],
     "immunities": ["acid"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "cloud-of-insects",
+          "name": "Cloud of Insects",
+          "cost": 1,
+          "description": "*Dexterity Saving Throw:* DC 17, one creature the dragon can see within 120 feet. *Failure:* 22 (4d10) Poison damage, and the target has Disadvantage on saving throws to maintain Concentration until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "frightful-presence",
+          "name": "Frightful Presence",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Fear. The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-blue-dragon",
@@ -121,7 +163,31 @@
     "resistances": [],
     "immunities": ["lightning"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "cloaked-flight",
+          "name": "Cloaked Flight",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Invisibility on itself, and it can fly up to half its Fly Speed. The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "sonic-boom",
+          "name": "Sonic Boom",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Shatter. The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "tail-swipe",
+          "name": "Tail Swipe",
+          "cost": 1,
+          "description": "The dragon makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-brass-dragon",
@@ -164,7 +230,31 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "blazing-light",
+          "name": "Blazing Light",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Scorching Ray."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        },
+        {
+          "id": "scorching-sands",
+          "name": "Scorching Sands",
+          "cost": 1,
+          "description": "*Dexterity Saving Throw:* DC 16, one creature the dragon can see within 120 feet. *Failure:* 27 (6d8) Fire damage, and the target's Speed is halved until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-bronze-dragon",
@@ -207,7 +297,31 @@
     "resistances": [],
     "immunities": ["lightning"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "guiding-light",
+          "name": "Guiding Light",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Guiding Bolt (level 2 version)."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        },
+        {
+          "id": "thunderclap",
+          "name": "Thunderclap",
+          "cost": 1,
+          "description": "*Constitution Saving Throw:* DC 17, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 90 feet. *Failure:* 10 (3d6) Thunder damage, and the target has the Deafened condition until the end of its next turn."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-copper-dragon",
@@ -250,7 +364,31 @@
     "resistances": [],
     "immunities": ["acid"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "giggling-magic",
+          "name": "Giggling Magic",
+          "cost": 1,
+          "description": "*Charisma Saving Throw:* DC 17, one creature the dragon can see within 90 feet. *Failure:* 24 (7d6) Psychic damage. Until the end of its next turn, the target rolls 1d6 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "mind-jolt",
+          "name": "Mind Jolt",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Mind Spike (level 4 version). The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-gold-dragon",
@@ -293,7 +431,31 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "banish",
+          "name": "Banish",
+          "cost": 1,
+          "description": "*Charisma Saving Throw:* DC 21, one creature the dragon can see within 120 feet. *Failure:* 10 (3d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it reappears in an unoccupied space of the dragon's choice within 120 feet of the dragon. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "guiding-light",
+          "name": "Guiding Light",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Guiding Bolt (level 2 version)."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-green-dragon",
@@ -336,7 +498,31 @@
     "resistances": [],
     "immunities": ["poison"],
     "vulnerabilities": [],
-    "conditionImmunities": ["poisoned"]
+    "conditionImmunities": ["poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "mind-invasion",
+          "name": "Mind Invasion",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Mind Spike (level 3 version)."
+        },
+        {
+          "id": "noxious-miasma",
+          "name": "Noxious Miasma",
+          "cost": 1,
+          "description": "*Constitution Saving Throw:* DC 17, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 90 feet. *Failure:* 7 (2d6) Poison damage, and the target takes a -2 penalty to AC until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-red-dragon",
@@ -379,7 +565,31 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "commanding-presence",
+          "name": "Commanding Presence",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Command (level 2 version). The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "fiery-rays",
+          "name": "Fiery Rays",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Scorching Ray. The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-silver-dragon",
@@ -422,7 +632,31 @@
     "resistances": [],
     "immunities": ["cold"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "chill",
+          "name": "Chill",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Hold Monster. The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "cold-gale",
+          "name": "Cold Gale",
+          "cost": 1,
+          "description": "*Dexterity Saving Throw:* DC 19, each creature in a 60-foot-long, 10-foot-wide Line. *Failure:* 14 (4d6) Cold damage, and the target is pushed up to 30 feet straight away from the dragon. *Success:* Half damage only. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "adult-white-dragon",
@@ -465,7 +699,31 @@
     "resistances": [],
     "immunities": ["cold"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "freezing-burst",
+          "name": "Freezing Burst",
+          "cost": 1,
+          "description": "*Constitution Saving Throw:* DC 14, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 120 feet. *Failure:* 7 (2d6) Cold damage, and the target's Speed is 0 until the end of the target's next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "frightful-presence",
+          "name": "Frightful Presence",
+          "cost": 1,
+          "description": "The dragon casts *Fear*, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 14). The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "air-elemental",
@@ -596,7 +854,31 @@
     "resistances": [],
     "immunities": ["acid"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "cloud-of-insects",
+          "name": "Cloud of Insects",
+          "cost": 1,
+          "description": "*Dexterity Saving Throw:* DC 21, one creature the dragon can see within 120 feet. *Failure:* 33 (6d10) Poison damage, and the target has Disadvantage on saving throws to maintain Concentration until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "frightful-presence",
+          "name": "Frightful Presence",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Fear. The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "ancient-blue-dragon",
@@ -639,7 +921,31 @@
     "resistances": [],
     "immunities": ["lightning"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "cloaked-flight",
+          "name": "Cloaked Flight",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Invisibility on itself, and it can fly up to half its Fly Speed. The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "sonic-boom",
+          "name": "Sonic Boom",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Shatter (level 3 version). The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "tail-swipe",
+          "name": "Tail Swipe",
+          "cost": 1,
+          "description": "The dragon makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "ancient-brass-dragon",
@@ -682,7 +988,31 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "blazing-light",
+          "name": "Blazing Light",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Scorching Ray (level 3 version)."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        },
+        {
+          "id": "scorching-sands",
+          "name": "Scorching Sands",
+          "cost": 1,
+          "description": "*Dexterity Saving Throw:* DC 20, one creature the dragon can see within 120 feet. *Failure:* 36 (8d8) Fire damage, and the target's Speed is halved until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "ancient-bronze-dragon",
@@ -725,7 +1055,31 @@
     "resistances": [],
     "immunities": ["lightning"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "guiding-light",
+          "name": "Guiding Light",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Guiding Bolt (level 2 version)."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        },
+        {
+          "id": "thunderclap",
+          "name": "Thunderclap",
+          "cost": 1,
+          "description": "*Constitution Saving Throw:* DC 22, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 120 feet. *Failure:* 13 (3d8) Thunder damage, and the target has the Deafened condition until the end of its next turn."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "ancient-copper-dragon",
@@ -768,7 +1122,31 @@
     "resistances": [],
     "immunities": ["acid"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "giggling-magic",
+          "name": "Giggling Magic",
+          "cost": 1,
+          "description": "*Charisma Saving Throw:* DC 21, one creature the dragon can see within 120 feet. *Failure:* 31 (9d6) Psychic damage. Until the end of its next turn, the target rolls 1d8 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "mind-jolt",
+          "name": "Mind Jolt",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Mind Spike (level 5 version). The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "ancient-gold-dragon",
@@ -811,7 +1189,31 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "banish",
+          "name": "Banish",
+          "cost": 1,
+          "description": "*Charisma Saving Throw:* DC 24, one creature the dragon can see within 120 feet. *Failure:* 24 (7d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it reappears in an unoccupied space of the dragon's choice within 120 feet of the dragon. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "guiding-light",
+          "name": "Guiding Light",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Guiding Bolt (level 4 version)."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "ancient-green-dragon",
@@ -854,7 +1256,31 @@
     "resistances": [],
     "immunities": ["poison"],
     "vulnerabilities": [],
-    "conditionImmunities": ["poisoned"]
+    "conditionImmunities": ["poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "mind-invasion",
+          "name": "Mind Invasion",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Mind Spike (level 5 version)."
+        },
+        {
+          "id": "noxious-miasma",
+          "name": "Noxious Miasma",
+          "cost": 1,
+          "description": "*Constitution Saving Throw:* DC 21, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 90 feet. *Failure:* 17 (5d6) Poison damage, and the target takes a -2 penalty to AC until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "ancient-red-dragon",
@@ -897,7 +1323,31 @@
     "resistances": [],
     "immunities": ["fire"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "commanding-presence",
+          "name": "Commanding Presence",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Command (level 2 version). The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "fiery-rays",
+          "name": "Fiery Rays",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Scorching Ray (level 3 version). The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "ancient-silver-dragon",
@@ -940,7 +1390,31 @@
     "resistances": [],
     "immunities": ["cold"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "chill",
+          "name": "Chill",
+          "cost": 1,
+          "description": "The dragon uses Spellcasting to cast Hold Monster. The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "cold-gale",
+          "name": "Cold Gale",
+          "cost": 1,
+          "description": "*Dexterity Saving Throw:* DC 23, each creature in a 60-foot-long, 10-foot-wide Line. *Failure:* 14 (4d6) Cold damage, and the target is pushed up to 30 feet straight away from the dragon. *Success:* Half damage only. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "ancient-white-dragon",
@@ -983,7 +1457,31 @@
     "resistances": [],
     "immunities": ["cold"],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "freezing-burst",
+          "name": "Freezing Burst",
+          "cost": 1,
+          "description": "*Constitution Saving Throw:* DC 20, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 120 feet. *Failure:* 14 (4d6) Cold damage, and the target's Speed is 0 until the end of the target's next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "frightful-presence",
+          "name": "Frightful Presence",
+          "cost": 1,
+          "description": "The dragon casts *Fear*, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18). The dragon can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "pounce",
+          "name": "Pounce",
+          "cost": 1,
+          "description": "The dragon moves up to half its Speed, and it makes one Rend attack."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "animated-armor",
@@ -1668,7 +2166,8 @@
     "resistances": ["cold", "lightning"],
     "immunities": ["fire", "poison"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "frightened", "poisoned"]
+    "conditionImmunities": ["charmed", "frightened", "poisoned"],
+    "legendaryResistance": 3
   },
   {
     "id": "bandit",
@@ -8048,7 +8547,25 @@
     "resistances": [],
     "immunities": ["cold", "lightning"],
     "vulnerabilities": [],
-    "conditionImmunities": ["frightened", "grappled", "paralyzed", "restrained"]
+    "conditionImmunities": ["frightened", "grappled", "paralyzed", "restrained"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "storm-bolt",
+          "name": "Storm Bolt",
+          "cost": 1,
+          "description": "The kraken uses Lightning Strike."
+        },
+        {
+          "id": "toxic-ink",
+          "name": "Toxic Ink",
+          "cost": 1,
+          "description": "*Constitution Saving Throw:* DC 23, each creature in a 15-foot Emanation originating from the kraken while it is underwater. *Failure:* The target has the Blinded and Poisoned conditions until the end of the kraken's next turn. The kraken then moves up to its Speed. *Failure or Success:* The kraken can't take this action again until the start of its next turn."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "lamia",
@@ -8191,7 +8708,31 @@
     "resistances": ["cold", "lightning"],
     "immunities": ["necrotic", "poison"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "frightened", "paralyzed", "poisoned"]
+    "conditionImmunities": ["charmed", "frightened", "paralyzed", "poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "deathly-teleport",
+          "name": "Deathly Teleport",
+          "cost": 1,
+          "description": "The lich teleports up to 60 feet to an unoccupied space it can see, and each creature within 10 feet of the space it left takes 11 (2d10) Necrotic damage."
+        },
+        {
+          "id": "disrupt-life",
+          "name": "Disrupt Life",
+          "cost": 1,
+          "description": "*Constitution Saving Throw:* DC 20, each creature that isn't an Undead in a 20-foot Emanation originating from the lich. *Failure:* 31 (9d6) Necrotic damage. *Success:* Half damage. *Failure or Success:* The lich can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "frightening-gaze",
+          "name": "Frightening Gaze",
+          "cost": 1,
+          "description": "The lich casts *Fear*, using the same spellcasting ability as Spellcasting. The lich can't take this action again until the start of its next turn."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "lion",
@@ -9061,7 +9602,31 @@
     "resistances": [],
     "immunities": ["necrotic", "poison"],
     "vulnerabilities": ["fire"],
-    "conditionImmunities": ["charmed", "frightened", "paralyzed", "poisoned"]
+    "conditionImmunities": ["charmed", "frightened", "paralyzed", "poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "dread-command",
+          "name": "Dread Command",
+          "cost": 1,
+          "description": "The mummy casts *Command* (level 2 version), using the same spellcasting ability as Spellcasting. The mummy can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "glare",
+          "name": "Glare",
+          "cost": 1,
+          "description": "The mummy uses Dreadful Glare. The mummy can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "necrotic-strike",
+          "name": "Necrotic Strike",
+          "cost": 1,
+          "description": "The mummy makes one Rotting Fist or Channel Negative Energy attack."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "nalfeshnee",
@@ -9906,7 +10471,8 @@
     "resistances": ["cold"],
     "immunities": ["fire", "poison"],
     "vulnerabilities": [],
-    "conditionImmunities": ["poisoned"]
+    "conditionImmunities": ["poisoned"],
+    "legendaryResistance": 4
   },
   {
     "id": "planetar",
@@ -11423,7 +11989,25 @@
     "resistances": [],
     "immunities": ["poison", "radiant"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "frightened", "poisoned"]
+    "conditionImmunities": ["charmed", "frightened", "poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "blinding-gaze",
+          "name": "Blinding Gaze",
+          "cost": 1,
+          "description": "*Constitution Saving Throw:* DC 25, one creature the solar can see within 120 feet. *Failure:* The target has the Blinded condition for 1 minute. *Failure or Success:* The solar can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "radiant-teleport",
+          "name": "Radiant Teleport",
+          "cost": 1,
+          "description": "The solar teleports up to 60 feet to an unoccupied space it can see. *Dexterity Saving Throw:* DC 25, each creature in a 10-foot Emanation originating from the solar at its destination space. *Failure:* 11 (2d10) Radiant damage. *Success:* Half damage."
+        }
+      ]
+    },
+    "legendaryResistance": 4
   },
   {
     "id": "specter",
@@ -11509,7 +12093,25 @@
     "resistances": ["necrotic", "radiant"],
     "immunities": ["psychic"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "frightened"]
+    "conditionImmunities": ["charmed", "frightened"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "arcane-prowl",
+          "name": "Arcane Prowl",
+          "cost": 1,
+          "description": "The sphinx can teleport up to 30 feet to an unoccupied space it can see, and it makes one Claw attack."
+        },
+        {
+          "id": "weight-of-years",
+          "name": "Weight of Years",
+          "cost": 1,
+          "description": "*Constitution Saving Throw:* DC 16, one creature the sphinx can see within 120 feet. *Failure:* The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. *Failure or Success:* The sphinx can't take this action again until the start of its next turn."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "sphinx-of-valor",
@@ -11548,7 +12150,25 @@
     "resistances": ["necrotic", "radiant"],
     "immunities": ["psychic"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "frightened"]
+    "conditionImmunities": ["charmed", "frightened"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "arcane-prowl",
+          "name": "Arcane Prowl",
+          "cost": 1,
+          "description": "The sphinx can teleport up to 30 feet to an unoccupied space it can see, and it makes one Claw attack."
+        },
+        {
+          "id": "weight-of-years",
+          "name": "Weight of Years",
+          "cost": 1,
+          "description": "*Constitution Saving Throw:* DC 16, one creature the sphinx can see within 120 feet. *Failure:* The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. *Failure or Success:* The sphinx can't take this action again until the start of its next turn."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "sphinx-of-wonder",
@@ -12473,7 +13093,25 @@
     "resistances": ["bludgeoning", "piercing", "slashing"],
     "immunities": ["fire", "poison"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "deafened", "frightened", "paralyzed", "poisoned"]
+    "conditionImmunities": ["charmed", "deafened", "frightened", "paralyzed", "poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "onslaught",
+          "name": "Onslaught",
+          "cost": 1,
+          "description": "The tarrasque moves up to half its Speed, and it makes one Claw or Tail attack."
+        },
+        {
+          "id": "world-shaking-movement",
+          "name": "World-Shaking Movement",
+          "cost": 1,
+          "description": "The tarrasque moves up to its Speed. At the end of this movement, the tarrasque creates an instantaneous shock wave in a 60-foot Emanation originating from itself. Creatures in that area lose Concentration and, if Medium or smaller, have the Prone condition. The tarrasque can't take this action again until the start of its next turn."
+        }
+      ]
+    },
+    "legendaryResistance": 6
   },
   {
     "id": "tiger",
@@ -12875,7 +13513,25 @@
     "resistances": [],
     "immunities": ["poison"],
     "vulnerabilities": [],
-    "conditionImmunities": ["charmed", "paralyzed", "poisoned"]
+    "conditionImmunities": ["charmed", "paralyzed", "poisoned"],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "charging-horn",
+          "name": "Charging Horn",
+          "cost": 1,
+          "description": "The unicorn moves up to half its Speed without provoking Opportunity Attacks, and it makes one Radiant Horn attack."
+        },
+        {
+          "id": "shimmering-shield",
+          "name": "Shimmering Shield",
+          "cost": 1,
+          "description": "The unicorn targets itself or one creature it can see within 60 feet of itself. The target gains 10 (3d6) Temporary Hit Points, and its AC increases by 2 until the end of the unicorn's next turn. The unicorn can't take this action again until the start of its next turn."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "vampire",
@@ -12917,7 +13573,25 @@
     "resistances": ["necrotic"],
     "immunities": [],
     "vulnerabilities": [],
-    "conditionImmunities": []
+    "conditionImmunities": [],
+    "legendary": {
+      "actions": 3,
+      "options": [
+        {
+          "id": "beguile",
+          "name": "Beguile",
+          "cost": 1,
+          "description": "The vampire casts *Command*, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 17). The vampire can't take this action again until the start of its next turn."
+        },
+        {
+          "id": "deathless-strike",
+          "name": "Deathless Strike",
+          "cost": 1,
+          "description": "The vampire moves up to half its Speed, and it makes one Grave Strike attack."
+        }
+      ]
+    },
+    "legendaryResistance": 3
   },
   {
     "id": "vampire-familiar",
