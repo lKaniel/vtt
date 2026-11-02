@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveCreature } from './creature.ts';
-import { homebrewCompendia, homebrewIssues } from './homebrew.ts';
+import { gameCompendia, homebrewCompendia, homebrewIssues } from './homebrew.ts';
 import { contentWith } from './packs.ts';
 import { TokenSchema } from './token-schema.ts';
 
@@ -88,5 +88,24 @@ describe('homebrew classes', () => {
     expect(homebrewIssues(illusionist)).toEqual([]);
     expect(homebrewIssues({ ...illusionist, hitDie: 'd8' })).toEqual([expect.stringMatching(/hitDie/)]);
     expect(homebrewIssues({ id: 'x', kind: 'trap', name: 'X' })).toEqual([expect.stringMatching(/kind/)]);
+  });
+});
+
+describe("a game's compendia", () => {
+  const pack = { id: 'p-items', name: 'Items', type: 'item', path: 'items.json', pack: 'p', docs: [] };
+  const packs = [pack];
+
+  it('adds the homebrew documents to the packs and keeps the list while nothing changes', () => {
+    const game = {};
+    const first = gameCompendia(game, packs, [{ ...illusionist, rev: 1 }]);
+    expect(first.map((c) => c.id)).toEqual(['p-items', 'homebrew-class']);
+    expect(gameCompendia(game, packs, [{ ...illusionist, rev: 1 }])).toBe(first);
+    expect(gameCompendia(game, packs, [{ ...illusionist, rev: 2 }])).not.toBe(first);
+  });
+
+  it('reads stored documents through `read`, and gives just the packs without homebrew', () => {
+    const read = (d: { id: string }) => ({ ...d, kind: 'class' });
+    expect(gameCompendia({}, packs, [{ ...illusionist, kind: undefined }], read)[1]?.docs).toHaveLength(1);
+    expect(gameCompendia({}, packs, [])).toEqual(packs);
   });
 });

@@ -1,5 +1,5 @@
 import { itemCost, SPELL_SCROLL, type TokenView } from '@vtt/system-dnd5e';
-import { gameContent } from './content.ts';
+import { contentFor } from './content.ts';
 import { actionTiles, type ActionTile, type MacroLookup } from './actions.ts';
 import { assetUrl } from './assets.ts';
 import { itemArt, spellArt } from './icon-art.ts';
@@ -27,7 +27,7 @@ export function tileRef(tile: ActionTile): string {
 /** An inventory item as a tile, if the creature carries it. */
 function itemTile(token: TokenView, id: string): ActionTile | undefined {
   const entry = token.inventory?.find((e) => e.item === id);
-  const item = entry && gameContent('2014').items.get(id);
+  const item = entry && contentFor(token).items.get(id);
   if (!entry || !item) return undefined;
   const tile: ActionTile = {
     kind: 'item',
@@ -43,7 +43,7 @@ function itemTile(token: TokenView, id: string): ActionTile | undefined {
 /** A scroll the creature carries, as a tile casting its spell. */
 function scrollTile(token: TokenView, id: string): ActionTile | undefined {
   const entry = token.inventory?.find((e) => e.item === SPELL_SCROLL && e.spell === id);
-  const spell = entry && gameContent(token.sheet?.edition ?? '2014').spells.get(id);
+  const spell = entry && contentFor(token).spells.get(id);
   if (!entry || !spell) return undefined;
   const icon = { ...spellIcon(spell), art: spellArt(spell) };
   return {
