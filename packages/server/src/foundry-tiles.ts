@@ -25,11 +25,26 @@ export const FoundryTile = z.object({
     .optional()
     .catch(undefined),
   flags: z
-    .object({ betterroofs: z.object({ brMode: num }).optional().catch(undefined) })
+    .object({
+      betterroofs: z.object({ brMode: num }).optional().catch(undefined),
+      'monks-active-tiles': z
+        .object({ actions: z.array(z.object({ action: str })).catch([]) })
+        .optional()
+        .catch(undefined),
+    })
     .optional()
     .catch(undefined),
 });
 export type FoundryTileData = z.infer<typeof FoundryTile>;
+
+/** What Monk's Active Tiles did on these tiles (its triggers stay behind): a report line, if any. */
+export function activeTilesNote(tiles: FoundryTileData[]): string | undefined {
+  const acting = tiles.filter((t) => t.flags?.['monks-active-tiles']?.actions.length);
+  if (!acting.length) return undefined;
+  const actions = new Set(acting.flatMap((t) => t.flags!['monks-active-tiles']!.actions.map((a) => a.action ?? '?')));
+  const count = `${acting.length} tile${acting.length === 1 ? '' : 's'}`;
+  return `Monk's Active Tiles triggers on ${count} (${[...actions].join(', ')}): the tile comes, not what it does`;
+}
 
 /** Whether a tile is drawn over the tokens; `foreground` is the scene's foreground elevation (v12+). */
 export function isOverhead(t: FoundryTileData, foreground: number | undefined): boolean {

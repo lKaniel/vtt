@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { foundryList } from './foundry-lists.ts';
 import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
-import { FoundryTile, isOverhead, roofOf } from './foundry-tiles.ts';
+import { activeTilesNote, FoundryTile, isOverhead, roofOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
 
 // A Foundry VTT scene (from a module's compendium, a world, or "Export
@@ -35,6 +35,11 @@ const FoundrySceneSchema = z.object({
   gridDistance: num,
   darkness: num,
   environment: z.object({ darknessLevel: num }).optional().catch(undefined),
+  /** SmallTime's `darkness-link`: the scene darkens with the time of day. */
+  flags: z
+    .object({ smalltime: z.object({ 'darkness-link': z.boolean().optional() }).optional().catch(undefined) })
+    .optional()
+    .catch(undefined),
   foregroundElevation: num,
   /** A picture drawn over the map, where the background is. */
   foreground: str.nullable(),
@@ -113,7 +118,7 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     name: s.name,
     ...(gridSizePatch(grid.size) as { gridSize: number; chunkSize: number }),
     start: s.initial ? [s.initial.x, s.initial.y] : [x + s.width / 2, y + s.height / 2],
-    darkness: Math.min(1, Math.max(0, s.environment?.darknessLevel ?? s.darkness ?? 0)),
+    ...darknessOf(s),
     vision: true,
     ...(grid.gridless ? { grid: 'none' as const } : {}),
     ...(s.backgroundColor ? { background: s.backgroundColor } : {}),
@@ -197,6 +202,12 @@ const FoundryLevel = z.object({
   background: z.object({ src: str.nullable() }).optional().catch(undefined),
 });
 
+/** How dark it is; whether it darkens with the time of day (SmallTime linked it to the clock). */
+function darknessOf(s: FoundryScene): Pick<SceneEntry, 'darkness' | 'darknessFollowsClock'> {
+  const darkness = Math.min(1, Math.max(0, s.environment?.darknessLevel ?? s.darkness ?? 0));
+  return s.flags?.smalltime?.['darkness-link'] ? { darkness, darknessFollowsClock: true } : { darkness };
+}
+
 /** v14 keeps the background on the scene's floors: the lowest one that has a picture. */
 function levelBackground(levels: unknown[] | undefined): string | undefined {
   const floors = (levels ?? []).flatMap((l) => FoundryLevel.safeParse(l).data ?? []);
@@ -215,6 +226,8 @@ function tilesOf(s: FoundryScene, find: ReturnType<typeof lookupIn>, skipped: st
   const missing: string[] = [];
   const models = sorted.filter((t) => is3dModel(t.texture?.src ?? t.img)).length;
   if (models) skipped.push(`${plural(models, '3D Canvas model tile')} (3D only, they show as blank squares)`);
+  const triggers = activeTilesNote(sorted);
+  if (triggers) skipped.push(triggers);
   for (const t of sorted) {
     const path = t.texture?.src ?? t.img;
     if (is3dModel(path)) continue;

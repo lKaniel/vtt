@@ -46,7 +46,7 @@ const mira = {
   name: 'Mira',
   type: 'character',
   img: 'icons/svg/mystery-man.svg',
-  prototypeToken: { texture: { src: 'worlds/lost-keep/art/mira.webp' }, actorLink: true },
+  prototypeToken: { texture: { src: 'worlds/lost-keep/art/mira.webp?1693669309657' }, actorLink: true },
   system: { abilities, attributes: { hp: { value: 12, max: 20 } } },
   ownership: { default: 2, U1: 3 },
   items: ['I1'],
@@ -132,7 +132,10 @@ beforeEach(async () => {
     '!macros!M2': { _id: 'M2', name: 'Sword', type: 'script', command: 'dnd5e.documents.macro.rollItem("Sword")' },
   });
   await db('items', { '!items!I9': { _id: 'I9', name: 'Longsword', type: 'weapon' } });
-  await db('settings', { '!settings!X1': { _id: 'X1', key: 'dnd5e.rulesVersion', value: '"legacy"' } });
+  await db('settings', {
+    '!settings!X1': { _id: 'X1', key: 'dnd5e.rulesVersion', value: '"legacy"' },
+    '!settings!X2': { _id: 'X2', key: 'core.time', value: '90000' },
+  });
   await db('users', {
     '!users!U1': { _id: 'U1', name: 'Sam' },
     '!users!U0': { _id: 'U0', name: 'Gamemaster', role: 4 },
@@ -237,6 +240,11 @@ describe('importFoundryWorld', () => {
     expect(await readJson(join(dir, 'macros/hail.json'))).toMatchObject({ name: 'Hail', command: 'Well met!' });
     expect(report.macros).toBe(1);
     expect(report.skipped).toContain('1 macro that rolls an item from the hotbar: our hotbar does that already');
+  });
+
+  it('keeps the world’s time on the game clock', async () => {
+    const { dir } = await imported();
+    expect(await readJson(join(dir, 'time.json'))).toMatchObject({ time: 90000, calendar: { sunrise: 6 } });
   });
 
   it('makes a game that passes check-game', async () => {

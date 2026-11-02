@@ -126,7 +126,8 @@ type NewDrawing = Drawing extends infer D ? (D extends unknown ? Omit<D, 'id'> :
 
 function drawingOf(d: Data<'drawings'>): NewDrawing | undefined {
   const look = drawingLook(d);
-  const box = { x: d.x, y: d.y, w: d.shape.width ?? 0, h: d.shape.height ?? 0 };
+  // A text label Foundry sizes to its words can come with no box: give it a pixel.
+  const box = { x: d.x, y: d.y, w: Math.max(1, d.shape.width ?? 0), h: Math.max(1, d.shape.height ?? 0) };
   if (d.text)
     return { shape: 'text', ...box, text: d.text, ...opt('fontSize', d.fontSize), ...opt('textColor', d.textColor) };
   const boxed = BOXES[d.shape.type];
