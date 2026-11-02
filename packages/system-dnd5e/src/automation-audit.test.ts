@@ -44,6 +44,11 @@ describe.each(EDITIONS)('automated %s spells', (edition) => {
     ).toEqual([]);
   });
 
+  it('say why when the GM has to run them by hand', () => {
+    const silent = [...srdFor(edition).spells.values()].filter((s) => !s.automated && !s.manual).map((s) => s.id);
+    expect(silent).toEqual([]);
+  });
+
   it('heal only when healing is all they do (temporary hit points are not healing)', () => {
     expect(
       automated(edition)

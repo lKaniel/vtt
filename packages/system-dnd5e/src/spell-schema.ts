@@ -204,8 +204,8 @@ export const SpellSchema = z.object({
   hpPool: dice.optional(),
   /** Ends the target's effects that impose any of these conditions (lesser restoration). */
   cures: z.array(ConditionSchema).optional(),
-  /** Brings a dead creature back with 1 hit point (revivify). */
-  revive: z.boolean().optional(),
+  /** Brings a dead creature back with 1 hit point (revivify), or with all of them: "full" (resurrection). */
+  revive: z.union([z.boolean(), z.literal('full')]).optional(),
   /** Makes a dying creature stable (spare the dying). */
   stabilize: z.boolean().optional(),
   /** The caster regains half the damage dealt (vampiric touch). */
@@ -260,6 +260,12 @@ export const SpellSchema = z.object({
   creatureTypes: z.array(z.string()).optional(),
   /** false when the engine only shows the text: the GM applies it by hand. */
   automated: z.boolean().default(true),
+  /**
+   * Why a spell the engine doesn't run stays with the GM: "social" and
+   * "utility" spells are left out on purpose, "gm" ones need a call the
+   * engine can't make.
+   */
+  manual: z.object({ kind: z.enum(['social', 'utility', 'gm']), why: z.string().min(1) }).optional(),
   description: z.string().default(''),
 });
 export type Spell = z.infer<typeof SpellSchema>;

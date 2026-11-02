@@ -104,6 +104,18 @@ describe('buff spells', () => {
     expect(cast('revivify', dead)).toMatchObject({ revived: true, hp: 1 });
     expect(cast('revivify', ally()).revived).toBeUndefined();
   });
+
+  it('resurrection brings the dead back with all their hit points', () => {
+    const dead = ally({ hp: 0, deathSaves: { successes: 0, failures: 3 } });
+    expect(cast('resurrection', dead)).toMatchObject({ revived: true, hp: sheetOf(dead).maxHp });
+  });
+
+  it('protection from poison ends poisoning and leaves resistance behind', () => {
+    const bo = ally({ effects: [{ id: 'sting', name: 'Sting', conditions: ['poisoned'] }] });
+    const result = cast('protection-from-poison', bo);
+    expect(result.cured).toEqual(['sting']);
+    expect(result.effect).toMatchObject({ resistances: ['poison'], saveAdvantage: ['con'] });
+  });
 });
 
 describe('haste and slow', () => {

@@ -10,6 +10,7 @@ import {
   isDying,
   joinCombat,
   lastingEffects,
+  manualNote,
   resolveCast,
   scaledSpell,
   scrollCaster,
@@ -226,7 +227,7 @@ export class SpellActions {
     if (r.effect && !first) this.addEffect(r.target, r.effect);
     if (r.stabilized) this.stabilize(r.target);
     if (r.cured) this.cure(r.target, r.cured);
-    if (r.revived) this.revive(r.target);
+    if (r.revived) this.revive(r.target, r.hp);
     if (r.save?.legendary) this.resist(r.target);
   }
 
@@ -245,10 +246,11 @@ export class SpellActions {
     this.store.setToken({ ...token, effects: left.length ? left : undefined });
   }
 
-  private revive(id: string): void {
+  private revive(id: string, hp: number): void {
     const token = this.store.tokens.get(id);
     if (!token) return;
-    this.store.setToken({ ...token, hp: 1, deathSaves: undefined });
+    const max = this.table.sheetOf(token)?.maxHp ?? hp;
+    this.store.setToken({ ...token, hp: hp >= max ? undefined : hp, deathSaves: undefined });
     this.table.note(`${token.name} returns to life`);
   }
 
@@ -380,7 +382,8 @@ export class SpellActions {
   ): void {
     const name = (id: string) => this.store.tokens.get(id)?.name ?? id;
     const notes = [...extra];
-    if (!spell.automated) notes.push('not automated: the GM applies it');
+    const manual = manualNote(spell);
+    if (manual) notes.push(manual);
     if (spell.automated && spell.gmNote) notes.push(`GM: ${spell.gmNote}`);
     const down = new Set(outcome.results.filter((r) => r.damage > 0 && r.hp <= 0).map((r) => r.target));
     for (const id of down) notes.push(`${name(id)} is down`);
