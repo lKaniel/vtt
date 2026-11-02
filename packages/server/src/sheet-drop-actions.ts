@@ -8,9 +8,6 @@ import { Refusal, requireGm, type Table } from './table.ts';
 type Give = Extract<ClientMessage, { t: 'give' }>;
 type DropMessage = Extract<ClientMessage, { t: 'drop' | 'give' | 'trade' }>;
 
-export const isDropMessage = (msg: ClientMessage): msg is DropMessage =>
-  msg.t === 'drop' || msg.t === 'give' || msg.t === 'trade';
-
 /**
  * Drag and drop onto character sheets (see system-dnd5e sheet-drops.ts):
  * compendium entries dropped on a sheet someone may edit, items handed

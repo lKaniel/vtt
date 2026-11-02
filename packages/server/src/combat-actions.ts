@@ -35,7 +35,6 @@ import {
 import { canControl, gridKind, isParty, type Player } from '@vtt/shared';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
 import { breakSanctuary, loseImage, passSanctuary } from './spell-wards.ts';
-export { isTurnMessage } from './legendary-actions.ts';
 import { Refusal, requireGm, type Cost, type Fighter, type Table } from './table.ts';
 
 /** An attack that has been rolled but not yet landed: its target may still react (shield). */

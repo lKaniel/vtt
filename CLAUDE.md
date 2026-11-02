@@ -75,6 +75,9 @@ with `pnpm check-game data/games/<id>`.
   duplicate them.
 - The server is authoritative: clients send intents, the server validates
   and broadcasts each player's filtered view (`canSee`, `viewToken`).
+  A new intent is a schema in `client-messages.ts` plus a route in
+  `game-routes.ts`; the routes table names every kind, so TypeScript fails
+  until the new one has a handler.
 - Edits are document ops (see `docs/edits.md`): a client sends an `ops`
   transaction, the server checks each op against the sender's ownership
   (`op-permissions.ts`) and the file schemas (`doc-checks.ts`) and applies

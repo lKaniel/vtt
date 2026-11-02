@@ -20,8 +20,6 @@ type EntryMessage =
   | RunMacro
   | CardMessage;
 
-const ENTRY_MESSAGES = new Set(['rollTable', 'showJournal', 'showImage', 'runMacro', ...CARD_MESSAGES]);
-export const isEntryMessage = (msg: { t: string }): msg is EntryMessage => ENTRY_MESSAGES.has(msg.t);
 const isCardMessage = (msg: EntryMessage): msg is CardMessage => CARD_MESSAGES.has(msg.t);
 
 interface Out {
