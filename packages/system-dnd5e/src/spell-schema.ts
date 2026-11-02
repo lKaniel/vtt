@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { LightSchema, WallRulesSchema } from '@vtt/shared';
-import { ABILITIES, DamageSchema, DamageTypeSchema } from './stats-schema.ts';
+import { ABILITIES, AbilitiesSchema, DamageSchema, DamageTypeSchema } from './stats-schema.ts';
 import { EffectChangeSchema } from './effect-changes.ts';
 
 // Spells, class features and the effects they leave on creatures. Spells and
@@ -225,9 +225,74 @@ export const AreaSchema = z.object({
 });
 export type Area = z.infer<typeof AreaSchema>;
 
+/**
+ * A stat block that comes with a spell (2024 giant insect, summon dragon):
+ * AC is `ac.base` + `ac.perLevel` × the slot, hit points `hp.base` +
+ * `hp.perLevel` for each slot level above `hp.from`. Attacks use the caster's
+ * spell attack bonus unless they give `toHit`; `plusLevel` adds the slot and
+ * `plusMod` the caster's spellcasting modifier to the first damage, and `upDie`
+ * adds one such die per slot level above the spell's.
+ */
+export const SpellCreatureSchema = z.object({
+  name: z.string().min(1),
+  size: z.number().positive().default(1),
+  type: z.string(),
+  speed: z.number().nonnegative().default(30),
+  darkvision: z.number().nonnegative().default(0),
+  blindsight: z.number().nonnegative().default(0),
+  abilities: AbilitiesSchema,
+  ac: z.object({ base: z.number().int(), perLevel: z.number().int().default(0) }),
+  hp: z.object({
+    base: z.number().int().positive(),
+    perLevel: z.number().int().default(0),
+    from: z.number().int().default(0),
+  }),
+  resistances: z.array(DamageTypeSchema).default([]),
+  immunities: z.array(DamageTypeSchema).default([]),
+  conditionImmunities: z.array(z.string()).default([]),
+  /** "half-level": attacks per action equal to half the slot level, rounded down. */
+  multiattack: z.literal('half-level').optional(),
+  attacks: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        kind: z.enum(['melee', 'ranged']),
+        reach: z.number().positive().optional(),
+        range: z.tuple([z.number().positive(), z.number().positive()]).optional(),
+        toHit: z.number().int().optional(),
+        damage: z.array(DamageSchema).min(1),
+        plusLevel: z.boolean().optional(),
+        plusMod: z.boolean().optional(),
+        upDie: z
+          .string()
+          .regex(/^d\d+$/)
+          .optional(),
+      }),
+    )
+    .min(1),
+});
+export type SpellCreature = z.infer<typeof SpellCreatureSchema>;
+
 export const SummonSchema = z.object({
-  /** What the caster may pick from: a monster id and how many of it appear. */
-  options: z.array(z.object({ monster: id, count: z.number().int().positive().default(1) })).min(1),
+  /**
+   * What the caster may pick from: a monster id and how many of it appear.
+   * Animated objects count by size: `count` objects (or the caster's
+   * spellcasting modifier with `fromMod`) plus `upCount` per slot level above
+   * the spell's, each creature counting as `weight` of them. `creature` is a
+   * stat block that comes with the spell, `monster` then naming it.
+   */
+  options: z
+    .array(
+      z.object({
+        monster: id,
+        count: z.number().int().positive().default(1),
+        upCount: z.number().int().positive().optional(),
+        fromMod: z.boolean().optional(),
+        weight: z.number().int().positive().optional(),
+        creature: SpellCreatureSchema.optional(),
+      }),
+    )
+    .min(1),
   /** "own": the summons get their own turn after the caster's; "shared": they act on the caster's turn. */
   turn: z.enum(['own', 'shared']).default('shared'),
 });

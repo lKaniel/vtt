@@ -91,7 +91,9 @@ export class SpellActions {
     if (!plan.again) this.begin(caster, spell, plan.spend, !!reader);
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
     if (spell.teleport) this.teleport(caster.token.id, req.point!);
-    const summoned = spell.summon ? summon(this.table, this.table.fighter(caster.token.id), spell, req) : [];
+    const summoned = spell.summon
+      ? summon(this.table, this.table.fighter(caster.token.id), spell, { ...req, slot: plan.slot })
+      : [];
     const free = req.free && plan.slot > 0 && !plan.again ? ['cast without a spell slot'] : [];
     this.strike(caster.token.id, { spell, slot: plan.slot, point: req.point, reader }, targets, [
       ...free,
