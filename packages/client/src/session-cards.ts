@@ -1,6 +1,6 @@
-import { type Doc, freeId, slugify } from '@vtt/core';
-import { canControl, type Card, type Owned, standardDeck } from '@vtt/shared';
-import { JournalSession } from './session-journal.ts';
+import { type Doc, type DocStore, freeId, type Op, slugify } from '@vtt/core';
+import { canControl, type Card, type Owned, type Player, standardDeck } from '@vtt/shared';
+import type { ClientMessage } from '@vtt/system-dnd5e';
 
 // Cards (cards/<id>.json): the decks, hands and piles you were sent, and
 // the moves the server makes for you (card-actions.ts there). A deck you
@@ -30,51 +30,62 @@ function viewOf(doc: Doc): CardStackView {
   return { id: doc.id, name: typeof doc.name === 'string' ? doc.name : doc.id, kind, cards, count, doc };
 }
 
-export abstract class CardSession extends JournalSession {
+/** What the cards need of the session: its documents, your seat, and a way to the server. */
+export interface CardHost {
+  readonly docs: DocStore;
+  readonly you?: Player;
+  send(msg: ClientMessage): void;
+  sendChanges(label: string, ops: readonly Op[]): void;
+}
+
+/** Your cards, as `session.cards`. */
+export class Cards {
+  constructor(private readonly s: CardHost) {}
+
   /** Every stack you were sent, by name. */
-  cardStacks(): CardStackView[] {
-    return this.docs
+  stacks(): CardStackView[] {
+    return this.s.docs
       .all('cards')
       .map(viewOf)
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /** The hands you hold (the GM: every hand). */
-  myHands(): CardStackView[] {
-    const you = this.you;
-    return this.cardStacks().filter((s) => s.kind === 'hand' && !!you && canControl(s.doc as Owned, you));
+  hands(): CardStackView[] {
+    const you = this.s.you;
+    return this.stacks().filter((s) => s.kind === 'hand' && !!you && canControl(s.doc as Owned, you));
   }
 
-  drawCards(from: string, to: string, n = 1): void {
-    this.send({ t: 'drawCards', from, to, n });
+  draw(from: string, to: string, n = 1): void {
+    this.s.send({ t: 'drawCards', from, to, n });
   }
 
   /** Moves cards (by cardKey) from a stack you hold onto another; onto a pile plays them. */
-  passCards(from: string, to: string, cards: string[]): void {
-    this.send({ t: 'passCards', from, to, cards });
+  pass(from: string, to: string, cards: string[]): void {
+    this.s.send({ t: 'passCards', from, to, cards });
   }
 
-  shuffleCards(stack: string): void {
-    this.send({ t: 'shuffleCards', stack });
+  shuffle(stack: string): void {
+    this.s.send({ t: 'shuffleCards', stack });
   }
 
   /** GM: `n` cards from a deck to each stack named. */
-  dealCards(from: string, to: string[], n = 1): void {
-    this.send({ t: 'dealCards', from, to, n });
+  deal(from: string, to: string[], n = 1): void {
+    this.s.send({ t: 'dealCards', from, to, n });
   }
 
   /** GM: every card of a deck back in it, shuffled. */
-  resetCards(deck: string): void {
-    this.send({ t: 'resetCards', deck });
+  reset(deck: string): void {
+    this.s.send({ t: 'resetCards', deck });
   }
 
   /** GM: a new deck (`standard`: of 52 playing cards), a hand (held by `owner`) or a pile. */
-  newCards(kind: StackKind, opts: { name?: string; owner?: string; standard?: boolean } = {}): void {
+  create(kind: StackKind, opts: { name?: string; owner?: string; standard?: boolean } = {}): void {
     const name = opts.name ?? (opts.standard ? 'Playing cards' : NAMES[kind]);
-    const id = freeId(slugify(name), (x) => !!this.docs.get('cards', x), { bare: true });
+    const id = freeId(slugify(name), (x) => !!this.s.docs.get('cards', x), { bare: true });
     const ownership = { default: SEEN[kind], ...(opts.owner && { [opts.owner]: 'owner' }) };
     const cards = opts.standard ? standardDeck(id) : [];
     const doc = { id, type: 'cards', rev: 0, name, kind, cards, ownership } as Doc;
-    this.sendChanges('new cards', [{ op: 'create', coll: 'cards', doc }]);
+    this.s.sendChanges('new cards', [{ op: 'create', coll: 'cards', doc }]);
   }
 }

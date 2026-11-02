@@ -41,33 +41,33 @@ const last = () => ws.sent.at(-1) as Record<string, unknown>;
 describe('cards in the session', () => {
   it('list the stacks, how many cards each holds, and the hands you hold', () => {
     joinAs('player');
-    expect(session.cardStacks().map((s) => [s.id, s.kind, s.count])).toEqual([
+    expect(session.cards.stacks().map((s) => [s.id, s.kind, s.count])).toEqual([
       ['discard', 'pile', 1],
       ['mine', 'hand', 1],
       ['poker', 'deck', 50],
     ]);
-    expect(session.myHands().map((s) => s.id)).toEqual(['mine']);
+    expect(session.cards.hands().map((s) => s.id)).toEqual(['mine']);
   });
 
   it('send each move to the server', () => {
     joinAs('player');
-    session.drawCards('poker', 'mine', 2);
+    session.cards.draw('poker', 'mine', 2);
     expect(last()).toEqual({ t: 'drawCards', from: 'poker', to: 'mine', n: 2 });
-    session.passCards('mine', 'discard', ['poker/a']);
+    session.cards.pass('mine', 'discard', ['poker/a']);
     expect(last()).toEqual({ t: 'passCards', from: 'mine', to: 'discard', cards: ['poker/a'] });
-    session.shuffleCards('mine');
+    session.cards.shuffle('mine');
     expect(last()).toEqual({ t: 'shuffleCards', stack: 'mine' });
-    session.dealCards('poker', ['mine'], 3);
+    session.cards.deal('poker', ['mine'], 3);
     expect(last()).toEqual({ t: 'dealCards', from: 'poker', to: ['mine'], n: 3 });
-    session.resetCards('poker');
+    session.cards.reset('poker');
     expect(last()).toEqual({ t: 'resetCards', deck: 'poker' });
   });
 
   it('let the GM make a deck of playing cards, a hand for a player and a pile', () => {
     const ana = joinAs('gm');
-    session.newCards('deck', { standard: true });
-    session.newCards('hand', { owner: ana, name: 'Ana’s hand' });
-    session.newCards('pile');
+    session.cards.create('deck', { standard: true });
+    session.cards.create('hand', { owner: ana, name: 'Ana’s hand' });
+    session.cards.create('pile');
     const sent = ws.sent as { t: string; ops?: { doc: Doc }[] }[];
     const made = sent.flatMap((m) => (m.t === 'ops' ? (m.ops ?? []).map((o) => o.doc) : []));
     expect(made.map((d) => [d.id, d.kind, (d.cards as unknown[]).length, d.ownership])).toEqual([

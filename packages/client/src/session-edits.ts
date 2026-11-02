@@ -181,7 +181,7 @@ export abstract class EditSession extends Commands {
    * Sends a transaction of creates, updates and deletes and shows it at
    * once, as the server will leave the documents; a refusal puts them back.
    */
-  protected sendChanges(label: string, ops: readonly Op[]): void {
+  sendChanges(label: string, ops: readonly Op[]): void {
     const shown = ops.map((op) => this.optimistic(op));
     const txn = this.sendOps(label, [...ops]);
     if (!txn) return;

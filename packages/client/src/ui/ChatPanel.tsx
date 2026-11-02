@@ -77,7 +77,7 @@ const TAB_ICONS: Record<Tab, LucideIcon> = {
 
 /** Players get Cards when some are shared with them, and the Compendium when they may edit a creature (trusted owners), to fill their sheets from. */
 function playerTabs(session: Session): readonly Tab[] {
-  const cards: Tab[] = session.cardStacks().length ? ['Cards'] : [];
+  const cards: Tab[] = session.cards.stacks().length ? ['Cards'] : [];
   const compendium: Tab[] = [...session.tokens.keys()].some((id) => session.canEdit(id)) ? ['Compendium'] : [];
   return [...PLAYER_TABS, ...cards, ...compendium];
 }
