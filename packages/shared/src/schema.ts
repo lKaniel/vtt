@@ -1,4 +1,4 @@
-import type { Ownership } from '@vtt/core';
+import { IdSchema as id, type Ownership } from '@vtt/core';
 import { z } from 'zod';
 import { TileTriggerSchema } from './trigger-schema.ts';
 import { WeatherSchema } from './weather.ts';
@@ -9,8 +9,7 @@ import { GRID_KINDS } from './grid.ts';
 // game-schema.ts). The checker, the server and docs/game-format.md all follow
 // these schemas.
 
-const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digits and dashes');
-/** Ids in a game folder: lowercase letters, digits and dashes. */
+/** Ids in a game folder: lowercase letters, digits and dashes (core's, so documents and files agree). */
 export const IdSchema = id;
 
 export const PointSchema = z.tuple([z.number(), z.number()]);

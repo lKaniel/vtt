@@ -75,6 +75,9 @@ with `pnpm check-game data/games/<id>`.
   duplicate them.
 - The server is authoritative: clients send intents, the server validates
   and broadcasts each player's filtered view (`canSee`, `viewToken`).
+  A new intent is a schema in `client-messages.ts` plus a route in
+  `game-routes.ts`; the routes table names every kind, so TypeScript fails
+  until the new one has a handler.
 - Edits are document ops (see `docs/edits.md`): a client sends an `ops`
   transaction, the server checks each op against the sender's ownership
   (`op-permissions.ts`) and the file schemas (`doc-checks.ts`) and applies
@@ -139,9 +142,11 @@ with `pnpm check-game data/games/<id>`.
   `registerMenu` entries there, never per-type canvas code.
 - Rules editions: the world plays `rules` (missing = the system's default,
   2014 for D&D: SRD 5.1) and a character can opt into the other with
-  `stats.rules`. Look content up with
-  `srdFor(editionOf(token, world))`; edition-specific rules (class features,
-  weapon mastery) must branch on that edition, never assume one.
+  `stats.rules`. Look a token's content up through the game, never the bare
+  SRD: `contentFor(store, token)` on the server (`game-packs.ts`: its
+  edition's SRD, the game's packs and homebrew, its own `own` entries) and
+  `gameContent(edition)` on the client. Edition-specific rules (class
+  features, weapon mastery) must branch on that edition, never assume one.
 - Bundled content is SRD 5.1 and 5.2 (CC-BY-4.0) only; anything else is the user's
   own homebrew and stays out of the repo.
 - Red-green always: write the failing test first, run it and see it fail,

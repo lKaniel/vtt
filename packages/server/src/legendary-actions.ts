@@ -13,9 +13,6 @@ export type LegendaryMessage = Extract<ClientMessage, { t: 'legendary' | 'lair' 
 /** Messages about the fight's turns that the combat actions route: turn-based mode, legendary and lair actions. */
 export type TurnMessage = LegendaryMessage | Extract<ClientMessage, { t: 'turnBased' }>;
 
-export const isTurnMessage = (msg: ClientMessage): msg is TurnMessage =>
-  msg.t === 'turnBased' || msg.t === 'legendary' || msg.t === 'lair';
-
 /** Makes a legendary action's attack outside the creature's turn. */
 export type LegendaryAttack = (attacker: Fighter, target: string, attack: string) => void;
 

@@ -65,7 +65,8 @@ compendia)` on the server (`game-packs.ts` `contentFor`) and `gameContent`
   on the client. The SRD is the system's own packs `dnd5e-srd-2014` and
   `dnd5e-srd-2024` (`SystemDefinition.packs`), always on; see
   [packs.md](packs.md). The character creator and level-up still read the
-  bare SRD (`srdFor`).
+  bare SRD plus the game's homebrew classes (`bookFor` in
+  `system-dnd5e/src/character.ts`), not the game's packs.
 - World time (step 13): the clock (`game.time`, calendar) belongs to the
   engine; when an effect, concentration or a rest ends is the system's call,
   so effect expiry by world time goes in `system-dnd5e/src/effects.ts`
