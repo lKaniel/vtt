@@ -153,7 +153,7 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
   const submit = (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
-    session.say(text);
+    session.requests.say(text);
     setText('');
   };
 
@@ -179,7 +179,7 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
       </div>
       <div className="dice">
         {QUICK_DICE.map((d) => (
-          <button key={d} onClick={() => session.say(`/r 1${d}`)} title={`Roll 1${d}`}>
+          <button key={d} onClick={() => session.requests.say(`/r 1${d}`)} title={`Roll 1${d}`}>
             <img src={diceArt(d)} alt="" draggable={false} />
             <span>{d}</span>
           </button>

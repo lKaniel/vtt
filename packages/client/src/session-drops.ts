@@ -14,7 +14,7 @@ export interface DropHost {
   readonly actors: ReadonlyMap<string, Actor>;
   readonly sheets: { readonly current?: SheetTarget };
   readonly draw: { create(draft: Draft): void };
-  saveActor(actor: Actor): void;
+  readonly requests: { saveActor(actor: Actor): void };
   send(msg: ClientMessage): void;
   showError(message: string): void;
 }
@@ -64,7 +64,7 @@ export class Drops {
     const target = this.s.sheets.current;
     if (!target) return;
     const actor = target.kind === 'actor' ? this.s.actors.get(target.id) : undefined;
-    if (actor && payload.kind === 'media') return this.s.saveActor({ ...actor, img: payload.src });
+    if (actor && payload.kind === 'media') return this.s.requests.saveActor({ ...actor, img: payload.src });
     this.send(sheetDropMessage(payload, { kind: target.kind, id: target.id }, area));
   }
 

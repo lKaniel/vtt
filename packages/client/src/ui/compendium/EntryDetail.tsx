@@ -90,7 +90,7 @@ function MonsterButtons({
       { id, name: monster.name, at: [0, 0], rules: drag.rules },
       session.world?.rules,
     );
-    session.saveActor(actorFromToken(token, id, 'Monsters'));
+    session.requests.saveActor(actorFromToken(token, id, 'Monsters'));
   };
   return (
     <>

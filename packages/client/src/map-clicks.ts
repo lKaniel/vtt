@@ -51,7 +51,7 @@ export function moveSelectionTo(s: Session, at: Point, lead?: string): boolean {
   const { group, lead: first } = selectedGroup(s);
   const leader = lead && group.some((t) => t.id === lead) ? lead : first;
   if (!leader) return false;
-  for (const m of formationMoves(group, leader, at)) s.move(m.id, m.to);
+  for (const m of formationMoves(group, leader, at)) s.requests.move(m.id, m.to);
   return true;
 }
 
@@ -87,7 +87,7 @@ function foeOptions(s: Session, target: string): MenuItem[] {
 function walkUpTo(s: Session, id: string, target: string): void {
   const [self, other] = [s.tokens.get(id), s.tokens.get(target)];
   const g = s.world?.gridSize ?? 100;
-  if (self && other) s.move(id, walkUpPoint(bodyOf(self, g), bodyOf(other, g)));
+  if (self && other) s.requests.move(id, walkUpPoint(bodyOf(self, g), bodyOf(other, g)));
 }
 
 /** A pile of loot or a merchant: open its window, or walk up to it. */

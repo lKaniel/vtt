@@ -33,7 +33,7 @@ describe('Token HUD', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'condition', token: 'hero', condition: 'prone', on: true });
     session.hud.setCombatant('hero', false);
     expect(ws.sent.at(-1)).toEqual({ t: 'combatant', token: 'hero', on: false });
-    session.editToken('hero', { elevation: 10 });
+    session.requests.editToken('hero', { elevation: 10 });
     expect(ws.sent.at(-1)).toEqual({ t: 'editToken', token: 'hero', patch: { elevation: 10 } });
   });
 

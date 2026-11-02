@@ -70,7 +70,7 @@ function EncounterPanel({ session }: Readonly<{ session: Session }>) {
         size="sm"
         disabled={!share}
         onClick={() =>
-          session.awardXp(
+          session.requests.awardXp(
             party.map((p) => p.id),
             share,
           )

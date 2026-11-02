@@ -51,7 +51,10 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <div className="map" ref={host} />
       <TopBar session={session} onLeave={onLeave} />
       <SceneNav session={session} />
-      <TurnOrder session={session} onStart={(shared) => session.startCombat(session.editor.fightersInView(), shared)} />
+      <TurnOrder
+        session={session}
+        onStart={(shared) => session.requests.startCombat(session.editor.fightersInView(), shared)}
+      />
       <PartyBar session={session} />
       <MapTools session={session} />
       <Inspector session={session} />

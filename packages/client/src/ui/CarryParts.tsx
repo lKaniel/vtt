@@ -86,7 +86,7 @@ export function Purse(props: Readonly<SheetProps>) {
       {text}
       <PurseEditor
         currency={value.currency ?? {}}
-        onSave={(currency) => session.carry(value.id, { kind: 'coins', currency })}
+        onSave={(currency) => session.requests.carry(value.id, { kind: 'coins', currency })}
       />
     </div>
   );
@@ -135,7 +135,7 @@ export function Attunement(props: Readonly<SheetProps>) {
   const count = attunedCount(value);
   const live = canCarry(props) && !edit;
   const set = (i: number, on: boolean) => {
-    if (live) session.carry(value.id, { kind: 'attune', item: i, on });
+    if (live) session.requests.carry(value.id, { kind: 'attune', item: i, on });
     else update((d) => ({ ...d, inventory: attuned(list, i, on) }), true);
   };
   return (

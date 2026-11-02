@@ -10,7 +10,7 @@ const signed = (n: number) => (n < 0 ? `${n}` : `+${n}`);
 export function ChecksPanel({ session, value, kind, sheet, edit }: Readonly<SheetProps>) {
   if (kind !== 'token' || edit || !session.canControl(value as TokenView)) return null;
   const roll = (ability: (typeof ABILITIES)[number], skill?: string) =>
-    session.rollCheck(value.id, { ability, ...(skill && { skill }) });
+    session.requests.rollCheck(value.id, { ability, ...(skill && { skill }) });
   return (
     <section className="mb-3 flex flex-col gap-1" data-slot="checks">
       <h4 className="font-display text-sm text-gold">Checks</h4>

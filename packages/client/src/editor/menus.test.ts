@@ -16,8 +16,7 @@ function api(gm = true) {
       deleteSelected: vi.fn(),
     },
     sheets: { open: vi.fn() },
-    move: vi.fn(),
-    editMap: vi.fn(),
+    requests: { move: vi.fn(), editMap: vi.fn() },
     tiles: { group: vi.fn(), ungroup: vi.fn(), reorder: vi.fn(), toggleLock: vi.fn() },
     editor: { canEditSelection: () => gm, editSelection: vi.fn(), selectAll: vi.fn(), lightPreset: 'torch' as const },
     targets: { mine: new Set<string>(), toggle: vi.fn() },
@@ -187,7 +186,7 @@ describe('context menus', () => {
     const a = api();
     expect(labels(on(), a)).toEqual(['Paste here', 'Select all']);
     pick({ ...on(), mode: 'lights' }, a, 'Place torch here').run();
-    expect(a.editMap).toHaveBeenCalledWith({
+    expect(a.requests.editMap).toHaveBeenCalledWith({
       op: 'addLight',
       light: expect.objectContaining({ x: 10, y: 20, bright: 20 }) as unknown,
     });

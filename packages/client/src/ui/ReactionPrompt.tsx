@@ -24,11 +24,16 @@ export function ReactionPrompt({ session }: Readonly<{ session: Session }>) {
       <span className="aiming-name">{question(offer, name)}</span>
       <span className="slot-choices">
         {offer.choices.map((choice) => (
-          <Button key={choice} variant="outline" size="sm" onClick={() => session.takeReaction(offer.id, choice)}>
+          <Button
+            key={choice}
+            variant="outline"
+            size="sm"
+            onClick={() => session.requests.takeReaction(offer.id, choice)}
+          >
             {CHOICE_LABELS[choice] ?? choice}
           </Button>
         ))}
-        <Button variant="outline" size="sm" onClick={() => session.takeReaction(offer.id)}>
+        <Button variant="outline" size="sm" onClick={() => session.requests.takeReaction(offer.id)}>
           {offer.kind === 'hit' ? 'Take the hit' : 'Let it go'}
         </Button>
       </span>

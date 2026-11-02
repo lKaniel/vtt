@@ -244,7 +244,7 @@ function Darkness({ session }: Readonly<{ session: Session }>) {
         step={0.05}
         value={[value]}
         onValueChange={([n]) => setValue(n!)}
-        onValueCommit={([n]) => session.setDarkness(n!)}
+        onValueCommit={([n]) => session.requests.setDarkness(n!)}
       />
       <span>Night</span>
     </label>

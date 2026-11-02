@@ -43,7 +43,7 @@ function RequestCheck({ session }: Readonly<{ session: Session }>) {
   const contest = kind === 'contest';
   const ready = contest ? who.length === 2 : who.length > 0;
   const send = () =>
-    session.requestCheck({
+    session.requests.requestCheck({
       tokens: who.map((t) => t.id),
       ...checkOf(check),
       kind,

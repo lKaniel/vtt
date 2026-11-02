@@ -17,9 +17,9 @@ afterEach(() => closeSession(session));
 describe('Session tile triggers', () => {
   it('clicks a tile with the creature you act with, or none', () => {
     ws.receive(welcome());
-    session.useTile('lever', 'hero');
+    session.requests.useTile('lever', 'hero');
     expect(ws.sent.at(-1)).toEqual({ t: 'trigger', tile: 'lever', token: 'hero' });
-    session.useTile('lever');
+    session.requests.useTile('lever');
     expect(ws.sent.at(-1)).toEqual({ t: 'trigger', tile: 'lever' });
   });
 

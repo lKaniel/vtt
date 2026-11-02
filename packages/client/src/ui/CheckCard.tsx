@@ -22,7 +22,7 @@ export function CheckLine({ m, session }: Readonly<{ m: ChatMessage & { check: C
               <Badge variant={e.success ? 'good' : 'warn'}>{e.success ? 'success' : 'failure'}</Badge>
             )}
             {e.total === undefined && mine && (
-              <Button variant="outline" size="sm" onClick={() => session.rollCheck(e.token, check, m.id)}>
+              <Button variant="outline" size="sm" onClick={() => session.requests.rollCheck(e.token, check, m.id)}>
                 Roll
               </Button>
             )}

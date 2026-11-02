@@ -47,7 +47,7 @@ export function GameSettingsSection({ session }: Readonly<{ session: Session }>)
   const rules = toEdition(session.world?.rules);
   const settings = gameSettingsOf(session.world?.settings);
   const set = (next: { rules?: string; settings?: Partial<GameSettings> }) =>
-    session.setGameSettings(next.rules ?? rules, { ...settings, ...next.settings });
+    session.requests.setGameSettings(next.rules ?? rules, { ...settings, ...next.settings });
   return (
     <section className="flex flex-col gap-3" data-slot="game-settings">
       <Separator />

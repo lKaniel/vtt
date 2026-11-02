@@ -20,7 +20,7 @@ export function Vigour(props: Readonly<SheetProps>) {
 function Exhaustion({ session, value, kind, update, edit, sheet }: Readonly<SheetProps>) {
   const level = value.exhaustion ?? 0;
   const set = (n: number) => {
-    if (kind === 'token' && !edit) session.setExhaustion(value.id, n);
+    if (kind === 'token' && !edit) session.requests.setExhaustion(value.id, n);
     else update((d) => ({ ...d, exhaustion: n || undefined }), true);
   };
   return (
@@ -60,7 +60,7 @@ function HitDiceRow({ session, value, kind, sheet }: Readonly<SheetProps>) {
           size="sm"
           disabled={!dice.left || !hurt}
           title="Spend a hit die: roll it plus Constitution and heal that much"
-          onClick={() => session.spendHitDie(value.id)}
+          onClick={() => session.requests.spendHitDie(value.id)}
         >
           Spend
         </Button>

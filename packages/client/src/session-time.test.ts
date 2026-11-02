@@ -45,9 +45,9 @@ describe('the game clock in the client', () => {
 
   it('sends the GM’s clock changes and turn-based mode', () => {
     ws.receive(welcomeWith({}, 50_000));
-    session.clockAction({ do: 'skip', seconds: MINUTE });
+    session.requests.clockAction({ do: 'skip', seconds: MINUTE });
     expect(ws.sent.at(-1)).toEqual({ t: 'clock', action: { do: 'skip', seconds: MINUTE } });
-    session.setTurnBased(true);
+    session.requests.setTurnBased(true);
     expect(ws.sent.at(-1)).toEqual({ t: 'turnBased', on: true });
   });
 

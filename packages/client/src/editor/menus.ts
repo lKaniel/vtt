@@ -32,8 +32,8 @@ export interface MenuApi {
     deleteSelected(): void;
   };
   readonly sheets: { open(target: { kind: 'token'; id: string }, edit?: boolean): void };
-  move(token: string, to: Point): void;
-  editMap(edit: MapEdit): void;
+  /** Plain requests to the server (see session-requests.ts). */
+  readonly requests: { move(token: string, to: Point): void; editMap(edit: MapEdit): void };
   /** The tiles mode's commands (see session-tiles.ts). */
   readonly tiles: { group(): void; ungroup(): void; reorder(how: ZOrder): void; toggleLock(): void };
   /** The editor's selection and tools (see session-editor.ts). */
@@ -317,10 +317,11 @@ registerMenu('ground', (t, api) => {
     gm &&
       t.mode === 'lights' && {
         label: `Place ${LIGHT_PRESETS[api.editor.lightPreset].label.toLowerCase()} here`,
-        run: () => api.editMap({ op: 'addLight', light: { ...light, x: t.at[0], y: t.at[1] } }),
+        run: () => api.requests.editMap({ op: 'addLight', light: { ...light, x: t.at[0], y: t.at[1] } }),
       },
     !!t.under && targetEntry(t.under.id, api),
-    t.mode === 'tokens' && !!token && { label: `Move ${token.name} here`, run: () => api.move(token.id, t.at) },
+    t.mode === 'tokens' &&
+      !!token && { label: `Move ${token.name} here`, run: () => api.requests.move(token.id, t.at) },
     { label: 'Select all', run: () => api.editor.selectAll() },
   ];
 });

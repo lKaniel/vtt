@@ -66,12 +66,12 @@ export function TurnOrder({ session, onStart }: StartProps) {
         })}
       </div>
       {gm && peaceful && (
-        <Button variant="outline" size="sm" onClick={() => session.setTurnBased(false)}>
+        <Button variant="outline" size="sm" onClick={() => session.requests.setTurnBased(false)}>
           Real time
         </Button>
       )}
       {gm && !peaceful && (
-        <Button variant="outline" size="sm" onClick={() => session.endCombat()}>
+        <Button variant="outline" size="sm" onClick={() => session.requests.endCombat()}>
           End combat
         </Button>
       )}
@@ -100,11 +100,16 @@ function RestButtons({ session }: Readonly<{ session: Session }>) {
         variant="outline"
         size="sm"
         title="Party takes a short rest"
-        onClick={() => session.rest(party(), 'short')}
+        onClick={() => session.requests.rest(party(), 'short')}
       >
         Short rest
       </Button>
-      <Button variant="outline" size="sm" title="Party takes a long rest" onClick={() => session.rest(party(), 'long')}>
+      <Button
+        variant="outline"
+        size="sm"
+        title="Party takes a long rest"
+        onClick={() => session.requests.rest(party(), 'long')}
+      >
         Long rest
       </Button>
     </>
@@ -137,7 +142,7 @@ function IdleBar({ session, onStart }: StartProps) {
       <Button
         variant="outline"
         size="sm"
-        onClick={() => session.setTurnBased(true)}
+        onClick={() => session.requests.setTurnBased(true)}
         title="Turn-based mode: the party takes turns, 6 seconds a round"
       >
         Turn-based

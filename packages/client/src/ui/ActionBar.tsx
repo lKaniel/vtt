@@ -168,7 +168,7 @@ function Hotbar({
   token,
   budget,
 }: Readonly<{ session: Session; token: TokenView; budget: TurnBudget | undefined }>) {
-  const save = (slots: Slots) => session.setHotbar(token.id, trimmed(slots));
+  const save = (slots: Slots) => session.requests.setHotbar(token.id, trimmed(slots));
   const onDrop = (i: number) => (e: React.DragEvent) => {
     const data = e.dataTransfer.getData(TILE_DRAG);
     if (!data) return;
@@ -315,7 +315,7 @@ function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenVi
       <button
         className="end-turn"
         disabled={!mine}
-        onClick={() => session.endTurn()}
+        onClick={() => session.requests.endTurn()}
         title={mine ? 'End turn (Space)' : 'Waiting for your turn'}
         aria-label={mine ? 'End turn' : 'Waiting for your turn'}
       />

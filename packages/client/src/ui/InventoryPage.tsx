@@ -63,7 +63,7 @@ function Bag(props: Readonly<SheetProps>) {
   if (!list.length) return <p className="muted">Empty-handed.</p>;
   const { loose, boxes } = bagLayout(list, sheet.edition, value);
   const stow = canCarry(props)
-    ? (item: number, into: number | null) => session.carry(value.id, { kind: 'stow', item, into })
+    ? (item: number, into: number | null) => session.requests.carry(value.id, { kind: 'stow', item, into })
     : undefined;
   return (
     <>
@@ -133,7 +133,7 @@ function Slot({
   const wearable = item && (item.type !== 'gear' || item.bonus !== undefined || item.attunement === true);
   const use = () => {
     if (entry.spell) readScroll(session, value.id, entry.spell);
-    else if (wearable) session.equip(value.id, index, !entry.equipped);
+    else if (wearable) session.requests.equip(value.id, index, !entry.equipped);
   };
   const cls = ['bag-slot', entry.equipped && 'equipped', entry.attuned && 'attuned'].filter(Boolean).join(' ');
   return (

@@ -105,8 +105,8 @@ function SheetWindow({
     liveRef.current = live;
   });
   const { value, update } = useAutoSave<Draft>(live, (draft) => {
-    if (target.kind === 'token') session.editToken(live.id, tokenPatch(liveRef.current, draft));
-    else session.saveActor(draft);
+    if (target.kind === 'token') session.requests.editToken(live.id, tokenPatch(liveRef.current, draft));
+    else session.requests.saveActor(draft);
   });
   const rules = editionOf(value, session.world ?? {});
   const sheet = sheetOf(session, target, live, previewSheet(value, rules));
@@ -236,7 +236,7 @@ function SheetFoot(props: Readonly<SheetProps>) {
  * actor or start over from it.
  */
 function ActorLinkButtons({ session, id, linked }: Readonly<{ session: Session; id: string; linked: boolean }>) {
-  const relink = (how: 'link' | 'unlink' | 'save' | 'reset') => session.relinkToken(id, how);
+  const relink = (how: 'link' | 'unlink' | 'save' | 'reset') => session.requests.relinkToken(id, how);
   if (linked) {
     return (
       <Button
@@ -287,13 +287,13 @@ function GmFootButtons({ session, kind, value }: Readonly<SheetProps>) {
       setConfirm(true);
       return;
     }
-    if (kind === 'token') session.deleteToken(value.id);
-    else session.deleteActor(value.id);
+    if (kind === 'token') session.requests.deleteToken(value.id);
+    else session.requests.deleteActor(value.id);
     session.sheets.open(undefined);
   };
   const saveAsActor = () => {
     const id = uniqueId(value.name, (x) => session.actors.has(x));
-    session.saveActor(actorFromToken({ x: 0, y: 0, ...value }, id));
+    session.requests.saveActor(actorFromToken({ x: 0, y: 0, ...value }, id));
     session.showError(`Saved ${value.name} to the Actors list`);
   };
   const tokenButtons = value.actor ? (

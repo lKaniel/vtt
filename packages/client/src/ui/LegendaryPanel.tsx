@@ -44,7 +44,7 @@ function LegendaryActions(props: Readonly<SheetProps>) {
               size="sm"
               disabled={!act || o.cost > legendary.left}
               title={o.description ?? (o.attack ? 'Attacks your one target' : o.name)}
-              onClick={() => session.legendary(value.id, o.id, session.targets.only())}
+              onClick={() => session.requests.legendary(value.id, o.id, session.targets.only())}
             >
               {o.name}
               {o.cost > 1 && ` (${o.cost})`}
@@ -72,7 +72,7 @@ function LairActions(props: Readonly<SheetProps>) {
               size="sm"
               disabled={!canAct(props) || !lairTurn}
               title={a.description ?? 'On initiative 20'}
-              onClick={() => session.lairAction(value.id, a.id)}
+              onClick={() => session.requests.lairAction(value.id, a.id)}
             >
               {a.name}
             </Button>

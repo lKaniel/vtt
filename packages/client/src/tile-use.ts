@@ -15,7 +15,7 @@ export function activateTile(session: Session, token: TokenView, tile: ActionTil
 
 /** A feature aimed like a spell waits for its targets; any other goes off at once. */
 function activateFeature(session: Session, token: TokenView, feature: FeatureSheet): void {
-  if (!feature.spell) return session.useFeature(token.id, feature.id);
+  if (!feature.spell) return session.requests.useFeature(token.id, feature.id);
   session.actions.aimFeature(session.actions.aiming?.feature === feature.id ? undefined : feature.id);
 }
 
@@ -35,6 +35,6 @@ function readyItem(session: Session, token: TokenView, item: Item): void {
   const name = item.name;
   if (token.sheet?.attacks.some((a) => a.name === name))
     session.actions.arm(session.actions.armed === name ? undefined : name);
-  else if (item.type === 'gear' && item.use) session.useItem(token.id, item.id);
+  else if (item.type === 'gear' && item.use) session.requests.useItem(token.id, item.id);
   else session.showError(`Using ${name} isn't automated yet: ask the GM`);
 }
