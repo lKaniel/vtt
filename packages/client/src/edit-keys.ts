@@ -1,4 +1,5 @@
 import type { EditorMode, Point } from '@vtt/shared';
+import { actionOf, currentKeys, type Keymap } from './keybinds.ts';
 
 /** An edit command a key press asks for; "clipboard" is copy, cut or paste, handled by the clipboard events. */
 export type EditKey = 'undo' | 'redo' | 'duplicate' | 'delete' | 'clipboard' | 'selectAll' | LayerKey;
@@ -50,28 +51,29 @@ function layerKey(key: string, shift: boolean): LayerKey | undefined {
 /** An editor key: switch mode (R: to the ruler), or nudge the selection. */
 export type EditorKey = { mode: EditorMode; tool?: 'ruler' } | { nudge: Point; big: boolean };
 
-const MODE_KEYS: Record<string, EditorMode> = {
-  t: 'tokens',
-  w: 'walls',
-  l: 'lights',
-  d: 'drawings',
-  n: 'notes',
-  m: 'templates',
+/** The map tool actions of keybinds.ts and the mode each picks. */
+const MODE_ACTIONS: Record<string, EditorKey> = {
+  'mode-tokens': { mode: 'tokens' },
+  'mode-tiles': { mode: 'tiles' },
+  'mode-walls': { mode: 'walls' },
+  'mode-lights': { mode: 'lights' },
+  'mode-drawings': { mode: 'drawings' },
+  'mode-notes': { mode: 'notes' },
+  'mode-templates': { mode: 'templates' },
+  'mode-ruler': { mode: 'templates', tool: 'ruler' },
 };
+const MODE_IDS = Object.keys(MODE_ACTIONS);
 const ARROWS: Record<string, Point> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 
 /**
  * T tokens, Shift+T tiles, W walls, L lights, D drawings, N notes, M
- * templates, R the ruler (players reach drawings and templates only); outside the tokens mode
+ * templates, R the ruler, or the player's own keys (keybinds.ts; players reach drawings and templates only); outside the tokens mode
  * (`editing`) the arrows nudge a pixel, or a square with Shift.
  */
-export function editorKey(e: KeyPress, editing: boolean): EditorKey | undefined {
+export function editorKey(e: KeyPress, editing: boolean, keys: Keymap = currentKeys()): EditorKey | undefined {
   if (e.ctrlKey || e.metaKey) return undefined;
   const arrow = ARROWS[e.key];
   if (arrow) return editing ? { nudge: arrow, big: e.shiftKey } : undefined;
-  const key = e.key.toLowerCase();
-  if (key === 't' && e.shiftKey) return { mode: 'tiles' };
-  if (key === 'r') return { mode: 'templates', tool: 'ruler' };
-  const mode = MODE_KEYS[key];
-  return mode && { mode };
+  const id = actionOf(e, keys, MODE_IDS);
+  return id ? MODE_ACTIONS[id] : undefined;
 }

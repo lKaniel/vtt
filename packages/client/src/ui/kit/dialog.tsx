@@ -2,6 +2,7 @@ import { XIcon } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import type * as React from 'react';
 import { cn } from '@/lib/utils';
+import { usePortalHost } from './portal-host.tsx';
 
 function Dialog(props: Readonly<React.ComponentProps<typeof DialogPrimitive.Root>>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -18,7 +19,7 @@ function DialogContent({
   ...props
 }: Readonly<React.ComponentProps<typeof DialogPrimitive.Content>>) {
   return (
-    <DialogPrimitive.Portal>
+    <DialogPrimitive.Portal container={usePortalHost()}>
       <DialogPrimitive.Overlay data-slot="dialog-overlay" className="fixed inset-0 z-[1000] bg-black/55" />
       <DialogPrimitive.Content
         data-slot="dialog-content"
