@@ -9,6 +9,7 @@ import {
   characterLevel,
   classesText,
 } from '@vtt/system-dnd5e';
+import { xpLine } from '../encounter-view.ts';
 import { uniqueId } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Session, SheetTarget } from '../session.ts';
@@ -137,7 +138,13 @@ function Pages(props: Readonly<SheetProps & { rules: Edition }>) {
 
 function SheetHead({ session, kind, value, update, edit }: Readonly<SheetProps>) {
   const level = characterLevel(value.stats);
-  const title = [level && `Level ${level}`, classesText(value.stats) ?? value.monster, kind === 'actor' && '(actor)']
+  const xp = xpLine(value.stats);
+  const title = [
+    level && `Level ${level}`,
+    classesText(value.stats) ?? value.monster,
+    xp && `· ${xp}`,
+    kind === 'actor' && '(actor)',
+  ]
     .filter(Boolean)
     .join(' ');
   const editable = kind === 'actor' ? session.isGm() : session.canEdit(value.id);

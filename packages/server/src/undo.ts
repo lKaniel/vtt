@@ -60,6 +60,7 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   legendary: { label: 'legendary action', action: true },
   lair: { label: 'lair action', action: true },
   exhaustion: { label: 'exhaustion change', action: true },
+  awardXp: { label: 'experience award', action: true },
   cast: { label: 'spell', action: true },
   feature: { label: 'feature use', action: true },
   useItem: { label: 'item use', action: true },

@@ -105,6 +105,11 @@ export abstract class Commands {
     this.send({ t: 'lair', token, action });
   }
 
+  /** GM: gives each of these characters `xp` experience points. */
+  awardXp(tokens: string[], xp: number): void {
+    this.send({ t: 'awardXp', tokens, xp });
+  }
+
   /** Spends one of the creature's hit dice to heal. */
   spendHitDie(token: string): void {
     this.send({ t: 'hitDie', token });
