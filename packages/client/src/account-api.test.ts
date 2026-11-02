@@ -85,4 +85,26 @@ describe('account api client', () => {
       ['/api/admin', 'POST', JSON.stringify({ password: 'open sesame' })],
     ]);
   });
+
+  it('lists, makes and restores backups, exports and imports games', async () => {
+    const fetch = answer(200, {
+      backups: [{ id: 'b1', at: 1, reason: 'load' }],
+      backup: { id: 'b2' },
+      game: { id: 'x' },
+    });
+    expect(await api.backups('test')).toEqual([{ id: 'b1', at: 1, reason: 'load' }]);
+    expect(await api.backUp('test')).toEqual({ id: 'b2' });
+    await api.restoreBackup('test', 'b1');
+    expect(api.exportUrl('lost mine')).toBe('/api/games/lost%20mine/export');
+    const file = new Blob(['zip']);
+    expect(await api.importZip(file)).toEqual({ id: 'x' });
+    const calls = fetch.mock.calls.map((c) => [(c as unknown[])[0], ((c as unknown[])[1] as RequestInit).method]);
+    expect(calls).toEqual([
+      ['/api/games/test/backups', 'GET'],
+      ['/api/games/test/backups', 'POST'],
+      ['/api/games/test/backups/b1/restore', 'POST'],
+      ['/api/games/import-zip', 'POST'],
+    ]);
+    expect(((fetch.mock.calls[3] as unknown[])[1] as RequestInit).body).toBe(file);
+  });
 });

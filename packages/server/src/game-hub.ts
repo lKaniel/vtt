@@ -12,9 +12,11 @@ import {
   uniqueId,
 } from '@vtt/shared';
 import type { WebSocket } from 'ws';
+import { type BackupInfo, type BackupReason, Backups } from './backups.ts';
 import { foundryWorldTitle, importFoundryWorld, type WorldReport } from './foundry-world.ts';
 import { Game } from './game.ts';
 import { GameAccess } from './game-access.ts';
+import { unzipGame, writeGame, zipGame } from './game-archive.ts';
 import { GameIndex } from './game-index.ts';
 import { GameStore } from './game-store.ts';
 import { SYSTEMS } from './systems.ts';
@@ -38,6 +40,8 @@ export interface HubOptions {
   idleMs?: number;
   /** Hot-reload hand edits to loaded games (off in tests). */
   watch?: boolean;
+  /** How often a loaded game is backed up (if it changed). */
+  backupMs?: number;
 }
 
 export interface Running {
@@ -75,6 +79,7 @@ export interface GameInfo {
 export class HubError extends Error {}
 
 const IDLE_MS = 5 * 60_000;
+const BACKUP_MS = 15 * 60_000;
 
 export class GameHub {
   /** Folder of each game. */
@@ -82,6 +87,7 @@ export class GameHub {
   private loading = new Map<string, Promise<Running>>();
   private live = new Map<string, Running>();
   private timers = new Map<string, NodeJS.Timeout>();
+  private backupTimers = new Map<string, NodeJS.Timeout>();
   private index: GameIndex;
   /** Join requests and seat passwords (game-access.ts). */
   readonly access: GameAccess;
@@ -90,9 +96,12 @@ export class GameHub {
   readonly packs: PackStore;
   /** The plugins installed on the server: the data folder's plugins/. */
   readonly plugins: PluginStore;
+  /** Copies of each game folder (backups.ts). */
+  readonly backups: Backups;
 
   constructor(private opts: HubOptions) {
     this.index = new GameIndex(opts.dataDir);
+    this.backups = new Backups(opts.dataDir);
     this.access = new GameAccess(this.index);
     this.packs = new PackStore(join(opts.dataDir, 'packs'));
     this.plugins = new PluginStore(join(opts.dataDir, 'plugins'));
@@ -161,6 +170,7 @@ export class GameHub {
     try {
       const running = await loading;
       this.live.set(id, running);
+      this.keepBackingUp(id);
       this.idle(id);
       return running;
     } finally {
@@ -170,6 +180,7 @@ export class GameHub {
 
   private async start(dir: string): Promise<Running> {
     const file = await readGameFile(dir);
+    if (file) await this.backups.snapshot(file.id, dir, 'load');
     const system = SYSTEMS.get(file?.system ?? DEFAULT_SYSTEM);
     if (!system) throw new HubError(`This server has no "${file?.system ?? ''}" system.`);
     const store = new GameStore(dir, system, this.packs);
@@ -191,11 +202,56 @@ export class GameHub {
   private async unload(id: string): Promise<void> {
     const running = this.live.get(id);
     clearTimeout(this.timers.get(id));
+    clearInterval(this.backupTimers.get(id));
     if (!running) return;
     this.live.delete(id);
     running.game.close();
     running.store.close();
     await running.store.flush();
+  }
+
+  private keepBackingUp(id: string): void {
+    const timer = setInterval(() => void this.backup(id, 'timer'), this.opts.backupMs ?? BACKUP_MS);
+    timer.unref();
+    this.backupTimers.set(id, timer);
+  }
+
+  /** Copies the game folder as it is now (undefined: nothing changed since the last copy). */
+  async backup(id: string, reason: BackupReason): Promise<BackupInfo | undefined> {
+    const dir = this.dirs.get(id);
+    if (!dir) throw new HubError('No such game.');
+    await this.live.get(id)?.store.flush();
+    return this.backups.snapshot(id, dir, reason);
+  }
+
+  /** Puts a backup back: the game as it is now is backed up first, and everyone reconnects to the restored one. */
+  async restore(id: string, backup: string): Promise<void> {
+    const dir = this.dirs.get(id);
+    if (!dir) throw new HubError('No such game.');
+    if (!(await this.backups.list(id)).some((b) => b.id === backup)) throw new HubError('No such backup.');
+    await this.backup(id, 'restore');
+    for (const ws of this.live.get(id)?.sockets.keys() ?? []) ws.close(1012, 'the game was restored from a backup');
+    await this.unload(id);
+    await this.backups.restore(id, backup, dir);
+  }
+
+  /** The game folder as a zip. */
+  async exportZip(id: string): Promise<Buffer> {
+    const dir = this.dirs.get(id);
+    if (!dir) throw new HubError('No such game.');
+    await this.live.get(id)?.store.flush();
+    return zipGame(dir);
+  }
+
+  /** Makes a new game from an exported zip, with `gm` in the only seat; returns its id. */
+  async importZip(buf: Buffer, gm: Player): Promise<string> {
+    const zipped = unzipGame(buf);
+    const id = this.freeId(zipped.game.name);
+    const dir = join(this.gamesDir, id);
+    await writeGame(dir, zipped, id, gm);
+    this.dirs.set(id, dir);
+    await this.index.set(id, { lastPlayed: Date.now() });
+    return id;
   }
 
   /** Puts a connection into a loaded game for `player`, and keeps the game loaded while it lasts. */
@@ -245,7 +301,7 @@ export class GameHub {
 
   /** A game id for `name` that no game has (nor the lobby's own routes). */
   private freeId(name: string): string {
-    return uniqueId(name, (x) => this.dirs.has(x) || x === 'games' || x === 'import-foundry');
+    return uniqueId(name, (x) => this.dirs.has(x) || x === 'games' || x === 'import-foundry' || x === 'import-zip');
   }
 
   /**

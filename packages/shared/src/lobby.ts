@@ -92,6 +92,13 @@ export interface GameSummary {
   lastPlayed?: number;
 }
 
+/** A copy of a game folder the GM can restore: when, and why it was made. */
+export interface BackupInfo {
+  id: string;
+  at: number;
+  reason: 'load' | 'timer' | 'manual' | 'restore';
+}
+
 /** A game's page in the lobby: who is in it and, for its GMs, the invite code. */
 export interface GameDetail extends GameSummary {
   /** `locked`: the seat has a password (taken without an account). */

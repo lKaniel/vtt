@@ -55,6 +55,21 @@ The server's admin is the first account made, unless `VTT_ADMIN_PASSWORD`
 is set: then no account is admin until someone types that password on the
 account screen (`POST /api/admin`).
 
+## Backups and zip files
+
+A game is backed up into `data/backups/<game>/<when>/` when it loads, every
+15 minutes while it is loaded, and when its GM presses _Back up now_; the
+automatic ones only when something changed since the last. The last 20 are
+kept. Pictures (`assets/`) are left out of backups: they are big and play
+doesn't change them. _Restore_ on the game's page puts one back: the game as
+it is now is backed up first (so a restore can itself be undone), everyone
+connected is reconnected, and the game loads from the restored files.
+
+_Download as zip_ gives the GM the whole game folder, pictures and all.
+_Import a game_ in the lobby makes a new game from such a zip, with whoever
+imports it as its only seat (the GM); `game.json` may sit at the zip's root
+or in one folder inside it.
+
 ## Entering a game
 
 _Enter the game_ takes your seat and, if you pick one, brings a roster
@@ -80,19 +95,23 @@ All under `/api/`, signed in:
 | `PUT games/<id>/approval` `{approval}`                  | GM                   | joining asks the GM first, or not                                                 |
 | `POST games/<id>/requests/<account>` `{approve}`        | GM                   | lets a waiting account in as a player, or turns it down                           |
 | `PUT games/<id>/members/<id>/password` `{password}`     | GM                   | a password on a fixed seat, or (null) none                                        |
+| `GET games/<id>/backups`                                | GM                   | the backups, newest first                                                         |
+| `POST games/<id>/backups`                               | GM                   | backs up now                                                                      |
+| `POST games/<id>/backups/<backup>/restore`              | GM                   | puts a backup back (backing up the game as it is first)                           |
+| `GET games/<id>/export`                                 | GM                   | the game folder as a zip                                                          |
+| `POST games/import-zip` (zip body)                      | anyone               | makes a game from an exported zip with you as GM                                  |
 | `PUT games/<id>/members/<account>` `{role}`             | GM                   | changes a role                                                                    |
 | `DELETE games/<id>/members/<account>`                   | GM, or yourself      | removes a member                                                                  |
 | `POST invites/<code>`                                   | anyone               | joins the game as a player (or asks, with approval on)                            |
 
 Code: `server/src/game-hub.ts` (games, loading, invites), `lobby-api.ts`
 (the routes), `socket-join.ts` (who a connection is), `game-access.ts` (approval, seat
-passwords), `shared/src/lobby.ts`
+passwords), `backups.ts` and `game-archive.ts` (backups, zips), `shared/src/lobby.ts`
 (new-game checks, member changes), `server/src/systems.ts` (the systems a
 game can run on), client `ui/LobbyScreens.tsx` and
 `ui/GamePage.tsx`.
 
 ## Not done yet
 
-- Backing a game up from the lobby (copy its folder).
 - Asset packs per game (a later step), and a system other than D&D 5e (the
   seam is in place, see [systems.md](systems.md)).
