@@ -11,7 +11,8 @@
     },
     "properties": ["light"],
     "mastery": "slow",
-    "weight": 2
+    "weight": 2,
+    "price": 0.1
   },
   {
     "id": "dagger",
@@ -26,7 +27,8 @@
     "properties": ["finesse", "light", "thrown"],
     "range": [20, 60],
     "mastery": "nick",
-    "weight": 1
+    "weight": 1,
+    "price": 2
   },
   {
     "id": "greatclub",
@@ -40,7 +42,8 @@
     },
     "properties": ["two-handed"],
     "mastery": "push",
-    "weight": 10
+    "weight": 10,
+    "price": 0.2
   },
   {
     "id": "handaxe",
@@ -55,7 +58,8 @@
     "properties": ["light", "thrown"],
     "range": [20, 60],
     "mastery": "vex",
-    "weight": 2
+    "weight": 2,
+    "price": 5
   },
   {
     "id": "javelin",
@@ -70,7 +74,8 @@
     "properties": ["thrown"],
     "range": [30, 120],
     "mastery": "slow",
-    "weight": 2
+    "weight": 2,
+    "price": 0.5
   },
   {
     "id": "light-hammer",
@@ -85,7 +90,8 @@
     "properties": ["light", "thrown"],
     "range": [20, 60],
     "mastery": "nick",
-    "weight": 2
+    "weight": 2,
+    "price": 2
   },
   {
     "id": "mace",
@@ -99,7 +105,8 @@
     },
     "properties": [],
     "mastery": "sap",
-    "weight": 4
+    "weight": 4,
+    "price": 5
   },
   {
     "id": "quarterstaff",
@@ -114,7 +121,8 @@
     "properties": ["versatile"],
     "versatile": "1d8",
     "mastery": "topple",
-    "weight": 4
+    "weight": 4,
+    "price": 0.2
   },
   {
     "id": "sickle",
@@ -128,7 +136,8 @@
     },
     "properties": ["light"],
     "mastery": "nick",
-    "weight": 2
+    "weight": 2,
+    "price": 1
   },
   {
     "id": "spear",
@@ -144,7 +153,8 @@
     "range": [20, 60],
     "versatile": "1d8",
     "mastery": "sap",
-    "weight": 3
+    "weight": 3,
+    "price": 1
   },
   {
     "id": "dart",
@@ -159,7 +169,8 @@
     "properties": ["finesse", "thrown"],
     "range": [20, 60],
     "mastery": "vex",
-    "weight": 0.25
+    "weight": 0.25,
+    "price": 0.05
   },
   {
     "id": "light-crossbow",
@@ -174,7 +185,8 @@
     "properties": ["ammunition", "loading", "two-handed"],
     "range": [80, 320],
     "mastery": "slow",
-    "weight": 5
+    "weight": 5,
+    "price": 25
   },
   {
     "id": "shortbow",
@@ -189,7 +201,8 @@
     "properties": ["ammunition", "two-handed"],
     "range": [80, 320],
     "mastery": "vex",
-    "weight": 2
+    "weight": 2,
+    "price": 25
   },
   {
     "id": "sling",
@@ -204,7 +217,8 @@
     "properties": ["ammunition"],
     "range": [30, 120],
     "mastery": "slow",
-    "weight": 0
+    "weight": 0,
+    "price": 0.1
   },
   {
     "id": "battleaxe",
@@ -219,7 +233,8 @@
     "properties": ["versatile"],
     "versatile": "1d10",
     "mastery": "topple",
-    "weight": 4
+    "weight": 4,
+    "price": 10
   },
   {
     "id": "flail",
@@ -233,7 +248,8 @@
     },
     "properties": [],
     "mastery": "sap",
-    "weight": 2
+    "weight": 2,
+    "price": 10
   },
   {
     "id": "glaive",
@@ -247,7 +263,8 @@
     },
     "properties": ["heavy", "reach", "two-handed"],
     "mastery": "graze",
-    "weight": 6
+    "weight": 6,
+    "price": 20
   },
   {
     "id": "greataxe",
@@ -261,7 +278,8 @@
     },
     "properties": ["heavy", "two-handed"],
     "mastery": "cleave",
-    "weight": 7
+    "weight": 7,
+    "price": 30
   },
   {
     "id": "greatsword",
@@ -275,7 +293,8 @@
     },
     "properties": ["heavy", "two-handed"],
     "mastery": "graze",
-    "weight": 6
+    "weight": 6,
+    "price": 50
   },
   {
     "id": "halberd",
@@ -289,7 +308,8 @@
     },
     "properties": ["heavy", "reach", "two-handed"],
     "mastery": "cleave",
-    "weight": 6
+    "weight": 6,
+    "price": 20
   },
   {
     "id": "lance",
@@ -303,7 +323,8 @@
     },
     "properties": ["heavy", "reach", "two-handed"],
     "mastery": "topple",
-    "weight": 6
+    "weight": 6,
+    "price": 10
   },
   {
     "id": "longsword",
@@ -318,7 +339,8 @@
     "properties": ["versatile"],
     "versatile": "1d10",
     "mastery": "sap",
-    "weight": 3
+    "weight": 3,
+    "price": 15
   },
   {
     "id": "maul",
@@ -332,7 +354,8 @@
     },
     "properties": ["heavy", "two-handed"],
     "mastery": "topple",
-    "weight": 10
+    "weight": 10,
+    "price": 10
   },
   {
     "id": "morningstar",
@@ -346,7 +369,8 @@
     },
     "properties": [],
     "mastery": "sap",
-    "weight": 4
+    "weight": 4,
+    "price": 15
   },
   {
     "id": "pike",
@@ -360,7 +384,8 @@
     },
     "properties": ["heavy", "reach", "two-handed"],
     "mastery": "push",
-    "weight": 18
+    "weight": 18,
+    "price": 5
   },
   {
     "id": "rapier",
@@ -374,7 +399,8 @@
     },
     "properties": ["finesse"],
     "mastery": "vex",
-    "weight": 2
+    "weight": 2,
+    "price": 25
   },
   {
     "id": "scimitar",
@@ -388,7 +414,8 @@
     },
     "properties": ["finesse", "light"],
     "mastery": "nick",
-    "weight": 3
+    "weight": 3,
+    "price": 25
   },
   {
     "id": "shortsword",
@@ -402,7 +429,8 @@
     },
     "properties": ["finesse", "light"],
     "mastery": "vex",
-    "weight": 2
+    "weight": 2,
+    "price": 10
   },
   {
     "id": "trident",
@@ -418,7 +446,8 @@
     "range": [20, 60],
     "versatile": "1d10",
     "mastery": "topple",
-    "weight": 4
+    "weight": 4,
+    "price": 5
   },
   {
     "id": "warhammer",
@@ -433,7 +462,8 @@
     "properties": ["versatile"],
     "versatile": "1d10",
     "mastery": "push",
-    "weight": 5
+    "weight": 5,
+    "price": 15
   },
   {
     "id": "war-pick",
@@ -448,7 +478,8 @@
     "properties": ["versatile"],
     "versatile": "1d10",
     "mastery": "sap",
-    "weight": 2
+    "weight": 2,
+    "price": 5
   },
   {
     "id": "whip",
@@ -462,7 +493,8 @@
     },
     "properties": ["finesse", "reach"],
     "mastery": "slow",
-    "weight": 3
+    "weight": 3,
+    "price": 2
   },
   {
     "id": "blowgun",
@@ -477,7 +509,8 @@
     "properties": ["ammunition", "loading"],
     "range": [25, 100],
     "mastery": "vex",
-    "weight": 1
+    "weight": 1,
+    "price": 10
   },
   {
     "id": "hand-crossbow",
@@ -492,7 +525,8 @@
     "properties": ["ammunition", "light", "loading"],
     "range": [30, 120],
     "mastery": "vex",
-    "weight": 3
+    "weight": 3,
+    "price": 75
   },
   {
     "id": "heavy-crossbow",
@@ -507,7 +541,8 @@
     "properties": ["ammunition", "heavy", "loading", "two-handed"],
     "range": [100, 400],
     "mastery": "push",
-    "weight": 18
+    "weight": 18,
+    "price": 50
   },
   {
     "id": "longbow",
@@ -522,7 +557,8 @@
     "properties": ["ammunition", "heavy", "two-handed"],
     "range": [150, 600],
     "mastery": "slow",
-    "weight": 2
+    "weight": 2,
+    "price": 50
   },
   {
     "id": "musket",
@@ -537,7 +573,8 @@
     "properties": ["ammunition", "loading", "two-handed"],
     "range": [40, 120],
     "mastery": "slow",
-    "weight": 10
+    "weight": 10,
+    "price": 500
   },
   {
     "id": "pistol",
@@ -552,7 +589,8 @@
     "properties": ["ammunition", "loading"],
     "range": [30, 90],
     "mastery": "vex",
-    "weight": 3
+    "weight": 3,
+    "price": 250
   },
   {
     "id": "padded",
@@ -561,7 +599,8 @@
     "category": "light",
     "ac": 11,
     "stealthDisadvantage": true,
-    "weight": 8
+    "weight": 8,
+    "price": 5
   },
   {
     "id": "leather",
@@ -569,7 +608,8 @@
     "name": "Leather Armor",
     "category": "light",
     "ac": 11,
-    "weight": 10
+    "weight": 10,
+    "price": 10
   },
   {
     "id": "studded-leather",
@@ -577,7 +617,8 @@
     "name": "Studded Leather Armor",
     "category": "light",
     "ac": 12,
-    "weight": 13
+    "weight": 13,
+    "price": 45
   },
   {
     "id": "hide",
@@ -585,7 +626,8 @@
     "name": "Hide Armor",
     "category": "medium",
     "ac": 12,
-    "weight": 12
+    "weight": 12,
+    "price": 10
   },
   {
     "id": "chain-shirt",
@@ -593,7 +635,8 @@
     "name": "Chain Shirt",
     "category": "medium",
     "ac": 13,
-    "weight": 20
+    "weight": 20,
+    "price": 50
   },
   {
     "id": "scale-mail",
@@ -602,7 +645,8 @@
     "category": "medium",
     "ac": 14,
     "stealthDisadvantage": true,
-    "weight": 45
+    "weight": 45,
+    "price": 50
   },
   {
     "id": "breastplate",
@@ -610,7 +654,8 @@
     "name": "Breastplate",
     "category": "medium",
     "ac": 14,
-    "weight": 20
+    "weight": 20,
+    "price": 400
   },
   {
     "id": "half-plate",
@@ -619,7 +664,8 @@
     "category": "medium",
     "ac": 15,
     "stealthDisadvantage": true,
-    "weight": 40
+    "weight": 40,
+    "price": 750
   },
   {
     "id": "ring-mail",
@@ -628,7 +674,8 @@
     "category": "heavy",
     "ac": 14,
     "stealthDisadvantage": true,
-    "weight": 40
+    "weight": 40,
+    "price": 30
   },
   {
     "id": "chain-mail",
@@ -638,7 +685,8 @@
     "ac": 16,
     "strength": 13,
     "stealthDisadvantage": true,
-    "weight": 55
+    "weight": 55,
+    "price": 75
   },
   {
     "id": "splint",
@@ -648,7 +696,8 @@
     "ac": 17,
     "strength": 15,
     "stealthDisadvantage": true,
-    "weight": 60
+    "weight": 60,
+    "price": 200
   },
   {
     "id": "plate",
@@ -658,7 +707,8 @@
     "ac": 18,
     "strength": 15,
     "stealthDisadvantage": true,
-    "weight": 65
+    "weight": 65,
+    "price": 1500
   },
   {
     "id": "shield",
@@ -666,28 +716,32 @@
     "name": "Shield",
     "category": "shield",
     "ac": 2,
-    "weight": 6
+    "weight": 6,
+    "price": 10
   },
   {
     "id": "torch",
     "type": "gear",
     "name": "Torch",
     "description": "Bright light 20 ft, dim 20 ft more, for 1 hour.",
-    "weight": 1
+    "weight": 1,
+    "price": 0.01
   },
   {
     "id": "rope",
     "type": "gear",
     "name": "Rope",
     "description": "50 feet of hempen rope.",
-    "weight": 5
+    "weight": 5,
+    "price": 1
   },
   {
     "id": "healer-s-kit",
     "type": "gear",
     "name": "Healer's Kit",
     "description": "Ten uses: stabilize a creature at 0 HP.",
-    "weight": 3
+    "weight": 3,
+    "price": 5
   },
   {
     "id": "potion-of-healing",
@@ -695,6 +749,7 @@
     "name": "Potion of Healing",
     "description": "Regain 2d4+2 hit points.",
     "weight": 0.5,
+    "price": 50,
     "use": {
       "heal": "2d4+2",
       "potion": true
@@ -745,7 +800,8 @@
     "type": "gear",
     "name": "Thieves' Tools",
     "description": "Pick locks and disarm traps.",
-    "weight": 1
+    "weight": 1,
+    "price": 25
   },
   {
     "id": "backpack",
@@ -753,6 +809,7 @@
     "name": "Backpack",
     "description": "Holds 30 pounds of gear.",
     "weight": 5,
+    "price": 2,
     "container": {
       "capacity": 30
     }
@@ -763,6 +820,7 @@
     "name": "Pouch",
     "description": "Holds 6 pounds of small things.",
     "weight": 1,
+    "price": 0.5,
     "container": {
       "capacity": 6
     }
@@ -773,6 +831,7 @@
     "name": "Sack",
     "description": "Holds 30 pounds of gear.",
     "weight": 0.5,
+    "price": 0.01,
     "container": {
       "capacity": 30
     }
@@ -783,6 +842,7 @@
     "name": "Chest",
     "description": "Holds 300 pounds of gear.",
     "weight": 25,
+    "price": 5,
     "container": {
       "capacity": 300
     }

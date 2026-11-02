@@ -119,6 +119,13 @@ export type ClientMessage =
   | { t: 'equip'; token: string; item: number; equipped: boolean }
   /** An owner's own gear: coins, packing it into containers (`into` null takes it out), attunement. */
   | { t: 'carry'; token: string; change: CarryChange }
+  /**
+   * Gear or coins between a creature and a pile (piles.ts): `item` is an
+   * index in `from`'s inventory, `qty` defaults to the whole stack (one from a
+   * merchant). Without
+   * `to`, `from` drops it where it stands.
+   */
+  | { t: 'trade'; from: string; to?: string; item?: number; qty?: number; coins?: Currency }
   /** GM: a legendary action, between other creatures' turns; `target` for one that attacks. */
   | { t: 'legendary'; token: string; option: string; target?: string }
   /** GM: the lair action of `token`'s lair, on its turn at initiative 20. */

@@ -28,6 +28,10 @@ export function healthOf(hp: number, maxHp: number): Health {
 /** What `player` may know about `token`: its sheet if they control it, else just how hurt it looks. */
 export function viewToken(token: Token, player: Player, content: Content): TokenView {
   const sheet = resolveCreature(token, content);
+  if (token.pile?.locked && !canObserve(token, player)) {
+    const { inventory: _i, currency: _c, ...shut } = token;
+    return shut;
+  }
   if (!sheet) return token;
   const art = token.monster ? content.monsters.get(token.monster)?.img : undefined;
   const look = art ? { art } : {};
