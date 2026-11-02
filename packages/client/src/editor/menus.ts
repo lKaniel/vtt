@@ -49,6 +49,8 @@ export interface MenuApi {
   /** GM: the creature whose eyes the map shows. */
   readonly observing?: string;
   observe(token: string | undefined): void;
+  /** GM: opens a picture on every player's screen. */
+  showImage(src: string, title?: string): void;
 }
 
 /** What the menu was opened on. */
@@ -118,7 +120,7 @@ registerMenu('token', (t, api) => {
   const hidden = allDocs(t, (d) => d.hidden === true);
   return [
     { label: 'Open sheet', run: () => api.openSheet({ kind: 'token', id }) },
-    !!t.screen && { label: 'Token HUD', run: () => api.openHud(id, t.screen!) },
+    hudEntry(id, t.screen, api),
     api.canEdit(id) && { label: 'Edit sheet', run: () => api.openSheet({ kind: 'token', id }, true) },
     api.isGm() && {
       label: hidden ? 'Reveal to players' : 'Hide from players',
@@ -126,6 +128,7 @@ registerMenu('token', (t, api) => {
     },
     targetEntry(id, api),
     api.isGm() && observeEntry(id, api),
+    artEntry(t.token, api),
   ];
 });
 
@@ -134,6 +137,15 @@ const observeEntry = (id: string, api: MenuApi): MenuItem =>
   api.observing === id
     ? { label: 'Stop seeing through its eyes', run: () => api.observe(undefined) }
     : { label: 'See through its eyes', run: () => api.observe(id) };
+
+const hudEntry = (id: string, screen: Point | undefined, api: MenuApi): Entry =>
+  !!screen && { label: 'Token HUD', run: () => api.openHud(id, screen) };
+
+/** GM: show a creature's picture to the players. */
+function artEntry(token: TokenView | undefined, api: MenuApi): Entry {
+  const src = token?.img ?? token?.art;
+  return api.isGm() && !!src && { label: 'Show art to players', run: () => api.showImage(src, token?.name) };
+}
 
 /** Target a creature, or stop (see targets.ts). */
 const targetEntry = (id: string, api: MenuApi): MenuItem => ({
@@ -200,8 +212,15 @@ registerMenu('tile', (t, api) => {
       label: ground ? 'Make it an object' : 'Make it ground',
       run: () => api.editSelection({ background: ground ? null : true }),
     },
+    showTileEntry(t, api),
   ];
 });
+
+/** GM: show one picture tile to the players. */
+function showTileEntry(t: MenuTarget, api: MenuApi): Entry {
+  const src = t.docs.length === 1 ? t.docs[0]!.doc.src : undefined;
+  return api.isGm() && typeof src === 'string' && { label: 'Show to players', run: () => api.showImage(src) };
+}
 
 const ITEM_TYPES = ['drawing', 'note', 'template', 'region', 'sound'];
 

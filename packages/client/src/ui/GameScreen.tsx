@@ -12,6 +12,7 @@ import { ClockBar } from './clock/ClockBar.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
 import { blockNativeMenu } from '../native-menu.ts';
+import { ImageViewer } from './ImageViewer.tsx';
 import { Inspector } from './Inspector.tsx';
 import { JournalViewer } from './JournalViewer.tsx';
 import { MapTools } from './MapTools.tsx';
@@ -94,6 +95,7 @@ export function GameScreen({
       <MapTools session={session} />
       <Inspector session={session} />
       <JournalViewer session={session} />
+      <ImageViewer session={session} />
       <ReactionPrompt session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <CharacterSheet session={session} />

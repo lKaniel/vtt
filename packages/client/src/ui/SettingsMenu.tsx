@@ -5,6 +5,7 @@ import { type Automation, automationOf } from '@vtt/system-dnd5e';
 import type { Session } from '../session.ts';
 import { Button } from './kit/button.tsx';
 import { Label } from './kit/label.tsx';
+import { ProfileRow } from './ProfileRow.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 import { Separator } from './kit/separator.tsx';
 import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
@@ -69,6 +70,8 @@ export function SettingsMenu({ session }: Readonly<{ session: Session }>) {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="flex w-[340px] flex-col gap-3" data-slot="settings-menu">
+        <ProfileRow session={session} />
+        <Separator />
         <strong className="font-display">Automation</strong>
         <span className="muted -mt-2 text-xs">What the table does for your creatures without asking.</span>
         <Separator ornate />

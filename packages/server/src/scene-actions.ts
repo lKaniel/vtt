@@ -2,7 +2,7 @@ import type { Op } from '@vtt/core';
 import { type Player, playPatch, type Playlist, stopPatch } from '@vtt/shared';
 import type { ClientMessage } from './client-messages.ts';
 import type { GameStore } from './game-store.ts';
-import { setSeatSettings } from './seat-settings.ts';
+import { setProfile, setSeatSettings } from './seat-settings.ts';
 import { Refusal, requireGm } from './table.ts';
 
 // Moving people between scenes. Each seat is on the game's scene unless its
@@ -24,6 +24,7 @@ export class SceneActions {
     else if (msg.t === 'activateScene') this.activate(player, msg.scene);
     else if (msg.t === 'sendPlayer') this.send(player, msg.player, msg.scene);
     else if (msg.t === 'seatSettings') setSeatSettings(this.store, player, msg.settings);
+    else if (msg.t === 'profile') setProfile(this.store, player, msg);
   }
 
   /** GM: look at another scene; the players stay where they are. */

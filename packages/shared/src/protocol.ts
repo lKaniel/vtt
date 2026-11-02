@@ -19,6 +19,8 @@ export interface ChatEntry {
   time: number;
   from: string;
   color: string;
+  /** The writer's picture (Player.avatar). */
+  avatar?: string;
   text?: string;
   roll?: Roll;
   /** What a roll is for, written after its formula ("/r 8d6 fire"); a system may read it (a damage type). */
@@ -110,6 +112,10 @@ export type EngineClientMessage =
   | { t: 'rollTable'; table: string; gmOnly?: boolean }
   /** GM: share a journal entry with every player and open it (at `page`) on their screens. */
   | { t: 'showJournal'; entry: string; page?: string }
+  /** GM: open a picture on every player's screen. */
+  | { t: 'showImage'; src: string; title?: string }
+  /** Your seat's colour and picture; a null avatar takes it away. */
+  | { t: 'profile'; color?: string; avatar?: string | null }
   /** Your own options for this game (see Player.settings), checked by the game's system; they replace the old ones. */
   | { t: 'seatSettings'; settings: Record<string, string> };
 
@@ -156,5 +162,7 @@ export type EngineServerMessage =
   | { t: 'compendium'; pack: string; compendium: string; docs: unknown[] }
   /** The GM shows you a journal entry: open it (at `page`). */
   | { t: 'showJournal'; entry: string; page?: string }
+  /** The GM shows you a picture. */
+  | { t: 'showImage'; src: string; title?: string }
   /** Your seat changed without the table starting over (your settings). */
   | { t: 'you'; you: Player };

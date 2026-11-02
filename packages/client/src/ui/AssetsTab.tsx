@@ -1,4 +1,5 @@
 import { type MediaEntry, type MediaKind, type PackInfo, searchMedia, topTags } from '@vtt/core';
+import { EyeIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { assetUrl } from '../assets.ts';
 import type { Session } from '../session.ts';
@@ -186,7 +187,7 @@ function MediaTile({ session, media }: Readonly<{ session: Session; media: Media
   }
   return (
     <li
-      className="asset-thumb"
+      className="asset-thumb relative"
       title={title}
       draggable
       onDragStart={(e) => startDrag(e, { kind: 'media', src: media.src, ...size })}
@@ -199,6 +200,19 @@ function MediaTile({ session, media }: Readonly<{ session: Session; media: Media
         onLoad={(e) => setSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
       />
       <span className="asset-name">{media.name}</span>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="absolute top-1 right-1 bg-black/60"
+        aria-label={`Show ${media.name} to players`}
+        title="Show to players"
+        onClick={(e) => {
+          e.stopPropagation();
+          session.showImage(media.src, media.name);
+        }}
+      >
+        <EyeIcon />
+      </Button>
     </li>
   );
 }

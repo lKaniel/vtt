@@ -27,6 +27,12 @@ const MAX_TARGETS = 50;
 const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('rollTable'), table: z.string(), gmOnly: z.boolean().optional() }),
   z.object({ t: z.literal('showJournal'), entry: z.string(), page: z.string().optional() }),
+  z.object({ t: z.literal('showImage'), src: z.string().min(1).max(500), title: z.string().max(200).optional() }),
+  z.object({
+    t: z.literal('profile'),
+    color: z.string().max(40).optional(),
+    avatar: z.string().max(500).nullable().optional(),
+  }),
   z.object({ t: z.literal('view'), chunks: z.array(z.string()).max(400) }),
   z.object({ t: z.literal('move'), token: z.string(), to: PointSchema }),
   z.object({ t: z.literal('ruler'), points: z.array(PointSchema).max(MAX_RULER_POINTS) }),

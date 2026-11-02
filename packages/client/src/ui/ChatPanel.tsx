@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { assetUrl } from '../assets.ts';
 import type { Session } from '../session.ts';
 import type { ApplyHow } from '../session-actions.ts';
 import { ActorsTab } from './ActorsTab.tsx';
@@ -199,6 +200,14 @@ function Message({ m, onApply, onUndo }: Readonly<MessageProps>) {
   return (
     <div className={kindOf(m)}>
       <span className="msg-from" style={{ color: m.color }}>
+        {m.avatar && (
+          <img
+            src={assetUrl(m.avatar)}
+            alt=""
+            data-slot="chat-avatar"
+            className="mr-1.5 inline-block size-5 rounded-full border border-gold-dim object-cover align-middle"
+          />
+        )}
         {m.from}
         {modeNote(m) && <span className="muted"> ({modeNote(m)})</span>}
         {m.undone && <span className="muted"> (undone)</span>}

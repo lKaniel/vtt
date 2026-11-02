@@ -34,6 +34,11 @@ on, shared live between players.
   conditions, set its hit points, temporary hit points and elevation; the GM
   also hides it from players and adds it to the fight or takes it out
   (starting one if none is on, with rolled initiative).
+- **Show to players.** The GM shows a picture on every player's screen: a
+  token's art from its menu, a picture tile from its menu, or an image in the
+  Assets tab (the eye button). Journal entries are shown from the Journal tab.
+- **Your colour and picture.** Settings (the cog) sets your colour, used for
+  your chat, cursor and targets, and a picture shown beside your chat.
 - **Pause.** The GM's pause button in the top bar stops players acting (moves,
   attacks, spells) until it is pressed again; everyone sees "Game paused".
 - **Live file editing.** Edit any file in `world/` and every client updates

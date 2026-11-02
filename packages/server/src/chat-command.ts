@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { type Player, roll, type RollMode, rollModeOf, withMode } from '@vtt/shared';
 import type { ChatMessage } from '@vtt/system-dnd5e';
+import { signedBy } from './seat-settings.ts';
 
 /**
  * Plain text, or a roll for "/r 1d20+5" in the seat's `mode`, or for one
  * roll in another ("/gmr", "/br", "/sr", "/pr": see roll-modes.ts). Throws on a bad formula.
  */
 export function chatMessage(player: Player, text: string, mode: RollMode = 'public'): ChatMessage {
-  const base = { id: randomUUID(), time: Date.now(), from: player.name, color: player.color, by: player.id };
+  const base = { ...signedBy(player), id: randomUUID(), time: Date.now(), by: player.id };
   const space = text.indexOf(' ');
   const command = space > 0 ? text.slice(0, space).toLowerCase() : '';
   const rolled = rollModeOf(command, mode);

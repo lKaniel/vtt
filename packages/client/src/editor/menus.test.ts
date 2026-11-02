@@ -31,6 +31,7 @@ function api(gm = true) {
     openHud: vi.fn(),
     observing: undefined as string | undefined,
     observe: vi.fn(),
+    showImage: vi.fn(),
   } satisfies MenuApi;
 }
 
@@ -98,6 +99,21 @@ describe('context menus', () => {
     pick(target, a, 'Hide from players').run();
     expect(a.editSelection).toHaveBeenCalledWith({ hidden: true }, 'hide');
     expect(labels(target, api(false))).toEqual(['Open sheet', 'Target']);
+  });
+
+  it('the GM shows a token’s art or a picture tile to the players', () => {
+    const a = api();
+    const token: MenuTarget = {
+      ...on({ id: 'k', type: 'token', rev: 1 }),
+      mode: 'tokens',
+      token: { id: 'k', name: 'Kara', img: '/assets/kara.png' } as TokenView,
+    };
+    pick(token, a, 'Show art to players').run();
+    expect(a.showImage).toHaveBeenCalledWith('/assets/kara.png', 'Kara');
+    expect(labels(token, api(false))).not.toContain('Show art to players');
+    const tile = { ...on({ id: 't', type: 'tile', rev: 1, kind: 'image', src: '/assets/map.png' }), mode: 'tiles' };
+    pick(tile as MenuTarget, a, 'Show to players').run();
+    expect(a.showImage).toHaveBeenCalledWith('/assets/map.png');
   });
 
   it('a token opens its HUD where the menu was', () => {
