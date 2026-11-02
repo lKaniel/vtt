@@ -26,20 +26,30 @@ async function clickOnMap(page: Page, at: [number, number]): Promise<void> {
   await page.mouse.click(p.x, p.y);
 }
 
-test('a weapon attack rolls to hit, and a hit wounds the target', async ({ page }) => {
-  await atTable(page, PLAYER_2);
-  await clickOnMap(page, BRAM);
-  const cards = chatLog(page).getByText(/Bram → Goblin, Longsword/);
-  // Outside a fight attacks are unlimited: swing until one hits.
-  for (let swing = 1; swing <= 8; swing++) {
+test.describe('a weapon attack', () => {
+  // Seeded dice, and a goblin whose armour (AC 1) anything but a natural 1 beats.
+  test.use({
+    serverOptions: {
+      seed: 20,
+      prepare: async (dir) => {
+        await placeToken(dir, 'goblin-1', ...GOBLIN);
+        await editActor(dir, 'goblin', (goblin) => ({ ...goblin, stats: { ac: 1 } }));
+      },
+    },
+  });
+
+  test('rolls to hit, and the hit wounds the target', async ({ page }) => {
+    await atTable(page, PLAYER_2);
+    await clickOnMap(page, BRAM);
     await page.getByRole('button', { name: 'Longsword' }).click();
     await clickOnMap(page, GOBLIN);
-    await expect(cards).toHaveCount(swing);
-    if (!(await cards.last().textContent())?.includes('Miss')) break;
-    expect(await healthSeen(page, 'goblin-1')).toBe('unhurt');
-  }
-  await expect(cards.last()).not.toContainText('Miss');
-  await expect.poll(() => healthSeen(page, 'goblin-1')).not.toBe('unhurt');
+    const card = chatLog(page)
+      .getByText(/Bram → Goblin, Longsword/)
+      .locator('..');
+    await expect(card).toHaveCount(1);
+    await expect(card).not.toContainText('Miss');
+    await expect.poll(() => healthSeen(page, 'goblin-1')).not.toBe('unhurt');
+  });
 });
 
 test('Magic Missile always hits and spends a spell slot', async ({ page }) => {
