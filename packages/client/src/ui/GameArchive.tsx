@@ -16,8 +16,8 @@ const REASONS: Record<BackupInfo['reason'], string> = {
 
 const when = (at: number) => new Date(at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
-/** GM: the game's backups, newest first, each one restorable; and the zip download. */
-export function BackupsPanel({ game }: Readonly<{ game: GameDetail }>) {
+/** GM: the game's backups, newest first, each one restorable; and the zip download. `onRestored` reloads the page around it. */
+export function BackupsPanel({ game, onRestored }: Readonly<{ game: GameDetail; onRestored: () => void }>) {
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [error, setError] = useState<string>();
   const [note, setNote] = useState<string>();
@@ -27,12 +27,13 @@ export function BackupsPanel({ game }: Readonly<{ game: GameDetail }>) {
     });
   }, [game.id]);
   useEffect(reload, [reload]);
-  const run = async (step: () => Promise<unknown>, done: string) => {
+  const run = async (step: () => Promise<unknown>, done: string, after?: () => void) => {
     setError(undefined);
     try {
       await step();
       setNote(done);
       reload();
+      after?.();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -60,7 +61,9 @@ export function BackupsPanel({ game }: Readonly<{ game: GameDetail }>) {
               variant="outline"
               size="sm"
               title="Puts the game back as it was then (the game as it is now is backed up first)"
-              onClick={() => void run(() => api.restoreBackup(game.id, b.id), `Restored the game to ${when(b.at)}.`)}
+              onClick={() =>
+                void run(() => api.restoreBackup(game.id, b.id), `Restored the game to ${when(b.at)}.`, onRestored)
+              }
             >
               Restore
             </Button>
