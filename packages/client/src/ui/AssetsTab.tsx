@@ -2,7 +2,7 @@ import { type MediaEntry, type MediaKind, type PackInfo, searchMedia, topTags } 
 import { EyeIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { assetUrl } from '../assets.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { startDrag } from './ActorsTab.tsx';
 import { PluginsView } from './PluginsView.tsx';
 import { Button } from './kit/button.tsx';

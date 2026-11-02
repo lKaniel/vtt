@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
-import { GameStore } from './game-store.ts';
+import { GameStore } from './store/game-store.ts';
 
 let dir: string;
 let store: GameStore;

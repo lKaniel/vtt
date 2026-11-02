@@ -3,7 +3,7 @@ import { isGm, navLabel, navScenes, sceneThumb } from '@vtt/shared';
 import { ChevronLeftIcon, ChevronRightIcon, PlayIcon } from 'lucide-react';
 import { useState } from 'react';
 import { assetUrl } from '../assets.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 
 /**

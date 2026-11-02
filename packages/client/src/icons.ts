@@ -1,5 +1,5 @@
 import type { Attack, Condition, DamageType, EffectTemplate, Feature, Item, Spell } from '@vtt/system-dnd5e';
-import { effectTone } from './vitals.ts';
+import { effectTone } from './play/vitals.ts';
 
 // Which icon and colour each action tile, effect and log line gets. The glyphs
 // themselves are SVG paths in ui/Icon.tsx; tints are CSS classes in style.css.

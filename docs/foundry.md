@@ -4,7 +4,7 @@ Two imports read Foundry's files directly: Foundry doesn't have to run (it can
 stay open), no Foundry module is needed, and nothing in the Foundry folder is
 changed. Both read every Foundry version's databases: the NeDB `.db` files of
 v10 and before, and the LevelDB folders of v11 and later (a small reader of
-our own, `server/src/leveldb.ts`, so no native module is installed).
+our own, `server/src/foundry/leveldb.ts`, so no native module is installed).
 
 | You want                                                  | Use                                                                          |
 | --------------------------------------------------------- | ---------------------------------------------------------------------------- |

@@ -3,7 +3,7 @@ import type { AttackLog, ChatMessage, SpellLog, SpellTargetLog } from '@vtt/syst
 import type { Roll } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
 import { cuesOf, elementColor, IMPACT, type Cue } from './feedback.ts';
-import { videoChoices } from './animations.ts';
+import { videoChoices } from './play/animations.ts';
 
 const roll = (total: number): Roll => ({ formula: '1d20', terms: [], total });
 

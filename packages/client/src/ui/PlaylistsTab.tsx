@@ -1,6 +1,6 @@
 import type { Doc } from '@vtt/core';
 import { useState } from 'react';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { SelectField } from './kit/select.tsx';

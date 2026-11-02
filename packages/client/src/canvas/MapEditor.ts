@@ -17,9 +17,9 @@ import type { MenuTarget } from '../editor/menus.ts';
 import { previewDoc, previewTiles } from '../editor/preview.ts';
 import { keyOf, refOf, type Mods } from '../editor/selection.ts';
 import { TileItems } from '../editor/tile-items.ts';
-import type { Session } from '../session.ts';
-import { moveSelectionTo } from '../map-clicks.ts';
-import { dragsFreely } from '../walking.ts';
+import type { Session } from '../session/session.ts';
+import { moveSelectionTo } from '../play/map-clicks.ts';
+import { dragsFreely } from '../play/walking.ts';
 import { DrawTools } from './DrawTools.ts';
 import { drawHandles, drawLight, drawMarquee, drawOutline, drawWall, type DrawCtx } from './editor-draw.ts';
 

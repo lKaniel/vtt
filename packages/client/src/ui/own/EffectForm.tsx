@@ -1,5 +1,5 @@
 import { AuraSchema, ConditionSchema, type Effect, EffectSchema } from '@vtt/system-dnd5e';
-import { setAura } from '../../effect-edit.ts';
+import { setAura } from '../../content/effect-edit.ts';
 import { SelectField } from '../kit/select.tsx';
 import { Input } from '../kit/input.tsx';
 import { NumberField } from '../kit/number-field.tsx';

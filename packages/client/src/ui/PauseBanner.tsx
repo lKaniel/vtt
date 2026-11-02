@@ -1,5 +1,5 @@
 import { PauseIcon, PlayIcon } from 'lucide-react';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 
 /** Told to everyone while the GM has the game paused. */

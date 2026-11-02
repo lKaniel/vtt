@@ -1,7 +1,7 @@
 import { type Token, TokenSchema } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { GameStore } from './game-store.ts';
+import { GameStore } from './store/game-store.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
 
 // Item piles on the table: Ana's hero stands in the room (150, 150) with a

@@ -1,7 +1,7 @@
 import type { Doc, Op, Patch, PluginLoad } from '@vtt/core';
 import type { Player, Point } from '@vtt/shared';
 import type { ClientMessage, TokenView } from '@vtt/system-dnd5e';
-import type { SessionEvents } from '../session-events.ts';
+import type { SessionEvents } from '../session/session-events.ts';
 import { i18n } from '../i18n/index.ts';
 import { Hooks, type HookFn } from './hooks.ts';
 import { PluginLoader } from './plugins.ts';

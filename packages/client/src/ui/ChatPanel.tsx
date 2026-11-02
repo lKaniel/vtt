@@ -18,8 +18,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { assetUrl } from '../assets.ts';
-import type { Session } from '../session.ts';
-import type { ApplyHow } from '../session-actions.ts';
+import type { Session } from '../session/session.ts';
+import type { ApplyHow } from '../session/session-actions.ts';
 import { ActorsTab } from './ActorsTab.tsx';
 import { CheckLine } from './CheckCard.tsx';
 import { AssetsTab } from './AssetsTab.tsx';
@@ -32,13 +32,13 @@ import { MacrosTab } from './MacrosTab.tsx';
 import { PlayersTab } from './PlayersTab.tsx';
 import { ScenesTab } from './ScenesTab.tsx';
 import { diceArt } from '../icon-art.ts';
-import { targetText } from '../spell-text.ts';
+import { targetText } from '../text/spell-text.ts';
 import { t } from '../i18n/index.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
 import { SelectField } from './kit/select.tsx';
-import { HIDDEN_ROLL, modeNote, ROLL_MODE_OPTIONS } from '../roll-mode.ts';
+import { HIDDEN_ROLL, modeNote, ROLL_MODE_OPTIONS } from '../play/roll-mode.ts';
 import type { RollMode } from '@vtt/shared';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];

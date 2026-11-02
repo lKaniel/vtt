@@ -1,6 +1,6 @@
 import { actsNow, type TokenView, type TurnBudget } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, type Tab } from '../actions.ts';
+import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, type Tab } from '../play/actions.ts';
 import {
   dragTile,
   landOn,
@@ -12,15 +12,15 @@ import {
   TILE_DRAG,
   type Slots,
   type TileDrag,
-} from '../hotbar.ts';
+} from '../play/hotbar.ts';
 import type { Glyph as GlyphName } from '../icons.ts';
-import type { Session } from '../session.ts';
-import { ORDINAL } from '../spell-text.ts';
-import { activateTile, canActivate } from '../tile-use.ts';
+import type { Session } from '../session/session.ts';
+import { ORDINAL } from '../text/spell-text.ts';
+import { activateTile, canActivate } from '../play/tile-use.ts';
 import { AimingControls } from './AimingControls.tsx';
 import { SmiteControls } from './SmiteControls.tsx';
-import { currentKeys, keyLabel, keyOf } from '../keybinds.ts';
-import { attackTip, featureTip, itemTip, macroTip, spellTip } from '../tooltip.ts';
+import { currentKeys, keyLabel, keyOf } from '../keys/keybinds.ts';
+import { attackTip, featureTip, itemTip, macroTip, spellTip } from '../text/tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 import { TipCard } from './Tip.tsx';

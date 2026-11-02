@@ -1,8 +1,8 @@
 import type { TokenView } from '@vtt/system-dnd5e';
 import { effectIcon } from '../icons.ts';
-import { effectBadge, effectLeft } from '../session-time.ts';
+import { effectBadge, effectLeft } from '../session/session-time.ts';
 import { portraitOf } from '../icon-art.ts';
-import { effectTone, hpBar } from '../vitals.ts';
+import { effectTone, hpBar } from '../play/vitals.ts';
 import { IconFace } from './Icon.tsx';
 
 /** A framed face: the token's picture, or the default hooded stranger. */

@@ -1,9 +1,9 @@
 import type { Doc } from '@vtt/core';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { exposeApi } from './script-api.ts';
-import { closeSession, openSession, token, welcome, type FakeWebSocket } from '../session.fixtures.ts';
+import { closeSession, openSession, token, welcome, type FakeWebSocket } from '../session/session.fixtures.ts';
 
 // The scripting API (docs/scripting.md): what a GM's script macro or a
 // plugin sees as `vtt`. It acts through the session, so the server checks

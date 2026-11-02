@@ -16,7 +16,7 @@ import {
   rollAbilityScores,
   setBackgroundBonus,
   toggleBonusChoice,
-} from '../../creator.ts';
+} from '../../content/creator.ts';
 import type { StepProps } from './OriginSteps.tsx';
 import { Chips, Detail, StepHead } from './Parts.tsx';
 import { Button } from '../kit/button.tsx';

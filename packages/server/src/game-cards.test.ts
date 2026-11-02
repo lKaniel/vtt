@@ -2,7 +2,7 @@ import type { Doc, Op } from '@vtt/core';
 import { cardKey, standardDeck } from '@vtt/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { GameStore } from './game-store.ts';
+import { GameStore } from './store/game-store.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
 
 // Cards in play: players draw from a deck into their hand and play onto a

@@ -1,11 +1,11 @@
 import { type InventoryEntry } from '@vtt/system-dnd5e';
-import { contentFor } from '../content.ts';
-import { type BagBox, bagLayout, carriedDrag, carriedLook } from '../carried.ts';
-import { DRAG_TYPE } from '../drops.ts';
-import { dragTile } from '../hotbar.ts';
+import { contentFor } from '../content/content.ts';
+import { type BagBox, bagLayout, carriedDrag, carriedLook } from '../play/carried.ts';
+import { DRAG_TYPE } from '../play/drops.ts';
+import { dragTile } from '../play/hotbar.ts';
 import { attackArt } from '../icon-art.ts';
 import { attackIcon } from '../icons.ts';
-import { attackTip } from '../tooltip.ts';
+import { attackTip } from '../text/tooltip.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { Attunement, canCarry, InventoryEdit, Load, Purse } from './CarryParts.tsx';
 import { IconFace } from './Icon.tsx';

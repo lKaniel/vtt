@@ -1,6 +1,6 @@
 import { isGm, type Role, RoleSchema } from '@vtt/shared';
 import { t } from '../i18n/index.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { AddPlayerForm } from './GameAccess.tsx';
 import { ROLE_NAMES } from './role-names.ts';
 import { SelectField } from './kit/select.tsx';

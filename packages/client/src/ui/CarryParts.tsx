@@ -12,9 +12,9 @@ import {
   putInside,
   type TokenView,
 } from '@vtt/system-dnd5e';
-import { contentFor } from '../content.ts';
-import { bagLayout, carriedLook, loadText, loadTip, purseText } from '../carried.ts';
-import { dragTile } from '../hotbar.ts';
+import { contentFor } from '../content/content.ts';
+import { bagLayout, carriedLook, loadText, loadTip, purseText } from '../play/carried.ts';
+import { dragTile } from '../play/hotbar.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { IconFace } from './Icon.tsx';
 import { RemoveButton } from './SheetDetails.tsx';

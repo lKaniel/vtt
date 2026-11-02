@@ -8,7 +8,7 @@ import {
   partsOf,
   skillName,
 } from '@vtt/system-dnd5e';
-import { characterSummary } from '../../creator.ts';
+import { characterSummary } from '../../content/creator.ts';
 import { StepHead } from './Parts.tsx';
 import type { StepProps } from './OriginSteps.tsx';
 import { Input } from '../kit/input.tsx';

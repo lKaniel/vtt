@@ -1,7 +1,7 @@
 import type { Doc } from '@vtt/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { GameStore } from './game-store.ts';
+import { GameStore } from './store/game-store.ts';
 import { FakeSocket, makeTwoScenes } from './test/fixtures.ts';
 
 // Tile triggers, like Monk's Active Tiles: clicking a tile (or walking onto

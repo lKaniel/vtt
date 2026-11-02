@@ -1,9 +1,9 @@
 import type { Doc } from '@vtt/core';
 import { type Calendar, dateOf, questProgress, secondsOf } from '@vtt/shared';
 import { useState } from 'react';
-import { type MonthRef, monthGrid, notesByDay, stepMonth } from '../calendar-view.ts';
-import { questsBy } from '../quest-view.ts';
-import type { Session } from '../session.ts';
+import { type MonthRef, monthGrid, notesByDay, stepMonth } from '../text/calendar-view.ts';
+import { questsBy } from '../text/quest-view.ts';
+import type { Session } from '../session/session.ts';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
 import { CalendarMonth } from './kit/calendar.tsx';

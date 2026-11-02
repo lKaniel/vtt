@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { numberOrUndefined } from '../token-edit.ts';
+import { numberOrUndefined } from '../play/token-edit.ts';
 import { Input } from './kit/input.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 

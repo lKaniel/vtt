@@ -1,5 +1,5 @@
 import { abilityName, type Character, type Class, partsOf, skillName, type Species } from '@vtt/system-dnd5e';
-import { chooseBackground, chooseClass, chooseSpecies } from '../../creator.ts';
+import { chooseBackground, chooseClass, chooseSpecies } from '../../content/creator.ts';
 import { Chips, Detail, OptionCard, RichText, StepHead, TraitList } from './Parts.tsx';
 import { classesToPick } from './use-homebrew.ts';
 

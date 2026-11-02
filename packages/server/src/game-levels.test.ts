@@ -1,7 +1,7 @@
 import type { Patch } from '@vtt/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { GameStore } from './game-store.ts';
+import { GameStore } from './store/game-store.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
 
 // Scene levels in sight: the hero stands in the dark room, the goblin

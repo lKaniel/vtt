@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { useRef, useState, type DragEvent } from 'react';
 import { dropPlace, layerRows, type DropZone, type LayerRow } from '../editor/layers.ts';
 import { clickSelect, keyOf, modsOf, refOf } from '../editor/selection.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Input } from './kit/input.tsx';
 import { Button } from './kit/button.tsx';
 

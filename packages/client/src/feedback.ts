@@ -1,6 +1,6 @@
 import type { AttackLog, ChatMessage, DamageType, SpellLog, SpellTargetLog } from '@vtt/system-dnd5e';
 import type { Point } from '@vtt/shared';
-import { type Animation, animationOf, isRangedVideo, type Motion } from './animations.ts';
+import { type Animation, animationOf, isRangedVideo, type Motion } from './play/animations.ts';
 
 // What the map plays when an attack or spell comes through chat: a timeline
 // of cues (swing, missile, burst, flinch, floating number). Cues name tokens

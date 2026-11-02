@@ -1,5 +1,5 @@
 import { canObserve, isGm, isParty } from '@vtt/shared';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 
 /** Portraits of your party down the left edge. Click to select, double-click to jump to them. */

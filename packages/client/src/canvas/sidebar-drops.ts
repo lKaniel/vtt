@@ -1,7 +1,7 @@
 import type { Point } from '@vtt/shared';
-import { DRAG_TYPE, type DragPayload } from '../drops.ts';
-import { moveSelectionTo } from '../map-clicks.ts';
-import type { Session } from '../session.ts';
+import { DRAG_TYPE, type DragPayload } from '../play/drops.ts';
+import { moveSelectionTo } from '../play/map-clicks.ts';
+import type { Session } from '../session/session.ts';
 import type { ItemLayer } from './ItemLayer.ts';
 
 /** The GM drags actors, monsters, items and spells in from the side panel onto the map. */

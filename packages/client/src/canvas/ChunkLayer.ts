@@ -2,7 +2,7 @@ import { canObserve, type Chunk, isGm, type Point, tileClickable, type Wall } fr
 import { Circle, Container, Graphics } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
 import { drawDoor, drawWalls, drawWallShadows } from './art/walls.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { imageTile, type TileView } from './tile-draw.ts';
 import { type RoofEyes, roofWatchers } from './tile-motion.ts';
 

@@ -5,7 +5,7 @@ import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeTwoScenes } from './test/fixtures.ts';
-import { GameStore } from './game-store.ts';
+import { GameStore } from './store/game-store.ts';
 
 // The cellar is lit (darkness 0) with a wall along x = 0; Ana's scout stands at 150, 150.
 

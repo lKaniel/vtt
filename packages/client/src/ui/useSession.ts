@@ -1,6 +1,6 @@
 import { useLanguage } from '../i18n/index.ts';
 import { useSyncExternalStore } from 'react';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 
 /** Re-renders the component whenever the session changes. */
 export function useSession(session: Session): Session {

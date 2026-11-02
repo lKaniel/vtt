@@ -1,9 +1,9 @@
 import { SettingsIcon } from 'lucide-react';
 import { useState } from 'react';
-import { currentMotion, type Motion, setMotion } from '../animations.ts';
-import { currentDice, type DiceChoice, setDice } from '../dice-throw.ts';
+import { currentMotion, type Motion, setMotion } from '../play/animations.ts';
+import { currentDice, type DiceChoice, setDice } from '../dice/dice-throw.ts';
 import { type Automation, automationOf } from '@vtt/system-dnd5e';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { i18n, type MessageKey, t, useLanguage } from '../i18n/index.ts';
 import { Button } from './kit/button.tsx';
 import { SelectField } from './kit/select.tsx';

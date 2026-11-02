@@ -13,9 +13,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
-import { LIGHT_PRESETS, TILE_PRESETS, type LightPreset } from '../map-tools.ts';
-import type { Session } from '../session.ts';
-import type { EditorTool } from '../session-editor.ts';
+import { LIGHT_PRESETS, TILE_PRESETS, type LightPreset } from '../play/map-tools.ts';
+import type { Session } from '../session/session.ts';
+import type { EditorTool } from '../session/session-editor.ts';
 import { LayersPanel } from './LayersPanel.tsx';
 import { Button } from './kit/button.tsx';
 import { Toggle } from './kit/toggle.tsx';

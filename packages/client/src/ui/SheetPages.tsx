@@ -1,12 +1,12 @@
 import { dropOwn, type Edition, knownSpellIds, type OwnKind, type Spell } from '@vtt/system-dnd5e';
-import { contentFor } from '../content.ts';
-import { pipLeft, withSlotsLeft, withUsesLeft } from '../charges.ts';
-import { dragTile } from '../hotbar.ts';
+import { contentFor } from '../content/content.ts';
+import { pipLeft, withSlotsLeft, withUsesLeft } from '../play/charges.ts';
+import { dragTile } from '../play/hotbar.ts';
 import { featureArt, spellArt } from '../icon-art.ts';
 import { featureIcon, spellIcon } from '../icons.ts';
-import { ORDINAL } from '../spell-text.ts';
-import { setStat } from '../token-edit.ts';
-import { featureTip, spellTip } from '../tooltip.ts';
+import { ORDINAL } from '../text/spell-text.ts';
+import { setStat } from '../play/token-edit.ts';
+import { featureTip, spellTip } from '../text/tooltip.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { NumberInput } from './EditorFields.tsx';
 import { IconFace } from './Icon.tsx';

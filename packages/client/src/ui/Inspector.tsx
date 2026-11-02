@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Doc } from '@vtt/core';
 import { commonValue, fieldsFor, MIXED, type Field, type FieldValue } from '../editor/inspector.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Input } from './kit/input.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 import { SelectField } from './kit/select.tsx';

@@ -11,7 +11,7 @@ import {
   stepFields,
   stepTypes,
 } from '../editor/trigger-edit.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dialog.tsx';

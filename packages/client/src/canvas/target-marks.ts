@@ -1,5 +1,5 @@
 import type { Graphics } from 'pixi.js';
-import type { Targeter } from '../targets.ts';
+import type { Targeter } from '../session/targets.ts';
 
 // The marks on a targeted creature: four arrowheads closing in on it in the
 // colour of whoever targets it (you first), and a pip over it for each

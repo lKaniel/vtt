@@ -15,7 +15,7 @@ import {
 } from '@vtt/shared';
 import { lightOf, sensesOf, type TokenView } from '@vtt/system-dnd5e';
 import type { Application } from 'pixi.js';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { FogLayer } from './lighting/FogLayer.ts';
 import { LightingFilter } from './lighting/LightingFilter.ts';
 import { LightMap, type LightScene } from './lighting/LightMap.ts';

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ANIMATION_IDS, ANIMATIONS, animationRef, isMediaAnimation } from '@vtt/system-dnd5e';
-import type { Session } from '../session.ts';
-import { videoChoices } from '../animations.ts';
+import type { Session } from '../session/session.ts';
+import { videoChoices } from '../play/animations.ts';
 import { withKey } from './sheet-model.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { Button } from './kit/button.tsx';

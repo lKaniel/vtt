@@ -1,8 +1,8 @@
 import { XIcon } from 'lucide-react';
 import { isGm, type Level, levelOf } from '@vtt/shared';
 import { editionOf, toEdition } from '@vtt/system-dnd5e';
-import { gameContent } from '../content.ts';
-import { setOwnership, setStat } from '../token-edit.ts';
+import { gameContent } from '../content/content.ts';
+import { setOwnership, setStat } from '../play/token-edit.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { ClassesEdit } from './ClassesEdit.tsx';
 import { Check, Field, NumberInput, TextInput } from './EditorFields.tsx';

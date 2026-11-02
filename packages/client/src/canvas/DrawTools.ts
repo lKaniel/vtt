@@ -1,8 +1,8 @@
 import { type Point, rectBetween } from '@vtt/shared';
 import type { Graphics } from 'pixi.js';
 import { isItemTool, ShapeDraft } from '../editor/shape-tools.ts';
-import { LIGHT_PRESETS, snapPoint, wallEdit } from '../map-tools.ts';
-import type { Session } from '../session.ts';
+import { LIGHT_PRESETS, snapPoint, wallEdit } from '../play/map-tools.ts';
+import type { Session } from '../session/session.ts';
 import { DOOR_COLOR, WALL_COLOR, type DrawCtx } from './editor-draw.ts';
 import { drawDraft } from './item-draw.ts';
 

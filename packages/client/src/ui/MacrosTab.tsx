@@ -1,8 +1,8 @@
 import type { Doc } from '@vtt/core';
 import { isScriptMacro } from '@vtt/shared';
 import { useState } from 'react';
-import { TILE_DRAG } from '../hotbar.ts';
-import type { Session } from '../session.ts';
+import { TILE_DRAG } from '../play/hotbar.ts';
+import type { Session } from '../session/session.ts';
 import { t } from '../i18n/index.ts';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';

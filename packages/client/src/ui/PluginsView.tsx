@@ -1,6 +1,6 @@
 import type { PluginInfo } from '@vtt/core';
 import { useEffect } from 'react';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { t } from '../i18n/index.ts';
 import { Checkbox } from './kit/checkbox.tsx';
 

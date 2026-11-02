@@ -1,8 +1,8 @@
 import { type Class, type Edition, findClass } from '@vtt/system-dnd5e';
 import { XIcon } from 'lucide-react';
-import { gameContent } from '../content.ts';
-import { choicesDue } from '../homebrew-edit.ts';
-import { classRows, type ClassRow, setClasses, toggleFeature } from '../token-edit.ts';
+import { gameContent } from '../content/content.ts';
+import { choicesDue } from '../content/homebrew-edit.ts';
+import { classRows, type ClassRow, setClasses, toggleFeature } from '../play/token-edit.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { Field, NumberInput, TextInput } from './EditorFields.tsx';
 import { Button } from './kit/button.tsx';

@@ -11,7 +11,7 @@ import {
   type Keymap,
   keyOf,
   setKeys,
-} from '../keybinds.ts';
+} from '../keys/keybinds.ts';
 import { Button } from './kit/button.tsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from './kit/dialog.tsx';
 

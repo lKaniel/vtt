@@ -1,9 +1,9 @@
 import { formChoices, type Spell, type TokenView } from '@vtt/system-dnd5e';
-import { contentFor } from '../content.ts';
-import { slotChoices } from '../charges.ts';
-import type { Session } from '../session.ts';
-import { ORDINAL } from '../spell-text.ts';
-import type { Aiming } from '../targeting.ts';
+import { contentFor } from '../content/content.ts';
+import { slotChoices } from '../play/charges.ts';
+import type { Session } from '../session/session.ts';
+import { ORDINAL } from '../text/spell-text.ts';
+import type { Aiming } from '../play/targeting.ts';
 import { Button } from './kit/button.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Toggle } from './kit/toggle.tsx';

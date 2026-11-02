@@ -1,9 +1,9 @@
 import { DicesIcon } from 'lucide-react';
-import type { CheckRef, ContentLink } from '../content-links.ts';
-import { checkClick, linkTarget, rollClick } from '../content-target.ts';
-import { parseRich, type Span } from '../rich-text.ts';
-import type { Session } from '../session.ts';
-import type { Tip } from '../tooltip.ts';
+import type { CheckRef, ContentLink } from '../content/content-links.ts';
+import { checkClick, linkTarget, rollClick } from '../content/content-target.ts';
+import { parseRich, type Span } from '../text/rich-text.ts';
+import type { Session } from '../session/session.ts';
+import type { Tip } from '../text/tooltip.ts';
 import { Button } from './kit/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 

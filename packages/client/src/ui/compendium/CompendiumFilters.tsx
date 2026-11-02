@@ -1,5 +1,13 @@
 import type { Edition } from '@vtt/system-dnd5e';
-import { type Category, crText, type Facet, facetOptions, FACETS, type Picks, type Sort } from '../../compendium.ts';
+import {
+  type Category,
+  crText,
+  type Facet,
+  facetOptions,
+  FACETS,
+  type Picks,
+  type Sort,
+} from '../../content/compendium.ts';
 import { t } from '../../i18n/index.ts';
 import { Button } from '../kit/button.tsx';
 import { SelectField } from '../kit/select.tsx';

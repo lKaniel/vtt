@@ -1,8 +1,8 @@
 import type { Doc } from '@vtt/core';
 import { ABILITIES, type Ability, type Class, homebrewIssues, type Spellcasting } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { classOfDoc, classPatch, levelTableText, parseLevelTable } from '../homebrew-edit.ts';
-import type { Session } from '../session.ts';
+import { classOfDoc, classPatch, levelTableText, parseLevelTable } from '../content/homebrew-edit.ts';
+import type { Session } from '../session/session.ts';
 import { Field, NumberInput, TextInput } from './EditorFields.tsx';
 import { FeatureList, NamedRows, SubclassList } from './ClassEditorParts.tsx';
 import { Button } from './kit/button.tsx';

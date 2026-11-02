@@ -2,7 +2,7 @@ import type { Doc, Patch } from '@vtt/core';
 import { gridSizePatch, isGm, sceneThumb } from '@vtt/shared';
 import { assetUrl } from '../assets.ts';
 import { useState } from 'react';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Toggle } from './kit/toggle.tsx';

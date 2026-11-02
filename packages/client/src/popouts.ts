@@ -1,4 +1,4 @@
-import type { SheetTarget } from './session-sheets.ts';
+import type { SheetTarget } from './session/session-sheets.ts';
 
 // Sheets popped out of the table into windows of their own (Foundry's pop
 // out): each keeps its own edit mode, apart from the sheet open over the

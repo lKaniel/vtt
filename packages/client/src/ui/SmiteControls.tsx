@@ -1,6 +1,6 @@
 import type { TokenView } from '@vtt/system-dnd5e';
-import type { Session } from '../session.ts';
-import { ORDINAL } from '../spell-text.ts';
+import type { Session } from '../session/session.ts';
+import { ORDINAL } from '../text/spell-text.ts';
 import { Toggle } from './kit/toggle.tsx';
 
 /** While a melee attack is readied by a 2014 paladin: which slot, if any, to Divine Smite with on a hit. */

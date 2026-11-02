@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { assetUrl } from '../assets.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { ColorInput } from './kit/color-input.tsx';
 import { Input } from './kit/input.tsx';

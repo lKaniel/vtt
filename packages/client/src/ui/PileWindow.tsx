@@ -1,8 +1,8 @@
 import { cpOf, type Pile, type TokenView, toEdition } from '@vtt/system-dnd5e';
-import { purseText } from '../carried.ts';
-import { contentFor } from '../content.ts';
-import { type PileRow, pileRows } from '../pile-view.ts';
-import type { Session } from '../session.ts';
+import { purseText } from '../play/carried.ts';
+import { contentFor } from '../content/content.ts';
+import { type PileRow, pileRows } from '../text/pile-view.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dialog.tsx';
 

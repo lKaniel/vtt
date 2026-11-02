@@ -1,0 +1,373 @@
+import { mkdir, readdir, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { editionIn } from '@vtt/core';
+import {
+  DEFAULT_SYSTEM,
+  type Game as GameFile,
+  GameSchema,
+  type NewGame,
+  newGameIssues,
+  type Player,
+  uniqueId,
+} from '@vtt/shared';
+import type { WebSocket } from 'ws';
+import { type BackupInfo, type BackupReason, Backups } from './backups.ts';
+import { foundryWorldTitle, importFoundryWorld, type WorldReport } from '../foundry/foundry-world.ts';
+import { Game } from '../game.ts';
+import { GameAccess } from './game-access.ts';
+import { unzipGame, writeGame, zipGame } from './game-archive.ts';
+import { GameIndex } from './game-index.ts';
+import { GameStore } from '../store/game-store.ts';
+import { SYSTEMS } from '../systems.ts';
+import { readJson, writeJson } from '../store/json-files.ts';
+import { FORMAT } from '../migrate/migrate-ownership.ts';
+import { PackStore } from './pack-store.ts';
+import { PluginStore } from './plugin-store.ts';
+
+// Every game on the server. Games made in the lobby live in the data
+// folder's games/<id>/; the game folder the server was started with (world/
+// by default, where Claude edits by hand) stays where it is as the "home"
+// game. A game is loaded when someone needs it and unloaded a while after
+// its last player has left.
+
+export interface HubOptions {
+  /** Accounts, characters, games.json and games/. */
+  dataDir: string;
+  /** The game folder the server was started with. */
+  home?: string;
+  /** How long a game with nobody connected stays loaded. */
+  idleMs?: number;
+  /** Hot-reload hand edits to loaded games (off in tests). */
+  watch?: boolean;
+  /** How often a loaded game is backed up (if it changed). */
+  backupMs?: number;
+}
+
+export interface Running {
+  store: GameStore;
+  game: Game;
+  /** Who is connected. */
+  sockets: Map<WebSocket, Player>;
+}
+
+/** Seats connected to a game, each once. */
+const onlineIn = (running: Running | undefined) => [
+  ...new Set([...(running?.sockets.values() ?? [])].map((p) => p.id)),
+];
+
+/** A game as the lobby lists it. */
+export interface GameInfo {
+  id: string;
+  name: string;
+  system: string;
+  /** The game's rules edition (its system's default when game.json doesn't say). */
+  rules: string;
+  players: Player[];
+  /** Seats connected now. */
+  online: string[];
+  lastPlayed?: number;
+  /** The game the server was started with: it can't be deleted from the lobby. */
+  home: boolean;
+}
+
+/** Something the lobby can't do, with the reason to show. */
+export class HubError extends Error {}
+
+const IDLE_MS = 5 * 60_000;
+const BACKUP_MS = 15 * 60_000;
+
+export class GameHub {
+  /** Folder of each game. */
+  private dirs = new Map<string, string>();
+  private loading = new Map<string, Promise<Running>>();
+  private live = new Map<string, Running>();
+  private timers = new Map<string, NodeJS.Timeout>();
+  private backupTimers = new Map<string, NodeJS.Timeout>();
+  private index: GameIndex;
+  /** Players' passwords and Claude keys (game-access.ts). */
+  readonly access: GameAccess;
+  homeId?: string;
+  /** The asset packs installed on the server: the data folder's packs/. */
+  readonly packs: PackStore;
+  /** The plugins installed on the server: the data folder's plugins/. */
+  readonly plugins: PluginStore;
+  /** Copies of each game folder (backups.ts). */
+  readonly backups: Backups;
+
+  constructor(private opts: HubOptions) {
+    this.index = new GameIndex(opts.dataDir);
+    this.backups = new Backups(opts.dataDir);
+    this.access = new GameAccess(this.index);
+    this.packs = new PackStore(join(opts.dataDir, 'packs'));
+    this.plugins = new PluginStore(join(opts.dataDir, 'plugins'));
+  }
+
+  private get gamesDir(): string {
+    return join(this.opts.dataDir, 'games');
+  }
+
+  /** Finds the home game and every game folder in games/. */
+  async load(): Promise<void> {
+    await this.index.load();
+    await this.packs.load();
+    for (const problem of this.packs.problems) console.warn(`[packs] ${problem}`);
+    await this.plugins.load();
+    for (const problem of this.plugins.problems) console.warn(`[plugins] ${problem}`);
+    if (this.opts.home) await this.loadHome(this.opts.home);
+    const names = await readdir(this.gamesDir).catch(() => [] as string[]);
+    for (const name of [...names].sort((a, b) => a.localeCompare(b))) {
+      const dir = join(this.gamesDir, name);
+      const game = await readGameFile(dir);
+      if (game && !this.dirs.has(game.id)) this.dirs.set(game.id, dir);
+    }
+  }
+
+  private async loadHome(dir: string): Promise<void> {
+    // An old world folder has no game.json yet: loading it migrates it.
+    const id = (await readGameFile(dir))?.id ?? (await this.start(dir)).store.campaign.id;
+    this.homeId = id;
+    this.dirs.set(id, dir);
+  }
+
+  ids(): string[] {
+    return [...this.dirs.keys()];
+  }
+
+  has(id: string): boolean {
+    return this.dirs.has(id);
+  }
+
+  isRunning(id: string): boolean {
+    return this.live.has(id);
+  }
+
+  /** The loaded games. */
+  running(): Running[] {
+    return [...this.live.values()];
+  }
+
+  /** The folder of a game's files, e.g. to serve its assets. */
+  dirOf(id: string): string | undefined {
+    return this.dirs.get(id);
+  }
+
+  /** The game, loaded if it isn't yet. It unloads again once idle. */
+  async open(id: string): Promise<Running> {
+    const live = this.live.get(id);
+    if (live) {
+      this.idle(id);
+      return live;
+    }
+    const dir = this.dirs.get(id);
+    if (!dir) throw new HubError('No such game.');
+    const loading = this.loading.get(id) ?? this.start(dir);
+    this.loading.set(id, loading);
+    try {
+      const running = await loading;
+      this.live.set(id, running);
+      this.keepBackingUp(id);
+      this.idle(id);
+      return running;
+    } finally {
+      this.loading.delete(id);
+    }
+  }
+
+  private async start(dir: string): Promise<Running> {
+    const file = await readGameFile(dir);
+    if (file) await this.backups.snapshot(file.id, dir, 'load');
+    const system = SYSTEMS.get(file?.system ?? DEFAULT_SYSTEM);
+    if (!system) throw new HubError(`This server has no "${file?.system ?? ''}" system.`);
+    const store = new GameStore(dir, system, this.packs);
+    store.plugins = this.plugins;
+    await store.load();
+    if (this.opts.watch !== false) store.watch();
+    return { store, game: new Game(store), sockets: new Map() };
+  }
+
+  /** Unloads the game after a while if nobody is connected (and keeps it while someone is). */
+  private idle(id: string): void {
+    clearTimeout(this.timers.get(id));
+    if (this.live.get(id)?.sockets.size) return;
+    const timer = setTimeout(() => void this.unload(id), this.opts.idleMs ?? IDLE_MS);
+    timer.unref();
+    this.timers.set(id, timer);
+  }
+
+  private async unload(id: string): Promise<void> {
+    const running = this.live.get(id);
+    clearTimeout(this.timers.get(id));
+    clearInterval(this.backupTimers.get(id));
+    if (!running) return;
+    this.live.delete(id);
+    running.game.close();
+    running.store.close();
+    await running.store.flush();
+  }
+
+  private keepBackingUp(id: string): void {
+    const timer = setInterval(() => void this.backup(id, 'timer'), this.opts.backupMs ?? BACKUP_MS);
+    timer.unref();
+    this.backupTimers.set(id, timer);
+  }
+
+  /** Copies the game folder as it is now (undefined: nothing changed since the last copy). */
+  async backup(id: string, reason: BackupReason): Promise<BackupInfo | undefined> {
+    const dir = this.dirs.get(id);
+    if (!dir) throw new HubError('No such game.');
+    await this.live.get(id)?.store.flush();
+    return this.backups.snapshot(id, dir, reason);
+  }
+
+  /** Puts a backup back: the game as it is now is backed up first, and everyone reconnects to the restored one. */
+  async restore(id: string, backup: string): Promise<void> {
+    const dir = this.dirs.get(id);
+    if (!dir) throw new HubError('No such game.');
+    if (!(await this.backups.list(id)).some((b) => b.id === backup)) throw new HubError('No such backup.');
+    await this.backup(id, 'restore');
+    for (const ws of this.live.get(id)?.sockets.keys() ?? []) ws.close(1012, 'the game was restored from a backup');
+    await this.unload(id);
+    await this.backups.restore(id, backup, dir);
+  }
+
+  /** The game folder as a zip. */
+  async exportZip(id: string): Promise<Buffer> {
+    const dir = this.dirs.get(id);
+    if (!dir) throw new HubError('No such game.');
+    await this.live.get(id)?.store.flush();
+    return zipGame(dir);
+  }
+
+  /** Makes a new game from an exported zip, with `gm` in the only seat; returns its id. */
+  async importZip(buf: Buffer, gm: Player): Promise<string> {
+    const zipped = unzipGame(buf);
+    const id = this.freeId(zipped.game.name);
+    const dir = join(this.gamesDir, id);
+    await writeGame(dir, zipped, id, gm);
+    this.dirs.set(id, dir);
+    await this.index.set(id, { lastPlayed: Date.now() });
+    return id;
+  }
+
+  /** Puts a connection into a loaded game for `player`, and keeps the game loaded while it lasts. */
+  connect(id: string, ws: WebSocket, player: Player): void {
+    const running = this.live.get(id);
+    if (!running) throw new HubError('That game is not loaded.');
+    running.game.connect(ws, player);
+    running.sockets.set(ws, player);
+    clearTimeout(this.timers.get(id));
+    void this.index.set(id, { lastPlayed: Date.now() });
+    ws.on('close', () => {
+      running.sockets.delete(ws);
+      this.idle(id);
+    });
+  }
+
+  async info(id: string): Promise<GameInfo> {
+    const file = this.live.get(id)?.store.campaign ?? (await readGameFile(this.dirs.get(id) ?? ''));
+    if (!file) throw new HubError('No such game.');
+    const entry = this.index.get(id);
+    return {
+      id,
+      name: file.name,
+      system: file.system,
+      rules: rulesOf(file),
+      players: file.players,
+      online: onlineIn(this.live.get(id)),
+      ...(entry.lastPlayed ? { lastPlayed: entry.lastPlayed } : {}),
+      home: id === this.homeId,
+    };
+  }
+
+  /** Makes a new game in games/<id>/ with `gm` in the only seat; returns its id. */
+  async create(input: NewGame, gm: Player): Promise<string> {
+    const issues = newGameIssues(input, SYSTEMS.infos());
+    if (issues.length) throw new HubError(issues[0]);
+    const id = this.freeId(input.name);
+    const dir = join(this.gamesDir, id);
+    await writeNewGame(dir, { ...input, name: input.name.trim(), id }, gm);
+    this.dirs.set(id, dir);
+    await this.index.set(id, { lastPlayed: Date.now() });
+    return id;
+  }
+
+  /** A game id for `name` that no game has (nor the lobby's own routes). */
+  private freeId(name: string): string {
+    return uniqueId(name, (x) => this.dirs.has(x) || x === 'games' || x === 'import-foundry' || x === 'import-zip');
+  }
+
+  /**
+   * Makes a new game from the Foundry VTT world folder `from` (on this
+   * server's disk), with `gm` in the only seat; its id and what came along.
+   */
+  async importFoundry(
+    from: string,
+    gm: Player,
+    opts: { name?: string; dataDir?: string } = {},
+  ): Promise<{ id: string; report: WorldReport }> {
+    let name: string;
+    try {
+      name = opts.name?.trim() ? opts.name.trim() : await foundryWorldTitle(from);
+    } catch (e) {
+      throw new HubError((e as Error).message);
+    }
+    const id = this.freeId(name);
+    const dir = join(this.gamesDir, id);
+    try {
+      const report = await importFoundryWorld(from, dir, { gm, name, dataDir: opts.dataDir });
+      this.dirs.set(id, dir);
+      await this.index.set(id, { lastPlayed: Date.now() });
+      return { id, report };
+    } catch (e) {
+      await rm(dir, { recursive: true, force: true });
+      throw new HubError((e as Error).message);
+    }
+  }
+
+  /** Deletes a game made in the lobby, files and all. */
+  async remove(id: string): Promise<void> {
+    if (id === this.homeId)
+      throw new HubError('This is the game the server was started with: delete its folder by hand.');
+    const dir = this.dirs.get(id);
+    if (!dir) throw new HubError('No such game.');
+    for (const ws of this.live.get(id)?.sockets.keys() ?? []) ws.close(4004, 'the game was deleted');
+    await this.unload(id);
+    this.dirs.delete(id);
+    await this.index.remove(id);
+    await rm(dir, { recursive: true, force: true });
+  }
+
+  /** Replaces the players; a removed one is sent away, their fog deleted and their password dropped. */
+  async setMembers(id: string, players: Player[]): Promise<void> {
+    const { store } = await this.open(id);
+    const gone = store.world.players.filter((p) => !players.some((q) => q.id === p.id));
+    store.setGame({ players });
+    for (const p of gone) await this.access.forget(id, p.id);
+  }
+
+  /** Unloads every game, once everything is on disk. */
+  async close(): Promise<void> {
+    await Promise.all([...this.live.keys()].map((id) => this.unload(id)));
+    await this.index.flush();
+  }
+}
+
+/** The edition a game plays: its own, else its system's default. */
+function rulesOf(file: GameFile): string {
+  const system = SYSTEMS.get(file.system);
+  return system ? editionIn(system, file.rules) : (file.rules ?? '');
+}
+
+/** game.json of a game folder, if it reads. */
+export async function readGameFile(dir: string): Promise<GameFile | undefined> {
+  const parsed = GameSchema.safeParse(await readJson(join(dir, 'game.json')));
+  return parsed.success ? parsed.data : undefined;
+}
+
+/** A new game folder: game.json with one seat, and one empty scene. */
+async function writeNewGame(dir: string, game: NewGame & { id: string }, gm: Player): Promise<void> {
+  await mkdir(join(dir, 'assets'), { recursive: true });
+  const file: GameFile = { ...game, format: FORMAT, scene: 'main', players: [gm] };
+  await writeJson(join(dir, 'game.json'), file);
+  await writeJson(join(dir, 'scenes/main/scene.json'), { name: 'Main', darkness: 0, darknessFollowsClock: true });
+}

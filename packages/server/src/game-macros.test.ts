@@ -1,7 +1,7 @@
 import type { Doc, Op } from '@vtt/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
-import { GameStore } from './game-store.ts';
+import { GameStore } from './store/game-store.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
 
 // Chat macros: a list of chat lines saved as a document, run from the

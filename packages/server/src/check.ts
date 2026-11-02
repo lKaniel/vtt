@@ -1,9 +1,9 @@
 import { join, relative } from 'node:path';
-import { checkFolder } from './game-folder.ts';
-import { readGameFile } from './game-hub.ts';
-import { gamePluginIssues } from './game-plugins.ts';
-import { PackStore } from './pack-store.ts';
-import { PluginStore } from './plugin-store.ts';
+import { checkFolder } from './store/game-folder.ts';
+import { readGameFile } from './library/game-hub.ts';
+import { gamePluginIssues } from './library/game-plugins.ts';
+import { PackStore } from './library/pack-store.ts';
+import { PluginStore } from './library/plugin-store.ts';
 import { dataDirFor, gameDirFromArgs } from './paths.ts';
 
 // Validates every file in a game folder. Run it after editing game files

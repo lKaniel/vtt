@@ -1,6 +1,6 @@
 import { useState, useSyncExternalStore } from 'react';
 import { Popouts } from '../popouts.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { CharacterSheet, PoppedSheet } from './CharacterSheet.tsx';
 import { PopOutWindow } from './PopOutWindow.tsx';
 

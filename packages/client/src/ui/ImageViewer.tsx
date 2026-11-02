@@ -1,5 +1,5 @@
 import { assetUrl } from '../assets.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dialog.tsx';
 
 /** A picture the GM showed you, open until you close it. */

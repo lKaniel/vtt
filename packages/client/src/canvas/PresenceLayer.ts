@@ -1,8 +1,8 @@
 import type { Point } from '@vtt/shared';
 import { Container, type FederatedPointerEvent, Graphics } from 'pixi.js';
-import { LongPress, PING_MS, type ShownPing } from '../presence.ts';
-import type { Session } from '../session.ts';
-import type { Targeter } from '../targets.ts';
+import { LongPress, PING_MS, type ShownPing } from '../session/presence.ts';
+import type { Session } from '../session/session.ts';
+import type { Targeter } from '../session/targets.ts';
 import { LabelPool } from './label-pool.ts';
 import { drawTargets, type PlaceOf } from './target-marks.ts';
 

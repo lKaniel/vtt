@@ -1,7 +1,7 @@
 import type { Character } from '@vtt/system-dnd5e';
 import type { GameDetail, Role } from '@vtt/shared';
 import { useCallback, useState } from 'react';
-import { characterSummary } from '../creator.ts';
+import { characterSummary } from '../content/creator.ts';
 import { t } from '../i18n/index.ts';
 import type { Route } from '../route.ts';
 import { api } from '../server-api.ts';

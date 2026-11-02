@@ -3,10 +3,10 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { apiHandler } from '../api.ts';
-import { CharacterStore } from '../characters.ts';
-import { GameHub } from '../game-hub.ts';
-import { SessionStore } from '../sessions.ts';
+import { apiHandler } from '../http/api.ts';
+import { CharacterStore } from '../library/characters.ts';
+import { GameHub } from '../library/game-hub.ts';
+import { SessionStore } from '../http/sessions.ts';
 import { makeWorld } from './fixtures.ts';
 
 type Json = Record<string, unknown>;

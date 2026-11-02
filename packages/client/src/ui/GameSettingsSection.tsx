@@ -1,6 +1,6 @@
 import { dnd5e, type GameSettings, gameSettingsOf, toEdition } from '@vtt/system-dnd5e';
 import { t } from '../i18n/index.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Label } from './kit/label.tsx';
 import { Separator } from './kit/separator.tsx';
 import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';

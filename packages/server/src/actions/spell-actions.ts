@@ -1,0 +1,416 @@
+import {
+  animationRef,
+  type CasterSheet,
+  type CastingTime,
+  type CastOutcome,
+  castProblem,
+  type CastResult,
+  type Effect,
+  inArea,
+  isDying,
+  lastingEffects,
+  makesDeathSaves,
+  manualNote,
+  withChoice,
+  resolveCast,
+  scaledSpell,
+  scrollCaster,
+  type Spell,
+  SPELL_SCROLL,
+  type SpellLog,
+  type Token,
+  tokenDistance,
+  spendResistance,
+  characterLevel,
+} from '@vtt/system-dnd5e';
+import { gridKind, isGridless, placeToken, type Player, type Point } from '@vtt/shared';
+import { castBreaksSanctuary, passSanctuaries } from '../play/spell-wards.ts';
+import { shaped } from '../play/spell-forms.ts';
+import { summon } from '../play/spell-summons.ts';
+import { Refusal, type Cost, type Fighter, type Table } from '../play/table.ts';
+
+export interface CastRequest {
+  caster: string;
+  repeat?: boolean;
+  spell: string;
+  slot: number;
+  free?: boolean;
+  targets: string[];
+  point?: Point;
+  summon?: string;
+  scroll?: boolean;
+  /** The spell's option (see Spell `choices`); a lasting spell used again keeps the one it was cast with. */
+  choice?: string;
+  /** The monster a shape-shifting spell turns its targets into (polymorph). */
+  form?: string;
+}
+
+/** What casting costs: the action, slot and slot spent; using a lasting spell again needs no slot. */
+interface Plan {
+  cost: Cost;
+  slot: number;
+  spend: number;
+  again: boolean;
+}
+
+const COST: Record<CastingTime, Cost> = {
+  action: 'action',
+  bonus: 'bonus',
+  reaction: 'reaction',
+  minute: 'free',
+  hour: 'free',
+};
+
+/** Casting spells: checks, slots, targets, concentration, and applying what the spell did. */
+export class SpellActions {
+  constructor(
+    private table: Table,
+    private logSpell: (log: SpellLog) => void,
+  ) {}
+
+  private get store() {
+    return this.table.store;
+  }
+
+  private get grid() {
+    return this.store.world.gridSize;
+  }
+
+  cast(player: Player, canSee: (id: string) => boolean, req: CastRequest): void {
+    const actor = this.table.actor(player, req.caster);
+    const known = this.table.content(actor.token).spells.get(req.spell);
+    if (!known) throw new Refusal(`There is no spell called ${req.spell}`);
+    const { caster, plan, reader } = this.prepare(actor, known, req);
+    const picked = chosen(caster, known, req.choice);
+    this.table.check(caster.token, plan.cost);
+    const targets = this.aim(caster, picked, { ...req, slot: plan.slot }, { canSee, again: plan.again });
+    const spell = shaped(this.table, caster, picked, { form: req.form, targets });
+    passSanctuaries(this.table, caster, spell, targets);
+    this.table.pay(caster.token, plan.cost);
+    castBreaksSanctuary(this.table, caster, spell, targets);
+    if (!plan.again) this.begin(caster, spell, plan.spend, !!reader);
+    if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
+    if (spell.teleport) this.teleport(caster.token.id, req.point!);
+    const summoned = spell.summon
+      ? summon(this.table, this.table.fighter(caster.token.id), spell, { ...req, slot: plan.slot })
+      : [];
+    const free = req.free && plan.slot > 0 && !plan.again ? ['cast without a spell slot'] : [];
+    this.strike(caster.token.id, { spell, slot: plan.slot, point: req.point, reader }, targets, [
+      ...free,
+      ...summonNotes(summoned),
+    ]);
+  }
+
+  /** Who the spell hits now: no one when casting only conjures it (flame blade) or its zone waits for creatures to enter. */
+  private aim(
+    caster: Fighter,
+    spell: Spell,
+    req: CastRequest,
+    how: { canSee: (id: string) => boolean; again: boolean },
+  ) {
+    if (!how.again && !spell.attackOnCast) return [];
+    const aimed = this.targets(caster, spell, req, how.canSee);
+    return spell.zone && !spell.zone.onCast && !how.again ? [] : aimed;
+  }
+
+  /** What casting costs: the action, slot and slot spent; using a lasting spell again needs no slot. */
+  private plan(caster: Fighter, spell: Spell, req: CastRequest): Plan {
+    if (req.repeat) {
+      const going = caster.sheet.effects.find((e) => e.repeat?.spell === spell.id);
+      if (!going || !spell.repeat) throw new Refusal(`${spell.name} isn't going`);
+      return { cost: spell.repeat, slot: going.repeat!.slot, spend: 0, again: true };
+    }
+    const problem = castProblem({ spell, slot: req.slot, sheet: caster.sheet, free: req.free });
+    if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
+    if ((spell.castingTime === 'minute' || spell.castingTime === 'hour') && this.table.inFight(caster.token.id)) {
+      throw new Refusal(`${spell.name} takes too long to cast in a fight`);
+    }
+    const slot = spell.level === 0 ? 0 : req.slot;
+    return { cost: COST[spell.castingTime], slot, spend: req.free ? 0 : slot, again: false };
+  }
+
+  /** Who casts and how: with their own spellcasting, or reading a scroll with its numbers. */
+  private prepare(
+    actor: Fighter,
+    spell: Spell,
+    req: CastRequest,
+  ): { caster: Fighter; plan: Plan; reader?: CasterSheet } {
+    if (!req.scroll) return { caster: actor, plan: this.plan(actor, spell, req) };
+    const reader = scrollReader(actor, spell);
+    const caster = { ...actor, sheet: { ...actor.sheet, caster: reader } };
+    return { caster, plan: this.scrollPlan(caster, spell), reader };
+  }
+
+  /** A scroll's spell: cast at its own level with no slot, in a fight only on your turn like any other. */
+  private scrollPlan(caster: Fighter, spell: Spell): Plan {
+    if ((spell.castingTime === 'minute' || spell.castingTime === 'hour') && this.table.inFight(caster.token.id)) {
+      throw new Refusal(`${spell.name} takes too long to cast in a fight`);
+    }
+    return { cost: COST[spell.castingTime], slot: spell.level, spend: 0, again: false };
+  }
+
+  /** Rolls a spell from `casterId` against `targets`, applies it and logs it: casts, features and zones. `reader`: read from a scroll. */
+  strike(
+    casterId: string,
+    { spell, slot, point, reader }: { spell: Spell; slot: number; point?: Point; reader?: CasterSheet },
+    targets: Fighter[],
+    notes: string[] = [],
+  ): void {
+    const fighter = this.table.fighter(casterId);
+    const caster = reader ? { ...fighter, sheet: { ...fighter.sheet, caster: reader } } : fighter;
+    const grid = gridKind(this.store.world);
+    const outcome = resolveCast({ spell, slot, caster, targets, gridSize: this.grid, grid }, this.table.rng);
+    this.apply(outcome);
+    const pushed = this.push(caster.token, outcome);
+    const drained = this.drain(casterId, outcome.drained);
+    this.log(caster, { spell, slot, point }, outcome, [...notes, ...pushed, ...drained]);
+  }
+
+  private addLasting(id: string, effects: Effect[]): void {
+    for (const e of effects) this.addEffect(id, e);
+  }
+
+  /** Spends the slot (or the scroll), ends invisibility and starts concentrating. */
+  private begin(caster: Fighter, spell: Spell, slot: number, scroll: boolean): void {
+    if (spell.concentration && caster.token.concentration) this.table.endConcentration(caster.token.id);
+    this.table.spendSlot(caster.token.id, slot);
+    const now = this.store.tokens.get(caster.token.id)!;
+    const token = scroll ? useScroll(now, spell.id) : now;
+    const effects = token.effects?.filter((e) => !e.endsOnAttack);
+    this.store.setToken({
+      ...token,
+      effects: effects?.length ? effects : undefined,
+      concentration: spell.concentration ? { spell: spell.id, name: spell.name } : token.concentration,
+    });
+  }
+
+  // ---- Targets -----------------------------------------------------------
+
+  targets(caster: Fighter, spell: Spell, req: CastRequest, canSee: (id: string) => boolean): Fighter[] {
+    if (spell.teleport || spell.summon) {
+      this.checkPoint(caster, spell, req.point, spell.teleport ?? spell.range);
+      return [];
+    }
+    if (spell.area) return this.areaTargets(caster, spell, req.point);
+    const scaled = scaledSpell(spell, req.slot, caster.sheet.caster?.level ?? 1);
+    if (scaled.targets === 0) return [this.table.fighter(caster.token.id)];
+    const most = scaled.beams > 1 ? scaled.beams : scaled.targets;
+    if (!req.targets.length) throw new Refusal(`Pick a target for ${spell.name}`);
+    if (req.targets.length > most) throw new Refusal(`${spell.name} can target at most ${most}`);
+    return req.targets.map((id) => this.creatureTarget(caster, spell, id, canSee));
+  }
+
+  private creatureTarget(caster: Fighter, spell: Spell, id: string, canSee: (id: string) => boolean): Fighter {
+    if (!canSee(id)) throw new Refusal('No such target');
+    const target = this.table.fighter(id);
+    const feet = tokenDistance(caster.token, target.token, this.grid, gridKind(this.store.world));
+    if (feet > Math.max(5, spell.range)) throw new Refusal(`${target.token.name} is out of range (${feet} ft)`);
+    if (!this.table.clearShot([caster.token.x, caster.token.y], [target.token.x, target.token.y])) {
+      throw new Refusal(`${caster.token.name} has no clear path to ${target.token.name}`);
+    }
+    return target;
+  }
+
+  private checkPoint(caster: Fighter, spell: Spell, point: Point | undefined, range: number): Point {
+    if (!point) throw new Refusal(`Pick a point for ${spell.name}`);
+    const from: Point = [caster.token.x, caster.token.y];
+    const feet = (Math.hypot(point[0] - from[0], point[1] - from[1]) / this.grid) * 5;
+    if (range > 0 && feet > range + 2.5) throw new Refusal(`That point is out of range (${Math.round(feet)} ft)`);
+    if (!this.table.clearShot(from, point)) throw new Refusal(`${caster.token.name} can't see that point`);
+    return point;
+  }
+
+  /** Every creature in the area that the area's origin has a clear line to. */
+  private areaTargets(caster: Fighter, spell: Spell, point: Point | undefined): Fighter[] {
+    const aim =
+      spell.range > 0
+        ? this.checkPoint(caster, spell, point, spell.range)
+        : (point ?? [caster.token.x + 1, caster.token.y]);
+    const origin: Point = spell.area!.shape === 'sphere' || spell.range > 0 ? aim : [caster.token.x, caster.token.y];
+    const area = { area: spell.area!, range: spell.range };
+    return [...this.store.tokens.values()]
+      .filter((t) => inArea(area, { caster: caster.token, aim, token: t, gridSize: this.grid }))
+      .filter((t) => this.table.clearShot(origin, [t.x, t.y]))
+      .flatMap((t) => {
+        const sheet = this.table.sheetOf(t);
+        return sheet ? [{ token: t, sheet }] : [];
+      });
+  }
+
+  // ---- Results -----------------------------------------------------------
+
+  private apply(outcome: CastOutcome): void {
+    for (const r of outcome.results) this.applyOne(r);
+    this.table.useUp(outcome.used);
+  }
+
+  private applyOne(r: CastResult): void {
+    // A raised maximum (aid) is in place before the healing that fills it.
+    const first = r.healed !== undefined;
+    if (r.effect && first) this.addEffect(r.target, r.effect);
+    this.applyHp(r);
+    if (r.effect && !first) this.addEffect(r.target, r.effect);
+    if (r.stabilized) this.stabilize(r.target);
+    if (r.cured) this.cure(r.target, r.cured);
+    if (r.revived) this.revive(r.target, r.hp);
+    if (r.killed) this.kill(r.target);
+    if (r.save?.legendary) this.resist(r.target);
+  }
+
+  /** The target turned a failed save into a success: one legendary resistance is gone. */
+  private resist(id: string): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    this.store.setToken(spendResistance(token));
+    this.table.note(`${token.name} uses Legendary Resistance to succeed instead`);
+  }
+
+  private cure(id: string, effects: readonly string[]): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    const left = (token.effects ?? []).filter((e) => !effects.includes(e.id));
+    this.store.setToken({ ...token, effects: left.length ? left : undefined });
+  }
+
+  /** Killed outright: a character is dead, not dying. */
+  private kill(id: string): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    const dead = makesDeathSaves(token) ? { deathSaves: { successes: 0, failures: 3, dead: true } } : {};
+    this.store.setToken({ ...token, hp: 0, ...dead });
+    this.table.note(`${token.name} dies`);
+  }
+
+  private revive(id: string, hp: number): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    const max = this.table.sheetOf(token)?.maxHp ?? hp;
+    this.store.setToken({ ...token, hp: hp >= max ? undefined : hp, deathSaves: undefined });
+    this.table.note(`${token.name} returns to life`);
+  }
+
+  /** Healing, damage or temporary hit points from one result. */
+  private applyHp(r: CastResult): void {
+    const target = this.table.fighter(r.target);
+    if (r.healed !== undefined) {
+      this.store.setToken({ ...target.token, hp: r.hp >= target.sheet.maxHp ? undefined : r.hp });
+    } else if (r.damage > 0) {
+      this.table.hurt(target.token, r, r.damage);
+    } else if (r.tempHp !== undefined) {
+      this.store.setToken({ ...target.token, tempHp: r.tempHp || undefined });
+    }
+  }
+
+  /** Pushes or pulls everyone the spell moves, from where the caster stands. */
+  private push(caster: Token, outcome: CastOutcome): string[] {
+    const notes: string[] = [];
+    for (const r of outcome.results) {
+      if (!r.push) continue;
+      const feet = this.table.forceMove(r.target, [caster.x, caster.y], r.push);
+      const name = this.store.tokens.get(r.target)?.name ?? r.target;
+      if (feet > 0) notes.push(`${name} is ${r.push > 0 ? 'pushed' : 'pulled'} ${feet} ft`);
+    }
+    return notes;
+  }
+
+  private stabilize(id: string): void {
+    const token = this.store.tokens.get(id);
+    if (!token || !isDying(token)) return;
+    this.store.setToken({ ...token, deathSaves: { successes: 0, failures: 0, ...token.deathSaves, stable: true } });
+    this.table.note(`${token.name} is stable`);
+  }
+
+  /** The caster regains hit points from what the spell drained. */
+  private drain(id: string, amount: number | undefined): string[] {
+    if (!amount) return [];
+    const { token, sheet } = this.table.fighter(id);
+    const hp = Math.min(sheet.maxHp, sheet.hp + amount);
+    this.store.setToken({ ...token, hp: hp >= sheet.maxHp ? undefined : hp });
+    return [`${token.name} regains ${hp - sheet.hp} HP`];
+  }
+
+  private addEffect(id: string, effect: Effect): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    const effects = [...(token.effects ?? []).filter((e) => e.id !== effect.id), effect];
+    this.store.setToken({ ...token, effects });
+  }
+
+  private teleport(id: string, point: Point): void {
+    const token = this.store.tokens.get(id)!;
+    const [x, y] = isGridless(this.store.world) ? point : placeToken(point, token.size, this.store.world);
+    this.store.setToken({ ...token, x, y });
+  }
+
+  private log(
+    caster: Fighter,
+    { spell, slot, point }: { spell: Spell; slot: number; point?: Point },
+    outcome: CastOutcome,
+    extra: string[],
+  ): void {
+    const name = (id: string) => this.store.tokens.get(id)?.name ?? id;
+    const notes = [...extra];
+    const manual = manualNote(spell);
+    if (manual) notes.push(manual);
+    if (spell.automated && spell.gmNote) notes.push(`GM: ${spell.gmNote}`);
+    const down = new Set(outcome.results.filter((r) => r.damage > 0 && r.hp <= 0).map((r) => r.target));
+    for (const id of down) notes.push(`${name(id)} is down`);
+    this.logSpell({
+      caster: caster.token.name,
+      spell: spell.name,
+      casterId: caster.token.id,
+      spellId: spell.id,
+      animation: caster.token.animations?.[animationRef('spell', spell.id)],
+      damageType: spell.damage[0]?.type,
+      attackKind: spell.attack,
+      point,
+      area: spell.area,
+      slot,
+      results: outcome.results.map((r) => ({
+        target: name(r.target),
+        targetId: r.target,
+        attack: r.attack,
+        hit: r.hit,
+        crit: r.crit,
+        save: r.save && { ability: r.save.ability, dc: r.save.dc, total: r.save.total, success: r.save.success },
+        damage: r.damage,
+        healed: r.healed,
+        effect: r.effect?.name,
+        immune: r.immune,
+      })),
+      notes,
+    });
+  }
+}
+
+/** The spell with the option picked for it: the one asked for, else the one a going spell was cast with, else the first. */
+function chosen(caster: Fighter, spell: Spell, choice: string | undefined): Spell {
+  const going = caster.sheet.effects.find((e) => e.repeat?.spell === spell.id)?.repeat?.choice;
+  try {
+    return withChoice(spell, choice ?? going);
+  } catch (e) {
+    throw new Refusal((e as Error).message);
+  }
+}
+
+function summonNotes(summoned: readonly Token[]): string[] {
+  return summoned.length ? [`${summoned.map((t) => t.name).join(', ')} appear`] : [];
+}
+
+/** The spellcasting `caster` reads a scroll of `spell` with; refused without such a scroll. */
+function scrollReader({ token, sheet }: Fighter, spell: Spell): CasterSheet {
+  if (!token.inventory?.some((e) => e.item === SPELL_SCROLL && e.spell === spell.id)) {
+    throw new Refusal(`${token.name} has no scroll of ${spell.name}`);
+  }
+  return scrollCaster(sheet, spell, characterLevel(token.stats) ?? 1);
+}
+
+/** One scroll of `spell` fewer: it crumbles to dust. */
+function useScroll(token: Token, spell: string): Token {
+  const list = token.inventory ?? [];
+  const at = list.findIndex((e) => e.item === SPELL_SCROLL && e.spell === spell);
+  const entry = list[at]!;
+  const inventory =
+    entry.qty > 1 ? list.map((e, i) => (i === at ? { ...e, qty: e.qty - 1 } : e)) : list.filter((_, i) => i !== at);
+  return { ...token, inventory: inventory.length ? inventory : undefined };
+}
