@@ -13,6 +13,12 @@ export const PluginManifestSchema = z.object({
   main: innerPath.default('main.js'),
   /** Stylesheets inside the folder, added to the page. */
   styles: z.array(innerPath).default([]),
+  /** Translations it offers: a JSON file of words by key for each language (docs/i18n.md). */
+  languages: z
+    .array(
+      z.object({ lang: z.string().regex(/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/), name: z.string().min(1), path: innerPath }),
+    )
+    .default([]),
 });
 export type PluginManifest = z.infer<typeof PluginManifestSchema>;
 
@@ -28,4 +34,5 @@ export interface PluginLoad {
   name: string;
   main: string;
   styles: string[];
+  languages: { lang: string; name: string; url: string }[];
 }

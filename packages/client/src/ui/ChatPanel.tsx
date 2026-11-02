@@ -31,6 +31,7 @@ import { PlayersTab } from './PlayersTab.tsx';
 import { ScenesTab } from './ScenesTab.tsx';
 import { diceArt } from '../icon-art.ts';
 import { targetText } from '../spell-text.ts';
+import { t } from '../i18n/index.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
@@ -82,23 +83,30 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
   return (
     <aside className={`chat frame${open ? '' : ' closed'}${shown === 'Adventure log' ? '' : ' library'}`}>
       <header className="chat-head">
-        <span>{shown}</span>
+        <span>{t(`panel.${shown}`)}</span>
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={() => setOpen(!open)}
-          aria-label={open ? 'Hide panel' : 'Show panel'}
-          title={open ? 'Hide panel' : 'Show panel'}
+          aria-label={t(open ? 'panel.hide' : 'panel.show')}
+          title={t(open ? 'panel.hide' : 'panel.show')}
         >
           {open ? <MinusIcon /> : <PlusIcon />}
         </Button>
       </header>
-      <Tabs value={shown} onValueChange={(t) => setTab(t as Tab)}>
+      <Tabs value={shown} onValueChange={(v) => setTab(v as Tab)}>
         <TabsList className="mb-1.5">
-          {tabs.map((t) => {
-            const Icon = TAB_ICONS[t];
+          {tabs.map((id) => {
+            const Icon = TAB_ICONS[id];
+            const name = t(`panel.${id}`);
             return (
-              <TabsTrigger key={t} value={t} title={t} aria-label={t} className="px-1 pt-0.5 pb-1.5 [&_svg]:size-4">
+              <TabsTrigger
+                key={id}
+                value={id}
+                title={name}
+                aria-label={name}
+                className="px-1 pt-0.5 pb-1.5 [&_svg]:size-4"
+              >
                 <Icon />
               </TabsTrigger>
             );

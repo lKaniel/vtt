@@ -3,6 +3,7 @@ import { isScriptMacro } from '@vtt/shared';
 import { useState } from 'react';
 import { TILE_DRAG } from '../hotbar.ts';
 import type { Session } from '../session.ts';
+import { t } from '../i18n/index.ts';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
@@ -26,7 +27,7 @@ export function MacrosTab({ session }: Readonly<{ session: Session }>) {
     <div className="scenes-tab">
       {canMake && (
         <Button variant="outline" size="sm" onClick={() => session.createEntry('macro')}>
-          New macro
+          {t('macros.new')}
         </Button>
       )}
       <ul className="rows">
@@ -40,7 +41,7 @@ export function MacrosTab({ session }: Readonly<{ session: Session }>) {
           />
         ))}
       </ul>
-      {!macros.length && <p className="muted">No macros yet.</p>}
+      {!macros.length && <p className="muted">{t('macros.none')}</p>}
     </div>
   );
 }
@@ -60,24 +61,24 @@ function MacroRow({ session, doc, open, onToggle }: Readonly<RowProps>) {
       className="scene-row"
       draggable
       onDragStart={(e) => e.dataTransfer.setData(TILE_DRAG, JSON.stringify({ ref: `macro:${doc.id}` }))}
-      title="Drag onto the hotbar"
+      title={t('macros.dragHint')}
     >
       <Button variant="link" onClick={onToggle}>
         {nameOf(doc)}
       </Button>
       <span className="row-actions">
-        {isScriptMacro(doc) && <Badge title="JavaScript, run in your browser">script</Badge>}
+        {isScriptMacro(doc) && <Badge title={t('macros.scriptHint')}>{t('macros.script')}</Badge>}
         <Button variant="outline" size="sm" onClick={() => void session.runMacro(doc.id, session.selected)}>
-          Run
+          {t('macros.run')}
         </Button>
         {session.isGm() && !isScriptMacro(doc) && (
           <Button
             variant="outline"
             size="sm"
             onClick={share}
-            title={shared(doc) ? 'Players can run it' : 'Let the players run it'}
+            title={t(shared(doc) ? 'macros.sharedHint' : 'macros.shareHint')}
           >
-            {shared(doc) ? 'Shared' : 'Share'}
+            {t(shared(doc) ? 'macros.shared' : 'macros.share')}
           </Button>
         )}
       </span>
@@ -86,11 +87,6 @@ function MacroRow({ session, doc, open, onToggle }: Readonly<RowProps>) {
   );
 }
 
-const HINT = {
-  chat: 'Each line goes to chat as if you typed it: words, or a roll such as "/r 2d6+3 fire".',
-  script:
-    'JavaScript, run in your browser with `vtt` (the scripting API) and `token` (the creature it is run for). Players never see or run it.',
-};
 const PLACEHOLDER = {
   chat: 'Well met, friends!\n/r 1d20+5 persuasion',
   script: 'for (const t of vtt.tokens()) vtt.chat(`${t.name} is here`);',
@@ -106,7 +102,7 @@ function MacroEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
     <div className="table-edit">
       <Input
         value={name}
-        aria-label="Name"
+        aria-label={t('macros.name')}
         onChange={(e) => setName(e.target.value)}
         onBlur={() => name.trim() && patch({ name: name.trim() })}
       />
@@ -116,13 +112,13 @@ function MacroEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
           value={kind}
           onValueChange={(v) => v && patch(v === 'script' ? { kind: v, ownership: null } : { kind: v })}
         >
-          <ToggleGroupItem value="chat">Chat</ToggleGroupItem>
-          <ToggleGroupItem value="script">Script</ToggleGroupItem>
+          <ToggleGroupItem value="chat">{t('macros.kind.chat')}</ToggleGroupItem>
+          <ToggleGroupItem value="script">{t('macros.kind.script')}</ToggleGroupItem>
         </ToggleGroup>
       )}
       <Textarea
         value={command}
-        aria-label={kind === 'script' ? 'Script' : 'Chat lines'}
+        aria-label={t(kind === 'script' ? 'macros.code' : 'macros.chatLines')}
         className={kind === 'script' ? 'font-mono text-xs' : undefined}
         placeholder={PLACEHOLDER[kind]}
         onChange={(e) => setCommand(e.target.value)}
@@ -131,13 +127,13 @@ function MacroEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
       <Input
         value={img}
         aria-label="Picture"
-        placeholder="Picture for the hotbar (asset path)"
+        placeholder={t('macros.picture')}
         onChange={(e) => setImg(e.target.value)}
         onBlur={() => patch({ img: img.trim() || null })}
       />
-      <p className="muted">{HINT[kind]}</p>
+      <p className="muted">{t(`macros.help.${kind}`)}</p>
       <Button variant="outline" size="sm" onClick={() => session.deleteMacro(doc.id)}>
-        Delete
+        {t('macros.delete')}
       </Button>
     </div>
   );

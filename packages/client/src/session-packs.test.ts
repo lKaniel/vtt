@@ -101,7 +101,15 @@ describe('the GM’s asset browser', () => {
     ws.receive(gmWelcome());
     session.requestPlugins();
     expect(sent()).toEqual({ t: 'plugins' });
-    const alert = { id: 'alert', name: 'Alert', version: '1.0.0', system: null, main: 'main.js', styles: [] };
+    const alert = {
+      id: 'alert',
+      name: 'Alert',
+      version: '1.0.0',
+      system: null,
+      main: 'main.js',
+      styles: [],
+      languages: [],
+    };
     ws.receive({ t: 'plugins', plugins: [{ ...alert, enabled: false }], problems: ['x/plugin.json: name'] });
     expect(session.pluginList.map((p) => p.id)).toEqual(['alert']);
     expect(session.pluginProblems).toEqual(['x/plugin.json: name']);

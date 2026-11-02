@@ -23,6 +23,7 @@ beforeAll(async () => {
     name: 'Dice so nice',
     version: '2.0.0',
     styles: ['dice.css'],
+    languages: [{ lang: 'de', name: 'Deutsch', path: 'lang/de.json' }],
   });
   await put('dice-so-nice/main.js', 'export default () => {};');
   await put('dice-so-nice/dice.css', '.die {}');
@@ -69,8 +70,9 @@ describe('the plugins of a game', () => {
         name: 'Dice so nice',
         main: '/plugins/dice-so-nice/main.js',
         styles: ['/plugins/dice-so-nice/dice.css'],
+        languages: [{ lang: 'de', name: 'Deutsch', url: '/plugins/dice-so-nice/lang/de.json' }],
       },
-      { id: 'crit-cards', name: 'Crit cards', main: '/plugins/crit-cards/src/index.js', styles: [] },
+      { id: 'crit-cards', name: 'Crit cards', main: '/plugins/crit-cards/src/index.js', styles: [], languages: [] },
     ]);
     expect(pluginLoads(plugins, game())).toEqual([]);
   });

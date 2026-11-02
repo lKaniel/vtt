@@ -61,6 +61,15 @@ describe('the scripting API', () => {
     expect(session.docs.get('macros', 'heal')).toBeUndefined();
   });
 
+  it('translates, and takes a plugin’s own words', () => {
+    joinAsGm();
+    const { i18n } = session.scripts.vtt;
+    expect(i18n.lang()).toBe('en');
+    expect(i18n.t('keys.title')).toBe('Keybindings');
+    i18n.add('en', { 'alert.turn': "{name}'s turn" });
+    expect(i18n.t('alert.turn', { name: 'Bram' })).toBe("Bram's turn");
+  });
+
   it('shows a notice', () => {
     joinAsGm();
     session.scripts.vtt.notify('Done');
@@ -81,14 +90,20 @@ describe('plugins', () => {
     const start = vi.fn();
     session.scripts.plugins.importModule = () => Promise.resolve({ default: start });
     const base = welcome([]) as Extract<ServerMessage, { t: 'welcome' }>;
-    ws.receive({ ...base, plugins: [{ id: 'alert', name: 'Alert', main: '/plugins/alert/main.js', styles: [] }] });
+    ws.receive({
+      ...base,
+      plugins: [{ id: 'alert', name: 'Alert', main: '/plugins/alert/main.js', styles: [], languages: [] }],
+    });
     await vi.waitFor(() => expect(start).toHaveBeenCalledWith(session.scripts.vtt));
   });
 
   it('show their failure as an error', async () => {
     session.scripts.plugins.importModule = () => Promise.reject(new Error('404'));
     const base = welcome([]) as Extract<ServerMessage, { t: 'welcome' }>;
-    ws.receive({ ...base, plugins: [{ id: 'alert', name: 'Alert', main: '/plugins/alert/main.js', styles: [] }] });
+    ws.receive({
+      ...base,
+      plugins: [{ id: 'alert', name: 'Alert', main: '/plugins/alert/main.js', styles: [], languages: [] }],
+    });
     await vi.waitFor(() => expect(session.error?.message).toBe('Plugin alert failed: 404'));
   });
 });

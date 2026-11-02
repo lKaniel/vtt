@@ -38,15 +38,16 @@ up without a restart.
 }
 ```
 
-| Field                   | What it is                                                        |
-| ----------------------- | ----------------------------------------------------------------- |
-| `id`                    | lowercase letters, digits and dashes; the same as the folder name |
-| `name`                  | what the Plugins list shows                                       |
-| `version`               | default `"1.0.0"`                                                 |
-| `system`                | the system it is for (`"dnd5e"`), or `null` (the default) for any |
-| `main`                  | its ES module inside the folder, default `main.js`                |
-| `styles`                | stylesheets inside the folder, added to the page                  |
-| `description`, `author` | shown in the Plugins list                                         |
+| Field                   | What it is                                                               |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `id`                    | lowercase letters, digits and dashes; the same as the folder name        |
+| `name`                  | what the Plugins list shows                                              |
+| `version`               | default `"1.0.0"`                                                        |
+| `system`                | the system it is for (`"dnd5e"`), or `null` (the default) for any        |
+| `main`                  | its ES module inside the folder, default `main.js`                       |
+| `styles`                | stylesheets inside the folder, added to the page                         |
+| `languages`             | translations it brings: `{ lang, name, path }` each ([i18n.md](i18n.md)) |
+| `description`, `author` | shown in the Plugins list                                                |
 
 The schema is `PluginManifestSchema` in `packages/core/src/plugins.ts`.
 
