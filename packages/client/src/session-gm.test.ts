@@ -93,6 +93,23 @@ describe('the GM tools', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'exhaustion', token: 'hero', level: 2 });
   });
 
+  it('asks for checks and rolls them', () => {
+    ws.receive(gmWelcome());
+    session.requestCheck({ tokens: ['hero'], ability: 'dex', skill: 'stealth', kind: 'group', dc: 12 });
+    expect(ws.sent.at(-1)).toEqual({
+      t: 'requestCheck',
+      tokens: ['hero'],
+      ability: 'dex',
+      skill: 'stealth',
+      kind: 'group',
+      dc: 12,
+    });
+    session.rollCheck('hero', { ability: 'dex' }, 'card-1');
+    expect(ws.sent.at(-1)).toEqual({ t: 'rollCheck', token: 'hero', ability: 'dex', card: 'card-1' });
+    session.rollCheck('hero', { ability: 'str', skill: 'athletics' });
+    expect(ws.sent.at(-1)).toEqual({ t: 'rollCheck', token: 'hero', ability: 'str', skill: 'athletics' });
+  });
+
   it('awards experience', () => {
     ws.receive(gmWelcome());
     session.awardXp(['hero'], 150);

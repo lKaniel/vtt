@@ -19,6 +19,7 @@ import { assetUrl } from '../assets.ts';
 import type { Session } from '../session.ts';
 import type { ApplyHow } from '../session-actions.ts';
 import { ActorsTab } from './ActorsTab.tsx';
+import { CheckLine } from './CheckCard.tsx';
 import { AssetsTab } from './AssetsTab.tsx';
 import { CompendiumTab } from './CompendiumTab.tsx';
 import { JournalTab } from './JournalTab.tsx';
@@ -147,6 +148,7 @@ function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
           <Message
             key={m.id}
             m={m}
+            session={session}
             onApply={(how) => session.applyRoll(m.id, how)}
             onUndo={session.isGm() && session.history.card === m.id ? () => session.undoCard(m.id) : undefined}
           />
@@ -189,6 +191,7 @@ function kindOf(m: ChatMessage): string {
 
 interface MessageProps {
   m: ChatMessage;
+  session: Session;
   /** Applies the card's roll to your targets or selection. */
   onApply: (how: ApplyHow) => void;
   /** GM, latest game action only: undoes what the card reports. */
@@ -196,7 +199,7 @@ interface MessageProps {
 }
 
 /** A chat card; a roll gets buttons to apply it (in full, half, double, as healing). */
-function Message({ m, onApply, onUndo }: Readonly<MessageProps>) {
+function Message({ m, session, onApply, onUndo }: Readonly<MessageProps>) {
   return (
     <div className={kindOf(m)}>
       <span className="msg-from" style={{ color: m.color }}>
@@ -226,20 +229,25 @@ function Message({ m, onApply, onUndo }: Readonly<MessageProps>) {
       {m.text && <span className="msg-text">{m.text}</span>}
       {m.attack && <AttackLine a={m.attack} />}
       {m.spell && <SpellLine s={m.spell} />}
-      {m.roll && (
-        <span className="roll">
-          <span className="muted">{m.roll.formula}</span>
-          <span className="roll-terms">
-            {m.roll.terms.map((t, i) => (
-              <Term key={i} t={t} first={i === 0} />
-            ))}
-          </span>
-          <span className="roll-total">{m.roll.total}</span>
-          {m.label && <span className="muted">{m.label}</span>}
-        </span>
-      )}
+      {m.check && <CheckLine m={{ ...m, check: m.check }} session={session} />}
+      {m.roll && <RollLine roll={m.roll} label={m.label} />}
       {m.roll && <ApplyButtons onApply={onApply} />}
     </div>
+  );
+}
+
+function RollLine({ roll, label }: Readonly<{ roll: NonNullable<ChatMessage['roll']>; label?: string }>) {
+  return (
+    <span className="roll">
+      <span className="muted">{roll.formula}</span>
+      <span className="roll-terms">
+        {roll.terms.map((t, i) => (
+          <Term key={i} t={t} first={i === 0} />
+        ))}
+      </span>
+      <span className="roll-total">{roll.total}</span>
+      {label && <span className="muted">{label}</span>}
+    </span>
   );
 }
 

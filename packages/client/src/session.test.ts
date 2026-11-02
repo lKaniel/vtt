@@ -134,6 +134,8 @@ describe('Session', () => {
     ws.receive({ t: 'error', message: 'nope' });
     expect(session.chat).toHaveLength(1);
     expect(session.error?.message).toBe('nope');
+    ws.receive({ t: 'chat', message: { id: '1', time: 0, from: 'Ana', color: '#f00', text: 'hello again' } });
+    expect(session.chat.map((m) => m.text)).toEqual(['hello again']);
   });
 
   it('tells the map about new chat messages, but not the history it joins with', () => {

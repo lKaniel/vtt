@@ -9,6 +9,7 @@ import type {
   Roll,
   WorldInfo,
 } from '@vtt/shared';
+import type { CheckEntry, CheckKind, CheckRequestKind } from './checks.ts';
 import type { Combat } from './combat.ts';
 import type { Area, Condition } from './spell-schema.ts';
 import type { CompendiumDrop, SheetArea } from './sheet-drops.ts';
@@ -81,6 +82,18 @@ export interface SpellLog {
 export interface ChatMessage extends ChatEntry {
   attack?: AttackLog;
   spell?: SpellLog;
+  check?: CheckLog;
+}
+
+/** An ability or skill check card: one creature's roll, or the GM's request with a row per creature. */
+export interface CheckLog extends CheckKind {
+  dc?: number;
+  kind: CheckRequestKind;
+  /** In a contest, the second creature's check (Acrobatics against the first's Athletics). */
+  versus?: CheckKind;
+  entries: (CheckEntry & { roll?: Roll })[];
+  /** The group's or the contest's result once everyone has rolled. */
+  outcome?: string;
 }
 
 /** What the GM places on the map: a monster from one edition's book, or a copy of an actor. */
@@ -129,6 +142,18 @@ export type ClientMessage =
   | { t: 'exhaustion'; token: string; level: number }
   /** GM: gives each of these characters `xp` experience points. */
   | { t: 'awardXp'; tokens: string[]; xp: number }
+  /** GM: asks these creatures for a check: each for itself, as a group, or two in a contest. */
+  | {
+      t: 'requestCheck';
+      tokens: string[];
+      ability: Ability;
+      skill?: string;
+      dc?: number;
+      kind: CheckRequestKind;
+      versus?: CheckKind;
+    }
+  /** Rolls a creature's check: on the request card `card`, or on its own. */
+  | { t: 'rollCheck'; token: string; ability: Ability; skill?: string; card?: string }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
   | {
       t: 'cast';

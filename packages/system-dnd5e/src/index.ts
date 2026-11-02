@@ -9,6 +9,7 @@ export * from './creature.ts';
 export * from './classes.ts';
 export * from './multiclass.ts';
 export * from './encounter.ts';
+export * from './checks.ts';
 export * from './attack.ts';
 export * from './combat.ts';
 export * from './token-view.ts';

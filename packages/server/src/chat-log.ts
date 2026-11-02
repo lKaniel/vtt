@@ -35,6 +35,18 @@ export class ChatLog<C extends Seat> {
   post(message: ChatMessage): void {
     this.messages.push(message);
     if (this.messages.length > CHAT_HISTORY) this.messages.shift();
+    this.broadcast(message);
+  }
+
+  /** A card changed (a check request filling in): everyone allowed to read it gets it again. */
+  update(message: ChatMessage): void {
+    const at = this.messages.findIndex((m) => m.id === message.id);
+    if (at < 0) return this.post(message);
+    this.messages[at] = message;
+    this.broadcast(message);
+  }
+
+  private broadcast(message: ChatMessage): void {
     for (const other of this.seats()) {
       const shown = chatFor(message, other.player);
       if (shown) this.send(other, { t: 'chat', message: shown });
