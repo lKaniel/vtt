@@ -11,6 +11,7 @@ import { CharacterSheet } from './CharacterSheet.tsx';
 import { ClockBar } from './clock/ClockBar.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
+import { blockNativeMenu } from '../native-menu.ts';
 import { Inspector } from './Inspector.tsx';
 import { JournalViewer } from './JournalViewer.tsx';
 import { MapTools } from './MapTools.tsx';
@@ -60,6 +61,7 @@ export function GameScreen({
   }, [session]);
 
   useEffect(() => listenToClipboard(session), [session]);
+  useEffect(() => blockNativeMenu(document), []);
   useEffect(() => {
     const sound = new SoundScape(session);
     return () => sound.destroy();

@@ -175,10 +175,7 @@ export class MapView {
       this.drag = undefined;
     });
     this.app.canvas.addEventListener('wheel', this.onWheel, { passive: false });
-    // Right click opens our own menus; middle drag pans instead of the browser's auto-scroll.
-    this.app.canvas.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-    });
+    // Middle drag pans instead of the browser's auto-scroll (the game screen blocks the browser's right-click menu).
     this.app.canvas.addEventListener('mousedown', (e) => {
       if (e.button === 1) e.preventDefault();
     });
