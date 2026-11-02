@@ -158,7 +158,7 @@ export class MapEditor {
   /** What the tiles mode picks, with groups and locks (see editor/tile-items.ts). */
   private tileItems(): TileItems {
     const s = this.session;
-    const tiles = s.tiles();
+    const tiles = s.tiles.all();
     const selected = s.selection.map((k) => refOf(k).id);
     return new TileItems(withGroupBounds(tiles), s.modeColl('tiles'), TileItems.scopeOf(tiles, selected));
   }
@@ -180,7 +180,7 @@ export class MapEditor {
   private shownSelection(): { ref: { coll: string; id: string }; doc: Doc }[] {
     const docs = this.session.selectedDocs();
     if (this.session.mode !== 'tiles') return docs;
-    const shown = new Map(withGroupBounds(this.session.tiles()).map((d) => [d.id, d]));
+    const shown = new Map(withGroupBounds(this.session.tiles.all()).map((d) => [d.id, d]));
     return docs.map(({ ref, doc }) => ({ ref, doc: shown.get(doc.id) ?? doc }));
   }
 

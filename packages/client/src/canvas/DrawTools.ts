@@ -89,7 +89,7 @@ export class DrawTools {
     this.box = undefined;
     if (!start) return;
     const r = rectBetween(start, snapPoint(at, this.grid, !free));
-    if (r.w > 0 && r.h > 0) this.session.createTile(r);
+    if (r.w > 0 && r.h > 0) this.session.tiles.create(r);
   }
 
   draw(g: Graphics, hover: Point | undefined, free: boolean, ctx: DrawCtx): void {

@@ -51,10 +51,10 @@ const isLayerKey = (k: EditKey): k is LayerKey => LAYER_KEYS.has(k);
 function runLayerKey(session: Session, command: LayerKey, e: Key): boolean {
   if (session.mode !== 'tiles' || !session.isGm()) return false;
   e.preventDefault();
-  if (command === 'group') session.group();
-  else if (command === 'ungroup') session.ungroup();
-  else if (command === 'lock') session.toggleLock();
-  else session.reorder(command);
+  if (command === 'group') session.tiles.group();
+  else if (command === 'ungroup') session.tiles.ungroup();
+  else if (command === 'lock') session.tiles.toggleLock();
+  else session.tiles.reorder(command);
   return true;
 }
 

@@ -36,10 +36,8 @@ export interface MenuApi {
   openSheet(target: { kind: 'token'; id: string }, edit?: boolean): void;
   move(token: string, to: Point): void;
   editMap(edit: MapEdit): void;
-  group(): void;
-  ungroup(): void;
-  reorder(how: ZOrder): void;
-  toggleLock(): void;
+  /** The tiles mode's commands (see session-tiles.ts). */
+  readonly tiles: { group(): void; ungroup(): void; reorder(how: ZOrder): void; toggleLock(): void };
   readonly lightPreset: LightPreset;
   /** The creatures you target (see targets.ts). */
   readonly targets: { readonly mine: ReadonlySet<string>; toggle(id: string): void };
@@ -241,10 +239,10 @@ registerMenu('tile', (t, api) => {
   const pictures = allDocs(t, (d) => d.kind !== 'group');
   const ground = allDocs(t, (d) => d.background === true);
   return [
-    { label: 'Group', run: () => api.group() },
-    groups && { label: 'Ungroup', run: () => api.ungroup() },
-    ...Z_ORDER.map(({ label, how }) => ({ label, run: () => api.reorder(how) })),
-    { label: locked ? 'Unlock' : 'Lock', run: () => api.toggleLock() },
+    { label: 'Group', run: () => api.tiles.group() },
+    groups && { label: 'Ungroup', run: () => api.tiles.ungroup() },
+    ...Z_ORDER.map(({ label, how }) => ({ label, run: () => api.tiles.reorder(how) })),
+    { label: locked ? 'Unlock' : 'Lock', run: () => api.tiles.toggleLock() },
     pictures && {
       label: ground ? 'Make it an object' : 'Make it ground',
       run: () => api.editSelection({ background: ground ? null : true }),

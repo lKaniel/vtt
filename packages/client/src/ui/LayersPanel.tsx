@@ -27,7 +27,7 @@ export function LayersPanel({ session }: Readonly<{ session: Session }>) {
   const [over, setOver] = useState<{ id: string; zone: DropZone }>();
   const [renaming, setRenaming] = useState<string>();
   const coll = session.modeColl('tiles');
-  const tiles = session.tiles();
+  const tiles = session.tiles.all();
   const rows = layerRows(tiles, folded);
   const selected = new Set(session.selection.map((k) => refOf(k).id));
 
@@ -50,7 +50,7 @@ export function LayersPanel({ session }: Readonly<{ session: Session }>) {
     e.preventDefault();
     const ids = JSON.parse(data) as string[];
     const place = dropPlace(tiles, ids, row.id, zoneAt(e));
-    if (place) session.moveTiles(ids, place.parent, place.index);
+    if (place) session.tiles.move(ids, place.parent, place.index);
   };
 
   if (!rows.length) return <p className="layers-empty">No tiles yet: pick Draw and drag a box on the map.</p>;
@@ -135,7 +135,7 @@ function RowBody({ session, row, renaming, onRename, onFold }: Readonly<RowProps
         aria-label={row.locked ? 'Unlock' : 'Lock'}
         onClick={(e) => {
           e.stopPropagation();
-          session.editTiles([row.id], { locked: lock }, row.locked ? 'unlock' : 'lock');
+          session.tiles.edit([row.id], { locked: lock }, row.locked ? 'unlock' : 'lock');
         }}
       >
         {row.locked ? <LockIcon /> : <LockOpenIcon />}
@@ -161,7 +161,7 @@ function kindMark(row: LayerRow): string {
 function rename(session: Session, id: string, name: string): void {
   const doc = session.docs.get(session.modeColl('tiles'), id);
   if (!doc || (doc.name ?? '') === name) return;
-  session.editTiles([id], { name: name || null }, 'rename');
+  session.tiles.edit([id], { name: name || null }, 'rename');
 }
 
 function RenameBox({ row, onDone }: Readonly<{ row: LayerRow; onDone: (name?: string) => void }>) {
