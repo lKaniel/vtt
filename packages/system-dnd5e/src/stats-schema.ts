@@ -84,6 +84,8 @@ const itemBase = {
   id,
   name: z.string().min(1),
   weight: z.number().nonnegative().default(0),
+  /** What it costs in a shop, in gold pieces (0.1 is a silver piece); magic items have none. */
+  price: z.number().nonnegative().optional(),
   /** A magic item that only works for a creature attuned to it (three at most). */
   attunement: z.boolean().optional(),
   /** What it adds while equipped (and attuned, if it needs that): a ring of protection's +1. */

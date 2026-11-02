@@ -51,6 +51,8 @@ export interface MenuApi {
   observe(token: string | undefined): void;
   /** GM: opens a picture on every player's screen. */
   showImage(src: string, title?: string): void;
+  /** Opens a pile of loot's or a merchant's window (see session-piles.ts). */
+  openPile(token: string): void;
 }
 
 /** What the menu was opened on. */
@@ -119,7 +121,7 @@ registerMenu('token', (t, api) => {
   if (!id) return [];
   const hidden = allDocs(t, (d) => d.hidden === true);
   return [
-    { label: 'Open sheet', run: () => api.openSheet({ kind: 'token', id }) },
+    openEntry(t.token, id, api),
     hudEntry(id, t.screen, api),
     api.canEdit(id) && { label: 'Edit sheet', run: () => api.openSheet({ kind: 'token', id }, true) },
     api.isGm() && {
@@ -129,8 +131,39 @@ registerMenu('token', (t, api) => {
     targetEntry(id, api),
     api.isGm() && observeEntry(id, api),
     artEntry(t.token, api),
+    ...(api.isGm() ? pileEntries(t.token?.pile, api) : []),
   ];
 });
+
+/** A creature's sheet, or a pile's window. */
+const openEntry = (token: TokenView | undefined, id: string, api: MenuApi): MenuItem =>
+  token?.pile
+    ? { label: `Open ${token.name}`, run: () => api.openPile(id) }
+    : { label: 'Open sheet', run: () => api.openSheet({ kind: 'token', id }) };
+
+/** GM: makes a token a pile of loot or a merchant (see system-dnd5e piles.ts), locks it, or makes it a token again. */
+function pileEntries(pile: TokenView['pile'], api: MenuApi): MenuItem[] {
+  const set = (to: Partial<NonNullable<TokenView['pile']>> | null, label: string) => () =>
+    api.editSelection({ pile: to }, label);
+  if (!pile) {
+    return [
+      { label: 'Make it a pile of loot', run: set({ kind: 'loot' }, 'pile') },
+      { label: 'Make it a merchant', run: set({ kind: 'merchant' }, 'merchant') },
+    ];
+  }
+  const { locked, ...open } = pile;
+  const other = pile.kind === 'merchant' ? 'loot' : 'merchant';
+  return [
+    locked
+      ? { label: 'Unlock it', run: set(open, 'unlock') }
+      : { label: 'Lock it', run: set({ ...pile, locked: true }, 'lock') },
+    {
+      label: other === 'loot' ? 'Make it a pile of loot' : 'Make it a merchant',
+      run: set({ kind: other }, other === 'loot' ? 'pile' : 'merchant'),
+    },
+    { label: 'Stop being a pile', run: set(null, 'not a pile'), danger: true },
+  ];
+}
 
 /** GM: see the map as this creature's players do (light, sight, fog), or stop. */
 const observeEntry = (id: string, api: MenuApi): MenuItem =>

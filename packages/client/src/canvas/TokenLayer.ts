@@ -281,7 +281,8 @@ export class TokenLayer {
   /**
    * A press on a token you control: shift adds or takes it from the
    * selection, ctrl takes it away; otherwise it is the one you act with and
-   * can be dragged (with the rest of the selection). Double click: its sheet.
+   * can be dragged (with the rest of the selection). Double click: its sheet
+   * (a pile's window).
    */
   private press(id: string, e: FederatedPointerEvent): void {
     const s = this.session;
@@ -292,8 +293,10 @@ export class TokenLayer {
     }
     if (s.isSelected(id)) s.setPrimary(id);
     else s.select(id);
-    if (this.isDoubleClick(id)) s.openSheet({ kind: 'token', id });
-    else this.onGrab?.(id, [e.global.x, e.global.y]);
+    if (this.isDoubleClick(id)) {
+      if (s.tokens.get(id)?.pile) s.openPile(id);
+      else s.openSheet({ kind: 'token', id });
+    } else this.onGrab?.(id, [e.global.x, e.global.y]);
   }
 
   private watchHover(view: Sprite): void {

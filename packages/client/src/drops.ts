@@ -3,7 +3,8 @@ import type { Point } from '@vtt/shared';
 
 // Drag and drop, as in Foundry: things from the side panel (Actors,
 // Compendium, Journal, Assets) and from a character's inventory, dropped on
-// the map or on a character sheet. The server decides what a drop does to a
+// the map or on a character sheet. Gear dropped on the ground becomes a pile
+// of loot, and gear dropped on a pile goes in it (or is sold to a merchant). The server decides what a drop does to a
 // sheet (system-dnd5e sheet-drops.ts) and checks who may do it.
 
 /** The data type every drag between the panel, sheets and map carries. */
@@ -62,8 +63,8 @@ export function dropMessage(payload: MapDrop, p: Point, ctx: DropContext): Outco
   }
   const token = tokenAt(ctx.tokens, p, ctx.gridSize);
   if (payload.kind === 'carried') {
-    if (!token) return { error: 'Hand it to a creature' };
-    return token.id === payload.from ? undefined : give(payload, token.id);
+    if (token?.id === payload.from) return undefined;
+    return !token || token.pile ? trade(payload, ctx.tokens, token?.id) : give(payload, token.id);
   }
   if (!token) return { error: `Drop ${payload.kind}s on a creature` };
   return { t: 'drop', what: payload, onto: { kind: 'token', id: token.id } };
@@ -81,6 +82,18 @@ export function sheetDropMessage(payload: DragPayload, onto: SheetRef, area?: Sh
   }
   if (payload.kind === 'journal') return { error: 'Drop journal entries on the map' };
   return { error: payload.kind === 'media' ? 'Drop pictures on the map' : 'Drop creatures on the map' };
+}
+
+/** A carried item dropped on the ground (a new pile there) or into a pile (see system-dnd5e piles.ts). */
+function trade(
+  { from, item, spell }: Extract<DragPayload, { kind: 'carried' }>,
+  tokens: Iterable<TokenView>,
+  to?: string,
+): Outcome {
+  const owner = [...tokens].find((t) => t.id === from);
+  const index = owner?.inventory?.findIndex((e) => e.item === item && e.spell === spell) ?? -1;
+  if (index < 0) return { error: `${owner?.name ?? 'It'} doesn’t carry that` };
+  return { t: 'trade', from, ...(to && { to }), item: index };
 }
 
 function give({ from, item, spell }: Extract<DragPayload, { kind: 'carried' }>, to: string): ClientMessage {

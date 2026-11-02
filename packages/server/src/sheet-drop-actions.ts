@@ -2,27 +2,34 @@ import { type CompendiumDrop, dropOnSheet, handOver, type SheetArea, SPELL_SCROL
 import { canControl, canEdit, type Player } from '@vtt/shared';
 import type { ClientMessage } from './client-messages.ts';
 import { contentFor } from './game-packs.ts';
+import { Piles } from './pile-actions.ts';
 import { Refusal, requireGm, type Table } from './table.ts';
 
 type Give = Extract<ClientMessage, { t: 'give' }>;
-type DropMessage = Extract<ClientMessage, { t: 'drop' | 'give' }>;
+type DropMessage = Extract<ClientMessage, { t: 'drop' | 'give' | 'trade' }>;
 
-export const isDropMessage = (msg: ClientMessage): msg is DropMessage => msg.t === 'drop' || msg.t === 'give';
+export const isDropMessage = (msg: ClientMessage): msg is DropMessage =>
+  msg.t === 'drop' || msg.t === 'give' || msg.t === 'trade';
 
 /**
  * Drag and drop onto character sheets (see system-dnd5e sheet-drops.ts):
- * compendium entries dropped on a sheet someone may edit, and items handed
- * from a creature to another.
+ * compendium entries dropped on a sheet someone may edit, items handed
+ * from a creature to another, and trading with piles (pile-actions.ts).
  */
 export class SheetDrops {
-  constructor(private table: Table) {}
+  private piles: Piles;
+
+  constructor(private table: Table) {
+    this.piles = new Piles(table);
+  }
 
   private get store() {
     return this.table.store;
   }
 
   handle(player: Player, canSee: (id: string) => boolean, msg: DropMessage): void {
-    if (msg.t === 'give') this.give(player, canSee, msg);
+    if (msg.t === 'trade') this.piles.trade(player, canSee, msg);
+    else if (msg.t === 'give') this.give(player, canSee, msg);
     else this.drop(player, msg.what, msg.onto, msg.area);
   }
 

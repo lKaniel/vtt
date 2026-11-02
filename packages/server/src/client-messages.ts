@@ -137,6 +137,14 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     area: z.enum(['inventory', 'spells', 'features']).optional(),
   }),
   z.object({ t: z.literal('give'), from: z.string(), to: z.string(), item: z.string(), spell: z.string().optional() }),
+  z.object({
+    t: z.literal('trade'),
+    from: z.string(),
+    to: z.string().optional(),
+    item: z.number().int().nonnegative().optional(),
+    qty: z.number().int().positive().optional(),
+    coins: CurrencySchema.optional(),
+  }),
   // The actor itself is checked by GmActions, so a broken one gets a readable refusal.
   z.object({ t: z.literal('saveActor'), actor: z.unknown() }),
   z.object({ t: z.literal('deleteActor'), actor: z.string() }),

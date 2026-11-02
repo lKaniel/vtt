@@ -68,4 +68,16 @@ describe('viewToken', () => {
     expect(viewToken(goblin, gm, content)).toMatchObject({ art: '/art/tokens/goblin.webp' });
     expect(viewToken(goblin, ana, srd)).not.toHaveProperty('art');
   });
+
+  it('shows what is in a pile to everyone, unless it is locked', () => {
+    const pile = { id: 'p', name: 'Chest', x: 0, y: 0, inventory: [{ item: 'dagger' }], currency: { gp: 3 } };
+    const open = viewToken(TokenSchema.parse({ ...pile, pile: {} }), ana, srdFor('2024'));
+    expect(open).toMatchObject({ inventory: [{ item: 'dagger' }], currency: { gp: 3 } });
+    const shut = viewToken(TokenSchema.parse({ ...pile, pile: { locked: true } }), ana, srdFor('2024'));
+    expect(shut).not.toHaveProperty('inventory');
+    expect(shut).not.toHaveProperty('currency');
+    expect(viewToken(TokenSchema.parse({ ...pile, pile: { locked: true } }), gm, srdFor('2024'))).toHaveProperty(
+      'inventory',
+    );
+  });
 });

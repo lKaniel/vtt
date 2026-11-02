@@ -605,6 +605,43 @@ sheet without edit mode.
 ]
 ```
 
+**Item piles and merchants**, like the Item Piles module: a token with
+`pile` is a heap of things rather than a creature (no sheet; it doesn't block
+walking). Its `inventory` and `currency` are what it holds, and everyone who
+can see it sees them, unless it is `locked` (only the GM opens it). Click it
+to open its window: creatures take from loot and put their gear in it, buy
+from a merchant at `buy` times the item's `price` and sell to it at `sell`
+times (a merchant's purse never runs dry; what has no price can't be traded).
+Gear dragged from a sheet onto the ground drops as a new pile of loot (or
+onto the pile already there). A loot pile goes once it is empty unless
+`keepEmpty`; an `infinite` merchant never runs out. Creatures trade within
+`reach` feet. The GM makes any token a pile from its right-click menu.
+
+| `pile` field | Default | Meaning                                      |
+| ------------ | ------- | -------------------------------------------- |
+| `kind`       | `loot`  | `loot` or `merchant`                         |
+| `buy`        | 1       | What a merchant asks, times the item's price |
+| `sell`       | 0.5     | What a merchant pays, times the item's price |
+| `reach`      | 10      | Feet a creature must stand within to trade   |
+| `locked`     |         | Only the GM may open it                      |
+| `keepEmpty`  |         | A loot pile stays once emptied (a chest)     |
+| `infinite`   |         | A merchant whose stock never runs out        |
+
+```json
+{
+  "id": "smithy",
+  "name": "Smithy",
+  "x": 450,
+  "y": 250,
+  "img": "/assets/stall.webp",
+  "pile": { "kind": "merchant", "buy": 1.2 },
+  "inventory": [{ "item": "longsword", "qty": 3 }, { "item": "shield" }]
+}
+```
+
+Item prices are in gold pieces (`"price": 15`; 0.1 is a silver piece). The
+SRD's mundane gear has its book price; magic items have none.
+
 **Spells and features.** `stats.spells` lists the spell ids a character
 knows or has prepared (from `spells-5.1.json` or `spells-5.2.json`, by the
 token's edition). A `class` named after an SRD class (Wizard, Fighter, ...)
