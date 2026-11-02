@@ -74,20 +74,23 @@ export const PlaylistSchema = z.object({
 });
 export type Playlist = z.infer<typeof PlaylistSchema>;
 
-/** What a macro does: chat posts each line of `command` as if typed in chat. */
-export const MACRO_KINDS = ['chat'] as const;
+/** What a macro does: chat posts each line of `command` as if typed in chat; script runs it as JavaScript in the GM's browser (docs/scripting.md). */
+export const MACRO_KINDS = ['chat', 'script'] as const;
 
 export const MacroSchema = z.object({
   ...sidebar,
   kind: z.enum(MACRO_KINDS).default('chat'),
-  /** Chat lines, one per line: plain text, or a chat command such as "/r 1d20+5". */
-  command: z.string().max(4000).default(''),
+  /** Chat lines, one per line (plain text, or a chat command such as "/r 1d20+5"), or a script's code. */
+  command: z.string().max(20000).default(''),
   /** Its picture on the hotbar: an asset path or pack:// reference. */
   img: z.string().optional(),
   /** The player who made it, who may change it; the GM's own have none. */
   author: z.string().optional(),
 });
 export type Macro = z.infer<typeof MacroSchema>;
+
+/** A script macro: code, so only the GM writes, sees and runs it. */
+export const isScriptMacro = (doc: Readonly<Record<string, unknown>>): boolean => doc.kind === 'script';
 
 /** The chat lines a macro posts: its command's lines, without the blank ones. */
 export function macroLines(command: string): string[] {

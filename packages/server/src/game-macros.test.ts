@@ -94,3 +94,38 @@ describe('chat macros', () => {
     expect(store.docs.get('macros', 'x')).toBeUndefined();
   });
 });
+
+// Script macros are JavaScript the GM runs in their own browser (see
+// docs/scripting.md). Only the GM writes them, sees them or runs them, so a
+// player can never put code in front of the GM.
+describe('script macros', () => {
+  const script = { id: 'heal', name: 'Heal all', kind: 'script', command: 'vtt.chat("hi")' };
+
+  it('are written by the GM alone', () => {
+    const ana = seat('ana');
+    ana.receive({ t: 'ops', txn: 't', ops: [make({ ...script, author: 'ana' })] });
+    expect(rejected(ana)).toEqual(['Only the GM can write script macros']);
+    ana.receive({ t: 'ops', txn: 't', ops: [make({ id: 'mine', name: 'Mine', command: 'Hi', author: 'ana' })] });
+    ana.receive({ t: 'ops', txn: 't', ops: [{ op: 'update', coll: 'macros', id: 'mine', patch: { kind: 'script' } }] });
+    expect(rejected(ana)).toEqual(['Only the GM can write script macros']);
+    expect(store.docs.get('macros', 'mine')?.kind).toBe('chat');
+  });
+
+  it('are never sent to a player, even shared', () => {
+    const gm = seat('gm');
+    const ana = seat('ana');
+    gm.receive({ t: 'ops', txn: 't', ops: [make({ ...script, ownership: { default: 'observer' } })] });
+    expect(rejected(gm)).toEqual([]);
+    expect(store.docs.get('macros', 'heal')?.kind).toBe('script');
+    expect(ana.sent.some((m) => JSON.stringify(m).includes('"heal"'))).toBe(false);
+    ana.receive({ t: 'runMacro', macro: 'heal' });
+    expect(errors(ana)).toEqual(['No such macro']);
+  });
+
+  it('run in the GM’s browser, not on the server', () => {
+    const gm = seat('gm');
+    gm.receive({ t: 'ops', txn: 't', ops: [make(script)] });
+    gm.receive({ t: 'runMacro', macro: 'heal' });
+    expect(errors(gm)).toEqual(['Heal all is a script: it runs in your browser']);
+  });
+});

@@ -1,5 +1,5 @@
 import { type Change, type Doc, docPatch, type Op, type Patch } from '@vtt/core';
-import { canControl, canEdit, isGm, lockedPatchKeys, type Player, sceneCollOf } from '@vtt/shared';
+import { canControl, canEdit, isGm, isScriptMacro, lockedPatchKeys, type Player, sceneCollOf } from '@vtt/shared';
 import { sameJson } from '@vtt/system-dnd5e';
 import type { DocAccess, OwnedDoc } from './store-access.ts';
 import { Refusal } from './table.ts';
@@ -49,9 +49,20 @@ function checkUpdate(player: Player, access: DocAccess, op: Extract<Op, { op: 'u
 const AUTHORED = new Set(['drawings', 'templates']);
 const authored = (coll: string) => coll === 'macros' || AUTHORED.has(sceneCollOf(coll)?.name ?? '');
 
+/** Script macros are code the GM runs, so a player may not write one, or turn theirs into one. */
+function checkScript(access: DocAccess, op: Op): void {
+  if (op.coll !== 'macros') return;
+  const doc = op.op === 'create' ? op.doc : access.get(op.coll, op.id);
+  const after = op.op === 'update' && 'kind' in op.patch ? op.patch : doc;
+  if ((doc && isScriptMacro(doc)) || (after && isScriptMacro(after))) {
+    throw new Refusal('Only the GM can write script macros');
+  }
+}
+
 /** True when the op is on a player's own drawing or template and allowed; throws when it isn't. */
 function checkAuthored(player: Player, access: DocAccess, op: Op): boolean {
   if (!authored(op.coll) || player.role === 'observer') return false;
+  checkScript(access, op);
   if (op.op === 'create') return op.doc.author === player.id;
   const doc = access.get(op.coll, op.id);
   if (!doc) return true; // The store reports the missing document.

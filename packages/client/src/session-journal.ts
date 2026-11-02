@@ -1,6 +1,7 @@
 import { type Doc, freeId, type Patch } from '@vtt/core';
 import {
   ENTRY_TYPES,
+  isScriptMacro,
   type EntryType,
   playPatch,
   type Playlist,
@@ -103,10 +104,15 @@ export abstract class JournalSession extends ItemSession {
     this.sendChanges('new', [{ op: 'create', coll, doc }]);
   }
 
-  /** Runs a macro's chat lines, said by `token` when you control it. */
-  runMacro(macro: string, token?: string): void {
+  /** Runs a macro for `token`: a chat macro's lines on the server, said by `token` when you control it; a script here. */
+  async runMacro(macro: string, token?: string): Promise<void> {
+    const doc = this.docs.get('macros', macro);
+    if (doc && isScriptMacro(doc)) return this.runScript(doc, token);
     this.send({ t: 'runMacro', macro, ...(token ? { token } : {}) });
   }
+
+  /** Runs a script macro in this browser (the GM's: players are never sent scripts). */
+  protected abstract runScript(doc: Doc, token?: string): Promise<void>;
 
   /** A macro you were sent, as the hotbar shows it. */
   readonly macroOf = (id: string): MacroCard | undefined => {

@@ -143,7 +143,7 @@ describe('macros in the session', () => {
 
   it('run a macro for a token, and show it on the hotbar', () => {
     joinWith('player', [hail]);
-    session.runMacro('hail', 'bram');
+    void session.runMacro('hail', 'bram');
     expect(last()).toEqual({ t: 'runMacro', macro: 'hail', token: 'bram' });
     expect(session.macroOf('hail')).toEqual({ id: 'hail', name: 'Hail', command: 'Hi', img: 'h.webp' });
     expect(session.macroOf('gone')).toBeUndefined();

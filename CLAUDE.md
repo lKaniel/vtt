@@ -120,6 +120,10 @@ with `pnpm check-game data/games/<id>`.
   act through a browserless seat (`mcp-seat.ts`) so they keep the caller's
   rights. A new tool goes in `mcp-tools.ts`, never with its own permission
   checks.
+- Scripting (`docs/scripting.md`): `client/src/scripting/` holds the
+  hooks, the `vtt` API and the GM-only script macros. The API acts only
+  through the session (what a click would send), never around the server;
+  a new ability goes in `script-api.ts` as a call to a session method.
 - Map editor (`docs/editor.md`): modes, selection, handles, menus and the
   inspector work the same for every placeable. Hit-testing and shapes stay
   in `shared/hit-test.ts` and `placeables.ts` (one boundary for a later
