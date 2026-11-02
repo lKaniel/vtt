@@ -413,6 +413,30 @@ and `ownership` (missing: only the GM sees it; `limited` shows the title,
 }
 ```
 
+Page text can link and roll. `@journal[the-well#map]{the map}` opens an
+entry (at a page), `@actor[bram]` a sheet, `@scene[cave]` takes the GM there,
+and `@spell[fireball]`, `@item[longsword]`, `@monster[goblin]` show the rules
+card; a link without `{label}` shows the document's name. `[[/r 2d6+3]]` (or
+`[[1d4]]{label}`, `[[/damage 2d6 fire]]`) rolls in chat, and
+`[[/check perception 15]]` rolls the check for your selected creature (the
+GM's click asks it of the selection, or the party). Foundry's own links
+(`@UUID[JournalEntry.x]{label}`, `@Actor[x]`, compendium spells and items by
+name) are read too, and the importer points links between entries at the
+entries it made.
+
+An entry with `quest` is in the quest log: `status` (`"active"`, `"done"`,
+`"failed"`) and `objectives` (`text`, `done`). An entry with `date` (game
+seconds, see time.json) is a calendar note on that day:
+
+```json
+{
+  "id": "find-the-well",
+  "name": "Find the well",
+  "date": 86400,
+  "quest": { "status": "active", "objectives": [{ "text": "Ask the innkeeper", "done": true }] }
+}
+```
+
 A roll table has `results` (`text`, `weight` default 1, `drawn`), and
 `replacement: false` draws each result once until it is reset. A playlist
 has `mode` (`"sequence"`, `"shuffle"`, `"together"`), `volume`, and

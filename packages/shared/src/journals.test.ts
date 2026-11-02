@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { drawFrom, drawnPatch, resetPatch } from './roll-tables.ts';
 import { nextTrack, playPatch, stopPatch } from './playlists.ts';
-import { JournalSchema, type Playlist, type RollTable } from './journals.ts';
+import { JournalSchema, type Playlist, questProgress, type RollTable, toggleObjective } from './journals.ts';
 
 const table: RollTable = {
   id: 'loot',
@@ -71,5 +71,21 @@ describe('journal entries', () => {
       pages: [{ id: 'p1', name: 'Rooms', text: 'Three.' }],
     });
     expect(entry.pages[0]!.kind).toBe('text');
+  });
+
+  it('may be a quest with objectives, or a note on a date', () => {
+    const quest = JournalSchema.parse({
+      id: 'q',
+      name: 'Find the well',
+      quest: { objectives: [{ text: 'Ask the innkeeper', done: true }, { text: 'Go down' }] },
+      date: 86400,
+    });
+    expect(quest.quest?.status).toBe('active');
+    expect(quest.date).toBe(86400);
+    expect(questProgress(quest.quest!)).toEqual({ done: 1, total: 2 });
+    const next = toggleObjective(quest.quest!, 1);
+    expect(questProgress(next)).toEqual({ done: 2, total: 2 });
+    expect(quest.quest!.objectives[1]!.done).toBeUndefined();
+    expect(toggleObjective(next, 0).objectives[0]).toEqual({ text: 'Ask the innkeeper' });
   });
 });

@@ -1,6 +1,6 @@
 import { CalendarSchema } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
-import { dayPart, monthGrid, stepMonth } from './calendar-view.ts';
+import { dayPart, monthGrid, notesByDay, stepMonth } from './calendar-view.ts';
 
 const gregorian = CalendarSchema.parse({});
 const harptos = CalendarSchema.parse({
@@ -34,5 +34,25 @@ describe('the part of the day', () => {
     expect(dayPart(gregorian, 12)).toBe('day');
     expect(dayPart(gregorian, 18.25)).toBe('dusk');
     expect(dayPart(gregorian, 22)).toBe('night');
+  });
+});
+
+describe('notes on the calendar', () => {
+  it('lists the entries dated to each day of the month shown', () => {
+    const day = 86400;
+    const notes = [
+      { id: 'a', date: day * 2 + 3600 },
+      { id: 'b', date: day * 2 },
+      { id: 'c', date: day * 40 },
+      { id: 'd' },
+    ];
+    const january = notesByDay(harptos, notes, { year: 1492, month: 0 });
+    expect([...january.keys()]).toEqual([3]);
+    expect(january.get(3)!.map((n) => n.id)).toEqual(['a', 'b']);
+    expect(
+      notesByDay(harptos, notes, { year: 1492, month: 1 })
+        .get(11)!
+        .map((n) => n.id),
+    ).toEqual(['c']);
   });
 });

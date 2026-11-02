@@ -103,6 +103,15 @@ describe('the sidebar documents in the session', () => {
     expect(last()).toMatchObject({ ops: [{ op: 'create', coll: 'playlists', doc: { tracks: [] } }] });
   });
 
+  it('make quests and dated notes, and open them', () => {
+    joinAs('gm');
+    session.createEntry('journal', { name: 'New quest', quest: { status: 'active', objectives: [] } });
+    expect(last()).toMatchObject({
+      ops: [{ op: 'create', coll: 'journals', doc: { name: 'New quest', quest: { status: 'active' } } }],
+    });
+    expect(session.journal).toEqual({ entry: 'journal-1' });
+  });
+
   it('opens a picture the GM shows, and the GM shows one', () => {
     ws.receive(welcome());
     ws.receive({ t: 'showImage', src: '/assets/map.png', title: 'Old map' });
