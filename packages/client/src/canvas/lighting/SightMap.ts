@@ -1,4 +1,12 @@
-import { feetToPx, type LightSource, type Point, type ReachPolygon, type Rect, type Senses } from '@vtt/shared';
+import {
+  feetToPx,
+  lightReach,
+  type LightSource,
+  type Point,
+  type ReachPolygon,
+  type Rect,
+  type Senses,
+} from '@vtt/shared';
 import { Container, Graphics, RenderTexture, type Renderer } from 'pixi.js';
 import { MAP_RESOLUTION, placeScene, type ViewTransform } from './LightMap.ts';
 
@@ -64,7 +72,9 @@ export class SightMap {
       this.area(this.keenSenses, scene, v.at, range(keen));
     }
     // Magical darkness puts out darkvision (red) but leaves sight and memory alone.
-    for (const l of scene.darkness) this.area(this.darkness, scene, [l.x, l.y], range(l.bright + l.dim));
+    for (const l of scene.darkness) {
+      if (l.bright + l.dim > 0) this.darkness.poly(lightReach(l, scene.gridSize, scene.polygon)).fill(0x00ffff);
+    }
     this.renderer.render({ container: this.scene, target: this.texture, clear: true });
   }
 
@@ -75,7 +85,6 @@ export class SightMap {
 
   private area(g: Graphics, scene: SightScene, at: Point, radius: number): void {
     if (radius <= 0) return;
-    const dark = g === this.darkness;
-    g.poly(scene.polygon(at, radius, dark ? 'light' : 'sight')).fill(dark ? 0x00ffff : 0xff0000);
+    g.poly(scene.polygon(at, radius, 'sight')).fill(0xff0000);
   }
 }

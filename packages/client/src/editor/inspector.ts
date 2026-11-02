@@ -29,8 +29,18 @@ const LIGHT_FIELDS: Field[] = [
   plain('bright', 'Bright (ft)', 'number'),
   plain('dim', 'Dim (ft)', 'number'),
   plain('color', 'Colour', 'color'),
+  plain('colorIntensity', 'Colour strength (0-1)', 'number'),
+  plain('luminosity', 'Luminosity (0-1)', 'number'),
+  plain('attenuation', 'Edge softness (0-1)', 'number'),
+  plain('angle', 'Beam (°)', 'number'),
+  plain('rotation', 'Facing (° from south)', 'number', { when: (d) => typeof d.angle === 'number' && d.angle < 360 }),
   plain('animation', 'Animation', 'select', { options: options('', 'flicker', 'pulse') }),
   { ...plain('darkness', 'Magical darkness', 'check'), get: (d) => d.darkness === true },
+  {
+    ...plain('walls', 'Shines through walls', 'check'),
+    get: (d) => d.walls === false,
+    patch: (v) => ({ walls: v === true ? false : null }),
+  },
   ON_TILE,
 ];
 

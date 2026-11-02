@@ -218,6 +218,18 @@ export const LightSchema = z.object({
   animation: z.enum(['flicker', 'pulse']).optional(),
   /** Magical darkness instead of light (the Darkness spell): nothing nonmagical lights it. */
   darkness: z.boolean().optional(),
+  /** Degrees of the beam (a lantern, a lighthouse); missing: all round. */
+  angle: z.number().gt(0).max(360).optional(),
+  /** Which way the beam faces, degrees clockwise from facing down the map (south). */
+  rotation: z.number().optional(),
+  /** false: it shines through walls (a magical glow). */
+  walls: z.boolean().optional(),
+  /** How strongly it lights, 0 to 1 (default 1). */
+  luminosity: z.number().min(0).max(1).optional(),
+  /** How softly it fades out at its edges, 0 (a hard edge) to 1 (default 0.5). */
+  attenuation: z.number().min(0).max(1).optional(),
+  /** How much of its colour it casts, 0 (plain warm light) to 1 (default). */
+  colorIntensity: z.number().min(0).max(1).optional(),
 });
 export type Light = z.infer<typeof LightSchema>;
 
