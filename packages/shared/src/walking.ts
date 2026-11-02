@@ -1,13 +1,16 @@
-import { distToSegment, movementBlocked, wallsInRect } from './geometry.ts';
+import { type Disc, type Ground, TangentSearch, wallCorners } from './any-angle.ts';
+import { CellIndex } from './cell-index.ts';
+import { blocksMovement, distToSegment, passesOneWay, segmentsIntersect, wallsInRect } from './geometry.ts';
 import { gridKind } from './grid.ts';
 import { MinHeap } from './min-heap.ts';
 import { findPath, type Path, type PathOptions } from './pathfinding.ts';
 import type { Point, Wall } from './schema.ts';
 
 // Walking a token across a scene. Without a grid (the default) a token goes
-// to the exact point, in a straight line when it can and around walls and
-// other creatures when it can't, and the way is measured in feet. On a
-// square grid it walks square to square, every square 5 ft.
+// to the exact point, in a straight line when it can and otherwise the
+// shortest way round walls and other creatures, curving round them
+// (any-angle.ts), and the way is measured in feet. On a square grid it walks
+// square to square, every square 5 ft.
 
 /** A creature's footprint on the map: a circle, in pixels. */
 export interface Body {
@@ -54,6 +57,9 @@ export function walkPath(from: Point, to: Point, walls: readonly Wall[], opts: W
   const walker = new Walker(from, near, opts);
   if (!walker.canStand(to)) return null;
   if (walker.clear(from, to)) return route([from, to], opts);
+  const shortest = anyAngle(walker, [from, to], near, opts);
+  if (shortest.points) return route(shortest.points, opts);
+  if (!shortest.unsure) return null;
   const corners = new LatticeSearch(walker, from, to, opts).run();
   return (
     corners &&
@@ -62,6 +68,23 @@ export function walkPath(from: Point, to: Point, walls: readonly Wall[], opts: W
       opts,
     )
   );
+}
+
+/** How far a way keeps off the end of a wall as it rounds it, in squares. */
+const CORNER = 0.15;
+
+/**
+ * The shortest way round creatures and wall ends (any-angle.ts). `unsure`
+ * when it may have missed one: it gave up early, or a wall end so close to
+ * the start or goal that it couldn't be gone round was left out.
+ */
+function anyAngle(walker: Walker, [from, to]: [Point, Point], walls: readonly Wall[], opts: WalkOptions) {
+  const r = CORNER * opts.gridSize;
+  const corners = wallCorners(walls, r);
+  const kept = corners.filter((d) => dist(d.c, from) > r + EPS && dist(d.c, to) > r + EPS);
+  const search = new TangentSearch([...walker.discs(), ...kept], from, to, walker.ground());
+  const points = search.run(opts.maxNodes ?? 20000);
+  return { points, unsure: search.exhausted || kept.length < corners.length };
 }
 
 /** `points` with points added so no step is longer than `step`. */
@@ -82,24 +105,65 @@ function dist(a: Point, b: Point): number {
 /** What stands in a walker's way: walls, and creatures it doesn't already overlap. */
 class Walker {
   private bodies: Body[];
+  private index: CellIndex<{ wall: Wall } | { body: number }>;
 
   constructor(
     from: Point,
-    private walls: readonly Wall[],
+    walls: readonly Wall[],
     private opts: WalkOptions,
   ) {
     // A creature stuck inside another may still step out of it.
     this.bodies = opts.bodies.filter((b) => this.free(from, b));
+    this.index = new CellIndex(opts.gridSize * 2);
+    for (const wall of walls) {
+      if (!blocksMovement(wall)) continue;
+      const [a, b] = [wall.a, wall.b];
+      this.index.add(
+        { wall },
+        [Math.min(a[0], b[0]), Math.min(a[1], b[1])],
+        [Math.max(a[0], b[0]), Math.max(a[1], b[1])],
+      );
+    }
+    this.bodies.forEach((b, body) => {
+      const r = b.r + opts.radius;
+      this.index.add({ body }, [b.x - r, b.y - r], [b.x + r, b.y + r]);
+    });
   }
 
   canStand(p: Point): boolean {
     return this.bodies.every((b) => this.free(p, b));
   }
 
-  /** Whether the walker can go straight from a to b. */
-  clear(a: Point, b: Point): boolean {
-    if (movementBlocked(a, b, this.walls)) return false;
-    return this.bodies.every((body) => distToSegment([body.x, body.y], a, b) >= body.r + this.opts.radius - EPS);
+  /** Whether the walker can go straight from a to b (brushing past the creature numbered `hug`). */
+  clear(a: Point, b: Point, hug?: number): boolean {
+    return !this.index.someAlong(a, b, (o) =>
+      'wall' in o ? this.wallBlocks(o.wall, a, b) : this.bodyBlocks(o.body, a, b, hug),
+    );
+  }
+
+  private wallBlocks(wall: Wall, a: Point, b: Point): boolean {
+    return !passesOneWay(wall, a) && segmentsIntersect(a, b, wall.a, wall.b);
+  }
+
+  private bodyBlocks(i: number, a: Point, b: Point, hug: number | undefined): boolean {
+    const body = this.bodies[i]!;
+    return i !== hug && distToSegment([body.x, body.y], a, b) < body.r + this.opts.radius - EPS;
+  }
+
+  /** The creatures in the way, grown by the walker's own radius: where its centre may not go. */
+  discs(): Disc[] {
+    return this.bodies.map((b) => ({ c: [b.x, b.y], r: b.r + this.opts.radius }));
+  }
+
+  /** The ground for the any-angle search: creatures are the first discs. */
+  ground(): Ground {
+    const { gridSize, cost } = this.opts;
+    return {
+      clear: (a, b, hug) => this.clear(a, b, hug),
+      weigh: (a, b) => (costFeet([a, b], gridSize, cost) / 5) * gridSize,
+      even: !cost,
+      step: gridSize / 8,
+    };
   }
 
   private free(p: Point, b: Body): boolean {
@@ -123,7 +187,7 @@ const STEPS: readonly Point[] = [
   [-1, -1],
 ];
 
-/** A* over a half-square lattice anchored at the start, used when the straight way is blocked. */
+/** A* over a half-square lattice anchored at the start: the fallback when the any-angle search can't be sure. */
 class LatticeSearch {
   private cost = new Map<number, number>();
   private came = new Map<number, number>();
