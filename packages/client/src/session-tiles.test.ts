@@ -113,7 +113,7 @@ describe('moving tiles', () => {
 describe('grouping', () => {
   it('groups the selection in one step and selects the group', () => {
     session.setSelection([key('house'), key('crate')]);
-    session.group();
+    session.tiles.group();
     const ops = lastOps()!;
     expect(ops.label).toBe('group');
     expect(ops.ops?.[0]).toMatchObject({ op: 'create', doc: { id: 'group', kind: 'group' } });
@@ -124,7 +124,7 @@ describe('grouping', () => {
 
   it('takes a group back when the server refuses it', () => {
     session.setSelection([key('house'), key('crate')]);
-    session.group();
+    session.tiles.group();
     ws.receive({ t: 'reject', txn: lastOps()!.txn!, reason: 'No' });
     expect(session.docs.get('main/tiles', 'group')).toBeUndefined();
     expect(session.docs.get('main/tiles', 'house')?.parent).toBeUndefined();
@@ -132,7 +132,7 @@ describe('grouping', () => {
 
   it('ungroups, selecting what was in the group', () => {
     session.setSelection([key('camp')]);
-    session.ungroup();
+    session.tiles.ungroup();
     expect(lastOps()?.ops?.at(-1)).toEqual({ op: 'delete', coll: 'main/tiles', id: 'camp' });
     expect(session.selection.toSorted((a, b) => a.localeCompare(b))).toEqual([key('fire'), key('tent')]);
   });
@@ -141,41 +141,41 @@ describe('grouping', () => {
 describe('order and locks', () => {
   it('brings the selection to the front', () => {
     session.setSelection([key('house')]);
-    session.reorder('front');
+    session.tiles.reorder('front');
     expect(patchOf('house')).toEqual({ sort: expect.any(String) as string });
     expect((patchOf('house')!.sort as string) > 'D').toBe(true);
   });
 
   it('locks and unlocks the selection', () => {
     session.setSelection([key('house'), key('crate')]);
-    session.toggleLock();
+    session.tiles.toggleLock();
     expect(lastOps()).toMatchObject({ label: 'lock', ops: [{ patch: { locked: true } }, { patch: { locked: true } }] });
-    session.toggleLock();
+    session.tiles.toggleLock();
     expect(patchOf('house')).toEqual({ locked: null });
   });
 
   it('moves tiles into a group from the layers panel', () => {
-    session.moveTiles(['crate'], 'camp', 0);
+    session.tiles.move(['crate'], 'camp', 0);
     expect(patchOf('crate')).toMatchObject({ parent: 'camp' });
   });
 });
 
 describe('drawing tiles', () => {
   it('draws a tile into the container under it, and selects it', () => {
-    session.createTile({ x: 1100, y: 1100, w: 200, h: 100 }, 'wood');
+    session.tiles.create({ x: 1100, y: 1100, w: 200, h: 100 }, 'wood');
     const op = lastOps()?.ops?.[0];
     expect(op).toMatchObject({ op: 'create', doc: { kind: 'rect', texture: 'wood', parent: 'house', x: 1100 } });
     expect(session.selection).toEqual([key(op!.doc!.id)]);
   });
 
   it('draws the preset picked last', () => {
-    session.setTilePreset('cobble');
-    session.createTile({ x: 2500, y: 2500, w: 100, h: 100 });
+    session.tiles.setPreset('cobble');
+    session.tiles.create({ x: 2500, y: 2500, w: 100, h: 100 });
     expect(lastOps()?.ops?.[0]?.doc).toMatchObject({ id: 'cobble', texture: 'cobble', color: '#8a8580' });
   });
 
   it('puts new ground under everything', () => {
-    session.createTile({ x: 0, y: 0, w: 500, h: 500 }, 'grass');
+    session.tiles.create({ x: 0, y: 0, w: 500, h: 500 }, 'grass');
     const doc = lastOps()?.ops?.[0]?.doc;
     expect(doc).toMatchObject({ background: true });
     expect((doc!.sort as string) < 'A').toBe(true);

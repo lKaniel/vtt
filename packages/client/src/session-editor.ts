@@ -7,6 +7,7 @@ import type { LightPreset } from './map-tools.ts';
 import type { ItemTool } from './editor/shape-tools.ts';
 import { mayUseMode } from './authorship.ts';
 import { EditSession } from './session-edits.ts';
+import type { Tiles } from './session-tiles.ts';
 
 // The map editor's state: which mode and tool, what is selected, and the open
 // context menu. Every change it makes goes out as document ops through
@@ -23,6 +24,8 @@ export interface OpenMenu {
 }
 
 export abstract class EditorSession extends EditSession {
+  /** The tile tree's commands (session-tiles.ts); the tiles mode's moves go there. */
+  abstract readonly tiles: Tiles;
   mode: EditorMode = 'tokens';
   tool: EditorTool = 'select';
   /** The light the place tool puts down. */
@@ -135,6 +138,7 @@ export abstract class EditorSession extends EditSession {
 
   /** Moves documents by `delta`, snapped as the mode snaps (Shift: free), in one step. */
   moveSelection(keys: readonly string[], delta: Point, free: boolean): void {
+    if (this.mode === 'tiles') return this.tiles.moveSelection(keys, delta, free);
     const d = snapDelta(delta, this.mode, this.moveGrid(), free);
     if (!d[0] && !d[1]) return;
     this.patchEach('move', keys, (doc) => moveBy(doc, d));
@@ -142,12 +146,14 @@ export abstract class EditorSession extends EditSession {
 
   /** Arrow keys: one pixel, or one square with Shift. */
   nudge(dir: Point, big: boolean): void {
+    if (this.mode === 'tiles') return this.tiles.nudge(dir, big);
     const step = big ? this.gridSize() : 1;
     this.patchEach('move', this.selection, (doc) => moveBy(doc, [dir[0] * step, dir[1] * step]));
   }
 
   /** Drags one handle of a document (a wall end, a light ring, a tile edge) to `to`. */
   reshape(key: string, handle: string, to: Point, free: boolean): void {
+    if (this.mode === 'tiles' && this.tiles.reshape(key, handle, to, free)) return;
     this.patchEach('reshape', [key], (doc) => dragHandle(doc, handle, to, { gridSize: this.gridSize(), free }));
   }
 

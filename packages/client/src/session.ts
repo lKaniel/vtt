@@ -35,7 +35,8 @@ import type { SessionEvents } from './session-events.ts';
 import { Actions, type ActionEvents } from './session-actions.ts';
 import { Fog, type FogEvents } from './session-fog.ts';
 import { Draw, Levels } from './session-items.ts';
-import { TileSession } from './session-tiles.ts';
+import { EditorSession } from './session-editor.ts';
+import { Tiles } from './session-tiles.ts';
 import { isTableNews, type TableNews, withChat } from './session-news.ts';
 import type { SessionPart } from './session-part.ts';
 import { type SceneEvents, Scenes } from './session-scenes.ts';
@@ -60,7 +61,7 @@ export interface SheetTarget {
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends TileSession {
+export class Session extends EditorSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -97,8 +98,8 @@ export class Session extends TileSession {
     updates: (label, updates) => this.sendUpdates(label, updates),
     runScript: (doc, token) => this.scripts.run(doc, token),
     heard: (src, volume) => this.emit('sound', src, volume),
-    createImageTile: (r, src) => this.createImageTile(r, src),
     reseat: (you) => (this.you = you),
+    createImageTile: (r, src) => this.tiles.createImage(r, src),
   };
   /** The selected creature's readied attack or aimed spell, and your roll mode. */
   readonly actions = new Actions(this, this.ev);
@@ -111,6 +112,7 @@ export class Session extends TileSession {
   readonly draw = new Draw(this, this.ev);
   readonly levels = new Levels(this, this.ev);
   readonly turns = new Turns(this);
+  readonly tiles = new Tiles(this, this.ev);
   /** The parts that take messages, the welcome and departures. */
   private readonly parts: SessionPart[] = [this.journal, this.packs, this.scenes, this.fog, this.hud, this.piles];
   /** The GM paused the game: players can't act until it resumes. */

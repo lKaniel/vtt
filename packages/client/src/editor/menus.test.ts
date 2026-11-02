@@ -20,10 +20,7 @@ function api(gm = true) {
     openSheet: vi.fn(),
     move: vi.fn(),
     editMap: vi.fn(),
-    group: vi.fn(),
-    ungroup: vi.fn(),
-    reorder: vi.fn(),
-    toggleLock: vi.fn(),
+    tiles: { group: vi.fn(), ungroup: vi.fn(), reorder: vi.fn(), toggleLock: vi.fn() },
     lightPreset: 'torch' as const,
     targets: { mine: new Set<string>(), toggle: vi.fn() },
     hud: { open: vi.fn(), observing: undefined as string | undefined, observe: vi.fn() },
@@ -241,11 +238,11 @@ describe('context menus', () => {
       const a = api();
       expect(labels(onTiles({ id: 'g', type: 'tile', rev: 1, kind: 'group' }), a)).toContain('Ungroup');
       pick(onTiles(tile('a', { locked: true, background: true })), a, 'Unlock').run();
-      expect(a.toggleLock).toHaveBeenCalled();
+      expect(a.tiles.toggleLock).toHaveBeenCalled();
       pick(onTiles(tile('a', { background: true })), a, 'Make it an object').run();
       expect(a.editSelection).toHaveBeenCalledWith({ background: null });
       pick(onTiles(tile('a')), a, 'Bring forward').run();
-      expect(a.reorder).toHaveBeenCalledWith('forward');
+      expect(a.tiles.reorder).toHaveBeenCalledWith('forward');
     });
   });
 

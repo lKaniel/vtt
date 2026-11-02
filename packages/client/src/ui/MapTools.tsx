@@ -254,8 +254,8 @@ function Darkness({ session }: Readonly<{ session: Session }>) {
 function TilePresets({ session }: Readonly<{ session: Session }>) {
   return (
     <SelectField
-      value={session.tilePreset}
-      onValueChange={(id) => session.setTilePreset(id as TileTexture)}
+      value={session.tiles.preset}
+      onValueChange={(id) => session.tiles.setPreset(id as TileTexture)}
       title="What the Draw tool paints: ground stays under everything and never holds tiles"
       options={Object.entries(TILE_PRESETS).map(([id, t]) => ({
         value: id,
