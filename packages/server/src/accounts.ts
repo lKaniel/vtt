@@ -54,6 +54,12 @@ export class AccountStore {
     if (sessions.success) this.sessions = new Map(Object.entries(sessions.data));
   }
 
+  /** The server's admin: the first account made. */
+  admin(): Account | undefined {
+    const file = [...this.accounts.values()].find((a) => a.admin);
+    return file && publicAccount(file);
+  }
+
   get(id: string): Account | undefined {
     const file = this.accounts.get(id);
     return file && publicAccount(file);

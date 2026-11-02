@@ -52,18 +52,19 @@ at `/assets/`).
 
 All under `/api/`, signed in:
 
-| Call                                        | Who                  | Does                                        |
-| ------------------------------------------- | -------------------- | ------------------------------------------- |
-| `GET games`                                 | anyone               | your games and open ones, and the systems   |
-| `POST games` `{name, system, rules}`        | anyone               | makes a game with you as GM                 |
-| `GET games/<id>`                            | who can see it       | members (who is online), the invite for GMs |
-| `DELETE games/<id>`                         | GM, admin            | deletes a lobby game, files and all         |
-| `POST games/<id>/join` `{character?}`       | member, or open game | takes your seat, brings the character       |
-| `POST games/<id>/invite`                    | GM                   | a new invite code                           |
-| `PUT games/<id>/open` `{open}`              | GM                   | open to every account, or not               |
-| `PUT games/<id>/members/<account>` `{role}` | GM                   | changes a role                              |
-| `DELETE games/<id>/members/<account>`       | GM, or yourself      | removes a member                            |
-| `POST invites/<code>`                       | anyone               | joins the game as a player                  |
+| Call                                                    | Who                  | Does                                                                              |
+| ------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------- |
+| `GET games`                                             | anyone               | your games and open ones, and the systems                                         |
+| `POST games` `{name, system, rules}`                    | anyone               | makes a game with you as GM                                                       |
+| `POST games/import-foundry` `{folder, name?, dataDir?}` | the admin            | makes a game from a Foundry world on the server's disk ([foundry.md](foundry.md)) |
+| `GET games/<id>`                                        | who can see it       | members (who is online), the invite for GMs                                       |
+| `DELETE games/<id>`                                     | GM, admin            | deletes a lobby game, files and all                                               |
+| `POST games/<id>/join` `{character?}`                   | member, or open game | takes your seat, brings the character                                             |
+| `POST games/<id>/invite`                                | GM                   | a new invite code                                                                 |
+| `PUT games/<id>/open` `{open}`                          | GM                   | open to every account, or not                                                     |
+| `PUT games/<id>/members/<account>` `{role}`             | GM                   | changes a role                                                                    |
+| `DELETE games/<id>/members/<account>`                   | GM, or yourself      | removes a member                                                                  |
+| `POST invites/<code>`                                   | anyone               | joins the game as a player                                                        |
 
 Code: `server/src/game-hub.ts` (games, loading, invites), `lobby-api.ts`
 (the routes), `socket-join.ts` (who a connection is), `shared/src/lobby.ts`

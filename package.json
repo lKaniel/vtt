@@ -17,7 +17,8 @@
     "coverage": "vitest run --coverage",
     "quality": "pnpm coverage && fallow",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm quality && pnpm check-game",
-    "import-foundry": "pnpm --filter @vtt/server import-foundry"
+    "import-foundry": "pnpm --filter @vtt/server import-foundry",
+    "import-foundry-world": "pnpm --filter @vtt/server import-foundry-world"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -4,6 +4,7 @@ import { editionOf, toEdition } from './content.ts';
 import { CONTENT_TYPES, contentWith, packContentIssues, SRD_PACKS } from './packs.ts';
 import { withOwn } from './own-content.ts';
 import { perceiverOf } from './perception.ts';
+import { foundrySheets } from './foundry-actor.ts';
 import { type Actor, ActorSchema, type Token, TokenSchema } from './token-schema.ts';
 
 // D&D 5e as the engine sees it: its editions, the shape of its creatures,
@@ -46,6 +47,7 @@ export const dnd5e: Dnd5eSystem = {
   packs: SRD_PACKS,
   contentTypes: CONTENT_TYPES,
   packContentIssues,
+  foundry: foundrySheets,
   perceiver: (token, rules, packs) => {
     const monster = token.monster
       ? contentWith(editionOf(token, { rules: toEdition(rules) }), packs).monsters.get(token.monster)

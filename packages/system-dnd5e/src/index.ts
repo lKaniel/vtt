@@ -38,3 +38,4 @@ export * from './traps.ts';
 export * from './durations.ts';
 export * from './own-content.ts';
 export * from './sheet-drops.ts';
+export * from './foundry-actor.ts';

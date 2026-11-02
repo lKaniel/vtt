@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { startApi, type ApiServer } from './test/api-server.ts';
 
@@ -145,5 +148,48 @@ describe('the lobby', () => {
     expect((await kaniel('DELETE', '/api/games/two')).status).toBe(200);
     expect(api.hub.ids()).toEqual(['test']);
     expect((await kaniel('DELETE', '/api/games/test')).json.error).toMatch(/started with/);
+  });
+});
+
+describe('importing a Foundry world', () => {
+  async function foundryWorld(): Promise<string> {
+    const dir = join(await mkdtemp(join(tmpdir(), 'foundry-')), 'worlds', 'lost-keep');
+    await mkdir(join(dir, 'data'), { recursive: true });
+    await writeFile(
+      join(dir, 'world.json'),
+      JSON.stringify({ id: 'lost-keep', title: 'The Lost Keep', system: 'dnd5e' }),
+    );
+    await writeFile(
+      join(dir, 'data', 'scenes.db'),
+      JSON.stringify({ _id: 's', name: 'Keep', width: 500, height: 500 }),
+    );
+    await writeFile(join(dir, 'data', 'actors.db'), JSON.stringify({ _id: 'a', name: 'Goblin', type: 'npc' }));
+    return dir;
+  }
+
+  it('makes a new game from a world folder on the server, with the admin as its GM', async () => {
+    const kaniel = await signUp('kaniel');
+    const res = await kaniel('POST', '/api/games/import-foundry', { folder: await foundryWorld() });
+    expect(res).toMatchObject({
+      status: 200,
+      json: { game: { id: 'the-lost-keep', name: 'The Lost Keep', you: 'gm' }, report: { scenes: 1, actors: 1 } },
+    });
+    expect((await kaniel('GET', '/api/games/the-lost-keep')).status).toBe(200);
+    const again = await kaniel('POST', '/api/games/import-foundry', { folder: await foundryWorld(), name: 'Keep 2' });
+    expect(again.json).toMatchObject({ game: { id: 'keep-2', name: 'Keep 2' } });
+  });
+
+  it("is the server admin's, since it reads the server's disk", async () => {
+    await signUp('kaniel');
+    const ana = await signUp('ana');
+    const res = await ana('POST', '/api/games/import-foundry', { folder: await foundryWorld() });
+    expect(res.status).toBe(403);
+  });
+
+  it('says what is wrong with a folder that is no world', async () => {
+    const kaniel = await signUp('kaniel');
+    const res = await kaniel('POST', '/api/games/import-foundry', { folder: tmpdir() });
+    expect(res).toMatchObject({ status: 400, json: { error: expect.stringMatching(/world\.json/) as unknown } });
+    expect(api.hub.ids()).toEqual(['test']);
   });
 });

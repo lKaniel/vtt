@@ -123,3 +123,46 @@ describe('a Foundry scene', () => {
     ).toBeCloseTo(0.4);
   });
 });
+
+describe('Foundry v14 scenes', () => {
+  const v14 = {
+    name: 'Market',
+    width: 2000,
+    height: 1000,
+    padding: 0,
+    grid: { size: 100, type: 1, distance: 5 },
+    levels: [
+      {
+        _id: 'up',
+        name: 'Upstairs',
+        elevation: { bottom: 10, top: 20 },
+        background: { src: 'modules/caves/tiles/barrel.png' },
+      },
+      {
+        _id: 'gr',
+        name: 'Ground',
+        elevation: { bottom: 0, top: 10 },
+        background: { src: 'modules/caves/maps/goblin cave.webp' },
+      },
+    ],
+    tiles: [
+      { texture: { src: 'modules/levels-3d-preview/assets/blank.webp' }, x: 0, y: 0, width: 100, height: 100 },
+      { texture: { src: 'modules/levels-3d-preview/assets/blank.webp' }, x: 100, y: 0, width: 100, height: 100 },
+      { texture: { src: 'modules/caves/tiles/barrel.png' }, x: 200, y: 0, width: 100, height: 100 },
+    ],
+  };
+
+  it('takes the background from the lowest floor that has one', () => {
+    const { scene } = foundryScene(v14, media);
+    expect(scene.tiles[0]).toMatchObject({ id: 'background', src: 'pack://caves/media/maps/goblin cave.webp' });
+  });
+
+  it('leaves out 3D Canvas model tiles, which are blank squares in 2D', () => {
+    const { scene, skipped } = foundryScene(v14, media);
+    expect(scene.tiles.map((t) => ('src' in t ? t.src : undefined))).toEqual([
+      'pack://caves/media/maps/goblin cave.webp',
+      'pack://caves/media/tiles/barrel.png',
+    ]);
+    expect(skipped).toContain('2 3D Canvas model tiles (3D only, they show as blank squares)');
+  });
+});

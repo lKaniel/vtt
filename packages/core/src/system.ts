@@ -39,6 +39,23 @@ export interface SystemDefinition<TToken = unknown, TActor = unknown> extends Sy
   contentTypes?: readonly string[];
   /** What is wrong with the documents of one of its content compendia. */
   packContentIssues?: (compendium: PackCompendium) => string[];
+  /** Reads the creature sheets of a Foundry VTT world made for one Foundry system, for importing it. */
+  foundry?: FoundrySheets;
+}
+
+/** A system's reading of Foundry VTT actors (see server/src/foundry-world.ts). */
+export interface FoundrySheets {
+  /** The Foundry system whose actors it reads, e.g. "dnd5e". */
+  system: string;
+  /** The rules edition a Foundry world plays, from its settings (by key); undefined: the default. */
+  rules: (setting: (key: string) => unknown) => string | undefined;
+  /**
+   * A Foundry actor as sheet fields, besides the id, name, picture, ownership
+   * and folder the import sets itself; and what could not come along.
+   */
+  sheet: (actor: unknown, rules: string) => { sheet: Record<string, unknown>; skipped: string[] };
+  /** An unlinked Foundry token's own changes to its actor, as token delta fields. */
+  delta: (delta: unknown) => Record<string, unknown>;
 }
 
 /** A pack a system ships: its manifest and its compendia's documents. */

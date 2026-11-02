@@ -1,5 +1,13 @@
 import type { Character } from '@vtt/system-dnd5e';
-import type { GameDetail, GameSummary, NewGame, Player, Role } from '@vtt/shared';
+import type {
+  FoundryImportInput,
+  FoundryImportReport,
+  GameDetail,
+  GameSummary,
+  NewGame,
+  Player,
+  Role,
+} from '@vtt/shared';
 import type { SystemInfo } from '@vtt/core';
 
 // The account side of the server: signing in, characters, and the lobby.
@@ -60,6 +68,9 @@ export const api = {
   game: async (id: string) => (await call<{ game: GameDetail }>('GET', game(id))).game,
   createGame: async (input: NewGame) => (await call<{ game: GameSummary }>('POST', '/api/games', input)).game,
   deleteGame: (id: string) => call<object>('DELETE', game(id)),
+  /** Makes a game from a Foundry world folder on the server's disk (the admin only). */
+  importFoundry: (input: FoundryImportInput) =>
+    call<{ game: GameSummary; report: FoundryImportReport }>('POST', '/api/games/import-foundry', input),
   /** Takes your seat at the game, bringing `character` from your roster. */
   joinGame: async (id: string, character?: string) =>
     (await call<{ player: Player }>('POST', game(id, '/join'), { character })).player,
