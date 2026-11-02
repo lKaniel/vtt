@@ -103,6 +103,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     point: PointSchema.optional(),
     summon: z.string().optional(),
     choice: z.string().optional(),
+    form: z.string().optional(),
   }),
   z.object({
     t: z.literal('feature'),

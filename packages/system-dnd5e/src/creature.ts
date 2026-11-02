@@ -20,6 +20,7 @@ import { characterLevel, type ClassLevel, classLevels } from './multiclass.ts';
 import { withOwn } from './own-content.ts';
 import { exhausted } from './vigour.ts';
 import { sensesOf } from './perception.ts';
+import { type Form, formOf, shapeToken, withoutForm } from './forms.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Condition, Effect } from './spell-schema.ts';
 import {
@@ -80,6 +81,8 @@ function proficiencyForCr(cr: number): number {
  * stats and equipped gear. Undefined for tokens without any (scenery, illusions).
  */
 export function resolveCreature(token: Token, books: Content): Creature | undefined {
+  const form = formOf(token);
+  if (form) return formCreature(token, form, books);
   const content = withOwn(books, token);
   const monster = token.monster ? content.monsters.get(token.monster) : undefined;
   if (token.monster ? !monster : !token.stats) return undefined;
@@ -120,6 +123,16 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     senses: sensesOf(token, monster),
   };
   return withCarrying(applyEffects(withItemBonuses(base, token, content)), token, { monster, content });
+}
+
+/** A creature in another shape: the form's stat block, with its own hit points in 2024 (forms.ts). */
+function formCreature(token: Token, form: Form, books: Content): Creature | undefined {
+  const own = resolveCreature(withoutForm(token), books);
+  if (!own) return undefined;
+  const { int, wis, cha } = own.abilities;
+  const shape = resolveCreature(shapeToken(token, form, { int, wis, cha }), books);
+  if (!shape) return own;
+  return form.hp === 'temp' ? { ...shape, hp: own.hp, maxHp: own.maxHp } : shape;
 }
 
 /** Equipped (and attuned) magic items' bonuses to AC and saving throws. */

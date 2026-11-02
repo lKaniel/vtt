@@ -1,5 +1,8 @@
 import {
   afterDamage,
+  changeBack,
+  endShape,
+  formOf,
   canAct,
   type Combat,
   concentrationDc,
@@ -193,6 +196,7 @@ export class Table {
   hurt(token: Token, hit: { hp: number; tempHp?: number; crit?: boolean }, damage: number): void {
     const stored = this.store.tokens.get(token.id) ?? token;
     const before = this.sheetOf(stored)!;
+    if (hit.hp <= 0 && formOf(stored)?.hp === 'replace') return this.outOfShape(stored, before, damage);
     const { token: current, hit: after } = this.warded(stored, before.hp, hit);
     const hurt = this.downed(withHp(current, after, before.maxHp), {
       damage,
@@ -204,6 +208,18 @@ export class Table {
     this.store.setToken(shaken.token);
     for (const n of shaken.notes) this.note(n);
     this.checkConcentration(shaken.token, damage);
+  }
+
+  /** A 2014 shape dropped to 0: the creature changes back, and damage beyond the shape's hit points carries over. */
+  private outOfShape(token: Token, shape: { hp: number; tempHp: number }, damage: number): void {
+    const back = changeBack(endShape(token));
+    this.store.setToken(back);
+    this.note(`${token.name} returns to its true form`);
+    const excess = damage - shape.hp - shape.tempHp;
+    const own = this.sheetOf(back);
+    if (excess <= 0 || !own) return;
+    const fromTemp = Math.min(own.tempHp, excess);
+    this.hurt(back, { hp: own.hp - (excess - fromTemp), tempHp: own.tempHp - fromTemp }, excess);
   }
 
   /** Death ward: dropping to 0 from above it leaves the creature at 1 instead, once. */

@@ -178,6 +178,8 @@ export type ClientMessage =
       summon?: string;
       /** The spell's option: a damage type, enlarge or reduce (see Spell `choices`). */
       choice?: string;
+      /** The monster a shape-shifting spell turns its targets into (polymorph). */
+      form?: string;
     }
   /** `targets` and `point` aim features used like spells (bardic inspiration, turn undead). */
   | { t: 'feature'; token: string; feature: string; targets?: string[]; point?: Point }

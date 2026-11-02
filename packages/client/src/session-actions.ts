@@ -120,6 +120,12 @@ export abstract class ActionSession extends PackSession {
     this.changed();
   }
 
+  /** Changes the form the aimed shape-shifting spell gives its targets (polymorph). */
+  chooseForm(form: string): void {
+    if (this.aiming) this.aiming = { ...this.aiming, form };
+    this.changed();
+  }
+
   /** Changes the aimed spell's option (a damage type, enlarge or reduce). */
   chooseOption(choice: string): void {
     if (this.aiming) this.aiming = { ...this.aiming, choice };
