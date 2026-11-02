@@ -48,6 +48,8 @@ export interface Camera {
 export class Vision {
   readonly mapFilter: LightingFilter;
   readonly tokenFilter: LightingFilter;
+  /** Roofs: lit and fogged like the ground, but see-through where they have no picture. */
+  readonly roofFilter: LightingFilter;
   private light: LightMap;
   private sight: SightMap;
   private explored = new FogLayer();
@@ -65,6 +67,7 @@ export class Vision {
     const maps = { light: this.light.texture, sight: this.sight.texture };
     this.mapFilter = new LightingFilter({ ...maps, fog: 1, floor: 0, opaque: 1 });
     this.tokenFilter = new LightingFilter({ ...maps, fog: 0, floor: TOKEN_FLOOR, opaque: 0 });
+    this.roofFilter = new LightingFilter({ ...maps, fog: 1, floor: 0, opaque: 0 });
     this.resize();
   }
 
@@ -74,6 +77,7 @@ export class Vision {
     this.sight.resize(width, height);
     this.mapFilter.resize(width, height);
     this.tokenFilter.resize(width, height);
+    this.roofFilter.resize(width, height);
   }
 
   /** Call when walls change so sight and light shapes are rebuilt. */
@@ -143,7 +147,7 @@ export class Vision {
     this.showExplored();
     const darkness = lights.filter((l) => l.darkness);
     this.sight.render({ view, gridSize: world.gridSize, viewers: eyes, darkness, sightRadius, polygon }, transform);
-    this.mapFilter.fog = fogStrength(gm, brushing, world.vision);
+    this.mapFilter.fog = this.roofFilter.fog = fogStrength(gm, brushing, world.vision);
     this.mapFilter.voidColor = world.background;
     return this.light.animated(scene);
   }

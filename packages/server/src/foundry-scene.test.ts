@@ -81,6 +81,32 @@ describe('a Foundry scene', () => {
     });
   });
 
+  it('makes roofs of overhead, roof and Better Roofs tiles, and keeps videos', () => {
+    const tile = { texture: { src: 'modules/caves/tiles/barrel.png' }, x: 0, y: 0, width: 100, height: 100 };
+    const roofs = {
+      ...v11,
+      foregroundElevation: 20,
+      tiles: [
+        { ...tile, overhead: true, occlusion: { mode: 1, alpha: 0.3 } },
+        { ...tile, flags: { betterroofs: { brMode: 2 } } },
+        { ...tile, elevation: 20, occlusion: { modes: [2], alpha: 0 } },
+        { ...tile, elevation: 0 },
+        { ...tile, texture: { src: 'modules/caves/tiles/river.webm' } },
+      ],
+    };
+    const tiles = foundryScene(roofs, (p) => `pack://caves/${p}`).scene.tiles.slice(1);
+    expect(
+      tiles.map((t) => [('overhead' in t && t.overhead) ?? false, 'occludedAlpha' in t && t.occludedAlpha]),
+    ).toEqual([
+      [false, false],
+      [false, false],
+      [true, 0.3],
+      [true, false],
+      [true, false],
+    ]);
+    expect(tiles.map((t) => 'src' in t && t.src)).toContain('pack://caves/modules/caves/tiles/river.webm');
+  });
+
   it('keeps tiles whose picture came along, in Foundry’s order', () => {
     const { scene, skipped } = foundryScene(v11, media);
     expect(scene.tiles.slice(1)).toEqual([

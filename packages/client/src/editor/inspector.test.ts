@@ -150,8 +150,17 @@ describe('the inspector', () => {
     const image: Doc = { id: 'i', type: 'tile', rev: 1, kind: 'image', x: 0, y: 0, w: 1, h: 1, src: 'a.png' };
     const both = ['name', 'x', 'y', 'w', 'h', 'background', 'locked'];
     expect(fieldsFor([rect]).map((f) => f.key)).toEqual([...both, 'color', 'texture']);
-    expect(fieldsFor([image]).map((f) => f.key)).toEqual([...both, 'src']);
+    expect(fieldsFor([image]).map((f) => f.key)).toEqual([...both, 'src', 'overhead', 'scroll.x', 'scroll.y']);
     expect(fieldsFor([rect, image]).map((f) => f.key)).toEqual(both);
+  });
+
+  it('makes a picture a roof that fades, or a scrolling one', () => {
+    const image: Doc = { id: 'i', type: 'tile', rev: 1, kind: 'image', x: 0, y: 0, w: 1, h: 1, src: 'a.png' };
+    const roof = { ...image, overhead: true, scroll: { x: 5, y: 0 } };
+    expect(fieldsFor([roof]).map((f) => f.key)).toContain('occludedAlpha');
+    expect(field([roof], 'scroll.y').patch('-10', roof)).toEqual({ scroll: { x: 5, y: -10 } });
+    expect(field([roof], 'scroll.x').patch('0', { ...roof, scroll: { x: 5, y: 0 } })).toEqual({ scroll: null });
+    expect(commonValue([image], field([image], 'scroll.x'))).toBe(0);
   });
 
   it('shows a group its name and lock only', () => {
