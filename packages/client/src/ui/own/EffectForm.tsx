@@ -1,4 +1,6 @@
-import { ConditionSchema, type Effect, EffectSchema } from '@vtt/system-dnd5e';
+import { AuraSchema, ConditionSchema, type Effect, EffectSchema } from '@vtt/system-dnd5e';
+import { setAura } from '../../effect-edit.ts';
+import { SelectField } from '../kit/select.tsx';
 import { Input } from '../kit/input.tsx';
 import { NumberField } from '../kit/number-field.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../kit/toggle-group.tsx';
@@ -35,6 +37,24 @@ export function EffectForm({ effect, onSave }: Readonly<{ effect: Effect; onSave
           ))}
         </ToggleGroup>
       </Field>
+      <Field label="Aura (ft, 0: none)">
+        <NumberField
+          value={draft.aura?.radius ?? 0}
+          min={0}
+          max={300}
+          step={5}
+          onValueChange={(radius) => change({ aura: setAura(draft, { radius }).aura })}
+        />
+      </Field>
+      {draft.aura && (
+        <Field label="Aura reaches">
+          <SelectField
+            value={draft.aura.who}
+            onValueChange={(who) => change({ aura: setAura(draft, { who: who as 'allies' }).aura })}
+            options={AuraSchema.shape.who.unwrap().options.map((w) => ({ value: w, label: w }))}
+          />
+        </Field>
+      )}
       <Field label="Changes" wide>
         <ChangeRows changes={draft.changes ?? []} onChange={(changes) => change({ changes })} />
       </Field>

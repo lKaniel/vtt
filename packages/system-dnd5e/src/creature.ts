@@ -147,7 +147,7 @@ function changedScores(
 ): { abilities: Abilities; proficiency: number } {
   const features = featureSheets(token, levels, base.abilities, grantedFeatures(token, content));
   const passives = features.flatMap((f) => (f.passive ? [f.passive] : []));
-  const effects = [...(token.effects ?? []), ...passives];
+  const effects = [...(token.effects ?? []), ...passives].filter((e) => !e.aura);
   if (!effects.some((e) => e.changes?.length)) return base;
   return changedBase(base.abilities, base.proficiency, effects);
 }
@@ -174,11 +174,21 @@ function effectParts(
   features: readonly FeatureSheet[],
   edition: Edition,
 ): Pick<Creature, 'effects' | 'conditions'> {
+  // An effect that gives off an aura reaches its bearer only as the aura (auras.ts).
+  const effects = [...ownEffects(token, features), ...downed(token), ...exhausted(token, edition)].filter(
+    (e) => !e.aura,
+  );
+  const immune = new Set(effects.flatMap((e) => e.conditionImmunities ?? []));
+  const conditions = new Set(effects.flatMap((e) => e.conditions ?? []));
+  return { effects, conditions: [...conditions].filter((c) => !immune.has(c)) };
+}
+
+/** The token's effects, then the ones its features always give (danger sense), auras included. */
+export function ownEffects(token: Token, features: readonly FeatureSheet[]): Effect[] {
   const passive = features.flatMap((f) =>
     f.passive ? [{ ...f.passive, id: f.id, name: f.passive.name ?? f.name, source: token.id }] : [],
   );
-  const effects = [...(token.effects ?? []), ...passive, ...downed(token), ...exhausted(token, edition)];
-  return { effects, conditions: [...new Set(effects.flatMap((e) => e.conditions ?? []))] };
+  return [...(token.effects ?? []), ...passive];
 }
 
 /** Extra attack (the best of its classes), sneak attack by rogue level and weapon mastery. */

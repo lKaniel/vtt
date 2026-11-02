@@ -717,6 +717,24 @@ or `override`; they apply in that order. A feature's `passive` effect takes
 `changes` too (a belt of giant strength as a homemade feature). In the sheet's
 edit mode, the Effects page makes and edits effects with changes by hand.
 
+A change's `value` can also be an ability of the effect's source, as DAE
+writes it: `"@cha"` (its Charisma modifier) or `"max(1,@cha)"` (at least 1).
+Auras fill it in; on other effects it counts for nothing.
+
+**Auras**, like Active Auras: an effect with
+`"aura": { "radius": 10, "who": "allies", "self": true, "conscious": true }`
+doesn't act on its bearer. Instead, every creature within `radius` feet that
+`who` names (`allies`, the default, then `enemies` or `all`) gets a copy of
+it, the bearer too unless `self` is false (or `who` is `enemies`). The copy
+goes when the creature leaves the aura's reach, or when the bearer drops
+(unless `conscious` is false). The server keeps the copies on the tokens
+(marked `auraFrom`, in the same undo step as the move), so leave those
+copies alone. A paladin's Aura of Protection (+Charisma to saves) and Aura of
+Courage (`conditionImmunities: ["frightened"]`, which keeps a condition off the
+bearer while it lasts) work this way, reaching 30 ft at 18th level (`auraRadius`
+on the feature). In the sheet's Effects page, the effect form sets an aura's
+radius and whom it reaches.
+
 Players only receive the stats of tokens they control. For everyone else
 they're told how hurt the creature looks (unhurt, hurt, bloodied, down).
 

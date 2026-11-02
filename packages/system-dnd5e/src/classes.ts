@@ -195,9 +195,18 @@ function featureSpell(f: Feature, level: number): Partial<Spell> | undefined {
   return JSON.parse(JSON.stringify(f.spell).replace(/\{die\}/g, die)) as Partial<Spell>;
 }
 
+/** A feature's always-on effect at this class level: its speed bonus and aura radius filled in. */
+function passiveAt(f: Feature, level: number): Feature['passive'] {
+  const p = f.passive;
+  if (!p) return undefined;
+  const speed = f.speed && { speed: levelValue(f.speed, level) };
+  const aura = f.auraRadius && p.aura && { aura: { ...p.aura, radius: levelValue(f.auraRadius, level) } };
+  return { ...p, ...speed, ...aura };
+}
+
 function sheetOf(f: Feature, level: number, abilities: Abilities, spent: Record<string, number>): FeatureSheet {
   const short = f.shortRestFrom !== undefined && level >= f.shortRestFrom;
-  const passive = f.passive && f.speed ? { ...f.passive, speed: levelValue(f.speed, level) } : f.passive;
+  const passive = passiveAt(f, level);
   const base: FeatureSheet = {
     ...f,
     passive,

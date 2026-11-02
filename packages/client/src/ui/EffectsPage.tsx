@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { changeText, type Effect } from '@vtt/system-dnd5e';
-import { newEffect, removeEffect, setEffect } from '../effect-edit.ts';
+import { auraText, newEffect, removeEffect, setEffect } from '../effect-edit.ts';
 import { effectIcon } from '../icons.ts';
 import { effectLeft } from '../session-time.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
@@ -12,10 +12,16 @@ import { Vigour } from './Vigour.tsx';
 import { Button } from './kit/button.tsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dialog.tsx';
 
-/** What an effect does, for its row: conditions, changes by key, time left. */
-function effectDetail(e: Effect, left: { now: number; fighting: boolean }): string {
+interface RowContext {
+  now: number;
+  fighting: boolean;
+  nameOf: (token: string) => string | undefined;
+}
+
+/** What an effect does, for its row: its aura, conditions, changes by key, time left. */
+function effectDetail(e: Effect, at: RowContext): string {
   const changes = (e.changes ?? []).map(changeText);
-  return [e.conditions?.join(', '), ...changes, effectLeft(e, left)].filter(Boolean).join(' · ');
+  return [auraText(e, at.nameOf), e.conditions?.join(', '), ...changes, effectLeft(e, at)].filter(Boolean).join(' · ');
 }
 
 /**
@@ -27,7 +33,11 @@ export function EffectsPage(props: Readonly<SheetProps>) {
   const { session, value, kind, edit, update } = props;
   const [open, setOpen] = useState<string>();
   const effects = value.effects ?? [];
-  const left = { now: session.gameTime(), fighting: !!session.combat };
+  const left = {
+    now: session.gameTime(),
+    fighting: !!session.combat,
+    nameOf: (id: string) => session.tokens.get(id)?.name,
+  };
   const remove = (id: string) => (edit ? update((d) => removeEffect(d, id), true) : session.removeEffect(value.id, id));
   const create = () => {
     const made = newEffect(value);
@@ -45,8 +55,11 @@ export function EffectsPage(props: Readonly<SheetProps>) {
             <IconFace icon={effectIcon(e)} size={16} />
             <span className="row-name">{e.name}</span>
             <span className="row-detail">{effectDetail(e, left)}</span>
-            {edit && <EditButton name={e.name} onClick={() => setOpen(e.id)} />}
-            {(edit || (session.isGm() && kind === 'token')) && <RemoveButton onClick={() => remove(e.id)} />}
+            {/* An aura's copy comes and goes with the aura. */}
+            {edit && !e.auraFrom && <EditButton name={e.name} onClick={() => setOpen(e.id)} />}
+            {!e.auraFrom && (edit || (session.isGm() && kind === 'token')) && (
+              <RemoveButton onClick={() => remove(e.id)} />
+            )}
           </li>
         ))}
       </ul>

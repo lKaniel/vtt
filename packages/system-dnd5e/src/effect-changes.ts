@@ -30,14 +30,22 @@ export type ChangeMode = (typeof CHANGE_MODES)[number];
 
 const isList = (key: string): key is ListKey => (LIST_KEYS as readonly string[]).includes(key);
 
+/**
+ * A value worked out from an ability of the effect's source, as Foundry's DAE
+ * writes it: "@cha" is the Charisma modifier, "max(1,@cha)" at least 1. Auras
+ * fill it in (auras.ts); elsewhere it counts for nothing.
+ */
+export const ABILITY_VALUE = /^(?:max\((-?\d+),\s*)?@(str|dex|con|int|wis|cha)\)?$/;
+const isNumberish = (v: unknown) => typeof v === 'number' || (typeof v === 'string' && ABILITY_VALUE.test(v));
+
 export const EffectChangeSchema = z
   .object({
     key: z.enum(CHANGE_KEYS),
     mode: z.enum(CHANGE_MODES).default('add'),
     value: z.union([z.number(), z.string()]),
   })
-  .refine((c) => (isList(c.key) ? DamageTypeSchema.safeParse(c.value).success : typeof c.value === 'number'), {
-    message: 'damage lists take a damage type, the rest a number',
+  .refine((c) => (isList(c.key) ? DamageTypeSchema.safeParse(c.value).success : isNumberish(c.value)), {
+    message: 'damage lists take a damage type, the rest a number or an ability like "@cha" or "max(1,@cha)"',
     path: ['value'],
   });
 export type EffectChange = z.infer<typeof EffectChangeSchema>;
