@@ -9,8 +9,8 @@ import {
   type LightSource,
   onLevel,
   type Player,
-  type Point,
   rasterStroke,
+  type ReachPolygon,
   SIGHT_SQUARES,
   tokenLevel,
   visibilityPolygon,
@@ -77,13 +77,10 @@ export class FogKeeper {
   private sightOn(level: string | undefined, lights: readonly LightSource[]) {
     const store = this.store;
     const world = store.world;
-    const polygon = (at: Point, r: number) => {
+    const polygon: ReachPolygon = (at, r, kind = 'sight') => {
       const walls = store.wallsIn({ x: at[0] - r, y: at[1] - r, w: 2 * r, h: 2 * r });
-      return visibilityPolygon(
-        at,
-        r,
-        walls.filter((w) => onLevel(w, level)),
-      );
+      const here = walls.filter((w) => onLevel(w, level));
+      return visibilityPolygon(at, r, here, { kind, gridSize: world.gridSize });
     };
     return {
       dark: ambientLevel(world.darkness) === 'dark',

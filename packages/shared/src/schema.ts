@@ -146,16 +146,48 @@ export type DrawnTile = z.infer<typeof DrawnTileSchema>;
 export const DoorStateSchema = z.enum(['closed', 'open', 'locked']);
 export type DoorState = z.infer<typeof DoorStateSchema>;
 
-export const WallSchema = z.object({
-  id,
-  a: PointSchema,
-  b: PointSchema,
-  /** Present only on doors. */
-  door: DoorStateSchema.optional(),
-  /** false for windows and bars: they block movement but not sight. */
-  sight: z.boolean().optional(),
-  ...onLevel,
+/** How a wall stops movement: it does, or it doesn't (an illusory or ethereal wall). */
+export const MoveRestrictionSchema = z.enum(['none', 'normal']);
+/**
+ * How a wall stops sight, light or sound (Foundry's wall senses): `none` lets
+ * it through, `normal` stops it, `limited` lets it through one such wall but
+ * not two (tall grass, a thin curtain), `proximity` lets it through only from
+ * within the wall's `threshold` (a fence you peer over up close).
+ */
+export const SenseRestrictionSchema = z.enum(['none', 'normal', 'limited', 'proximity']);
+export type SenseRestriction = z.infer<typeof SenseRestrictionSchema>;
+
+/** Feet from the wall within which a proximity wall lets that sense through. */
+const ThresholdSchema = z.object({
+  sight: z.number().nonnegative().optional(),
+  light: z.number().nonnegative().optional(),
+  sound: z.number().nonnegative().optional(),
 });
+
+/** Old files marked windows `"sight": false` (movement only); that is sight and light `none` now. */
+function oldWindow(raw: unknown): unknown {
+  if (typeof raw !== 'object' || raw === null || typeof (raw as { sight?: unknown }).sight !== 'boolean') return raw;
+  const { sight, ...rest } = raw as Record<string, unknown>;
+  return sight ? rest : { light: 'none', ...rest, sight: 'none' };
+}
+
+/** What kind of wall it is: a door or not, and what it stops. */
+export const WallRulesSchema = z.object({
+  /** Present only on doors. An open door restricts nothing. */
+  door: DoorStateSchema.optional(),
+  /** What the wall stops; each missing one is `normal`. A window has sight and light `none`. */
+  move: MoveRestrictionSchema.optional(),
+  sight: SenseRestrictionSchema.optional(),
+  light: SenseRestrictionSchema.optional(),
+  sound: SenseRestrictionSchema.optional(),
+  threshold: ThresholdSchema.optional(),
+});
+export type WallRules = z.infer<typeof WallRulesSchema>;
+
+export const WallSchema = z.preprocess(
+  oldWindow,
+  z.object({ id, a: PointSchema, b: PointSchema, ...WallRulesSchema.shape, ...onLevel }),
+);
 export type Wall = z.infer<typeof WallSchema>;
 
 /** Light radii are in feet, like the rules. */

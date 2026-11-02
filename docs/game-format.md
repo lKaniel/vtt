@@ -196,8 +196,25 @@ pixels.
   covers (default 2). Grass, dirt, sand, water and rock get natural wobbly
   edges; set `"edge": "straight"` or `"rough"` to choose. `image` tiles load from
   `assets/`.
-- A wall is a line from `a` to `b` that blocks movement. Add `door` to make
-  it a door: `"closed"`, `"open"` or `"locked"`. Open doors don't block.
+- A wall is a line from `a` to `b` that stops movement, sight, light and
+  sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.
+  Open doors stop nothing.
+- What a wall stops is set one by one, like Foundry's wall senses: `move` is
+  `"none"` or `"normal"`; `sight`, `light` and `sound` are `"none"`,
+  `"normal"`, `"limited"` or `"proximity"`. Missing means `"normal"`.
+  - `limited`: the sense gets through one limited wall but not a second
+    (tall grass, a thin curtain: the Foundry "terrain" wall).
+  - `proximity`: the sense gets through from within `threshold` feet of the
+    wall, e.g. `"threshold": { "sight": 10 }` (a fence you look over up close).
+  - Usual kinds: a window is `"sight": "none", "light": "none"`; a terrain
+    wall is `limited` for sight, light and sound; an invisible barrier has
+    sight, light and sound `none`; an illusory wall is `"move": "none"`.
+  - Old files with `"sight": false` still load, as a window.
+
+  ```json
+  { "id": "hedge", "a": [0, 0], "b": [500, 0], "sight": "limited", "light": "limited", "sound": "limited" }
+  ```
+
 - Ids must be unique within the list.
 
 ## Lights

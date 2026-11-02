@@ -1,4 +1,4 @@
-import { blocksSight, type Point, type Wall } from '@vtt/shared';
+import { type Point, restriction, type Wall, wallPreset } from '@vtt/shared';
 import type { Graphics } from 'pixi.js';
 
 // How walls, windows and doors look: stone walls with a soft shadow on the
@@ -23,9 +23,20 @@ export function doorLeaf(a: Point, b: Point, open: boolean): number[] {
   return [a[0] + nx, a[1] + ny, end[0] + nx, end[1] + ny, end[0] - nx, end[1] - ny, a[0] - nx, a[1] - ny];
 }
 
+/**
+ * Walls that look like stone: they stop sight (an illusory wall too). Walls
+ * you see through one of (tall grass) and invisible barriers aren't drawn:
+ * the map's own picture shows them.
+ */
+function stone(w: Wall): boolean {
+  if (w.door) return false;
+  const sight = restriction(w, 'sight');
+  return sight === 'normal' || sight === 'proximity';
+}
+
 /** A soft dark band where walls meet the floor, like ambient occlusion. */
 export function drawWallShadows(g: Graphics, walls: readonly Wall[]): void {
-  const solid = walls.filter((w) => !w.door && blocksSight(w));
+  const solid = walls.filter(stone);
   for (const [width, alpha] of [
     [46, 0.06],
     [32, 0.08],
@@ -38,8 +49,8 @@ export function drawWallShadows(g: Graphics, walls: readonly Wall[]): void {
 
 /** Stone walls, and windows as glass in a dark frame. */
 export function drawWalls(g: Graphics, walls: readonly Wall[]): void {
-  const solid = walls.filter((w) => !w.door && w.sight !== false);
-  const windows = walls.filter((w) => !w.door && w.sight === false);
+  const solid = walls.filter(stone);
+  const windows = walls.filter((w) => wallPreset(w) === 'window');
   const stroke = (list: Wall[], width: number, color: number, alpha = 1) => {
     if (list.length === 0) return;
     for (const w of list) g.moveTo(...w.a).lineTo(...w.b);

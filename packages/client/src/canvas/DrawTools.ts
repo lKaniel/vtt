@@ -22,7 +22,8 @@ export class DrawTools {
   constructor(private session: Session) {}
 
   get drawing(): boolean {
-    return this.session.mode !== 'tokens' && this.session.tool !== 'select';
+    const tool = this.session.tool;
+    return this.session.mode !== 'tokens' && tool !== 'select' && tool !== 'ruler';
   }
 
   /** A wall, tile or shape is half drawn. */

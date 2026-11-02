@@ -9,11 +9,17 @@ import { z } from 'zod';
 /** Uploads up to 20 MB, as base64. */
 const MAX_UPLOAD_BASE64 = Math.ceil((20 * 1024 * 1024 * 4) / 3) + 4;
 
+/** Waypoints a ruler may have. */
+const MAX_RULER_POINTS = 64;
+
 const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('rollTable'), table: z.string(), gmOnly: z.boolean().optional() }),
   z.object({ t: z.literal('showJournal'), entry: z.string(), page: z.string().optional() }),
   z.object({ t: z.literal('view'), chunks: z.array(z.string()).max(400) }),
   z.object({ t: z.literal('move'), token: z.string(), to: PointSchema }),
+  z.object({ t: z.literal('ruler'), points: z.array(PointSchema).max(MAX_RULER_POINTS) }),
+  z.object({ t: z.literal('cursor'), at: PointSchema.nullable() }),
+  z.object({ t: z.literal('ping'), at: PointSchema, pull: z.boolean().optional() }),
   z.object({ t: z.literal('door'), chunk: z.string(), wall: z.string(), state: DoorStateSchema }),
   z.object({ t: z.literal('chat'), text: z.string().min(1).max(2000) }),
   z.object({ t: z.literal('combatStart'), tokens: z.array(z.string()).min(1).max(100) }),

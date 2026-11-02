@@ -8,7 +8,8 @@
     "id": "tavern-window",
     "a": [600, 200],
     "b": [700, 200],
-    "sight": false
+    "sight": "none",
+    "light": "none"
   },
   {
     "id": "tavern-n2",

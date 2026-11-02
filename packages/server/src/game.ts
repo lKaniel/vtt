@@ -28,21 +28,8 @@ import { RegionActions } from './region-actions.ts';
 import { startOf, welcomeOf } from './welcome.ts';
 import { contentFor, packContent } from './game-packs.ts';
 import { WorldClock } from './world-clock.ts';
-
-interface Client {
-  ws: WebSocket;
-  player: Player;
-  /** The scene this client is on (see scene-actions.ts). */
-  scene: string;
-  /** What the client was last welcomed with, to tell when it needs a fresh welcome. */
-  start: string;
-  /** Chunks this client is looking at. */
-  chunks: Set<string>;
-  /** Tokens this client currently knows about. */
-  visible: Set<string>;
-  /** The documents this client has (see doc-feed.ts). */
-  feed: DocFeed;
-}
+import { isPresenceMessage, Presence } from './presence.ts';
+import { type Client, streamChunks } from './game-client.ts';
 
 /**
  * The live game. Clients send intents ("move here", "open this door"); the
@@ -70,6 +57,10 @@ export class Game {
   private history: History;
   private packs: PackActions;
   private entries: EntryActions;
+  private presence = new Presence<Client>(
+    () => this.clients,
+    (c, msg) => this.send(c, msg),
+  );
   /** World time (see world-clock.ts). */
   readonly clock: WorldClock;
 
@@ -170,7 +161,9 @@ export class Game {
       if (JSON.stringify(c.player.settings) !== JSON.stringify(player.settings))
         this.send(c, { t: 'you', you: player });
       c.player = player;
+      const was = c.scene;
       c.scene = sceneOf(player, this.store);
+      if (was !== c.scene) this.presence.left(c, was);
       if (startOf(this.store, c) !== c.start) this.restart(c);
     }
   }
@@ -201,7 +194,10 @@ export class Game {
       if (msg) this.handle(client, msg);
       else this.fail(client, 'Bad message');
     });
-    ws.on('close', () => this.clients.delete(client));
+    ws.on('close', () => {
+      this.clients.delete(client);
+      this.presence.left(client, client.scene);
+    });
     console.log(`[game] ${player.name} joined`);
   }
 
@@ -285,6 +281,7 @@ export class Game {
 
   private handleHere(c: Client, msg: ClientMessage): void {
     if (msg.t === 'ops') return this.onOps(c, msg);
+    if (isPresenceMessage(msg)) return this.presence.handle(c, msg);
     if (isPackMessage(msg)) return this.packs.handle(c.player, msg, (reply) => this.send(c, reply));
     try {
       if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);
@@ -344,7 +341,7 @@ export class Game {
   private dispatch(c: Client, msg: ClientMessage): void {
     switch (msg.t) {
       case 'view':
-        return this.onView(c, msg.chunks);
+        return streamChunks(c, msg.chunks, this.store, (msg) => this.send(c, msg));
       case 'move':
         return this.moves.move(c.player, (id) => c.visible.has(id), msg.token, msg.to);
       case 'door':
@@ -433,17 +430,6 @@ export class Game {
       return castFeature(this, c.player, (id) => c.visible.has(id), msg);
     }
     this.features.use(c.player, msg.token, msg.feature);
-  }
-
-  private onView(c: Client, chunks: string[]): void {
-    const next = new Set(chunks);
-    for (const key of next) {
-      if (c.chunks.has(key)) continue;
-      // Empty chunks are sent too, so the client knows the area is loaded.
-      const chunk = this.store.chunks.get(key) ?? { tiles: [], walls: [], lights: [] };
-      this.send(c, { t: 'chunk', key, chunk });
-    }
-    c.chunks = next;
   }
 
   private onChat(c: Client, text: string): void {

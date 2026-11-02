@@ -2,7 +2,7 @@ import { Redo2Icon, Undo2Icon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { SoundScape } from '../audio.ts';
 import { MapView } from '../canvas/MapView.ts';
-import { editKey, editorKey, type EditKey, type LayerKey } from '../edit-keys.ts';
+import { editKey, editorKey, type EditKey, type EditorKey, type LayerKey } from '../edit-keys.ts';
 import { hotbarTiles } from '../hotbar.ts';
 import { Session } from '../session.ts';
 import { stepTarget } from '../stepping.ts';
@@ -203,6 +203,7 @@ function UndoButtons({ session }: Readonly<{ session: Session }>) {
  */
 function backOutOfEditor(session: Session): boolean {
   if (session.menu) session.closeMenu();
+  else if (session.rulers.clear()) return true;
   else if (session.mode === 'tokens') return false;
   else if (session.tool !== 'select') session.setTool('select');
   else if (session.selection.length) session.setSelection([]);
@@ -210,14 +211,20 @@ function backOutOfEditor(session: Session): boolean {
   return true;
 }
 
-/** T, Shift+T, W, L, D, N and M switch modes (those this seat may use); the arrows nudge outside the tokens mode. */
+/** T, Shift+T, W, L, D, N and M switch modes (those this seat may use), R picks up the ruler; the arrows nudge outside the tokens mode. */
 function runEditorKey(session: Session, e: KeyboardEvent): boolean {
   const key = editorKey(e, session.mode !== 'tokens');
-  if (!key || ('mode' in key && (!session.canUseMode(key.mode) || key.mode === session.mode))) return false;
+  if (!key || ('mode' in key && !switches(session, key))) return false;
   e.preventDefault();
-  if ('mode' in key) session.setMode(key.mode);
+  if ('mode' in key) session.setMode(key.mode, key.tool);
   else session.nudge(key.nudge, key.big);
   return true;
+}
+
+/** Whether a mode key changes anything: a mode this seat may use, or a tool it isn't holding. */
+function switches(session: Session, key: Extract<EditorKey, { mode: unknown }>): boolean {
+  if (!session.canUseMode(key.mode)) return false;
+  return key.mode !== session.mode || (!!key.tool && key.tool !== session.tool);
 }
 
 /** C opens the selected creature's sheet, or closes the open one. */

@@ -30,7 +30,10 @@ describe('applyMapEdit', () => {
     const out = applyMapEdit(new Map(), SIZE, { op: 'addWall', wall: { a: [-200, 0], b: [-100, 0], door: 'closed' } });
     expect(out[0]!.key).toBe('-1_0');
     expect(out[0]!.chunk.walls[0]).toMatchObject({ id: 'door-1', door: 'closed' });
-    const glass = applyMapEdit(new Map(), SIZE, { op: 'addWall', wall: { a: [0, 0], b: [100, 0], sight: false } });
+    const glass = applyMapEdit(new Map(), SIZE, {
+      op: 'addWall',
+      wall: { a: [0, 0], b: [100, 0], sight: 'none', light: 'none' },
+    });
     expect(glass[0]!.chunk.walls[0]!.id).toBe('window-1');
   });
 
@@ -76,6 +79,14 @@ describe('applyMapEdit', () => {
     expect(out[0]!.chunk.walls[0]!.door).toBe('closed');
     const back = applyMapEdit(new Map([['0_0', out[0]!.chunk]]), SIZE, { op: 'setWall', chunk: '0_0', id: 'w' });
     expect(back[0]!.chunk.walls[0]).not.toHaveProperty('door');
+    const curtain = applyMapEdit(new Map([['0_0', out[0]!.chunk]]), SIZE, {
+      op: 'setWall',
+      chunk: '0_0',
+      id: 'w',
+      sight: 'limited',
+      sound: 'none',
+    });
+    expect(curtain[0]!.chunk.walls[0]).toEqual({ id: 'w', a: [0, 0], b: [100, 0], sight: 'limited', sound: 'none' });
   });
 
   it('validates edits coming over the wire', () => {
