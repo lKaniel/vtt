@@ -196,6 +196,15 @@ pixels.
   covers (default 2). Grass, dirt, sand, water and rock get natural wobbly
   edges; set `"edge": "straight"` or `"rough"` to choose. `image` tiles load from
   `assets/`.
+- An `image` tile's `src` may be an animated GIF or a video (`.webm`, `.mp4`,
+  `.m4v`, `.ogv`), which loops without sound. `"scroll": { "x": 20, "y": 0 }`
+  slides the picture inside the tile, in pixels a second (running water,
+  drifting clouds).
+- `"overhead": true` makes an image tile a roof or a canopy: it draws over
+  the creatures, and goes see-through while one of yours stands under it (the
+  GM's: the selected token). `occludedAlpha` is how opaque it stays then, 0
+  (gone, the default) to 1. The Foundry importer makes roofs of overhead,
+  roof and Better Roofs tiles.
 - A wall is a line from `a` to `b` that stops movement, sight, light and
   sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.
   Open doors stop nothing.

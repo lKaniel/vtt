@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { foundryList } from './foundry-lists.ts';
 import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
+import { FoundryTile, isOverhead, roofOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
 
 // A Foundry VTT scene (from a module's compendium, a world, or "Export
@@ -13,18 +14,6 @@ import { FoundryWall, wallOf } from './foundry-walls.ts';
 
 const num = z.number().optional().catch(undefined);
 const str = z.string().optional().catch(undefined);
-
-const FoundryTile = z.object({
-  texture: z.object({ src: str.nullable() }).optional().catch(undefined),
-  img: str.nullable(),
-  x: z.number(),
-  y: z.number(),
-  width: z.number(),
-  height: z.number(),
-  sort: num,
-  z: num,
-  overhead: z.boolean().optional().catch(undefined),
-});
 
 const list = foundryList;
 
@@ -44,6 +33,7 @@ const FoundrySceneSchema = z.object({
   gridDistance: num,
   darkness: num,
   environment: z.object({ darknessLevel: num }).optional().catch(undefined),
+  foregroundElevation: num,
   initial: z.object({ x: z.number(), y: z.number() }).nullable().optional().catch(undefined),
   walls: list(FoundryWall),
   lights: list(FoundryLight),
@@ -158,7 +148,8 @@ function backgroundTile(
 }
 
 function tilesOf(s: FoundryScene, find: ReturnType<typeof lookupIn>, skipped: string[]): Tile[] {
-  const order = (t: FoundryScene['tiles'][number]) => (t.overhead ? 1e9 : 0) + (t.sort ?? t.z ?? 0);
+  const fg = s.foregroundElevation;
+  const order = (t: FoundryScene['tiles'][number]) => (isOverhead(t, fg) ? 1e9 : 0) + (t.sort ?? t.z ?? 0);
   const sorted = [...s.tiles].sort((a, b) => order(a) - order(b));
   const out: Tile[] = [];
   const missing: string[] = [];
@@ -166,7 +157,8 @@ function tilesOf(s: FoundryScene, find: ReturnType<typeof lookupIn>, skipped: st
     const path = t.texture?.src ?? t.img;
     const src = find(path);
     if (src && t.width > 0 && t.height > 0) {
-      out.push({ id: `tile-${out.length + 1}`, kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src });
+      const id = `tile-${out.length + 1}`;
+      out.push({ id, kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src, ...roofOf(t, fg) });
     } else missing.push(path ?? '(none)');
   }
   if (missing.length)

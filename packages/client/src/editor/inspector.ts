@@ -48,6 +48,21 @@ const isRect = (d: Doc) => d.kind === 'rect';
 
 const drawn = (d: Doc) => d.kind !== 'group';
 
+const isImage = (d: Doc) => d.kind === 'image';
+
+/** How fast a picture slides one way; both still removes the scroll. */
+function scrollField(axis: 'x' | 'y', label: string): Field {
+  const of = (d: Doc) => (d.scroll ?? { x: 0, y: 0 }) as { x: number; y: number };
+  return {
+    ...plain(`scroll.${axis}`, label, 'number', { when: isImage }),
+    get: (d) => of(d)[axis],
+    patch: (value, doc) => {
+      const next = { ...(doc ? of(doc) : { x: 0, y: 0 }), [axis]: Number(value) || 0 };
+      return { scroll: next.x || next.y ? next : null };
+    },
+  };
+}
+
 const TILE_FIELDS: Field[] = [
   plain('name', 'Name', 'text'),
   plain('x', 'X', 'number', { when: drawn }),
@@ -58,7 +73,11 @@ const TILE_FIELDS: Field[] = [
   flag('locked', 'Locked'),
   plain('color', 'Colour', 'color', { when: isRect }),
   plain('texture', 'Texture', 'select', { options: options('', ...TileTextureSchema.options), when: isRect }),
-  plain('src', 'Picture', 'text', { when: (d) => d.kind === 'image' }),
+  plain('src', 'Picture', 'text', { when: isImage }),
+  flag('overhead', 'Roof (over creatures)', { when: isImage }),
+  plain('occludedAlpha', 'Opacity under it (0-1)', 'number', { when: (d) => isImage(d) && d.overhead === true }),
+  scrollField('x', 'Scrolls across (px/s)'),
+  scrollField('y', 'Scrolls down (px/s)'),
 ];
 
 const TOKEN_FIELDS: Field[] = [{ ...plain('hidden', 'Hidden from players', 'check'), get: (d) => d.hidden === true }];
