@@ -68,6 +68,7 @@ export function newSceneOps(src: Source, name: string): { id: string; ops: Op[] 
     chunkSize: 2000,
     start: [1000, 1000],
     darkness: 0,
+    darknessFollowsClock: true,
     vision: true,
   };
   return { id, ops: [{ op: 'create', coll: SCENES, doc }] };

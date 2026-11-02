@@ -337,5 +337,5 @@ async function writeNewGame(dir: string, game: NewGame & { id: string }, gm: Pla
   await mkdir(join(dir, 'assets'), { recursive: true });
   const file: GameFile = { ...game, format: FORMAT, scene: 'main', players: [gm] };
   await writeJson(join(dir, 'game.json'), file);
-  await writeJson(join(dir, 'scenes/main/scene.json'), { name: 'Main', darkness: 0 });
+  await writeJson(join(dir, 'scenes/main/scene.json'), { name: 'Main', darkness: 0, darknessFollowsClock: true });
 }

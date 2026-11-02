@@ -347,6 +347,9 @@ export class Session extends HudSession {
         if (this.world) this.world = { ...this.world, darkness: msg.darkness };
         this.emit('lighting');
         return true;
+      case 'weather':
+        if (this.world) this.world = { ...this.world, weather: msg.weather };
+        return true;
       case 'error':
         this.showError(msg.message);
         return false;

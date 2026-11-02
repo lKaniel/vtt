@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { WEATHER_PRESETS, addWeather, removeWeather, setWeather } from './weather-edit.ts';
+import {
+  CYCLE_CHOICES,
+  WEATHER_PRESETS,
+  addWeather,
+  cycleWeathers,
+  removeWeather,
+  setWeather,
+  toggleCycleWeather,
+} from './weather-edit.ts';
 
 describe('the scene’s weather', () => {
   it('adds a preset’s layers after the ones it has', () => {
@@ -18,5 +26,29 @@ describe('the scene’s weather', () => {
     expect(setWeather(two, 0, { wind: 0 })[0]).toEqual({ kind: 'rain', density: 0.5 });
     expect(removeWeather(two, 0)).toEqual([{ kind: 'fog', density: 0.5 }]);
     expect(removeWeather([two[0]!], 0)).toBeNull();
+  });
+});
+
+describe('weather that changes with the time', () => {
+  it('picks the weathers a scene can have, keeping how often each comes up', () => {
+    const rain = toggleCycleWeather(undefined, 'rain');
+    expect(rain).toEqual({ every: 4, options: [{ weather: 'rain', weight: 1 }] });
+    const both = toggleCycleWeather({ ...rain!, every: 6 }, 'clear');
+    expect(both).toEqual({
+      every: 6,
+      options: [
+        { weather: 'rain', weight: 1 },
+        { weather: 'clear', weight: 1 },
+      ],
+    });
+    expect(toggleCycleWeather(both, 'rain')).toEqual({ every: 6, options: [{ weather: 'clear', weight: 1 }] });
+    // None left: the weather no longer changes (the field goes).
+    expect(toggleCycleWeather({ every: 6, options: [{ weather: 'clear', weight: 1 }] }, 'clear')).toBeNull();
+  });
+
+  it('reads the weathers picked and offers clear skies besides the presets', () => {
+    expect(cycleWeathers({ every: 4, options: [{ weather: 'fog', weight: 2 }] })).toEqual(['fog']);
+    expect(cycleWeathers('junk')).toEqual([]);
+    expect(CYCLE_CHOICES[0]).toEqual({ value: 'clear', label: 'Clear' });
   });
 });

@@ -2,6 +2,7 @@ import type { Ownership } from '@vtt/core';
 import { z } from 'zod';
 import { TileTriggerSchema } from './trigger-schema.ts';
 import { WeatherSchema } from './weather.ts';
+import { WeatherCycleSchema } from './weather-cycle.ts';
 
 // The items in a game folder are described here (game.json and scene.json in
 // game-schema.ts). The checker, the server and docs/game-format.md all follow
@@ -90,6 +91,8 @@ export const SceneSettingsSchema = z.object({
   playlist: id.optional(),
   /** Rain, snow, clouds, fog, embers or birds over the map, in layers (see weather.ts). */
   weather: z.array(WeatherSchema).optional(),
+  /** The weather changes with world time instead (see weather-cycle.ts); `weather` is ignored. */
+  weatherCycle: WeatherCycleSchema.optional(),
 });
 
 /** The table settings the rules and the client use: the game's, plus those of the scene being played. */

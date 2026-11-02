@@ -108,7 +108,7 @@ export class Game {
     const rules = { combat: this.combat, zones: this.zones, reactions: this.reactions };
     this.moves = tokenMoves(table, rules, { say, scene, show });
     this.history = new History(store, (ids, undone) => this.chat.undone(ids, undone));
-    this.clock = new WorldClock(table, { now, step: (fn) => this.timePasses(fn) });
+    this.clock = new WorldClock(table, { now, step: (fn) => this.timePasses(fn), say });
     this.packs = new PackActions(store);
     this.damage = new DamageActions(table, () => this.chat.all);
     this.hud = new HudActions(table, this.combat);
@@ -140,13 +140,12 @@ export class Game {
     });
     store.on('actor', (actor) => this.toGms({ t: 'actor', actor }));
     store.on('actorGone', (id) => this.toGms({ t: 'actorGone', id }));
-    store.on('combat', (combat) => {
-      for (const c of this.clients) this.send(c, { t: 'combat', combat: combat ?? null });
-    });
+    store.on('combat', (combat) => this.clients.forEach((c) => this.send(c, { t: 'combat', combat: combat ?? null })));
     store.on('lighting', (darkness, scene) => {
       for (const c of this.on(scene)) this.send(c, { t: 'lighting', darkness });
       this.refreshAll(scene);
     });
+    store.on('weather', (weather, scene) => this.on(scene).forEach((c) => this.send(c, { t: 'weather', weather })));
     store.on('world', (world) => this.onWorld(world));
     store.on('scene', () => this.onWorld(this.store.world));
     // Each client gets the documents it may read; players also keep their filtered views above.

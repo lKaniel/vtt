@@ -24,10 +24,9 @@ import type { PluginStore } from './plugin-store.ts';
 import { classify, crossCheck, pathOf } from './game-files.ts';
 import { readEntry, readFolder, stateOf, type FolderEntry } from './game-folder.ts';
 import { upgradeFolder } from './migrate-all.ts';
-import { SceneState } from './scene-state.ts';
+import { SceneState, sameScene, tellSky } from './scene-state.ts';
 import { StoreAccess, type DocAccess } from './store-access.ts';
-import type { TYPE } from './store-colls.ts';
-import { ACTORS, CLOCK, COMBAT, docsOf, FIGHT, fileOf, GAME, SCENES, sameScene, scopeOf } from './store-colls.ts';
+import { ACTORS, CLOCK, COMBAT, docsOf, FIGHT, fileOf, GAME, SCENES, scopeOf, type TYPE } from './store-colls.ts';
 import { StoreHistory, touchedBy, type Touched } from './store-history.ts';
 import { sceneDeleteOps } from './scene-ops.ts';
 import { isEntryColl } from './entry-files.ts';
@@ -41,6 +40,8 @@ interface StoreEvents {
   scene: [string];
   /** Only the time of day changed: no need to start over. */
   lighting: [number, string];
+  /** Only the weather changed (by hand, or with the time): no need to start over. */
+  weather: [NonNullable<World['weather']>, string];
   chunk: [string, Chunk, string];
   chunkGone: [string, string];
   /** `path` is set when the token walked there inside the game. */
@@ -462,7 +463,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
       const old = worlds.get(state.id);
       if (state.settle(game) || !old) changed.add(state.id);
       else if (!sameScene(old, state.world)) changed.add(state.id);
-      else if (old.darkness !== state.world.darkness && !quiet) this.emit('lighting', state.world.darkness, state.id);
+      else if (!quiet) tellSky(this, old, state.world, state.id);
     }
     if (quiet) return;
     if (JSON.stringify(before) !== JSON.stringify(game)) this.emit('world', this.world);
