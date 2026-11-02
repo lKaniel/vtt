@@ -72,7 +72,8 @@ describe('spells automated by hand', () => {
   });
 
   it('2014 conversion slips are fixed: fire shield and control water are no longer area damage', () => {
-    expect(spell('fire-shield')).toMatchObject({ automated: false, manual: { kind: 'gm' } });
+    expect(spell('fire-shield')).toMatchObject({ targets: 0, effect: { retaliate: [{ dice: '2d8', type: 'fire' }] } });
+    expect(spell('fire-shield').area).toBeUndefined();
     expect(spell('control-water')).toMatchObject({ automated: false, manual: { kind: 'utility' } });
   });
 });

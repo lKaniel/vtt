@@ -190,9 +190,10 @@ export class Table {
    * Sets a creature's hit points (and temporary ones) after it took `damage`,
    * ends what damage ends, then checks its concentration.
    */
-  hurt(token: Token, after: { hp: number; tempHp?: number; crit?: boolean }, damage: number): void {
-    const current = this.store.tokens.get(token.id) ?? token;
-    const before = this.sheetOf(current)!;
+  hurt(token: Token, hit: { hp: number; tempHp?: number; crit?: boolean }, damage: number): void {
+    const stored = this.store.tokens.get(token.id) ?? token;
+    const before = this.sheetOf(stored)!;
+    const { token: current, hit: after } = this.warded(stored, before.hp, hit);
     const hurt = this.downed(withHp(current, after, before.maxHp), {
       damage,
       crit: !!after.crit,
@@ -203,6 +204,14 @@ export class Table {
     this.store.setToken(shaken.token);
     for (const n of shaken.notes) this.note(n);
     this.checkConcentration(shaken.token, damage);
+  }
+
+  /** Death ward: dropping to 0 from above it leaves the creature at 1 instead, once. */
+  private warded<T extends { hp: number }>(token: Token, hpBefore: number, hit: T): { token: Token; hit: T } {
+    const ward = token.effects?.find((e) => e.deathWard);
+    if (!ward || hit.hp > 0 || hpBefore <= 0) return { token, hit };
+    this.note(`${token.name} is saved by ${ward.name}`);
+    return { token: removeEffects(token, new Set([ward.id])), hit: { ...hit, hp: 1 } };
   }
 
   /** A character hit while down fails death saves, and massive damage kills it. */

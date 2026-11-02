@@ -151,6 +151,8 @@ export type ClientMessage =
       targets: string[];
       point?: Point;
       summon?: string;
+      /** The spell's option: a damage type, enlarge or reduce (see Spell `choices`). */
+      choice?: string;
     }
   /** `targets` and `point` aim features used like spells (bardic inspiration, turn undead). */
   | { t: 'feature'; token: string; feature: string; targets?: string[]; point?: Point }

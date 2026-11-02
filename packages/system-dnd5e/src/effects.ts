@@ -1,7 +1,7 @@
 import { type Rng, roll, type Roll } from '@vtt/shared';
 import type { Token } from './token-schema.ts';
 import type { Condition, Effect } from './spell-schema.ts';
-import type { Ability, Edition } from './stats-schema.ts';
+import type { Ability, DamageType, Edition } from './stats-schema.ts';
 
 // How spells, conditions and features change rolls, and how they end:
 // counting down, being shaken off, or with the caster's concentration.
@@ -11,6 +11,8 @@ export interface Affected {
   effects: readonly Effect[];
   conditions: readonly Condition[];
   saves: Record<Ability, number>;
+  /** Creature type, for effects that only count against some (protection from evil and good). */
+  type?: string;
 }
 
 interface Side {
@@ -43,10 +45,15 @@ const FAILS_STR_DEX: readonly Condition[] = ['paralyzed', 'petrified', 'stunned'
 const hasAny = (c: Affected, list: readonly Condition[]) => c.conditions.some((x) => list.includes(x));
 const anyOf = (...values: unknown[]) => values.some(Boolean);
 
-/** Effects on the attacker that change its own roll. */
-function attackerSide(attacker: Side): Pick<AttackModifiers, 'advantage' | 'disadvantage' | 'bonus' | 'used'> {
+/** Effects on the attacker that change its own roll; one about a single creature only counts against it. */
+function attackerSide(
+  attacker: Side,
+  target: string,
+): Pick<AttackModifiers, 'advantage' | 'disadvantage' | 'bonus' | 'used'> {
   const { sheet, token } = attacker;
-  const effects = sheet.effects.filter((e) => anyOf(e.advantage, e.disadvantage, e.attackBonus, e.endsOnAttack));
+  const effects = sheet.effects.filter(
+    (e) => anyOf(e.advantage, e.disadvantage, e.attackBonus, e.endsOnAttack) && (!e.onlyFor || e.onlyFor === target),
+  );
   return {
     advantage: sheet.conditions.includes('invisible') || effects.some((e) => e.advantage),
     disadvantage: hasAny(sheet, HINDERED) || effects.some((e) => e.disadvantage),
@@ -58,13 +65,13 @@ function attackerSide(attacker: Side): Pick<AttackModifiers, 'advantage' | 'disa
 /** Effects on the target that change rolls against it. */
 function targetSide(
   target: Side,
-  attacker: string,
+  attacker: Side,
   within5: boolean,
 ): Pick<AttackModifiers, 'advantage' | 'disadvantage' | 'used'> {
   const { sheet, token } = target;
   const prone = sheet.conditions.includes('prone');
   const effects = sheet.effects.filter(
-    (e) => anyOf(e.advantageAgainst, e.disadvantageAgainst) && (!e.onlyFor || e.onlyFor === attacker),
+    (e) => anyOf(e.advantageAgainst, e.disadvantageAgainst) && countsAgainst(e, attacker),
   );
   return {
     advantage: hasAny(sheet, HELPLESS) || (prone && within5) || effects.some((e) => e.advantageAgainst),
@@ -74,10 +81,16 @@ function targetSide(
   };
 }
 
+/** Whether an effect on the target counts against this attacker: its own one (vex), or its creature type (protection from evil). */
+function countsAgainst(e: Effect, attacker: Side): boolean {
+  if (e.onlyFor && e.onlyFor !== attacker.token.id) return false;
+  return !e.fromTypes || e.fromTypes.includes(attacker.sheet.type ?? '');
+}
+
 /** Advantage, disadvantage and bonus dice for one attack, from both creatures' conditions and effects. */
 export function attackModifiers(attacker: Side, target: Side, { within5 }: { within5: boolean }): AttackModifiers {
-  const a = attackerSide(attacker);
-  const t = targetSide(target, attacker.token.id, within5);
+  const a = attackerSide(attacker, target.token.id);
+  const t = targetSide(target, attacker, within5);
   return {
     advantage: a.advantage || t.advantage,
     disadvantage: a.disadvantage || t.disadvantage,
@@ -100,7 +113,8 @@ export function saveModifiers(sheet: Affected, ability: Ability): SaveModifiers 
     autoFail: strDex && hasAny(sheet, FAILS_STR_DEX),
     advantage: sheet.effects.some((e) => e.saveAdvantage?.includes(ability)),
     disadvantage:
-      (ability === 'dex' && sheet.conditions.includes('restrained')) || sheet.effects.some((e) => e.saveDisadvantage),
+      (ability === 'dex' && sheet.conditions.includes('restrained')) ||
+      sheet.effects.some((e) => e.saveDisadvantage === true || e.saveDisadvantageFor?.includes(ability) === true),
     bonus: sheet.effects.flatMap((e) => (e.saveBonus ? [e.saveBonus] : [])),
   };
 }
@@ -134,6 +148,25 @@ export function rollSave(sheet: Affected, ability: Ability, dc: number, rng: Rng
   if (mods.autoFail) return { ability, dc, total: 0, success: false };
   const result = roll(d20Formula(sheet.saves[ability], mods.bonus, mods), rng);
   return { ability, dc, roll: result, total: result.total, success: result.total >= dc };
+}
+
+/** What effects do to their bearer as its turn starts: damage to roll (searing smite) and hit points regained (regenerate). */
+export function turnStartHarm(
+  effects: readonly Effect[],
+  rng: Rng = Math.random,
+): { parts: { amount: number; type: DamageType }[]; heal: number } {
+  const parts = effects.flatMap((e) =>
+    (e.turnDamage ?? []).map((d) => ({ amount: roll(d.dice, rng).total, type: d.type })),
+  );
+  return { parts, heal: effects.reduce((n, e) => n + (e.turnHeal ?? 0), 0) };
+}
+
+/** Damage an effect deals back to a creature that hits its bearer in melee (fire shield). */
+export function retaliation(
+  effects: readonly Effect[],
+  rng: Rng = Math.random,
+): { amount: number; type: DamageType }[] {
+  return effects.flatMap((e) => (e.retaliate ?? []).map((d) => ({ amount: roll(d.dice, rng).total, type: d.type })));
 }
 
 /** Whether a creature can take actions at all. */

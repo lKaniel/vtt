@@ -88,7 +88,10 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
   });
   const gear = equippedItems(token, content);
   const { maxHp, ac } = fixedNumbers(stats, monster, classHp(levels, abilities));
-  const features = withBasicActions(featureSheets(token, levels, abilities, grantedFeatures(token, content)));
+  const features = withBasicActions(
+    featureSheets(token, levels, abilities, grantedFeatures(token, content)),
+    token.effects,
+  );
   const base: Creature = {
     edition: content.edition,
     abilities,
@@ -105,7 +108,7 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     attacks: creatureAttacks(stats, monster, gear.weapons, { abilities, proficiency }),
     ...defenses(stats, monster),
     ...kindAndSaves(monster, cls, { abilities, proficiency }),
-    ...effectParts(token, features, content.edition),
+    ...effectParts(token, features, content.edition, monster?.conditionImmunities),
     ...classParts(levels),
     caster: casterSheet(token, { abilities, proficiency }, content),
     ...legendaryParts(token, monster),
@@ -173,12 +176,13 @@ function effectParts(
   token: Token,
   features: readonly FeatureSheet[],
   edition: Edition,
+  innate: readonly string[] = [],
 ): Pick<Creature, 'effects' | 'conditions'> {
   // An effect that gives off an aura reaches its bearer only as the aura (auras.ts).
   const effects = [...ownEffects(token, features), ...downed(token), ...exhausted(token, edition)].filter(
     (e) => !e.aura,
   );
-  const immune = new Set(effects.flatMap((e) => e.conditionImmunities ?? []));
+  const immune = new Set<string>([...innate, ...effects.flatMap((e) => e.conditionImmunities ?? [])]);
   const conditions = new Set(effects.flatMap((e) => e.conditions ?? []));
   return { effects, conditions: [...conditions].filter((c) => !immune.has(c)) };
 }

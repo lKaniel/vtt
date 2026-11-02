@@ -8,6 +8,9 @@ import { type Rng, roll, type Roll } from '@vtt/shared';
 import { attackModifiers, d20Formula, rollSave, type SaveRoll, type UsedEffect } from './effects.ts';
 import type { Token } from './token-schema.ts';
 import type { Effect, Spell } from './spell-schema.ts';
+import { dispelled, tierFor, tierSpell } from './spell-options.ts';
+
+export { withChoice } from './spell-options.ts';
 import type { Damage, DamageType } from './stats-schema.ts';
 
 // Casting a spell: what it does at the slot it's cast with, whether the
@@ -144,8 +147,10 @@ export interface CastResult {
   /** Temporary hit points after this result, when they changed. */
   tempHp?: number;
   effect?: Effect;
-  /** The spell doesn't work on this kind of creature. */
+  /** The spell doesn't work on this kind of creature (or one with this many hit points). */
   immune?: boolean;
+  /** The spell killed it outright (power word kill). */
+  killed?: boolean;
   /** Feet the target is pushed away from the caster (negative: pulled closer). */
   push?: number;
 }
@@ -160,6 +165,9 @@ export interface CastOutcome {
 
 interface Cast {
   spell: Spell & { beams: number };
+  slot: number;
+  /** What's left of a healing pool shared out among the targets (mass heal). */
+  pool?: number;
   /** One damage roll shared by every target, for spells without attacks or beams. */
   shared?: { roll: Roll; type: DamageType }[];
   caster: CastSide;
@@ -193,9 +201,12 @@ function riderOf({ spell, caster }: Cast): Partial<Effect> | undefined {
 function effectFor(cast: Cast): Effect | undefined {
   const { spell, caster, dc } = cast;
   if (!spell.effect && !spell.rider) return undefined;
-  const { repeatSave, saveOnDamage, turnTempHp, ...template } = { ...spell.effect, ...riderOf(cast) };
+  const { repeatSave, saveOnDamage, turnTempHp, forCaster, ...template } = { ...spell.effect, ...riderOf(cast) };
   return {
     ...template,
+    ...(forCaster && { onlyFor: caster.token.id }),
+    spell: spell.id,
+    slot: cast.slot,
     ...(turnTempHp !== undefined && { turnTempHp: turnTempHp === 'mod' ? cast.mod : turnTempHp }),
     id: `${spell.id}-${caster.token.id}`,
     name: template.name ?? spell.name,
@@ -224,7 +235,7 @@ function spellAttack(cast: Cast, target: CastSide, used: UsedEffect[]) {
 function landing(cast: Cast, target: CastSide, used: UsedEffect[]) {
   const { spell, rng } = cast;
   const attack = spell.attack && !spell.autoHit ? spellAttack(cast, target, used) : undefined;
-  const save = spell.save
+  const save = spell.save?.onCast
     ? resistSave(target.sheet, rollSave(target.sheet, spell.save.ability, cast.dc, rng))
     : undefined;
   const landed = (attack?.hit ?? true) && !save?.success;
@@ -242,6 +253,7 @@ function unrolled(cast: Cast, target: CastSide, base: Base): CastResult | undefi
   if (spell.stabilize) return { ...base, stabilized: true };
   if (spell.revive) return revive(target, base, spell.revive === 'full');
   if (spell.cures) return { ...base, cured: cured(spell, target.token), effect: effectFor(cast) };
+  if (spell.dispels) return { ...base, cured: dispelled(spell, target.token, cast) };
   return undefined;
 }
 
@@ -258,11 +270,17 @@ function revive(target: CastSide, base: Base, full: boolean): CastResult {
 }
 
 function oneTarget(cast: Cast, target: CastSide, used: UsedEffect[]): CastResult {
-  const { spell } = cast;
   const base = { target: target.token.id, damage: 0, parts: [], hp: target.sheet.hp };
   const early = unrolled(cast, target, base);
   if (early) return early;
-  const { attack, save, landed, half } = landing(cast, target, used);
+  const landed = landing(cast, target, used);
+  if (landed.landed && cast.spell.hpTiers) return tiered(cast, target, { base, used, save: landed.save });
+  return rolled(cast, target, base, landed);
+}
+
+/** Damage, an effect and a push from a spell whose attack and save are rolled. */
+function rolled(cast: Cast, target: CastSide, base: Base, { attack, save, landed, half }: Landing): CastResult {
+  const { spell } = cast;
   const marks = attack ? markDamage(target.sheet, cast.caster.token.id, spell.damage[0]?.type ?? 'force') : [];
   const rolls = cast.shared ?? rollDamage([...spell.damage, ...marks], attack?.crit === true, cast.rng);
   const damaged = landed || half ? dealt(target.sheet, rolls, half) : undefined;
@@ -271,21 +289,50 @@ function oneTarget(cast: Cast, target: CastSide, used: UsedEffect[]): CastResult
     ...(attack && { attack: attack.attack, hit: attack.hit, crit: attack.crit }),
     save,
     ...damaged,
-    effect: landed ? effectFor(cast) : undefined,
-    push: landed ? spell.push : undefined,
+    ...(landed && { effect: effectFor(cast), push: spell.push }),
   };
 }
 
+type Landing = ReturnType<typeof landing>;
 type Base = Pick<CastResult, 'target' | 'damage' | 'parts' | 'hp'>;
 
+/** A spell that works by the target's hit points: a kill, a tier's effect, or nothing above every tier. */
+function tiered(
+  cast: Cast,
+  target: CastSide,
+  { base, used, save }: { base: Base; used: UsedEffect[]; save: SaveRoll | undefined },
+): CastResult {
+  const tier = tierFor(cast.spell, target.sheet.hp);
+  if (tier?.kill) return { ...base, save, killed: true, hp: 0 };
+  if (tier)
+    return { ...base, save, effect: effectFor({ ...cast, spell: { ...tierSpell(cast.spell, tier), beams: 1 } }) };
+  const { hpTiers: _tiers, ...plain } = cast.spell;
+  if (!plain.damage.length && !plain.effect) return { ...base, save, immune: true };
+  const result = oneTarget(
+    { ...cast, spell: { ...plain, save: plain.save && { ...plain.save, onCast: false } } },
+    target,
+    used,
+  );
+  return { ...result, save };
+}
+
 function heal(cast: Cast, target: CastSide, base: Base): CastResult {
-  const healing = roll(cast.spell.heal!, cast.rng).total + (cast.spell.healMod ? cast.mod : 0);
+  const healing = healingFor(cast, target);
   const effect = effectFor(cast);
   // A raised maximum (aid) counts once, even when the effect is cast again.
   const before = target.token.effects?.find((e) => e.id === effect?.id)?.maxHp ?? 0;
   const max = target.sheet.maxHp + (effect?.maxHp ?? 0) - before;
   const hp = Math.min(max, target.sheet.hp + Math.max(0, healing));
   return { ...base, healed: hp - target.sheet.hp, hp, effect, cured: cured(cast.spell, target.token) };
+}
+
+/** Hit points a heal gives one target: rolled, or taken from a shared pool up to what it's missing. */
+function healingFor(cast: Cast, target: CastSide): number {
+  if (!cast.spell.healShared) return roll(cast.spell.heal!, cast.rng).total + (cast.spell.healMod ? cast.mod : 0);
+  cast.pool ??= roll(cast.spell.heal!, cast.rng).total;
+  const given = Math.min(cast.pool, Math.max(0, target.sheet.maxHp - target.sheet.hp));
+  cast.pool -= given;
+  return given;
 }
 
 /** Temporary hit points: the higher of what the target has and what the spell gives. */
@@ -329,6 +376,7 @@ export function resolveCast(input: CastInput, rng: Rng = Math.random): CastOutco
   const mod = book ? abilityMod(caster.sheet.abilities[book.ability]) : 0;
   const cast: Cast = {
     spell: scaledSpell(input.spell, slot, book?.level ?? 1),
+    slot,
     caster,
     dc: book?.dc ?? 10,
     attackBonus: book?.attack ?? 0,

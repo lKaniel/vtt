@@ -12,17 +12,30 @@ import type { Effect, Spell } from './spell-schema.ts';
 export function lastingEffects(caster: Token, spell: Spell, slot: number, point?: Point): Effect[] {
   const base = {
     source: caster.id,
+    spell: spell.id,
+    slot,
     rounds: spell.rounds,
     concentration: spell.concentration || undefined,
   };
   const out: Effect[] = [];
   if (spell.zone && spell.area) {
     const at = spell.range > 0 ? point : undefined;
-    const zone = { spell: spell.id, slot, ...(at && { at }), ...(spell.zone.spares && { spares: spell.zone.spares }) };
+    const zone = {
+      spell: spell.id,
+      slot,
+      ...(at && { at }),
+      ...(spell.zone.spares && { spares: spell.zone.spares }),
+      ...(spell.chosen && { choice: spell.chosen }),
+    };
     out.push({ ...base, id: `${spell.id}-zone-${caster.id}`, name: spell.name, zone });
   }
   if (spell.repeat) {
-    out.push({ ...base, id: `${spell.id}-repeat-${caster.id}`, name: spell.name, repeat: { spell: spell.id, slot } });
+    out.push({
+      ...base,
+      id: `${spell.id}-repeat-${caster.id}`,
+      name: spell.name,
+      repeat: { spell: spell.id, slot, ...(spell.chosen && { choice: spell.chosen }) },
+    });
   }
   return out;
 }

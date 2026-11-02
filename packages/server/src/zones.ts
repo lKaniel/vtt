@@ -1,4 +1,4 @@
-import { inZone, type Token, type ZoneHit, zonesOf } from '@vtt/system-dnd5e';
+import { inZone, type Token, withChoice, type ZoneHit, zonesOf } from '@vtt/system-dnd5e';
 import { inTemplate, isParty, type Point } from '@vtt/shared';
 import type { SpellActions } from './spell-actions.ts';
 import type { Table } from './table.ts';
@@ -58,7 +58,8 @@ export class Zones {
 
   private trigger(z: ZoneHit, victim: Token): void {
     const combat = this.store.combat;
-    const spell = this.table.content(z.bearer).spells.get(z.effect.zone.spell);
+    const known = this.table.content(z.bearer).spells.get(z.effect.zone.spell);
+    const spell = known && withChoice(known, z.effect.zone.choice);
     const sheet = this.table.sheetOf(victim);
     if (!combat || !spell || !sheet || sheet.hp <= 0) return;
     const key = `${combat.round}:${combat.turn}:${z.effect.id}:${victim.id}`;
