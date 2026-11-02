@@ -48,13 +48,19 @@ export class EntryActions {
 
   private show(player: Player, id: string, page?: string): void {
     if (!isGm(player)) throw new Refusal('Only the GM can show journal entries');
-    const doc = this.store.docs.get('journals', id);
-    if (!doc) throw new Refusal('No such journal entry');
-    const level = (doc.ownership as { default?: string } | undefined)?.default;
-    if (level !== 'observer' && level !== 'owner') {
-      const ownership = { ...(doc.ownership as object | undefined), default: 'observer' };
-      this.store.applyOps([{ op: 'update', coll: 'journals', id, patch: { ownership } }]);
-    }
+    if (!shareEntry(this.store, id)) throw new Refusal('No such journal entry');
     this.out.show(id, page);
   }
+}
+
+/** Lets every player see a journal entry (default ownership observer); false when there is no such entry. */
+export function shareEntry(store: GameStore, id: string): boolean {
+  const doc = store.docs.get('journals', id);
+  if (!doc) return false;
+  const level = (doc.ownership as { default?: string } | undefined)?.default;
+  if (level !== 'observer' && level !== 'owner') {
+    const ownership = { ...(doc.ownership as object | undefined), default: 'observer' };
+    store.applyOps([{ op: 'update', coll: 'journals', id, patch: { ownership } }]);
+  }
+  return true;
 }

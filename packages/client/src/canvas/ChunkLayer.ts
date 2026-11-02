@@ -1,4 +1,4 @@
-import { canObserve, type Chunk, isGm, type Point, type Wall } from '@vtt/shared';
+import { canObserve, type Chunk, isGm, type Point, tileClickable, type Wall } from '@vtt/shared';
 import { Circle, Container, Graphics } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
 import { drawDoor, drawWalls, drawWallShadows } from './art/walls.ts';
@@ -8,6 +8,8 @@ import { type RoofEyes, roofWatchers } from './tile-motion.ts';
 
 const DOOR_COLORS = { closed: 0xd08a3a, open: 0x7ac06a, locked: 0xd04a4a } as const;
 const DOOR_HANDLE_RADIUS = 11;
+/** How a tile hidden from players shows to the GM. */
+const HIDDEN_ALPHA = 0.45;
 
 interface ChunkView {
   /** The chunk's tiles and wall shadows: each sits straight in `ground`, so tiles of all chunks stack by `z`. */
@@ -59,7 +61,8 @@ export class ChunkLayer {
   draw(key: string, chunk: Chunk): void {
     this.remove(key);
     const world = this.session.world;
-    const tiles = drawTiles(chunk, { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 });
+    const ctx = { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 };
+    const tiles = drawTiles(chunk, ctx, (root, tile) => this.dress(root, tile));
     const view: ChunkView = { ...tiles, walls: new Container(), doors: [] };
     view.walls.cullable = true;
     const shadows = shadowsOf(chunk.walls);
@@ -94,6 +97,22 @@ export class ChunkLayer {
     for (const v of this.views.values()) for (const d of v.doors) d.visible = visible;
   }
 
+  /** A tile with a click trigger answers clicks; one hidden from players shows faintly to the GM. */
+  private dress(drawn: Container, tile: Chunk['tiles'][number]): void {
+    const gm = this.session.isGm();
+    if (tile.hidden) drawn.alpha = HIDDEN_ALPHA;
+    if (!tileClickable(tile, gm)) return;
+    drawn.eventMode = 'static';
+    drawn.cursor = 'pointer';
+    drawn.on('pointerdown', (e) => e.stopPropagation());
+    drawn.on('pointertap', (e) => {
+      e.stopPropagation();
+      const s = this.session;
+      const acting = s.selected ? s.tokens.get(s.selected) : undefined;
+      s.useTile(tile.id, acting && s.canControl(acting) ? acting.id : undefined);
+    });
+  }
+
   /** The clickable handle in the middle of a door, coloured by its state. */
   private door(key: string, wall: Wall): Graphics {
     const color = DOOR_COLORS[wall.door ?? 'closed'];
@@ -124,12 +143,17 @@ export class ChunkLayer {
   }
 }
 
-/** The chunk's tiles, each at its place in the scene's draw order: floor tiles, roofs, and those that move. */
-function drawTiles(chunk: Chunk, ctx: GroundContext): Pick<ChunkView, 'ground' | 'roofs' | 'moving'> {
+/** The chunk's tiles, each at its place in the scene's draw order: floor tiles, roofs, and those that move; `dress` makes triggers clickable. */
+function drawTiles(
+  chunk: Chunk,
+  ctx: GroundContext,
+  dress: (root: Container, tile: Chunk['tiles'][number]) => void,
+): Pick<ChunkView, 'ground' | 'roofs' | 'moving'> {
   const out: Pick<ChunkView, 'ground' | 'roofs' | 'moving'> = { ground: [], roofs: [], moving: [] };
   chunk.tiles.forEach((tile, i) => {
     const drawn = tile.kind === 'rect' ? { root: rectTile(tile, ctx) } : imageTile(tile);
     drawn.root.zIndex = tile.z ?? i;
+    dress(drawn.root, tile);
     (tile.kind === 'image' && tile.overhead ? out.roofs : out.ground).push(drawn.root);
     if (drawn.tick) out.moving.push(drawn);
   });

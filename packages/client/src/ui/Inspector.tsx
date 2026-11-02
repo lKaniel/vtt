@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import type { Doc } from '@vtt/core';
 import { commonValue, fieldsFor, MIXED, type Field, type FieldValue } from '../editor/inspector.ts';
 import type { Session } from '../session.ts';
 import { Input } from './kit/input.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 import { SelectField } from './kit/select.tsx';
+import { Button } from './kit/button.tsx';
+import { TriggerDialog } from './TriggerDialog.tsx';
 
 /** Fields only the GM sets. */
 const GM_FIELDS = new Set(['hidden', 'level']);
@@ -58,7 +61,25 @@ export function Inspector({ session }: Readonly<{ session: Session }>) {
         );
       })}
       {!fields.length && <p className="inspector-note">Nothing to edit together here.</p>}
+      {session.isGm() && count === 1 && triggerable(docs[0]!) && <TriggerButton session={session} doc={docs[0]!} />}
     </div>
+  );
+}
+
+/** A tile with a picture or a region: it can run a chain of actions. */
+const triggerable = (doc: Doc) => doc.type === 'region' || (doc.type === 'tile' && doc.kind !== 'group');
+
+function TriggerButton({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
+  const [open, setOpen] = useState(false);
+  const verb = doc.trigger ? 'Edit' : 'Add';
+  const label = doc.type === 'region' ? 'Behaviours…' : `${verb} trigger…`;
+  return (
+    <>
+      <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => setOpen(true)}>
+        {label}
+      </Button>
+      {open && <TriggerDialog key={doc.id} session={session} doc={doc} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 

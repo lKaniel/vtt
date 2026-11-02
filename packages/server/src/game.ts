@@ -25,10 +25,9 @@ import { History } from './undo.ts';
 import { SceneActions, sceneOf } from './scene-actions.ts';
 import { FogKeeper } from './fog-keeper.ts';
 import { actedBy, ChatLog, gameCard } from './chat-log.ts';
-import { TokenMoves } from './token-moves.ts';
+import { tokenMoves, type TokenMoves } from './token-moves.ts';
 import { isPackMessage, PackActions } from './pack-actions.ts';
 import { EntryActions, isEntryMessage } from './entry-actions.ts';
-import { RegionActions } from './region-actions.ts';
 import { startOf, welcomeOf } from './welcome.ts';
 import { packContent } from './game-packs.ts';
 import { WorldClock } from './world-clock.ts';
@@ -100,8 +99,14 @@ export class Game {
     this.map = new MapActions(table);
     this.scenes = new SceneActions(store);
     this.fog = new FogKeeper(store);
-    const regions = new RegionActions(table, (text, gmOnly) => this.chat.post(gameCard(text, gmOnly)));
-    this.moves = new TokenMoves(store, { combat: this.combat, zones: this.zones, reactions: this.reactions, regions });
+    const show = (entry: string, page?: string) => {
+      for (const c of this.clients)
+        if (!isGm(c.player)) this.send(c, { t: 'showJournal', entry, ...(page && { page }) });
+    };
+    const say = (text: string, gmOnly: boolean) => this.chat.post(gameCard(text, gmOnly));
+    const scene = (msg: ServerMessage) => this.on(store.currentScene).forEach((c) => this.send(c, msg));
+    const rules = { combat: this.combat, zones: this.zones, reactions: this.reactions };
+    this.moves = tokenMoves(table, rules, { say, scene, show });
     this.history = new History(store, (ids, undone) => this.chat.undone(ids, undone));
     this.clock = new WorldClock(table, { now, step: (fn) => this.timePasses(fn) });
     this.packs = new PackActions(store);
@@ -109,10 +114,7 @@ export class Game {
     this.hud = new HudActions(table, this.combat);
     this.entries = new EntryActions(store, rng, {
       post: (message) => this.chat.post(actedBy(message, this.acting)),
-      show: (entry, page) => {
-        for (const c of this.clients)
-          if (!isGm(c.player)) this.send(c, { t: 'showJournal', entry, ...(page && { page }) });
-      },
+      show,
     });
     this.listen(store);
   }
@@ -128,8 +130,7 @@ export class Game {
     });
     store.on('chunkGone', (key, scene) => {
       this.fog.mapChanged(scene);
-      for (const c of this.on(scene))
-        if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk: { tiles: [], walls: [], lights: [] } });
+      for (const c of this.on(scene)) if (c.chunks.has(key)) this.send(c, chunkMessage(c, key, undefined));
       this.refreshAll(scene);
     });
     store.on('token', (token, path, scene) => this.refreshAll(scene, token.id, path));
@@ -310,9 +311,7 @@ export class Game {
   }
 
   /** Stops the clock's tick (the game is unloaded). */
-  close(): void {
-    this.clock.close();
-  }
+  close = (): void => this.clock.close();
 
   /** A transaction of document ops, each allowed by ownership: all of it, or a reject saying why not. */
   private onOps(c: Client, msg: Extract<ClientMessage, { t: 'ops' }>): void {
@@ -348,7 +347,8 @@ export class Game {
       case 'move':
         return this.moves.move(c.player, (id) => c.visible.has(id), msg.token, msg.to);
       case 'door':
-        return this.moves.door(c.player, msg);
+      case 'trigger':
+        return this.moves.use(c.player, (id) => c.visible.has(id), msg);
       case 'chat':
         return this.onChat(c, msg.text.trim());
       case 'combatStart':

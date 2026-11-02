@@ -24,6 +24,7 @@ export class SoundScape {
     const update = () => this.update();
     this.off.push(session.on('change', update), session.on('editor', update), session.on('token', update));
     this.off.push(session.on('chunk', (key) => this.doorsIn(key)));
+    this.off.push(session.on('sound', (src, volume) => playOnce(src, volume)));
     this.update();
   }
 
@@ -99,4 +100,11 @@ export class SoundScape {
     if (next) s.playPlaylist(channel.playlist, next);
     else s.stopPlaylist(channel.playlist);
   }
+}
+
+/** A sound a trigger plays once, for everyone on the scene. */
+function playOnce(src: string, volume: number): void {
+  const audio = new Audio(assetUrl(src));
+  audio.volume = Math.min(1, Math.max(0, volume));
+  audio.play().catch(() => undefined);
 }

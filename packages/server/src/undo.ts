@@ -49,6 +49,7 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   showJournal: { label: 'journal share' },
   move: { label: 'move', action: true },
   door: { label: 'door', action: true },
+  trigger: { label: 'tile trigger', action: true },
   combatStart: { label: 'fight start', action: true },
   combatEnd: { label: 'fight end', action: true },
   endTurn: { label: 'end of turn', action: true },

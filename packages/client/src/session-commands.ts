@@ -16,6 +16,11 @@ export abstract class Commands {
     this.send({ t: 'door', chunk, wall, state });
   }
 
+  /** Clicks a tile that has a trigger, with `token` (one of yours) for the actions that move a creature. */
+  useTile(tile: string, token?: string): void {
+    this.send({ t: 'trigger', tile, ...(token && { token }) });
+  }
+
   editMap(edit: MapEdit): void {
     this.send({ t: 'mapEdit', edit });
   }

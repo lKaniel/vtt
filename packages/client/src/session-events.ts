@@ -33,4 +33,6 @@ export interface SessionEvents {
   presence: () => void;
   /** Your targets or someone else's changed. */
   targets: () => void;
+  /** A trigger played a sound for the scene (volume 0 to 1). */
+  sound: (src: string, volume: number) => void;
 }
