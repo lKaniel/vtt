@@ -26,12 +26,25 @@ report and traces of a failed run as the `e2e-report` artifact
 - **Getting to the table** (`support/table.ts`) goes through the same screens a
   person uses: `joinGame` (join screen), `enterTable` (_Enter the game_), or
   both in `atTable`. The `seat` fixture brings another person in a browser of
-  their own (own cookies), so a spec can have a GM and players at one table.
+  their own, so a spec can have a GM and players at one table.
 - **Reading the table** uses `vtt`, the scripting API every open table puts on
   the page (`docs/scripting.md`): `page.evaluate(() => vtt.tokens())`. The
   canvas is never pixel-matched. Act through the screens (buttons, chat,
   sheet) wherever a person would; `vtt` calls are what a script could do too,
   so they never get around the server's checks.
+
+## The map
+
+- `support/map.ts` points at the map: a scene opens with its camera on the
+  scene's `start` at zoom 0.6, so `screenOf(page, x, y)` turns a world point
+  into a place on the page, and `dragOnMap` drags a token with the mouse. Pick
+  points that land on the open map, not under the top bar or a panel (the
+  viewport is 1024×640).
+- Headless Chromium draws WebGL in software, at a few frames a second, and
+  every mouse event waits for a frame. Keep canvas input to a few events, and
+  give a spec with three browsers `test.slow()`.
+- Each `seat` is a separate browser, not just a context: two tables in one
+  browser share its software GPU and starve each other.
 
 ## Writing one
 

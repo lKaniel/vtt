@@ -9,6 +9,7 @@ export const HOME = 'example';
 
 /** The players in `world/game.json`, by their names on screen. */
 export const GM = 'GM';
+export const PLAYER_1 = 'Player 1';
 export const PLAYER_2 = 'Player 2';
 
 export interface JoinOptions {
@@ -42,3 +43,26 @@ export async function atTable(page: Page, player: string, options: JoinOptions =
   await joinGame(page, player, options);
   await enterTable(page);
 }
+
+/** The ids of the creatures `page`'s player can see right now. */
+export function idsSeen(page: Page): Promise<string[]> {
+  return page.evaluate(() => vtt.tokens().map((t) => t.id));
+}
+
+/** Where `page`'s player sees creature `id`, or undefined when they can't see it. */
+export function placeSeen(page: Page, id: string): Promise<[number, number] | undefined> {
+  return page.evaluate((key) => {
+    const t = vtt.token(key);
+    return t && ([t.x, t.y] as [number, number]);
+  }, id);
+}
+
+/** Says (or rolls) `text` in chat, as typed into the chat box. */
+export async function say(page: Page, text: string): Promise<void> {
+  const box = page.getByRole('textbox', { name: /^Message or/ });
+  await box.fill(text);
+  await box.press('Enter');
+}
+
+/** The sidebar's adventure log, where chat and rolls appear. */
+export const chatLog = (page: Page) => page.getByRole('complementary');
