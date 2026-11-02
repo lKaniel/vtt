@@ -746,5 +746,80 @@
     "name": "Thieves' Tools",
     "description": "Pick locks and disarm traps.",
     "weight": 1
+  },
+  {
+    "id": "backpack",
+    "type": "gear",
+    "name": "Backpack",
+    "description": "Holds 30 pounds of gear.",
+    "weight": 5,
+    "container": {
+      "capacity": 30
+    }
+  },
+  {
+    "id": "pouch",
+    "type": "gear",
+    "name": "Pouch",
+    "description": "Holds 6 pounds of small things.",
+    "weight": 1,
+    "container": {
+      "capacity": 6
+    }
+  },
+  {
+    "id": "sack",
+    "type": "gear",
+    "name": "Sack",
+    "description": "Holds 30 pounds of gear.",
+    "weight": 0.5,
+    "container": {
+      "capacity": 30
+    }
+  },
+  {
+    "id": "chest",
+    "type": "gear",
+    "name": "Chest",
+    "description": "Holds 300 pounds of gear.",
+    "weight": 25,
+    "container": {
+      "capacity": 300
+    }
+  },
+  {
+    "id": "bag-of-holding",
+    "type": "gear",
+    "name": "Bag of Holding",
+    "description": "Holds up to 500 pounds, and always weighs 15 pounds whatever is in it.",
+    "weight": 15,
+    "container": {
+      "capacity": 500,
+      "weightless": true
+    }
+  },
+  {
+    "id": "ring-of-protection",
+    "type": "gear",
+    "name": "Ring of Protection",
+    "description": "Requires attunement. +1 bonus to AC and saving throws.",
+    "weight": 0,
+    "attunement": true,
+    "bonus": {
+      "ac": 1,
+      "saves": 1
+    }
+  },
+  {
+    "id": "cloak-of-protection",
+    "type": "gear",
+    "name": "Cloak of Protection",
+    "description": "Requires attunement. +1 bonus to AC and saving throws.",
+    "weight": 1,
+    "attunement": true,
+    "bonus": {
+      "ac": 1,
+      "saves": 1
+    }
   }
 ]

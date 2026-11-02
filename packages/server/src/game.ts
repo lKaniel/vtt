@@ -1,12 +1,16 @@
 import { canControl, HOUR, isGm, type Player, type Point, type Rng, tokensVisibleTo, type World } from '@vtt/shared';
-import { type ChatMessage, type ServerMessage, type Token, viewToken } from '@vtt/system-dnd5e';
+import { type ChatMessage, type ServerMessage, type Token } from '@vtt/system-dnd5e';
 import { OpError } from '@vtt/core';
 import type { WebSocket } from 'ws';
 import { parseClientMessage, type ClientMessage } from './client-messages.ts';
 import { CombatActions } from './combat-actions.ts';
+import { isSheetMessage, sheetAction } from './sheet-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
 import { isDropMessage } from './sheet-drop-actions.ts';
+import { DamageActions } from './damage-actions.ts';
+import { HudActions, isHudMessage } from './hud-actions.ts';
+import { Pause } from './pause.ts';
 import { castFeature } from './feature-casting.ts';
 import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
@@ -20,29 +24,16 @@ import type { GameStore } from './game-store.ts';
 import { History } from './undo.ts';
 import { SceneActions, sceneOf } from './scene-actions.ts';
 import { FogKeeper } from './fog-keeper.ts';
-import { ChatLog, gameCard } from './chat-log.ts';
+import { actedBy, ChatLog, gameCard } from './chat-log.ts';
 import { TokenMoves } from './token-moves.ts';
 import { isPackMessage, PackActions } from './pack-actions.ts';
 import { EntryActions, isEntryMessage } from './entry-actions.ts';
 import { RegionActions } from './region-actions.ts';
 import { startOf, welcomeOf } from './welcome.ts';
-import { contentFor, packContent } from './game-packs.ts';
+import { packContent } from './game-packs.ts';
 import { WorldClock } from './world-clock.ts';
-
-interface Client {
-  ws: WebSocket;
-  player: Player;
-  /** The scene this client is on (see scene-actions.ts). */
-  scene: string;
-  /** What the client was last welcomed with, to tell when it needs a fresh welcome. */
-  start: string;
-  /** Chunks this client is looking at. */
-  chunks: Set<string>;
-  /** Tokens this client currently knows about. */
-  visible: Set<string>;
-  /** The documents this client has (see doc-feed.ts). */
-  feed: DocFeed;
-}
+import { isPresenceMessage, Presence } from './presence.ts';
+import { chunkMessage, type Client, streamChunks, viewFor, visibilityChanges } from './game-client.ts';
 
 /**
  * The live game. Clients send intents ("move here", "open this door"); the
@@ -70,8 +61,17 @@ export class Game {
   private history: History;
   private packs: PackActions;
   private entries: EntryActions;
+  private damage: DamageActions;
+  private hud: HudActions;
+  private pause = new Pause((msg) => this.clients.forEach((c) => this.send(c, msg)));
+  private presence = new Presence<Client>(
+    () => this.clients,
+    (c, msg) => this.send(c, msg),
+  );
   /** World time (see world-clock.ts). */
   readonly clock: WorldClock;
+  /** The seat whose message is being handled: the cards it makes follow its roll mode. */
+  private acting?: Client;
 
   /** `now`: the server's time in ms, which the game clock runs by. */
   constructor(
@@ -105,8 +105,10 @@ export class Game {
     this.history = new History(store, (ids, undone) => this.chat.undone(ids, undone));
     this.clock = new WorldClock(table, { now, step: (fn) => this.timePasses(fn) });
     this.packs = new PackActions(store);
+    this.damage = new DamageActions(table, () => this.chat.all);
+    this.hud = new HudActions(table, this.combat);
     this.entries = new EntryActions(store, rng, {
-      post: (message) => this.chat.post(message),
+      post: (message) => this.chat.post(actedBy(message, this.acting)),
       show: (entry, page) => {
         for (const c of this.clients)
           if (!isGm(c.player)) this.send(c, { t: 'showJournal', entry, ...(page && { page }) });
@@ -120,7 +122,7 @@ export class Game {
     store.fog.on('fog', (scene, player, keys, full) => this.onFog(scene, player, keys, full));
     store.on('chunk', (key, chunk, scene) => {
       this.fog.mapChanged(scene);
-      for (const c of this.on(scene)) if (c.chunks.has(key)) this.send(c, { t: 'chunk', key, chunk });
+      for (const c of this.on(scene)) if (c.chunks.has(key)) this.send(c, chunkMessage(c, key, chunk));
       // A door or a light changed: what everyone can see may have too.
       this.refreshAll(scene);
     });
@@ -167,8 +169,12 @@ export class Game {
         c.ws.close(4000, 'your seat is gone');
         continue;
       }
+      if (JSON.stringify(c.player.settings) !== JSON.stringify(player.settings))
+        this.send(c, { t: 'you', you: player });
       c.player = player;
+      const was = c.scene;
       c.scene = sceneOf(player, this.store);
+      if (was !== c.scene) this.presence.left(c, was);
       if (startOf(this.store, c) !== c.start) this.restart(c);
     }
   }
@@ -181,13 +187,9 @@ export class Game {
   }
 
   /** The clients on a scene. */
-  private on(scene: string): Client[] {
-    return [...this.clients].filter((c) => c.scene === scene);
-  }
+  private on = (scene: string): Client[] => [...this.clients].filter((c) => c.scene === scene);
 
-  findPlayer(id: string): Player | undefined {
-    return this.store.world.players.find((p) => p.id === id);
-  }
+  findPlayer = (id: string): Player | undefined => this.store.world.players.find((p) => p.id === id);
 
   connect(ws: WebSocket, player: Player): void {
     const scene = sceneOf(player, this.store);
@@ -201,7 +203,10 @@ export class Game {
       if (msg) this.handle(client, msg);
       else this.fail(client, 'Bad message');
     });
-    ws.on('close', () => this.clients.delete(client));
+    ws.on('close', () => {
+      this.clients.delete(client);
+      this.presence.left(client, client.scene);
+    });
     console.log(`[game] ${player.name} joined`);
   }
 
@@ -212,10 +217,12 @@ export class Game {
     const parts = {
       chat: this.chat.all,
       history: this.history.state(player),
-      view: (t: Token) => this.view(t, player),
+      view: (t: Token) => viewFor(this.store, t, player),
       now: this.clock.serverTime(),
+      paused: this.pause.on,
     };
     for (const msg of welcomeOf(this.store, c, parts)) this.send(c, msg);
+    this.presence.greet(c);
     this.store.inScene(c.scene, () => {
       this.fog.explore(player);
       for (const fog of this.fog.snapshot(player)) this.send(c, { t: 'fog', ...fog, full: true });
@@ -242,7 +249,7 @@ export class Game {
     for (const c of this.on(scene)) {
       const before = c.visible;
       c.visible = this.visibleTo(c.player, scene);
-      const msgs = this.store.inScene(scene, () => this.visibilityChanges(c, before, changed, path));
+      const msgs = this.store.inScene(scene, () => visibilityChanges(this.store, c, before, { changed, path }));
       for (const msg of msgs) this.send(c, msg);
     }
     this.exploreOn(scene);
@@ -263,31 +270,24 @@ export class Game {
     for (const c of this.on(scene)) if (c.player.id === player || isGm(c.player)) this.send(c, msg);
   }
 
-  private visibilityChanges(c: Client, before: Set<string>, changed?: string, path?: Point[]): ServerMessage[] {
-    const out: ServerMessage[] = [];
-    for (const id of before) if (!c.visible.has(id)) out.push({ t: 'tokenGone', id });
-    for (const id of c.visible) {
-      const token = this.view(this.store.tokens.get(id)!, c.player);
-      if (!before.has(id)) out.push({ t: 'token', token });
-      else if (id === changed) out.push(path ? { t: 'moved', id, path } : { t: 'token', token });
-    }
-    return out;
-  }
-
-  private view(token: Token, player: Player) {
-    return viewToken(token, player, contentFor(this.store, token));
-  }
-
   /** Runs a message on the scene the client is on. */
   private handle(c: Client, msg: ClientMessage): void {
-    this.store.inScene(c.scene, () => this.handleHere(c, msg));
+    this.acting = c;
+    try {
+      this.store.inScene(c.scene, () => this.handleHere(c, msg));
+    } finally {
+      this.acting = undefined;
+    }
   }
 
   private handleHere(c: Client, msg: ClientMessage): void {
     if (msg.t === 'ops') return this.onOps(c, msg);
+    if (isPresenceMessage(msg)) return this.presence.handle(c, msg);
     if (isPackMessage(msg)) return this.packs.handle(c.player, msg, (reply) => this.send(c, reply));
     try {
-      if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);
+      this.pause.check(c.player, msg);
+      if (msg.t === 'pause') this.pause.set(c.player, msg.on);
+      else if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);
       else if (this.history.run(c.player, msg, () => this.settle(() => this.dispatch(c, msg)))) this.sendHistory();
     } catch (e) {
       if (!(e instanceof Refusal)) throw e;
@@ -344,7 +344,7 @@ export class Game {
   private dispatch(c: Client, msg: ClientMessage): void {
     switch (msg.t) {
       case 'view':
-        return this.onView(c, msg.chunks);
+        return streamChunks(c, msg.chunks, this.store, (msg) => this.send(c, msg));
       case 'move':
         return this.moves.move(c.player, (id) => c.visible.has(id), msg.token, msg.to);
       case 'door':
@@ -359,8 +359,6 @@ export class Game {
         return this.combat.endTurn(c.player);
       case 'attack':
         return this.combat.attack(c.player, (id) => c.visible.has(id), msg);
-      case 'equip':
-        return this.combat.equip(c.player, msg.token, msg.item, msg.equipped);
       default:
         return this.dispatchMagic(c, msg);
     }
@@ -376,7 +374,8 @@ export class Game {
       case 'relinkToken':
         return this.gm.relink(c.player, msg.token, msg.how);
       case 'hotbar':
-        return this.moves.hotbar(c.player, (id) => c.visible.has(id), msg.token, msg.slots);
+      case 'animation':
+        return this.moves.arrange(c.player, (id) => c.visible.has(id), msg);
       case 'spawn':
         return this.gm.spawn(c.player, msg.from, msg.at, msg.hidden);
       case 'saveActor':
@@ -399,7 +398,10 @@ export class Game {
     if (msg.t === 'fog') this.fog.edit(c.player, msg.edit);
     else if (msg.t === 'clock') this.clock.act(c.player, msg.action);
     else if (msg.t === 'turnBased') this.combat.turnBased(c.player, msg.on);
+    else if (isSheetMessage(msg)) sheetAction(this.table, c.player, msg);
     else if (isEntryMessage(msg)) this.entries.handle(c.player, msg);
+    else if (msg.t === 'applyDamage') this.damage.apply(c.player, (id) => c.visible.has(id), msg);
+    else if (isHudMessage(msg)) this.hud.handle(c.player, (id) => c.visible.has(id), msg);
     else if (isDropMessage(msg)) this.gm.drops.handle(c.player, (id) => c.visible.has(id), msg);
     else this.scenes.dispatch(c.player, msg);
   }
@@ -435,17 +437,6 @@ export class Game {
     this.features.use(c.player, msg.token, msg.feature);
   }
 
-  private onView(c: Client, chunks: string[]): void {
-    const next = new Set(chunks);
-    for (const key of next) {
-      if (c.chunks.has(key)) continue;
-      // Empty chunks are sent too, so the client knows the area is loaded.
-      const chunk = this.store.chunks.get(key) ?? { tiles: [], walls: [], lights: [] };
-      this.send(c, { t: 'chunk', key, chunk });
-    }
-    c.chunks = next;
-  }
-
   private onChat(c: Client, text: string): void {
     try {
       this.chat.say(c, text);
@@ -456,9 +447,9 @@ export class Game {
 
   /** A message from the game itself: initiative, attack results. */
   private narrate(content: Pick<ChatMessage, 'text' | 'attack' | 'spell'>): void {
-    const card = gameCard(content.text ?? '');
+    const card = actedBy({ ...gameCard(content.text ?? ''), ...content }, this.acting);
     this.history.noteCard(card.id);
-    this.chat.post({ ...card, ...content });
+    this.chat.post(card);
   }
 
   private toGms(msg: ServerMessage): void {

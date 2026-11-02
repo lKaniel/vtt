@@ -95,3 +95,23 @@ describe('reaction spells', () => {
     expect(ana.take('error').map((m) => m.message)).toEqual(['Hero has already used their reaction']);
   });
 });
+
+describe('per-player automation settings', () => {
+  it('a player who never wants hit reactions offered just takes the hit', () => {
+    const ana = join_('ana');
+    ana.receive({ t: 'seatSettings', settings: { hitReactions: 'never' } });
+    expect(game.findPlayer('ana')!.settings).toEqual({ hitReactions: 'never' });
+    expect(ana.take('you').at(-1)).toMatchObject({ you: { id: 'ana', settings: { hitReactions: 'never' } } });
+    expect(ana.take('welcome')).toEqual([]);
+    const { ana: again } = goblinSwings();
+    expect(again.take('reactionOffer')).toEqual([]);
+    expect(tok('hero').hp).toBe(30 - 5);
+  });
+
+  it('refuses settings the game does not know', () => {
+    const ana = join_('ana');
+    ana.receive({ t: 'seatSettings', settings: { hitReactions: 'sometimes' } });
+    expect(ana.take('error')).toHaveLength(1);
+    expect(game.findPlayer('ana')!.settings).toBeUndefined();
+  });
+});

@@ -16,6 +16,13 @@ function withChoices(field: Field, session: Session): Field {
       .map((j) => ({ value: j.id, label: typeof j.name === 'string' ? j.name : j.id }));
     return { ...field, options: [{ value: '', label: 'none' }, ...entries] };
   }
+  if (field.choices === 'tiles') {
+    const tiles = session.docs
+      .all(`${session.scene}/tiles`)
+      .filter((t) => t.kind !== 'group' && t.background !== true)
+      .map((t) => ({ value: t.id, label: typeof t.name === 'string' ? t.name : t.id }));
+    return { ...field, options: [{ value: '', label: 'none' }, ...tiles] };
+  }
   if (field.choices === 'levels') {
     const levels = (session.world?.levels ?? []).map((l) => ({ value: l.id, label: l.name }));
     return { ...field, options: [{ value: '', label: 'every level' }, ...levels] };

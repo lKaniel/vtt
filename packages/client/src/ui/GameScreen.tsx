@@ -2,7 +2,7 @@ import { Redo2Icon, Undo2Icon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { SoundScape } from '../audio.ts';
 import { MapView } from '../canvas/MapView.ts';
-import { editKey, editorKey, type EditKey, type LayerKey } from '../edit-keys.ts';
+import { editKey, editorKey, type EditKey, type EditorKey, type LayerKey } from '../edit-keys.ts';
 import { hotbarTiles } from '../hotbar.ts';
 import { Session } from '../session.ts';
 import { stepTarget } from '../stepping.ts';
@@ -15,9 +15,12 @@ import { Inspector } from './Inspector.tsx';
 import { JournalViewer } from './JournalViewer.tsx';
 import { MapTools } from './MapTools.tsx';
 import { PartyBar } from './PartyBar.tsx';
+import { PauseBanner, PauseButton } from './PauseBanner.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
+import { TokenHud } from './TokenHud.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
+import { SettingsMenu } from './SettingsMenu.tsx';
 import { Button } from './kit/button.tsx';
 
 export function GameScreen({
@@ -47,7 +50,7 @@ export function GameScreen({
       if (e.defaultPrevented || isTyping(e.target)) return;
       if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
       if (e.key === 'Escape' && backOutOfEditor(session)) return;
-      if (runEditorKey(session, e)) return;
+      if (targetKey(session, e) || runEditorKey(session, e)) return;
       if (e.key === 'c') toggleSheet(session);
       else if (e.key === 'e') toggleEditor(session);
       else handleGameKey(session, e);
@@ -76,7 +79,9 @@ export function GameScreen({
         <span className="you" style={{ color: session.you?.color }}>
           {session.you?.name}
         </span>
+        <PauseButton session={session} />
         <UndoButtons session={session} />
+        <SettingsMenu session={session} />
         <Button variant="link" onClick={onLeave}>
           Leave
         </Button>
@@ -92,6 +97,8 @@ export function GameScreen({
       <ChatPanel session={session} />
       <Toast session={session} />
       <ContextMenu session={session} />
+      <TokenHud session={session} />
+      <PauseBanner session={session} />
     </div>
   );
 }
@@ -201,6 +208,7 @@ function UndoButtons({ session }: Readonly<{ session: Session }>) {
  */
 function backOutOfEditor(session: Session): boolean {
   if (session.menu) session.closeMenu();
+  else if (session.rulers.clear()) return true;
   else if (session.mode === 'tokens') return false;
   else if (session.tool !== 'select') session.setTool('select');
   else if (session.selection.length) session.setSelection([]);
@@ -208,14 +216,26 @@ function backOutOfEditor(session: Session): boolean {
   return true;
 }
 
-/** T, Shift+T, W, L, D, N and M switch modes (those this seat may use); the arrows nudge outside the tokens mode. */
+/** T in the tokens mode targets the creature under the pointer, or lets them all go over empty ground (see targets.ts). */
+function targetKey(session: Session, e: KeyboardEvent): boolean {
+  if (e.key.toLowerCase() !== 't' || e.shiftKey || session.mode !== 'tokens') return false;
+  return session.toggleTargetAtPointer();
+}
+
+/** T, Shift+T, W, L, D, N and M switch modes (those this seat may use), R picks up the ruler; the arrows nudge outside the tokens mode. */
 function runEditorKey(session: Session, e: KeyboardEvent): boolean {
   const key = editorKey(e, session.mode !== 'tokens');
-  if (!key || ('mode' in key && (!session.canUseMode(key.mode) || key.mode === session.mode))) return false;
+  if (!key || ('mode' in key && !switches(session, key))) return false;
   e.preventDefault();
-  if ('mode' in key) session.setMode(key.mode);
+  if ('mode' in key) session.setMode(key.mode, key.tool);
   else session.nudge(key.nudge, key.big);
   return true;
+}
+
+/** Whether a mode key changes anything: a mode this seat may use, or a tool it isn't holding. */
+function switches(session: Session, key: Extract<EditorKey, { mode: unknown }>): boolean {
+  if (!session.canUseMode(key.mode)) return false;
+  return key.mode !== session.mode || (!!key.tool && key.tool !== session.tool);
 }
 
 /** C opens the selected creature's sheet, or closes the open one. */

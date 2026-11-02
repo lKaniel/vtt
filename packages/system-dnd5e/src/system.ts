@@ -2,6 +2,7 @@ import type { PackCompendium, SystemDefinition } from '@vtt/core';
 import type { Perceiver } from '@vtt/shared';
 import { editionOf, toEdition } from './content.ts';
 import { CONTENT_TYPES, contentWith, packContentIssues, SRD_PACKS } from './packs.ts';
+import { inventoryIssues } from './carrying.ts';
 import { withOwn } from './own-content.ts';
 import { perceiverOf } from './perception.ts';
 import { foundrySheets } from './foundry-actor.ts';
@@ -26,6 +27,7 @@ function contentIssues(sheet: Sheet, rules: string, packs?: readonly PackCompend
     ...(sheet.stats?.spells ?? [])
       .filter((s) => !srd.spells.has(s))
       .map((s) => `unknown spell "${s}" in the ${edition} rules`),
+    ...inventoryIssues(sheet, srd),
   ];
 }
 

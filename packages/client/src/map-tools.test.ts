@@ -12,6 +12,6 @@ describe('wallEdit', () => {
   it('draws walls, doors or windows', () => {
     expect(wallEdit('wall', [0, 0], [100, 0])).toEqual({ op: 'addWall', wall: { a: [0, 0], b: [100, 0] } });
     expect(wallEdit('door', [0, 0], [100, 0]).wall.door).toBe('closed');
-    expect(wallEdit('window', [0, 0], [100, 0]).wall.sight).toBe(false);
+    expect(wallEdit('window', [0, 0], [100, 0]).wall).toMatchObject({ sight: 'none', light: 'none' });
   });
 });

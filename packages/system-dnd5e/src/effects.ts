@@ -99,7 +99,8 @@ export function saveModifiers(sheet: Affected, ability: Ability): SaveModifiers 
   return {
     autoFail: strDex && hasAny(sheet, FAILS_STR_DEX),
     advantage: sheet.effects.some((e) => e.saveAdvantage?.includes(ability)),
-    disadvantage: ability === 'dex' && sheet.conditions.includes('restrained'),
+    disadvantage:
+      (ability === 'dex' && sheet.conditions.includes('restrained')) || sheet.effects.some((e) => e.saveDisadvantage),
     bonus: sheet.effects.flatMap((e) => (e.saveBonus ? [e.saveBonus] : [])),
   };
 }

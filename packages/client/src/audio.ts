@@ -1,6 +1,8 @@
 import { nextTrack, onLevel, type Playlist, type Point, type Wall } from '@vtt/shared';
 import { assetUrl } from './assets.ts';
 import { audioMix, type Channel } from './audio-mix.ts';
+import { DoorSounds } from './door-sounds.ts';
+import { playDoor } from './door-synth.ts';
 import type { Session } from './session.ts';
 
 // Plays what audio-mix.ts says this client should hear, with one <audio>
@@ -10,11 +12,26 @@ import type { Session } from './session.ts';
 export class SoundScape {
   private playing = new Map<string, HTMLAudioElement>();
   private off: (() => void)[] = [];
+  private doors: DoorSounds;
 
   constructor(private session: Session) {
+    const ears = {
+      listener: () => this.listener(),
+      gridSize: () => session.world?.gridSize ?? 100,
+      walls: () => this.walls(),
+    };
+    this.doors = new DoorSounds(ears, playDoor);
     const update = () => this.update();
     this.off.push(session.on('change', update), session.on('editor', update), session.on('token', update));
+    this.off.push(session.on('chunk', (key) => this.doorsIn(key)));
     this.update();
+  }
+
+  /** A chunk arrived: its doors may have swung. */
+  private doorsIn(key: string): void {
+    const chunk = this.session.chunks.get(key);
+    this.doors.forget([...this.session.chunks.keys()]);
+    if (chunk) this.doors.chunk(key, chunk);
   }
 
   destroy(): void {

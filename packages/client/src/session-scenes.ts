@@ -141,10 +141,17 @@ export abstract class SceneSession extends JournalSession {
   }
 
   protected override applyEdit(msg: ServerMessage): boolean {
+    // Your seat changed without the table starting over (your settings).
+    if (msg.t === 'you') return this.reseat(msg.you);
     if (msg.t !== 'fog') return super.applyEdit(msg);
     this.applyFog(msg);
     this.fogChanged();
     return false;
+  }
+
+  private reseat(you: Player): boolean {
+    this.you = you;
+    return true;
   }
 
   private applyFog(msg: Extract<ServerMessage, { t: 'fog' }>): void {

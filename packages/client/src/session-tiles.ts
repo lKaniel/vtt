@@ -1,8 +1,9 @@
-import { type Doc, freeId, type Op, type Patch, slugify } from '@vtt/core';
+import { attachedTo, type Doc, freeId, type Op, type Patch, slugify } from '@vtt/core';
 import {
   applyPatch,
   applyTileEdit,
   dragHandle,
+  EDIT_KINDS,
   groupEdit,
   isGroup,
   merge,
@@ -94,7 +95,25 @@ export abstract class TileSession extends EditorSession {
       if (patch && Object.keys(patch).length) moved.updates.push({ id, patch });
     }
     const nest = nestEdit(applyTileEdit(tiles, moved), ids);
-    this.sendTileEdit('move', { ...moved, updates: merge([...moved.updates, ...nest.updates]) });
+    const fastened = this.fastenedMoves(withDescendants(tiles, ids), d);
+    this.sendTileEdit('move', { ...moved, updates: merge([...moved.updates, ...nest.updates]) }, fastened);
+  }
+
+  /** Moving tiles moves the walls and lights fastened to them. */
+  private fastenedMoves(ids: readonly string[], d: Point): Op[] {
+    const coll = this.modeColl('tiles');
+    const along = attachedTo(
+      this.docs,
+      EDIT_KINDS,
+      ids.map((id) => ({ coll, id })),
+    );
+    return along.map(({ coll: at, doc }): Op => ({
+      op: 'update',
+      coll: at,
+      id: doc.id,
+      rev: doc.rev,
+      patch: moveBy(doc, d),
+    }));
   }
 
   /** Ctrl+G: puts the selected tiles in a new group, and selects it. */
@@ -163,7 +182,7 @@ export abstract class TileSession extends EditorSession {
   }
 
   /** Sends a tile edit as one transaction, shown at once. */
-  private sendTileEdit(label: string, edit: TileEdit): void {
+  private sendTileEdit(label: string, edit: TileEdit, more: readonly Op[] = []): void {
     const coll = this.modeColl('tiles');
     const ops: Op[] = [
       ...edit.creates.map((doc): Op => ({ op: 'create', coll, doc })),
@@ -173,6 +192,7 @@ export abstract class TileSession extends EditorSession {
         return doc && Object.keys(real).length ? [{ op: 'update', coll, id, rev: doc.rev, patch: real }] : [];
       }),
       ...edit.deletes.map((id): Op => ({ op: 'delete', coll, id })),
+      ...more,
     ];
     this.sendChanges(label, ops);
   }

@@ -1,4 +1,4 @@
-import { feetToPx, type LightSource, type Point, type Rect } from '@vtt/shared';
+import { feetToPx, lightReach, type LightSource, type ReachPolygon, type Rect } from '@vtt/shared';
 import { Container, Graphics, RenderTexture, Sprite, Texture, type Renderer } from 'pixi.js';
 import { ambientColor, falloff, lightColor, lightPulse } from './light-style.ts';
 
@@ -24,7 +24,7 @@ export interface LightScene {
   gridSize: number;
   lights: readonly LightSource[];
   /** The area a light reaches from a point, stopped by walls. */
-  polygon: (at: Point, radius: number) => number[];
+  polygon: ReachPolygon;
   now: number;
 }
 
@@ -47,7 +47,7 @@ export class LightMap {
   private lamps = new Container();
   private darkness = new Graphics();
   private cache = new Map<string, Lamp>();
-  private gradients = new Map<number, Texture>();
+  private gradients = new Map<string, Texture>();
 
   constructor(private renderer: Renderer) {
     this.texture = RenderTexture.create({ width: 1, height: 1, resolution: MAP_RESOLUTION });
@@ -92,31 +92,32 @@ export class LightMap {
 
   private drawDarkness(l: LightSource, scene: LightScene): void {
     const radius = feetToPx(l.bright + l.dim, scene.gridSize);
-    if (radius > 0) this.darkness.poly(scene.polygon([l.x, l.y], radius)).fill(0x000000);
+    if (radius > 0) this.darkness.poly(lightReach(l, scene.gridSize, scene.polygon)).fill(0x000000);
   }
 
   private drawLamp(l: LightSource, index: number, scene: LightScene): void {
     const radius = feetToPx(l.bright + l.dim, scene.gridSize);
     if (radius <= 0 || !overlaps(l, radius, scene.view)) return;
     const share = l.bright / (l.bright + l.dim);
-    const key = `${l.x},${l.y},${radius},${share}`;
+    const soft = l.attenuation ?? 0.5;
+    const key = `${l.x},${l.y},${radius},${share},${soft},${l.angle},${l.rotation},${l.walls}`;
     let lamp = this.cache.get(key);
     if (!lamp) {
-      lamp = this.makeLamp(scene.polygon([l.x, l.y], radius), share);
+      lamp = this.makeLamp(lightReach(l, scene.gridSize, scene.polygon), share, soft);
       this.cache.set(key, lamp);
       this.lamps.addChild(lamp.root);
     }
     lamp.used = true;
     const pulse = lightPulse(l.animation, scene.now, index + l.x * 0.013 + l.y * 0.007);
     lamp.glow.tint = lightColor(l);
-    lamp.glow.alpha = Math.min(1, pulse);
+    lamp.glow.alpha = Math.min(1, pulse) * (l.luminosity ?? 1);
     lamp.glow.position.set(l.x, l.y);
     lamp.glow.width = lamp.glow.height = radius * 2 * (0.985 + 0.015 * pulse);
   }
 
-  private makeLamp(poly: number[], share: number): Lamp {
+  private makeLamp(poly: number[], share: number, soft: number): Lamp {
     const root = new Container();
-    const glow = new Sprite(this.gradient(share));
+    const glow = new Sprite(this.gradient(share, soft));
     glow.anchor.set(0.5);
     glow.blendMode = 'add';
     const mask = new Graphics().poly(poly).fill(0xffffff);
@@ -134,10 +135,12 @@ export class LightMap {
     }
   }
 
-  /** A round white glow that falls off like a light with `share` of its radius bright. */
-  private gradient(share: number): Texture {
+  /** A round white glow that falls off like a light with `share` of its radius bright, `soft`ly at its edges. */
+  private gradient(share: number, soft: number): Texture {
     const step = Math.round(share * 20) / 20;
-    let tex = this.gradients.get(step);
+    const att = Math.round(soft * 10) / 10;
+    const key = `${step},${att}`;
+    let tex = this.gradients.get(key);
     if (tex) return tex;
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = GRADIENT_SIZE;
@@ -145,13 +148,13 @@ export class LightMap {
     const half = GRADIENT_SIZE / 2;
     const g = ctx.createRadialGradient(half, half, 0, half, half, half);
     for (let i = 0; i <= 32; i++) {
-      const v = Math.round(falloff(i / 32, step) * 255);
+      const v = Math.round(falloff(i / 32, step, att) * 255);
       g.addColorStop(i / 32, `rgb(${v},${v},${v})`);
     }
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, GRADIENT_SIZE, GRADIENT_SIZE);
     tex = Texture.from(canvas);
-    this.gradients.set(step, tex);
+    this.gradients.set(key, tex);
     return tex;
   }
 }

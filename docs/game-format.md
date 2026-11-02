@@ -86,6 +86,10 @@ over on their scene; a seat that's gone is disconnected.
 Players whose `id` matches an account (see the README) are that account's
 seat: the game's members are its seats (see `docs/lobby.md`). The server adds
 one when an account joins, so you can change its `role` here afterwards.
+A seat's `settings` are the player's own options, set from the gear in the
+top bar: `opportunity` (`ask`, `auto`, `never`: how opportunity attacks are
+offered) and `hitReactions` (`ask`, `never`: shield and uncanny dodge). A
+creature reacts by the settings of a player who controls it, else the GM's.
 Removing a seat deletes its explored fog. A character brought from an account becomes an actor
 and a linked token, both with the character's id and the account as
 `owner` in `ownership`; saving or levelling the character updates its name, stats and
@@ -192,8 +196,41 @@ pixels.
   covers (default 2). Grass, dirt, sand, water and rock get natural wobbly
   edges; set `"edge": "straight"` or `"rough"` to choose. `image` tiles load from
   `assets/`.
-- A wall is a line from `a` to `b` that blocks movement. Add `door` to make
-  it a door: `"closed"`, `"open"` or `"locked"`. Open doors don't block.
+- A wall is a line from `a` to `b` that stops movement, sight, light and
+  sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.
+  Open doors stop nothing.
+- What a wall stops is set one by one, like Foundry's wall senses: `move` is
+  `"none"` or `"normal"`; `sight`, `light` and `sound` are `"none"`,
+  `"normal"`, `"limited"` or `"proximity"`. Missing means `"normal"`.
+  - `limited`: the sense gets through one limited wall but not a second
+    (tall grass, a thin curtain: the Foundry "terrain" wall).
+  - `proximity`: the sense gets through from within `threshold` feet of the
+    wall, e.g. `"threshold": { "sight": 10 }` (a fence you look over up close).
+  - Usual kinds: a window is `"sight": "none", "light": "none"`; a terrain
+    wall is `limited` for sight, light and sound; an invisible barrier has
+    sight, light and sound `none`; an illusory wall is `"move": "none"`.
+  - Old files with `"sight": false` still load, as a window.
+- `"dir": "left"` or `"right"` makes a one-way wall: it stops movement,
+  sight, light and sound only when they come from that side, looking from
+  `a` to `b` (with `a` north of `b`, left is east). The editor draws an
+  arrow the way things get through.
+- `"secret": true` on a door: players are sent a plain wall until it is
+  opened, and only the GM can open it.
+- `doorSound` is what a door sounds like when it swings or its lock turns:
+  `"wood"` (the default), `"stone"`, `"iron"`, `"gate"`, `"none"`, or an
+  audio file. It is heard within 100 ft, quieter through walls.
+- `"height": { "bottom": 0, "top": 10 }` (feet, like the Wall Height module):
+  the wall only stops creatures and eyes whose elevation is from `bottom` up
+  to, not including, `top`; a flier above it sees and flies over. Either end
+  may be left out (no limit). Lights shine from the ground.
+- `"tile": "<tile id>"` fastens a wall (or a light) to a tile, like a prefab
+  house: moving the tile in the editor moves it, and copying or deleting the
+  tile takes it along. `check-game` reports a tile the scene doesn't have.
+
+  ```json
+  { "id": "hedge", "a": [0, 0], "b": [500, 0], "sight": "limited", "light": "limited", "sound": "limited" }
+  ```
+
 - Ids must be unique within the list.
 
 ## Lights
@@ -209,16 +246,23 @@ rules: `bright` light, then `dim` light beyond it.
 ]
 ```
 
-| Field       | Meaning                                                                          |
-| ----------- | -------------------------------------------------------------------------------- |
-| `color`     | Colour of the light; default a warm white.                                       |
-| `animation` | `"flicker"` for flames, `"pulse"` for magic.                                     |
-| `darkness`  | Magical darkness (the Darkness spell) of radius `bright + dim` instead of light. |
+| Field            | Meaning                                                                          |
+| ---------------- | -------------------------------------------------------------------------------- |
+| `color`          | Colour of the light; default a warm white.                                       |
+| `animation`      | `"flicker"` for flames, `"pulse"` for magic.                                     |
+| `darkness`       | Magical darkness (the Darkness spell) of radius `bright + dim` instead of light. |
+| `angle`          | Degrees of a beam (a lantern, a lighthouse); left out, it shines all round.      |
+| `rotation`       | Which way the beam faces, degrees clockwise from facing south (down the map).    |
+| `walls`          | `false`: it shines through walls (a magical glow).                               |
+| `luminosity`     | How strongly it lights, 0 to 1 (default 1).                                      |
+| `attenuation`    | How softly it fades at its edges, 0 (a hard edge) to 1 (default 0.5).            |
+| `colorIntensity` | How much of `color` it casts, 0 (plain warm light) to 1 (default).               |
 
 The GM can also draw walls, doors and windows, place, drag and erase lights,
 and set the time of day from the map tools in the game (bottom left).
 
-Walls stop light like they stop sight. A token carries a light with the same
+Walls stop light like they stop sight (a light whose `walls` is `false`
+ignores them; a beam lights, and lets you see, only inside its angle). A token carries a light with the same
 fields in `light`. A placed light with `activeAt: [from, to]` shines only
 while the darkness is in that band (`[0.6, 1]` lamps lit at night; a band
 written high to low wraps round, `[0.8, 0.2]` dusk to dawn). Everything with
@@ -496,6 +540,29 @@ better of STR and DEX, ranged weapons DEX), proficiency from `level`:
 | `attacks`                                      | Extra attacks: `{ "name", "kind": "melee"\|"ranged", "toHit", "reach" or "range": [normal, long], "damage": [{ "dice": "1d6+2", "type": "fire" }] }` |
 | `resistances`, `immunities`, `vulnerabilities` | Damage types, e.g. `["fire"]`.                                                                                                                       |
 
+**Coins, containers and attunement.** `currency` holds the coins carried,
+`{ "pp": 1, "gp": 40, "ep": 0, "sp": 12, "cp": 30 }` (fifty coins weigh a
+pound). An entry is packed into a container entry by naming it: give the
+container an `id` and the packed entries `"in": "<that id>"`. Containers are
+gear with `"container": { "capacity": 30 }` in pounds (backpack, pouch, sack,
+chest); with `"weightless": true` (bag of holding) what is inside weighs
+nothing. A character carrying more than Strength × 15 lb (doubled per size
+above medium, halved for tiny) moves 5 ft at most; monsters don't count their
+loot. Magic items with `"attunement": true` work only while the entry is
+`"attuned": true` (three at most, the file is refused with a fourth), and an
+item's `"bonus": { "ac": 1, "saves": 1 }` counts while it is equipped (and
+attuned, if it needs that). Owners pack, attune and count coins from the
+sheet without edit mode.
+
+```json
+"currency": { "gp": 25, "sp": 8 },
+"inventory": [
+  { "id": "pack", "item": "backpack" },
+  { "item": "rope", "in": "pack" },
+  { "item": "ring-of-protection", "equipped": true, "attuned": true }
+]
+```
+
 **Spells and features.** `stats.spells` lists the spell ids a character
 knows or has prepared (from `spells-5.1.json` or `spells-5.2.json`, by the
 token's edition). A `class` named after an SRD class (Wizard, Fighter, ...)
@@ -532,15 +599,31 @@ spells and features are added by dragging them from the Compendium.
 The server writes the rest of a creature's magic to its token, and you can
 edit it too:
 
-| Token field     | Meaning                                                                                                                                                                                    |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.                                                                                      |
-| `deathSaves`    | `{ "successes", "failures", "stable"?, "dead"? }`: a character at 0 hp rolls these at the start of its turns. Monsters just die at 0.                                                      |
-| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                                      |
-| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st) and feature uses.                                                                                     |
-| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                                              |
-| `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"`, `"scroll:fireball"` or `null`. |
-| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                                                |
+<<<<<<< HEAD
+
+| Token field     | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.                                                                                                                                                                                                                                                                                                                                 |
+| `deathSaves`    | `{ "successes", "failures", "stable"?, "dead"? }`: a character at 0 hp rolls these at the start of its turns. Monsters just die at 0.                                                                                                                                                                                                                                                                                                 |
+| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                                                                                                                                                                                                                                                                                 |
+| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st) and feature uses.                                                                                                                                                                                                                                                                                                                                |
+| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                                                                                                                                                                                                                                                                                         |
+| `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"`, `"scroll:fireball"` or `null`.                                                                                                                                                                                                                                            |
+| `animations`    | The animation its controller picked per attack or spell, by `"attack:<name>"` or `"spell:<id>"`: a library name (`"flame-blade"`, `"frost-orb"`, `"lightning"`, `"holy-light"`, `"none"`, see `system-dnd5e/src/animations.ts`) or a video of the assets or a pack (`"pack://jb2a/media/…_30ft_….webm"`). Videos named by range (`_30ft_`) or under a `Ranged` folder fly from the attacker to the target; others play on the target. |
+| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                                                                                                                                                                                                                                                                                           |
+| =======         |
+| Token field     | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                                                                                                                                                             |
+| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.                                                                                                                                                                                                                                                                                                                                 |
+| `deathSaves`    | `{ "successes", "failures", "stable"?, "dead"? }`: a character at 0 hp rolls these at the start of its turns. Monsters just die at 0.                                                                                                                                                                                                                                                                                                 |
+| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                                                                                                                                                                                                                                                                                 |
+| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st), feature uses, and `hitDice` spent (one per level, of the class die; an owner spends one from the Effects page to heal die + Con; a long rest gives back half in 2014, all in 2024).                                                                                                                                                             |
+| `exhaustion`    | 1 to 6. 2014: disadvantage on checks, speed halved, disadvantage on attacks and saves, HP max halved, speed 0, dead (cumulative). 2024: −2 per level to d20 tests, −5 ft speed per level, dead at 6. A long rest takes one level away.                                                                                                                                                                                                |
+| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                                                                                                                                                                                                                                                                                         |
+| `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"`, `"scroll:fireball"` or `null`.                                                                                                                                                                                                                                            |
+| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                                                                                                                                                                                                                                                                                           |
+
+> > > > > > > origin/main
 
 Effect modifiers: `senses` (e.g. `{ "darkvision": 60 }` or
 `{ "seeInvisible": true }`), `conditions` (e.g. `["prone"]`, `["paralyzed"]`),
@@ -564,6 +647,17 @@ ends it when the bearer attacks or casts; `endsOnDamage` ends it when the bearer
 takes damage, and `saveOnDamage` gives it another save (with advantage) then;
 `worsens` (with `repeatSave`) swaps the conditions for these on a failed save. A hidden trap or a GM ruling can
 just write an effect into the token.
+
+`changes` changes any statistic by key, like Foundry's Active Effects (and
+DAE): `[{ "key": "abilities.str", "mode": "override", "value": 19 }]`. Keys:
+`abilities.<str…cha>` and `proficiency` (changed first, so attacks, saves and
+AC follow), `ac`, `maxHp`, `speed`, `initiative`, `toHit` (every attack roll),
+`saves.all`, `saves.<str…cha>`, and `resistances`, `immunities`,
+`vulnerabilities` (the value is a damage type, added to the list). `mode` is
+`add` (the default), `multiply`, `downgrade` (at most), `upgrade` (at least)
+or `override`; they apply in that order. A feature's `passive` effect takes
+`changes` too (a belt of giant strength as a homemade feature). In the sheet's
+edit mode, the Effects page makes and edits effects with changes by hand.
 
 Players only receive the stats of tokens they control. For everyone else
 they're told how hurt the creature looks (unhurt, hurt, bloodied, down).

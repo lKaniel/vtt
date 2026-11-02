@@ -47,8 +47,8 @@ function layerKey(key: string, shift: boolean): LayerKey | undefined {
   return shift ? layer[1] : layer[0];
 }
 
-/** A GM's editor key: switch mode, or nudge the selection. */
-export type EditorKey = { mode: EditorMode } | { nudge: Point; big: boolean };
+/** An editor key: switch mode (R: to the ruler), or nudge the selection. */
+export type EditorKey = { mode: EditorMode; tool?: 'ruler' } | { nudge: Point; big: boolean };
 
 const MODE_KEYS: Record<string, EditorMode> = {
   t: 'tokens',
@@ -62,7 +62,7 @@ const ARROWS: Record<string, Point> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], 
 
 /**
  * T tokens, Shift+T tiles, W walls, L lights, D drawings, N notes, M
- * templates (players reach drawings and templates only); outside the tokens mode
+ * templates, R the ruler (players reach drawings and templates only); outside the tokens mode
  * (`editing`) the arrows nudge a pixel, or a square with Shift.
  */
 export function editorKey(e: KeyPress, editing: boolean): EditorKey | undefined {
@@ -71,6 +71,7 @@ export function editorKey(e: KeyPress, editing: boolean): EditorKey | undefined 
   if (arrow) return editing ? { nudge: arrow, big: e.shiftKey } : undefined;
   const key = e.key.toLowerCase();
   if (key === 't' && e.shiftKey) return { mode: 'tiles' };
+  if (key === 'r') return { mode: 'templates', tool: 'ruler' };
   const mode = MODE_KEYS[key];
   return mode && { mode };
 }

@@ -11,8 +11,8 @@ import { EditSession } from './session-edits.ts';
 // context menu. Every change it makes goes out as document ops through
 // EditSession, so undo, redo and the server's checks apply as for any edit.
 
-/** What a press does in the current mode: select (and move, reshape), or draw. */
-export type EditorTool = 'select' | 'tile' | 'wall' | 'door' | 'window' | 'place' | ItemTool;
+/** What a press does in the current mode: select (and move, reshape), draw, or measure with the ruler. */
+export type EditorTool = 'select' | 'tile' | 'wall' | 'door' | 'window' | 'place' | 'ruler' | ItemTool;
 
 /** A context menu on screen. */
 export interface OpenMenu {

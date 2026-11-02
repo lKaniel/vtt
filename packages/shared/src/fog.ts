@@ -1,6 +1,8 @@
 import type { Point } from './schema.ts';
 import type { Senses } from './senses.ts';
 import { feetToPx, type LightSource } from './vision.ts';
+import { lightReach } from './light-shape.ts';
+import type { ReachPolygon } from './walls.ts';
 
 // Explored fog of war: where a player's tokens have seen, as a bitmap of
 // small cells (a quarter of a square each), cut into blocks so only what
@@ -278,13 +280,15 @@ function fromBase64(data: string): Uint8Array {
 export interface FogEye {
   at: Point;
   senses: Senses;
+  /** Feet up: walls lower than this don't stop it. */
+  elevation?: number;
 }
 
 export interface FogContext {
   /** Unlit places are dark (night): only senses and lights show anything. */
   dark: boolean;
   lights: readonly LightSource[];
-  polygon: (at: Point, radius: number) => number[];
+  polygon: ReachPolygon;
   /** How far eyes reach, in pixels. */
   sight: number;
   gridSize: number;
@@ -301,15 +305,15 @@ export function exploredRasters(eyes: readonly FogEye[], ctx: FogContext): Raste
 }
 
 function eyeRasters(eye: FogEye, ctx: FogContext): Raster[] {
-  const sight = rasterize(ctx.polygon(eye.at, ctx.sight), ctx.cell);
+  const sight = rasterize(ctx.polygon(eye.at, ctx.sight, 'sight', eye.elevation), ctx.cell);
   if (!ctx.dark) return [sight];
   const s = eye.senses;
   const sense = feetToPx(Math.max(s.darkvision, s.blindsight, s.truesight, s.devilsSight), ctx.gridSize);
-  const out = sense > 0 ? [rasterize(ctx.polygon(eye.at, sense), ctx.cell)] : [];
+  const out = sense > 0 ? [rasterize(ctx.polygon(eye.at, sense, 'sight', eye.elevation), ctx.cell)] : [];
   for (const l of ctx.lights) {
     const reach = feetToPx(l.bright + l.dim, ctx.gridSize);
     if (l.darkness || reach <= 0 || Math.hypot(l.x - eye.at[0], l.y - eye.at[1]) > ctx.sight + reach) continue;
-    out.push(intersect(rasterize(ctx.polygon([l.x, l.y], reach), ctx.cell), sight));
+    out.push(intersect(rasterize(lightReach(l, ctx.gridSize, ctx.polygon), ctx.cell), sight));
   }
   return out;
 }

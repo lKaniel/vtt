@@ -29,6 +29,8 @@ export const PlayerSchema = z.object({
   color: z.string().default('#8a8a8a'),
   /** The scene this seat is on when it isn't the game's (the GM sent them, or the GM is looking elsewhere). */
   scene: id.optional(),
+  /** The seat's own options for this game, as its system names them (D&D: how reactions are offered). */
+  settings: z.record(z.string().max(40), z.string().max(40)).optional(),
 });
 export type Player = z.infer<typeof PlayerSchema>;
 
@@ -144,16 +146,66 @@ export type DrawnTile = z.infer<typeof DrawnTileSchema>;
 export const DoorStateSchema = z.enum(['closed', 'open', 'locked']);
 export type DoorState = z.infer<typeof DoorStateSchema>;
 
-export const WallSchema = z.object({
-  id,
-  a: PointSchema,
-  b: PointSchema,
-  /** Present only on doors. */
-  door: DoorStateSchema.optional(),
-  /** false for windows and bars: they block movement but not sight. */
-  sight: z.boolean().optional(),
-  ...onLevel,
+/** A wall or light fastened to a tile (a prefab house): moving, copying or deleting the tile takes it along. */
+const onTile = { tile: id.optional() };
+
+/** How a wall stops movement: it does, or it doesn't (an illusory or ethereal wall). */
+export const MoveRestrictionSchema = z.enum(['none', 'normal']);
+/**
+ * How a wall stops sight, light or sound (Foundry's wall senses): `none` lets
+ * it through, `normal` stops it, `limited` lets it through one such wall but
+ * not two (tall grass, a thin curtain), `proximity` lets it through only from
+ * within the wall's `threshold` (a fence you peer over up close).
+ */
+export const SenseRestrictionSchema = z.enum(['none', 'normal', 'limited', 'proximity']);
+export type SenseRestriction = z.infer<typeof SenseRestrictionSchema>;
+
+/** Feet from the wall within which a proximity wall lets that sense through. */
+const ThresholdSchema = z.object({
+  sight: z.number().nonnegative().optional(),
+  light: z.number().nonnegative().optional(),
+  sound: z.number().nonnegative().optional(),
 });
+
+/** Old files marked windows `"sight": false` (movement only); that is sight and light `none` now. */
+function oldWindow(raw: unknown): unknown {
+  if (typeof raw !== 'object' || raw === null || typeof (raw as { sight?: unknown }).sight !== 'boolean') return raw;
+  const { sight, ...rest } = raw as Record<string, unknown>;
+  return sight ? rest : { light: 'none', ...rest, sight: 'none' };
+}
+
+/** What kind of wall it is: a door or not, and what it stops. */
+export const WallRulesSchema = z.object({
+  /** Present only on doors. An open door restricts nothing. */
+  door: DoorStateSchema.optional(),
+  /** What the wall stops; each missing one is `normal`. A window has sight and light `none`. */
+  move: MoveRestrictionSchema.optional(),
+  sight: SenseRestrictionSchema.optional(),
+  light: SenseRestrictionSchema.optional(),
+  sound: SenseRestrictionSchema.optional(),
+  threshold: ThresholdSchema.optional(),
+  /** A one-way wall: it stops only what comes from this side, looking from `a` to `b`. */
+  dir: z.enum(['left', 'right']).optional(),
+  /** A secret door: players see a plain wall until it is opened, and can't open it themselves. */
+  secret: z.boolean().optional(),
+  /** What a door sounds like: wood (the default), stone, iron, gate, none, or an audio file. */
+  doorSound: z.string().min(1).optional(),
+});
+export type WallRules = z.infer<typeof WallRulesSchema>;
+
+export const WallSchema = z.preprocess(
+  oldWindow,
+  z.object({
+    id,
+    a: PointSchema,
+    b: PointSchema,
+    ...WallRulesSchema.shape,
+    /** Feet above the ground the wall stands between (Wall Height): a creature above `top` passes over. */
+    height: z.object({ bottom: z.number().optional(), top: z.number().optional() }).optional(),
+    ...onTile,
+    ...onLevel,
+  }),
+);
 export type Wall = z.infer<typeof WallSchema>;
 
 /** Light radii are in feet, like the rules. */
@@ -166,6 +218,18 @@ export const LightSchema = z.object({
   animation: z.enum(['flicker', 'pulse']).optional(),
   /** Magical darkness instead of light (the Darkness spell): nothing nonmagical lights it. */
   darkness: z.boolean().optional(),
+  /** Degrees of the beam (a lantern, a lighthouse); missing: all round. */
+  angle: z.number().gt(0).max(360).optional(),
+  /** Which way the beam faces, degrees clockwise from facing down the map (south). */
+  rotation: z.number().optional(),
+  /** false: it shines through walls (a magical glow). */
+  walls: z.boolean().optional(),
+  /** How strongly it lights, 0 to 1 (default 1). */
+  luminosity: z.number().min(0).max(1).optional(),
+  /** How softly it fades out at its edges, 0 (a hard edge) to 1 (default 0.5). */
+  attenuation: z.number().min(0).max(1).optional(),
+  /** How much of its colour it casts, 0 (plain warm light) to 1 (default). */
+  colorIntensity: z.number().min(0).max(1).optional(),
 });
 export type Light = z.infer<typeof LightSchema>;
 
@@ -173,6 +237,7 @@ export const PlacedLightSchema = LightSchema.extend({
   id,
   x: z.number(),
   y: z.number(),
+  ...onTile,
   ...onLevel,
   /** Shines only while the scene's darkness is in this band ("only at night"). */
   activeAt: DarknessBandSchema.optional(),

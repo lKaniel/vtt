@@ -63,12 +63,21 @@ export function scrollAiming(token: TokenView | undefined, spellId: string | und
 
 const readerLevel = (token: TokenView | undefined): number => token?.sheet?.caster?.level ?? token?.stats?.level ?? 1;
 
+const hasBeams = (spell: Spell): boolean => (spell.beams ?? 1) > 1 || spell.cantrip === 'beams';
+
 /** Adds a creature to the picks; `done` once the spell has all it needs. */
 export function pick(aiming: Aiming, id: string): { aiming: Aiming; done: boolean } {
-  const beams = (aiming.spell.beams ?? 1) > 1 || aiming.spell.cantrip === 'beams';
-  const picks = !beams && aiming.picks.includes(id) ? aiming.picks : [...aiming.picks, id];
+  const picks = !hasBeams(aiming.spell) && aiming.picks.includes(id) ? aiming.picks : [...aiming.picks, id];
   const next = { ...aiming, picks };
   return { aiming: next, done: picks.length >= aiming.need };
+}
+
+/** Picks your targets for a spell aimed at creatures (every beam in turn); `done` once it has all it needs. */
+export function aimAtTargets(aiming: Aiming, targets: readonly string[]): { aiming: Aiming; done: boolean } {
+  if (aiming.mode !== 'creatures' || targets.length === 0) return { aiming, done: false };
+  const count = hasBeams(aiming.spell) ? aiming.need : Math.min(aiming.need, targets.length);
+  const picks = Array.from({ length: count }, (_, i) => targets[i % targets.length]!);
+  return { aiming: { ...aiming, picks }, done: picks.length >= aiming.need };
 }
 
 export function castMessage(caster: string, aiming: Aiming, point?: Point): ClientMessage {

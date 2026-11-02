@@ -15,7 +15,10 @@ import { NumberInput } from './EditorFields.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 import { previewSheet, withKey, type Draft, type Update } from './sheet-model.ts';
 import { Details } from './SheetDetails.tsx';
-import { EffectsPage, FeaturesPage, InventoryPage, SpellsPage } from './SheetPages.tsx';
+import { FeaturesPage, SpellsPage } from './SheetPages.tsx';
+import { InventoryPage } from './InventoryPage.tsx';
+import { EffectsPage } from './EffectsPage.tsx';
+import { AnimationsPage } from './AnimationsPage.tsx';
 import { useAutoSave } from './useAutoSave.ts';
 import { sheetDropTarget } from './sheet-drop.ts';
 import { Button } from './kit/button.tsx';
@@ -33,7 +36,7 @@ const ABILITY_NAME = {
   cha: 'Charisma',
 } as const;
 
-const PAGES = ['Inventory', 'Spells', 'Features', 'Effects', 'Details'] as const;
+const PAGES = ['Inventory', 'Spells', 'Features', 'Effects', 'Animations', 'Details'] as const;
 type Page = (typeof PAGES)[number];
 /** Where things dropped on a page (or its tab) go. */
 const AREA: Partial<Record<Page, SheetArea>> = { Inventory: 'inventory', Spells: 'spells', Features: 'features' };
@@ -124,6 +127,7 @@ function Pages(props: Readonly<SheetProps & { rules: Edition }>) {
       {shown === 'Spells' && <SpellsPage {...props} />}
       {shown === 'Features' && <FeaturesPage {...props} />}
       {shown === 'Effects' && <EffectsPage {...props} />}
+      {shown === 'Animations' && <AnimationsPage {...props} />}
       {shown === 'Details' && <Details {...props} />}
     </div>
   );

@@ -15,7 +15,7 @@ they drew.
 | Lights  | L        | select, place                                       | bright ring, dim ring                                                                      |
 | Draw    | D        | select, box, ellipse, polygon, line, freehand, text | box: 8; polygon and line: each point, and the middle of each side (drag it to add a point) |
 | Notes   | N        | select, pin                                         | none                                                                                       |
-| Measure | M        | select, circle, cone, line, square                  | the aim (length and direction, 5 ft and 15° steps)                                         |
+| Measure | M, R     | select, ruler, circle, cone, line, square           | the aim (length and direction, 5 ft and 15° steps)                                         |
 | Regions | (button) | select, region                                      | each corner, the middle of each side                                                       |
 | Sounds  | (button) | select, place                                       | the reach                                                                                  |
 
@@ -28,6 +28,45 @@ out from its origin. Shift turns snapping off. In the Draw mode the toolbar
 also picks the line colour, width and fill of new drawings; the GM's
 toolbar has the level picker on scenes with floors. A click on a note in
 the tokens mode opens its journal entry.
+
+The ruler (R picks it up) measures without placing anything: click to start
+(on a creature, from its centre), click for each waypoint, right click takes
+the last one back and Esc puts it away. Everyone on the scene sees it live,
+in its player's colour, with the feet so far at each waypoint and at the end
+the total, what walking it costs across difficult ground, and, from a
+creature, its speed (or what is left of its turn). The measuring is
+`measureRuler` in `shared/ruler.ts` (crow-flies without a grid, 5 ft a square
+on one, regions' difficult ground from `regionCost`); the client keeps
+rulers in `rulers.ts` and draws them in `canvas/RulerLayer.ts`, and the
+server only passes them on (`server/presence.ts`): they aren't documents, so
+nothing is saved or undone.
+
+Everyone on a scene also sees where the others point: each player's cursor,
+with their name, in their colour. Hold a left press still for half a second,
+in any mode, to ping that spot: rings spread from it on everyone's map. The
+GM's Shift+long press also pulls everyone's view there. Cursors and pings go
+through `server/presence.ts` like rulers (live, per scene, never saved, a
+cursor goes when its player leaves the map or the scene); the client keeps
+them in `presence.ts` (cursors sent at most every 50 ms, `throttle.ts`) and
+draws them in `canvas/PresenceLayer.ts`.
+
+Targets go the same way. In the tokens mode T over a creature targets it
+(again lets it go), T over empty ground lets all yours go, and the token
+menu has Target too. Everyone on the scene who can see the creature gets
+arrowheads round it in the colour of whoever targets it and a pip per player
+(`canvas/target-marks.ts`). The client keeps them in `targets.ts`; the server
+checks you can see what you target and tells each player only the targets
+they can see. An armed attack with one target goes straight at it, and a
+spell aimed at creatures starts with your targets picked
+(`session-actions.ts`, `aimAtTargets` in `targeting.ts`).
+
+Roll modes (`shared/roll-modes.ts`) say who reads a roll: public, gm (the
+GM and the roller), blind (the GM; the roller sees only that they rolled) or
+self (the roller). Each seat picks one beside the chat box (kept in the
+browser) and tells the server; it holds for `/r` and for the chat cards of
+that seat's actions (attacks, spells, roll tables). `/pr`, `/gmr`, `/br`
+and `/sr` roll once in a given mode. Plain chat is always public. The server
+sends each seat only what `chatFor` lets it read, live and on joining.
 
 ## Pointer
 
@@ -113,6 +152,15 @@ select tool, then deselects, then returns to Tokens.
 Bottom right: the fields of the selection (`editor/inspector.ts`). A field
 that differs across the selection shows "Mixed"; setting it sets it on all of
 them, as one undo step.
+
+A wall's Kind picks one of the usual kinds (wall, door, window, terrain,
+invisible, ethereal); below it, Movement, Sight, Light and Sound set what it
+stops one by one (`editor/wall-fields.ts`, rules in `shared/walls.ts`), and a
+proximity sense asks from how many feet it passes. One way makes the wall
+stop things from one side only (an arrow shows the way through); doors also
+get Secret and Sound. Stands from / up to set the wall's height in feet, and
+On tile (walls and lights) fastens it to a tile, so it moves, copies and
+deletes with it (`attachedTo` in core's clipboard kinds).
 
 ## How it fits together
 

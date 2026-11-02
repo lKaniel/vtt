@@ -1,4 +1,4 @@
-import type { Light, MapEdit, Point, TileTexture } from '@vtt/shared';
+import { type Light, type MapEdit, type Point, type TileTexture, WALL_PRESETS } from '@vtt/shared';
 
 export type LightPreset = 'candle' | 'torch' | 'lantern' | 'campfire' | 'magic' | 'moonbeam' | 'darkness';
 
@@ -18,7 +18,8 @@ export function snapPoint(p: Point, gridSize: number, snap: boolean): Point {
   return [Math.round(p[0] / gridSize) * gridSize, Math.round(p[1] / gridSize) * gridSize];
 }
 
-const WALL_KINDS = { wall: {}, door: { door: 'closed' as const }, window: { sight: false } };
+const { wall, door, window } = WALL_PRESETS;
+const WALL_KINDS = { wall, door, window };
 
 export function wallEdit(tool: keyof typeof WALL_KINDS, a: Point, b: Point): Extract<MapEdit, { op: 'addWall' }> {
   return { op: 'addWall', wall: { a, b, ...WALL_KINDS[tool] } };

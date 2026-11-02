@@ -20,10 +20,21 @@ const v11 = {
   grid: { size: 200, type: 1, distance: 5 },
   darkness: 0.7,
   walls: [
-    { _id: 'w1', c: [1000, 800, 1400, 800], move: 20, sight: 20, door: 0, ds: 0 },
+    {
+      _id: 'w1',
+      c: [1000, 800, 1400, 800],
+      move: 20,
+      sight: 20,
+      door: 0,
+      ds: 0,
+      flags: { 'wall-height': { top: 10, bottom: null } },
+    },
     { _id: 'w2', c: [1400, 800, 1400, 1000], move: 20, sight: 20, door: 1, ds: 2 },
     { _id: 'w3', c: [1400, 1000, 1600, 1000], move: 20, sight: 0, door: 0 },
     { _id: 'w4', c: [1600, 1000, 1800, 1000], move: 0, sight: 0, sound: 20 },
+    { _id: 'w5', c: [1800, 1000, 2000, 1000], move: 0, sight: 0, light: 0, sound: 0 },
+    { _id: 'w6', c: [2000, 1000, 2200, 1000], move: 20, sight: 10, light: 30, sound: 0, threshold: { light: 10 } },
+    { _id: 'w7', c: [2200, 1000, 2400, 1000], dir: 2, door: 2, ds: 0, doorSound: 'ironBasic' },
   ],
   lights: [
     { _id: 'l1', x: 1100, y: 900, config: { bright: 20, dim: 40, color: '#ff9a40', animation: { type: 'torch' } } },
@@ -78,14 +89,33 @@ describe('a Foundry scene', () => {
     expect(skipped).toContain('1 tile whose picture is not in the module (icons/svg/mystery-man.svg)');
   });
 
-  it('turns walls, doors and windows into ours, leaving out walls that block nothing we model', () => {
+  it('turns walls, doors and windows into ours with what each one stops, leaving out walls that stop nothing', () => {
     const { scene, skipped } = foundryScene(v11, media);
     expect(scene.walls).toEqual([
-      { id: 'wall-1', a: [1000, 800], b: [1400, 800] },
+      { id: 'wall-1', a: [1000, 800], b: [1400, 800], height: { top: 10 } },
       { id: 'wall-2', a: [1400, 800], b: [1400, 1000], door: 'locked' },
-      { id: 'wall-3', a: [1400, 1000], b: [1600, 1000], sight: false },
+      { id: 'wall-3', a: [1400, 1000], b: [1600, 1000], sight: 'none', light: 'none' },
+      { id: 'wall-4', a: [1600, 1000], b: [1800, 1000], move: 'none', sight: 'none', light: 'none' },
+      {
+        id: 'wall-5',
+        a: [2000, 1000],
+        b: [2200, 1000],
+        sight: 'limited',
+        light: 'proximity',
+        sound: 'none',
+        threshold: { light: 10 },
+      },
+      {
+        id: 'wall-6',
+        a: [2200, 1000],
+        b: [2400, 1000],
+        door: 'closed',
+        secret: true,
+        dir: 'right',
+        doorSound: 'iron',
+      },
     ]);
-    expect(skipped).toContain('1 wall that blocks neither movement nor sight');
+    expect(skipped).toContain('1 wall that stops nothing');
     expect(skipped).toContain('1 token (place the creatures from the Actors tab)');
   });
 
@@ -93,6 +123,39 @@ describe('a Foundry scene', () => {
     const { scene } = foundryScene(v11, media);
     expect(scene.lights).toEqual([
       { id: 'light-1', x: 1100, y: 900, bright: 20, dim: 40, color: '#ff9a40', animation: 'flicker' },
+    ]);
+  });
+
+  it('keeps a light’s beam, strength, softness, colour strength and whether walls stop it', () => {
+    const lantern = {
+      ...v11,
+      lights: [
+        {
+          x: 0,
+          y: 0,
+          rotation: 90,
+          walls: false,
+          config: { bright: 20, dim: 0, color: '#3060ff', angle: 60, luminosity: 0.25, attenuation: 0.8, alpha: 0.2 },
+        },
+        { x: 0, y: 0, config: { bright: 20, dim: 0, angle: 360, luminosity: 0.5, attenuation: 0.5, alpha: 0.5 } },
+      ],
+    };
+    expect(foundryScene(lantern, media).scene.lights).toEqual([
+      {
+        id: 'light-1',
+        x: 0,
+        y: 0,
+        bright: 20,
+        dim: 0,
+        color: '#3060ff',
+        angle: 60,
+        rotation: 90,
+        walls: false,
+        luminosity: 0.5,
+        attenuation: 0.8,
+        colorIntensity: 0.4,
+      },
+      { id: 'light-2', x: 0, y: 0, bright: 20, dim: 0 },
     ]);
   });
 
@@ -111,7 +174,9 @@ describe('a Foundry scene', () => {
     const { scene } = foundryScene(v9, media);
     expect(scene).toMatchObject({ gridSize: 100, grid: 'none', darkness: 0 });
     expect(scene.tiles[0]).toMatchObject({ x: 300, y: 300 });
-    expect(scene.walls).toEqual([{ id: 'wall-1', a: [0, 0], b: [100, 0], door: 'open', sight: false }]);
+    expect(scene.walls).toEqual([
+      { id: 'wall-1', a: [0, 0], b: [100, 0], door: 'open', secret: true, sight: 'none', light: 'none' },
+    ]);
     expect(scene.lights).toEqual([
       { id: 'light-1', x: 50, y: 50, bright: 5, dim: 10, color: '#ffffff', animation: 'pulse' },
     ]);

@@ -29,12 +29,37 @@ export function segmentsIntersect(p1: Point, p2: Point, q1: Point, q2: Point): b
   return false;
 }
 
+/** Distance from p to the segment a-b. */
+export function distToSegment(p: Point, a: Point, b: Point): number {
+  const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
+  const len2 = dx * dx + dy * dy;
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2));
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+}
+
+/** Which side of a wall `p` is on, looking from `a` to `b`; undefined on its line. */
+export function sideOf(wall: Pick<Wall, 'a' | 'b'>, p: Point): 'left' | 'right' | undefined {
+  const { a, b } = wall;
+  const cross = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+  if (Math.abs(cross) < 1e-9) return undefined;
+  return cross < 0 ? 'left' : 'right';
+}
+
+/** Whether a one-way wall lets through what comes from `from` (from the other side). */
+export function passesOneWay(wall: Wall, from: Point): boolean {
+  if (!wall.dir) return false;
+  const side = sideOf(wall, from);
+  return side !== undefined && side !== wall.dir;
+}
+
 export function blocksMovement(wall: Wall): boolean {
-  return wall.door !== 'open';
+  return wall.door !== 'open' && wall.move !== 'none';
 }
 
 export function movementBlocked(from: Point, to: Point, walls: readonly Wall[]): boolean {
-  for (const w of walls) if (blocksMovement(w) && segmentsIntersect(from, to, w.a, w.b)) return true;
+  for (const w of walls) {
+    if (blocksMovement(w) && !passesOneWay(w, from) && segmentsIntersect(from, to, w.a, w.b)) return true;
+  }
   return false;
 }
 

@@ -329,6 +329,26 @@ describe('opportunity attacks', () => {
     expect(errors(gm)[0]).toMatch(/passed/);
   });
 
+  it('takes the attack at once for a GM who set opportunity attacks to automatic', () => {
+    store.setToken({ ...tok('goblin'), x: 150, y: 250 });
+    const { bo, gm } = fight(['bo', 'goblin', 'hero', 'goblin2']);
+    gm.receive({ t: 'seatSettings', settings: { opportunity: 'auto' } });
+    dice = [face(19), face(3, 6)];
+    bo.receive({ t: 'move', token: 'bo', to: [150, 50] });
+    expect(gm.take('reactionOffer')).toEqual([]);
+    expect(tok('bo').hp).toBe(40 - 5);
+    expect(store.combat!.reacted).toEqual(['goblin']);
+  });
+
+  it('makes no offer to a GM who turned opportunity attacks off', () => {
+    store.setToken({ ...tok('goblin'), x: 150, y: 250 });
+    const { bo, gm } = fight(['bo', 'goblin', 'hero', 'goblin2']);
+    gm.receive({ t: 'seatSettings', settings: { opportunity: 'never' } });
+    bo.receive({ t: 'move', token: 'bo', to: [150, 50] });
+    expect(gm.take('reactionOffer')).toEqual([]);
+    expect(tok('bo').hp).toBeUndefined();
+  });
+
   it('makes no offer when the creature disengaged first', () => {
     store.setToken({ ...tok('goblin'), x: 150, y: 250 });
     const { bo, gm } = fight(['bo', 'goblin', 'hero', 'goblin2']);

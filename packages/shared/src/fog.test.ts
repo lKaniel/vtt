@@ -132,6 +132,20 @@ describe('exploredRasters', () => {
     return map;
   };
 
+  it("looks out from the eye's height, lights from the ground", () => {
+    const asked: unknown[] = [];
+    const spy = {
+      ...ctx(true),
+      polygon: (_at: unknown, _r: number, kind?: string, up?: number) => (asked.push([kind, up]), []),
+    };
+    exploredRasters([{ ...eye(30), elevation: 40 }], spy);
+    expect(asked).toEqual([
+      ['sight', 40],
+      ['sight', 40],
+      ['light', undefined],
+    ]);
+  });
+
   it('is everything in sight by day', () => {
     expect(explored(false, 0).explored([1500, 0])).toBe(true);
   });
@@ -142,5 +156,13 @@ describe('exploredRasters', () => {
     expect(map.explored([700, 0])).toBe(false);
     expect(map.explored([1000, 150])).toBe(true);
     expect(map.explored([1500, 0])).toBe(false);
+  });
+
+  it('shows only what a beam falls on at night', () => {
+    const map = new FogMap(CELL);
+    const beam = { ...ctx(true), lights: [{ id: 'l', x: 1000, y: 0, bright: 10, dim: 0, angle: 90, rotation: 0 }] };
+    for (const r of exploredRasters([eye(0)], beam)) map.add(r);
+    expect(map.explored([1000, 80])).toBe(true);
+    expect(map.explored([1000, -80])).toBe(false);
   });
 });

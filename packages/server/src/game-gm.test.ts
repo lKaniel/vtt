@@ -198,6 +198,21 @@ describe('the Actors list', () => {
   });
 });
 
+describe('choosing animations', () => {
+  it('saves an animation for an attack or spell of a creature you control, and none goes back to the default', () => {
+    const ana = seat('ana');
+    ana.receive({ t: 'animation', token: 'hero', ref: 'spell:fire-bolt', animation: 'frost-orb' });
+    expect(store.tokens.get('hero')!.animations).toEqual({ 'spell:fire-bolt': 'frost-orb' });
+    ana.receive({ t: 'animation', token: 'hero', ref: 'spell:fire-bolt' });
+    expect(store.tokens.get('hero')!.animations).toBeUndefined();
+    ana.receive({ t: 'animation', token: 'hero', ref: 'spell:fire-bolt', animation: 'no-such-thing' });
+    expect(ana.take('error')).toHaveLength(1);
+    const bo = seat('bo');
+    bo.receive({ t: 'animation', token: 'hero', ref: 'attack:Dagger', animation: 'blade' });
+    expect(bo.take('error')[0]!.message).toMatch(/don't control/);
+  });
+});
+
 describe('arranging the hotbar', () => {
   it('saves the layout for a creature you control', () => {
     const ana = seat('ana');

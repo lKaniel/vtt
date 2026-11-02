@@ -1,7 +1,8 @@
+import { AnimationChoiceSchema } from './animations.ts';
 import { IdSchema as id, OwnershipSchema } from '@vtt/core';
 import { LightSchema } from '@vtt/shared';
 import { EffectSchema, FeatureSchema, SpellSchema } from './spell-schema.ts';
-import { InventoryEntrySchema, ItemSchema, StatsSchema } from './stats-schema.ts';
+import { CurrencySchema, InventorySchema, ItemSchema, StatsSchema } from './stats-schema.ts';
 import { z } from 'zod';
 
 // A D&D creature as it is stored: a token in a scene's tokens.json (where it
@@ -70,9 +71,12 @@ export const TokenSchema = z.object({
       dead: z.boolean().optional(),
     })
     .optional(),
+  /** Levels of exhaustion, 1 to 6 (6 is death); a long rest takes one away. */
+  exhaustion: z.number().int().min(1).max(6).optional(),
   /** Temporary hit points: lost first, and don't stack. */
   tempHp: z.number().int().positive().optional(),
-  inventory: z.array(InventoryEntrySchema).optional(),
+  inventory: InventorySchema.optional(),
+  currency: CurrencySchema.optional(),
   own: OwnSchema.optional(),
   /** Spells, conditions and features currently affecting the token. */
   effects: z.array(EffectSchema).optional(),
@@ -85,6 +89,8 @@ export const TokenSchema = z.object({
       slots: z.array(z.number().int().nonnegative()).optional(),
       /** Uses per feature id. */
       uses: z.record(z.string(), z.number().int().nonnegative()).optional(),
+      /** Hit dice spent on short rests. */
+      hitDice: z.number().int().nonnegative().optional(),
     })
     .optional(),
   /** Set on creatures a spell or feature brought in; they vanish when it ends. */
@@ -95,6 +101,8 @@ export const TokenSchema = z.object({
   leader: id.optional(),
   /** How its controller arranged the action bar: one tile reference per slot ("spell:fire-bolt"), or null. */
   hotbar: z.array(z.string().max(80).nullable()).max(60).optional(),
+  /** The animation its controller picked per attack or spell ("spell:fire-bolt" → "frost-orb", see animations.ts). */
+  animations: z.record(z.string().max(90), AnimationChoiceSchema).optional(),
   /** The actor this token stands for (see token-link.ts); missing on a token that carries its own sheet. */
   actor: id.optional(),
   /** Linked tokens share their actor's hit points and effects; unlinked ones are copies with their own. */

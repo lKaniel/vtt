@@ -79,6 +79,20 @@ describe('the GM tools', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'hotbar', token: 'hero', slots: ['spell:fire-bolt', null] });
   });
 
+  it("asks to pack, attune and count a creature's gear", () => {
+    ws.receive(welcome());
+    session.carry('hero', { kind: 'stow', item: 1, into: 0 });
+    expect(ws.sent.at(-1)).toEqual({ t: 'carry', token: 'hero', change: { kind: 'stow', item: 1, into: 0 } });
+  });
+
+  it('spends hit dice and sets exhaustion', () => {
+    ws.receive(welcome());
+    session.spendHitDie('hero');
+    expect(ws.sent.at(-1)).toEqual({ t: 'hitDie', token: 'hero' });
+    session.setExhaustion('hero', 2);
+    expect(ws.sent.at(-1)).toEqual({ t: 'exhaustion', token: 'hero', level: 2 });
+  });
+
   it('sends drops and shows why one was refused', () => {
     ws.receive(gmWelcome());
     session.spawnHidden = true;
