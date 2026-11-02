@@ -1,7 +1,7 @@
 import { AnimationChoiceSchema } from './animations.ts';
 import { IdSchema as id, OwnershipSchema } from '@vtt/core';
 import { LightSchema, TokenLookSchema } from '@vtt/shared';
-import { EffectSchema, FeatureSchema, SpellSchema } from './spell-schema.ts';
+import { ClassSchema, EffectSchema, FeatureSchema, SpellSchema } from './spell-schema.ts';
 import { CurrencySchema, InventorySchema, ItemSchema, MonsterSchema, StatsSchema } from './stats-schema.ts';
 import { z } from 'zod';
 
@@ -21,6 +21,8 @@ export const OwnSchema = z.object({
   features: z.array(FeatureSchema.extend({ level: FeatureSchema.shape.level.default(1) })).optional(),
   /** Stat blocks of its own: a spell's creature built for the slot it was summoned with (spell-creatures.ts). */
   monsters: z.array(MonsterSchema).optional(),
+  /** Homebrew classes its character brought from the roster; the game's own copy of one wins. */
+  classes: z.array(ClassSchema).optional(),
 });
 export type Own = z.infer<typeof OwnSchema>;
 

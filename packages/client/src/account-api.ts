@@ -1,4 +1,4 @@
-import type { Character } from '@vtt/system-dnd5e';
+import type { Character, Class } from '@vtt/system-dnd5e';
 import type {
   FoundryImportInput,
   FoundryImportReport,
@@ -59,6 +59,8 @@ export const api = {
   register: async (username: string, password: string, name: string) =>
     (await call<{ account: Account }>('POST', '/api/register', { username, password, name })).account,
   logout: () => call<object>('POST', '/api/logout', {}),
+  /** The GMs' homebrew classes shared with the account in its games (roster-homebrew.ts on the server). */
+  homebrew: async () => (await call<{ classes: Class[] }>('GET', '/api/homebrew')).classes,
   characters: async () => (await call<{ characters: Character[] }>('GET', '/api/characters')).characters,
   /** Creates the character when `id` is empty, else updates it. */
   saveCharacter: async ({ id, owner: _owner, ...rest }: Character) =>

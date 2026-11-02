@@ -800,7 +800,13 @@ Level tables are `[[level, value], ...]`. A character takes it like an SRD
 class (`"class": "illusionist"`), a subclass through `classes`
 (`[{ "class": "illusionist", "level": 3, "subclass": "dreamer" }]`). Shared
 (`ownership.default` `"observer"`) homebrew reaches the players' sheets;
-without ownership only the GM sees it.
+without ownership only the GM sees it. The account character creator and
+level-up screen offer the homebrew classes of the games an account sits in
+that its seat may read (two skills of any, the class's subclasses, no
+starting kit). A roster character keeps a copy of each one it takes
+(`homebrew` in the character), refreshed from the game whenever it is saved,
+and its token carries the copy as `own.classes`, so it works in any game; a
+game's own class of that id wins over the copy.
 
 **Encounters and experience.** The GM's Encounter button (beside Start
 combat) weighs the monsters on the scene against the party: the

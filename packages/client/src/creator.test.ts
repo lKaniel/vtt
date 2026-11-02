@@ -1,4 +1,12 @@
-import { type Character, characterIssues, CharacterSchema, levelUp, newCharacter } from '@vtt/system-dnd5e';
+import {
+  type Character,
+  characterIssues,
+  CharacterSchema,
+  ClassSchema,
+  levelUp,
+  newCharacter,
+  partsOf,
+} from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import {
   adjustPointBuy,
@@ -17,6 +25,7 @@ import {
   toggleBonusChoice,
   toggleSkill,
   toggleSpell,
+  withHomebrewClass,
 } from './creator.ts';
 import { parseRoute, routeHash } from './route.ts';
 
@@ -59,6 +68,16 @@ describe('choosing origins and class', () => {
   it('clears class picks when the class changes', () => {
     const c = chooseClass({ ...fresh(), skills: ['athletics'], spells: ['x'], kit: { a: 'b' } }, 'wizard');
     expect(c).toMatchObject({ class: 'wizard', skills: [], spells: [], kit: {} });
+  });
+
+  it('copies a homebrew class onto the character, and drops it once unused', () => {
+    const seer = ClassSchema.parse({ id: 'seer', name: 'Seer', hitDie: 8, saves: ['wis'], features: [] });
+    const c = chooseClass(fresh(), 'seer', [seer]);
+    expect(c.homebrew).toEqual([seer]);
+    expect(partsOf(c).cls?.name).toBe('Seer');
+    expect(chooseClass(c, 'wizard', [seer]).homebrew).toEqual([]);
+    expect(withHomebrewClass(fresh(), seer).homebrew).toEqual([seer]);
+    expect(withHomebrewClass(c, seer)).toBe(c);
   });
 
   it('drops class skills the new background already gives', () => {
