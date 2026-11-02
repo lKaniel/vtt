@@ -26,6 +26,10 @@ on, shared live between players.
   A roll card has Apply, ½, ×2 and Heal buttons: they deal the total to your
   targets (else the selected creatures), and a damage type written after the
   formula (`/r 8d6 fire`) meets resistances. The GM can undo it like any action.
+  Every roll you can see is also thrown as 3D dice across the screen, in the
+  roller's colour, landing on the numbers rolled (like Dice So Nice). Each
+  player can turn them off in the settings menu (3D dice: Off); they also
+  stay still when animations are off, and hidden rolls are never thrown.
 - **Targets.** T over a creature (tokens mode) targets it, T over the ground
   lets them all go, or use the creature's menu. Everyone on the scene sees
   your targets in your colour. An attack readied with one target goes at it

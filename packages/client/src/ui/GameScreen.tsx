@@ -16,6 +16,7 @@ import { ContextMenu } from './ContextMenu.tsx';
 import { blockNativeMenu } from '../native-menu.ts';
 import { ImageViewer } from './ImageViewer.tsx';
 import { PileWindow } from './PileWindow.tsx';
+import { DiceOverlay } from './DiceOverlay.tsx';
 import { Inspector } from './Inspector.tsx';
 import { JournalViewer } from './JournalViewer.tsx';
 import { MapTools } from './MapTools.tsx';
@@ -65,6 +66,7 @@ export function GameScreen({
       <JournalViewer session={session} />
       <ImageViewer session={session} />
       <PileWindow session={session} />
+      <DiceOverlay session={session} />
       <ReactionPrompt session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <Sheets session={session} />

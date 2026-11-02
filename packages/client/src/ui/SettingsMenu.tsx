@@ -1,6 +1,7 @@
 import { SettingsIcon } from 'lucide-react';
 import { useState } from 'react';
 import { currentMotion, type Motion, setMotion } from '../animations.ts';
+import { currentDice, type DiceChoice, setDice } from '../dice-throw.ts';
 import { type Automation, automationOf } from '@vtt/system-dnd5e';
 import type { Session } from '../session.ts';
 import { i18n, type MessageKey, t, useLanguage } from '../i18n/index.ts';
@@ -93,6 +94,7 @@ export function SettingsMenu({ session }: Readonly<{ session: Session }>) {
         {session.isGm() && <GameSettingsSection session={session} />}
         <Separator />
         <MotionRow />
+        <DiceRow />
         <LanguageRow />
         <KeysDialog />
       </PopoverContent>
@@ -138,6 +140,24 @@ function LanguageRow() {
         onValueChange={(v) => void i18n.use(v)}
       />
       <span className="muted text-xs font-normal">{t('lang.hint')}</span>
+    </Label>
+  );
+}
+
+/** Whether rolls throw 3D dice across this browser's screen. */
+function DiceRow() {
+  const [dice, choose] = useState(currentDice);
+  const set = (d: DiceChoice) => {
+    setDice(d);
+    choose(d);
+  };
+  return (
+    <Label className="flex-col items-stretch gap-1">
+      {t('settings.dice')}
+      <ToggleGroup type="single" value={dice} onValueChange={(v) => v && set(v as DiceChoice)}>
+        <ToggleGroupItem value="on">{t('settings.dice.on')}</ToggleGroupItem>
+        <ToggleGroupItem value="off">{t('settings.dice.off')}</ToggleGroupItem>
+      </ToggleGroup>
     </Label>
   );
 }
