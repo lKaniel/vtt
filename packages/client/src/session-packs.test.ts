@@ -60,6 +60,23 @@ describe('pack content in the client', () => {
     expect(compendium('monsters', '2014', 'warlord').map((e) => e.id)).toEqual(['goblin-warlord']);
   });
 
+  it('adds the game’s homebrew classes, as they are now', () => {
+    const base = gmWelcome() as Extract<ServerMessage, { t: 'welcome' }>;
+    const seer = {
+      type: 'homebrew',
+      id: 'seer',
+      rev: 1,
+      kind: 'class',
+      name: 'Seer',
+      hitDie: 8,
+      saves: [],
+      features: [],
+    };
+    ws.receive({ ...base, docs: { ...base.docs, homebrew: [seer] } });
+    ws.receive({ t: 'packContent', compendia: [] });
+    expect(gameContent('2014').classes.get('seer')?.name).toBe('Seer');
+  });
+
   it('shows pack files from where the server serves them', () => {
     expect(assetUrl('pack://forest/media/big oak.webp')).toBe('/packs/forest/media/big%20oak.webp');
   });

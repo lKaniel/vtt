@@ -6,11 +6,13 @@ import { offHandAttacks } from './two-weapon.ts';
 import { makesDeathSaves } from './deaths.ts';
 import {
   casterSheet,
+  classScales,
   type CasterSheet,
   type FeatureSheet,
   featureSheets,
   grantedFeatures,
   levelValue,
+  type ScaleValue,
 } from './classes.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
@@ -69,6 +71,8 @@ export interface Creature extends Affected, LegendaryParts {
   features: FeatureSheet[];
   /** What it perceives with (mirror image doesn't fool blindsight or truesight). */
   senses?: Senses;
+  /** Numbers by class level a homebrew class shows (a pool's size). */
+  scales?: ScaleValue[];
 }
 
 /** Proficiency bonus by challenge rating. */
@@ -217,9 +221,10 @@ export function ownEffects(token: Token, features: readonly FeatureSheet[]): Eff
 function classParts(
   levels: readonly ClassLevel[],
   monster: Monster | undefined,
-): Pick<Creature, 'attacksPerAction' | 'sneakAttack' | 'weaponMastery'> {
+): Pick<Creature, 'attacksPerAction' | 'sneakAttack' | 'weaponMastery' | 'scales'> {
   const sneak = levels.find((l) => l.cls?.sneakAttack);
   return {
+    scales: classScales(levels),
     attacksPerAction: Math.max(
       1,
       monster?.multiattack ?? 0,

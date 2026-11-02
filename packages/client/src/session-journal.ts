@@ -137,6 +137,12 @@ export abstract class JournalSession extends ItemSession {
     return this.isGm() || (!!this.you && this.docs.get('macros', id)?.author === this.you.id);
   }
 
+  /** GM: a new homebrew document (a class), its fields ready (see homebrew.ts in the system). */
+  createHomebrew(fields: { id: string; kind: string; name: string } & Record<string, unknown>): void {
+    const doc = { ...fields, type: 'homebrew', rev: 0 } as Doc;
+    this.sendChanges('new homebrew', [{ op: 'create', coll: 'homebrew', doc }]);
+  }
+
   /** Changes one sidebar document's fields. */
   patchEntry(coll: string, id: string, patch: Patch, label = 'edit'): void {
     this.sendUpdates(label, [{ ref: { coll, id }, patch }]);

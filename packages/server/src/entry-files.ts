@@ -1,4 +1,5 @@
 import { JournalSchema, MacroSchema, PlaylistSchema, RollTableSchema } from '@vtt/shared';
+import { HomebrewSchema } from '@vtt/system-dnd5e';
 import type { z } from 'zod';
 
 // The game's sidebar documents with a file each, like actors: journal
@@ -9,6 +10,7 @@ export const ENTRY_COLLS = {
   tables: { type: 'rolltable', schema: RollTableSchema },
   playlists: { type: 'playlist', schema: PlaylistSchema },
   macros: { type: 'macro', schema: MacroSchema },
+  homebrew: { type: 'homebrew', schema: HomebrewSchema },
 } as const;
 
 export type EntryColl = keyof typeof ENTRY_COLLS;

@@ -30,6 +30,7 @@ describe('the edit kinds', () => {
     expect(Object.keys(EDIT_KINDS).sort((a, b) => a.localeCompare(b))).toEqual([
       'actor',
       'drawing',
+      'homebrew',
       'journal',
       'light',
       'macro',

@@ -1,5 +1,6 @@
 import { enabledPacks, type PackCompendium, type PackInfo, type SystemDefinition } from '@vtt/core';
-import { type Content, contentWith, editionOf, type Token, withOwn } from '@vtt/system-dnd5e';
+import { type Content, contentWith, editionOf, homebrewCompendia, type Token, withOwn } from '@vtt/system-dnd5e';
+import { fromDoc } from './doc-sync.ts';
 import type { GameStore } from './game-store.ts';
 import type { PackStore } from './pack-store.ts';
 
@@ -76,11 +77,24 @@ export function gamePackIssues(
   });
 }
 
-type RunningGame = Pick<GameStore, 'packs' | 'campaign' | 'system'>;
+type RunningGame = Pick<GameStore, 'packs' | 'campaign' | 'system' | 'docs'>;
 
-/** The rules content (D&D: monsters, items, spells) of the packs a running game turns on. */
+const lastContent = new WeakMap<object, { packs: PackCompendium[]; key: string; list: PackCompendium[] }>();
+
+/**
+ * The rules content (D&D: monsters, items, spells, classes) of the packs a
+ * running game turns on and of its own homebrew. The same list while nothing
+ * changes, so content built from it is cached.
+ */
 export function packContent(store: RunningGame): PackCompendium[] {
-  return contentCompendia(store.packs, store.campaign, store.system);
+  const packs = contentCompendia(store.packs, store.campaign, store.system);
+  const docs = store.docs.all('homebrew');
+  const key = docs.map((d) => `${d.id}@${d.rev}`).join(',');
+  const last = lastContent.get(store);
+  if (last?.packs === packs && last.key === key) return last.list;
+  const list = docs.length ? [...packs, ...homebrewCompendia(docs.map((d) => fromDoc(d)))] : packs;
+  lastContent.set(store, { packs, key, list });
+  return list;
 }
 
 /** What a token in a running game can refer to: its edition's SRD plus the game's packs. */

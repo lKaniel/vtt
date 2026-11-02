@@ -79,6 +79,7 @@ export const EDIT_KINDS: Kinds = {
   rolltable: { coll: () => 'tables' },
   playlist: { coll: () => 'playlists' },
   macro: { coll: () => 'macros' },
+  homebrew: { coll: () => 'homebrew' },
 };
 
 interface Source {

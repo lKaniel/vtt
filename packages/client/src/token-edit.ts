@@ -45,21 +45,29 @@ export function setStat<D extends Draft>(draft: D, key: keyof Stats, value: unkn
 export interface ClassRow {
   class: string;
   level: number;
+  subclass?: string;
 }
 
 /** The creature's classes as editable rows: its `classes`, or its one class and level. */
 export function classRows(draft: Draft): ClassRow[] {
   const stats = draft.stats;
-  if (stats?.classes) return stats.classes.map((c) => ({ class: c.class, level: c.level }));
+  if (stats?.classes) return stats.classes.map((c) => ({ ...c }));
   return stats?.class ? [{ class: stats.class, level: stats.level ?? 1 }] : [];
 }
 
-/** One class is written as `class` and `level`, several as `classes`. */
+/** One class is written as `class` and `level`, several (or one with a subclass) as `classes`. */
 export function setClasses<D extends Draft>(draft: D, rows: readonly ClassRow[]): D {
   const cleared = setStat(setStat(setStat(draft, 'classes', undefined), 'class', undefined), 'level', undefined);
   const [only] = rows;
-  if (rows.length > 1) return setStat(cleared, 'classes', [...rows]);
+  if (rows.length > 1 || only?.subclass) return setStat(cleared, 'classes', [...rows]);
   return only ? setStat(setStat(cleared, 'class', only.class), 'level', only.level) : cleared;
+}
+
+/** Picks a class option ("class/feature") the character didn't have, or drops one it had. */
+export function toggleFeature<D extends Draft>(draft: D, ref: string): D {
+  const now = draft.stats?.features ?? [];
+  const next = now.includes(ref) ? now.filter((f) => f !== ref) : [...now, ref];
+  return setStat(draft, 'features', next.length ? next : undefined);
 }
 
 export function setAbility<D extends Draft>(draft: D, ability: Ability, score: number | undefined): D {

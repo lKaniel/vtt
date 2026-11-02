@@ -517,8 +517,24 @@ export const FeatureSchema = z.object({
   healPool: z.boolean().optional(),
   /** Aimed like a spell at creatures or an area: spell fields such as targets, range, area, save, effect. */
   spell: z.record(z.string(), z.unknown()).optional(),
+  /** An option of the class's choice by this id: the character has it only when picked (`stats.features`). */
+  choice: id.optional(),
 });
 export type Feature = z.infer<typeof FeatureSchema>;
+
+/** A number that grows with the class level (a pool's size, a die), shown on the sheet. */
+export const ScaleSchema = z.object({ id, name: z.string().min(1), values: LevelTableSchema });
+
+/** Options to pick from as the class levels up: its features with this `choice`, `count` of them by level. */
+export const ChoiceSchema = z.object({ id, name: z.string().min(1), count: LevelTableSchema });
+
+export const SubclassSchema = z.object({
+  id,
+  name: z.string().min(1),
+  description: z.string().default(''),
+  features: z.array(FeatureSchema).default([]),
+});
+export type Subclass = z.infer<typeof SubclassSchema>;
 
 export const SpellcastingSchema = z.object({
   ability: AbilitySchema,
@@ -543,6 +559,14 @@ export const ClassSchema = z.object({
   /** 2024 weapon mastery: your weapons' mastery properties apply. */
   weaponMastery: z.boolean().optional(),
   features: z.array(FeatureSchema).default([]),
+  /** Numbers by class level the sheet shows (custom advancement). */
+  scales: z.array(ScaleSchema).optional(),
+  /** Picks among the class's optional features (custom advancement). */
+  choices: z.array(ChoiceSchema).optional(),
+  /** The class level its subclass is chosen at. */
+  subclassLevel: z.number().int().min(1).max(20).optional(),
+  /** Subclasses with their own features (homebrew; the SRD's are named in origins). */
+  subclasses: z.array(SubclassSchema).optional(),
   /** Scores of 13 needed to multiclass into or out of it: every one of `all`, and one of `any`. */
   multiclass: z.object({ all: z.array(AbilitySchema).optional(), any: z.array(AbilitySchema).optional() }).optional(),
 });

@@ -33,9 +33,12 @@ function playing(doc: Doc): boolean {
   return Array.isArray(doc.tracks) && (doc.tracks as { playing?: boolean }[]).some((t) => t.playing);
 }
 
+/** Sidebar documents a player is sent once they may observe them. */
+const OBSERVED = new Set(['tables', 'macros', 'homebrew']);
+
 const observed = (v: Viewer, owned: OwnedDoc) => canSee(owned, v.player) && canObserve(owned, v.player);
 
-/** Roll tables and chat macros shared with the player; script macros are the GM's alone. */
+/** Roll tables, chat macros and homebrew shared with the player; script macros are the GM's alone. */
 const sidebarSent = (v: Viewer, access: DocAccess, coll: string, doc: Doc) =>
   !(coll === 'macros' && isScriptMacro(doc)) && observed(v, access.owned(coll, doc));
 
@@ -44,7 +47,7 @@ export function sendsTo(v: Viewer, access: DocAccess, coll: string, doc: Doc): b
   if (isGm(v.player) || coll === CLOCK_COLL) return true;
   if (coll === 'actors' || coll.endsWith('/tokens')) return observed(v, access.owned(coll, doc));
   if (coll === 'journals') return canSee(access.owned(coll, doc), v.player);
-  if (coll === 'tables' || coll === 'macros') return sidebarSent(v, access, coll, doc);
+  if (OBSERVED.has(coll)) return sidebarSent(v, access, coll, doc);
   if (coll === 'playlists') return playing(doc);
   const at = sceneCollOf(coll);
   const rule = at && SCENE_RULES[at.name];
