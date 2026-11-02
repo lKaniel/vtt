@@ -112,6 +112,16 @@ const modifiers = {
   bonusActions: z.array(id).optional(),
   /** Saving throws of these abilities have disadvantage (bestow curse, contagion). */
   saveDisadvantageFor: z.array(AbilitySchema).optional(),
+  /** The bearer is sent off the map while it lasts: its token is hidden (banishment, maze). */
+  banished: z.boolean().optional(),
+  /** At the end of each of the bearer's turns a d20 of 11 or more sends it away until its next turn (blink). */
+  blink: z.boolean().optional(),
+  /** Illusory duplicates attacks may land on instead of the bearer (mirror image). */
+  images: z.number().int().min(1).max(3).optional(),
+  /** The bearer's weapon blows are weakened: "half" damage with Strength weapons, or dice taken off (ray of enfeeblement). */
+  weakened: z.union([z.literal('half'), dice]).optional(),
+  /** Attackers must pass a Wisdom save against this DC to target the bearer; `true` in a spell takes the caster's DC (sanctuary). */
+  sanctuary: z.union([z.literal(true), z.number().int()]).optional(),
   /** The bearer's movement doesn't provoke opportunity attacks (disengage). */
   disengaged: z.boolean().optional(),
   /** The bearer's speed is 0 (hypnotic pattern). */

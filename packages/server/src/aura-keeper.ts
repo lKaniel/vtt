@@ -1,5 +1,5 @@
 import { isGridless } from '@vtt/shared';
-import { auraEffects, withAuras } from '@vtt/system-dnd5e';
+import { auraEffects, withAuras, withBanishment } from '@vtt/system-dnd5e';
 import type { Table } from './table.ts';
 import { ZoneTemplates } from './zone-templates.ts';
 
@@ -27,18 +27,27 @@ class AuraKeeper {
   }
 }
 
-/** What every step brings in line after it runs: the templates of lasting spell zones, then auras. */
+/** Banished creatures leave the map while the spell lasts (withBanishment). */
+function banishments(table: Table): void {
+  for (const token of [...table.store.tokens.values()]) {
+    const next = withBanishment(token);
+    if (next) table.store.setToken(next);
+  }
+}
+
+/** What every step brings in line after it runs: the templates of lasting spell zones, banishments, then auras. */
 export class AfterStep {
   readonly zoneTemplates: ZoneTemplates;
   private auras: AuraKeeper;
 
-  constructor(table: Table) {
+  constructor(private table: Table) {
     this.zoneTemplates = new ZoneTemplates(table);
     this.auras = new AuraKeeper(table);
   }
 
   sync(): void {
     this.zoneTemplates.sync();
+    banishments(this.table);
     this.auras.sync();
   }
 }

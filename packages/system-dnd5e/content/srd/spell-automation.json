@@ -248,11 +248,13 @@
   },
   "banishment": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs creatures taken off the map while the caster concentrates."
-      }
+      "automated": true,
+      "effect": {
+        "name": "Banished",
+        "conditions": ["incapacitated"],
+        "banished": true
+      },
+      "gmNote": "A creature from another plane that stays banished for the full minute doesn’t come back: delete its token."
     }
   },
   "barkskin": {
@@ -463,10 +465,11 @@
   },
   "blink": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs random vanishing at the end of each turn."
-      }
+      "automated": true,
+      "effect": {
+        "blink": true
+      },
+      "gmNote": "While away the caster may come back anywhere within 10 ft of where it vanished: move the token by hand."
     }
   },
   "blur": {
@@ -2688,11 +2691,12 @@
   },
   "imprisonment": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs creatures taken off the map."
-      }
+      "automated": true,
+      "effect": {
+        "name": "Imprisoned",
+        "banished": true
+      },
+      "gmNote": "The prison’s form and the ending condition are the GM’s."
     }
   },
   "incendiary-cloud": {
@@ -2947,10 +2951,18 @@
   },
   "maze": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs creatures taken off the map."
-      }
+      "automated": true,
+      "save": {
+        "ability": "int",
+        "onSave": "none",
+        "onCast": false
+      },
+      "effect": {
+        "name": "In a Maze",
+        "banished": true,
+        "repeatSave": true
+      },
+      "gmNote": "The escape is an Intelligence check (DC 20) as an action; here it is an Intelligence save against the spell at the end of each turn."
     }
   },
   "meld-into-stone": {
@@ -3016,10 +3028,11 @@
   },
   "mirror-image": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs duplicates that can be hit instead of the caster."
-      }
+      "automated": true,
+      "effect": {
+        "images": 3
+      },
+      "gmNote": "Spell attacks against the caster: roll for the duplicates by hand."
     }
   },
   "mislead": {
@@ -3158,11 +3171,17 @@
   },
   "plane-shift": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs creatures taken off the map."
-      }
+      "automated": true,
+      "attack": "melee",
+      "save": {
+        "ability": "cha",
+        "onSave": "none"
+      },
+      "effect": {
+        "name": "Plane Shifted",
+        "banished": true
+      },
+      "gmNote": "Cast on willing creatures it carries the party to another plane: move or remove their tokens by hand."
     }
   },
   "plant-growth": {
@@ -3396,12 +3415,28 @@
     }
   },
   "ray-of-enfeeblement": {
-    "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs halved or reduced weapon damage."
+    "2014": {
+      "automated": true,
+      "save": {
+        "ability": "con",
+        "onSave": "none",
+        "onCast": false
+      },
+      "effect": {
+        "name": "Enfeebled",
+        "weakened": "half",
+        "repeatSave": true
       }
+    },
+    "2024": {
+      "automated": true,
+      "effect": {
+        "name": "Enfeebled",
+        "weakened": "1d8",
+        "saveDisadvantageFor": ["str"],
+        "repeatSave": true
+      },
+      "gmNote": "On a successful save the target has disadvantage on its next attack roll; Strength checks have disadvantage too: both by hand."
     }
   },
   "ray-of-frost": {
@@ -3577,10 +3612,14 @@
     }
   },
   "sanctuary": {
+    "2014": {},
+    "2024": {
+      "gmNote": "In 2024 it also ends when the warded creature casts any spell or deals damage: remove it by hand then."
+    },
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs attackers to save before attacking the target."
+      "automated": true,
+      "effect": {
+        "sanctuary": true
       }
     }
   },

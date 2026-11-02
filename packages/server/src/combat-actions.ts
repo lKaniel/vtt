@@ -27,12 +27,14 @@ import {
   smiteProblem,
   startCombat,
   tickEffects,
+  blinkAway,
   type Token,
   tokenDistance,
   type WeaponAttackOutcome,
 } from '@vtt/system-dnd5e';
 import { canControl, isGridless, isParty, type Player } from '@vtt/shared';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
+import { breakSanctuary, loseImage, passSanctuary } from './spell-wards.ts';
 export { isTurnMessage } from './legendary-actions.ts';
 import { Refusal, requireGm, type Cost, type Fighter, type Table } from './table.ts';
 
@@ -180,7 +182,9 @@ export class CombatActions {
       const result = save.success ? 'shakes it off' : 'is still affected';
       this.table.note(`${token.name} saves against ${effect}: ${save.total} vs DC ${save.dc}, ${result}`);
     }
-    if (after !== token) this.store.setToken(after);
+    const blinked = blinkAway(after, this.table.rng);
+    if (blinked !== after) this.table.note(`${token.name} blinks into the Ethereal Plane`);
+    if (blinked !== token) this.store.setToken(blinked);
   }
 
   /** Effects made by the creature whose turn starts count down a round. */
@@ -256,6 +260,7 @@ export class CombatActions {
     if (!this.table.clearShot([attacker.token.x, attacker.token.y], [target.token.x, target.token.y])) {
       throw new Refusal(`${attacker.token.name} has no clear shot`);
     }
+    passSanctuary(this.table, attacker, target);
     this.table.pay(attacker.token, cost, attacker.sheet.attacksPerAction);
     if (lightAttack(attack)) this.markUsed(attacker.token, 'light-attack');
     if (attack.offHand && cost === 'free') this.markUsed(attacker.token, 'nick');
@@ -281,6 +286,7 @@ export class CombatActions {
     const target = this.table.fighter(req.target);
     const attack = this.attackOf(attacker, req);
     this.table.check(attacker.token, 'reaction');
+    passSanctuary(this.table, attacker, target);
     this.table.pay(attacker.token, 'reaction');
     this.resolve({ attacker, target, attack, range: 'normal' }, { smite: req.smite, reaction: true });
   }
@@ -324,6 +330,7 @@ export class CombatActions {
       this.table.rng,
     );
     if (outcome.sneak && !reaction) this.markUsed(attacker.token, 'sneak-attack');
+    breakSanctuary(this.table, attacker.token.id);
     const hit = { attacker, target, attack, range, smite, outcome };
     if (!outcome.roll.hit || !this.onHit(hit)) this.land(hit);
   }
@@ -331,6 +338,7 @@ export class CombatActions {
   /** Lands a rolled attack, once any reaction to it is settled. */
   land({ attacker, target, attack, range, smite, outcome }: PendingHit): void {
     if (outcome.smote) this.table.spendSlot(attacker.token.id, smite!);
+    if (outcome.decoy === 'hit') loseImage(this.table, target.token.id);
     this.table.useUp(outcome.used);
     this.applyOutcome(attacker, target, outcome, { range, name: attack.name, kind: attack.kind });
   }
