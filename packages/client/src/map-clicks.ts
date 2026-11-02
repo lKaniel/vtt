@@ -94,7 +94,7 @@ function walkUpTo(s: Session, id: string, target: string): void {
 function pileOptions(s: Session, id: string): MenuItem[] {
   const self = s.selected ? s.tokens.get(s.selected) : undefined;
   const name = s.tokens.get(id)?.name ?? 'it';
-  const open = { label: `Open ${name}`, run: () => s.openPile(id) };
+  const open = { label: `Open ${name}`, run: () => s.piles.open(id) };
   if (!self || !s.canControl(self)) return [open];
   return [open, { label: 'Walk up to it', run: () => walkUpTo(s, self.id, id) }];
 }

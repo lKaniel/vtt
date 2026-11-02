@@ -11,10 +11,10 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dia
 // own gear to put in (or sell). The server checks reach and prices.
 
 export function PileWindow({ session }: Readonly<{ session: Session }>) {
-  const pile = session.pile ? session.tokens.get(session.pile) : undefined;
+  const pile = session.piles.current ? session.tokens.get(session.piles.current) : undefined;
   if (!pile?.pile) return null;
   return (
-    <Dialog open onOpenChange={(open) => !open && session.openPile(undefined)}>
+    <Dialog open onOpenChange={(open) => !open && session.piles.open(undefined)}>
       <DialogContent data-slot="pile-window" className="w-[min(560px,calc(100vw-32px))]">
         <DialogTitle>{pile.name}</DialogTitle>
         <DialogDescription>{describe(pile.pile)}</DialogDescription>
@@ -40,7 +40,7 @@ interface ContentsProps {
 }
 
 function Contents({ session, pile, kind }: Readonly<ContentsProps>) {
-  const trader = session.trader;
+  const trader = session.piles.trader;
   const rules = toEdition(session.world?.rules);
   const merchant = kind.kind === 'merchant';
   const goods = pileRows(pile, merchant ? kind.buy : undefined, contentFor(pile, rules));
@@ -54,12 +54,17 @@ function Contents({ session, pile, kind }: Readonly<ContentsProps>) {
         empty={merchant ? 'Sold out.' : 'Nothing left.'}
         action={merchant ? 'Buy' : 'Take'}
         priced={merchant}
-        onRow={trader && ((row) => session.trade('take', row.index, merchant ? 1 : undefined))}
+        onRow={trader && ((row) => session.piles.trade('take', row.index, merchant ? 1 : undefined))}
       />
       {!merchant && cpOf(pile.currency) > 0 && (
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm">{purseText(pile.currency)}</span>
-          <Button variant="outline" size="sm" disabled={!trader} onClick={() => session.takeCoins(pile.currency ?? {})}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!trader}
+            onClick={() => session.piles.takeCoins(pile.currency ?? {})}
+          >
             Take coins
           </Button>
         </div>
@@ -82,7 +87,7 @@ function Yours({ session, trader, kind }: Readonly<{ session: Session; trader: T
         empty="Empty-handed."
         action={merchant ? 'Sell' : 'Put in'}
         priced={merchant}
-        onRow={(row) => session.trade('put', row.index, merchant ? 1 : undefined)}
+        onRow={(row) => session.piles.trade('put', row.index, merchant ? 1 : undefined)}
       />
     </>
   );

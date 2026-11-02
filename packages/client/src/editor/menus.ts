@@ -51,8 +51,8 @@ export interface MenuApi {
   observe(token: string | undefined): void;
   /** GM: opens a picture on every player's screen. */
   showImage(src: string, title?: string): void;
-  /** Opens a pile of loot's or a merchant's window (see session-piles.ts). */
-  openPile(token: string): void;
+  /** The pile window (see session-piles.ts). */
+  readonly piles: { open(token: string): void };
 }
 
 /** What the menu was opened on. */
@@ -138,7 +138,7 @@ registerMenu('token', (t, api) => {
 /** A creature's sheet, or a pile's window. */
 const openEntry = (token: TokenView | undefined, id: string, api: MenuApi): MenuItem =>
   token?.pile
-    ? { label: `Open ${token.name}`, run: () => api.openPile(id) }
+    ? { label: `Open ${token.name}`, run: () => api.piles.open(id) }
     : { label: 'Open sheet', run: () => api.openSheet({ kind: 'token', id }) };
 
 /** GM: makes a token a pile of loot or a merchant (see system-dnd5e piles.ts), locks it, or makes it a token again. */

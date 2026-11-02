@@ -4,7 +4,7 @@ import { clickToken } from './map-clicks.ts';
 import type { Session } from './session.ts';
 import { closeSession, openSession, token, welcome, type FakeWebSocket } from './session.fixtures.ts';
 
-// Item piles at the table (session-piles.ts): clicking one opens its window,
+// Item piles at the table (session-piles.ts, `session.piles`): clicking one opens its window,
 // whose buttons trade for the creature you act with.
 
 let session: Session;
@@ -26,21 +26,21 @@ describe('item piles', () => {
     const click = clickToken(session, 'chest');
     expect(click.kind === 'prompt' && click.items.map((i) => i.label)).toEqual(['Open chest', 'Walk up to it']);
     if (click.kind === 'prompt') click.items[0]!.run();
-    expect(session.pile).toBe('chest');
-    session.openPile('hero');
-    expect(session.pile).toBeUndefined();
-    session.openPile('chest');
+    expect(session.piles.current).toBe('chest');
+    session.piles.open('hero');
+    expect(session.piles.current).toBeUndefined();
+    session.piles.open('chest');
     ws.receive({ t: 'tokenGone', id: 'chest' });
-    expect(session.pile).toBeUndefined();
+    expect(session.piles.current).toBeUndefined();
   });
 
   it('trade for the creature you act with', () => {
-    session.openPile('chest');
-    session.trade('take', 1);
+    session.piles.open('chest');
+    session.piles.trade('take', 1);
     expect(ws.sent.at(-1)).toEqual({ t: 'trade', from: 'chest', to: 'hero', item: 1 });
-    session.trade('put', 0, 2);
+    session.piles.trade('put', 0, 2);
     expect(ws.sent.at(-1)).toEqual({ t: 'trade', from: 'hero', to: 'chest', item: 0, qty: 2 });
-    session.takeCoins({ gp: 3 });
+    session.piles.takeCoins({ gp: 3 });
     expect(ws.sent.at(-1)).toEqual({ t: 'trade', from: 'chest', to: 'hero', coins: { gp: 3 } });
   });
 });
