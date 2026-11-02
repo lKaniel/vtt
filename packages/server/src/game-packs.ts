@@ -1,5 +1,13 @@
 import { enabledPacks, type PackCompendium, type PackInfo, type SystemDefinition } from '@vtt/core';
-import { type Content, contentWith, editionOf, homebrewCompendia, type Token, withOwn } from '@vtt/system-dnd5e';
+import {
+  type Content,
+  contentWith,
+  editionOf,
+  homebrewCompendia,
+  type Token,
+  withOwn,
+  withSettings,
+} from '@vtt/system-dnd5e';
 import { fromDoc } from './doc-sync.ts';
 import type { GameStore } from './game-store.ts';
 import type { PackStore } from './pack-store.ts';
@@ -102,5 +110,6 @@ export function contentFor(
   store: RunningGame & Pick<GameStore, 'world'>,
   token: Pick<Token, 'stats' | 'own'>,
 ): Content {
-  return withOwn(contentWith(editionOf(token, store.world), packContent(store)), token);
+  const content = contentWith(editionOf(token, store.world), packContent(store));
+  return withOwn(withSettings(content, store.world.settings), token);
 }

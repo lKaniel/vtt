@@ -14,7 +14,7 @@ import {
   withOwn,
 } from '@vtt/system-dnd5e';
 import { gameContent } from '../content.ts';
-import { bagLayout, carriedLook, loadText, purseText } from '../carried.ts';
+import { bagLayout, carriedLook, loadText, loadTip, purseText } from '../carried.ts';
 import { dragTile } from '../hotbar.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { IconFace } from './Icon.tsx';
@@ -44,8 +44,8 @@ export function Load(props: Readonly<SheetProps>) {
   const load = encumbrance(value, sheet.abilities.str, contentOf(props));
   return (
     <span
-      className={load.over ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}
-      title={load.over ? 'Over capacity: speed drops to 5 ft' : 'Carried weight / carrying capacity'}
+      className={load.over || load.level !== 'none' ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}
+      title={loadTip(load)}
     >
       {loadText(load)}
     </span>

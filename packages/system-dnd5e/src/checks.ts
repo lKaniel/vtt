@@ -43,7 +43,9 @@ export function rollCheck(
 ): CheckRoll {
   const { dc } = check;
   const disadvantage =
-    sheet.effects.some((e) => e.checkDisadvantage) || sheet.conditions.some((c) => HINDERED.includes(c));
+    sheet.effects.some(
+      (e) => e.checkDisadvantage === true || e.checkDisadvantageFor?.includes(check.ability) === true,
+    ) || sheet.conditions.some((c) => HINDERED.includes(c));
   const extra = sheet.effects.flatMap((e) => (e.checkBonus ? [e.checkBonus] : []));
   const result = roll(d20Formula(checkBonus(token, sheet, check), extra, { disadvantage }), rng);
   return { roll: result, total: result.total, ...(dc !== undefined && { success: result.total >= dc }) };

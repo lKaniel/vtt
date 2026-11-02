@@ -61,6 +61,15 @@
   background: rgba(14, 13, 11, 0.85);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
 }
+/* They sit between the top bar and the log, wrapping, never over either. */
+@media (min-width: 801px) {
+  .turn-order.idle {
+    left: 610px;
+    right: 350px;
+    max-width: none;
+    transform: none;
+  }
+}
 
 /* ---------- Party ---------- */
 

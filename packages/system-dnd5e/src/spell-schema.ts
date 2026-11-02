@@ -48,6 +48,8 @@ const modifiers = {
   /** Added to the bearer's ability checks, and checks with disadvantage (exhaustion). */
   checkBonus: dice.optional(),
   checkDisadvantage: z.boolean().optional(),
+  /** Ability checks of these abilities have disadvantage (heavy encumbrance). */
+  checkDisadvantageFor: z.array(AbilitySchema).optional(),
   ac: z.number().int().optional(),
   /** Unarmored AC before dex: the bearer's AC without body armor is this + dex (mage armor). */
   armorBase: z.number().int().optional(),

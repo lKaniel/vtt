@@ -152,15 +152,37 @@ function withItemBonuses(c: Creature, token: Token, content: Content): Creature 
   return { ...c, ac: c.ac + ac, saves };
 }
 
-/** A character carrying more than its capacity moves 5 ft at most (monsters don't count their loot). */
+/** Speed lost and what else the variant encumbrance rule does at each level. */
+const VARIANT_LOAD = {
+  none: { slower: 0 },
+  encumbered: { slower: 10 },
+  heavy: {
+    slower: 20,
+    effect: {
+      id: 'heavily-encumbered',
+      name: 'Heavily encumbered',
+      disadvantage: true,
+      saveDisadvantageFor: ['str', 'dex', 'con'],
+      checkDisadvantageFor: ['str', 'dex', 'con'],
+    } satisfies Effect,
+  },
+} as const;
+
+/**
+ * A character carrying more than its capacity moves 5 ft at most, and the
+ * variant rule slows it sooner (monsters don't count their loot).
+ */
 function withCarrying(
   c: Creature,
   token: Token,
   { monster, content }: { monster?: Monster; content: Content },
 ): Creature {
   if (monster) return c;
-  const { over } = encumbrance(token, c.abilities.str, content);
-  return over ? { ...c, speed: Math.min(c.speed, 5) } : c;
+  const { over, level } = encumbrance(token, c.abilities.str, content);
+  const load: { slower: number; effect?: Effect } = VARIANT_LOAD[level];
+  const speed = Math.max(0, c.speed - load.slower);
+  const effects = load.effect ? [...c.effects, load.effect] : c.effects;
+  return { ...c, speed: over ? Math.min(speed, 5) : speed, effects };
 }
 
 /** Ability scores and proficiency after the changes of the token's effects and always-on features. */

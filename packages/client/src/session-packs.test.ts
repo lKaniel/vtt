@@ -77,6 +77,13 @@ describe('pack content in the client', () => {
     expect(gameContent('2014').classes.get('seer')?.name).toBe('Seer');
   });
 
+  it('plays by the game’s settings', () => {
+    const base = gmWelcome() as Extract<ServerMessage, { t: 'welcome' }>;
+    ws.receive({ ...base, world: { ...base.world, settings: { encumbrance: 'variant' } } });
+    ws.receive({ t: 'packContent', compendia: [] });
+    expect(gameContent('2014').settings?.encumbrance).toBe('variant');
+  });
+
   it('shows pack files from where the server serves them', () => {
     expect(assetUrl('pack://forest/media/big oak.webp')).toBe('/packs/forest/media/big%20oak.webp');
   });

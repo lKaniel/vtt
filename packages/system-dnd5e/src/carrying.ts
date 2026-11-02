@@ -59,9 +59,17 @@ export interface Encumbrance {
   capacity: number;
   /** Carrying more than its capacity: speed drops to 5 ft. */
   over: boolean;
+  /** Under the variant rule: slowed by 10 ft (encumbered) or 20 ft (heavy); `none` otherwise. */
+  level: 'none' | 'encumbered' | 'heavy';
 }
 
-/** What `token` carries against what a creature of its Strength and size can. */
+/** The variant rule's level: over a third of the capacity (Strength × 5), or two thirds (× 10). */
+function variantLevel(weight: number, capacity: number): Encumbrance['level'] {
+  if (weight > (capacity * 2) / 3) return 'heavy';
+  return weight > capacity / 3 ? 'encumbered' : 'none';
+}
+
+/** What `token` carries against what a creature of its Strength and size can, by the game's encumbrance rule. */
 export function encumbrance(
   token: Pick<Token, 'inventory' | 'currency' | 'size'>,
   strength: number,
@@ -69,7 +77,10 @@ export function encumbrance(
 ): Encumbrance {
   const weight = carriedWeight(token, content);
   const capacity = carryingCapacity(strength, token.size);
-  return { weight, capacity, over: weight > capacity };
+  const rule = content.settings?.encumbrance ?? 'capacity';
+  if (rule === 'off') return { weight, capacity, over: false, level: 'none' };
+  const level = rule === 'variant' ? variantLevel(weight, capacity) : 'none';
+  return { weight, capacity, over: weight > capacity, level };
 }
 
 /** How many magic items the creature is attuned to. */

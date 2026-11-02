@@ -7,6 +7,7 @@ import { i18n, type MessageKey, t, useLanguage } from '../i18n/index.ts';
 import { Button } from './kit/button.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Label } from './kit/label.tsx';
+import { GameSettingsSection } from './GameSettingsSection.tsx';
 import { KeysDialog } from './KeysDialog.tsx';
 import { ProfileRow } from './ProfileRow.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
@@ -89,6 +90,7 @@ export function SettingsMenu({ session }: Readonly<{ session: Session }>) {
           value={automation.hitReactions}
           onChange={(hitReactions) => set({ hitReactions })}
         />
+        {session.isGm() && <GameSettingsSection session={session} />}
         <Separator />
         <MotionRow />
         <LanguageRow />

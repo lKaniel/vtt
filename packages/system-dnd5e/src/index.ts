@@ -49,6 +49,7 @@ export * from './sheet-drops.ts';
 export * from './foundry-actor.ts';
 export * from './automation.ts';
 export * from './carrying.ts';
+export * from './game-settings.ts';
 export * from './animations.ts';
 export * from './auras.ts';
 export * from './piles.ts';
