@@ -16,7 +16,7 @@ import { SelectField } from './kit/select.tsx';
  */
 export function CardsTab({ session }: Readonly<{ session: Session }>) {
   const [open, setOpen] = useState<string>();
-  const stacks = session.cardStacks();
+  const stacks = session.cards.stacks();
   return (
     <div className="scenes-tab">
       {session.isGm() && <NewCards session={session} />}
@@ -45,13 +45,13 @@ function NewCards({ session }: Readonly<{ session: Session }>) {
   const players = session.players.filter((p) => p.role !== 'gm');
   return (
     <div className="flex flex-wrap gap-1.5">
-      <Button variant="outline" size="sm" onClick={() => session.newCards('deck', { standard: true })}>
+      <Button variant="outline" size="sm" onClick={() => session.cards.create('deck', { standard: true })}>
         {t('cards.newPlaying')}
       </Button>
-      <Button variant="outline" size="sm" onClick={() => session.newCards('deck')}>
+      <Button variant="outline" size="sm" onClick={() => session.cards.create('deck')}>
         {t('cards.newDeck')}
       </Button>
-      <Button variant="outline" size="sm" onClick={() => session.newCards('pile')}>
+      <Button variant="outline" size="sm" onClick={() => session.cards.create('pile')}>
         {t('cards.newPile')}
       </Button>
       {players.length > 0 && (
@@ -62,7 +62,7 @@ function NewCards({ session }: Readonly<{ session: Session }>) {
           value=""
           onValueChange={(id) => {
             const p = players.find((x) => x.id === id);
-            if (p) session.newCards('hand', { owner: p.id, name: t('cards.handOf', { name: p.name }) });
+            if (p) session.cards.create('hand', { owner: p.id, name: t('cards.handOf', { name: p.name }) });
           }}
           options={players.map((p) => ({ value: p.id, label: t('cards.handOf', { name: p.name }) }))}
         />
@@ -73,9 +73,9 @@ function NewCards({ session }: Readonly<{ session: Session }>) {
 
 /** What can be done with a stack from its row: draw from a deck, shuffle one you hold, and the GM's deal and gather. */
 function StackActions({ session, stack }: Readonly<{ session: Session; stack: CardStackView }>) {
-  const hand = session.myHands()[0];
+  const hand = session.cards.hands()[0];
   const gm = session.isGm();
-  const holds = gm || session.myHands().some((h) => h.id === stack.id);
+  const holds = gm || session.cards.hands().some((h) => h.id === stack.id);
   return (
     <span className="row-actions">
       {stack.kind === 'deck' && hand && !gm && (
@@ -83,18 +83,18 @@ function StackActions({ session, stack }: Readonly<{ session: Session; stack: Ca
           variant="outline"
           size="sm"
           disabled={!stack.count}
-          onClick={() => session.drawCards(stack.id, hand.id)}
+          onClick={() => session.cards.draw(stack.id, hand.id)}
         >
           {t('cards.draw')}
         </Button>
       )}
       {holds && stack.count > 1 && (
-        <Button variant="outline" size="sm" onClick={() => session.shuffleCards(stack.id)}>
+        <Button variant="outline" size="sm" onClick={() => session.cards.shuffle(stack.id)}>
           {t('cards.shuffle')}
         </Button>
       )}
       {gm && stack.kind === 'deck' && (
-        <Button variant="outline" size="sm" onClick={() => session.resetCards(stack.id)} title={t('cards.gatherHint')}>
+        <Button variant="outline" size="sm" onClick={() => session.cards.reset(stack.id)} title={t('cards.gatherHint')}>
           {t('cards.gather')}
         </Button>
       )}
@@ -109,7 +109,7 @@ function StackCards({
   stacks,
 }: Readonly<{ session: Session; stack: CardStackView; stacks: CardStackView[] }>) {
   const [picked, setPicked] = useState<string[]>([]);
-  const holds = session.isGm() || session.myHands().some((h) => h.id === stack.id);
+  const holds = session.isGm() || session.cards.hands().some((h) => h.id === stack.id);
   const toggle = (key: string) => setPicked(picked.includes(key) ? picked.filter((k) => k !== key) : [...picked, key]);
   const present = picked.filter((k) => stack.cards.some((c) => cardKey(c) === k));
   return (
@@ -133,7 +133,7 @@ function StackCards({
         <MoveCards
           stacks={stacks.filter((s) => s.id !== stack.id)}
           onMove={(to) => {
-            session.passCards(stack.id, to, present);
+            session.cards.pass(stack.id, to, present);
             setPicked([]);
           }}
         />
@@ -180,7 +180,7 @@ function DealCards({
         size="sm"
         disabled={!deck.count}
         onClick={() =>
-          session.dealCards(
+          session.cards.deal(
             deck.id,
             hands.map((h) => h.id),
             n,

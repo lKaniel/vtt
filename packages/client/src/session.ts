@@ -34,6 +34,7 @@ import { Presence } from './presence.ts';
 import { Rulers } from './rulers.ts';
 import type { SessionEvents } from './session-events.ts';
 import { HudSession } from './session-hud.ts';
+import { Cards } from './session-cards.ts';
 import { ScriptHost } from './scripting/script-api.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
@@ -76,6 +77,8 @@ export class Session extends HudSession {
   sheet?: SheetTarget & { edit: boolean };
   /** GM only: creatures dropped on the map arrive hidden from the players. */
   spawnHidden = false;
+  /** The decks, hands and piles you were sent (session-cards.ts). */
+  readonly cards = new Cards(this);
   /** Your ruler and the ones the others on your scene are laying. */
   readonly rulers = new Rulers(
     (msg) => this.send(msg),
