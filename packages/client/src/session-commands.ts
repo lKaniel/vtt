@@ -90,6 +90,16 @@ export abstract class Commands {
     this.send({ t: 'equip', token, item, equipped });
   }
 
+  /** Spends one of the creature's hit dice to heal. */
+  spendHitDie(token: string): void {
+    this.send({ t: 'hitDie', token });
+  }
+
+  /** GM: sets a creature's exhaustion (0 for none). */
+  setExhaustion(token: string, level: number): void {
+    this.send({ t: 'exhaustion', token, level });
+  }
+
   /** Coins, packing and attunement on a creature the player controls. */
   carry(token: string, change: CarryChange): void {
     this.send({ t: 'carry', token, change });

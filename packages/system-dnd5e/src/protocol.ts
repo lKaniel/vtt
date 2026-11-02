@@ -119,6 +119,10 @@ export type ClientMessage =
   | { t: 'equip'; token: string; item: number; equipped: boolean }
   /** An owner's own gear: coins, packing it into containers (`into` null takes it out), attunement. */
   | { t: 'carry'; token: string; change: CarryChange }
+  /** Spends one hit die to heal (outside fights). */
+  | { t: 'hitDie'; token: string }
+  /** GM: sets a creature's exhaustion, 0 for none. */
+  | { t: 'exhaustion'; token: string; level: number }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
   | {
       t: 'cast';

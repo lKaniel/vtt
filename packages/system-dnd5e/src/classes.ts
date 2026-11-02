@@ -70,7 +70,7 @@ export function spellSlots(casting: Pick<Spellcasting, 'progression' | 'from'>, 
 }
 
 /** The class a token's `stats.class` names, matched by id or name. */
-export function classOf(token: Token, content: Content): Class | undefined {
+export function classOf(token: Pick<Token, 'stats'>, content: Content): Class | undefined {
   const name = token.stats?.class?.toLowerCase();
   if (!name) return undefined;
   return content.classes.get(name) ?? [...content.classes.values()].find((c) => c.name.toLowerCase() === name);

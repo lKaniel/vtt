@@ -8,6 +8,7 @@ import { IconFace } from './Icon.tsx';
 import { RemoveButton } from './SheetDetails.tsx';
 import { EditButton } from './own/OwnEditor.tsx';
 import { EffectForm } from './own/EffectForm.tsx';
+import { Vigour } from './Vigour.tsx';
 import { Button } from './kit/button.tsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dialog.tsx';
 
@@ -35,6 +36,7 @@ export function EffectsPage(props: Readonly<SheetProps>) {
   };
   return (
     <>
+      <Vigour {...props} />
       {!effects.length && !value.concentration && <p className="muted">Nothing is affecting {value.name}.</p>}
       <ul className="rows">
         {value.concentration && <ConcentrationRow {...props} />}
