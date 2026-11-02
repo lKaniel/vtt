@@ -8,7 +8,7 @@ import {
   RoleSchema,
   ROLL_MODES,
 } from '@vtt/shared';
-import { CurrencySchema, EditionSchema } from '@vtt/system-dnd5e';
+import { ConditionSchema, CurrencySchema, EditionSchema } from '@vtt/system-dnd5e';
 import type { RawData } from 'ws';
 import { z } from 'zod';
 
@@ -81,6 +81,9 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   }),
   z.object({ t: z.literal('useItem'), token: z.string(), item: z.string() }),
   z.object({ t: z.literal('react'), offer: z.string(), choice: z.string().optional() }),
+  z.object({ t: z.literal('condition'), token: z.string(), condition: ConditionSchema, on: z.boolean() }),
+  z.object({ t: z.literal('combatant'), token: z.string(), on: z.boolean() }),
+  z.object({ t: z.literal('pause'), on: z.boolean() }),
   z.object({
     t: z.literal('applyDamage'),
     card: z.string(),

@@ -41,6 +41,7 @@ export interface WelcomeParts {
   view: (token: Token, player: Player) => TokenView;
   /** The server's time (ms), for the game clock. */
   now: number;
+  paused: boolean;
 }
 
 /** The welcome, then the rules content of the game's packs. */
@@ -63,6 +64,7 @@ export function welcomeOf(store: GameStore, c: Joining, parts: WelcomeParts): Se
     history: parts.history,
     docs: c.feed.start(player),
     serverTime: parts.now,
+    ...(parts.paused && { paused: true }),
     ...(gm ? { players: store.world.players, actors: [...store.actors.values()] } : {}),
   };
   return [welcome, { t: 'packContent', compendia: packContent(store) }];

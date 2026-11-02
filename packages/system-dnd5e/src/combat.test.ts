@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type Combat, currentTurn, joinCombat, leaveCombat, nextTurn, startCombat } from './index.ts';
+import { addToCombat, type Combat, currentTurn, joinCombat, leaveCombat, nextTurn, startCombat } from './index.ts';
 import type { Rng } from '@vtt/shared';
 
 /** An rng that returns the given d20 faces in order. */
@@ -73,5 +73,34 @@ describe('joinCombat', () => {
     const after = joinCombat(c, 'goblin', ['owl']);
     expect(after.order.map((e) => e.token)).toEqual(['goblin', 'owl', 'wolf', 'hero']);
     expect(currentTurn(after)).toBe('wolf');
+  });
+});
+
+describe('addToCombat', () => {
+  const base: Combat = {
+    round: 1,
+    turn: 1,
+    order: [
+      { token: 'a', initiative: 18 },
+      { token: 'b', initiative: 12 },
+      { token: 'c', initiative: 5 },
+    ],
+    left: { move: 30, action: true, bonus: true, attacks: 0, used: [] },
+    reacted: [],
+    side: {},
+  };
+
+  it('rolls initiative and takes its place, keeping whose turn it is', () => {
+    // A d20 of 16 (0.75), +4: 20 goes first, before the creature acting now.
+    const first = addToCombat(base, { token: 'd', bonus: 4, speed: 30 }, () => 0.75);
+    expect(first.order.map((e) => e.token)).toEqual(['d', 'a', 'b', 'c']);
+    expect(currentTurn(first)).toBe('b');
+    const last = addToCombat(base, { token: 'e', bonus: 0, speed: 30 }, () => 0);
+    expect(last.order.map((e) => e.token)).toEqual(['a', 'b', 'c', 'e']);
+    expect(currentTurn(last)).toBe('b');
+  });
+
+  it('leaves a creature already in the fight where it is', () => {
+    expect(addToCombat(base, { token: 'a', bonus: 0, speed: 30 }, () => 0)).toBe(base);
   });
 });

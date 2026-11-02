@@ -62,10 +62,15 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   useItem: { label: 'item use', action: true },
   react: { label: 'reaction', action: true },
   applyDamage: { label: 'applied roll', action: true },
+  condition: { label: 'condition', action: true },
+  combatant: { label: 'fight change', action: true },
   dropConcentration: { label: 'dropped concentration', action: true },
   removeEffect: { label: 'effect removal', action: true },
   rest: { label: 'rest', action: true },
 };
+
+/** Whether a message is a game action (a move, an attack), as opposed to an edit or talk. */
+export const isGameAction = (t: string): boolean => !!STEPS[t as ClientMessage['t']]?.action;
 
 const CLOCK_LABELS: Record<string, string> = {
   start: 'clock start',

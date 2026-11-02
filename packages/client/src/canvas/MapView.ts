@@ -429,9 +429,10 @@ export class MapView {
    */
   private rightClick(screen: Point, at: Point): void {
     if (this.editor.finish() || this.editor.cancel() || this.session.cancelAction()) return;
-    const target = this.editor.menuTarget(at);
     const rect = this.app.canvas.getBoundingClientRect();
-    this.session.openMenu([screen[0] + rect.left, screen[1] + rect.top], menuFor(target, this.session));
+    const onScreen: Point = [screen[0] + rect.left, screen[1] + rect.top];
+    const target = { ...this.editor.menuTarget(at), screen: onScreen };
+    this.session.openMenu(onScreen, menuFor(target, this.session));
   }
 
   /** A fling glides on; a drag that stopped before letting go stays put. */

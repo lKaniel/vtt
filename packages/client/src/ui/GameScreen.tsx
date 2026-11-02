@@ -15,7 +15,9 @@ import { Inspector } from './Inspector.tsx';
 import { JournalViewer } from './JournalViewer.tsx';
 import { MapTools } from './MapTools.tsx';
 import { PartyBar } from './PartyBar.tsx';
+import { PauseBanner, PauseButton } from './PauseBanner.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
+import { TokenHud } from './TokenHud.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
 import { SettingsMenu } from './SettingsMenu.tsx';
@@ -77,6 +79,7 @@ export function GameScreen({
         <span className="you" style={{ color: session.you?.color }}>
           {session.you?.name}
         </span>
+        <PauseButton session={session} />
         <UndoButtons session={session} />
         <SettingsMenu session={session} />
         <Button variant="link" onClick={onLeave}>
@@ -94,6 +97,8 @@ export function GameScreen({
       <ChatPanel session={session} />
       <Toast session={session} />
       <ContextMenu session={session} />
+      <TokenHud session={session} />
+      <PauseBanner session={session} />
     </div>
   );
 }
