@@ -18,6 +18,7 @@ import {
   type Routes,
 } from './http-json.ts';
 import { LobbyRoutes } from './lobby-api.ts';
+import { mcpHandler } from './mcp-http.ts';
 
 // The account side of the server, as JSON over HTTP: signing up and in, and
 // the player's characters (the roster). Games are lobby-api.ts. The game
@@ -27,6 +28,8 @@ export interface ApiDeps {
   accounts: AccountStore;
   characters: CharacterStore;
   hub: GameHub;
+  /** The server's own key for Claude (VTT_MCP_KEY): it sits as the home game's GM. */
+  mcpKey?: string;
 }
 
 const sessionCookie = (token: string, maxAge: number) =>
@@ -40,8 +43,10 @@ const CharacterInput = CharacterSchema.omit({ id: true, owner: true });
 /** Handles /api/ requests about accounts, characters and games; returns false for anything else. */
 export function apiHandler(deps: ApiDeps): (req: IncomingMessage, res: ServerResponse) => Promise<boolean> {
   const all: Routes[] = [new AccountRoutes(deps), new LobbyRoutes(deps)];
+  const mcp = mcpHandler(deps);
   return async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
+    if (url.pathname === '/mcp') return mcp(req, res);
     const parts = url.pathname.split('/').filter(Boolean).slice(1);
     const routes = all.find((r) => r.handles(parts[0]));
     if (!url.pathname.startsWith('/api/') || !routes) return false;
@@ -61,7 +66,7 @@ class AccountRoutes implements Routes {
   constructor(private deps: ApiDeps) {}
 
   handles(route: string | undefined): boolean {
-    return ['session', 'register', 'login', 'logout', 'characters'].includes(route ?? '');
+    return ['session', 'register', 'login', 'logout', 'characters', 'mcp-key'].includes(route ?? '');
   }
 
   async serve(call: Call): Promise<void> {
@@ -77,6 +82,7 @@ class AccountRoutes implements Routes {
         return this.logout(call);
       default:
         if (call.parts[0] === 'characters') return this.characters(call);
+        if (call.parts[0] === 'mcp-key') return this.mcpKey(call);
         throw new HttpError(405, 'Method not allowed.');
     }
   }
@@ -114,6 +120,23 @@ class AccountRoutes implements Routes {
   private async logout(call: Call): Promise<void> {
     if (call.token) await this.deps.accounts.endSession(call.token);
     send(call.res, 200, {}, sessionCookie('', 0));
+  }
+
+  /** The account's key for Claude: whether it has one, a new one (shown once), or none. */
+  private async mcpKey(call: Call): Promise<void> {
+    const { accounts } = this.deps;
+    const account = this.account(call);
+    if (call.method === 'GET') {
+      send(call.res, 200, { has: accounts.hasMcpKey(account.id) });
+      return;
+    }
+    if (call.method === 'POST') {
+      send(call.res, 200, { key: await accounts.newMcpKey(account.id) });
+      return;
+    }
+    if (call.method !== 'DELETE') throw new HttpError(405, 'Method not allowed.');
+    await accounts.dropMcpKey(account.id);
+    send(call.res, 200, {});
   }
 
   private async characters(call: Call): Promise<void> {

@@ -12,6 +12,7 @@ export default defineConfig({
     proxy: {
       '/ws': { target: server, ws: true },
       '/api': server,
+      '/mcp': server,
       '/assets': server,
       '/packs': server,
       '^/games/[^/]+/assets/': server,

@@ -23,7 +23,7 @@ export interface ApiServer {
 }
 
 /** The account and lobby API on a random port, over the test game as its home game. */
-export async function startApi(): Promise<ApiServer> {
+export async function startApi(opts: { mcpKey?: string } = {}): Promise<ApiServer> {
   const dataDir = await mkdtemp(join(tmpdir(), 'vtt-data-'));
   const home = await makeWorld();
   const hub = new GameHub({ dataDir, home, watch: false });
@@ -32,7 +32,7 @@ export async function startApi(): Promise<ApiServer> {
   await accounts.load();
   const characters = new CharacterStore(dataDir);
   await characters.load();
-  const api = apiHandler({ accounts, characters, hub });
+  const api = apiHandler({ accounts, characters, hub, ...opts });
   const server: Server = createServer((req, res) => {
     void api(req, res).then((handled) => {
       if (!handled) res.writeHead(404).end();

@@ -31,7 +31,7 @@ const handleRequest = httpHandler({
   packFile: (pack, path) => hub.packs.mediaFile(pack, path),
   clientDir: clientDist,
   players: async () => (hub.homeId ? (await hub.info(hub.homeId)).players : []),
-  api: apiHandler({ accounts, characters, hub }),
+  api: apiHandler({ accounts, characters, hub, mcpKey: process.env.VTT_MCP_KEY }),
 });
 
 const server = createServer((req, res) => {

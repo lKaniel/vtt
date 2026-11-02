@@ -1,9 +1,9 @@
-// fallow-ignore-file unused-class-member -- Game calls FakeSocket's members through the WebSocket type
 import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { ActorSchema, resolveToken, type ServerMessage, type Token, TokenEntrySchema } from '@vtt/system-dnd5e';
 import type { WebSocket } from 'ws';
+import { BridgeSocket } from '../mcp-seat.ts';
 
 const players = [
   { id: 'gm', name: 'GM', role: 'gm' },
@@ -78,29 +78,10 @@ export function makeLegacyWorld(): Promise<string> {
 }
 
 /** Stands in for a browser connection and records what the server sends. */
-export class FakeSocket {
-  readonly OPEN = 1;
-  readyState = 1;
-  sent: ServerMessage[] = [];
-  private handlers = new Map<string, ((data: Buffer) => void)[]>();
-
-  on(event: string, fn: (data: Buffer) => void): this {
-    this.handlers.set(event, [...(this.handlers.get(event) ?? []), fn]);
-    return this;
-  }
-
-  send(text: string): void {
-    this.sent.push(JSON.parse(text) as ServerMessage);
-  }
-
-  close(): void {
-    this.readyState = 3;
-    for (const fn of this.handlers.get('close') ?? []) fn(Buffer.alloc(0));
-  }
-
+export class FakeSocket extends BridgeSocket {
   /** Simulates the browser sending a message. */
   receive(msg: unknown): void {
-    for (const fn of this.handlers.get('message') ?? []) fn(Buffer.from(JSON.stringify(msg)));
+    this.emit('message', Buffer.from(JSON.stringify(msg)));
   }
 
   /** Messages of one kind, oldest first, and clears the log. */
