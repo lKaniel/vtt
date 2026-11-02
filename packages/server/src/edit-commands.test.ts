@@ -87,6 +87,21 @@ const SAMPLES: Record<string, { coll: string; doc: Doc }> = {
     coll: 'macros',
     doc: { id: 'hail', type: 'macro', rev: 0, name: 'Hail', kind: 'chat', command: 'Well met!' },
   },
+  cards: {
+    coll: 'cards',
+    doc: {
+      id: 'tarot',
+      type: 'cards',
+      rev: 0,
+      name: 'Tarot',
+      kind: 'deck',
+      cards: [{ id: 'fool', name: 'The Fool', origin: 'tarot' }],
+    },
+  },
+  homebrew: {
+    coll: 'homebrew',
+    doc: { id: 'seer', type: 'homebrew', rev: 0, kind: 'class', name: 'Seer', hitDie: 8, saves: ['wis'], features: [] },
+  },
 };
 
 beforeEach(async () => {

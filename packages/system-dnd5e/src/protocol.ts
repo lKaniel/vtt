@@ -1,4 +1,4 @@
-import type { Doc } from '@vtt/core';
+import type { Doc, PluginLoad } from '@vtt/core';
 import type {
   ChatEntry,
   EngineClientMessage,
@@ -234,6 +234,8 @@ export type ServerMessage =
       history: HistoryState;
       /** The server's clock (ms) as it sent this, so the game clock reads the same everywhere. */
       serverTime?: number;
+      /** The plugins the game turned on, for every client to load (docs/plugins.md). */
+      plugins?: PluginLoad[];
       /** The GM paused the game: players can't act. */
       paused?: boolean;
     }

@@ -1,10 +1,13 @@
-import { abilityName, type Character, partsOf, skillName, type Species } from '@vtt/system-dnd5e';
+import { abilityName, type Character, type Class, partsOf, skillName, type Species } from '@vtt/system-dnd5e';
 import { chooseBackground, chooseClass, chooseSpecies } from '../../creator.ts';
 import { Chips, Detail, OptionCard, RichText, StepHead, TraitList } from './Parts.tsx';
+import { classesToPick } from './use-homebrew.ts';
 
 export interface StepProps {
   c: Character;
   set: (c: Character) => void;
+  /** The GMs' homebrew classes the account may take. */
+  homebrew?: readonly Class[];
 }
 
 const bonusText = (b: Partial<Record<string, number>>) =>
@@ -73,9 +76,9 @@ export function SpeciesStep({ c, set }: Readonly<StepProps>) {
   );
 }
 
-export function ClassStep({ c, set }: Readonly<StepProps>) {
+export function ClassStep({ c, set, homebrew = [] }: Readonly<StepProps>) {
   const p = partsOf(c);
-  const classes = [...p.book.content.classes.values()];
+  const classes = classesToPick(p.book.content.classes.values(), homebrew);
   return (
     <div className="cc-split">
       <div>
@@ -87,9 +90,10 @@ export function ClassStep({ c, set }: Readonly<StepProps>) {
               title={cls.name}
               sub={`d${cls.hitDie} hit die · saves ${cls.saves.map((s) => s.toUpperCase()).join(', ')}`}
               on={cls.id === c.class}
-              onClick={() => set(chooseClass(c, cls.id))}
+              onClick={() => set(chooseClass(c, cls.id, homebrew))}
             >
               {cls.spellcasting && <span className="cc-card-tag">Spellcaster</span>}
+              {homebrew.some((h) => h.id === cls.id) && <span className="cc-card-tag">Homebrew</span>}
             </OptionCard>
           ))}
         </div>

@@ -159,6 +159,8 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
           options={[
             { value: 'none', label: 'None: walk anywhere, distances in feet' },
             { value: 'square', label: 'Squares: walk square to square' },
+            { value: 'hex-rows', label: 'Hexes in rows (pointy top)' },
+            { value: 'hex-cols', label: 'Hexes in columns (flat top)' },
           ]}
         />
       </label>
@@ -195,7 +197,7 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
           onBlur={(e) => edit({ background: e.target.value })}
         />
       </label>
-      <WeatherFields value={doc.weather} edit={edit} />
+      <WeatherFields value={doc.weather} cycle={doc.weatherCycle} edit={edit} />
       <NavFields doc={doc} edit={edit} />
       <Check label="Fog of war" value={flag(doc, 'vision', true)} onChange={(v) => edit({ vision: v })} />
       <Check
@@ -207,7 +209,7 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
         label="Darkness follows the clock"
         value={flag(doc, 'darknessFollowsClock', false)}
         onChange={(v) => edit({ darknessFollowsClock: v })}
-        title="Saved now; takes effect once the game has world time"
+        title="The darkness is the time of day on the game clock"
       />
     </div>
   );

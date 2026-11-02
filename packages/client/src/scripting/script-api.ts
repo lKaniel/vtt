@@ -1,8 +1,10 @@
-import type { Doc, Op, Patch } from '@vtt/core';
+import type { Doc, Op, Patch, PluginLoad } from '@vtt/core';
 import type { Player, Point } from '@vtt/shared';
 import type { ClientMessage, TokenView } from '@vtt/system-dnd5e';
 import type { SessionEvents } from '../session-events.ts';
+import { i18n } from '../i18n/index.ts';
 import { Hooks, type HookFn } from './hooks.ts';
+import { PluginLoader } from './plugins.ts';
 import { runScript } from './run-script.ts';
 
 // The scripting API (docs/scripting.md): what a GM's script macro or a
@@ -17,6 +19,7 @@ export interface ScriptSession {
   readonly targets: { readonly mine: ReadonlySet<string> };
   readonly docs: { get(coll: string, id: string): Doc | undefined; all(coll: string): Doc[] };
   combat: unknown;
+  readonly pluginLoads: readonly PluginLoad[];
   on<K extends keyof SessionEvents>(event: K, fn: SessionEvents[K]): () => void;
   isGm(): boolean;
   send(msg: ClientMessage): void;
@@ -52,6 +55,12 @@ export interface VttApi {
   runMacro(idOrName: string, token?: string): Promise<void>;
   /** Any client message, as the table's own screens send them (see client-messages.ts). */
   send(msg: ClientMessage): void;
+  /** Translations (docs/i18n.md): words by key in the player's language; a plugin adds its own. */
+  readonly i18n: {
+    t(key: string, vars?: Readonly<Record<string, string | number>>): string;
+    lang(): string;
+    add(lang: string, words: Readonly<Record<string, string>>): void;
+  };
 }
 
 /** Session news passed on as hooks: [session event, hook name]. */
@@ -68,10 +77,11 @@ const BRIDGED: [keyof SessionEvents, string][] = [
 
 const macroName = (doc: Doc) => (typeof doc.name === 'string' ? doc.name : doc.id);
 
-/** The hooks and the `vtt` object of one session, and the runner of its script macros. */
+/** The hooks and the `vtt` object of one session, the runner of its script macros and its plugins. */
 export class ScriptHost {
   readonly hooks: Hooks;
   readonly vtt: VttApi;
+  readonly plugins: PluginLoader;
 
   constructor(private readonly session: ScriptSession) {
     this.hooks = new Hooks((hook, e) => session.showError(`A ${hook} hook failed: ${messageOf(e)}`));
@@ -80,6 +90,9 @@ export class ScriptHost {
       session.on(event, (...args: unknown[]) => this.hooks.call(hook, ...args));
     }
     session.on('combat', () => this.hooks.call('combat', session.combat));
+    this.plugins = new PluginLoader(this.vtt, (id, message) => session.showError(`Plugin ${id} failed: ${message}`));
+    // Plugins load once the table is ready, so their main runs with the scene and documents in.
+    session.on('welcome', () => void this.plugins.load(session.pluginLoads));
   }
 
   /** Runs a script macro for `token`; its failure shows as an error, named for the macro. */
@@ -122,6 +135,11 @@ function makeApi(s: ScriptSession, hooks: Hooks): VttApi {
     notify: (text: string) => s.showNotice(text),
     runMacro: (key: string, token?: string) => s.runMacro(byName('macros', key)?.id ?? key, token),
     send: (msg: ClientMessage) => s.send(msg),
+    i18n: Object.freeze({
+      t: (key: string, vars?: Readonly<Record<string, string | number>>) => i18n.t(key, vars),
+      lang: () => i18n.lang,
+      add: (lang: string, words: Readonly<Record<string, string>>) => i18n.add(lang, words),
+    }),
   });
 }
 

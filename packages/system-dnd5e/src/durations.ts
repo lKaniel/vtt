@@ -1,4 +1,4 @@
-import { ROUND_SECONDS } from '@vtt/shared';
+import { burntOut, type Light, ROUND_SECONDS, stampLight } from '@vtt/shared';
 import type { Token } from './token-schema.ts';
 import type { Effect } from './spell-schema.ts';
 
@@ -27,7 +27,27 @@ export function stampDurations(token: Token, now: number, rounds: SpellRounds): 
   const s = token.summon;
   const sEnds = s && s.endsAt === undefined ? ends(now, rounds(s.spell)) : undefined;
   if (s && sEnds !== undefined) next = { ...next, summon: { ...s, endsAt: sEnds } };
-  return next;
+  return stampTokenLight(next, now);
+}
+
+function stampTokenLight(token: Token, now: number): Token {
+  const light = token.light && stampLight(token.light, now);
+  return light === token.light ? token : { ...token, light };
+}
+
+/** Puts out the token's light once it has burnt down at `now` (a torch after its hour). */
+export function burnOut(token: Token, now: number): { token: Token; out?: Light } {
+  if (!token.light || !burntOut(token.light, now)) return { token };
+  const { light, ...rest } = token;
+  return { token: rest, out: light };
+}
+
+const reach = (l: Light) => l.bright + l.dim;
+
+/** The light the token sheds: its own (a torch), or one an effect gives (the Light spell), the farther reaching. */
+export function lightOf(token: Pick<Token, 'light' | 'effects'>): Light | undefined {
+  const all = [token.light, ...(token.effects ?? []).map((e) => e.light)].filter((l): l is Light => !!l);
+  return all.toSorted((a, b) => reach(b) - reach(a))[0];
 }
 
 /**

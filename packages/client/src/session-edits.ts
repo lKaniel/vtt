@@ -18,6 +18,7 @@ import {
   deleteRefs,
   formatDate,
   type HistoryState,
+  type MoveGrid,
   pasteAt,
   pasteOffsetTo,
   type Point,
@@ -75,6 +76,8 @@ export abstract class EditSession extends Commands {
   /** What the edit commands work on: the selected token, or the actor whose sheet is open. */
   protected abstract editTargets(): DocRef[];
   protected abstract gridSize(): number;
+  /** What editor moves snap to: the scene's squares or hexes. */
+  abstract moveGrid(): MoveGrid;
   abstract isGm(): boolean;
   abstract viewCentre(): Point;
   abstract showError(message: string): void;

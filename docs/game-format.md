@@ -24,6 +24,7 @@ world/                      the example game (another folder: VTT_GAME); lobby g
   tables/<id>.json          roll tables
   playlists/<id>.json       music
   macros/<id>.json          chat and script macros for the hotbar
+  cards/<id>.json           card decks, hands and piles
   combat.json               the fight in progress, if any
   time.json                 the game clock and its calendar (made on first start)
   assets/                   images referenced by tiles and tokens (uploads in assets/uploads/)
@@ -44,7 +45,8 @@ Everything is in **pixels** on one unbounded plane per scene. `x` grows
 right, `y` grows down, negative values are fine.
 
 - `gridSize` pixels make 5 ft (default 100), with or without a grid.
-- Scenes have no grid unless `grid` is `"square"`. Without one, tokens walk
+- Scenes have no grid unless `grid` is `"square"`, `"hex-rows"` or
+  `"hex-cols"`. Without one, tokens walk
   to any point, around walls and around other creatures (no one walks
   through or stops inside another), and distances are plain feet as the
   crow flies. Creatures within half a square of each other's edge count as
@@ -53,6 +55,14 @@ right, `y` grows down, negative values are fine.
   `c*gridSize` to `(c+1)*gridSize`, its centre is `(c + 0.5) * gridSize`,
   and tokens walk square centre to square centre (with `gridSize: 100` a
   token sits at `x: 550`, not `x: 500`), every square 5 ft, diagonals too.
+- With `"grid": "hex-rows"` (pointy tops, rows) or `"hex-cols"` (flat tops,
+  columns) tokens walk hex centre to hex centre, every hex 5 ft, and reach
+  and range count hexes. `gridSize` is the distance between two
+  neighbouring hexes' centres. In rows, hex `[q, r]` (row `r`, each row
+  half a hex right of the one above) has its centre at
+  `x = gridSize * (q + r / 2 + 0.5)`, `y = gridSize * (0.866 * r + 0.577)`,
+  so hex `[0, 0]` fits in the map's top left corner; columns are the same
+  with x and y swapped. `grid.ts` in shared has the maths (`latticeOf`).
 - Walls usually run along square edges, so their ends are multiples of
   `gridSize`; the editor snaps to them even when no grid is drawn.
 
@@ -81,6 +91,8 @@ clears every seat's own). At least one player must have `"role": "gm"`.
 one so far. `packs` lists the installed asset packs the game uses (see
 [packs.md](packs.md)); tiles and tokens refer to their files as
 `pack://<pack>/<path>`, and tokens can use their monsters.
+`plugins` lists the installed plugins every client at the game loads (see
+[plugins.md](plugins.md)).
 Changes reach everyone live: whoever's seat, scene or settings changed starts
 over on their scene; a seat that's gone is disconnected.
 
@@ -126,21 +138,21 @@ how the scene is stored.
 
 Optional, all set from the Scenes tab too:
 
-| Field                  | What it does                                                                              |
-| ---------------------- | ----------------------------------------------------------------------------------------- |
-| `name`                 | What the Scenes list and the top bar show (the folder name otherwise).                    |
-| `sort`                 | Order in the Scenes list (a sort key, see `sort-key.ts`); the editor writes it.           |
-| `exploration`          | With fog of war, players keep seeing (dimmed) where they have been. Default on.           |
-| `grid`                 | `"none"` (default): no grid, free movement in feet. `"square"`: grid lines, square moves. |
-| `gridColor`            | Grid line colour, default `"#000000"`.                                                    |
-| `gridOpacity`          | 0 to 1, default 0.16.                                                                     |
-| `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                                      |
-| `darknessFollowsClock` | The darkness follows the game clock's time of day (see time.json); `darkness` is ignored. |
-| `levels`               | Floors of the scene, see "Scene levels" below.                                            |
-| `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.            |
-| `navigation`           | `true`: the scene is in the GM's navigation bar under the top bar.                        |
-| `navName`              | Its name in that bar (default `name`).                                                    |
-| `thumb`                | A small picture for the bar and the Scenes list (default the background tile's picture).  |
+| Field                  | What it does                                                                                                                 |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | What the Scenes list and the top bar show (the folder name otherwise).                                                       |
+| `sort`                 | Order in the Scenes list (a sort key, see `sort-key.ts`); the editor writes it.                                              |
+| `exploration`          | With fog of war, players keep seeing (dimmed) where they have been. Default on.                                              |
+| `grid`                 | `"none"` (default): no grid, free movement in feet. `"square"`: grid lines, square moves. `"hex-rows"`, `"hex-cols"`: hexes. |
+| `gridColor`            | Grid line colour, default `"#000000"`.                                                                                       |
+| `gridOpacity`          | 0 to 1, default 0.16.                                                                                                        |
+| `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                                                                         |
+| `darknessFollowsClock` | The darkness follows the game clock's time of day (see time.json); `darkness` is ignored. New scenes start with it on.       |
+| `levels`               | Floors of the scene, see "Scene levels" below.                                                                               |
+| `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.                                               |
+| `navigation`           | `true`: the scene is in the GM's navigation bar under the top bar.                                                           |
+| `navName`              | Its name in that bar (default `name`).                                                                                       |
+| `thumb`                | A small picture for the bar and the Scenes list (default the background tile's picture).                                     |
 
 The navigation bar always holds the game's scene and the one the GM is on;
 a click looks at a scene, its play button moves the game there. A
@@ -168,6 +180,25 @@ clouds:
 The GM adds layers from presets (rain, snow, clouds, fog, embers, birds,
 storm, blizzard, wildfire) in the scene's settings. Players who turned
 animations down see it half as thick, or not at all.
+
+With `weatherCycle` the weather changes with world time instead (and
+`weather` is ignored): every `every` hours (default 4) one of `options` comes
+up, `weight` making it likelier (default 1, 0 never), `months` (indexes into
+the calendar's months) keeping it to part of the year. `"clear"` is no
+weather; the others are the preset ids. It is worked out from the clock, so
+skipping time, or undoing it, changes it too:
+
+```json
+"weatherCycle": {
+  "every": 6,
+  "options": [
+    { "weather": "clear", "weight": 3 },
+    { "weather": "rain" },
+    { "weather": "storm", "weight": 0.5 },
+    { "weather": "snow", "months": [0, 1, 11] }
+  ]
+}
+```
 
 ### Explored fog of war
 
@@ -321,6 +352,9 @@ rules: `bright` light, then `dim` light beyond it.
 | `luminosity`     | How strongly it lights, 0 to 1 (default 1).                                      |
 | `attenuation`    | How softly it fades at its edges, 0 (a hard edge) to 1 (default 0.5).            |
 | `colorIntensity` | How much of `color` it casts, 0 (plain warm light) to 1 (default).               |
+| `lasts`          | Game seconds it burns once lit (a campfire: 28800); left out, it never goes out. |
+| `endsAt`         | The game-clock second it goes out; the server works it out from `lasts`.         |
+| `name`           | What gives it ("Torch"), named in the chat when it burns out.                    |
 
 The GM can also draw walls, doors and windows, place, drag and erase lights,
 and set the time of day from the map tools in the game (bottom left).
@@ -415,7 +449,7 @@ to 1, default 0.5), `walls` (default true: each wall between muffles it),
 `activeAt`, `name`. A player hears them from their token, the GM from the
 middle of the screen.
 
-## Journal entries, roll tables, playlists and macros
+## Journal entries, roll tables, playlists, macros and cards
 
 One file each, in `journals/`, `tables/` and `playlists/` (schemas in
 `shared/journals.ts`). Each has `id`, `name`, and may have `folder`, `sort`
@@ -447,7 +481,9 @@ entries it made.
 
 An entry with `quest` is in the quest log: `status` (`"active"`, `"done"`,
 `"failed"`) and `objectives` (`text`, `done`). An entry with `date` (game
-seconds, see time.json) is a calendar note on that day:
+seconds, see time.json) is a calendar note on that day; when the clock reaches
+it, the chat says so ("Today: Find the well"), to everyone if every player
+may see the entry, else to the GM alone:
 
 ```json
 {
@@ -477,6 +513,34 @@ runs those.
 
 ```json
 { "id": "rally", "name": "Rally", "kind": "chat", "command": "To me!\n/r 1d6 inspiration" }
+```
+
+### Cards
+
+A file in `cards/` is a stack of cards: a `kind` of `"deck"` (drawn from,
+face down), `"hand"` (a player's own) or `"pile"` (played cards, face up),
+and its `cards`, top first. A card has an `id`, a `name` and the `origin`
+deck it belongs to, which gathering the deck brings it back to; its face is
+a `face` picture, or its `value` and `suit` ("A", "♠"). It may have a `back`
+picture and `text`; a stack's `back` covers cards without one. A card is
+known by `<origin>/<id>`, so two decks may share card ids.
+
+Who sees what is `ownership`: a player who may only know of a stack
+(limited) is sent its name and how many cards it holds, not the cards;
+observer shows them, and owner lets them draw into it, shuffle it, and play
+or pass its cards. Players move cards only that way (the server refuses
+their edits to `cards`); the GM deals and gathers decks back. The Cards
+tab makes a deck of 52 playing cards, empty decks, piles, and a hand for
+each player.
+
+```json
+{
+  "id": "fate",
+  "name": "Deck of fate",
+  "kind": "deck",
+  "ownership": { "default": "limited" },
+  "cards": [{ "id": "the-tower", "name": "The Tower", "origin": "fate", "face": "/assets/cards/tower.webp" }]
+}
 ```
 
 ## Actors and tokens
@@ -611,6 +675,14 @@ and SRD 5.2 (`monsters-5.2.json`) under 2024 rules; the weapon and armor list
 2024 class in a 2014 game, with `"stats": { "rules": "2024" }`; that token's
 monster id and rules then come from that edition.
 
+**Game settings.** `game.json` `"settings"` holds the GM's table rules, set
+from the settings menu (the cog): `"encumbrance"` is `"capacity"` (the
+default: over Strength × 15 lb a character's speed drops to 5 ft),
+`"variant"` (the PHB variant: over Strength × 5 lb speed −10 ft, over × 10 lb
+−20 ft and disadvantage on attacks and on Strength, Dexterity and
+Constitution checks and saves) or `"off"` (weight isn't counted). The same
+menu changes `rules`.
+
 A monster uses the stat block as is. Anything in `stats` overrides it, and
 `hp` tracks damage (leave it out for an unhurt creature), and `tempHp` holds
 temporary hit points, which are lost first:
@@ -724,6 +796,27 @@ gives that class's spell slots, spellcasting ability and features by `level`,
 from `classes-5.x.json`. A homebrew class or a monster that casts uses
 `"spellcasting": { "ability": "int", "progression": "full" | "half" | "third" | "pact", "level": 5 }`.
 
+**Homebrew classes.** The GM makes classes in the Compendium tab
+(Homebrew), and each is a file in `homebrew/<id>.json` with `"kind": "class"`
+and the fields of an SRD class: `hitDie`, `saves`, `spellcasting`,
+`features` (`id`, `name`, `level`, `description`, `uses` by level,
+`recharge`, `action`), `multiclass`. Custom advancement adds `scales`
+(numbers by class level the sheet shows, such as a pool's size), `choices`
+(`id`, `name`, `count` by level: features with that `choice` are options a
+character picks, kept as `"<class>/<feature>"` in `stats.features`),
+`subclassLevel` and `subclasses` (`id`, `name`, `description`, `features`).
+Level tables are `[[level, value], ...]`. A character takes it like an SRD
+class (`"class": "illusionist"`), a subclass through `classes`
+(`[{ "class": "illusionist", "level": 3, "subclass": "dreamer" }]`). Shared
+(`ownership.default` `"observer"`) homebrew reaches the players' sheets;
+without ownership only the GM sees it. The account character creator and
+level-up screen offer the homebrew classes of the games an account sits in
+that its seat may read (two skills of any, the class's subclasses, no
+starting kit). A roster character keeps a copy of each one it takes
+(`homebrew` in the character), refreshed from the game whenever it is saved,
+and its token carries the copy as `own.classes`, so it works in any game; a
+game's own class of that id wins over the copy.
+
 **Encounters and experience.** The GM's Encounter button (beside Start
 combat) weighs the monsters on the scene against the party: the
 player-owned characters with class levels. In 2014 rules the monsters' XP
@@ -785,6 +878,10 @@ its `own` field, written like compendium entries: `"own": { "items": [...],
 `inventory` by their id like any other item, own spells are known without
 listing them in `stats.spells`, and own features are granted. Existing items,
 spells and features are added by dragging them from the Compendium.
+`own.monsters` holds stat blocks of its own: a creature a spell brings with
+its stat block (2024 giant insect, summon dragon, find steed, animated
+objects) carries the one the server built for the slot it was cast with, and
+its `monster` names it.
 
 The server writes the rest of a creature's magic to its token, and you can
 edit it too:
@@ -946,7 +1043,12 @@ the party takes turns), the clock holds still and each round adds 6 seconds;
 `round` is the fight round it last counted. A short rest lets 1 hour pass, a
 long rest 8. Everything that lasts has its end on the clock: effects
 (`endsAt`), concentration and summons (`concentration.endsAt`,
-`summon.endsAt`), templates. Skipping time ends them; in a fight, effects that
+`summon.endsAt`), templates, and lights with `lasts` (placed ones and the
+light a token carries: a lit torch burns for an hour, a lantern for 6). Gear
+with `"use": { "light": {…}, "fuel": "oil-flask" }` is lit from the action bar:
+the token carries that light, and the torch (or the fuel) is used up. An effect
+with `light` (the Light spell) makes its bearer shine while it lasts. Skipping
+time ends them; in a fight, effects that
 last rounds count down on their maker's turns instead. Every change to the
 clock, and what it ended, can be undone.
 

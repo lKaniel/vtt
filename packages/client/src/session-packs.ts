@@ -1,4 +1,4 @@
-import type { MediaEntry, PackInfo } from '@vtt/core';
+import type { MediaEntry, PackInfo, PluginInfo } from '@vtt/core';
 import type { Doc } from '@vtt/core';
 import {
   ENTRY_TYPES,
@@ -12,7 +12,7 @@ import {
   uniqueId,
 } from '@vtt/shared';
 import { type Actor, ActorSchema, type ServerMessage } from '@vtt/system-dnd5e';
-import { setPackContent } from './content.ts';
+import { setHomebrewSource, setPackContent, setSettingsSource } from './content.ts';
 import { SceneSession } from './session-scenes.ts';
 
 // Asset packs on the client: the rules content of the game's packs (for
@@ -27,6 +27,10 @@ export abstract class PackSession extends SceneSession {
   packs: PackInfo[] = [];
   /** GM: packs the server could not read. */
   packProblems: string[] = [];
+  /** GM: the plugins the game may use, once asked for. */
+  pluginList: PluginInfo[] = [];
+  /** GM: plugins the server could not read, or this game can't load. */
+  pluginProblems: string[] = [];
   /** GM: pictures, sounds and videos of the game and its packs, once asked for. */
   media: MediaEntry[] = [];
   private compendia = new Map<string, unknown[]>();
@@ -37,6 +41,10 @@ export abstract class PackSession extends SceneSession {
 
   requestPacks(): void {
     this.send({ t: 'packs' });
+  }
+
+  requestPlugins(): void {
+    this.send({ t: 'plugins' });
   }
 
   requestMedia(): void {
@@ -55,12 +63,24 @@ export abstract class PackSession extends SceneSession {
 
   /** Turns an installed pack on or off for this game (game.json `packs`). */
   setPackEnabled(pack: string, on: boolean): void {
+    this.setInstalled('packs', pack, on);
+    this.packs = this.packs.map((p) => (p.id === pack ? { ...p, enabled: on } : p));
+  }
+
+  /** Turns an installed plugin on or off for this game (game.json `plugins`); everyone loads it on joining. */
+  setPluginEnabled(plugin: string, on: boolean): void {
+    this.setInstalled('plugins', plugin, on);
+    this.pluginList = this.pluginList.map((p) => (p.id === plugin ? { ...p, enabled: on } : p));
+  }
+
+  /** Adds `id` to, or takes it from, a list in game.json. */
+  private setInstalled(key: 'packs' | 'plugins', id: string, on: boolean): void {
     const game = this.docs.all('game')[0];
     if (!game) return;
-    const now = Array.isArray(game.packs) ? (game.packs as string[]) : [];
-    const packs = on ? [...new Set([...now, pack])] : now.filter((p) => p !== pack);
-    this.sendUpdates(on ? 'pack on' : 'pack off', [{ ref: { coll: 'game', id: game.id }, patch: { packs } }]);
-    this.packs = this.packs.map((p) => (p.id === pack ? { ...p, enabled: on } : p));
+    const now = Array.isArray(game[key]) ? (game[key] as string[]) : [];
+    const list = on ? [...new Set([...now, id])] : now.filter((p) => p !== id);
+    const label = `${key === 'packs' ? 'pack' : 'plugin'} ${on ? 'on' : 'off'}`;
+    this.sendUpdates(label, [{ ref: { coll: 'game', id: game.id }, patch: { [key]: list } }]);
   }
 
   /** Sends a file (base64) to the game's assets/uploads/. */
@@ -131,10 +151,16 @@ export abstract class PackSession extends SceneSession {
     switch (msg.t) {
       case 'packContent':
         setPackContent(msg.compendia);
+        setHomebrewSource(() => this.docs.all('homebrew'));
+        setSettingsSource(() => this.world?.settings);
         return true;
       case 'packs':
         this.packs = msg.packs;
         this.packProblems = msg.problems;
+        return true;
+      case 'plugins':
+        this.pluginList = msg.plugins;
+        this.pluginProblems = msg.problems;
         return true;
       case 'media':
         this.media = msg.entries;

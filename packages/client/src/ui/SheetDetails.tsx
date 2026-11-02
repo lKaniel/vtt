@@ -174,7 +174,7 @@ function RulesFields({ session, value, update }: Readonly<SheetProps>) {
           ]}
         />
       </Field>
-      <ClassesEdit value={value} update={update} />
+      <ClassesEdit value={value} update={update} rules={rules} />
     </div>
   );
 }

@@ -17,8 +17,10 @@ with `pnpm check-game data/games/<id>`.
   `drawings.json`, `notes.json`, `templates.json`, `regions.json`,
   `sounds.json`. A new scene is a new folder with a `scene.json`. Leave
   `fog/` alone (the server's).
-- Journal entries, roll tables, playlists and chat macros are one file each
-  in `journals/`, `tables/`, `playlists/`, `macros/`. Traps, teleporters
+- Journal entries, roll tables, playlists, chat macros and card stacks are
+  one file each in `journals/`, `tables/`, `playlists/`, `macros/`, `cards/`
+  (decks, hands, piles: players move cards only through the card actions,
+  `card-actions.ts`). Traps, teleporters
   and difficult ground are regions with behaviours; floors are scene
   `levels` (see "Scene levels" in the format doc).
 - A creature's sheet is an actor (`actors/<id>.json`); a token in
@@ -124,6 +126,12 @@ with `pnpm check-game data/games/<id>`.
   hooks, the `vtt` API and the GM-only script macros. The API acts only
   through the session (what a click would send), never around the server;
   a new ability goes in `script-api.ts` as a call to a session method.
+  Plugins (`docs/plugins.md`) are folders in `data/plugins/<id>/` that a game
+  turns on in game.json `plugins`; their code gets the same `vtt`. Never
+  commit someone's private plugin.
+- Words on screen go through `t()` (`client/src/i18n`, `docs/i18n.md`),
+  their English in `i18n/en.ts`; new and changed screens use it, older
+  ones move over as they are touched.
 - Map editor (`docs/editor.md`): modes, selection, handles, menus and the
   inspector work the same for every placeable. Hit-testing and shapes stay
   in `shared/hit-test.ts` and `placeables.ts` (one boundary for a later

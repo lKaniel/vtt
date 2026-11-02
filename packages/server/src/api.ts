@@ -5,6 +5,7 @@ import { uniqueId } from '@vtt/shared';
 import { z } from 'zod';
 import { AccountError, type Account, type AccountStore } from './accounts.ts';
 import type { CharacterStore } from './characters.ts';
+import { homebrewFor, withCurrentHomebrew } from './roster-homebrew.ts';
 import { HubError, type GameHub } from './game-hub.ts';
 import type { GameStore } from './game-store.ts';
 import {
@@ -67,7 +68,9 @@ class AccountRoutes implements Routes {
   constructor(private deps: ApiDeps) {}
 
   handles(route: string | undefined): boolean {
-    return ['session', 'register', 'login', 'logout', 'admin', 'characters', 'mcp-key'].includes(route ?? '');
+    return ['session', 'register', 'login', 'logout', 'admin', 'characters', 'mcp-key', 'homebrew'].includes(
+      route ?? '',
+    );
   }
 
   async serve(call: Call): Promise<void> {
@@ -83,6 +86,8 @@ class AccountRoutes implements Routes {
         return this.logout(call);
       case 'POST admin':
         return this.unlockAdmin(call);
+      case 'GET homebrew':
+        return this.homebrew(call);
       default:
         if (call.parts[0] === 'characters') return this.characters(call);
         if (call.parts[0] === 'mcp-key') return this.mcpKey(call);
@@ -153,6 +158,12 @@ class AccountRoutes implements Routes {
     send(call.res, 200, {});
   }
 
+  /** The GMs' homebrew classes the account may build a character with. */
+  private async homebrew(call: Call): Promise<void> {
+    const classes = await homebrewFor(this.deps.hub, this.account(call));
+    send(call.res, 200, { classes: [...classes.values()] });
+  }
+
   private async characters(call: Call): Promise<void> {
     const account = this.account(call);
     const id = call.parts[1];
@@ -182,11 +193,14 @@ class AccountRoutes implements Routes {
 
   private async saveCharacter(call: Call, account: Account, id: string | ((name: string) => string)): Promise<void> {
     const input = await parseBody(call.req, CharacterInput);
-    const character: Character = {
+    const built: Character = {
       ...input,
       id: typeof id === 'string' ? id : id(input.name),
       owner: account.id,
     };
+    const character = built.homebrew.length
+      ? withCurrentHomebrew(built, await homebrewFor(this.deps.hub, account))
+      : built;
     const issues = characterIssues(character);
     if (issues.length) throw new HttpError(400, issues[0]!, issues);
     await this.deps.characters.save(character);

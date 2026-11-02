@@ -4,7 +4,8 @@ import { type Content, srdFor } from './content.ts';
 import { abilityMod } from './creature-math.ts';
 import { type Background, type ClassOptions, type KitStep, type Origins, originsFor, type Species } from './origins.ts';
 import type { Token } from './token-schema.ts';
-import type { Class } from './spell-schema.ts';
+import { ClassSchema, type Class } from './spell-schema.ts';
+import { withHomebrewClasses } from './homebrew-book.ts';
 import {
   ABILITIES,
   type Abilities,
@@ -57,6 +58,8 @@ export const CharacterSchema = z.object({
   spells: z.array(id).default([]),
   /** Starting kit choices: step id to option id. */
   kit: z.record(z.string(), z.string()).default({}),
+  /** The GM's homebrew classes it takes (homebrew.ts), copied from the game they were made in. */
+  homebrew: z.array(ClassSchema).max(10).default([]),
   color: z.string().default('#c0603a'),
   img: z.string().optional(),
 });
@@ -68,7 +71,9 @@ export interface Book {
   origins: Origins;
 }
 
-export function bookFor(edition: Edition): Book {
+/** The edition's SRD, plus homebrew classes when there are any. */
+export function bookFor(edition: Edition, homebrew: readonly Class[] = []): Book {
+  if (homebrew.length) return withHomebrewClasses(edition, originsFor(edition), homebrew);
   return { content: srdFor(edition), origins: originsFor(edition) };
 }
 
@@ -83,7 +88,7 @@ export interface Parts {
 
 /** Looks up everything a character names; missing parts are undefined. */
 export function partsOf(c: Character): Parts {
-  const book = bookFor(c.rules);
+  const book = bookFor(c.rules, c.homebrew);
   const species = book.origins.species.find((s) => s.id === c.species);
   return {
     book,
@@ -178,6 +183,7 @@ export function characterToken(c: Character, parts = partsOf(c)): Omit<Token, 'i
       spells: c.spells,
     },
     inventory: characterInventory(c, parts),
+    ...(c.homebrew.length && { own: { classes: c.homebrew } }),
   };
 }
 

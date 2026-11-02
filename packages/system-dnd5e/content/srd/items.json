@@ -725,7 +725,65 @@
     "name": "Torch",
     "description": "Bright light 20 ft, dim 20 ft more, for 1 hour.",
     "weight": 1,
-    "price": 0.01
+    "price": 0.01,
+    "use": {
+      "light": { "bright": 20, "dim": 20, "color": "#ff9a40", "animation": "flicker", "lasts": 3600 }
+    }
+  },
+  {
+    "id": "candle",
+    "type": "gear",
+    "name": "Candle",
+    "description": "Bright light 5 ft, dim 5 ft more, for 1 hour.",
+    "weight": 0,
+    "price": 0.01,
+    "use": {
+      "light": { "bright": 5, "dim": 5, "color": "#ffb060", "animation": "flicker", "lasts": 3600 }
+    }
+  },
+  {
+    "id": "lamp",
+    "type": "gear",
+    "name": "Lamp",
+    "description": "Bright light 15 ft, dim 30 ft more. A flask of oil burns for 6 hours.",
+    "weight": 1,
+    "price": 0.5,
+    "use": {
+      "light": { "bright": 15, "dim": 30, "color": "#ffc070", "lasts": 21600 },
+      "fuel": "oil-flask"
+    }
+  },
+  {
+    "id": "lantern-hooded",
+    "type": "gear",
+    "name": "Lantern, Hooded",
+    "description": "Bright light 30 ft, dim 30 ft more. A flask of oil burns for 6 hours.",
+    "weight": 2,
+    "price": 5,
+    "use": {
+      "light": { "bright": 30, "dim": 30, "color": "#ffd8a0", "lasts": 21600 },
+      "fuel": "oil-flask"
+    }
+  },
+  {
+    "id": "lantern-bullseye",
+    "type": "gear",
+    "name": "Lantern, Bullseye",
+    "description": "Bright light in a 60-foot cone, dim 60 ft more. A flask of oil burns for 6 hours.",
+    "weight": 2,
+    "price": 10,
+    "use": {
+      "light": { "bright": 60, "dim": 60, "color": "#ffd8a0", "angle": 53, "lasts": 21600 },
+      "fuel": "oil-flask"
+    }
+  },
+  {
+    "id": "oil-flask",
+    "type": "gear",
+    "name": "Flask of Oil",
+    "description": "Fuel for a lamp or lantern: 6 hours of light.",
+    "weight": 1,
+    "price": 0.1
   },
   {
     "id": "rope",

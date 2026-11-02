@@ -44,6 +44,11 @@ export abstract class Commands {
     this.send({ t: 'seatSettings', settings });
   }
 
+  /** GM: the game's rules edition and options (game-settings.ts); they replace the old ones. */
+  setGameSettings(rules: string | undefined, settings: Record<string, string>): void {
+    this.send({ t: 'gameSettings', ...(rules && { rules }), settings });
+  }
+
   /** Picks the animation for one of a creature's attacks or spells; none goes back to the default. */
   setAnimation(token: string, ref: string, animation?: string): void {
     this.send({ t: 'animation', token, ref, animation });

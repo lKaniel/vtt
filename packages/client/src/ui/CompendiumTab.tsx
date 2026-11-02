@@ -14,6 +14,7 @@ import { CATEGORIES, compendium, crText, type Category, type Entry } from '../co
 import type { Session } from '../session.ts';
 import { attackTip, itemTip, spellTip, type Tip } from '../tooltip.ts';
 import { startDrag } from './ActorsTab.tsx';
+import { HomebrewPanel } from './HomebrewPanel.tsx';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Toggle } from './kit/toggle.tsx';
@@ -48,52 +49,70 @@ export function CompendiumTab({ session }: Readonly<{ session: Session }>) {
   const [rules, setRules] = useState<Edition>(toEdition(session.world?.rules));
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string>();
+  const [homebrew, setHomebrew] = useState(false);
   const list = compendium(category, rules, query);
   const editioned = category === 'monsters' || category === 'spells' || category === 'features';
   return (
     <div className="lib">
       <nav className="lib-cats">
         {CATEGORIES.map((c) => (
-          <Toggle key={c} pressed={c === category} onPressedChange={() => setCategory(c)}>
+          <Toggle
+            key={c}
+            pressed={!homebrew && c === category}
+            onPressedChange={() => {
+              setCategory(c);
+              setHomebrew(false);
+            }}
+          >
             {LABEL[c]}
           </Toggle>
         ))}
+        {session.isGm() && (
+          <Toggle pressed={homebrew} onPressedChange={setHomebrew} title="Your own classes">
+            Homebrew
+          </Toggle>
+        )}
       </nav>
-      <div className="lib-filter">
-        <Input
-          className="lib-search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={`Search ${LABEL[category].toLowerCase()}…`}
-        />
-        {editioned && (
-          <SelectField
-            value={rules}
-            onValueChange={(r) => setRules(r as Edition)}
-            aria-label="Rules edition"
-            options={[
-              { value: '2014', label: '2014' },
-              { value: '2024', label: '2024' },
-            ]}
-          />
-        )}
-      </div>
-      <ul className="lib-list lib-scroll">
-        {list.slice(0, SHOWN).map((e) => (
-          <EntryRow
-            key={e.key}
-            session={session}
-            entry={e}
-            open={open === e.key}
-            onToggle={() => setOpen(open === e.key ? undefined : e.key)}
-          />
-        ))}
-        {list.length > SHOWN && (
-          <li className="muted lib-hint">{list.length - SHOWN} more: type to narrow the list.</li>
-        )}
-        {list.length === 0 && <li className="muted lib-hint">Nothing matches.</li>}
-      </ul>
-      <p className="muted lib-hint">{HINT[category]}</p>
+      {homebrew && <HomebrewPanel session={session} />}
+      {!homebrew && (
+        <>
+          <div className="lib-filter">
+            <Input
+              className="lib-search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={`Search ${LABEL[category].toLowerCase()}…`}
+            />
+            {editioned && (
+              <SelectField
+                value={rules}
+                onValueChange={(r) => setRules(r as Edition)}
+                aria-label="Rules edition"
+                options={[
+                  { value: '2014', label: '2014' },
+                  { value: '2024', label: '2024' },
+                ]}
+              />
+            )}
+          </div>
+          <ul className="lib-list lib-scroll">
+            {list.slice(0, SHOWN).map((e) => (
+              <EntryRow
+                key={e.key}
+                session={session}
+                entry={e}
+                open={open === e.key}
+                onToggle={() => setOpen(open === e.key ? undefined : e.key)}
+              />
+            ))}
+            {list.length > SHOWN && (
+              <li className="muted lib-hint">{list.length - SHOWN} more: type to narrow the list.</li>
+            )}
+            {list.length === 0 && <li className="muted lib-hint">Nothing matches.</li>}
+          </ul>
+          <p className="muted lib-hint">{HINT[category]}</p>
+        </>
+      )}
     </div>
   );
 }

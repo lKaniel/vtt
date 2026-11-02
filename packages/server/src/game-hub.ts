@@ -21,6 +21,7 @@ import { SYSTEMS } from './systems.ts';
 import { readJson, writeJson } from './json-files.ts';
 import { FORMAT } from './migrate-ownership.ts';
 import { PackStore } from './pack-store.ts';
+import { PluginStore } from './plugin-store.ts';
 
 // Every game on the server. Games made in the lobby live in the data
 // folder's games/<id>/; the game folder the server was started with (world/
@@ -87,11 +88,14 @@ export class GameHub {
   homeId?: string;
   /** The asset packs installed on the server: the data folder's packs/. */
   readonly packs: PackStore;
+  /** The plugins installed on the server: the data folder's plugins/. */
+  readonly plugins: PluginStore;
 
   constructor(private opts: HubOptions) {
     this.index = new GameIndex(opts.dataDir);
     this.access = new GameAccess(this.index);
     this.packs = new PackStore(join(opts.dataDir, 'packs'));
+    this.plugins = new PluginStore(join(opts.dataDir, 'plugins'));
   }
 
   private get gamesDir(): string {
@@ -103,6 +107,8 @@ export class GameHub {
     await this.index.load();
     await this.packs.load();
     for (const problem of this.packs.problems) console.warn(`[packs] ${problem}`);
+    await this.plugins.load();
+    for (const problem of this.plugins.problems) console.warn(`[plugins] ${problem}`);
     if (this.opts.home) await this.loadHome(this.opts.home);
     const names = await readdir(this.gamesDir).catch(() => [] as string[]);
     for (const name of [...names].sort((a, b) => a.localeCompare(b))) {
@@ -167,6 +173,7 @@ export class GameHub {
     const system = SYSTEMS.get(file?.system ?? DEFAULT_SYSTEM);
     if (!system) throw new HubError(`This server has no "${file?.system ?? ''}" system.`);
     const store = new GameStore(dir, system, this.packs);
+    store.plugins = this.plugins;
     await store.load();
     if (this.opts.watch !== false) store.watch();
     return { store, game: new Game(store), sockets: new Map() };
@@ -319,7 +326,8 @@ function rulesOf(file: GameFile): string {
   return system ? editionIn(system, file.rules) : (file.rules ?? '');
 }
 
-async function readGameFile(dir: string): Promise<GameFile | undefined> {
+/** game.json of a game folder, if it reads. */
+export async function readGameFile(dir: string): Promise<GameFile | undefined> {
   const parsed = GameSchema.safeParse(await readJson(join(dir, 'game.json')));
   return parsed.success ? parsed.data : undefined;
 }
@@ -329,5 +337,5 @@ async function writeNewGame(dir: string, game: NewGame & { id: string }, gm: Pla
   await mkdir(join(dir, 'assets'), { recursive: true });
   const file: GameFile = { ...game, format: FORMAT, scene: 'main', players: [gm] };
   await writeJson(join(dir, 'game.json'), file);
-  await writeJson(join(dir, 'scenes/main/scene.json'), { name: 'Main', darkness: 0 });
+  await writeJson(join(dir, 'scenes/main/scene.json'), { name: 'Main', darkness: 0, darknessFollowsClock: true });
 }

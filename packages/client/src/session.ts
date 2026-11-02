@@ -1,5 +1,15 @@
-import type { Doc, DocRef } from '@vtt/core';
-import { canControl, canEdit, type Chunk, isGm, type Player, type Point, type WorldInfo } from '@vtt/shared';
+import type { Doc, DocRef, PluginLoad } from '@vtt/core';
+import {
+  canControl,
+  canEdit,
+  type Chunk,
+  isGm,
+  type MoveGrid,
+  type Player,
+  type Point,
+  sceneLattice,
+  type WorldInfo,
+} from '@vtt/shared';
 import {
   type Actor,
   type ChatMessage,
@@ -86,7 +96,9 @@ export class Session extends HudSession {
   private listeners = new Map<keyof SessionEvents, Set<(...args: never[]) => void>>();
   private closed = false;
   private retry?: ReturnType<typeof setTimeout>;
-  /** Hooks, the scripting API (`vtt`) and script macros: docs/scripting.md. */
+  /** The plugins the game turned on, to load (docs/plugins.md). */
+  pluginLoads: readonly PluginLoad[] = [];
+  /** Hooks, the scripting API (`vtt`), script macros and plugins: docs/scripting.md. */
   readonly scripts: ScriptHost = new ScriptHost(this);
 
   /** `gameId` is the game to join (else the home game); `playerId` a home game seat, else the account's. */
@@ -283,6 +295,10 @@ export class Session extends HudSession {
     return this.world?.gridSize ?? 100;
   }
 
+  moveGrid(): MoveGrid {
+    return (this.world && sceneLattice(this.world)) ?? this.gridSize();
+  }
+
   protected runScript(doc: Doc, token?: string): Promise<void> {
     return this.scripts.run(doc, token);
   }
@@ -345,6 +361,9 @@ export class Session extends HudSession {
         if (this.world) this.world = { ...this.world, darkness: msg.darkness };
         this.emit('lighting');
         return true;
+      case 'weather':
+        if (this.world) this.world = { ...this.world, weather: msg.weather };
+        return true;
       case 'error':
         this.showError(msg.message);
         return false;
@@ -399,6 +418,7 @@ export class Session extends HudSession {
     this.welcomeEdits(msg);
     this.welcomeScenes(msg);
     this.players = msg.players ?? [];
+    this.pluginLoads = msg.plugins ?? [];
     this.actors.clear();
     for (const a of msg.actors ?? []) this.actors.set(a.id, a);
     // A new role may take edit mode away (or the creature out of sight).

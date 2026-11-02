@@ -22,6 +22,12 @@ describe('Session seat choices', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'animation', token: 'hero', ref: 'attack:Dagger' });
   });
 
+  it('sends the GM’s game settings', () => {
+    ws.receive(welcome());
+    session.setGameSettings('2024', { encumbrance: 'variant' });
+    expect(ws.sent.at(-1)).toEqual({ t: 'gameSettings', rules: '2024', settings: { encumbrance: 'variant' } });
+  });
+
   it('sends your settings and takes your changed seat without starting over', () => {
     ws.receive(welcome());
     session.setSeatSettings({ opportunity: 'auto' });

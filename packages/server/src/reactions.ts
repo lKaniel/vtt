@@ -1,4 +1,4 @@
-import { canControl, isGm, isGridless, type Player, type Point } from '@vtt/shared';
+import { canControl, isGm, gridKind, type Player, type Point } from '@vtt/shared';
 import {
   automationOf,
   type Effect,
@@ -41,7 +41,7 @@ export class Reactions {
       return sheet ? [{ token, sheet }] : [];
     });
     const { world } = this.table.store;
-    const scale = { gridSize: world.gridSize, gridless: isGridless(world) };
+    const scale = { gridSize: world.gridSize, grid: gridKind(world) };
     for (const reactor of opportunityAttackers({ mover, path, others, ...scale, reacted: combat.reacted })) {
       const { token, sheet } = others.find((o) => o.token.id === reactor)!;
       const choices = sheet.attacks.filter((a) => a.kind === 'melee').map((a) => a.name);

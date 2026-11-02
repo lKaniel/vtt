@@ -1,18 +1,75 @@
 import type { Patch } from '@vtt/core';
 import { type Weather, WeatherSchema } from '@vtt/shared';
 import { XIcon } from 'lucide-react';
-import { addWeather, removeWeather, setWeather, WEATHER_PRESETS } from '../editor/weather-edit.ts';
+import {
+  addWeather,
+  CYCLE_CHOICES,
+  cycleWeathers,
+  removeWeather,
+  setWeather,
+  toggleCycleWeather,
+  WEATHER_PRESETS,
+} from '../editor/weather-edit.ts';
 import { Button } from './kit/button.tsx';
+import { NumberField } from './kit/number-field.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Slider } from './kit/slider.tsx';
+import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
 
 // GM: a scene's weather in its settings: a preset to add (rain, a storm...)
-// and each layer's thickness and wind, or a cross to take it away.
+// and each layer's thickness and wind, or a cross to take it away; or the
+// weathers it turns between as world time passes, and how often.
 
 const layersOf = (value: unknown): Weather[] =>
   Array.isArray(value) ? value.flatMap((w) => WeatherSchema.safeParse(w).data ?? []) : [];
 
-export function WeatherFields({ value, edit }: Readonly<{ value: unknown; edit: (patch: Patch) => void }>) {
+type Edit = (patch: Patch) => void;
+
+export function WeatherFields({ value, cycle, edit }: Readonly<{ value: unknown; cycle: unknown; edit: Edit }>) {
+  if (cycleWeathers(cycle).length) return <CycleFields cycle={cycle} edit={edit} />;
+  return (
+    <>
+      <LayerFields value={value} edit={edit} />
+      <CycleFields cycle={cycle} edit={edit} />
+    </>
+  );
+}
+
+/** The weathers the scene turns between as the clock runs, each for `every` hours. */
+function CycleFields({ cycle, edit }: Readonly<{ cycle: unknown; edit: Edit }>) {
+  const picked = cycleWeathers(cycle);
+  const every = (cycle as { every?: number } | undefined)?.every ?? 4;
+  const toggle = (next: string[]) => {
+    const changed = [...next.filter((w) => !picked.includes(w)), ...picked.filter((w) => !next.includes(w))][0];
+    if (changed) edit({ weatherCycle: toggleCycleWeather(cycle, changed) });
+  };
+  return (
+    <div className="flex flex-col gap-1.5" title="The weather turns between these as world time passes">
+      <span>Weather changes with time</span>
+      <ToggleGroup type="multiple" className="flex-wrap justify-start" value={picked} onValueChange={toggle}>
+        {CYCLE_CHOICES.map((c) => (
+          <ToggleGroupItem key={c.value} value={c.value}>
+            {c.label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+      {picked.length > 0 && (
+        <label className="flex items-center gap-2 text-xs">
+          <span>Every (hours)</span>
+          <NumberField
+            aria-label="Hours each weather lasts"
+            value={every}
+            min={1}
+            max={72}
+            onValueChange={(n) => edit({ weatherCycle: { ...(cycle as object), every: n } })}
+          />
+        </label>
+      )}
+    </div>
+  );
+}
+
+function LayerFields({ value, edit }: Readonly<{ value: unknown; edit: Edit }>) {
   const layers = layersOf(value);
   return (
     <div className="flex flex-col gap-1.5">

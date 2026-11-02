@@ -1,3 +1,4 @@
+import type { GameSettings } from './game-settings.ts';
 import { z } from 'zod';
 import classAutomation from '../content/srd/class-automation.json' with { type: 'json' };
 import classes51 from '../content/srd/classes-5.1.json' with { type: 'json' };
@@ -23,6 +24,8 @@ export interface Content {
   monsters: ReadonlyMap<string, Monster>;
   spells: ReadonlyMap<string, Spell>;
   classes: ReadonlyMap<string, Class>;
+  /** The game's settings (game-settings.ts); missing: the defaults. */
+  settings?: GameSettings;
 }
 
 function byId<T extends { id: string }>(list: T[]): Map<string, T> {

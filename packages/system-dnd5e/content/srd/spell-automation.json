@@ -105,11 +105,342 @@
     }
   },
   "animate-objects": {
-    "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Its stat block comes with the spell and scales with the slot; it isn’t in the bestiary yet."
-      }
+    "2014": {
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "object-tiny",
+            "count": 10,
+            "upCount": 2,
+            "weight": 1,
+            "creature": {
+              "name": "Animated Object (Tiny)",
+              "size": 1,
+              "type": "construct",
+              "blindsight": 30,
+              "abilities": {
+                "str": 4,
+                "dex": 18,
+                "con": 10,
+                "int": 3,
+                "wis": 3,
+                "cha": 1
+              },
+              "ac": {
+                "base": 18
+              },
+              "hp": {
+                "base": 20
+              },
+              "attacks": [
+                {
+                  "name": "Slam",
+                  "kind": "melee",
+                  "toHit": 8,
+                  "damage": [
+                    {
+                      "dice": "1d4+4",
+                      "type": "bludgeoning"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "monster": "object-small",
+            "count": 10,
+            "upCount": 2,
+            "weight": 1,
+            "creature": {
+              "name": "Animated Object (Small)",
+              "size": 1,
+              "type": "construct",
+              "blindsight": 30,
+              "abilities": {
+                "str": 6,
+                "dex": 14,
+                "con": 10,
+                "int": 3,
+                "wis": 3,
+                "cha": 1
+              },
+              "ac": {
+                "base": 16
+              },
+              "hp": {
+                "base": 25
+              },
+              "attacks": [
+                {
+                  "name": "Slam",
+                  "kind": "melee",
+                  "toHit": 6,
+                  "damage": [
+                    {
+                      "dice": "1d8+2",
+                      "type": "bludgeoning"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "monster": "object-medium",
+            "count": 10,
+            "upCount": 2,
+            "weight": 2,
+            "creature": {
+              "name": "Animated Object (Medium)",
+              "size": 1,
+              "type": "construct",
+              "blindsight": 30,
+              "abilities": {
+                "str": 10,
+                "dex": 12,
+                "con": 10,
+                "int": 3,
+                "wis": 3,
+                "cha": 1
+              },
+              "ac": {
+                "base": 13
+              },
+              "hp": {
+                "base": 40
+              },
+              "attacks": [
+                {
+                  "name": "Slam",
+                  "kind": "melee",
+                  "toHit": 5,
+                  "damage": [
+                    {
+                      "dice": "2d6+1",
+                      "type": "bludgeoning"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "monster": "object-large",
+            "count": 10,
+            "upCount": 2,
+            "weight": 4,
+            "creature": {
+              "name": "Animated Object (Large)",
+              "size": 2,
+              "type": "construct",
+              "blindsight": 30,
+              "abilities": {
+                "str": 14,
+                "dex": 10,
+                "con": 10,
+                "int": 3,
+                "wis": 3,
+                "cha": 1
+              },
+              "ac": {
+                "base": 10
+              },
+              "hp": {
+                "base": 50
+              },
+              "attacks": [
+                {
+                  "name": "Slam",
+                  "kind": "melee",
+                  "toHit": 6,
+                  "damage": [
+                    {
+                      "dice": "2d10+2",
+                      "type": "bludgeoning"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "monster": "object-huge",
+            "count": 10,
+            "upCount": 2,
+            "weight": 8,
+            "creature": {
+              "name": "Animated Object (Huge)",
+              "size": 3,
+              "type": "construct",
+              "blindsight": 30,
+              "abilities": {
+                "str": 18,
+                "dex": 6,
+                "con": 10,
+                "int": 3,
+                "wis": 3,
+                "cha": 1
+              },
+              "ac": {
+                "base": 10
+              },
+              "hp": {
+                "base": 80
+              },
+              "attacks": [
+                {
+                  "name": "Slam",
+                  "kind": "melee",
+                  "toHit": 8,
+                  "damage": [
+                    {
+                      "dice": "2d12+4",
+                      "type": "bludgeoning"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "gmNote": "Ten objects at 5th level (two more per slot above): a Medium object counts as two, Large as four, Huge as eight. Objects without legs fly 30 ft. At 0 HP an object reverts and leftover damage carries over to it."
+    },
+    "2024": {
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "object-medium",
+            "fromMod": true,
+            "weight": 1,
+            "creature": {
+              "name": "Animated Object (Medium)",
+              "size": 1,
+              "type": "construct",
+              "blindsight": 30,
+              "abilities": {
+                "str": 16,
+                "dex": 10,
+                "con": 10,
+                "int": 3,
+                "wis": 3,
+                "cha": 1
+              },
+              "ac": {
+                "base": 15
+              },
+              "hp": {
+                "base": 10
+              },
+              "immunities": ["poison", "psychic"],
+              "conditionImmunities": ["charmed", "exhaustion", "frightened", "paralyzed", "poisoned"],
+              "attacks": [
+                {
+                  "name": "Slam",
+                  "kind": "melee",
+                  "damage": [
+                    {
+                      "dice": "1d4+3",
+                      "type": "force"
+                    }
+                  ],
+                  "upDie": "d4"
+                }
+              ]
+            }
+          },
+          {
+            "monster": "object-large",
+            "fromMod": true,
+            "weight": 2,
+            "creature": {
+              "name": "Animated Object (Large)",
+              "size": 2,
+              "type": "construct",
+              "blindsight": 30,
+              "abilities": {
+                "str": 16,
+                "dex": 10,
+                "con": 10,
+                "int": 3,
+                "wis": 3,
+                "cha": 1
+              },
+              "ac": {
+                "base": 15
+              },
+              "hp": {
+                "base": 20
+              },
+              "immunities": ["poison", "psychic"],
+              "conditionImmunities": ["charmed", "exhaustion", "frightened", "paralyzed", "poisoned"],
+              "attacks": [
+                {
+                  "name": "Slam",
+                  "kind": "melee",
+                  "damage": [
+                    {
+                      "dice": "2d6+3",
+                      "type": "force"
+                    }
+                  ],
+                  "upDie": "d6",
+                  "plusMod": true
+                }
+              ]
+            }
+          },
+          {
+            "monster": "object-huge",
+            "fromMod": true,
+            "weight": 3,
+            "creature": {
+              "name": "Animated Object (Huge)",
+              "size": 3,
+              "type": "construct",
+              "blindsight": 30,
+              "abilities": {
+                "str": 16,
+                "dex": 10,
+                "con": 10,
+                "int": 3,
+                "wis": 3,
+                "cha": 1
+              },
+              "ac": {
+                "base": 15
+              },
+              "hp": {
+                "base": 40
+              },
+              "immunities": ["poison", "psychic"],
+              "conditionImmunities": ["charmed", "exhaustion", "frightened", "paralyzed", "poisoned"],
+              "attacks": [
+                {
+                  "name": "Slam",
+                  "kind": "melee",
+                  "damage": [
+                    {
+                      "dice": "2d12+3",
+                      "type": "force"
+                    }
+                  ],
+                  "upDie": "d12",
+                  "plusMod": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "gmNote": "As many objects as your spellcasting modifier: a Medium or smaller object counts as one, Large as two, Huge as three. At 0 HP an object reverts and leftover damage carries over to it."
     }
   },
   "antilife-shell": {
@@ -2095,10 +2426,128 @@
       "gmNote": "The steed is a celestial, fey or fiend of your choice and lasts until it drops to 0 HP."
     },
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Its stat block comes with the spell (2024 Otherworldly Steed); it isn’t in the bestiary yet."
-      }
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "steed-celestial",
+            "creature": {
+              "name": "Otherworldly Steed (Celestial)",
+              "size": 2,
+              "type": "celestial",
+              "speed": 60,
+              "abilities": {
+                "str": 18,
+                "dex": 12,
+                "con": 14,
+                "int": 6,
+                "wis": 12,
+                "cha": 8
+              },
+              "ac": {
+                "base": 10,
+                "perLevel": 1
+              },
+              "hp": {
+                "base": 5,
+                "perLevel": 10
+              },
+              "attacks": [
+                {
+                  "name": "Otherworldly Slam",
+                  "kind": "melee",
+                  "damage": [
+                    {
+                      "dice": "1d8",
+                      "type": "radiant"
+                    }
+                  ],
+                  "plusLevel": true
+                }
+              ]
+            }
+          },
+          {
+            "monster": "steed-fey",
+            "creature": {
+              "name": "Otherworldly Steed (Fey)",
+              "size": 2,
+              "type": "fey",
+              "speed": 60,
+              "abilities": {
+                "str": 18,
+                "dex": 12,
+                "con": 14,
+                "int": 6,
+                "wis": 12,
+                "cha": 8
+              },
+              "ac": {
+                "base": 10,
+                "perLevel": 1
+              },
+              "hp": {
+                "base": 5,
+                "perLevel": 10
+              },
+              "attacks": [
+                {
+                  "name": "Otherworldly Slam",
+                  "kind": "melee",
+                  "damage": [
+                    {
+                      "dice": "1d8",
+                      "type": "psychic"
+                    }
+                  ],
+                  "plusLevel": true
+                }
+              ]
+            }
+          },
+          {
+            "monster": "steed-fiend",
+            "creature": {
+              "name": "Otherworldly Steed (Fiend)",
+              "size": 2,
+              "type": "fiend",
+              "speed": 60,
+              "abilities": {
+                "str": 18,
+                "dex": 12,
+                "con": 14,
+                "int": 6,
+                "wis": 12,
+                "cha": 8
+              },
+              "ac": {
+                "base": 10,
+                "perLevel": 1
+              },
+              "hp": {
+                "base": 5,
+                "perLevel": 10
+              },
+              "attacks": [
+                {
+                  "name": "Otherworldly Slam",
+                  "kind": "melee",
+                  "damage": [
+                    {
+                      "dice": "1d8",
+                      "type": "necrotic"
+                    }
+                  ],
+                  "plusLevel": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "gmNote": "It flies 60 ft with a 4th-level or higher slot. Its once-a-day bonus action (Healing Touch 2d8 + level, Fey Step 60 ft, or Fell Glare: Wis save or frightened) and Life Bond are the GM’s call."
     }
   },
   "find-the-path": {
@@ -2390,10 +2839,164 @@
       "gmNote": "The insects were ordinary ones you transformed; they act on your turn."
     },
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Its stat block comes with the spell and scales with the slot; it isn’t in the bestiary yet."
-      }
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "insect-centipede",
+            "creature": {
+              "name": "Giant Centipede",
+              "size": 2,
+              "type": "beast",
+              "speed": 40,
+              "darkvision": 60,
+              "abilities": {
+                "str": 17,
+                "dex": 13,
+                "con": 15,
+                "int": 4,
+                "wis": 14,
+                "cha": 3
+              },
+              "ac": {
+                "base": 11,
+                "perLevel": 1
+              },
+              "hp": {
+                "base": 30,
+                "perLevel": 10,
+                "from": 4
+              },
+              "multiattack": "half-level",
+              "attacks": [
+                {
+                  "name": "Poison Jab",
+                  "kind": "melee",
+                  "reach": 10,
+                  "damage": [
+                    {
+                      "dice": "1d6+3",
+                      "type": "piercing"
+                    },
+                    {
+                      "dice": "1d4",
+                      "type": "poison"
+                    }
+                  ],
+                  "plusLevel": true
+                }
+              ]
+            }
+          },
+          {
+            "monster": "insect-spider",
+            "creature": {
+              "name": "Giant Spider",
+              "size": 2,
+              "type": "beast",
+              "speed": 40,
+              "darkvision": 60,
+              "abilities": {
+                "str": 17,
+                "dex": 13,
+                "con": 15,
+                "int": 4,
+                "wis": 14,
+                "cha": 3
+              },
+              "ac": {
+                "base": 11,
+                "perLevel": 1
+              },
+              "hp": {
+                "base": 30,
+                "perLevel": 10,
+                "from": 4
+              },
+              "multiattack": "half-level",
+              "attacks": [
+                {
+                  "name": "Poison Jab",
+                  "kind": "melee",
+                  "reach": 10,
+                  "damage": [
+                    {
+                      "dice": "1d6+3",
+                      "type": "piercing"
+                    },
+                    {
+                      "dice": "1d4",
+                      "type": "poison"
+                    }
+                  ],
+                  "plusLevel": true
+                },
+                {
+                  "name": "Web Bolt",
+                  "kind": "ranged",
+                  "range": [60, 60],
+                  "damage": [
+                    {
+                      "dice": "1d10+3",
+                      "type": "bludgeoning"
+                    }
+                  ],
+                  "plusLevel": true
+                }
+              ]
+            }
+          },
+          {
+            "monster": "insect-wasp",
+            "creature": {
+              "name": "Giant Wasp",
+              "size": 2,
+              "type": "beast",
+              "speed": 40,
+              "darkvision": 60,
+              "abilities": {
+                "str": 17,
+                "dex": 13,
+                "con": 15,
+                "int": 4,
+                "wis": 14,
+                "cha": 3
+              },
+              "ac": {
+                "base": 11,
+                "perLevel": 1
+              },
+              "hp": {
+                "base": 30,
+                "perLevel": 10,
+                "from": 4
+              },
+              "multiattack": "half-level",
+              "attacks": [
+                {
+                  "name": "Poison Jab",
+                  "kind": "melee",
+                  "reach": 10,
+                  "damage": [
+                    {
+                      "dice": "1d6+3",
+                      "type": "piercing"
+                    },
+                    {
+                      "dice": "1d4",
+                      "type": "poison"
+                    }
+                  ],
+                  "plusLevel": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "gmNote": "The wasp flies (40 ft). A Web Bolt hit drops the target’s speed to 0 until the insect’s next turn; the centipede’s Venomous Spew (bonus action, Con save or poisoned) is the GM’s call."
     }
   },
   "glibness": {
@@ -2832,10 +3435,11 @@
   },
   "light": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "utility",
-        "why": "An object sheds light: give the token a light by hand."
+      "automated": true,
+      "save": null,
+      "effect": {
+        "name": "Light",
+        "light": { "bright": 20, "dim": 20, "color": "#fff1c8", "colorIntensity": 0.3 }
       }
     }
   },
@@ -4203,10 +4807,59 @@
   },
   "summon-dragon": {
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Its stat block comes with the spell and scales with the slot; it isn’t in the bestiary yet."
-      }
+      "automated": true,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "draconic-spirit",
+            "creature": {
+              "name": "Draconic Spirit",
+              "size": 2,
+              "type": "dragon",
+              "speed": 30,
+              "darkvision": 60,
+              "blindsight": 30,
+              "abilities": {
+                "str": 19,
+                "dex": 14,
+                "con": 17,
+                "int": 10,
+                "wis": 14,
+                "cha": 14
+              },
+              "ac": {
+                "base": 14,
+                "perLevel": 1
+              },
+              "hp": {
+                "base": 50,
+                "perLevel": 10,
+                "from": 5
+              },
+              "resistances": ["acid", "cold", "fire", "lightning", "poison"],
+              "conditionImmunities": ["charmed", "frightened", "poisoned"],
+              "multiattack": "half-level",
+              "attacks": [
+                {
+                  "name": "Rend",
+                  "kind": "melee",
+                  "reach": 10,
+                  "damage": [
+                    {
+                      "dice": "1d6+4",
+                      "type": "piercing"
+                    }
+                  ],
+                  "plusLevel": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "gmNote": "It flies 60 ft and swims. Its Breath Weapon (30-ft cone, Dex save, 2d6 of a type it resists, half on a save) comes with its Rends: cast it as a GM area. You also gain one of its resistances until the spell ends."
     }
   },
   "sunbeam": {

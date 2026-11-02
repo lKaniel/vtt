@@ -29,6 +29,25 @@ export function effectLeft(
   return e.rounds === undefined ? undefined : `${e.rounds} rd`;
 }
 
+const SHORT: [number, string][] = [
+  [DAY, 'd'],
+  [HOUR, 'h'],
+  [MINUTE, 'm'],
+  [1, 's'],
+];
+
+/** What a portrait badge shows: rounds in a fight, "9m" or "8h" of game time out of one. */
+export function effectBadge(
+  e: Pick<Effect, 'rounds' | 'endsAt'>,
+  { now, fighting }: { now: number; fighting: boolean },
+): string | undefined {
+  if ((fighting || e.endsAt === undefined) && e.rounds !== undefined) return String(e.rounds);
+  if (e.endsAt === undefined) return undefined;
+  const left = Math.max(0, e.endsAt - now);
+  const [size, unit] = SHORT.find(([size]) => left >= size) ?? [1, 's'];
+  return `${Math.floor(left / size)}${unit}`;
+}
+
 /** "Frost 30" lines as months; lines that don't end in a number are left out. */
 export function parseMonths(text: string): { name: string; days: number }[] {
   return text.split('\n').flatMap((line) => {

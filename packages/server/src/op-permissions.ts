@@ -73,7 +73,15 @@ function checkAuthored(player: Player, access: DocAccess, op: Op): boolean {
   return true;
 }
 
+/** Players move cards only by drawing, passing and playing them (card-actions.ts). */
+function checkCards(op: Op): void {
+  if (op.coll === 'cards' && op.op === 'update' && 'cards' in op.patch) {
+    throw new Refusal('Cards move by drawing, passing and playing');
+  }
+}
+
 function checkOp(player: Player, access: DocAccess, op: Op): void {
+  checkCards(op);
   if (checkAuthored(player, access, op)) return;
   if (op.op === 'update') return checkUpdate(player, access, op);
   if (op.op === 'create') throw new Refusal(`Only the GM can add ${nameOf(op.doc as OwnedDoc, op.doc.id)}`);

@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { actionOf, comboOf, conflicts, keyLabel, KEY_ACTIONS, keyOf, loadKeymap, saveKeymap } from './keybinds.ts';
+import {
+  actionLabel,
+  actionOf,
+  comboOf,
+  conflicts,
+  keyLabel,
+  KEY_ACTIONS,
+  keyOf,
+  loadKeymap,
+  saveKeymap,
+} from './keybinds.ts';
 
 const press = (key: string, shift = false) => ({ key, shiftKey: shift, ctrlKey: false, metaKey: false, altKey: false });
 
@@ -55,6 +65,8 @@ describe('key bindings', () => {
     expect(loadKeymap(store)).toEqual({ sheet: 'i' });
     store.setItem('vtt:keys', 'not json');
     expect(loadKeymap(store)).toEqual({});
-    expect(KEY_ACTIONS.every((a) => a.label && a.key)).toBe(true);
+    expect(KEY_ACTIONS.every((a) => a.key && !actionLabel(a).startsWith('keys.'))).toBe(true);
+    expect(actionLabel(KEY_ACTIONS.find((a) => a.id === 'hotbar-0')!)).toBe('Slot 10');
+    expect(actionLabel(KEY_ACTIONS.find((a) => a.id === 'sheet')!)).toBe('Open or close the sheet');
   });
 });

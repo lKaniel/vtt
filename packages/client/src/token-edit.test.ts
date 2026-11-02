@@ -5,6 +5,7 @@ import {
   parseList,
   setAbility,
   setClasses,
+  toggleFeature,
   setOwnership,
   setStat,
   tokenPatch,
@@ -64,5 +65,18 @@ describe('ownership in the editor', () => {
     expect(one.stats).toEqual({ abilities: { str: 12 }, class: 'fighter', level: 4 });
     expect(classRows(one)).toEqual([{ class: 'fighter', level: 4 }]);
     expect(setClasses(one, []).stats).toEqual({ abilities: { str: 12 } });
+  });
+
+  it('keeps a subclass in the classes list, even for one class', () => {
+    const d = setClasses({ id: 'h', stats: {} }, [{ class: 'illusionist', level: 3, subclass: 'dreamer' }]);
+    expect(d.stats).toEqual({ classes: [{ class: 'illusionist', level: 3, subclass: 'dreamer' }] });
+    expect(classRows(d)).toEqual([{ class: 'illusionist', level: 3, subclass: 'dreamer' }]);
+  });
+
+  it('picks and unpicks a class option', () => {
+    const start: { id: string; stats?: { features?: string[] } } = { id: 'h', stats: { features: ['seer/a'] } };
+    const d = toggleFeature(start, 'seer/b');
+    expect(d.stats?.features).toEqual(['seer/a', 'seer/b']);
+    expect(toggleFeature(toggleFeature(d, 'seer/a'), 'seer/b').stats?.features).toBeUndefined();
   });
 });

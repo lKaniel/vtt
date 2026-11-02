@@ -10,6 +10,7 @@ import {
   MinusIcon,
   MusicIcon,
   PlusIcon,
+  SpadeIcon,
   SquareTerminalIcon,
   ScrollTextIcon,
   UsersIcon,
@@ -22,6 +23,7 @@ import type { ApplyHow } from '../session-actions.ts';
 import { ActorsTab } from './ActorsTab.tsx';
 import { CheckLine } from './CheckCard.tsx';
 import { AssetsTab } from './AssetsTab.tsx';
+import { CardsTab } from './CardsTab.tsx';
 import { CompendiumTab } from './CompendiumTab.tsx';
 import { JournalTab } from './JournalTab.tsx';
 import { PlaylistsTab } from './PlaylistsTab.tsx';
@@ -31,6 +33,7 @@ import { PlayersTab } from './PlayersTab.tsx';
 import { ScenesTab } from './ScenesTab.tsx';
 import { diceArt } from '../icon-art.ts';
 import { targetText } from '../spell-text.ts';
+import { t } from '../i18n/index.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
@@ -40,7 +43,7 @@ import type { RollMode } from '@vtt/shared';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
-/** The side panel has tabs, like a VTT sidebar: the log, journal and macros for everyone; for the GM the scenes, Actors, Compendium, tables, music, assets and packs, and the seats; the Compendium for trusted players. */
+/** The side panel has tabs, like a VTT sidebar: the log, journal and macros for everyone, and cards once some are shared; for the GM the scenes, Actors, Compendium, tables, music, assets and packs, and the seats; the Compendium for trusted players. */
 const TABS = [
   'Adventure log',
   'Journal',
@@ -49,6 +52,7 @@ const TABS = [
   'Compendium',
   'Tables',
   'Macros',
+  'Cards',
   'Music',
   'Assets',
   'Players',
@@ -65,14 +69,18 @@ const TAB_ICONS: Record<Tab, LucideIcon> = {
   Compendium: LibraryIcon,
   Tables: DicesIcon,
   Macros: SquareTerminalIcon,
+  Cards: SpadeIcon,
   Music: MusicIcon,
   Assets: ImageIcon,
   Players: ArmchairIcon,
 };
 
-/** Players who may edit a creature (trusted owners) also get the Compendium, to fill their sheets from. */
-const playerTabs = (session: Session): readonly Tab[] =>
-  [...session.tokens.keys()].some((id) => session.canEdit(id)) ? [...PLAYER_TABS, 'Compendium'] : PLAYER_TABS;
+/** Players get Cards when some are shared with them, and the Compendium when they may edit a creature (trusted owners), to fill their sheets from. */
+function playerTabs(session: Session): readonly Tab[] {
+  const cards: Tab[] = session.cardStacks().length ? ['Cards'] : [];
+  const compendium: Tab[] = [...session.tokens.keys()].some((id) => session.canEdit(id)) ? ['Compendium'] : [];
+  return [...PLAYER_TABS, ...cards, ...compendium];
+}
 
 export function ChatPanel({ session }: Readonly<{ session: Session }>) {
   const [open, setOpen] = useState(true);
@@ -82,23 +90,30 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
   return (
     <aside className={`chat frame${open ? '' : ' closed'}${shown === 'Adventure log' ? '' : ' library'}`}>
       <header className="chat-head">
-        <span>{shown}</span>
+        <span>{t(`panel.${shown}`)}</span>
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={() => setOpen(!open)}
-          aria-label={open ? 'Hide panel' : 'Show panel'}
-          title={open ? 'Hide panel' : 'Show panel'}
+          aria-label={t(open ? 'panel.hide' : 'panel.show')}
+          title={t(open ? 'panel.hide' : 'panel.show')}
         >
           {open ? <MinusIcon /> : <PlusIcon />}
         </Button>
       </header>
-      <Tabs value={shown} onValueChange={(t) => setTab(t as Tab)}>
+      <Tabs value={shown} onValueChange={(v) => setTab(v as Tab)}>
         <TabsList className="mb-1.5">
-          {tabs.map((t) => {
-            const Icon = TAB_ICONS[t];
+          {tabs.map((id) => {
+            const Icon = TAB_ICONS[id];
+            const name = t(`panel.${id}`);
             return (
-              <TabsTrigger key={t} value={t} title={t} aria-label={t} className="px-1 pt-0.5 pb-1.5 [&_svg]:size-4">
+              <TabsTrigger
+                key={id}
+                value={id}
+                title={name}
+                aria-label={name}
+                className="px-1 pt-0.5 pb-1.5 [&_svg]:size-4"
+              >
                 <Icon />
               </TabsTrigger>
             );
@@ -116,6 +131,7 @@ function Library({ tab, session }: Readonly<{ tab: Exclude<Tab, 'Adventure log'>
     Journal: JournalTab,
     Tables: TablesTab,
     Macros: MacrosTab,
+    Cards: CardsTab,
     Music: PlaylistsTab,
     Scenes: ScenesTab,
     Actors: ActorsTab,

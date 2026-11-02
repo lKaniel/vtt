@@ -22,10 +22,13 @@ import {
   tokenLevel,
   tokenLights,
   type Wall,
+  type Weather,
+  weatherAt,
+  WeatherCycleSchema,
   type World,
   worldOf,
 } from '@vtt/shared';
-import { type Actor, resolveToken, type Token, type TokenEntry } from '@vtt/system-dnd5e';
+import { type Actor, lightOf, resolveToken, type Token, type TokenEntry } from '@vtt/system-dnd5e';
 import { fromDoc } from './doc-sync.ts';
 import { drawnTiles, reordersTiles } from './scene-map.ts';
 import { MAP } from './store-colls.ts';
@@ -62,11 +65,22 @@ export class SceneState {
     this.base = worldOf(fromDoc<Game>(docs.all('game')[0]!), this.scene);
   }
 
-  /** The settings the scene is played with: on a scene that follows the clock, darkness is the time of day. */
+  /**
+   * The settings the scene is played with: on a scene that follows the clock,
+   * darkness is the time of day; with a weather cycle, the weather is the
+   * time's (see weather-cycle.ts). Neither is stored.
+   */
   get world(): World {
-    if (!this.scene.darknessFollowsClock) return this.base;
+    const { darknessFollowsClock, weatherCycle } = this.scene;
+    if (!darknessFollowsClock && !weatherCycle) return this.base;
     const clock = this.gameClock();
-    return { ...this.base, darkness: darknessAt(clock.calendar, timeNow(clock, Date.now())) };
+    const now = timeNow(clock, Date.now());
+    const cycle = weatherCycle && WeatherCycleSchema.safeParse(weatherCycle).data;
+    return {
+      ...this.base,
+      ...(darknessFollowsClock && { darkness: darknessAt(clock.calendar, now) }),
+      ...(cycle && { weather: weatherAt(cycle, clock.calendar, now, this.id) }),
+    };
   }
 
   private gameClock(): Clock {
@@ -121,14 +135,14 @@ export class SceneState {
     });
   }
 
-  /** Every light shining on the scene: placed ones in their darkness band, and those tokens carry (on the token's level). */
+  /** Every light shining on the scene: placed ones in their darkness band, and those tokens carry or their effects give (on the token's level). */
   lights(): LightSource[] {
     const { darkness, levels } = this.world;
     const out: LightSource[] = [];
     for (const c of this.chunks.values()) out.push(...c.lights.filter((l) => activeAt(l.activeAt, darkness)));
     for (const t of this.tokens.values()) {
       const level = levels?.length ? tokenLevel(levels, t) : undefined;
-      out.push(...tokenLights([t]).map((l) => ({ ...l, ...(level && { level }) })));
+      out.push(...tokenLights([{ ...t, light: lightOf(t) }]).map((l) => ({ ...l, ...(level && { level }) })));
     }
     return out;
   }
@@ -191,4 +205,23 @@ export class SceneState {
       lights: items('lights') as Chunk['lights'],
     };
   }
+}
+
+/** True when two scenes' settings differ in nothing but the time of day and the weather (the game's own settings aside). */
+export function sameScene(a: World, b: World): boolean {
+  const scene = ({ players: _p, name: _n, rules: _r, darkness: _d, weather: _w, ...rest }: World) =>
+    JSON.stringify(rest);
+  return scene(a) === scene(b);
+}
+
+/** Where a scene's sky news goes: the store's events. */
+interface SkyEvents {
+  emit(event: 'lighting', darkness: number, scene: string): unknown;
+  emit(event: 'weather', weather: Weather[], scene: string): unknown;
+}
+
+/** Tells what changed of a scene's sky alone (the time of day, the weather), without starting over. */
+export function tellSky(to: SkyEvents, old: World, now: World, scene: string): void {
+  if (old.darkness !== now.darkness) to.emit('lighting', now.darkness, scene);
+  if (JSON.stringify(old.weather) !== JSON.stringify(now.weather)) to.emit('weather', now.weather ?? [], scene);
 }

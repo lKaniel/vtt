@@ -21,8 +21,12 @@ export const GameSchema = z.object({
   /** The scene everyone is on: a folder in scenes/. */
   scene: id,
   players: z.array(PlayerSchema).min(1),
+  /** The GM's options for the whole game, which its system reads (D&D: the encumbrance rule). */
+  settings: z.record(z.string().max(40), z.string().max(40)).optional(),
   /** Installed asset packs the game uses (data/packs/<id>/); the system's own packs are always on. */
   packs: z.array(id).optional(),
+  /** Installed plugins the game uses (data/plugins/<id>/), loaded by every client: docs/plugins.md. */
+  plugins: z.array(id).optional(),
 });
 export type Game = z.infer<typeof GameSchema>;
 
@@ -43,14 +47,15 @@ export type Scene = z.infer<typeof SceneSchema>;
 /** The table settings for `scene` of `game`. */
 export function worldOf(game: Game, scene: Scene): World {
   const { name: _name, sort: _sort, navigation: _nav, navName: _navName, thumb: _thumb, ...settings } = scene;
-  return { ...settings, name: game.name, rules: game.rules, players: game.players };
+  const world = { ...settings, name: game.name, rules: game.rules, players: game.players };
+  return game.settings ? { ...world, settings: game.settings } : world;
 }
 
 /** Puts changed table settings back where they are stored. */
 export function splitWorld(world: World, game: Game, scene: Scene): { game: Game; scene: Scene } {
-  const { name, rules, players, ...settings } = world;
+  const { name, rules, players, settings: options, ...settings } = world;
   return {
-    game: { ...game, name, rules, players },
+    game: { ...game, name, rules, players, settings: options },
     scene: { ...scene, ...settings },
   };
 }

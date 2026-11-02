@@ -6,6 +6,7 @@ import {
   type EditorMode,
   isGroup,
   moveBy,
+  type MoveGrid,
   type Rect,
   scaleGroupEdit,
   snapDelta,
@@ -21,10 +22,10 @@ export function previewDoc(
   key: string,
   doc: Doc,
   preview: Preview | undefined,
-  ctx: { mode: EditorMode; gridSize: number },
+  ctx: { mode: EditorMode; gridSize: number; grid?: MoveGrid },
 ): Doc {
   if (preview?.kind === 'move' && preview.keys.includes(key))
-    return applyPatch(doc, moveBy(doc, snapDelta(preview.delta, ctx.mode, ctx.gridSize, preview.free)));
+    return applyPatch(doc, moveBy(doc, snapDelta(preview.delta, ctx.mode, ctx.grid ?? ctx.gridSize, preview.free)));
   if (preview?.kind === 'handle' && preview.key === key)
     return applyPatch(doc, dragHandle(doc, preview.handle, preview.to, { gridSize: ctx.gridSize, free: preview.free }));
   return doc;

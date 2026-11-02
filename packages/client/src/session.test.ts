@@ -38,6 +38,14 @@ describe('Session', () => {
     expect(lit).toHaveBeenCalled();
   });
 
+  it('follows the weather without reconnecting', () => {
+    ws.receive(welcome());
+    ws.receive({ t: 'weather', weather: [{ kind: 'snow', density: 0.8 }] });
+    expect(session.world?.weather).toEqual([{ kind: 'snow', density: 0.8 }]);
+    ws.receive({ t: 'weather', weather: [] });
+    expect(session.world?.weather).toEqual([]);
+  });
+
   it('sends map edits, darkness, and keeps the light preset', () => {
     ws.receive(welcome());
     session.editMap({ op: 'remove', chunk: '0_0', id: 'w' });

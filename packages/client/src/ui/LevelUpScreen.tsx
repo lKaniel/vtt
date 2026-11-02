@@ -4,6 +4,7 @@ import {
   abilityName,
   abilityScores,
   type Character,
+  type Class,
   characterClasses,
   characterIssues,
   characterMaxHp,
@@ -11,8 +12,9 @@ import {
   partsOf,
 } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { api } from '../account-api.ts';
-import { characterSummary, levelUpPlan, spellChoices } from '../creator.ts';
+import { characterSummary, levelUpPlan, spellChoices, withHomebrewClass } from '../creator.ts';
+import { classesToPick, useHomebrewClasses } from './creator/use-homebrew.ts';
+import { useSaveCharacter } from './creator/use-save.ts';
 import { SpellPicker } from './creator/PickSteps.tsx';
 import { Chips, Detail, RichText, TraitList } from './creator/Parts.tsx';
 import { Button } from './kit/button.tsx';
@@ -22,35 +24,34 @@ type Bonus = Partial<Record<Ability, number>>;
 
 /** Gaining a level: hit points, an ability score improvement, a subclass and new spells. */
 export function LevelUpScreen({
-  character: c,
+  character: saved,
   onDone,
   onCancel,
 }: Readonly<{ character: Character; onDone: () => void; onCancel: () => void }>) {
-  const [classId, setClassId] = useState(c.class);
+  const homebrew = useHomebrewClasses();
+  const [classId, setClassId] = useState(saved.class);
+  // A new homebrew class to multiclass into comes along on the character.
+  const taking = (id: string) =>
+    withHomebrewClass(
+      saved,
+      homebrew.find((h) => h.id === id),
+    );
+  const c = taking(classId);
   const plan = levelUpPlan(c, classId);
   const [hp, setHp] = useState(plan.average);
   const [improvement, setImprovement] = useState<Bonus>({});
   const [subclass, setSubclass] = useState<string>();
   const [spells, setSpells] = useState(c.spells);
-  const [error, setError] = useState<string>();
+  const { busy, error, save } = useSaveCharacter(onDone);
   const choice = { hp, class: classId, improvement: plan.improvement ? improvement : undefined, subclass, spells };
   const next = levelUp(c, choice);
   const issues = plan.problem ? [plan.problem] : characterIssues(next);
   const casts = spellChoices(next, plan.classLevel, classId).limits.maxLevel > 0;
   const pickClass = (id: string) => {
     setClassId(id);
-    setHp(levelUpPlan(c, id).average);
+    setHp(levelUpPlan(taking(id), id).average);
     setSubclass(undefined);
     setImprovement({});
-  };
-
-  const confirm = async () => {
-    try {
-      await api.saveCharacter(next);
-      onDone();
-    } catch (e) {
-      setError((e as Error).message);
-    }
   };
 
   return (
@@ -62,18 +63,20 @@ export function LevelUpScreen({
         <p className="cc-line">{characterSummary(next)}</p>
       </header>
       <div className="levelup-body">
-        <section className="frame levelup-col">
-          <ClassPicker c={c} value={classId} onPick={pickClass} />
-          <Detail title="Hit points">
-            <HitPoints die={plan.hitDie} average={plan.average} hp={hp} setHp={setHp} />
-            <p className="cc-facts">
-              Maximum hit points: {characterMaxHp(c)} → <strong>{characterMaxHp(next)}</strong>
-            </p>
-          </Detail>
-          {plan.improvement && <Improvement c={c} value={improvement} onChange={setImprovement} />}
-          {plan.subclass && <SubclassPicker c={next} classId={classId} value={subclass} onPick={setSubclass} />}
-          <NewFeatures c={next} classId={classId} level={plan.classLevel} />
-        </section>
+        <ChoicesColumn
+          c={c}
+          next={next}
+          plan={plan}
+          homebrew={homebrew}
+          classId={classId}
+          pickClass={pickClass}
+          hp={hp}
+          setHp={setHp}
+          improvement={improvement}
+          setImprovement={setImprovement}
+          subclass={subclass}
+          setSubclass={setSubclass}
+        />
         {casts && (
           <section className="frame levelup-col wide">
             <SpellPicker c={next} classId={classId} level={plan.classLevel} set={(x) => setSpells(x.spells)} />
@@ -82,9 +85,9 @@ export function LevelUpScreen({
       </div>
       <LevelUpFooter
         message={error ?? issues[0]}
-        disabled={issues.length > 0}
+        disabled={busy || issues.length > 0}
         onCancel={onCancel}
-        onConfirm={() => void confirm()}
+        onConfirm={() => save(next)}
       />
     </div>
   );
@@ -110,10 +113,50 @@ function LevelUpFooter({
   );
 }
 
+interface ChoicesProps {
+  c: Character;
+  next: Character;
+  plan: ReturnType<typeof levelUpPlan>;
+  homebrew: readonly Class[];
+  classId: string;
+  pickClass: (id: string) => void;
+  hp: number;
+  setHp: (hp: number) => void;
+  improvement: Bonus;
+  setImprovement: (b: Bonus) => void;
+  subclass: string | undefined;
+  setSubclass: (id: string) => void;
+}
+
+/** The class gaining the level, hit points, an improvement, a subclass and the new features. */
+function ChoicesColumn(p: Readonly<ChoicesProps>) {
+  const { c, next, plan, homebrew, classId, pickClass, hp, setHp, improvement, setImprovement } = p;
+  const { subclass, setSubclass } = p;
+  return (
+    <section className="frame levelup-col">
+      <ClassPicker c={c} homebrew={homebrew} value={classId} onPick={pickClass} />
+      <Detail title="Hit points">
+        <HitPoints die={plan.hitDie} average={plan.average} hp={hp} setHp={setHp} />
+        <p className="cc-facts">
+          Maximum hit points: {characterMaxHp(c)} → <strong>{characterMaxHp(next)}</strong>
+        </p>
+      </Detail>
+      {plan.improvement && <Improvement c={c} value={improvement} onChange={setImprovement} />}
+      {plan.subclass && <SubclassPicker c={next} classId={classId} value={subclass} onPick={setSubclass} />}
+      <NewFeatures c={next} classId={classId} level={plan.classLevel} />
+    </section>
+  );
+}
+
 /** Which class gains the level: one the character has, or a new one to multiclass into. */
-function ClassPicker({ c, value, onPick }: Readonly<{ c: Character; value: string; onPick: (id: string) => void }>) {
+function ClassPicker({
+  c,
+  homebrew,
+  value,
+  onPick,
+}: Readonly<{ c: Character; homebrew: readonly Class[]; value: string; onPick: (id: string) => void }>) {
   const taken = new Map(characterClasses(c).map((k) => [k.class, k.level]));
-  const classes = [...partsOf(c).book.content.classes.values()];
+  const classes = classesToPick(partsOf(c).book.content.classes.values(), homebrew);
   const label = (id: string, name: string) => (taken.has(id) ? `${name} ${taken.get(id)}` : `${name} (new)`);
   return (
     <Detail title="Class">

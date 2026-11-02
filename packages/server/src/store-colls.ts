@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { CLOCK_COLL, CLOCK_ID, type MapCollection, SCENE_TYPES, type World } from '@vtt/shared';
+import { CLOCK_COLL, CLOCK_ID, type MapCollection, SCENE_TYPES } from '@vtt/shared';
 import { ENTRY_COLLS, isEntryColl } from './entry-files.ts';
 import { toDoc } from './doc-sync.ts';
 import type { FileKind, GameFile } from './game-files.ts';
@@ -56,10 +56,4 @@ export function scopeOf(kind: FileKind): { coll: string; only?: string } | undef
   if (kind.kind === 'time') return { coll: CLOCK };
   if (kind.kind === 'entry') return { coll: kind.coll, only: kind.id };
   return { coll: `${kind.scene}/${kind.coll}` };
-}
-
-/** True when two scenes' settings differ in nothing but the time of day (the game's own settings aside). */
-export function sameScene(a: World, b: World): boolean {
-  const scene = ({ players: _p, name: _n, rules: _r, darkness: _d, ...rest }: World) => JSON.stringify(rest);
-  return scene(a) === scene(b);
 }

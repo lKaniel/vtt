@@ -6,6 +6,7 @@ import {
   type Combat,
   CombatSchema,
   type Dnd5eSystem,
+  homebrewCompendia,
   resolveToken,
   type TokenEntry,
   TokenEntrySchema,
@@ -59,6 +60,7 @@ import { sceneItemIssues } from './item-checks.ts';
 //   scenes/<id>/<coll>.json       a list per collection: tiles, walls, lights, tokens,
 //                                 drawings, notes, templates, regions, sounds
 //   journals/, tables/, playlists/  one file per journal entry, roll table, playlist
+//   homebrew/<id>.json            the GM's own rules content (a homebrew class)
 
 export type { SceneCollection };
 
@@ -282,6 +284,8 @@ export interface GameState {
   actors: ReadonlyMap<string, Actor>;
   combat?: Combat;
   journals?: ReadonlyMap<string, Journal>;
+  /** The GM's homebrew rules content (homebrew/). */
+  homebrew?: readonly unknown[];
 }
 
 export interface Issue {
@@ -308,7 +312,7 @@ export function crossCheck(state: GameState, system = SYSTEMS.get(state.game.sys
   const { game, scenes, actors, combat } = state;
   const out: Issue[] = [];
   if (!system) out.push({ file: 'game.json', message: `this server has no "${game.system}" system` });
-  const content = system ? contentCompendia(packs, game, system) : [];
+  const content = system ? [...contentCompendia(packs, game, system), ...homebrewCompendia(state.homebrew ?? [])] : [];
   out.push(...packWarnings(game, system, packs));
   const active = scenes.get(game.scene);
   if (!active) out.push({ file: 'game.json', message: `scene "${game.scene}" has no folder in scenes/` });

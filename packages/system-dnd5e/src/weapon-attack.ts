@@ -4,7 +4,7 @@ import { attackModifiers, rollSave, type UsedEffect } from './effects.ts';
 import type { CastSide } from './spells.ts';
 import type { Effect } from './spell-schema.ts';
 import type { Attack, Damage, DamageType } from './stats-schema.ts';
-import type { Rng } from '@vtt/shared';
+import type { GridKind, Rng } from '@vtt/shared';
 import { divineSmite, hitRiders, markDamage, withWeaponBonus } from './riders.ts';
 import { mirrorImage, weakenedDamage } from './wards.ts';
 
@@ -17,8 +17,8 @@ export interface WeaponAttackInput {
   attack: Attack;
   range: 'normal' | 'long';
   gridSize: number;
-  /** The scene has no grid: distances are measured as the crow flies. */
-  gridless?: boolean;
+  /** The scene's grid (default square; none: distances as the crow flies). */
+  grid?: GridKind;
   /** An ally of the attacker is within 5 ft of the target (for sneak attack). */
   allyNearTarget: boolean;
   /** Spell slot spent on Divine Smite if the attack hits (2014 paladin); the server checks it's allowed. */
@@ -111,9 +111,9 @@ function grazeDamage(input: WeaponAttackInput): WeaponAttackOutcome['graze'] {
 }
 
 export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.random): WeaponAttackOutcome {
-  const { attacker, target, gridSize, gridless } = input;
+  const { attacker, target, gridSize, grid } = input;
   const attack = withWeaponBonus(input.attack, attacker.sheet);
-  const within5 = tokenDistance(attacker.token, target.token, gridSize, gridless) <= 5;
+  const within5 = tokenDistance(attacker.token, target.token, gridSize, grid) <= 5;
   const mods = attackModifiers(attacker, target, { within5 });
   const disadvantage = mods.disadvantage || input.range === 'long';
   const sneak = canSneak(input, mods.advantage, disadvantage);

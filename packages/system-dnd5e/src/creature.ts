@@ -6,11 +6,13 @@ import { offHandAttacks } from './two-weapon.ts';
 import { makesDeathSaves } from './deaths.ts';
 import {
   casterSheet,
+  classScales,
   type CasterSheet,
   type FeatureSheet,
   featureSheets,
   grantedFeatures,
   levelValue,
+  type ScaleValue,
 } from './classes.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
@@ -69,6 +71,8 @@ export interface Creature extends Affected, LegendaryParts {
   features: FeatureSheet[];
   /** What it perceives with (mirror image doesn't fool blindsight or truesight). */
   senses?: Senses;
+  /** Numbers by class level a homebrew class shows (a pool's size). */
+  scales?: ScaleValue[];
 }
 
 /** Proficiency bonus by challenge rating. */
@@ -116,7 +120,7 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     ...defenses(stats, monster),
     ...kindAndSaves(monster, cls, { abilities, proficiency }),
     ...effectParts(token, features, content.edition, monster?.conditionImmunities),
-    ...classParts(levels),
+    ...classParts(levels, monster),
     caster: casterSheet(token, { abilities, proficiency }, content),
     ...legendaryParts(token, monster),
     features,
@@ -148,15 +152,37 @@ function withItemBonuses(c: Creature, token: Token, content: Content): Creature 
   return { ...c, ac: c.ac + ac, saves };
 }
 
-/** A character carrying more than its capacity moves 5 ft at most (monsters don't count their loot). */
+/** Speed lost and what else the variant encumbrance rule does at each level. */
+const VARIANT_LOAD = {
+  none: { slower: 0 },
+  encumbered: { slower: 10 },
+  heavy: {
+    slower: 20,
+    effect: {
+      id: 'heavily-encumbered',
+      name: 'Heavily encumbered',
+      disadvantage: true,
+      saveDisadvantageFor: ['str', 'dex', 'con'],
+      checkDisadvantageFor: ['str', 'dex', 'con'],
+    } satisfies Effect,
+  },
+} as const;
+
+/**
+ * A character carrying more than its capacity moves 5 ft at most, and the
+ * variant rule slows it sooner (monsters don't count their loot).
+ */
 function withCarrying(
   c: Creature,
   token: Token,
   { monster, content }: { monster?: Monster; content: Content },
 ): Creature {
   if (monster) return c;
-  const { over } = encumbrance(token, c.abilities.str, content);
-  return over ? { ...c, speed: Math.min(c.speed, 5) } : c;
+  const { over, level } = encumbrance(token, c.abilities.str, content);
+  const load: { slower: number; effect?: Effect } = VARIANT_LOAD[level];
+  const speed = Math.max(0, c.speed - load.slower);
+  const effects = load.effect ? [...c.effects, load.effect] : c.effects;
+  return { ...c, speed: over ? Math.min(speed, 5) : speed, effects };
 }
 
 /** Ability scores and proficiency after the changes of the token's effects and always-on features. */
@@ -216,10 +242,16 @@ export function ownEffects(token: Token, features: readonly FeatureSheet[]): Eff
 /** Extra attack (the best of its classes), sneak attack by rogue level and weapon mastery. */
 function classParts(
   levels: readonly ClassLevel[],
-): Pick<Creature, 'attacksPerAction' | 'sneakAttack' | 'weaponMastery'> {
+  monster: Monster | undefined,
+): Pick<Creature, 'attacksPerAction' | 'sneakAttack' | 'weaponMastery' | 'scales'> {
   const sneak = levels.find((l) => l.cls?.sneakAttack);
   return {
-    attacksPerAction: Math.max(1, ...levels.map((l) => levelValue(l.cls?.attacks ?? [], l.level))),
+    scales: classScales(levels),
+    attacksPerAction: Math.max(
+      1,
+      monster?.multiattack ?? 0,
+      ...levels.map((l) => levelValue(l.cls?.attacks ?? [], l.level)),
+    ),
     sneakAttack: sneak ? `${Math.ceil(sneak.level / 2)}d6` : undefined,
     weaponMastery: levels.some((l) => l.cls?.weaponMastery),
   };

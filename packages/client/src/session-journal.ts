@@ -28,6 +28,7 @@ const NEW: Record<EntryType, Record<string, unknown>> = {
   rolltable: { name: 'New table', results: [{ text: 'Something' }] },
   playlist: { name: 'New playlist', mode: 'sequence', tracks: [] },
   macro: { name: 'New macro', kind: 'chat', command: '' },
+  cards: { name: 'New deck', kind: 'deck', cards: [] },
 };
 
 /** A picture the GM showed. */
@@ -135,6 +136,12 @@ export abstract class JournalSession extends ItemSession {
   /** Whether you may change a macro: the GM any, a player their own. */
   canEditMacro(id: string): boolean {
     return this.isGm() || (!!this.you && this.docs.get('macros', id)?.author === this.you.id);
+  }
+
+  /** GM: a new homebrew document (a class), its fields ready (see homebrew.ts in the system). */
+  createHomebrew(fields: { id: string; kind: string; name: string } & Record<string, unknown>): void {
+    const doc = { ...fields, type: 'homebrew', rev: 0 } as Doc;
+    this.sendChanges('new homebrew', [{ op: 'create', coll: 'homebrew', doc }]);
   }
 
   /** Changes one sidebar document's fields. */

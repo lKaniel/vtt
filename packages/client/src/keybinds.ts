@@ -2,11 +2,12 @@
 // (the Keybindings screen, ui/KeysDialog.tsx). Keys with Ctrl (undo, copy,
 // the layer keys in edit-keys.ts) and Esc stay as they are.
 
+import { type MessageKey, t } from './i18n/index.ts';
+
 type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem'>;
 
 export interface KeyAction {
   id: string;
-  label: string;
   group: 'Table' | 'Action bar' | 'Map tools' | 'Walking';
   /** The default key, as comboOf names it. */
   key: string;
@@ -17,24 +18,31 @@ export interface KeyAction {
 const HOTBAR = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
 export const KEY_ACTIONS: readonly KeyAction[] = [
-  { id: 'sheet', label: 'Open or close the sheet', group: 'Table', key: 'c' },
-  { id: 'editSheet', label: 'Edit the sheet', group: 'Table', key: 'e' },
-  { id: 'endTurn', label: 'End your turn', group: 'Table', key: 'space' },
-  { id: 'target', label: 'Target the token under the pointer', group: 'Table', key: 't', shares: ['mode-tokens'] },
-  ...HOTBAR.map((k, i): KeyAction => ({ id: `hotbar-${k}`, label: `Slot ${i + 1}`, group: 'Action bar', key: k })),
-  { id: 'mode-tokens', label: 'Tokens', group: 'Map tools', key: 't', shares: ['target'] },
-  { id: 'mode-tiles', label: 'Tiles', group: 'Map tools', key: 'shift+t' },
-  { id: 'mode-walls', label: 'Walls', group: 'Map tools', key: 'w' },
-  { id: 'mode-lights', label: 'Lights', group: 'Map tools', key: 'l' },
-  { id: 'mode-drawings', label: 'Drawings', group: 'Map tools', key: 'd' },
-  { id: 'mode-notes', label: 'Notes', group: 'Map tools', key: 'n' },
-  { id: 'mode-templates', label: 'Templates', group: 'Map tools', key: 'm' },
-  { id: 'mode-ruler', label: 'Ruler', group: 'Map tools', key: 'r' },
-  { id: 'step-up', label: 'Step up', group: 'Walking', key: 'arrowup' },
-  { id: 'step-down', label: 'Step down', group: 'Walking', key: 'arrowdown' },
-  { id: 'step-left', label: 'Step left', group: 'Walking', key: 'arrowleft' },
-  { id: 'step-right', label: 'Step right', group: 'Walking', key: 'arrowright' },
+  { id: 'sheet', group: 'Table', key: 'c' },
+  { id: 'editSheet', group: 'Table', key: 'e' },
+  { id: 'endTurn', group: 'Table', key: 'space' },
+  { id: 'target', group: 'Table', key: 't', shares: ['mode-tokens'] },
+  ...HOTBAR.map((k): KeyAction => ({ id: `hotbar-${k}`, group: 'Action bar', key: k })),
+  { id: 'mode-tokens', group: 'Map tools', key: 't', shares: ['target'] },
+  { id: 'mode-tiles', group: 'Map tools', key: 'shift+t' },
+  { id: 'mode-walls', group: 'Map tools', key: 'w' },
+  { id: 'mode-lights', group: 'Map tools', key: 'l' },
+  { id: 'mode-drawings', group: 'Map tools', key: 'd' },
+  { id: 'mode-notes', group: 'Map tools', key: 'n' },
+  { id: 'mode-templates', group: 'Map tools', key: 'm' },
+  { id: 'mode-ruler', group: 'Map tools', key: 'r' },
+  { id: 'step-up', group: 'Walking', key: 'arrowup' },
+  { id: 'step-down', group: 'Walking', key: 'arrowdown' },
+  { id: 'step-left', group: 'Walking', key: 'arrowleft' },
+  { id: 'step-right', group: 'Walking', key: 'arrowright' },
 ];
+
+/** What an action is called, in the player's language: "Slot 3" for hotbar-3. */
+export function actionLabel(action: KeyAction): string {
+  const slot = /^hotbar-(\d)$/.exec(action.id);
+  if (slot) return t('keys.slot', { n: slot[1] === '0' ? 10 : Number(slot[1]) });
+  return t(`keys.${action.id}` as MessageKey);
+}
 
 /** The player's own keys, by action id; the rest keep their default. */
 export type Keymap = Record<string, string>;

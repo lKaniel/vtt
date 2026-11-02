@@ -20,12 +20,14 @@ import { fromDoc, toDoc } from './doc-sync.ts';
 import { putOps } from './token-ops.ts';
 import { requireGm, type Table } from './table.ts';
 import { TimeOut } from './time-out.ts';
+import { CalendarAlerts, type Say } from './calendar-alerts.ts';
 
 // The game clock (time.json, see clock.ts in shared). The GM starts, stops
 // and skips it; rests skip it; in a fight (or turn-based mode) it holds still
 // and each round adds 6 seconds. After every step the clock catches up with
-// the fight and what has run out ends (time-out.ts). While it runs, a tick
-// each second ends what runs out as it does, as a step of its own.
+// the fight, what has run out ends (time-out.ts) and calendar notes it
+// reached are said (calendar-alerts.ts). While it runs, a tick each second
+// does the same as time goes by, as a step of its own.
 
 const TICK_MS = 1000;
 
@@ -34,13 +36,16 @@ export interface ClockHooks {
   now: () => number;
   /** Runs the tick as an undo step ("time passing"). */
   step: (fn: () => void) => void;
+  /** Says something in the chat (calendar notes as the clock reaches them). */
+  say?: Say;
 }
 
 export class WorldClock {
   private out: TimeOut;
+  private alerts: CalendarAlerts;
   private timer?: NodeJS.Timeout;
-  /** Darkness last told to the clients of each scene that follows the clock. */
-  private lit = new Map<string, number>();
+  /** Darkness and weather last told to the clients of each scene that follows the clock. */
+  private lit = new Map<string, string>();
 
   constructor(
     private table: Table,
@@ -48,6 +53,7 @@ export class WorldClock {
   ) {
     this.out = new TimeOut(table);
     if (!this.store.docs.get(CLOCK_COLL, CLOCK_ID)) this.put(ClockSchema.parse({}));
+    this.alerts = new CalendarAlerts(hooks.say ?? (() => undefined), this.now());
     this.store.on('docs', (changes) => {
       if (changes.some((c) => c.coll === CLOCK_COLL || c.coll === 'scenes')) this.changed();
     });
@@ -125,6 +131,7 @@ export class WorldClock {
     if (combat && clock.round === undefined)
       this.store.inScene(this.store.activeScene, () => this.out.fightStarts(now));
     this.out.settle(now);
+    this.alerts.reached(now, this.store.docs.all('journals'), this.store.world.players);
   }
 
   /** Each second while the clock runs. */
@@ -156,7 +163,7 @@ export class WorldClock {
     this.light();
   }
 
-  /** Tells the clients of scenes that follow the clock how dark it is now, when that changed. */
+  /** Tells the clients of scenes that follow the clock how dark it is now and the weather, when that changed. */
   private light(): void {
     for (const scene of this.store.sceneIds()) {
       const world = this.store.inScene(scene, () => this.store.world);
@@ -165,15 +172,20 @@ export class WorldClock {
         this.lit.delete(scene);
         continue;
       }
-      if (this.lit.get(scene) === world.darkness) continue;
-      const first = !this.lit.has(scene);
-      this.lit.set(scene, world.darkness);
-      if (!first) this.store.emit('lighting', world.darkness, scene);
+      const was = this.lit.get(scene);
+      const sky = { darkness: world.darkness, weather: world.weather ?? [] };
+      this.lit.set(scene, JSON.stringify(sky));
+      if (was === undefined || was === this.lit.get(scene)) continue;
+      const before = JSON.parse(was) as typeof sky;
+      if (before.darkness !== sky.darkness) this.store.emit('lighting', sky.darkness, scene);
+      if (JSON.stringify(before.weather) !== JSON.stringify(sky.weather))
+        this.store.emit('weather', sky.weather, scene);
     }
   }
 
+  /** Whether the current scene's darkness or weather follows the clock. */
   private followsClock(): boolean {
     const doc = this.store.docs.get('scenes', this.store.currentScene);
-    return doc?.darknessFollowsClock === true;
+    return doc?.darknessFollowsClock === true || !!doc?.weatherCycle;
   }
 }

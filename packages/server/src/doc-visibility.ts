@@ -5,7 +5,8 @@ import type { DocAccess, OwnedDoc } from './store-access.ts';
 // Which documents a player is sent (doc-feed.ts), and how much of them.
 // The GM gets everything. A player gets the actors and tokens they observe,
 // the journal entries they may see (limited: the title only), the roll
-// tables and chat macros shared with them (and their own macros; script macros are the GM's alone), the playlists playing now, and on the scene they
+// tables and chat macros shared with them (and their own macros; script macros are the GM's alone), the
+// card stacks they may see (limited: how many cards), the playlists playing now, and on the scene they
 // are on, what is drawn there for them: drawings, templates, notes, sounds
 // and the regions the GM shows. Everyone gets the game clock.
 
@@ -33,9 +34,12 @@ function playing(doc: Doc): boolean {
   return Array.isArray(doc.tracks) && (doc.tracks as { playing?: boolean }[]).some((t) => t.playing);
 }
 
+/** Sidebar documents a player is sent once they may observe them. */
+const OBSERVED = new Set(['tables', 'macros', 'homebrew']);
+
 const observed = (v: Viewer, owned: OwnedDoc) => canSee(owned, v.player) && canObserve(owned, v.player);
 
-/** Roll tables and chat macros shared with the player; script macros are the GM's alone. */
+/** Roll tables, chat macros and homebrew shared with the player; script macros are the GM's alone. */
 const sidebarSent = (v: Viewer, access: DocAccess, coll: string, doc: Doc) =>
   !(coll === 'macros' && isScriptMacro(doc)) && observed(v, access.owned(coll, doc));
 
@@ -43,19 +47,26 @@ const sidebarSent = (v: Viewer, access: DocAccess, coll: string, doc: Doc) =>
 export function sendsTo(v: Viewer, access: DocAccess, coll: string, doc: Doc): boolean {
   if (isGm(v.player) || coll === CLOCK_COLL) return true;
   if (coll === 'actors' || coll.endsWith('/tokens')) return observed(v, access.owned(coll, doc));
-  if (coll === 'journals') return canSee(access.owned(coll, doc), v.player);
-  if (coll === 'tables' || coll === 'macros') return sidebarSent(v, access, coll, doc);
+  if (coll === 'journals' || coll === 'cards') return canSee(access.owned(coll, doc), v.player);
+  if (OBSERVED.has(coll)) return sidebarSent(v, access, coll, doc);
   if (coll === 'playlists') return playing(doc);
   const at = sceneCollOf(coll);
   const rule = at && SCENE_RULES[at.name];
   return !!rule && at.scene === v.scene && rule(v, access, doc);
 }
 
-/** The document as the player is sent it: a journal entry they may only know of comes without its pages. */
+/**
+ * The document as the player is sent it: a journal entry they may only know
+ * of comes without its pages, and cards they may not look at (a deck,
+ * another's hand) as a count.
+ */
 export function viewOf(v: Viewer, access: DocAccess, coll: string, doc: Doc): Doc {
-  if (coll !== 'journals' || isGm(v.player) || canObserve(access.owned(coll, doc), v.player)) return doc;
-  return { ...doc, pages: [] };
+  if (!LIMITED_VIEW.has(coll) || isGm(v.player) || canObserve(access.owned(coll, doc), v.player)) return doc;
+  if (coll === 'journals') return { ...doc, pages: [] };
+  return { ...doc, cards: [], count: Array.isArray(doc.cards) ? doc.cards.length : 0 };
 }
+
+const LIMITED_VIEW = new Set(['journals', 'cards']);
 
 /** Documents whose visibility hangs on another: notes on a journal entry. */
 export function dependents(access: DocAccess, coll: string, id: string): { coll: string; doc: Doc }[] {

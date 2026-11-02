@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { placeToken, uniqueId, uniqueName } from './index.ts';
+import { latticeOf, placeToken, uniqueId, uniqueName } from './index.ts';
 
 describe('ids and names for new tokens', () => {
   it('turns a name into a free id', () => {
@@ -17,8 +17,16 @@ describe('ids and names for new tokens', () => {
 
 describe('placing tokens', () => {
   it('puts odd sizes on a square centre and even sizes on a grid corner', () => {
-    expect(placeToken([130, 270], 1, 100)).toEqual([150, 250]);
-    expect(placeToken([130, 270], 2, 100)).toEqual([100, 300]);
-    expect(placeToken([130, 270], 3, 100)).toEqual([150, 250]);
+    const squares = { gridSize: 100 };
+    expect(placeToken([130, 270], 1, squares)).toEqual([150, 250]);
+    expect(placeToken([130, 270], 2, squares)).toEqual([100, 300]);
+    expect(placeToken([130, 270], 3, squares)).toEqual([150, 250]);
+  });
+
+  it('puts any size on a hex centre on hexes', () => {
+    const hexes = { gridSize: 100, grid: 'hex-rows' };
+    const centre = latticeOf('hex-rows', 100).centre([1, 2]);
+    expect(placeToken([centre[0] + 20, centre[1] - 15], 1, hexes)).toEqual(centre);
+    expect(placeToken([centre[0] + 20, centre[1] - 15], 2, hexes)).toEqual(centre);
   });
 });

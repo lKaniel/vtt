@@ -1,6 +1,7 @@
-import type { Doc, MediaEntry, Op, PackCompendium, PackInfo } from '@vtt/core';
+import type { Doc, MediaEntry, Op, PackCompendium, PackInfo, PluginInfo } from '@vtt/core';
 import type { Roll } from './dice.ts';
 import type { ClockAction } from './clock.ts';
+import type { Weather } from './weather.ts';
 import type { Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
 import type { FogEdit } from './fog-edit.ts';
 import type { MapEdit } from './map-edit.ts';
@@ -102,6 +103,8 @@ export type EngineClientMessage =
   | { t: 'redo' }
   /** GM: the packs this game may use (answered with `packs`). */
   | { t: 'packs' }
+  /** GM: the plugins this game may use (answered with `plugins`). */
+  | { t: 'plugins' }
   /** GM: the pictures, sounds and videos of the game's assets and its packs (answered with `media`). */
   | { t: 'media' }
   /** GM: one compendium's documents, to copy into the game (answered with `compendium`). */
@@ -112,6 +115,16 @@ export type EngineClientMessage =
   | { t: 'rollTable'; table: string; gmOnly?: boolean }
   /** Run a macro you may see: its chat lines are posted as if you typed them, said by `token` when you control it. */
   | { t: 'runMacro'; macro: string; token?: string }
+  /** Draw `n` (default 1) cards from the top of a deck into a hand you own. */
+  | { t: 'drawCards'; from: string; to: string; n?: number }
+  /** Move cards (by cardKey) from a stack you own onto another: onto a pile plays them. */
+  | { t: 'passCards'; from: string; to: string; cards: string[] }
+  /** Shuffle a stack you own. */
+  | { t: 'shuffleCards'; stack: string }
+  /** GM: deal `n` (default 1) cards from a deck to each stack named. */
+  | { t: 'dealCards'; from: string; to: string[]; n?: number }
+  /** GM: gather every card of a deck back into it and shuffle it. */
+  | { t: 'resetCards'; deck: string }
   /** GM: share a journal entry with every player and open it (at `page`) on their screens. */
   | { t: 'showJournal'; entry: string; page?: string }
   /** GM: open a picture on every player's screen. */
@@ -119,7 +132,9 @@ export type EngineClientMessage =
   /** Your seat's colour and picture; a null avatar takes it away. */
   | { t: 'profile'; color?: string; avatar?: string | null }
   /** Your own options for this game (see Player.settings), checked by the game's system; they replace the old ones. */
-  | { t: 'seatSettings'; settings: Record<string, string> };
+  | { t: 'seatSettings'; settings: Record<string, string> }
+  /** GM: the game's rules edition and its options (see Game.settings), checked by its system; they replace the old ones. */
+  | { t: 'gameSettings'; rules?: string; settings: Record<string, string> };
 
 /** What the engine tells clients, whatever system the game plays. */
 export type EngineServerMessage =
@@ -144,6 +159,8 @@ export type EngineServerMessage =
   | { t: 'paused'; on: boolean }
   /** The time of day changed. */
   | { t: 'lighting'; darkness: number }
+  /** The scene's weather changed (by hand, or with the time): no need to start over. */
+  | { t: 'weather'; weather: Weather[] }
   /** A trigger plays a sound once for everyone on the scene. */
   | { t: 'sound'; src: string; volume?: number }
   | { t: 'error'; message: string }
@@ -160,6 +177,8 @@ export type EngineServerMessage =
   | { t: 'packContent'; compendia: PackCompendium[] }
   /** GM: the packs the game may use; `problems` are packs the server couldn't read. */
   | { t: 'packs'; packs: PackInfo[]; problems: string[] }
+  /** GM: the plugins the game may use; `problems` are plugins the server couldn't read or this game can't load. */
+  | { t: 'plugins'; plugins: PluginInfo[]; problems: string[] }
   | { t: 'media'; entries: MediaEntry[] }
   | { t: 'compendium'; pack: string; compendium: string; docs: unknown[] }
   /** The GM shows you a journal entry: open it (at `page`). */

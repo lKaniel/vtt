@@ -60,6 +60,30 @@ describe('pack content in the client', () => {
     expect(compendium('monsters', '2014', 'warlord').map((e) => e.id)).toEqual(['goblin-warlord']);
   });
 
+  it('adds the game’s homebrew classes, as they are now', () => {
+    const base = gmWelcome() as Extract<ServerMessage, { t: 'welcome' }>;
+    const seer = {
+      type: 'homebrew',
+      id: 'seer',
+      rev: 1,
+      kind: 'class',
+      name: 'Seer',
+      hitDie: 8,
+      saves: [],
+      features: [],
+    };
+    ws.receive({ ...base, docs: { ...base.docs, homebrew: [seer] } });
+    ws.receive({ t: 'packContent', compendia: [] });
+    expect(gameContent('2014').classes.get('seer')?.name).toBe('Seer');
+  });
+
+  it('plays by the game’s settings', () => {
+    const base = gmWelcome() as Extract<ServerMessage, { t: 'welcome' }>;
+    ws.receive({ ...base, world: { ...base.world, settings: { encumbrance: 'variant' } } });
+    ws.receive({ t: 'packContent', compendia: [] });
+    expect(gameContent('2014').settings?.encumbrance).toBe('variant');
+  });
+
   it('shows pack files from where the server serves them', () => {
     expect(assetUrl('pack://forest/media/big oak.webp')).toBe('/packs/forest/media/big%20oak.webp');
   });
@@ -95,6 +119,27 @@ describe('the GM’s asset browser', () => {
     });
     session.setPackEnabled('forest', false);
     expect(sent()).toMatchObject({ ops: [{ patch: { packs: ['goblins'] } }] });
+  });
+
+  it('lists the plugins and turns them on and off on game.json', () => {
+    ws.receive(gmWelcome());
+    session.requestPlugins();
+    expect(sent()).toEqual({ t: 'plugins' });
+    const alert = {
+      id: 'alert',
+      name: 'Alert',
+      version: '1.0.0',
+      system: null,
+      main: 'main.js',
+      styles: [],
+      languages: [],
+    };
+    ws.receive({ t: 'plugins', plugins: [{ ...alert, enabled: false }], problems: ['x/plugin.json: name'] });
+    expect(session.pluginList.map((p) => p.id)).toEqual(['alert']);
+    expect(session.pluginProblems).toEqual(['x/plugin.json: name']);
+    session.setPluginEnabled('alert', true);
+    expect(sent()).toMatchObject({ ops: [{ op: 'update', coll: 'game', patch: { plugins: ['alert'] } }] });
+    expect(session.pluginList[0]?.enabled).toBe(true);
   });
 
   it('uploads a file', () => {

@@ -17,6 +17,9 @@ const innerPath = z
   .min(1)
   .refine((p) => !p.startsWith('/') && !p.includes('\\') && !p.split('/').includes('..'), 'a path inside the pack');
 
+/** A path inside an installed folder, for other manifests (plugins.ts). */
+export const InnerPathSchema = innerPath;
+
 export const CompendiumInfoSchema = z.object({
   id: slug,
   name: z.string().optional(),
@@ -29,8 +32,8 @@ export const CompendiumInfoSchema = z.object({
 });
 export type CompendiumInfo = z.infer<typeof CompendiumInfoSchema>;
 
-/** pack.json */
-export const PackManifestSchema = z.object({
+/** What every installed folder's manifest has (pack.json, plugin.json). */
+export const ManifestFields = {
   id: slug,
   name: z.string().min(1),
   version: z.string().default('1.0.0'),
@@ -38,6 +41,11 @@ export const PackManifestSchema = z.object({
   system: z.string().nullable().default(null),
   description: z.string().optional(),
   author: z.string().optional(),
+};
+
+/** pack.json */
+export const PackManifestSchema = z.object({
+  ...ManifestFields,
   /** "CC-BY-4.0", "private"... Only CC-BY SRD content ships with the code. */
   license: z.string().optional(),
   compendia: z.array(CompendiumInfoSchema).default([]),

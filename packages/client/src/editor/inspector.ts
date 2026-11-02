@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { TileTextureSchema, TOKEN_FILTERS, WALL_PRESETS, type WallRules, wallPreset } from '@vtt/shared';
+import { HOUR, TileTextureSchema, TOKEN_FILTERS, WALL_PRESETS, type WallRules, wallPreset } from '@vtt/shared';
 import { type Field, type FieldValue, flag, MIXED, options, plain } from './field-kit.ts';
 import { ITEM_FIELDS } from './item-fields.ts';
 import { doorFields, presetPatch, wallRuleFields } from './wall-fields.ts';
@@ -40,6 +40,12 @@ const LIGHT_FIELDS: Field[] = [
     ...plain('walls', 'Shines through walls', 'check'),
     get: (d) => d.walls === false,
     patch: (v) => ({ walls: v === true ? false : null }),
+  },
+  {
+    // In hours; a change lights it afresh (the server counts the new end time from now).
+    ...plain('lasts', 'Burns for (h, empty: forever)', 'number'),
+    get: (d) => (typeof d.lasts === 'number' ? d.lasts / HOUR : undefined),
+    patch: (v) => ({ lasts: Number(v) > 0 ? Math.round(Number(v) * HOUR) : null, endsAt: null }),
   },
   ON_TILE,
 ];

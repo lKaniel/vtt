@@ -27,7 +27,31 @@ const index = z.number().int().nonnegative();
 /** Tokens one player may target at once. */
 const MAX_TARGETS = 50;
 
+/** Cards moved or dealt at once. */
+const MAX_CARDS = 200;
+const cardStack = z.string().max(80);
+
 const ClientMessageSchema = z.discriminatedUnion('t', [
+  z.object({
+    t: z.literal('drawCards'),
+    from: cardStack,
+    to: cardStack,
+    n: z.number().int().min(1).max(MAX_CARDS).optional(),
+  }),
+  z.object({
+    t: z.literal('passCards'),
+    from: cardStack,
+    to: cardStack,
+    cards: z.array(z.string().max(170)).min(1).max(MAX_CARDS),
+  }),
+  z.object({ t: z.literal('shuffleCards'), stack: cardStack }),
+  z.object({
+    t: z.literal('dealCards'),
+    from: cardStack,
+    to: z.array(cardStack).min(1).max(50),
+    n: z.number().int().min(1).max(MAX_CARDS).optional(),
+  }),
+  z.object({ t: z.literal('resetCards'), deck: cardStack }),
   z.object({ t: z.literal('rollTable'), table: z.string(), gmOnly: z.boolean().optional() }),
   z.object({ t: z.literal('runMacro'), macro: z.string().max(80), token: z.string().max(80).optional() }),
   z.object({ t: z.literal('showJournal'), entry: z.string(), page: z.string().optional() }),
@@ -126,6 +150,11 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('dropConcentration'), token: z.string() }),
   z.object({ t: z.literal('removeEffect'), token: z.string(), effect: z.string() }),
   z.object({ t: z.literal('seatSettings'), settings: z.record(z.string().max(40), z.string().max(40)) }),
+  z.object({
+    t: z.literal('gameSettings'),
+    rules: z.string().max(40).optional(),
+    settings: z.record(z.string().max(40), z.string().max(40)),
+  }),
   z.object({ t: z.literal('rest'), tokens: z.array(z.string()).min(1).max(100), kind: z.enum(['short', 'long']) }),
   z.object({ t: z.literal('editToken'), token: z.string(), patch: z.record(z.string(), z.unknown()) }),
   z.object({ t: z.literal('deleteToken'), token: z.string() }),
@@ -188,6 +217,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('undo'), card: z.string().optional() }),
   z.object({ t: z.literal('redo') }),
   z.object({ t: z.literal('packs') }),
+  z.object({ t: z.literal('plugins') }),
   z.object({ t: z.literal('media') }),
   z.object({ t: z.literal('compendium'), pack: z.string().max(80), compendium: z.string().max(80) }),
   z.object({ t: z.literal('upload'), name: z.string().min(1).max(200), data: z.string().max(MAX_UPLOAD_BASE64) }),

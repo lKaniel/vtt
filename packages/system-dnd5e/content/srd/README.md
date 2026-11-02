@@ -12,7 +12,8 @@
 - `items.json`: weapons, armor and gear, shared by both editions (weapon
   masteries only apply under the 2024 rules). Gear with `use` can be used from
   the action bar: `{ "heal": "2d4+2", "potion": true }` (a potion is an action
-  in 2014, a bonus action in 2024). Containers carry `"container": { "capacity": 30 }`
+  in 2014, a bonus action in 2024), or `{ "light": { "bright": 20, "dim": 20, "lasts": 3600 } }`
+  for a torch (`"fuel": "oil-flask"` burns the oil instead of the lantern). Containers carry `"container": { "capacity": 30 }`
   (pounds; `"weightless": true` for a bag of holding), magic items `"attunement": true`
   and `"bonus": { "ac": 1, "saves": 1 }`.
 

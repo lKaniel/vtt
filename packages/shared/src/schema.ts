@@ -2,6 +2,8 @@ import type { Ownership } from '@vtt/core';
 import { z } from 'zod';
 import { TileTriggerSchema } from './trigger-schema.ts';
 import { WeatherSchema } from './weather.ts';
+import { WeatherCycleSchema } from './weather-cycle.ts';
+import { GRID_KINDS } from './grid.ts';
 
 // The items in a game folder are described here (game.json and scene.json in
 // game-schema.ts). The checker, the server and docs/game-format.md all follow
@@ -74,9 +76,10 @@ export const SceneSettingsSchema = z.object({
   /**
    * "none" (the default): no grid, tokens walk anywhere and distances are
    * plain feet. "square": grid lines, tokens walk square to square, every
-   * square (diagonals too) 5 ft.
+   * square (diagonals too) 5 ft. "hex-rows" (pointy top) and "hex-cols"
+   * (flat top): tokens walk hex to hex, every hex 5 ft (see grid.ts).
    */
-  grid: z.enum(['square', 'none']).optional(),
+  grid: z.enum(GRID_KINDS).optional(),
   /** Grid line colour (default black) and opacity (default 0.16). */
   gridColor: z.string().optional(),
   gridOpacity: z.number().min(0).max(1).optional(),
@@ -90,6 +93,8 @@ export const SceneSettingsSchema = z.object({
   playlist: id.optional(),
   /** Rain, snow, clouds, fog, embers or birds over the map, in layers (see weather.ts). */
   weather: z.array(WeatherSchema).optional(),
+  /** The weather changes with world time instead (see weather-cycle.ts); `weather` is ignored. */
+  weatherCycle: WeatherCycleSchema.optional(),
 });
 
 /** The table settings the rules and the client use: the game's, plus those of the scene being played. */
@@ -97,6 +102,8 @@ export const WorldSchema = SceneSettingsSchema.extend({
   name: z.string().min(1),
   /** The game system's rules edition (see SystemDefinition in core); missing = the system's default. */
   rules: z.string().min(1).optional(),
+  /** The game's options, which its system reads (D&D: the encumbrance rule); missing = the defaults. */
+  settings: z.record(z.string().max(40), z.string().max(40)).optional(),
   players: z.array(PlayerSchema).min(1),
 });
 export type World = z.infer<typeof WorldSchema>;
@@ -261,6 +268,12 @@ export const LightSchema = z.object({
   attenuation: z.number().min(0).max(1).optional(),
   /** How much of its colour it casts, 0 (plain warm light) to 1 (default). */
   colorIntensity: z.number().min(0).max(1).optional(),
+  /** What gives it, e.g. "Torch": named when it burns out. */
+  name: z.string().optional(),
+  /** Game seconds it burns once lit (a torch: 3600); missing: it never goes out (see light-time.ts). */
+  lasts: z.number().positive().optional(),
+  /** Game-clock second it goes out, worked out from `lasts` when it is lit. */
+  endsAt: z.number().optional(),
 });
 export type Light = z.infer<typeof LightSchema>;
 

@@ -1,5 +1,14 @@
-import type { Point } from '@vtt/shared';
-import { joinCombat, type Spell, type Token, TokenSchema } from '@vtt/system-dnd5e';
+import { gridKind, type Lattice, placeToken, type Point, sceneLattice } from '@vtt/shared';
+import {
+  abilityMod,
+  joinCombat,
+  type Spell,
+  spellCreature,
+  type SummonCast,
+  summonCount,
+  type Token,
+  TokenSchema,
+} from '@vtt/system-dnd5e';
 import type { CastRequest } from './spell-actions.ts';
 import { Refusal, type Fighter, type Table } from './table.ts';
 
@@ -11,18 +20,21 @@ export function summon(
   table: Table,
   caster: Fighter,
   spell: Spell,
-  req: Pick<CastRequest, 'summon' | 'point'>,
+  req: Pick<CastRequest, 'summon' | 'point'> & { slot: number },
 ): Token[] {
   const options = spell.summon!.options;
   const choice = options.find((o) => o.monster === req.summon) ?? (options.length === 1 ? options[0] : undefined);
   if (!choice) throw new Refusal(`Pick what ${spell.name} summons: ${options.map((o) => o.monster).join(', ')}`);
-  const monster = table.content(caster.token).monsters.get(choice.monster);
+  const cast = castOf(table, caster, spell, req.slot);
+  const built = spellCreature(choice, cast);
+  const monster = built ?? table.content(caster.token).monsters.get(choice.monster);
   if (!monster) throw new Refusal(`There is no ${choice.monster} in the bestiary`);
-  const spots = freeSpots(table, snapTo(table, req.point!, monster.size), monster.size, choice.count);
+  const count = summonCount(choice, cast);
+  const spots = freeSpots(table, placeToken(req.point!, monster.size, table.store.world), monster.size, count);
   const tokens = spots.map(([x, y], i) =>
     TokenSchema.parse({
       id: freeId(table, choice.monster, i),
-      name: choice.count > 1 ? `${monster.name} ${i + 1}` : monster.name,
+      name: count > 1 ? `${monster.name} ${i + 1}` : monster.name,
       x,
       y,
       size: monster.size,
@@ -30,6 +42,7 @@ export function summon(
       speed: monster.speed,
       darkvision: monster.darkvision,
       monster: monster.id,
+      ...(built && { own: { monsters: [built] } }),
       ownership: caster.token.ownership,
       summon: { by: caster.token.id, spell: spell.id, concentration: spell.concentration },
       leader: spell.summon!.turn === 'shared' ? caster.token.id : undefined,
@@ -49,19 +62,28 @@ export function summon(
   return tokens;
 }
 
+/** The slot, the spell's level and the caster's spell attack and modifier, for a creature built by the spell. */
+function castOf(table: Table, caster: Fighter, spell: Spell, slot: number): SummonCast {
+  const sheet = caster.sheet.caster;
+  const mod = sheet ? abilityMod(caster.sheet.abilities[sheet.ability]) : 0;
+  return { slot: Math.max(slot, spell.level), level: spell.level, attack: sheet?.attack ?? 0, mod };
+}
+
 function freeId(table: Table, base: string, from: number): string {
   let n = from + 1;
   while (table.store.tokens.has(`${base}-${n}`)) n++;
   return `${base}-${n}`;
 }
 
-/** `count` squares around `start` with no token on them, nearest first. */
+/** `count` spots around `start` with no token on them, nearest first: squares, or hexes on a hex grid. */
 function freeSpots(table: Table, start: Point, size: number, count: number): Point[] {
-  const g = table.store.world.gridSize * size;
+  const world = table.store.world;
+  const hexes = gridKind(world).startsWith('hex') ? sceneLattice(world) : undefined;
+  const ring = (n: number) => (hexes ? hexRing(hexes, start, n) : ringAround(start, n, world.gridSize * size));
   const taken = new Set([...table.store.tokens.values()].map((t) => `${t.x},${t.y}`));
   const out: Point[] = [];
-  for (let ring = 0; out.length < count && ring < 10; ring++) {
-    for (const p of ringAround(start, ring, g)) {
+  for (let n = 0; out.length < count && n < 10; n++) {
+    for (const p of ring(n)) {
       if (out.length < count && !taken.has(`${p[0]},${p[1]}`)) {
         out.push(p);
         taken.add(`${p[0]},${p[1]}`);
@@ -71,11 +93,17 @@ function freeSpots(table: Table, start: Point, size: number, count: number): Poi
   return out;
 }
 
-/** A point moved onto the grid square (or corner) where a creature of `size` squares stands. */
-function snapTo(table: Table, [x, y]: Point, size: number): Point {
-  const g = table.store.world.gridSize;
-  const axis = (v: number) => (size % 2 ? (Math.floor(v / g) + 0.5) * g : Math.round(v / g) * g);
-  return [axis(x), axis(y)];
+/** The centres of the hexes `ring` steps from the hex at `c`. */
+function hexRing(hexes: Lattice, c: Point, ring: number): Point[] {
+  const at = hexes.cellOf(c);
+  const out: Point[] = [];
+  for (let dq = -ring; dq <= ring; dq++) {
+    for (let dr = -ring; dr <= ring; dr++) {
+      const cell: Point = [at[0] + dq, at[1] + dr];
+      if (hexes.distance(at, cell) === ring) out.push(hexes.centre(cell));
+    }
+  }
+  return out;
 }
 
 /** The squares on the edge of a square ring `ring` steps out from `c`. */

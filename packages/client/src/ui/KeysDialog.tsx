@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { t, type MessageKey } from '../i18n/index.ts';
 import {
+  actionLabel,
   comboOf,
   conflicts,
   currentKeys,
@@ -40,36 +42,35 @@ export function KeysDialog() {
     <Dialog onOpenChange={() => setListening(undefined)}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Keybindings
+          {t('keys.open')}
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[min(520px,calc(100vw-32px))]" data-slot="keys-dialog">
-        <DialogTitle>Keybindings</DialogTitle>
-        <DialogDescription>
-          Kept in this browser. Keys with Ctrl (undo, copy, paste) and Esc stay as they are.
-        </DialogDescription>
+        <DialogTitle>{t('keys.title')}</DialogTitle>
+        <DialogDescription>{t('keys.hint')}</DialogDescription>
         {GROUPS.map((group) => (
           <section key={group} className="flex flex-col gap-1">
-            <strong className="font-display text-gold">{group}</strong>
+            <strong className="font-display text-gold">{t(`keys.group.${group}` as MessageKey)}</strong>
             {KEY_ACTIONS.filter((a) => a.group === group).map((a) => {
               const key = keyOf(a.id, keys)!;
               const clash = clashes.has(key);
+              const label = actionLabel(a);
               return (
                 <div key={a.id} className="flex items-center justify-between gap-2">
                   <span className={clash ? 'text-destructive' : undefined}>
-                    {a.label}
-                    {clash && ' (shared)'}
+                    {label}
+                    {clash && ` ${t('keys.shared')}`}
                   </span>
                   <Button
                     variant={listening === a.id ? 'default' : 'outline'}
                     size="sm"
                     className="min-w-24"
-                    aria-label={`Key for ${a.label}`}
+                    aria-label={t('keys.keyFor', { action: label })}
                     onClick={() => setListening(a.id)}
                     onKeyDown={(e) => listening === a.id && capture(e, a)}
                     onBlur={() => setListening(undefined)}
                   >
-                    {listening === a.id ? 'Press a key' : keyLabel(key)}
+                    {listening === a.id ? t('keys.press') : keyLabel(key)}
                   </Button>
                 </div>
               );
@@ -77,7 +78,7 @@ export function KeysDialog() {
           </section>
         ))}
         <Button variant="outline" size="sm" disabled={!Object.keys(keys).length} onClick={() => save({})}>
-          Back to the defaults
+          {t('keys.reset')}
         </Button>
       </DialogContent>
     </Dialog>

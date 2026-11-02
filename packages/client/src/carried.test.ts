@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bagLayout, carriedDrag, carriedLook, loadText, purseText } from './carried.ts';
+import { bagLayout, carriedDrag, carriedLook, loadText, loadTip, purseText } from './carried.ts';
 
 describe('what a creature carries, on its sheet', () => {
   it('names a scroll after its spell and drags it as a scroll', () => {
@@ -52,6 +52,14 @@ describe('how the bag is laid out', () => {
   it('describes coins and the weight carried', () => {
     expect(purseText({ gp: 12, sp: 3, cp: 0 })).toBe('12 gp · 3 sp');
     expect(purseText(undefined)).toBe('No coins');
-    expect(loadText({ weight: 45.5, capacity: 150, over: false })).toBe('45.5 / 150 lb');
+    expect(loadText({ weight: 45.5, capacity: 150, over: false, level: 'none' })).toBe('45.5 / 150 lb');
+  });
+
+  it('says what the load does by the game’s encumbrance rule', () => {
+    const load = { weight: 60, capacity: 150, over: false };
+    expect(loadTip({ ...load, level: 'none' })).toBe('Carried weight / carrying capacity');
+    expect(loadTip({ ...load, level: 'encumbered' })).toBe('Encumbered: speed −10 ft');
+    expect(loadTip({ ...load, level: 'heavy' })).toMatch(/speed −20 ft, disadvantage/);
+    expect(loadTip({ ...load, over: true, level: 'heavy' })).toBe('Over capacity: speed drops to 5 ft');
   });
 });

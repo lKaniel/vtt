@@ -103,6 +103,14 @@ describe('the sidebar documents in the session', () => {
     expect(last()).toMatchObject({ ops: [{ op: 'create', coll: 'playlists', doc: { tracks: [] } }] });
   });
 
+  it('make and save homebrew classes for the GM', () => {
+    joinAs('gm');
+    session.createHomebrew({ id: 'seer', kind: 'class', name: 'Seer' });
+    expect(last()).toMatchObject({
+      ops: [{ op: 'create', coll: 'homebrew', doc: { id: 'seer', type: 'homebrew', kind: 'class', name: 'Seer' } }],
+    });
+  });
+
   it('make quests and dated notes, and open them', () => {
     joinAs('gm');
     session.createEntry('journal', { name: 'New quest', quest: { status: 'active', objectives: [] } });

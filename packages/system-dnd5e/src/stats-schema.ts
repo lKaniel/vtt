@@ -1,3 +1,4 @@
+import { LightSchema } from '@vtt/shared';
 import { z } from 'zod';
 
 // Creature statistics and the SRD content they're built from. Monsters and
@@ -126,6 +127,10 @@ export const ItemSchema = z.discriminatedUnion('type', [
         heal: z.string().optional(),
         /** A potion: drinking it is an action in 2014 and a bonus action in 2024. */
         potion: z.boolean().default(false),
+        /** Lighting it: the bearer sheds this light for `lasts` seconds (a torch, a lantern). */
+        light: LightSchema.optional(),
+        /** What lighting it burns instead of the item itself (a lantern burns a flask of oil). */
+        fuel: z.string().optional(),
       })
       .optional(),
   }),
@@ -183,6 +188,8 @@ export const MonsterSchema = z.object({
   /** Saving throws the monster is proficient in. */
   saves: z.array(z.enum(ABILITIES)).default([]),
   attacks: z.array(AttackSchema).default([]),
+  /** Attacks it makes with the Attack action (a spell's creature: half the spell's level). */
+  multiattack: z.number().int().positive().optional(),
   ...defenses,
   conditionImmunities: z.array(z.string()).default([]),
   ...legendaryParts,

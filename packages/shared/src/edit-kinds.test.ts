@@ -29,7 +29,9 @@ describe('the edit kinds', () => {
   it('cover every placeable and the Actors list', () => {
     expect(Object.keys(EDIT_KINDS).sort((a, b) => a.localeCompare(b))).toEqual([
       'actor',
+      'cards',
       'drawing',
+      'homebrew',
       'journal',
       'light',
       'macro',

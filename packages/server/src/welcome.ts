@@ -3,6 +3,7 @@ import type { ChatMessage, ServerMessage, Token, TokenView } from '@vtt/system-d
 import type { DocFeed } from './doc-feed.ts';
 import type { GameStore } from './game-store.ts';
 import { packContent } from './game-packs.ts';
+import { pluginLoads } from './game-plugins.ts';
 import { withoutSettings } from './seat-settings.ts';
 
 // What a client is sent when it joins, or starts over because its seat,
@@ -19,8 +20,8 @@ export interface Joining {
 
 /** Everything a welcome depends on, short of the documents: when it changes, the client starts over. */
 export function startOf(store: GameStore, c: Joining): string {
-  // The time of day changes without starting over (a `lighting` message).
-  const { players, darkness: _darkness, ...world } = store.inScene(c.scene, () => store.world);
+  // The time of day and the weather change without starting over (`lighting` and `weather` messages).
+  const { players, darkness: _darkness, weather: _weather, ...world } = store.inScene(c.scene, () => store.world);
   // The GM's welcome lists the seats too.
   const seats = isGm(c.player) ? players.map(withoutSettings) : undefined;
   const parts = [
@@ -31,6 +32,7 @@ export function startOf(store: GameStore, c: Joining): string {
     store.sceneName(c.scene),
     seats,
     store.campaign.packs,
+    store.campaign.plugins,
   ];
   return JSON.stringify(parts);
 }
@@ -64,6 +66,7 @@ export function welcomeOf(store: GameStore, c: Joining, parts: WelcomeParts): Se
     history: parts.history,
     docs: c.feed.start(player),
     serverTime: parts.now,
+    plugins: pluginLoads(store.plugins, store.campaign),
     ...(parts.paused && { paused: true }),
     ...(gm ? { players: store.world.players, actors: [...store.actors.values()] } : {}),
   };

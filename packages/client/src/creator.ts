@@ -5,6 +5,7 @@ import {
   abilityScores,
   averageHitDie,
   type Character,
+  type Class,
   characterClasses,
   type CreatorStep,
   type Edition,
@@ -30,8 +31,21 @@ export function chooseSpecies(c: Character, species: string): Character {
   return { ...c, species, subspecies: undefined, size, bonusPicks: c.rules === '2014' ? {} : c.bonusPicks };
 }
 
-export function chooseClass(c: Character, cls: string): Character {
-  return { ...c, class: cls, subclass: undefined, skills: [], spells: [], kit: {} };
+/** `c` carrying a copy of the homebrew class `cls` (homebrew.ts) when it doesn't have it yet. */
+export function withHomebrewClass(c: Character, cls: Class | undefined): Character {
+  if (!cls || c.homebrew.some((h) => h.id === cls.id)) return c;
+  return { ...c, homebrew: [...c.homebrew, cls] };
+}
+
+/** `c` in class `cls`, which may be one of the GMs' `homebrew` classes; class picks start over. */
+export function chooseClass(c: Character, cls: string, homebrew: readonly Class[] = []): Character {
+  const next = withHomebrewClass(
+    c,
+    homebrew.find((h) => h.id === cls),
+  );
+  const used = new Set([cls, ...c.multiclass.map((m) => m.class)]);
+  const kept = next.homebrew.filter((h) => used.has(h.id));
+  return { ...next, class: cls, subclass: undefined, skills: [], spells: [], kit: {}, homebrew: kept };
 }
 
 export function chooseBackground(c: Character, background: string): Character {

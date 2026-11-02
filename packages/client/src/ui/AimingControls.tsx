@@ -43,10 +43,7 @@ function SpellOptions({ session, aiming }: Readonly<{ session: Session; aiming: 
           value={aiming.summon ?? ''}
           aria-label="What to summon"
           onValueChange={(m) => session.chooseSummon(m)}
-          options={spell.summon.options.map((o) => ({
-            value: o.monster,
-            label: o.count > 1 ? `${o.count} × ${o.monster}` : o.monster,
-          }))}
+          options={spell.summon.options.map((o) => ({ value: o.monster, label: summonLabel(o) }))}
         />
       )}
       {spell.choices && (
@@ -112,4 +109,13 @@ function SlotChoices({
       </Toggle>
     </span>
   );
+}
+
+type SummonOption = NonNullable<Spell['summon']>['options'][number];
+
+/** "2 × dire-wolf", or a spell creature's own name (how many it brings depends on the slot and size). */
+function summonLabel(o: SummonOption): string {
+  const name = o.creature?.name ?? o.monster;
+  const fixed = o.count > 1 && !o.fromMod && (o.weight ?? 1) === 1;
+  return fixed ? `${o.count} × ${name}` : name;
 }

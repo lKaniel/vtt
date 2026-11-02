@@ -12,7 +12,7 @@ import {
   TokenSchema,
   tradeCost,
 } from '@vtt/system-dnd5e';
-import { canControl, isGm, isGridless, type Player, uniqueId } from '@vtt/shared';
+import { canControl, isGm, gridKind, type Player, uniqueId } from '@vtt/shared';
 import type { ClientMessage } from './client-messages.ts';
 import { contentFor } from './game-packs.ts';
 import { Refusal, type Table } from './table.ts';
@@ -65,7 +65,7 @@ export class Piles {
     if (other.id !== mine.id && !canSee(other.id)) throw new Refusal('No such token');
     if (other.pile?.locked) throw new Refusal(`${other.name} is locked`);
     const world = this.store.world;
-    const feet = tokenDistance(mine, other, world.gridSize, isGridless(world));
+    const feet = tokenDistance(mine, other, world.gridSize, gridKind(world));
     if (feet > (other.pile?.reach ?? NEXT_TO)) throw new Refusal(`${mine.name} is too far from ${other.name}`);
   }
 

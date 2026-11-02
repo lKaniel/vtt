@@ -66,13 +66,14 @@ export async function readFolder(dir: string): Promise<FolderEntry[]> {
 const emptyScene = () => ({ tiles: [], walls: [], lights: [], tokens: [] });
 
 function addFile(
-  state: GameState & { actors: Map<string, Actor>; journals: Map<string, Journal> },
+  state: GameState & { actors: Map<string, Actor>; journals: Map<string, Journal>; homebrew: unknown[] },
   file: GameFile,
 ): void {
   if (file.kind === 'scene') state.scenes.set(file.scene, { ...emptyScene(), scene: file.data });
   else if (file.kind === 'actor') state.actors.set(file.id, file.data);
   else if (file.kind === 'combat') state.combat = file.data;
   else if (file.kind === 'entry' && file.coll === 'journals') state.journals.set(file.id, file.data as Journal);
+  else if (file.kind === 'entry' && file.coll === 'homebrew') state.homebrew.push(file.data);
 }
 
 function addItems(state: GameState, file: GameFile): void {
@@ -85,7 +86,13 @@ export function stateOf(entries: readonly FolderEntry[]): GameState | undefined 
   const files = entries.flatMap((e) => (e.file ? [e.file] : []));
   const game = files.find((f) => f.kind === 'game');
   if (game?.kind !== 'game') return undefined;
-  const state = { game: game.data, scenes: new Map(), actors: new Map<string, Actor>(), journals: new Map() };
+  const state = {
+    game: game.data,
+    scenes: new Map(),
+    actors: new Map<string, Actor>(),
+    journals: new Map(),
+    homebrew: [] as unknown[],
+  };
   for (const file of files) addFile(state, file);
   for (const file of files) addItems(state, file);
   return state;

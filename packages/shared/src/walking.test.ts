@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { densify, isGridless, segmentsIntersect, type Wall, walkPath } from './index.ts';
+import { densify, isGridless, latticeOf, segmentsIntersect, type Wall, walkPath } from './index.ts';
 
 const G = 100;
 const free = { gridSize: G, gridless: true, radius: 50, bodies: [] };
 const squares = { ...free, gridless: false };
 
 describe('isGridless', () => {
-  it('is gridless unless the scene asks for squares', () => {
+  it('is gridless unless the scene asks for squares or hexes', () => {
     expect(isGridless({})).toBe(true);
     expect(isGridless({ grid: 'none' })).toBe(true);
     expect(isGridless({ grid: 'square' })).toBe(false);
+    expect(isGridless({ grid: 'hex-cols' })).toBe(false);
   });
 });
 
@@ -84,6 +85,31 @@ describe('walkPath on a square grid', () => {
     const p = walkPath([50, 50], [450, 50], [], { ...squares, bodies })!;
     expect(p.points).not.toContainEqual([250, 50]);
     expect(walkPath([50, 50], [250, 50], [], { ...squares, bodies })).toBeNull();
+  });
+});
+
+describe('walkPath on hexes', () => {
+  const hex = latticeOf('hex-rows', G);
+  const hexes = { ...squares, lattice: hex };
+
+  it('walks hex to hex, every hex 5 ft', () => {
+    const p = walkPath(hex.centre([0, 0]), hex.centre([3, 2]), [], hexes)!;
+    expect(p.points[0]).toEqual(hex.centre([0, 0]));
+    expect(p.points.at(-1)).toEqual(hex.centre([3, 2]));
+    expect(p.feet).toBe(25);
+    for (let i = 1; i < p.points.length; i++) {
+      const [a, b] = [hex.cellOf(p.points[i - 1]!), hex.cellOf(p.points[i]!)];
+      expect(hex.distance(a, b)).toBe(1);
+    }
+  });
+
+  it('goes around a wall', () => {
+    const wall: Wall = { id: 'w', a: [220, -400], b: [220, 300] };
+    const p = walkPath(hex.centre([0, 0]), hex.centre([4, 0]), [wall], hexes)!;
+    expect(p.feet).toBeGreaterThan(20);
+    for (let i = 1; i < p.points.length; i++) {
+      expect(segmentsIntersect(p.points[i - 1]!, p.points[i]!, wall.a, wall.b)).toBe(false);
+    }
   });
 });
 
