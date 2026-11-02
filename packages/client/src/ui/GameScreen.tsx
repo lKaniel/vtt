@@ -18,6 +18,7 @@ import { PartyBar } from './PartyBar.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
+import { SettingsMenu } from './SettingsMenu.tsx';
 import { Button } from './kit/button.tsx';
 
 export function GameScreen({
@@ -77,6 +78,7 @@ export function GameScreen({
           {session.you?.name}
         </span>
         <UndoButtons session={session} />
+        <SettingsMenu session={session} />
         <Button variant="link" onClick={onLeave}>
           Leave
         </Button>

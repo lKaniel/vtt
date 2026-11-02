@@ -29,6 +29,8 @@ export const PlayerSchema = z.object({
   color: z.string().default('#8a8a8a'),
   /** The scene this seat is on when it isn't the game's (the GM sent them, or the GM is looking elsewhere). */
   scene: id.optional(),
+  /** The seat's own options for this game, as its system names them (D&D: how reactions are offered). */
+  settings: z.record(z.string().max(40), z.string().max(40)).optional(),
 });
 export type Player = z.infer<typeof PlayerSchema>;
 

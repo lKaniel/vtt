@@ -69,6 +69,14 @@ describe('Session', () => {
     expect(lit).toHaveBeenCalled();
   });
 
+  it('sends your settings and takes your changed seat without starting over', () => {
+    ws.receive(welcome());
+    session.setSeatSettings({ opportunity: 'auto' });
+    expect(ws.sent.at(-1)).toEqual({ t: 'seatSettings', settings: { opportunity: 'auto' } });
+    ws.receive({ t: 'you', you: { ...session.you!, settings: { opportunity: 'auto' } } });
+    expect(session.you?.settings).toEqual({ opportunity: 'auto' });
+  });
+
   it('sends map edits, darkness, and keeps the light preset', () => {
     ws.receive(welcome());
     session.editMap({ op: 'remove', chunk: '0_0', id: 'w' });

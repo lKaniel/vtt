@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ABILITIES, DamageSchema, DamageTypeSchema } from './stats-schema.ts';
+import { EffectChangeSchema } from './effect-changes.ts';
 
 // Spells, class features and the effects they leave on creatures. Spells and
 // classes are data in packages/system-dnd5e/content; the engine in spells.ts,
@@ -34,6 +35,8 @@ export type RiderDamage = z.infer<typeof RiderDamageSchema>;
 
 /** What an effect changes about the creature that has it. */
 const modifiers = {
+  /** Changes to any statistic by key, Foundry style: `{ key: "abilities.str", mode: "override", value: 19 }` (see effect-changes.ts). */
+  changes: z.array(EffectChangeSchema).optional(),
   conditions: z.array(ConditionSchema).optional(),
   /** Added to the bearer's attack rolls, e.g. "1d4" for bless or "-1d4" for bane. */
   attackBonus: dice.optional(),

@@ -1,7 +1,7 @@
 import type { Doc, MediaEntry, Op, PackCompendium, PackInfo } from '@vtt/core';
 import type { Roll } from './dice.ts';
 import type { ClockAction } from './clock.ts';
-import type { Chunk, DoorState, Point, Role, World } from './schema.ts';
+import type { Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
 import type { FogEdit } from './fog-edit.ts';
 import type { MapEdit } from './map-edit.ts';
 import type { RollMode } from './roll-modes.ts';
@@ -103,7 +103,9 @@ export type EngineClientMessage =
   /** Roll on a roll table into chat (players: tables shared with them); `gmOnly` whispers the result to the GM. */
   | { t: 'rollTable'; table: string; gmOnly?: boolean }
   /** GM: share a journal entry with every player and open it (at `page`) on their screens. */
-  | { t: 'showJournal'; entry: string; page?: string };
+  | { t: 'showJournal'; entry: string; page?: string }
+  /** Your own options for this game (see Player.settings), checked by the game's system; they replace the old ones. */
+  | { t: 'seatSettings'; settings: Record<string, string> };
 
 /** What the engine tells clients, whatever system the game plays. */
 export type EngineServerMessage =
@@ -143,4 +145,6 @@ export type EngineServerMessage =
   | { t: 'media'; entries: MediaEntry[] }
   | { t: 'compendium'; pack: string; compendium: string; docs: unknown[] }
   /** The GM shows you a journal entry: open it (at `page`). */
-  | { t: 'showJournal'; entry: string; page?: string };
+  | { t: 'showJournal'; entry: string; page?: string }
+  /** Your seat changed without the table starting over (your settings). */
+  | { t: 'you'; you: Player };
