@@ -142,6 +142,25 @@ describe('attacking', () => {
     expect(ana.take('error')[0]!.message).toMatch(/already used/);
   });
 
+  it('swings at empty ground: the attack is spent and the log says it hit nothing', () => {
+    const { ana } = fight();
+    const hero = store.tokens.get('hero')!;
+    ana.receive({ t: 'attack', attacker: 'hero', attack: 'Longsword', point: [hero.x + 100, hero.y] });
+    const [log] = ana.take('chat');
+    expect(log!.message.attack).toMatchObject({ attacker: 'Hero', target: 'nothing', targetId: '', hit: false });
+    expect(store.combat!.left.action).toBe(false);
+  });
+
+  it('refuses an attack at ground out of its reach, or with neither target nor point', () => {
+    const { ana } = fight();
+    const hero = store.tokens.get('hero')!;
+    ana.receive({ t: 'attack', attacker: 'hero', attack: 'Longsword', point: [hero.x + 900, hero.y] });
+    expect(ana.take('error')[0]!.message).toMatch(/out of range/);
+    ana.receive({ t: 'attack', attacker: 'hero', attack: 'Longsword' });
+    expect(ana.take('error')[0]!.message).toMatch(/Pick a target/);
+    expect(store.combat!.left.action).toBe(true);
+  });
+
   it('pushes the target with a push mastery weapon (2024)', () => {
     store.setToken({
       ...store.tokens.get('hero')!,

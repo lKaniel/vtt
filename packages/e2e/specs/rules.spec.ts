@@ -52,6 +52,14 @@ test.describe('a weapon attack', () => {
   });
 });
 
+test('an attack at empty ground is spent and hits nothing', async ({ page }) => {
+  await atTable(page, PLAYER_2);
+  await clickOnMap(page, BRAM);
+  await page.getByRole('button', { name: 'Longsword' }).click();
+  await clickOnMap(page, [BRAM[0] - 20, BRAM[1] - 100]);
+  await expect(chatLog(page).getByText(/Bram → nothing, Longsword/)).toBeVisible();
+});
+
 test('Magic Missile always hits and spends a spell slot', async ({ page }) => {
   await atTable(page, PLAYER_1);
   await clickOnMap(page, ORRIN);

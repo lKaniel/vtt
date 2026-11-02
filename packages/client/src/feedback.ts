@@ -150,6 +150,8 @@ function weaponElement(log: AttackLog): Element {
 }
 
 function attackCues(log: AttackLog): Cue[] {
+  // An attack at empty ground has no one to strike.
+  if (!log.targetId) return [];
   const chosen = animationOf(log.animation);
   const element = chosen?.element ?? weaponElement(log);
   const { attackerId: from, targetId: to } = log;
