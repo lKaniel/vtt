@@ -1,5 +1,5 @@
 import { inArea } from './areas.ts';
-import { isParty, type Point } from '@vtt/shared';
+import { isParty, type Light, type Point, ringAround, wallAcross, type WallRules } from '@vtt/shared';
 import type { Token } from './token-schema.ts';
 import type { Effect, Spell } from './spell-schema.ts';
 
@@ -109,4 +109,25 @@ export function zonesOf(tokens: Iterable<Token>): ZoneHit[] {
     for (const e of bearer.effects ?? []) if (e.zone) out.push({ bearer, effect: { ...e, zone: e.zone } });
   }
   return out;
+}
+
+/** What a lasting area puts on the map: a light, and walls with the rules they all share. */
+export interface ZonePlacements {
+  light?: Light & { x: number; y: number };
+  walls: { a: Point; b: Point }[];
+  rules?: WallRules;
+}
+
+/** The light and walls a zone's spell puts on the map (see Spell `places`), in pixels at `gridSize` per 5 ft. */
+export function zonePlacements({ bearer, effect }: ZoneHit, spell: Spell, gridSize: number): ZonePlacements {
+  const places = spell.places;
+  const size = spell.area?.size;
+  if (!places || size === undefined) return { walls: [] };
+  const at: Point = effect.zone.at ?? [bearer.x, bearer.y];
+  const light = places.light && { dim: 0, ...places.light, bright: size, x: at[0], y: at[1] };
+  if (!places.wall) return { light, walls: [] };
+  const { shape, ...rules } = places.wall;
+  const px = (size * gridSize) / 5;
+  const ends = shape === 'ring' ? ringAround(at, px) : [wallAcross([bearer.x, bearer.y], at, px)];
+  return { light, walls: ends.map(([a, b]) => ({ a, b })), rules };
 }

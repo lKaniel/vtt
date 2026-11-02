@@ -73,3 +73,24 @@ export function wallsInRect(walls: readonly Wall[], r: Rect): Wall[] {
       Math.min(w.a[1], w.b[1]) <= r.y + r.h,
   );
 }
+
+/** A straight wall `length` long centred on `at`, square to the line from `from` to `at` (a wall spell cast across your view). */
+export function wallAcross(from: Point, at: Point, length: number): [Point, Point] {
+  const dx = at[0] - from[0];
+  const dy = at[1] - from[1];
+  const len = Math.hypot(dx, dy) || 1;
+  const [px, py] = [(-dy / len) * (length / 2), (dx / len) * (length / 2)];
+  return [
+    [at[0] + px, at[1] + py],
+    [at[0] - px, at[1] - py],
+  ];
+}
+
+/** A closed ring of `sides` straight walls of radius `r` round `c` (a dome or globe seen from above). */
+export function ringAround(c: Point, r: number, sides = 16): [Point, Point][] {
+  const at = (i: number): Point => {
+    const t = (i / sides) * 2 * Math.PI;
+    return [c[0] + r * Math.cos(t), c[1] + r * Math.sin(t)];
+  };
+  return Array.from({ length: sides }, (_, i) => [at(i), at(i + 1)]);
+}
