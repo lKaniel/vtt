@@ -9,6 +9,7 @@ import { HttpError, parseBody, send } from './http-json.ts';
 import { answerRpc } from './mcp-protocol.ts';
 import { type BridgeTable, mcpTools } from './mcp-tools.ts';
 import { repoRoot } from './paths.ts';
+import { sameText } from './secrets.ts';
 
 // The Claude bridge: POST /mcp speaks MCP (mcp-protocol.ts), so Claude Code
 // or Claude Desktop can sit at a live game. A caller shows a key: one an
@@ -32,7 +33,7 @@ const GUIDE = join(repoRoot, 'docs/game-format.md');
 function callerOf(req: IncomingMessage, deps: McpDeps): Caller | undefined {
   const key = /^Bearer\s+(\S+)$/i.exec(req.headers.authorization ?? '')?.[1];
   if (!key) return undefined;
-  if (deps.mcpKey && key === deps.mcpKey) return { server: true };
+  if (deps.mcpKey && sameText(key, deps.mcpKey)) return { server: true };
   const account = deps.accounts.mcpAccount(key);
   return account && { account };
 }

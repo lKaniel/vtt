@@ -14,6 +14,7 @@ import { z } from 'zod';
 import type { Account, AccountStore } from './accounts.ts';
 import { SYSTEMS } from './systems.ts';
 import type { CharacterStore } from './characters.ts';
+import type { GameAccess } from './game-access.ts';
 import type { GameHub, GameInfo } from './game-hub.ts';
 import type { GameStore } from './game-store.ts';
 import { HttpError, parseBody, send, signedIn, type Call, type Routes } from './http-json.ts';
@@ -33,6 +34,9 @@ const NewGameInput = z.object({ name: z.string().max(80), system: z.string(), ru
 const JoinInput = z.object({ character: z.string().optional() });
 const RoleInput = z.object({ role: RoleSchema });
 const OpenInput = z.object({ open: z.boolean() });
+const ApprovalInput = z.object({ approval: z.boolean() });
+const AnswerInput = z.object({ approve: z.boolean() });
+const SeatPasswordInput = z.object({ password: z.string().max(200).nullable() });
 const FoundryInput = z.object({
   folder: z.string().min(1).max(1000),
   name: z.string().max(80).optional(),
@@ -57,8 +61,10 @@ function summary(info: GameInfo, account: Account): GameSummary {
   };
 }
 
-function detail(info: GameInfo, account: Account): GameDetail {
+function detail(info: GameInfo, account: Account, access: GameAccess): GameDetail {
   const seat = seatOf(info, account);
+  const gm = !!seat && isGm(seat);
+  const locked = new Set(access.lockedSeats(info.id));
   return {
     ...summary(info, account),
     players: info.players.map(({ id, name, role, color }) => ({
@@ -67,8 +73,10 @@ function detail(info: GameInfo, account: Account): GameDetail {
       role,
       color,
       online: info.online.includes(id),
+      ...(locked.has(id) && { locked: true }),
     })),
-    ...(seat && isGm(seat) && info.invite ? { invite: info.invite } : {}),
+    ...(gm && info.invite ? { invite: info.invite } : {}),
+    ...(gm && { approval: info.approval, requests: access.requests(info.id) }),
   };
 }
 
@@ -90,7 +98,7 @@ export class LobbyRoutes implements Routes {
     const info = await this.visible(id, account);
     switch (`${call.method} ${sub ?? ''}`) {
       case 'GET ':
-        send(call.res, 200, { game: detail(info, account) });
+        send(call.res, 200, { game: detail(info, account, this.deps.hub.access) });
         return;
       case 'DELETE ':
         return this.remove(call, info, account);
@@ -100,10 +108,20 @@ export class LobbyRoutes implements Routes {
         return this.invite(call, info, account);
       case 'PUT open':
         return this.setOpen(call, info, account);
+      case 'PUT approval':
+        return this.setApproval(call, info, account);
       default:
-        if (sub === 'members') return this.member(call, info, account);
-        throw new HttpError(405, 'Method not allowed.');
+        return this.byPath(call, info, account);
     }
+  }
+
+  /** Calls on a game's requests and members, which carry an id in the path. */
+  private byPath(call: Call, info: GameInfo, account: Account): Promise<void> {
+    const [, , sub, , extra] = call.parts;
+    if (sub === 'requests') return this.answer(call, info, account);
+    if (sub === 'members' && extra === 'password') return this.seatPassword(call, info, account);
+    if (sub === 'members') return this.member(call, info, account);
+    throw new HttpError(405, 'Method not allowed.');
   }
 
   /** Calls that aren't about one game: the list, a new game, an import, an invite. */
@@ -168,6 +186,36 @@ export class LobbyRoutes implements Routes {
     send(call.res, 200, {});
   }
 
+  private async setApproval(call: Call, info: GameInfo, account: Account): Promise<void> {
+    this.requireGm(info, account);
+    const { approval } = await parseBody(call.req, ApprovalInput);
+    await this.deps.hub.access.setApproval(info.id, approval);
+    send(call.res, 200, {});
+  }
+
+  /** GM: lets an account that asked to join in (as a player), or turns it down. */
+  private async answer(call: Call, info: GameInfo, account: Account): Promise<void> {
+    this.requireGm(info, account);
+    if (call.method !== 'POST') throw new HttpError(405, 'Method not allowed.');
+    const { approve } = await parseBody(call.req, AnswerInput);
+    const asked = await this.deps.hub.access.answer(info.id, call.parts[3] ?? '');
+    if (!asked) throw new HttpError(404, 'No such request.');
+    const joining = approve && this.deps.accounts.get(asked.id);
+    if (joining) seat((await this.deps.hub.open(info.id)).store, joining, 'player');
+    send(call.res, 200, {});
+  }
+
+  /** GM: a password on a seat taken without an account, or (null) none. */
+  private async seatPassword(call: Call, info: GameInfo, account: Account): Promise<void> {
+    this.requireGm(info, account);
+    if (call.method !== 'PUT') throw new HttpError(405, 'Method not allowed.');
+    const member = call.parts[3] ?? '';
+    if (!info.players.some((p) => p.id === member)) throw new HttpError(404, 'No such seat.');
+    const { password } = await parseBody(call.req, SeatPasswordInput);
+    await this.deps.hub.access.setSeatKey(info.id, member, password === '' ? null : password);
+    send(call.res, 200, {});
+  }
+
   /** Changes a member's role, or removes them. Anyone may leave; the rest is the GM's. */
   private async member(call: Call, info: GameInfo, account: Account): Promise<void> {
     const member = call.parts[3] ?? '';
@@ -189,7 +237,18 @@ export class LobbyRoutes implements Routes {
     const id = this.deps.hub.byInvite(code);
     if (!id) throw new HttpError(404, 'This invite link is old or wrong: ask the GM for a new one.');
     const { store } = await this.deps.hub.open(id);
+    if (this.mustAsk(id, store, account)) return this.ask(call, id, account);
     send(call.res, 200, { game: id, player: seat(store, account, 'player') });
+  }
+
+  /** Joining asks the GM: the game wants approval and the account has no seat yet. */
+  private mustAsk(id: string, store: GameStore, account: Account): boolean {
+    return this.deps.hub.access.needsApproval(id) && !store.world.players.some((p) => p.id === account.id);
+  }
+
+  private async ask(call: Call, id: string, account: Account): Promise<void> {
+    await this.deps.hub.access.request(id, account);
+    send(call.res, 200, { game: id, pending: true });
   }
 
   /** Takes the account's seat, bringing a roster character onto the map if one is picked. */
@@ -199,6 +258,7 @@ export class LobbyRoutes implements Routes {
     if (cid && !character) throw new HttpError(404, 'No such character.');
     if (!seatOf(info, account) && !info.open) throw new HttpError(403, 'Ask the GM for an invite link.');
     const { store } = await this.deps.hub.open(info.id);
+    if (!account.admin && this.mustAsk(info.id, store, account)) return this.ask(call, info.id, account);
     // The server's admin runs the home game, as before games had a lobby.
     const player = seat(store, account, account.admin && info.home ? 'gm' : 'player');
     if (character) place(store, character);

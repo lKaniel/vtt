@@ -14,9 +14,14 @@ const homeDir = gameDirFromArgs();
 const clientDist = resolve(repoRoot, 'packages/client/dist');
 const dataDir = dataDirFor(homeDir);
 
+/** VTT_ADMIN_PASSWORD, when set to something. */
+function adminPassword(value: string | undefined): string | undefined {
+  return value?.trim() ? value : undefined;
+}
+
 const hub = new GameHub({ dataDir, home: homeDir });
 await hub.load();
-const accounts = new AccountStore(dataDir);
+const accounts = new AccountStore(dataDir, adminPassword(process.env.VTT_ADMIN_PASSWORD));
 await accounts.load();
 const characters = new CharacterStore(dataDir);
 await characters.load();
@@ -30,7 +35,11 @@ const handleRequest = httpHandler({
   assetsDir,
   packFile: (pack, path) => hub.packs.mediaFile(pack, path),
   clientDir: clientDist,
-  players: async () => (hub.homeId ? (await hub.info(hub.homeId)).players : []),
+  players: async () => {
+    if (!hub.homeId) return [];
+    const locked = new Set(hub.access.lockedSeats(hub.homeId));
+    return (await hub.info(hub.homeId)).players.map((p) => ({ ...p, locked: locked.has(p.id) }));
+  },
   api: apiHandler({ accounts, characters, hub, mcpKey: process.env.VTT_MCP_KEY }),
 });
 
@@ -50,6 +59,7 @@ server.on('upgrade', (req, socket, head) => {
     (seat) =>
       wss.handleUpgrade(req, socket, head, (ws) => {
         if (!seat) return ws.close(4001, 'unknown player');
+        if ('refuse' in seat) return ws.close(seat.refuse, 'wrong seat password');
         try {
           hub.connect(seat.game, ws, seat.player);
         } catch {

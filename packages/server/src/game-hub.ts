@@ -14,6 +14,7 @@ import {
 import type { WebSocket } from 'ws';
 import { foundryWorldTitle, importFoundryWorld, type WorldReport } from './foundry-world.ts';
 import { Game } from './game.ts';
+import { GameAccess } from './game-access.ts';
 import { GameIndex } from './game-index.ts';
 import { GameStore } from './game-store.ts';
 import { SYSTEMS } from './systems.ts';
@@ -65,6 +66,8 @@ export interface GameInfo {
   invite?: string;
   /** The game the server was started with: it can't be deleted from the lobby. */
   home: boolean;
+  /** Joining asks the GM first. */
+  approval: boolean;
 }
 
 /** Something the lobby can't do, with the reason to show. */
@@ -79,12 +82,15 @@ export class GameHub {
   private live = new Map<string, Running>();
   private timers = new Map<string, NodeJS.Timeout>();
   private index: GameIndex;
+  /** Join requests and seat passwords (game-access.ts). */
+  readonly access: GameAccess;
   homeId?: string;
   /** The asset packs installed on the server: the data folder's packs/. */
   readonly packs: PackStore;
 
   constructor(private opts: HubOptions) {
     this.index = new GameIndex(opts.dataDir);
+    this.access = new GameAccess(this.index);
     this.packs = new PackStore(join(opts.dataDir, 'packs'));
   }
 
@@ -214,6 +220,7 @@ export class GameHub {
       ...(entry.lastPlayed ? { lastPlayed: entry.lastPlayed } : {}),
       ...(entry.invite ? { invite: entry.invite } : {}),
       home: id === this.homeId,
+      approval: !!entry.approval,
     };
   }
 
