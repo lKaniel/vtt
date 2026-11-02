@@ -5,9 +5,10 @@ import { MapView } from '../canvas/MapView.ts';
 import { editKey, editorKey, type EditKey, type EditorKey, type LayerKey } from '../edit-keys.ts';
 import { hotbarTiles } from '../hotbar.ts';
 import { Session } from '../session.ts';
-import { stepTarget } from '../stepping.ts';
+import { actionOf, currentKeys } from '../keybinds.ts';
+import { STEP_ACTIONS, stepTarget } from '../stepping.ts';
 import { activateTile, ActionBar, canActivate } from './ActionBar.tsx';
-import { CharacterSheet } from './CharacterSheet.tsx';
+import { Sheets } from './PoppedSheets.tsx';
 import { ClockBar } from './clock/ClockBar.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
@@ -57,8 +58,9 @@ export function GameScreen({
       if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
       if (e.key === 'Escape' && backOutOfEditor(session)) return;
       if (targetKey(session, e) || runEditorKey(session, e)) return;
-      if (e.key === 'c') toggleSheet(session);
-      else if (e.key === 'e') toggleEditor(session);
+      const sheetKey = actionOf(e, currentKeys(), ['sheet', 'editSheet']);
+      if (sheetKey === 'sheet') toggleSheet(session);
+      else if (sheetKey === 'editSheet') toggleEditor(session);
       else handleGameKey(session, e);
     };
     addEventListener('keydown', onKey);
@@ -105,7 +107,7 @@ export function GameScreen({
       <DiceOverlay session={session} />
       <ReactionPrompt session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
-      <CharacterSheet session={session} />
+      <Sheets session={session} />
       <ChatPanel session={session} />
       <Toast session={session} />
       <ContextMenu session={session} />
@@ -231,7 +233,7 @@ function backOutOfEditor(session: Session): boolean {
 
 /** T in the tokens mode targets the creature under the pointer, or lets them all go over empty ground (see targets.ts). */
 function targetKey(session: Session, e: KeyboardEvent): boolean {
-  if (e.key.toLowerCase() !== 't' || e.shiftKey || session.mode !== 'tokens') return false;
+  if (session.mode !== 'tokens' || e.shiftKey || !actionOf(e, currentKeys(), ['target'])) return false;
   return session.toggleTargetAtPointer();
 }
 
@@ -270,7 +272,8 @@ function toggleEditor(session: Session): void {
 /** Arrow keys walk the selected creature one square. */
 function step(session: Session, e: KeyboardEvent): boolean {
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
-  const to = token && session.world && stepTarget(token, e.key, session.world.gridSize);
+  const id = actionOf(e, currentKeys(), STEP_ACTIONS);
+  const to = token && id && session.world && stepTarget(token, id, session.world.gridSize);
   if (!token || !to) return false;
   e.preventDefault();
   session.move(token.id, to);
@@ -284,17 +287,23 @@ function backOut(session: Session): void {
   else session.select(undefined);
 }
 
-/** Esc backs out, 1-0 use the action bar's tiles, Space ends your turn. */
+/** Esc backs out, 1-0 use the action bar's tiles, Space ends your turn (or the player's own keys, keybinds.ts). */
 function handleGameKey(session: Session, e: KeyboardEvent): void {
   if (step(session, e)) return;
   if (e.key === 'Escape') return backOut(session);
-  if (e.key === ' ' && session.isMyTurn()) {
+  const id = actionOf(e, currentKeys());
+  if (id === 'endTurn' && session.isMyTurn()) {
     e.preventDefault();
     session.endTurn();
     return;
   }
+  if (id?.startsWith('hotbar-')) pressSlot(session, id.slice(7));
+}
+
+/** Uses the selected creature's action bar tile in slot `hotkey` ("1".."0"). */
+function pressSlot(session: Session, hotkey: string): void {
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
-  const tile = token && hotbarTiles(token, session.macroOf).find((t) => t?.hotkey === e.key);
+  const tile = token && hotbarTiles(token, session.macroOf).find((t) => t?.hotkey === hotkey);
   if (token && tile && canActivate(tile)) activateTile(session, token, tile);
 }
 

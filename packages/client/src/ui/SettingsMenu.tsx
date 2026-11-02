@@ -6,6 +6,7 @@ import { type Automation, automationOf } from '@vtt/system-dnd5e';
 import type { Session } from '../session.ts';
 import { Button } from './kit/button.tsx';
 import { Label } from './kit/label.tsx';
+import { KeysDialog } from './KeysDialog.tsx';
 import { ProfileRow } from './ProfileRow.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 import { Separator } from './kit/separator.tsx';
@@ -89,6 +90,7 @@ export function SettingsMenu({ session }: Readonly<{ session: Session }>) {
         <Separator />
         <MotionRow />
         <DiceRow />
+        <KeysDialog />
       </PopoverContent>
     </Popover>
   );

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { assetUrl } from '../assets.ts';
 import { pageText } from '../journal-text.ts';
 import type { Session } from '../session.ts';
-import { RichText } from './creator/Parts.tsx';
+import { ContentText } from './ContentText.tsx';
+import { EntryHeader, EntryTools } from './JournalParts.tsx';
 import { Textarea } from './kit/textarea.tsx';
 import { Button } from './kit/button.tsx';
 import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
@@ -53,13 +54,22 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
           </TabsList>
         </Tabs>
         {gm && (
-          <Button variant="ghost" size="sm" onClick={addPage}>
-            <PlusIcon /> Page
-          </Button>
+          <>
+            <EntryTools session={session} doc={doc} />
+            <Button variant="ghost" size="sm" onClick={addPage}>
+              <PlusIcon /> Page
+            </Button>
+          </>
         )}
       </div>
+      <EntryHeader session={session} doc={doc} />
       {page ? (
-        <PageView page={page} gm={gm} onChange={(p) => setPages(pages.map((x) => (x.id === p.id ? p : x)))} />
+        <PageView
+          key={page.id}
+          session={session}
+          page={page}
+          onChange={(p) => setPages(pages.map((x) => (x.id === p.id ? p : x)))}
+        />
       ) : (
         <p className="muted">{gm ? 'Add a page.' : 'You may know of this, but not what it says.'}</p>
       )}
@@ -67,11 +77,32 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
   );
 }
 
-function PageView({ page, gm, onChange }: Readonly<{ page: Page; gm: boolean; onChange: (p: Page) => void }>) {
-  const [draft, setDraft] = useState(page.text ?? '');
+interface PageProps {
+  session: Session;
+  page: Page;
+  onChange: (p: Page) => void;
+}
+
+/** A page: a picture, or text with its links and rolls live; the GM switches to editing the text. */
+function PageView({ session, page, onChange }: Readonly<PageProps>) {
+  const gm = session.isGm();
+  const [editing, setEditing] = useState(gm && !page.text);
   if (page.kind === 'image' && page.src)
     return <img className="journal-image" src={assetUrl(page.src)} alt={page.name} />;
-  if (!gm) return <RichText text={pageText(page.text ?? '')} className="rich journal-text" />;
+  const text = <ContentText session={session} text={pageText(page.text ?? '')} className="rich journal-text" />;
+  if (!gm) return text;
+  return (
+    <>
+      {editing ? <PageEditor page={page} onChange={onChange} /> : text}
+      <Button variant="ghost" size="sm" className="self-start" onClick={() => setEditing(!editing)}>
+        {editing ? 'Done' : 'Edit text'}
+      </Button>
+    </>
+  );
+}
+
+function PageEditor({ page, onChange }: Readonly<Omit<PageProps, 'session'>>) {
+  const [draft, setDraft] = useState(page.text ?? '');
   return (
     <Textarea
       className="journal-edit"
@@ -79,6 +110,7 @@ function PageView({ page, gm, onChange }: Readonly<{ page: Page; gm: boolean; on
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => draft !== page.text && onChange({ ...page, text: draft })}
       aria-label="Page text"
+      placeholder="Links: @journal[id]{label}, @actor[id], @spell[fireball]. Rolls: [[/r 2d6]], [[/check perception 15]]."
     />
   );
 }

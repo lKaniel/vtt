@@ -115,7 +115,7 @@ function RestButtons({ session }: Readonly<{ session: Session }>) {
 function IdleBar({ session, onStart }: StartProps) {
   const [shared, setShared] = useState(loadShared);
   return (
-    <div className="turn-order idle">
+    <div className="turn-order idle flex-wrap justify-center">
       <Button
         variant="outline"
         onClick={() => onStart(shared)}

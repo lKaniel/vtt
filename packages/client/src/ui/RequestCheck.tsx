@@ -1,7 +1,7 @@
 import { isParty } from '@vtt/shared';
 import type { CheckRequestKind } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { CHECK_OPTIONS, checkOf } from '../check-text.ts';
+import { askedOf, CHECK_OPTIONS, checkOf } from '../check-text.ts';
 import type { Session } from '../session.ts';
 import { Button } from './kit/button.tsx';
 import { NumberField } from './kit/number-field.tsx';
@@ -39,8 +39,7 @@ function RequestCheck({ session }: Readonly<{ session: Session }>) {
   const [dc, setDc] = useState(0);
   const [kind, setKind] = useState<CheckRequestKind>('each');
   const all = [...session.tokens.values()].filter((t) => t.sheet !== undefined);
-  const selected = all.filter((t) => session.isSelected(t.id));
-  const who = selected.length ? selected : all.filter((t) => isParty(t) && !t.monster);
+  const who = askedOf(all, (id) => session.isSelected(id), isParty);
   const contest = kind === 'contest';
   const ready = contest ? who.length === 2 : who.length > 0;
   const send = () =>

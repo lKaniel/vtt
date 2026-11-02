@@ -21,3 +21,24 @@ export function checkOf(value: string): CheckKind {
 export function checkValue(check: CheckKind): string {
   return check.skill ? `${check.ability}:${check.skill}` : check.ability;
 }
+
+const ABILITY_NAMES = new Map(ABILITIES.map((a) => [abilityName(a).toLowerCase(), a]));
+
+/** A check by its name as written in text: "perception", "dex" or "dexterity". */
+export function checkNamed(name: string): CheckKind | undefined {
+  const key = name.toLowerCase();
+  const skill = Object.entries(SKILLS).find(([s]) => s === key || skillName(s).toLowerCase() === key);
+  if (skill) return { ability: skill[1], skill: skill[0] };
+  const ability = (ABILITIES as readonly string[]).includes(key) ? (key as Ability) : ABILITY_NAMES.get(key);
+  return ability && { ability };
+}
+
+/** Who a check is asked of: the selected creatures, else the party. */
+export function askedOf<T extends { id: string; monster?: unknown }>(
+  all: readonly T[],
+  selected: (id: string) => boolean,
+  party: (t: T) => boolean,
+): T[] {
+  const picked = all.filter((t) => selected(t.id));
+  return picked.length ? picked : all.filter((t) => party(t) && !t.monster);
+}

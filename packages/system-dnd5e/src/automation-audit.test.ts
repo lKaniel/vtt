@@ -26,6 +26,7 @@ const doesSomething = (s: Spell) =>
     s.cures,
     s.revive,
     s.dispels,
+    s.places,
     s.hpTiers,
   ].some(Boolean);
 

@@ -1,6 +1,6 @@
 import type { Doc, Op } from '@vtt/core';
 import type { Template } from '@vtt/shared';
-import { type ZoneHit, zonesOf, zoneTemplate } from '@vtt/system-dnd5e';
+import { withChoice, type ZoneHit, zonesOf, zoneTemplate } from '@vtt/system-dnd5e';
 import type { Table } from './table.ts';
 
 // Lasting zones show as templates on the map. After every step the templates
@@ -44,8 +44,10 @@ export class ZoneTemplates {
   }
 
   private create(z: ZoneHit): Op[] {
-    const spell = this.table.content(z.bearer).spells.get(z.effect.zone.spell);
-    const shape = spell && zoneTemplate(z, spell);
+    const known = this.table.content(z.bearer).spells.get(z.effect.zone.spell);
+    const spell = known && withChoice(known, z.effect.zone.choice);
+    // A wall spell shows as its walls (zone-placements.ts), not as an area.
+    const shape = spell && !spell.places?.wall && zoneTemplate(z, spell);
     if (!shape) return [];
     const effect: Owner = { token: z.bearer.id, id: z.effect.id };
     const doc = { id: idOf(z), type: 'template', rev: 0, ...shape, effect } as Doc;
