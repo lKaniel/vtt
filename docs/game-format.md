@@ -585,15 +585,16 @@ spells and features are added by dragging them from the Compendium.
 The server writes the rest of a creature's magic to its token, and you can
 edit it too:
 
-| Token field     | Meaning                                                                                                                                                                                    |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.                                                                                      |
-| `deathSaves`    | `{ "successes", "failures", "stable"?, "dead"? }`: a character at 0 hp rolls these at the start of its turns. Monsters just die at 0.                                                      |
-| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                                      |
-| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st) and feature uses.                                                                                     |
-| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                                              |
-| `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"`, `"scroll:fireball"` or `null`. |
-| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                                                |
+| Token field     | Meaning                                                                                                                                                                                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.                                                                                                                                                                     |
+| `deathSaves`    | `{ "successes", "failures", "stable"?, "dead"? }`: a character at 0 hp rolls these at the start of its turns. Monsters just die at 0.                                                                                                                                     |
+| `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                                                                                                                     |
+| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st), feature uses, and `hitDice` spent (one per level, of the class die; an owner spends one from the Effects page to heal die + Con; a long rest gives back half in 2014, all in 2024). |
+| `exhaustion`    | 1 to 6. 2014: disadvantage on checks, speed halved, disadvantage on attacks and saves, HP max halved, speed 0, dead (cumulative). 2024: −2 per level to d20 tests, −5 ft speed per level, dead at 6. A long rest takes one level away.                                    |
+| `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                                                                                                                             |
+| `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"`, `"scroll:fireball"` or `null`.                                                                                |
+| `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                                                                                                                               |
 
 Effect modifiers: `senses` (e.g. `{ "darkvision": 60 }` or
 `{ "seeInvisible": true }`), `conditions` (e.g. `["prone"]`, `["paralyzed"]`),
