@@ -12,7 +12,7 @@ export function gameDirFromArgs(): string {
   return resolve(arg ?? process.env.VTT_GAME ?? process.env.VTT_WORLD ?? resolve(repoRoot, 'world'));
 }
 
-/** Accounts and characters: VTT_DATA, or a data folder next to the game folder. */
+/** Sessions, characters and Setup's games: VTT_DATA, or a data folder next to the game folder. */
 export function dataDirFor(gameDir: string): string {
   return resolve(process.env.VTT_DATA ?? resolve(dirname(gameDir), 'data'));
 }

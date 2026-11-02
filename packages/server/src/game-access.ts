@@ -1,59 +1,78 @@
-import type { Account } from './accounts.ts';
-import type { GameIndex, IndexEntry } from './game-index.ts';
-import { checkSecret, hashSecret } from './secrets.ts';
+import { createHash, randomBytes } from 'node:crypto';
+import type { GameIndex } from './game-index.ts';
+import { checkSecret, type Hashed, hashSecret } from './secrets.ts';
 
-// Who gets into a game besides its members: join requests the GM approves
-// (when the game asks for approval), and passwords on fixed seats, the ones
-// taken without an account. Kept in the server's games.json (game-index.ts).
+// What opens a game's players, besides the game folder: each player's
+// password (picked on the join screen) and each player's key for Claude
+// (mcp-http.ts). Kept in the server's games.json (game-index.ts), so copying a
+// game folder to another server doesn't copy them.
 
-export type JoinRequest = NonNullable<IndexEntry['requests']>[number];
+const sha256 = (text: string) => createHash('sha256').update(text).digest('hex');
 
 export class GameAccess {
   constructor(private index: GameIndex) {}
 
-  /** Whether joining asks the GM first. */
-  needsApproval(game: string): boolean {
-    return !!this.index.get(game).approval;
-  }
-
-  setApproval(game: string, approval: boolean): Promise<void> {
-    return this.index.set(game, { approval });
-  }
-
-  requests(game: string): JoinRequest[] {
-    return this.index.get(game).requests ?? [];
-  }
-
-  /** The account asks to join (once). */
-  async request(game: string, account: Account): Promise<void> {
-    const waiting = this.requests(game);
-    if (waiting.some((r) => r.id === account.id)) return;
-    await this.index.set(game, { requests: [...waiting, { id: account.id, name: account.name, at: Date.now() }] });
-  }
-
-  /** Takes an account's request off the list; undefined if it had none. */
-  async answer(game: string, account: string): Promise<JoinRequest | undefined> {
-    const waiting = this.requests(game);
-    const found = waiting.find((r) => r.id === account);
-    if (found) await this.index.set(game, { requests: waiting.filter((r) => r !== found) });
-    return found;
-  }
-
-  /** Puts a password on a seat, or (null) takes it off. */
-  async setSeatKey(game: string, seat: string, password: string | null): Promise<void> {
-    const { [seat]: _old, ...rest } = this.index.get(game).seatKeys ?? {};
-    const keys = password ? { ...rest, [seat]: await hashSecret(password) } : rest;
+  /** Puts a password on a player, or (null) takes it off. */
+  async setPassword(game: string, player: string, password: string | null): Promise<void> {
+    const { [player]: _old, ...rest } = this.index.get(game).seatKeys ?? {};
+    const keys = password ? { ...rest, [player]: await hashSecret(password) } : rest;
     await this.index.set(game, { seatKeys: keys });
   }
 
-  /** The seats with a password. */
-  lockedSeats(game: string): string[] {
+  /** Gives a player an already hashed password (an old account's, migrate-accounts.ts), unless it has one. */
+  async adoptPassword(game: string, player: string, hashed: Hashed): Promise<void> {
+    const keys = this.index.get(game).seatKeys ?? {};
+    if (!keys[player]) await this.index.set(game, { seatKeys: { ...keys, [player]: hashed } });
+  }
+
+  /** Gives a player an already hashed Claude key (an old account's), unless it has one. */
+  async adoptMcpKey(game: string, player: string, hash: string): Promise<void> {
+    const keys = this.index.get(game).mcpKeys ?? {};
+    if (!keys[player]) await this.index.set(game, { mcpKeys: { ...keys, [player]: hash } });
+  }
+
+  /** The players with a password. */
+  locked(game: string): string[] {
     return Object.keys(this.index.get(game).seatKeys ?? {});
   }
 
-  /** Whether `key` opens the seat: any key does when it has no password. */
-  async opens(game: string, seat: string, key: string | null): Promise<boolean> {
-    const hashed = this.index.get(game).seatKeys?.[seat];
-    return !hashed || (key !== null && (await checkSecret(key, hashed)));
+  /** Whether `password` opens the player: anything does when it has none. */
+  async opens(game: string, player: string, password: string | null): Promise<boolean> {
+    const hashed = this.index.get(game).seatKeys?.[player];
+    return !hashed || (password !== null && (await checkSecret(password, hashed)));
+  }
+
+  /** A removed player's password and Claude key go with them. */
+  async forget(game: string, player: string): Promise<void> {
+    const entry = this.index.get(game);
+    const { [player]: _key, ...seatKeys } = entry.seatKeys ?? {};
+    const { [player]: _mcp, ...mcpKeys } = entry.mcpKeys ?? {};
+    await this.index.set(game, { seatKeys, mcpKeys });
+  }
+
+  /** A new key for Claude to sit as `player` with; it replaces the old one. Shown once. */
+  async newMcpKey(game: string, player: string): Promise<string> {
+    const key = `vtt_${randomBytes(24).toString('base64url')}`;
+    await this.index.set(game, { mcpKeys: { ...this.index.get(game).mcpKeys, [player]: sha256(key) } });
+    return key;
+  }
+
+  async dropMcpKey(game: string, player: string): Promise<void> {
+    const { [player]: _gone, ...rest } = this.index.get(game).mcpKeys ?? {};
+    await this.index.set(game, { mcpKeys: rest });
+  }
+
+  hasMcpKey(game: string, player: string): boolean {
+    return !!this.index.get(game).mcpKeys?.[player];
+  }
+
+  /** The game and player a Claude key sits as. */
+  mcpSeat(key: string): { game: string; player: string } | undefined {
+    const hash = sha256(key);
+    for (const [game, entry] of this.index.all()) {
+      const player = Object.entries(entry.mcpKeys ?? {}).find(([, h]) => h === hash)?.[0];
+      if (player) return { game, player };
+    }
+    return undefined;
   }
 }

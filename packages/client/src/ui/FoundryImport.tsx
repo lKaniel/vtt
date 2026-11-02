@@ -1,6 +1,6 @@
 import type { FoundryImportReport } from '@vtt/shared';
 import { useState } from 'react';
-import { api } from '../account-api.ts';
+import { api } from '../server-api.ts';
 import { importSummary } from '../foundry-report.ts';
 import { Button } from './kit/button.tsx';
 import { Card } from './kit/card.tsx';

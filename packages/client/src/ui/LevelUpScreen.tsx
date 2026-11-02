@@ -24,11 +24,12 @@ type Bonus = Partial<Record<Ability, number>>;
 
 /** Gaining a level: hit points, an ability score improvement, a subclass and new spells. */
 export function LevelUpScreen({
+  game,
   character: saved,
   onDone,
   onCancel,
-}: Readonly<{ character: Character; onDone: () => void; onCancel: () => void }>) {
-  const homebrew = useHomebrewClasses();
+}: Readonly<{ game: string; character: Character; onDone: () => void; onCancel: () => void }>) {
+  const homebrew = useHomebrewClasses(game);
   const [classId, setClassId] = useState(saved.class);
   // A new homebrew class to multiclass into comes along on the character.
   const taking = (id: string) =>
@@ -42,7 +43,7 @@ export function LevelUpScreen({
   const [improvement, setImprovement] = useState<Bonus>({});
   const [subclass, setSubclass] = useState<string>();
   const [spells, setSpells] = useState(c.spells);
-  const { busy, error, save } = useSaveCharacter(onDone);
+  const { busy, error, save } = useSaveCharacter(game, onDone);
   const choice = { hp, class: classId, improvement: plan.improvement ? improvement : undefined, subclass, spells };
   const next = levelUp(c, choice);
   const issues = plan.problem ? [plan.problem] : characterIssues(next);

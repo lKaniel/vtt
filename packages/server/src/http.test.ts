@@ -28,10 +28,6 @@ beforeAll(async () => {
     assetsDir: (game) => ({ other: join(dir, 'other', 'assets'), home: join(dir, 'assets') })[game ?? 'home'],
     pluginFile: (plugin, path) => (plugin === 'turn-alert' && path === 'main.js' ? join(dir, 'main.js') : undefined),
     clientDir: join(dir, 'client'),
-    players: () => [
-      { id: 'gm', name: 'GM', role: 'gm', color: '#fff' },
-      { id: 'ana', name: 'Ana', role: 'player', color: '#f00', locked: true },
-    ],
   });
   server = createServer((req, res) => void handle(req, res));
   await new Promise<void>((done) => server.listen(0, done));
@@ -43,14 +39,6 @@ afterAll(() => {
 });
 
 describe('httpHandler', () => {
-  it('lists the seats, and which have a password', async () => {
-    const res = await fetch(`${base}/api/players`);
-    expect(await res.json()).toEqual([
-      { id: 'gm', name: 'GM', role: 'gm', color: '#fff' },
-      { id: 'ana', name: 'Ana', role: 'player', color: '#f00', locked: true },
-    ]);
-  });
-
   it('serves assets with their type', async () => {
     const res = await fetch(`${base}/assets/map.png`);
     expect(res.headers.get('content-type')).toBe('image/png');

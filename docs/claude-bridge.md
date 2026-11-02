@@ -7,8 +7,9 @@ editing documents while everyone watches.
 
 ## Connecting
 
-1. Sign in, open your account page and press **Connect Claude**, then
-   **Make a key**. The key is shown once; a new one replaces it.
+1. Join the game, open its page and press **Connect Claude**, then
+   **Make a key**. The key is shown once; a new one replaces it. Claude plays
+   as the player you joined as, at that game.
 2. Paste the command it shows into a terminal:
 
    ```sh
@@ -16,8 +17,8 @@ editing documents while everyone watches.
      --header "Authorization: Bearer vtt_..."
    ```
 
-A server without accounts can set `VTT_MCP_KEY=<secret>` instead: that key
-sits as the home game's GM.
+A server can also set `VTT_MCP_KEY=<secret>`: that key sits as the home
+game's GM.
 
 ## What Claude may do
 

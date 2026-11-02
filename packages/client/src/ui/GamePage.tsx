@@ -1,231 +1,211 @@
 import type { Character } from '@vtt/system-dnd5e';
 import type { GameDetail, Role } from '@vtt/shared';
 import { useCallback, useState } from 'react';
-import { api, type Account } from '../account-api.ts';
 import { characterSummary } from '../creator.ts';
-import { inviteLink } from '../lobby.ts';
+import { t } from '../i18n/index.ts';
 import type { Route } from '../route.ts';
-import { LobbyHead, systemLine, useLoad } from './LobbyScreens.tsx';
-import { ROLE_NAMES } from './PlayersTab.tsx';
-import { Button } from './kit/button.tsx';
-import { Input } from './kit/input.tsx';
-import { SelectField } from './kit/select.tsx';
-import { Checkbox } from './kit/checkbox.tsx';
-import { ApprovalPanel, SeatPassword } from './GameAccess.tsx';
+import { api } from '../server-api.ts';
+import { CharactersPanel } from './CharactersPanel.tsx';
+import { ClaudeKey } from './ClaudeKey.tsx';
+import { AddPlayerForm, PlayerPassword } from './GameAccess.tsx';
 import { BackupsPanel } from './GameArchive.tsx';
+import { LobbyHead, systemLine, useLoad } from './LobbyScreens.tsx';
+import { ROLE_NAMES } from './role-names.ts';
+import { Button } from './kit/button.tsx';
+import { SelectField } from './kit/select.tsx';
 
-// One game's page in the lobby: its members and their roles, the invite
-// link, and the door to the table.
+// One game's page: the door to the table with your characters there, and
+// for its GM (or the server's admin) its players, backups and files.
 
 type Go = (to: Route) => void;
 
-/** The GM's side of a game's page: the invite, who joins, backups. */
-function GmPanels({ game, onChanged }: Readonly<{ game: GameDetail; onChanged: () => void }>) {
-  return (
-    <>
-      <InvitePanel game={game} onChanged={onChanged} />
-      <ApprovalPanel game={game} onChanged={onChanged} />
-      <BackupsPanel game={game} />
-    </>
-  );
-}
+const noCharacters = () => Promise.resolve([] as Character[]);
 
-/** One game: who is in it, its invite link, and entering it with a character. */
-export function GamePage({
-  id,
-  account,
-  characters,
-  go,
-}: Readonly<{ id: string; account: Account; characters: Character[]; go: Go }>) {
+export function GamePage({ game: id, admin, go }: Readonly<{ game: string; admin: boolean; go: Go }>) {
   const load = useCallback(() => api.game(id), [id]);
   const { data: game, error, reload } = useLoad(load);
-  const gm = game?.you === 'gm';
+  const switchPlayer = async () => {
+    await api.leave(id);
+    go({ name: 'join', game: id });
+  };
   return (
-    <div className="account lobby">
-      <LobbyHead kicker={game ? systemLine(game) : 'Loading…'} title={game?.name ?? ''}>
-        <Button variant="outline" onClick={() => go({ name: 'games' })}>
-          All games
+    <div className="account lobby" data-slot="game-page">
+      <LobbyHead kicker={game ? systemLine(game) : t('menu.connecting')} title={game?.name ?? ''}>
+        {game?.me && (
+          <Button variant="outline" onClick={() => void switchPlayer()}>
+            {t('game.switch')}
+          </Button>
+        )}
+        <Button variant="outline" onClick={() => go({ name: 'menu' })}>
+          {t('setup.games')}
         </Button>
       </LobbyHead>
       {error && <p className="menu-error">{error}</p>}
-      {game && (
-        <div className="lobby-body">
-          <Members game={game} account={account} onChanged={reload} onLeft={() => go({ name: 'games' })} />
-          <aside className="lobby-side">
-            <EnterGame game={game} characters={characters} go={go} />
-            {gm && <GmPanels game={game} onChanged={reload} />}
-            {(gm || account.admin) && !game.home && <DeleteGame game={game} onDeleted={() => go({ name: 'games' })} />}
-          </aside>
-        </div>
-      )}
+      {game && <GameBody game={game} admin={admin} go={go} onChanged={reload} />}
     </div>
   );
 }
 
-function Members({
+function GameBody({
   game,
-  account,
+  admin,
+  go,
   onChanged,
-  onLeft,
-}: Readonly<{ game: GameDetail; account: Account; onChanged: () => void; onLeft: () => void }>) {
+}: Readonly<{ game: GameDetail; admin: boolean; go: Go; onChanged: () => void }>) {
+  const { id, me } = game;
+  const loadCharacters = useCallback(() => (me ? api.characters(id) : noCharacters()), [id, me]);
+  const characters = useLoad(loadCharacters);
+  const list = characters.data ?? [];
+  return (
+    <div className="lobby-body">
+      <div className="flex min-w-0 flex-1 flex-col gap-4">
+        {me && <CharactersPanel game={id} characters={list} go={go} refresh={characters.reload} />}
+        <Players game={game} onChanged={onChanged} />
+      </div>
+      <aside className="lobby-side">
+        {me ? (
+          <EnterGame game={game} characters={list} go={go} />
+        ) : (
+          <Button size="xl" onClick={() => go({ name: 'join', game: id })}>
+            {t('game.join')}
+          </Button>
+        )}
+        {me && <ClaudeKey game={id} />}
+        {game.manage && <BackupsPanel game={game} />}
+        {admin && !game.home && <DeleteGame game={game} onDeleted={() => go({ name: 'setup' })} />}
+      </aside>
+    </div>
+  );
+}
+
+/** The game's players: the GM changes roles, passwords and who plays; anyone sets their own password. */
+function Players({ game, onChanged }: Readonly<{ game: GameDetail; onChanged: () => void }>) {
   const [error, setError] = useState<string>();
-  const change = async (member: string, role: Role | null) => {
+  const run = async (step: Promise<unknown>) => {
     try {
-      await api.setMember(game.id, member, role);
-      if (member === account.id && !role) onLeft();
-      else onChanged();
+      await step;
+      setError(undefined);
+      onChanged();
     } catch (e) {
       setError((e as Error).message);
     }
   };
+  const gms = game.players.filter((p) => p.role === 'gm').length;
   return (
-    <section className="frame lobby-members">
-      <h2 className="lobby-heading">At the table</h2>
+    <section className="frame lobby-members" data-slot="players">
+      <h2 className="lobby-heading">{t('players.title')}</h2>
       <ul className="lobby-member-list">
         {game.players.map((p) => (
-          <MemberRow
+          <PlayerRow
             key={p.id}
             p={p}
             game={game}
-            me={account.id}
-            onChange={(role) => void change(p.id, role)}
+            lastGm={p.role === 'gm' && gms === 1}
+            onRole={(role) => void run(api.setRole(game.id, p.id, role))}
+            onRemove={() => void run(api.removePlayer(game.id, p.id))}
             onChanged={onChanged}
           />
         ))}
       </ul>
+      {game.manage && <AddPlayerForm game={game.id} players={game.players} onAdded={onChanged} />}
+      {game.manage && <p className="menu-note">{t('players.hint')}</p>}
       {error && <p className="menu-error">{error}</p>}
     </section>
   );
 }
 
-function MemberRow({
+function PlayerRow({
   p,
   game,
-  me,
-  onChange,
+  lastGm,
+  onRole,
+  onRemove,
   onChanged,
 }: Readonly<{
   p: GameDetail['players'][number];
   game: GameDetail;
-  me: string;
-  onChange: (role: Role | null) => void;
+  lastGm: boolean;
+  onRole: (role: Role) => void;
+  onRemove: () => void;
   onChanged: () => void;
 }>) {
-  const gm = game.you === 'gm';
-  const self = p.id === me;
-  // A game always keeps a GM: the only one can't step down or leave.
-  const lastGm = p.role === 'gm' && game.players.filter((x) => x.role === 'gm').length === 1;
+  const self = p.id === game.me;
+  const remove = () => {
+    if (confirm(t('players.removeAsk', { name: p.name }))) onRemove();
+  };
   return (
     <li className="lobby-member">
-      <span className={p.online ? 'lobby-dot on' : 'lobby-dot'} title={p.online ? 'Playing now' : 'Away'} />
+      <span
+        className={p.online ? 'lobby-dot on' : 'lobby-dot'}
+        title={t(p.online ? 'players.online' : 'players.away')}
+      />
       <span className="lobby-member-name" style={{ color: p.color }}>
         {p.name}
-        {self && ' (you)'}
+        {self && ` ${t('players.you')}`}
       </span>
-      <RoleField p={p} gm={gm} lastGm={lastGm} onChange={onChange} />
-      {gm && game.home && <SeatPassword game={game} seat={p} onChanged={onChanged} />}
-      {(gm || self) && !lastGm && (
-        <Button variant="outline" size="sm" onClick={() => onChange(null)}>
-          {self ? 'Leave' : 'Remove'}
+      <RoleField p={p} manage={game.manage} lastGm={lastGm} onChange={onRole} />
+      {(game.manage || self) && <PlayerPassword game={game.id} player={p} onChanged={onChanged} />}
+      {game.manage && !lastGm && (
+        <Button variant="outline" size="sm" onClick={remove}>
+          {t('players.remove')}
         </Button>
       )}
     </li>
   );
 }
 
-/** A member's role: a picker for the GM, plain text for everyone else. */
+/** A player's role: a picker for the GM, plain text for everyone else. */
 function RoleField({
   p,
-  gm,
+  manage,
   lastGm,
   onChange,
-}: Readonly<{ p: GameDetail['players'][number]; gm: boolean; lastGm: boolean; onChange: (role: Role) => void }>) {
-  if (!gm) return <span className="menu-note">{ROLE_NAMES[p.role].name}</span>;
+}: Readonly<{ p: GameDetail['players'][number]; manage: boolean; lastGm: boolean; onChange: (role: Role) => void }>) {
+  if (!manage) return <span className="menu-note">{ROLE_NAMES[p.role].name}</span>;
   return (
     <SelectField
       value={p.role}
       disabled={lastGm}
-      title={lastGm ? 'The game needs a GM' : undefined}
-      aria-label={`${p.name}'s role`}
+      title={lastGm ? t('players.needsGm') : undefined}
+      aria-label={t('players.roleOf', { name: p.name })}
       onValueChange={(r) => onChange(r as Role)}
       options={Object.entries(ROLE_NAMES).map(([role, r]) => ({ value: role, label: r.name }))}
     />
   );
 }
 
+/** The door to the table, bringing one of your characters onto the map if you pick one. */
 function EnterGame({ game, characters, go }: Readonly<{ game: GameDetail; characters: Character[]; go: Go }>) {
   const [picked, setPicked] = useState('');
   const [error, setError] = useState<string>();
+  const me = game.players.find((p) => p.id === game.me);
   const enter = async () => {
     try {
-      const { pending } = await api.joinGame(game.id, picked || undefined);
-      if (pending) setError('The GM approves who joins: they have your request now.');
-      else go({ name: 'play', game: game.id });
+      if (picked) await api.bring(game.id, picked);
+      go({ name: 'play', game: game.id });
     } catch (e) {
       setError((e as Error).message);
     }
   };
   return (
-    <div className="auth frame lobby-form">
-      <h2 className="lobby-heading">{game.you ? 'Take your seat' : 'Join this game'}</h2>
+    <div className="auth frame lobby-form" data-slot="enter-game">
+      <h2 className="lobby-heading">{t('game.enterAs', { name: me?.name ?? '' })}</h2>
       <label className="auth-field">
-        <span>Bring a character</span>
+        <span>{t('game.bring')}</span>
         <SelectField
           className="w-full"
           value={picked}
           onValueChange={setPicked}
           options={[
-            { value: '', label: game.you === 'gm' ? 'None: run the game' : 'None for now' },
+            { value: '', label: t(game.you === 'gm' ? 'game.bringNoneGm' : 'game.bringNone') },
             ...characters.map((c) => ({ value: c.id, label: `${c.name}, ${characterSummary(c)}` })),
           ]}
         />
       </label>
       {error && <p className="menu-error">{error}</p>}
-      <Button onClick={() => void enter()}>Enter the game</Button>
-    </div>
-  );
-}
-
-function InvitePanel({ game, onChanged }: Readonly<{ game: GameDetail; onChanged: () => void }>) {
-  const [copied, setCopied] = useState(false);
-  const link = game.invite && inviteLink(location.href, game.invite);
-  const renew = async () => {
-    await api.newInvite(game.id);
-    setCopied(false);
-    onChanged();
-  };
-  const copy = () => {
-    if (!link) return;
-    void navigator.clipboard.writeText(link);
-    setCopied(true);
-  };
-  const toggleOpen = async (open: boolean) => {
-    await api.setOpen(game.id, open);
-    onChanged();
-  };
-  return (
-    <div className="auth frame lobby-form">
-      <h2 className="lobby-heading">Invite players</h2>
-      {link ? (
-        <Input className="lobby-link" readOnly value={link} onFocus={(e) => e.target.select()} />
-      ) : (
-        <p className="menu-note">No invite link yet.</p>
-      )}
-      <div className="auth-actions">
-        <Button variant="outline" onClick={() => void renew()}>
-          {link ? 'New link' : 'Make a link'}
-        </Button>
-        {link && (
-          <Button variant="outline" onClick={copy}>
-            {copied ? 'Copied' : 'Copy'}
-          </Button>
-        )}
-      </div>
-      {link && <p className="menu-note">Anyone with the link joins as a player. A new link turns this one off.</p>}
-      <label className="lobby-check">
-        <Checkbox checked={game.open} onCheckedChange={(on) => void toggleOpen(on === true)} />
-        Anyone on this server may join
-      </label>
+      <Button size="xl" onClick={() => void enter()}>
+        {t('game.enter')}
+      </Button>
     </div>
   );
 }
@@ -233,7 +213,7 @@ function InvitePanel({ game, onChanged }: Readonly<{ game: GameDetail; onChanged
 function DeleteGame({ game, onDeleted }: Readonly<{ game: GameDetail; onDeleted: () => void }>) {
   const [error, setError] = useState<string>();
   const remove = async () => {
-    if (!confirm(`Delete "${game.name}" for good? Its scenes, actors and fog are gone with it.`)) return;
+    if (!confirm(t('game.deleteAsk', { name: game.name }))) return;
     try {
       await api.deleteGame(game.id);
       onDeleted();
@@ -244,7 +224,7 @@ function DeleteGame({ game, onDeleted }: Readonly<{ game: GameDetail; onDeleted:
   return (
     <div className="lobby-danger">
       <Button variant="destructive" onClick={() => void remove()}>
-        Delete this game
+        {t('game.delete')}
       </Button>
       {error && <p className="menu-error">{error}</p>}
     </div>

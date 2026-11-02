@@ -1,5 +1,6 @@
 import { join } from 'node:path';
-import { type Game as GameFile, GameSchema, type Player } from '@vtt/shared';
+import { type Game as GameFile, GameSchema, isGm, type Player, PlayerSchema } from '@vtt/shared';
+import { z } from 'zod';
 import { readFolder, writeFolder } from './folder-files.ts';
 import { writeJson } from './json-files.ts';
 import { unzip, zip, type ZipEntry } from './zip.ts';
@@ -20,10 +21,11 @@ export async function zipGame(dir: string): Promise<Buffer> {
 }
 
 /** game.json as the zip has it: its id and seats are replaced on import. */
-const ZippedGameSchema = GameSchema.omit({ id: true, players: true });
+/** A zipped game's players may be none: whoever imports it adds a GM. */
+const ZippedGameSchema = GameSchema.omit({ id: true }).extend({ players: z.array(PlayerSchema).default([]) });
 
 export interface ZippedGame {
-  game: Omit<GameFile, 'id' | 'players'>;
+  game: Omit<GameFile, 'id'>;
   /** Every file but game.json, relative to the game's folder. */
   files: ZipEntry[];
 }
@@ -39,7 +41,7 @@ export function unzipGame(buf: Buffer): ZippedGame {
   const top = entries
     .filter((f) => /^([^/]+\/)?game\.json$/.test(f.path))
     .sort((a, b) => a.path.length - b.path.length)[0];
-  if (!top) throw new ArchiveError('There is no game.json in this zip: export a game from its lobby page.');
+  if (!top) throw new ArchiveError('There is no game.json in this zip: export a game from its page.');
   const parsed = ZippedGameSchema.safeParse(parseJson(top.data));
   if (!parsed.success) throw new ArchiveError('The game.json in this zip is not a game file.');
   const root = top.path.slice(0, -'game.json'.length);
@@ -57,8 +59,9 @@ function parseJson(data: Buffer): unknown {
   }
 }
 
-/** Writes an unzipped game into `dir` as game `id`, with `gm` in its only seat. */
+/** Writes an unzipped game into `dir` as game `id`, keeping its players (their passwords stay behind); `gm` joins them if it has no GM. */
 export async function writeGame(dir: string, { game, files }: ZippedGame, id: string, gm: Player): Promise<void> {
   await writeFolder(dir, files);
-  await writeJson(join(dir, 'game.json'), { ...game, id, players: [gm] });
+  const players = game.players.some(isGm) ? game.players : [gm, ...game.players.filter((p) => p.id !== gm.id)];
+  await writeJson(join(dir, 'game.json'), { ...game, id, players });
 }

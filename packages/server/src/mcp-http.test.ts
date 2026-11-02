@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { startApi, type ApiServer } from './test/api-server.ts';
 
-// Claude connects to a running server at /mcp with a key the player made on
-// their account page, and plays at their seats.
+// Claude connects to a running server at /mcp with a key a player made on
+// their game's page, and plays as that player.
 
 let api: ApiServer;
 
@@ -42,18 +42,17 @@ describe('the MCP endpoint', () => {
     expect((await rpc('wrong', 'tools/list')).status).toBe(401);
   });
 
-  it('lets an account make a key, and play at its seat with it', async () => {
-    const gm = api.client();
-    await gm('POST', '/api/register', { username: 'gm', password: 'hunter22', name: 'GM' });
-    expect((await gm('GET', '/api/mcp-key')).json).toEqual({ has: false });
-    const { key } = (await gm('POST', '/api/mcp-key')).json as { key: string };
-    expect((await gm('GET', '/api/mcp-key')).json).toEqual({ has: true });
+  it('lets a player make a key, and play as that player with it', async () => {
+    const gm = await api.joined('test', 'gm');
+    expect((await gm('GET', '/api/games/test/mcp-key')).json).toEqual({ has: false });
+    const { key } = (await gm('POST', '/api/games/test/mcp-key')).json as { key: string };
+    expect((await gm('GET', '/api/games/test/mcp-key')).json).toEqual({ has: true });
     expect(JSON.parse(toolText(await rpc(key, 'tools/call', { name: 'list_games' })))).toEqual({
       games: [{ id: 'test', name: 'Test', role: 'gm' }],
     });
     const seen = JSON.parse(toolText(await rpc(key, 'tools/call', { name: 'look', arguments: {} }))) as Json;
     expect(seen.you).toMatchObject({ id: 'gm', role: 'gm' });
-    await gm('DELETE', '/api/mcp-key');
+    await gm('DELETE', '/api/games/test/mcp-key');
     expect((await rpc(key, 'tools/list')).status).toBe(401);
   });
 

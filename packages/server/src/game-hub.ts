@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto';
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { editionIn } from '@vtt/core';
@@ -64,15 +63,11 @@ export interface GameInfo {
   /** The game's rules edition (its system's default when game.json doesn't say). */
   rules: string;
   players: Player[];
-  open: boolean;
   /** Seats connected now. */
   online: string[];
   lastPlayed?: number;
-  invite?: string;
   /** The game the server was started with: it can't be deleted from the lobby. */
   home: boolean;
-  /** Joining asks the GM first. */
-  approval: boolean;
 }
 
 /** Something the lobby can't do, with the reason to show. */
@@ -89,7 +84,7 @@ export class GameHub {
   private timers = new Map<string, NodeJS.Timeout>();
   private backupTimers = new Map<string, NodeJS.Timeout>();
   private index: GameIndex;
-  /** Join requests and seat passwords (game-access.ts). */
+  /** Players' passwords and Claude keys (game-access.ts). */
   readonly access: GameAccess;
   homeId?: string;
   /** The asset packs installed on the server: the data folder's packs/. */
@@ -278,12 +273,9 @@ export class GameHub {
       system: file.system,
       rules: rulesOf(file),
       players: file.players,
-      open: entry.open ?? id === this.homeId,
       online: onlineIn(this.live.get(id)),
       ...(entry.lastPlayed ? { lastPlayed: entry.lastPlayed } : {}),
-      ...(entry.invite ? { invite: entry.invite } : {}),
       home: id === this.homeId,
-      approval: !!entry.approval,
     };
   }
 
@@ -345,28 +337,12 @@ export class GameHub {
     await rm(dir, { recursive: true, force: true });
   }
 
-  /** Replaces the seats; a removed member is sent away and their fog deleted. */
+  /** Replaces the players; a removed one is sent away, their fog deleted and their password dropped. */
   async setMembers(id: string, players: Player[]): Promise<void> {
     const { store } = await this.open(id);
+    const gone = store.world.players.filter((p) => !players.some((q) => q.id === p.id));
     store.setGame({ players });
-  }
-
-  /** A fresh invite code; the previous link stops working. */
-  async invite(id: string): Promise<string> {
-    if (!this.dirs.has(id)) throw new HubError('No such game.');
-    const code = randomBytes(9).toString('base64url');
-    await this.index.set(id, { invite: code });
-    return code;
-  }
-
-  byInvite(code: string): string | undefined {
-    const id = this.index.byInvite(code);
-    return id && this.dirs.has(id) ? id : undefined;
-  }
-
-  async setOpen(id: string, open: boolean): Promise<void> {
-    if (!this.dirs.has(id)) throw new HubError('No such game.');
-    await this.index.set(id, { open });
+    for (const p of gone) await this.access.forget(id, p.id);
   }
 
   /** Unloads every game, once everything is on disk. */

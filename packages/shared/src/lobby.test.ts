@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GameSchema, membersAfter, newGameIssues, nextSeatColor } from './index.ts';
+import { GameSchema, membersAfter, newGameIssues, newPlayerIssues, nextSeatColor } from './index.ts';
 
 const seats = [
   { id: 'kaniel', name: 'Kaniel', role: 'gm' as const, color: '#e0b040' },
@@ -46,6 +46,16 @@ describe('changing who is in a game', () => {
   it('never leaves a game without a GM', () => {
     expect(() => membersAfter(seats, 'kaniel', 'player')).toThrow(/GM/);
     expect(() => membersAfter(seats, 'kaniel', null)).toThrow(/GM/);
-    expect(() => membersAfter(seats, 'nobody', null)).toThrow(/member/);
+    expect(() => membersAfter(seats, 'nobody', null)).toThrow(/no such player/);
+  });
+});
+
+describe('a new player', () => {
+  const players = [{ id: 'gm', name: 'GM', role: 'gm' as const, color: '#fff' }];
+  it('needs a name no one at the game has', () => {
+    expect(newPlayerIssues('  ', players)).toEqual(['Give the player a name.']);
+    expect(newPlayerIssues('gm', players)).toEqual(['That game has a player of that name.']);
+    expect(newPlayerIssues('x'.repeat(41), players)).toEqual(['Keep a name to 40 characters.']);
+    expect(newPlayerIssues('Ana', players)).toEqual([]);
   });
 });

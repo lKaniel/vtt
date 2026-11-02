@@ -1,14 +1,9 @@
 import { isGm, type Role, RoleSchema } from '@vtt/shared';
+import { t } from '../i18n/index.ts';
 import type { Session } from '../session.ts';
+import { AddPlayerForm } from './GameAccess.tsx';
+import { ROLE_NAMES } from './role-names.ts';
 import { SelectField } from './kit/select.tsx';
-
-/** How each role reads on screen, and what it lets a seat do. */
-export const ROLE_NAMES: Record<Role, { name: string; about: string }> = {
-  gm: { name: 'Game master', about: 'Runs the table: sees and edits everything.' },
-  trusted: { name: 'Trusted player', about: 'Plays and edits the sheets of the tokens they own.' },
-  player: { name: 'Player', about: 'Plays the tokens they own.' },
-  observer: { name: 'Observer', about: "Watches through the party's eyes; acts on nothing." },
-};
 
 /**
  * GM: everyone at the table and what they may do. Changes take effect at
@@ -40,6 +35,12 @@ export function PlayersTab({ session }: Readonly<{ session: Session }>) {
           );
         })}
       </ul>
+      {session.gameId && session.isGm() && (
+        <div className="flex flex-col gap-1" data-slot="players-add">
+          <span className="muted">{t('players.addHint')}</span>
+          <AddPlayerForm game={session.gameId} players={session.players} onAdded={() => undefined} />
+        </div>
+      )}
       <dl className="role-help muted">
         {RoleSchema.options.map((r) => (
           <div key={r}>

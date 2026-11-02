@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, api } from './account-api.ts';
+import { ApiError, api } from './server-api.ts';
 
 function answer(status: number, body: unknown) {
   const fetch = vi.fn(() => Promise.resolve(new Response(JSON.stringify(body), { status })));
@@ -11,32 +11,36 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('account api client', () => {
+describe('server api client', () => {
   it('posts JSON and returns the answer', async () => {
-    const fetch = answer(200, { account: { id: 'ana', name: 'Ana', admin: false } });
-    expect(await api.login('ana', 'pw')).toEqual({ id: 'ana', name: 'Ana', admin: false });
-    expect(fetch).toHaveBeenCalledWith('/api/login', {
+    const fetch = answer(200, { player: { id: 'ana', name: 'Ana', role: 'player' } });
+    expect(await api.join('lost-mine', 'ana', 'pw')).toEqual({ id: 'ana', name: 'Ana', role: 'player' });
+    expect(fetch).toHaveBeenCalledWith('/api/games/lost-mine/join', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'ana', password: 'pw' }),
+      body: JSON.stringify({ player: 'ana', password: 'pw' }),
     });
   });
 
   it('throws the server message and issues', async () => {
     answer(400, { error: 'Choose 2 class skills.', issues: ['Choose 2 class skills.'] });
-    const err = await api.saveCharacter({ id: '', name: 'x' } as never).catch((e: unknown) => e);
+    const err = await api.saveCharacter('test', { id: '', name: 'x' } as never).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ApiError);
     expect(err).toMatchObject({ message: 'Choose 2 class skills.', status: 400, issues: ['Choose 2 class skills.'] });
   });
 
   it('creates new characters and updates saved ones', async () => {
     const fetch = answer(200, { character: { id: 'vex-1' } });
-    await api.saveCharacter({ id: '', name: 'Vex' } as never);
-    await api.saveCharacter({ id: 'vex-1', name: 'Vex' } as never);
-    expect(fetch.mock.calls.map((c) => [(c as unknown[])[0], ((c as unknown[])[1] as RequestInit).method])).toEqual([
-      ['/api/characters', 'POST'],
-      ['/api/characters/vex-1', 'PUT'],
+    await api.saveCharacter('test', { id: '', name: 'Vex', owner: 'ana', game: 'test' } as never);
+    await api.saveCharacter('test', { id: 'vex-1', name: 'Vex' } as never);
+    await api.bring('test', 'vex-1');
+    const calls = fetch.mock.calls.map((c) => [(c as unknown[])[0], (c as unknown[])[1] as RequestInit]);
+    expect(calls.map(([path, init]) => [path, (init as RequestInit).method])).toEqual([
+      ['/api/games/test/characters', 'POST'],
+      ['/api/games/test/characters/vex-1', 'PUT'],
+      ['/api/games/test/bring', 'POST'],
     ]);
+    expect((calls[0]![1] as RequestInit).body).toBe(JSON.stringify({ name: 'Vex' }));
   });
 
   it('says the server is unreachable when fetch fails', async () => {
@@ -47,42 +51,43 @@ describe('account api client', () => {
     await expect(api.session()).rejects.toThrow("Can't reach the game server.");
   });
 
-  it('makes, joins and manages games', async () => {
-    const fetch = answer(200, { game: 'lost-mine', invite: 'abc', player: { id: 'ana' } });
+  it('makes games and manages their players', async () => {
+    const fetch = answer(200, { game: { id: 'lost-mine' }, player: { id: 'cy' } });
     await api.createGame({ name: 'Lost Mine', system: 'dnd5e', rules: '2014' });
-    await api.joinGame('lost-mine', 'vex-1');
-    await api.newInvite('lost-mine');
-    expect(await api.acceptInvite('abc')).toEqual({ game: 'lost-mine' });
-    await api.setMember('lost-mine', 'bo', 'trusted');
-    await api.setMember('lost-mine', 'bo', null);
+    await api.addPlayer('lost-mine', { name: 'Cy', role: 'player', password: 'pw' });
+    await api.setRole('lost-mine', 'cy', 'trusted');
+    await api.setPassword('lost-mine', 'cy', null);
+    await api.removePlayer('lost-mine', 'cy');
+    await api.leave('lost-mine');
     await api.deleteGame('lost-mine');
-    expect(fetch.mock.calls.map((c) => [((c as unknown[])[1] as RequestInit).method, (c as unknown[])[0]])).toEqual([
-      ['POST', '/api/games'],
-      ['POST', '/api/games/lost-mine/join'],
-      ['POST', '/api/games/lost-mine/invite'],
-      ['POST', '/api/invites/abc'],
-      ['PUT', '/api/games/lost-mine/members/bo'],
-      ['DELETE', '/api/games/lost-mine/members/bo'],
-      ['DELETE', '/api/games/lost-mine'],
+    const calls = fetch.mock.calls.map((c) => {
+      const init = (c as unknown[])[1] as RequestInit;
+      return [init.method, (c as unknown[])[0], init.body];
+    });
+    expect(calls).toEqual([
+      ['POST', '/api/games', JSON.stringify({ name: 'Lost Mine', system: 'dnd5e', rules: '2014' })],
+      ['POST', '/api/games/lost-mine/players', JSON.stringify({ name: 'Cy', role: 'player', password: 'pw' })],
+      ['PUT', '/api/games/lost-mine/players/cy', JSON.stringify({ role: 'trusted' })],
+      ['PUT', '/api/games/lost-mine/players/cy/password', JSON.stringify({ password: null })],
+      ['DELETE', '/api/games/lost-mine/players/cy', undefined],
+      ['POST', '/api/games/lost-mine/leave', '{}'],
+      ['DELETE', '/api/games/lost-mine', undefined],
     ]);
   });
 
-  it('asks to join, answers requests, locks seats and unlocks the admin', async () => {
-    const fetch = answer(200, { game: 'lost-mine', pending: true });
-    expect(await api.acceptInvite('abc')).toEqual({ game: 'lost-mine', pending: true });
-    await api.setApproval('lost-mine', true);
-    await api.answerRequest('lost-mine', 'bo', false);
-    await api.setSeatPassword('test', 'ana', 'secret');
+  it('opens, locks and sets the admin password', async () => {
+    const fetch = answer(200, {});
     await api.unlockAdmin('open sesame');
+    await api.setAdminPassword('castle');
+    await api.lockAdmin();
     const calls = fetch.mock.calls.map((c) => {
       const init = (c as unknown[])[1] as RequestInit;
       return [(c as unknown[])[0], init.method, init.body];
     });
-    expect(calls.slice(1)).toEqual([
-      ['/api/games/lost-mine/approval', 'PUT', JSON.stringify({ approval: true })],
-      ['/api/games/lost-mine/requests/bo', 'POST', JSON.stringify({ approve: false })],
-      ['/api/games/test/members/ana/password', 'PUT', JSON.stringify({ password: 'secret' })],
+    expect(calls).toEqual([
       ['/api/admin', 'POST', JSON.stringify({ password: 'open sesame' })],
+      ['/api/admin', 'PUT', JSON.stringify({ password: 'castle' })],
+      ['/api/admin', 'DELETE', undefined],
     ]);
   });
 

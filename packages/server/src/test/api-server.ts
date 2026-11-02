@@ -3,36 +3,47 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { AccountStore } from '../accounts.ts';
 import { apiHandler } from '../api.ts';
 import { CharacterStore } from '../characters.ts';
 import { GameHub } from '../game-hub.ts';
+import { SessionStore } from '../sessions.ts';
 import { makeWorld } from './fixtures.ts';
 
 type Json = Record<string, unknown>;
+export type Client = (method: string, path: string, body?: unknown) => Promise<{ status: number; json: Json }>;
+
+/** The admin password test servers have, unless a test asks for none (null). */
+export const ADMIN_PASSWORD = 'open sesame';
 
 export interface ApiServer {
   base: string;
   dataDir: string;
   home: string;
   hub: GameHub;
-  accounts: AccountStore;
+  sessions: SessionStore;
   /** A tiny browser: keeps the session cookie between calls. */
-  client: () => (method: string, path: string, body?: unknown) => Promise<{ status: number; json: Json }>;
+  client: () => Client;
+  /** A browser that joined `game` as `player`. */
+  joined: (game: string, player: string, password?: string) => Promise<Client>;
+  /** A browser that gave the admin password. */
+  admin: () => Promise<Client>;
   close: () => Promise<void>;
 }
 
-/** The account and lobby API on a random port, over the test game as its home game. */
-export async function startApi(opts: { adminPassword?: string; mcpKey?: string } = {}): Promise<ApiServer> {
+/** The session and lobby API on a random port, over the test game as its home game. */
+export async function startApi(opts: { adminPassword?: string | null; mcpKey?: string } = {}): Promise<ApiServer> {
   const dataDir = await mkdtemp(join(tmpdir(), 'vtt-data-'));
   const home = await makeWorld();
   const hub = new GameHub({ dataDir, home, watch: false });
   await hub.load();
-  const accounts = new AccountStore(dataDir, opts.adminPassword);
-  await accounts.load();
+  const sessions = new SessionStore(
+    dataDir,
+    opts.adminPassword === undefined ? ADMIN_PASSWORD : (opts.adminPassword ?? undefined),
+  );
+  await sessions.load();
   const characters = new CharacterStore(dataDir);
   await characters.load();
-  const api = apiHandler({ accounts, characters, hub, ...opts });
+  const api = apiHandler({ sessions, characters, hub, mcpKey: opts.mcpKey });
   const server: Server = createServer((req, res) => {
     void api(req, res).then((handled) => {
       if (!handled) res.writeHead(404).end();
@@ -40,7 +51,7 @@ export async function startApi(opts: { adminPassword?: string; mcpKey?: string }
   });
   await new Promise<void>((done) => server.listen(0, done));
   const base = `http://localhost:${(server.address() as AddressInfo).port}`;
-  const client = () => {
+  const client = (): Client => {
     let cookie = '';
     return async (method: string, path: string, body?: unknown) => {
       const res = await fetch(`${base}${path}`, {
@@ -54,9 +65,20 @@ export async function startApi(opts: { adminPassword?: string; mcpKey?: string }
       return { status: res.status, json: (text ? JSON.parse(text) : {}) as Json };
     };
   };
+  const joined = async (game: string, player: string, password?: string) => {
+    const call = client();
+    const res = await call('POST', `/api/games/${game}/join`, { player, password });
+    if (res.status !== 200) throw new Error(`could not join ${game} as ${player}: ${JSON.stringify(res.json)}`);
+    return call;
+  };
+  const admin = async () => {
+    const call = client();
+    await call('POST', '/api/admin', { password: opts.adminPassword ?? ADMIN_PASSWORD });
+    return call;
+  };
   const close = async () => {
     server.close();
     await hub.close();
   };
-  return { base, dataDir, home, hub, accounts, client, close };
+  return { base, dataDir, home, hub, sessions, client, joined, admin, close };
 }

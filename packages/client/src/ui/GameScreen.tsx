@@ -32,12 +32,8 @@ import { SettingsMenu } from './SettingsMenu.tsx';
 import { Button } from './kit/button.tsx';
 import { exposeApi } from '../scripting/script-api.ts';
 
-export function GameScreen({
-  playerId,
-  gameId,
-  onLeave,
-}: Readonly<{ playerId?: string; gameId?: string; onLeave: () => void }>) {
-  const [session] = useState(() => new Session(playerId, gameId));
+export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLeave: () => void }>) {
+  const [session] = useState(() => new Session(gameId));
   const host = useRef<HTMLDivElement>(null);
   useSession(session);
 

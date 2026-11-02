@@ -32,23 +32,10 @@ import { parseRoute, routeHash } from './route.ts';
 const fresh = (rules: '2014' | '2024' = '2014') => newCharacter({ id: 'new', owner: 'me', rules });
 
 describe('routes', () => {
-  it('reads and writes the screens in the address bar', () => {
-    expect(parseRoute('')).toEqual({ name: 'menu' });
-    expect(parseRoute('#/login')).toEqual({ name: 'login' });
-    expect(parseRoute('#/edit/vex-1a2b')).toEqual({ name: 'create', id: 'vex-1a2b' });
-    expect(parseRoute('#/level/vex-1a2b')).toEqual({ name: 'levelup', id: 'vex-1a2b' });
-    expect(parseRoute('#/nonsense')).toEqual({ name: 'menu' });
-    for (const hash of [
-      '#/',
-      '#/login',
-      '#/register',
-      '#/account',
-      '#/create',
-      '#/edit/x',
-      '#/level/x',
-      '#/seats',
-      '#/play',
-    ]) {
+  it('reads and writes the creator screens in the address bar', () => {
+    expect(parseRoute('#/edit/test/vex-1a2b')).toEqual({ name: 'create', game: 'test', id: 'vex-1a2b' });
+    expect(parseRoute('#/level/test/vex-1a2b')).toEqual({ name: 'levelup', game: 'test', id: 'vex-1a2b' });
+    for (const hash of ['#/', '#/create/test', '#/edit/test/x', '#/level/test/x', '#/play']) {
       expect(routeHash(parseRoute(hash))).toBe(hash);
     }
   });

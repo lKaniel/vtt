@@ -50,7 +50,7 @@ describe('Session reactions', () => {
         }
       },
     );
-    const session = new Session('ana');
+    const session = new Session();
     session.connect();
     socket.onmessage?.({ data: JSON.stringify({ t: 'reactionOffer', offer: offer('a') }) });
     expect(session.reactions).toHaveLength(1);

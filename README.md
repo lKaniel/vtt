@@ -103,36 +103,36 @@ pnpm install
 pnpm dev          # server on :3001, client on http://localhost:5173
 ```
 
-Open http://localhost:5173. The main menu offers:
+Open http://localhost:5173. It works like Foundry VTT's setup and join
+screens:
 
-- **Create an account / Sign in.** Your account keeps your characters and
-  lands you in the lobby. The first account made on a server is its admin.
-- **Your games** (the lobby). Every game you are in, plus games open to the
-  whole server. _New game_ asks for a name, a system (D&D 5e for now) and its
-  rules (2014 or 2024); you are its GM. _Join a game_ takes an invite link or
-  code. A game's page lists who is at the table (GMs change roles and remove
-  members), shows the invite link to the GM, and has _Enter the game_ with a
-  character from your roster, or none.
-- **Your characters.** Create a character, edit it, level it up, or delete it.
-- **Take a seat without an account.** The home game's fixed seats from
-  `game.json`, handy for a quick test: open a second browser window as
-  another player to see sync and per-player views.
+- **The games.** The main page lists every game on the server. Pick one to
+  open its join screen, choose your player and give its password if it has
+  one. The game's page then has _Enter the game_, your characters there
+  (create, edit, level up) and the game's players.
+- **Players.** A game's GM adds players on the game's page (or in the
+  Players tab at the table): a name, a role and an optional password. Anyone
+  can set their own password.
+- **Setup.** Behind the server's admin password: make a game (a name, a
+  system, D&D 5e for now, and its rules, 2014 or 2024), import one from a zip
+  or a Foundry world, delete games, and manage any game's players. A new game
+  starts with a `Gamemaster` player without a password.
 
-See [docs/lobby.md](docs/lobby.md) for how games, invites and members work.
+See [docs/lobby.md](docs/lobby.md) for how games, players and Setup work.
 
-### Accounts and characters
+### Players, passwords and characters
 
-Accounts, characters and the games made in the lobby live in a `data/`
-folder next to the world folder (set `VTT_DATA` to move it), so one roster
-can visit many campaigns. Passwords are stored as salted scrypt hashes, and a sign-in lasts
-30 days in an HttpOnly cookie. There's no e-mail or reset: to reset an
-account, delete its file in `data/accounts/`. Set `VTT_ADMIN_PASSWORD` so that
-the admin is whoever types it on the account screen rather than the first
-account made. A GM can make joining wait for approval and lock fixed seats with
-a password (see [docs/lobby.md](docs/lobby.md)). Every game is backed up when it
-loads and every 15 minutes of play (when it changed) into `data/backups/`; its
-GM restores a backup or downloads the game as a zip from its lobby page, and
-anyone can make a new game from such a zip.
+Characters, sessions and the games made in Setup live in a `data/` folder
+next to the world folder (set `VTT_DATA` to move it). Passwords are stored as
+salted scrypt hashes, and a join lasts 30 days in an HttpOnly cookie. The admin
+password is set in Setup, or by `VTT_ADMIN_PASSWORD` (which then can't be
+changed there); without one, Setup is open to anyone who reaches the server.
+Forgot a player's password? The GM or the admin sets a new one on the game's
+page. Every game is backed up when it loads and every 15 minutes of play (when
+it changed) into `data/backups/`; its GM restores a backup or downloads the
+game as a zip from its page, and Setup can make a new game from such a zip.
+A server from before (with accounts) carries them over on its first start:
+see [docs/lobby.md](docs/lobby.md).
 
 The character creator follows the BG3 order: race or species, class,
 background, abilities (point buy, standard array, 4d6 or manual), skills,

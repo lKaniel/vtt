@@ -1,17 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { inviteCode, inviteLink, lastPlayedText } from './lobby.ts';
+import { gameRoute, lastPlayedText } from './lobby.ts';
 
-describe('invite links', () => {
-  it('are this page with the invite route', () => {
-    expect(inviteLink('https://table:3000/?x=1#/games/lost-mine', 'aB3_x-9')).toBe(
-      'https://table:3000/#/invite/aB3_x-9',
-    );
-  });
-
-  it('give back their code, pasted whole or as the code alone', () => {
-    expect(inviteCode('https://table:3000/#/invite/aB3_x-9')).toBe('aB3_x-9');
-    expect(inviteCode('  aB3_x-9 ')).toBe('aB3_x-9');
-    expect(inviteCode('')).toBe('');
+describe('a game card', () => {
+  it('leads to the join screen until you joined, then to the game page', () => {
+    expect(gameRoute({ id: 'lost-mine', you: null })).toEqual({ name: 'join', game: 'lost-mine' });
+    expect(gameRoute({ id: 'lost-mine', you: 'player' })).toEqual({ name: 'game', game: 'lost-mine' });
   });
 });
 

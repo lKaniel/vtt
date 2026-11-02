@@ -64,7 +64,7 @@ export function nextSeatColor(players: readonly Player[]): string {
 
 /** The seats once `member` has `role`, or is removed (null). A game always keeps a GM. */
 export function membersAfter(players: readonly Player[], member: string, role: Role | null): Player[] {
-  if (!players.some((p) => p.id === member)) throw new Error('That account is not a member of this game.');
+  if (!players.some((p) => p.id === member)) throw new Error('That game has no such player.');
   const next = players.flatMap((p) => {
     if (p.id !== member) return [p];
     return role ? [{ ...p, role }] : [];
@@ -73,7 +73,26 @@ export function membersAfter(players: readonly Player[], member: string, role: R
   return next;
 }
 
-/** A game as the lobby lists it for one account. */
+/** The player a game is made with (a new game, an import): the GM, without a password until Setup gives one. */
+export const FIRST_GM: Player = { id: 'gamemaster', name: 'Gamemaster', role: 'gm', color: '#e0b040' };
+
+/** A player the GM adds to a game. */
+export interface NewPlayer {
+  name: string;
+  role: Role;
+}
+
+/** What is wrong with a new player's name at a game with `players`, if anything. */
+export function newPlayerIssues(name: string, players: readonly Player[]): string[] {
+  const trimmed = name.trim();
+  if (!trimmed) return ['Give the player a name.'];
+  if (trimmed.length > 40) return ['Keep a name to 40 characters.'];
+  if (players.some((p) => p.name.toLowerCase() === trimmed.toLowerCase()))
+    return ['That game has a player of that name.'];
+  return [];
+}
+
+/** A game as the games list shows it to one browser. */
 export interface GameSummary {
   id: string;
   name: string;
@@ -81,12 +100,10 @@ export interface GameSummary {
   /** The system's name, as the server that has it calls it. */
   systemName: string;
   rules: string;
-  /** Your role there, or null when you have no seat yet. */
+  /** The role of the player you joined it as, or null when you haven't joined it. */
   you: Role | null;
   members: number;
   online: number;
-  /** Every account on the server may join. */
-  open: boolean;
   /** The game the server was started with. */
   home: boolean;
   lastPlayed?: number;
@@ -99,13 +116,12 @@ export interface BackupInfo {
   reason: 'load' | 'timer' | 'manual' | 'restore';
 }
 
-/** A game's page in the lobby: who is in it and, for its GMs, the invite code. */
+/** A game's join screen and page: its players, and which one you joined as. */
 export interface GameDetail extends GameSummary {
-  /** `locked`: the seat has a password (taken without an account). */
+  /** `locked`: the player has a password. */
   players: (Pick<Player, 'id' | 'name' | 'role' | 'color'> & { online: boolean; locked?: boolean })[];
-  invite?: string;
-  /** GM: joining asks the GM first. */
-  approval?: boolean;
-  /** GM: accounts asking to join. */
-  requests?: { id: string; name: string; at: number }[];
+  /** The id of the player you joined as. */
+  me?: string;
+  /** You may manage its players, backups and files: you joined as its GM, or you are the server's admin. */
+  manage: boolean;
 }
