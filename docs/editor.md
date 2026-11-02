@@ -158,7 +158,9 @@ invisible, ethereal); below it, Movement, Sight, Light and Sound set what it
 stops one by one (`editor/wall-fields.ts`, rules in `shared/walls.ts`), and a
 proximity sense asks from how many feet it passes. One way makes the wall
 stop things from one side only (an arrow shows the way through); doors also
-get Secret and Sound.
+get Secret and Sound. Stands from / up to set the wall's height in feet, and
+On tile (walls and lights) fastens it to a tile, so it moves, copies and
+deletes with it (`attachedTo` in core's clipboard kinds).
 
 ## How it fits together
 

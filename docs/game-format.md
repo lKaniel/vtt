@@ -219,6 +219,13 @@ pixels.
 - `doorSound` is what a door sounds like when it swings or its lock turns:
   `"wood"` (the default), `"stone"`, `"iron"`, `"gate"`, `"none"`, or an
   audio file. It is heard within 100 ft, quieter through walls.
+- `"height": { "bottom": 0, "top": 10 }` (feet, like the Wall Height module):
+  the wall only stops creatures and eyes whose elevation is from `bottom` up
+  to, not including, `top`; a flier above it sees and flies over. Either end
+  may be left out (no limit). Lights shine from the ground.
+- `"tile": "<tile id>"` fastens a wall (or a light) to a tile, like a prefab
+  house: moving the tile in the editor moves it, and copying or deleting the
+  tile takes it along. `check-game` reports a tile the scene doesn't have.
 
   ```json
   { "id": "hedge", "a": [0, 0], "b": [500, 0], "sight": "limited", "light": "limited", "sound": "limited" }

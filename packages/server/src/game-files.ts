@@ -315,7 +315,7 @@ export function crossCheck(state: GameState, system = SYSTEMS.get(state.game.sys
   const players = new Set(game.players.map((p) => p.id));
   for (const [id, s] of scenes) {
     const refs = { players, world: worldOf(game, s.scene), system, content };
-    out.push(...sceneTokenIssues(id, s, state, refs), ...sceneTileIssues(id, s.tiles));
+    out.push(...sceneTokenIssues(id, s, state, refs), ...sceneTileIssues(id, s.tiles), ...fastenedIssues(id, s));
     out.push(...sceneItemIssues(id, s as never, sceneRefs(state, s.scene)));
   }
   const refs = { players, world: worldOf(game, active?.scene ?? SceneSchema.parse({})), system, content };
@@ -351,6 +351,19 @@ function combatIssues(combat: Combat | undefined, tokens: readonly TokenEntry[])
 function sceneTileIssues(id: string, tiles: readonly Tile[]): Issue[] {
   const docs = tiles.map((t) => toDoc('tile', t));
   return tileTreeIssues(docs).map((issue) => ({ file: `scenes/${id}/tiles.json`, ...issue }));
+}
+
+/** Walls and lights fastened to a tile the scene doesn't have. */
+function fastenedIssues(id: string, s: Pick<SceneItems, 'tiles' | 'walls' | 'lights'>): Issue[] {
+  const tiles = new Set(s.tiles.map((t) => t.id));
+  const lost = (what: string, file: string, items: readonly { id: string; tile?: string }[]) =>
+    items
+      .filter((i) => i.tile !== undefined && !tiles.has(i.tile))
+      .map((i) => ({
+        file: `scenes/${id}/${file}`,
+        message: `${what} "${i.id}": tile "${i.tile}" is not a tile here`,
+      }));
+  return [...lost('wall', 'walls.json', s.walls), ...lost('light', 'lights.json', s.lights)];
 }
 
 /** Problems with the tokens of one scene. */

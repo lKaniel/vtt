@@ -8,6 +8,7 @@ import {
   type WalkOptions,
   walkPath,
   type Wall,
+  wallsAt,
 } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
 import { previewLabel } from '../spell-text.ts';
@@ -58,7 +59,10 @@ export class PathPreview {
     const g = ctx.gridSize;
     const target = this.aim(hover, ctx);
     if (!this.needsRedraw(`walk:${target[0]},${target[1]}:${token.x},${token.y}`, ctx.force)) return;
-    const path = walkPath([token.x, token.y], target, ctx.walls, { ...ctx.walk, cost: ctx.cost });
+    const path = walkPath([token.x, token.y], target, wallsAt(ctx.walls, token.elevation), {
+      ...ctx.walk,
+      cost: ctx.cost,
+    });
     if (!path) {
       this.line.circle(target[0], target[1], g * 0.3).stroke({ width: 6, color: BLOCKED_COLOR });
       return;

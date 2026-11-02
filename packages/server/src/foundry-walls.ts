@@ -22,6 +22,11 @@ export const FoundryWall = z.object({
   door: num,
   ds: num,
   doorSound: z.string().optional().catch(undefined),
+  /** The Wall Height module (and Levels): feet the wall stands between; null is no limit. */
+  flags: z
+    .object({ 'wall-height': z.object({ top: num.nullable(), bottom: num.nullable() }).optional().catch(undefined) })
+    .optional()
+    .catch(undefined),
   /** v11+: distances (grid units) within which a proximity wall lets a sense through. */
   threshold: z.object({ sight: num, light: num, sound: num }).nullable().optional().catch(undefined),
 });
@@ -78,11 +83,23 @@ function doorOf(w: FoundryWallData): WallRules {
   };
 }
 
+/** Wall Height's top and bottom in feet, leaving out the unlimited ends. */
+function heightOf(w: FoundryWallData, feet: (units: number) => number): Pick<Wall, 'height'> {
+  const h = w.flags?.['wall-height'];
+  const ends = Object.fromEntries(
+    (['bottom', 'top'] as const).flatMap((end) => {
+      const v = h?.[end];
+      return typeof v === 'number' && Number.isFinite(v) ? [[end, feet(v)]] : [];
+    }),
+  );
+  return Object.keys(ends).length ? { height: ends } : {};
+}
+
 /** One wall without its id, or undefined if it stops nothing. */
 export function wallOf(w: FoundryWallData, feet: (units: number) => number): Omit<Wall, 'id'> | undefined {
   const rules = rulesOf(w, feet);
   if (stopsNothing(rules)) return undefined;
   const [ax, ay, bx, by] = w.c;
   const dir = DIRECTIONS[w.dir ?? 0];
-  return { a: [ax, ay], b: [bx, by], ...doorOf(w), ...rules, ...(dir && { dir }) };
+  return { a: [ax, ay], b: [bx, by], ...doorOf(w), ...rules, ...(dir && { dir }), ...heightOf(w, feet) };
 }

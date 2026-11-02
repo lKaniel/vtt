@@ -43,6 +43,11 @@ function gmWelcome(): ServerMessage {
         rect('fire', [300, 100, 100, 100], { parent: 'camp', sort: 'W' }),
         rect('crate', [2000, 2000, 100, 100], { sort: 'D' }),
       ],
+      'main/walls': [
+        { id: 'tent-wall', type: 'wall', rev: 1, a: [100, 100], b: [200, 100], tile: 'tent' },
+        { id: 'loose', type: 'wall', rev: 1, a: [0, 0], b: [100, 0] },
+      ],
+      'main/lights': [{ id: 'fire-glow', type: 'light', rev: 1, x: 350, y: 150, bright: 10, dim: 10, tile: 'fire' }],
     },
   };
 }
@@ -72,8 +77,19 @@ describe('moving tiles', () => {
       lastOps()
         ?.ops?.map((o) => o.id)
         .sort(),
-    ).toEqual(['fire', 'tent']);
+    ).toEqual(['fire', 'fire-glow', 'tent', 'tent-wall']);
     expect(patchOf('tent')).toEqual({ x: 200 });
+  });
+
+  it('takes the walls and lights fastened to the tiles along', () => {
+    session.moveSelection([key('camp')], [100, 0], false);
+    const ops = lastOps()!.ops!;
+    expect(ops.find((o) => o.id === 'tent-wall')).toMatchObject({
+      coll: 'main/walls',
+      patch: { a: [200, 100], b: [300, 100] },
+    });
+    expect(ops.find((o) => o.id === 'fire-glow')).toMatchObject({ coll: 'main/lights', patch: { x: 450 } });
+    expect(ops.find((o) => o.id === 'loose')).toBeUndefined();
   });
 
   it('a tile dropped on another goes inside it, on top', () => {

@@ -132,6 +132,20 @@ describe('exploredRasters', () => {
     return map;
   };
 
+  it("looks out from the eye's height, lights from the ground", () => {
+    const asked: unknown[] = [];
+    const spy = {
+      ...ctx(true),
+      polygon: (_at: unknown, _r: number, kind?: string, up?: number) => (asked.push([kind, up]), []),
+    };
+    exploredRasters([{ ...eye(30), elevation: 40 }], spy);
+    expect(asked).toEqual([
+      ['sight', 40],
+      ['sight', 40],
+      ['light', undefined],
+    ]);
+  });
+
   it('is everything in sight by day', () => {
     expect(explored(false, 0).explored([1500, 0])).toBe(true);
   });
