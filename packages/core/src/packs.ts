@@ -133,6 +133,8 @@ export interface MediaEntry {
   tags: string[];
   /** The pack it is from; missing = the game's own assets. */
   pack?: string;
+  /** For a video: a still picture of it (see withThumbnails). */
+  thumb?: string;
 }
 
 /** A media entry for a file `path` inside a folder, named by `src`. */
@@ -142,6 +144,42 @@ export function mediaEntry(src: string, path: string, pack?: string): MediaEntry
   const file = path.split('/').at(-1)!;
   const name = file.slice(0, file.lastIndexOf('.'));
   return { src, name, kind, tags: mediaTags(path), ...(pack ? { pack } : {}) };
+}
+
+const THUMB_SUFFIX = /[._ -]thumb(nail)?$/i;
+const THUMB_FOLDER = /(^|\/)(thumbs|thumbnails)(\/|$)/i;
+
+const folderOf = (src: string) => src.slice(0, src.lastIndexOf('/'));
+const isThumb = (m: MediaEntry) =>
+  m.kind === 'image' && (THUMB_SUFFIX.test(m.name) || THUMB_FOLDER.test(folderOf(m.src)));
+
+/** The video a thumbnail picture is of: same name (less "_Thumb"), in its folder or the one its thumbnails folder mirrors. */
+function videoOf(thumb: MediaEntry, videos: Map<string, MediaEntry[]>): MediaEntry | undefined {
+  const named = videos.get(thumb.name.replace(THUMB_SUFFIX, '').toLowerCase()) ?? [];
+  const folder = folderOf(thumb.src).replace(THUMB_FOLDER, '$1').toLowerCase();
+  return named.find((v) => folderOf(v.src).toLowerCase() === folder) ?? named[0];
+}
+
+/**
+ * Animation packs (JB2A) ship a still picture beside each video: it becomes
+ * the video's `thumb`, and thumbnails leave the list, even ones whose video
+ * isn't there.
+ */
+export function withThumbnails(media: readonly MediaEntry[]): MediaEntry[] {
+  const videos = new Map<string, MediaEntry[]>();
+  for (const m of media) {
+    if (m.kind === 'video') videos.set(m.name.toLowerCase(), [...(videos.get(m.name.toLowerCase()) ?? []), m]);
+  }
+  const thumbs = new Map<MediaEntry, string>();
+  for (const m of media) {
+    const video = isThumb(m) ? videoOf(m, videos) : undefined;
+    if (video && !thumbs.has(video)) thumbs.set(video, m.src);
+  }
+  return media.flatMap((m) => {
+    if (isThumb(m)) return [];
+    const thumb = thumbs.get(m);
+    return [thumb ? { ...m, thumb } : m];
+  });
 }
 
 export interface MediaQuery {
