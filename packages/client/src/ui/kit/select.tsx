@@ -3,6 +3,7 @@ import { Select as SelectPrimitive } from 'radix-ui';
 import type * as React from 'react';
 import { cn } from '@/lib/utils';
 import { fieldClass } from './input.tsx';
+import { usePortalHost } from './portal-host.tsx';
 
 function Select(props: Readonly<React.ComponentProps<typeof SelectPrimitive.Root>>) {
   return <SelectPrimitive.Root data-slot="select" {...props} />;
@@ -42,7 +43,7 @@ function SelectContent({
   ...props
 }: Readonly<React.ComponentProps<typeof SelectPrimitive.Content>>) {
   return (
-    <SelectPrimitive.Portal>
+    <SelectPrimitive.Portal container={usePortalHost()}>
       <SelectPrimitive.Content
         data-slot="select-content"
         position={position}

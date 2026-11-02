@@ -1,6 +1,4 @@
 import {
-  ABILITIES,
-  abilityMod,
   actorFromToken,
   type Creature,
   type Edition,
@@ -13,10 +11,8 @@ import { xpLine } from '../encounter-view.ts';
 import { uniqueId } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
 import type { Session, SheetTarget } from '../session.ts';
-import { listText, parseList, setAbility, setStat, tokenPatch } from '../token-edit.ts';
-import { NumberInput } from './EditorFields.tsx';
-import { EffectBadges, Face, HpBar } from './Portrait.tsx';
-import { previewSheet, withKey, type Draft, type Update } from './sheet-model.ts';
+import { tokenPatch } from '../token-edit.ts';
+import { previewSheet, type Draft, type Update } from './sheet-model.ts';
 import { Details } from './SheetDetails.tsx';
 import { FeaturesPage, SpellsPage } from './SheetPages.tsx';
 import { InventoryPage } from './InventoryPage.tsx';
@@ -24,20 +20,11 @@ import { EffectsPage } from './EffectsPage.tsx';
 import { AnimationsPage } from './AnimationsPage.tsx';
 import { useAutoSave } from './useAutoSave.ts';
 import { sheetDropTarget } from './sheet-drop.ts';
+import { cn } from '@/lib/utils';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
-
-const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
-
-const ABILITY_NAME = {
-  str: 'Strength',
-  dex: 'Dexterity',
-  con: 'Constitution',
-  int: 'Intelligence',
-  wis: 'Wisdom',
-  cha: 'Charisma',
-} as const;
+import { Abilities, Hero } from './SheetHero.tsx';
 
 const PAGES = ['Inventory', 'Spells', 'Features', 'Effects', 'Animations', 'Details'] as const;
 type Page = (typeof PAGES)[number];
@@ -59,18 +46,59 @@ export interface SheetProps {
  * the middle, gear, magic and details on the right. The GM can switch it to
  * edit mode, where every field saves itself.
  */
-export function CharacterSheet({ session }: Readonly<{ session: Session }>) {
+export function CharacterSheet({
+  session,
+  onPopOut,
+}: Readonly<{ session: Session; onPopOut: (target: SheetTarget & { edit: boolean }) => void }>) {
   const target = session.sheet;
-  const live = target && (target.kind === 'token' ? session.tokens.get(target.id) : session.actors.get(target.id));
+  const live = target && liveOf(session, target);
   if (!target || !live) return null;
-  return <SheetWindow key={`${target.kind}:${target.id}`} session={session} target={target} live={live} />;
+  const controls: SheetControls = {
+    setEdit: (edit) => session.setSheetEdit(edit),
+    close: () => session.openSheet(undefined),
+    popOut: () => {
+      onPopOut(target);
+      session.openSheet(undefined);
+    },
+  };
+  return (
+    <SheetWindow
+      key={`${target.kind}:${target.id}`}
+      session={session}
+      target={target}
+      live={live}
+      controls={controls}
+    />
+  );
+}
+
+/** What the sheet's header buttons do: the sheet over the map, or one in its own window (no pop-out). */
+export interface SheetControls {
+  setEdit: (edit: boolean) => void;
+  close: () => void;
+  popOut?: () => void;
+}
+
+const liveOf = (session: Session, t: SheetTarget): Draft | undefined =>
+  t.kind === 'token' ? session.tokens.get(t.id) : session.actors.get(t.id);
+
+/** A sheet popped out into its own window (PopOutWindow.tsx), with its own edit mode. */
+export function PoppedSheet({
+  session,
+  target,
+  controls,
+}: Readonly<{ session: Session; target: SheetTarget & { edit: boolean }; controls: SheetControls }>) {
+  const live = liveOf(session, target);
+  if (!live) return <p className="muted p-6">{"This sheet isn't on the table any more."}</p>;
+  return <SheetWindow session={session} target={target} live={live} controls={controls} />;
 }
 
 function SheetWindow({
   session,
   target,
   live,
-}: Readonly<{ session: Session; target: SheetTarget & { edit: boolean }; live: Draft }>) {
+  controls,
+}: Readonly<{ session: Session; target: SheetTarget & { edit: boolean }; live: Draft; controls: SheetControls }>) {
   const liveRef = useRef(live);
   useEffect(() => {
     liveRef.current = live;
@@ -85,11 +113,11 @@ function SheetWindow({
   const props: SheetProps = { session, kind: target.kind, value, update, sheet, edit: target.edit };
   return (
     <section
-      className={target.edit ? 'sheet frame editing' : 'sheet frame'}
+      className={cn('sheet frame', target.edit && 'editing', !controls.popOut && POPPED)}
       aria-label={`${value.name}'s character sheet`}
       {...sheetDropTarget(session)}
     >
-      <SheetHead {...props} />
+      <SheetHead {...props} controls={controls} />
       <div className="sheet-cols">
         <Abilities {...props} />
         <Hero {...props} />
@@ -136,7 +164,17 @@ function Pages(props: Readonly<SheetProps & { rules: Edition }>) {
   );
 }
 
-function SheetHead({ session, kind, value, update, edit }: Readonly<SheetProps>) {
+/** A sheet in its own window fills it instead of floating over the map. */
+const POPPED = 'static! top-auto! left-auto! min-h-screen w-full! max-h-none! transform-none!';
+
+function SheetHead({
+  session,
+  kind,
+  value,
+  update,
+  edit,
+  controls,
+}: Readonly<SheetProps & { controls: SheetControls }>) {
   const level = characterLevel(value.stats);
   const xp = xpLine(value.stats);
   const title = [
@@ -165,168 +203,18 @@ function SheetHead({ session, kind, value, update, edit }: Readonly<SheetProps>)
       </div>
       <div className="sheet-head-tools">
         {editable && (
-          <Button variant="outline" size="sm" onClick={() => session.setSheetEdit(!edit)} title="Edit mode (E)">
+          <Button variant="outline" size="sm" onClick={() => controls.setEdit(!edit)} title="Edit mode (E)">
             {edit ? 'Done' : 'Edit'}
           </Button>
         )}
-        <Button variant="close" onClick={() => session.openSheet(undefined)} aria-label="Close (C)" title="Close (C)" />
+        {controls.popOut && (
+          <Button variant="outline" size="sm" onClick={controls.popOut} title="Open in its own window">
+            Pop out
+          </Button>
+        )}
+        <Button variant="close" onClick={controls.close} aria-label="Close (C)" title="Close (C)" />
       </div>
     </header>
-  );
-}
-
-function Abilities({ value, update, sheet, edit }: Readonly<SheetProps>) {
-  return (
-    <div className="sheet-abilities">
-      {ABILITIES.map((a) => (
-        <div key={a} className="ability" title={ABILITY_NAME[a]}>
-          <span className="ability-name">{a.toUpperCase()}</span>
-          <strong className="ability-mod">{signed(abilityMod(sheet.abilities[a]))}</strong>
-          {edit ? (
-            <NumberInput
-              className="ability-score"
-              value={value.stats?.abilities?.[a]}
-              min={1}
-              placeholder={sheet.abilities[a]}
-              onChange={(v) => update((d) => setAbility(d, a, v))}
-            />
-          ) : (
-            <span className="ability-score">{sheet.abilities[a]}</span>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Hero(props: Readonly<SheetProps>) {
-  const { value, sheet, edit } = props;
-  return (
-    <div className="sheet-hero">
-      <Face token={{ x: 0, y: 0, ...value }} className="hero-face" />
-      {edit ? <HpEdit {...props} /> : <HpBar token={{ x: 0, y: 0, ...value, sheet }} />}
-      <EffectBadges token={{ x: 0, y: 0, ...value }} />
-      {edit ? <StatsEdit {...props} /> : <StatsView sheet={sheet} />}
-      <Defenses {...props} />
-    </div>
-  );
-}
-
-function StatsView({ sheet }: Readonly<{ sheet: Creature }>) {
-  return (
-    <div className="sheet-stats">
-      <Stat label="Armour" value={sheet.ac} />
-      <Stat label="Speed" value={`${sheet.speed} ft`} />
-      <Stat label="Initiative" value={signed(sheet.initiative)} />
-      <Stat label="Proficiency" value={signed(sheet.proficiency)} />
-    </div>
-  );
-}
-
-function StatsEdit({ value, update, sheet }: Readonly<SheetProps>) {
-  const stat = (key: 'ac' | 'proficiency') => (v: number | undefined) => update((d) => setStat(d, key, v));
-  return (
-    <div className="sheet-stats">
-      <EditStat label="Armour">
-        <NumberInput value={value.stats?.ac} placeholder={sheet.ac} onChange={stat('ac')} />
-      </EditStat>
-      <EditStat label="Speed">
-        <NumberInput value={value.speed} min={0} onChange={(v) => update((d) => ({ ...d, speed: v ?? 30 }))} />
-      </EditStat>
-      <Stat label="Initiative" value={signed(sheet.initiative)} />
-      <EditStat label="Proficiency">
-        <NumberInput value={value.stats?.proficiency} placeholder={sheet.proficiency} onChange={stat('proficiency')} />
-      </EditStat>
-    </div>
-  );
-}
-
-function Stat({ label, value }: Readonly<{ label: string; value: string | number }>) {
-  return (
-    <div className="stat">
-      <strong>{value}</strong>
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function EditStat({ label, children }: Readonly<{ label: string; children: React.ReactNode }>) {
-  return (
-    <label className="stat stat-edit">
-      {children}
-      <span>{label}</span>
-    </label>
-  );
-}
-
-/** Hit points and maximum, plus quick damage and healing. */
-function HpEdit({ value, update, sheet }: Readonly<SheetProps>) {
-  const [amount, setAmount] = useState<number | undefined>();
-  const apply = (sign: number) => {
-    if (!amount) return;
-    const hp = Math.min(sheet.maxHp, Math.max(0, (value.hp ?? sheet.maxHp) + sign * amount));
-    update((d) => withKey(d, 'hp', hp >= sheet.maxHp ? undefined : hp), true);
-    setAmount(undefined);
-  };
-  return (
-    <div className="hp-edit">
-      <label>
-        <span>HP</span>
-        <NumberInput
-          value={value.hp}
-          placeholder={`${sheet.maxHp}`}
-          onChange={(v) => update((d) => withKey(d, 'hp', v))}
-        />
-      </label>
-      <label>
-        <span>Max</span>
-        <NumberInput
-          value={value.stats?.maxHp}
-          min={1}
-          placeholder={sheet.maxHp}
-          onChange={(v) => update((d) => setStat(d, 'maxHp', v))}
-        />
-      </label>
-      <NumberInput value={amount} min={0} onChange={setAmount} placeholder="±" />
-      <Button variant="outline" size="sm" onClick={() => apply(-1)} title="Take damage">
-        Hit
-      </Button>
-      <Button variant="outline" size="sm" onClick={() => apply(1)} title="Heal">
-        Heal
-      </Button>
-    </div>
-  );
-}
-
-const DEFENSES = [
-  ['resistances', 'Resistant'],
-  ['immunities', 'Immune'],
-  ['vulnerabilities', 'Vulnerable'],
-] as const;
-
-function Defenses({ value, update, sheet, edit }: Readonly<SheetProps>) {
-  const shown = DEFENSES.filter(([key]) => edit || sheet[key].length > 0);
-  if (!shown.length) return null;
-  return (
-    <dl className="defenses">
-      {shown.map(([key, label]) => (
-        <div key={key}>
-          <dt>{label}</dt>
-          <dd>
-            {edit ? (
-              <Input
-                key={listText(value.stats?.[key])}
-                defaultValue={listText(value.stats?.[key])}
-                placeholder={listText(sheet[key]) || 'e.g. fire, cold'}
-                onBlur={(e) => update((d) => setStat(d, key, parseList(e.target.value)), true)}
-              />
-            ) : (
-              sheet[key].join(', ')
-            )}
-          </dd>
-        </div>
-      ))}
-    </dl>
   );
 }
 
