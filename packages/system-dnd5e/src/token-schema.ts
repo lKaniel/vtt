@@ -1,6 +1,6 @@
 import { AnimationChoiceSchema } from './animations.ts';
 import { IdSchema as id, OwnershipSchema } from '@vtt/core';
-import { LightSchema } from '@vtt/shared';
+import { LightSchema, TokenLookSchema } from '@vtt/shared';
 import { EffectSchema, FeatureSchema, SpellSchema } from './spell-schema.ts';
 import { CurrencySchema, InventorySchema, ItemSchema, StatsSchema } from './stats-schema.ts';
 import { z } from 'zod';
@@ -34,6 +34,8 @@ export const TokenSchema = z.object({
   size: z.number().positive().default(1),
   color: z.string().default('#b04a3a'),
   img: z.string().optional(),
+  /** When its name and bars show, picture scale, mirroring and ring (see token-look.ts in shared). */
+  ...TokenLookSchema,
   /** Walking speed in feet. */
   speed: z.number().nonnegative().default(30),
   /**
