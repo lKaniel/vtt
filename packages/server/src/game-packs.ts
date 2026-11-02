@@ -3,7 +3,7 @@ import {
   type Content,
   contentWith,
   editionOf,
-  homebrewCompendia,
+  gameCompendia,
   type Token,
   withOwn,
   withSettings,
@@ -87,8 +87,6 @@ export function gamePackIssues(
 
 type RunningGame = Pick<GameStore, 'packs' | 'campaign' | 'system' | 'docs'>;
 
-const lastContent = new WeakMap<object, { packs: PackCompendium[]; key: string; list: PackCompendium[] }>();
-
 /**
  * The rules content (D&D: monsters, items, spells, classes) of the packs a
  * running game turns on and of its own homebrew. The same list while nothing
@@ -96,13 +94,7 @@ const lastContent = new WeakMap<object, { packs: PackCompendium[]; key: string; 
  */
 export function packContent(store: RunningGame): PackCompendium[] {
   const packs = contentCompendia(store.packs, store.campaign, store.system);
-  const docs = store.docs.all('homebrew');
-  const key = docs.map((d) => `${d.id}@${d.rev}`).join(',');
-  const last = lastContent.get(store);
-  if (last?.packs === packs && last.key === key) return last.list;
-  const list = docs.length ? [...packs, ...homebrewCompendia(docs.map((d) => fromDoc(d)))] : packs;
-  lastContent.set(store, { packs, key, list });
-  return list;
+  return gameCompendia(store, packs, store.docs.all('homebrew'), (d) => fromDoc(d));
 }
 
 /** What a token in a running game can refer to: its edition's SRD plus the game's packs. */

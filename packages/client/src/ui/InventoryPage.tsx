@@ -1,5 +1,5 @@
-import { type InventoryEntry, withOwn } from '@vtt/system-dnd5e';
-import { gameContent } from '../content.ts';
+import { type InventoryEntry } from '@vtt/system-dnd5e';
+import { contentFor } from '../content.ts';
 import { type BagBox, bagLayout, carriedDrag, carriedLook } from '../carried.ts';
 import { DRAG_TYPE } from '../drops.ts';
 import { dragTile } from '../hotbar.ts';
@@ -129,7 +129,7 @@ function Slot({
   index,
 }: Readonly<SheetProps & { entry: InventoryEntry; index: number }>) {
   const look = carriedLook(entry, sheet.edition, value);
-  const item = withOwn(gameContent(sheet.edition), value).items.get(entry.item);
+  const item = contentFor(value, sheet.edition).items.get(entry.item);
   const wearable = item && (item.type !== 'gear' || item.bonus !== undefined || item.attunement === true);
   const use = () => {
     if (entry.spell) readScroll(session, value.id, entry.spell);

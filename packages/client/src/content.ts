@@ -1,5 +1,5 @@
 import type { PackCompendium } from '@vtt/core';
-import { type Content, contentWith, type Edition, homebrewCompendia, withSettings } from '@vtt/system-dnd5e';
+import { type Content, contentWith, type Edition, gameCompendia, withOwn, withSettings } from '@vtt/system-dnd5e';
 
 // What this game's tokens can refer to: the SRD of an edition plus the
 // monsters, items, spells and classes of the packs the game turned on, which
@@ -10,7 +10,8 @@ import { type Content, contentWith, type Edition, homebrewCompendia, withSetting
 let packs: readonly PackCompendium[] = [];
 let homebrew: () => readonly { id: string; rev?: number }[] = () => [];
 let settings: () => Readonly<Record<string, string>> | undefined = () => undefined;
-let last: { packs: readonly PackCompendium[]; key: string; list: readonly PackCompendium[] } | undefined;
+/** Keys the compendia cache: this browser plays one game at a time. */
+const THIS_GAME = {};
 
 export function setPackContent(list: readonly PackCompendium[]): void {
   packs = list.filter((c) => c.pack !== 'homebrew');
@@ -26,15 +27,18 @@ export function setSettingsSource(source: () => Readonly<Record<string, string>>
   settings = source;
 }
 
-/** The same list while nothing changed, so the content built from it is cached. */
-function compendia(): readonly PackCompendium[] {
-  const docs = homebrew();
-  const key = docs.map((d) => `${d.id}@${d.rev ?? 0}`).join(',');
-  if (last?.packs === packs && last.key === key) return last.list;
-  last = { packs, key, list: docs.length ? [...packs, ...homebrewCompendia(docs)] : packs };
-  return last.list;
+export function gameContent(rules: Edition): Content {
+  return withSettings(contentWith(rules, gameCompendia(THIS_GAME, packs, homebrew())), settings());
 }
 
-export function gameContent(rules: Edition): Content {
-  return withSettings(contentWith(rules, compendia()), settings());
+type Own = Parameters<typeof withOwn>[1];
+
+/**
+ * What a creature can refer to: the game's content in its edition plus the
+ * items and spells made on its own sheet (the server's `contentFor`). Only a
+ * token whose sheet you see has an inventory or own entries to look up, so
+ * one without a sheet falls back to `rules`.
+ */
+export function contentFor(token: Own & { sheet?: { edition: Edition } }, rules: Edition = '2014'): Content {
+  return withOwn(gameContent(token.sheet?.edition ?? rules), token);
 }

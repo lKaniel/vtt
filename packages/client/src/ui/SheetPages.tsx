@@ -1,5 +1,5 @@
-import { dropOwn, type Edition, knownSpellIds, type OwnKind, type Spell, withOwn } from '@vtt/system-dnd5e';
-import { gameContent } from '../content.ts';
+import { dropOwn, type Edition, knownSpellIds, type OwnKind, type Spell } from '@vtt/system-dnd5e';
+import { contentFor } from '../content.ts';
 import { pipLeft, withSlotsLeft, withUsesLeft } from '../charges.ts';
 import { dragTile } from '../hotbar.ts';
 import { featureArt, spellArt } from '../icon-art.ts';
@@ -106,7 +106,7 @@ function SlotPips({ sheet, edit, update }: Readonly<SheetProps>) {
 export function SpellsPage(props: Readonly<SheetProps & { rules: Edition }>) {
   const { sheet, value, edit, rules } = props;
   const caster = sheet.caster;
-  const book = withOwn(gameContent(rules), value).spells;
+  const book = contentFor(value, rules).spells;
   const own = useOwnEditor(value, props.update);
   const unknown = (value.stats?.spells ?? []).filter((id) => !book.has(id));
   // Without spellcasting it can't cast them, but the sheet still lists what it has.

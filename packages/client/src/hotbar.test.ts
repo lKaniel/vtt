@@ -51,6 +51,16 @@ describe('items on the hotbar', () => {
     expect(costOf(potionTile({ ...t, sheet: { ...t.sheet!, edition: '2014' } }))).toBe('action');
     expect(costOf(potionTile({ ...t, sheet: { ...t.sheet!, edition: '2024' } }))).toBe('bonus');
   });
+
+  it('shows an item the character made on its own sheet', () => {
+    const tonic = { ...srdFor('2014').items.get('potion-of-healing')!, id: 'troll-tonic', name: 'Troll Tonic' };
+    const t = {
+      ...wizard(['item:troll-tonic']),
+      inventory: [{ item: 'troll-tonic', qty: 1 }],
+      own: { items: [tonic] },
+    };
+    expect(hotbarTiles(t as TokenView)[0]).toMatchObject({ kind: 'item', name: 'Troll Tonic' });
+  });
 });
 
 describe('spell scrolls', () => {
