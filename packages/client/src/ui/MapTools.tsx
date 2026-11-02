@@ -1,5 +1,17 @@
 import type { EditorMode, ItemMode, TileTexture } from '@vtt/shared';
 import { ITEM_TOOLS, type ItemTool } from '../editor/shape-tools.ts';
+import {
+  BrickWallIcon,
+  LayoutGridIcon,
+  LightbulbIcon,
+  MousePointer2Icon,
+  PencilIcon,
+  RulerIcon,
+  SquareDashedIcon,
+  StickyNoteIcon,
+  Volume2Icon,
+  type LucideIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 import { LIGHT_PRESETS, TILE_PRESETS, type LightPreset } from '../map-tools.ts';
 import type { Session } from '../session.ts';
@@ -12,21 +24,40 @@ import { Slider } from './kit/slider.tsx';
 import { ColorInput } from './kit/color-input.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 
-const MODES: { mode: EditorMode; label: string; key: string; hint: string }[] = [
-  { mode: 'tokens', label: 'Tokens', key: 'T', hint: 'Select, move and act with creatures' },
-  { mode: 'tiles', label: 'Tiles', key: 'Shift+T', hint: 'Draw, select, move, resize and group tiles' },
-  { mode: 'walls', label: 'Walls', key: 'W', hint: 'Select, move and reshape walls, doors and windows' },
-  { mode: 'lights', label: 'Lights', key: 'L', hint: 'Select, move and resize lights' },
-  { mode: 'drawings', label: 'Draw', key: 'D', hint: 'Shapes, lines, freehand and text on the map' },
-  { mode: 'notes', label: 'Notes', key: 'N', hint: 'Pins that open journal entries' },
+const MODES: { mode: EditorMode; label: string; key: string; hint: string; icon: LucideIcon }[] = [
+  { mode: 'tokens', label: 'Tokens', key: 'T', hint: 'Select, move and act with creatures', icon: MousePointer2Icon },
+  {
+    mode: 'tiles',
+    label: 'Tiles',
+    key: 'Shift+T',
+    hint: 'Draw, select, move, resize and group tiles',
+    icon: LayoutGridIcon,
+  },
+  {
+    mode: 'walls',
+    label: 'Walls',
+    key: 'W',
+    hint: 'Select, move and reshape walls, doors and windows',
+    icon: BrickWallIcon,
+  },
+  { mode: 'lights', label: 'Lights', key: 'L', hint: 'Select, move and resize lights', icon: LightbulbIcon },
+  { mode: 'drawings', label: 'Draw', key: 'D', hint: 'Shapes, lines, freehand and text on the map', icon: PencilIcon },
+  { mode: 'notes', label: 'Notes', key: 'N', hint: 'Pins that open journal entries', icon: StickyNoteIcon },
   {
     mode: 'templates',
     label: 'Measure',
     key: 'M',
     hint: 'The ruler (R), and spell areas: circles, cones, lines and squares',
+    icon: RulerIcon,
   },
-  { mode: 'regions', label: 'Regions', key: '', hint: 'Areas that do something when a token walks in' },
-  { mode: 'sounds', label: 'Sounds', key: '', hint: 'Ambient sound, louder the nearer you are' },
+  {
+    mode: 'regions',
+    label: 'Regions',
+    key: '',
+    hint: 'Areas that do something when a token walks in',
+    icon: SquareDashedIcon,
+  },
+  { mode: 'sounds', label: 'Sounds', key: '', hint: 'Ambient sound, louder the nearer you are', icon: Volume2Icon },
 ];
 
 const ITEM_TOOL_INFO: Record<ItemTool, { label: string; hint: string }> = {
@@ -93,14 +124,16 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
   return (
     <div className="map-tools frame">
       <div className="map-tools-row" role="toolbar" aria-label="Editor mode">
-        {modes.map(({ mode, label, key, hint }) => (
+        {modes.map(({ mode, label, key, hint, icon: Icon }) => (
           <Toggle
             key={mode}
             pressed={session.mode === mode}
-            title={key ? `${hint} (${key})` : hint}
+            title={key ? `${label}: ${hint} (${key})` : `${label}: ${hint}`}
+            aria-label={label}
+            className="w-7 px-0 [&_svg]:size-4"
             onPressedChange={() => session.setMode(mode)}
           >
-            {label}
+            <Icon />
           </Toggle>
         ))}
       </div>

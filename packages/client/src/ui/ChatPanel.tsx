@@ -1,6 +1,19 @@
 import type { AttackLog, ChatMessage, SpellLog } from '@vtt/system-dnd5e';
 import type { DiceTerm } from '@vtt/shared';
-import { MinusIcon, PlusIcon } from 'lucide-react';
+import {
+  ArmchairIcon,
+  BookOpenIcon,
+  DicesIcon,
+  ImageIcon,
+  LibraryIcon,
+  MapIcon,
+  MinusIcon,
+  MusicIcon,
+  PlusIcon,
+  ScrollTextIcon,
+  UsersIcon,
+  type LucideIcon,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '../session.ts';
 import type { ApplyHow } from '../session-actions.ts';
@@ -38,6 +51,19 @@ const TABS = [
 type Tab = (typeof TABS)[number];
 const PLAYER_TABS: readonly Tab[] = ['Adventure log', 'Journal'];
 
+/** Each tab is an icon in one slim row; its name is the panel's title and the icon's tooltip. */
+const TAB_ICONS: Record<Tab, LucideIcon> = {
+  'Adventure log': ScrollTextIcon,
+  Journal: BookOpenIcon,
+  Scenes: MapIcon,
+  Actors: UsersIcon,
+  Compendium: LibraryIcon,
+  Tables: DicesIcon,
+  Music: MusicIcon,
+  Assets: ImageIcon,
+  Players: ArmchairIcon,
+};
+
 /** Players who may edit a creature (trusted owners) also get the Compendium, to fill their sheets from. */
 const playerTabs = (session: Session): readonly Tab[] =>
   [...session.tokens.keys()].some((id) => session.canEdit(id)) ? [...PLAYER_TABS, 'Compendium'] : PLAYER_TABS;
@@ -62,12 +88,15 @@ export function ChatPanel({ session }: Readonly<{ session: Session }>) {
         </Button>
       </header>
       <Tabs value={shown} onValueChange={(t) => setTab(t as Tab)}>
-        <TabsList className="mb-1.5 flex-wrap">
-          {tabs.map((t) => (
-            <TabsTrigger key={t} value={t} className="flex-none px-2 pb-1.5 text-[13px]">
-              {t === 'Adventure log' ? 'Log' : t}
-            </TabsTrigger>
-          ))}
+        <TabsList className="mb-1.5">
+          {tabs.map((t) => {
+            const Icon = TAB_ICONS[t];
+            return (
+              <TabsTrigger key={t} value={t} title={t} aria-label={t} className="px-1 pt-0.5 pb-1.5 [&_svg]:size-4">
+                <Icon />
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
       </Tabs>
       {shown === 'Adventure log' ? <Log session={session} open={open} /> : <Library tab={shown} session={session} />}

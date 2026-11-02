@@ -15,7 +15,7 @@ function Separator({
       <SeparatorPrimitive.Root
         data-slot="separator"
         decorative={decorative}
-        className={cn('art-divider h-7 w-full shrink-0', className)}
+        className={cn('art-divider h-4 w-full shrink-0', className)}
         {...props}
       />
     );
