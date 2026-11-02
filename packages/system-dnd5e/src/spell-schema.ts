@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ABILITIES, DamageSchema, DamageTypeSchema } from './stats-schema.ts';
+import { EffectChangeSchema } from './effect-changes.ts';
 
 // Spells, class features and the effects they leave on creatures. Spells and
 // classes are data in packages/system-dnd5e/content; the engine in spells.ts,
@@ -34,11 +35,18 @@ export type RiderDamage = z.infer<typeof RiderDamageSchema>;
 
 /** What an effect changes about the creature that has it. */
 const modifiers = {
+  /** Changes to any statistic by key, Foundry style: `{ key: "abilities.str", mode: "override", value: 19 }` (see effect-changes.ts). */
+  changes: z.array(EffectChangeSchema).optional(),
   conditions: z.array(ConditionSchema).optional(),
   /** Added to the bearer's attack rolls, e.g. "1d4" for bless or "-1d4" for bane. */
   attackBonus: dice.optional(),
   /** Added to the bearer's saving throws. */
   saveBonus: dice.optional(),
+  /** The bearer's saving throws have disadvantage (exhaustion 3 in 2014). */
+  saveDisadvantage: z.boolean().optional(),
+  /** Added to the bearer's ability checks, and checks with disadvantage (exhaustion). */
+  checkBonus: dice.optional(),
+  checkDisadvantage: z.boolean().optional(),
   ac: z.number().int().optional(),
   /** Unarmored AC before dex: the bearer's AC without body armor is this + dex (mage armor). */
   armorBase: z.number().int().optional(),
@@ -46,6 +54,8 @@ const modifiers = {
   minAc: z.number().int().optional(),
   /** Added to the bearer's hit point maximum (aid). */
   maxHp: z.number().int().optional(),
+  /** The bearer's hit point maximum is multiplied by this (0.5 for exhaustion 4 in 2014). */
+  maxHpTimes: z.number().positive().optional(),
   /** Temporary hit points the bearer gains at the start of each of its turns; "mod" is the caster's spellcasting modifier (heroism). */
   turnTempHp: z.union([z.number().int(), z.literal('mod')]).optional(),
   /** Feet added to (or taken from) the bearer's speed. */

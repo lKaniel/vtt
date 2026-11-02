@@ -4,12 +4,14 @@ import {
   onLevel,
   type LightSource,
   type Point,
+  type ReachPolygon,
   type Rect,
   type Senses,
   SIGHT_SQUARES,
   tokenLights,
   visibilityPolygon,
   type Wall,
+  wallsAt,
 } from '@vtt/shared';
 import { sensesOf, type TokenView } from '@vtt/system-dnd5e';
 import type { Application } from 'pixi.js';
@@ -87,12 +89,12 @@ export class Vision {
     this.sight.destroy();
   }
 
-  private polygon(walls: readonly Wall[]) {
-    return (origin: Point, radius: number): number[] => {
-      const key = `${origin[0]},${origin[1]},${radius},${this.wallsVersion}`;
+  private polygon(walls: readonly Wall[], gridSize: number): ReachPolygon {
+    return (origin, radius, kind = 'sight', elevation) => {
+      const key = `${kind},${origin[0]},${origin[1]},${radius},${elevation},${this.wallsVersion}`;
       let poly = this.polyCache.get(key);
       if (!poly) {
-        poly = visibilityPolygon(origin, radius, walls);
+        poly = visibilityPolygon(origin, radius, wallsAt(walls, elevation), { kind, gridSize });
         if (this.polyCache.size > 500) this.polyCache.clear();
         this.polyCache.set(key, poly);
       }
@@ -121,7 +123,7 @@ export class Vision {
       h: height / camera.zoom,
     };
     const gm = isGm(you);
-    const polygon = this.polygon(walls);
+    const polygon = this.polygon(walls, world.gridSize);
     const lights = this.lights(viewers);
     const scene: LightScene = {
       view,
@@ -134,7 +136,9 @@ export class Vision {
     this.light.render(scene, transform);
     // The GM's fog brush shows what the players explored instead of what the GM's tokens see.
     const brushing = gm && !!this.session.fogBrush;
-    const eyes = brushing ? [] : viewers.map((v) => ({ at: v.at, senses: sensesOfView(v.token) }));
+    const eyes = brushing
+      ? []
+      : viewers.map((v) => ({ at: v.at, senses: sensesOfView(v.token), elevation: v.token.elevation }));
     const sightRadius = SIGHT_SQUARES * world.gridSize;
     this.showExplored();
     const darkness = lights.filter((l) => l.darkness);

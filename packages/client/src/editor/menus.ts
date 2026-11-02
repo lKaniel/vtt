@@ -1,8 +1,9 @@
 import type { Doc, DocRef, Patch } from '@vtt/core';
-import type { EditorMode, MapEdit, Point, ZOrder } from '@vtt/shared';
+import { type EditorMode, type MapEdit, type Point, type WallRules, wallPreset, type ZOrder } from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
 import { LIGHT_PRESETS, type LightPreset } from '../map-tools.ts';
 import type { Draft } from './shape-tools.ts';
+import { presetPatch } from './wall-fields.ts';
 
 // Right-click menus. Each kind of thing registers the entries it adds, so a
 // new placeable (or a game system) brings its own without touching the
@@ -41,6 +42,10 @@ export interface MenuApi {
   reorder(how: ZOrder): void;
   toggleLock(): void;
   readonly lightPreset: LightPreset;
+  /** The creatures you target (see targets.ts). */
+  readonly targets: { readonly mine: ReadonlySet<string>; toggle(id: string): void };
+  /** Opens the token HUD beside a creature (see session-hud.ts). */
+  openHud(token: string, screen: Point): void;
 }
 
 /** What the menu was opened on. */
@@ -52,6 +57,10 @@ export interface MenuTarget {
   docs: { ref: DocRef; doc: Doc }[];
   /** In the tokens mode: the token under the pointer, or the one selected for a ground menu. */
   token?: TokenView;
+  /** A ground menu's creature under the pointer that you don't control (to target it). */
+  under?: TokenView;
+  /** Where the menu opens, in screen pixels (the token HUD opens there too). */
+  screen?: Point;
 }
 
 type Entry = MenuItem | false | undefined;
@@ -106,19 +115,29 @@ registerMenu('token', (t, api) => {
   const hidden = allDocs(t, (d) => d.hidden === true);
   return [
     { label: 'Open sheet', run: () => api.openSheet({ kind: 'token', id }) },
+    !!t.screen && { label: 'Token HUD', run: () => api.openHud(id, t.screen!) },
     api.canEdit(id) && { label: 'Edit sheet', run: () => api.openSheet({ kind: 'token', id }, true) },
     api.isGm() && {
       label: hidden ? 'Reveal to players' : 'Hide from players',
       run: () => api.editSelection({ hidden: hidden ? null : true }, hidden ? 'reveal' : 'hide'),
     },
+    targetEntry(id, api),
   ];
 });
 
-const WALL_KINDS: { label: string; is: (d: Doc) => boolean; patch: Patch }[] = [
-  { label: 'Make it a wall', is: (d) => !d.door && d.sight !== false, patch: { door: null, sight: null } },
-  { label: 'Make it a door', is: (d) => !!d.door, patch: { door: 'closed', sight: null } },
-  { label: 'Make it a window', is: (d) => !d.door && d.sight === false, patch: { door: null, sight: false } },
-];
+/** Target a creature, or stop (see targets.ts). */
+const targetEntry = (id: string, api: MenuApi): MenuItem => ({
+  label: api.targets.mine.has(id) ? 'Stop targeting' : 'Target',
+  run: () => api.targets.toggle(id),
+});
+
+const WALL_KINDS: { label: string; is: (d: Doc) => boolean; patch: Patch }[] = (
+  ['wall', 'door', 'window'] as const
+).map((kind) => ({
+  label: `Make it a ${kind}`,
+  is: (d) => wallPreset(d as WallRules) === kind,
+  patch: presetPatch(kind),
+}));
 
 registerMenu('wall', (t, api) => {
   const kinds = WALL_KINDS.filter((k) => !allDocs(t, k.is)).map((k) => ({
@@ -231,6 +250,7 @@ registerMenu('ground', (t, api) => {
         label: `Place ${LIGHT_PRESETS[api.lightPreset].label.toLowerCase()} here`,
         run: () => api.editMap({ op: 'addLight', light: { ...light, x: t.at[0], y: t.at[1] } }),
       },
+    !!t.under && targetEntry(t.under.id, api),
     t.mode === 'tokens' && !!token && { label: `Move ${token.name} here`, run: () => api.move(token.id, t.at) },
     { label: 'Select all', run: () => api.selectAll() },
   ];

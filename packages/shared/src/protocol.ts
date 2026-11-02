@@ -1,9 +1,10 @@
 import type { Doc, MediaEntry, Op, PackCompendium, PackInfo } from '@vtt/core';
 import type { Roll } from './dice.ts';
 import type { ClockAction } from './clock.ts';
-import type { Chunk, DoorState, Point, Role, World } from './schema.ts';
+import type { Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
 import type { FogEdit } from './fog-edit.ts';
 import type { MapEdit } from './map-edit.ts';
+import type { RollMode } from './roll-modes.ts';
 
 // The engine's half of the wire protocol: scenes, maps, fog, documents and
 // undo. A game system adds its own messages (attacks, spells, sheets) on top;
@@ -20,8 +21,14 @@ export interface ChatEntry {
   color: string;
   text?: string;
   roll?: Roll;
-  /** Set on GM-only messages. */
-  gmOnly?: boolean;
+  /** What a roll is for, written after its formula ("/r 8d6 fire"); a system may read it (a damage type). */
+  label?: string;
+  /** The player who made it; none for the game's own cards. */
+  by?: string;
+  /** Who may read it (see roll-modes.ts); none: everyone. */
+  mode?: Exclude<RollMode, 'public'>;
+  /** A blind roll as its roller sees it: only that it was made. */
+  hidden?: boolean;
   /** The GM undid the action this card reports. */
   undone?: boolean;
 }
@@ -46,6 +53,18 @@ export type EngineClientMessage =
   /** The chunks this client's camera can see; the server streams them. */
   | { t: 'view'; chunks: string[] }
   | { t: 'move'; token: string; to: Point }
+  /** Lay your ruler through these waypoints, shown live to everyone on your scene; none puts it away (see ruler.ts). */
+  | { t: 'ruler'; points: Point[] }
+  /** Where your pointer is on the map, shown live to everyone on your scene; null: it left the map. */
+  | { t: 'cursor'; at: Point | null }
+  /** Point out a spot to everyone on your scene; the GM may `pull` everyone's view there. */
+  | { t: 'ping'; at: Point; pull?: boolean }
+  /** GM: pause the game (players can't act) or go on. */
+  | { t: 'pause'; on: boolean }
+  /** Mark these tokens as your targets, shown to everyone on your scene who can see them; none clears them. */
+  | { t: 'target'; tokens: string[] }
+  /** Who sees your rolls and the cards of your actions from now on (see roll-modes.ts). */
+  | { t: 'rollMode'; mode: RollMode }
   | { t: 'door'; chunk: string; wall: string; state: DoorState }
   | { t: 'chat'; text: string }
   /** Change token fields; `null` removes one (e.g. `hp: null` heals fully). The GM may edit any token, a trusted player the ones they own. */
@@ -88,7 +107,9 @@ export type EngineClientMessage =
   /** Roll on a roll table into chat (players: tables shared with them); `gmOnly` whispers the result to the GM. */
   | { t: 'rollTable'; table: string; gmOnly?: boolean }
   /** GM: share a journal entry with every player and open it (at `page`) on their screens. */
-  | { t: 'showJournal'; entry: string; page?: string };
+  | { t: 'showJournal'; entry: string; page?: string }
+  /** Your own options for this game (see Player.settings), checked by the game's system; they replace the old ones. */
+  | { t: 'seatSettings'; settings: Record<string, string> };
 
 /** What the engine tells clients, whatever system the game plays. */
 export type EngineServerMessage =
@@ -101,6 +122,16 @@ export type EngineServerMessage =
   | { t: 'fog'; player: string; cell: number; blocks: Record<string, string>; full?: boolean }
   | { t: 'tokenGone'; id: string }
   | { t: 'moved'; id: string; path: Point[] }
+  /** Someone else on your scene laid their ruler through these waypoints; none: they put it away. */
+  | { t: 'ruler'; player: string; name: string; color: string; points: Point[] }
+  /** Someone else on your scene is pointing here; null: their pointer left the map. */
+  | { t: 'cursor'; player: string; name: string; color: string; at: Point | null }
+  /** Someone else on your scene pinged a spot; `pull`: the GM brings your view there. */
+  | { t: 'ping'; player: string; name: string; color: string; at: Point; pull?: boolean }
+  /** Someone else on your scene marked these tokens (those you can see) as their targets. */
+  | { t: 'targets'; player: string; name: string; color: string; tokens: string[] }
+  /** The GM paused the game, or let it go on. */
+  | { t: 'paused'; on: boolean }
   /** The time of day changed. */
   | { t: 'lighting'; darkness: number }
   | { t: 'error'; message: string }
@@ -120,4 +151,6 @@ export type EngineServerMessage =
   | { t: 'media'; entries: MediaEntry[] }
   | { t: 'compendium'; pack: string; compendium: string; docs: unknown[] }
   /** The GM shows you a journal entry: open it (at `page`). */
-  | { t: 'showJournal'; entry: string; page?: string };
+  | { t: 'showJournal'; entry: string; page?: string }
+  /** Your seat changed without the table starting over (your settings). */
+  | { t: 'you'; you: Player };

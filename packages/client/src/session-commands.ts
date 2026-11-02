@@ -1,4 +1,4 @@
-import type { Actor, ClientMessage } from '@vtt/system-dnd5e';
+import type { Actor, CarryChange, ClientMessage } from '@vtt/system-dnd5e';
 import type { ClockAction, DoorState, MapEdit, Point, Role } from '@vtt/shared';
 
 /**
@@ -32,6 +32,16 @@ export abstract class Commands {
   /** GM: turn-based mode outside a fight. */
   setTurnBased(on: boolean): void {
     this.send({ t: 'turnBased', on });
+  }
+
+  /** Your own options for this game (automation.ts); they replace the old ones. */
+  setSeatSettings(settings: Record<string, string>): void {
+    this.send({ t: 'seatSettings', settings });
+  }
+
+  /** Picks the animation for one of a creature's attacks or spells; none goes back to the default. */
+  setAnimation(token: string, ref: string, animation?: string): void {
+    this.send({ t: 'animation', token, ref, animation });
   }
 
   say(text: string): void {
@@ -78,6 +88,21 @@ export abstract class Commands {
 
   equip(token: string, item: number, equipped: boolean): void {
     this.send({ t: 'equip', token, item, equipped });
+  }
+
+  /** Spends one of the creature's hit dice to heal. */
+  spendHitDie(token: string): void {
+    this.send({ t: 'hitDie', token });
+  }
+
+  /** GM: sets a creature's exhaustion (0 for none). */
+  setExhaustion(token: string, level: number): void {
+    this.send({ t: 'exhaustion', token, level });
+  }
+
+  /** Coins, packing and attunement on a creature the player controls. */
+  carry(token: string, change: CarryChange): void {
+    this.send({ t: 'carry', token, change });
   }
 
   /** GM: change what a seat may do at the table. */

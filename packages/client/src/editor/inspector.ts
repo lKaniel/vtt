@@ -1,7 +1,8 @@
-import type { Doc, Patch } from '@vtt/core';
-import { TileTextureSchema } from '@vtt/shared';
+import type { Doc } from '@vtt/core';
+import { TileTextureSchema, WALL_PRESETS, type WallRules, wallPreset } from '@vtt/shared';
 import { type Field, type FieldValue, flag, MIXED, options, plain } from './field-kit.ts';
 import { ITEM_FIELDS } from './item-fields.ts';
+import { doorFields, presetPatch, wallRuleFields } from './wall-fields.ts';
 
 export { type Field, type FieldValue, MIXED } from './field-kit.ts';
 
@@ -9,32 +10,38 @@ export { type Field, type FieldValue, MIXED } from './field-kit.ts';
 // what to show for a selection, the value they share (or "mixed"), and the
 // patch an input makes.
 
-const WALL_KIND: Record<string, Patch> = {
-  wall: { door: null, sight: null },
-  door: { door: 'closed', sight: null },
-  window: { door: null, sight: false },
-};
-
-function wallKind(doc: Doc): string {
-  if (doc.door) return 'door';
-  return doc.sight === false ? 'window' : 'wall';
-}
+/** The tile a wall or light is fastened to: it moves, copies and deletes with it. */
+const ON_TILE = plain('tile', 'On tile', 'select', { choices: 'tiles' });
 
 const WALL_FIELDS: Field[] = [
   {
-    ...plain('kind', 'Kind', 'select', { options: options('wall', 'door', 'window') }),
-    get: wallKind,
-    patch: (value) => WALL_KIND[String(value)] ?? {},
+    ...plain('kind', 'Kind', 'select', { options: options(...Object.keys(WALL_PRESETS), 'custom') }),
+    get: (d) => wallPreset(d as WallRules),
+    patch: (value) => presetPatch(String(value)),
   },
   plain('door', 'Door', 'select', { options: options('closed', 'open', 'locked'), when: (d) => !!d.door }),
+  ...doorFields(),
+  ...wallRuleFields(),
+  ON_TILE,
 ];
 
 const LIGHT_FIELDS: Field[] = [
   plain('bright', 'Bright (ft)', 'number'),
   plain('dim', 'Dim (ft)', 'number'),
   plain('color', 'Colour', 'color'),
+  plain('colorIntensity', 'Colour strength (0-1)', 'number'),
+  plain('luminosity', 'Luminosity (0-1)', 'number'),
+  plain('attenuation', 'Edge softness (0-1)', 'number'),
+  plain('angle', 'Beam (°)', 'number'),
+  plain('rotation', 'Facing (° from south)', 'number', { when: (d) => typeof d.angle === 'number' && d.angle < 360 }),
   plain('animation', 'Animation', 'select', { options: options('', 'flicker', 'pulse') }),
   { ...plain('darkness', 'Magical darkness', 'check'), get: (d) => d.darkness === true },
+  {
+    ...plain('walls', 'Shines through walls', 'check'),
+    get: (d) => d.walls === false,
+    patch: (v) => ({ walls: v === true ? false : null }),
+  },
+  ON_TILE,
 ];
 
 const isRect = (d: Doc) => d.kind === 'rect';

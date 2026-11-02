@@ -48,6 +48,47 @@ describe('Session', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'darkness', darkness: 0.4 });
   });
 
+  it('lays your ruler for the table and shows the others’ until a fresh welcome', () => {
+    ws.receive(welcome());
+    const shown = vi.fn();
+    session.on('rulers', shown);
+    session.rulers.press([10, 20]);
+    expect(ws.sent.at(-1)).toEqual({ t: 'ruler', points: [[10, 20]] });
+    ws.receive({
+      t: 'ruler',
+      player: 'bo',
+      name: 'Bo',
+      color: '#00f',
+      points: [
+        [0, 0],
+        [5, 5],
+      ],
+    });
+    expect(session.rulers.others.get('bo')?.name).toBe('Bo');
+    expect(shown).toHaveBeenCalled();
+    ws.receive(welcome());
+    expect(session.rulers.others.size).toBe(0);
+    expect(session.rulers.active).toBe(false);
+  });
+
+  it('shows the others’ cursors and pings, and a GM’s pull brings your view to the spot', () => {
+    ws.receive(welcome());
+    const shown = vi.fn();
+    const focus = vi.fn();
+    session.on('presence', shown);
+    session.on('focus', focus);
+    const bo = { player: 'bo', name: 'Bo', color: '#00f' };
+    ws.receive({ t: 'cursor', ...bo, at: [3, 4] });
+    expect(session.presence.cursors.get('bo')?.at).toEqual([3, 4]);
+    ws.receive({ t: 'ping', ...bo, at: [8, 8], pull: true });
+    expect(focus).toHaveBeenCalledWith([8, 8]);
+    expect(shown).toHaveBeenCalledTimes(2);
+    session.presence.ping([1, 2], false);
+    expect(ws.sent.at(-1)).toEqual({ t: 'ping', at: [1, 2] });
+    ws.receive(welcome());
+    expect(session.presence.cursors.size).toBe(0);
+  });
+
   it('keeps only chunks in view', () => {
     const chunk = { tiles: [], walls: [], lights: [] };
     const gone = vi.fn();
@@ -109,7 +150,7 @@ describe('Session', () => {
   it('asks for its chunks again after reconnecting', () => {
     session.setView(['0_0']);
     ws.receive(welcome());
-    expect(ws.sent.at(-1)).toEqual({ t: 'view', chunks: ['0_0'] });
+    expect(ws.sent).toContainEqual({ t: 'view', chunks: ['0_0'] });
   });
 
   it('reconnects unless the seat was refused', () => {
@@ -182,6 +223,14 @@ describe('Session', () => {
       expect(session.armed).toBeUndefined();
     });
 
+    it('fires an armed attack at once at your one target', () => {
+      session.select('hero');
+      session.targets.toggle('goblin');
+      session.arm('Longsword');
+      expect(ws.sent.at(-1)).toEqual({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Longsword' });
+      expect(session.armed).toBeUndefined();
+    });
+
     it('smites with a chosen slot on the armed attack, then forgets the choice', () => {
       session.select('hero');
       session.arm('Longsword');
@@ -230,6 +279,13 @@ describe('Session', () => {
           slot: 1,
           targets: ['goblin', 'goblin', 'orc'],
         });
+        expect(session.aiming).toBeUndefined();
+      });
+
+      it('aims a spell at your targets and casts when they are all it needs', () => {
+        session.targets.toggle('goblin');
+        session.aim('magic-missile', 1);
+        expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', targets: ['goblin', 'goblin', 'goblin'] });
         expect(session.aiming).toBeUndefined();
       });
 

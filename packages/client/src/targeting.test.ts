@@ -1,6 +1,15 @@
 import { srdFor, type TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
-import { aimFor, aimScroll, aimSpell, castMessage, needsClearPath, pick, scrollAiming } from './targeting.ts';
+import {
+  aimAtTargets,
+  aimFor,
+  aimScroll,
+  aimSpell,
+  castMessage,
+  needsClearPath,
+  pick,
+  scrollAiming,
+} from './targeting.ts';
 
 const spell = (id: string) => srdFor('2014').spells.get(id)!;
 
@@ -51,6 +60,30 @@ describe('aiming a spell', () => {
       targets: [],
       point: [250, 150],
     });
+  });
+});
+
+describe('aiming at your targets', () => {
+  it('picks them, and is done when the spell has all it needs', () => {
+    const bolt = aimAtTargets(aimSpell(spell('fire-bolt'), 0, 5), ['goblin']);
+    expect(bolt).toMatchObject({ aiming: { picks: ['goblin'] }, done: true });
+    const bless = aimAtTargets(aimSpell(spell('bless'), 1, 5), ['ana']);
+    expect(bless).toMatchObject({ aiming: { picks: ['ana'] }, done: false });
+  });
+
+  it('takes no more than the spell can, and sends every beam at them in turn', () => {
+    expect(aimAtTargets(aimSpell(spell('fire-bolt'), 0, 5), ['a', 'b']).aiming.picks).toEqual(['a']);
+    expect(aimAtTargets(aimSpell(spell('magic-missile'), 1, 5), ['a', 'b'])).toMatchObject({
+      aiming: { picks: ['a', 'b', 'a'] },
+      done: true,
+    });
+  });
+
+  it('leaves the aiming alone with no targets, or when it isn’t at creatures', () => {
+    const fireball = aimSpell(spell('fireball'), 3, 5);
+    expect(aimAtTargets(fireball, ['a'])).toEqual({ aiming: fireball, done: false });
+    const bolt = aimSpell(spell('fire-bolt'), 0, 5);
+    expect(aimAtTargets(bolt, [])).toEqual({ aiming: bolt, done: false });
   });
 });
 

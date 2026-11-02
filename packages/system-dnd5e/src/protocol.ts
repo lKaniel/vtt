@@ -10,9 +10,9 @@ import type {
   WorldInfo,
 } from '@vtt/shared';
 import type { Combat } from './combat.ts';
-import type { Area } from './spell-schema.ts';
+import type { Area, Condition } from './spell-schema.ts';
 import type { CompendiumDrop, SheetArea } from './sheet-drops.ts';
-import type { Ability, DamageType, Edition } from './stats-schema.ts';
+import type { Ability, Currency, DamageType, Edition } from './stats-schema.ts';
 import type { Actor } from './token-schema.ts';
 import type { TokenView } from './token-view.ts';
 
@@ -37,6 +37,8 @@ export interface AttackLog {
   parts: { roll: Roll; type: DamageType; dealt: number }[];
   /** e.g. "long range: disadvantage", "Goblin is down". */
   notes: string[];
+  /** The animation the attacker picked for this attack (animations.ts); missing plays the default. */
+  animation?: string;
 }
 
 /** One target's part of a spell, as the chat log shows it. */
@@ -72,6 +74,8 @@ export interface SpellLog {
   slot: number;
   results: SpellTargetLog[];
   notes: string[];
+  /** The animation the caster picked for this spell; missing plays the default. */
+  animation?: string;
 }
 
 export interface ChatMessage extends ChatEntry {
@@ -95,6 +99,12 @@ export interface ReactionOffer {
   total?: number;
 }
 
+/** A change to what a creature carries; `item` and `into` are inventory indexes. */
+export type CarryChange =
+  | { kind: 'coins'; currency: Currency }
+  | { kind: 'stow'; item: number; into: number | null }
+  | { kind: 'attune'; item: number; on: boolean };
+
 export type ClientMessage =
   | EngineClientMessage
   /** GM: roll initiative for these tokens and start a fight. */
@@ -107,6 +117,12 @@ export type ClientMessage =
   | { t: 'attack'; attacker: string; target: string; attack: string; smite?: number }
   /** `item` is the index in the token's inventory. */
   | { t: 'equip'; token: string; item: number; equipped: boolean }
+  /** An owner's own gear: coins, packing it into containers (`into` null takes it out), attunement. */
+  | { t: 'carry'; token: string; change: CarryChange }
+  /** Spends one hit die to heal (outside fights). */
+  | { t: 'hitDie'; token: string }
+  /** GM: sets a creature's exhaustion, 0 for none. */
+  | { t: 'exhaustion'; token: string; level: number }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
   | {
       t: 'cast';
@@ -129,6 +145,12 @@ export type ClientMessage =
   | { t: 'useItem'; token: string; item: string }
   /** Take a reaction that was offered, with this attack; no attack declines it. */
   | { t: 'react'; offer: string; choice?: string }
+  /** Put a condition on a creature you control, or take it off (the token HUD). */
+  | { t: 'condition'; token: string; condition: Condition; on: boolean }
+  /** GM: add a creature to the fight (starting one) or take it out. */
+  | { t: 'combatant'; token: string; on: boolean }
+  /** Apply the roll on a chat card to these creatures: in full, half, double, or as healing. */
+  | { t: 'applyDamage'; card: string; tokens: string[]; how: 'full' | 'half' | 'double' | 'heal' }
   | { t: 'dropConcentration'; token: string }
   /** GM: end one effect on a token. */
   | { t: 'removeEffect'; token: string; effect: string }
@@ -136,6 +158,8 @@ export type ClientMessage =
   | { t: 'rest'; tokens: string[]; kind: 'short' | 'long' }
   /** Save how a creature you control has its action bar arranged. */
   | { t: 'hotbar'; token: string; slots: (string | null)[] }
+  /** Picks the animation for one of a creature's attacks or spells (`ref` "attack:<name>" or "spell:<id>"); none plays the default. */
+  | { t: 'animation'; token: string; ref: string; animation?: string }
   /** Something from the Compendium dropped on a sheet (a token's or, for the GM, an actor's) you may edit. */
   | { t: 'drop'; what: CompendiumDrop; onto: { kind: 'token' | 'actor'; id: string }; area?: SheetArea }
   /** Hand the stack of an item a creature you control carries (a scroll: of that spell) to a creature you see. */
@@ -168,6 +192,8 @@ export type ServerMessage =
       history: HistoryState;
       /** The server's clock (ms) as it sent this, so the game clock reads the same everywhere. */
       serverTime?: number;
+      /** The GM paused the game: players can't act. */
+      paused?: boolean;
     }
   | { t: 'token'; token: TokenView }
   | { t: 'chat'; message: ChatMessage }

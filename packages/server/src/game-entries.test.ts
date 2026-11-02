@@ -60,7 +60,7 @@ describe('roll tables', () => {
     const ana = seat('ana');
     setUp(gm);
     gm.receive({ t: 'rollTable', table: 'loot', gmOnly: true });
-    expect(gm.take('chat')[0]?.message).toMatchObject({ gmOnly: true, text: 'Loot: Copper (1 on 1d4)' });
+    expect(gm.take('chat')[0]?.message).toMatchObject({ mode: 'gm', text: 'Loot: Copper (1 on 1d4)' });
     expect(ana.take('chat')).toEqual([]);
   });
 

@@ -1,6 +1,14 @@
 import { OpSchema } from '@vtt/core';
-import { ClockActionSchema, DoorStateSchema, FogEditSchema, MapEditSchema, PointSchema, RoleSchema } from '@vtt/shared';
-import { EditionSchema } from '@vtt/system-dnd5e';
+import {
+  ClockActionSchema,
+  DoorStateSchema,
+  FogEditSchema,
+  MapEditSchema,
+  PointSchema,
+  RoleSchema,
+  ROLL_MODES,
+} from '@vtt/shared';
+import { ConditionSchema, CurrencySchema, EditionSchema } from '@vtt/system-dnd5e';
 import type { RawData } from 'ws';
 import { z } from 'zod';
 
@@ -9,11 +17,23 @@ import { z } from 'zod';
 /** Uploads up to 20 MB, as base64. */
 const MAX_UPLOAD_BASE64 = Math.ceil((20 * 1024 * 1024 * 4) / 3) + 4;
 
+/** Waypoints a ruler may have. */
+const MAX_RULER_POINTS = 64;
+const index = z.number().int().nonnegative();
+
+/** Tokens one player may target at once. */
+const MAX_TARGETS = 50;
+
 const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('rollTable'), table: z.string(), gmOnly: z.boolean().optional() }),
   z.object({ t: z.literal('showJournal'), entry: z.string(), page: z.string().optional() }),
   z.object({ t: z.literal('view'), chunks: z.array(z.string()).max(400) }),
   z.object({ t: z.literal('move'), token: z.string(), to: PointSchema }),
+  z.object({ t: z.literal('ruler'), points: z.array(PointSchema).max(MAX_RULER_POINTS) }),
+  z.object({ t: z.literal('cursor'), at: PointSchema.nullable() }),
+  z.object({ t: z.literal('ping'), at: PointSchema, pull: z.boolean().optional() }),
+  z.object({ t: z.literal('target'), tokens: z.array(z.string()).max(MAX_TARGETS) }),
+  z.object({ t: z.literal('rollMode'), mode: z.enum(ROLL_MODES) }),
   z.object({ t: z.literal('door'), chunk: z.string(), wall: z.string(), state: DoorStateSchema }),
   z.object({ t: z.literal('chat'), text: z.string().min(1).max(2000) }),
   z.object({ t: z.literal('combatStart'), tokens: z.array(z.string()).min(1).max(100) }),
@@ -29,6 +49,17 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     smite: z.number().int().min(1).max(9).optional(),
   }),
   z.object({ t: z.literal('equip'), token: z.string(), item: z.number().int().nonnegative(), equipped: z.boolean() }),
+  z.object({ t: z.literal('hitDie'), token: z.string() }),
+  z.object({ t: z.literal('exhaustion'), token: z.string(), level: z.number().int().min(0).max(6) }),
+  z.object({
+    t: z.literal('carry'),
+    token: z.string(),
+    change: z.discriminatedUnion('kind', [
+      z.object({ kind: z.literal('coins'), currency: CurrencySchema }),
+      z.object({ kind: z.literal('stow'), item: index, into: index.nullable() }),
+      z.object({ kind: z.literal('attune'), item: index, on: z.boolean() }),
+    ]),
+  }),
   z.object({
     t: z.literal('cast'),
     caster: z.string(),
@@ -50,12 +81,28 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   }),
   z.object({ t: z.literal('useItem'), token: z.string(), item: z.string() }),
   z.object({ t: z.literal('react'), offer: z.string(), choice: z.string().optional() }),
+  z.object({ t: z.literal('condition'), token: z.string(), condition: ConditionSchema, on: z.boolean() }),
+  z.object({ t: z.literal('combatant'), token: z.string(), on: z.boolean() }),
+  z.object({ t: z.literal('pause'), on: z.boolean() }),
+  z.object({
+    t: z.literal('applyDamage'),
+    card: z.string(),
+    tokens: z.array(z.string()).min(1).max(50),
+    how: z.enum(['full', 'half', 'double', 'heal']),
+  }),
   z.object({ t: z.literal('dropConcentration'), token: z.string() }),
   z.object({ t: z.literal('removeEffect'), token: z.string(), effect: z.string() }),
+  z.object({ t: z.literal('seatSettings'), settings: z.record(z.string().max(40), z.string().max(40)) }),
   z.object({ t: z.literal('rest'), tokens: z.array(z.string()).min(1).max(100), kind: z.enum(['short', 'long']) }),
   z.object({ t: z.literal('editToken'), token: z.string(), patch: z.record(z.string(), z.unknown()) }),
   z.object({ t: z.literal('deleteToken'), token: z.string() }),
   z.object({ t: z.literal('relinkToken'), token: z.string(), how: z.enum(['link', 'unlink', 'save', 'reset']) }),
+  z.object({
+    t: z.literal('animation'),
+    token: z.string(),
+    ref: z.string().max(90),
+    animation: z.string().max(300).optional(),
+  }),
   z.object({
     t: z.literal('hotbar'),
     token: z.string(),

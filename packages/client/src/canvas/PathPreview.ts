@@ -8,6 +8,7 @@ import {
   type WalkOptions,
   walkPath,
   type Wall,
+  wallsAt,
 } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
 import { previewLabel } from '../spell-text.ts';
@@ -58,7 +59,10 @@ export class PathPreview {
     const g = ctx.gridSize;
     const target = this.aim(hover, ctx);
     if (!this.needsRedraw(`walk:${target[0]},${target[1]}:${token.x},${token.y}`, ctx.force)) return;
-    const path = walkPath([token.x, token.y], target, ctx.walls, { ...ctx.walk, cost: ctx.cost });
+    const path = walkPath([token.x, token.y], target, wallsAt(ctx.walls, token.elevation), {
+      ...ctx.walk,
+      cost: ctx.cost,
+    });
     if (!path) {
       this.line.circle(target[0], target[1], g * 0.3).stroke({ width: 6, color: BLOCKED_COLOR });
       return;
@@ -77,7 +81,7 @@ export class PathPreview {
     const target = this.aim(hover, ctx);
     if (!this.needsRedraw(`attack:${attack.name}:${target[0]},${target[1]}:${token.x},${token.y}`, ctx.force)) return;
     const feet = tokenDistance(token, { x: target[0], y: target[1], size: 1 }, ctx.gridSize, ctx.gridless);
-    const blocked = !hasLineOfSight([token.x, token.y], target, ctx.walls);
+    const blocked = !hasLineOfSight([token.x, token.y], target, ctx.walls, { kind: 'sight', gridSize: ctx.gridSize });
     const range = blocked ? 'out' : attackRange(attack, feet);
     const color = { normal: OK_COLOR, long: LONG_RANGE_COLOR, out: BLOCKED_COLOR }[range];
     this.line.moveTo(token.x, token.y).lineTo(...target);
@@ -96,7 +100,9 @@ export class PathPreview {
     if (!this.needsRedraw(key, ctx.force)) return;
     const reach = spell.teleport ?? spell.range;
     const feet = Math.round((Math.hypot(target[0] - token.x, target[1] - token.y) / ctx.gridSize) * 5);
-    const blocked = needsClearPath(spell) && !hasLineOfSight([token.x, token.y], target, ctx.walls);
+    const blocked =
+      needsClearPath(spell) &&
+      !hasLineOfSight([token.x, token.y], target, ctx.walls, { kind: 'sight', gridSize: ctx.gridSize });
     const out = (reach > 0 && feet > Math.max(5, reach) + 2.5) || blocked;
     const color = out ? BLOCKED_COLOR : OK_COLOR;
     const count = aiming.mode === 'creatures' ? `${aiming.picks.length + 1}/${aiming.need}` : undefined;

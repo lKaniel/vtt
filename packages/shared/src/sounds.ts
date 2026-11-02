@@ -1,8 +1,8 @@
 import type { Point, Wall } from './schema.ts';
 import type { Sound } from './scene-items.ts';
-import { segmentsIntersect } from './geometry.ts';
 import { activeAt } from './levels.ts';
 import { feetToPx } from './vision.ts';
+import { wallsCrossed } from './walls.ts';
 
 // Ambient sounds: how loud one is where the listener stands. It fades from
 // its volume at its centre to nothing at its radius, and a wall in between
@@ -27,6 +27,6 @@ export function soundVolume(sound: Sound, at: Point, ctx: Hearing): number {
   const base = (sound.volume ?? 0.5) * (1 - d / reach);
   if (sound.walls === false) return base;
   const from: Point = [sound.x, sound.y];
-  const walls = ctx.wallsBetween(from, at).filter((w) => w.door !== 'open' && segmentsIntersect(from, at, w.a, w.b));
-  return base * MUFFLE ** Math.min(walls.length, 2);
+  const walls = wallsCrossed(from, at, ctx.wallsBetween(from, at), { kind: 'sound', gridSize: ctx.gridSize });
+  return base * MUFFLE ** Math.min(walls, 2);
 }

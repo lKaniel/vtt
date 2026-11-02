@@ -27,6 +27,8 @@ function api(gm = true) {
     reorder: vi.fn(),
     toggleLock: vi.fn(),
     lightPreset: 'torch' as const,
+    targets: { mine: new Set<string>(), toggle: vi.fn() },
+    openHud: vi.fn(),
   } satisfies MenuApi;
 }
 
@@ -93,7 +95,46 @@ describe('context menus', () => {
     expect(a.openSheet).toHaveBeenCalledWith({ kind: 'token', id: 'k' }, true);
     pick(target, a, 'Hide from players').run();
     expect(a.editSelection).toHaveBeenCalledWith({ hidden: true }, 'hide');
-    expect(labels(target, api(false))).toEqual(['Open sheet']);
+    expect(labels(target, api(false))).toEqual(['Open sheet', 'Target']);
+  });
+
+  it('a token opens its HUD where the menu was', () => {
+    const a = api(false);
+    const target: MenuTarget = {
+      ...on({ id: 'k', type: 'token', rev: 1 }),
+      mode: 'tokens',
+      token: { id: 'k' } as TokenView,
+      screen: [300, 200],
+    };
+    pick(target, a, 'Token HUD').run();
+    expect(a.openHud).toHaveBeenCalledWith('k', [300, 200]);
+  });
+
+  it('a token is targeted from its menu, and let go again', () => {
+    const a = api(false);
+    const target: MenuTarget = {
+      ...on({ id: 'k', type: 'token', rev: 1 }),
+      mode: 'tokens',
+      token: { id: 'k' } as TokenView,
+    };
+    pick(target, a, 'Target').run();
+    expect(a.targets.toggle).toHaveBeenCalledWith('k');
+    a.targets.mine.add('k');
+    expect(labels(target, a)).toContain('Stop targeting');
+  });
+
+  it('a creature you don’t control is targeted from the ground menu', () => {
+    const a = api(false);
+    const kara = { id: 'k', name: 'Kara' } as TokenView;
+    const ground: MenuTarget = {
+      ...on(),
+      mode: 'tokens',
+      under: { id: 'gob', name: 'Goblin' } as TokenView,
+      token: kara,
+    };
+    pick(ground, a, 'Target').run();
+    expect(a.targets.toggle).toHaveBeenCalledWith('gob');
+    expect(labels({ ...ground, under: undefined }, a)).not.toContain('Target');
   });
 
   it('the ground pastes, places a light, walks the selected token and selects all', () => {

@@ -8,8 +8,9 @@ import {
   type Player,
   type Point,
   walkPath,
+  wallsAt,
 } from '@vtt/shared';
-import { inTheWay, type Token } from '@vtt/system-dnd5e';
+import { AnimationChoiceSchema, type ClientMessage, inTheWay, type Token } from '@vtt/system-dnd5e';
 import type { CombatActions } from './combat-actions.ts';
 import type { GameStore } from './game-store.ts';
 import type { Reactions } from './reactions.ts';
@@ -44,12 +45,13 @@ export class TokenMoves {
     const token = this.controlled(player, seen, id);
     const g = this.store.world.gridSize;
     const m = PATH_MARGIN * g;
-    const walls = this.store.wallsIn({
+    const around = this.store.wallsIn({
       x: Math.min(token.x, to[0]) - m,
       y: Math.min(token.y, to[1]) - m,
       w: Math.abs(token.x - to[0]) + 2 * m,
       h: Math.abs(token.y - to[1]) + 2 * m,
     });
+    const walls = wallsAt(around, token.elevation);
     const { combat, zones, reactions, regions } = this.rules;
     const path = walkPath([token.x, token.y], to, walls, {
       gridSize: g,
@@ -79,15 +81,20 @@ export class TokenMoves {
     );
   }
 
-  hotbar(player: Player, seen: (id: string) => boolean, id: string, slots: (string | null)[]): void {
-    const token = this.controlled(player, seen, id);
-    this.store.setToken({ ...token, hotbar: slots });
+  /** A controller arranges their creature: its action bar, or the animation of one attack or spell. */
+  arrange(player: Player, seen: (id: string) => boolean, msg: Arrange): void {
+    const token = this.controlled(player, seen, msg.token);
+    if (msg.t === 'hotbar') return this.store.setToken({ ...token, hotbar: msg.slots });
+    if (msg.animation && !AnimationChoiceSchema.safeParse(msg.animation).success) {
+      throw new Refusal(`No animation "${msg.animation}"`);
+    }
+    this.store.setToken({ ...token, animations: withAnimation(token.animations, msg.ref, msg.animation) });
   }
 
   door(player: Player, msg: { chunk: string; wall: string; state: DoorState }): void {
     const chunk = this.store.chunks.get(msg.chunk);
     const wall = chunk?.walls.find((w) => w.id === msg.wall);
-    if (!chunk || !wall?.door) throw new Refusal('No such door');
+    if (!chunk || !wall?.door || (wall.secret && !isGm(player))) throw new Refusal('No such door');
     if (player.role === 'observer') throw new Refusal('Observers only watch');
     const touchesLock = wall.door === 'locked' || msg.state === 'locked';
     if (touchesLock && !isGm(player)) throw new Refusal('The door is locked');
@@ -101,4 +108,13 @@ export class TokenMoves {
     if (!canControl(token, player)) throw new Refusal(`You don't control ${token.name}`);
     return token;
   }
+}
+
+type Arrange = Extract<ClientMessage, { t: 'hotbar' | 'animation' }>;
+
+/** The choices with `ref` set to `animation`, or dropped (back to the default); none left is undefined. */
+function withAnimation(choices: Token['animations'], ref: string, animation: string | undefined): Token['animations'] {
+  const { [ref]: _old, ...rest } = choices ?? {};
+  const next = animation ? { ...rest, [ref]: animation } : rest;
+  return Object.keys(next).length ? next : undefined;
 }

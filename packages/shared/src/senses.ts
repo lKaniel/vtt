@@ -1,5 +1,6 @@
 import type { Point } from './schema.ts';
 import { feetToPx, type LightSource } from './vision.ts';
+import { inLightCone } from './light-shape.ts';
 
 // What a creature can perceive: its senses (the game's system works them
 // out), how much light falls where it looks, and whether it notices another
@@ -54,6 +55,8 @@ export interface LightContext {
   lights: readonly LightSource[];
   /** Whether nothing blocks sight between two points. */
   clear: (a: Point, b: Point) => boolean;
+  /** Whether a light at `a` reaches `b` past the walls; missing: the same as sight. */
+  lit?: (a: Point, b: Point) => boolean;
 }
 
 export interface LightHere {
@@ -66,8 +69,11 @@ const RANK: Record<LightLevel, number> = { dark: 0, dim: 1, bright: 2 };
 
 /** How brightly lit point `p` is. */
 export function lightLevelAt(p: Point, ctx: LightContext): LightHere {
+  const lit = ctx.lit ?? ctx.clear;
   const reaches = (l: LightSource, feet: number) =>
-    Math.hypot(l.x - p[0], l.y - p[1]) <= feetToPx(feet, ctx.gridSize) && ctx.clear([l.x, l.y], p);
+    Math.hypot(l.x - p[0], l.y - p[1]) <= feetToPx(feet, ctx.gridSize) &&
+    inLightCone(l, p) &&
+    (l.walls === false || lit([l.x, l.y], p));
   if (ctx.lights.some((l) => l.darkness && reaches(l, l.bright + l.dim))) return { level: 'dark', magical: true };
   let level = ambientLevel(ctx.darkness);
   for (const l of ctx.lights) {

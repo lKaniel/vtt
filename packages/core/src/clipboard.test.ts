@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { clipboardText, copyDocs, deleteOps, parseClipboard, pasteOffset, pasteOps, type Kinds } from './clipboard.ts';
+import {
+  attachedTo,
+  clipboardText,
+  copyDocs,
+  deleteOps,
+  parseClipboard,
+  pasteOffset,
+  pasteOps,
+  type Kinds,
+} from './clipboard.ts';
 import { DocStore, type Doc } from './ops.ts';
 
 // A small world: pins on a board, pins may sit in a group (parent), and
@@ -169,5 +178,48 @@ describe('clipboard text', () => {
     expect(parseClipboard('hello')).toBeUndefined();
     expect(parseClipboard('{"type":"other","docs":[]}')).toBeUndefined();
     expect(parseClipboard('{"type":"vtt/documents","v":1,"docs":[{"id":"Bad Id"}]}')).toBeUndefined();
+  });
+});
+
+describe('documents fastened to another (walls on a tile)', () => {
+  const tied: Kinds = {
+    ...kinds,
+    string: {
+      coll: (scene) => `${scene}/strings`,
+      refs: { pin: 'pin' },
+      attachedTo: 'pin',
+      shift: (d, dx) => ({ ...d, x: (d.x as number) + dx }),
+    },
+  };
+  const tiedBoard = () => {
+    const store = board();
+    store.apply([
+      { op: 'create', coll: 'a/strings', doc: doc('red', 'string', { x: 100, pin: 'door' }) },
+      { op: 'create', coll: 'a/strings', doc: doc('blue', 'string', { x: 400, pin: 'rock' }) },
+    ]);
+    return store;
+  };
+
+  it('come along when what they are fastened to is copied or deleted, even inside a group', () => {
+    const store = tiedBoard();
+    expect(ids(copyDocs(store, tied, [{ coll: 'a/pins', id: 'house' }]))).toEqual(['door', 'house', 'lamp', 'red']);
+    const gone = deleteOps(store, tied, [{ coll: 'a/pins', id: 'rock' }]);
+    expect(gone).toContainEqual({ op: 'delete', coll: 'a/strings', id: 'blue' });
+  });
+
+  it('are fastened to the pasted copy, or to nothing when pasted without it onto a scene that lacks it', () => {
+    const store = tiedBoard();
+    const clip = copyDocs(store, tied, [{ coll: 'a/pins', id: 'rock' }]);
+    store.apply(pasteOps(store, tied, clip, { scene: 'a', offset: [100, 0] }).ops);
+    expect(store.get('a/strings', 'blue-1')).toMatchObject({ pin: 'rock-1', x: 500 });
+    const alone = copyDocs(store, tied, [{ coll: 'a/strings', id: 'red' }]);
+    const { ops } = pasteOps(store, tied, alone, { scene: 'b', offset: [0, 0] });
+    expect(ops[0]).toMatchObject({ op: 'create', coll: 'b/strings' });
+    expect((ops[0] as { doc: Doc }).doc).not.toHaveProperty('pin');
+  });
+
+  it('are found for a move', () => {
+    const found = attachedTo(tiedBoard(), tied, [{ coll: 'a/pins', id: 'door' }]);
+    expect(found.map((f) => [f.coll, f.doc.id])).toEqual([['a/strings', 'red']]);
   });
 });

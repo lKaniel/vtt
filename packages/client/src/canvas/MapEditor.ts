@@ -68,17 +68,22 @@ export class MapEditor {
     return this.session.mode !== 'tokens';
   }
 
-  /** Puts away a half-drawn wall or a drag; true if there was one. */
+  private get measuring(): boolean {
+    return this.session.mode === 'templates' && this.session.tool === 'ruler';
+  }
+
+  /** Puts away a half-drawn wall, a drag or your ruler; true if there was one. */
   cancel(): boolean {
-    const had = this.tools.busy || this.controller.busy;
+    const had = this.session.rulers.clear() || this.tools.busy || this.controller.busy;
     this.tools.cancel();
     this.controller.cancel();
     this.redraw();
     return had;
   }
 
-  /** Ends a line, polygon or region being drawn; true if there was one. */
+  /** Ends a line, polygon or region being drawn, or takes back the ruler's last waypoint; true if there was one. */
   finish(): boolean {
+    if (this.measuring) return this.session.rulers.back();
     const done = this.tools.finish();
     this.redraw();
     return done;
@@ -88,7 +93,8 @@ export class MapEditor {
   pointerDown(p: PointerInfo): boolean {
     if (p.button !== 0) return false;
     this.session.closeMenu();
-    if (this.tools.drawing) this.tools.press(p.at, p.mods.shift);
+    if (this.measuring) this.session.rulers.press(this.rulerPoint(p.at));
+    else if (this.tools.drawing) this.tools.press(p.at, p.mods.shift);
     else this.controller.down(p.at, p.mods);
     this.redraw();
     return true;
@@ -97,6 +103,7 @@ export class MapEditor {
   pointerMove(at: Point, mods: Mods): void {
     this.hover = at;
     this.free = mods.shift;
+    if (this.measuring) this.session.rulers.hover(at);
     this.controller.move(at, this.dragMods(mods));
     if (this.tools.busy) this.tools.drag(at);
     if (this.active || this.controller.busy) this.redraw();
@@ -188,6 +195,13 @@ export class MapEditor {
     return out;
   }
 
+  /** Where a click lays the ruler: a ruler started on a creature starts at its centre. */
+  private rulerPoint(at: Point): Point {
+    if (this.session.rulers.active) return at;
+    const id = hitTest(this.tokenItems(true), at, 0);
+    return (id ? this.tokenPlace(id)?.at : undefined) ?? at;
+  }
+
   private pick(at: Point): string | undefined {
     if (this.session.mode === 'tokens') return undefined;
     return hitTest(this.items(), at, PICK_PX * this.ctx.px);
@@ -211,7 +225,8 @@ export class MapEditor {
       return { mode: 'tokens', at, docs: s.selectedDocs(), token };
     }
     const selected = s.selected ? s.tokens.get(s.selected) : undefined;
-    return { mode: 'tokens', at, docs: [], token: selected && s.canControl(selected) ? selected : undefined };
+    const mine = selected && s.canControl(selected) ? selected : undefined;
+    return { mode: 'tokens', at, docs: [], token: mine, ...(token && { under: token }) };
   }
 
   private host(): EditorHost {
@@ -254,7 +269,8 @@ export class MapEditor {
 
   /** Outlines the selection and what is under the pointer; handles on the selection unless it is being moved. */
   private drawSelection(g: Graphics, docs: { key: string; doc: Doc }[], ctx: DrawCtx & View): void {
-    const hovered = this.hover && !this.controller.busy && !this.tools.drawing ? this.pick(this.hover) : undefined;
+    const idle = !this.controller.busy && !this.tools.drawing && !this.measuring;
+    const hovered = this.hover && idle ? this.pick(this.hover) : undefined;
     const selected = new Set(this.session.selection);
     const handles = this.controller.preview()?.kind !== 'move';
     for (const { key, doc } of docs) {

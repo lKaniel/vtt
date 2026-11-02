@@ -1,4 +1,5 @@
 import {
+  animationRef,
   applyDamage,
   type Attack,
   type AttackLog,
@@ -321,6 +322,7 @@ export class CombatActions {
       damage: total,
       parts: result.damage.map((d, i) => ({ ...d, dealt: dealt[i]! })),
       notes,
+      animation: attacker.token.animations?.[animationRef('attack', name)],
     });
   }
 
@@ -337,14 +339,6 @@ export class CombatActions {
     const ids = new Set(outcome.targetEffects.map((e) => e.id));
     const effects = [...(token.effects ?? []).filter((e) => !ids.has(e.id)), ...outcome.targetEffects];
     this.store.setToken({ ...token, effects });
-  }
-
-  equip(player: Player, id: string, index: number, equipped: boolean): void {
-    const token = this.store.tokens.get(id);
-    if (!token || !canControl(token, player)) throw new Refusal('No such token');
-    const inventory = token.inventory ?? [];
-    if (!inventory[index]) throw new Refusal(`${token.name} has no such item`);
-    this.store.setToken({ ...token, inventory: inventory.map((e, i) => (i === index ? { ...e, equipped } : e)) });
   }
 
   /** A token disappeared from the world: take it out of the fight. */

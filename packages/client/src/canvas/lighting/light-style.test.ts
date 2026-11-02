@@ -58,3 +58,22 @@ describe('lightPulse', () => {
     }
   });
 });
+
+describe('light depth', () => {
+  it('casts only part of its colour at a lower colour intensity', () => {
+    expect(lightColor({ color: '#0000ff', colorIntensity: 0 })).toBe(0xfff0d8);
+    expect(lightColor({ color: '#0000ff', colorIntensity: 1 })).toBe(0x0000ff);
+    expect(lightColor({ color: '#0000ff', colorIntensity: 0.5 })).toBe(0x8078ec);
+  });
+
+  it('keeps today’s fall-off at the default attenuation', () => {
+    for (const r of [0, 0.2, 0.45, 0.7, 0.95]) expect(falloff(r, 0.5, 0.5)).toBeCloseTo(falloff(r, 0.5));
+  });
+
+  it('steps hard at no attenuation and fades early at full', () => {
+    expect(falloff(0.49, 0.5, 0)).toBeCloseTo(1);
+    expect(falloff(0.51, 0.5, 0)).toBeCloseTo(0.5);
+    expect(falloff(0.99, 0.5, 0)).toBeCloseTo(0.5);
+    expect(falloff(0.4, 0.5, 1)).toBeLessThan(falloff(0.4, 0.5, 0.5));
+  });
+});

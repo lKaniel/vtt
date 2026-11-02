@@ -16,8 +16,9 @@ export function parseColor(css: string | undefined, fallback: number): number {
   return parseInt(hex, 16);
 }
 
-export function lightColor(light: Pick<Light, 'color'>): number {
-  return parseColor(light.color, WARM_WHITE);
+/** The colour a light casts: its own, mixed back toward warm white by its colour intensity. */
+export function lightColor(light: Pick<Light, 'color' | 'colorIntensity'>): number {
+  return mix(WARM_WHITE, parseColor(light.color, WARM_WHITE), light.colorIntensity ?? 1);
 }
 
 function scale(color: number, k: number): number {
@@ -37,20 +38,26 @@ export function ambientColor(darkness: number): number {
 }
 
 function smoothstep(a: number, b: number, x: number): number {
-  const t = Math.min(1, Math.max(0, (x - a) / (b - a || 1)));
+  if (b <= a) return x >= a ? 1 : 0;
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
 }
 
 /**
  * Brightness at `r` (0 at the light, 1 at the edge of its dim light) for a
  * light whose bright part reaches `bright` of the way out. Bright light is
- * full strength, dim light is half, and the edges blend instead of stepping.
+ * full strength, dim light is half, and the edges blend instead of stepping:
+ * `attenuation` 0 steps hard, 0.5 is the usual blend, 1 also fades the whole
+ * light toward its rim.
  */
-export function falloff(r: number, bright: number): number {
+export function falloff(r: number, bright: number, attenuation = 0.5): number {
   if (r >= 1) return 0;
-  const dim = 0.5 * (1 - smoothstep(bright, 1, r));
-  if (bright <= 0) return dim;
-  return dim + 0.5 * (1 - smoothstep(bright * 0.5, Math.min(1, bright * 1.2), r));
+  const soft = Math.min(1, attenuation * 2);
+  const dim = 0.5 * (1 - smoothstep(1 - (1 - bright) * soft, 1, r));
+  const fade = 1 - Math.max(0, attenuation * 2 - 1) * 0.6 * r;
+  if (bright <= 0) return dim * fade;
+  const edge = 0.5 * (1 - smoothstep(bright * (1 - 0.5 * soft), Math.min(1, bright * (1 + 0.2 * soft)), r));
+  return (dim + edge) * fade;
 }
 
 /** Strength of an animated light at time `ms`; `seed` keeps neighbouring torches out of step. */

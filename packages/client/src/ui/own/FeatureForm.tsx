@@ -3,6 +3,7 @@ import { Input } from '../kit/input.tsx';
 import { NumberField } from '../kit/number-field.tsx';
 import { SelectField } from '../kit/select.tsx';
 import { Textarea } from '../kit/textarea.tsx';
+import { ChangeRows } from './ChangeRows.tsx';
 import { Field, Problem, useChecked, NameField } from './fields.tsx';
 
 /** A homemade feature: what it says, how often it can be used, and what using it costs. */
@@ -45,6 +46,12 @@ export function FeatureForm({ feature, onSave }: Readonly<{ feature: Feature; on
           onChange={(e) => change({ heal: e.target.value || undefined })}
         />
       </Field>
+      <Field label="Always-on changes" wide>
+        <ChangeRows
+          changes={draft.passive?.changes ?? []}
+          onChange={(changes) => change({ passive: passiveWith(draft.passive, changes) })}
+        />
+      </Field>
       <Field label="Description" wide>
         <Textarea rows={5} value={draft.description} onChange={(e) => change({ description: e.target.value })} />
       </Field>
@@ -53,4 +60,13 @@ export function FeatureForm({ feature, onSave }: Readonly<{ feature: Feature; on
       </div>
     </div>
   );
+}
+
+/** The feature's always-on effect with these changes; none left drops an effect that only held changes. */
+function passiveWith(
+  passive: Feature['passive'],
+  changes: NonNullable<Feature['passive']>['changes'],
+): Feature['passive'] {
+  const rest = { ...passive, changes: changes?.length ? changes : undefined };
+  return Object.values(rest).some((v) => v !== undefined) ? rest : undefined;
 }

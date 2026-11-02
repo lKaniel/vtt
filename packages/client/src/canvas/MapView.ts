@@ -1,4 +1,4 @@
-import { chunkKey, type EditorMode, onLevel, type Point, type Rect, type Wall } from '@vtt/shared';
+import { type EditorMode, onLevel, type Point, type Rect, type Wall } from '@vtt/shared';
 import {
   Application,
   Container,
@@ -13,15 +13,18 @@ import { modsOf } from '../editor/selection.ts';
 import type { Session } from '../session.ts';
 import type { EditorTool } from '../session-editor.ts';
 import { cuesOf } from '../feedback.ts';
+import { currentMotion } from '../animations.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
 import { CameraMotion } from './camera-motion.ts';
 import { EffectsLayer } from './EffectsLayer.ts';
-import { drawGrid } from './grid.ts';
+import { chunksInView, drawGrid } from './grid.ts';
 import { FogBrush } from './FogBrush.ts';
 import { ItemLayer } from './ItemLayer.ts';
-import { dropToken, listenToDrops } from './sidebar-drops.ts';
+import { clickGround, dropToken, listenToDrops, openNote } from './sidebar-drops.ts';
 import { MapEditor } from './MapEditor.ts';
 import { PathPreview, showPreview } from './PathPreview.ts';
+import { PresenceLayer } from './PresenceLayer.ts';
+import { RulerLayer } from './RulerLayer.ts';
 import { TokenLayer } from './TokenLayer.ts';
 import { Vision } from './Vision.ts';
 
@@ -30,10 +33,6 @@ extensions.add(CullerPlugin);
 const WHEEL_ZOOM_SPEED = 0.0015;
 /** Below these zoom levels the matching detail is skipped, so a zoomed-out map stays cheap. */
 const LOD = { labels: 0.45, doors: 0.25 };
-/** Extra chunks loaded around the screen, so panning doesn't show holes. */
-const CHUNK_MARGIN = 1;
-/** Beyond this many chunks across, keep what's loaded instead of asking for more. */
-const MAX_CHUNK_SPAN = 24;
 const DRAG_THRESHOLD = 5;
 
 interface Drag {
@@ -68,6 +67,8 @@ export class MapView {
   private editor: MapEditor;
   private fogBrush: FogBrush;
   private items: ItemLayer;
+  private rulers: RulerLayer;
+  private presence: PresenceLayer;
   private vision?: Vision;
   /** The scene last shown, so a new one starts at its own camera start. */
   private shownScene?: string;
@@ -105,6 +106,8 @@ export class MapView {
     this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
     this.fogBrush = new FogBrush(session);
     this.items = new ItemLayer(session);
+    this.rulers = new RulerLayer(session);
+    this.presence = new PresenceLayer(session, (id) => this.tokens.placeOf(id));
   }
 
   async init(host: HTMLElement): Promise<void> {
@@ -125,6 +128,7 @@ export class MapView {
     this.ground.addChild(this.chunks.ground, this.grid, this.items.container, this.chunks.walls);
     this.camera.addChild(this.ground, this.tokens.container, this.effects.container);
     this.overhead.addChild(this.preview.container, this.effects.labels, this.editor.container, this.fogBrush.container);
+    this.overhead.addChild(this.rulers.container, this.presence.container);
     // Previews are drawn over tokens; clicks must still reach the tokens below.
     this.overhead.eventMode = 'none';
     this.vision = new Vision(this.app, this.session);
@@ -133,6 +137,7 @@ export class MapView {
     this.app.stage.addChild(this.camera, this.overhead);
     this.listenToInput();
     this.listenToSession();
+    this.unsubscribe.push(this.presence.attach(this.app.canvas));
     this.app.ticker.add((t) => {
       this.tick(t.deltaMS / 1000);
     });
@@ -164,7 +169,7 @@ export class MapView {
     });
     stage.on('pointerupoutside', (e) => {
       // Let go over a panel or off the window: a drag in the editor still lands where the pointer is.
-      if (this.fogBrush.up()) return;
+      if (this.presence.up() || this.fogBrush.up()) return;
       this.editor.pointerUp({ at: this.screenToWorld(e.global.x, e.global.y), button: e.button, mods: modsOf(e) });
       this.drag = undefined;
     });
@@ -230,7 +235,10 @@ export class MapView {
         this.updatePreview(true);
       }),
       s.on('chat', (message) => {
-        this.effects.play(cuesOf(message), performance.now());
+        this.effects.play(cuesOf(message, currentMotion()), performance.now());
+      }),
+      s.on('rulers', () => {
+        this.rulers.redraw();
       }),
       s.on('lighting', visionChanged),
       s.on('fog', visionChanged),
@@ -292,6 +300,7 @@ export class MapView {
     const now = performance.now();
     this.tokens.animateFeedback(now);
     this.effects.tick(now);
+    this.presence.tick(dt, now);
     if (!this.session.world) return;
     if (this.cam.step(dt)) this.dirty = true;
     // One more render after a walk ends, to mark what the token now sees as explored.
@@ -323,6 +332,8 @@ export class MapView {
     this.editor.setZoom(this.zoom);
     this.items.setZoom(this.zoom);
     this.fogBrush.setZoom(this.zoom);
+    this.rulers.setZoom(this.zoom);
+    this.presence.setZoom(this.zoom);
     this.tokens.showLabels(this.zoom >= LOD.labels);
     this.chunks.showDoors(this.zoom >= LOD.doors);
   }
@@ -339,15 +350,8 @@ export class MapView {
   }
 
   private requestChunks(): void {
-    const size = this.session.world!.chunkSize;
-    const r = this.visibleRect();
-    const cx0 = Math.floor(r.x / size) - CHUNK_MARGIN;
-    const cy0 = Math.floor(r.y / size) - CHUNK_MARGIN;
-    const cx1 = Math.floor((r.x + r.w) / size) + CHUNK_MARGIN;
-    const cy1 = Math.floor((r.y + r.h) / size) + CHUNK_MARGIN;
-    if (Math.max(cx1 - cx0, cy1 - cy0) > MAX_CHUNK_SPAN) return;
-    const keys: string[] = [];
-    for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) keys.push(chunkKey(cx, cy));
+    const keys = chunksInView(this.visibleRect(), this.session.world!.chunkSize);
+    if (!keys) return;
     const id = keys.join(' ');
     if (id === this.viewId) return;
     this.viewId = id;
@@ -369,10 +373,11 @@ export class MapView {
     const p: Point = [e.global.x, e.global.y];
     const at = this.screenToWorld(p[0], p[1]);
     if (e.button !== 2) this.session.closeMenu();
+    this.presence.down(p, at, e);
     // An aimed spell or readied attack keeps the left click for itself.
     const acting = !!(this.session.armed ?? this.session.aiming) && !this.editor.active;
     if (!acting && this.fogBrush.down(at, e.button)) return;
-    if (!acting && e.button === 0 && this.openNote(at)) return;
+    if (!acting && e.button === 0 && openNote(this.session, this.items, at)) return;
     if (!acting && this.editor.pointerDown({ at, button: e.button, mods: modsOf(e) })) return;
     this.drag = { start: p, last: p, at: performance.now(), panning: e.button === 1, button: e.button };
     this.cam.hold();
@@ -383,6 +388,7 @@ export class MapView {
     if (this.drag) this.dragTo(this.drag, p);
     this.hoverPoint = this.screenToWorld(p[0], p[1]);
     this.session.pointer = this.hoverPoint;
+    this.presence.move(p, this.hoverPoint);
     this.editor.pointerMove(this.hoverPoint, modsOf(e));
     this.fogBrush.move(this.hoverPoint);
     this.updatePreview(false);
@@ -409,11 +415,11 @@ export class MapView {
     this.editor.pointerUp({ at, button: e.button, mods: modsOf(e) });
     const drag = this.drag;
     this.drag = undefined;
-    if (!drag) return;
+    if (this.presence.up() || !drag) return;
     if (drag.token) return dropToken(this.session, drag.token, drag.moved ? at : undefined);
     if (drag.panning) return this.letGo(drag);
     if (drag.button === 2 && !drag.moved) return this.rightClick([e.global.x, e.global.y], at);
-    if (drag.button === 0 && !drag.moved) this.clickGround(at);
+    if (drag.button === 0 && !drag.moved) clickGround(this.session, at);
   }
 
   /**
@@ -423,29 +429,15 @@ export class MapView {
    */
   private rightClick(screen: Point, at: Point): void {
     if (this.editor.finish() || this.editor.cancel() || this.session.cancelAction()) return;
-    const target = this.editor.menuTarget(at);
     const rect = this.app.canvas.getBoundingClientRect();
-    this.session.openMenu([screen[0] + rect.left, screen[1] + rect.top], menuFor(target, this.session));
+    const onScreen: Point = [screen[0] + rect.left, screen[1] + rect.top];
+    const target = { ...this.editor.menuTarget(at), screen: onScreen };
+    this.session.openMenu(onScreen, menuFor(target, this.session));
   }
 
   /** A fling glides on; a drag that stopped before letting go stays put. */
   private letGo(drag: Drag): void {
     if (performance.now() - drag.at < 80) this.cam.release();
-  }
-
-  /** In the tokens mode, a click on a map note opens its journal entry. */
-  private openNote(at: Point): boolean {
-    const note = this.session.mode === 'tokens' ? this.items.noteAt(at) : undefined;
-    if (note) this.session.openJournal(note.entry, note.page);
-    return !!note;
-  }
-
-  /** A left click on the map with an action ready: casts an aimed area spell, or puts the action away. */
-  private clickGround(p: Point): void {
-    if (this.session.armed) return this.session.arm(undefined);
-    const aiming = this.session.aiming;
-    if (aiming?.mode === 'point') return this.session.castAt(p);
-    if (aiming) this.session.aim(undefined);
   }
 
   /** The token whose path shows: while it is dragged, or aiming a spell or attack. */

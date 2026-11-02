@@ -1,6 +1,14 @@
 import { z } from 'zod';
 import { chunkOf } from './chunks.ts';
-import { type Chunk, DoorStateSchema, LightSchema, type PlacedLight, PointSchema, type Wall } from './schema.ts';
+import {
+  type Chunk,
+  LightSchema,
+  type PlacedLight,
+  PointSchema,
+  type Wall,
+  type WallRules,
+  WallRulesSchema,
+} from './schema.ts';
 
 // The GM's map tools: drawing walls, doors and windows, placing lights, and
 // erasing them. Each edit names what changes; applyMapEdit works out which
@@ -9,16 +17,10 @@ import { type Chunk, DoorStateSchema, LightSchema, type PlacedLight, PointSchema
 export const MapEditSchema = z.discriminatedUnion('op', [
   z.object({
     op: z.literal('addWall'),
-    wall: z.object({ a: PointSchema, b: PointSchema, door: DoorStateSchema.optional(), sight: z.boolean().optional() }),
+    wall: z.object({ a: PointSchema, b: PointSchema, ...WallRulesSchema.shape }),
   }),
-  /** Make a wall a door (or a window with `sight: false`), or a plain wall again. */
-  z.object({
-    op: z.literal('setWall'),
-    chunk: z.string(),
-    id: z.string(),
-    door: DoorStateSchema.optional(),
-    sight: z.boolean().optional(),
-  }),
+  /** Give a wall new rules (a door, a window, what it stops); what is left out goes back to the default. */
+  z.object({ op: z.literal('setWall'), chunk: z.string(), id: z.string(), ...WallRulesSchema.shape }),
   z.object({ op: z.literal('addLight'), light: LightSchema.extend({ x: z.number(), y: z.number() }) }),
   z.object({ op: z.literal('moveLight'), chunk: z.string(), id: z.string(), to: PointSchema }),
   /** Erase a wall or a light. */
@@ -50,8 +52,10 @@ function freeId(chunks: Chunks, prefix: string): string {
 
 function wallPrefix(wall: Pick<Wall, 'door' | 'sight'>): string {
   if (wall.door) return 'door';
-  return wall.sight === false ? 'window' : 'wall';
+  return wall.sight === 'none' ? 'window' : 'wall';
 }
+
+const RULES = Object.keys(WallRulesSchema.shape) as (keyof WallRules)[];
 
 function find(chunks: Chunks, key: string): Chunk {
   const chunk = chunks.get(key);
@@ -73,8 +77,9 @@ function setWall(chunks: Chunks, edit: Extract<MapEdit, { op: 'setWall' }>): Chu
   if (!chunk.walls.some((w) => w.id === edit.id)) throw new MapEditError('No such wall');
   const walls = chunk.walls.map((w) => {
     if (w.id !== edit.id) return w;
-    const { door: _d, sight: _s, ...plain } = w;
-    return { ...plain, ...(edit.door ? { door: edit.door } : {}), ...(edit.sight === false ? { sight: false } : {}) };
+    const kept = Object.entries(w).filter(([k]) => !RULES.includes(k as keyof WallRules));
+    const set = RULES.flatMap((k) => (edit[k] === undefined ? [] : [[k, edit[k]]]));
+    return Object.fromEntries([...kept, ...set]) as Wall;
   });
   return [{ key: edit.chunk, chunk: { ...chunk, walls } }];
 }

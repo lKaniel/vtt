@@ -1,5 +1,6 @@
 import type { Content } from './content.ts';
 import { withBasicActions } from './basic-actions.ts';
+import { encumbrance, itemWorks } from './carrying.ts';
 import { offHandAttacks } from './two-weapon.ts';
 import { makesDeathSaves } from './deaths.ts';
 import {
@@ -13,7 +14,9 @@ import {
 } from './classes.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
+import { changed, changedBase, changedList } from './effect-changes.ts';
 import { withOwn } from './own-content.ts';
+import { exhausted } from './vigour.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Condition, Effect } from './spell-schema.ts';
 import {
@@ -77,8 +80,10 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
   if (token.monster ? !monster : !token.stats) return undefined;
   const stats = token.stats ?? {};
   const cls = classOf(token, content);
-  const abilities = AbilitiesSchema.parse({ ...monster?.abilities, ...stats.abilities });
-  const proficiency = defaultProficiency(stats, monster);
+  const { abilities, proficiency } = changedScores(token, cls, content, {
+    abilities: AbilitiesSchema.parse({ ...monster?.abilities, ...stats.abilities }),
+    proficiency: defaultProficiency(stats, monster),
+  });
   const gear = equippedItems(token, content);
   const { maxHp, ac } = fixedNumbers(stats, monster, classHp(cls, stats, abilities));
   const features = withBasicActions(featureSheets(token, cls, abilities, grantedFeatures(token, content)));
@@ -98,12 +103,50 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     attacks: creatureAttacks(stats, monster, gear.weapons, { abilities, proficiency }),
     ...defenses(stats, monster),
     ...kindAndSaves(monster, cls, { abilities, proficiency }),
-    ...effectParts(token, features),
+    ...effectParts(token, features, content.edition),
     ...classParts(token, cls),
     caster: casterSheet(token, { abilities, proficiency }, content),
     features,
   };
-  return applyEffects(base);
+  return withCarrying(applyEffects(withItemBonuses(base, token, content)), token, { monster, content });
+}
+
+/** Equipped (and attuned) magic items' bonuses to AC and saving throws. */
+function withItemBonuses(c: Creature, token: Token, content: Content): Creature {
+  const bonuses = (token.inventory ?? []).flatMap((e) => {
+    const item = content.items.get(e.item);
+    return item?.bonus && itemWorks(e, item) ? [item.bonus] : [];
+  });
+  if (!bonuses.length) return c;
+  const ac = bonuses.reduce((n, b) => n + (b.ac ?? 0), 0);
+  const save = bonuses.reduce((n, b) => n + (b.saves ?? 0), 0);
+  const saves = Object.fromEntries(ABILITIES.map((a) => [a, c.saves[a] + save])) as Creature['saves'];
+  return { ...c, ac: c.ac + ac, saves };
+}
+
+/** A character carrying more than its capacity moves 5 ft at most (monsters don't count their loot). */
+function withCarrying(
+  c: Creature,
+  token: Token,
+  { monster, content }: { monster?: Monster; content: Content },
+): Creature {
+  if (monster) return c;
+  const { over } = encumbrance(token, c.abilities.str, content);
+  return over ? { ...c, speed: Math.min(c.speed, 5) } : c;
+}
+
+/** Ability scores and proficiency after the changes of the token's effects and always-on features. */
+function changedScores(
+  token: Token,
+  cls: Class | undefined,
+  content: Content,
+  base: { abilities: Abilities; proficiency: number },
+): { abilities: Abilities; proficiency: number } {
+  const features = featureSheets(token, cls, base.abilities, grantedFeatures(token, content));
+  const passives = features.flatMap((f) => (f.passive ? [f.passive] : []));
+  const effects = [...(token.effects ?? []), ...passives];
+  if (!effects.some((e) => e.changes?.length)) return base;
+  return changedBase(base.abilities, base.proficiency, effects);
 }
 
 /** Creature type (characters are humanoid) and saving throws, proficient ones from the class or stat block. */
@@ -123,11 +166,15 @@ function downed(token: Token): Effect[] {
 }
 
 /** The token's effects, then the ones its features always give (danger sense). */
-function effectParts(token: Token, features: readonly FeatureSheet[]): Pick<Creature, 'effects' | 'conditions'> {
+function effectParts(
+  token: Token,
+  features: readonly FeatureSheet[],
+  edition: Edition,
+): Pick<Creature, 'effects' | 'conditions'> {
   const passive = features.flatMap((f) =>
     f.passive ? [{ ...f.passive, id: f.id, name: f.passive.name ?? f.name, source: token.id }] : [],
   );
-  const effects = [...(token.effects ?? []), ...passive, ...downed(token)];
+  const effects = [...(token.effects ?? []), ...passive, ...downed(token), ...exhausted(token, edition)];
   return { effects, conditions: [...new Set(effects.flatMap((e) => e.conditions ?? []))] };
 }
 
@@ -171,16 +218,40 @@ function applyEffects(c: Creature): Creature {
   const effects = c.effects;
   const sum = (key: 'ac' | 'speed' | 'maxHp') => effects.reduce((n, e) => n + (e[key] ?? 0), 0);
   const held = c.conditions.some((x) => HELD.includes(x)) || effects.some((e) => e.immobile);
-  const maxHp = c.maxHp + sum('maxHp');
+  const hpTimes = effects.reduce((n, e) => n * (e.maxHpTimes ?? 1), 1);
+  const maxHp = Math.max(1, Math.floor(changed(c.maxHp + sum('maxHp'), effects, 'maxHp') * hpTimes));
   const minAc = Math.max(0, ...effects.map((e) => e.minAc ?? 0));
   const times = effects.reduce((n, e) => n * (e.speedTimes ?? 1), 1);
+  const speed = Math.max(0, changed(c.speed + sum('speed'), effects, 'speed'));
   return {
     ...c,
+    ...changedSheet(c),
     maxHp,
     hp: Math.min(c.hp, maxHp),
-    ac: Math.max(c.ac + sum('ac'), minAc),
-    speed: held ? 0 : Math.floor(Math.max(0, c.speed + sum('speed')) * times),
-    resistances: [...new Set([...c.resistances, ...effects.flatMap((e) => e.resistances ?? [])])],
+    ac: changed(Math.max(c.ac + sum('ac'), minAc), effects, 'ac'),
+    speed: held ? 0 : Math.floor(speed * times),
+    resistances: changedList(
+      [...c.resistances, ...effects.flatMap((e) => e.resistances ?? [])],
+      effects,
+      'resistances',
+    ),
+  };
+}
+
+/** Initiative, saves, attack rolls and immunities after the effects' changes by key. */
+function changedSheet(
+  c: Creature,
+): Pick<Creature, 'initiative' | 'saves' | 'attacks' | 'immunities' | 'vulnerabilities'> {
+  const effects = c.effects;
+  const saves = Object.fromEntries(
+    ABILITIES.map((a) => [a, changed(changed(c.saves[a], effects, 'saves.all'), effects, `saves.${a}`)]),
+  ) as Record<Ability, number>;
+  return {
+    initiative: changed(c.initiative, effects, 'initiative'),
+    saves,
+    attacks: c.attacks.map((a) => ({ ...a, toHit: changed(a.toHit, effects, 'toHit') })),
+    immunities: changedList(c.immunities, effects, 'immunities'),
+    vulnerabilities: changedList(c.vulnerabilities, effects, 'vulnerabilities'),
   };
 }
 

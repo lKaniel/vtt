@@ -17,6 +17,12 @@ export interface Kind {
   refs?: Readonly<Record<string, string>>;
   /** The field naming the document this one sits in: copying or deleting the parent takes it along. */
   parent?: string;
+  /**
+   * The field naming a document of another type on the same scene this one is
+   * fastened to (a wall on a tile): copying, deleting or moving that document
+   * takes it along. The field's type comes from `refs`.
+   */
+  attachedTo?: string;
   /** True for a parent that is deleted along with the last thing in it (a group). */
   dropsWhenEmpty?: (doc: Doc) => boolean;
   /** Where a placeable sits on its scene; undefined for one with no place of its own (a group). */
@@ -68,7 +74,39 @@ function unset(doc: Doc, path: string): Doc {
   return kept as Doc;
 }
 
-/** The documents `refs` name plus, for each, everything sitting in it. */
+/** The scene a placeable collection (`<scene>/<name>`) belongs to; undefined for the sidebar. */
+const sceneOfColl = (coll: string): string | undefined => {
+  const at = coll.lastIndexOf('/');
+  return at < 0 ? undefined : coll.slice(0, at);
+};
+
+/** The collection and type of what a document is fastened to, if its kind fastens. */
+function fastening(kinds: Kinds, kind: Kind | undefined, scene: string): { coll: string; type: string } | undefined {
+  const type = kind?.attachedTo ? kind.refs?.[kind.attachedTo] : undefined;
+  const target = type ? kinds[type] : undefined;
+  return type && target ? { coll: target.coll(scene), type } : undefined;
+}
+
+/** The documents fastened to `doc` (of another type, on its scene). */
+function fastenedTo(src: Source, kinds: Kinds, coll: string, doc: Doc): { coll: string; doc: Doc }[] {
+  const scene = sceneOfColl(coll);
+  if (scene === undefined) return [];
+  return Object.values(kinds).flatMap((kind) => {
+    if (fastening(kinds, kind, scene)?.type !== doc.type) return [];
+    const at = kind.coll(scene);
+    return src.all(at).flatMap((d) => (read(d, kind.attachedTo!) === doc.id ? [{ coll: at, doc: d }] : []));
+  });
+}
+
+/** What is fastened to the documents `refs` name (walls and lights on tiles): what a move takes along. */
+export function attachedTo(src: Source, kinds: Kinds, refs: readonly DocRef[]): { coll: string; doc: Doc }[] {
+  return refs.flatMap(({ coll, id }) => {
+    const doc = src.get(coll, id);
+    return doc ? fastenedTo(src, kinds, coll, doc) : [];
+  });
+}
+
+/** The documents `refs` name plus, for each, everything sitting in it or fastened to it. */
 function withChildren(src: Source, kinds: Kinds, refs: readonly DocRef[]): { coll: string; doc: Doc }[] {
   const found = new Map<string, { coll: string; doc: Doc }>();
   const visit = (coll: string, doc: Doc): void => {
@@ -79,6 +117,7 @@ function withChildren(src: Source, kinds: Kinds, refs: readonly DocRef[]): { col
       const parent = kinds[child.type]?.parent;
       if (parent && read(child, parent) === doc.id) visit(coll, child);
     }
+    for (const fastened of fastenedTo(src, kinds, coll, doc)) visit(fastened.coll, fastened.doc);
   };
   for (const { coll, id } of refs) {
     const doc = src.get(coll, id);
@@ -165,9 +204,20 @@ export function pasteOps(
     const linked = relink(moved, kind, renamed);
     const parent = parentId(kinds, linked);
     const lost = parent !== undefined && !used.has(`${coll}\u0000${parent}`) && !src.get(coll, parent);
-    return { op: 'create', coll, doc: lost ? unset(linked, kind.parent!) : linked };
+    const kept = lost ? unset(linked, kind.parent!) : linked;
+    return { op: 'create', coll, doc: unfastenLost(src, kinds, kept, { scene, used }) };
   });
   return { ops, ids: placed.map((p) => p.doc.id) };
+}
+
+/** The copy without its fastening when what it was fastened to is neither pasted with it nor on the scene. */
+function unfastenLost(src: Source, kinds: Kinds, doc: Doc, at: { scene: string; used: ReadonlySet<string> }): Doc {
+  const kind = kinds[doc.type];
+  const to = fastening(kinds, kind, at.scene);
+  const id = kind?.attachedTo ? read(doc, kind.attachedTo) : undefined;
+  if (!to || typeof id !== 'string') return doc;
+  const there = at.used.has(`${to.coll}\u0000${id}`) || !!src.get(to.coll, id);
+  return there ? doc : unset(doc, kind!.attachedTo!);
 }
 
 /** How far to move a copy so its middle lands on `at`, in whole grid squares to keep it on the grid. */

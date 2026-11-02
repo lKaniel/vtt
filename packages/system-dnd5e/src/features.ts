@@ -1,5 +1,6 @@
 import { type FeatureSheet, levelValue } from './classes.ts';
 import type { Creature } from './creature.ts';
+import { hitDiceOf, restedExhaustion, restedHitDice } from './vigour.ts';
 import { type Rng, roll } from '@vtt/shared';
 import { removeEffects, rollSave, type SaveRoll } from './effects.ts';
 import type { Token } from './token-schema.ts';
@@ -99,11 +100,26 @@ function restUses(token: Token, sheet: Creature): Record<string, number> | undef
 
 /** A short rest gives back short-rest features and pact slots; a long rest gives back everything. */
 export function rest(token: Token, sheet: Creature, kind: 'short' | 'long'): Token {
-  if (kind === 'long')
-    return { ...token, hp: undefined, spent: undefined, effects: undefined, concentration: undefined };
+  if (kind === 'long') return longRest(token, sheet);
   const uses = restUses(token, sheet);
   const slots = sheet.caster?.pact ? undefined : token.spent?.slots;
-  return { ...token, spent: uses || slots ? { slots, uses } : undefined };
+  const hitDice = token.spent?.hitDice;
+  return { ...token, spent: uses || slots || hitDice ? { slots, uses, hitDice } : undefined };
+}
+
+/** Everything back, but only some hit dice (2014) and one level of exhaustion. */
+function longRest(token: Token, sheet: Creature): Token {
+  const total = hitDiceOf(token, sheet)?.total ?? 0;
+  const hitDice = restedHitDice(token.spent?.hitDice, total, sheet.edition);
+  const exhaustion = restedExhaustion(token.exhaustion);
+  return {
+    ...token,
+    hp: undefined,
+    spent: hitDice ? { hitDice } : undefined,
+    effects: undefined,
+    concentration: undefined,
+    exhaustion,
+  };
 }
 
 /** A failed repeated save makes some effects worse instead of keeping them as they are. */

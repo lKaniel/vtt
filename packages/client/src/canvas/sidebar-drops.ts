@@ -2,6 +2,7 @@ import type { Point } from '@vtt/shared';
 import { DRAG_TYPE, type DragPayload } from '../drops.ts';
 import { moveSelectionTo } from '../map-clicks.ts';
 import type { Session } from '../session.ts';
+import type { ItemLayer } from './ItemLayer.ts';
 
 /** The GM drags actors, monsters, items and spells in from the side panel onto the map. */
 export function listenToDrops(
@@ -27,4 +28,19 @@ export function listenToDrops(
 export function dropToken(s: Session, id: string, at: Point | undefined): void {
   if (!at) return s.select(id);
   moveSelectionTo(s, at, id);
+}
+
+/** In the tokens mode, a click on a map note opens its journal entry. */
+export function openNote(s: Session, items: ItemLayer, at: Point): boolean {
+  const note = s.mode === 'tokens' ? items.noteAt(at) : undefined;
+  if (note) s.openJournal(note.entry, note.page);
+  return !!note;
+}
+
+/** A left click on the map with an action ready: casts an aimed area spell, or puts the action away. */
+export function clickGround(s: Session, p: Point): void {
+  if (s.armed) return s.arm(undefined);
+  const aiming = s.aiming;
+  if (aiming?.mode === 'point') return s.castAt(p);
+  if (aiming) s.aim(undefined);
 }

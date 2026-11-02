@@ -75,7 +75,10 @@ export class Table {
   }
 
   clearShot(from: Point, to: Point): boolean {
-    return hasLineOfSight(from, to, this.store.wallsBetween(from, to));
+    return hasLineOfSight(from, to, this.store.wallsBetween(from, to), {
+      kind: 'sight',
+      gridSize: this.store.world.gridSize,
+    });
   }
 
   inFight(id: string): boolean {
