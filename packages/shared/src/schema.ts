@@ -137,7 +137,18 @@ const RectTileSchema = z.object({
   /** "rough" wobbles the edges (the default for grass, dirt, sand, water and rock); "straight" keeps them crisp. */
   edge: z.enum(['rough', 'straight']).optional(),
 });
-const ImageTileSchema = z.object({ kind: z.literal('image'), ...tileBase, src: z.string().min(1) });
+const ImageTileSchema = z.object({
+  kind: z.literal('image'),
+  ...tileBase,
+  /** A picture, an animated GIF or a video (webm, mp4), which loops without sound. */
+  src: z.string().min(1),
+  /** A roof or canopy: drawn over creatures, and see-through while one of yours stands under it. */
+  overhead: z.boolean().optional(),
+  /** How opaque an overhead tile gets while a creature of yours is under it: 0 (gone, the default) to 1. */
+  occludedAlpha: z.number().min(0).max(1).optional(),
+  /** Pixels a second the picture slides by inside the tile (running water, clouds). */
+  scroll: z.object({ x: z.number(), y: z.number() }).optional(),
+});
 /** A group of tiles: no picture or rect of its own, it spans what is in it. */
 const GroupTileSchema = z.object({ kind: z.literal('group'), ...tileTree });
 

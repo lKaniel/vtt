@@ -83,9 +83,15 @@ sends each seat only what `chatFor` lets it read, live and on joining.
   it wasn't), or of the ground. Right or middle drag pans and opens nothing.
   A right click also puts away a half-drawn wall, an aimed spell or a
   readied attack.
-- Tokens: click selects the token you act with; drag walks it (and the rest
-  of the selection, by the same offset) by the rules. Clicking empty ground
-  deselects, so walking is by dragging, or "Move … here" in the ground menu.
+- Tokens (`map-clicks.ts`): a click on a creature you control selects it
+  alone; drag walks it (and the rest of the selection, by the same offset)
+  by the rules. A plain click on empty ground walks every selected creature
+  you control there in formation (the one you act with to the spot, the
+  rest keeping their places around it, the front ones first). A marquee
+  that catches nothing deselects. A click on a creature you can't control
+  does nothing, except a foe in a fight (in the turn order, not the
+  party's): it opens a menu with each attack of the creature you act with
+  and "Interact", which walks up next to it.
 
 ## Scenes
 

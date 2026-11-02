@@ -95,6 +95,16 @@ export abstract class Commands {
     this.send({ t: 'equip', token, item, equipped });
   }
 
+  /** GM: a legendary action, at `target` when it attacks. */
+  legendary(token: string, option: string, target?: string): void {
+    this.send({ t: 'legendary', token, option, ...(target && { target }) });
+  }
+
+  /** GM: a lair action on the lair's turn. */
+  lairAction(token: string, action: string): void {
+    this.send({ t: 'lair', token, action });
+  }
+
   /** Spends one of the creature's hit dice to heal. */
   spendHitDie(token: string): void {
     this.send({ t: 'hitDie', token });

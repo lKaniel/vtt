@@ -115,6 +115,57 @@ describe('convertClass', () => {
 });
 
 describe('convertMonster', () => {
+  it('reads legendary actions, which attack they make, and legendary resistance', () => {
+    const dragon: Entry = {
+      id: 'monsters.dragon',
+      type: 'monster',
+      fields: { ac: 18, hp: 200, cr: 10, legendaryActions: 3 },
+      grants: [
+        { item: 'monsters.dragon.tail' },
+        { item: 'monsters.dragon.tail-attack' },
+        { item: 'monsters.dragon.wing-attack' },
+        { item: 'monsters.dragon.legendary-resistance' },
+      ],
+    };
+    const tail: Entry = {
+      id: 'monsters.dragon.tail',
+      type: 'monsterAction',
+      fields: { attack: 'melee', toHit: 11, reach: 15, damage: '2d8+6', damageType: 'bludgeoning' },
+    };
+    const tailAttack = {
+      id: 'monsters.dragon.tail-attack',
+      type: 'monsterAction',
+      fields: { kind: 'legendary', legendaryCost: 1 },
+      actions: [{ steps: [{ use: 'monster-attack', source: "'monsters.dragon.tail'" }] }],
+    } as Entry;
+    const wing: Entry = {
+      id: 'monsters.dragon.wing-attack',
+      type: 'monsterAction',
+      fields: { kind: 'legendary', legendaryCost: 2 },
+    };
+    const resist: Entry = {
+      id: 'monsters.dragon.legendary-resistance',
+      type: 'monsterAction',
+      fields: { kind: 'trait', perDay: 3 },
+    };
+    const p = pack([dragon, tail, tailAttack, wing, resist], {
+      'monsters.dragon.tail.name': 'Tail',
+      'monsters.dragon.tail-attack.name': 'Tail Attack',
+      'monsters.dragon.wing-attack.name': 'Wing Attack (Costs 2 Actions)',
+      'monsters.dragon.wing-attack.description': 'The dragon beats its wings.',
+    });
+    expect(convertMonster(p, dragon)).toMatchObject({
+      legendary: {
+        actions: 3,
+        options: [
+          { id: 'tail-attack', name: 'Tail Attack', cost: 1, attack: 'Tail' },
+          { id: 'wing-attack', name: 'Wing Attack', cost: 2, description: 'The dragon beats its wings.' },
+        ],
+      },
+      legendaryResistance: 3,
+    });
+  });
+
   it('reads every sense, with darkvision', () => {
     const dragon: Entry = {
       id: 'monsters.dragon',

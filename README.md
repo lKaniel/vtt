@@ -30,6 +30,12 @@ on, shared live between players.
   lets them all go, or use the creature's menu. Everyone on the scene sees
   your targets in your colour. An attack readied with one target goes at it
   at once, and a spell aimed at creatures picks your targets first.
+- **Token HUD.** Right-click a creature you control, Token HUD: toggle its
+  conditions, set its hit points, temporary hit points and elevation; the GM
+  also hides it from players and adds it to the fight or takes it out
+  (starting one if none is on, with rolled initiative).
+- **Pause.** The GM's pause button in the top bar stops players acting (moves,
+  attacks, spells) until it is pressed again; everyone sees "Game paused".
 - **Live file editing.** Edit any file in `world/` and every client updates
   within a moment. `pnpm check-game` validates the folder.
 

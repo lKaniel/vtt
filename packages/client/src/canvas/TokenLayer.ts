@@ -12,6 +12,7 @@ import {
 import { BarTween } from '../bar-tween.ts';
 import { clickSelect, modsOf } from '../editor/selection.ts';
 import { cutoutOf, portraitOf } from '../icon-art.ts';
+import { clickToken } from '../map-clicks.ts';
 import type { Session } from '../session.ts';
 import type { Viewer } from './Vision.ts';
 
@@ -241,8 +242,9 @@ export class TokenLayer {
       if (!t) return;
       if (this.session.aiming?.mode === 'creatures') return this.session.pickTarget(t.id);
       if (this.isTarget(t)) return this.session.attack(t.id);
-      if (!this.session.canControl(t)) return;
-      this.press(t.id, e);
+      const click = clickToken(this.session, t.id);
+      if (click.kind === 'prompt') return this.session.openMenu([e.clientX, e.clientY], click.items);
+      if (click.kind === 'select') this.press(t.id, e);
     });
     this.container.addChild(root);
     const view: Sprite = { root, ground, disc, face, faceMask, status, label, route: [], token, r: 0, hover: false };

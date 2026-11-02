@@ -44,6 +44,8 @@ export interface MenuApi {
   readonly lightPreset: LightPreset;
   /** The creatures you target (see targets.ts). */
   readonly targets: { readonly mine: ReadonlySet<string>; toggle(id: string): void };
+  /** Opens the token HUD beside a creature (see session-hud.ts). */
+  openHud(token: string, screen: Point): void;
 }
 
 /** What the menu was opened on. */
@@ -57,6 +59,8 @@ export interface MenuTarget {
   token?: TokenView;
   /** A ground menu's creature under the pointer that you don't control (to target it). */
   under?: TokenView;
+  /** Where the menu opens, in screen pixels (the token HUD opens there too). */
+  screen?: Point;
 }
 
 type Entry = MenuItem | false | undefined;
@@ -111,6 +115,7 @@ registerMenu('token', (t, api) => {
   const hidden = allDocs(t, (d) => d.hidden === true);
   return [
     { label: 'Open sheet', run: () => api.openSheet({ kind: 'token', id }) },
+    !!t.screen && { label: 'Token HUD', run: () => api.openHud(id, t.screen!) },
     api.canEdit(id) && { label: 'Edit sheet', run: () => api.openSheet({ kind: 'token', id }, true) },
     api.isGm() && {
       label: hidden ? 'Reveal to players' : 'Hide from players',

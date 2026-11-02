@@ -12,6 +12,7 @@ import {
   uniqueId,
 } from '@vtt/shared';
 import type { WebSocket } from 'ws';
+import { foundryWorldTitle, importFoundryWorld, type WorldReport } from './foundry-world.ts';
 import { Game } from './game.ts';
 import { GameIndex } from './game-index.ts';
 import { GameStore } from './game-store.ts';
@@ -220,12 +221,45 @@ export class GameHub {
   async create(input: NewGame, gm: Player): Promise<string> {
     const issues = newGameIssues(input, SYSTEMS.infos());
     if (issues.length) throw new HubError(issues[0]);
-    const id = uniqueId(input.name, (x) => this.dirs.has(x) || x === 'games');
+    const id = this.freeId(input.name);
     const dir = join(this.gamesDir, id);
     await writeNewGame(dir, { ...input, name: input.name.trim(), id }, gm);
     this.dirs.set(id, dir);
     await this.index.set(id, { lastPlayed: Date.now() });
     return id;
+  }
+
+  /** A game id for `name` that no game has (nor the lobby's own routes). */
+  private freeId(name: string): string {
+    return uniqueId(name, (x) => this.dirs.has(x) || x === 'games' || x === 'import-foundry');
+  }
+
+  /**
+   * Makes a new game from the Foundry VTT world folder `from` (on this
+   * server's disk), with `gm` in the only seat; its id and what came along.
+   */
+  async importFoundry(
+    from: string,
+    gm: Player,
+    opts: { name?: string; dataDir?: string } = {},
+  ): Promise<{ id: string; report: WorldReport }> {
+    let name: string;
+    try {
+      name = opts.name?.trim() ? opts.name.trim() : await foundryWorldTitle(from);
+    } catch (e) {
+      throw new HubError((e as Error).message);
+    }
+    const id = this.freeId(name);
+    const dir = join(this.gamesDir, id);
+    try {
+      const report = await importFoundryWorld(from, dir, { gm, name, dataDir: opts.dataDir });
+      this.dirs.set(id, dir);
+      await this.index.set(id, { lastPlayed: Date.now() });
+      return { id, report };
+    } catch (e) {
+      await rm(dir, { recursive: true, force: true });
+      throw new HubError((e as Error).message);
+    }
   }
 
   /** Deletes a game made in the lobby, files and all. */

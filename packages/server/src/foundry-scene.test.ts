@@ -81,6 +81,32 @@ describe('a Foundry scene', () => {
     });
   });
 
+  it('makes roofs of overhead, roof and Better Roofs tiles, and keeps videos', () => {
+    const tile = { texture: { src: 'modules/caves/tiles/barrel.png' }, x: 0, y: 0, width: 100, height: 100 };
+    const roofs = {
+      ...v11,
+      foregroundElevation: 20,
+      tiles: [
+        { ...tile, overhead: true, occlusion: { mode: 1, alpha: 0.3 } },
+        { ...tile, flags: { betterroofs: { brMode: 2 } } },
+        { ...tile, elevation: 20, occlusion: { modes: [2], alpha: 0 } },
+        { ...tile, elevation: 0 },
+        { ...tile, texture: { src: 'modules/caves/tiles/river.webm' } },
+      ],
+    };
+    const tiles = foundryScene(roofs, (p) => `pack://caves/${p}`).scene.tiles.slice(1);
+    expect(
+      tiles.map((t) => [('overhead' in t && t.overhead) ?? false, 'occludedAlpha' in t && t.occludedAlpha]),
+    ).toEqual([
+      [false, false],
+      [false, false],
+      [true, 0.3],
+      [true, false],
+      [true, false],
+    ]);
+    expect(tiles.map((t) => 'src' in t && t.src)).toContain('pack://caves/modules/caves/tiles/river.webm');
+  });
+
   it('keeps tiles whose picture came along, in Foundry’s order', () => {
     const { scene, skipped } = foundryScene(v11, media);
     expect(scene.tiles.slice(1)).toEqual([
@@ -186,5 +212,48 @@ describe('a Foundry scene', () => {
     expect(
       foundryScene({ ...v11, darkness: undefined, environment: { darknessLevel: 0.4 } }, media).scene.darkness,
     ).toBeCloseTo(0.4);
+  });
+});
+
+describe('Foundry v14 scenes', () => {
+  const v14 = {
+    name: 'Market',
+    width: 2000,
+    height: 1000,
+    padding: 0,
+    grid: { size: 100, type: 1, distance: 5 },
+    levels: [
+      {
+        _id: 'up',
+        name: 'Upstairs',
+        elevation: { bottom: 10, top: 20 },
+        background: { src: 'modules/caves/tiles/barrel.png' },
+      },
+      {
+        _id: 'gr',
+        name: 'Ground',
+        elevation: { bottom: 0, top: 10 },
+        background: { src: 'modules/caves/maps/goblin cave.webp' },
+      },
+    ],
+    tiles: [
+      { texture: { src: 'modules/levels-3d-preview/assets/blank.webp' }, x: 0, y: 0, width: 100, height: 100 },
+      { texture: { src: 'modules/levels-3d-preview/assets/blank.webp' }, x: 100, y: 0, width: 100, height: 100 },
+      { texture: { src: 'modules/caves/tiles/barrel.png' }, x: 200, y: 0, width: 100, height: 100 },
+    ],
+  };
+
+  it('takes the background from the lowest floor that has one', () => {
+    const { scene } = foundryScene(v14, media);
+    expect(scene.tiles[0]).toMatchObject({ id: 'background', src: 'pack://caves/media/maps/goblin cave.webp' });
+  });
+
+  it('leaves out 3D Canvas model tiles, which are blank squares in 2D', () => {
+    const { scene, skipped } = foundryScene(v14, media);
+    expect(scene.tiles.map((t) => ('src' in t ? t.src : undefined))).toEqual([
+      'pack://caves/media/maps/goblin cave.webp',
+      'pack://caves/media/tiles/barrel.png',
+    ]);
+    expect(skipped).toContain('2 3D Canvas model tiles (3D only, they show as blank squares)');
   });
 });

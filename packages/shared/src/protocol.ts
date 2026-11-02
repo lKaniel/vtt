@@ -59,6 +59,8 @@ export type EngineClientMessage =
   | { t: 'cursor'; at: Point | null }
   /** Point out a spot to everyone on your scene; the GM may `pull` everyone's view there. */
   | { t: 'ping'; at: Point; pull?: boolean }
+  /** GM: pause the game (players can't act) or go on. */
+  | { t: 'pause'; on: boolean }
   /** Mark these tokens as your targets, shown to everyone on your scene who can see them; none clears them. */
   | { t: 'target'; tokens: string[] }
   /** Who sees your rolls and the cards of your actions from now on (see roll-modes.ts). */
@@ -130,6 +132,8 @@ export type EngineServerMessage =
   | { t: 'ping'; player: string; name: string; color: string; at: Point; pull?: boolean }
   /** Someone else on your scene marked these tokens (those you can see) as their targets. */
   | { t: 'targets'; player: string; name: string; color: string; tokens: string[] }
+  /** The GM paused the game, or let it go on. */
+  | { t: 'paused'; on: boolean }
   /** The time of day changed. */
   | { t: 'lighting'; darkness: number }
   /** A trigger plays a sound once for everyone on the scene. */

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, type Account } from '../account-api.ts';
 import { inviteCode, lastPlayedText, PENDING_INVITE } from '../lobby.ts';
 import type { Route } from '../route.ts';
+import { FoundryImportForm } from './FoundryImport.tsx';
 import { ROLE_NAMES } from './PlayersTab.tsx';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
@@ -74,6 +75,7 @@ export function GamesScreen({ account, go }: Readonly<{ account: Account; go: Go
         <aside className="lobby-side">
           {data && <NewGameForm systems={data.systems} onMade={(id) => go({ name: 'game', id })} />}
           <JoinByInvite go={go} onJoined={reload} />
+          {account.admin && <FoundryImportForm onMade={(id) => go({ name: 'game', id })} />}
         </aside>
       </div>
     </div>

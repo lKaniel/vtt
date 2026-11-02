@@ -24,7 +24,7 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          'art-panel z-[1000] px-6 py-5 font-body text-popover-foreground shadow-[0_14px_40px_rgba(0,0,0,0.75)] outline-none',
+          'art-panel z-[1000] px-4 py-3.5 font-body text-popover-foreground shadow-[0_14px_40px_rgba(0,0,0,0.75)] outline-none',
           className,
         )}
         {...props}

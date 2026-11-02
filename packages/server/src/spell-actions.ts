@@ -19,6 +19,7 @@ import {
   type Token,
   tokenDistance,
   TokenSchema,
+  spendResistance,
 } from '@vtt/system-dnd5e';
 import { isGridless, type Player, type Point } from '@vtt/shared';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
@@ -226,6 +227,15 @@ export class SpellActions {
     if (r.stabilized) this.stabilize(r.target);
     if (r.cured) this.cure(r.target, r.cured);
     if (r.revived) this.revive(r.target);
+    if (r.save?.legendary) this.resist(r.target);
+  }
+
+  /** The target turned a failed save into a success: one legendary resistance is gone. */
+  private resist(id: string): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    this.store.setToken(spendResistance(token));
+    this.table.note(`${token.name} uses Legendary Resistance to succeed instead`);
   }
 
   private cure(id: string, effects: readonly string[]): void {

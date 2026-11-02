@@ -28,6 +28,7 @@ function api(gm = true) {
     toggleLock: vi.fn(),
     lightPreset: 'torch' as const,
     targets: { mine: new Set<string>(), toggle: vi.fn() },
+    openHud: vi.fn(),
   } satisfies MenuApi;
 }
 
@@ -95,6 +96,18 @@ describe('context menus', () => {
     pick(target, a, 'Hide from players').run();
     expect(a.editSelection).toHaveBeenCalledWith({ hidden: true }, 'hide');
     expect(labels(target, api(false))).toEqual(['Open sheet', 'Target']);
+  });
+
+  it('a token opens its HUD where the menu was', () => {
+    const a = api(false);
+    const target: MenuTarget = {
+      ...on({ id: 'k', type: 'token', rev: 1 }),
+      mode: 'tokens',
+      token: { id: 'k' } as TokenView,
+      screen: [300, 200],
+    };
+    pick(target, a, 'Token HUD').run();
+    expect(a.openHud).toHaveBeenCalledWith('k', [300, 200]);
   });
 
   it('a token is targeted from its menu, and let go again', () => {

@@ -110,9 +110,10 @@ with `module.json`, `world.json` or `system.json`). It makes a pack in
 
 - Every picture, sound and video is copied into `media/`, keeping its
   folders, which become search tags.
-- Scenes become a `scene` compendium: from the module's compendia in the
-  old `.db` format (Foundry v10 and before), a world's `data/scenes.db`, and
-  any scene saved with Foundry's "Export Data" (`fvtt-Scene-*.json`). The
+- Scenes become a `scene` compendium: from the module's compendia (the
+  old `.db` files of Foundry v10 and before, or the LevelDB folders of v11
+  and later, Adventures included), a world's `data/scenes`, and any scene
+  saved with Foundry's "Export Data" (`fvtt-Scene-*.json`). The
   background becomes a locked ground tile where Foundry draws it (inside the
   scene's padding), tiles become image tiles, walls, doors and windows
   become ours, lights keep their radius (in feet), colour and animation.
@@ -123,19 +124,18 @@ with `module.json`, `world.json` or `system.json`). It makes a pack in
 - Journal entries (text and image pages), roll tables (weights from their
   ranges) and playlists (tracks whose file came along) become `journal`,
   `rolltable` and `playlist` compendia, from compendia and a world's
-  `data/journal.db`, `tables.db` and `playlists.db`. Map notes point at the
+  `data/journal`, `tables` and `playlists`. Map notes point at the
   entries brought with them.
 - It prints what it left out: tokens (place creatures from the Actors
   tab), tiles and sounds whose file isn't in the module, walls that block
   neither movement nor sight, page kinds and region behaviours we have no
   match for, and compendia of other types.
 
-Foundry v11 and later keep compendia in LevelDB databases, which can't be
-read yet. Open the module in Foundry, use "Export Data" on its scenes, put
-the files in the module folder and import again.
+To play a whole Foundry world (its tokens and actors too), import it as a
+game instead: see [foundry.md](foundry.md).
 
 ## Not done yet
 
-- Reading Foundry v11+ LevelDB compendia, and Foundry actors and items
-  (their data is system-specific).
+- Foundry actors and items in a pack's compendia (a world import reads
+  them, see [foundry.md](foundry.md)).
 - Installing a pack from the browser (zip upload) and per-pack permissions.

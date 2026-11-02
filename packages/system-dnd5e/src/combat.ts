@@ -80,6 +80,17 @@ function advance(combat: Combat, start: number, info: TurnInfo): Combat {
   return combat;
 }
 
+/** Rolls initiative for a creature joining a fight under way: it takes its place, and the turn stays with whoever has it. */
+export function addToCombat(combat: Combat, f: Combatant, rng: Rng = Math.random): Combat {
+  if (combat.order.some((e) => e.token === f.token)) return combat;
+  const initiative = roll('1d20', rng).total + f.bonus;
+  const at = combat.order.findIndex((e) => e.initiative < initiative);
+  const index = at < 0 ? combat.order.length : at;
+  const order = [...combat.order];
+  order.splice(index, 0, { token: f.token, initiative });
+  return { ...combat, order, turn: index <= combat.turn ? combat.turn + 1 : combat.turn };
+}
+
 /** Adds creatures to the order right after `after`, sharing its initiative (summons). */
 export function joinCombat(combat: Combat, after: string, tokens: readonly string[]): Combat {
   const index = combat.order.findIndex((e) => e.token === after);

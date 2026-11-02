@@ -155,3 +155,59 @@ describe('Foundry placeables', () => {
     expect(out.skipped).toContain('1 region behaviour we have no match for (executeMacro)');
   });
 });
+
+describe('Foundry v14 templates, kept as regions', () => {
+  const flagged = (shape: object, template: object = {}) => ({
+    name: 'Fireball',
+    color: '#ff4400',
+    shapes: [shape],
+    behaviors: [],
+    flags: { core: { MeasuredTemplate: template } },
+  });
+
+  it('turns template regions into our templates, not regions', () => {
+    const out = foundryPlaceables(
+      {
+        regions: [
+          flagged({ type: 'circle', x: 1000, y: 1000, radius: 800 }),
+          flagged({ type: 'cone', x: 0, y: 0, radius: 600, angle: 60, rotation: 90 }),
+          flagged({ type: 'rectangle', x: 0, y: 0, width: 400, height: 400 }, { t: 'rect', distance: 10 }),
+          flagged({ type: 'line', x: 0, y: 0, length: 1200, width: 200, rotation: 0 }),
+          { name: 'Trap', shapes: [{ type: 'rectangle', x: 0, y: 0, width: 10, height: 10 }], behaviors: [] },
+        ],
+      },
+      { grid, media },
+    );
+    expect(out.templates).toEqual([
+      { id: 'template-1', shape: 'circle', x: 1000, y: 1000, distance: 20, color: '#ff4400' },
+      { id: 'template-2', shape: 'cone', x: 0, y: 0, distance: 15, direction: 90, angle: 60, color: '#ff4400' },
+      { id: 'template-3', shape: 'square', x: 200, y: 200, distance: 10, color: '#ff4400' },
+      { id: 'template-4', shape: 'line', x: 0, y: 0, distance: 30, direction: 0, width: 5, color: '#ff4400' },
+    ]);
+    expect(out.regions.map((r) => r.name)).toEqual(['Trap']);
+    for (const t of out.templates) expect(TemplateSchema.safeParse(t).success).toBe(true);
+  });
+});
+
+describe('a v14 scene', () => {
+  it('ignores the old templates list, which the migration to regions left behind', () => {
+    const out = foundryPlaceables(
+      {
+        levels: [{ _id: 'defaultLevel0000' }],
+        templates: [{ t: 'circle', x: 0, y: 0, distance: 20 }],
+        regions: [
+          {
+            color: '#ff0000',
+            shapes: [{ type: 'rectangle', x: 2200, y: 2900, width: 200, height: 400, anchorX: 0, anchorY: 0 }],
+            behaviors: [],
+            flags: { core: { MeasuredTemplate: true } },
+          },
+        ],
+      },
+      { grid, media },
+    );
+    expect(out.templates).toEqual([
+      { id: 'template-1', shape: 'square', x: 2300, y: 3100, distance: 10, color: '#ff0000' },
+    ]);
+  });
+});

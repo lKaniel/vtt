@@ -3,12 +3,14 @@ import { type ChatMessage, type ServerMessage, type Token } from '@vtt/system-dn
 import { OpError } from '@vtt/core';
 import type { WebSocket } from 'ws';
 import { parseClientMessage, type ClientMessage } from './client-messages.ts';
-import { CombatActions } from './combat-actions.ts';
+import { CombatActions, isTurnMessage } from './combat-actions.ts';
 import { isSheetMessage, sheetAction } from './sheet-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
 import { isDropMessage } from './sheet-drop-actions.ts';
 import { DamageActions } from './damage-actions.ts';
+import { HudActions, isHudMessage } from './hud-actions.ts';
+import { Pause } from './pause.ts';
 import { castFeature } from './feature-casting.ts';
 import { MapActions } from './map-actions.ts';
 import { SpellActions } from './spell-actions.ts';
@@ -59,6 +61,8 @@ export class Game {
   private packs: PackActions;
   private entries: EntryActions;
   private damage: DamageActions;
+  private hud: HudActions;
+  private pause = new Pause((msg) => this.clients.forEach((c) => this.send(c, msg)));
   private presence = new Presence<Client>(
     () => this.clients,
     (c, msg) => this.send(c, msg),
@@ -107,6 +111,7 @@ export class Game {
     this.clock = new WorldClock(table, { now, step: (fn) => this.timePasses(fn) });
     this.packs = new PackActions(store);
     this.damage = new DamageActions(table, () => this.chat.all);
+    this.hud = new HudActions(table, this.combat);
     this.entries = new EntryActions(store, rng, {
       post: (message) => this.chat.post(actedBy(message, this.acting)),
       show,
@@ -215,6 +220,7 @@ export class Game {
       history: this.history.state(player),
       view: (t: Token) => viewFor(this.store, t, player),
       now: this.clock.serverTime(),
+      paused: this.pause.on,
     };
     for (const msg of welcomeOf(this.store, c, parts)) this.send(c, msg);
     this.presence.greet(c);
@@ -280,7 +286,9 @@ export class Game {
     if (isPresenceMessage(msg)) return this.presence.handle(c, msg);
     if (isPackMessage(msg)) return this.packs.handle(c.player, msg, (reply) => this.send(c, reply));
     try {
-      if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);
+      this.pause.check(c.player, msg);
+      if (msg.t === 'pause') this.pause.set(c.player, msg.on);
+      else if (msg.t === 'undo' || msg.t === 'redo') this.onUndo(c, msg);
       else if (this.history.run(c.player, msg, () => this.settle(() => this.dispatch(c, msg)))) this.sendHistory();
     } catch (e) {
       if (!(e instanceof Refusal)) throw e;
@@ -389,10 +397,11 @@ export class Game {
   private dispatchScenes(c: Client, msg: ClientMessage): void {
     if (msg.t === 'fog') this.fog.edit(c.player, msg.edit);
     else if (msg.t === 'clock') this.clock.act(c.player, msg.action);
-    else if (msg.t === 'turnBased') this.combat.turnBased(c.player, msg.on);
+    else if (isTurnMessage(msg)) this.combat.turnAction(c.player, (id) => c.visible.has(id), msg);
     else if (isSheetMessage(msg)) sheetAction(this.table, c.player, msg);
     else if (isEntryMessage(msg)) this.entries.handle(c.player, msg);
     else if (msg.t === 'applyDamage') this.damage.apply(c.player, (id) => c.visible.has(id), msg);
+    else if (isHudMessage(msg)) this.hud.handle(c.player, (id) => c.visible.has(id), msg);
     else if (isDropMessage(msg)) this.gm.drops.handle(c.player, (id) => c.visible.has(id), msg);
     else this.scenes.dispatch(c.player, msg);
   }

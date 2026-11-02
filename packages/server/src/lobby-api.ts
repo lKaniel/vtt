@@ -33,6 +33,11 @@ const NewGameInput = z.object({ name: z.string().max(80), system: z.string(), ru
 const JoinInput = z.object({ character: z.string().optional() });
 const RoleInput = z.object({ role: RoleSchema });
 const OpenInput = z.object({ open: z.boolean() });
+const FoundryInput = z.object({
+  folder: z.string().min(1).max(1000),
+  name: z.string().max(80).optional(),
+  dataDir: z.string().max(1000).optional(),
+});
 
 const seatOf = (info: GameInfo, account: Account) => info.players.find((p) => p.id === account.id);
 
@@ -79,9 +84,9 @@ export class LobbyRoutes implements Routes {
 
   async serve(call: Call): Promise<void> {
     const account = signedIn(this.deps.accounts, call);
-    const [route, id, sub] = call.parts;
-    if (route === 'invites' && call.method === 'POST') return this.accept(call, account, id ?? '');
-    if (!id) return this.games(call, account);
+    const [, id, sub] = call.parts;
+    const top = this.topLevel(call, account);
+    if (top || !id) return top;
     const info = await this.visible(id, account);
     switch (`${call.method} ${sub ?? ''}`) {
       case 'GET ':
@@ -99,6 +104,15 @@ export class LobbyRoutes implements Routes {
         if (sub === 'members') return this.member(call, info, account);
         throw new HttpError(405, 'Method not allowed.');
     }
+  }
+
+  /** Calls that aren't about one game: the list, a new game, an import, an invite. */
+  private topLevel(call: Call, account: Account): Promise<void> | undefined {
+    const [route, id] = call.parts;
+    if (route === 'invites' && call.method === 'POST') return this.accept(call, account, id ?? '');
+    if (!id) return this.games(call, account);
+    if (id === 'import-foundry' && call.method === 'POST') return this.importFoundry(call, account);
+    return undefined;
   }
 
   private async games(call: Call, account: Account): Promise<void> {
@@ -125,6 +139,15 @@ export class LobbyRoutes implements Routes {
     const gm: Player = { id: account.id, name: account.name, role: 'gm', color: nextSeatColor([]) };
     const id = await this.deps.hub.create(input, gm);
     send(call.res, 200, { game: summary(await this.deps.hub.info(id), account) });
+  }
+
+  /** A new game from a Foundry world folder on the server: the admin's, since it reads the server's disk. */
+  private async importFoundry(call: Call, account: Account): Promise<void> {
+    if (!account.admin) throw new HttpError(403, "Only the server's admin can import from its disk.");
+    const input = await parseBody(call.req, FoundryInput);
+    const gm: Player = { id: account.id, name: account.name, role: 'gm', color: nextSeatColor([]) };
+    const { id, report } = await this.deps.hub.importFoundry(input.folder.trim(), gm, input);
+    send(call.res, 200, { game: summary(await this.deps.hub.info(id), account), report });
   }
 
   private async remove(call: Call, info: GameInfo, account: Account): Promise<void> {

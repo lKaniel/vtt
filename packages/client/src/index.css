@@ -8,6 +8,7 @@
 
 @import 'tailwindcss/theme.css' layer(theme);
 @import './style.css' layer(legacy);
+@import './minimal.css' layer(legacy);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
 /* Tailwind scans these for class names. */
@@ -105,10 +106,12 @@
  * 9-slice plates for panels and buttons, slot frames, the ornate divider.
  */
 @utility art-panel {
-  border-image: url('/art/ui/panel-small.webp') 70 fill / 16px stretch;
+  background: linear-gradient(180deg, rgba(24, 22, 19, 0.96), rgba(13, 12, 10, 0.96));
+  border: 6px solid;
+  border-image: url('/art/ui/panel-small.webp') 70 / 6px stretch;
 }
 @utility art-button {
-  border-image: url('/art/ui/button.webp') 40 fill / 9px stretch;
+  border-image: url('/art/ui/button.webp') 40 fill / 5px stretch;
 }
 @utility art-button-lit {
   border-image-source: url('/art/ui/button-hover.webp');
@@ -120,7 +123,7 @@
   border-image-source: url('/art/ui/button-disabled.webp');
 }
 @utility art-well {
-  border-image: url('/art/ui/inventory-slot.webp') 34 fill / 8px stretch;
+  border-image: url('/art/ui/inventory-slot.webp') 34 fill / 5px stretch;
 }
 @utility art-slot {
   background: url('/art/ui/slot-frame.webp') center / 100% 100% no-repeat;
@@ -132,5 +135,11 @@
   background: url('/art/ui/divider.webp') center / auto 100% no-repeat;
 }
 @utility art-card {
-  border-image: url('/art/ui/seat-card.webp') 40 fill / 12px stretch;
+  border-image: url('/art/ui/seat-card.webp') 40 fill / 7px stretch;
+}
+/* The quiet frame: a bronze hairline on dark glass, for everyday buttons. */
+@utility art-hairline {
+  background: rgba(10, 9, 8, 0.35);
+  border: 1px solid rgba(168, 138, 94, 0.38);
+  border-radius: 3px;
 }

@@ -97,7 +97,7 @@ export class MapView {
   private destroyed = false;
 
   constructor(private session: Session) {
-    this.chunks = new ChunkLayer(session);
+    this.chunks = new ChunkLayer(session, (id) => this.tokens.placeOf(id));
     this.tokens = new TokenLayer(session);
     this.tokens.onGrab = (token, at) => {
       this.drag = { start: at, last: at, at: performance.now(), panning: false, button: 0, token };
@@ -126,7 +126,7 @@ export class MapView {
     }
     host.appendChild(this.app.canvas);
     this.ground.addChild(this.chunks.ground, this.grid, this.items.container, this.chunks.walls);
-    this.camera.addChild(this.ground, this.tokens.container, this.effects.container);
+    this.camera.addChild(this.ground, this.tokens.container, this.chunks.roofs, this.effects.container);
     this.overhead.addChild(this.preview.container, this.effects.labels, this.editor.container, this.fogBrush.container);
     this.overhead.addChild(this.rulers.container, this.presence.container);
     // Previews are drawn over tokens; clicks must still reach the tokens below.
@@ -134,6 +134,7 @@ export class MapView {
     this.vision = new Vision(this.app, this.session);
     this.ground.filters = [this.vision.mapFilter];
     this.tokens.container.filters = [this.vision.tokenFilter];
+    this.chunks.roofs.filters = [this.vision.roofFilter];
     this.app.stage.addChild(this.camera, this.overhead);
     this.listenToInput();
     this.listenToSession();
@@ -174,10 +175,7 @@ export class MapView {
       this.drag = undefined;
     });
     this.app.canvas.addEventListener('wheel', this.onWheel, { passive: false });
-    // Right click opens our own menus; middle drag pans instead of the browser's auto-scroll.
-    this.app.canvas.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-    });
+    // Middle drag pans instead of the browser's auto-scroll (the game screen blocks the browser's right-click menu).
     this.app.canvas.addEventListener('mousedown', (e) => {
       if (e.button === 1) e.preventDefault();
     });
@@ -302,6 +300,7 @@ export class MapView {
     this.tokens.animateFeedback(now);
     this.effects.tick(now);
     this.presence.tick(dt, now);
+    this.chunks.tick(dt);
     if (!this.session.world) return;
     if (this.cam.step(dt)) this.dirty = true;
     // One more render after a walk ends, to mark what the token now sees as explored.
@@ -327,7 +326,7 @@ export class MapView {
     this.session.viewRect = view;
     // Lighting covers the whole screen, even where nothing is drawn yet.
     this.ground.filterArea = new Rectangle(view.x, view.y, view.w, view.h);
-    this.tokens.container.filterArea = this.ground.filterArea;
+    this.tokens.container.filterArea = this.chunks.roofs.filterArea = this.ground.filterArea;
     this.requestChunks();
     drawGrid(this.grid, this.session.world!, view, this.zoom);
     this.editor.setZoom(this.zoom);
@@ -430,9 +429,10 @@ export class MapView {
    */
   private rightClick(screen: Point, at: Point): void {
     if (this.editor.finish() || this.editor.cancel() || this.session.cancelAction()) return;
-    const target = this.editor.menuTarget(at);
     const rect = this.app.canvas.getBoundingClientRect();
-    this.session.openMenu([screen[0] + rect.left, screen[1] + rect.top], menuFor(target, this.session));
+    const onScreen: Point = [screen[0] + rect.left, screen[1] + rect.top];
+    const target = { ...this.editor.menuTarget(at), screen: onScreen };
+    this.session.openMenu(onScreen, menuFor(target, this.session));
   }
 
   /** A fling glides on; a drag that stopped before letting go stays put. */

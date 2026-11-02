@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { foundryList } from './foundry-lists.ts';
 import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
+import { FoundryTile, isOverhead, roofOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
 
 // A Foundry VTT scene (from a module's compendium, a world, or "Export
@@ -14,18 +15,6 @@ import { FoundryWall, wallOf } from './foundry-walls.ts';
 const num = z.number().optional().catch(undefined);
 const str = z.string().optional().catch(undefined);
 
-const FoundryTile = z.object({
-  texture: z.object({ src: str.nullable() }).optional().catch(undefined),
-  img: str.nullable(),
-  x: z.number(),
-  y: z.number(),
-  width: z.number(),
-  height: z.number(),
-  sort: num,
-  z: num,
-  overhead: z.boolean().optional().catch(undefined),
-});
-
 const list = foundryList;
 
 const FoundrySceneSchema = z.object({
@@ -35,6 +24,8 @@ const FoundrySceneSchema = z.object({
   padding: z.number().min(0).catch(0.25),
   background: z.object({ src: str.nullable() }).optional().catch(undefined),
   img: str.nullable(),
+  /** v14: floors, each with its own background picture. */
+  levels: z.array(z.unknown()).optional().catch(undefined),
   backgroundColor: str.nullable(),
   grid: z
     .union([z.number(), z.object({ size: num, type: num, distance: num })])
@@ -44,6 +35,7 @@ const FoundrySceneSchema = z.object({
   gridDistance: num,
   darkness: num,
   environment: z.object({ darknessLevel: num }).optional().catch(undefined),
+  foregroundElevation: num,
   initial: z.object({ x: z.number(), y: z.number() }).nullable().optional().catch(undefined),
   walls: list(FoundryWall),
   lights: list(FoundryLight),
@@ -51,6 +43,9 @@ const FoundrySceneSchema = z.object({
   tokens: z.array(z.unknown()).optional().catch(undefined),
 });
 type FoundryScene = z.infer<typeof FoundrySceneSchema>;
+
+/** A Foundry scene's grid: its square size, feet per square, and whether it has none. */
+export const foundryGrid = (data: unknown): Grid => gridOf(FoundrySceneSchema.parse(data));
 
 /** The `pack://` reference of a file the import copied, by its path in Foundry's data folder. */
 export type MediaLookup = (foundryPath: string) => string | undefined;
@@ -61,7 +56,7 @@ export interface ConvertedScene {
   skipped: string[];
 }
 
-interface Grid {
+export interface Grid {
   size: number;
   /** Foundry grid units per square (feet by default, 5). */
   distance: number;
@@ -91,6 +86,8 @@ const lookupIn = (media: MediaLookup) => (src: string | null | undefined) => (sr
 export interface SceneLookups {
   entries?: (foundryId: string) => string | undefined;
   pages?: (foundryId: string) => string | undefined;
+  /** The caller places the tokens itself (a world import), so they aren't reported as left out. */
+  keepsTokens?: boolean;
 }
 
 /** Converts one Foundry scene; `media` finds the copied pictures and sounds. */
@@ -121,7 +118,8 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     ...placeables,
   };
   const tokens = s.tokens?.length ?? 0;
-  if (tokens) skipped.push(`${plural(tokens, 'token')} (place the creatures from the Actors tab)`);
+  if (tokens && !lookups.keepsTokens)
+    skipped.push(`${plural(tokens, 'token')} (place the creatures from the Actors tab)`);
   return { scene, skipped };
 }
 
@@ -136,7 +134,7 @@ function backgroundTile(
   find: ReturnType<typeof lookupIn>,
   skipped: string[],
 ): Tile[] {
-  const path = s.background?.src ?? s.img;
+  const path = s.background?.src ?? s.img ?? levelBackground(s.levels);
   const src = find(path);
   if (!src) {
     if (path) skipped.push(`the background picture, which is not in the module (${path})`);
@@ -157,16 +155,36 @@ function backgroundTile(
   ];
 }
 
+const FoundryLevel = z.object({
+  elevation: z.object({ bottom: num }).optional().catch(undefined),
+  background: z.object({ src: str.nullable() }).optional().catch(undefined),
+});
+
+/** v14 keeps the background on the scene's floors: the lowest one that has a picture. */
+function levelBackground(levels: unknown[] | undefined): string | undefined {
+  const floors = (levels ?? []).flatMap((l) => FoundryLevel.safeParse(l).data ?? []);
+  const bottom = (l: (typeof floors)[number]) => l.elevation?.bottom ?? 0;
+  return [...floors].sort((a, b) => bottom(a) - bottom(b)).find((l) => l.background?.src)?.background?.src ?? undefined;
+}
+
+/** 3D Canvas puts its models on the map as tiles of a blank picture. */
+const is3dModel = (path: string | null | undefined) => !!path && /levels-3d-preview\/.*blank\.webp$/.test(path);
+
 function tilesOf(s: FoundryScene, find: ReturnType<typeof lookupIn>, skipped: string[]): Tile[] {
-  const order = (t: FoundryScene['tiles'][number]) => (t.overhead ? 1e9 : 0) + (t.sort ?? t.z ?? 0);
+  const fg = s.foregroundElevation;
+  const order = (t: FoundryScene['tiles'][number]) => (isOverhead(t, fg) ? 1e9 : 0) + (t.sort ?? t.z ?? 0);
   const sorted = [...s.tiles].sort((a, b) => order(a) - order(b));
   const out: Tile[] = [];
   const missing: string[] = [];
+  const models = sorted.filter((t) => is3dModel(t.texture?.src ?? t.img)).length;
+  if (models) skipped.push(`${plural(models, '3D Canvas model tile')} (3D only, they show as blank squares)`);
   for (const t of sorted) {
     const path = t.texture?.src ?? t.img;
+    if (is3dModel(path)) continue;
     const src = find(path);
     if (src && t.width > 0 && t.height > 0) {
-      out.push({ id: `tile-${out.length + 1}`, kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src });
+      const id = `tile-${out.length + 1}`;
+      out.push({ id, kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src, ...roofOf(t, fg) });
     } else missing.push(path ?? '(none)');
   }
   if (missing.length)

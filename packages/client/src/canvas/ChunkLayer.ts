@@ -1,9 +1,10 @@
-import { type Chunk, tileClickable, type Wall } from '@vtt/shared';
-import { assetUrl } from '../assets.ts';
-import { Assets, Circle, Container, Graphics, Sprite } from 'pixi.js';
+import { canObserve, type Chunk, isGm, type Point, tileClickable, type Wall } from '@vtt/shared';
+import { Circle, Container, Graphics } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
 import { drawDoor, drawWalls, drawWallShadows } from './art/walls.ts';
 import type { Session } from '../session.ts';
+import { imageTile, type TileView } from './tile-draw.ts';
+import { type RoofEyes, roofWatchers } from './tile-motion.ts';
 
 const DOOR_COLORS = { closed: 0xd08a3a, open: 0x7ac06a, locked: 0xd04a4a } as const;
 const DOOR_HANDLE_RADIUS = 11;
@@ -13,6 +14,10 @@ const HIDDEN_ALPHA = 0.45;
 interface ChunkView {
   /** The chunk's tiles and wall shadows: each sits straight in `ground`, so tiles of all chunks stack by `z`. */
   ground: Container[];
+  /** Its overhead tiles (roofs), straight in `roofs`. */
+  roofs: Container[];
+  /** Tiles that move: scrolling pictures and fading roofs. */
+  moving: TileView[];
   walls: Container;
   doors: Graphics[];
 }
@@ -26,9 +31,28 @@ export class ChunkLayer {
   readonly ground = new Container({ sortableChildren: true });
   /** Walls and doors, above the grid. */
   readonly walls = new Container();
+  /** Roofs and canopies, over the creatures. */
+  readonly roofs = new Container({ sortableChildren: true, eventMode: 'none' });
   private views = new Map<string, ChunkView>();
 
-  constructor(private session: Session) {}
+  /** `placeOf`: where a token is drawn now, for the roofs it walks under. */
+  constructor(
+    private session: Session,
+    private placeOf: (id: string) => { at: Point } | undefined,
+  ) {}
+
+  /** Moves scrolling tiles on and fades roofs over your creatures. */
+  tick(dt: number): void {
+    const watchers = roofWatchers(this.eyes(), this.placeOf);
+    for (const v of this.views.values()) for (const t of v.moving) t.tick?.(dt, watchers);
+  }
+
+  private eyes(): RoofEyes {
+    const { you, selected } = this.session;
+    const gm = !you || isGm(you);
+    const yours = gm ? [] : [...this.session.tokens.values()].filter((t) => canObserve(t, you)).map((t) => t.id);
+    return { gm, yours, selected: selected ? [selected] : [] };
+  }
 
   get keys(): string[] {
     return [...this.views.keys()];
@@ -36,11 +60,11 @@ export class ChunkLayer {
 
   draw(key: string, chunk: Chunk): void {
     this.remove(key);
-    const view: ChunkView = { ground: [], walls: new Container(), doors: [] };
-    view.walls.cullable = true;
     const world = this.session.world;
-    view.ground = drawTiles(chunk, { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 });
-    chunk.tiles.forEach((tile, i) => this.dress(view.ground[i]!, tile));
+    const ctx = { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 };
+    const tiles = drawTiles(chunk, ctx, (root, tile) => this.dress(root, tile));
+    const view: ChunkView = { ...tiles, walls: new Container(), doors: [] };
+    view.walls.cullable = true;
     const shadows = shadowsOf(chunk.walls);
     shadows.zIndex = SHADOW_Z;
     view.ground.push(shadows);
@@ -55,6 +79,7 @@ export class ChunkLayer {
       item.cullable = true;
       this.ground.addChild(item);
     }
+    for (const roof of view.roofs) this.roofs.addChild(roof);
     this.walls.addChild(view.walls);
     this.views.set(key, view);
   }
@@ -62,7 +87,7 @@ export class ChunkLayer {
   remove(key: string): boolean {
     const v = this.views.get(key);
     if (!v) return false;
-    for (const item of v.ground) item.destroy({ children: true });
+    for (const item of [...v.ground, ...v.roofs]) item.destroy({ children: true });
     v.walls.destroy({ children: true });
     this.views.delete(key);
     return true;
@@ -118,29 +143,21 @@ export class ChunkLayer {
   }
 }
 
-/** The chunk's tiles, each at its place in the scene's draw order. */
-function drawTiles(chunk: Chunk, ctx: GroundContext): Container[] {
-  return chunk.tiles.map((tile, i) => {
-    const drawn = tile.kind === 'rect' ? rectTile(tile, ctx) : imageTile(tile);
-    drawn.zIndex = tile.z ?? i;
-    return drawn;
+/** The chunk's tiles, each at its place in the scene's draw order: floor tiles, roofs, and those that move; `dress` makes triggers clickable. */
+function drawTiles(
+  chunk: Chunk,
+  ctx: GroundContext,
+  dress: (root: Container, tile: Chunk['tiles'][number]) => void,
+): Pick<ChunkView, 'ground' | 'roofs' | 'moving'> {
+  const out: Pick<ChunkView, 'ground' | 'roofs' | 'moving'> = { ground: [], roofs: [], moving: [] };
+  chunk.tiles.forEach((tile, i) => {
+    const drawn = tile.kind === 'rect' ? { root: rectTile(tile, ctx) } : imageTile(tile);
+    drawn.root.zIndex = tile.z ?? i;
+    dress(drawn.root, tile);
+    (tile.kind === 'image' && tile.overhead ? out.roofs : out.ground).push(drawn.root);
+    if (drawn.tick) out.moving.push(drawn);
   });
-}
-
-function imageTile(tile: Extract<Chunk['tiles'][number], { kind: 'image' }>): Sprite {
-  const sprite = new Sprite();
-  sprite.position.set(tile.x, tile.y);
-  Assets.load(assetUrl(tile.src))
-    .then((texture: Sprite['texture']) => {
-      if (sprite.destroyed) return;
-      sprite.texture = texture;
-      sprite.width = tile.w;
-      sprite.height = tile.h;
-    })
-    .catch(() => {
-      console.warn(`Missing image assets/${tile.src}`);
-    });
-  return sprite;
+  return out;
 }
 
 function shadowsOf(walls: readonly Wall[]): Graphics {
