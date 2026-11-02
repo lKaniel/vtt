@@ -1408,10 +1408,16 @@
   },
   "darkness": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs magical darkness placed on the map by a spell."
-      }
+      "automated": true,
+      "zone": {
+        "onCast": false
+      },
+      "places": {
+        "light": {
+          "darkness": true
+        }
+      },
+      "gmNote": "Cast on an object it moves with the object: move the light by hand."
     }
   },
   "darkvision": {
@@ -1434,10 +1440,16 @@
   },
   "daylight": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "A sphere of daylight: place a light by hand."
-      }
+      "automated": true,
+      "zone": {
+        "onCast": false
+      },
+      "places": {
+        "light": {
+          "dim": 60
+        }
+      },
+      "gmNote": "Cast on an object it moves with the object: move the light by hand. Magical darkness it overlaps is dispelled by hand."
     }
   },
   "death-ward": {
@@ -2226,10 +2238,16 @@
   },
   "fog-cloud": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs an area that blocks sight."
-      }
+      "automated": true,
+      "zone": {
+        "onCast": false
+      },
+      "places": {
+        "light": {
+          "darkness": true
+        }
+      },
+      "gmNote": "Shown as magical darkness: it blinds darkvision as fog does, but devil’s sight would see through it, which fog stops. A strong wind disperses it: end it by hand."
     }
   },
   "forbiddance": {
@@ -3272,10 +3290,51 @@
   },
   "prismatic-wall": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs walls placed on the map by a spell."
-      }
+      "automated": true,
+      "area": {
+        "shape": "line",
+        "size": 90,
+        "width": 5
+      },
+      "zone": {
+        "onCast": false
+      },
+      "places": {
+        "wall": {
+          "shape": "line",
+          "sight": "normal"
+        },
+        "light": {
+          "dim": 100
+        }
+      },
+      "choices": [
+        {
+          "id": "wall",
+          "name": "A wall",
+          "set": {}
+        },
+        {
+          "id": "globe",
+          "name": "A globe",
+          "set": {
+            "area": {
+              "shape": "sphere",
+              "size": 15
+            },
+            "places": {
+              "wall": {
+                "shape": "ring",
+                "sight": "normal"
+              },
+              "light": {
+                "dim": 100
+              }
+            }
+          }
+        }
+      ],
+      "gmNote": "The wall and its light are placed; blinding creatures near it and the layers’ damage to creatures passing through are by hand."
     }
   },
   "private-sanctum": {
@@ -3569,7 +3628,7 @@
       "automated": false,
       "manual": {
         "kind": "gm",
-        "why": "A die added to one save (2014) or damage reduced once per turn (2024): not tracked yet."
+        "why": "Damage reduced once per turn: not tracked yet."
       }
     },
     "2014": {
@@ -4242,7 +4301,7 @@
       "automated": false,
       "manual": {
         "kind": "gm",
-        "why": "Needs advantage against one target for the caster only (2014) or a weapon attack inside a spell (2024)."
+        "why": "Needs a weapon attack made as part of a spell."
       }
     },
     "2014": {
@@ -4303,10 +4362,49 @@
   },
   "wall-of-force": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs walls placed on the map by a spell."
-      }
+      "automated": true,
+      "area": {
+        "shape": "line",
+        "size": 100,
+        "width": 5
+      },
+      "zone": {
+        "onCast": false
+      },
+      "places": {
+        "wall": {
+          "shape": "line",
+          "sight": "none",
+          "light": "none",
+          "sound": "none"
+        }
+      },
+      "choices": [
+        {
+          "id": "panels",
+          "name": "Ten panels in a line",
+          "set": {}
+        },
+        {
+          "id": "dome",
+          "name": "A dome or globe",
+          "set": {
+            "area": {
+              "shape": "sphere",
+              "size": 10
+            },
+            "places": {
+              "wall": {
+                "shape": "ring",
+                "sight": "none",
+                "light": "none",
+                "sound": "none"
+              }
+            }
+          }
+        }
+      ],
+      "gmNote": "Panels always stand in a straight line. It also blocks ethereal travel."
     }
   },
   "wall-of-ice": {
@@ -4323,10 +4421,21 @@
   },
   "wall-of-stone": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs walls placed on the map by a spell."
-      }
+      "automated": true,
+      "area": {
+        "shape": "line",
+        "size": 100,
+        "width": 5
+      },
+      "zone": {
+        "onCast": false
+      },
+      "places": {
+        "wall": {
+          "shape": "line"
+        }
+      },
+      "gmNote": "Always a straight wall of ten 10-foot panels; other shapes, its hit points and trapped creatures’ saves are by hand."
     }
   },
   "wall-of-thorns": {

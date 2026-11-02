@@ -18,6 +18,7 @@ import type { Session } from '../session.ts';
 import { ORDINAL } from '../spell-text.ts';
 import { AimingControls } from './AimingControls.tsx';
 import { SmiteControls } from './SmiteControls.tsx';
+import { currentKeys, keyLabel, keyOf } from '../keybinds.ts';
 import { attackTip, featureTip, itemTip, macroTip, spellTip } from '../tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
@@ -291,7 +292,7 @@ function Tile({
     >
       <IconFace icon={tile.icon} size={26} />
       <span className="tile-cost" />
-      {tile.hotkey && <span className="tile-key">{tile.hotkey}</span>}
+      {tile.hotkey && <span className="tile-key">{keyLabel(keyOf(`hotbar-${tile.hotkey}`, currentKeys()) ?? '')}</span>}
       <TileCorner tile={tile} />
       <TipCard tip={tipFor(tile)} />
     </button>

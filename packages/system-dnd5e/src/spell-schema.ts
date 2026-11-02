@@ -1,5 +1,6 @@
 import { LightSchema } from '@vtt/shared';
 import { z } from 'zod';
+import { LightSchema, WallRulesSchema } from '@vtt/shared';
 import { ABILITIES, DamageSchema, DamageTypeSchema } from './stats-schema.ts';
 import { EffectChangeSchema } from './effect-changes.ts';
 
@@ -250,6 +251,19 @@ export const SpellSchema = z.object({
   /** How many creatures it targets; areas hit everyone inside instead. */
   targets: z.number().int().nonnegative().default(1),
   area: AreaSchema.optional(),
+  /**
+   * What a lasting area puts on the map while it lasts: a light as wide as the
+   * area (darkness, daylight), or walls — a line `area.size` long across the
+   * caster's view, or a ring of that radius (wall of force).
+   */
+  places: z
+    .object({
+      light: LightSchema.omit({ bright: true }).partial().optional(),
+      wall: WallRulesSchema.pick({ move: true, sight: true, light: true, sound: true })
+        .extend({ shape: z.enum(['line', 'ring']) })
+        .optional(),
+    })
+    .optional(),
   /** A spell attack roll against each target. */
   attack: z.enum(['melee', 'ranged']).optional(),
   save: z
