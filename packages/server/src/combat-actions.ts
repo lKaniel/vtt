@@ -1,6 +1,8 @@
 import {
   animationRef,
   applyDamage,
+  retaliation,
+  turnStartHarm,
   type Attack,
   type AttackLog,
   attackRange,
@@ -190,6 +192,7 @@ export class CombatActions {
       if (after !== t) this.store.setToken(after);
     }
     this.hearten(id);
+    this.smoulder(id);
     this.turnStarted(id);
   }
 
@@ -203,6 +206,26 @@ export class CombatActions {
     const attacks = effects.reduce((n, e) => n + (e.turnAttacks ?? 0), 0);
     const left = attacks ? this.table.budget(token) : undefined;
     if (left) this.table.setBudget(token, { ...left, attacks: left.attacks + attacks });
+  }
+
+  /** Lasting damage (searing smite) and regeneration as the bearer's turn starts. */
+  private smoulder(id: string): void {
+    const token = this.store.tokens.get(id);
+    const sheet = token && this.table.sheetOf(token);
+    if (!token || !sheet) return;
+    const { parts, heal } = turnStartHarm(sheet.effects, this.table.rng);
+    if (parts.length) {
+      const { dealt, hp, tempHp } = applyDamage(sheet, parts);
+      const total = dealt.reduce((n, d) => n + d, 0);
+      this.table.note(`${token.name} takes ${total} damage from lasting effects`);
+      if (total > 0) this.table.hurt(token, { hp, tempHp }, total);
+    }
+    const now = this.store.tokens.get(id)!;
+    const sheetNow = this.table.sheetOf(now)!;
+    if (heal && sheetNow.hp > 0 && sheetNow.hp < sheetNow.maxHp) {
+      const hp = Math.min(sheetNow.maxHp, sheetNow.hp + heal);
+      this.store.setToken({ ...now, hp: hp >= sheetNow.maxHp ? undefined : hp });
+    }
   }
 
   /** Checks that `token` may walk `feet` now, and spends the movement in a fight. Standing up costs half its speed. */
@@ -343,14 +366,16 @@ export class CombatActions {
     { range, name, kind }: { range: string; name: string; kind: AttackLog['kind'] },
   ): void {
     const { roll: result } = outcome;
+    const notes0: string[] = [];
     const parts = result.damage.map((d) => ({ amount: d.roll.total, type: d.type }));
     if (outcome.graze) parts.push(outcome.graze);
     const fresh = this.table.fighter(target.token.id);
     const { dealt, hp, tempHp } = applyDamage(fresh.sheet, parts);
     const total = dealt.reduce((sum, d) => sum + d, 0);
     if (total > 0) this.table.hurt(fresh.token, { hp, tempHp, crit: result.crit }, total);
+    if (result.hit && kind === 'melee') notes0.push(...this.hitBack(attacker.token, fresh));
     this.addEffects(target.token.id, outcome);
-    const notes = [...outcome.notes];
+    const notes = [...outcome.notes, ...notes0];
     if (range === 'long') notes.push('long range: disadvantage');
     if (outcome.graze) notes.push(`graze: ${dealt.at(-1)} damage`);
     if (total > 0 && hp <= 0) notes.push(`${target.token.name} is down`);
@@ -370,6 +395,17 @@ export class CombatActions {
       notes,
       animation: attacker.token.animations?.[animationRef('attack', name)],
     });
+  }
+
+  /** A melee hit on a creature with fire shield burns the attacker standing within 5 ft. */
+  private hitBack(attacker: Token, target: Fighter): string[] {
+    const parts = retaliation(target.sheet.effects, this.table.rng);
+    const struck = this.table.fighter(attacker.id);
+    if (!parts.length || this.distance(attacker, target.token) > 5) return [];
+    const { dealt, hp, tempHp } = applyDamage(struck.sheet, parts);
+    const total = dealt.reduce((n, d) => n + d, 0);
+    if (total > 0) this.table.hurt(struck.token, { hp, tempHp }, total);
+    return [`${attacker.name} takes ${total} damage back`];
   }
 
   /** The push mastery shoves the target straight away from the attacker. */

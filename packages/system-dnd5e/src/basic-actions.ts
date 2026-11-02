@@ -1,5 +1,5 @@
 import type { FeatureSheet } from './classes.ts';
-import type { Feature } from './spell-schema.ts';
+import type { Effect, Feature } from './spell-schema.ts';
 
 // What any creature can do with its action besides attacking and casting,
 // and the class features that make some of them bonus actions.
@@ -36,7 +36,7 @@ const BASIC: Feature[] = [
 ];
 
 /** Bonus action versions of basic actions a feature allows (cunning action). */
-function bonusVersions(features: readonly FeatureSheet[]): FeatureSheet[] {
+function bonusVersions(features: readonly Pick<FeatureSheet, 'name' | 'bonusActions'>[]): FeatureSheet[] {
   return features.flatMap((f) =>
     (f.bonusActions ?? []).flatMap((id) => {
       const basic = BASIC.find((b) => b.id === id);
@@ -55,6 +55,9 @@ function bonusVersions(features: readonly FeatureSheet[]): FeatureSheet[] {
 }
 
 /** A creature's features with the basic actions everyone has added after them. */
-export function withBasicActions(features: readonly FeatureSheet[]): FeatureSheet[] {
-  return [...features, ...BASIC, ...bonusVersions(features)];
+export function withBasicActions(
+  features: readonly FeatureSheet[],
+  effects: readonly Pick<Effect, 'name' | 'bonusActions'>[] = [],
+): FeatureSheet[] {
+  return [...features, ...BASIC, ...bonusVersions([...features, ...effects])];
 }

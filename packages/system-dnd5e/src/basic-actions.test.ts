@@ -40,6 +40,13 @@ describe('actions anyone can take', () => {
     expect(useFeature(t, sheet(t), 'dash').dash).toBe(30);
   });
 
+  it('lets an effect such as expeditious retreat give Dash as a bonus action', () => {
+    const fast = character('wizard', '2014', {
+      effects: [{ id: 'er', name: 'Expeditious Retreat', bonusActions: ['dash'] }],
+    });
+    expect(feature(fast, 'expeditious-dash')).toMatchObject({ action: 'bonus', name: 'Dash (Expeditious Retreat)' });
+  });
+
   it('lets a rogue dash and disengage as a bonus action with Cunning Action', () => {
     const rogue = character('rogue', '2014');
     expect(feature(rogue, 'cunning-dash')).toMatchObject({ action: 'bonus', name: 'Dash (Cunning Action)' });

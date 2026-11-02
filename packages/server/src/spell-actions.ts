@@ -8,9 +8,10 @@ import {
   type Effect,
   inArea,
   isDying,
-  joinCombat,
   lastingEffects,
+  makesDeathSaves,
   manualNote,
+  withChoice,
   resolveCast,
   scaledSpell,
   scrollCaster,
@@ -19,11 +20,11 @@ import {
   type SpellLog,
   type Token,
   tokenDistance,
-  TokenSchema,
   spendResistance,
   characterLevel,
 } from '@vtt/system-dnd5e';
 import { isGridless, type Player, type Point } from '@vtt/shared';
+import { summon } from './spell-summons.ts';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
 
 export interface CastRequest {
@@ -36,6 +37,8 @@ export interface CastRequest {
   point?: Point;
   summon?: string;
   scroll?: boolean;
+  /** The spell's option (see Spell `choices`); a lasting spell used again keeps the one it was cast with. */
+  choice?: string;
 }
 
 /** What casting costs: the action, slot and slot spent; using a lasting spell again needs no slot. */
@@ -71,22 +74,34 @@ export class SpellActions {
 
   cast(player: Player, canSee: (id: string) => boolean, req: CastRequest): void {
     const actor = this.table.actor(player, req.caster);
-    const spell = this.table.content(actor.token).spells.get(req.spell);
-    if (!spell) throw new Refusal(`There is no spell called ${req.spell}`);
-    const { caster, plan, reader } = this.prepare(actor, spell, req);
+    const known = this.table.content(actor.token).spells.get(req.spell);
+    if (!known) throw new Refusal(`There is no spell called ${req.spell}`);
+    const { caster, plan, reader } = this.prepare(actor, known, req);
+    const spell = chosen(caster, known, req.choice);
     this.table.check(caster.token, plan.cost);
-    const aimed = this.targets(caster, spell, { ...req, slot: plan.slot }, canSee);
-    const targets = spell.zone && !spell.zone.onCast && !plan.again ? [] : aimed;
+    const targets = this.aim(caster, spell, { ...req, slot: plan.slot }, { canSee, again: plan.again });
     this.table.pay(caster.token, plan.cost);
     if (!plan.again) this.begin(caster, spell, plan.spend, !!reader);
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
     if (spell.teleport) this.teleport(caster.token.id, req.point!);
-    const summoned = spell.summon ? this.summon(this.table.fighter(caster.token.id), spell, req) : [];
+    const summoned = spell.summon ? summon(this.table, this.table.fighter(caster.token.id), spell, req) : [];
     const free = req.free && plan.slot > 0 && !plan.again ? ['cast without a spell slot'] : [];
     this.strike(caster.token.id, { spell, slot: plan.slot, point: req.point, reader }, targets, [
       ...free,
       ...summonNotes(summoned),
     ]);
+  }
+
+  /** Who the spell hits now: no one when casting only conjures it (flame blade) or its zone waits for creatures to enter. */
+  private aim(
+    caster: Fighter,
+    spell: Spell,
+    req: CastRequest,
+    how: { canSee: (id: string) => boolean; again: boolean },
+  ) {
+    if (!how.again && !spell.attackOnCast) return [];
+    const aimed = this.targets(caster, spell, req, how.canSee);
+    return spell.zone && !spell.zone.onCast && !how.again ? [] : aimed;
   }
 
   /** What casting costs: the action, slot and slot spent; using a lasting spell again needs no slot. */
@@ -229,6 +244,7 @@ export class SpellActions {
     if (r.stabilized) this.stabilize(r.target);
     if (r.cured) this.cure(r.target, r.cured);
     if (r.revived) this.revive(r.target, r.hp);
+    if (r.killed) this.kill(r.target);
     if (r.save?.legendary) this.resist(r.target);
   }
 
@@ -245,6 +261,15 @@ export class SpellActions {
     if (!token) return;
     const left = (token.effects ?? []).filter((e) => !effects.includes(e.id));
     this.store.setToken({ ...token, effects: left.length ? left : undefined });
+  }
+
+  /** Killed outright: a character is dead, not dying. */
+  private kill(id: string): void {
+    const token = this.store.tokens.get(id);
+    if (!token) return;
+    const dead = makesDeathSaves(token) ? { deathSaves: { successes: 0, failures: 3, dead: true } } : {};
+    this.store.setToken({ ...token, hp: 0, ...dead });
+    this.table.note(`${token.name} dies`);
   }
 
   private revive(id: string, hp: number): void {
@@ -314,67 +339,6 @@ export class SpellActions {
     return [axis(x), axis(y)];
   }
 
-  // ---- Summons -----------------------------------------------------------
-
-  private summon(caster: Fighter, spell: Spell, req: CastRequest): Token[] {
-    const options = spell.summon!.options;
-    const choice = options.find((o) => o.monster === req.summon) ?? (options.length === 1 ? options[0] : undefined);
-    if (!choice) throw new Refusal(`Pick what ${spell.name} summons: ${options.map((o) => o.monster).join(', ')}`);
-    const monster = this.table.content(caster.token).monsters.get(choice.monster);
-    if (!monster) throw new Refusal(`There is no ${choice.monster} in the bestiary`);
-    const spots = this.freeSpots(this.snap(req.point!, monster.size), monster.size, choice.count);
-    const tokens = spots.map(([x, y], i) =>
-      TokenSchema.parse({
-        id: this.freeId(choice.monster, i),
-        name: choice.count > 1 ? `${monster.name} ${i + 1}` : monster.name,
-        x,
-        y,
-        size: monster.size,
-        color: caster.token.color,
-        speed: monster.speed,
-        darkvision: monster.darkvision,
-        monster: monster.id,
-        ownership: caster.token.ownership,
-        summon: { by: caster.token.id, spell: spell.id, concentration: spell.concentration },
-        leader: spell.summon!.turn === 'shared' ? caster.token.id : undefined,
-      }),
-    );
-    for (const t of tokens) this.store.setToken(t);
-    const combat = this.store.combat;
-    if (combat && spell.summon!.turn === 'own' && this.table.inFight(caster.token.id)) {
-      this.store.setCombat(
-        joinCombat(
-          combat,
-          caster.token.id,
-          tokens.map((t) => t.id),
-        ),
-      );
-    }
-    return tokens;
-  }
-
-  private freeId(base: string, from: number): string {
-    let n = from + 1;
-    while (this.store.tokens.has(`${base}-${n}`)) n++;
-    return `${base}-${n}`;
-  }
-
-  /** `count` squares around `start` with no token on them, nearest first. */
-  private freeSpots(start: Point, size: number, count: number): Point[] {
-    const g = this.grid * size;
-    const taken = new Set([...this.store.tokens.values()].map((t) => `${t.x},${t.y}`));
-    const out: Point[] = [];
-    for (let ring = 0; out.length < count && ring < 10; ring++) {
-      for (const p of ringAround(start, ring, g)) {
-        if (out.length < count && !taken.has(`${p[0]},${p[1]}`)) {
-          out.push(p);
-          taken.add(`${p[0]},${p[1]}`);
-        }
-      }
-    }
-    return out;
-  }
-
   private log(
     caster: Fighter,
     { spell, slot, point }: { spell: Spell; slot: number; point?: Point },
@@ -416,20 +380,18 @@ export class SpellActions {
   }
 }
 
-function summonNotes(summoned: readonly Token[]): string[] {
-  return summoned.length ? [`${summoned.map((t) => t.name).join(', ')} appear`] : [];
+/** The spell with the option picked for it: the one asked for, else the one a going spell was cast with, else the first. */
+function chosen(caster: Fighter, spell: Spell, choice: string | undefined): Spell {
+  const going = caster.sheet.effects.find((e) => e.repeat?.spell === spell.id)?.repeat?.choice;
+  try {
+    return withChoice(spell, choice ?? going);
+  } catch (e) {
+    throw new Refusal((e as Error).message);
+  }
 }
 
-/** The squares on the edge of a square ring `ring` steps out from `c`. */
-function ringAround(c: Point, ring: number, step: number): Point[] {
-  if (ring === 0) return [c];
-  const out: Point[] = [];
-  for (let dx = -ring; dx <= ring; dx++) {
-    for (let dy = -ring; dy <= ring; dy++) {
-      if (Math.max(Math.abs(dx), Math.abs(dy)) === ring) out.push([c[0] + dx * step, c[1] + dy * step]);
-    }
-  }
-  return out;
+function summonNotes(summoned: readonly Token[]): string[] {
+  return summoned.length ? [`${summoned.map((t) => t.name).join(', ')} appear`] : [];
 }
 
 /** The spellcasting `caster` reads a scroll of `spell` with; refused without such a scroll. */

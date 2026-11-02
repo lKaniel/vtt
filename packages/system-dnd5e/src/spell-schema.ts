@@ -92,10 +92,26 @@ const modifiers = {
       at: z.tuple([z.number(), z.number()]).optional(),
       /** "allies": creatures on the bearer's side aren't hit. */
       spares: z.enum(['allies']).optional(),
+      /** The spell's option chosen on casting (see Spell `choices`). */
+      choice: id.optional(),
     })
     .optional(),
   /** The bearer may use this spell again without a slot while it lasts (spiritual weapon, call lightning). */
-  repeat: z.object({ spell: id, slot: z.number().int().min(0).max(9) }).optional(),
+  repeat: z.object({ spell: id, slot: z.number().int().min(0).max(9), choice: id.optional() }).optional(),
+  /** Damage the bearer takes at the start of each of its turns (searing smite, phantasmal killer). */
+  turnDamage: z.array(DamageSchema).optional(),
+  /** Hit points the bearer regains at the start of each of its turns (regenerate). */
+  turnHeal: z.number().int().positive().optional(),
+  /** The first time the bearer would drop to 0 hit points it drops to 1 instead, and the effect ends (death ward). */
+  deathWard: z.boolean().optional(),
+  /** Damage dealt to a creature within 5 ft that hits the bearer with a melee attack (fire shield). */
+  retaliate: z.array(DamageSchema).optional(),
+  /** `advantageAgainst` and `disadvantageAgainst` only count against attackers of these creature types (protection from evil and good). */
+  fromTypes: z.array(z.string()).optional(),
+  /** Basic actions (by id) the bearer may take as a bonus action (expeditious retreat: dash). */
+  bonusActions: z.array(id).optional(),
+  /** Saving throws of these abilities have disadvantage (bestow curse, contagion). */
+  saveDisadvantageFor: z.array(AbilitySchema).optional(),
   /** The bearer's movement doesn't provoke opportunity attacks (disengage). */
   disengaged: z.boolean().optional(),
   /** The bearer's speed is 0 (hypnotic pattern). */
@@ -146,6 +162,12 @@ export const EffectTemplateSchema = z.object({
   endsOnAttack: z.boolean().optional(),
   /** With `repeatSave`: failing the repeated save swaps the conditions for these and ends the saves (2024 sleep). */
   worsens: z.array(ConditionSchema).optional(),
+  /**
+   * Only about the caster: the bearer's own attack modifiers count only against
+   * the caster, and modifiers on attacks against it only for the caster's
+   * attacks (true strike, bestow curse).
+   */
+  forCaster: z.boolean().optional(),
   /** Ends when the bearer takes damage (sleep, hypnotic pattern). */
   endsOnDamage: z.boolean().optional(),
   /** The bearer repeats the save, with advantage, each time it takes damage (hideous laughter). */
@@ -169,6 +191,9 @@ export const EffectSchema = EffectTemplateSchema.extend({
   endsAt: z.number().optional(),
   /** Put here by an aura ("<bearer>:<effect>"); the server takes it off when the aura no longer reaches. */
   auraFrom: z.string().optional(),
+  /** The spell that made it, and the slot it was cast with: what dispel magic checks. */
+  spell: id.optional(),
+  slot: z.number().int().min(0).max(9).optional(),
 });
 export type Effect = z.infer<typeof EffectSchema>;
 
@@ -214,7 +239,14 @@ export const SpellSchema = z.object({
   area: AreaSchema.optional(),
   /** A spell attack roll against each target. */
   attack: z.enum(['melee', 'ranged']).optional(),
-  save: z.object({ ability: AbilitySchema, onSave: z.enum(['half', 'none']).default('none') }).optional(),
+  save: z
+    .object({
+      ability: AbilitySchema,
+      onSave: z.enum(['half', 'none']).default('none'),
+      /** false: no save when cast, only the effect's repeated saves (power word stun, 2014 irresistible dance). */
+      onCast: z.boolean().default(true),
+    })
+    .optional(),
   damage: z.array(DamageSchema).default([]),
   /** Hit points restored, plus the caster's spellcasting modifier when `healMod`. */
   heal: dice.optional(),
@@ -277,6 +309,33 @@ export const SpellSchema = z.object({
     .optional(),
   /** Later turns can use it again without a slot, with this action (spiritual weapon, call lightning). */
   repeat: z.enum(['action', 'bonus']).optional(),
+  /** Effects by the target's hit points: the first tier whose `atMost` it is within applies instead of the spell's effect (power word kill). */
+  hpTiers: z
+    .array(
+      z.object({
+        atMost: z.number().int().positive(),
+        kill: z.boolean().optional(),
+        effect: EffectTemplateSchema.optional(),
+      }),
+    )
+    .optional(),
+  /** Later uses attack, casting only conjures it (flame blade). */
+  attackOnCast: z.boolean().default(true),
+  /** Ends spell effects on the target: true for any (higher-level ones need a check, dispel magic), or only these spells (remove curse). */
+  dispels: z.union([z.literal(true), z.array(id)]).optional(),
+  /** `heal` is one pool shared out among the targets, each healed up to its maximum (mass heal). */
+  healShared: z.boolean().optional(),
+  /**
+   * Options the caster picks on casting, each setting spell fields over the
+   * spell's own (`null` takes one away): a damage type, enlarge or reduce, a
+   * curse. Checked against this schema when picked (see `withChoice`).
+   */
+  choices: z
+    .array(z.object({ id, name: z.string().min(1), set: z.record(z.string(), z.unknown()) }))
+    .min(2)
+    .optional(),
+  /** The id of the choice this spell was cast with. */
+  chosen: id.optional(),
   /** Only creatures of these types are affected (hold person: humanoid). */
   creatureTypes: z.array(z.string()).optional(),
   /** false when the engine only shows the text: the GM applies it by hand. */
