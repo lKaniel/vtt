@@ -1,10 +1,10 @@
 import { ABILITIES, abilityMod, actorFromToken, type Edition, type Monster, tokenFromMonster } from '@vtt/system-dnd5e';
 import { uniqueId } from '@vtt/shared';
-import { crText, type Entry } from '../../compendium.ts';
-import { gameContent } from '../../content.ts';
+import { crText, type Entry } from '../../content/compendium.ts';
+import { gameContent } from '../../content/content.ts';
 import { t } from '../../i18n/index.ts';
-import type { Session } from '../../session.ts';
-import { attackTip, itemTip, spellTip, type Tip } from '../../tooltip.ts';
+import type { Session } from '../../session/session.ts';
+import { attackTip, itemTip, spellTip, type Tip } from '../../text/tooltip.ts';
 import { Button } from '../kit/button.tsx';
 
 // What a Compendium entry says when opened: its facts and text, and the

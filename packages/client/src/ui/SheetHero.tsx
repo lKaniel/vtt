@@ -1,6 +1,6 @@
 import { ABILITIES, abilityMod, type Creature } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { listText, parseList, setAbility, setStat } from '../token-edit.ts';
+import { listText, parseList, setAbility, setStat } from '../play/token-edit.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { NumberInput } from './EditorFields.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';

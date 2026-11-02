@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import type { Calendar } from '@vtt/shared';
-import type { Session } from '../../session.ts';
+import type { Session } from '../../session/session.ts';
 import { Button } from '../kit/button.tsx';
 import { Card } from '../kit/card.tsx';
 import { Input } from '../kit/input.tsx';

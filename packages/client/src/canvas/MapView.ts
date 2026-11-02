@@ -10,10 +10,10 @@ import {
 } from 'pixi.js';
 import { menuFor } from '../editor/menus.ts';
 import { modsOf } from '../editor/selection.ts';
-import type { Session } from '../session.ts';
-import type { EditorTool } from '../session-editor.ts';
+import type { Session } from '../session/session.ts';
+import type { EditorTool } from '../session/session-editor.ts';
 import { cuesOf } from '../feedback.ts';
-import { currentMotion } from '../animations.ts';
+import { currentMotion } from '../play/animations.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
 import { CameraMotion } from './camera-motion.ts';
 import { EffectsLayer } from './EffectsLayer.ts';
@@ -28,7 +28,7 @@ import { RulerLayer } from './RulerLayer.ts';
 import { TokenLayer } from './TokenLayer.ts';
 import { WeatherLayer } from './WeatherLayer.ts';
 import { Vision } from './Vision.ts';
-import { spaceKey } from '../space-pan.ts';
+import { spaceKey } from '../play/space-pan.ts';
 import { listenToWheel } from './wheel-zoom.ts';
 
 extensions.add(CullerPlugin);

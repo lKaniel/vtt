@@ -1,7 +1,7 @@
 import type { Class, Feature, Subclass } from '@vtt/system-dnd5e';
 import { ChevronDownIcon, ChevronRightIcon, XIcon } from 'lucide-react';
 import { useState } from 'react';
-import { freshId, levelTableText, parseLevelTable, withAt, withoutAt } from '../homebrew-edit.ts';
+import { freshId, levelTableText, parseLevelTable, withAt, withoutAt } from '../content/homebrew-edit.ts';
 import { Field, NumberInput } from './EditorFields.tsx';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';

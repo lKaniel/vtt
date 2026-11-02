@@ -1,8 +1,8 @@
 import { isParty } from '@vtt/shared';
 import type { CheckRequestKind } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { askedOf, CHECK_OPTIONS, checkOf } from '../check-text.ts';
-import type { Session } from '../session.ts';
+import { askedOf, CHECK_OPTIONS, checkOf } from '../text/check-text.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { NumberField } from './kit/number-field.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';

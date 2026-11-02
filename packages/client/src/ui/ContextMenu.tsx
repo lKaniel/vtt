@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 
 /** The right-click menu the map opened, at the pointer. A click elsewhere closes it. */

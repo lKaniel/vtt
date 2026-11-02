@@ -1,5 +1,5 @@
 import type { ReactionOffer } from '@vtt/system-dnd5e';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 
 const CHOICE_LABELS: Record<string, string> = {

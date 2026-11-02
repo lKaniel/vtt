@@ -9,14 +9,14 @@ import {
   type FederatedPointerEvent,
   type Texture,
 } from 'pixi.js';
-import { BarTween } from '../bar-tween.ts';
+import { BarTween } from '../play/bar-tween.ts';
 import { clickSelect, modsOf } from '../editor/selection.ts';
 import { cutoutOf, portraitOf } from '../icon-art.ts';
-import { clickToken } from '../map-clicks.ts';
-import type { Session } from '../session.ts';
+import { clickToken } from '../play/map-clicks.ts';
+import type { Session } from '../session/session.ts';
 import { applyTokenFilter, drawTokenRing, faceScale, onlookerOf } from './token-face.ts';
 import type { Viewer } from './Vision.ts';
-import { spaceKey } from '../space-pan.ts';
+import { spaceKey } from '../play/space-pan.ts';
 
 /** Token walking speed when animating a move, pixels per second. */
 const WALK_SPEED = 900;

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { dateOf } from '@vtt/shared';
 import { cn } from '@/lib/utils';
-import type { Session } from '../../session.ts';
-import { shortDate, turnMode } from '../../session-time.ts';
+import type { Session } from '../../session/session.ts';
+import { shortDate, turnMode } from '../../session/session-time.ts';
 import { Badge } from '../kit/badge.tsx';
 import { Button } from '../kit/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../kit/popover.tsx';

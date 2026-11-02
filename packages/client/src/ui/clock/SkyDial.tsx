@@ -1,5 +1,5 @@
 import type { Calendar } from '@vtt/shared';
-import { dayPart } from '../../calendar-view.ts';
+import { dayPart } from '../../text/calendar-view.ts';
 
 const SKY = {
   night: 'from-[#0b1020] to-[#1a1f33]',

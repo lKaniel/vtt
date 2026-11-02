@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { changeText, type Effect } from '@vtt/system-dnd5e';
-import { auraText, newEffect, removeEffect, setEffect } from '../effect-edit.ts';
+import { auraText, newEffect, removeEffect, setEffect } from '../content/effect-edit.ts';
 import { effectIcon } from '../icons.ts';
-import { effectLeft } from '../session-time.ts';
+import { effectLeft } from '../session/session-time.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { IconFace } from './Icon.tsx';
 import { RemoveButton } from './SheetDetails.tsx';

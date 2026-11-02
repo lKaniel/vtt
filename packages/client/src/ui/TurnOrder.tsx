@@ -1,7 +1,7 @@
 import { actsNow, currentTurn, isLairTurn } from '@vtt/system-dnd5e';
 import { isParty } from '@vtt/shared';
 import { useState } from 'react';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Face, HpBar } from './Portrait.tsx';
 import { Button } from './kit/button.tsx';
 import { EncounterButton } from './EncounterPanel.tsx';

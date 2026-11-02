@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { type CalendarDate, dateOf, secondsOf } from '@vtt/shared';
-import { monthGrid, stepMonth } from '../../calendar-view.ts';
-import type { Session } from '../../session.ts';
+import { monthGrid, stepMonth } from '../../text/calendar-view.ts';
+import type { Session } from '../../session/session.ts';
 import { Button } from '../kit/button.tsx';
 import { CalendarMonth } from '../kit/calendar.tsx';
 import { Label } from '../kit/label.tsx';

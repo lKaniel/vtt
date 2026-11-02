@@ -1,6 +1,6 @@
 import type { Weather, WeatherKind } from '@vtt/shared';
 import type { TokenLook } from '@vtt/shared';
-import type { Motion } from '../animations.ts';
+import type { Motion } from '../play/animations.ts';
 
 // How the scene's weather and the tokens' colour filters look on screen
 // (WeatherLayer.ts, TokenLayer.ts): the colours, and how much a player's

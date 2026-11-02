@@ -1,6 +1,6 @@
 import { type Character, type Edition, newCharacter } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { creatorSteps, setEdition, type StepId, type StepInfo } from '../creator.ts';
+import { creatorSteps, setEdition, type StepId, type StepInfo } from '../content/creator.ts';
 import { AbilitiesStep } from './creator/AbilitiesStep.tsx';
 import { EquipmentStep } from './creator/KitStep.tsx';
 import { BackgroundStep, ClassStep, SpeciesStep, type StepProps } from './creator/OriginSteps.tsx';

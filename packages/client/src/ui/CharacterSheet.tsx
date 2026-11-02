@@ -7,12 +7,12 @@ import {
   characterLevel,
   classesText,
 } from '@vtt/system-dnd5e';
-import { xpLine } from '../encounter-view.ts';
+import { xpLine } from '../text/encounter-view.ts';
 import { uniqueId } from '@vtt/shared';
 import { useEffect, useRef, useState } from 'react';
-import type { Session } from '../session.ts';
-import type { SheetTarget } from '../session-sheets.ts';
-import { tokenPatch } from '../token-edit.ts';
+import type { Session } from '../session/session.ts';
+import type { SheetTarget } from '../session/session-sheets.ts';
+import { tokenPatch } from '../play/token-edit.ts';
 import { previewSheet, type Draft, type Update } from './sheet-model.ts';
 import { Details } from './SheetDetails.tsx';
 import { FeaturesPage, SpellsPage } from './SheetPages.tsx';

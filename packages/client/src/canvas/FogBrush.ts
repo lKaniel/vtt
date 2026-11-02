@@ -1,6 +1,6 @@
 import type { Point } from '@vtt/shared';
 import { Graphics } from 'pixi.js';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 
 /**
  * The GM's fog brush on the map: a ring under the pointer, and a stroke

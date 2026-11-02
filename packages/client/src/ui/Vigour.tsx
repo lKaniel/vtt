@@ -1,5 +1,5 @@
 import { hitDiceOf, MAX_EXHAUSTION, type TokenView } from '@vtt/system-dnd5e';
-import { exhaustionText, hitDiceText } from '../vigour-text.ts';
+import { exhaustionText, hitDiceText } from '../text/vigour-text.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { Button } from './kit/button.tsx';
 import { NumberField } from './kit/number-field.tsx';

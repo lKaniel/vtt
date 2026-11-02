@@ -9,7 +9,7 @@ import {
   keyName,
   LIST_KEYS,
 } from '@vtt/system-dnd5e';
-import { blankChange } from '../../effect-edit.ts';
+import { blankChange } from '../../content/effect-edit.ts';
 import { Button } from '../kit/button.tsx';
 import { NumberField } from '../kit/number-field.tsx';
 import { SelectField } from '../kit/select.tsx';

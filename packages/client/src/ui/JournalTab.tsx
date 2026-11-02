@@ -1,6 +1,6 @@
 import type { Doc } from '@vtt/core';
 import { useState } from 'react';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { startDrag } from './ActorsTab.tsx';
 import { Button } from './kit/button.tsx';
 import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';

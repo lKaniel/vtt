@@ -1,8 +1,8 @@
 import { encounterDifficulty, toEdition } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { gameContent } from '../content.ts';
-import { encounterOf, xpShares } from '../encounter-view.ts';
-import type { Session } from '../session.ts';
+import { gameContent } from '../content/content.ts';
+import { encounterOf, xpShares } from '../text/encounter-view.ts';
+import type { Session } from '../session/session.ts';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';

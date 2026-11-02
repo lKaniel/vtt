@@ -1,8 +1,8 @@
 import type { Doc } from '@vtt/core';
 import { slugify } from '@vtt/core';
 import { useState } from 'react';
-import { blankClass } from '../homebrew-edit.ts';
-import type { Session } from '../session.ts';
+import { blankClass } from '../content/homebrew-edit.ts';
+import type { Session } from '../session/session.ts';
 import { ClassEditor } from './ClassEditor.tsx';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';

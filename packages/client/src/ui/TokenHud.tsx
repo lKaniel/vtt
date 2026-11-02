@@ -1,7 +1,7 @@
 import { ConditionSchema, type Condition, type TokenView } from '@vtt/system-dnd5e';
 import { XIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { Label } from './kit/label.tsx';
 import { NumberField } from './kit/number-field.tsx';

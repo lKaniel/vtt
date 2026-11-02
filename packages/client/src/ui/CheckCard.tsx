@@ -1,5 +1,5 @@
 import type { ChatMessage, CheckLog } from '@vtt/system-dnd5e';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
 

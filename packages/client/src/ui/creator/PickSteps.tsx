@@ -11,10 +11,10 @@ import {
   type Spell,
 } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { spellChoices, toggleSkill, toggleSpell } from '../../creator.ts';
+import { spellChoices, toggleSkill, toggleSpell } from '../../content/creator.ts';
 import { spellIcon } from '../../icons.ts';
 import { spellArt } from '../../icon-art.ts';
-import { ORDINAL } from '../../spell-text.ts';
+import { ORDINAL } from '../../text/spell-text.ts';
 import { IconFace } from '../Icon.tsx';
 import type { StepProps } from './OriginSteps.tsx';
 import { Detail, RichText, StepHead } from './Parts.tsx';

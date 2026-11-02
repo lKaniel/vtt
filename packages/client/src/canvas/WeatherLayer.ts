@@ -1,7 +1,7 @@
 import { type Particle, particleCount, spawnParticle, stepParticle, type Weather } from '@vtt/shared';
 import { BlurFilter, Container, Graphics } from 'pixi.js';
-import { currentMotion } from '../animations.ts';
-import type { Session } from '../session.ts';
+import { currentMotion } from '../play/animations.ts';
+import type { Session } from '../session/session.ts';
 import { shownWeather, weatherColor } from './weather-look.ts';
 
 // The scene's weather (shared weather.ts) over the map, under the rulers and

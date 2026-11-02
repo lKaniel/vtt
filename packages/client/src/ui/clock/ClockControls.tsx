@@ -1,6 +1,6 @@
 import { HourglassIcon, PauseIcon, PlayIcon, SwordsIcon } from 'lucide-react';
-import type { Session } from '../../session.ts';
-import { quickSkips, turnMode } from '../../session-time.ts';
+import type { Session } from '../../session/session.ts';
+import { quickSkips, turnMode } from '../../session/session-time.ts';
 import { Badge } from '../kit/badge.tsx';
 import { Button } from '../kit/button.tsx';
 import { Label } from '../kit/label.tsx';

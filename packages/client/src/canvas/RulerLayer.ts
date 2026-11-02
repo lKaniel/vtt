@@ -1,7 +1,7 @@
 import { isGridless, sceneLattice, measureRuler, type Point, type Region, regionCost } from '@vtt/shared';
 import { Container, Graphics } from 'pixi.js';
-import { rulerLabels } from '../rulers.ts';
-import type { Session } from '../session.ts';
+import { rulerLabels } from '../session/rulers.ts';
+import type { Session } from '../session/session.ts';
 import { LabelPool } from './label-pool.ts';
 
 const OUTLINE = 0x000000;

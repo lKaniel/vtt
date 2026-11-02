@@ -1,6 +1,6 @@
 import type { Doc } from '@vtt/core';
 import { useState } from 'react';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { Textarea } from './kit/textarea.tsx';
 import { Checkbox } from './kit/checkbox.tsx';

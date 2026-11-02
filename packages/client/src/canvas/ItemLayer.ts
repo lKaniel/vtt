@@ -1,7 +1,7 @@
 import type { Doc } from '@vtt/core';
 import { hitTest, onLevel, type Point, shapeOf } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { drawItem } from './item-draw.ts';
 
 // Drawings, templates and map notes for everyone; regions and sounds for the

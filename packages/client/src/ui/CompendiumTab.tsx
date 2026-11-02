@@ -1,10 +1,10 @@
 import { type Edition, toEdition } from '@vtt/system-dnd5e';
 import { FilterIcon, LayoutGridIcon, ListIcon, SearchIcon } from 'lucide-react';
 import { useState } from 'react';
-import { CATEGORIES, type Category, compendium, type Entry, type Facet, type Search } from '../compendium.ts';
+import { CATEGORIES, type Category, compendium, type Entry, type Facet, type Search } from '../content/compendium.ts';
 import { type MessageKey, t } from '../i18n/index.ts';
 import { readPref, writePref } from '../prefs.ts';
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { CompendiumFilters } from './compendium/CompendiumFilters.tsx';
 import { ResultGrid, ResultRows } from './compendium/CompendiumResults.tsx';
 import { EntryDetail } from './compendium/EntryDetail.tsx';

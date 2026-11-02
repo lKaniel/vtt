@@ -12,10 +12,10 @@ import {
   wallsAt,
 } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
-import { previewLabel } from '../spell-text.ts';
-import type { Session } from '../session.ts';
-import { aimPoint, walkOptions } from '../walking.ts';
-import { needsClearPath, type Aiming } from '../targeting.ts';
+import { previewLabel } from '../text/spell-text.ts';
+import type { Session } from '../session/session.ts';
+import { aimPoint, walkOptions } from '../play/walking.ts';
+import { needsClearPath, type Aiming } from '../play/targeting.ts';
 
 const OK_COLOR = 0xffffff;
 const TOO_FAR_COLOR = 0xff8060;

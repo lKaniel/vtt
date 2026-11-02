@@ -1,4 +1,4 @@
-import type { Tip } from '../tooltip.ts';
+import type { Tip } from '../text/tooltip.ts';
 
 /** The hover card above an action tile. Shown by CSS while its parent is hovered or focused. */
 export function TipCard({ tip }: Readonly<{ tip: Tip }>) {

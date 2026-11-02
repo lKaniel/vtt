@@ -12,7 +12,7 @@ import {
   partsOf,
 } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { characterSummary, levelUpPlan, spellChoices, withHomebrewClass } from '../creator.ts';
+import { characterSummary, levelUpPlan, spellChoices, withHomebrewClass } from '../content/creator.ts';
 import { classesToPick, useHomebrewClasses } from './creator/use-homebrew.ts';
 import { useSaveCharacter } from './creator/use-save.ts';
 import { SpellPicker } from './creator/PickSteps.tsx';

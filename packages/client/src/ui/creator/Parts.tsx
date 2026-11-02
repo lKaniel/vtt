@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { parseRich } from '../../rich-text.ts';
+import { parseRich } from '../../text/rich-text.ts';
 import { Toggle } from '../kit/toggle.tsx';
 
 // Building blocks shared by the creator's steps.

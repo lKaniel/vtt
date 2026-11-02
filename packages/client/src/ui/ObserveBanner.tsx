@@ -1,4 +1,4 @@
-import type { Session } from '../session.ts';
+import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 
 /** GM: whose eyes the map shows (see session-hud.ts), with a way back. */

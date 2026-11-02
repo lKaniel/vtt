@@ -1,6 +1,6 @@
-import type { Entry } from '../../compendium.ts';
+import type { Entry } from '../../content/compendium.ts';
 import { t } from '../../i18n/index.ts';
-import type { Session } from '../../session.ts';
+import type { Session } from '../../session/session.ts';
 import { startDrag } from '../ActorsTab.tsx';
 import { IconFace } from '../Icon.tsx';
 import { Badge } from '../kit/badge.tsx';

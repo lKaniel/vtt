@@ -46,6 +46,14 @@ with `pnpm check-game data/games/<id>`.
 - TypeScript monorepo: `packages/core` (documents, `SystemDefinition`),
   `packages/shared` (the engine: scenes, walls, vision, fog, editor, lobby),
   `packages/system-dnd5e` (D&D rules, schemas and SRD content), `server`, `client`.
+- Server and client sources sit in folders by area; a new file joins the
+  area it belongs to, never the root. Server: `actions/` (client message
+  handlers, `game-routes.ts`), `play/` (rules at work: table, zones, clock,
+  keepers), `store/` (GameStore, documents, files, undo), `library/` (games,
+  packs, plugins, characters on disk), `http/`, `mcp/`, `foundry/`,
+  `migrate/`; the root keeps the Game and its integration tests. Client:
+  `session/` (Session and its parts), `play/`, `content/`, `text/`, `keys/`,
+  `audio/`, `dice/`, beside `canvas/`, `editor/`, `ui/`, `scripting/`.
 - Systems (`docs/systems.md`): the engine (core and shared) knows no D&D;
   `shared/engine-boundary.test.ts` fails on a system import or rules words
   there. D&D code goes in `system-dnd5e`; the engine reaches a system only
@@ -110,7 +118,7 @@ with `pnpm check-game data/games/<id>`.
 - Time of day is read in one place, `activeAt()` in `shared/levels.ts`
   (lights, regions and sounds with a darkness band); world time hooks there.
   Lasting spell zones are server-kept templates (`zone-templates.ts`).
-- The client's `Session` (`client/src/session.ts`) holds the connection,
+- The client's `Session` (`client/src/session/session.ts`) holds the connection,
   the table state and the parts that do the rest, with no base class: each
   area is a class that takes a small host interface and the session's
   events (like `Cards` in `session-cards.ts`, reached as `session.cards`;

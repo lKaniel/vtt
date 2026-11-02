@@ -1,5 +1,5 @@
 import { type Actor, type Creature, type Edition, omitKey, resolveCreature, type TokenView } from '@vtt/system-dnd5e';
-import { gameContent } from '../content.ts';
+import { gameContent } from '../content/content.ts';
 
 /** What a sheet shows and edits: an actor, or a token (an actor with a position). */
 export type Draft = Actor & Partial<Pick<TokenView, 'x' | 'y' | 'sheet' | 'health' | 'actor'>>;

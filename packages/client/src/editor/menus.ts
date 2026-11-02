@@ -1,7 +1,7 @@
 import type { Doc, DocRef, Patch } from '@vtt/core';
 import { type EditorMode, type MapEdit, type Point, type WallRules, wallPreset, type ZOrder } from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
-import { LIGHT_PRESETS, type LightPreset } from '../map-tools.ts';
+import { LIGHT_PRESETS, type LightPreset } from '../play/map-tools.ts';
 import type { Draft } from './shape-tools.ts';
 import { presetPatch } from './wall-fields.ts';
 
