@@ -156,7 +156,6 @@ export class PathPreview {
     l.moveTo(...points[0]!);
     for (const p of points.slice(1)) l.lineTo(...p);
     l.stroke({ width: 6, color, alpha: 0.8, cap: 'round', join: 'round' });
-    for (const p of points.slice(1, -1)) l.circle(p[0], p[1], 6).fill({ color, alpha: 0.8 });
     const end = points.at(-1)!;
     l.circle(end[0], end[1], g * 0.3).stroke({ width: 6, color });
   }
