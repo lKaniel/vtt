@@ -1,5 +1,6 @@
 import type { Character, Class } from '@vtt/system-dnd5e';
 import type {
+  BackupInfo,
   FoundryImportInput,
   FoundryImportReport,
   GameDetail,
@@ -38,7 +39,10 @@ export class ApiError extends Error {
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const init: RequestInit = { method };
-  if (body !== undefined) {
+  if (body instanceof Blob) {
+    init.headers = { 'content-type': 'application/zip' };
+    init.body = body;
+  } else if (body !== undefined) {
     init.headers = { 'content-type': 'application/json' };
     init.body = JSON.stringify(body);
   }
@@ -104,6 +108,17 @@ export const api = {
     call<object>('PUT', game(id, `/members/${encodeURIComponent(seat)}/password`), { password }),
   /** Become the server's admin with its admin password. */
   unlockAdmin: (password: string) => call<{ account: Account }>('POST', '/api/admin', { password }),
+  /** GM: the game's backups, newest first. */
+  backups: async (id: string) => (await call<{ backups: BackupInfo[] }>('GET', game(id, '/backups'))).backups,
+  /** GM: backs the game up now. */
+  backUp: async (id: string) => (await call<{ backup: BackupInfo }>('POST', game(id, '/backups'))).backup,
+  /** GM: puts a backup back (the game as it is now is backed up first). */
+  restoreBackup: (id: string, backup: string) =>
+    call<object>('POST', game(id, `/backups/${encodeURIComponent(backup)}/restore`)),
+  /** GM: where the game downloads as a zip. */
+  exportUrl: (id: string) => game(id, '/export'),
+  /** A new game from an exported zip, with you as its GM. */
+  importZip: async (file: Blob) => (await call<{ game: GameSummary }>('POST', '/api/games/import-zip', file)).game,
   setOpen: (id: string, open: boolean) => call<object>('PUT', game(id, '/open'), { open }),
   /** Changes a member's role, or removes them (null). */
   setMember: (id: string, member: string, role: Role | null) =>

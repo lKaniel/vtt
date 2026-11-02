@@ -80,7 +80,8 @@ sends each seat only what `chatFor` lets it read, live and on joining.
   corners, light rings to 5 ft and tile edges to the grid. Shift turns
   snapping off. Tokens on a scene without a grid never snap.
 - Right click opens the menu of what is under the pointer (selecting it if
-  it wasn't), or of the ground. Right or middle drag pans and opens nothing.
+  it wasn't), or of the ground. Right or middle drag pans and opens nothing, and so does a left drag
+  while Space is held.
   A right click also puts away a half-drawn wall, an aimed spell or a
   readied attack.
 - Tokens (`map-clicks.ts`): a click on a creature you control selects it

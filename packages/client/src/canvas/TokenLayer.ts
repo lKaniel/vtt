@@ -16,6 +16,7 @@ import { clickToken } from '../map-clicks.ts';
 import type { Session } from '../session.ts';
 import { applyTokenFilter, drawTokenRing, faceScale, onlookerOf } from './token-face.ts';
 import type { Viewer } from './Vision.ts';
+import { spaceKey } from '../space-pan.ts';
 
 /** Token walking speed when animating a move, pixels per second. */
 const WALK_SPEED = 900;
@@ -286,6 +287,8 @@ export class TokenLayer {
    * (a pile's window).
    */
   private press(id: string, e: FederatedPointerEvent): void {
+    // Space held: the press pans the map (MapView) instead.
+    if (spaceKey.held) return;
     const s = this.session;
     s.closeMenu();
     if (e.shiftKey || e.ctrlKey || e.metaKey) {

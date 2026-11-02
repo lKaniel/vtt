@@ -12,11 +12,23 @@ import { Input } from './kit/input.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 import { ApprovalPanel, SeatPassword } from './GameAccess.tsx';
+import { BackupsPanel } from './GameArchive.tsx';
 
 // One game's page in the lobby: its members and their roles, the invite
 // link, and the door to the table.
 
 type Go = (to: Route) => void;
+
+/** The GM's side of a game's page: the invite, who joins, backups. */
+function GmPanels({ game, onChanged }: Readonly<{ game: GameDetail; onChanged: () => void }>) {
+  return (
+    <>
+      <InvitePanel game={game} onChanged={onChanged} />
+      <ApprovalPanel game={game} onChanged={onChanged} />
+      <BackupsPanel game={game} />
+    </>
+  );
+}
 
 /** One game: who is in it, its invite link, and entering it with a character. */
 export function GamePage({
@@ -41,8 +53,7 @@ export function GamePage({
           <Members game={game} account={account} onChanged={reload} onLeft={() => go({ name: 'games' })} />
           <aside className="lobby-side">
             <EnterGame game={game} characters={characters} go={go} />
-            {gm && <InvitePanel game={game} onChanged={reload} />}
-            {gm && <ApprovalPanel game={game} onChanged={reload} />}
+            {gm && <GmPanels game={game} onChanged={reload} />}
             {(gm || account.admin) && !game.home && <DeleteGame game={game} onDeleted={() => go({ name: 'games' })} />}
           </aside>
         </div>
