@@ -1,4 +1,4 @@
-import { areaShape, type Attack, attackRange, type Token, tokenDistance } from '@vtt/system-dnd5e';
+import { areaShape, type Attack, attackRange, type Token, tokenDistance, type TokenView } from '@vtt/system-dnd5e';
 import {
   hasLineOfSight,
   gridKind,
@@ -16,6 +16,19 @@ import { previewLabel } from '../text/spell-text.ts';
 import type { Session } from '../session/session.ts';
 import { aimPoint, walkOptions } from '../play/walking.ts';
 import { needsClearPath, type Aiming } from '../play/targeting.ts';
+import { type WalkPlan, type WalkWarning, walkWarnings } from '../play/walk-warnings.ts';
+import { t } from '../i18n/index.ts';
+
+/** What the walk preview needs besides the scene: who and what the player knows of, and the movement left. */
+type WalkContext = Omit<WalkPlan, 'mover' | 'path' | 'gridSize' | 'grid'>;
+
+/** A walk the map previews, for the `walkPreview` hook: null feet when there is no way there. */
+export interface WalkShown {
+  token: string;
+  to: Point;
+  feet: number | null;
+  warnings: { kind: WalkWarning['kind']; at: Point; text: string }[];
+}
 
 const OK_COLOR = 0xffffff;
 const TOO_FAR_COLOR = 0xff8060;
@@ -42,39 +55,85 @@ export class PathPreview {
     text: '',
     style: { fill: OK_COLOR, fontSize: 28, fontWeight: '600', stroke: { color: 0x000000, width: 5 } },
   });
+  /** What the walk would set off, under the label. */
+  private notes = new Text({
+    text: '',
+    style: {
+      fill: BLOCKED_COLOR,
+      fontSize: 22,
+      fontWeight: '600',
+      stroke: { color: 0x000000, width: 4 },
+      align: 'center',
+    },
+  });
   private shownFor?: string;
 
   constructor() {
     this.label.anchor.set(0.5, 1.4);
-    this.container.addChild(this.line, this.label);
+    this.notes.anchor.set(0.5, 0);
+    this.container.addChild(this.line, this.label, this.notes);
   }
 
   clear(): void {
     this.line.clear();
     this.label.text = '';
+    this.notes.text = '';
     this.shownFor = undefined;
   }
 
-  /** Redraws unless the token and the hovered square are unchanged (or `force`). */
-  show(token: Token, hover: Point, ctx: PreviewContext & { budget: number; walk: WalkOptions }): void {
+  /** Redraws unless the token and the hovered square are unchanged (or `force`); says what it drew. */
+  show(
+    token: TokenView,
+    hover: Point,
+    ctx: PreviewContext & { walk: WalkOptions; plan: WalkContext },
+  ): WalkShown | undefined {
     const g = ctx.gridSize;
     const target = this.aim(hover, ctx);
-    if (!this.needsRedraw(`walk:${target[0]},${target[1]}:${token.x},${token.y}`, ctx.force)) return;
+    if (!this.needsRedraw(`walk:${target[0]},${target[1]}:${token.x},${token.y}`, ctx.force)) return undefined;
+    const shown = { token: token.id, to: target };
     const path = walkPath([token.x, token.y], target, wallsAt(ctx.walls, token.elevation), {
       ...ctx.walk,
       cost: ctx.cost,
     });
     if (!path) {
       this.line.circle(target[0], target[1], g * 0.3).stroke({ width: 6, color: BLOCKED_COLOR });
-      return;
+      this.setLabel(t('walk.blocked'), BLOCKED_COLOR);
+      this.placeLabel(target, ctx);
+      return { ...shown, feet: null, warnings: [] };
     }
-    if (path.points.length < 2) return;
-    // In a fight the limit is what's left of this turn's movement.
-    const limit = Number.isFinite(ctx.budget) ? ctx.budget : token.speed;
-    const color = path.feet > limit ? TOO_FAR_COLOR : OK_COLOR;
-    this.drawRoute(path.points, color, g);
-    this.setLabel(Number.isFinite(ctx.budget) ? `${path.feet} / ${ctx.budget} ft` : `${path.feet} ft`, color);
+    if (path.points.length < 2) return undefined;
+    const warnings = walkWarnings({ ...ctx.plan, mover: token, path: path.points, gridSize: g, grid: ctx.grid });
+    const tooFar = warnings.find((w) => w.kind === 'tooFar');
+    this.drawRoute(path.points, tooFar ? TOO_FAR_COLOR : OK_COLOR, g);
+    if (tooFar) this.drawLine(tooFar.reach, OK_COLOR);
+    for (const w of warnings) this.drawWarning(w, g);
+    const budget = ctx.plan.budget;
+    this.setLabel(
+      Number.isFinite(budget) ? `${path.feet} / ${budget} ft` : `${path.feet} ft`,
+      tooFar ? TOO_FAR_COLOR : OK_COLOR,
+    );
+    this.notes.text = warnings.map(warningText).join('\n');
     this.placeLabel(target, ctx);
+    return {
+      ...shown,
+      feet: path.feet,
+      warnings: warnings.map((w) => ({ kind: w.kind, at: w.at, text: warningText(w) })),
+    };
+  }
+
+  /** A mark where something happens along the way: a red ring where a foe may strike, with a line from it. */
+  private drawWarning(w: WalkWarning, g: number): void {
+    const l = this.line;
+    if (w.kind === 'opportunity') {
+      l.moveTo(...w.from)
+        .lineTo(...w.at)
+        .stroke({ width: 3, color: BLOCKED_COLOR, alpha: 0.7 });
+      l.circle(w.at[0], w.at[1], g * 0.12).fill({ color: BLOCKED_COLOR, alpha: 0.9 });
+    } else if (w.kind === 'tooFar') {
+      l.circle(w.at[0], w.at[1], g * 0.08).fill({ color: TOO_FAR_COLOR });
+    } else {
+      l.circle(w.at[0], w.at[1], g * 0.1).stroke({ width: 4, color: LONG_RANGE_COLOR });
+    }
   }
 
   /** A line from the attacker to the hovered square, saying whether it's in range. */
@@ -147,15 +206,23 @@ export class PathPreview {
   }
 
   private placeLabel(target: Point, ctx: PreviewContext): void {
+    const scale = Math.max(1, 0.8 / ctx.zoom);
     this.label.position.set(target[0], target[1] - ctx.gridSize * 0.3);
-    this.label.scale.set(Math.max(1, 0.8 / ctx.zoom));
+    this.label.scale.set(scale);
+    this.notes.position.set(target[0], target[1] + ctx.gridSize * 0.4);
+    this.notes.scale.set(scale);
   }
 
-  private drawRoute(points: Point[], color: number, g: number): void {
+  private drawLine(points: readonly Point[], color: number): void {
     const l = this.line;
     l.moveTo(...points[0]!);
     for (const p of points.slice(1)) l.lineTo(...p);
     l.stroke({ width: 6, color, alpha: 0.8, cap: 'round', join: 'round' });
+  }
+
+  private drawRoute(points: Point[], color: number, g: number): void {
+    const l = this.line;
+    this.drawLine(points, color);
     const end = points.at(-1)!;
     l.circle(end[0], end[1], g * 0.3).stroke({ width: 6, color });
   }
@@ -166,7 +233,7 @@ export function showPreview(
   preview: PathPreview,
   session: Session,
   at: {
-    token: Token & { sheet?: { attacks: Attack[] } };
+    token: TokenView;
     hover: Point;
     walls: readonly Wall[];
     zoom: number;
@@ -190,6 +257,21 @@ export function showPreview(
   else if (attack) preview.showAttack(token, hover, attack, ctx);
   else {
     const walk = walkOptions(world, token, session.tokens.values());
-    preview.show(token, hover, { ...ctx, budget: session.turns.movementLeft(token.id), walk });
+    const plan = {
+      tokens: session.tokens.values(),
+      regions,
+      darkness: world.darkness,
+      combat: session.combat,
+      budget: session.turns.movementLeft(token.id),
+    };
+    const shown = preview.show(token, hover, { ...ctx, walk, plan });
+    if (shown) session.scripts.hooks.call('walkPreview', shown);
   }
+}
+
+/** A warning in words, for the lines under the label. */
+function warningText(w: WalkWarning): string {
+  if (w.kind === 'opportunity') return t('walk.opportunity', { name: w.name });
+  if (w.kind === 'trap') return w.name ? t('walk.trap', { name: w.name }) : t('walk.trapUnnamed');
+  return t(w.kind === 'tooFar' ? 'walk.tooFar' : 'walk.difficult');
 }

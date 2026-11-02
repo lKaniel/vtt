@@ -1,6 +1,8 @@
 import { TokenSchema, type TokenView } from '@vtt/system-dnd5e';
-import { describe, expect, it } from 'vitest';
-import { aimPoint, dragsFreely, walkOptions } from './walking.ts';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { aimPoint, dragsFreely, previewToken, walkOptions } from './walking.ts';
+import { closeSession, openSession, token as placed, welcome } from '../session/session.fixtures.ts';
+import type { Session } from '../session/session.ts';
 
 const token = (data: object): TokenView => TokenSchema.parse({ id: 't', name: 'T', x: 150, y: 150, ...data });
 const hero = token({ id: 'hero' });
@@ -28,5 +30,37 @@ describe('the GM dragging in the map editor', () => {
     expect(dragsFreely('tokens', { ...world, grid: 'square' })).toBe(false);
     expect(dragsFreely('walls', world)).toBe(false);
     expect(dragsFreely('tokens', undefined)).toBe(false);
+  });
+});
+
+describe('previewToken', () => {
+  let session: Session;
+
+  beforeEach(() => {
+    const { session: s, ws } = openSession();
+    session = s;
+    ws.receive(welcome([placed('hero'), { ...placed('goblin', 550), ownership: undefined }]));
+    session.select('hero');
+  });
+
+  afterEach(() => closeSession(session));
+
+  const open = { hover: [350, 350] as [number, number], editing: false };
+
+  it("shows your creature's walk while the pointer rests on open ground", () => {
+    expect(previewToken(session, open)?.id).toBe('hero');
+  });
+
+  it('shows nothing over a creature, while panning or pressing, or in another editor mode', () => {
+    expect(previewToken(session, { ...open, hover: [550, 50] })).toBeUndefined();
+    expect(previewToken(session, { ...open, drag: { token: false, panning: true } })).toBeUndefined();
+    expect(previewToken(session, { ...open, drag: { token: false, panning: false } })).toBeUndefined();
+    expect(previewToken(session, { ...open, editing: true })).toBeUndefined();
+  });
+
+  it('shows the path of a token being dragged', () => {
+    expect(previewToken(session, { ...open, hover: [550, 50], drag: { token: true, panning: false } })?.id).toBe(
+      'hero',
+    );
   });
 });

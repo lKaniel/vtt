@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { srdFor } from './content.ts';
 import { nextTurn, startCombat } from './combat.ts';
 import { resolveCreature } from './creature.ts';
-import { opportunityAttackers } from './reactions.ts';
+import { opportunityAttackers, threatsAlong } from './reactions.ts';
 import { type Token, TokenSchema } from './token-schema.ts';
 
 const G = 100;
@@ -39,6 +39,28 @@ describe('opportunity attacks', () => {
     expect(opportunityAttackers({ mover: hero(), path: away, others, gridSize: G, reacted: ['near'] })).toEqual([]);
     const friend = fighters([goblin('pal', 1, { ownership: { default: 'limited', bo: 'owner' } })]);
     expect(opportunityAttackers({ mover: hero(), path: away, others: friend, gridSize: G, reacted: [] })).toEqual([]);
+  });
+});
+
+describe('threatsAlong', () => {
+  it('says which enemies a walk would draw an attack from, and where it leaves their reach', () => {
+    const near = goblin('near', 1);
+    const path = [at(0, 0), at(0, 1), at(0, 2)];
+    const threats = [
+      { token: near, reach: 5 },
+      { token: goblin('long', 2), reach: 10 },
+    ];
+    expect(threatsAlong({ mover: hero(), path, threats, gridSize: G })).toEqual([{ id: 'near', at: at(0, 2) }]);
+  });
+
+  it('is empty for a creature that disengaged, and ignores allies', () => {
+    const away = [at(0, 0), at(0, 1), at(0, 2)];
+    const disengaged = hero({ effects: [{ id: 'd', name: 'Disengaged', disengaged: true }] });
+    expect(
+      threatsAlong({ mover: disengaged, path: away, threats: [{ token: goblin('near', 1), reach: 5 }], gridSize: G }),
+    ).toEqual([]);
+    const pal = goblin('pal', 1, { ownership: { default: 'limited', bo: 'owner' } });
+    expect(threatsAlong({ mover: hero(), path: away, threats: [{ token: pal, reach: 5 }], gridSize: G })).toEqual([]);
   });
 });
 

@@ -29,6 +29,7 @@ import { TokenLayer } from './TokenLayer.ts';
 import { WeatherLayer } from './WeatherLayer.ts';
 import { Vision } from './Vision.ts';
 import { spaceKey } from '../play/space-pan.ts';
+import { previewToken } from '../play/walking.ts';
 import { listenToWheel } from './wheel-zoom.ts';
 
 extensions.add(CullerPlugin);
@@ -443,15 +444,10 @@ export class MapView {
     if (performance.now() - drag.at < 80) this.cam.release();
   }
 
-  /** The token whose path shows: while it is dragged, or aiming a spell or attack. */
-  private pathToken() {
-    const s = this.session;
-    const showing = !!(this.drag?.token ?? s.actions.armed ?? s.actions.aiming) && !this.drag?.panning;
-    return showing && s.selected ? s.tokens.get(s.selected) : undefined;
-  }
-
   private updatePreview(force: boolean): void {
-    const token = this.pathToken();
+    const drag = this.drag && { token: !!this.drag.token, panning: this.drag.panning };
+    const at = { hover: this.hoverPoint, drag, editing: this.editor.active };
+    const token = previewToken(this.session, at);
     if (!token || !this.hoverPoint) return this.preview.clear();
     showPreview(this.preview, this.session, {
       token,
