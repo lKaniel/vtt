@@ -19,12 +19,17 @@ const joined = <T extends { id: string }>(base: ReadonlyMap<string, T>, mine: re
 /** `content` plus the sheet's own items and spells (they win over a compendium entry of the same id). */
 export function withOwn(content: Content, sheet: Sheet): Content {
   const own = sheet.own;
-  if (!own?.items?.length && !own?.spells?.length) return content;
+  if (!own?.items?.length && !own?.spells?.length && !own?.monsters?.length) return content;
   const known = cache.get(own) ?? new WeakMap<Content, Content>();
   cache.set(own, known);
   const hit = known.get(content);
   if (hit) return hit;
-  const mine = { ...content, items: joined(content.items, own.items), spells: joined(content.spells, own.spells) };
+  const mine = {
+    ...content,
+    items: joined(content.items, own.items),
+    spells: joined(content.spells, own.spells),
+    monsters: joined(content.monsters, own.monsters),
+  };
   known.set(content, mine);
   return mine;
 }

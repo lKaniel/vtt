@@ -1,5 +1,14 @@
 import type { Point } from '@vtt/shared';
-import { joinCombat, type Spell, type Token, TokenSchema } from '@vtt/system-dnd5e';
+import {
+  abilityMod,
+  joinCombat,
+  type Spell,
+  spellCreature,
+  type SummonCast,
+  summonCount,
+  type Token,
+  TokenSchema,
+} from '@vtt/system-dnd5e';
 import type { CastRequest } from './spell-actions.ts';
 import { Refusal, type Fighter, type Table } from './table.ts';
 
@@ -11,18 +20,21 @@ export function summon(
   table: Table,
   caster: Fighter,
   spell: Spell,
-  req: Pick<CastRequest, 'summon' | 'point'>,
+  req: Pick<CastRequest, 'summon' | 'point'> & { slot: number },
 ): Token[] {
   const options = spell.summon!.options;
   const choice = options.find((o) => o.monster === req.summon) ?? (options.length === 1 ? options[0] : undefined);
   if (!choice) throw new Refusal(`Pick what ${spell.name} summons: ${options.map((o) => o.monster).join(', ')}`);
-  const monster = table.content(caster.token).monsters.get(choice.monster);
+  const cast = castOf(table, caster, spell, req.slot);
+  const built = spellCreature(choice, cast);
+  const monster = built ?? table.content(caster.token).monsters.get(choice.monster);
   if (!monster) throw new Refusal(`There is no ${choice.monster} in the bestiary`);
-  const spots = freeSpots(table, snapTo(table, req.point!, monster.size), monster.size, choice.count);
+  const count = summonCount(choice, cast);
+  const spots = freeSpots(table, snapTo(table, req.point!, monster.size), monster.size, count);
   const tokens = spots.map(([x, y], i) =>
     TokenSchema.parse({
       id: freeId(table, choice.monster, i),
-      name: choice.count > 1 ? `${monster.name} ${i + 1}` : monster.name,
+      name: count > 1 ? `${monster.name} ${i + 1}` : monster.name,
       x,
       y,
       size: monster.size,
@@ -30,6 +42,7 @@ export function summon(
       speed: monster.speed,
       darkvision: monster.darkvision,
       monster: monster.id,
+      ...(built && { own: { monsters: [built] } }),
       ownership: caster.token.ownership,
       summon: { by: caster.token.id, spell: spell.id, concentration: spell.concentration },
       leader: spell.summon!.turn === 'shared' ? caster.token.id : undefined,
@@ -47,6 +60,13 @@ export function summon(
     );
   }
   return tokens;
+}
+
+/** The slot, the spell's level and the caster's spell attack and modifier, for a creature built by the spell. */
+function castOf(table: Table, caster: Fighter, spell: Spell, slot: number): SummonCast {
+  const sheet = caster.sheet.caster;
+  const mod = sheet ? abilityMod(caster.sheet.abilities[sheet.ability]) : 0;
+  return { slot: Math.max(slot, spell.level), level: spell.level, attack: sheet?.attack ?? 0, mod };
 }
 
 function freeId(table: Table, base: string, from: number): string {

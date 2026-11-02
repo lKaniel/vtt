@@ -116,7 +116,7 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     ...defenses(stats, monster),
     ...kindAndSaves(monster, cls, { abilities, proficiency }),
     ...effectParts(token, features, content.edition, monster?.conditionImmunities),
-    ...classParts(levels),
+    ...classParts(levels, monster),
     caster: casterSheet(token, { abilities, proficiency }, content),
     ...legendaryParts(token, monster),
     features,
@@ -216,10 +216,15 @@ export function ownEffects(token: Token, features: readonly FeatureSheet[]): Eff
 /** Extra attack (the best of its classes), sneak attack by rogue level and weapon mastery. */
 function classParts(
   levels: readonly ClassLevel[],
+  monster: Monster | undefined,
 ): Pick<Creature, 'attacksPerAction' | 'sneakAttack' | 'weaponMastery'> {
   const sneak = levels.find((l) => l.cls?.sneakAttack);
   return {
-    attacksPerAction: Math.max(1, ...levels.map((l) => levelValue(l.cls?.attacks ?? [], l.level))),
+    attacksPerAction: Math.max(
+      1,
+      monster?.multiattack ?? 0,
+      ...levels.map((l) => levelValue(l.cls?.attacks ?? [], l.level)),
+    ),
     sneakAttack: sneak ? `${Math.ceil(sneak.level / 2)}d6` : undefined,
     weaponMastery: levels.some((l) => l.cls?.weaponMastery),
   };

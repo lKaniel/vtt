@@ -188,6 +188,8 @@ export const MonsterSchema = z.object({
   /** Saving throws the monster is proficient in. */
   saves: z.array(z.enum(ABILITIES)).default([]),
   attacks: z.array(AttackSchema).default([]),
+  /** Attacks it makes with the Attack action (a spell's creature: half the spell's level). */
+  multiattack: z.number().int().positive().optional(),
   ...defenses,
   conditionImmunities: z.array(z.string()).default([]),
   ...legendaryParts,

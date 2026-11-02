@@ -788,6 +788,10 @@ its `own` field, written like compendium entries: `"own": { "items": [...],
 `inventory` by their id like any other item, own spells are known without
 listing them in `stats.spells`, and own features are granted. Existing items,
 spells and features are added by dragging them from the Compendium.
+`own.monsters` holds stat blocks of its own: a creature a spell brings with
+its stat block (2024 giant insect, summon dragon, find steed, animated
+objects) carries the one the server built for the slot it was cast with, and
+its `monster` names it.
 
 The server writes the rest of a creature's magic to its token, and you can
 edit it too:
