@@ -447,21 +447,25 @@ without one):
 }
 ```
 
-| Field         | Meaning                                                                 |
-| ------------- | ----------------------------------------------------------------------- |
-| `id`          | Lowercase letters, digits, dashes. An actor's must match its file name. |
-| `x`, `y`      | A token's centre in pixels (a square centre on a square grid).          |
-| `size`        | In squares: 1 medium, 2 large, 3 huge. Default 1.                       |
-| `color`       | Disc colour behind the placeholder when there is no picture.            |
-| `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency.     |
-| `speed`       | Walking speed in feet. Default 30.                                      |
-| `ownership`   | Who may see, read and act with it; see Ownership below.                 |
-| `darkvision`  | Range in feet. Also `blindsight`, `tremorsense`, `truesight`.           |
-| `devilsSight` | Sees in magical and nonmagical darkness to this range, in feet.         |
-| `light`       | A light it carries, like a placed light: `{ "bright": 20, "dim": 20 }`. |
-| `hidden`      | A token's: `true` = only the GM sees it.                                |
-| `visibleTo`   | A token's: only these players (and the GM) see it. Used for illusions.  |
-| `folder`      | An actor's: groups it in the Actors list.                               |
+| Field                        | Meaning                                                                                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                         | Lowercase letters, digits, dashes. An actor's must match its file name.                                                                             |
+| `x`, `y`                     | A token's centre in pixels (a square centre on a square grid).                                                                                      |
+| `size`                       | In squares: 1 medium, 2 large, 3 huge. Default 1.                                                                                                   |
+| `color`                      | Disc colour behind the placeholder when there is no picture.                                                                                        |
+| `img`                        | Picture URL, drawn as-is: use a top-down cut-out with transparency.                                                                                 |
+| `displayName`, `displayBars` | When its name and hit point bar show: `never`, `control` (while its owner has it selected), `ownerHover`, `hover`, `owner`, `always` (the default). |
+| `scale`                      | How big its picture is drawn in its square, 0.2 to 3. Default 1.                                                                                    |
+| `mirrorX`, `mirrorY`         | Flip its picture left to right, or upside down.                                                                                                     |
+| `ring`                       | A ring round its picture: `{ "color": "#e0b040", "background": "#202020" }`.                                                                        |
+| `speed`                      | Walking speed in feet. Default 30.                                                                                                                  |
+| `ownership`                  | Who may see, read and act with it; see Ownership below.                                                                                             |
+| `darkvision`                 | Range in feet. Also `blindsight`, `tremorsense`, `truesight`.                                                                                       |
+| `devilsSight`                | Sees in magical and nonmagical darkness to this range, in feet.                                                                                     |
+| `light`                      | A light it carries, like a placed light: `{ "bright": 20, "dim": 20 }`.                                                                             |
+| `hidden`                     | A token's: `true` = only the GM sees it.                                                                                                            |
+| `visibleTo`                  | A token's: only these players (and the GM) see it. Used for illusions.                                                                              |
+| `folder`                     | An actor's: groups it in the Actors list.                                                                                                           |
 
 ### Ownership
 

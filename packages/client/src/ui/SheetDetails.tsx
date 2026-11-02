@@ -5,6 +5,7 @@ import { gameContent } from '../content.ts';
 import { setOwnership, setStat } from '../token-edit.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
 import { Check, Field, NumberInput, TextInput } from './EditorFields.tsx';
+import { LookFields } from './SheetLook.tsx';
 import { withKey, type Draft, type Update } from './sheet-model.ts';
 import { Button } from './kit/button.tsx';
 import { ColorInput } from './kit/color-input.tsx';
@@ -62,6 +63,7 @@ function Identity({ session, kind, value, update }: Readonly<SheetProps>) {
         </Field>
         <LightFields value={value} update={update} />
       </div>
+      <LookFields value={value} update={update} />
       {session.isGm() && (
         <>
           <Check label="Hidden from players" checked={value.hidden} onChange={set('hidden', true)} />

@@ -1,4 +1,4 @@
-import { canObserve, isGm, isParty, ownersOf, type Point } from '@vtt/shared';
+import { canObserve, displays, isGm, isParty, ownersOf, type Point, type TokenLook } from '@vtt/shared';
 import { currentTurn, hasCondition, type Health, type TokenView } from '@vtt/system-dnd5e';
 import {
   Assets,
@@ -13,6 +13,7 @@ import { BarTween } from '../bar-tween.ts';
 import { clickSelect, modsOf } from '../editor/selection.ts';
 import { cutoutOf, portraitOf } from '../icon-art.ts';
 import type { Session } from '../session.ts';
+import { drawTokenRing, faceScale, onlookerOf } from './token-face.ts';
 import type { Viewer } from './Vision.ts';
 
 /** Token walking speed when animating a move, pixels per second. */
@@ -55,6 +56,8 @@ interface Sprite {
   r: number;
   hover: boolean;
   bar?: BarTween;
+  /** Its bars show to you (its `displayBars`). */
+  showBar: boolean;
   /** Flinch start time and colour, lunge start time and direction. */
   flinch?: { at: number; color: number };
   lunge?: { at: number; dir: Point };
@@ -80,14 +83,13 @@ export class TokenLayer {
     view.r = r;
     trackHp(view, token);
     this.redrawGround(view);
-    const cutout = cutoutOf(token);
-    drawPlaceholder(view, cutout ? undefined : token.color);
-    showTexture(view.face, portraitOf(token), cutout ? box : r * 2);
-    redrawStatus(view);
+    const cutout = cutoutOf(token) && !token.ring;
+    drawPlaceholder(view, cutout ? undefined : (token.ring?.background ?? token.color));
+    showTexture(view.face, portraitOf(token), cutout ? box : r * 2, token);
     const { label, faint } = describe(token);
     view.label.text = label;
     view.label.position.set(0, r * 1.15);
-    view.label.visible = this.labelsVisible;
+    this.refreshLook(view);
     view.root.alpha = faint ? 0.5 : 1;
     view.root.cursor = this.isTarget(token) ? 'crosshair' : 'pointer';
   }
@@ -108,7 +110,15 @@ export class TokenLayer {
 
   showLabels(visible: boolean): void {
     this.labelsVisible = visible;
-    for (const v of this.views.values()) v.label.visible = visible;
+    for (const v of this.views.values()) this.refreshLook(v);
+  }
+
+  /** Shows its name and bars as its display modes say for you now (selected, hovered), and redraws its status. */
+  private refreshLook(view: Sprite): void {
+    const you = onlookerOf(this.session, view.token, view.hover);
+    view.label.visible = this.labelsVisible && displays(view.token.displayName, you);
+    view.showBar = displays(view.token.displayBars, you);
+    redrawStatus(view);
   }
 
   /** Your tokens (owned or observed), which see for you, where they're drawn right now. The GM has none. */
@@ -245,7 +255,20 @@ export class TokenLayer {
       this.press(t.id, e);
     });
     this.container.addChild(root);
-    const view: Sprite = { root, ground, disc, face, faceMask, status, label, route: [], token, r: 0, hover: false };
+    const view: Sprite = {
+      root,
+      ground,
+      disc,
+      face,
+      faceMask,
+      status,
+      label,
+      route: [],
+      token,
+      r: 0,
+      hover: false,
+      showBar: true,
+    };
     this.watchHover(view);
     this.views.set(token.id, view);
     return view;
@@ -273,6 +296,7 @@ export class TokenLayer {
     const set = (hover: boolean) => {
       view.hover = hover;
       this.redrawGround(view);
+      this.refreshLook(view);
     };
     view.root.on('pointerover', () => set(true));
     view.root.on('pointerout', () => set(false));
@@ -299,14 +323,15 @@ function describe(token: TokenView): { label: string; faint: boolean } {
  * Shows a picture once it has loaded, scaled to fit a `size` square without
  * stretching; switching pictures keeps the old one until then.
  */
-function showTexture(sprite: PixiSprite, url: string, size: number): void {
-  const key = `${url}@${size}`;
+function showTexture(sprite: PixiSprite, url: string, size: number, look: TokenLook): void {
+  const key = `${url}@${size}@${look.scale}${look.mirrorX}${look.mirrorY}`;
   if (sprite.label === key) return;
   sprite.label = key;
   void Assets.load<Texture>(url).then((texture) => {
     if (sprite.destroyed || sprite.label !== key) return;
     sprite.texture = texture;
-    sprite.scale.set(size / Math.max(texture.width, texture.height, 1));
+    const { x, y } = faceScale(look, size / Math.max(texture.width, texture.height, 1));
+    sprite.scale.set(x, y);
   });
 }
 
@@ -355,7 +380,9 @@ function trackHp(view: Sprite, token: TokenView): void {
 }
 
 function redrawStatus(view: Sprite): void {
-  drawStatus(view.status.clear(), view, view.r);
+  view.status.clear();
+  if (view.token.ring) drawTokenRing(view.status, view.r, view.token.ring, view.token.color);
+  if (view.showBar) drawStatus(view.status, view, view.r);
   drawEffects(view.status, view.token, view.r);
 }
 
