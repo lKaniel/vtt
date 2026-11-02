@@ -93,7 +93,11 @@ so sheets, tooltips and the Compendium know pack monsters too.
   packs it uses. Search by name and tag, pick a tag chip, filter by kind or
   pack. Drag a picture onto the map to place it as a tile at its own size,
   or click it to place it in view. **Upload** adds files to the game's
-  `assets/uploads/` (pictures, sounds and videos up to 20 MB).
+  `assets/uploads/` (pictures, sounds and videos up to 20 MB). Videos show
+  their first frame and play while the pointer is over them. A still picture
+  shipped beside a video (`Bless_01_Thumb.webp` next to `Bless_01.webm`, or
+  the same name under a `thumbs/` or `thumbnails/` folder, as JB2A does)
+  becomes its preview; thumbnails are left out of the list.
 - **Packs**: the system's packs and the installed ones, with a checkbox to
   use each in this game. Open a pack to see its compendia: import a scene,
   or add an actor to the Actors list.

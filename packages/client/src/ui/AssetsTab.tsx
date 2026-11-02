@@ -173,15 +173,11 @@ function MediaView({ session }: Readonly<{ session: Session }>) {
 function MediaTile({ session, media }: Readonly<{ session: Session; media: MediaEntry }>) {
   const [size, setSize] = useState<{ w: number; h: number }>();
   const title = [media.name, ...media.tags].join(' · ');
-  if (media.kind !== 'image') {
+  if (media.kind === 'audio') {
     return (
       <li className="asset-row" title={title}>
         <span className="lib-name">{media.name}</span>
-        {media.kind === 'audio' ? (
-          <audio src={assetUrl(media.src)} controls preload="none" />
-        ) : (
-          <span className="lib-sub">video</span>
-        )}
+        <audio src={assetUrl(media.src)} controls preload="none" />
       </li>
     );
   }
@@ -193,27 +189,67 @@ function MediaTile({ session, media }: Readonly<{ session: Session; media: Media
       onDragStart={(e) => startDrag(e, { kind: 'media', src: media.src, ...size })}
       onClick={() => session.placeMedia(media.src, session.viewCentre(), size)}
     >
+      <Preview media={media} onSize={setSize} />
+      <span className="asset-name">{media.name}</span>
+      {media.kind === 'image' && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="absolute top-1 right-1 bg-black/60"
+          aria-label={`Show ${media.name} to players`}
+          title="Show to players"
+          onClick={(e) => {
+            e.stopPropagation();
+            session.showImage(media.src, media.name);
+          }}
+        >
+          <EyeIcon />
+        </Button>
+      )}
+    </li>
+  );
+}
+
+/**
+ * A picture, or a video's thumbnail (a JB2A pack ships one per video) or
+ * first frame, which plays while the pointer is over it.
+ */
+function Preview({ media, onSize }: Readonly<{ media: MediaEntry; onSize: (size: { w: number; h: number }) => void }>) {
+  const [hover, setHover] = useState(false);
+  const still = media.kind === 'image' ? media.src : media.thumb;
+  if (still && !(media.kind === 'video' && hover)) {
+    return (
       <img
-        src={assetUrl(media.src)}
+        src={assetUrl(still)}
         alt={media.name}
         loading="lazy"
-        onLoad={(e) => setSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
+        onMouseEnter={() => setHover(true)}
+        onLoad={(e) =>
+          media.kind === 'image' && onSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
+        }
       />
-      <span className="asset-name">{media.name}</span>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="absolute top-1 right-1 bg-black/60"
-        aria-label={`Show ${media.name} to players`}
-        title="Show to players"
-        onClick={(e) => {
-          e.stopPropagation();
-          session.showImage(media.src, media.name);
-        }}
-      >
-        <EyeIcon />
-      </Button>
-    </li>
+    );
+  }
+  return (
+    <video
+      src={assetUrl(media.src)}
+      muted
+      loop
+      playsInline
+      preload="metadata"
+      autoPlay={hover}
+      aria-label={media.name}
+      className="h-[72px] w-full bg-black/40 object-contain"
+      onMouseEnter={(e) => {
+        setHover(true);
+        e.currentTarget.play().catch(() => undefined);
+      }}
+      onMouseLeave={(e) => {
+        setHover(false);
+        e.currentTarget.pause();
+      }}
+      onLoadedMetadata={(e) => onSize({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
+    />
   );
 }
 

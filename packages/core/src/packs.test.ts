@@ -5,6 +5,7 @@ import {
   pickWildcard,
   wildcardMatches,
   type MediaEntry,
+  mediaEntry,
   mediaKind,
   mediaTags,
   PackManifestSchema,
@@ -13,6 +14,7 @@ import {
   parsePackRef,
   searchMedia,
   topTags,
+  withThumbnails,
 } from './index.ts';
 
 describe('a pack manifest', () => {
@@ -107,5 +109,38 @@ describe('wildcard pictures', () => {
     expect(wildcardMatches('/assets/tokens/goblin-*.webp', files)).toEqual(files.slice(0, 2));
     expect(pickWildcard('/assets/tokens/goblin-*.webp', files, () => 0.99)).toBe(files[1]);
     expect(pickWildcard('pack://p/a*.png', files, () => 0)).toBeUndefined();
+  });
+});
+
+describe('video thumbnails', () => {
+  const entry = (path: string) => mediaEntry(`pack://fx/${path}`, path, 'fx')!;
+
+  it('become the preview of the video they belong to and leave the list', () => {
+    const list = withThumbnails([
+      entry('Library/Bless/Bless_01_Yellow_400x400.webm'),
+      entry('Library/Bless/Bless_01_Yellow_400x400_Thumb.webp'),
+      entry('Library/Fire/Fire_Bolt.webm'),
+      entry('Library/Fire/fire_bolt.thumb.png'),
+      entry('Library/Ice/Ice_Knife.webm'),
+      entry('Maps/Cave.webp'),
+    ]);
+    expect(list.map((m) => [m.name, m.thumb])).toEqual([
+      ['Bless_01_Yellow_400x400', 'pack://fx/Library/Bless/Bless_01_Yellow_400x400_Thumb.webp'],
+      ['Fire_Bolt', 'pack://fx/Library/Fire/fire_bolt.thumb.png'],
+      ['Ice_Knife', undefined],
+      ['Cave', undefined],
+    ]);
+  });
+
+  it('are found in a thumbnails folder too, and hidden even with no video of theirs', () => {
+    const list = withThumbnails([
+      entry('Library/Bless/Bless_01.webm'),
+      entry('Thumbnails/Library/Bless/Bless_01.webp'),
+      entry('Thumbs/Orphan.webp'),
+      entry('Library/Lone_Thumb.webp'),
+    ]);
+    expect(list.map((m) => [m.name, m.thumb])).toEqual([
+      ['Bless_01', 'pack://fx/Thumbnails/Library/Bless/Bless_01.webp'],
+    ]);
   });
 });

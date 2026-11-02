@@ -1,6 +1,6 @@
 import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { enabledPacks, freeId, mediaEntry, type MediaEntry, mediaKind, slugify } from '@vtt/core';
+import { enabledPacks, freeId, mediaEntry, type MediaEntry, mediaKind, slugify, withThumbnails } from '@vtt/core';
 import { isGm, type Player } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import type { ClientMessage } from './client-messages.ts';
@@ -86,13 +86,13 @@ export class PackActions {
   }
 }
 
-/** The game's own assets, then the media of each pack it uses. */
+/** The game's own assets, then the media of each pack it uses; video thumbnails become the videos' previews. */
 export async function gameMedia(store: GameStore): Promise<MediaEntry[]> {
   const own = await filesUnder(join(store.dir, 'assets'));
   const entries = own.flatMap((rel) => mediaEntry(`/assets/${rel}`, rel) ?? []);
   const packs = store.packs;
-  if (!packs) return entries;
+  if (!packs) return withThumbnails(entries);
   const on = enabledPacks(packs.list(), store.campaign.packs, store.system.id);
   for (const pack of on) entries.push(...(await packs.media(pack.id)));
-  return entries;
+  return withThumbnails(entries);
 }

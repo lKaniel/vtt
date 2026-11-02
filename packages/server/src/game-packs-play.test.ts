@@ -135,6 +135,20 @@ describe('the GM browsing packs', () => {
     ]);
   });
 
+  it('gives a pack’s videos their thumbnails as previews, and leaves the thumbnails out', async () => {
+    await put(packDir, 'goblins/media/Fx/Bless_01.webm', 'x');
+    await put(packDir, 'goblins/media/Fx/Bless_01_Thumb.webp', 'x');
+    await start(['goblins']);
+    const gm = seat('gm');
+    gm.receive({ t: 'media' });
+    await settle();
+    const [media] = gm.take('media');
+    expect(media!.entries.filter((m) => m.pack).map((m) => [m.src, m.thumb])).toEqual([
+      ['pack://goblins/media/Fx/Bless_01.webm', 'pack://goblins/media/Fx/Bless_01_Thumb.webp'],
+      ['pack://goblins/media/Tokens/warlord.webp', undefined],
+    ]);
+  });
+
   it('gets a compendium’s documents, its own system’s too', async () => {
     await start(['goblins']);
     const gm = seat('gm');
