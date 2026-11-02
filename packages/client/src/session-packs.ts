@@ -12,7 +12,7 @@ import {
   uniqueId,
 } from '@vtt/shared';
 import { type Actor, ActorSchema, type ServerMessage } from '@vtt/system-dnd5e';
-import { setHomebrewSource, setPackContent } from './content.ts';
+import { setHomebrewSource, setPackContent, setSettingsSource } from './content.ts';
 import { SceneSession } from './session-scenes.ts';
 
 // Asset packs on the client: the rules content of the game's packs (for
@@ -152,6 +152,7 @@ export abstract class PackSession extends SceneSession {
       case 'packContent':
         setPackContent(msg.compendia);
         setHomebrewSource(() => this.docs.all('homebrew'));
+        setSettingsSource(() => this.world?.settings);
         return true;
       case 'packs':
         this.packs = msg.packs;

@@ -122,7 +122,9 @@ export type EngineClientMessage =
   /** Your seat's colour and picture; a null avatar takes it away. */
   | { t: 'profile'; color?: string; avatar?: string | null }
   /** Your own options for this game (see Player.settings), checked by the game's system; they replace the old ones. */
-  | { t: 'seatSettings'; settings: Record<string, string> };
+  | { t: 'seatSettings'; settings: Record<string, string> }
+  /** GM: the game's rules edition and its options (see Game.settings), checked by its system; they replace the old ones. */
+  | { t: 'gameSettings'; rules?: string; settings: Record<string, string> };
 
 /** What the engine tells clients, whatever system the game plays. */
 export type EngineServerMessage =

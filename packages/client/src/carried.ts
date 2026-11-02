@@ -88,6 +88,17 @@ export function purseText(currency: Currency | undefined): string {
   return parts.length ? parts.join(' · ') : 'No coins';
 }
 
+const LOAD_TIPS: Record<Encumbrance['level'], string> = {
+  none: 'Carried weight / carrying capacity',
+  encumbered: 'Encumbered: speed −10 ft',
+  heavy: 'Heavily encumbered: speed −20 ft, disadvantage on Str, Dex and Con rolls and on attacks',
+};
+
+/** What the load does to the creature, by the game's encumbrance rule. */
+export function loadTip(load: Encumbrance): string {
+  return load.over ? 'Over capacity: speed drops to 5 ft' : LOAD_TIPS[load.level];
+}
+
 export function loadText({ weight, capacity }: Encumbrance): string {
   return `${Math.round(weight * 10) / 10} / ${capacity} lb`;
 }

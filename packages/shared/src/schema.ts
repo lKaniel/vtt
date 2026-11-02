@@ -100,6 +100,8 @@ export const WorldSchema = SceneSettingsSchema.extend({
   name: z.string().min(1),
   /** The game system's rules edition (see SystemDefinition in core); missing = the system's default. */
   rules: z.string().min(1).optional(),
+  /** The game's options, which its system reads (D&D: the encumbrance rule); missing = the defaults. */
+  settings: z.record(z.string().max(40), z.string().max(40)).optional(),
   players: z.array(PlayerSchema).min(1),
 });
 export type World = z.infer<typeof WorldSchema>;

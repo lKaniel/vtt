@@ -637,6 +637,14 @@ and SRD 5.2 (`monsters-5.2.json`) under 2024 rules; the weapon and armor list
 2024 class in a 2014 game, with `"stats": { "rules": "2024" }`; that token's
 monster id and rules then come from that edition.
 
+**Game settings.** `game.json` `"settings"` holds the GM's table rules, set
+from the settings menu (the cog): `"encumbrance"` is `"capacity"` (the
+default: over Strength × 15 lb a character's speed drops to 5 ft),
+`"variant"` (the PHB variant: over Strength × 5 lb speed −10 ft, over × 10 lb
+−20 ft and disadvantage on attacks and on Strength, Dexterity and
+Constitution checks and saves) or `"off"` (weight isn't counted). The same
+menu changes `rules`.
+
 A monster uses the stat block as is. Anything in `stats` overrides it, and
 `hp` tracks damage (leave it out for an unhurt creature), and `tempHp` holds
 temporary hit points, which are lost first:

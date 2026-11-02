@@ -25,4 +25,13 @@ describe('game and scene files', () => {
     expect(back.game).toEqual({ ...game, rules: '2024' });
     expect(back.scene).toEqual({ ...scene, darkness: 0.2 });
   });
+
+  it('keep the game’s own settings in game.json', () => {
+    const scene = SceneSchema.parse({});
+    const set = { ...game, settings: { encumbrance: 'variant' } };
+    expect(worldOf(set, scene).settings).toEqual({ encumbrance: 'variant' });
+    const back = splitWorld({ ...worldOf(game, scene), settings: { encumbrance: 'off' } }, game, scene);
+    expect(back.game.settings).toEqual({ encumbrance: 'off' });
+    expect(back.scene).toEqual(scene);
+  });
 });

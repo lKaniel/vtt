@@ -23,6 +23,17 @@ export const EN = {
   'settings.motion.full': 'Full',
   'settings.motion.reduced': 'Reduced',
   'settings.motion.off': 'Numbers only',
+  'settings.game': 'Game',
+  'settings.gameHint': 'For everyone at the table. Seats start over with the change.',
+  'settings.rules': 'Rules',
+  'settings.encumbrance': 'Encumbrance',
+  'settings.encumbrance.capacity': 'Capacity',
+  'settings.encumbrance.capacityHint': 'Over Strength × 15 lb, speed drops to 5 ft.',
+  'settings.encumbrance.variant': 'Variant',
+  'settings.encumbrance.variantHint':
+    'Over Str × 5 lb: −10 ft. Over Str × 10 lb: −20 ft and disadvantage on Str, Dex and Con rolls.',
+  'settings.encumbrance.off': 'Off',
+  'settings.encumbrance.offHint': 'Weight is not counted.',
 
   'keys.open': 'Keybindings',
   'keys.title': 'Keybindings',
