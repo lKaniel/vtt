@@ -14,20 +14,27 @@ import { AnimationChoiceSchema, type ClientMessage, inTheWay, type Token } from 
 import type { CombatActions } from './combat-actions.ts';
 import type { GameStore } from './game-store.ts';
 import type { Reactions } from './reactions.ts';
-import type { RegionActions } from './region-actions.ts';
-import { Refusal } from './table.ts';
+import { RegionActions } from './region-actions.ts';
+import { Refusal, type Table } from './table.ts';
+import { TriggerActions, type TriggerOut } from './trigger-actions.ts';
 import type { Zones } from './zones.ts';
 
 /** How far a path search may wander past the start-goal box, in squares. */
 const PATH_MARGIN = 12;
 
-/** Walking tokens, opening doors and arranging action bars, on the scene the store is told to read. */
 /** What a walk sets off: the fight's movement, lasting zones, reactions and regions. */
 export interface MoveRules {
   combat: CombatActions;
   zones: Zones;
   reactions: Reactions;
   regions: RegionActions;
+  triggers: TriggerActions;
+}
+
+/** The walking rules with the regions and tile triggers of the scene: what `out` gets is what they say and play. */
+export function tokenMoves(table: Table, rules: Omit<MoveRules, 'regions' | 'triggers'>, out: TriggerOut): TokenMoves {
+  const triggers = new TriggerActions(table, out);
+  return new TokenMoves(table.store, { ...rules, regions: new RegionActions(table, triggers), triggers });
 }
 
 export class TokenMoves {
@@ -91,7 +98,13 @@ export class TokenMoves {
     this.store.setToken({ ...token, animations: withAnimation(token.animations, msg.ref, msg.animation) });
   }
 
-  door(player: Player, msg: { chunk: string; wall: string; state: DoorState }): void {
+  /** Opening a door, or clicking a tile with a trigger. */
+  use(player: Player, seen: (id: string) => boolean, msg: Extract<ClientMessage, { t: 'door' | 'trigger' }>): void {
+    if (msg.t === 'trigger') return this.rules.triggers.click(player, seen, msg);
+    this.door(player, msg);
+  }
+
+  private door(player: Player, msg: { chunk: string; wall: string; state: DoorState }): void {
     const chunk = this.store.chunks.get(msg.chunk);
     const wall = chunk?.walls.find((w) => w.id === msg.wall);
     if (!chunk || !wall?.door || (wall.secret && !isGm(player))) throw new Refusal('No such door');

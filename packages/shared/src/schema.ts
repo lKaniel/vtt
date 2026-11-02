@@ -1,5 +1,6 @@
 import type { Ownership } from '@vtt/core';
 import { z } from 'zod';
+import { TileTriggerSchema } from './trigger-schema.ts';
 
 // The items in a game folder are described here (game.json and scene.json in
 // game-schema.ts). The checker, the server and docs/game-format.md all follow
@@ -116,6 +117,10 @@ const tileBase = {
   h: z.number().positive(),
   /** Ground: tiles dropped on it don't go inside it, and a drag starting on it draws a marquee. */
   background: z.boolean().optional(),
+  /** GM only: players don't get it (a trigger can show it). */
+  hidden: z.boolean().optional(),
+  /** Runs actions when it is clicked or walked onto (see triggers.ts). */
+  trigger: TileTriggerSchema.optional(),
 };
 
 /** Painted ground for rect tiles, tinted by the tile's colour. */

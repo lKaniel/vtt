@@ -64,6 +64,8 @@ export type EngineClientMessage =
   /** Who sees your rolls and the cards of your actions from now on (see roll-modes.ts). */
   | { t: 'rollMode'; mode: RollMode }
   | { t: 'door'; chunk: string; wall: string; state: DoorState }
+  /** Click a tile that has a trigger, with one of your creatures for the actions that move one (see triggers.ts). */
+  | { t: 'trigger'; tile: string; token?: string }
   | { t: 'chat'; text: string }
   /** Change token fields; `null` removes one (e.g. `hp: null` heals fully). The GM may edit any token, a trusted player the ones they own. */
   | { t: 'editToken'; token: string; patch: Record<string, unknown> }
@@ -130,6 +132,8 @@ export type EngineServerMessage =
   | { t: 'targets'; player: string; name: string; color: string; tokens: string[] }
   /** The time of day changed. */
   | { t: 'lighting'; darkness: number }
+  /** A trigger plays a sound once for everyone on the scene. */
+  | { t: 'sound'; src: string; volume?: number }
   | { t: 'error'; message: string }
   /** GM only: documents changed, by `by` (a player id; none for a hand edit of the files). */
   | { t: 'docs'; changes: DocChange[]; by?: string; txn?: string }

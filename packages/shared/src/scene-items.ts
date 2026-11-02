@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DarknessBandSchema, IdSchema as id, PointSchema } from './schema.ts';
+import { TRIGGER_ACTIONS } from './trigger-schema.ts';
 
 // The scene's other placeables (design doc, "Walls, lights, fog and the rest
 // of the scene"): drawings, map notes, templates, regions and ambient sounds.
@@ -107,14 +108,12 @@ export const RegionBehaviorSchema = z.discriminatedUnion('type', [
     once: z.boolean().optional(),
     system: z.record(z.string(), z.unknown()).optional(),
   }),
-  /** Moves the token to `to`, on this scene or on `scene`. */
-  z.object({ type: z.literal('teleport'), to: PointSchema, scene: id.optional() }),
   /** Takes the token to another level of the scene (stairs, a ladder, a trapdoor). */
   z.object({ type: z.literal('level'), to: id }),
   /** Players whose token enters see the whole region as explored. */
   z.object({ type: z.literal('reveal') }),
-  /** Posts `text` in chat; `gmOnly` whispers it to the GM. */
-  z.object({ type: z.literal('message'), text: z.string().min(1), gmOnly: z.boolean().optional() }),
+  /** Teleport, message, door, sound, image, show/hide and journal: what a tile trigger does too. */
+  ...TRIGGER_ACTIONS,
 ]);
 export type RegionBehavior = z.infer<typeof RegionBehaviorSchema>;
 

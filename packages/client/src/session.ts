@@ -174,6 +174,10 @@ export class Session extends ActionSession {
     this.emit('selection');
   }
 
+  protected heard(src: string, volume: number): void {
+    this.emit('sound', src, volume);
+  }
+
   protected fogChanged(): void {
     this.emit('fog');
   }

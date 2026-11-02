@@ -196,6 +196,29 @@ pixels.
   covers (default 2). Grass, dirt, sand, water and rock get natural wobbly
   edges; set `"edge": "straight"` or `"rough"` to choose. `image` tiles load from
   `assets/`.
+- `"hidden": true` keeps a tile from players (the GM sees it faintly) until a
+  trigger shows it.
+- A tile with a `trigger` runs actions, like Monk's Active Tiles:
+  `{ "on": "click", "actions": [ … ], "once": true, "gmOnly": true, "disabled": true }`.
+  `on` is `"click"` (the default: a player clicks it in the tokens mode, with
+  the creature they have selected) or `"enter"` (a creature walks onto it; a
+  hidden plate still works). `once` turns it off after it runs, `gmOnly` lets
+  only the GM click it. Players are told only that a tile can be clicked. The
+  actions, in order (regions take them as behaviours too):
+
+  | Action                                                                                 | What it does                                                           |
+  | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+  | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                | Shows the next picture, round and round; `tile` names another tile.    |
+  | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }` | Shows, hides or toggles a tile, token, region, drawing, note or sound. |
+  | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                       | Plays once for everyone on the scene.                                  |
+  | `{ "type": "teleport", "to": [x, y], "scene": "cellar" }`                              | Moves the creature that set it off (the actions after it wait).        |
+  | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                   | Opens, closes, locks or toggles a door.                                |
+  | `{ "type": "message", "text": "…", "gmOnly": true }`                                   | Says it in chat.                                                       |
+  | `{ "type": "journal", "entry": "letter", "page": "p1" }`                               | Shares the entry with the players and opens it on their screens.       |
+
+  The GM edits a trigger (or a region's behaviours) with the inspector's
+  **Add trigger…** button.
+
 - A wall is a line from `a` to `b` that stops movement, sight, light and
   sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.
   Open doors stop nothing.
@@ -342,6 +365,9 @@ with `endsAt` (a game-clock second, see time.json) goes when the clock reaches i
 | `{ "type": "level", "to": "loft" }`                                 | Takes the token to that level (its elevation becomes the level's bottom).                                                                                         |
 | `{ "type": "reveal" }`                                              | The players whose token walked in see the whole region as explored.                                                                                               |
 | `{ "type": "message", "text": "…", "gmOnly": true }`                | Says it in chat (to the GM alone with `gmOnly`).                                                                                                                  |
+
+A region also takes every tile trigger action (`image` with a `tile`,
+`visibility`, `sound`, `door`, `journal`; see "Tiles and walls").
 
 **Sounds** (`sounds.json`): `x, y`, `radius` (feet), `src`, `volume` (0
 to 1, default 0.5), `walls` (default true: each wall between muffles it),

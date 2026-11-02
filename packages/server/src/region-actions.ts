@@ -1,5 +1,4 @@
 import {
-  canControl,
   canObserve,
   fogCell,
   isGm,
@@ -13,22 +12,23 @@ import {
 } from '@vtt/shared';
 import { springTrap, type Token, TrapRulesSchema } from '@vtt/system-dnd5e';
 import { fromDoc } from './doc-sync.ts';
-import { moveSeats, sceneOf } from './scene-actions.ts';
 import type { Table } from './table.ts';
+import type { TriggerActions } from './trigger-actions.ts';
 
 // Regions at work (see regions.ts in shared): walking into one runs its
 // behaviours in order. Difficult ground is the path's business (`cost`).
-// A teleport ends the walk there, so later behaviours and regions wait.
-
-type Say = (text: string, gmOnly: boolean) => void;
-
-type Step = (token: Token, region: Region, b: RegionBehavior) => boolean | undefined;
+// A teleport ends the walk there, so later behaviours and regions wait. The
+// actions a tile trigger has (teleport, message, door...) run in trigger-actions.ts.
 
 export class RegionActions {
   constructor(
     private table: Table,
-    private say: Say,
+    private triggers: TriggerActions,
   ) {}
+
+  private say(text: string): void {
+    this.triggers.run({ type: 'message', text }, {});
+  }
 
   private get store() {
     return this.table.store;
@@ -47,6 +47,8 @@ export class RegionActions {
 
   /** A token walked along `path`: the regions it went into, nearest first, do what they do. */
   entered(id: string, path: readonly Point[]): void {
+    // Tiles to walk onto go first (trigger-actions.ts).
+    if (this.triggers.entered(id, path)) return;
     const hits = regionsEntered(this.regions(), path).sort((a, b) => a.at - b.at);
     for (const { region } of hits) {
       for (const b of region.behaviors) {
@@ -58,28 +60,21 @@ export class RegionActions {
 
   /** Runs one behaviour; true when the token was taken away (a teleport). */
   private run(token: Token, region: Region, b: RegionBehavior): boolean {
-    const steps: Record<RegionBehavior['type'], Step> = {
-      difficult: () => false,
-      trap: (t, r, trap) => {
-        this.trap(t, r, trap as Extract<RegionBehavior, { type: 'trap' }>);
+    switch (b.type) {
+      case 'difficult':
         return false;
-      },
-      teleport: (t, _r, tp) => this.teleport(t, tp as Extract<RegionBehavior, { type: 'teleport' }>),
-      level: (t, _r, l) => {
-        this.level(t, (l as Extract<RegionBehavior, { type: 'level' }>).to);
+      case 'trap':
+        this.trap(token, region, b);
         return false;
-      },
-      reveal: (t, r) => {
-        this.reveal(t, r);
+      case 'level':
+        this.level(token, b.to);
         return false;
-      },
-      message: (_t, _r, m) => {
-        const msg = m as Extract<RegionBehavior, { type: 'message' }>;
-        this.say(msg.text, !!msg.gmOnly);
+      case 'reveal':
+        this.reveal(token, region);
         return false;
-      },
-    };
-    return steps[b.type](token, region, b) === true;
+      default:
+        return this.triggers.run(b, { token });
+    }
   }
 
   private trap(token: Token, region: Region, b: Extract<RegionBehavior, { type: 'trap' }>): void {
@@ -91,36 +86,12 @@ export class RegionActions {
     const sheet = this.table.sheetOf(token);
     const lead = b.message ? `${b.message} ` : '';
     if (!rules.success || !sheet) {
-      if (b.message) this.say(b.message, false);
+      if (b.message) this.say(b.message);
       return;
     }
     const sprung = springTrap(sheet, rules.data, this.table.rng, this.table.rng);
     if (sprung.damage > 0) this.table.hurt(token, { hp: sprung.hp, tempHp: sprung.tempHp }, sprung.damage);
-    this.say(`${lead}${token.name}: ${sprung.text}`.trim(), false);
-  }
-
-  private teleport(token: Token, b: Extract<RegionBehavior, { type: 'teleport' }>): boolean {
-    const here = this.store.currentScene;
-    const [x, y] = b.to;
-    if (!b.scene || b.scene === here) {
-      this.store.setToken({ ...token, x, y });
-      return true;
-    }
-    if (!this.store.hasScene(b.scene)) return false;
-    const doc = this.store.docs.get(`${here}/tokens`, token.id)!;
-    this.store.applyOps([
-      { op: 'delete', coll: `${here}/tokens`, id: token.id },
-      { op: 'create', coll: `${b.scene}/tokens`, doc: { ...doc, x, y } },
-    ]);
-    const owners = this.store.world.players.filter(
-      (p) => !isGm(p) && canControl(token, p) && sceneOf(p, this.store) === here,
-    );
-    moveSeats(
-      this.store,
-      owners.map((p) => p.id),
-      b.scene,
-    );
-    return true;
+    this.say(`${lead}${token.name}: ${sprung.text}`.trim());
   }
 
   private level(token: Token, to: string): void {

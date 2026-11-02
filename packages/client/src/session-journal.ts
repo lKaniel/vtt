@@ -82,7 +82,14 @@ export abstract class JournalSession extends ItemSession {
     this.sendUpdates(label, [{ ref: { coll, id }, patch }]);
   }
 
+  /** A trigger played a sound for the scene. */
+  protected abstract heard(src: string, volume: number): void;
+
   protected override applyEdit(msg: ServerMessage): boolean {
+    if (msg.t === 'sound') {
+      this.heard(msg.src, msg.volume ?? 1);
+      return false;
+    }
     if (msg.t !== 'showJournal') return super.applyEdit(msg);
     this.openJournal(msg.entry, msg.page);
     return true;

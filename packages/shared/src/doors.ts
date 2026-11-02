@@ -1,4 +1,5 @@
 import type { Chunk, DoorState, Wall } from './schema.ts';
+import { tileFor } from './triggers.ts';
 
 // Doors: what players are shown of secret doors, and the sound a door makes
 // when it swings or its lock turns.
@@ -13,10 +14,17 @@ export function wallFor(wall: Wall, gm: boolean): Wall {
   return door === 'open' ? { ...plain, door } : plain;
 }
 
-/** A map chunk as a player is shown it: secret doors hidden from all but the GM. */
+/**
+ * A map chunk as a player is shown it: secret doors, hidden tiles and what
+ * triggers do kept from all but the GM.
+ */
 export function chunkFor(chunk: Chunk, gm: boolean): Chunk {
-  if (gm || !chunk.walls.some((w) => w.secret)) return chunk;
-  return { ...chunk, walls: chunk.walls.map((w) => wallFor(w, false)) };
+  if (gm) return chunk;
+  const walls = chunk.walls.some((w) => w.secret) ? chunk.walls.map((w) => wallFor(w, false)) : chunk.walls;
+  const tiles = chunk.tiles.some((t) => t.hidden === true || t.trigger !== undefined)
+    ? chunk.tiles.filter((t) => !t.hidden).map((t) => tileFor(t))
+    : chunk.tiles;
+  return walls === chunk.walls && tiles === chunk.tiles ? chunk : { ...chunk, walls, tiles };
 }
 
 /** Sounds a door can make without a file of its own (drawn up by the client). */

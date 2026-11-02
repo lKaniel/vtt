@@ -1,4 +1,4 @@
-import type { Chunk, Wall } from '@vtt/shared';
+import { type Chunk, tileClickable, type Wall } from '@vtt/shared';
 import { assetUrl } from '../assets.ts';
 import { Assets, Circle, Container, Graphics, Sprite } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
@@ -7,6 +7,8 @@ import type { Session } from '../session.ts';
 
 const DOOR_COLORS = { closed: 0xd08a3a, open: 0x7ac06a, locked: 0xd04a4a } as const;
 const DOOR_HANDLE_RADIUS = 11;
+/** How a tile hidden from players shows to the GM. */
+const HIDDEN_ALPHA = 0.45;
 
 interface ChunkView {
   /** The chunk's tiles and wall shadows: each sits straight in `ground`, so tiles of all chunks stack by `z`. */
@@ -38,6 +40,7 @@ export class ChunkLayer {
     view.walls.cullable = true;
     const world = this.session.world;
     view.ground = drawTiles(chunk, { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 });
+    chunk.tiles.forEach((tile, i) => this.dress(view.ground[i]!, tile));
     const shadows = shadowsOf(chunk.walls);
     shadows.zIndex = SHADOW_Z;
     view.ground.push(shadows);
@@ -67,6 +70,22 @@ export class ChunkLayer {
 
   showDoors(visible: boolean): void {
     for (const v of this.views.values()) for (const d of v.doors) d.visible = visible;
+  }
+
+  /** A tile with a click trigger answers clicks; one hidden from players shows faintly to the GM. */
+  private dress(drawn: Container, tile: Chunk['tiles'][number]): void {
+    const gm = this.session.isGm();
+    if (tile.hidden) drawn.alpha = HIDDEN_ALPHA;
+    if (!tileClickable(tile, gm)) return;
+    drawn.eventMode = 'static';
+    drawn.cursor = 'pointer';
+    drawn.on('pointerdown', (e) => e.stopPropagation());
+    drawn.on('pointertap', (e) => {
+      e.stopPropagation();
+      const s = this.session;
+      const acting = s.selected ? s.tokens.get(s.selected) : undefined;
+      s.useTile(tile.id, acting && s.canControl(acting) ? acting.id : undefined);
+    });
   }
 
   /** The clickable handle in the middle of a door, coloured by its state. */
