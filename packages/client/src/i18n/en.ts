@@ -65,6 +65,7 @@ export const EN = {
   'panel.Music': 'Music',
   'panel.Assets': 'Assets',
   'panel.Players': 'Players',
+  'panel.Cards': 'Cards',
 
   'macros.new': 'New macro',
   'macros.none': 'No macros yet.',
@@ -90,6 +91,27 @@ export const EN = {
   'plugins.hint':
     "Install plugins in the server's data/plugins/ folder. They run in every player's browser, so install only code you trust. Players load one when they next join.",
   'plugins.use': 'Use {name}',
+  'cards.none': 'No cards yet.',
+  'cards.kind.deck': 'deck',
+  'cards.kind.hand': 'hand',
+  'cards.kind.pile': 'pile',
+  'cards.count': '{n} cards',
+  'cards.newPlaying': 'Playing cards',
+  'cards.newDeck': 'New deck',
+  'cards.newPile': 'New pile',
+  'cards.newHand': 'New hand for…',
+  'cards.handOf': '{name}’s hand',
+  'cards.draw': 'Draw',
+  'cards.shuffle': 'Shuffle',
+  'cards.gather': 'Gather',
+  'cards.gatherHint': 'Bring every card of this deck back from hands and piles, and shuffle it',
+  'cards.faceDown': 'Face down.',
+  'cards.empty': 'Empty.',
+  'cards.moveTo': 'Move the picked cards to',
+  'cards.play': 'Play',
+  'cards.pass': 'Pass',
+  'cards.dealCount': 'Cards to each hand',
+  'cards.deal': 'Deal to {n} hands',
 } as const;
 
 export type MessageKey = keyof typeof EN;

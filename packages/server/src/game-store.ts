@@ -156,6 +156,8 @@ export class GameStore extends EventEmitter<StoreEvents> {
         setTimeout(() => void this.onFileChanged(rel), 80),
       );
     });
+    // A folder removed as the watcher looks into it (rm -rf cards/) is an error event, not a reason to stop.
+    this.watcher.on('error', (e) => console.warn(`[game] watching ${this.dir}: ${e.message}`));
   }
 
   close(): void {

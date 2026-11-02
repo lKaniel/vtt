@@ -80,6 +80,7 @@ export const EDIT_KINDS: Kinds = {
   playlist: { coll: () => 'playlists' },
   macro: { coll: () => 'macros' },
   homebrew: { coll: () => 'homebrew' },
+  cards: { coll: () => 'cards' },
 };
 
 interface Source {

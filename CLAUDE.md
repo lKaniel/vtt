@@ -17,8 +17,10 @@ with `pnpm check-game data/games/<id>`.
   `drawings.json`, `notes.json`, `templates.json`, `regions.json`,
   `sounds.json`. A new scene is a new folder with a `scene.json`. Leave
   `fog/` alone (the server's).
-- Journal entries, roll tables, playlists and chat macros are one file each
-  in `journals/`, `tables/`, `playlists/`, `macros/`. Traps, teleporters
+- Journal entries, roll tables, playlists, chat macros and card stacks are
+  one file each in `journals/`, `tables/`, `playlists/`, `macros/`, `cards/`
+  (decks, hands, piles: players move cards only through the card actions,
+  `card-actions.ts`). Traps, teleporters
   and difficult ground are regions with behaviours; floors are scene
   `levels` (see "Scene levels" in the format doc).
 - A creature's sheet is an actor (`actors/<id>.json`); a token in
