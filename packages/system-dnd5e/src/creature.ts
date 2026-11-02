@@ -16,6 +16,7 @@ import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
 import { changed, changedBase, changedList } from './effect-changes.ts';
 import { withOwn } from './own-content.ts';
+import { exhausted } from './vigour.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Condition, Effect } from './spell-schema.ts';
 import {
@@ -102,7 +103,7 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     attacks: creatureAttacks(stats, monster, gear.weapons, { abilities, proficiency }),
     ...defenses(stats, monster),
     ...kindAndSaves(monster, cls, { abilities, proficiency }),
-    ...effectParts(token, features),
+    ...effectParts(token, features, content.edition),
     ...classParts(token, cls),
     caster: casterSheet(token, { abilities, proficiency }, content),
     features,
@@ -165,11 +166,15 @@ function downed(token: Token): Effect[] {
 }
 
 /** The token's effects, then the ones its features always give (danger sense). */
-function effectParts(token: Token, features: readonly FeatureSheet[]): Pick<Creature, 'effects' | 'conditions'> {
+function effectParts(
+  token: Token,
+  features: readonly FeatureSheet[],
+  edition: Edition,
+): Pick<Creature, 'effects' | 'conditions'> {
   const passive = features.flatMap((f) =>
     f.passive ? [{ ...f.passive, id: f.id, name: f.passive.name ?? f.name, source: token.id }] : [],
   );
-  const effects = [...(token.effects ?? []), ...passive, ...downed(token)];
+  const effects = [...(token.effects ?? []), ...passive, ...downed(token), ...exhausted(token, edition)];
   return { effects, conditions: [...new Set(effects.flatMap((e) => e.conditions ?? []))] };
 }
 
@@ -213,7 +218,8 @@ function applyEffects(c: Creature): Creature {
   const effects = c.effects;
   const sum = (key: 'ac' | 'speed' | 'maxHp') => effects.reduce((n, e) => n + (e[key] ?? 0), 0);
   const held = c.conditions.some((x) => HELD.includes(x)) || effects.some((e) => e.immobile);
-  const maxHp = Math.max(1, changed(c.maxHp + sum('maxHp'), effects, 'maxHp'));
+  const hpTimes = effects.reduce((n, e) => n * (e.maxHpTimes ?? 1), 1);
+  const maxHp = Math.max(1, Math.floor(changed(c.maxHp + sum('maxHp'), effects, 'maxHp') * hpTimes));
   const minAc = Math.max(0, ...effects.map((e) => e.minAc ?? 0));
   const times = effects.reduce((n, e) => n * (e.speedTimes ?? 1), 1);
   const speed = Math.max(0, changed(c.speed + sum('speed'), effects, 'speed'));

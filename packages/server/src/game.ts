@@ -4,7 +4,7 @@ import { OpError } from '@vtt/core';
 import type { WebSocket } from 'ws';
 import { parseClientMessage, type ClientMessage } from './client-messages.ts';
 import { CombatActions } from './combat-actions.ts';
-import { gearAction } from './carry-actions.ts';
+import { isSheetMessage, sheetAction } from './sheet-actions.ts';
 import { FeatureActions } from './feature-actions.ts';
 import { GmActions } from './gm-actions.ts';
 import { isDropMessage } from './sheet-drop-actions.ts';
@@ -403,7 +403,7 @@ export class Game {
     if (msg.t === 'fog') this.fog.edit(c.player, msg.edit);
     else if (msg.t === 'clock') this.clock.act(c.player, msg.action);
     else if (msg.t === 'turnBased') this.combat.turnBased(c.player, msg.on);
-    else if (msg.t === 'equip' || msg.t === 'carry') gearAction(this.table, c.player, msg);
+    else if (isSheetMessage(msg)) sheetAction(this.table, c.player, msg);
     else if (isEntryMessage(msg)) this.entries.handle(c.player, msg);
     else if (isDropMessage(msg)) this.gm.drops.handle(c.player, (id) => c.visible.has(id), msg);
     else this.scenes.dispatch(c.player, msg);

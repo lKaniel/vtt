@@ -54,6 +54,8 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   attack: { label: 'attack', action: true },
   equip: { label: 'equipment change', action: true },
   carry: { label: 'inventory change', action: true },
+  hitDie: { label: 'hit die', action: true },
+  exhaustion: { label: 'exhaustion change', action: true },
   cast: { label: 'spell', action: true },
   feature: { label: 'feature use', action: true },
   useItem: { label: 'item use', action: true },
