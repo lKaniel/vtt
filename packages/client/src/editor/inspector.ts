@@ -10,6 +10,9 @@ export { type Field, type FieldValue, MIXED } from './field-kit.ts';
 // what to show for a selection, the value they share (or "mixed"), and the
 // patch an input makes.
 
+/** The tile a wall or light is fastened to: it moves, copies and deletes with it. */
+const ON_TILE = plain('tile', 'On tile', 'select', { choices: 'tiles' });
+
 const WALL_FIELDS: Field[] = [
   {
     ...plain('kind', 'Kind', 'select', { options: options(...Object.keys(WALL_PRESETS), 'custom') }),
@@ -19,6 +22,7 @@ const WALL_FIELDS: Field[] = [
   plain('door', 'Door', 'select', { options: options('closed', 'open', 'locked'), when: (d) => !!d.door }),
   ...doorFields(),
   ...wallRuleFields(),
+  ON_TILE,
 ];
 
 const LIGHT_FIELDS: Field[] = [
@@ -27,6 +31,7 @@ const LIGHT_FIELDS: Field[] = [
   plain('color', 'Colour', 'color'),
   plain('animation', 'Animation', 'select', { options: options('', 'flicker', 'pulse') }),
   { ...plain('darkness', 'Magical darkness', 'check'), get: (d) => d.darkness === true },
+  ON_TILE,
 ];
 
 const isRect = (d: Doc) => d.kind === 'rect';

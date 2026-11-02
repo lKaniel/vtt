@@ -5,6 +5,8 @@ import { MAP_RESOLUTION, placeScene, type ViewTransform } from './LightMap.ts';
 export interface SightViewer {
   at: Point;
   senses: Senses;
+  /** Feet up: walls lower than this don't block it. */
+  elevation?: number;
 }
 
 export interface SightScene {
@@ -56,7 +58,7 @@ export class SightMap {
     for (const g of [this.sight, this.senses, this.darkness, this.keenSenses]) g.clear();
     const range = (feet: number) => feetToPx(feet, scene.gridSize);
     for (const v of scene.viewers) {
-      this.sight.poly(scene.polygon(v.at, scene.sightRadius)).fill(0x00ff00);
+      this.sight.poly(scene.polygon(v.at, scene.sightRadius, 'sight', v.elevation)).fill(0x00ff00);
       this.area(this.senses, scene, v.at, range(v.senses.darkvision));
       const keen = Math.max(v.senses.devilsSight, v.senses.truesight, v.senses.blindsight);
       this.area(this.keenSenses, scene, v.at, range(keen));

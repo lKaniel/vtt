@@ -11,6 +11,7 @@ import {
   tokenLights,
   visibilityPolygon,
   type Wall,
+  wallsAt,
 } from '@vtt/shared';
 import { sensesOf, type TokenView } from '@vtt/system-dnd5e';
 import type { Application } from 'pixi.js';
@@ -89,11 +90,11 @@ export class Vision {
   }
 
   private polygon(walls: readonly Wall[], gridSize: number): ReachPolygon {
-    return (origin, radius, kind = 'sight') => {
-      const key = `${kind},${origin[0]},${origin[1]},${radius},${this.wallsVersion}`;
+    return (origin, radius, kind = 'sight', elevation) => {
+      const key = `${kind},${origin[0]},${origin[1]},${radius},${elevation},${this.wallsVersion}`;
       let poly = this.polyCache.get(key);
       if (!poly) {
-        poly = visibilityPolygon(origin, radius, walls, { kind, gridSize });
+        poly = visibilityPolygon(origin, radius, wallsAt(walls, elevation), { kind, gridSize });
         if (this.polyCache.size > 500) this.polyCache.clear();
         this.polyCache.set(key, poly);
       }
@@ -135,7 +136,9 @@ export class Vision {
     this.light.render(scene, transform);
     // The GM's fog brush shows what the players explored instead of what the GM's tokens see.
     const brushing = gm && !!this.session.fogBrush;
-    const eyes = brushing ? [] : viewers.map((v) => ({ at: v.at, senses: sensesOfView(v.token) }));
+    const eyes = brushing
+      ? []
+      : viewers.map((v) => ({ at: v.at, senses: sensesOfView(v.token), elevation: v.token.elevation }));
     const sightRadius = SIGHT_SQUARES * world.gridSize;
     this.showExplored();
     const darkness = lights.filter((l) => l.darkness);

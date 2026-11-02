@@ -49,7 +49,8 @@ function pointsOrXY(name: string, extra: Partial<Kind> = {}): Kind {
 
 export const EDIT_KINDS: Kinds = {
   token: atXY('tokens', { refs: { actor: 'actor', leader: 'token', 'summon.by': 'token' } }),
-  light: atXY('lights'),
+  // Walls and lights may be fastened to a tile, and go where it goes.
+  light: atXY('lights', { refs: { tile: 'tile' }, attachedTo: 'tile' }),
   // Tiles sit in groups and containers (see tiles.ts); a group has no place of its own.
   tile: atXY('tiles', {
     refs: { parent: 'tile' },
@@ -60,6 +61,8 @@ export const EDIT_KINDS: Kinds = {
   }),
   wall: {
     coll: (scene) => `${scene}/walls`,
+    refs: { tile: 'tile' },
+    attachedTo: 'tile',
     anchor: (d) => {
       const [a, b] = [d.a as Point, d.b as Point];
       return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];

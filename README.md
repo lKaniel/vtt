@@ -23,6 +23,9 @@ on, shared live between players.
   dice buttons. Roll modes as in Foundry: pick public, private GM, blind GM
   or self beside the chat box, and it holds for your rolls and the cards of
   your attacks and spells; `/gmr`, `/br`, `/sr` and `/pr` roll once in another.
+  A roll card has Apply, ½, ×2 and Heal buttons: they deal the total to your
+  targets (else the selected creatures), and a damage type written after the
+  formula (`/r 8d6 fire`) meets resistances. The GM can undo it like any action.
 - **Targets.** T over a creature (tokens mode) targets it, T over the ground
   lets them all go, or use the creature's menu. Everyone on the scene sees
   your targets in your colour. An attack readied with one target goes at it

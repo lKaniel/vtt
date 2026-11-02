@@ -16,7 +16,7 @@ const field = (docs: Doc[], key: string) => fieldsFor(docs).find((f) => f.key ==
 
 describe('the inspector', () => {
   it('shows the fields of the selection, or none for a mixed bag of types', () => {
-    expect(fieldsFor([light]).map((f) => f.key)).toEqual(['bright', 'dim', 'color', 'animation', 'darkness']);
+    expect(fieldsFor([light]).map((f) => f.key)).toEqual(['bright', 'dim', 'color', 'animation', 'darkness', 'tile']);
     expect(fieldsFor([light, wall()])).toEqual([]);
     expect(fieldsFor([])).toEqual([]);
   });
@@ -66,7 +66,17 @@ describe('the inspector', () => {
   });
 
   it('offers the door state, secrecy and sound only when every wall is a door', () => {
-    expect(fieldsFor([wall()]).map((f) => f.key)).toEqual(['kind', 'move', 'sight', 'light', 'sound', 'dir']);
+    expect(fieldsFor([wall()]).map((f) => f.key)).toEqual([
+      'kind',
+      'move',
+      'sight',
+      'light',
+      'sound',
+      'dir',
+      'height.bottom',
+      'height.top',
+      'tile',
+    ]);
     expect(fieldsFor([wall({ door: 'open' })]).map((f) => f.key)).toEqual([
       'kind',
       'door',
@@ -77,7 +87,19 @@ describe('the inspector', () => {
       'light',
       'sound',
       'dir',
+      'height.bottom',
+      'height.top',
+      'tile',
     ]);
+  });
+
+  it('sets how high a wall stands, and fastens it to a tile', () => {
+    const low = wall({ height: { bottom: 0 } });
+    const top = field([low], 'height.top');
+    expect(commonValue([low], top)).toBe('');
+    expect(top.patch('10', low)).toEqual({ height: { bottom: 0, top: 10 } });
+    expect(field([low], 'height.bottom').patch('', low)).toEqual({ height: null });
+    expect(field([wall()], 'tile').patch('hut')).toEqual({ tile: 'hut' });
   });
 
   it('makes a wall one-way, and a door secret or quiet', () => {

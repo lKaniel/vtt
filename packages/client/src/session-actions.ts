@@ -1,4 +1,7 @@
-import { featureSpell } from '@vtt/system-dnd5e';
+import { type ClientMessage, featureSpell } from '@vtt/system-dnd5e';
+
+/** How a chat roll is applied: in full, half, double, or as healing. */
+export type ApplyHow = Extract<ClientMessage, { t: 'applyDamage' }>['how'];
 import type { Point, RollMode } from '@vtt/shared';
 import { PackSession } from './session-packs.ts';
 import { aimAtTargets, aimFor, aimSpell, castMessage, pick, scrollAiming, type Aiming } from './targeting.ts';
@@ -27,6 +30,14 @@ export abstract class ActionSession extends PackSession {
   rollMode: RollMode = loadRollMode();
 
   protected abstract notify(event: 'armed' | 'targets'): void;
+
+  /** Applies the roll on a chat card to your targets, else the creatures selected (see damage-actions.ts on the server). */
+  applyRoll(card: string, how: ApplyHow): void {
+    const picked = [...this.tokens.keys()].filter((id) => this.isSelected(id));
+    const tokens = this.targets.mine.size ? [...this.targets.mine] : picked;
+    if (!tokens.length) return this.showError('Target or select the creatures to apply it to');
+    this.send({ t: 'applyDamage', card, tokens, how });
+  }
 
   /** T: targets the creature under the pointer, or lets it go; over empty ground lets all yours go. False: nothing to do. */
   toggleTargetAtPointer(): boolean {
