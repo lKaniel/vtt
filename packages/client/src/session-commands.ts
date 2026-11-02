@@ -1,4 +1,4 @@
-import type { Actor, CarryChange, ClientMessage } from '@vtt/system-dnd5e';
+import type { Actor, CarryChange, CheckKind, ClientMessage } from '@vtt/system-dnd5e';
 import type { ClockAction, DoorState, MapEdit, Point, Role } from '@vtt/shared';
 
 /**
@@ -103,6 +103,16 @@ export abstract class Commands {
   /** GM: a lair action on the lair's turn. */
   lairAction(token: string, action: string): void {
     this.send({ t: 'lair', token, action });
+  }
+
+  /** GM: asks these creatures for a check, each for itself, as a group or two in a contest. */
+  requestCheck(request: Omit<Extract<ClientMessage, { t: 'requestCheck' }>, 't'>): void {
+    this.send({ t: 'requestCheck', ...request });
+  }
+
+  /** Rolls a creature's ability or skill check, on the GM's request card `card` when there is one. */
+  rollCheck(token: string, check: CheckKind, card?: string): void {
+    this.send({ t: 'rollCheck', token, ...check, ...(card && { card }) });
   }
 
   /** GM: gives each of these characters `xp` experience points. */

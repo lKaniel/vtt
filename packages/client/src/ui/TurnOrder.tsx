@@ -4,6 +4,7 @@ import type { Session } from '../session.ts';
 import { Face, HpBar } from './Portrait.tsx';
 import { Button } from './kit/button.tsx';
 import { EncounterButton } from './EncounterPanel.tsx';
+import { RequestCheckButton } from './RequestCheck.tsx';
 
 /** Initiative order across the top of the screen, plus the GM's fight controls. */
 export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onStart: () => void }>) {
@@ -25,6 +26,7 @@ export function TurnOrder({ session, onStart }: Readonly<{ session: Session; onS
         </Button>
         <RestButtons session={session} />
         <EncounterButton session={session} />
+        <RequestCheckButton session={session} />
       </div>
     ) : null;
   }

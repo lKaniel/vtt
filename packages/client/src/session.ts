@@ -303,7 +303,9 @@ export class Session extends HudSession {
       case 'moved':
         return this.onMoved(msg.id, msg.path);
       case 'chat':
-        this.chat = [...this.chat, msg.message].slice(-CHAT_HISTORY);
+        this.chat = this.chat.some((m) => m.id === msg.message.id)
+          ? this.chat.map((m) => (m.id === msg.message.id ? msg.message : m))
+          : [...this.chat, msg.message].slice(-CHAT_HISTORY);
         this.emit('chat', msg.message);
         return true;
       case 'combat':

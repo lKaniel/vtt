@@ -633,6 +633,16 @@ Monsters can be left out with their toggles. Award XP splits the
 monsters' XP evenly, adds it to each character's `stats.xp` and says in
 chat who has enough for a new level.
 
+**Checks.** A creature's owner rolls ability and skill checks from the
+sheet's Features page: the ability modifier, plus proficiency for a skill
+in `stats.skills`, with disadvantage when poisoned, frightened or (2014)
+exhausted, and an effect's `checkBonus` dice. The GM's Request check button
+asks the selected creatures (else the party) for one: each for itself, as a
+group (it passes when at least half pass the DC), or as a contest between
+two (the second may use another skill, Acrobatics against Athletics; the
+higher total wins, a tie changes nothing). The request is a chat card where
+each owner presses Roll; the card fills in and says the result.
+
 **Multiclassing.** `stats.classes` splits a character's levels over several
 classes. Proficiency, cantrips and scroll reading follow the total level;
 each class gives its features at its own level (their tables, like rage

@@ -8,7 +8,7 @@ import {
   RoleSchema,
   ROLL_MODES,
 } from '@vtt/shared';
-import { ConditionSchema, CurrencySchema, EditionSchema } from '@vtt/system-dnd5e';
+import { ABILITIES, ConditionSchema, CurrencySchema, EditionSchema } from '@vtt/system-dnd5e';
 import type { RawData } from 'ws';
 import { z } from 'zod';
 
@@ -16,6 +16,9 @@ import { z } from 'zod';
 
 /** Uploads up to 20 MB, as base64. */
 const MAX_UPLOAD_BASE64 = Math.ceil((20 * 1024 * 1024 * 4) / 3) + 4;
+
+/** An ability check, or a skill check using that ability. */
+const checkKind = { ability: z.enum(ABILITIES), skill: z.string().max(40).optional() };
 
 /** Waypoints a ruler may have. */
 const MAX_RULER_POINTS = 64;
@@ -65,6 +68,15 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     tokens: z.array(z.string()).min(1).max(20),
     xp: z.number().int().min(1).max(1_000_000),
   }),
+  z.object({
+    t: z.literal('requestCheck'),
+    tokens: z.array(z.string()).min(1).max(20),
+    ...checkKind,
+    dc: z.number().int().min(1).max(40).optional(),
+    kind: z.enum(['each', 'group', 'contest']),
+    versus: z.object(checkKind).optional(),
+  }),
+  z.object({ t: z.literal('rollCheck'), token: z.string(), ...checkKind, card: z.string().optional() }),
   z.object({
     t: z.literal('carry'),
     token: z.string(),
