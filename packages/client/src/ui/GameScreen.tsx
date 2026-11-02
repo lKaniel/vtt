@@ -19,6 +19,7 @@ import { PartyBar } from './PartyBar.tsx';
 import { ObserveBanner } from './ObserveBanner.tsx';
 import { PauseBanner, PauseButton } from './PauseBanner.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
+import { SceneNav } from './SceneNav.tsx';
 import { TokenHud } from './TokenHud.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
@@ -69,7 +70,8 @@ export function GameScreen({
   }, [session]);
 
   return (
-    <div className="game">
+    // The party portraits move down under the scene navigation bar while it shows.
+    <div className="game has-[[data-slot=scene-nav]]:[&_.party]:top-[84px]!">
       <div className="map" ref={host} />
       <header className="topbar frame">
         <span
@@ -89,6 +91,7 @@ export function GameScreen({
           Leave
         </Button>
       </header>
+      <SceneNav session={session} />
       <TurnOrder session={session} onStart={() => session.startCombat(session.fightersInView())} />
       <PartyBar session={session} />
       <MapTools session={session} />

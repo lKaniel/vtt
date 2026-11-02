@@ -137,6 +137,15 @@ Optional, all set from the Scenes tab too:
 | `darknessFollowsClock` | The darkness follows the game clock's time of day (see time.json); `darkness` is ignored. |
 | `levels`               | Floors of the scene, see "Scene levels" below.                                            |
 | `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.            |
+| `navigation`           | `true`: the scene is in the GM's navigation bar under the top bar.                        |
+| `navName`              | Its name in that bar (default `name`).                                                    |
+| `thumb`                | A small picture for the bar and the Scenes list (default the background tile's picture).  |
+
+The navigation bar always holds the game's scene and the one the GM is on;
+a click looks at a scene, its play button moves the game there. A
+foreground picture (Foundry's scene foreground) is an image tile drawn over
+everything: `"overhead": true, "occludedAlpha": 1` makes it a roof that
+never fades.
 
 Every scene is live at once: the rules (moves, doors, fights, spells) work
 on whichever scene the player acting is on.

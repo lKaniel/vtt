@@ -31,12 +31,18 @@ export const SceneSchema = SceneSettingsSchema.extend({
   name: z.string().min(1).optional(),
   /** Fractional key ordering the Scenes list (see sort-key.ts in core). */
   sort: z.string().optional(),
+  /** Shown in the GM's scene navigation bar. */
+  navigation: z.boolean().optional(),
+  /** Its name in the navigation bar (default: its name). */
+  navName: z.string().optional(),
+  /** A small picture for the Scenes list and the bar (default: the background tile's picture). */
+  thumb: z.string().optional(),
 });
 export type Scene = z.infer<typeof SceneSchema>;
 
 /** The table settings for `scene` of `game`. */
 export function worldOf(game: Game, scene: Scene): World {
-  const { name: _name, sort: _sort, ...settings } = scene;
+  const { name: _name, sort: _sort, navigation: _nav, navName: _navName, thumb: _thumb, ...settings } = scene;
   return { ...settings, name: game.name, rules: game.rules, players: game.players };
 }
 

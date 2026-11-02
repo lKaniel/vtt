@@ -36,6 +36,11 @@ const FoundrySceneSchema = z.object({
   darkness: num,
   environment: z.object({ darknessLevel: num }).optional().catch(undefined),
   foregroundElevation: num,
+  /** A picture drawn over the map, where the background is. */
+  foreground: str.nullable(),
+  navigation: z.boolean().optional().catch(undefined),
+  navName: str.nullable(),
+  thumb: str.nullable(),
   initial: z.object({ x: z.number(), y: z.number() }).nullable().optional().catch(undefined),
   walls: list(FoundryWall),
   lights: list(FoundryLight),
@@ -112,7 +117,8 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     vision: true,
     ...(grid.gridless ? { grid: 'none' as const } : {}),
     ...(s.backgroundColor ? { background: s.backgroundColor } : {}),
-    tiles: [...background, ...tilesOf(s, lookupIn(media), skipped)],
+    ...navOf(s, lookupIn(media)),
+    tiles: [...background, ...tilesOf(s, lookupIn(media), skipped), ...foregroundTile(s, { x, y }, lookupIn(media))],
     walls: wallsOf(s, grid, skipped),
     lights: foundryLights(s.lights, feetIn(grid)),
     ...placeables,
@@ -153,6 +159,37 @@ function backgroundTile(
       locked: true,
     },
   ];
+}
+
+/** The foreground picture, as a roof over the whole map that never fades. */
+function foregroundTile(s: FoundryScene, at: { x: number; y: number }, find: ReturnType<typeof lookupIn>): Tile[] {
+  const src = find(s.foreground);
+  if (!src) return [];
+  const [w, h] = [s.width, s.height];
+  return [
+    {
+      id: 'foreground',
+      name: 'Foreground',
+      kind: 'image',
+      ...at,
+      w,
+      h,
+      src,
+      overhead: true,
+      occludedAlpha: 1,
+      locked: true,
+    },
+  ];
+}
+
+/** Whether the scene shows in the navigation bar, its name there, and its thumbnail. */
+function navOf(s: FoundryScene, find: ReturnType<typeof lookupIn>): Partial<SceneEntry> {
+  const thumb = find(s.thumb);
+  return {
+    ...(s.navigation ? { navigation: true } : {}),
+    ...(s.navName ? { navName: s.navName } : {}),
+    ...(thumb ? { thumb } : {}),
+  };
 }
 
 const FoundryLevel = z.object({

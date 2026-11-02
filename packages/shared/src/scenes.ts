@@ -22,6 +22,24 @@ export function sceneList(src: Source): Doc[] {
   return src.all(SCENES).sort((a, b) => sortOf(a).localeCompare(sortOf(b)) || nameOf(a).localeCompare(nameOf(b)));
 }
 
+/** The scenes the navigation bar shows: those marked for it, and the game's and yours, in the list's order. */
+export function navScenes(src: Source, at: { active: string; here: string }): Doc[] {
+  return sceneList(src).filter((d) => d.navigation === true || d.id === at.active || d.id === at.here);
+}
+
+/** A scene's name in the navigation bar. */
+export function navLabel(doc: Doc): string {
+  return typeof doc.navName === 'string' && doc.navName ? doc.navName : nameOf(doc);
+}
+
+/** A scene's picture: its thumbnail, else the picture of its background tile. */
+export function sceneThumb(src: Source, scene: string): string | undefined {
+  const thumb = src.get(SCENES, scene)?.thumb;
+  if (typeof thumb === 'string' && thumb) return thumb;
+  const ground = src.all(`${scene}/tiles`).find((t) => t.background === true && typeof t.src === 'string');
+  return ground?.src as string | undefined;
+}
+
 function lastKey(src: Source): string {
   const last = sceneList(src).at(-1);
   const sort = last ? sortOf(last) : '';
