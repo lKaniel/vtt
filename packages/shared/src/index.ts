@@ -9,6 +9,7 @@ export * from './permissions.ts';
 export * from './vision.ts';
 export * from './walls.ts';
 export * from './light-shape.ts';
+export * from './token-look.ts';
 export * from './doors.ts';
 export * from './senses.ts';
 export * from './protocol.ts';

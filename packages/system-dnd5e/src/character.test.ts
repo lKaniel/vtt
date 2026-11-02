@@ -9,6 +9,7 @@ import {
   characterToken,
   kitItems,
   newCharacter,
+  totalLevel,
 } from './character.ts';
 import { characterIssues, issuesByStep, levelUp } from './character-check.ts';
 import type { KitStep } from './origins.ts';
@@ -191,6 +192,67 @@ describe('levelUp', () => {
 
   it('takes the subclass at its level', () => {
     expect(levelUp(wizard({ level: 2, hpRolls: [4] }), { hp: 4, subclass: 'evoker' }).subclass).toBe('evoker');
+  });
+});
+
+describe('multiclassing', () => {
+  const c3 = cleric({ level: 3, hpRolls: [5, 5] });
+
+  it('takes a level in a new class, then more in it', () => {
+    const c = levelUp(c3, { hp: 6, class: 'fighter' });
+    expect(c).toMatchObject({ level: 3, multiclass: [{ class: 'fighter', level: 1 }], hpRolls: [5, 5, 6] });
+    expect(totalLevel(c)).toBe(4);
+    expect(characterIssues(c)).toEqual([]);
+    expect(levelUp(c, { hp: 6, class: 'fighter' }).multiclass).toEqual([{ class: 'fighter', level: 2 }]);
+    expect(levelUp(c, { hp: 5, class: 'cleric' })).toMatchObject({ level: 4, multiclass: [{ level: 1 }] });
+  });
+
+  it('picks spells from each caster class’s list', () => {
+    const c = cleric({
+      base: { str: 13, dex: 8, con: 14, int: 13, wis: 15, cha: 8 },
+      level: 3,
+      hpRolls: [5, 5, 4],
+      multiclass: [{ class: 'wizard', level: 1 }],
+      spells: [...cleric().spells, 'fire-bolt', 'magic-missile'],
+    });
+    expect(characterIssues(c)).toEqual([]);
+    expect(characterIssues({ ...c, spells: [...c.spells, 'fireball'] })).toContain(
+      "Fireball isn't a level 2 or lower cleric spell.",
+    );
+  });
+
+  it('needs the scores to multiclass', () => {
+    expect(characterIssues(levelUp(c3, { hp: 4, class: 'wizard' }))).toContain(
+      'Multiclassing into Wizard needs Intelligence 13.',
+    );
+  });
+
+  it('counts improvements and subclasses per class level', () => {
+    const c = cleric({ level: 3, hpRolls: [5, 5, 5, 5, 5, 5], multiclass: [{ class: 'fighter', level: 4 }] });
+    expect(characterIssues(c)).toEqual(
+      expect.arrayContaining(['Take 1 ability score improvement (2 points each).', 'Choose a Fighter subclass.']),
+    );
+    const chosen = levelUp(cleric({ level: 3, hpRolls: [5, 5, 5, 5], multiclass: [{ class: 'fighter', level: 2 }] }), {
+      hp: 5,
+      class: 'fighter',
+      subclass: 'champion',
+    });
+    expect(chosen.multiclass).toEqual([{ class: 'fighter', level: 3, subclass: 'champion' }]);
+    expect(chosen.subclass).toBe('life-domain');
+  });
+
+  it('puts every class on the token', () => {
+    const t = characterToken(cleric({ level: 3, hpRolls: [5, 5, 6], multiclass: [{ class: 'fighter', level: 1 }] }));
+    expect(t.stats).toMatchObject({
+      classes: [
+        { class: 'cleric', level: 3, subclass: 'life-domain' },
+        { class: 'fighter', level: 1 },
+      ],
+    });
+    expect(t.stats?.class).toBeUndefined();
+    expect(t.stats?.level).toBeUndefined();
+    // 8 + 3, then 5 + 3, 5 + 3 and 6 + 3, plus 4 for dwarven toughness.
+    expect(t.stats?.maxHp).toBe(40);
   });
 });
 

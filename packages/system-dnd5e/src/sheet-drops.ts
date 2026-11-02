@@ -1,3 +1,4 @@
+import { classLevels } from './multiclass.ts';
 import { type CasterSheet, classFeature } from './classes.ts';
 import type { Content } from './content.ts';
 import type { Creature } from './creature.ts';
@@ -71,9 +72,9 @@ function learn<T extends Sheet>(sheet: T, spell: Spell): DropOutcome<T> {
 function grant<T extends Sheet>(sheet: T, ref: string, content: Content): DropOutcome<T> {
   const feature = classFeature(ref, content);
   if (!feature) return { problem: `There is no feature "${ref}" in the ${content.edition} rules` };
-  const cls = sheet.stats?.class?.toLowerCase();
-  const level = sheet.stats?.level ?? 1;
-  const fromClass = content.classes.get(cls ?? '')?.features.some((f) => f.id === feature.id && f.level <= level);
+  const fromClass = classLevels(sheet, content).some((l) =>
+    l.cls?.features.some((f) => f.id === feature.id && f.level <= l.level),
+  );
   const granted = sheet.stats?.features ?? [];
   if (fromClass || granted.some((r) => r.endsWith(`/${feature.id}`))) {
     return { problem: `${sheet.name} already has ${feature.name}` };

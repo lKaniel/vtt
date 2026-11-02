@@ -9,7 +9,10 @@ describe('exhaustion and hit dice on the sheet', () => {
     expect(exhaustionText(6, '2024')).toBe('Dead');
   });
 
-  it('counts hit dice left', () => {
-    expect(hitDiceText({ die: 10, total: 3, left: 2 })).toBe('2/3 d10');
+  it('counts hit dice left, per die', () => {
+    const d10 = { die: 10, total: 3, left: 2 };
+    expect(hitDiceText({ ...d10, dice: [d10] })).toBe('2/3 d10');
+    const d6 = { die: 6, total: 2, left: 2 };
+    expect(hitDiceText({ die: 10, total: 5, left: 4, dice: [d10, d6] })).toBe('2/3 d10 · 2/2 d6');
   });
 });

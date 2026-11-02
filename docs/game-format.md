@@ -473,21 +473,25 @@ without one):
 }
 ```
 
-| Field         | Meaning                                                                 |
-| ------------- | ----------------------------------------------------------------------- |
-| `id`          | Lowercase letters, digits, dashes. An actor's must match its file name. |
-| `x`, `y`      | A token's centre in pixels (a square centre on a square grid).          |
-| `size`        | In squares: 1 medium, 2 large, 3 huge. Default 1.                       |
-| `color`       | Disc colour behind the placeholder when there is no picture.            |
-| `img`         | Picture URL, drawn as-is: use a top-down cut-out with transparency.     |
-| `speed`       | Walking speed in feet. Default 30.                                      |
-| `ownership`   | Who may see, read and act with it; see Ownership below.                 |
-| `darkvision`  | Range in feet. Also `blindsight`, `tremorsense`, `truesight`.           |
-| `devilsSight` | Sees in magical and nonmagical darkness to this range, in feet.         |
-| `light`       | A light it carries, like a placed light: `{ "bright": 20, "dim": 20 }`. |
-| `hidden`      | A token's: `true` = only the GM sees it.                                |
-| `visibleTo`   | A token's: only these players (and the GM) see it. Used for illusions.  |
-| `folder`      | An actor's: groups it in the Actors list.                               |
+| Field                        | Meaning                                                                                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                         | Lowercase letters, digits, dashes. An actor's must match its file name.                                                                             |
+| `x`, `y`                     | A token's centre in pixels (a square centre on a square grid).                                                                                      |
+| `size`                       | In squares: 1 medium, 2 large, 3 huge. Default 1.                                                                                                   |
+| `color`                      | Disc colour behind the placeholder when there is no picture.                                                                                        |
+| `img`                        | Picture URL, drawn as-is: use a top-down cut-out with transparency.                                                                                 |
+| `displayName`, `displayBars` | When its name and hit point bar show: `never`, `control` (while its owner has it selected), `ownerHover`, `hover`, `owner`, `always` (the default). |
+| `scale`                      | How big its picture is drawn in its square, 0.2 to 3. Default 1.                                                                                    |
+| `mirrorX`, `mirrorY`         | Flip its picture left to right, or upside down.                                                                                                     |
+| `ring`                       | A ring round its picture: `{ "color": "#e0b040", "background": "#202020" }`.                                                                        |
+| `speed`                      | Walking speed in feet. Default 30.                                                                                                                  |
+| `ownership`                  | Who may see, read and act with it; see Ownership below.                                                                                             |
+| `darkvision`                 | Range in feet. Also `blindsight`, `tremorsense`, `truesight`.                                                                                       |
+| `devilsSight`                | Sees in magical and nonmagical darkness to this range, in feet.                                                                                     |
+| `light`                      | A light it carries, like a placed light: `{ "bright": 20, "dim": 20 }`.                                                                             |
+| `hidden`                     | A token's: `true` = only the GM sees it.                                                                                                            |
+| `visibleTo`                  | A token's: only these players (and the GM) see it. Used for illusions.                                                                              |
+| `folder`                     | An actor's: groups it in the Actors list.                                                                                                           |
 
 ### Ownership
 
@@ -569,6 +573,7 @@ better of STR and DEX, ranged weapons DEX), proficiency from `level`:
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `level`                                        | Character level, sets proficiency.                                                                                                                   |
 | `class`                                        | Shown on the character sheet.                                                                                                                        |
+| `classes`                                      | A multiclassed character: `[{ "class": "fighter", "level": 3, "subclass"? }, ...]`, first class first, instead of `class` and `level`.               |
 | `abilities`                                    | `str dex con int wis cha` scores; missing ones are 10 (or the monster's).                                                                            |
 | `maxHp`                                        | Hit point maximum.                                                                                                                                   |
 | `ac`, `proficiency`                            | Override the computed values.                                                                                                                        |
@@ -603,7 +608,22 @@ knows or has prepared (from `spells-5.1.json` or `spells-5.2.json`, by the
 token's edition). A `class` named after an SRD class (Wizard, Fighter, ...)
 gives that class's spell slots, spellcasting ability and features by `level`,
 from `classes-5.x.json`. A homebrew class or a monster that casts uses
-`"spellcasting": { "ability": "int", "progression": "full" | "half" | "pact", "level": 5 }`.
+`"spellcasting": { "ability": "int", "progression": "full" | "half" | "third" | "pact", "level": 5 }`.
+
+**Multiclassing.** `stats.classes` splits a character's levels over several
+classes. Proficiency, cantrips and scroll reading follow the total level;
+each class gives its features at its own level (their tables, like rage
+damage, read that level); extra attack is the best of the classes and sneak
+attack follows rogue levels. Saving throws come from the first class. Spell
+slots come from the combined caster level (full casters count every level,
+half casters half, rounded down in 2014 and up in 2024 or for classes that
+cast from 1st level, third casters a third), unless only one class casts,
+which keeps its own table. A warlock's pact slots are added apart and come
+back on a short rest. Spell attacks and DCs use the first casting class's
+ability. Hit dice are one pool per die; spending takes the biggest first.
+In the level-up screen a player picks the class gaining the level; taking a
+new one needs 13 in its main abilities and in the current classes' (a
+class's `multiclass: { all, any }` in `class-automation.json`).
 
 ```json
 "stats": {

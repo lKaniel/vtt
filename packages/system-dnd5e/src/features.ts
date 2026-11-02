@@ -1,5 +1,6 @@
 import { type FeatureSheet, levelValue } from './classes.ts';
 import { keptResistance } from './legendary.ts';
+import { characterLevel } from './multiclass.ts';
 import type { Creature } from './creature.ts';
 import { hitDiceOf, restedExhaustion, restedHitDice } from './vigour.ts';
 import { type Rng, roll } from '@vtt/shared';
@@ -52,9 +53,13 @@ export function spendUse(token: Token, feature: FeatureSheet, amount = 1): Token
   return { ...token, spent: { ...token.spent, uses } };
 }
 
+/** The level a feature's tables read: its class's level. */
+const featureLevel = (token: Token, feature: FeatureSheet): number =>
+  feature.classLevel ?? characterLevel(token.stats) ?? 1;
+
 function featureEffect(token: Token, feature: FeatureSheet): Effect | undefined {
   if (!feature.effect) return undefined;
-  const level = token.stats?.level ?? 1;
+  const level = featureLevel(token, feature);
   const meleeDamage = feature.meleeDamage ? levelValue(feature.meleeDamage, level) : feature.effect.meleeDamage;
   return {
     ...feature.effect,
@@ -71,7 +76,7 @@ export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng =
   let next = spendUse(token, feature);
   let healed: number | undefined;
   if (feature.heal) {
-    const amount = roll(feature.heal.replace(/level/g, String(token.stats?.level ?? 1)), rng).total;
+    const amount = roll(feature.heal.replace(/level/g, String(featureLevel(token, feature))), rng).total;
     const hp = Math.min(sheet.maxHp, sheet.hp + amount);
     healed = hp - sheet.hp;
     next = { ...next, hp: hp >= sheet.maxHp ? undefined : hp };
@@ -108,9 +113,18 @@ function withResistance(uses: Record<string, number> | undefined, token: Token):
 export function rest(token: Token, sheet: Creature, kind: 'short' | 'long'): Token {
   if (kind === 'long') return longRest(token, sheet);
   const uses = withResistance(restUses(token, sheet), token);
-  const slots = sheet.caster?.pact ? undefined : token.spent?.slots;
+  const slots = shortRestSlots(token.spent?.slots, sheet.caster);
   const hitDice = token.spent?.hitDice;
   return { ...token, spent: uses || slots || hitDice ? { slots, uses, hitDice } : undefined };
+}
+
+/** Spent slots after a short rest: pact slots come back (taken to be the ones spent first). */
+function shortRestSlots(spent: number[] | undefined, caster: Creature['caster']): number[] | undefined {
+  if (!spent || caster?.pact) return undefined;
+  const pact = caster?.pactSlots;
+  if (!pact) return spent;
+  const left = spent.map((n, i) => Math.max(0, n - (pact[i] ?? 0)));
+  return left.some((n) => n > 0) ? left : undefined;
 }
 
 /** Everything back, but only some hit dice (2014) and one level of exhaustion. */

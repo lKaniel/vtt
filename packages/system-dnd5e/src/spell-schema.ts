@@ -320,8 +320,8 @@ export type Feature = z.infer<typeof FeatureSchema>;
 
 export const SpellcastingSchema = z.object({
   ability: AbilitySchema,
-  /** Slot progression: full casters, half casters (paladin, ranger) or a warlock's pact magic. */
-  progression: z.enum(['full', 'half', 'pact']),
+  /** Slot progression: full casters, half casters (paladin, ranger), third casters or a warlock's pact magic. */
+  progression: z.enum(['full', 'half', 'third', 'pact']),
   /** Class level spellcasting starts at (2 for 2014 paladins and rangers). */
   from: z.number().int().min(1).default(1),
 });
@@ -341,5 +341,7 @@ export const ClassSchema = z.object({
   /** 2024 weapon mastery: your weapons' mastery properties apply. */
   weaponMastery: z.boolean().optional(),
   features: z.array(FeatureSchema).default([]),
+  /** Scores of 13 needed to multiclass into or out of it: every one of `all`, and one of `any`. */
+  multiclass: z.object({ all: z.array(AbilitySchema).optional(), any: z.array(AbilitySchema).optional() }).optional(),
 });
 export type Class = z.infer<typeof ClassSchema>;

@@ -42,6 +42,26 @@ export function setStat<D extends Draft>(draft: D, key: keyof Stats, value: unkn
   return withField(draft, 'stats', Object.keys(stats).length ? stats : undefined);
 }
 
+export interface ClassRow {
+  class: string;
+  level: number;
+}
+
+/** The creature's classes as editable rows: its `classes`, or its one class and level. */
+export function classRows(draft: Draft): ClassRow[] {
+  const stats = draft.stats;
+  if (stats?.classes) return stats.classes.map((c) => ({ class: c.class, level: c.level }));
+  return stats?.class ? [{ class: stats.class, level: stats.level ?? 1 }] : [];
+}
+
+/** One class is written as `class` and `level`, several as `classes`. */
+export function setClasses<D extends Draft>(draft: D, rows: readonly ClassRow[]): D {
+  const cleared = setStat(setStat(setStat(draft, 'classes', undefined), 'class', undefined), 'level', undefined);
+  const [only] = rows;
+  if (rows.length > 1) return setStat(cleared, 'classes', [...rows]);
+  return only ? setStat(setStat(cleared, 'class', only.class), 'level', only.level) : cleared;
+}
+
 export function setAbility<D extends Draft>(draft: D, ability: Ability, score: number | undefined): D {
   const abilities = withField(draft.stats?.abilities ?? {}, ability, score);
   return setStat(draft, 'abilities', Object.keys(abilities).length ? abilities : undefined);

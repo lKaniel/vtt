@@ -3,7 +3,15 @@ import { knownSpellIds, ownFeatures } from './own-content.ts';
 import { abilityMod } from './creature-math.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Feature, LevelTable, Spell, Spellcasting } from './spell-schema.ts';
-import type { Abilities, Ability } from './stats-schema.ts';
+import type { Abilities, Ability, Edition } from './stats-schema.ts';
+import {
+  type CastingLevel,
+  castingLevels,
+  characterLevel,
+  type ClassLevel,
+  classLevels,
+  multiclassCasterLevel,
+} from './multiclass.ts';
 
 // What a character's class gives them at their level: spell slots, the
 // spells they can cast and features with limited uses.
@@ -65,15 +73,28 @@ export function spellSlots(casting: Pick<Spellcasting, 'progression' | 'from'>, 
     slots[levelValue(PACT_LEVEL, level) - 1] = levelValue(PACT_SLOTS, level);
     return slots;
   }
-  const casterLevel = casting.progression === 'half' ? Math.ceil(level / 2) : level;
-  return nineLevels(FULL_CASTER[casterLevel - 1] ?? []);
+  const share = { full: 1, half: 2, third: 3 }[casting.progression];
+  return fullCasterSlots(Math.ceil(level / share));
 }
 
-/** The class a token's `stats.class` names, matched by id or name. */
+const fullCasterSlots = (casterLevel: number): number[] => nineLevels(FULL_CASTER[casterLevel - 1] ?? []);
+
+/** Slots of several caster classes: the full caster table at their combined level, plus pact slots apart. */
+function combinedSlots(casters: readonly CastingLevel[], edition: Edition): { slots: number[]; pact: number[] } {
+  const pactCasters = casters.filter((c) => c.casting.progression === 'pact');
+  const others = casters.filter((c) => c.casting.progression !== 'pact');
+  const single = others.length === 1 ? others[0] : undefined;
+  const regular = single
+    ? spellSlots(single.casting, single.level)
+    : fullCasterSlots(multiclassCasterLevel(others, edition));
+  const pact = nineLevels([]);
+  for (const c of pactCasters) spellSlots(c.casting, c.level).forEach((n, i) => (pact[i]! += n));
+  return { slots: regular.map((n, i) => n + pact[i]!), pact };
+}
+
+/** The class a token took at 1st level (its only class unless it multiclassed), matched by id or name. */
 export function classOf(token: Pick<Token, 'stats'>, content: Content): Class | undefined {
-  const name = token.stats?.class?.toLowerCase();
-  if (!name) return undefined;
-  return content.classes.get(name) ?? [...content.classes.values()].find((c) => c.name.toLowerCase() === name);
+  return classLevels(token, content)[0]?.cls;
 }
 
 export interface CasterSheet {
@@ -86,8 +107,10 @@ export interface CasterSheet {
   /** Slots per spell level (index 0 = 1st), and how many are left. */
   slots: number[];
   left: number[];
-  /** Pact slots come back on a short rest. */
+  /** All its slots are pact slots, which come back on a short rest. */
   pact: boolean;
+  /** The pact slots among `slots` of a multiclassed warlock (index 0 = 1st), back on a short rest. */
+  pactSlots?: number[];
   spells: Spell[];
 }
 
@@ -96,11 +119,29 @@ interface Basics {
   proficiency: number;
 }
 
-function spellcastingOf(token: Token, cls: Class | undefined): (Spellcasting & { level: number }) | undefined {
+interface Casting {
+  ability: Ability;
+  /** Caster level for cantrips: the character's level. */
+  level: number;
+  slots: number[];
+  pact?: number[];
+  allPact: boolean;
+}
+
+function spellcastingOf(token: Token, content: Content): Casting | undefined {
   const own = token.stats?.spellcasting;
-  const level = own?.level ?? token.stats?.level ?? 1;
-  if (own) return { ability: own.ability, progression: own.progression, from: 1, level };
-  return cls?.spellcasting && { ...cls.spellcasting, level };
+  const level = characterLevel(token.stats) ?? 1;
+  if (own) {
+    const at = own.level ?? level;
+    const slots = spellSlots({ progression: own.progression, from: 1 }, at);
+    return { ability: own.ability, level: at, slots, allPact: own.progression === 'pact' };
+  }
+  const casters = castingLevels(classLevels(token, content));
+  if (!casters.length) return undefined;
+  const { slots, pact } = combinedSlots(casters, content.edition);
+  const allPact = casters.every((c) => c.casting.progression === 'pact');
+  const mixed = !allPact && pact.some((n) => n > 0);
+  return { ability: casters[0]!.casting.ability, level, slots, allPact, ...(mixed && { pact }) };
 }
 
 /** Spellcasting numbers for a token, or undefined if it casts nothing. */
@@ -109,10 +150,10 @@ export function casterSheet(
   { abilities, proficiency }: Basics,
   content: Content,
 ): CasterSheet | undefined {
-  const casting = spellcastingOf(token, classOf(token, content));
+  const casting = spellcastingOf(token, content);
   if (!casting) return undefined;
   const mod = abilityMod(abilities[casting.ability]);
-  const slots = spellSlots(casting, casting.level);
+  const slots = casting.slots;
   const spent = token.spent?.slots ?? [];
   return {
     ability: casting.ability,
@@ -121,7 +162,8 @@ export function casterSheet(
     level: casting.level,
     slots,
     left: slots.map((n, i) => Math.max(0, n - (spent[i] ?? 0))),
-    pact: casting.progression === 'pact',
+    pact: casting.allPact,
+    ...(casting.pact && { pactSlots: casting.pact }),
     spells: knownSpellIds(token)
       .map((id) => content.spells.get(id))
       .filter((s): s is Spell => !!s),
@@ -135,6 +177,8 @@ export interface FeatureSheet extends Omit<Feature, 'spell'> {
   left?: number;
   /** For features aimed like spells, with "{die}" filled in. */
   spell?: Partial<Spell>;
+  /** Levels in the class it comes from (the character's level for granted features): its tables read this. */
+  classLevel?: number;
 }
 
 /** Most uses at `level`: a fixed table, an ability modifier (at least 1), or hit points per level. */
@@ -158,6 +202,7 @@ function sheetOf(f: Feature, level: number, abilities: Abilities, spent: Record<
     ...f,
     passive,
     spell: featureSpell(f, level),
+    classLevel: level,
     ...(short && { recharge: 'short' as const }),
   };
   const max = maxUses(f, level, abilities);
@@ -165,18 +210,21 @@ function sheetOf(f: Feature, level: number, abilities: Abilities, spent: Record<
   return { ...base, max, left: Math.max(0, max - (spent[f.id] ?? 0)) };
 }
 
-/** The class features a token has at its level and those granted by hand, with uses left; `usesFrom` features share another's. */
+/** The features each class gives at its level and those granted by hand, with uses left; `usesFrom` features share another's. */
 export function featureSheets(
   token: Token,
-  cls: Class | undefined,
+  levels: readonly ClassLevel[],
   abilities: Abilities,
   granted: readonly Feature[] = [],
 ): FeatureSheet[] {
-  const level = token.stats?.level ?? 1;
+  const total = characterLevel(token.stats) ?? 1;
   const spent = token.spent?.uses ?? {};
-  const own = (cls?.features ?? []).filter((f) => f.level <= level);
-  const extra = granted.filter((g) => !own.some((f) => f.id === g.id));
-  const sheets = [...own, ...extra].map((f) => sheetOf(f, level, abilities, spent));
+  const own = levels.flatMap((l) =>
+    (l.cls?.features ?? []).filter((f) => f.level <= l.level).map((f) => ({ f, level: l.level })),
+  );
+  const fresh = own.filter((o, i) => own.findIndex((p) => p.f.id === o.f.id) === i);
+  const extra = granted.filter((g) => !fresh.some((o) => o.f.id === g.id)).map((f) => ({ f, level: total }));
+  const sheets = [...fresh, ...extra].map(({ f, level }) => sheetOf(f, level, abilities, spent));
   return sheets.map((f) => {
     const from = f.usesFrom ? sheets.find((s) => s.id === f.usesFrom) : undefined;
     return from ? { ...f, max: from.max, left: from.left } : f;

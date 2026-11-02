@@ -20,6 +20,7 @@ import {
   tokenDistance,
   TokenSchema,
   spendResistance,
+  characterLevel,
 } from '@vtt/system-dnd5e';
 import { isGridless, type Player, type Point } from '@vtt/shared';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
@@ -433,7 +434,7 @@ function scrollReader({ token, sheet }: Fighter, spell: Spell): CasterSheet {
   if (!token.inventory?.some((e) => e.item === SPELL_SCROLL && e.spell === spell.id)) {
     throw new Refusal(`${token.name} has no scroll of ${spell.name}`);
   }
-  return scrollCaster(sheet, spell, token.stats?.level ?? 1);
+  return scrollCaster(sheet, spell, characterLevel(token.stats) ?? 1);
 }
 
 /** One scroll of `spell` fewer: it crumbles to dust. */
