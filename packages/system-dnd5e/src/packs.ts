@@ -1,7 +1,7 @@
 import { type PackCompendium, PackManifestSchema, type SystemPackSource } from '@vtt/core';
 import type { z } from 'zod';
 import { type Content, srdFor } from './content.ts';
-import { SpellSchema } from './spell-schema.ts';
+import { ClassSchema, SpellSchema } from './spell-schema.ts';
 import { type Edition, ItemSchema, MonsterSchema } from './stats-schema.ts';
 
 // D&D content in asset packs. The bundled SRD is two packs the system ships
@@ -13,7 +13,7 @@ import { type Edition, ItemSchema, MonsterSchema } from './stats-schema.ts';
 type SystemPack = SystemPackSource;
 
 /** Compendium types that are rules content, and the schema of their documents. */
-const CONTENT_SCHEMAS = { monster: MonsterSchema, item: ItemSchema, spell: SpellSchema } as const;
+const CONTENT_SCHEMAS = { monster: MonsterSchema, item: ItemSchema, spell: SpellSchema, class: ClassSchema } as const;
 type ContentType = keyof typeof CONTENT_SCHEMAS;
 export const CONTENT_TYPES = Object.keys(CONTENT_SCHEMAS) as ContentType[];
 
@@ -67,7 +67,7 @@ function parsedDocs(c: PackCompendium): { id: string }[] {
 
 const cache = new WeakMap<readonly PackCompendium[], Partial<Record<Edition, Content>>>();
 
-/** The SRD of `edition` plus the monsters, items and spells of a game's pack compendia. */
+/** The SRD of `edition` plus the monsters, items, spells and classes of a game's pack compendia. */
 export function contentWith(edition: Edition, compendia: readonly PackCompendium[] = []): Content {
   const srd = srdFor(edition);
   const mine = compendia.filter((c) => forEdition(c, edition));
@@ -84,12 +84,13 @@ export function contentWith(edition: Edition, compendia: readonly PackCompendium
     monsters: add('monster', srd.monsters),
     items: add('item', srd.items),
     spells: add('spell', srd.spells),
+    classes: add('class', srd.classes),
   } as Content;
   cache.set(compendia, { ...known, [edition]: content });
   return content;
 }
 
-/** What is wrong with the documents of a monster, item or spell compendium, one line each. */
+/** What is wrong with the documents of a monster, item, spell or class compendium, one line each. */
 export function packContentIssues(c: PackCompendium): string[] {
   if (!isContentType(c.type)) return [];
   const schema = CONTENT_SCHEMAS[c.type] as z.ZodType;

@@ -228,9 +228,7 @@ export function featureSheets(
 ): FeatureSheet[] {
   const total = characterLevel(token.stats) ?? 1;
   const spent = token.spent?.uses ?? {};
-  const own = levels.flatMap((l) =>
-    (l.cls?.features ?? []).filter((f) => f.level <= l.level).map((f) => ({ f, level: l.level })),
-  );
+  const own = levels.flatMap((l) => levelFeatures(l).map((f) => ({ f, level: l.level })));
   const fresh = own.filter((o, i) => own.findIndex((p) => p.f.id === o.f.id) === i);
   const extra = granted.filter((g) => !fresh.some((o) => o.f.id === g.id)).map((f) => ({ f, level: total }));
   const sheets = [...fresh, ...extra].map(({ f, level }) => sheetOf(f, level, abilities, spent));
@@ -238,6 +236,25 @@ export function featureSheets(
     const from = f.usesFrom ? sheets.find((s) => s.id === f.usesFrom) : undefined;
     return from ? { ...f, max: from.max, left: from.left } : f;
   });
+}
+
+/** A class's features up to its level, its subclass's too; options of a choice only when picked (granted). */
+function levelFeatures(l: ClassLevel): Feature[] {
+  const sub = l.subclass ? l.cls?.subclasses?.find((s) => s.id === l.subclass) : undefined;
+  return [...(l.cls?.features ?? []), ...(sub?.features ?? [])].filter((f) => f.level <= l.level && !f.choice);
+}
+
+/** The class's scale values at its level (custom advancement). */
+export function classScales(levels: readonly ClassLevel[]): ScaleValue[] {
+  return levels.flatMap((l) =>
+    (l.cls?.scales ?? []).map((s) => ({ id: s.id, name: s.name, value: levelValue(s.values, l.level) })),
+  );
+}
+
+export interface ScaleValue {
+  id: string;
+  name: string;
+  value: number;
 }
 
 /** The features a token was granted on top of its class ("barbarian/rage"); unknown ones are left out. */

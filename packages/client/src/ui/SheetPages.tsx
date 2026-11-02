@@ -16,6 +16,7 @@ import { withKey } from './sheet-model.ts';
 import { RemoveButton } from './SheetDetails.tsx';
 import { EditButton, isOwn, NewButton, useOwnEditor } from './own/OwnEditor.tsx';
 import { TipCard } from './Tip.tsx';
+import { Badge } from './kit/badge.tsx';
 
 // The right-hand pages of the character sheet. Anything usable can be
 // dragged onto the action bar; in edit mode the GM makes new things here
@@ -198,6 +199,15 @@ export function FeaturesPage(props: Readonly<SheetProps>) {
   return (
     <>
       <ChecksPanel {...props} />
+      {sheet.scales?.length ? (
+        <div className="mb-2 flex flex-wrap gap-1" data-slot="scales">
+          {sheet.scales.map((s) => (
+            <Badge key={s.id} title={`${s.name} at this level`}>
+              {s.name} {s.value}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
       {sheet.features.length ? (
         <ul className="rows">
           {sheet.features.map((f) => (

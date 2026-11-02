@@ -87,6 +87,10 @@ const SAMPLES: Record<string, { coll: string; doc: Doc }> = {
     coll: 'macros',
     doc: { id: 'hail', type: 'macro', rev: 0, name: 'Hail', kind: 'chat', command: 'Well met!' },
   },
+  homebrew: {
+    coll: 'homebrew',
+    doc: { id: 'seer', type: 'homebrew', rev: 0, kind: 'class', name: 'Seer', hitDie: 8, saves: ['wis'], features: [] },
+  },
 };
 
 beforeEach(async () => {

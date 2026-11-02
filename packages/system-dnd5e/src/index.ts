@@ -40,6 +40,7 @@ export * from './character-check.ts';
 export * from './character-token.ts';
 export * from './token-link.ts';
 export * from './packs.ts';
+export * from './homebrew.ts';
 export * from './system.ts';
 export * from './traps.ts';
 export * from './durations.ts';

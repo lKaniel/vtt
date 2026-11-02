@@ -727,6 +727,21 @@ gives that class's spell slots, spellcasting ability and features by `level`,
 from `classes-5.x.json`. A homebrew class or a monster that casts uses
 `"spellcasting": { "ability": "int", "progression": "full" | "half" | "third" | "pact", "level": 5 }`.
 
+**Homebrew classes.** The GM makes classes in the Compendium tab
+(Homebrew), and each is a file in `homebrew/<id>.json` with `"kind": "class"`
+and the fields of an SRD class: `hitDie`, `saves`, `spellcasting`,
+`features` (`id`, `name`, `level`, `description`, `uses` by level,
+`recharge`, `action`), `multiclass`. Custom advancement adds `scales`
+(numbers by class level the sheet shows, such as a pool's size), `choices`
+(`id`, `name`, `count` by level: features with that `choice` are options a
+character picks, kept as `"<class>/<feature>"` in `stats.features`),
+`subclassLevel` and `subclasses` (`id`, `name`, `description`, `features`).
+Level tables are `[[level, value], ...]`. A character takes it like an SRD
+class (`"class": "illusionist"`), a subclass through `classes`
+(`[{ "class": "illusionist", "level": 3, "subclass": "dreamer" }]`). Shared
+(`ownership.default` `"observer"`) homebrew reaches the players' sheets;
+without ownership only the GM sees it.
+
 **Encounters and experience.** The GM's Encounter button (beside Start
 combat) weighs the monsters on the scene against the party: the
 player-owned characters with class levels. In 2014 rules the monsters' XP

@@ -9,8 +9,8 @@ import { fromDoc } from './doc-sync.ts';
 /** What a stored document is, for deciding who may touch it. */
 export type OwnedDoc = Owned & { name?: unknown; hidden?: boolean; visibleTo?: string[] };
 
-/** Journal entries, roll tables and macros: missing ownership means only the GM sees them. */
-const SIDEBAR = new Set(['journals', 'tables', 'macros']);
+/** Journal entries, roll tables, macros and homebrew: missing ownership means only the GM sees them. */
+const SIDEBAR = new Set(['journals', 'tables', 'macros', 'homebrew']);
 
 /** A sidebar entry's ownership: the GM's alone when it has none; a macro's author owns it. */
 function sidebarOwnership(doc: Doc): OwnedDoc['ownership'] {
