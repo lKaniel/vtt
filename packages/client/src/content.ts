@@ -27,8 +27,13 @@ export function setSettingsSource(source: () => Readonly<Record<string, string>>
   settings = source;
 }
 
+/** The game's packs' compendia and its homebrew, as one list. */
+export function gameCompendiaNow(): readonly PackCompendium[] {
+  return gameCompendia(THIS_GAME, packs, homebrew());
+}
+
 export function gameContent(rules: Edition): Content {
-  return withSettings(contentWith(rules, gameCompendia(THIS_GAME, packs, homebrew())), settings());
+  return withSettings(contentWith(rules, gameCompendiaNow()), settings());
 }
 
 type Own = Parameters<typeof withOwn>[1];
