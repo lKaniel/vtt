@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { listText, parseList, setAbility, setOwnership, setStat, tokenPatch } from './token-edit.ts';
+import {
+  classRows,
+  listText,
+  parseList,
+  setAbility,
+  setClasses,
+  setOwnership,
+  setStat,
+  tokenPatch,
+} from './token-edit.ts';
 
 describe('the GM token editor', () => {
   it('sends only what changed, and null for what was cleared', () => {
@@ -35,5 +44,25 @@ describe('ownership in the editor', () => {
       setOwnership({ ownership: { default: 'limited' as const, ana: 'owner' as const } }, 'ana', 'limited'),
     ).toEqual({});
     expect(setOwnership({}, 'ana', 'owner')).toEqual({ ownership: { default: 'limited', ana: 'owner' } });
+  });
+
+  it('keeps one class as class and level, and several as a classes list', () => {
+    const d = { id: 'h', stats: { abilities: { str: 12 } } };
+    const two = setClasses(d, [
+      { class: 'fighter', level: 3 },
+      { class: 'wizard', level: 2 },
+    ]);
+    expect(two.stats).toEqual({
+      abilities: { str: 12 },
+      classes: [
+        { class: 'fighter', level: 3 },
+        { class: 'wizard', level: 2 },
+      ],
+    });
+    expect(classRows(two)).toHaveLength(2);
+    const one = setClasses(two, [{ class: 'fighter', level: 4 }]);
+    expect(one.stats).toEqual({ abilities: { str: 12 }, class: 'fighter', level: 4 });
+    expect(classRows(one)).toEqual([{ class: 'fighter', level: 4 }]);
+    expect(setClasses(one, []).stats).toEqual({ abilities: { str: 12 } });
   });
 });

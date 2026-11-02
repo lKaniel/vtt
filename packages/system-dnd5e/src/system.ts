@@ -1,3 +1,4 @@
+import { classIssues } from './multiclass.ts';
 import type { PackCompendium, SystemDefinition } from '@vtt/core';
 import type { Perceiver } from '@vtt/shared';
 import { editionOf, toEdition } from './content.ts';
@@ -28,6 +29,7 @@ function contentIssues(sheet: Sheet, rules: string, packs?: readonly PackCompend
       .filter((s) => !srd.spells.has(s))
       .map((s) => `unknown spell "${s}" in the ${edition} rules`),
     ...inventoryIssues(sheet, srd),
+    ...classIssues(sheet.stats),
   ];
 }
 

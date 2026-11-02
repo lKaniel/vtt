@@ -2,6 +2,9 @@
   "$comment": "Hand-written rules merged over classes-5.1.json (2014) and classes-5.2.json (2024) at load: spellcasting, extra attacks and the features the engine runs. Features are matched by id.",
   "barbarian": {
     "both": {
+      "multiclass": {
+        "all": ["str"]
+      },
       "attacks": [[5, 2]],
       "features": {
         "rage": {
@@ -76,6 +79,9 @@
   },
   "bard": {
     "both": {
+      "multiclass": {
+        "all": ["cha"]
+      },
       "spellcasting": {
         "ability": "cha",
         "progression": "full"
@@ -109,6 +115,9 @@
   },
   "cleric": {
     "both": {
+      "multiclass": {
+        "all": ["wis"]
+      },
       "spellcasting": {
         "ability": "wis",
         "progression": "full"
@@ -178,6 +187,9 @@
   },
   "druid": {
     "both": {
+      "multiclass": {
+        "all": ["wis"]
+      },
       "spellcasting": {
         "ability": "wis",
         "progression": "full"
@@ -186,6 +198,9 @@
   },
   "fighter": {
     "both": {
+      "multiclass": {
+        "any": ["str", "dex"]
+      },
       "attacks": [
         [5, 2],
         [11, 3],
@@ -231,6 +246,9 @@
   },
   "monk": {
     "both": {
+      "multiclass": {
+        "all": ["dex", "wis"]
+      },
       "attacks": [[5, 2]],
       "features": {
         "unarmored-defense": {
@@ -380,6 +398,9 @@
   },
   "paladin": {
     "both": {
+      "multiclass": {
+        "all": ["str", "cha"]
+      },
       "attacks": [[5, 2]],
       "spellcasting": {
         "ability": "cha",
@@ -420,6 +441,9 @@
   },
   "ranger": {
     "both": {
+      "multiclass": {
+        "all": ["dex", "wis"]
+      },
       "attacks": [[5, 2]],
       "spellcasting": {
         "ability": "wis",
@@ -439,6 +463,9 @@
   },
   "rogue": {
     "both": {
+      "multiclass": {
+        "all": ["dex"]
+      },
       "sneakAttack": true,
       "features": {
         "cunning-action": {
@@ -452,6 +479,9 @@
   },
   "sorcerer": {
     "both": {
+      "multiclass": {
+        "all": ["cha"]
+      },
       "spellcasting": {
         "ability": "cha",
         "progression": "full"
@@ -460,6 +490,9 @@
   },
   "warlock": {
     "both": {
+      "multiclass": {
+        "all": ["cha"]
+      },
       "spellcasting": {
         "ability": "cha",
         "progression": "pact"
@@ -468,6 +501,9 @@
   },
   "wizard": {
     "both": {
+      "multiclass": {
+        "all": ["int"]
+      },
       "spellcasting": {
         "ability": "int",
         "progression": "full"

@@ -2,7 +2,7 @@ import { type Rng, roll } from '@vtt/shared';
 import { abilityMod } from './creature-math.ts';
 import type { Creature } from './creature.ts';
 import { srdFor } from './content.ts';
-import { classOf } from './classes.ts';
+import { classLevels } from './multiclass.ts';
 import type { Effect } from './spell-schema.ts';
 import type { Edition } from './stats-schema.ts';
 import type { Token } from './token-schema.ts';
@@ -41,22 +41,40 @@ export function restedExhaustion(level: number | undefined): number | undefined 
   return level && level > 1 ? level - 1 : undefined;
 }
 
-export interface HitDice {
-  /** Faces of the class's hit die. */
+export interface HitDicePool {
+  /** Faces of the die. */
   die: number;
   total: number;
   left: number;
 }
 
-/** A class character's hit dice: one per level, of its class's die. */
+export interface HitDice extends HitDicePool {
+  /** The next die spent: the biggest one left (the biggest one when none are). */
+  die: number;
+  /** One pool per kind of die, biggest first. */
+  dice: HitDicePool[];
+}
+
+/** A class character's hit dice: one per level, of each class's die; spent ones are taken from the biggest dice. */
 export function hitDiceOf(
   token: Pick<Token, 'stats' | 'monster' | 'spent'>,
   sheet: Pick<Creature, 'edition'>,
 ): HitDice | undefined {
-  const cls = classOf(token, srdFor(sheet.edition));
-  const total = token.stats?.level;
-  if (!cls || !total || token.monster) return undefined;
-  return { die: cls.hitDie, total, left: Math.max(0, total - (token.spent?.hitDice ?? 0)) };
+  const levels = classLevels(token, srdFor(sheet.edition));
+  if (!levels.length || token.monster || levels.some((l) => !l.cls)) return undefined;
+  const counts = new Map<number, number>();
+  for (const l of levels) counts.set(l.cls!.hitDie, (counts.get(l.cls!.hitDie) ?? 0) + l.level);
+  let spent = token.spent?.hitDice ?? 0;
+  const dice = [...counts]
+    .sort(([a], [b]) => b - a)
+    .map(([die, total]) => {
+      const used = Math.min(total, spent);
+      spent -= used;
+      return { die, total, left: total - used };
+    });
+  const total = dice.reduce((n, d) => n + d.total, 0);
+  const left = dice.reduce((n, d) => n + d.left, 0);
+  return { die: (dice.find((d) => d.left) ?? dice[0]!).die, total, left, dice };
 }
 
 /** Spent hit dice after a long rest: half the total back (at least one) in 2014, all of them in 2024. */

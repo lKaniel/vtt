@@ -4,6 +4,7 @@ import { editionOf, toEdition } from '@vtt/system-dnd5e';
 import { gameContent } from '../content.ts';
 import { setOwnership, setStat } from '../token-edit.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
+import { ClassesEdit } from './ClassesEdit.tsx';
 import { Check, Field, NumberInput, TextInput } from './EditorFields.tsx';
 import { withKey, type Draft, type Update } from './sheet-model.ts';
 import { Button } from './kit/button.tsx';
@@ -171,14 +172,7 @@ function RulesFields({ session, value, update }: Readonly<SheetProps>) {
           ]}
         />
       </Field>
-      <div className="ed-grid">
-        <Field label="Class">
-          <TextInput value={value.stats?.class} onChange={stat('class')} placeholder="none" />
-        </Field>
-        <Field label="Level">
-          <NumberInput value={value.stats?.level} min={1} onChange={stat('level')} placeholder="—" />
-        </Field>
-      </div>
+      <ClassesEdit value={value} update={update} />
     </div>
   );
 }

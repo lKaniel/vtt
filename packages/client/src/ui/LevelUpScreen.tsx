@@ -4,6 +4,7 @@ import {
   abilityName,
   abilityScores,
   type Character,
+  characterClasses,
   characterIssues,
   characterMaxHp,
   levelUp,
@@ -25,15 +26,23 @@ export function LevelUpScreen({
   onDone,
   onCancel,
 }: Readonly<{ character: Character; onDone: () => void; onCancel: () => void }>) {
-  const plan = levelUpPlan(c);
+  const [classId, setClassId] = useState(c.class);
+  const plan = levelUpPlan(c, classId);
   const [hp, setHp] = useState(plan.average);
   const [improvement, setImprovement] = useState<Bonus>({});
-  const [subclass, setSubclass] = useState(c.subclass);
+  const [subclass, setSubclass] = useState<string>();
   const [spells, setSpells] = useState(c.spells);
   const [error, setError] = useState<string>();
-  const next = levelUp(c, { hp, improvement: plan.improvement ? improvement : undefined, subclass, spells });
-  const issues = characterIssues(next);
-  const casts = spellChoices(next).limits.maxLevel > 0;
+  const choice = { hp, class: classId, improvement: plan.improvement ? improvement : undefined, subclass, spells };
+  const next = levelUp(c, choice);
+  const issues = plan.problem ? [plan.problem] : characterIssues(next);
+  const casts = spellChoices(next, plan.classLevel, classId).limits.maxLevel > 0;
+  const pickClass = (id: string) => {
+    setClassId(id);
+    setHp(levelUpPlan(c, id).average);
+    setSubclass(undefined);
+    setImprovement({});
+  };
 
   const confirm = async () => {
     try {
@@ -54,6 +63,7 @@ export function LevelUpScreen({
       </header>
       <div className="levelup-body">
         <section className="frame levelup-col">
+          <ClassPicker c={c} value={classId} onPick={pickClass} />
           <Detail title="Hit points">
             <HitPoints die={plan.hitDie} average={plan.average} hp={hp} setHp={setHp} />
             <p className="cc-facts">
@@ -61,12 +71,12 @@ export function LevelUpScreen({
             </p>
           </Detail>
           {plan.improvement && <Improvement c={c} value={improvement} onChange={setImprovement} />}
-          {plan.subclass && <SubclassPicker c={next} value={subclass} onPick={setSubclass} />}
-          <NewFeatures c={next} level={plan.level} />
+          {plan.subclass && <SubclassPicker c={next} classId={classId} value={subclass} onPick={setSubclass} />}
+          <NewFeatures c={next} classId={classId} level={plan.classLevel} />
         </section>
         {casts && (
           <section className="frame levelup-col wide">
-            <SpellPicker c={next} set={(x) => setSpells(x.spells)} />
+            <SpellPicker c={next} classId={classId} level={plan.classLevel} set={(x) => setSpells(x.spells)} />
           </section>
         )}
       </div>
@@ -100,12 +110,28 @@ function LevelUpFooter({
   );
 }
 
+/** Which class gains the level: one the character has, or a new one to multiclass into. */
+function ClassPicker({ c, value, onPick }: Readonly<{ c: Character; value: string; onPick: (id: string) => void }>) {
+  const taken = new Map(characterClasses(c).map((k) => [k.class, k.level]));
+  const classes = [...partsOf(c).book.content.classes.values()];
+  const label = (id: string, name: string) => (taken.has(id) ? `${name} ${taken.get(id)}` : `${name} (new)`);
+  return (
+    <Detail title="Class">
+      <Chips options={classes.map((k) => ({ id: k.id, label: label(k.id, k.name) }))} value={value} onPick={onPick} />
+      {!taken.has(value) && (
+        <p className="cc-facts">Multiclassing needs 13 in this class's main abilities and your current classes'.</p>
+      )}
+    </Detail>
+  );
+}
+
 function SubclassPicker({
   c,
+  classId,
   value,
   onPick,
-}: Readonly<{ c: Character; value: string | undefined; onPick: (id: string) => void }>) {
-  const options = partsOf(c).options?.subclasses ?? [];
+}: Readonly<{ c: Character; classId: string; value: string | undefined; onPick: (id: string) => void }>) {
+  const options = partsOf(c).book.origins.classes.find((o) => o.id === classId)?.subclasses ?? [];
   return (
     <Detail title="Subclass">
       <Chips options={options.map((s) => ({ id: s.id, label: s.name }))} value={value} onPick={onPick} />
@@ -114,8 +140,8 @@ function SubclassPicker({
   );
 }
 
-function NewFeatures({ c, level }: Readonly<{ c: Character; level: number }>) {
-  const features = (partsOf(c).cls?.features ?? []).filter((f) => f.level === level);
+function NewFeatures({ c, classId, level }: Readonly<{ c: Character; classId: string; level: number }>) {
+  const features = (partsOf(c).book.content.classes.get(classId)?.features ?? []).filter((f) => f.level === level);
   return (
     <Detail title={features.length ? 'New features' : 'Features'}>
       {features.length ? (

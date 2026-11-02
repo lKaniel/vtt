@@ -6,7 +6,6 @@ import { makesDeathSaves } from './deaths.ts';
 import {
   casterSheet,
   type CasterSheet,
-  classOf,
   type FeatureSheet,
   featureSheets,
   grantedFeatures,
@@ -16,6 +15,7 @@ import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
 import { changed, changedBase, changedList } from './effect-changes.ts';
 import { legendaryParts, type LegendaryParts } from './legendary.ts';
+import { characterLevel, type ClassLevel, classLevels } from './multiclass.ts';
 import { withOwn } from './own-content.ts';
 import { exhausted } from './vigour.ts';
 import type { Token } from './token-schema.ts';
@@ -80,14 +80,15 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
   const monster = token.monster ? content.monsters.get(token.monster) : undefined;
   if (token.monster ? !monster : !token.stats) return undefined;
   const stats = token.stats ?? {};
-  const cls = classOf(token, content);
-  const { abilities, proficiency } = changedScores(token, cls, content, {
+  const levels = classLevels(token, content);
+  const cls = levels[0]?.cls;
+  const { abilities, proficiency } = changedScores(token, levels, content, {
     abilities: AbilitiesSchema.parse({ ...monster?.abilities, ...stats.abilities }),
     proficiency: defaultProficiency(stats, monster),
   });
   const gear = equippedItems(token, content);
-  const { maxHp, ac } = fixedNumbers(stats, monster, classHp(cls, stats, abilities));
-  const features = withBasicActions(featureSheets(token, cls, abilities, grantedFeatures(token, content)));
+  const { maxHp, ac } = fixedNumbers(stats, monster, classHp(levels, abilities));
+  const features = withBasicActions(featureSheets(token, levels, abilities, grantedFeatures(token, content)));
   const base: Creature = {
     edition: content.edition,
     abilities,
@@ -105,7 +106,7 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     ...defenses(stats, monster),
     ...kindAndSaves(monster, cls, { abilities, proficiency }),
     ...effectParts(token, features, content.edition),
-    ...classParts(token, cls),
+    ...classParts(levels),
     caster: casterSheet(token, { abilities, proficiency }, content),
     ...legendaryParts(token, monster),
     features,
@@ -140,11 +141,11 @@ function withCarrying(
 /** Ability scores and proficiency after the changes of the token's effects and always-on features. */
 function changedScores(
   token: Token,
-  cls: Class | undefined,
+  levels: readonly ClassLevel[],
   content: Content,
   base: { abilities: Abilities; proficiency: number },
 ): { abilities: Abilities; proficiency: number } {
-  const features = featureSheets(token, cls, base.abilities, grantedFeatures(token, content));
+  const features = featureSheets(token, levels, base.abilities, grantedFeatures(token, content));
   const passives = features.flatMap((f) => (f.passive ? [f.passive] : []));
   const effects = [...(token.effects ?? []), ...passives];
   if (!effects.some((e) => e.changes?.length)) return base;
@@ -180,15 +181,15 @@ function effectParts(
   return { effects, conditions: [...new Set(effects.flatMap((e) => e.conditions ?? []))] };
 }
 
+/** Extra attack (the best of its classes), sneak attack by rogue level and weapon mastery. */
 function classParts(
-  token: Token,
-  cls: Class | undefined,
+  levels: readonly ClassLevel[],
 ): Pick<Creature, 'attacksPerAction' | 'sneakAttack' | 'weaponMastery'> {
-  const level = token.stats?.level ?? 1;
+  const sneak = levels.find((l) => l.cls?.sneakAttack);
   return {
-    attacksPerAction: Math.max(1, levelValue(cls?.attacks ?? [], level)),
-    sneakAttack: cls?.sneakAttack ? `${Math.ceil(level / 2)}d6` : undefined,
-    weaponMastery: cls?.weaponMastery ?? false,
+    attacksPerAction: Math.max(1, ...levels.map((l) => levelValue(l.cls?.attacks ?? [], l.level))),
+    sneakAttack: sneak ? `${Math.ceil(sneak.level / 2)}d6` : undefined,
+    weaponMastery: levels.some((l) => l.cls?.weaponMastery),
   };
 }
 
@@ -201,11 +202,13 @@ function saveBonuses(
   return Object.fromEntries(entries) as Record<Ability, number>;
 }
 
-/** Max hit points from the class: a full hit die at 1st level, the average after, plus Con each level. */
-function classHp(cls: Class | undefined, stats: Stats, abilities: Abilities): number | undefined {
-  if (!cls || !stats.level) return undefined;
+/** Max hit points from the classes: the first class's full hit die at 1st level, each die's average after, plus Con each level. */
+function classHp(levels: readonly ClassLevel[], abilities: Abilities): number | undefined {
+  if (!levels.length || levels.some((l) => !l.cls)) return undefined;
   const con = abilityMod(abilities.con);
-  return Math.max(1, cls.hitDie + con + (stats.level - 1) * (cls.hitDie / 2 + 1 + con));
+  const average = levels.reduce((n, l) => n + l.level * (l.cls!.hitDie / 2 + 1 + con), 0);
+  const first = levels[0]!.cls!.hitDie;
+  return Math.max(1, average + first / 2 - 1);
 }
 
 const HELD: readonly Condition[] = ['grappled', 'paralyzed', 'petrified', 'restrained', 'stunned', 'unconscious'];
@@ -282,7 +285,8 @@ function fixedNumbers(stats: Stats, monster: Monster | undefined, classHp?: numb
 
 function defaultProficiency(stats: Stats, monster: Monster | undefined): number {
   if (stats.proficiency !== undefined) return stats.proficiency;
-  if (stats.level !== undefined) return proficiencyForLevel(stats.level);
+  const level = characterLevel(stats);
+  if (level !== undefined) return proficiencyForLevel(level);
   return monster ? proficiencyForCr(monster.cr) : 2;
 }
 

@@ -1,4 +1,4 @@
-import type { Actor, TokenView } from '@vtt/system-dnd5e';
+import { type Actor, classesText, type TokenView } from '@vtt/system-dnd5e';
 import { uniqueId } from '@vtt/shared';
 import { EyeIcon, EyeOffIcon, PencilIcon, PlusIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -20,7 +20,8 @@ export function startDrag(e: React.DragEvent, payload: DragPayload): void {
 const matches = (name: string, query: string) => name.toLowerCase().includes(query.trim().toLowerCase());
 
 function subtitle(t: Pick<TokenView, 'monster' | 'stats'>): string {
-  const cls = t.stats?.class ? [t.stats.class, t.stats.level].filter(Boolean).join(' ') : t.monster;
+  const level = t.stats?.classes ? undefined : t.stats?.level;
+  const cls = t.stats?.class || t.stats?.classes ? [classesText(t.stats), level].filter(Boolean).join(' ') : t.monster;
   return [cls, t.stats?.rules && `${t.stats.rules} rules`].filter(Boolean).join(' · ');
 }
 
