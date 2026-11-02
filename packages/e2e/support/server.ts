@@ -13,6 +13,8 @@ export const repoRoot = resolve(fileURLToPath(import.meta.url), '../../../..');
 export interface ServerOptions {
   /** VTT_ADMIN_PASSWORD; unset leaves Setup open until one is set there. */
   adminPassword?: string;
+  /** Changes the game's files before the server starts (an encounter set up by hand). */
+  prepare?: (gameDir: string) => Promise<void>;
 }
 
 export interface RunningServer {
@@ -68,6 +70,7 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
   const gameDir = join(root, 'world');
   const dataDir = join(root, 'data');
   await cp(join(repoRoot, 'world'), gameDir, { recursive: true });
+  await options.prepare?.(gameDir);
   const port = await freePort();
   const env: NodeJS.ProcessEnv = { ...process.env, PORT: String(port), VTT_GAME: gameDir, VTT_DATA: dataDir };
   delete env.VTT_ADMIN_PASSWORD;
