@@ -259,6 +259,13 @@ export const EN = {
   'characters.edit': 'Edit',
   'characters.levelUp': 'Level up',
   'characters.deleteAsk': 'Delete {name} for good? Their token stays on the map as an actor.',
+
+  'walk.opportunity': 'Opportunity attack: {name}',
+  'walk.tooFar': 'Not enough movement',
+  'walk.difficult': 'Difficult terrain',
+  'walk.trap': 'Trap: {name}',
+  'walk.trapUnnamed': 'Trap',
+  'walk.blocked': "Can't get there",
 } as const;
 
 export type MessageKey = keyof typeof EN;

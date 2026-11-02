@@ -23,6 +23,12 @@ interface E2eVtt {
   doc(coll: string, id: string): ({ id: string } & Record<string, unknown>) | undefined;
   update(coll: string, id: string, patch: Record<string, unknown>, label?: string): void;
   send(message: Record<string, unknown>): void;
+  hooks: { on(hook: string, fn: (...args: unknown[]) => void): unknown };
+}
+
+interface Window {
+  /** What a spec collected from a hook. */
+  seen?: unknown[];
 }
 
 declare const vtt: E2eVtt;

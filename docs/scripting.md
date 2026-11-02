@@ -57,17 +57,18 @@ in the browser console.
 
 ## Hooks
 
-| Hook        | Called with          | When                                    |
-| ----------- | -------------------- | --------------------------------------- |
-| `ready`     |                      | you joined the table (or rejoined)      |
-| `chat`      | the chat message     | a chat message arrives                  |
-| `combat`    | the fight, or null   | a fight starts, ends or moves on a turn |
-| `token`     | the creature         | a creature appears or changes           |
-| `tokenGone` | its id               | a creature leaves your view             |
-| `moved`     | its id, the path     | a creature walks                        |
-| `select`    | its id, or undefined | you select a creature                   |
-| `targets`   |                      | your targets or someone else's change   |
-| `time`      |                      | the time of day changes                 |
+| Hook          | Called with                     | When                                                                                                                                                                      |
+| ------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ready`       |                                 | you joined the table (or rejoined)                                                                                                                                        |
+| `chat`        | the chat message                | a chat message arrives                                                                                                                                                    |
+| `combat`      | the fight, or null              | a fight starts, ends or moves on a turn                                                                                                                                   |
+| `token`       | the creature                    | a creature appears or changes                                                                                                                                             |
+| `tokenGone`   | its id                          | a creature leaves your view                                                                                                                                               |
+| `moved`       | its id, the path                | a creature walks                                                                                                                                                          |
+| `select`      | its id, or undefined            | you select a creature                                                                                                                                                     |
+| `targets`     |                                 | your targets or someone else's change                                                                                                                                     |
+| `time`        |                                 | the time of day changes                                                                                                                                                   |
+| `walkPreview` | `{ token, to, feet, warnings }` | the map previews a walk (the pointer rests on open ground): its length (null: no way there) and each warning (`kind`: opportunity, tooFar, difficult, trap; `at`; `text`) |
 
 ```js
 // Say who is up whenever the turn moves on.
