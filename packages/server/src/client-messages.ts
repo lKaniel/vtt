@@ -27,7 +27,31 @@ const index = z.number().int().nonnegative();
 /** Tokens one player may target at once. */
 const MAX_TARGETS = 50;
 
+/** Cards moved or dealt at once. */
+const MAX_CARDS = 200;
+const cardStack = z.string().max(80);
+
 const ClientMessageSchema = z.discriminatedUnion('t', [
+  z.object({
+    t: z.literal('drawCards'),
+    from: cardStack,
+    to: cardStack,
+    n: z.number().int().min(1).max(MAX_CARDS).optional(),
+  }),
+  z.object({
+    t: z.literal('passCards'),
+    from: cardStack,
+    to: cardStack,
+    cards: z.array(z.string().max(170)).min(1).max(MAX_CARDS),
+  }),
+  z.object({ t: z.literal('shuffleCards'), stack: cardStack }),
+  z.object({
+    t: z.literal('dealCards'),
+    from: cardStack,
+    to: z.array(cardStack).min(1).max(50),
+    n: z.number().int().min(1).max(MAX_CARDS).optional(),
+  }),
+  z.object({ t: z.literal('resetCards'), deck: cardStack }),
   z.object({ t: z.literal('rollTable'), table: z.string(), gmOnly: z.boolean().optional() }),
   z.object({ t: z.literal('runMacro'), macro: z.string().max(80), token: z.string().max(80).optional() }),
   z.object({ t: z.literal('showJournal'), entry: z.string(), page: z.string().optional() }),

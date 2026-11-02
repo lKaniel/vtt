@@ -37,6 +37,7 @@ export * from './weather-cycle.ts';
 export * from './ruler.ts';
 export * from './sounds.ts';
 export * from './roll-tables.ts';
+export * from './cards.ts';
 export * from './playlists.ts';
 export * from './box-handles.ts';
 export * from './item-shapes.ts';

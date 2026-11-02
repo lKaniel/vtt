@@ -24,6 +24,7 @@ world/                      the example game (another folder: VTT_GAME); lobby g
   tables/<id>.json          roll tables
   playlists/<id>.json       music
   macros/<id>.json          chat and script macros for the hotbar
+  cards/<id>.json           card decks, hands and piles
   combat.json               the fight in progress, if any
   time.json                 the game clock and its calendar (made on first start)
   assets/                   images referenced by tiles and tokens (uploads in assets/uploads/)
@@ -439,7 +440,7 @@ to 1, default 0.5), `walls` (default true: each wall between muffles it),
 `activeAt`, `name`. A player hears them from their token, the GM from the
 middle of the screen.
 
-## Journal entries, roll tables, playlists and macros
+## Journal entries, roll tables, playlists, macros and cards
 
 One file each, in `journals/`, `tables/` and `playlists/` (schemas in
 `shared/journals.ts`). Each has `id`, `name`, and may have `folder`, `sort`
@@ -503,6 +504,34 @@ runs those.
 
 ```json
 { "id": "rally", "name": "Rally", "kind": "chat", "command": "To me!\n/r 1d6 inspiration" }
+```
+
+### Cards
+
+A file in `cards/` is a stack of cards: a `kind` of `"deck"` (drawn from,
+face down), `"hand"` (a player's own) or `"pile"` (played cards, face up),
+and its `cards`, top first. A card has an `id`, a `name` and the `origin`
+deck it belongs to, which gathering the deck brings it back to; its face is
+a `face` picture, or its `value` and `suit` ("A", "♠"). It may have a `back`
+picture and `text`; a stack's `back` covers cards without one. A card is
+known by `<origin>/<id>`, so two decks may share card ids.
+
+Who sees what is `ownership`: a player who may only know of a stack
+(limited) is sent its name and how many cards it holds, not the cards;
+observer shows them, and owner lets them draw into it, shuffle it, and play
+or pass its cards. Players move cards only that way (the server refuses
+their edits to `cards`); the GM deals and gathers decks back. The Cards
+tab makes a deck of 52 playing cards, empty decks, piles, and a hand for
+each player.
+
+```json
+{
+  "id": "fate",
+  "name": "Deck of fate",
+  "kind": "deck",
+  "ownership": { "default": "limited" },
+  "cards": [{ "id": "the-tower", "name": "The Tower", "origin": "fate", "face": "/assets/cards/tower.webp" }]
+}
 ```
 
 ## Actors and tokens

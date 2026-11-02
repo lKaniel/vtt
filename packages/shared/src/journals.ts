@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { IdSchema as id, TileSchema } from './schema.ts';
 
 // The game's sidebar documents beyond actors: journal entries (handouts and
-// the GM's notes, which map notes open), roll tables, playlists and macros.
-// Each is one file: journals/<id>.json, tables/<id>.json, playlists/<id>.json,
-// macros/<id>.json.
+// the GM's notes, which map notes open), roll tables, playlists, macros and
+// card stacks. Each is one file: journals/<id>.json, tables/<id>.json,
+// playlists/<id>.json, macros/<id>.json, cards/<id>.json.
 
 const sidebar = {
   id,
@@ -131,6 +131,37 @@ export function macroLines(command: string): string[] {
     .filter(Boolean);
 }
 
+/** A playing card, tarot card or any other: it remembers the deck it came from. */
+export const CardSchema = z.object({
+  id,
+  name: z.string().min(1),
+  /** The deck it belongs to, which a reset gathers it back to. */
+  origin: id,
+  /** Its face and back pictures: asset paths or pack:// references (no face: drawn from suit and value). */
+  face: z.string().optional(),
+  back: z.string().optional(),
+  suit: z.string().optional(),
+  value: z.string().optional(),
+  /** Words on its face. */
+  text: z.string().optional(),
+});
+export type Card = z.infer<typeof CardSchema>;
+
+/** deck: drawn from, face down; hand: a player's own cards; pile: played cards, face up. */
+export const STACK_KINDS = ['deck', 'hand', 'pile'] as const;
+
+/** Cards held together (cards/<id>.json): a deck, a hand or a pile. */
+export const CardStackSchema = z.object({
+  ...sidebar,
+  kind: z.enum(STACK_KINDS).default('deck'),
+  description: z.string().optional(),
+  /** The back of its cards that have none of their own. */
+  back: z.string().optional(),
+  /** Top first. */
+  cards: z.array(CardSchema).default([]),
+});
+export type CardStack = z.infer<typeof CardStackSchema>;
+
 /** A compendium's tile prefab: tiles drawn together (a cart, a market stall), placed as one. */
 export const PrefabSchema = z.object({
   id,
@@ -145,5 +176,6 @@ export const ENTRY_TYPES = {
   rolltable: { coll: 'tables', schema: RollTableSchema },
   playlist: { coll: 'playlists', schema: PlaylistSchema },
   macro: { coll: 'macros', schema: MacroSchema },
+  cards: { coll: 'cards', schema: CardStackSchema },
 } as const;
 export type EntryType = keyof typeof ENTRY_TYPES;

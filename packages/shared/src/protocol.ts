@@ -115,6 +115,16 @@ export type EngineClientMessage =
   | { t: 'rollTable'; table: string; gmOnly?: boolean }
   /** Run a macro you may see: its chat lines are posted as if you typed them, said by `token` when you control it. */
   | { t: 'runMacro'; macro: string; token?: string }
+  /** Draw `n` (default 1) cards from the top of a deck into a hand you own. */
+  | { t: 'drawCards'; from: string; to: string; n?: number }
+  /** Move cards (by cardKey) from a stack you own onto another: onto a pile plays them. */
+  | { t: 'passCards'; from: string; to: string; cards: string[] }
+  /** Shuffle a stack you own. */
+  | { t: 'shuffleCards'; stack: string }
+  /** GM: deal `n` (default 1) cards from a deck to each stack named. */
+  | { t: 'dealCards'; from: string; to: string[]; n?: number }
+  /** GM: gather every card of a deck back into it and shuffle it. */
+  | { t: 'resetCards'; deck: string }
   /** GM: share a journal entry with every player and open it (at `page`) on their screens. */
   | { t: 'showJournal'; entry: string; page?: string }
   /** GM: open a picture on every player's screen. */

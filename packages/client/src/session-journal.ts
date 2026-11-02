@@ -28,6 +28,7 @@ const NEW: Record<EntryType, Record<string, unknown>> = {
   rolltable: { name: 'New table', results: [{ text: 'Something' }] },
   playlist: { name: 'New playlist', mode: 'sequence', tracks: [] },
   macro: { name: 'New macro', kind: 'chat', command: '' },
+  cards: { name: 'New deck', kind: 'deck', cards: [] },
 };
 
 /** A picture the GM showed. */

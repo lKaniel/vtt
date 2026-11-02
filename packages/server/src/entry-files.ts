@@ -1,9 +1,9 @@
-import { JournalSchema, MacroSchema, PlaylistSchema, RollTableSchema } from '@vtt/shared';
+import { CardStackSchema, JournalSchema, MacroSchema, PlaylistSchema, RollTableSchema } from '@vtt/shared';
 import { HomebrewSchema } from '@vtt/system-dnd5e';
 import type { z } from 'zod';
 
 // The game's sidebar documents with a file each, like actors: journal
-// entries, roll tables, playlists and macros (see journals.ts in shared).
+// entries, roll tables, playlists, macros and card stacks (see journals.ts in shared).
 
 export const ENTRY_COLLS = {
   journals: { type: 'journal', schema: JournalSchema },
@@ -11,6 +11,7 @@ export const ENTRY_COLLS = {
   playlists: { type: 'playlist', schema: PlaylistSchema },
   macros: { type: 'macro', schema: MacroSchema },
   homebrew: { type: 'homebrew', schema: HomebrewSchema },
+  cards: { type: 'cards', schema: CardStackSchema },
 } as const;
 
 export type EntryColl = keyof typeof ENTRY_COLLS;
