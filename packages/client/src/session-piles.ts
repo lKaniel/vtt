@@ -1,41 +1,53 @@
-import type { Currency, TokenView } from '@vtt/system-dnd5e';
-import { ActionSession } from './session-actions.ts';
+import type { ClientMessage, Currency, TokenView } from '@vtt/system-dnd5e';
 import { pileTrader, tradeMessage } from './pile-view.ts';
 
 // Item piles (system-dnd5e piles.ts): the pile whose window is open, and the
-// trades its buttons send for the creature you act with.
+// trades its buttons send for the creature you act with. Reached as
+// `session.piles`.
 
-export abstract class PileSession extends ActionSession {
+/** What the piles need of the session: the tokens, your selection and seat, and a way to the server. */
+export interface PileHost {
+  readonly tokens: ReadonlyMap<string, TokenView>;
+  readonly selected?: string;
+  canControl(token: TokenView): boolean;
+  send(msg: ClientMessage): void;
+}
+
+/** The pile window, as `session.piles`. */
+export class Piles {
   /** The pile of loot or merchant whose window is open. */
-  pile?: string;
+  current?: string;
 
-  abstract canControl(token: TokenView): boolean;
+  constructor(
+    private readonly s: PileHost,
+    private readonly changed: () => void,
+  ) {}
 
   /** Opens a pile's window (nothing for a token that isn't one), or closes it. */
-  openPile(id: string | undefined): void {
-    this.pile = id && this.tokens.get(id)?.pile ? id : undefined;
+  open(id: string | undefined): void {
+    this.current = id && this.s.tokens.get(id)?.pile ? id : undefined;
     this.changed();
   }
 
   /** The creature that trades at the open pile. */
   get trader(): TokenView | undefined {
-    return pileTrader(this);
+    return pileTrader(this.s);
   }
 
   /** Takes (buys) the pile's entry `item`, or puts (sells) the trader's entry `item` in it. */
   trade(how: 'take' | 'put', item: number, qty?: number): void {
     const trader = this.trader;
-    if (this.pile && trader) this.send(tradeMessage(how, { pile: this.pile, trader: trader.id }, item, qty));
+    if (this.current && trader) this.s.send(tradeMessage(how, { pile: this.current, trader: trader.id }, item, qty));
   }
 
   /** Takes coins from the open pile. */
   takeCoins(coins: Currency): void {
     const trader = this.trader;
-    if (this.pile && trader) this.send({ t: 'trade', from: this.pile, to: trader.id, coins });
+    if (this.current && trader) this.s.send({ t: 'trade', from: this.current, to: trader.id, coins });
   }
 
-  /** The open pile is gone: close its window. */
-  protected pileGone(id: string): void {
-    if (this.pile === id) this.pile = undefined;
+  /** A token is gone: close its window if it was the open pile. */
+  gone(id: string): void {
+    if (this.current === id) this.current = undefined;
   }
 }

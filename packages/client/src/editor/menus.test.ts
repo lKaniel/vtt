@@ -32,7 +32,7 @@ function api(gm = true) {
     observing: undefined as string | undefined,
     observe: vi.fn(),
     showImage: vi.fn(),
-    openPile: vi.fn(),
+    piles: { open: vi.fn() },
   } satisfies MenuApi;
 }
 
@@ -117,7 +117,7 @@ describe('context menus', () => {
     pick(pile, a, 'Stop being a pile').run();
     expect(a.editSelection).toHaveBeenCalledWith({ pile: null }, 'not a pile');
     pick(pile, a, 'Open Chest').run();
-    expect(a.openPile).toHaveBeenCalledWith('p');
+    expect(a.piles.open).toHaveBeenCalledWith('p');
     const kara: MenuTarget = { ...pile, token: { id: 'k', name: 'Kara' } as TokenView };
     expect(labels(kara, a)).toEqual(expect.arrayContaining(['Make it a pile of loot', 'Make it a merchant']));
     expect(labels(kara, api(false))).not.toContain('Make it a merchant');

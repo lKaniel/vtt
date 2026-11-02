@@ -34,6 +34,7 @@ import { Presence } from './presence.ts';
 import { Rulers } from './rulers.ts';
 import type { SessionEvents } from './session-events.ts';
 import { HudSession } from './session-hud.ts';
+import { Piles } from './session-piles.ts';
 import { Cards } from './session-cards.ts';
 import { ScriptHost } from './scripting/script-api.ts';
 
@@ -79,6 +80,7 @@ export class Session extends HudSession {
   spawnHidden = false;
   /** The decks, hands and piles you were sent (session-cards.ts). */
   readonly cards = new Cards(this);
+  readonly piles = new Piles(this, () => this.changed());
   /** Your ruler and the ones the others on your scene are laying. */
   readonly rulers = new Rulers(
     (msg) => this.send(msg),
@@ -449,6 +451,7 @@ export class Session extends HudSession {
     if (!this.tokens.delete(id)) return false;
     this.targets.forget(id);
     this.hudTokenGone(id);
+    this.piles.gone(id);
     if (this.mode === 'tokens') this.pruneSelection((key) => key !== this.tokenKey(id));
     if (this.selected === id) this.select(undefined);
     if (this.sheet?.kind === 'token' && this.sheet.id === id) this.sheet = undefined;
