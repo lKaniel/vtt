@@ -156,13 +156,21 @@ function NewGameForm({ systems, onMade }: Readonly<{ systems: SystemInfo[]; onMa
   );
 }
 
+/** An invite to a game whose GM approves who joins. */
+const ASKED_GM =
+  'The GM approves who joins: they have your request now. The game shows up in your list once they let you in.';
+
 function JoinByInvite({ go, onJoined }: Readonly<{ go: Go; onJoined: () => void }>) {
   const [text, setText] = useState('');
   const [error, setError] = useState<string>();
   const join = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     try {
-      const id = await api.acceptInvite(inviteCode(text));
+      const { game: id, pending } = await api.acceptInvite(inviteCode(text));
+      if (pending) {
+        setError(ASKED_GM);
+        return;
+      }
       onJoined();
       go({ name: 'game', id });
     } catch (err) {
@@ -194,7 +202,7 @@ export function InviteScreen({ code, signedIn, go }: Readonly<{ code: string; si
     }
     sessionStorage.removeItem(PENDING_INVITE);
     api.acceptInvite(code).then(
-      (id) => go({ name: 'game', id }),
+      ({ game: id, pending }) => (pending ? setError(ASKED_GM) : go({ name: 'game', id })),
       (e: unknown) => setError((e as Error).message),
     );
   }, [code, signedIn, go]);

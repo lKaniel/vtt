@@ -122,7 +122,10 @@ Accounts, characters and the games made in the lobby live in a `data/`
 folder next to the world folder (set `VTT_DATA` to move it), so one roster
 can visit many campaigns. Passwords are stored as salted scrypt hashes, and a sign-in lasts
 30 days in an HttpOnly cookie. There's no e-mail or reset: to reset an
-account, delete its file in `data/accounts/`.
+account, delete its file in `data/accounts/`. Set `VTT_ADMIN_PASSWORD` so that
+the admin is whoever types it on the account screen rather than the first
+account made. A GM can make joining wait for approval and lock fixed seats with
+a password (see [docs/lobby.md](docs/lobby.md)).
 
 The character creator follows the BG3 order: race or species, class,
 background, abilities (point buy, standard array, 4d6 or manual), skills,
@@ -197,6 +200,5 @@ git, so plain git tools still work.
 
 Vision, lighting and fog (phase 2), character sheets and combat (phase 3),
 spells and effects (phase 4), levels (phase 5), live AI tools (phase 6).
-Fixed seats (_Take a seat without an account_) have no passwords: anyone who
-can reach the server can take one. Feats, multiclassing and subclass
+Feats, multiclassing and subclass
 features beyond their names aren't in the character builder yet.

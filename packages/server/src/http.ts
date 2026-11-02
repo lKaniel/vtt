@@ -38,11 +38,13 @@ export interface HttpOptions {
   clientDir: string;
   /** The file of an installed pack's media (`/packs/<pack>/<path>`), or undefined if it has none there. */
   packFile?: (pack: string, path: string) => string | undefined;
-  /** The home game's seats, for taking one without an account. */
-  players: () => readonly Player[] | Promise<readonly Player[]>;
+  /** The home game's seats, for taking one without an account; `locked` ones have a password. */
+  players: () => readonly SeatInfo[] | Promise<readonly SeatInfo[]>;
   /** Account routes; answers true when it handled the request. */
   api?: (req: IncomingMessage, res: ServerResponse) => Promise<boolean>;
 }
+
+type SeatInfo = Player & { locked?: boolean };
 
 /** Streams a file from inside `root`, refusing paths that escape it. */
 async function serveFile(res: ServerResponse, root: string, urlPath: string): Promise<boolean> {
@@ -82,7 +84,13 @@ export function httpHandler(opts: HttpOptions): (req: IncomingMessage, res: Serv
     if (opts.api && (await opts.api(req, res))) return;
     if (url.pathname === '/api/players') {
       // Self-hosted for friends: anyone who can reach the server may pick a seat.
-      const players = (await opts.players()).map(({ id, name, role, color }) => ({ id, name, role, color }));
+      const players = (await opts.players()).map(({ id, name, role, color, locked }) => ({
+        id,
+        name,
+        role,
+        color,
+        ...(locked && { locked }),
+      }));
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify(players));
       return;

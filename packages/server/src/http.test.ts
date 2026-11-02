@@ -26,7 +26,10 @@ beforeAll(async () => {
     // The home game is "home"; "other" is a game made in the lobby.
     assetsDir: (game) => ({ other: join(dir, 'other', 'assets'), home: join(dir, 'assets') })[game ?? 'home'],
     clientDir: join(dir, 'client'),
-    players: () => [{ id: 'gm', name: 'GM', role: 'gm', color: '#fff' }],
+    players: () => [
+      { id: 'gm', name: 'GM', role: 'gm', color: '#fff' },
+      { id: 'ana', name: 'Ana', role: 'player', color: '#f00', locked: true },
+    ],
   });
   server = createServer((req, res) => void handle(req, res));
   await new Promise<void>((done) => server.listen(0, done));
@@ -38,9 +41,12 @@ afterAll(() => {
 });
 
 describe('httpHandler', () => {
-  it('lists the seats', async () => {
+  it('lists the seats, and which have a password', async () => {
     const res = await fetch(`${base}/api/players`);
-    expect(await res.json()).toEqual([{ id: 'gm', name: 'GM', role: 'gm', color: '#fff' }]);
+    expect(await res.json()).toEqual([
+      { id: 'gm', name: 'GM', role: 'gm', color: '#fff' },
+      { id: 'ana', name: 'Ana', role: 'player', color: '#f00', locked: true },
+    ]);
   });
 
   it('serves assets with their type', async () => {

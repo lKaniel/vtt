@@ -40,6 +40,21 @@ who opens it joins as a player, signing in or making an account first if they
 need to. _New link_ replaces the code, so the old link stops working. Pasting
 a link or just its code into _Join a game_ does the same.
 
+## Approval and seat passwords
+
+_GM approves who joins_ on the game's page makes an invite link (or an open
+game) ask first: the account lands in the GM's request list and gets a seat
+as a player only once the GM lets it in. Turning it down drops the request.
+
+On the home game a GM can put a password on a fixed seat (one taken with
+_Take a seat without an account_). The seat then shows a lock, and the game
+connection needs `&key=<password>`; a wrong one is closed with code 4003.
+Passwords are stored as salted scrypt hashes in `games.json`.
+
+The server's admin is the first account made, unless `VTT_ADMIN_PASSWORD`
+is set: then no account is admin until someone types that password on the
+account screen (`POST /api/admin`).
+
 ## Entering a game
 
 _Enter the game_ takes your seat and, if you pick one, brings a roster
@@ -62,19 +77,22 @@ All under `/api/`, signed in:
 | `POST games/<id>/join` `{character?}`                   | member, or open game | takes your seat, brings the character                                             |
 | `POST games/<id>/invite`                                | GM                   | a new invite code                                                                 |
 | `PUT games/<id>/open` `{open}`                          | GM                   | open to every account, or not                                                     |
+| `PUT games/<id>/approval` `{approval}`                  | GM                   | joining asks the GM first, or not                                                 |
+| `POST games/<id>/requests/<account>` `{approve}`        | GM                   | lets a waiting account in as a player, or turns it down                           |
+| `PUT games/<id>/members/<id>/password` `{password}`     | GM                   | a password on a fixed seat, or (null) none                                        |
 | `PUT games/<id>/members/<account>` `{role}`             | GM                   | changes a role                                                                    |
 | `DELETE games/<id>/members/<account>`                   | GM, or yourself      | removes a member                                                                  |
-| `POST invites/<code>`                                   | anyone               | joins the game as a player                                                        |
+| `POST invites/<code>`                                   | anyone               | joins the game as a player (or asks, with approval on)                            |
 
 Code: `server/src/game-hub.ts` (games, loading, invites), `lobby-api.ts`
-(the routes), `socket-join.ts` (who a connection is), `shared/src/lobby.ts`
+(the routes), `socket-join.ts` (who a connection is), `game-access.ts` (approval, seat
+passwords), `shared/src/lobby.ts`
 (new-game checks, member changes), `server/src/systems.ts` (the systems a
 game can run on), client `ui/LobbyScreens.tsx` and
 `ui/GamePage.tsx`.
 
 ## Not done yet
 
-- Seat passwords and approving join requests (an invite link seats at once).
 - Backing a game up from the lobby (copy its folder).
 - Asset packs per game (a later step), and a system other than D&D 5e (the
   seam is in place, see [systems.md](systems.md)).

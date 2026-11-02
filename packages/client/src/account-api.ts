@@ -22,6 +22,8 @@ export interface SessionInfo {
   account: Account | null;
   /** The game the server was started with. */
   home: { id: string; name: string; rules: string } | null;
+  /** Becoming admin takes the server's admin password. */
+  adminLock?: boolean;
 }
 
 export class ApiError extends Error {
@@ -71,14 +73,30 @@ export const api = {
   /** Makes a game from a Foundry world folder on the server's disk (the admin only). */
   importFoundry: (input: FoundryImportInput) =>
     call<{ game: GameSummary; report: FoundryImportReport }>('POST', '/api/games/import-foundry', input),
-  /** Takes your seat at the game, bringing `character` from your roster. */
-  joinGame: async (id: string, character?: string) =>
-    (await call<{ player: Player }>('POST', game(id, '/join'), { character })).player,
+  /** Takes your seat at the game, bringing `character` from your roster; `pending` when the GM approves joins first. */
+  joinGame: (id: string, character?: string) =>
+    call<{ player?: Player; pending?: boolean }>('POST', game(id, '/join'), { character }),
   /** A new invite code; the old link stops working. */
   newInvite: async (id: string) => (await call<{ invite: string }>('POST', game(id, '/invite'), {})).invite,
-  /** Joins by an invite code, answering the game's id. */
-  acceptInvite: async (code: string) =>
-    (await call<{ game: string }>('POST', `/api/invites/${encodeURIComponent(code)}`, {})).game,
+  /** Joins by an invite code: the game's id, and `pending` when the GM approves joins first. */
+  acceptInvite: async (code: string) => {
+    const { game: id, pending } = await call<{ game: string; pending?: boolean }>(
+      'POST',
+      `/api/invites/${encodeURIComponent(code)}`,
+      {},
+    );
+    return pending ? { game: id, pending } : { game: id };
+  },
+  /** GM: joining asks you first, or not. */
+  setApproval: (id: string, approval: boolean) => call<object>('PUT', game(id, '/approval'), { approval }),
+  /** GM: lets an account that asked in, or turns it down. */
+  answerRequest: (id: string, account: string, approve: boolean) =>
+    call<object>('POST', game(id, `/requests/${encodeURIComponent(account)}`), { approve }),
+  /** GM: a password on a seat taken without an account, or none (null). */
+  setSeatPassword: (id: string, seat: string, password: string | null) =>
+    call<object>('PUT', game(id, `/members/${encodeURIComponent(seat)}/password`), { password }),
+  /** Become the server's admin with its admin password. */
+  unlockAdmin: (password: string) => call<{ account: Account }>('POST', '/api/admin', { password }),
   setOpen: (id: string, open: boolean) => call<object>('PUT', game(id, '/open'), { open }),
   /** Changes a member's role, or removes them (null). */
   setMember: (id: string, member: string, role: Role | null) =>

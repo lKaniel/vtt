@@ -4,6 +4,7 @@ import { api, type SessionInfo } from '../account-api.ts';
 import { characterSummary } from '../creator.ts';
 import type { Route } from '../route.ts';
 import { Button } from './kit/button.tsx';
+import { AdminUnlock } from './GameAccess.tsx';
 
 /** The signed-in player's roster; games are entered from the lobby (LobbyScreens.tsx). */
 export function AccountScreen({
@@ -44,6 +45,7 @@ export function AccountScreen({
             Sign out
           </Button>
         </div>
+        {info.adminLock && !account.admin && <AdminUnlock onUnlocked={refresh} />}
       </header>
 
       <div className="roster">
