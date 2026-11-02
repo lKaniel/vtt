@@ -7,7 +7,7 @@ import {
   type Spell,
   type TokenView,
 } from '@vtt/system-dnd5e';
-import { gameContent } from './content.ts';
+import { contentFor, gameContent } from './content.ts';
 import type { Point } from '@vtt/shared';
 
 // Picking what a spell is aimed at: nothing (self), a point (areas,
@@ -85,7 +85,7 @@ export function aimScroll(spell: Spell, casterLevel: number): Aiming {
 
 /** Aims a scroll of `spellId` that `token` reads, at its caster level (or level). */
 export function scrollAiming(token: TokenView | undefined, spellId: string | undefined): Aiming | undefined {
-  const spell = spellId ? gameContent(token?.sheet?.edition ?? '2014').spells.get(spellId) : undefined;
+  const spell = spellId ? contentFor(token ?? {}).spells.get(spellId) : undefined;
   return spell && aimScroll(spell, readerLevel(token));
 }
 

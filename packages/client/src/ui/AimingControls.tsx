@@ -1,5 +1,5 @@
 import { formChoices, type Spell, type TokenView } from '@vtt/system-dnd5e';
-import { gameContent } from '../content.ts';
+import { contentFor } from '../content.ts';
 import { slotChoices } from '../charges.ts';
 import type { Session } from '../session.ts';
 import { ORDINAL } from '../spell-text.ts';
@@ -60,7 +60,7 @@ function SpellOptions({ session, aiming }: Readonly<{ session: Session; aiming: 
 
 /** The creature a shape-shifting spell (polymorph) turns its targets into. */
 function FormChoice({ session, aiming, token }: Readonly<{ session: Session; aiming: Aiming; token: TokenView }>) {
-  const content = gameContent(token.sheet?.edition ?? '2014');
+  const content = contentFor(token);
   const forms = formChoices(aiming.spell, content, token.sheet?.caster?.level ?? 1);
   return (
     <SelectField

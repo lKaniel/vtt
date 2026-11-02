@@ -27,6 +27,33 @@ export function homebrewCompendia(docs: readonly unknown[]): PackCompendium[] {
   });
 }
 
+interface Listed {
+  packs: readonly PackCompendium[];
+  key: string;
+  list: PackCompendium[];
+}
+const listed = new WeakMap<object, Listed>();
+
+/**
+ * A game's rules compendia: its packs' and its homebrew documents'. The same
+ * list comes back while neither changes, so content built from it stays
+ * cached. `owner` (the running game) keys that cache; `read` turns a stored
+ * document into the homebrew entry (the server strips its document fields).
+ */
+export function gameCompendia<D extends { id: string; rev?: number }>(
+  owner: object,
+  packs: readonly PackCompendium[],
+  docs: readonly D[],
+  read?: (doc: D) => unknown,
+): PackCompendium[] {
+  const key = docs.map((d) => `${d.id}@${d.rev ?? 0}`).join(',');
+  const last = listed.get(owner);
+  if (last?.packs === packs && last.key === key) return last.list;
+  const list = docs.length ? [...packs, ...homebrewCompendia(read ? docs.map((d) => read(d)) : docs)] : [...packs];
+  listed.set(owner, { packs, key, list });
+  return list;
+}
+
 /** What is wrong with a homebrew document, one line each. */
 export function homebrewIssues(doc: unknown): string[] {
   const kind = kindOf(doc);

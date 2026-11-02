@@ -1,6 +1,6 @@
-import { cpOf, type Pile, type TokenView, toEdition, withOwn } from '@vtt/system-dnd5e';
+import { cpOf, type Pile, type TokenView, toEdition } from '@vtt/system-dnd5e';
 import { purseText } from '../carried.ts';
-import { gameContent } from '../content.ts';
+import { contentFor } from '../content.ts';
 import { type PileRow, pileRows } from '../pile-view.ts';
 import type { Session } from '../session.ts';
 import { Button } from './kit/button.tsx';
@@ -43,7 +43,7 @@ function Contents({ session, pile, kind }: Readonly<ContentsProps>) {
   const trader = session.trader;
   const rules = toEdition(session.world?.rules);
   const merchant = kind.kind === 'merchant';
-  const goods = pileRows(pile, merchant ? kind.buy : undefined, withOwn(gameContent(rules), pile));
+  const goods = pileRows(pile, merchant ? kind.buy : undefined, contentFor(pile, rules));
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">
@@ -73,7 +73,7 @@ function Contents({ session, pile, kind }: Readonly<ContentsProps>) {
 function Yours({ session, trader, kind }: Readonly<{ session: Session; trader: TokenView; kind: Pile }>) {
   const merchant = kind.kind === 'merchant';
   const rules = toEdition(trader.stats?.rules ?? session.world?.rules);
-  const rows = pileRows(trader, merchant ? kind.sell : undefined, withOwn(gameContent(rules), trader));
+  const rows = pileRows(trader, merchant ? kind.sell : undefined, contentFor(trader, rules));
   return (
     <>
       <h4>{trader.name}’s gear</h4>

@@ -11,9 +11,8 @@ import {
   MAX_ATTUNED,
   putInside,
   type TokenView,
-  withOwn,
 } from '@vtt/system-dnd5e';
-import { gameContent } from '../content.ts';
+import { contentFor } from '../content.ts';
 import { bagLayout, carriedLook, loadText, loadTip, purseText } from '../carried.ts';
 import { dragTile } from '../hotbar.ts';
 import type { SheetProps } from './CharacterSheet.tsx';
@@ -35,7 +34,7 @@ export function canCarry({ session, kind, value }: Readonly<SheetProps>): boolea
   return kind === 'token' && session.canControl(value as TokenView);
 }
 
-const contentOf = (p: Readonly<SheetProps>) => withOwn(gameContent(p.sheet.edition), p.value);
+const contentOf = (p: Readonly<SheetProps>) => contentFor(p.value, p.sheet.edition);
 
 /** Weight carried against capacity; characters only (monsters don't count their loot). */
 export function Load(props: Readonly<SheetProps>) {
