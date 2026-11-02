@@ -43,7 +43,7 @@ export class EntryActions {
     if (patch) this.store.applyOps([{ op: 'update', coll: 'tables', id, patch }]);
     const text = `${table.name}: ${table.results[drawn.index]!.text} (${drawn.roll} on 1d${drawn.of})`;
     const base = { id: randomUUID(), time: Date.now(), from: player.name, color: player.color };
-    this.out.post({ ...base, text, ...(gmOnly ? { gmOnly } : {}) });
+    this.out.post({ ...base, by: player.id, text, ...(gmOnly && { mode: 'gm' as const }) });
   }
 
   private show(player: Player, id: string, page?: string): void {

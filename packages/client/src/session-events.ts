@@ -31,4 +31,6 @@ export interface SessionEvents {
   rulers: () => void;
   /** Someone's cursor moved, or someone pinged. */
   presence: () => void;
+  /** Your targets or someone else's changed. */
+  targets: () => void;
 }

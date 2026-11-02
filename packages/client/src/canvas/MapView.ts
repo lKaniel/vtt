@@ -106,7 +106,7 @@ export class MapView {
     this.fogBrush = new FogBrush(session);
     this.items = new ItemLayer(session);
     this.rulers = new RulerLayer(session);
-    this.presence = new PresenceLayer(session);
+    this.presence = new PresenceLayer(session, (id) => this.tokens.placeOf(id));
   }
 
   async init(host: HTMLElement): Promise<void> {

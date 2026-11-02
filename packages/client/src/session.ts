@@ -6,7 +6,6 @@ import {
   type ClientMessage,
   type Combat,
   currentTurn,
-  featureSpell,
   type ReactionOffer,
   type ServerMessage,
   type SpawnSource,
@@ -18,12 +17,11 @@ import { openSocket, refusalOf } from './session-socket.ts';
 import type { DragPayload } from './drops.ts';
 import { dropOnMap } from './session-drops.ts';
 import { refOf } from './editor/selection.ts';
-import { PackSession } from './session-packs.ts';
 import { withOffer } from './reactions.ts';
 import { Presence } from './presence.ts';
 import { Rulers } from './rulers.ts';
 import type { SessionEvents } from './session-events.ts';
-import { aimFor, aimSpell, castMessage, pick, scrollAiming, type Aiming } from './targeting.ts';
+import { ActionSession } from './session-actions.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
 
@@ -35,11 +33,15 @@ export interface SheetTarget {
 
 const CHAT_HISTORY = 200;
 
+type PresenceNews = Extract<ServerMessage, { t: 'ruler' | 'cursor' | 'ping' | 'targets' }>;
+const PRESENCE = new Set(['ruler', 'cursor', 'ping', 'targets']);
+const isPresenceNews = (msg: ServerMessage): msg is PresenceNews => PRESENCE.has(msg.t);
+
 /**
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends PackSession {
+export class Session extends ActionSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -49,14 +51,8 @@ export class Session extends PackSession {
   selected?: string;
   /** The fight in progress, if any. */
   combat: Combat | null = null;
-  /** The attack the selected token will make on the next token clicked. */
-  armed?: string;
-  /** Slot level to Divine Smite with on the armed attack. */
-  smite?: number;
   /** Chances one of your creatures has to react (an opportunity attack). */
   reactions: ReactionOffer[] = [];
-  /** The spell the selected token is aiming, and what it has picked so far. */
-  aiming?: Aiming;
   /** The toast: an error, or with `info` news such as "Undid the move". */
   error?: { message: string; at: number; info?: boolean };
   /** GM only: everyone at the table. */
@@ -107,6 +103,10 @@ export class Session extends PackSession {
 
   private emit<K extends keyof SessionEvents>(event: K, ...args: Parameters<SessionEvents[K]>): void {
     for (const fn of this.listeners.get(event) ?? []) (fn as (...a: Parameters<SessionEvents[K]>) => void)(...args);
+  }
+
+  protected notify(event: 'armed' | 'targets'): void {
+    this.emit(event);
   }
 
   protected changed(): void {
@@ -185,96 +185,6 @@ export class Session extends PackSession {
 
   protected knownTokens(): Iterable<TokenView> {
     return this.tokens.values();
-  }
-
-  /** Readies an attack of the selected token; the next token clicked is the target. */
-  arm(attack: string | undefined): void {
-    this.armed = attack;
-    this.smite = undefined;
-    this.aiming = undefined;
-    this.emit('armed');
-    this.changed();
-  }
-
-  /** Readies a spell of the selected token with a slot, or for free; self spells go off at once. */
-  aim(spellId: string | undefined, slot = 0, free = false): void {
-    const sheet = this.selected ? this.tokens.get(this.selected)?.sheet : undefined;
-    this.armed = undefined;
-    this.aiming = aimFor(sheet, spellId, { slot, free });
-    if (this.aiming?.mode === 'self') return this.confirmCast();
-    this.emit('armed');
-    this.changed();
-  }
-
-  /** Readies a feature of the selected token that's aimed like a spell; one without targets goes off at once. */
-  aimFeature(featureId: string | undefined): void {
-    const token = this.selected ? this.tokens.get(this.selected) : undefined;
-    const feature = token?.sheet?.features.find((f) => f.id === featureId);
-    this.armed = undefined;
-    this.aiming = feature && { ...aimSpell(featureSpell(feature), 0, token?.stats?.level ?? 1), feature: feature.id };
-    if (this.aiming?.mode === 'self') return this.confirmCast();
-    this.emit('armed');
-    this.changed();
-  }
-
-  /** Readies the spell on a scroll the selected token carries. */
-  aimScroll(spellId: string | undefined): void {
-    this.armed = undefined;
-    this.aiming = scrollAiming(this.selected ? this.tokens.get(this.selected) : undefined, spellId);
-    if (this.aiming?.mode === 'self') return this.confirmCast();
-    this.emit('armed');
-    this.changed();
-  }
-
-  /** Casts the aimed spell without spending a slot, or with one again. */
-  setFreeCast(free: boolean): void {
-    if (this.aiming) this.aiming = { ...this.aiming, free };
-    this.changed();
-  }
-
-  /** Puts away an aimed spell or readied attack; false if there was none. */
-  cancelAction(): boolean {
-    if (!this.armed && !this.aiming) return false;
-    this.arm(undefined);
-    return true;
-  }
-
-  /** Changes what the aimed summoning spell brings. */
-  chooseSummon(monster: string): void {
-    if (this.aiming) this.aiming = { ...this.aiming, summon: monster };
-    this.changed();
-  }
-
-  pickTarget(id: string): void {
-    if (!this.aiming) return;
-    const { aiming, done } = pick(this.aiming, id);
-    this.aiming = aiming;
-    if (done) this.confirmCast();
-    else this.changed();
-  }
-
-  /** Casts the aimed spell at a point (areas, teleports, summons). */
-  castAt(point: Point): void {
-    this.confirmCast(point);
-  }
-
-  /** Casts the aimed spell now, with the targets picked so far. */
-  confirmCast(point?: Point): void {
-    if (this.selected && this.aiming) this.send(castMessage(this.selected, this.aiming, point));
-    this.aim(undefined);
-  }
-
-  /** Spends a slot of this level on Divine Smite if the armed attack hits; undefined for no smite. */
-  setSmite(slot: number | undefined): void {
-    this.smite = slot;
-    this.changed();
-  }
-
-  attack(target: string): void {
-    if (!this.selected || !this.armed) return;
-    const smite = this.smite ? { smite: this.smite } : {};
-    this.send({ t: 'attack', attacker: this.selected, target, attack: this.armed, ...smite });
-    this.arm(undefined);
   }
 
   // GM tools ---------------------------------------------------------------
@@ -405,6 +315,7 @@ export class Session extends PackSession {
   }
 
   private applyOther(msg: ServerMessage): boolean {
+    if (isPresenceNews(msg)) return this.onPresence(msg);
     switch (msg.t) {
       case 'lighting':
         if (this.world) this.world = { ...this.world, darkness: msg.darkness };
@@ -417,18 +328,20 @@ export class Session extends PackSession {
       case 'reactionGone':
         this.reactions = withOffer(this.reactions, msg);
         return true;
-      case 'ruler':
-      case 'cursor':
-      case 'ping':
-        if (msg.t === 'ruler') this.rulers.receive(msg);
-        else this.presence.receive(msg);
-        return false;
       case 'chatUndone':
         this.chat = this.chat.map((m) => (msg.ids.includes(m.id) ? { ...m, undone: msg.undone || undefined } : m));
         return true;
       default:
         return this.applyEdit(msg);
     }
+  }
+
+  /** Someone else's ruler, cursor, ping or targets: drawn over the map, nothing the UI re-renders for. */
+  private onPresence(msg: PresenceNews): false {
+    if (msg.t === 'ruler') this.rulers.receive(msg);
+    else if (msg.t === 'targets') this.targets.receive(msg);
+    else this.presence.receive(msg);
+    return false;
   }
 
   /** When one of your creatures' turns starts, select it and bring it into view. */
@@ -454,6 +367,7 @@ export class Session extends PackSession {
     this.combat = msg.combat;
     this.rulers.reset();
     this.presence.reset();
+    this.targets.reset((id) => this.tokens.has(id));
     this.welcomeEdits(msg);
     this.welcomeScenes(msg);
     this.players = msg.players ?? [];
@@ -466,6 +380,7 @@ export class Session extends PackSession {
     this.emit('welcome');
     for (const t of msg.tokens) this.emit('token', t);
     if (this.view.length) this.send({ t: 'view', chunks: this.view });
+    this.send({ t: 'rollMode', mode: this.rollMode });
   }
 
   private reopenSheet(sheet: SheetTarget & { edit: boolean }): void {
@@ -484,6 +399,7 @@ export class Session extends PackSession {
 
   private onTokenGone(id: string): boolean {
     if (!this.tokens.delete(id)) return false;
+    this.targets.forget(id);
     if (this.mode === 'tokens') this.pruneSelection((key) => key !== this.tokenKey(id));
     if (this.selected === id) this.select(undefined);
     if (this.sheet?.kind === 'token' && this.sheet.id === id) this.sheet = undefined;

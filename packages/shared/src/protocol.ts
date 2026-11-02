@@ -4,6 +4,7 @@ import type { ClockAction } from './clock.ts';
 import type { Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
 import type { FogEdit } from './fog-edit.ts';
 import type { MapEdit } from './map-edit.ts';
+import type { RollMode } from './roll-modes.ts';
 
 // The engine's half of the wire protocol: scenes, maps, fog, documents and
 // undo. A game system adds its own messages (attacks, spells, sheets) on top;
@@ -20,8 +21,12 @@ export interface ChatEntry {
   color: string;
   text?: string;
   roll?: Roll;
-  /** Set on GM-only messages. */
-  gmOnly?: boolean;
+  /** The player who made it; none for the game's own cards. */
+  by?: string;
+  /** Who may read it (see roll-modes.ts); none: everyone. */
+  mode?: Exclude<RollMode, 'public'>;
+  /** A blind roll as its roller sees it: only that it was made. */
+  hidden?: boolean;
   /** The GM undid the action this card reports. */
   undone?: boolean;
 }
@@ -52,6 +57,10 @@ export type EngineClientMessage =
   | { t: 'cursor'; at: Point | null }
   /** Point out a spot to everyone on your scene; the GM may `pull` everyone's view there. */
   | { t: 'ping'; at: Point; pull?: boolean }
+  /** Mark these tokens as your targets, shown to everyone on your scene who can see them; none clears them. */
+  | { t: 'target'; tokens: string[] }
+  /** Who sees your rolls and the cards of your actions from now on (see roll-modes.ts). */
+  | { t: 'rollMode'; mode: RollMode }
   | { t: 'door'; chunk: string; wall: string; state: DoorState }
   | { t: 'chat'; text: string }
   /** Change token fields; `null` removes one (e.g. `hp: null` heals fully). The GM may edit any token, a trusted player the ones they own. */
@@ -115,6 +124,8 @@ export type EngineServerMessage =
   | { t: 'cursor'; player: string; name: string; color: string; at: Point | null }
   /** Someone else on your scene pinged a spot; `pull`: the GM brings your view there. */
   | { t: 'ping'; player: string; name: string; color: string; at: Point; pull?: boolean }
+  /** Someone else on your scene marked these tokens (those you can see) as their targets. */
+  | { t: 'targets'; player: string; name: string; color: string; tokens: string[] }
   /** The time of day changed. */
   | { t: 'lighting'; darkness: number }
   | { t: 'error'; message: string }

@@ -50,6 +50,24 @@ cursor goes when its player leaves the map or the scene); the client keeps
 them in `presence.ts` (cursors sent at most every 50 ms, `throttle.ts`) and
 draws them in `canvas/PresenceLayer.ts`.
 
+Targets go the same way. In the tokens mode T over a creature targets it
+(again lets it go), T over empty ground lets all yours go, and the token
+menu has Target too. Everyone on the scene who can see the creature gets
+arrowheads round it in the colour of whoever targets it and a pip per player
+(`canvas/target-marks.ts`). The client keeps them in `targets.ts`; the server
+checks you can see what you target and tells each player only the targets
+they can see. An armed attack with one target goes straight at it, and a
+spell aimed at creatures starts with your targets picked
+(`session-actions.ts`, `aimAtTargets` in `targeting.ts`).
+
+Roll modes (`shared/roll-modes.ts`) say who reads a roll: public, gm (the
+GM and the roller), blind (the GM; the roller sees only that they rolled) or
+self (the roller). Each seat picks one beside the chat box (kept in the
+browser) and tells the server; it holds for `/r` and for the chat cards of
+that seat's actions (attacks, spells, roll tables). `/pr`, `/gmr`, `/br`
+and `/sr` roll once in a given mode. Plain chat is always public. The server
+sends each seat only what `chatFor` lets it read, live and on joining.
+
 ## Pointer
 
 - Click selects the topmost thing under the pointer; empty space deselects.

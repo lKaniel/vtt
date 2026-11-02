@@ -224,7 +224,8 @@ export class MapEditor {
       return { mode: 'tokens', at, docs: s.selectedDocs(), token };
     }
     const selected = s.selected ? s.tokens.get(s.selected) : undefined;
-    return { mode: 'tokens', at, docs: [], token: selected && s.canControl(selected) ? selected : undefined };
+    const mine = selected && s.canControl(selected) ? selected : undefined;
+    return { mode: 'tokens', at, docs: [], token: mine, ...(token && { under: token }) };
   }
 
   private host(): EditorHost {

@@ -1,11 +1,13 @@
-import { isGm, type Player, type Point } from '@vtt/shared';
+import { isGm, type Player, type Point, type RollMode } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 
 // Where everyone is at the table, live: rulers (shared/ruler.ts), cursors and
-// pings. None of it is a document: a client sends it as the pointer moves
+// pings, and the tokens each player targets. None of it is a document: a client sends it as the pointer moves
 // and the others on its scene are shown it straight away. Nothing is saved
 // and nothing can be undone. A ruler or cursor goes when its player puts it
-// away, leaves, or is moved to another scene.
+// away, leaves, or is moved to another scene. Targets are only shown to
+// those who can see the token. Each seat's roll mode (who sees its rolls)
+// is kept here too.
 
 interface PresenceSeat {
   player: Player;
@@ -14,14 +16,26 @@ interface PresenceSeat {
   ruler?: boolean;
   /** Its cursor is on the map. */
   cursor?: boolean;
+  /** The tokens it targets. */
+  targets?: string[];
+  /** The tokens it can see. */
+  visible: Set<string>;
+  /** Who sees its rolls (see roll-modes.ts); none: everyone. */
+  rollMode?: RollMode;
 }
 
 /** What a client sends about where it is. */
 export type PresenceMessage =
-  { t: 'ruler'; points: Point[] } | { t: 'cursor'; at: Point | null } | { t: 'ping'; at: Point; pull?: boolean };
+  | { t: 'ruler'; points: Point[] }
+  | { t: 'cursor'; at: Point | null }
+  | { t: 'ping'; at: Point; pull?: boolean }
+  | { t: 'target'; tokens: string[] }
+  | { t: 'rollMode'; mode: RollMode };
+
+const KINDS = new Set(['ruler', 'cursor', 'ping', 'target', 'rollMode']);
 
 export function isPresenceMessage(msg: { t: string }): msg is PresenceMessage {
-  return msg.t === 'ruler' || msg.t === 'cursor' || msg.t === 'ping';
+  return KINDS.has(msg.t);
 }
 
 export class Presence<C extends PresenceSeat> {
@@ -33,6 +47,11 @@ export class Presence<C extends PresenceSeat> {
   handle(c: C, msg: PresenceMessage): void {
     if (msg.t === 'ruler') return this.lay(c, msg.points);
     if (msg.t === 'cursor') return this.point(c, msg.at);
+    if (msg.t === 'target') return this.target(c, msg.tokens);
+    if (msg.t === 'rollMode') {
+      c.rollMode = msg.mode;
+      return;
+    }
     this.ping(c, msg.at, msg.pull);
   }
 
@@ -40,6 +59,21 @@ export class Presence<C extends PresenceSeat> {
   left(c: C, scene: string): void {
     if (c.ruler) this.lay(c, [], scene);
     if (c.cursor) this.point(c, null, scene);
+    if (c.targets?.length) this.target(c, [], scene);
+  }
+
+  /** `c` arrived on its scene: it is shown what the others there target. */
+  greet(c: C): void {
+    for (const other of this.clients()) {
+      if (other !== c && other.scene === c.scene && other.targets?.length) this.send(c, targetsFor(other, c));
+    }
+  }
+
+  /** `c` targets `tokens` (none: it stops), of those it can see. */
+  private target(c: C, tokens: string[], scene = c.scene): void {
+    c.targets = [...new Set(tokens)].filter((id) => c.visible.has(id));
+    for (const other of this.clients())
+      if (other !== c && other.scene === scene) this.send(other, targetsFor(c, other));
   }
 
   /** `c` laid its ruler through `points` (none: put it away). */
@@ -64,6 +98,11 @@ export class Presence<C extends PresenceSeat> {
   private tell(c: C, scene: string, msg: ServerMessage): void {
     for (const other of this.clients()) if (other !== c && other.scene === scene) this.send(other, msg);
   }
+}
+
+/** What `to` is told of `c`'s targets: the ones it can see. */
+function targetsFor(c: PresenceSeat, to: PresenceSeat): ServerMessage {
+  return { t: 'targets', ...who(c.player), tokens: (c.targets ?? []).filter((id) => to.visible.has(id)) };
 }
 
 function who({ id, name, color }: Player) {
