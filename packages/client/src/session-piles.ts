@@ -1,3 +1,4 @@
+import type { SessionPart } from './session-part.ts';
 import type { ClientMessage, Currency, TokenView } from '@vtt/system-dnd5e';
 import { pileTrader, tradeMessage } from './pile-view.ts';
 
@@ -14,19 +15,19 @@ export interface PileHost {
 }
 
 /** The pile window, as `session.piles`. */
-export class Piles {
+export class Piles implements SessionPart {
   /** The pile of loot or merchant whose window is open. */
   current?: string;
 
   constructor(
     private readonly s: PileHost,
-    private readonly changed: () => void,
+    private readonly on: { changed(): void },
   ) {}
 
   /** Opens a pile's window (nothing for a token that isn't one), or closes it. */
   open(id: string | undefined): void {
     this.current = id && this.s.tokens.get(id)?.pile ? id : undefined;
-    this.changed();
+    this.on.changed();
   }
 
   /** The creature that trades at the open pile. */

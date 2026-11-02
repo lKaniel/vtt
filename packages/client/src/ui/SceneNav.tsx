@@ -14,7 +14,7 @@ import { Button } from './kit/button.tsx';
 export function SceneNav({ session }: Readonly<{ session: Session }>) {
   const [open, setOpen] = useState(true);
   if (!session.you || !isGm(session.you)) return null;
-  const scenes = navScenes(session.docs, { active: session.activeScene, here: session.scene });
+  const scenes = navScenes(session.docs, { active: session.scenes.active, here: session.scene });
   if (scenes.length < 2) return null;
   return (
     <nav
@@ -43,7 +43,7 @@ export function SceneNav({ session }: Readonly<{ session: Session }>) {
 
 function SceneChip({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
   const here = session.scene === doc.id;
-  const active = session.activeScene === doc.id;
+  const active = session.scenes.active === doc.id;
   const thumb = sceneThumb(session.docs, doc.id);
   return (
     <div className="flex items-center">
@@ -52,7 +52,7 @@ function SceneChip({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
         variant={here ? 'default' : 'outline'}
         aria-pressed={here}
         title={active ? 'The game is here' : 'Look at this scene; the players stay where they are'}
-        onClick={() => session.viewScene(doc.id)}
+        onClick={() => session.scenes.view(doc.id)}
       >
         {thumb && <img src={assetUrl(thumb)} alt="" className="h-5 w-8 rounded-sm object-cover" />}
         {active && <PlayIcon className="text-gold-bright" />}
@@ -64,7 +64,7 @@ function SceneChip({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
           variant="ghost"
           aria-label="Play here"
           title="Move the game and everyone here"
-          onClick={() => session.activateScene(doc.id)}
+          onClick={() => session.scenes.activate(doc.id)}
         >
           <PlayIcon />
         </Button>

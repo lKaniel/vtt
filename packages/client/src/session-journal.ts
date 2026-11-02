@@ -1,3 +1,4 @@
+import type { SessionPart } from './session-part.ts';
 import { type Doc, type DocRef, type DocStore, freeId, type Op, type Patch } from '@vtt/core';
 import {
   ENTRY_TYPES,
@@ -59,7 +60,7 @@ export interface JournalEvents {
 }
 
 /** The sidebar's own documents and the entry viewer, as `session.journal`. */
-export class Journal {
+export class Journal implements SessionPart {
   /** The entry open in the viewer. */
   current?: OpenJournal;
   /** The picture the GM showed you, open until you close it. */

@@ -32,17 +32,22 @@ import { withOffer } from './reactions.ts';
 import { Presence } from './presence.ts';
 import { Rulers } from './rulers.ts';
 import type { SessionEvents } from './session-events.ts';
-import { Actions } from './session-actions.ts';
-import { SceneSession } from './session-scenes.ts';
+import { Actions, type ActionEvents } from './session-actions.ts';
+import { Fog, type FogEvents } from './session-fog.ts';
+import { ItemSession } from './session-items.ts';
+import { isTableNews, type TableNews, withChat } from './session-news.ts';
+import type { SessionPart } from './session-part.ts';
+import { type SceneEvents, Scenes } from './session-scenes.ts';
 import { Targets } from './targets.ts';
-import { Hud } from './session-hud.ts';
-import { Journal } from './session-journal.ts';
-import { Packs } from './session-packs.ts';
+import { Hud, type HudEvents } from './session-hud.ts';
+import { Journal, type JournalEvents } from './session-journal.ts';
+import { type PackEvents, Packs } from './session-packs.ts';
 import { Piles } from './session-piles.ts';
 import { Cards } from './session-cards.ts';
 import { ScriptHost } from './scripting/script-api.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
+type PartEvents = ActionEvents & HudEvents & JournalEvents & PackEvents & FogEvents & SceneEvents;
 
 /** What a character sheet shows: a token on the map or (GM only) an actor in the list. */
 export interface SheetTarget {
@@ -50,17 +55,11 @@ export interface SheetTarget {
   id: string;
 }
 
-const CHAT_HISTORY = 200;
-
-type PresenceNews = Extract<ServerMessage, { t: 'ruler' | 'cursor' | 'ping' | 'targets' }>;
-const PRESENCE = new Set(['ruler', 'cursor', 'ping', 'targets']);
-const isPresenceNews = (msg: ServerMessage): msg is PresenceNews => PRESENCE.has(msg.t);
-
 /**
  * The connection to the game server plus everything this player knows about
  * the world. The map view and the React UI both read from it.
  */
-export class Session extends SceneSession {
+export class Session extends ItemSession {
   status: Status = 'connecting';
   world?: WorldInfo;
   you?: Player;
@@ -90,25 +89,30 @@ export class Session extends SceneSession {
     changed: () => this.notify('targets'),
     you: () => this.you,
   });
-  /** The selected creature's readied attack or aimed spell, and your roll mode. */
-  readonly actions = new Actions(this, {
+  /** What the parts may ask of the session beyond its public face. */
+  private readonly ev: PartEvents = {
     changed: () => this.changed(),
     armed: () => this.notify('armed'),
+    lit: () => this.notify('lighting'),
+    editorChanged: () => this.editorChanged(),
+    fogChanged: () => this.emit('fog'),
     gridSize: () => this.gridSize(),
-  });
-  readonly piles = new Piles(this, () => this.changed());
-  readonly hud = new Hud(this, { changed: () => this.changed(), lit: () => this.notify('lighting') });
-  readonly journal = new Journal(this, {
-    changed: () => this.changed(),
     updates: (label, updates) => this.sendUpdates(label, updates),
     runScript: (doc, token) => this.scripts.run(doc, token),
     heard: (src, volume) => this.emit('sound', src, volume),
-  });
-  readonly packs = new Packs(this, {
-    updates: (label, updates) => this.sendUpdates(label, updates),
-    gridSize: () => this.gridSize(),
     createImageTile: (r, src) => this.createImageTile(r, src),
-  });
+    reseat: (you) => (this.you = you),
+  };
+  /** The selected creature's readied attack or aimed spell, and your roll mode. */
+  readonly actions = new Actions(this, this.ev);
+  readonly piles = new Piles(this, this.ev);
+  readonly hud = new Hud(this, this.ev);
+  readonly journal = new Journal(this, this.ev);
+  readonly packs = new Packs(this, this.ev);
+  readonly scenes = new Scenes(this, this.ev);
+  readonly fog = new Fog(this, this.ev);
+  /** The parts that take messages, the welcome and departures. */
+  private readonly parts: SessionPart[] = [this.journal, this.packs, this.scenes, this.fog, this.hud, this.piles];
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
   /** Your ruler and the ones the others on your scene are laying. */
@@ -222,10 +226,6 @@ export class Session extends SceneSession {
       this.setPrimary(this.selected && ids.includes(this.selected) ? this.selected : ids[0]);
     } else this.changed();
     this.emit('selection');
-  }
-
-  protected fogChanged(): void {
-    this.emit('fog');
   }
 
   protected editorChanged(): void {
@@ -355,9 +355,7 @@ export class Session extends SceneSession {
       case 'moved':
         return this.onMoved(msg.id, msg.path);
       case 'chat':
-        this.chat = this.chat.some((m) => m.id === msg.message.id)
-          ? this.chat.map((m) => (m.id === msg.message.id ? msg.message : m))
-          : [...this.chat, msg.message].slice(-CHAT_HISTORY);
+        this.chat = withChat(this.chat, msg.message);
         this.emit('chat', msg.message);
         return true;
       case 'combat':
@@ -373,7 +371,7 @@ export class Session extends SceneSession {
   }
 
   private applyOther(msg: ServerMessage): boolean {
-    if (isPresenceNews(msg)) return this.onPresence(msg);
+    if (isTableNews(msg)) return this.onPresence(msg);
     switch (msg.t) {
       case 'lighting':
         if (this.world) this.world = { ...this.world, darkness: msg.darkness };
@@ -402,11 +400,15 @@ export class Session extends SceneSession {
 
   /** A message for one of the session's parts, else an edit. */
   private applyParts(msg: ServerMessage): boolean {
-    return this.journal.receive(msg) ?? this.packs.receive(msg) ?? this.applyEdit(msg);
+    for (const part of this.parts) {
+      const changed = part.receive?.(msg);
+      if (changed !== undefined) return changed;
+    }
+    return this.applyEdit(msg);
   }
 
   /** Someone else's ruler, cursor, ping or targets: drawn over the map, nothing the UI re-renders for. */
-  private onPresence(msg: PresenceNews): false {
+  private onPresence(msg: TableNews): false {
     if (msg.t === 'ruler') this.rulers.receive(msg);
     else if (msg.t === 'targets') this.targets.receive(msg);
     else this.presence.receive(msg);
@@ -439,7 +441,7 @@ export class Session extends SceneSession {
     this.presence.reset();
     this.targets.reset((id) => this.tokens.has(id));
     this.welcomeEdits(msg);
-    this.welcomeScenes(msg);
+    for (const part of this.parts) part.welcome?.(msg);
     this.players = msg.players ?? [];
     this.pluginLoads = msg.plugins ?? [];
     this.actors.clear();
@@ -471,8 +473,7 @@ export class Session extends SceneSession {
   private onTokenGone(id: string): boolean {
     if (!this.tokens.delete(id)) return false;
     this.targets.forget(id);
-    this.hud.gone(id);
-    this.piles.gone(id);
+    for (const part of this.parts) part.gone?.(id);
     if (this.mode === 'tokens') this.pruneSelection((key) => key !== this.tokenKey(id));
     if (this.selected === id) this.select(undefined);
     if (this.sheet?.kind === 'token' && this.sheet.id === id) this.sheet = undefined;

@@ -18,7 +18,7 @@ export class FogBrush {
   }
 
   get active(): boolean {
-    return this.session.isGm() && !!this.session.fogBrush;
+    return this.session.isGm() && !!this.session.fog.brush;
   }
 
   setZoom(zoom: number): void {
@@ -38,7 +38,7 @@ export class FogBrush {
     this.hover = at;
     const last = this.stroke?.at(-1);
     // A stamp every half radius keeps the stroke solid.
-    if (last && Math.hypot(at[0] - last[0], at[1] - last[1]) >= this.session.fogBrushRadius() / 2) {
+    if (last && Math.hypot(at[0] - last[0], at[1] - last[1]) >= this.session.fog.radius() / 2) {
       this.stroke!.push(at);
     }
     this.draw();
@@ -48,7 +48,7 @@ export class FogBrush {
   up(): boolean {
     const stroke = this.stroke;
     this.stroke = undefined;
-    if (stroke) this.session.brushFog(stroke);
+    if (stroke) this.session.fog.paint(stroke);
     this.draw();
     return !!stroke;
   }
@@ -56,8 +56,8 @@ export class FogBrush {
   draw(): void {
     const g = this.container.clear();
     if (!this.active) return;
-    const r = this.session.fogBrushRadius();
-    const color = this.session.fogBrush === 'reveal' ? 0xfff2c0 : 0x4060a0;
+    const r = this.session.fog.radius();
+    const color = this.session.fog.brush === 'reveal' ? 0xfff2c0 : 0x4060a0;
     for (const p of this.stroke ?? []) g.circle(p[0], p[1], r).fill({ color, alpha: 0.18 });
     if (this.hover) g.circle(this.hover[0], this.hover[1], r).stroke({ width: 2 / this.zoom, color, alpha: 0.9 });
   }
