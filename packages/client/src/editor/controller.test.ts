@@ -40,11 +40,51 @@ describe('EditorController', () => {
     expect(h.selected).toEqual([]);
   });
 
+  it('a plain click on empty space goes to the host first, which may keep the selection', () => {
+    const h = host(['a']);
+    const clicks: Point[] = [];
+    h.clickEmpty = (at, mods) => {
+      clicks.push(at);
+      return !mods.shift;
+    };
+    const c = new EditorController(h);
+    c.down([50, 50], none);
+    c.up([51, 50], none);
+    expect(clicks).toEqual([[51, 50]]);
+    expect(h.selected).toEqual(['a']);
+    c.down([50, 50], { ...none, shift: true });
+    c.up([50, 50], { ...none, shift: true });
+    expect(h.selected).toEqual(['a']);
+  });
+
+  it('a marquee that catches nothing deselects, even when clicks on empty space go to the host', () => {
+    const h = host(['a']);
+    h.clickEmpty = () => true;
+    const c = new EditorController(h);
+    c.down([20, 50], none);
+    c.move([60, 80], none);
+    c.up([60, 80], none);
+    expect(h.selected).toEqual([]);
+  });
+
   it('shift-click adds to the selection', () => {
     const h = host(['a']);
     const c = new EditorController(h);
     c.down([100, 0], { ...none, shift: true });
     c.up([100, 0], { ...none, shift: true });
+    expect(h.selected).toEqual(['a', 'b']);
+  });
+
+  it('a marquee adds or takes away by the keys held when it started, not the free-drag shift the tokens mode passes', () => {
+    const h = host(['a']);
+    const c = new EditorController(h);
+    c.down([20, 50], none);
+    c.move([60, 80], { ...none, shift: true });
+    c.up([60, 80], { ...none, shift: true });
+    expect(h.selected).toEqual([]);
+    h.selected = ['a'];
+    c.down([90, -20], { ...none, shift: true });
+    c.up([110, 20], { ...none, shift: true });
     expect(h.selected).toEqual(['a', 'b']);
   });
 
