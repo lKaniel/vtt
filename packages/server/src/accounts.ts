@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { readJson, readJsonDir, writeJson } from './json-files.ts';
@@ -19,6 +19,8 @@ const AccountFileSchema = z.object({
   /** The server's admin: the first account, or (with an admin password) whoever gave it. */
   admin: z.boolean().default(false),
   created: z.number(),
+  /** The SHA-256 of the key Claude connects with (mcp-http.ts); none: no key. */
+  mcpKey: z.string().optional(),
 });
 type AccountFile = z.infer<typeof AccountFileSchema>;
 
@@ -34,6 +36,8 @@ const SessionsSchema = z.record(z.string(), SessionSchema);
 
 /** A sign-up or sign-in problem the player can fix. */
 export class AccountError extends Error {}
+
+const sha256 = (text: string) => createHash('sha256').update(text).digest('hex');
 
 const publicAccount = ({ id, name, admin }: AccountFile): Account => ({ id, name, admin });
 
@@ -56,9 +60,7 @@ export class AccountStore {
   async unlockAdmin(id: string, password: string): Promise<boolean> {
     const file = this.accounts.get(id);
     if (!file || !this.adminPassword || !sameText(password, this.adminPassword)) return false;
-    const admin = { ...file, admin: true };
-    this.accounts.set(id, admin);
-    await writeJson(join(this.dir, 'accounts', `${id}.json`), admin);
+    await this.saveAccount(id, { admin: true });
     return true;
   }
 
@@ -117,6 +119,36 @@ export class AccountStore {
     const session = token ? this.sessions.get(token) : undefined;
     if (!session || session.expires < Date.now()) return undefined;
     return this.get(session.account);
+  }
+
+  /** A new key for Claude to sit at the account's seats with; it replaces the old one. Shown once. */
+  async newMcpKey(id: string): Promise<string> {
+    const key = `vtt_${randomBytes(24).toString('base64url')}`;
+    await this.saveAccount(id, { mcpKey: sha256(key) });
+    return key;
+  }
+
+  async dropMcpKey(id: string): Promise<void> {
+    await this.saveAccount(id, { mcpKey: undefined });
+  }
+
+  hasMcpKey(id: string): boolean {
+    return !!this.accounts.get(id)?.mcpKey;
+  }
+
+  /** The account a key belongs to. */
+  mcpAccount(key: string): Account | undefined {
+    const hash = sha256(key);
+    const file = [...this.accounts.values()].find((a) => a.mcpKey === hash);
+    return file && publicAccount(file);
+  }
+
+  private async saveAccount(id: string, patch: Partial<AccountFile>): Promise<void> {
+    const old = this.accounts.get(id);
+    if (!old) throw new AccountError('No such account.');
+    const file = { ...old, ...patch };
+    this.accounts.set(id, file);
+    await writeJson(join(this.dir, 'accounts', `${id}.json`), file);
   }
 
   async endSession(token: string): Promise<void> {

@@ -40,7 +40,7 @@ const handleRequest = httpHandler({
     const locked = new Set(hub.access.lockedSeats(hub.homeId));
     return (await hub.info(hub.homeId)).players.map((p) => ({ ...p, locked: locked.has(p.id) }));
   },
-  api: apiHandler({ accounts, characters, hub }),
+  api: apiHandler({ accounts, characters, hub, mcpKey: process.env.VTT_MCP_KEY }),
 });
 
 const server = createServer((req, res) => {

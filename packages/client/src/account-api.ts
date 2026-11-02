@@ -65,6 +65,11 @@ export const api = {
     (await call<{ character: Character }>(id ? 'PUT' : 'POST', id ? `/api/characters/${id}` : '/api/characters', rest))
       .character,
   deleteCharacter: (id: string) => call<object>('DELETE', `/api/characters/${id}`),
+  /** Whether the account has a key for Claude (claude-bridge.ts). */
+  hasMcpKey: async () => (await call<{ has: boolean }>('GET', '/api/mcp-key')).has,
+  /** A new key for Claude, replacing the old one; the server shows it only now. */
+  newMcpKey: async () => (await call<{ key: string }>('POST', '/api/mcp-key', {})).key,
+  dropMcpKey: () => call<object>('DELETE', '/api/mcp-key'),
 
   games: () => call<{ games: GameSummary[]; systems: SystemInfo[] }>('GET', '/api/games'),
   game: async (id: string) => (await call<{ game: GameDetail }>('GET', game(id))).game,

@@ -116,6 +116,10 @@ with `pnpm check-game data/games/<id>`.
   `art-*` utilities in `index.css` (panel, button plates, slots, divider),
   then use it. Lay screens out with Tailwind classes;
   `style.css` is the older hand-written layer and only shrinks.
+- Claude bridge (`docs/claude-bridge.md`): `POST /mcp` speaks MCP; tools
+  act through a browserless seat (`mcp-seat.ts`) so they keep the caller's
+  rights. A new tool goes in `mcp-tools.ts`, never with its own permission
+  checks.
 - Map editor (`docs/editor.md`): modes, selection, handles, menus and the
   inspector work the same for every placeable. Hit-testing and shapes stay
   in `shared/hit-test.ts` and `placeables.ts` (one boundary for a later

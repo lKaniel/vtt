@@ -4,6 +4,7 @@ import { api, type SessionInfo } from '../account-api.ts';
 import { characterSummary } from '../creator.ts';
 import type { Route } from '../route.ts';
 import { Button } from './kit/button.tsx';
+import { ClaudeKey } from './ClaudeKey.tsx';
 import { AdminUnlock } from './GameAccess.tsx';
 
 /** The signed-in player's roster; games are entered from the lobby (LobbyScreens.tsx). */
@@ -38,6 +39,7 @@ export function AccountScreen({
         </div>
         <div className="account-actions">
           <Button onClick={() => go({ name: 'games' })}>Your games</Button>
+          <ClaudeKey />
           <Button variant="outline" onClick={() => go({ name: 'menu' })}>
             Main menu
           </Button>
