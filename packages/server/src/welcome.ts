@@ -19,8 +19,8 @@ export interface Joining {
 
 /** Everything a welcome depends on, short of the documents: when it changes, the client starts over. */
 export function startOf(store: GameStore, c: Joining): string {
-  // The time of day changes without starting over (a `lighting` message).
-  const { players, darkness: _darkness, ...world } = store.inScene(c.scene, () => store.world);
+  // The time of day and the weather change without starting over (`lighting` and `weather` messages).
+  const { players, darkness: _darkness, weather: _weather, ...world } = store.inScene(c.scene, () => store.world);
   // The GM's welcome lists the seats too.
   const seats = isGm(c.player) ? players.map(withoutSettings) : undefined;
   const parts = [

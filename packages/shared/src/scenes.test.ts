@@ -40,7 +40,8 @@ describe('scenes', () => {
     expect(id).toBe('goblin-cave');
     docs.apply(ops);
     expect(sceneList(docs).map((d) => d.id)).toEqual(['main', 'cellar', 'goblin-cave']);
-    expect(docs.get('scenes', id)).toMatchObject({ name: 'Goblin Cave', gridSize: 100 });
+    // Daylight comes and goes with the game clock until the GM says otherwise (a cave).
+    expect(docs.get('scenes', id)).toMatchObject({ name: 'Goblin Cave', gridSize: 100, darknessFollowsClock: true });
     expect(newSceneOps(docs, 'Goblin Cave').id).toBe('goblin-cave-2');
   });
 

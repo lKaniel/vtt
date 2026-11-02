@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { DAY, HOUR, MINUTE } from '@vtt/shared';
+import { DAY, HOUR, MINUTE, WeatherCycleSchema, weatherAt } from '@vtt/shared';
 import { type Token, TokenSchema } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
@@ -270,5 +270,71 @@ describe('darkness following the clock', () => {
     expect(gm.take('lighting').at(-1)).toEqual({ t: 'lighting', darkness: 0 });
     gm.receive({ t: 'undo' });
     expect(store.world.darkness).toBe(1);
+  });
+});
+
+describe('weather following the clock', () => {
+  const cycle = { every: 4, options: [{ weather: 'rain' }, { weather: 'clear' }, { weather: 'snow' }] };
+
+  it('works the weather out from the time, and tells the players when it turns', () => {
+    const gm = seat('gm');
+    const ana = seat('ana');
+    gm.receive({
+      t: 'ops',
+      txn: 't',
+      ops: [{ op: 'update', coll: 'scenes', id: 'main', patch: { weatherCycle: cycle } }],
+    });
+    const calendar = clock().calendar;
+    const parsed = WeatherCycleSchema.parse(cycle);
+    expect(store.world.weather).toEqual(weatherAt(parsed, calendar, 0, 'main'));
+    ana.take('welcome');
+    let t = 0;
+    while (JSON.stringify(weatherAt(parsed, calendar, t, 'main')) === JSON.stringify(store.world.weather))
+      t += 4 * HOUR;
+    gm.receive({ t: 'clock', action: { do: 'skip', seconds: t } });
+    expect(store.world.weather).toEqual(weatherAt(parsed, calendar, t, 'main'));
+    expect(ana.take('weather').at(-1)).toEqual({ t: 'weather', weather: store.world.weather });
+    expect(ana.take('welcome')).toEqual([]);
+  });
+
+  it('sends weather the GM sets by hand without starting the players over', () => {
+    const gm = seat('gm');
+    const ana = seat('ana');
+    ana.take('welcome');
+    const fog = [{ kind: 'fog', density: 0.5 }];
+    gm.receive({ t: 'ops', txn: 't', ops: [{ op: 'update', coll: 'scenes', id: 'main', patch: { weather: fog } }] });
+    expect(ana.take('weather').at(-1)).toEqual({ t: 'weather', weather: fog });
+    expect(ana.take('welcome')).toEqual([]);
+  });
+});
+
+describe('calendar notes on the clock', () => {
+  const entry = (id: string, date: number, ownership?: object) => ({
+    id,
+    type: 'journal',
+    rev: 0,
+    name: id === 'fair' ? 'The harvest fair' : 'The ambush',
+    pages: [],
+    date,
+    ...(ownership && { ownership }),
+  });
+
+  it('says so when the clock reaches a note’s day: to everyone who may read it, else to the GM', () => {
+    const gm = seat('gm');
+    const ana = seat('ana');
+    const ops = [
+      { op: 'create', coll: 'journals', doc: entry('fair', 2 * HOUR, { default: 'observer' }) },
+      { op: 'create', coll: 'journals', doc: entry('ambush', 3 * HOUR, { default: 'none' }) },
+      { op: 'create', coll: 'journals', doc: entry('later', 30 * HOUR, { default: 'observer' }) },
+    ];
+    gm.receive({ t: 'ops', txn: 't', ops });
+    said(ana);
+    said(gm);
+    gm.receive({ t: 'clock', action: { do: 'skip', seconds: 4 * HOUR } });
+    expect(said(ana).filter((t) => t?.startsWith('Today'))).toEqual(['Today: The harvest fair']);
+    expect(said(gm).filter((t) => t?.startsWith('Today'))).toEqual(['Today: The harvest fair', 'Today: The ambush']);
+    // Time going back and forth again doesn't repeat what was already said.
+    gm.receive({ t: 'clock', action: { do: 'skip', seconds: HOUR } });
+    expect(said(gm).filter((t) => t?.startsWith('Today'))).toEqual([]);
   });
 });

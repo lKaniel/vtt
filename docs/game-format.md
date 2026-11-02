@@ -126,21 +126,21 @@ how the scene is stored.
 
 Optional, all set from the Scenes tab too:
 
-| Field                  | What it does                                                                              |
-| ---------------------- | ----------------------------------------------------------------------------------------- |
-| `name`                 | What the Scenes list and the top bar show (the folder name otherwise).                    |
-| `sort`                 | Order in the Scenes list (a sort key, see `sort-key.ts`); the editor writes it.           |
-| `exploration`          | With fog of war, players keep seeing (dimmed) where they have been. Default on.           |
-| `grid`                 | `"none"` (default): no grid, free movement in feet. `"square"`: grid lines, square moves. |
-| `gridColor`            | Grid line colour, default `"#000000"`.                                                    |
-| `gridOpacity`          | 0 to 1, default 0.16.                                                                     |
-| `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                                      |
-| `darknessFollowsClock` | The darkness follows the game clock's time of day (see time.json); `darkness` is ignored. |
-| `levels`               | Floors of the scene, see "Scene levels" below.                                            |
-| `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.            |
-| `navigation`           | `true`: the scene is in the GM's navigation bar under the top bar.                        |
-| `navName`              | Its name in that bar (default `name`).                                                    |
-| `thumb`                | A small picture for the bar and the Scenes list (default the background tile's picture).  |
+| Field                  | What it does                                                                                                           |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | What the Scenes list and the top bar show (the folder name otherwise).                                                 |
+| `sort`                 | Order in the Scenes list (a sort key, see `sort-key.ts`); the editor writes it.                                        |
+| `exploration`          | With fog of war, players keep seeing (dimmed) where they have been. Default on.                                        |
+| `grid`                 | `"none"` (default): no grid, free movement in feet. `"square"`: grid lines, square moves.                              |
+| `gridColor`            | Grid line colour, default `"#000000"`.                                                                                 |
+| `gridOpacity`          | 0 to 1, default 0.16.                                                                                                  |
+| `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                                                                   |
+| `darknessFollowsClock` | The darkness follows the game clock's time of day (see time.json); `darkness` is ignored. New scenes start with it on. |
+| `levels`               | Floors of the scene, see "Scene levels" below.                                                                         |
+| `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.                                         |
+| `navigation`           | `true`: the scene is in the GM's navigation bar under the top bar.                                                     |
+| `navName`              | Its name in that bar (default `name`).                                                                                 |
+| `thumb`                | A small picture for the bar and the Scenes list (default the background tile's picture).                               |
 
 The navigation bar always holds the game's scene and the one the GM is on;
 a click looks at a scene, its play button moves the game there. A
@@ -168,6 +168,25 @@ clouds:
 The GM adds layers from presets (rain, snow, clouds, fog, embers, birds,
 storm, blizzard, wildfire) in the scene's settings. Players who turned
 animations down see it half as thick, or not at all.
+
+With `weatherCycle` the weather changes with world time instead (and
+`weather` is ignored): every `every` hours (default 4) one of `options` comes
+up, `weight` making it likelier (default 1, 0 never), `months` (indexes into
+the calendar's months) keeping it to part of the year. `"clear"` is no
+weather; the others are the preset ids. It is worked out from the clock, so
+skipping time, or undoing it, changes it too:
+
+```json
+"weatherCycle": {
+  "every": 6,
+  "options": [
+    { "weather": "clear", "weight": 3 },
+    { "weather": "rain" },
+    { "weather": "storm", "weight": 0.5 },
+    { "weather": "snow", "months": [0, 1, 11] }
+  ]
+}
+```
 
 ### Explored fog of war
 
@@ -450,7 +469,9 @@ entries it made.
 
 An entry with `quest` is in the quest log: `status` (`"active"`, `"done"`,
 `"failed"`) and `objectives` (`text`, `done`). An entry with `date` (game
-seconds, see time.json) is a calendar note on that day:
+seconds, see time.json) is a calendar note on that day; when the clock reaches
+it, the chat says so ("Today: Find the well"), to everyone if every player
+may see the entry, else to the GM alone:
 
 ```json
 {

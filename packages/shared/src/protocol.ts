@@ -1,6 +1,7 @@
 import type { Doc, MediaEntry, Op, PackCompendium, PackInfo } from '@vtt/core';
 import type { Roll } from './dice.ts';
 import type { ClockAction } from './clock.ts';
+import type { Weather } from './weather.ts';
 import type { Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
 import type { FogEdit } from './fog-edit.ts';
 import type { MapEdit } from './map-edit.ts';
@@ -144,6 +145,8 @@ export type EngineServerMessage =
   | { t: 'paused'; on: boolean }
   /** The time of day changed. */
   | { t: 'lighting'; darkness: number }
+  /** The scene's weather changed (by hand, or with the time): no need to start over. */
+  | { t: 'weather'; weather: Weather[] }
   /** A trigger plays a sound once for everyone on the scene. */
   | { t: 'sound'; src: string; volume?: number }
   | { t: 'error'; message: string }

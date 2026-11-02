@@ -56,6 +56,8 @@ describe('the games on a server', () => {
     expect(game.players).toEqual([kaniel]);
     const { store } = await hub.open(id);
     expect(store.sceneIds()).toEqual([game.scene]);
+    // Its daylight follows the game clock.
+    expect(store.docs.get('scenes', 'main')).toMatchObject({ darknessFollowsClock: true });
     expect(await hub.info(id)).toMatchObject({ open: false, players: [kaniel] });
     expect(await hub.create({ name: 'Lost Mine', system: 'dnd5e', rules: '2014' }, kaniel)).toBe('lost-mine-2');
   });
