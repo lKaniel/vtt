@@ -64,10 +64,14 @@ What comes along:
   becomes a copy whose own name, picture, size and hit points go in its
   `delta`. Hidden tokens stay hidden. A token whose actor is gone carries
   its name and picture itself.
-- **Actors**, in their folders ("Monsters / Goblins"), with their token art.
-  A player-visible actor (Foundry's default Observer or Owner) keeps that
-  level for everyone; the GM gives characters to their players in the
-  Players tab. The sheet is read by the game system (see below).
+- **Players**: each Foundry user becomes a player of the game with the same
+  name and colour (and avatar); Foundry's roles map to ours (player,
+  trusted, and assistant GM or gamemaster to GM). The first gamemaster is
+  you, the one importing.
+- **Actors**, in their folders ("Monsters / Goblins"), with their token art,
+  and the levels Foundry gave everyone and each user (a player owns their
+  character as before). The sheet is read by the game system (see below).
+- Journal entries and roll tables keep who may see them, the same way.
 - **Journal entries** (text and image pages), **roll tables** and
   **playlists**, in their folders.
 - **Pictures and sounds** those use, copied into the game's
@@ -110,7 +114,9 @@ prints the same list. Mainly:
 - Spells the SRD doesn't have, active effects and Foundry's automation.
 - Items in the Items sidebar (drag items from the Compendium instead),
   macros, card stacks, chat, combats and the explored fog.
-- Foundry users and their passwords: add your players on the game's page.
+- Foundry users' passwords (Foundry keeps only hashes): give your players
+  new ones on the game's page.
+- Each user's explored fog.
 - Data that other Foundry modules keep in `flags` (Monk's, Tagger...).
 - Sheets of other Foundry systems: their actors keep only their name and
   picture, everything else still comes along.

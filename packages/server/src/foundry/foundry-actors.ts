@@ -1,5 +1,6 @@
 import type { ImportLoss } from '@vtt/core';
 import { lost, placed, type PlacedLoss } from './import-losses.ts';
+import { foundryOwnership, type OwnershipOf } from './foundry-users.ts';
 import { freeId, type FoundrySheets, slugify, type SystemDefinition } from '@vtt/core';
 import type { Model3D } from '@vtt/shared';
 import type { FoundryDoc } from './foundry-db.ts';
@@ -53,14 +54,14 @@ export interface ActorContext {
   rules: string;
   media: MediaLookup;
   folderOf: FolderLookup;
+  /** Foundry's levels as ours, with the game's players; default: only the default level. */
+  ownership?: OwnershipOf;
 }
 
-/** Foundry permission levels: 0 none, 1 limited, 2 observer, 3 owner. Players never lose sight of a token here. */
-const LEVELS = [undefined, undefined, 'observer', 'owner'] as const;
-
-function ownershipOf(a: FoundryDoc): { ownership?: { default: string } } {
-  const level = LEVELS[num(obj(a.ownership ?? a.permission).default) ?? 0];
-  return level ? { ownership: { default: level } } : {};
+/** Foundry's levels on an actor as ours; players never lose sight of a token here (at least limited). */
+function ownershipOf(a: FoundryDoc, ctx: ActorContext): { ownership?: Record<string, string> } {
+  const ownership = (ctx.ownership ?? foundryOwnership())(a.ownership ?? a.permission, 'limited');
+  return ownership ? { ownership } : {};
 }
 
 /** The picture tokens of it show: the prototype token's, else the portrait. */
@@ -83,7 +84,7 @@ function actorBase(a: FoundryDoc, id: string, ctx: ActorContext): Record<string,
     ...(folder ? { folder } : {}),
     ...(width !== 1 ? { size: width } : {}),
     linked: typeof proto.actorLink === 'boolean' ? proto.actorLink : a.type === 'character',
-    ...ownershipOf(a),
+    ...ownershipOf(a, ctx),
   };
 }
 

@@ -63,8 +63,17 @@ export async function importFoundryWorld(from: string, game: string, opts: World
   const rules = system.foundry?.rules(setting) ?? defaultEdition(system);
   const media = new FoundryMedia({ dir: from, id: world.id }, opts.dataDir ?? dataFolderOf(from));
   const log = new LossLog();
-  const ctx: WorldContext = { world, system, rules, setting, media, log, made: { folderOf: () => undefined } };
-  const out: WorldOut = { docs: {}, scenes: [], files: {}, game: { players: [opts.gm] } };
+  const ctx: WorldContext = {
+    world,
+    system,
+    rules,
+    setting,
+    media,
+    log,
+    made: { folderOf: () => undefined },
+    gm: opts.gm,
+  };
+  const out: WorldOut = { docs: {}, scenes: [], files: {}, game: {} };
   for (const part of WORLD_PARTS) part.run(ctx, out);
   const name = opts.name?.trim() ? opts.name.trim() : world.title;
   await writeGame(game, out);

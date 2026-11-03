@@ -3,6 +3,7 @@
 // docs/i18n.md for adding words and languages.
 
 import { EN_BAILEYWIKI } from './en-lobby.ts';
+import { EN_FOUNDRY } from './en-foundry.ts';
 import { EN_MAP } from './en-map.ts';
 import { EN_SHEET } from './en-sheet.ts';
 
@@ -341,11 +342,6 @@ export const EN = {
   'lobby.players': '{n} players',
   'lobby.online': '{n} playing now',
   'lobby.home': 'server game',
-  'foundry.ready': '{name} is ready: {summary}.',
-  'foundry.leftOut': 'Left out',
-  'foundry.in': 'in {places}',
-  'foundry.inMany': 'in {count} places: {places}, …',
-  'foundry.open': 'Open the game',
 
   'setup.title': 'Setup',
   'setup.kicker': 'The games on this server',
@@ -407,6 +403,7 @@ export const EN = {
   'characters.deleteAsk': 'Delete {name} for good? Their token stays on the map as an actor.',
 
   ...EN_SHEET,
+  ...EN_FOUNDRY,
   ...EN_BAILEYWIKI,
   ...EN_MAP,
 } as const;

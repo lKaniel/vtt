@@ -151,7 +151,7 @@ beforeEach(async () => {
     '!settings!X2': { _id: 'X2', key: 'core.time', value: '90000' },
   });
   await db('users', {
-    '!users!U1': { _id: 'U1', name: 'Sam' },
+    '!users!U1': { _id: 'U1', name: 'Sam', role: 1, color: '#5bcc28', password: 'hash' },
     '!users!U0': { _id: 'U0', name: 'Gamemaster', role: 4 },
   });
 });
@@ -172,7 +172,7 @@ describe('importFoundryWorld', () => {
       system: 'dnd5e',
       rules: '2014',
       scene: 'the-keep',
-      players: [gm],
+      players: [gm, { id: 'sam', name: 'Sam', role: 'player', color: '#5bcc28' }],
     });
     expect(report).toMatchObject({
       name: 'The Lost Keep',
@@ -278,6 +278,15 @@ describe('importFoundryWorld', () => {
     );
   });
 
+  it("gives Foundry's users the actors and entries Foundry let them own or see", async () => {
+    const { dir } = await imported();
+    const actors = await readdir(join(dir, 'actors'));
+    const files = await Promise.all(actors.map((f) => readJson(join(dir, 'actors', f))));
+    expect(files).toContainEqual(
+      expect.objectContaining({ name: 'Mira', ownership: { default: 'observer', sam: 'owner' } }),
+    );
+  });
+
   it('keeps the world’s time on the game clock', async () => {
     const { dir } = await imported();
     expect(await readJson(join(dir, 'time.json'))).toMatchObject({ time: 90000, calendar: { sunrise: 6 } });
@@ -304,7 +313,7 @@ describe('importFoundryWorld', () => {
           what: 'Items in the Items sidebar (drag items from the Compendium instead)',
           examples: ['Longsword'],
         }),
-        expect.objectContaining({ what: "Foundry users (add your players on the game's page)", examples: ['Sam'] }),
+        expect.objectContaining({ examples: ['Sam'], count: 1 }),
       ]),
     );
   });

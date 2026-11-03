@@ -1,4 +1,4 @@
-import type { Game, SceneEntry } from '@vtt/shared';
+import type { Game, Player, SceneEntry } from '@vtt/shared';
 import { type ActorSystem, type ConvertedActors, foundryActors, foundryTokens, idMaker } from './foundry-actors.ts';
 import type { FoundryDoc } from './foundry-db.ts';
 import { type ConvertedEntries, type FolderLookup, foundryEntries } from './foundry-entries.ts';
@@ -9,6 +9,7 @@ import type { FoundryMedia } from './foundry-media.ts';
 import { foundryGrid, foundryScene } from './foundry-scene.ts';
 import { foundryClock } from './foundry-time.ts';
 import { tokenModelOf } from './foundry-3d.ts';
+import { foundryPlayers, type OwnershipOf } from './foundry-users.ts';
 import { lost, type LossLog, placed } from './import-losses.ts';
 import type { World } from './foundry-world-read.ts';
 
@@ -21,6 +22,8 @@ import type { World } from './foundry-world-read.ts';
 /** What earlier parts made, for later ones to point at. */
 export interface Made {
   folderOf: FolderLookup;
+  /** Foundry's levels as ours, for the game's players. */
+  ownership?: OwnershipOf;
   entries?: ConvertedEntries;
   actors?: ConvertedActors;
 }
@@ -34,6 +37,8 @@ export interface WorldContext {
   media: FoundryMedia;
   log: LossLog;
   made: Made;
+  /** The importing seat: the game's GM, standing in for Foundry's first gamemaster. */
+  gm: Player;
 }
 
 export interface SceneOut {
@@ -72,11 +77,29 @@ const folders: WorldPart = {
   },
 };
 
+const names = (docs: FoundryDoc[]) => docs.map((d) => (typeof d.name === 'string' ? d.name : '?'));
+
+const PASSWORDS = "Players' passwords (Foundry keeps only their hashes: give them new ones on the game's page)";
+
+/** Foundry's users as the game's players, the importing GM first. */
+const players: WorldPart = {
+  id: 'players',
+  run: (ctx, out) => {
+    const { users } = ctx.world.docs;
+    const p = foundryPlayers(users, ctx.gm, ctx.media.lookup);
+    ctx.made.ownership = p.ownership;
+    out.game.players = p.players;
+    const locked = users.filter((u) => typeof u.password === 'string' && u.password);
+    if (locked.length) ctx.log.add([lost(PASSWORDS, locked.length, names(locked))]);
+  },
+};
+
 const entries: WorldPart = {
   id: 'entries',
   run: (ctx, out) => {
     const { journal, tables, playlists } = ctx.world.docs;
-    const e = foundryEntries({ journals: journal, tables, playlists }, ctx.media.lookup, ctx.made.folderOf);
+    const raw = { journals: journal, tables, playlists };
+    const e = foundryEntries(raw, ctx.media.lookup, ctx.made.folderOf, ctx.made.ownership);
     ctx.made.entries = e;
     ctx.log.add(e.skipped);
     add(out, 'journals', e.journals);
@@ -105,6 +128,7 @@ const actors: WorldPart = {
       rules,
       media,
       folderOf: ctx.made.folderOf,
+      ownership: ctx.made.ownership,
     });
     ctx.made.actors = a;
     ctx.log.add(a.skipped);
@@ -166,15 +190,12 @@ const time: WorldPart = {
   },
 };
 
-const names = (docs: FoundryDoc[]) => docs.map((d) => (typeof d.name === 'string' ? d.name : '?'));
-
 /** What the world has that has no place in a game here (yet). */
 const leftBehind: WorldPart = {
   id: 'left-behind',
   run: (ctx) => {
     const { world, system } = ctx;
-    const { items, users, cards } = world.docs;
-    const players = users.filter((u) => typeof u.role !== 'number' || u.role < 4);
+    const { items, cards } = world.docs;
     const losses = [
       ...(system.foundry?.system === world.system
         ? []
@@ -187,9 +208,6 @@ const leftBehind: WorldPart = {
       ...(items.length
         ? [lost('Items in the Items sidebar (drag items from the Compendium instead)', items.length, names(items))]
         : []),
-      ...(players.length
-        ? [lost("Foundry users (add your players on the game's page)", players.length, names(players))]
-        : []),
       ...(cards.length ? [lost('Card stacks', cards.length, names(cards))] : []),
     ];
     ctx.log.add(losses);
@@ -197,4 +215,4 @@ const leftBehind: WorldPart = {
 };
 
 /** Every part, in the order they run. */
-export const WORLD_PARTS: readonly WorldPart[] = [folders, entries, macros, actors, scenes, time, leftBehind];
+export const WORLD_PARTS: readonly WorldPart[] = [folders, players, entries, macros, actors, scenes, time, leftBehind];
