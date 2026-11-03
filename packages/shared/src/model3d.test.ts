@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Model3DSchema, modelPieces } from './model3d.ts';
+import { Model3DSchema, modelOffset, modelPieces } from './model3d.ts';
 
 // A tile's 3D model (Foundry's 3D Canvas): one model stretched over the tile,
 // or repeated across it, standing at its elevation, turned with the tile.
@@ -83,5 +83,14 @@ describe('3D in the game files', () => {
     expect(tile.kind === 'image' && tile.model).toEqual({ src: 'b.glb' });
     const scene = SceneSettingsSchema.parse({ view3d: { sky: 'sky.webp', walls: false } });
     expect(scene.view3d).toEqual({ sky: 'sky.webp', walls: false });
+  });
+});
+
+describe('where a model stands on its spot', () => {
+  const bounds = { min: [-2, 1, 4] as const, max: [2, 3, 8] as const };
+  it('stands the middle of its footprint on the spot and its bottom on the ground, unless told to keep its origin', () => {
+    expect(modelOffset(bounds, {})).toEqual([0, -1, -6]);
+    expect(modelOffset(bounds, { center: false })).toEqual([0, -1, 0]);
+    expect(modelOffset(bounds, { ground: false, center: false })).toEqual([0, 0, 0]);
   });
 });

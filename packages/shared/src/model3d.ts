@@ -24,6 +24,10 @@ export const Model3DSchema = z.object({
   piece: z.number().positive().optional(),
   /** A colour multiplied into it. */
   color: z.string().optional(),
+  /** false: the model's own origin stands on the tile's middle, not the middle of its footprint (3D Canvas without autoCenter). */
+  center: z.boolean().optional(),
+  /** false: the model's own origin stands at its elevation, not the bottom of its bounds (3D Canvas without autoGround). */
+  ground: z.boolean().optional(),
 });
 export type Model3D = z.infer<typeof Model3DSchema>;
 
@@ -103,4 +107,14 @@ function cellsOf(rect: Rect, side: number): [number, number] {
 function turned(middle: [number, number], [dx, dy]: [number, number], turn: number): [number, number] {
   const [c, s] = [Math.cos(turn), Math.sin(turn)];
   return [middle[0] + dx * c - dy * s, middle[1] + dx * s + dy * c];
+}
+
+/** Where the model's own frame sits under its spot: its footprint centred and its bottom grounded, unless `center` or `ground` is false. */
+export function modelOffset(
+  bounds: { min: readonly [number, number, number]; max: readonly [number, number, number] },
+  model: Pick<Model3D, 'center' | 'ground'>,
+): [number, number, number] {
+  const mid = (i: number) => (bounds.min[i]! + bounds.max[i]!) / 2;
+  const keep = model.center === false;
+  return [keep ? 0 : -mid(0) || 0, model.ground === false ? 0 : -bounds.min[1] || 0, keep ? 0 : -mid(2) || 0];
 }
