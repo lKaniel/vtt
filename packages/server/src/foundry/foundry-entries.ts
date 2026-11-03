@@ -1,4 +1,5 @@
 import { lost as lostThings, type PlacedLoss } from './import-losses.ts';
+import type { OwnershipOf } from './foundry-users.ts';
 import { freeId, slugify } from '@vtt/core';
 import type { Journal, JournalPage, Playlist, RollTable, Track } from '@vtt/shared';
 import { z } from 'zod';
@@ -26,10 +27,12 @@ const FoundryJournal = z.object({
   pages: z.array(z.unknown()).optional().catch(undefined),
   /** v9: one page of HTML. */
   content: str,
+  ownership: z.unknown().optional(),
 });
 
 const FoundryTable = z.object({
   name: z.string().min(1),
+  ownership: z.unknown().optional(),
   folder: str,
   description: str,
   replacement: z.boolean().optional().catch(undefined),
@@ -111,7 +114,14 @@ interface Maps {
   playlists: Map<string, string>;
   skipped: PlacedLoss[];
   folderOf?: FolderLookup;
+  ownership?: OwnershipOf;
 }
+
+/** `ownership` for a Foundry document's levels (players see entries Foundry let them see). */
+const ownedBy = (maps: Maps, raw: unknown) => {
+  const ownership = maps.ownership?.(raw, 'none');
+  return ownership ? { ownership } : {};
+};
 
 /** A Foundry folder id as the folder name our sidebar lists show. */
 export type FolderLookup = (foundryId: string | null | undefined) => string | undefined;
@@ -138,10 +148,10 @@ function journalOf(j: z.infer<typeof FoundryJournal>, id: string, media: MediaLo
       place: j.name,
     });
   if (j._id) maps.entries.set(j._id, id);
-  return { id, name: j.name, ...inFolder(maps.folderOf, j.folder), pages };
+  return { id, name: j.name, ...inFolder(maps.folderOf, j.folder), ...ownedBy(maps, j.ownership), pages };
 }
 
-function tableOf(t: z.infer<typeof FoundryTable>, id: string, folderOf?: FolderLookup): RollTable {
+function tableOf(t: z.infer<typeof FoundryTable>, id: string, maps: Maps): RollTable {
   const results = t.results.map((r) => {
     const weight = r.weight ?? (r.range ? r.range[1] - r.range[0] + 1 : 1);
     return { text: r.text, weight: Math.max(1, Math.round(weight)), ...(r.drawn ? { drawn: true } : {}) };
@@ -149,7 +159,8 @@ function tableOf(t: z.infer<typeof FoundryTable>, id: string, folderOf?: FolderL
   return {
     id,
     name: t.name,
-    ...inFolder(folderOf, t.folder),
+    ...inFolder(maps.folderOf, t.folder),
+    ...ownedBy(maps, t.ownership),
     ...(t.description ? { description: t.description } : {}),
     ...(t.replacement === undefined ? {} : { replacement: t.replacement }),
     results,
@@ -195,15 +206,20 @@ const relinked = (journal: Journal, maps: Maps): Journal => ({
 });
 
 /** Converts the sidebar documents of a Foundry folder; `media` finds the copied files, `folderOf` names folders. */
-export function foundryEntries(raw: RawEntries, media: MediaLookup, folderOf?: FolderLookup): ConvertedEntries {
-  const maps: Maps = { entries: new Map(), pages: new Map(), playlists: new Map(), skipped: [], folderOf };
+export function foundryEntries(
+  raw: RawEntries,
+  media: MediaLookup,
+  folderOf?: FolderLookup,
+  ownership?: OwnershipOf,
+): ConvertedEntries {
+  const maps: Maps = { entries: new Map(), pages: new Map(), playlists: new Map(), skipped: [], folderOf, ownership };
   const [journalId, tableId, playlistId] = [ids(), ids(), ids()];
   const journals = each(FoundryJournal, raw.journals)
     .map((j) => journalOf(j, journalId(j.name, 'entry'), media, maps))
     .map((j) => relinked(j, maps));
   const tables = each(FoundryTable, raw.tables)
     .filter((t) => t.results.length)
-    .map((t) => tableOf(t, tableId(t.name, 'table'), folderOf));
+    .map((t) => tableOf(t, tableId(t.name, 'table'), maps));
   const playlists = each(FoundryPlaylist, raw.playlists).map((p) =>
     playlistOf(p, playlistId(p.name, 'playlist'), media, maps),
   );
