@@ -280,7 +280,7 @@ pixels.
   | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                | Shows the next picture, round and round; `tile` names another tile.                                   |
   | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }` | Shows, hides or toggles a tile, token, region, drawing, note, sound or light (a hidden light is out). |
   | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                       | Plays once for everyone on the scene.                                                                 |
-  | `{ "type": "teleport", "to": [x, y], "scene": "cellar" }`                              | Moves the creature that set it off (the actions after it wait).                                       |
+  | `{ "type": "teleport", "to": [x, y], "scene": "cellar", "level": "loft" }`             | Moves the creature that set it off (the actions after it wait), onto `level` when named.              |
   | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                   | Opens, closes, locks or toggles a door.                                                               |
   | `{ "type": "message", "text": "…", "gmOnly": true }`                                   | Says it in chat.                                                                                      |
   | `{ "type": "journal", "entry": "letter", "page": "p1" }`                               | Shares the entry with the players and opens it on their screens.                                      |
@@ -441,12 +441,21 @@ players don't see creatures on floors their own doesn't see
 the map tools (creatures on other floors show faintly); a player sees their
 creature's.
 
-A region only works for creatures on its own levels. Three behaviours move
+A region only works for creatures on its own levels. These behaviours move
 creatures between floors: `level` (always to that level), `stairs` (between
 two levels: up from one, down from the other; walk out and in again to go
 back) and `elevator` (whoever moves the creature picks one of its `floors`,
-or of every level when it has none). The GM may also move any creature to
-any level with the `changeLevel` message.
+or of every level when it has none) work when a walk ends inside the region,
+so walking past the stairs keeps a creature on its floor. Players see these
+ways between floors (an outline and a stairs sign) even when the region isn't
+`visible`. A `fall` region is a hole: a creature walking over it drops to
+the floor below where it stepped in, and a `teleport` with a `level` lands
+on that floor. The GM may also move any creature to any level with the
+`changeLevel` message.
+
+A creature with no `elevation` stands at 0 ft. It walks, sees and is pushed
+around among the walls of its own floor only (`wallsOnFloor` in
+`shared/levels.ts`), and creatures on other floors don't get in its way.
 
 ## Drawings, notes, templates, regions and sounds
 
@@ -494,16 +503,17 @@ with `endsAt` (a game-clock second, see time.json) goes when the clock reaches i
 `visible` (players see its outline), `disabled`, `activeAt`, and
 `behaviors`, run in order when a token walks in:
 
-| Behaviour                                                           | What it does                                                                                                                                                      |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `{ "type": "difficult", "multiplier": 2 }`                          | Moving through costs that many times as much (paths go round it if they can).                                                                                     |
-| `{ "type": "trap", "message": "…", "once": true, "system": { … } }` | The game system springs it; D&D: `system` is `{ "save": "dex", "dc": 15, "damage": "2d6", "type": "piercing", "half": true }`. `once` turns the region off after. |
-| `{ "type": "teleport", "to": [x, y], "scene": "cellar" }`           | Moves the token there (and, to another scene, the players who own it).                                                                                            |
-| `{ "type": "level", "to": "loft" }`                                 | Takes the token to that level (its elevation becomes the level's bottom).                                                                                         |
-| `{ "type": "stairs", "between": ["ground", "loft"] }`               | Stairs: a token on one of the two levels goes to the other.                                                                                                       |
-| `{ "type": "elevator", "floors": ["cellar", "ground", "loft"] }`    | Asks whoever moves the token which of these floors to go to (none listed: every level).                                                                           |
-| `{ "type": "reveal" }`                                              | The players whose token walked in see the whole region as explored.                                                                                               |
-| `{ "type": "message", "text": "…", "gmOnly": true }`                | Says it in chat (to the GM alone with `gmOnly`).                                                                                                                  |
+| Behaviour                                                                  | What it does                                                                                                                                                      |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{ "type": "difficult", "multiplier": 2 }`                                 | Moving through costs that many times as much (paths go round it if they can).                                                                                     |
+| `{ "type": "trap", "message": "…", "once": true, "system": { … } }`        | The game system springs it; D&D: `system` is `{ "save": "dex", "dc": 15, "damage": "2d6", "type": "piercing", "half": true }`. `once` turns the region off after. |
+| `{ "type": "teleport", "to": [x, y], "scene": "cellar", "level": "loft" }` | Moves the token there (and, to another scene, the players who own it), onto `level` when named.                                                                   |
+| `{ "type": "level", "to": "loft" }`                                        | Takes the token to that level (its elevation becomes the level's bottom).                                                                                         |
+| `{ "type": "stairs", "between": ["ground", "loft"] }`                      | Stairs: a token on one of the two levels goes to the other.                                                                                                       |
+| `{ "type": "elevator", "floors": ["cellar", "ground", "loft"] }`           | Asks whoever moves the token which of these floors to go to (none listed: every level).                                                                           |
+| `{ "type": "fall", "to": "cellar", "damage": true }`                       | A hole: a token walking over it falls to `to` (missing: the floor below), stopping where it stepped in; `damage` lets the system hurt it (D&D: 1d6 per 10 ft).    |
+| `{ "type": "reveal" }`                                                     | The players whose token walked in see the whole region as explored.                                                                                               |
+| `{ "type": "message", "text": "…", "gmOnly": true }`                       | Says it in chat (to the GM alone with `gmOnly`).                                                                                                                  |
 
 A region also takes every tile trigger action (`image` with a `tile`,
 `visibility`, `sound`, `door`, `journal`; see "Tiles and walls").

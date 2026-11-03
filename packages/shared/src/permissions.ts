@@ -1,9 +1,8 @@
 import { type Level, levelFor, type Ownership } from '@vtt/core';
-import { levelsSeen, onLevel, tokenLevel } from './levels.ts';
+import { levelsSeen, onLevel, tokenLevel, wallsOnFloor } from './levels.ts';
 import type { PlacedToken, Player, Point, SceneLevel, Wall, World } from './schema.ts';
 import { type Eyes, type LightContext, type Perceiver, perceives } from './senses.ts';
 import { hasLineOfSight, type LightSource } from './vision.ts';
-import { wallsAt } from './walls.ts';
 
 /** How much of a document a player has; see `Level` in core. */
 export type { Level, Ownership } from '@vtt/core';
@@ -118,12 +117,7 @@ function eyesOf<T extends PlacedToken>(v: T, ctx: SightContext<T>): LevelEyes {
   const level = tokenLevel(ctx.levels, v);
   const gridSize = ctx.world.gridSize;
   const past = (kind: 'sight' | 'light') => (a: Point, b: Point) =>
-    hasLineOfSight(
-      a,
-      b,
-      wallsAt(ctx.wallsBetween(a, b), v.elevation).filter((w) => onLevel(w, level)),
-      { kind, gridSize },
-    );
+    hasLineOfSight(a, b, wallsOnFloor(ctx.wallsBetween(a, b), ctx.levels, v), { kind, gridSize });
   const light = (on: string | undefined): LightContext => ({
     darkness: ctx.world.darkness,
     gridSize,

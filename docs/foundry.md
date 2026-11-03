@@ -68,7 +68,8 @@ What comes along:
   below with Levels. v14's change-level regions become stairs (two floors)
   or an elevator (more); so do Levels' stair (both ways, up only, down
   only) and elevator drawings, and its stair and elevator region scripts.
-  Holes in a floor are left out. Upper floors with their own picture get
+  Levels' hole drawings become holes (`fall` regions) on the floor at the
+  top of their range, unless that is the lowest floor. Upper floors with their own picture get
   it as a tile on that floor. Tokens keep their elevation, raised onto the
   floor v14 says they are on.
 - **Weather**: FXMaster's rain, snow, clouds, fog, embers and birds (crows,

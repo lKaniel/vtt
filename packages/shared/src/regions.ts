@@ -11,6 +11,11 @@ export function inRegion(region: Pick<Region, 'points'>, p: Point): boolean {
   return pointInPolygon(p, region.points.flat());
 }
 
+/** A way between floors: stairs, a ladder up or down, a lift. Players always see these (unless hidden), so they can find them. */
+export function isFloorWay(region: Pick<Region, 'behaviors'>): boolean {
+  return region.behaviors.some((b) => b.type === 'stairs' || b.type === 'level' || b.type === 'elevator');
+}
+
 /** Whether a region works now: not turned off, and in its darkness band. */
 export function regionWorks(region: Region, darkness: number): boolean {
   return !region.disabled && activeAt(region.activeAt, darkness);
