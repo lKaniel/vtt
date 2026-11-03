@@ -5,6 +5,7 @@ import type { BaileywikiImportReport, BaileywikiScene, SceneEntry } from '@vtt/s
 import { z } from 'zod';
 import { type BaileywikiClient, baileywikiPath } from './baileywiki-client.ts';
 import { foundryScene } from './foundry-scene.ts';
+import { lossLine } from './import-losses.ts';
 import { readJson, writeJson } from '../store/json-files.ts';
 
 // Baileywiki's online scene compendia (the ones their Content Module
@@ -143,7 +144,7 @@ async function importOne(run: Run, meta: Meta, id: string): Promise<Omit<SceneEn
     return run.have.has(p) ? packRef(PACK, `media/${p}`) : undefined;
   };
   const { scene, skipped } = foundryScene(doc, media);
-  run.skipped.push(...skipped.map((what) => `scene "${scene.name}": ${what}`));
+  run.skipped.push(...skipped.map((loss) => `scene "${scene.name}": ${lossLine(loss)}`));
   return scene;
 }
 
