@@ -48,7 +48,10 @@ where they have explored. Draco-compressed meshes and WebP textures load
 too: the client serves three's Draco decoder at `/draco/` (`model-loader.ts`,
 copied by `vite.config.ts`), and a model that fails says why in the console.
 `models3d.ts` loads each file once and clones it;
-`model3d.ts` in shared works out where each copy goes. Tiles with a
+`model3d.ts` in shared works out where each copy goes. Tiles bigger than
+a chunk stream in the scene-wide chunk (`WIDE_CHUNK` in shared
+`chunks.ts`), which every view loads, so a whole map's terrain shows
+wherever the camera is. Tiles with a
 `solid` raise a drawn outline as a solid (`solids3d.ts`, placed by
 `solid3d.ts` in shared). Tiles with `terrain` raise ground from a
 heightmap (`terrain3d.ts`, as 3D Canvas builds it: a box whose vertices

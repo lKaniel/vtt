@@ -43,15 +43,24 @@ export type MapCollection = 'tiles' | 'walls' | 'lights';
 
 type MapItem<C extends MapCollection> = Chunk[C][number];
 
-/** The chunk an item streams in: a tile by its top-left corner, a wall by its midpoint, a light by its centre. */
+/**
+ * The chunk of tiles bigger than a chunk (a whole map's terrain, a huge
+ * backdrop): every view loads it, so they show wherever the camera is.
+ */
+export const WIDE_CHUNK = 'wide';
+
+/** The chunk an item streams in: a tile by its top-left corner (a big one in the wide chunk), a wall by its midpoint, a light by its centre. */
 export function anchorChunk<C extends MapCollection>(coll: C, item: MapItem<C>, chunkSize: number): string {
   if (coll === 'walls') {
     const { a, b } = item as Wall;
     return chunkOf((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, chunkSize);
   }
+  if (coll === 'tiles' && isWide(item as DrawnTile, chunkSize)) return WIDE_CHUNK;
   const { x, y } = item as DrawnTile | PlacedLight;
   return chunkOf(x, y, chunkSize);
 }
+
+const isWide = (t: DrawnTile, chunkSize: number) => 'w' in t && (t.w > chunkSize || t.h > chunkSize);
 
 /**
  * Splits a scene's map into chunks, keeping each collection's order. With

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { anchorChunk, DrawnTileSchema, groupChunks, type PlacedLight, type Wall } from './index.ts';
+import { anchorChunk, DrawnTileSchema, groupChunks, type PlacedLight, type Wall, WIDE_CHUNK } from './index.ts';
 
 const SIZE = 2000;
 
@@ -11,6 +11,14 @@ describe('anchorChunk', () => {
     expect(anchorChunk('tiles', tile, SIZE)).toBe('0_0');
     expect(anchorChunk('walls', wall, SIZE)).toBe('1_0');
     expect(anchorChunk('lights', light, SIZE)).toBe('-1_0');
+  });
+
+  it('puts a tile wider or taller than a chunk in the scene-wide chunk, which every view loads', () => {
+    const tile = (w: number, h: number) =>
+      DrawnTileSchema.parse({ kind: 'rect', id: 't', x: 6300, y: 4700, w, h, color: '#000' });
+    expect(anchorChunk('tiles', tile(25000, 18750), SIZE)).toBe(WIDE_CHUNK);
+    expect(anchorChunk('tiles', tile(500, 2001), SIZE)).toBe(WIDE_CHUNK);
+    expect(anchorChunk('tiles', tile(2000, 2000), SIZE)).toBe('3_2');
   });
 });
 
