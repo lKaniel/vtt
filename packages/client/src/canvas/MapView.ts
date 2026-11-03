@@ -65,7 +65,7 @@ export class MapView {
   private overhead = new Container();
   private grid = new Graphics();
   private chunks: ChunkLayer;
-  private tokens: TokenLayer;
+  readonly tokens: TokenLayer;
   private effects: EffectsLayer;
   private preview = new PathPreview();
   private editor: MapEditor;
@@ -79,14 +79,15 @@ export class MapView {
   private shownScene?: string;
 
   /** World point at the centre of the screen. */
-  private cam = new CameraMotion([0, 0], 0.6);
+  readonly cam = new CameraMotion([0, 0], 0.6);
   private get center(): Point {
     return this.cam.center;
   }
   private get zoom(): number {
     return this.cam.zoom;
   }
-  private dirty = true;
+  /** The camera moved: set it when something else (the 3D view) moves `cam`. */
+  dirty = true;
   private visionDirty = true;
   private cameraMoved = true;
   private wasWalking = false;
@@ -425,7 +426,7 @@ export class MapView {
     if (this.presence.up() || !drag) return;
     if (drag.token) return dropToken(this.session, drag.token, drag.moved ? at : undefined);
     if (drag.panning) return this.letGo(drag);
-    if (drag.button === 2 && !drag.moved) return this.rightClick([e.global.x, e.global.y], at);
+    if (drag.button === 2 && !drag.moved) return this.rightClick([e.client.x, e.client.y], at);
     if (drag.button === 0 && !drag.moved) clickGround(this.session, at);
   }
 
@@ -434,10 +435,8 @@ export class MapView {
    * spell or a readied attack; otherwise opens the menu of what is under the
    * pointer (or of the ground).
    */
-  private rightClick(screen: Point, at: Point): void {
+  private rightClick(onScreen: Point, at: Point): void {
     if (this.editor.finish() || this.editor.cancel() || this.session.actions.cancelAction()) return;
-    const rect = this.app.canvas.getBoundingClientRect();
-    const onScreen: Point = [screen[0] + rect.left, screen[1] + rect.top];
     const target = { ...this.editor.menuTarget(at), screen: onScreen };
     this.session.editor.openMenu(onScreen, menuFor(target, this.session));
   }

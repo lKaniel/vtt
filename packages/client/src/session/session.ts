@@ -35,6 +35,7 @@ import { Actions, type ActionEvents } from './session-actions.ts';
 import { Fog, type FogEvents } from './session-fog.ts';
 import { Draw } from './session-items.ts';
 import { Levels } from './session-levels.ts';
+import { View3DSwitch } from './session-view3d.ts';
 import { Editor, type EditorEvents } from './session-editor.ts';
 import { mayEditRefs } from './authorship.ts';
 import { Requests } from './session-requests.ts';
@@ -135,6 +136,8 @@ export class Session {
   readonly fog = new Fog(this, this.ev);
   readonly draw = new Draw(this, this.ev);
   readonly levels = new Levels(this, this.ev);
+  /** Whether this browser shows the map in 3D. */
+  readonly view3d = new View3DSwitch(this.ev);
   readonly turns = new Turns(this);
   /** The open character sheet. */
   readonly sheets = new Sheets(this, this.ev);
@@ -296,11 +299,6 @@ export class Session {
 
   canControl(token: Token): boolean {
     return !!this.you && canControl(token, this.you);
-  }
-
-  /** GM: pauses the game, or lets it go on. */
-  setPaused(on: boolean): void {
-    this.send({ t: 'pause', on });
   }
 
   private editTargets(): DocRef[] {

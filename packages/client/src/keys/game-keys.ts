@@ -212,6 +212,7 @@ function handleGameKey(session: Session, e: Key): void {
     session.requests.endTurn();
     return;
   }
+  if (id === 'view3d') return session.view3d.toggle();
   if (id?.startsWith('hotbar-')) pressSlot(session, id.slice(7));
 }
 
