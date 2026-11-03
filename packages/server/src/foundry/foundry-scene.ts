@@ -8,7 +8,7 @@ import { foundryList, sourceOf } from './foundry-lists.ts';
 import { type Floors, foundryFloors } from './foundry-levels.ts';
 import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
-import { activeTilesNote, FoundryTile, isOverhead, roofOf } from './foundry-tiles.ts';
+import { activeTilesNote, FoundryTile, isOverhead, lookOf, roofOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
 import { scene3dOf, tileModelOf, tileSolidOf } from './foundry-3d.ts';
 
@@ -336,6 +336,7 @@ function tilesOf(s: FoundryScene, c: TileContext): Tile[] {
         w: t.width,
         h: t.height,
         src,
+        ...lookOf(t),
         ...roofOf(t, fg),
         ...on(t),
       };

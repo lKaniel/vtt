@@ -166,6 +166,10 @@ describe('the inspector', () => {
       'scroll.x',
       'scroll.y',
       'tint',
+      'rotation',
+      'flipX',
+      'flipY',
+      'alpha',
       'shadow',
     ]);
     expect(fieldsFor([rect, image]).map((f) => f.key)).toEqual(both);
