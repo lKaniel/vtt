@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { setAssetGame } from '../assets.ts';
 import { DRACO_PATH, loadModel, modelLoader } from './model-loader.ts';
 
 // Model kits (Baileywiki, 3D Canvas's compendium) squeeze their meshes with
@@ -17,5 +18,20 @@ describe('the model loader', () => {
     expect(await loadModel(failing, '/assets/foundry/wall.glb')).toBeUndefined();
     expect(warn).toHaveBeenCalledWith('Model /assets/foundry/wall.glb did not load: no draco');
     warn.mockRestore();
+  });
+
+  it("loads a game's own model from that game's assets", async () => {
+    setAssetGame('cursed-lands');
+    const asked: string[] = [];
+    const loader = { loadAsync: (url: string) => (asked.push(url), Promise.reject(new Error('x'))) };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    await loadModel(loader, '/assets/foundry/wall.glb');
+    await loadModel(loader, 'https://assets.forge-vtt.com/bazaar/web.glb');
+    expect(asked).toEqual([
+      '/games/cursed-lands/assets/foundry/wall.glb',
+      'https://assets.forge-vtt.com/bazaar/web.glb',
+    ]);
+    warn.mockRestore();
+    setAssetGame(undefined);
   });
 });
