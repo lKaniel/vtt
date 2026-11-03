@@ -124,6 +124,8 @@ export interface TokenContext {
   actors: Map<string, PlacedActor>;
   sheets?: FoundrySheets;
   media: MediaLookup;
+  /** A token's elevation in feet (on the floor it is on). */
+  elevation?: (t: FoundryDoc) => number;
 }
 
 /** A Foundry token's centre: Foundry keeps the top-left corner, sizes in squares. */
@@ -155,10 +157,17 @@ function looseToken(t: FoundryDoc, id: string, at: ReturnType<typeof centreOf>, 
     name: str(t.name) ?? 'Token',
     x: at.x,
     y: at.y,
+    ...elevationOf(t, ctx),
     ...(at.size !== 1 ? { size: at.size } : {}),
     ...(img ? { img } : {}),
     ...(t.hidden === true ? { hidden: true } : {}),
   };
+}
+
+/** A token's elevation in feet, left out on the ground. */
+function elevationOf(t: FoundryDoc, ctx: TokenContext): { elevation?: number } {
+  const feet = ctx.elevation?.(t) ?? 0;
+  return feet ? { elevation: feet } : {};
 }
 
 /** One tokens.json entry. */
@@ -172,6 +181,7 @@ function tokenOf(t: FoundryDoc, id: string, ctx: TokenContext): Record<string, u
     id,
     x: at.x,
     y: at.y,
+    ...elevationOf(t, ctx),
     actor: actor.id,
     linked,
     ...(t.hidden === true ? { hidden: true } : {}),

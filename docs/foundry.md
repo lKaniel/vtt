@@ -42,6 +42,19 @@ What comes along:
   has one (v14 keeps it in the scene's `levels`), templates that v14 stores
   as regions become templates again, and 3D Canvas model tiles (blank
   squares in 2D) are left out.
+- **Floors**, from v14's scene levels or the Levels module's flags (see
+  "Scene levels" in game-format.md): one level per floor, named by the
+  tightest band starting there (v14's migration makes overlapping bands).
+  Tiles, walls, lights, sounds, notes, drawings and regions go on the
+  floors their v14 `levels` or their Levels range (elevation or
+  `rangeBottom` to `rangeTop`; Wall Height for walls) cover. The floors
+  seen from each one come from v14's visibility, or are all the floors
+  below with Levels. v14's change-level regions become stairs (two floors)
+  or an elevator (more); so do Levels' stair (both ways, up only, down
+  only) and elevator drawings, and its stair and elevator region scripts.
+  Holes in a floor are left out. Upper floors with their own picture get
+  it as a tile on that floor. Tokens keep their elevation, raised onto the
+  floor v14 says they are on.
 - **Tokens** on their actors: a linked token stays linked; an unlinked one
   becomes a copy whose own name, picture, size and hit points go in its
   `delta`. Hidden tokens stay hidden. A token whose actor is gone carries
@@ -91,7 +104,7 @@ The import lists it all; mainly:
 - Items in the Items sidebar (drag items from the Compendium instead),
   macros, card stacks, chat, combats and the explored fog.
 - Foundry users and their passwords: add your players on the game's page.
-- Data that Foundry modules keep in `flags` (Levels, Monk's, Tagger...).
+- Data that other Foundry modules keep in `flags` (Monk's, Tagger...).
 - Sheets of other Foundry systems: their actors keep only their name and
   picture, everything else still comes along.
 

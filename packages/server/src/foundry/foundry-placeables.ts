@@ -1,6 +1,7 @@
 import type { Drawing, Note, Point, Region, RegionBehavior, Sound, Template } from '@vtt/shared';
 import { z } from 'zod';
-import { foundryList } from './foundry-lists.ts';
+import { foundryList, sourceOf } from './foundry-lists.ts';
+import type { Floors } from './foundry-levels.ts';
 import { isTemplateRegion, templateFromRegion } from './foundry-template-regions.ts';
 
 // The drawings, map notes, measured templates, ambient sounds and (v12)
@@ -88,6 +89,8 @@ export interface PlaceableLookups {
   entries?: (foundryId: string) => string | undefined;
   /** Our page id for a Foundry journal page id. */
   pages?: (foundryId: string) => string | undefined;
+  /** The scene's floors (foundry-levels.ts), when it has more than one. */
+  floors?: Floors;
 }
 
 export interface ConvertedPlaceables {
@@ -196,17 +199,44 @@ function behaviorOf(b: Data<'regions'>['behaviors'][number]): RegionBehavior | u
   return undefined;
 }
 
-function regionOf(r: Data<'regions'>, unknown: string[]): Omit<Region, 'id'> | undefined {
+/** Region behaviours that move creatures between floors: v14's changeLevel, Levels' stair and elevator scripts. */
+const FLOOR_BEHAVIORS = new Set(['changeLevel', 'executeScript']);
+
+function regionOf(r: Data<'regions'>, unknown: string[], floors: Floors | undefined): Omit<Region, 'id'> | undefined {
   const points = outline(r.shapes[0] ?? { type: '' });
   if (points.length < 3) return undefined;
+  const source = sourceOf(r);
+  const between = floors?.behaviors(source) ?? [];
   const behaviors = r.behaviors.flatMap((b) => {
     const ours = behaviorOf(b);
-    if (!ours) unknown.push(b.type);
+    if (!ours && !(between.length && FLOOR_BEHAVIORS.has(b.type))) unknown.push(b.type);
     return ours ?? [];
   });
   const visible = (r.visibility ?? 0) > 0;
-  return { ...opt('name', r.name), ...opt('color', r.color), ...(visible ? { visible } : {}), points, behaviors };
+  return {
+    ...opt('name', r.name),
+    ...opt('color', r.color),
+    ...(visible ? { visible } : {}),
+    points,
+    behaviors: [...between, ...behaviors],
+    ...floors?.on(source),
+  };
 }
+
+/** Levels' stair and elevator drawings, which become regions; the other drawings stay. */
+function levelsDrawings(s: z.infer<typeof FoundryPlaceables>, floors: Floors | undefined) {
+  const regions: Omit<Region, 'id'>[] = [];
+  const drawings = s.drawings.filter((d) => {
+    const region = floors?.drawingRegion(sourceOf(d));
+    if (region) regions.push(region);
+    return !region;
+  });
+  return { drawings, regions };
+}
+
+/** An item converted, put on its floors. */
+const placed = <T extends object>(floors: Floors | undefined, from: object, item: T | undefined) =>
+  item && floors ? { ...item, ...floors.on(sourceOf(from)) } : item;
 
 const numbered = <T>(prefix: string, list: readonly (T | undefined)[]) =>
   list.flatMap((item) => (item ? [item] : [])).map((item, i) => ({ id: `${prefix}-${i + 1}`, ...item }));
@@ -216,7 +246,7 @@ function soundsOf(s: z.infer<typeof FoundryPlaceables>, look: PlaceableLookups, 
   const sounds = s.sounds.map((snd) => {
     const src = snd.path ? look.media(snd.path) : undefined;
     if (!src) missing.push(snd.path ?? '(none)');
-    return src ? soundOf(snd, src, feet) : undefined;
+    return placed(look.floors, snd, src ? soundOf(snd, src, feet) : undefined);
   });
   const skipped = missing.length
     ? [`${plural(missing.length, 'sound')} whose file is not in the module (${missing.join(', ')})`]
@@ -243,17 +273,22 @@ export function foundryPlaceables(data: unknown, look: PlaceableLookups): Conver
   const s = FoundryPlaceables.parse(v14.rest);
   const unknown: string[] = [];
   const { sounds, skipped } = soundsOf(s, look, feet);
-  const regions = numbered(
-    'region',
-    s.regions.map((r) => regionOf(r, unknown)),
-  ) as Region[];
+  const floors = look.floors;
+  const levelsOwn = levelsDrawings(s, floors);
+  const regions = numbered('region', [
+    ...s.regions.map((r) => regionOf(r, unknown, floors)),
+    ...levelsOwn.regions,
+  ]) as Region[];
   if (unknown.length)
     skipped.push(`${plural(unknown.length, 'region behaviour')} we have no match for (${unknown.join(', ')})`);
   return {
-    drawings: numbered('drawing', s.drawings.map(drawingOf)),
+    drawings: numbered(
+      'drawing',
+      levelsOwn.drawings.map((d) => placed(floors, d, drawingOf(d))),
+    ),
     notes: numbered(
       'note',
-      s.notes.map((n) => noteOf(n, look)),
+      s.notes.map((n) => placed(floors, n, noteOf(n, look))),
     ),
     templates: numbered('template', [...s.templates.map((t) => templateOf(t, feet, px)), ...v14.templates]),
     sounds,
