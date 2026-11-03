@@ -11,6 +11,7 @@ import { dataFolderOf, FoundryMedia } from './foundry-media.ts';
 import { foundryFloors } from './foundry-levels.ts';
 import { foundryGrid, foundryScene, type MediaLookup } from './foundry-scene.ts';
 import { foundryClock } from './foundry-time.ts';
+import { tokenModelOf } from './foundry-3d.ts';
 import { readJson, writeJson } from '../store/json-files.ts';
 import { FORMAT } from '../migrate/migrate-folders.ts';
 import { SYSTEMS } from '../systems.ts';
@@ -138,6 +139,7 @@ function convertScenes(raw: FoundryDoc[], ctx: SceneContext, skipped: string[]):
       sheets: ctx.system.foundry,
       media: ctx.media,
       elevation: tokenElevation(data, grid.distance),
+      model: (t) => tokenModelOf(t, ctx.media),
     });
     skipped.push(...[...lost, ...tokens.skipped].map((what) => `scene "${scene.name}": ${what}`));
     const playlist = typeof data.playlist === 'string' ? ctx.entries.playlistIds(data.playlist) : undefined;

@@ -1,6 +1,6 @@
 import { statSync } from 'node:fs';
-import { copyFile, mkdir } from 'node:fs/promises';
-import { basename, dirname, join } from 'node:path';
+import { copyFile, mkdir, readFile } from 'node:fs/promises';
+import { basename, dirname, isAbsolute, join } from 'node:path';
 import { mediaKind } from '@vtt/core';
 import type { MediaLookup } from './foundry-scene.ts';
 
@@ -67,7 +67,35 @@ export class FoundryMedia {
       const to = join(game, 'assets', 'foundry', path);
       await mkdir(dirname(to), { recursive: true });
       await copyFile(file, to);
+      if (path.toLowerCase().endsWith('.gltf')) await copyParts(file, to);
     }
     return this.used.size;
+  }
+}
+
+/** The files a .gltf names beside it (buffers, textures), never outside its folder or embedded. */
+async function partsOf(file: string): Promise<string[]> {
+  try {
+    const gltf = JSON.parse(await readFile(file, 'utf8')) as {
+      buffers?: { uri?: unknown }[];
+      images?: { uri?: unknown }[];
+    };
+    const uris = [...(gltf.buffers ?? []), ...(gltf.images ?? [])].map((b) => b.uri);
+    return uris
+      .filter((u): u is string => typeof u === 'string' && !u.startsWith('data:'))
+      .map((u) => decoded(u))
+      .filter((u) => !u.split('/').includes('..') && !isAbsolute(u));
+  } catch {
+    return [];
+  }
+}
+
+/** Copies a .gltf's own files from beside `file` to beside `to`. */
+async function copyParts(file: string, to: string): Promise<void> {
+  for (const part of await partsOf(file)) {
+    const from = join(dirname(file), part);
+    if (!isFile(from)) continue;
+    await mkdir(dirname(join(dirname(to), part)), { recursive: true });
+    await copyFile(from, join(dirname(to), part));
   }
 }

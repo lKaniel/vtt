@@ -37,6 +37,20 @@ dialog under Camera.
 - `View3D.ts` ties them together; `view3d-switch.ts` turns it on and off
   with the session switch.
 
+## Models
+
+Image tiles with a `model` stand glTF models (`.glb`, or `.gltf` with its
+files), stretched over the tile or repeated across it; creatures with a
+`model` stand as that figure instead of their picture. A scene's `view3d`
+gives it a sky, a ground colour and can turn the standing walls off. See
+`model` and "The 3D view" in `game-format.md`. Players see models only
+where they have explored. `models3d.ts` loads each file once and clones it;
+`model3d.ts` in shared works out where each copy goes.
+
+The Foundry importer brings 3D Canvas (levels-3d-preview) along: model
+tiles with their depth, elevation, rotation, tilt, fill and tint; tokens'
+figures; a scene's sky, table colour and whether its walls show.
+
 The floor shown is the scene level shown on the 2D map (see "Scene levels"
 in `game-format.md`): its walls stand, and creatures stand at their height
 above it.

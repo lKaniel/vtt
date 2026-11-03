@@ -94,7 +94,7 @@ export function packUrl(src: string): string | undefined {
   return ref && `/packs/${ref.pack}/${ref.path.split('/').map(encodeURIComponent).join('/')}`;
 }
 
-export type MediaKind = 'image' | 'audio' | 'video';
+export type MediaKind = 'image' | 'audio' | 'video' | 'model';
 
 const KINDS: Record<string, MediaKind> = {
   png: 'image',
@@ -114,9 +114,11 @@ const KINDS: Record<string, MediaKind> = {
   webm: 'video',
   mp4: 'video',
   m4v: 'video',
+  glb: 'model',
+  gltf: 'model',
 };
 
-/** What a file is by its extension, or undefined if it isn't media. */
+/** What a file is by its extension (a 3D model is glTF), or undefined if it isn't media. */
 export function mediaKind(path: string): MediaKind | undefined {
   const dot = path.lastIndexOf('.');
   return dot < 0 ? undefined : KINDS[path.slice(dot + 1).toLowerCase()];

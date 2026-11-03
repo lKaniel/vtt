@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Model3DSchema } from './model3d.ts';
 
 // How a token looks on the map, the same in every game system: when its
 // name and bars show (Foundry's display modes), how big its picture is drawn
@@ -29,6 +30,8 @@ export const TokenLookSchema = {
   ring: z.object({ color: z.string().optional(), background: z.string().optional() }).optional(),
   /** A colour filter over its picture (see TOKEN_FILTERS). */
   filter: z.enum(TOKEN_FILTERS).optional(),
+  /** The figure that stands for it in the 3D view (see model3d.ts): `height` feet tall, else as wide as its square. */
+  model: Model3DSchema.optional(),
 };
 export type TokenLook = { [K in keyof typeof TokenLookSchema]?: z.infer<(typeof TokenLookSchema)[K]> };
 

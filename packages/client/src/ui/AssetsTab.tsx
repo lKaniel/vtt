@@ -21,7 +21,12 @@ type View = 'media' | 'packs' | 'plugins';
 /** Thumbnails shown at once; typing narrows the rest. */
 const SHOWN = 150;
 const TAGS = 14;
-const KIND_LABEL: Record<MediaKind, string> = { image: 'Pictures', audio: 'Sounds', video: 'Videos' };
+const KIND_LABEL: Record<MediaKind, string> = {
+  image: 'Pictures',
+  audio: 'Sounds',
+  video: 'Videos',
+  model: '3D models',
+};
 
 export function AssetsTab({ session }: Readonly<{ session: Session }>) {
   const [view, setView] = useState<View>('media');

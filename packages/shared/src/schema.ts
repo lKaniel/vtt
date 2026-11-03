@@ -4,6 +4,7 @@ import { TileTriggerSchema } from './trigger-schema.ts';
 import { WeatherSchema } from './weather.ts';
 import { WeatherCycleSchema } from './weather-cycle.ts';
 import { GRID_KINDS } from './grid.ts';
+import { Model3DSchema } from './model3d.ts';
 
 // The items in a game folder are described here (game.json and scene.json in
 // game-schema.ts). The checker, the server and docs/game-format.md all follow
@@ -62,6 +63,17 @@ export const DarknessBandSchema = z.tuple([z.number().min(0).max(1), z.number().
 /** The scene level a map item is on (scene.json `levels`), or the several it is on; neither = on every level. */
 const onLevel = { level: id.optional(), levels: z.array(id).optional() };
 
+/** How the 3D view shows a scene. */
+export const View3DSettingsSchema = z.object({
+  /** A picture of the sky all round (equirectangular, like a panorama). */
+  sky: z.string().optional(),
+  /** The colour of the ground beyond the map. */
+  ground: z.string().optional(),
+  /** Stand the scene's walls up (default true); off when its models are the walls. */
+  walls: z.boolean().optional(),
+});
+export type View3DSettings = z.infer<typeof View3DSettingsSchema>;
+
 /** A scene's grid, camera start and lighting (scenes/<id>/scene.json, without its name). */
 export const SceneSettingsSchema = z.object({
   /** Pixels per 5 ft: the side of a square when the scene has a grid. */
@@ -98,6 +110,8 @@ export const SceneSettingsSchema = z.object({
   weather: z.array(WeatherSchema).optional(),
   /** The weather changes with world time instead (see weather-cycle.ts); `weather` is ignored. */
   weatherCycle: WeatherCycleSchema.optional(),
+  /** The 3D view of the scene (docs/view3d.md). */
+  view3d: View3DSettingsSchema.optional(),
 });
 
 /** The table settings the rules and the client use: the game's, plus those of the scene being played. */
@@ -173,6 +187,8 @@ const ImageTileSchema = z.object({
     .optional(),
   /** A colour multiplied into the picture, e.g. "#88aaff" for moonlight. */
   tint: z.string().optional(),
+  /** What stands on the tile in the 3D view (see model3d.ts); a model tile's picture is often blank. */
+  model: Model3DSchema.optional(),
 });
 /** A group of tiles: no picture or rect of its own, it spans what is in it. */
 const GroupTileSchema = z.object({ kind: z.literal('group'), ...tileTree });

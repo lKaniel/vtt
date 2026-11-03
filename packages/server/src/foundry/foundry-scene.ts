@@ -6,6 +6,7 @@ import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
 import { activeTilesNote, FoundryTile, isOverhead, roofOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
+import { scene3dOf, tileModelOf } from './foundry-3d.ts';
 
 // A Foundry VTT scene (from a module's compendium, a world, or "Export
 // Data") as one of our scene entries. Foundry draws the scene's background
@@ -128,10 +129,11 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     ...(s.backgroundColor ? { background: s.backgroundColor } : {}),
     ...navOf(s, lookupIn(media)),
     ...(floors ? { levels: floors.levels } : {}),
+    ...view3dOf(data, media),
     tiles: [
       ...background,
       ...floorBackgrounds(s, { x, y }, lookupIn(media), floors),
-      ...tilesOf(s, lookupIn(media), skipped, on),
+      ...tilesOf(s, { find: lookupIn(media), skipped, on, grid }),
       ...foregroundTile(s, { x, y }, lookupIn(media)),
     ],
     walls: wallsOf(s, grid, skipped, on),
@@ -261,17 +263,49 @@ function levelBackground(levels: unknown[] | undefined): string | undefined {
 /** 3D Canvas puts its models on the map as tiles of a blank picture. */
 const is3dModel = (path: string | null | undefined) => !!path && /levels-3d-preview\/.*blank\.webp$/.test(path);
 
+/** The picture of a model tile: nothing, on the 2D map. */
+export const BLANK = '/art/ui/blank.svg';
+
+/** A 3D Canvas scene's sky and table, as `view3d`. */
+function view3dOf(data: unknown, media: MediaLookup): Pick<SceneEntry, 'view3d'> {
+  const view3d = scene3dOf(data, (p) => media(decoded(p)));
+  return view3d ? { view3d } : {};
+}
+
+interface TileContext {
+  find: ReturnType<typeof lookupIn>;
+  skipped: string[];
+  on: OnFloors;
+  grid: Grid;
+}
+
+/** 3D Canvas tiles with a glTF model that came along, as model tiles; those without, reported. */
+function modelTiles(tiles: FoundryScene['tiles'], c: TileContext): Tile[] {
+  const out: Tile[] = [];
+  let lost = 0;
+  for (const t of tiles) {
+    if (!is3dModel(t.texture?.src ?? t.img) || t.width <= 0 || t.height <= 0) continue;
+    const model = tileModelOf(sourceOf(t), c.grid, (p) => c.find(p));
+    if (!model) lost++;
+    else out.push({ id: '', kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src: BLANK, model, ...c.on(t) });
+  }
+  if (lost)
+    c.skipped.push(
+      `${plural(lost, '3D Canvas tile')} without a glTF model from the Data folder (drawn shapes stay behind)`,
+    );
+  return out;
+}
+
 /** Where an item is among the scene's floors. */
 type OnFloors = (item: object) => { level?: string; levels?: string[] };
 
-function tilesOf(s: FoundryScene, find: ReturnType<typeof lookupIn>, skipped: string[], on: OnFloors): Tile[] {
+function tilesOf(s: FoundryScene, c: TileContext): Tile[] {
+  const { find, skipped, on } = c;
   const fg = s.foregroundElevation;
   const order = (t: FoundryScene['tiles'][number]) => (isOverhead(t, fg) ? 1e9 : 0) + (t.sort ?? t.z ?? 0);
   const sorted = [...s.tiles].sort((a, b) => order(a) - order(b));
-  const out: Tile[] = [];
+  const out: Tile[] = modelTiles(sorted, c);
   const missing: string[] = [];
-  const models = sorted.filter((t) => is3dModel(t.texture?.src ?? t.img)).length;
-  if (models) skipped.push(`${plural(models, '3D Canvas model tile')} (3D only, they show as blank squares)`);
   const triggers = activeTilesNote(sorted);
   if (triggers) skipped.push(triggers);
   for (const t of sorted) {
@@ -279,13 +313,12 @@ function tilesOf(s: FoundryScene, find: ReturnType<typeof lookupIn>, skipped: st
     if (is3dModel(path)) continue;
     const src = find(path);
     if (src && t.width > 0 && t.height > 0) {
-      const id = `tile-${out.length + 1}`;
-      out.push({ id, kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src, ...roofOf(t, fg), ...on(t) });
+      out.push({ id: '', kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src, ...roofOf(t, fg), ...on(t) });
     } else missing.push(path ?? '(none)');
   }
   if (missing.length)
     skipped.push(`${plural(missing.length, 'tile')} whose picture is not in the module (${missing.join(', ')})`);
-  return out;
+  return out.map((t, i) => ({ ...t, id: `tile-${i + 1}` }));
 }
 
 function wallsOf(s: FoundryScene, grid: Grid, skipped: string[], on: OnFloors): Wall[] {

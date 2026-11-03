@@ -78,6 +78,7 @@ beforeEach(async () => {
   await put(join(data, 'assets/maps/keep.webp'), 'map');
   for (const art of ['goblin', 'goblin-portrait', 'mira']) await put(join(world, 'art', `${art}.webp`), art);
   await put(join(world, 'music/rain.ogg'), 'rain');
+  await put(join(world, 'models/boss.glb'), 'glTF');
   const db = (name: string, docs: Record<string, unknown>) => writeLevelDb(join(world, 'data', name), docs);
   await db('scenes', {
     '!scenes!S1': keep,
@@ -102,6 +103,7 @@ beforeEach(async () => {
       width: 2,
       hidden: true,
       delta: { system: { attributes: { hp: { value: 3 } } } },
+      flags: { 'levels-3d-preview': { model3d: 'worlds/lost-keep/models/boss.glb' } },
     },
     '!scenes.tokens!S1.T3': { _id: 'T3', name: 'Mira', actorId: 'A2', actorLink: true, x: 600, y: 600, width: 1 },
     '!scenes.tokens!S1.T4': {
@@ -208,7 +210,12 @@ describe('importFoundryWorld', () => {
         actor: 'goblin',
         linked: false,
         hidden: true,
-        delta: { name: 'Goblin Boss', size: 2, hp: 3 },
+        delta: {
+          name: 'Goblin Boss',
+          size: 2,
+          model: { src: '/assets/foundry/worlds/lost-keep/models/boss.glb' },
+          hp: 3,
+        },
       },
       { id: 'mira', x: 650, y: 650, actor: 'mira', linked: true },
       { id: 'statue', name: 'Statue', x: 50, y: 50, img: '/assets/foundry/worlds/lost-keep/art/goblin.webp' },
