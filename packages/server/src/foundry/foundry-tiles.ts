@@ -1,4 +1,7 @@
 import type { ImportLoss } from '@vtt/core';
+import type { Tile } from '@vtt/shared';
+
+type ImageTile = Extract<Tile, { kind: 'image' }>;
 import { lost } from './import-losses.ts';
 import { z } from 'zod';
 
@@ -10,8 +13,13 @@ import { z } from 'zod';
 const num = z.number().optional().catch(undefined);
 const str = z.string().optional().catch(undefined);
 
+const bool = z.boolean().optional().catch(undefined);
+
 export const FoundryTile = z.object({
-  texture: z.object({ src: str.nullable() }).optional().catch(undefined),
+  texture: z
+    .object({ src: str.nullable(), scaleX: num, scaleY: num, tint: str.nullable() })
+    .optional()
+    .catch(undefined),
   img: str.nullable(),
   x: z.number(),
   y: z.number(),
@@ -20,6 +28,9 @@ export const FoundryTile = z.object({
   sort: num,
   z: num,
   elevation: num,
+  rotation: num,
+  alpha: num,
+  hidden: bool,
   overhead: z.boolean().optional().catch(undefined),
   roof: z.boolean().optional().catch(undefined),
   occlusion: z
@@ -28,7 +39,11 @@ export const FoundryTile = z.object({
     .catch(undefined),
   flags: z
     .object({
-      betterroofs: z.object({ brMode: num }).optional().catch(undefined),
+      /** A number before v12, `true` after. */
+      betterroofs: z
+        .object({ brMode: z.union([z.number(), z.boolean()]).optional().catch(undefined) })
+        .optional()
+        .catch(undefined),
       'monks-active-tiles': z
         .object({ actions: z.array(z.object({ action: str })).catch([]) })
         .optional()
@@ -49,7 +64,7 @@ export function activeTilesNote(tiles: FoundryTileData[]): ImportLoss | undefine
 
 /** Whether a tile is drawn over the tokens; `foreground` is the scene's foreground elevation (v12+). */
 export function isOverhead(t: FoundryTileData, foreground: number | undefined): boolean {
-  if (t.overhead || t.roof || (t.flags?.betterroofs?.brMode ?? 0) > 0) return true;
+  if (t.overhead || t.roof || Number(t.flags?.betterroofs?.brMode ?? 0) > 0) return true;
   return foreground !== undefined && t.elevation !== undefined && t.elevation >= foreground;
 }
 
@@ -61,4 +76,25 @@ export function roofOf(
   if (!isOverhead(t, foreground)) return {};
   const alpha = Math.min(1, Math.max(0, t.occlusion?.alpha ?? 0));
   return { overhead: true, ...(alpha > 0 ? { occludedAlpha: alpha } : {}) };
+}
+
+type Look = Partial<Pick<ImageTile, 'rotation' | 'flipX' | 'flipY' | 'alpha' | 'tint' | 'hidden'>>;
+
+/** Only the fields that differ from a plain tile. */
+const some = (look: Record<string, unknown>): Look =>
+  Object.fromEntries(Object.entries(look).filter(([, v]) => v !== undefined && v !== false));
+
+/** How the tile's picture looks beyond its rectangle: turned, mirrored, see-through, tinted, hidden. */
+export function lookOf(t: FoundryTileData): Look {
+  const rotation = (((t.rotation ?? 0) % 360) + 360) % 360;
+  const tint = t.texture?.tint?.toLowerCase();
+  const alpha = Math.max(0, t.alpha ?? 1);
+  return some({
+    rotation: rotation || undefined,
+    flipX: (t.texture?.scaleX ?? 1) < 0,
+    flipY: (t.texture?.scaleY ?? 1) < 0,
+    tint: tint === '#ffffff' ? undefined : tint,
+    alpha: alpha < 1 ? alpha : undefined,
+    hidden: t.hidden,
+  });
 }

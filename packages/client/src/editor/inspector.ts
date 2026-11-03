@@ -109,6 +109,10 @@ const TILE_FIELDS: Field[] = [
   scrollField('x', 'Scrolls across (px/s)'),
   scrollField('y', 'Scrolls down (px/s)'),
   plain('tint', 'Tint', 'color', { when: isImage }),
+  plain('rotation', 'Rotation (degrees)', 'number', { when: isImage }),
+  flag('flipX', 'Mirrored left to right', { when: isImage }),
+  flag('flipY', 'Mirrored top to bottom', { when: isImage }),
+  plain('alpha', 'Opacity (0-1)', 'number', { when: isImage }),
   ...SHADOW_FIELDS,
 ];
 

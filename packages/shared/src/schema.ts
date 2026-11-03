@@ -188,6 +188,13 @@ const ImageTileSchema = z.object({
     .optional(),
   /** A colour multiplied into the picture, e.g. "#88aaff" for moonlight. */
   tint: z.string().optional(),
+  /** Degrees the picture is turned clockwise about the tile's centre. */
+  rotation: z.number().optional(),
+  /** Mirrored left to right, or top to bottom. */
+  flipX: z.boolean().optional(),
+  flipY: z.boolean().optional(),
+  /** How opaque the picture is: 0 (invisible) to 1 (the default). */
+  alpha: z.number().min(0).max(1).optional(),
   /** What stands on the tile in the 3D view (see model3d.ts); a model tile's picture is often blank. */
   model: Model3DSchema.optional(),
   /** A drawn shape raised on the tile in the 3D view (see solid3d.ts). */

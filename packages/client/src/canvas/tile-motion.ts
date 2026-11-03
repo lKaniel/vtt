@@ -1,4 +1,5 @@
 import type { Point } from '@vtt/shared';
+import { intoTile } from './tile-pose.ts';
 
 // How tiles move: videos and animated pictures, roofs that fade while your
 // creatures stand under them, and pictures that scroll. Pure, so it can be
@@ -20,12 +21,16 @@ interface Roof {
   y: number;
   w: number;
   h: number;
+  rotation?: number;
   occludedAlpha?: number;
 }
 
 /** How opaque a roof should be: see-through (its `occludedAlpha`, default 0) while a watcher stands under it. */
 export function roofAlpha(roof: Roof, watchers: readonly Point[]): number {
-  const under = watchers.some(([x, y]) => x >= roof.x && x <= roof.x + roof.w && y >= roof.y && y <= roof.y + roof.h);
+  const under = watchers.some((at) => {
+    const [x, y] = intoTile(roof, at);
+    return x >= roof.x && x <= roof.x + roof.w && y >= roof.y && y <= roof.y + roof.h;
+  });
   return under ? (roof.occludedAlpha ?? 0) : 1;
 }
 

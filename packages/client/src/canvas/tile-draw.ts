@@ -3,10 +3,12 @@ import { Assets, BlurFilter, Container, Sprite, type Texture, TilingSprite } fro
 import { type GifSource, GifSprite } from 'pixi.js/gif';
 import { assetUrl } from '../assets.ts';
 import { easeAlpha, roofAlpha, scrollOffset, tileMedia } from './tile-motion.ts';
+import { tilePose } from './tile-pose.ts';
 
 // One picture tile on the map: a still picture, an animated GIF or a looping
 // silent video, sliding when it scrolls and fading when it is a roof over
-// one of your creatures; tinted, and with a soft drop shadow, when it has them.
+// one of your creatures; turned, mirrored, see-through or tinted, and with a
+// soft drop shadow, when it has them.
 
 export type ImageTile = Extract<Chunk['tiles'][number], { kind: 'image' }>;
 
@@ -39,6 +41,7 @@ function sizedView(tile: ImageTile, picture: Texture | GifSource): Sprite | Tili
   const view = viewOf(tile, picture);
   if (!(view instanceof TilingSprite)) view.setSize(tile.w, tile.h);
   if (tile.tint) view.tint = tile.tint;
+  if (tile.alpha !== undefined) view.alpha = tile.alpha;
   return view;
 }
 
@@ -55,7 +58,11 @@ function shadowView(tile: ImageTile, picture: Texture | GifSource): Container | 
 
 export function imageTile(tile: ImageTile): TileView {
   const root = new Container();
-  root.position.set(tile.x, tile.y);
+  const pose = tilePose(tile);
+  root.position.set(...pose.position);
+  root.pivot.set(...pose.pivot);
+  root.angle = pose.angle;
+  root.scale.set(...pose.scale);
   let view: Sprite | TilingSprite | GifSprite | undefined;
   load(tile)
     .then((picture) => {

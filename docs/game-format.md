@@ -301,6 +301,10 @@ pixels.
 - `"tint": "#88aaff"` colours an image tile's picture (moonlight, a sickly
   swamp), and `"shadow": {}` gives it a soft drop shadow (trees, roofs,
   floating rocks), optionally `{ "offset": 12, "blur": 8, "alpha": 0.5 }`.
+- `"rotation": 90` turns an image tile's picture clockwise about the tile's
+  centre (degrees), `"flipX": true` / `"flipY": true` mirror it, and
+  `"alpha": 0.5` makes it see-through. The Foundry importer keeps all of
+  these, and a tile's `hidden`.
 - `"model": { "src": "/assets/models/bridge.glb" }` stands a glTF model
   (`.glb`, or `.gltf` with its files beside it) on an image tile in the 3D
   view (docs/view3d.md); the 2D map shows only the tile's picture, usually
