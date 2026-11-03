@@ -1,5 +1,6 @@
 import type { Point } from '@vtt/shared';
 import * as THREE from 'three';
+import { assetUrl } from '../assets.ts';
 import type { WallBox, WallKind } from './walls3d.ts';
 
 // What the 3D view draws (View3D.ts): the 2D map laid on the floor, the
@@ -184,7 +185,7 @@ export class Backdrop {
     if (!src) return undefined;
     if (this.sky?.src !== src) {
       this.sky?.texture.dispose();
-      const texture = this.loader.load(src);
+      const texture = this.loader.load(assetUrl(src));
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
       this.sky = { src, texture };
