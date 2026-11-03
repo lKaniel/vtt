@@ -9,6 +9,7 @@ import {
   type Point,
   sceneLattice,
   type WorldInfo,
+  WIDE_CHUNK,
 } from '@vtt/shared';
 import {
   type Actor,
@@ -241,7 +242,9 @@ export class Session {
   }
 
   /** Chunks the camera currently needs. Chunks outside it are forgotten. */
-  setView(keys: string[]): void {
+  setView(chunks: string[]): void {
+    // The scene-wide chunk (tiles bigger than a chunk) is always in view.
+    const keys = chunks.includes(WIDE_CHUNK) ? chunks : [...chunks, WIDE_CHUNK];
     this.view = keys;
     const wanted = new Set(keys);
     for (const key of [...this.chunks.keys()])

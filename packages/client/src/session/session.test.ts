@@ -104,10 +104,13 @@ describe('Session', () => {
     session.setView(['0_0']);
     ws.receive({ t: 'chunk', key: '0_0', chunk });
     ws.receive({ t: 'chunk', key: '5_5', chunk });
-    expect([...session.chunks.keys()]).toEqual(['0_0']);
+    ws.receive({ t: 'chunk', key: 'wide', chunk });
+    expect([...session.chunks.keys()]).toEqual(['0_0', 'wide']);
     session.setView(['1_0']);
     expect(gone).toHaveBeenCalledWith('0_0');
-    expect(ws.sent.at(-1)).toEqual({ t: 'view', chunks: ['1_0'] });
+    expect(gone).not.toHaveBeenCalledWith('wide');
+    // The scene-wide chunk (tiles bigger than a chunk) is always in view.
+    expect(ws.sent.at(-1)).toEqual({ t: 'view', chunks: ['1_0', 'wide'] });
   });
 
   it('moves tokens to the end of their path', () => {
@@ -160,7 +163,7 @@ describe('Session', () => {
   it('asks for its chunks again after reconnecting', () => {
     session.setView(['0_0']);
     ws.receive(welcome());
-    expect(ws.sent).toContainEqual({ t: 'view', chunks: ['0_0'] });
+    expect(ws.sent).toContainEqual({ t: 'view', chunks: ['0_0', 'wide'] });
   });
 
   it('reconnects unless the seat was refused', () => {
