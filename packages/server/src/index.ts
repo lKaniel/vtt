@@ -38,7 +38,13 @@ const handleRequest = httpHandler({
   packFile: (pack, path) => hub.packs.mediaFile(pack, path),
   pluginFile: (plugin, path) => hub.plugins.file(plugin, path),
   clientDir: clientDist,
-  api: apiHandler({ sessions, characters, hub, mcpKey: process.env.VTT_MCP_KEY }),
+  api: apiHandler({
+    sessions,
+    characters,
+    hub,
+    mcpKey: process.env.VTT_MCP_KEY,
+    baileywiki: process.env.VTT_BAILEYWIKI_URL,
+  }),
 });
 
 const server = createServer((req, res) => {
