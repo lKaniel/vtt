@@ -51,7 +51,7 @@ describe('what the 3D view stands up', () => {
       {
         key: 'token:bram:bram.glb',
         rect: { x: 100, y: 200, w: 100, h: 100 },
-        model: { src: 'bram.glb', elevation: 5 },
+        model: { fill: 'fit', src: 'bram.glb', elevation: 5 },
       },
     ]);
   });

@@ -307,7 +307,7 @@ pixels.
   `height` (feet, else in proportion), `elevation` (feet its base stands
   at, else the floor), `rotation` (degrees clockwise), `tilt` (`[x, z]`
   degrees) and `color` (a tint) shape it. `"fill": "tile", "piece": 2`
-  repeats it instead, one copy every 2 squares (floors, wall runs). The
+  repeats it instead, one copy every 2 squares (floors, wall runs); `"fill": "fit"` keeps its proportions, as a creature's figure always does. The
   Foundry importer brings 3D Canvas model tiles this way.
 - A wall is a line from `a` to `b` that stops movement, sight, light and
   sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.

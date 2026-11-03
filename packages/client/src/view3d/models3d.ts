@@ -1,6 +1,7 @@
 import { type Model3D, type ModelGround, modelPieces } from '@vtt/shared';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { clone as cloneRigged } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { at3d } from './scene3d.ts';
 
 // The glTF models of the 3D view: on tiles (model3d.ts in shared says where
@@ -87,7 +88,8 @@ class Placed {
 
   private copy(l: Loaded): THREE.Object3D {
     const pivot = new THREE.Group();
-    const model = l.scene.clone(true);
+    // Rigged figures need their bones cloned with them, or they draw in pieces.
+    const model = cloneRigged(l.scene);
     if (this.shown.model.color) tinted(model, this.shown.model.color);
     model.position.copy(l.offset);
     pivot.add(model);
