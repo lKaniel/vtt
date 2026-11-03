@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { ANIMATION_IDS, ANIMATIONS, animationRef, isMediaAnimation } from '@vtt/system-dnd5e';
-import type { Session } from '../session/session.ts';
-import { videoChoices } from '../play/animations.ts';
-import { withKey } from './sheet-model.ts';
-import type { SheetProps } from './CharacterSheet.tsx';
-import { Button } from './kit/button.tsx';
-import { Input } from './kit/input.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
-import { SelectField } from './kit/select.tsx';
+import type { Session } from '../../session/session.ts';
+import { videoChoices } from '../../play/animations.ts';
+import { withKey } from '../sheet-model.ts';
+import type { SheetProps } from './sheet-props.ts';
+import { Button } from '../kit/button.tsx';
+import { Input } from '../kit/input.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '../kit/popover.tsx';
+import { SelectField } from '../kit/select.tsx';
 
 const LIBRARY = [{ value: '', label: 'Default' }, ...ANIMATION_IDS.map((id) => ({ value: id, label: ANIMATIONS[id] }))];
 const fileName = (src: string) => decodeURIComponent(src.split('/').at(-1) ?? src);

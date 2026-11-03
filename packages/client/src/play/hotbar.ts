@@ -74,6 +74,11 @@ function placedTile(token: TokenView, ref: string, macros: MacroLookup | undefin
   return undefined;
 }
 
+/** The tile a reference names, as the sheet uses it: placed by hand, or one of the creature's own actions. */
+export function tileFor(token: TokenView, ref: string, macros?: MacroLookup): ActionTile | undefined {
+  return placedTile(token, ref, macros) ?? actionTiles(token).find((t) => tileRef(t) === ref);
+}
+
 /** The bar's slots, padded to HOTBAR_SIZE, with hotkeys 1-0 on the first ten. */
 export function hotbarTiles(token: TokenView, macros?: MacroLookup): (ActionTile | null)[] {
   const auto = new Map(actionTiles(token).map((t) => [tileRef(t), t]));

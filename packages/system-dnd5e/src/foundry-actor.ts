@@ -1,6 +1,6 @@
 import { type FoundrySheets, slugify } from '@vtt/core';
 import { type Content, srdFor, toEdition } from './content.ts';
-import { at, list, type Loose, num, obj, opt, plainText, str } from './foundry-data.ts';
+import { at, list, type Loose, num, obj, opt, paragraphs, plainText, str } from './foundry-data.ts';
 import { attackOf, byName, gearOf } from './foundry-gear.ts';
 import { ABILITIES, type Abilities, DamageTypeSchema, type Stats } from './stats-schema.ts';
 import type { Feature } from './spell-schema.ts';
@@ -246,8 +246,17 @@ export function foundrySheet(data: unknown, ctx: FoundrySheetContext): Converted
   if (actor.type !== 'npc' && actor.type !== 'character')
     return { sheet: {}, skipped: [`a ${str(actor.type) ?? 'nameless'} sheet, which we have no match for`] };
   const monster = actor.type === 'npc' ? srd.monsters.get(slugify(str(actor.name) ?? '')) : undefined;
-  if (monster) return { sheet: { monster: monster.id, ...woundsOf(obj(actor.system)) }, skipped: [] };
-  return builtSheet(actor, srd);
+  const story = biographyOf(obj(actor.system));
+  if (monster) return { sheet: { monster: monster.id, ...woundsOf(obj(actor.system)), ...story }, skipped: [] };
+  const built = builtSheet(actor, srd);
+  return { ...built, sheet: { ...built.sheet, ...story } };
+}
+
+/** The sheet's biography (HTML in Foundry) as text. */
+function biographyOf(sys: Loose): Sheet {
+  const html = str(at(sys, 'details.biography.value'));
+  const text = html && paragraphs(html);
+  return opt('biography', !!text && text);
 }
 
 /** An unlinked Foundry token's changes to its actor (`delta` from v11, `actorData` before) as ours. */

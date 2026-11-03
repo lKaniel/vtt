@@ -181,6 +181,13 @@ describe('foundrySheet', () => {
     expect(sheet({ ...goblin, name: 'Goblin Warrior' }, '2014').sheet.monster).toBeUndefined();
   });
 
+  it('keeps the biography as paragraphs of text', () => {
+    const bio = '<p>Born in <strong>Waterdeep</strong>.</p><p>Owes &amp; pays.<br>Always.</p>';
+    const told = { ...goblin, type: 'character', system: { ...goblin.system, details: { biography: { value: bio } } } };
+    expect(sheet(told).sheet.biography).toBe('Born in Waterdeep.\n\nOwes & pays.\nAlways.');
+    expect(sheet(goblin).sheet).not.toHaveProperty('biography');
+  });
+
   it('gives a vehicle or group nothing to play with', () => {
     expect(sheet({ name: 'Cart', type: 'vehicle', system: {} })).toEqual({
       sheet: {},

@@ -1,7 +1,7 @@
 import type { SheetArea } from '@vtt/system-dnd5e';
 import type React from 'react';
-import { DRAG_TYPE, type DragPayload } from '../play/drops.ts';
-import type { Session } from '../session/session.ts';
+import { DRAG_TYPE, type DragPayload } from '../../play/drops.ts';
+import type { Session } from '../../session/session.ts';
 
 // The character sheet as a drop target: compendium entries, pictures and
 // other creatures' items. Parts of the sheet say which area they are with

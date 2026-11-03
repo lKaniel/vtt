@@ -73,6 +73,8 @@ export interface Creature extends Affected, LegendaryParts {
   senses?: Senses;
   /** Numbers by class level a homebrew class shows (a pool's size). */
   scales?: ScaleValue[];
+  /** The saving throws it adds its proficiency to (the class's, or the stat block's). */
+  proficientSaves?: Ability[];
 }
 
 /** Proficiency bonus by challenge rating. */
@@ -204,9 +206,13 @@ function kindAndSaves(
   monster: Monster | undefined,
   cls: Class | undefined,
   { abilities, proficiency }: { abilities: Abilities; proficiency: number },
-): Pick<Creature, 'type' | 'saves'> {
+): Pick<Creature, 'type' | 'saves' | 'proficientSaves'> {
   const proficient = cls?.saves ?? monster?.saves ?? [];
-  return { type: monster?.type ?? 'humanoid', saves: saveBonuses(abilities, proficiency, proficient) };
+  return {
+    type: monster?.type ?? 'humanoid',
+    saves: saveBonuses(abilities, proficiency, proficient),
+    proficientSaves: [...proficient],
+  };
 }
 
 /** A character at 0 hp lies unconscious until it's healed. */

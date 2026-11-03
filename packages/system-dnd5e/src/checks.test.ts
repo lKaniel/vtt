@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { srdFor } from './content.ts';
 import { resolveCreature } from './creature.ts';
-import { checkBonus, checkOutcome, rollCheck } from './checks.ts';
+import { checkBonus, checkOutcome, passiveScore, rollCheck } from './checks.ts';
 import { TokenSchema } from './token-schema.ts';
 
 const book = srdFor('2014');
@@ -28,6 +28,27 @@ describe('ability checks', () => {
     const low = rollCheck(hero, tired, { ability: 'dex' }, () => 0.5);
     expect(low.roll?.formula).toMatch(/^2d20kl1/);
     expect(low.success).toBeUndefined();
+  });
+});
+
+describe('saving throws from the sheet', () => {
+  it('add proficiency in the class saves', () => {
+    expect(sheet.proficientSaves).toEqual(['dex', 'int']);
+    expect(checkBonus(hero, sheet, { ability: 'dex', save: true })).toBe(6);
+    expect(checkBonus(hero, sheet, { ability: 'str', save: true })).toBe(0);
+  });
+
+  it('roll with the save modifiers of effects: restrained creatures make DEX saves with disadvantage', () => {
+    const held = resolveCreature({ ...hero, effects: [{ id: 'net', name: 'Net', conditions: ['restrained'] }] }, book)!;
+    expect(rollCheck(hero, held, { ability: 'dex', save: true }, () => 0.5).roll?.formula).toBe('2d20kl1+6');
+    expect(rollCheck(hero, held, { ability: 'dex' }, () => 0.5).roll?.formula).toBe('1d20+3');
+  });
+});
+
+describe('passive scores', () => {
+  it('are 10 plus the check bonus', () => {
+    expect(passiveScore(hero, sheet, 'stealth')).toBe(16);
+    expect(passiveScore(hero, sheet, 'perception')).toBe(10);
   });
 });
 

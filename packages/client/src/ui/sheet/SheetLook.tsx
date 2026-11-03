@@ -1,9 +1,9 @@
 import { type DisplayMode, DisplayModeSchema } from '@vtt/shared';
-import type { SheetProps } from './CharacterSheet.tsx';
-import { Check, Field, NumberInput } from './EditorFields.tsx';
-import { ColorInput } from './kit/color-input.tsx';
-import { SelectField } from './kit/select.tsx';
-import { withKey, type Draft } from './sheet-model.ts';
+import type { SheetProps } from './sheet-props.ts';
+import { Check, Field, NumberInput } from '../EditorFields.tsx';
+import { ColorInput } from '../kit/color-input.tsx';
+import { SelectField } from '../kit/select.tsx';
+import { withKey, type Draft } from '../sheet-model.ts';
 
 // The token's look on the map (shared/token-look.ts): when its name and
 // bars show, how big its picture is drawn, mirroring, and a ring.

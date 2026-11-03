@@ -110,6 +110,8 @@ export const TokenSchema = z.object({
   /** Set on a token that is a pile of loot or a merchant rather than a creature. */
   pile: PileSchema.optional(),
   own: OwnSchema.optional(),
+  /** Its story, looks and personality, as text with content links (the sheet's Biography tab). */
+  biography: z.string().max(100_000).optional(),
   /** Spells, conditions and features currently affecting the token. */
   effects: z.array(EffectSchema).optional(),
   /** The spell this creature is concentrating on. */
