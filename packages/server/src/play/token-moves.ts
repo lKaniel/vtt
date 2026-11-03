@@ -106,6 +106,12 @@ export class TokenMoves {
     this.door(player, msg);
   }
 
+  /** Takes a token you control to another level: one the elevator it stands in serves (the GM: any). */
+  changeLevel(player: Player, seen: (id: string) => boolean, id: string, level: string): void {
+    const token = this.controlled(player, seen, id);
+    this.rules.regions.changeLevel(player, token, level);
+  }
+
   private door(player: Player, msg: { chunk: string; wall: string; state: DoorState }): void {
     const chunk = this.store.chunks.get(msg.chunk);
     const wall = chunk?.walls.find((w) => w.id === msg.wall);

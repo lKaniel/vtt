@@ -1,6 +1,11 @@
 import {
   canObserve,
+  levelChoices,
+  onLevel,
+  type Player,
+  tokenLevel,
   fogCell,
+  inRegion,
   isGm,
   type Point,
   rasterize,
@@ -12,7 +17,7 @@ import {
 } from '@vtt/shared';
 import { springTrap, type Token, TrapRulesSchema } from '@vtt/system-dnd5e';
 import { fromDoc } from '../store/doc-sync.ts';
-import type { Table } from '../play/table.ts';
+import { Refusal, type Table } from '../play/table.ts';
 import type { TriggerActions } from './trigger-actions.ts';
 
 // Regions at work (see regions.ts in shared): walking into one runs its
@@ -25,6 +30,10 @@ export class RegionActions {
     private table: Table,
     private triggers: TriggerActions,
   ) {}
+
+  private get out() {
+    return this.triggers.out;
+  }
 
   private say(text: string): void {
     this.triggers.run({ type: 'message', text }, {});
@@ -53,9 +62,33 @@ export class RegionActions {
     for (const { region } of hits) {
       for (const b of region.behaviors) {
         const token = this.store.tokens.get(id);
-        if (!token || this.run(token, region, b)) return;
+        if (!token || !this.onTokenLevel(region, token)) break;
+        if (this.run(token, region, b)) return;
       }
     }
+  }
+
+  /** The level a token stands on, on a scene with levels. */
+  private levelOf(token: Token): string | undefined {
+    return tokenLevel(this.store.world.levels, token);
+  }
+
+  /** A region on other floors than the token's does nothing for it. */
+  private onTokenLevel(region: Region, token: Token): boolean {
+    return onLevel(region, this.levelOf(token));
+  }
+
+  /**
+   * Someone who moves `token` picked a level for it: one an elevator it
+   * stands in serves (the GM may take any token to any level).
+   */
+  changeLevel(player: Player, token: Token, to: string): void {
+    const offered = (b: RegionBehavior) => b.type === 'elevator' && (!b.floors?.length || b.floors.includes(to));
+    const inLift = this.regions().some(
+      (r) => this.onTokenLevel(r, token) && inRegion(r, [token.x, token.y]) && r.behaviors.some(offered),
+    );
+    if (!isGm(player) && !inLift) throw new Refusal('There is no way to that level here');
+    if (!this.level(token, to)) throw new Refusal('No such level');
   }
 
   /** Runs one behaviour; true when the token was taken away (a teleport). */
@@ -68,6 +101,12 @@ export class RegionActions {
         return false;
       case 'level':
         this.level(token, b.to);
+        return false;
+      case 'stairs':
+        this.stairs(token, b.between);
+        return false;
+      case 'elevator':
+        this.elevator(token, b.floors);
         return false;
       case 'reveal':
         this.reveal(token, region);
@@ -94,9 +133,24 @@ export class RegionActions {
     this.say(`${lead}${token.name}: ${sprung.text}`.trim());
   }
 
-  private level(token: Token, to: string): void {
+  /** Puts the token on level `to`, at its bottom; false when the scene has no such level. */
+  private level(token: Token, to: string): boolean {
     const level = this.store.world.levels?.find((l) => l.id === to);
     if (level) this.store.setToken({ ...token, elevation: level.bottom });
+    return !!level;
+  }
+
+  /** Up the stairs from the lower of the two levels, down from the other. */
+  private stairs(token: Token, [a, b]: readonly [string, string]): void {
+    const here = this.levelOf(token);
+    if (here === a) this.level(token, b);
+    else if (here === b) this.level(token, a);
+  }
+
+  /** Asks whoever moves the token which of the elevator's floors to go to. */
+  private elevator(token: Token, floors: readonly string[] | undefined): void {
+    const levels = levelChoices(this.store.world.levels, floors, this.levelOf(token)).map((l) => l.id);
+    if (levels.length) this.out.ask(token, { t: 'levelChoice', token: token.id, levels });
   }
 
   private reveal(token: Token, region: Region): void {

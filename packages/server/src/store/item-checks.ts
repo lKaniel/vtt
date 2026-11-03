@@ -16,7 +16,7 @@ interface SceneRefs {
   scenes: (id: string) => boolean;
 }
 
-type Items = Record<string, readonly { id: string; level?: string }[] | undefined>;
+type Items = Record<string, readonly { id: string; level?: string; levels?: readonly string[] }[] | undefined>;
 
 const NOUN: Record<string, string> = {
   tiles: 'tile',
@@ -31,9 +31,20 @@ const NOUN: Record<string, string> = {
 
 function levelIssues(items: Items, levels: ReadonlySet<string>): [string, string][] {
   return Object.entries(NOUN).flatMap(([coll, noun]) =>
-    (items[coll] ?? [])
-      .filter((item) => item.level && !levels.has(item.level))
-      .map((item): [string, string] => [coll, `${noun} "${item.id}": unknown level "${item.level}"`]),
+    (items[coll] ?? []).flatMap((item) =>
+      [...(item.level ? [item.level] : []), ...(item.levels ?? [])]
+        .filter((l) => !levels.has(l))
+        .map((l): [string, string] => [coll, `${noun} "${item.id}": unknown level "${l}"`]),
+    ),
+  );
+}
+
+/** Levels seen from a level that the scene lacks. */
+function seenIssues(refs: SceneRefs, levels: ReadonlySet<string>): [string, string][] {
+  return (refs.levels ?? []).flatMap((l) =>
+    (l.sees ?? [])
+      .filter((id) => !levels.has(id))
+      .map((id): [string, string] => ['scene', `level "${l.id}": sees unknown level "${id}"`]),
   );
 }
 
@@ -48,6 +59,18 @@ interface Behavior {
   type: string;
   scene?: string;
   to?: unknown;
+  between?: unknown;
+  floors?: unknown;
+}
+
+/** The levels a behaviour takes a token to. */
+function levelsNamed(b: Behavior): string[] {
+  if (b.type === 'level') return typeof b.to === 'string' ? [b.to] : [];
+  if (b.type === 'stairs' || b.type === 'elevator') {
+    const ids = b.type === 'stairs' ? b.between : b.floors;
+    return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : [];
+  }
+  return [];
 }
 
 function regionIssues(items: Items, refs: SceneRefs, levels: ReadonlySet<string>): [string, string][] {
@@ -56,9 +79,9 @@ function regionIssues(items: Items, refs: SceneRefs, levels: ReadonlySet<string>
     (r.behaviors ?? []).flatMap((b): [string, string][] => {
       if (b.type === 'teleport' && b.scene && !refs.scenes(b.scene))
         return [['regions', `region "${r.id}": unknown scene "${b.scene}"`]];
-      if (b.type === 'level' && typeof b.to === 'string' && !levels.has(b.to))
-        return [['regions', `region "${r.id}": unknown level "${b.to}"`]];
-      return [];
+      return levelsNamed(b)
+        .filter((id) => !levels.has(id))
+        .map((id): [string, string] => ['regions', `region "${r.id}": unknown level "${id}"`]);
     }),
   );
 }
@@ -66,7 +89,10 @@ function regionIssues(items: Items, refs: SceneRefs, levels: ReadonlySet<string>
 /** The problems of one scene's placeables, each naming its file. */
 export function sceneItemIssues(scene: string, items: Items, refs: SceneRefs): ItemIssue[] {
   const levels = new Set((refs.levels ?? []).map((l) => l.id));
-  return [...levelIssues(items, levels), ...noteIssues(items, refs), ...regionIssues(items, refs, levels)].map(
-    ([coll, message]) => ({ file: `scenes/${scene}/${coll}.json`, message }),
-  );
+  return [
+    ...seenIssues(refs, levels),
+    ...levelIssues(items, levels),
+    ...noteIssues(items, refs),
+    ...regionIssues(items, refs, levels),
+  ].map(([coll, message]) => ({ file: `scenes/${scene}/${coll}.json`, message }));
 }

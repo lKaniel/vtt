@@ -20,6 +20,7 @@ import { PartyBar } from './PartyBar.tsx';
 import { ObserveBanner } from './ObserveBanner.tsx';
 import { PauseBanner, PauseButton } from './PauseBanner.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
+import { LevelPrompt } from './LevelPrompt.tsx';
 import { SceneNav } from './SceneNav.tsx';
 import { TokenHud } from './TokenHud.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
@@ -63,6 +64,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <PileWindow session={session} />
       <DiceOverlay session={session} />
       <ReactionPrompt session={session} />
+      <LevelPrompt session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <Sheets session={session} />
       <ChatPanel session={session} />

@@ -45,6 +45,10 @@ export const SceneLevelSchema = z.object({
   name: z.string().min(1),
   /** Feet: a token at this elevation or above (and below the next level up) is on this level. */
   bottom: z.number(),
+  /** Feet where it ends (its ceiling): how tall walls stand in 3D. Missing = the next level's bottom. */
+  top: z.number().optional(),
+  /** Other levels seen from this one, drawn beneath it (the floors below an open gallery). */
+  sees: z.array(id).optional(),
 });
 export type SceneLevel = z.infer<typeof SceneLevelSchema>;
 
@@ -55,8 +59,8 @@ export type SceneLevel = z.infer<typeof SceneLevelSchema>;
  */
 export const DarknessBandSchema = z.tuple([z.number().min(0).max(1), z.number().min(0).max(1)]);
 
-/** The scene level a map item is on (scene.json `levels`); missing = on every level. */
-const onLevel = { level: id.optional() };
+/** The scene level a map item is on (scene.json `levels`), or the several it is on; neither = on every level. */
+const onLevel = { level: id.optional(), levels: z.array(id).optional() };
 
 /** A scene's grid, camera start and lighting (scenes/<id>/scene.json, without its name). */
 export const SceneSettingsSchema = z.object({
