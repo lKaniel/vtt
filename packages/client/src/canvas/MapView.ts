@@ -454,7 +454,7 @@ export class MapView {
     showPreview(this.preview, this.session, {
       token,
       hover: this.hoverPoint,
-      walls: this.allWalls(),
+      walls: [...this.session.chunks.values()].flatMap((c) => c.walls),
       zoom: this.zoom,
       force,
     });

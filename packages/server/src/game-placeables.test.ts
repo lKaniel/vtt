@@ -154,6 +154,16 @@ describe('scene placeables and sidebar documents', () => {
         ],
         behaviors: [{ type: 'difficult' }],
       }),
+      make('main/regions', {
+        id: 'stairs',
+        type: 'region',
+        points: [
+          [0, 0],
+          [9, 0],
+          [0, 9],
+        ],
+        behaviors: [{ type: 'stairs', between: ['ground', 'loft'] }],
+      }),
       make('main/sounds', { id: 'brook', type: 'sound', x: 0, y: 0, radius: 30, src: 'brook.ogg' }),
       make('journals', { id: 'inn', type: 'journal', name: 'The inn', ownership: { default: 'observer' }, pages: [] }),
       make('journals', { id: 'lore', type: 'journal', name: 'Lore', pages: [{ id: 'p', name: 'Secrets' }] }),
@@ -170,7 +180,8 @@ describe('scene placeables and sidebar documents', () => {
     expect(ids(docs['main/drawings'])).toEqual(['shown']);
     expect(docs['cellar/drawings']).toBeUndefined();
     expect(ids(docs['main/notes'])).toEqual(['inn-pin']);
-    expect(ids(docs['main/regions'])).toEqual(['bog']);
+    // Ways between floors show to everyone, so players can find the stairs.
+    expect(ids(docs['main/regions'])).toEqual(['bog', 'stairs']);
     expect(ids(docs['main/sounds'])).toEqual(['brook']);
     expect(ids(docs.journals)).toEqual(['inn', 'rumours']);
     // Limited: the title, not the pages.

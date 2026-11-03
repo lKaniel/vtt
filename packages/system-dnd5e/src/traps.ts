@@ -66,3 +66,9 @@ export function springTrap(victim: Victim, rules: TrapRules, diceRng: Rng, saveR
   const text = [saveText(save), hurt].filter(Boolean).join(', ');
   return { ...(save && { save }), damage, hp: after.hp, tempHp: after.tempHp, text };
 }
+
+/** A fall of `feet`: 1d6 bludgeoning per 10 ft, at most 20d6; none for a drop under 10 ft. */
+export function fallRules(feet: number): TrapRules | undefined {
+  const dice = Math.min(20, Math.floor(feet / 10));
+  return dice > 0 ? { damage: `${dice}d6`, type: 'bludgeoning' } : undefined;
+}

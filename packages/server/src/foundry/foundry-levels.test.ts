@@ -137,6 +137,17 @@ describe('Levels module flags', () => {
     });
     expect(lift?.behaviors).toEqual([{ type: 'elevator', floors: ['level-1', 'level-3'] }]);
     expect(floors.drawingRegion({ x: 0, y: 0, shape: rect, flags: { levels: { drawingMode: 0 } } })).toBeUndefined();
+    const hole = (rangeTop: number) =>
+      floors.drawingRegion({
+        x: 0,
+        y: 0,
+        elevation: rangeTop - 9,
+        shape: rect,
+        flags: { levels: { drawingMode: 1, rangeTop } },
+      });
+    expect(hole(19)).toMatchObject({ name: 'Hole', level: 'level-2', behaviors: [{ type: 'fall' }] });
+    // Nothing to fall to under the lowest floor.
+    expect(hole(9)).toBeUndefined();
   });
 
   it('read Levels stair scripts on regions', () => {

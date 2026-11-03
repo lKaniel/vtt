@@ -8,8 +8,10 @@ import {
   foldersAbove,
   isFolderKind,
   isGm,
+  isFloorWay,
   isScriptMacro,
   type Player,
+  type Region,
   sceneCollOf,
 } from '@vtt/shared';
 import type { DocAccess, OwnedDoc } from './store-access.ts';
@@ -20,7 +22,7 @@ import type { DocAccess, OwnedDoc } from './store-access.ts';
 // tables and chat macros shared with them (and their own macros; script macros are the GM's alone), the
 // card stacks they may see (limited: how many cards), the playlists playing now, and on the scene they
 // are on, what is drawn there for them: drawings, templates, notes, sounds
-// and the regions the GM shows. Everyone gets the game clock, and the
+// and the regions the GM shows (and every way between floors). Everyone gets the game clock, and the
 // folders that hold something they get.
 
 export interface Viewer {
@@ -34,7 +36,8 @@ const SCENE_RULES: Partial<Record<string, (v: Viewer, access: DocAccess, doc: Do
   drawings: (v, _a, d) => !d.hidden || d.author === v.player.id,
   templates: (v, _a, d) => !d.hidden || d.author === v.player.id,
   sounds: (_v, _a, d) => !d.hidden,
-  regions: (_v, _a, d) => !d.hidden && d.visible === true,
+  regions: (_v, _a, d) =>
+    !d.hidden && (d.visible === true || (Array.isArray(d.behaviors) && isFloorWay(d as unknown as Region))),
   notes: (v, access, d) => !d.hidden && (typeof d.entry !== 'string' || entrySeen(v, access, d.entry)),
 };
 

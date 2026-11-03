@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { activeAt, levelAt, onLevel, tokenLevel } from './levels.ts';
-import { inRegion, regionCost, regionsEntered } from './regions.ts';
+import { inRegion, isFloorWay, regionCost, regionsEntered } from './regions.ts';
 import { soundVolume } from './sounds.ts';
 import { aimTemplate, inTemplate, templateEnd, templateShape } from './templates.ts';
 import type { Region, Template } from './scene-items.ts';
@@ -164,5 +164,14 @@ describe('ambient sounds', () => {
   it('are silent when off or hidden', () => {
     expect(soundVolume({ ...sound, hidden: true }, [0, 0], open)).toBe(0);
     expect(soundVolume({ ...sound, activeAt: [0.5, 1] }, [0, 0], { ...open, darkness: 0 })).toBe(0);
+  });
+});
+
+describe('ways between floors', () => {
+  it('are stairs, ladders and lifts, not holes or traps', () => {
+    expect(isFloorWay({ behaviors: [{ type: 'stairs', between: ['a', 'b'] }] })).toBe(true);
+    expect(isFloorWay({ behaviors: [{ type: 'level', to: 'b' }] })).toBe(true);
+    expect(isFloorWay({ behaviors: [{ type: 'elevator' }] })).toBe(true);
+    expect(isFloorWay({ behaviors: [{ type: 'fall' }, { type: 'trap' }] })).toBe(false);
   });
 });

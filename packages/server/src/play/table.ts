@@ -28,7 +28,17 @@ import {
   isLairTurn,
   lairOwner,
 } from '@vtt/system-dnd5e';
-import { canControl, hasLineOfSight, isGm, isParty, type Player, type Point, type Rng } from '@vtt/shared';
+import {
+  canControl,
+  hasLineOfSight,
+  isGm,
+  isParty,
+  type Player,
+  type Point,
+  type Rng,
+  sameFloor,
+  wallsOnFloor,
+} from '@vtt/shared';
 import type { GameStore } from '../store/game-store.ts';
 import { contentFor } from '../library/game-packs.ts';
 
@@ -262,7 +272,11 @@ export class Table {
       start: [token.x, token.y],
       feet,
       gridSize: g,
-      walls: this.store.wallsBetween([token.x - reach, token.y - reach], [token.x + reach, token.y + reach]),
+      walls: wallsOnFloor(
+        this.store.wallsBetween([token.x - reach, token.y - reach], [token.x + reach, token.y + reach]),
+        this.store.world.levels,
+        token,
+      ),
       taken: (p) => this.blocks(token, p),
     });
     if (path.length < 2) return 0;
@@ -277,7 +291,8 @@ export class Table {
     return [...this.store.tokens.values()].some((t) => {
       const reach = ((t.size + token.size) * g) / 2;
       const overlaps = Math.abs(t.x - x) < reach && Math.abs(t.y - y) < reach;
-      return t.id !== token.id && overlaps && (this.sheetOf(t)?.hp ?? 1) > 0;
+      const here = sameFloor(this.store.world.levels, token, t);
+      return t.id !== token.id && here && overlaps && (this.sheetOf(t)?.hp ?? 1) > 0;
     });
   }
 

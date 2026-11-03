@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { feetToPx, type Point, type Shape, shapeOf } from '@vtt/shared';
+import { feetToPx, isFloorWay, type Point, type Region, type Shape, shapeOf } from '@vtt/shared';
 import type { Graphics } from 'pixi.js';
 import type { ItemTool } from '../editor/shape-tools.ts';
 
@@ -67,9 +67,40 @@ function drawNote(g: Graphics, n: Doc, { px }: Ctx): void {
 
 function drawRegion(g: Graphics, r: Doc, { px }: Ctx): void {
   const c = color(r.color, 0x40c0a0);
-  g.poly((r.points as Point[]).flat(), true)
-    .fill({ color: c, alpha: r.disabled ? 0.05 : 0.15 })
-    .stroke({ width: 2 * px, color: c, alpha: r.disabled ? 0.4 : 0.9 });
+  const points = r.points as Point[];
+  const way = Array.isArray(r.behaviors) && isFloorWay(r as unknown as Region);
+  // A way between floors the GM didn't mark visible shows as a faint outline and its sign.
+  const faint = way && r.visible !== true;
+  g.poly(points.flat(), true)
+    .fill({ color: c, alpha: r.disabled || faint ? 0.05 : 0.15 })
+    .stroke({ width: 2 * px, color: c, alpha: r.disabled || faint ? 0.4 : 0.9 });
+  if (way) drawStairsSign(g, centreOf(points), px);
+}
+
+const centreOf = (points: Point[]): Point => [
+  points.reduce((s, p) => s + p[0], 0) / points.length,
+  points.reduce((s, p) => s + p[1], 0) / points.length,
+];
+
+const STAIRS_PX = 13;
+
+/** The sign of a way between floors: three steps in a disc. */
+function drawStairsSign(g: Graphics, [x, y]: Point, px: number): void {
+  const r = STAIRS_PX * px;
+  g.circle(x, y, r)
+    .fill({ color: 0x15120f, alpha: 0.85 })
+    .stroke({ width: 2 * px, color: 0xf0d8a0 });
+  const step = r / 2.5;
+  const steps = [
+    [-1.25, 0.75],
+    [-0.25, 0.75],
+    [-0.25, -0.25],
+    [0.75, -0.25],
+    [0.75, -1.25],
+  ];
+  g.moveTo(x - 1.25 * step, y + 1.25 * step);
+  for (const [dx, dy] of steps) g.lineTo(x + dx! * step, y + dy! * step);
+  g.stroke({ width: 2 * px, color: 0xf0d8a0 });
 }
 
 function drawSound(g: Graphics, s: Doc, { px, gridSize }: Ctx): void {
