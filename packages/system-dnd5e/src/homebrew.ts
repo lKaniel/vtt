@@ -1,14 +1,23 @@
 import { IdSchema, OwnershipSchema, type PackCompendium } from '@vtt/core';
 import { z } from 'zod';
-import { ClassSchema } from './spell-schema.ts';
+import { ClassSchema, SpellSchema } from './spell-schema.ts';
+import { ItemSchema } from './stats-schema.ts';
 
 // A game's own rules content, made in the app: documents in its homebrew
 // collection (homebrew/<id>.json), each with a `kind`. They join the game's
-// content like a pack's compendia, so tokens use them like SRD ones. Only
-// classes so far.
+// content like a pack's compendia, so tokens use them like SRD ones:
+// classes, items and spells. An item keeps its own fields in `item` (a
+// weapon has a `kind` of its own).
 
-const KINDS = { class: ClassSchema } as const;
+const KINDS = { class: ClassSchema, item: ItemSchema, spell: SpellSchema } as const;
 type Kind = keyof typeof KINDS;
+
+/** The compendium entry a homebrew document stands for. */
+const entryOf = (kind: Kind, doc: unknown): unknown => {
+  if (kind !== 'item') return doc;
+  const d = doc as { id?: unknown; name?: unknown; item?: unknown };
+  return { ...(d.item && typeof d.item === 'object' ? d.item : {}), id: d.id, name: d.name };
+};
 
 const kindOf = (doc: unknown): string | undefined => {
   const kind = (doc as { kind?: unknown } | null)?.kind;
@@ -19,7 +28,7 @@ const isKind = (kind: string | undefined): kind is Kind => kind !== undefined &&
 /** The homebrew documents as compendia, one per kind, for contentWith. */
 export function homebrewCompendia(docs: readonly unknown[]): PackCompendium[] {
   return (Object.keys(KINDS) as Kind[]).flatMap((kind) => {
-    const mine = docs.filter((d) => kindOf(d) === kind);
+    const mine = docs.filter((d) => kindOf(d) === kind).map((d) => entryOf(kind, d));
     if (!mine.length) return [];
     return [
       { id: `homebrew-${kind}`, name: 'Homebrew', type: kind, path: `${kind}.json`, pack: 'homebrew', docs: mine },
@@ -58,7 +67,7 @@ export function gameCompendia<D extends { id: string; rev?: number }>(
 export function homebrewIssues(doc: unknown): string[] {
   const kind = kindOf(doc);
   if (!isKind(kind)) return [`kind must be one of: ${Object.keys(KINDS).join(', ')}`];
-  const parsed = KINDS[kind].safeParse(doc);
+  const parsed = KINDS[kind].safeParse(entryOf(kind, doc));
   if (parsed.success) return [];
   return parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
 }

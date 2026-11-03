@@ -1,4 +1,4 @@
-import type { Game, Player, SceneEntry } from '@vtt/shared';
+import type { Game, Player, SceneEntry, Tile } from '@vtt/shared';
 import { type ActorSystem, type ConvertedActors, foundryActors, foundryTokens, idMaker } from './foundry-actors.ts';
 import type { FoundryDoc } from './foundry-db.ts';
 import { type ConvertedEntries, type FolderLookup, foundryEntries } from './foundry-entries.ts';
@@ -9,8 +9,9 @@ import type { FoundryMedia } from './foundry-media.ts';
 import { foundryGrid, foundryScene } from './foundry-scene.ts';
 import { foundryClock } from './foundry-time.ts';
 import { tokenModelOf } from './foundry-3d.ts';
-import { foundryPlayers, type OwnershipOf } from './foundry-users.ts';
+import { foundryOwnership, foundryPlayers, type OwnershipOf } from './foundry-users.ts';
 import { foundryTrigger, SceneIndex } from './foundry-active-tiles.ts';
+import { looseActors, type PropContext, propsOf, splitTokens } from './foundry-props.ts';
 import { originOf } from './foundry-origin.ts';
 import { lost, type LossLog, placed } from './import-losses.ts';
 import type { World } from './foundry-world-read.ts';
@@ -126,7 +127,9 @@ const actors: WorldPart = {
   run: (ctx, out) => {
     const { system, rules } = ctx;
     const media = ctx.media.lookup;
-    const a = foundryActors(ctx.world.docs.actors, {
+    const known = new Set(ctx.world.docs.actors.map((x) => x._id));
+    const loose = looseActors(ctx.world.docs.scenes, (t) => known.has(t.actorId));
+    const a = foundryActors([...ctx.world.docs.actors, ...loose], {
       system,
       sheets: system.foundry,
       rules,
@@ -150,11 +153,27 @@ function tokenElevation(scene: FoundryDoc, distance: number): (t: FoundryDoc) =>
   return (t) => floors?.elevationOf(t) ?? (typeof t.elevation === 'number' ? feet(t.elevation) : 0);
 }
 
+function floorsOf(scene: FoundryDoc, distance: number) {
+  const feet = (units: number) => Math.round((units * 5) / distance);
+  return { feet, floors: foundryFloors(scene, feet) };
+}
+
+/** Scenery placed as tokens, as tiles and lights after the scene's own (numbered on). */
+function addProps(scene: Omit<SceneEntry, 'id'>, props: FoundryDoc[], c: PropContext): void {
+  const { tiles, lights } = propsOf(props, c);
+  const firstTile = scene.tiles.length;
+  const firstLight = scene.lights.length;
+  scene.tiles.push(...tiles.map((t, i) => ({ ...t, id: `tile-${firstTile + i + 1}` }) as Tile));
+  scene.lights.push(...lights.map((l, i) => ({ ...l, id: `light-${firstLight + i + 1}` })));
+}
+
 function sceneOf(data: FoundryDoc, id: (name: string) => string, ctx: WorldContext): SceneOut {
   const lookups = { ...ctx.made.entries!, keepsTokens: true, keepsTriggers: true };
   const { scene, skipped } = foundryScene(data, ctx.media.lookup, lookups);
   const grid = foundryGrid(data);
-  const tokens = foundryTokens(data.tokens, {
+  const split = splitTokens(data.tokens, (t) => ctx.made.actors!.byFoundryId.has(String(t.actorId)));
+  addProps(scene, split.props, { grid: grid.size, media: ctx.media.lookup, ...floorsOf(data, grid.distance) });
+  const tokens = foundryTokens(split.creatures, {
     grid: grid.size,
     actors: ctx.made.actors!.byFoundryId,
     sheets: ctx.system.foundry,
@@ -259,12 +278,36 @@ const time: WorldPart = {
   },
 };
 
+/** The Items sidebar: the world's own spells and gear become the game's homebrew (the system says how). */
+const homebrew: WorldPart = {
+  id: 'homebrew',
+  run: (ctx, out) => {
+    const { items } = ctx.world.docs;
+    const convert = ctx.system.foundry?.system === ctx.world.system ? ctx.system.foundry.homebrew : undefined;
+    const ownership = ctx.made.ownership ?? foundryOwnership();
+    const nextId = idMaker('item');
+    const kept: string[] = [];
+    const docs = items.flatMap((item) => {
+      const name = typeof item.name === 'string' ? item.name : 'Item';
+      const doc = convert?.(item, nextId(name), ctx.rules);
+      if (!doc) return [];
+      kept.push(String(item._id));
+      const owned = ownership(item.ownership, 'none');
+      return [{ ...doc, ...(owned ? { ownership: owned } : {}) }];
+    });
+    add(out, 'homebrew', docs);
+    const rest = items.filter((i) => !kept.includes(String(i._id)));
+    const what = 'Items in the Items sidebar the Compendium already has, or that only live on sheets';
+    if (rest.length) ctx.log.add([lost(what, rest.length, names(rest))]);
+  },
+};
+
 /** What the world has that has no place in a game here (yet). */
 const leftBehind: WorldPart = {
   id: 'left-behind',
   run: (ctx) => {
     const { world, system } = ctx;
-    const { items, cards } = world.docs;
+    const { cards } = world.docs;
     const losses = [
       ...(system.foundry?.system === world.system
         ? []
@@ -274,9 +317,6 @@ const leftBehind: WorldPart = {
               1,
             ),
           ]),
-      ...(items.length
-        ? [lost('Items in the Items sidebar (drag items from the Compendium instead)', items.length, names(items))]
-        : []),
       ...(cards.length ? [lost('Card stacks', cards.length, names(cards))] : []),
     ];
     ctx.log.add(losses);
@@ -293,5 +333,6 @@ export const WORLD_PARTS: readonly WorldPart[] = [
   scenes,
   activeTiles,
   time,
+  homebrew,
   leftBehind,
 ];

@@ -44,7 +44,9 @@ What comes along:
 - **3D Canvas** (levels-3d-preview): model tiles become image tiles with a
   `model` (glTF with its files, depth as height, elevation, rotation, tilt,
   fill and tint), tokens keep their figure, and scenes keep their sky,
-  table colour and whether walls show (`view3d`). Drawn shapes, HeroForge
+  table colour and whether walls show (`view3d`). Drawn polygons (cliffs,
+  ledges, pools) become tiles with a `solid` of their outline, height,
+  elevation and colour. Other drawn shapes (cones, spheres), HeroForge
   figures and other non-glTF models stay behind and are reported. See
   docs/view3d.md.
 - **Floors**, from v14's scene levels or the Levels module's flags (see
@@ -60,6 +62,10 @@ What comes along:
   Holes in a floor are left out. Upper floors with their own picture get
   it as a tile on that floor. Tokens keep their elevation, raised onto the
   floor v14 says they are on.
+- **Weather**: FXMaster's rain, snow, clouds, fog, embers and birds (crows,
+  eagles, bats) become the scene's weather layers, about as thick and with
+  their tint; without FXMaster, Foundry's own scene weather. FXMaster's
+  filters (colour, lightning) and its rats stay behind.
 - **Monk's Active Tiles** as tile triggers: clicked (or double-clicked)
   tiles are clicked here, right-click and manual ones are the GM's, and
   "on enter" ones fire when a creature walks on. Picture swaps (and the
@@ -71,15 +77,20 @@ What comes along:
 - **Lights** put out in Foundry stay out until a trigger or the GM lights them.
 - **Tokens** on their actors: a linked token stays linked; an unlinked one
   becomes a copy whose own name, picture, size and hit points go in its
-  `delta`. Hidden tokens stay hidden. A token whose actor is gone carries
-  its name and picture itself.
+  `delta`. Hidden tokens stay hidden. A token with no actor in the world is
+  one of two things: a prop (a tree, a barrel, a lit brazier: its picture
+  sits in a map-art folder, or it has none) becomes a tile of its size,
+  with its light as a light of its own; a creature becomes an unlinked
+  copy of a new actor named after it (one actor for every "Bandit"), which
+  the GM can fill in later.
 - **Players**: each Foundry user becomes a player of the game with the same
   name and colour (and avatar); Foundry's roles map to ours (player,
   trusted, and assistant GM or gamemaster to GM). The first gamemaster is
   you, the one importing.
 - **Actors**, in their folders ("Monsters / Goblins"), with their token art,
   and the levels Foundry gave everyone and each user (a player owns their
-  character as before). The sheet is read by the game system (see below).
+  character as before). The sheet is read by the game system (see below);
+  an Item Piles actor becomes a pile of loot or a merchant.
 - Journal entries and roll tables keep who may see them, the same way.
 - **Journal entries** (text and image pages), **roll tables** and
   **playlists**, in their folders.
@@ -113,16 +124,31 @@ v1 to v5 field names):
   A multiclassed character keeps every class (`stats.classes`, the
   original class first, with its subclass); classes the SRD doesn't have,
   like a Blood Hunter, keep their name and levels.
+- Spells the SRD doesn't have become the sheet's own spells: level, school,
+  casting time, range, duration and, from their activities, the attack or
+  save and the damage they roll (with its upcasting). One that does nothing
+  we can read comes as its text, for the GM to apply.
+- Where the creature stands: its coins, spent spell slots and hit dice,
+  exhaustion, death saves, what is packed in which bag, and the magic items
+  it is attuned to.
+- Active effects: the actor's own (with their conditions) and those its
+  items give their bearer while worn (a race's resistance, a ring's +1 AC)
+  become effects whose `changes` are ours (ability scores, AC, hit points,
+  speed, initiative, saves, resistances and immunities).
 
 ### What stays behind
 
-The import lists it all, grouped by kind with how many and where ("815
-tokens whose actor is not in the world, in 77 scenes"); the terminal import
+The import lists it all, grouped by kind with how many and where ("907
+Monk's Active Tiles actions we have no match for, in 74 scenes"); the terminal import
 prints the same list. Mainly:
 
-- Spells the SRD doesn't have, active effects and Foundry's automation.
-- Items in the Items sidebar (drag items from the Compendium instead),
-  macros, card stacks, chat, combats and the explored fog.
+- Foundry's automation: effect changes on keys we have no match for
+  (Midi-QOL and DAE flags, macros), and item effects that land on a target
+  when the item is used.
+- Items in the Items sidebar that the Compendium already has (the SRD's,
+  by name) or that live only on sheets (features, classes); the world's
+  own spells and gear become the game's homebrew, with Foundry's ownership.
+- Card stacks, chat, combats and the explored fog.
 - Foundry users' passwords (Foundry keeps only hashes): give your players
   new ones on the game's page.
 - Each user's explored fog.

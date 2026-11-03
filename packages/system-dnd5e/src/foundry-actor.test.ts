@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { foundryDelta, foundrySheet, foundrySheets } from './foundry-actor.ts';
+import { foundryDelta, foundryHomebrew, foundrySheet, foundrySheets } from './foundry-actor.ts';
+import { homebrewIssues } from './homebrew.ts';
 import { ActorSchema } from './token-schema.ts';
 
 // Foundry's dnd5e system data (v3 to v5 field names; older ones where they differ).
@@ -152,12 +153,61 @@ describe('foundrySheet', () => {
         { item: 'potion-of-healing', qty: 3 },
         { item: 'lucky-coin' },
       ],
-      own: { items: [{ type: 'gear', id: 'lucky-coin', name: 'Lucky Coin', weight: 0.1, description: 'Shiny.' }] },
+      own: {
+        items: [{ type: 'gear', id: 'lucky-coin', name: 'Lucky Coin', weight: 0.1, description: 'Shiny.' }],
+        spells: [expect.objectContaining({ id: 'glimmer-of-amar', name: 'Glimmer of Amar', automated: false })],
+      },
     });
-    expect(skipped).toEqual([
-      { what: 'Spells the 2014 rules have no match for', count: 1, examples: ['Glimmer of Amar'] },
-    ]);
+    expect(skipped).toEqual([]);
     expect(ActorSchema.safeParse({ id: 'mira', name: 'Mira', ...s }).success).toBe(true);
+  });
+
+  it('keeps where a character stands: coins, spent slots and hit dice, exhaustion, death saves, bags, effects', () => {
+    const worn = {
+      name: 'Tamsin',
+      type: 'character',
+      system: {
+        abilities: abilities(10, 10, 10, 10, 10, 10),
+        currency: { gp: 12, sp: 0, cp: 7 },
+        attributes: { hp: { value: 0, max: 10 }, exhaustion: 2, death: { success: 1, failure: 2 } },
+        spells: { spell1: { value: 1, max: 4 }, spell2: { value: 2, max: 2 }, spell3: { value: 0, max: 1 } },
+      },
+      items: [
+        { _id: 'c1', name: 'Wizard', type: 'class', system: { levels: 5, hd: { spent: 2 } } },
+        { _id: 'b1', name: 'Backpack', type: 'container', system: {} },
+        { _id: 'r1', name: 'Rope', type: 'loot', system: { container: 'b1' } },
+        { _id: 'p1', name: "Explorer's Pack", type: 'loot', system: {} },
+        { _id: 't1', name: 'Torch', type: 'consumable', system: { container: 'p1' } },
+        { _id: 's1', name: 'Satchel of Tricks', type: 'container', system: { capacity: { weight: { value: 5 } } } },
+        { _id: 'd1', name: 'Dice', type: 'loot', system: { container: 's1' } },
+        {
+          _id: 'a1',
+          name: 'Ring of Warmth',
+          type: 'equipment',
+          system: { equipped: true, attunement: 'required', attuned: true },
+          effects: [{ name: 'Warm', changes: [{ key: 'system.traits.dr.value', value: 'cold', type: 'add' }] }],
+        },
+      ],
+    };
+    const { sheet: s } = sheet(worn);
+    expect(s).toMatchObject({
+      hp: 0,
+      currency: { gp: 12, cp: 7 },
+      exhaustion: 2,
+      deathSaves: { successes: 1, failures: 2 },
+      spent: { slots: [3, 0, 1], hitDice: 2 },
+      effects: [{ id: 'warm', name: 'Warm', changes: [{ key: 'resistances', mode: 'add', value: 'cold' }] }],
+    });
+    expect(s.inventory).toEqual([
+      { id: 'backpack', item: 'backpack' },
+      { item: 'rope', in: 'backpack' },
+      { item: 'explorers-pack' },
+      { item: 'torch' },
+      { id: 'satchel-of-tricks', item: 'satchel-of-tricks' },
+      { item: 'dice', in: 'satchel-of-tricks' },
+      { item: 'ring-of-warmth', equipped: true, attuned: true },
+    ]);
+    expect(ActorSchema.safeParse({ id: 'tamsin', name: 'Tamsin', ...s }).success).toBe(true);
   });
 
   it('keeps one class as class and level, and names homebrew classes by their slug', () => {
@@ -195,6 +245,49 @@ describe('foundrySheet', () => {
       sheet: {},
       skipped: [{ what: 'Sheets of a kind we have no match for', count: 1, examples: ['vehicle'] }],
     });
+  });
+});
+
+describe('an Item Piles actor', () => {
+  it('is a pile of loot, or a merchant', () => {
+    const pile = (type: string) => ({
+      ...goblin,
+      name: 'Chest',
+      flags: { 'item-piles': { data: { enabled: true, type } } },
+    });
+    expect(sheet(pile('pile')).sheet.pile).toEqual({ kind: 'loot' });
+    expect(sheet(pile('merchant')).sheet.pile).toEqual({ kind: 'merchant' });
+    expect(sheet(goblin).sheet).not.toHaveProperty('pile');
+  });
+});
+
+describe('foundryHomebrew', () => {
+  it("makes the world's own items and spells homebrew, and leaves the SRD's to the Compendium", () => {
+    const amulet = {
+      name: 'Amulet of Dusk',
+      type: 'equipment',
+      system: { attunement: 'required', description: { value: '<p>Dark.</p>' } },
+    };
+    const doc = foundryHomebrew(amulet, 'amulet-of-dusk', '2014');
+    expect(doc).toMatchObject({
+      kind: 'item',
+      id: 'amulet-of-dusk',
+      name: 'Amulet of Dusk',
+      item: { attunement: true },
+    });
+    const blade = {
+      name: 'Dusk Blade',
+      type: 'weapon',
+      system: { type: { value: 'martialM' }, damage: { base: { number: 1, denomination: 8, types: ['slashing'] } } },
+    };
+    expect(homebrewIssues(foundryHomebrew(blade, 'dusk-blade', '2014'))).toEqual([]);
+    expect(homebrewIssues(doc)).toEqual([]);
+    const spell = foundryHomebrew({ name: 'Dusk Bolt', type: 'spell', system: { level: 1 } }, 'dusk-bolt', '2014');
+    expect(spell).toMatchObject({ kind: 'spell', id: 'dusk-bolt', level: 1 });
+    expect(homebrewIssues(spell)).toEqual([]);
+    expect(foundryHomebrew({ name: 'Longsword', type: 'weapon' }, 'longsword', '2014')).toBeUndefined();
+    expect(foundryHomebrew({ name: 'Disguise Self', type: 'spell' }, 'disguise-self', '2014')).toBeUndefined();
+    expect(foundryHomebrew({ name: 'Tough', type: 'feat' }, 'tough', '2014')).toBeUndefined();
   });
 });
 

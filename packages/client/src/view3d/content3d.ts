@@ -1,4 +1,12 @@
-import { type DrawnTile, onLevels, type Point, tokenLevel, type WorldInfo } from '@vtt/shared';
+import {
+  type DrawnTile,
+  onLevels,
+  type Point,
+  type Solid3D,
+  solidOutline,
+  tokenLevel,
+  type WorldInfo,
+} from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
 import type { ModelShown } from './models3d.ts';
 
@@ -25,6 +33,29 @@ export function tileModels(tiles: Iterable<DrawnTile>, table: Table3D): ModelSho
       key: `tile:${t.id}:${JSON.stringify(t.model)}`,
       rect: { x: t.x, y: t.y, w: t.w, h: t.h },
       model: t.model,
+    });
+  }
+  return out;
+}
+
+/** A drawn solid to raise: its corners on the map. */
+export interface SolidShown {
+  key: string;
+  outline: [number, number][];
+  solid: Solid3D;
+}
+
+/** The tiles' drawn solids to raise. */
+export function tileSolids(tiles: Iterable<DrawnTile>, table: Table3D): SolidShown[] {
+  const out: SolidShown[] = [];
+  for (const t of tiles) {
+    if (t.kind !== 'image' || !t.solid || !onLevels(t, table.shown)) continue;
+    if (table.explored && !table.explored([t.x + t.w / 2, t.y + t.h / 2])) continue;
+    const rect = { x: t.x, y: t.y, w: t.w, h: t.h };
+    out.push({
+      key: `tile:${t.id}:${JSON.stringify([rect, t.solid])}`,
+      outline: solidOutline(rect, t.solid),
+      solid: t.solid,
     });
   }
   return out;

@@ -330,7 +330,7 @@ describe('Foundry v14 scenes', () => {
       model: { src: 'pack://caves/media/models/bridge.glb', elevation: 10, height: 2, rotation: 90 },
     });
     expect(skipped).toContainEqual({
-      what: '3D Canvas tiles without a glTF model in the Data folder (drawn shapes)',
+      what: "3D Canvas tiles without a glTF model in the Data folder, or a shape we can't draw (cones, spheres)",
       count: 2,
     });
   });

@@ -91,6 +91,43 @@ describe('homebrew classes', () => {
   });
 });
 
+describe('homebrew items and spells', () => {
+  const amulet = {
+    id: 'amulet-of-dusk',
+    kind: 'item',
+    name: 'Amulet of Dusk',
+    item: { type: 'gear', attunement: true },
+  };
+  const blade = {
+    id: 'dusk-blade',
+    kind: 'item',
+    name: 'Dusk Blade',
+    item: { type: 'weapon', category: 'martial', kind: 'melee', damage: { dice: '1d8', type: 'slashing' } },
+  };
+  const bolt = {
+    id: 'dusk-bolt',
+    kind: 'spell',
+    name: 'Dusk Bolt',
+    level: 1,
+    school: 'evocation',
+    castingTime: 'action',
+    range: 60,
+    attack: 'ranged',
+    damage: [{ dice: '2d8', type: 'necrotic' }],
+  };
+
+  it('join the game’s content like SRD ones', () => {
+    const more = contentWith('2014', homebrewCompendia([amulet, blade, bolt]));
+    expect(more.items.get('amulet-of-dusk')).toMatchObject({ name: 'Amulet of Dusk', attunement: true });
+    expect(more.items.get('dusk-blade')).toMatchObject({ id: 'dusk-blade', kind: 'melee' });
+    expect(homebrewIssues(blade)).toEqual([]);
+    expect(homebrewIssues({ ...blade, item: { type: 'weapon' } })).not.toEqual([]);
+    expect(more.spells.get('dusk-bolt')?.damage).toEqual([{ dice: '2d8', type: 'necrotic' }]);
+    expect(homebrewIssues(amulet)).toEqual([]);
+    expect(homebrewIssues({ ...bolt, level: 12 })).toEqual([expect.stringMatching(/level/)]);
+  });
+});
+
 describe("a game's compendia", () => {
   const pack = { id: 'p-items', name: 'Items', type: 'item', path: 'items.json', pack: 'p', docs: [] };
   const packs = [pack];

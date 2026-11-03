@@ -98,7 +98,7 @@ function lightTime(l: FoundryLightData): Pick<PlacedLight, 'activeAt'> {
 }
 
 /** One light without its id, or undefined if it sheds none; radii in feet. */
-function lightOf(l: FoundryLightData, feet: (units: number) => number): Omit<PlacedLight, 'id'> | undefined {
+export function lightOf(l: FoundryLightData, feet: (units: number) => number): Omit<PlacedLight, 'id'> | undefined {
   const [bright, dim] = [feet(l.config?.bright ?? l.bright ?? 0), feet(l.config?.dim ?? l.dim ?? 0)];
   if (!bright && !dim) return undefined;
   return { x: l.x, y: l.y, bright, dim, ...lightLook(l), ...lightAim(l), ...lightDepth(l), ...lightTime(l) };

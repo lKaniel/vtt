@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import type { TokenLayer } from '../canvas/TokenLayer.ts';
 import { portraitOf } from '../icon-art.ts';
 import type { Session } from '../session/session.ts';
-import { figures, onShownFloor, type Table3D, tileModels } from './content3d.ts';
+import { figures, onShownFloor, type SolidShown, type Table3D, tileModels, tileSolids } from './content3d.ts';
+import { Solids } from './solids3d.ts';
 import { CameraInput } from './input3d.ts';
 import { Models, type ModelShown } from './models3d.ts';
 import { eyeOf, follow, groundSquare, type MapPoint, ORBIT, type Orbit, panBy, rotateBy, zoomBy } from './orbit.ts';
@@ -37,6 +38,8 @@ export class View3D {
   private walls = new Walls();
   private standees = new Standees();
   private models = new Models();
+  private solids = new Solids();
+  private tileSolids: SolidShown[] = [];
   private backdrop = new Backdrop();
   /** The model tiles to stand, worked out with the walls. */
   private tileModels: ModelShown[] = [];
@@ -73,7 +76,14 @@ export class View3D {
       centre: () => (this.following = true),
       toggle: () => session.view3d.toggle(),
     });
-    this.scene.add(this.ground.mesh, this.walls.group, this.standees.group, this.models.group, this.backdrop.table);
+    this.scene.add(
+      this.ground.mesh,
+      this.walls.group,
+      this.standees.group,
+      this.models.group,
+      this.solids.group,
+      this.backdrop.table,
+    );
     this.scene.add(this.hemi, this.sun, this.sun.target);
   }
 
@@ -106,6 +116,7 @@ export class View3D {
     this.map.tokens.showFaces(true);
     this.surface.remove();
     this.ground.dispose();
+    this.solids.dispose();
     this.walls.dispose();
     this.standees.dispose();
     this.backdrop.dispose();
@@ -219,10 +230,9 @@ export class View3D {
     const current = this.session.levels.current;
     const table = this.table();
     const chunks = [...this.session.chunks.values()];
-    this.tileModels = tileModels(
-      chunks.flatMap((c) => c.tiles),
-      table,
-    );
+    const tiles = chunks.flatMap((c) => c.tiles);
+    this.tileModels = tileModels(tiles, table);
+    this.tileSolids = tileSolids(tiles, table);
     const walls =
       table.world.view3d?.walls === false ? [] : chunks.flatMap((c) => c.walls.filter((w) => onLevel(w, current)));
     const boxes = wallBoxes(walls, {
@@ -238,13 +248,18 @@ export class View3D {
 
   /** The model tiles, and the creatures that have a figure; all stood again when the floor shown changes. */
   private standModels(floor: number): void {
-    if (this.floorShown !== floor) this.models.restand();
+    if (this.floorShown !== floor) {
+      this.models.restand();
+      this.solids.restand();
+    }
     this.floorShown = floor;
     const placeOf = (id: string) => this.map.tokens.placeOf(id);
     const all = [...this.tileModels, ...figures(this.session.tokens.values(), this.table(), placeOf)];
     const ground = { grid: this.grid(), feet: 5, floor: this.level()?.bottom ?? 0 };
     this.models.show(all, ground, floor);
+    this.solids.show(this.tileSolids, ground, floor);
     this.surface.dataset.models = String(this.models.count);
+    this.surface.dataset.solids = String(this.solids.count);
   }
 
   /** The creatures you see on the floors shown (but those with a figure), where the 2D map has them now. */

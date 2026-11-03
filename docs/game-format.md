@@ -310,6 +310,12 @@ pixels.
   degrees) and `color` (a tint) shape it. `"fill": "tile", "piece": 2`
   repeats it instead, one copy every 2 squares (floors, wall runs); `"fill": "fit"` keeps its proportions, as a creature's figure always does. The
   Foundry importer brings 3D Canvas model tiles this way.
+- `"solid": { "points": [[0, 0], [1, 0], [0.5, 1]], "height": 10 }` raises a
+  drawn shape on an image tile in the 3D view (a cliff, a ledge, a pool's
+  rim): `points` are its corners as fractions of the tile's width and
+  height, `height` is in feet, and `elevation`, `rotation` and `color` work
+  as on a model. The Foundry importer brings 3D Canvas's drawn polygons
+  this way.
 - A wall is a line from `a` to `b` that stops movement, sight, light and
   sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.
   Open doors stop nothing.
@@ -859,6 +865,14 @@ starting kit). A player's character keeps a copy of each one it takes
 (`homebrew` in the character), refreshed from the game whenever it is saved,
 and its token carries the copy as `own.classes`, so it works in any game; a
 game's own class of that id wins over the copy.
+
+**Homebrew items and spells.** A homebrew file with `"kind": "spell"` has
+the fields of an SRD spell; one with `"kind": "item"` keeps the item's own
+fields in `item` (a weapon has a `kind` of its own):
+`{ "id": "dusk-blade", "kind": "item", "name": "Dusk Blade", "item": { "type": "weapon", ... } }`.
+They join the game's content like a pack's: sheets carry them by id and
+the Compendium lists them under Homebrew. The Foundry import makes them
+from the world's Items sidebar.
 
 **Encounters and experience.** The GM's Encounter button (beside Start
 combat) weighs the monsters on the scene against the party: the

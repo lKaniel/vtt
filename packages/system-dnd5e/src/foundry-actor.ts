@@ -1,9 +1,12 @@
-import { type FoundrySheets, type ImportLoss, slugify } from '@vtt/core';
+import { type FoundrySheets, freeId, type ImportLoss, slugify } from '@vtt/core';
 import { type Content, srdFor, toEdition } from './content.ts';
 import { at, list, type Loose, num, obj, opt, paragraphs, plainText, str } from './foundry-data.ts';
-import { attackOf, byName, gearOf } from './foundry-gear.ts';
+import { foundryEffects } from './foundry-effects.ts';
+import { attackOf, byName, GEAR_TYPES, gearOf, ownItem } from './foundry-gear.ts';
+import { ownSpell } from './foundry-spells.ts';
+import { stateOf } from './foundry-state.ts';
 import { ABILITIES, type Abilities, DamageTypeSchema, type Stats } from './stats-schema.ts';
-import type { Feature } from './spell-schema.ts';
+import type { Feature, Spell } from './spell-schema.ts';
 import type { Actor } from './token-schema.ts';
 
 // A Foundry VTT dnd5e actor as our sheet (what goes in actors/<id>.json
@@ -161,17 +164,20 @@ function classesOf(items: Loose[], srd: Content, sys: Loose): Classes {
   return { stats: { classes: entries }, srd: srdIds, skipped: [] };
 }
 
-function spellsOf(items: Loose[], srd: Content): { spells: string[]; skipped: ImportLoss[] } {
+/** Its spells: the SRD's by name, the rest as spells of its own. */
+function spellsOf(items: Loose[], srd: Content): { spells: string[]; own: Spell[] } {
   const spells: string[] = [];
-  const unknown: string[] = [];
+  const own: Spell[] = [];
   for (const item of items.filter((i) => i.type === 'spell')) {
-    const name = str(item.name) ?? '?';
-    const id = byName(srd.spells, name);
-    if (id) spells.push(id);
-    else unknown.push(name);
+    const name = str(item.name) ?? 'Spell';
+    const known = byName(srd.spells, name);
+    if (known) spells.push(known);
+    else if (!own.some((o) => o.name === name)) {
+      const taken = (x: string) => srd.spells.has(x) || own.some((o) => o.id === x);
+      own.push(ownSpell(item, freeId(slugify(name) || 'spell', taken, { bare: true })));
+    }
   }
-  const what = `Spells the ${srd.edition} rules have no match for`;
-  return { spells, skipped: unknown.length ? [{ what, count: unknown.length, examples: unknown }] : [] };
+  return { spells, own };
 }
 
 /** Features that aren't its SRD classes' own (those come with the class), as features of its own. */
@@ -228,7 +234,11 @@ function builtSheet(data: Loose, srd: Content): ConvertedSheet {
   const gear = gearOf(npc ? items.filter((i) => i.type !== 'weapon') : items, srd);
   const features = featuresOf(items, srd, classes.srd);
   const stats = statsOf(read, classes, spells.spells);
-  const own = { ...opt('items', gear.own.length > 0 && gear.own), ...opt('features', features.length > 0 && features) };
+  const own = {
+    ...opt('items', gear.own.length > 0 && gear.own),
+    ...opt('spells', spells.own.length > 0 && spells.own),
+    ...opt('features', features.length > 0 && features),
+  };
   return {
     sheet: {
       ...bodyOf(sys),
@@ -237,7 +247,7 @@ function builtSheet(data: Loose, srd: Content): ConvertedSheet {
       ...opt('inventory', gear.inventory.length > 0 && gear.inventory),
       ...opt('own', Object.keys(own).length > 0 && own),
     },
-    skipped: [...classes.skipped, ...spells.skipped],
+    skipped: classes.skipped,
   };
 }
 
@@ -251,10 +261,26 @@ export function foundrySheet(data: unknown, ctx: FoundrySheetContext): Converted
       skipped: [{ what: 'Sheets of a kind we have no match for', count: 1, examples: [str(actor.type) ?? 'nameless'] }],
     };
   const monster = actor.type === 'npc' ? srd.monsters.get(slugify(str(actor.name) ?? '')) : undefined;
-  const story = biographyOf(obj(actor.system));
-  if (monster) return { sheet: { monster: monster.id, ...woundsOf(obj(actor.system)), ...story }, skipped: [] };
+  const sys = obj(actor.system);
+  const effects = foundryEffects(actor);
+  const more: Sheet = {
+    ...biographyOf(sys),
+    ...stateOf(sys, actor.items),
+    ...opt('effects', effects.effects.length > 0 && effects.effects),
+    ...pileOf(actor),
+  };
+  if (monster) return { sheet: { monster: monster.id, ...woundsOf(sys), ...more }, skipped: effects.skipped };
   const built = builtSheet(actor, srd);
-  return { ...built, sheet: { ...built.sheet, ...story } };
+  return { sheet: { ...built.sheet, ...more }, skipped: [...built.skipped, ...effects.skipped] };
+}
+
+/** An Item Piles actor (flags["item-piles"]) is a pile of loot or a merchant. */
+function pileOf(actor: Loose): Sheet {
+  const data = obj(at(actor, 'flags.item-piles.data'));
+  return opt(
+    'pile',
+    data.enabled === true && ({ kind: data.type === 'merchant' ? 'merchant' : 'loot' } as Sheet['pile']),
+  );
 }
 
 /** The sheet's biography (HTML in Foundry) as text. */
@@ -278,10 +304,27 @@ function rulesOf(setting: (key: string) => unknown): string | undefined {
   return typeof version === 'string' ? editions[version] : undefined;
 }
 
+/**
+ * An item of the world's Items sidebar as a homebrew document: a spell or
+ * gear the SRD has no match for by name (the SRD's are in the Compendium
+ * already); undefined for those and for features, classes and the like.
+ */
+export function foundryHomebrew(raw: unknown, id: string, rules: string): Record<string, unknown> | undefined {
+  const item = obj(raw);
+  const name = str(item.name);
+  const srd = srdFor(toEdition(rules));
+  if (!name) return undefined;
+  if (item.type === 'spell') return byName(srd.spells, name) ? undefined : { kind: 'spell', ...ownSpell(item, id) };
+  if (!GEAR_TYPES.has(String(item.type)) || byName(srd.items, name)) return undefined;
+  const { id: _id, name: _name, ...own } = ownItem(id, item);
+  return { kind: 'item', id, name, item: own };
+}
+
 /** What the world import reads D&D actors with. */
 export const foundrySheets: FoundrySheets = {
   system: 'dnd5e',
   rules: rulesOf,
   sheet: (actor, rules) => foundrySheet(actor, { rules }),
   delta: foundryDelta,
+  homebrew: foundryHomebrew,
 };
