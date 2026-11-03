@@ -298,11 +298,6 @@ export class Session {
     return !!this.you && canControl(token, this.you);
   }
 
-  /** GM: pauses the game, or lets it go on. */
-  setPaused(on: boolean): void {
-    this.send({ t: 'pause', on });
-  }
-
   private editTargets(): DocRef[] {
     if (this.editor.selection.length) return this.editor.selection.map(refOf);
     if (this.selected) return [{ coll: `${this.scene}/tokens`, id: this.selected }];

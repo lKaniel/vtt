@@ -42,7 +42,7 @@ describe('Token HUD', () => {
     expect(session.paused).toBe(true);
     ws.receive({ t: 'paused', on: false });
     expect(session.paused).toBe(false);
-    session.setPaused(true);
+    session.requests.setPaused(true);
     expect(ws.sent.at(-1)).toEqual({ t: 'pause', on: true });
   });
 });
