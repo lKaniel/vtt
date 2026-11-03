@@ -20,7 +20,7 @@ import { GameIndex } from './game-index.ts';
 import { GameStore } from '../store/game-store.ts';
 import { SYSTEMS } from '../systems.ts';
 import { readJson, writeJson } from '../store/json-files.ts';
-import { FORMAT } from '../migrate/migrate-ownership.ts';
+import { FORMAT } from '../migrate/migrate-folders.ts';
 import { PackStore } from './pack-store.ts';
 import { PluginStore } from './plugin-store.ts';
 

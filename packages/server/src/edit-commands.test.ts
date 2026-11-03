@@ -83,6 +83,10 @@ const SAMPLES: Record<string, { coll: string; doc: Doc }> = {
       tracks: [{ id: 'lute', name: 'Lute', src: 'lute.ogg' }],
     },
   },
+  folder: {
+    coll: 'folders',
+    doc: { id: 'lore', type: 'folder', rev: 0, name: 'Lore', kind: 'journals', color: '#336699' },
+  },
   macro: {
     coll: 'macros',
     doc: { id: 'hail', type: 'macro', rev: 0, name: 'Hail', kind: 'chat', command: 'Well met!' },

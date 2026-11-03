@@ -1,5 +1,17 @@
 import type { Doc } from '@vtt/core';
-import { canObserve, canSee, CLOCK_COLL, isGm, isScriptMacro, type Player, sceneCollOf } from '@vtt/shared';
+import {
+  canObserve,
+  canSee,
+  CLOCK_COLL,
+  FOLDERS,
+  folderSeen,
+  foldersAbove,
+  isFolderKind,
+  isGm,
+  isScriptMacro,
+  type Player,
+  sceneCollOf,
+} from '@vtt/shared';
 import type { DocAccess, OwnedDoc } from './store-access.ts';
 
 // Which documents a player is sent (doc-feed.ts), and how much of them.
@@ -8,7 +20,8 @@ import type { DocAccess, OwnedDoc } from './store-access.ts';
 // tables and chat macros shared with them (and their own macros; script macros are the GM's alone), the
 // card stacks they may see (limited: how many cards), the playlists playing now, and on the scene they
 // are on, what is drawn there for them: drawings, templates, notes, sounds
-// and the regions the GM shows. Everyone gets the game clock.
+// and the regions the GM shows. Everyone gets the game clock, and the
+// folders that hold something they get.
 
 export interface Viewer {
   player: Player;
@@ -43,13 +56,29 @@ const observed = (v: Viewer, owned: OwnedDoc) => canSee(owned, v.player) && canO
 const sidebarSent = (v: Viewer, access: DocAccess, coll: string, doc: Doc) =>
   !(coll === 'macros' && isScriptMacro(doc)) && observed(v, access.owned(coll, doc));
 
+/** The documents as folders.ts reads them. */
+const listed = (access: DocAccess) => ({ get: access.get.bind(access), all: access.list.bind(access) });
+
+type Rule = (v: Viewer, access: DocAccess, doc: Doc, coll: string) => boolean;
+
+/** The game's own collections players may get, and which of their documents. */
+const GAME_RULES: Partial<Record<string, Rule>> = {
+  actors: (v, access, doc, coll) => observed(v, access.owned(coll, doc)),
+  journals: (v, access, doc, coll) => canSee(access.owned(coll, doc), v.player),
+  cards: (v, access, doc, coll) => canSee(access.owned(coll, doc), v.player),
+  playlists: (_v, _a, doc) => playing(doc),
+  [FOLDERS]: (v, access, doc) => folderSeen(listed(access), doc, (c, d) => sendsTo(v, access, c, d)),
+  ...Object.fromEntries(
+    [...OBSERVED].map((c): [string, Rule] => [c, (v, access, doc, coll) => sidebarSent(v, access, coll, doc)]),
+  ),
+};
+
 /** Whether a player is sent a document at all. */
 export function sendsTo(v: Viewer, access: DocAccess, coll: string, doc: Doc): boolean {
   if (isGm(v.player) || coll === CLOCK_COLL) return true;
-  if (coll === 'actors' || coll.endsWith('/tokens')) return observed(v, access.owned(coll, doc));
-  if (coll === 'journals' || coll === 'cards') return canSee(access.owned(coll, doc), v.player);
-  if (OBSERVED.has(coll)) return sidebarSent(v, access, coll, doc);
-  if (coll === 'playlists') return playing(doc);
+  const own = GAME_RULES[coll];
+  if (own) return own(v, access, doc, coll);
+  if (coll.endsWith('/tokens')) return observed(v, access.owned(coll, doc));
   const at = sceneCollOf(coll);
   const rule = at && SCENE_RULES[at.name];
   return !!rule && at.scene === v.scene && rule(v, access, doc);
@@ -68,11 +97,24 @@ export function viewOf(v: Viewer, access: DocAccess, coll: string, doc: Doc): Do
 
 const LIMITED_VIEW = new Set(['journals', 'cards']);
 
-/** Documents whose visibility hangs on another: notes on a journal entry. */
+/** Documents whose visibility hangs on another: notes on a journal entry, the folders a document or folder is in. */
 export function dependents(access: DocAccess, coll: string, id: string): { coll: string; doc: Doc }[] {
+  return [...notesOn(access, coll, id), ...foldersHolding(access, coll, id)];
+}
+
+function notesOn(access: DocAccess, coll: string, id: string): { coll: string; doc: Doc }[] {
   if (coll !== 'journals') return [];
   const all = access.all();
   return Object.entries(all)
     .filter(([c]) => c.endsWith('/notes'))
     .flatMap(([c, docs]) => docs.filter((d) => d.entry === id).map((doc) => ({ coll: c, doc })));
+}
+
+/** The folders above a document (or a folder) as it is now. */
+function foldersHolding(access: DocAccess, coll: string, id: string): { coll: string; doc: Doc }[] {
+  if (coll !== FOLDERS && !isFolderKind(coll)) return [];
+  const doc = access.get(coll, id);
+  const above = doc && (coll === FOLDERS ? doc.parent : doc.folder);
+  if (typeof above !== 'string') return [];
+  return foldersAbove(listed(access), above).map((f) => ({ coll: FOLDERS, doc: f }));
 }

@@ -33,6 +33,27 @@ describe('checkFolder', () => {
     ]);
   });
 
+  it('reports documents in folders that are missing or of another list', async () => {
+    const dir = await makeWorld();
+    await mkdir(join(dir, 'folders'));
+    await mkdir(join(dir, 'journals'));
+    await mkdir(join(dir, 'actors'), { recursive: true });
+    const write = (rel: string, data: unknown) => writeFile(join(dir, rel), JSON.stringify(data));
+    await write('folders/lore.json', { id: 'lore', name: 'Lore', kind: 'journals' });
+    await write('folders/inner.json', { id: 'inner', name: 'Inner', kind: 'journals', parent: 'gone' });
+    await write('folders/foes.json', { id: 'foes', name: 'Foes', kind: 'actors', parent: 'lore' });
+    await write('journals/sun.json', { id: 'sun', name: 'Sun', folder: 'lore' });
+    await write('journals/moon.json', { id: 'moon', name: 'Moon', folder: 'foes' });
+    await write('actors/wolf.json', { id: 'wolf', name: 'Wolf', folder: 'Road ambush' });
+    const { issues } = await checkFolder(dir);
+    expect(issues.map((i) => `${i.file}: ${i.message}`)).toEqual([
+      'actors/wolf.json: folder "Road ambush" is not in folders/',
+      'folders/foes.json: parent "lore" is a folder of journals, not of actors',
+      'folders/inner.json: parent "gone" is not in folders/',
+      'journals/moon.json: folder "foes" is a folder of actors, not of journals',
+    ]);
+  });
+
   it('points at the migration for an old world folder', async () => {
     const dir = await makeLegacyWorld();
     const { issues, state } = await checkFolder(dir);

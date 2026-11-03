@@ -50,6 +50,7 @@ import { Journal, type JournalEvents } from './session-journal.ts';
 import { type PackEvents, Packs } from './session-packs.ts';
 import { Piles } from './session-piles.ts';
 import { Cards } from './session-cards.ts';
+import { Folders } from './session-folders.ts';
 import { ScriptHost } from '../scripting/script-api.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
@@ -95,6 +96,8 @@ export class Session {
   readonly requests = new Requests(this);
   /** The decks, hands and piles you were sent (session-cards.ts). */
   readonly cards = new Cards(this);
+  /** The sidebar lists' folders (session-folders.ts). */
+  readonly folders = new Folders(this);
   /** The creatures you target (T), and the others'. */
   readonly targets = new Targets(this.wire(() => this.notify('targets')));
   /** What the parts may ask of the session beyond its public face. */

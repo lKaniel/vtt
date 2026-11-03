@@ -1,7 +1,11 @@
 {
   "id": "bandit-captain",
   "name": "Bandit Captain",
-  "folder": "Road ambush",
+  "folder": "road-ambush",
   "monster": "bandit-captain",
-  "inventory": [{ "item": "potion-of-healing" }]
+  "inventory": [
+    {
+      "item": "potion-of-healing"
+    }
+  ]
 }

@@ -1,4 +1,5 @@
 import { migrateActorsFolder } from './migrate-actors.ts';
+import { migrateFoldersFolder } from './migrate-folders.ts';
 import { migrateOwnershipFolder } from './migrate-ownership.ts';
 import { migrateFolder } from './migrate-world.ts';
 
@@ -16,4 +17,7 @@ export async function upgradeFolder(dir: string): Promise<void> {
   }
   const owned = await migrateOwnershipFolder(dir);
   if (owned) console.log(`[game] creatures have ownership levels now (format 4); originals kept in ${owned.backup}`);
+  const filed = await migrateFoldersFolder(dir);
+  if (filed?.backup)
+    console.log(`[game] made ${filed.folders} sidebar folders (format 5); originals kept in ${filed.backup}`);
 }

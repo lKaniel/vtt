@@ -26,7 +26,7 @@ describe('GameStore actors and tokens', () => {
     const { dir, store } = await loaded();
     expect(store.actors.get('hero')).toMatchObject({ name: 'Hero', ownership: { default: 'limited', ana: 'owner' } });
     expect(store.tokens.get('hero')).toMatchObject({ name: 'Hero', actor: 'hero', linked: true, x: 150 });
-    expect(await readJson(dir, 'game.json')).toMatchObject({ format: 4 });
+    expect(await readJson(dir, 'game.json')).toMatchObject({ format: 5 });
   });
 
   it('shares a linked token’s damage with its actor and every other token of it', async () => {

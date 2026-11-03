@@ -136,12 +136,17 @@ function ActorFolders({ session, actors }: Readonly<{ session: Session; actors: 
     if (!folder) return <div key="-">{list}</div>;
     return (
       <details key={folder} className="lib-folder" open>
-        <summary>{folder}</summary>
+        <summary>{nameOfFolder(session, folder)}</summary>
         {list}
       </details>
     );
   });
 }
+
+const nameOfFolder = (session: Session, id: string) => {
+  const name = session.docs.get('folders', id)?.name;
+  return typeof name === 'string' ? name : id;
+};
 
 function ActorRow({ session, actor }: Readonly<{ session: Session; actor: Actor }>) {
   const edit = () => session.sheets.open({ kind: 'actor', id: actor.id }, true);

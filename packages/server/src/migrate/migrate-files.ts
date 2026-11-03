@@ -53,14 +53,14 @@ export async function formatOf(dir: string): Promise<{ game: Record<string, unkn
   return { game, format: typeof game.format === 'number' ? game.format : 0 };
 }
 
-/** Copies game.json, actors/ and scenes/ to `.<tag>-backup/<time>/` and returns that path. */
-export async function backUp(dir: string, tag: string, now: Date): Promise<string> {
+/** Copies game.json, actors/ and scenes/ (and `more`) to `.<tag>-backup/<time>/` and returns that path. */
+export async function backUp(dir: string, tag: string, now: Date, more: readonly string[] = []): Promise<string> {
   const backup = `.${tag}-backup/${now
     .toISOString()
     .replace(/\.\d+Z$/, 'Z')
     .replaceAll(':', '-')}`;
   await mkdir(join(dir, backup), { recursive: true });
-  for (const name of ['game.json', 'actors', 'scenes']) {
+  for (const name of ['game.json', 'actors', 'scenes', ...more]) {
     await cp(join(dir, name), join(dir, backup, name), { recursive: true }).catch(() => undefined);
   }
   return backup;

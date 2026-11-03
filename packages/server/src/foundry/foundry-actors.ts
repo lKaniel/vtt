@@ -10,8 +10,8 @@ import type { MediaLookup } from './foundry-scene.ts';
 // token stands, whether it shares its actor's sheet, and what it changes.
 
 const obj = (x: unknown): FoundryDoc => (x && typeof x === 'object' && !Array.isArray(x) ? (x as FoundryDoc) : {});
-const str = (x: unknown) => (typeof x === 'string' && x ? x : undefined);
-const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : undefined);
+export const str = (x: unknown) => (typeof x === 'string' && x ? x : undefined);
+export const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : undefined);
 const plural = (n: number, what: string) => `${n} ${what}${n === 1 ? '' : 's'}`;
 
 /** Ids from names, each free in its list. */
@@ -22,19 +22,6 @@ export function idMaker(fallback: string) {
     taken.add(id);
     return id;
   };
-}
-
-/** Foundry folders by id, named by their path: "Monsters / Goblins". */
-export function folderNames(folders: FoundryDoc[]): FolderLookup {
-  const byId = new Map(folders.flatMap((f) => (str(f._id) ? [[f._id as string, f] as const] : [])));
-  const nameOf = (id: string | null | undefined, depth = 0): string | undefined => {
-    const folder = id ? byId.get(id) : undefined;
-    if (!folder || depth > 20) return undefined;
-    const parent = nameOf(str(folder.folder), depth + 1);
-    const name = str(folder.name) ?? 'Folder';
-    return parent ? `${parent} / ${name}` : name;
-  };
-  return nameOf;
 }
 
 /** What tokens need to know of the actor they stand for. */
