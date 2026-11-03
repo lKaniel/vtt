@@ -1,6 +1,9 @@
 import type { Character, Class } from '@vtt/system-dnd5e';
 import type {
   BackupInfo,
+  BaileywikiImportReport,
+  BaileywikiScene,
+  BaileywikiStatus,
   FoundryImportInput,
   FoundryImportReport,
   GameDetail,
@@ -79,6 +82,16 @@ export const api = {
   /** Admin: makes a game from a Foundry world folder on the server's disk. */
   importFoundry: (input: FoundryImportInput) =>
     call<{ game: GameSummary; report: FoundryImportReport }>('POST', '/api/games/import-foundry', input),
+  /** Admin: the server's Baileywiki sign-in. */
+  baileywiki: () => call<BaileywikiStatus>('GET', '/api/baileywiki'),
+  /** Admin: signs the server in to Baileywiki with the code their site shows. */
+  baileywikiSignIn: (code: string) => call<BaileywikiStatus>('POST', '/api/baileywiki/sign-in', { code }),
+  baileywikiSignOut: () => call<BaileywikiStatus>('DELETE', '/api/baileywiki'),
+  /** Admin: the scenes in Baileywiki's online compendia. */
+  baileywikiScenes: async () => (await call<{ scenes: BaileywikiScene[] }>('GET', '/api/baileywiki/scenes')).scenes,
+  /** Admin: downloads picked scenes into the server's Baileywiki pack. */
+  baileywikiImport: (scenes: { compendium: string; id: string }[]) =>
+    call<BaileywikiImportReport>('POST', '/api/baileywiki/import', { scenes }),
   /** Admin: a new game from an exported zip. */
   importZip: async (file: Blob) => (await call<{ game: GameSummary }>('POST', '/api/games/import-zip', file)).game,
 

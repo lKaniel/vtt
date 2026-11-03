@@ -2,6 +2,7 @@
 // to. A key is "<screen>.<what>"; `{name}` is filled in by t(). See
 // docs/i18n.md for adding words and languages.
 
+import { EN_BAILEYWIKI } from './en-lobby.ts';
 import { EN_SHEET } from './en-sheet.ts';
 
 export const EN = {
@@ -407,6 +408,7 @@ export const EN = {
   'walk.blocked': "Can't get there",
 
   ...EN_SHEET,
+  ...EN_BAILEYWIKI,
   'levels.question': '{name}: which floor?',
   'view3d.on': '3D view',
   'view3d.off': 'Back to the 2D map',

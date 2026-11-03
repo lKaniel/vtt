@@ -5,6 +5,7 @@ import { t } from '../i18n/index.ts';
 import { lastPlayedText } from '../lobby.ts';
 import type { Route } from '../route.ts';
 import { api, type SessionInfo } from '../server-api.ts';
+import { BaileywikiPanel } from './BaileywikiPanel.tsx';
 import { FoundryImportForm } from './FoundryImport.tsx';
 import { ImportZip } from './GameArchive.tsx';
 import { AdminPasswordForm, AdminUnlock } from './GameAccess.tsx';
@@ -112,6 +113,7 @@ function SetupBody({ info, refresh, go }: Readonly<{ info: SessionInfo; refresh:
           {data && <NewGameForm systems={data.systems} onMade={open} />}
           <ImportZip onMade={open} />
           <FoundryImportForm onMade={open} />
+          <BaileywikiPanel />
           {!info.adminFixed && <AdminPasswordForm has={info.adminPassword} onSaved={refresh} />}
         </aside>
       </div>
