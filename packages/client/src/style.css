@@ -2134,6 +2134,11 @@ button.pip:hover {
 
 /* ---------- Menus, accounts and character creation ---------- */
 
+/* The page scrolls on these screens (the table keeps body overflow hidden). */
+body:has(> #root > :is(.menu, .account, .cc, .levelup)) {
+  overflow-y: auto;
+}
+
 .menu,
 .account,
 .cc,

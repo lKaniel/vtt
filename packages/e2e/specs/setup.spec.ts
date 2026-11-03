@@ -48,3 +48,12 @@ test.describe('with VTT_ADMIN_PASSWORD set', () => {
     await expect(page.getByRole('textbox', { name: 'New admin password' })).toHaveCount(0);
   });
 });
+
+test('Setup scrolls when its boxes are taller than the window', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 600 });
+  await page.goto('/#/setup');
+  await expect(page.getByRole('region', { name: 'Baileywiki' })).toBeAttached();
+  await page.mouse.move(640, 300);
+  await page.mouse.wheel(0, 3000);
+  await expect.poll(() => page.evaluate(() => document.scrollingElement?.scrollTop ?? 0)).toBeGreaterThan(0);
+});
