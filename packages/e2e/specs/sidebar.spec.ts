@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { expect, test } from '../support/fixtures.ts';
 import { GM, atTable } from '../support/table.ts';
 
-test.describe.configure({ timeout: 150_000 }); // two tables, drags and menus
+test.describe.configure({ timeout: 150_000 }); // drags, dialogs and menus
 
 const onDisk = async (gameDir: string, rel: string) =>
   JSON.parse(await readFile(join(gameDir, rel), 'utf8').catch(() => '{}')) as Record<string, unknown>;
