@@ -1,3 +1,4 @@
+import { lossLine, placed } from './import-losses.ts';
 import { copyFile, mkdir, rm, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { freeId, mediaKind, type PackManifest, packRef, slugify } from '@vtt/core';
@@ -206,7 +207,7 @@ function convertScenes(
     const { scene, skipped: lost } = foundryScene(data, lookups.media, lookups);
     const id = freeId(slugify(scene.name) || 'scene', (x) => taken.has(x), { bare: true });
     taken.add(id);
-    skipped.push(...lost.map((what) => `scene "${scene.name}": ${what}`));
+    skipped.push(...placed(`scene "${scene.name}"`, lost).map(lossLine));
     return { id, ...scene };
   });
 }
@@ -248,7 +249,7 @@ export async function importFoundry(from: string, packsDir: string, opts: Import
   const media = await copyMedia(src, dir, id);
   const raw = await rawDocs(src, skipped);
   const entries = foundryEntries(raw, media.lookup);
-  skipped.push(...entries.skipped);
+  skipped.push(...entries.skipped.map((l) => lossLine({ ...l, place: l.place && `"${l.place}"` })));
   const scenes = convertScenes(raw.scenes, { media: media.lookup, ...entries }, skipped);
   const compendia = await writeCompendia(dir, { scenes, ...entries });
   const { manifest: m } = src;

@@ -1,20 +1,12 @@
 import { basename, join } from 'node:path';
 import { defaultEdition } from '@vtt/core';
-import { DEFAULT_SYSTEM, type FoundryImportReport, type Game, type Player, type SceneEntry } from '@vtt/shared';
-import { z } from 'zod';
-import { type ActorSystem, foundryActors, foundryTokens, idMaker, plural, type PlacedActor } from './foundry-actors.ts';
-import { type FoundryDoc, readFoundryDb } from './foundry-db.ts';
-import { foundryMacros } from './foundry-macros.ts';
-import { type ConvertedEntries, type FolderLookup, foundryEntries } from './foundry-entries.ts';
-import { foundryFolders } from './foundry-folders.ts';
+import type { FoundryImportReport, Game, Player } from '@vtt/shared';
 import { dataFolderOf, FoundryMedia } from './foundry-media.ts';
-import { foundryFloors } from './foundry-levels.ts';
-import { foundryGrid, foundryScene, type MediaLookup } from './foundry-scene.ts';
-import { foundryClock } from './foundry-time.ts';
-import { tokenModelOf } from './foundry-3d.ts';
-import { readJson, writeJson } from '../store/json-files.ts';
+import { readWorld, settingsOf, systemFor } from './foundry-world-read.ts';
+import { LossLog } from './import-losses.ts';
+import { type SceneOut, WORLD_PARTS, type WorldContext, type WorldOut } from './world-parts.ts';
+import { writeJson } from '../store/json-files.ts';
 import { FORMAT } from '../migrate/migrate-folders.ts';
-import { SYSTEMS } from '../systems.ts';
 
 // A whole Foundry VTT world as a new game: every scene with its walls,
 // lights, tiles, tokens and the rest, the actors (sheets read by the game
@@ -22,16 +14,11 @@ import { SYSTEMS } from '../systems.ts';
 // playlists in their folders, and every picture and sound they use, copied
 // into the game's assets/foundry/. It reads the world's databases directly
 // (NeDB files up to v10, LevelDB from v11), so Foundry need not run, and
-// never changes them. The asset-pack import (foundry-import.ts) is for
-// modules whose maps and handouts a GM wants to pick from.
+// never changes them. What it brings is a list of parts (world-parts.ts).
+// The asset-pack import (foundry-import.ts) is for modules whose maps and
+// handouts a GM wants to pick from.
 
-const WorldSchema = z.object({
-  /** `id` since v10, `name` before. */
-  id: z.string().optional(),
-  name: z.string().optional(),
-  title: z.string().optional(),
-  system: z.string().optional(),
-});
+export { foundryWorldTitle } from './foundry-world-read.ts';
 
 export interface WorldImportOptions {
   /** The importing account's seat: the game's GM. */
@@ -44,120 +31,9 @@ export interface WorldImportOptions {
 
 export type WorldReport = FoundryImportReport;
 
-const COLLECTIONS = [
-  'scenes',
-  'actors',
-  'items',
-  'journal',
-  'tables',
-  'playlists',
-  'folders',
-  'settings',
-  'users',
-  'macros',
-  'cards',
-] as const;
-type Docs = Record<(typeof COLLECTIONS)[number], FoundryDoc[]>;
-
-interface World {
-  dir: string;
-  id: string;
-  title: string;
-  /** The Foundry system it is for, e.g. "dnd5e". */
-  system: string;
-  docs: Docs;
-}
-
-async function readManifest(dir: string) {
-  const raw = await readJson(join(dir, 'world.json'));
-  if (raw === undefined) throw new Error(`${dir} has no world.json: pick a world's folder in Foundry's Data/worlds/.`);
-  const m = WorldSchema.parse(raw);
-  const id = m.id ?? m.name ?? 'world';
-  return { ...m, id, title: m.title ?? id };
-}
-
-/** A Foundry world's title, to name the game after. */
-export const foundryWorldTitle = async (dir: string): Promise<string> => (await readManifest(dir)).title;
-
-/** The world's manifest and every database we read. */
-async function readWorld(dir: string): Promise<World> {
-  const m = await readManifest(dir);
-  const id = m.id;
-  const docs = {} as Docs;
-  for (const c of COLLECTIONS) docs[c] = await readFoundryDb(join(dir, 'data', c));
-  return { dir, id, title: m.title, system: m.system ?? '', docs };
-}
-
-/** A world setting by key (Foundry keeps each value as JSON text). */
-function settingsOf(settings: FoundryDoc[]) {
-  return (key: string): unknown => {
-    const value = settings.find((s) => s.key === key)?.value;
-    if (typeof value !== 'string') return value;
-    try {
-      return JSON.parse(value) as unknown;
-    } catch {
-      return value;
-    }
-  };
-}
-
-/** The system that reads this world's actors, else the server's default (bare actors). */
-function systemFor(world: World): ActorSystem {
-  const all = [...SYSTEMS.infos()].map((s) => SYSTEMS.get(s.id)!);
-  return all.find((s) => s.foundry?.system === world.system) ?? SYSTEMS.require(DEFAULT_SYSTEM);
-}
-
-interface SceneContext {
-  media: MediaLookup;
-  entries: ConvertedEntries;
-  actors: Map<string, PlacedActor>;
-  system: ActorSystem;
-  folderOf: FolderLookup;
-}
-
-interface ConvertedScene {
-  id: string;
-  folder?: string;
-  entry: SceneEntry;
-  tokens: Record<string, unknown>[];
-  playlist?: string;
-  active: boolean;
-}
-
-const bySort = (a: FoundryDoc, b: FoundryDoc) =>
-  (typeof a.sort === 'number' ? a.sort : 0) - (typeof b.sort === 'number' ? b.sort : 0);
-
-function convertScenes(raw: FoundryDoc[], ctx: SceneContext, skipped: string[]): ConvertedScene[] {
-  const nextId = idMaker('scene');
-  return [...raw].sort(bySort).map((data) => {
-    const { scene, skipped: lost } = foundryScene(data, ctx.media, { ...ctx.entries, keepsTokens: true });
-    const id = nextId(scene.name);
-    const grid = foundryGrid(data);
-    const tokens = foundryTokens(data.tokens, {
-      grid: grid.size,
-      actors: ctx.actors,
-      sheets: ctx.system.foundry,
-      media: ctx.media,
-      elevation: tokenElevation(data, grid.distance),
-      model: (t) => tokenModelOf(t, ctx.media),
-    });
-    skipped.push(...[...lost, ...tokens.skipped].map((what) => `scene "${scene.name}": ${what}`));
-    const playlist = typeof data.playlist === 'string' ? ctx.entries.playlistIds(data.playlist) : undefined;
-    const folder = ctx.folderOf(typeof data.folder === 'string' ? data.folder : undefined);
-    return { id, folder, entry: { id, ...scene }, tokens: tokens.tokens, playlist, active: data.active === true };
-  });
-}
-
-/** A token's elevation in feet: on the floor v14 says it is on, else its own. */
-function tokenElevation(scene: FoundryDoc, distance: number): (t: FoundryDoc) => number {
-  const feet = (units: number) => Math.round((units * 5) / distance);
-  const floors = foundryFloors(scene, feet);
-  return (t) => floors?.elevationOf(t) ?? (typeof t.elevation === 'number' ? feet(t.elevation) : 0);
-}
-
 const PARTS = ['tiles', 'walls', 'lights', 'drawings', 'notes', 'templates', 'regions', 'sounds'] as const;
 
-async function writeScene(game: string, s: ConvertedScene): Promise<void> {
+async function writeScene(game: string, s: SceneOut): Promise<void> {
   const dir = join(game, 'scenes', s.id);
   const { id: _id, ...entry } = s.entry;
   const settings = Object.fromEntries(Object.entries(entry).filter(([k]) => !(PARTS as readonly string[]).includes(k)));
@@ -168,38 +44,16 @@ async function writeScene(game: string, s: ConvertedScene): Promise<void> {
   await writeJson(join(dir, 'scene.json'), settings);
 }
 
-async function writeEach(dir: string, docs: { id: string }[]): Promise<void> {
-  for (const doc of docs) await writeJson(join(dir, `${doc.id}.json`), doc);
+/** Writes what the parts made into the folder `game`. */
+async function writeGame(game: string, out: WorldOut): Promise<void> {
+  for (const s of out.scenes) await writeScene(game, s);
+  if (!out.scenes.length) await writeJson(join(game, 'scenes/main/scene.json'), { name: 'Main', darkness: 0 });
+  for (const [collection, docs] of Object.entries(out.docs))
+    for (const doc of docs) await writeJson(join(game, collection, `${doc.id}.json`), doc);
+  for (const [path, value] of Object.entries(out.files)) await writeJson(join(game, path), value);
 }
 
-const names = (docs: FoundryDoc[]) => {
-  const list = docs.map((d) => (typeof d.name === 'string' ? d.name : '?'));
-  return list.length > 5 ? `${list.slice(0, 5).join(', ')}, ...` : list.join(', ');
-};
-
-/** What the world has that has no place in a game here. */
-function leftBehind(world: World, system: ActorSystem): string[] {
-  const { items, users, cards } = world.docs;
-  const players = users.filter((u) => typeof u.role !== 'number' || u.role < 4);
-  return [
-    ...(system.foundry?.system === world.system
-      ? []
-      : [
-          `sheets: the world is for the Foundry "${world.system}" system, which we can't read, so actors keep only their name and picture`,
-        ]),
-    ...(items.length
-      ? [
-          `${plural(items.length, 'item')} in the Items sidebar (${names(items)}): drag items from the Compendium instead`,
-        ]
-      : []),
-    ...(players.length
-      ? [
-          `Foundry users (${names(players)}): add your players on the game's page; their characters are actors to give them`,
-        ]
-      : []),
-    ...(cards.length ? [`${plural(cards.length, 'card stack')}: we have no cards yet`] : []),
-  ];
-}
+const count = (out: WorldOut, collection: string) => out.docs[collection]?.length ?? 0;
 
 /** Imports the Foundry world folder `from` as a new game in the folder `game` (its name is the game's id). */
 export async function importFoundryWorld(from: string, game: string, opts: WorldImportOptions): Promise<WorldReport> {
@@ -208,54 +62,33 @@ export async function importFoundryWorld(from: string, game: string, opts: World
   const setting = settingsOf(world.docs.settings);
   const rules = system.foundry?.rules(setting) ?? defaultEdition(system);
   const media = new FoundryMedia({ dir: from, id: world.id }, opts.dataDir ?? dataFolderOf(from));
-  const { folders, folderOf } = foundryFolders(world.docs.folders);
-  const { docs } = world;
-  const entries = foundryEntries(
-    { journals: docs.journal, tables: docs.tables, playlists: docs.playlists },
-    media.lookup,
-    folderOf,
-  );
-  const macros = foundryMacros(docs.macros, media.lookup, folderOf);
-  const actors = foundryActors(docs.actors, { system, sheets: system.foundry, rules, media: media.lookup, folderOf });
-  const skipped = [...entries.skipped, ...actors.skipped, ...macros.skipped];
-  const scenes = convertScenes(
-    docs.scenes,
-    { media: media.lookup, entries, actors: actors.byFoundryId, system, folderOf },
-    skipped,
-  );
-  skipped.push(...leftBehind(world, system));
-  for (const s of scenes) await writeScene(game, s);
-  await writeEach(join(game, 'actors'), actors.actors as { id: string }[]);
-  await writeEach(join(game, 'journals'), entries.journals);
-  await writeEach(join(game, 'tables'), entries.tables);
-  await writeEach(join(game, 'playlists'), entries.playlists);
-  await writeEach(join(game, 'macros'), macros.macros);
-  await writeEach(join(game, 'folders'), folders);
+  const log = new LossLog();
+  const ctx: WorldContext = { world, system, rules, setting, media, log, made: { folderOf: () => undefined } };
+  const out: WorldOut = { docs: {}, scenes: [], files: {}, game: { players: [opts.gm] } };
+  for (const part of WORLD_PARTS) part.run(ctx, out);
   const name = opts.name?.trim() ? opts.name.trim() : world.title;
-  const active = scenes.find((s) => s.active) ?? scenes[0];
-  if (!active) await writeJson(join(game, 'scenes/main/scene.json'), { name: 'Main', darkness: 0 });
+  await writeGame(game, out);
   const file: Game = {
     id: basename(game),
     name,
     system: system.id,
     rules,
     format: FORMAT,
-    scene: active?.id ?? 'main',
+    scene: 'main',
     players: [opts.gm],
+    ...out.game,
   };
   await writeJson(join(game, 'game.json'), file);
-  const clock = foundryClock(setting);
-  if (clock) await writeJson(join(game, 'time.json'), clock);
   return {
     name,
-    scenes: scenes.length,
-    actors: actors.actors.length,
-    tokens: scenes.reduce((n, s) => n + s.tokens.length, 0),
-    journals: entries.journals.length,
-    tables: entries.tables.length,
-    playlists: entries.playlists.length,
-    macros: macros.macros.length,
+    scenes: out.scenes.length,
+    actors: count(out, 'actors'),
+    tokens: out.scenes.reduce((n, s) => n + s.tokens.length, 0),
+    journals: count(out, 'journals'),
+    tables: count(out, 'tables'),
+    playlists: count(out, 'playlists'),
+    macros: count(out, 'macros'),
     media: await media.copyTo(game),
-    skipped,
+    left: log.list(),
   };
 }

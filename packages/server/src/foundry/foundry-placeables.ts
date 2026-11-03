@@ -1,3 +1,5 @@
+import type { ImportLoss } from '@vtt/core';
+import { lost } from './import-losses.ts';
 import type { Drawing, Note, Point, Region, RegionBehavior, Sound, Template } from '@vtt/shared';
 import { z } from 'zod';
 import { foundryList, sourceOf } from './foundry-lists.ts';
@@ -99,10 +101,9 @@ export interface ConvertedPlaceables {
   templates: Template[];
   sounds: Sound[];
   regions: Region[];
-  skipped: string[];
+  skipped: ImportLoss[];
 }
 
-const plural = (n: number, what: string) => `${n} ${what}${n === 1 ? '' : 's'}`;
 const opt = <K extends string, V>(key: K, value: V | null | undefined) =>
   (value === undefined || value === null || (value as unknown) === '' ? {} : { [key]: value }) as Partial<Record<K, V>>;
 
@@ -248,9 +249,7 @@ function soundsOf(s: z.infer<typeof FoundryPlaceables>, look: PlaceableLookups, 
     if (!src) missing.push(snd.path ?? '(none)');
     return placed(look.floors, snd, src ? soundOf(snd, src, feet) : undefined);
   });
-  const skipped = missing.length
-    ? [`${plural(missing.length, 'sound')} whose file is not in the module (${missing.join(', ')})`]
-    : [];
+  const skipped = missing.length ? [lost('Ambient sounds whose file could not be found', missing.length, missing)] : [];
   return { sounds: numbered('sound', sounds) as Sound[], skipped };
 }
 
@@ -279,8 +278,7 @@ export function foundryPlaceables(data: unknown, look: PlaceableLookups): Conver
     ...s.regions.map((r) => regionOf(r, unknown, floors)),
     ...levelsOwn.regions,
   ]) as Region[];
-  if (unknown.length)
-    skipped.push(`${plural(unknown.length, 'region behaviour')} we have no match for (${unknown.join(', ')})`);
+  if (unknown.length) skipped.push(lost('Region behaviours we have no match for', unknown.length, unknown));
   return {
     drawings: numbered(
       'drawing',

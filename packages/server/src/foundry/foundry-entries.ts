@@ -1,3 +1,4 @@
+import { lost as lostThings, type PlacedLoss } from './import-losses.ts';
 import { freeId, slugify } from '@vtt/core';
 import type { Journal, JournalPage, Playlist, RollTable, Track } from '@vtt/shared';
 import { z } from 'zod';
@@ -77,10 +78,8 @@ export interface ConvertedEntries {
   pages: (foundryId: string) => string | undefined;
   /** Our playlist id for a Foundry playlist id. */
   playlistIds: (foundryId: string) => string | undefined;
-  skipped: string[];
+  skipped: PlacedLoss[];
 }
-
-const plural = (n: number, what: string) => `${n} ${what}${n === 1 ? '' : 's'}`;
 
 /** Parses what it can of a list, leaving out what it can't. */
 export function each<T extends z.ZodType>(schema: T, list: unknown[] | undefined): z.infer<T>[] {
@@ -110,7 +109,7 @@ interface Maps {
   entries: Map<string, string>;
   pages: Map<string, string>;
   playlists: Map<string, string>;
-  skipped: string[];
+  skipped: PlacedLoss[];
   folderOf?: FolderLookup;
 }
 
@@ -134,9 +133,10 @@ function journalOf(j: z.infer<typeof FoundryJournal>, id: string, media: MediaLo
     return page ?? [];
   });
   if (lost.length)
-    maps.skipped.push(
-      `journal "${j.name}": ${plural(lost.length, 'page')} of a kind we have no match for (${lost.join(', ')})`,
-    );
+    maps.skipped.push({
+      ...lostThings('Journal pages of a kind we have no match for', lost.length, lost),
+      place: j.name,
+    });
   if (j._id) maps.entries.set(j._id, id);
   return { id, name: j.name, ...inFolder(maps.folderOf, j.folder), pages };
 }
@@ -169,9 +169,10 @@ function playlistOf(p: z.infer<typeof FoundryPlaylist>, id: string, media: Media
     return [{ id: trackId(s.name, 'track'), name: s.name, src, ...extra }];
   });
   if (missing.length)
-    maps.skipped.push(
-      `playlist "${p.name}": ${plural(missing.length, 'track')} whose file is not in the module (${missing.join(', ')})`,
-    );
+    maps.skipped.push({
+      ...lostThings('Playlist tracks whose file could not be found', missing.length, missing),
+      place: p.name,
+    });
   if (p._id) maps.playlists.set(p._id, id);
   return { id, name: p.name, ...inFolder(maps.folderOf, p.folder), mode: MODES[p.mode ?? 0] ?? 'sequence', tracks };
 }

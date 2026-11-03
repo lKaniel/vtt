@@ -134,7 +134,11 @@ describe('Foundry placeables', () => {
       },
     ]);
     for (const s of out.sounds) SoundSchema.parse(s);
-    expect(out.skipped).toContain('1 sound whose file is not in the module (sounds/missing.ogg)');
+    expect(out.skipped).toContainEqual({
+      what: 'Ambient sounds whose file could not be found',
+      count: 1,
+      examples: ['sounds/missing.ogg'],
+    });
   });
 
   it('bring regions with the behaviours we have', () => {
@@ -154,7 +158,11 @@ describe('Foundry placeables', () => {
       },
     ]);
     for (const r of out.regions) RegionSchema.parse(r);
-    expect(out.skipped).toContain('1 region behaviour we have no match for (executeMacro)');
+    expect(out.skipped).toContainEqual({
+      what: 'Region behaviours we have no match for',
+      count: 1,
+      examples: ['executeMacro'],
+    });
   });
 });
 

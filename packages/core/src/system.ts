@@ -43,6 +43,13 @@ export interface SystemDefinition<TToken = unknown, TActor = unknown> extends Sy
   foundry?: FoundrySheets;
 }
 
+/** Things an import could not bring along: what they are (a phrase like "Walls that stop nothing"), how many, and some of their names. */
+export interface ImportLoss {
+  what: string;
+  count: number;
+  examples?: string[];
+}
+
 /** A system's reading of Foundry VTT actors (see server/src/foundry/foundry-world.ts). */
 export interface FoundrySheets {
   /** The Foundry system whose actors it reads, e.g. "dnd5e". */
@@ -53,7 +60,7 @@ export interface FoundrySheets {
    * A Foundry actor as sheet fields, besides the id, name, picture, ownership
    * and folder the import sets itself; and what could not come along.
    */
-  sheet: (actor: unknown, rules: string) => { sheet: Record<string, unknown>; skipped: string[] };
+  sheet: (actor: unknown, rules: string) => { sheet: Record<string, unknown>; skipped: ImportLoss[] };
   /** An unlinked Foundry token's own changes to its actor, as token delta fields. */
   delta: (delta: unknown) => Record<string, unknown>;
 }
