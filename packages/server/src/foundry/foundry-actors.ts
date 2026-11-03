@@ -1,3 +1,4 @@
+import { madeFrom } from './foundry-origin.ts';
 import type { ImportLoss } from '@vtt/core';
 import { lost, placed, type PlacedLoss } from './import-losses.ts';
 import { foundryOwnership, type OwnershipOf } from './foundry-users.ts';
@@ -211,7 +212,7 @@ export function foundryTokens(
   const orphans: string[] = [];
   const tokens = (Array.isArray(raw) ? raw : []).map((x) => {
     const t = obj(x);
-    const token = tokenOf(t, nextId(str(t.name) ?? 'token'), ctx);
+    const token = madeFrom(tokenOf(t, nextId(str(t.name) ?? 'token'), ctx), t);
     if (!token.actor) orphans.push(String(token.name));
     return token;
   });

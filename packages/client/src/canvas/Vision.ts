@@ -1,5 +1,5 @@
 import {
-  activeAt,
+  lightShines,
   isGm,
   onLevel,
   type LightSource,
@@ -158,8 +158,8 @@ export class Vision {
     const yours = new Set(viewers.map((v) => v.token.id));
     const level = this.session.levels.current;
     const darkness = this.session.world?.darkness ?? 0;
-    const shines = (l: { level?: string; activeAt?: [number, number] }) =>
-      onLevel(l, level) && activeAt(l.activeAt, darkness);
+    const shines = (l: { level?: string; activeAt?: [number, number]; hidden?: boolean }) =>
+      onLevel(l, level) && lightShines(l, darkness);
     return [
       ...[...this.session.chunks.values()].flatMap((c) => c.lights.filter(shines)),
       ...tokenLights(viewers.map((v) => ({ ...v.token, light: lightOf(v.token), x: v.at[0], y: v.at[1] }))),

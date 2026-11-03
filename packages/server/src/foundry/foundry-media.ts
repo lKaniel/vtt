@@ -1,4 +1,4 @@
-import { statSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import { copyFile, mkdir, readFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join } from 'node:path';
 import { mediaKind } from '@vtt/core';
@@ -60,6 +60,29 @@ export class FoundryMedia {
     this.used.set(path, file);
     return `/assets/foundry/${path}`;
   };
+
+  /** Every media file a Foundry pattern with `*` in its name matches ("maps/bw_tree*"), as our URLs, by name. */
+  glob(pattern: string): string[] {
+    const path = decoded(pattern).replace(/^\/+/, '');
+    const dir = dirname(path);
+    const name = new RegExp(
+      `^${basename(path)
+        .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*')}$`,
+      'i',
+    );
+    if (dir.split('/').includes('..') || !this.data) return [];
+    let files: string[];
+    try {
+      files = readdirSync(join(this.data, dir));
+    } catch {
+      return [];
+    }
+    return files
+      .filter((f) => name.test(f))
+      .sort((a, b) => a.localeCompare(b))
+      .flatMap((f) => this.lookup(dir === '.' ? f : `${dir}/${f}`) ?? []);
+  }
 
   /** Copies every file used into `assets/foundry/` of the game folder; how many. */
   async copyTo(game: string): Promise<number> {

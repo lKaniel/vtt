@@ -1,3 +1,4 @@
+import { carried, madeFrom } from './foundry-origin.ts';
 import type { ImportLoss } from '@vtt/core';
 import { lost, lost as lostThings } from './import-losses.ts';
 import { gridSizePatch, type SceneEntry, type Tile, type Wall } from '@vtt/shared';
@@ -102,6 +103,8 @@ export interface SceneLookups {
   pages?: (foundryId: string) => string | undefined;
   /** The caller places the tokens itself (a world import), so they aren't reported as left out. */
   keepsTokens?: boolean;
+  /** The caller turns Monk's Active Tiles into triggers itself (the world import), so they aren't reported here. */
+  keepsTriggers?: boolean;
 }
 
 /** Converts one Foundry scene; `media` finds the copied pictures and sounds. */
@@ -135,7 +138,7 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     tiles: [
       ...background,
       ...floorBackgrounds(s, { x, y }, lookupIn(media), floors),
-      ...tilesOf(s, { find: lookupIn(media), skipped, on, grid }),
+      ...tilesOf(s, { find: lookupIn(media), skipped, on, grid, keepsTriggers: lookups.keepsTriggers }),
       ...foregroundTile(s, { x, y }, lookupIn(media)),
     ],
     walls: wallsOf(s, grid, skipped, on),
@@ -277,6 +280,7 @@ interface TileContext {
   skipped: ImportLoss[];
   on: OnFloors;
   grid: Grid;
+  keepsTriggers?: boolean;
 }
 
 /** 3D Canvas tiles with a glTF model that came along, as model tiles; those without, reported. */
@@ -287,7 +291,13 @@ function modelTiles(tiles: FoundryScene['tiles'], c: TileContext): Tile[] {
     if (!is3dModel(t.texture?.src ?? t.img) || t.width <= 0 || t.height <= 0) continue;
     const model = tileModelOf(sourceOf(t), c.grid, (p) => c.find(p));
     if (!model) lost++;
-    else out.push({ id: '', kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src: BLANK, model, ...c.on(t) });
+    else
+      out.push(
+        madeFrom(
+          { id: '', kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src: BLANK, model, ...c.on(t) },
+          sourceOf(t),
+        ),
+      );
   }
   if (lost) c.skipped.push(lostThings('3D Canvas tiles without a glTF model in the Data folder (drawn shapes)', lost));
   return out;
@@ -303,26 +313,37 @@ function tilesOf(s: FoundryScene, c: TileContext): Tile[] {
   const sorted = [...s.tiles].sort((a, b) => order(a) - order(b));
   const out: Tile[] = modelTiles(sorted, c);
   const missing: string[] = [];
-  const triggers = activeTilesNote(sorted);
+  const triggers = c.keepsTriggers ? undefined : activeTilesNote(sorted);
   if (triggers) skipped.push(triggers);
   for (const t of sorted) {
     const path = t.texture?.src ?? t.img;
     if (is3dModel(path)) continue;
     const src = find(path);
     if (src && t.width > 0 && t.height > 0) {
-      out.push({ id: '', kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src, ...roofOf(t, fg), ...on(t) });
+      const tile: Tile = {
+        id: '',
+        kind: 'image',
+        x: t.x,
+        y: t.y,
+        w: t.width,
+        h: t.height,
+        src,
+        ...roofOf(t, fg),
+        ...on(t),
+      };
+      out.push(madeFrom(tile, sourceOf(t)));
     } else missing.push(path ?? '(none)');
   }
   if (missing.length) skipped.push(lost('Tiles whose picture could not be found', missing.length, missing));
-  return out.map((t, i) => ({ ...t, id: `tile-${i + 1}` }));
+  return out.map((t, i) => carried(t, { ...t, id: `tile-${i + 1}` }));
 }
 
 function wallsOf(s: FoundryScene, grid: Grid, skipped: ImportLoss[], on: OnFloors): Wall[] {
   const walls = s.walls.flatMap((w) => {
     const wall = wallOf(w, feetIn(grid));
-    return wall ? [{ ...wall, ...on(w) }] : [];
+    return wall ? [madeFrom({ ...wall, ...on(w) }, sourceOf(w))] : [];
   });
   const inert = s.walls.length - walls.length;
   if (inert) skipped.push(lost('Walls that stop nothing', inert));
-  return walls.map((wall, i) => ({ id: `wall-${i + 1}`, ...wall }));
+  return walls.map((wall, i) => carried(wall, { id: `wall-${i + 1}`, ...wall }));
 }

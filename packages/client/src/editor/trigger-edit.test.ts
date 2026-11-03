@@ -3,7 +3,16 @@ import { blankStep, getStep, problemOf, setStep, stepFields, stepTypes } from '.
 
 describe('trigger steps', () => {
   it('offers the trigger actions on tiles, and the region behaviours too on regions', () => {
-    expect(stepTypes('tile')).toEqual(['image', 'visibility', 'sound', 'teleport', 'door', 'message', 'journal']);
+    expect(stepTypes('tile')).toEqual([
+      'image',
+      'visibility',
+      'sound',
+      'teleport',
+      'door',
+      'message',
+      'activate',
+      'journal',
+    ]);
     expect(stepTypes('region')).toEqual(expect.arrayContaining(['difficult', 'trap', 'level', 'reveal', 'door']));
   });
 

@@ -38,6 +38,7 @@ const BLANK: Record<string, Omit<Step, 'type'>> = {
   door: { wall: '', to: 'toggle' },
   message: { text: '' },
   journal: { entry: '' },
+  activate: { target: { coll: 'tiles', id: '' }, to: 'toggle' },
   difficult: {},
   trap: {},
   level: { to: '' },
@@ -78,6 +79,11 @@ const FIELDS: Record<string, StepField[]> = {
   journal: [
     { key: 'entry', label: 'Entry', kind: 'select', choices: 'journals' },
     { key: 'page', label: 'Page id', kind: 'text' },
+  ],
+  activate: [
+    { key: 'target.coll', label: 'What', kind: 'select', options: ['tiles', 'regions'] },
+    { key: 'target.id', label: 'Which', kind: 'select', choices: 'target' },
+    { key: 'to', label: 'Turn it', kind: 'select', options: ['on', 'off', 'toggle'] },
   ],
   difficult: [{ key: 'multiplier', label: 'Cost ×', kind: 'number' }],
   trap: [

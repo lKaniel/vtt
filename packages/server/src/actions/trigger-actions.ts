@@ -107,6 +107,7 @@ export class TriggerActions {
       door: (a) => this.door(a.wall, a.to),
       message: (a) => this.say(a.text, !!a.gmOnly),
       journal: (a) => this.journal(a.entry, a.page),
+      activate: (a) => this.activate(a.target, a.to),
     };
     return (acts[action.type] as Act<TriggerAction['type']>)(action, ctx);
   }
@@ -146,6 +147,17 @@ export class TriggerActions {
     }
     const doc = this.store.docs.get(this.coll(target.coll), target.id);
     if (doc) this.update(target.coll, target.id, { hidden: hidden(doc.hidden) });
+    return false;
+  }
+
+  /** Turns a tile's trigger or a region off or on. */
+  private activate(target: { coll: 'tiles' | 'regions'; id: string }, to: 'on' | 'off' | 'toggle'): false {
+    const doc = this.store.docs.get(this.coll(target.coll), target.id);
+    const trigger = target.coll === 'tiles' ? (doc?.trigger as { disabled?: boolean } | undefined) : undefined;
+    const now = target.coll === 'tiles' ? !!trigger?.disabled : !!doc?.disabled;
+    const disabled = to === 'toggle' ? !now : to === 'off';
+    if (target.coll === 'regions') this.update('regions', target.id, { disabled });
+    else if (trigger) this.update('tiles', target.id, { trigger: { ...trigger, disabled } });
     return false;
   }
 

@@ -30,4 +30,16 @@ describe('copying a world’s media', () => {
     expect(await readFile(join(copied, 'house.bin'), 'utf8')).toBe('bin');
     expect(await readFile(join(copied, 'tex/wood.png'), 'utf8')).toBe('png');
   });
+
+  it("finds the pictures a Monk's Active Tiles pattern names", async () => {
+    const data = await mkdtemp(join(tmpdir(), 'foundry-data-'));
+    for (const f of ['bw_tree_01.webp', 'bw_tree_02.webp', 'bw_rock.webp', 'bw_tree.txt'])
+      await put(join(data, 'modules/kit/props', f), 'x');
+    const media = new FoundryMedia({ dir: join(data, 'worlds/w'), id: 'w' }, data);
+    expect(media.glob('modules/kit/props/bw_tree*')).toEqual([
+      '/assets/foundry/modules/kit/props/bw_tree_01.webp',
+      '/assets/foundry/modules/kit/props/bw_tree_02.webp',
+    ]);
+    expect(media.glob('modules/../secret/*')).toEqual([]);
+  });
 });

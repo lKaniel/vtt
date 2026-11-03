@@ -7,9 +7,9 @@ import { z } from 'zod';
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digits and dashes');
 const point = z.tuple([z.number(), z.number()]);
 
-/** Something on the scene an action points at: a tile, token, region, drawing, note or sound. */
+/** Something on the scene an action points at: a tile, token, region, drawing, note, sound or light. */
 export const TriggerTargetSchema = z.object({
-  coll: z.enum(['tiles', 'tokens', 'regions', 'drawings', 'notes', 'sounds']),
+  coll: z.enum(['tiles', 'tokens', 'regions', 'drawings', 'notes', 'sounds', 'lights']),
   id,
 });
 export type TriggerTarget = z.infer<typeof TriggerTargetSchema>;
@@ -18,7 +18,7 @@ export type TriggerTarget = z.infer<typeof TriggerTargetSchema>;
 export const TRIGGER_ACTIONS = [
   /** The tile shows the next picture of `images`, round and round; no `tile`: the tile that was triggered. */
   z.object({ type: z.literal('image'), tile: id.optional(), images: z.array(z.string().min(1)).min(1) }),
-  /** Shows, hides or flips whether players see something. */
+  /** Shows, hides or flips whether players see something (a light: whether it shines). */
   z.object({ type: z.literal('visibility'), target: TriggerTargetSchema, to: z.enum(['show', 'hide', 'toggle']) }),
   /** Plays a sound once for everyone on the scene. */
   z.object({ type: z.literal('sound'), src: z.string().min(1), volume: z.number().min(0).max(1).optional() }),
@@ -28,6 +28,12 @@ export const TRIGGER_ACTIONS = [
   z.object({ type: z.literal('door'), wall: id, to: z.enum(['open', 'closed', 'locked', 'toggle']) }),
   /** Posts `text` in chat; `gmOnly` whispers it to the GM. */
   z.object({ type: z.literal('message'), text: z.string().min(1), gmOnly: z.boolean().optional() }),
+  /** Turns a tile's trigger or a region off, on, or round. */
+  z.object({
+    type: z.literal('activate'),
+    target: z.object({ coll: z.enum(['tiles', 'regions']), id }),
+    to: z.enum(['on', 'off', 'toggle']),
+  }),
   /** Opens a journal entry (at `page`) on the screens of the players, and shares it with them. */
   z.object({ type: z.literal('journal'), entry: id, page: id.optional() }),
 ] as const;

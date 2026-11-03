@@ -1,6 +1,6 @@
 import type { Doc, DocStore } from '@vtt/core';
 import {
-  activeAt,
+  lightShines,
   anchorChunk,
   type Chunk,
   chunksInRect,
@@ -139,7 +139,7 @@ export class SceneState {
   lights(): LightSource[] {
     const { darkness, levels } = this.world;
     const out: LightSource[] = [];
-    for (const c of this.chunks.values()) out.push(...c.lights.filter((l) => activeAt(l.activeAt, darkness)));
+    for (const c of this.chunks.values()) out.push(...c.lights.filter((l) => lightShines(l, darkness)));
     for (const t of this.tokens.values()) {
       const level = levels?.length ? tokenLevel(levels, t) : undefined;
       out.push(...tokenLights([{ ...t, light: lightOf(t) }]).map((l) => ({ ...l, ...(level && { level }) })));

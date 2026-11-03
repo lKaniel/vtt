@@ -304,6 +304,8 @@ export const PlacedLightSchema = LightSchema.extend({
   ...onLevel,
   /** Shines only while the scene's darkness is in this band ("only at night"). */
   activeAt: DarknessBandSchema.optional(),
+  /** Put out: it doesn't shine until a trigger (or the GM) lights it again. */
+  hidden: z.boolean().optional(),
 });
 export type PlacedLight = z.infer<typeof PlacedLightSchema>;
 

@@ -70,7 +70,7 @@ export async function importFoundryWorld(from: string, game: string, opts: World
     setting,
     media,
     log,
-    made: { folderOf: () => undefined },
+    made: { folderOf: () => undefined, scenes: new Map() },
     gm: opts.gm,
   };
   const out: WorldOut = { docs: {}, scenes: [], files: {}, game: {} };
