@@ -1,5 +1,4 @@
 import { type Edition, toEdition } from '@vtt/system-dnd5e';
-import { FilterIcon, LayoutGridIcon, ListIcon, SearchIcon } from 'lucide-react';
 import { useState } from 'react';
 import { CATEGORIES, type Category, compendium, type Entry, type Facet, type Search } from '../content/compendium.ts';
 import { type MessageKey, t } from '../i18n/index.ts';
@@ -11,10 +10,9 @@ import { EntryDetail } from './compendium/EntryDetail.tsx';
 import { HomebrewPanel } from './HomebrewPanel.tsx';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
-import { Input } from './kit/input.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Toggle } from './kit/toggle.tsx';
-import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
+import { FilterToggle, SearchField, type ViewMode, ViewModes } from './directory/parts.tsx';
 
 // The Compendium tab (the GM's, and trusted players' for their own sheets):
 // the SRD books and the game's packs and homebrew, searched by name or by
@@ -31,7 +29,7 @@ const HINT: Record<Category, MessageKey> = {
   spells: 'compendium.hint.spells',
   features: 'compendium.hint.features',
 };
-const VIEWS = ['list', 'grid'] as const;
+const VIEWS = ['list', 'grid'] as const satisfies readonly ViewMode[];
 type View = (typeof VIEWS)[number];
 /** Entries shown at first and added per "Show more". */
 const PAGE = 120;
@@ -81,8 +79,7 @@ function useCompendium(session: Session) {
       setShown(PAGE);
       setOpen(undefined);
     },
-    pickView: (v: string) => {
-      if (!v) return;
+    pickView: (v: ViewMode) => {
       setView(v as View);
       writePref('compendium-view', v);
     },
@@ -169,25 +166,8 @@ function Toolbar({ s }: Readonly<{ s: State }>) {
             ]}
           />
         )}
-        <Toggle
-          className="ml-auto"
-          variant="plate"
-          pressed={s.filters}
-          onPressedChange={s.toggleFilters}
-          aria-label={t('compendium.filters')}
-          title={t('compendium.filters')}
-        >
-          <FilterIcon />
-          {picked > 0 && picked}
-        </Toggle>
-        <ToggleGroup type="single" value={s.view} onValueChange={s.pickView} aria-label={t('compendium.view')}>
-          <ToggleGroupItem value="list" aria-label={t('compendium.view.list')} title={t('compendium.view.list')}>
-            <ListIcon />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="grid" aria-label={t('compendium.view.grid')} title={t('compendium.view.grid')}>
-            <LayoutGridIcon />
-          </ToggleGroupItem>
-        </ToggleGroup>
+        <FilterToggle className="ml-auto" pressed={s.filters} onPressedChange={s.toggleFilters} picked={picked} />
+        <ViewModes value={s.view} onChange={s.pickView} modes={VIEWS} />
       </div>
     </>
   );
@@ -231,19 +211,7 @@ function SearchBox({
     category === 'all'
       ? t('compendium.searchAll')
       : t('compendium.search', { what: t(`compendium.cat.${category}`).toLowerCase() });
-  return (
-    <div className="relative">
-      <SearchIcon className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-      <Input
-        type="search"
-        className="lib-search pl-7"
-        value={query}
-        onChange={(e) => onQuery(e.target.value)}
-        placeholder={label}
-        aria-label={label}
-      />
-    </div>
-  );
+  return <SearchField value={query} onChange={onQuery} label={label} />;
 }
 
 function Results({

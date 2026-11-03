@@ -44,7 +44,7 @@ export function CompendiumFilters({ category, rules, picks, onPick, sort, onSort
   const sortBy = SORTABLE[category];
   const any = Object.values(picks).some(Boolean);
   return (
-    <div className="grid grid-cols-2 gap-1.5" role="group" aria-label={t('compendium.filters')}>
+    <div className="grid grid-cols-2 gap-1.5" role="group" aria-label={t('list.filters')}>
       {FACETS[category].map((facet) => (
         <FacetSelect
           key={facet}
@@ -68,7 +68,7 @@ export function CompendiumFilters({ category, rules, picks, onPick, sort, onSort
       )}
       {any && (
         <Button variant="ghost" size="sm" onClick={onClear}>
-          {t('compendium.clear')}
+          {t('list.clear')}
         </Button>
       )}
     </div>

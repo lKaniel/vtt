@@ -65,8 +65,11 @@ export class Scenes implements SessionPart {
     this.s.send({ t: 'sendPlayer', player, ...(scene ? { scene } : {}) });
   }
 
-  create(name: string): void {
-    this.s.edits.sendChanges('new scene', newSceneOps(this.s.docs, name).ops);
+  /** A new scene; its id. */
+  create(name: string): string {
+    const { id, ops } = newSceneOps(this.s.docs, name);
+    this.s.edits.sendChanges('new scene', ops);
+    return id;
   }
 
   duplicate(scene: string): void {

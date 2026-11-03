@@ -60,13 +60,17 @@ test.describe('a closed door', () => {
 });
 
 test('Play here takes everyone to a new scene', async ({ page, seat }) => {
+  test.slow(); // two tables, a dialog and a right-click menu
   await atTable(page, GM);
   const player = await seat(PLAYER_2);
   await page.getByRole('tab', { name: 'Scenes' }).click();
-  await page.getByRole('textbox', { name: 'New scene name' }).fill('Cellar');
-  await page.getByRole('button', { name: 'Add', exact: true }).click();
-  const cellar = page.getByRole('listitem').filter({ hasText: 'Cellar' });
-  await cellar.getByRole('button', { name: 'Play here' }).click();
+  await page.getByRole('button', { name: 'New scene' }).click();
+  // A new scene opens its settings, to name it.
+  const settings = page.getByRole('dialog');
+  await settings.getByRole('textbox', { name: 'Name', exact: true }).fill('Cellar');
+  await settings.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('listitem').filter({ hasText: 'Cellar' }).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Play here' }).click();
 
   await expect(player.getByRole('banner')).toContainText('Cellar');
   await expect(page.getByRole('banner')).toContainText('Cellar');
