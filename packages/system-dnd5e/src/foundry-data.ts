@@ -30,6 +30,20 @@ export const plainText = (html: string): string =>
     .replace(/\s+/g, ' ')
     .trim();
 
+/** HTML as paragraphs of plain text, a blank line between them and line breaks kept (a biography). */
+export const paragraphs = (html: string): string =>
+  html
+    .split(/<\/(?:p|div|h[1-6]|li|blockquote)>/i)
+    .map((block) =>
+      block
+        .split(/<br\s*\/?>/i)
+        .map(plainText)
+        .filter(Boolean)
+        .join('\n'),
+    )
+    .filter(Boolean)
+    .join('\n\n');
+
 /** A field only when it has a value: spread it into an object. */
 export const opt = <K extends string, V>(key: K, value: V | undefined | false): Partial<Record<K, V>> =>
   value === undefined || value === false ? {} : ({ [key]: value } as Record<K, V>);

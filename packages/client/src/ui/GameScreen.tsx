@@ -5,7 +5,7 @@ import { MapView } from '../canvas/MapView.ts';
 import { Session } from '../session/session.ts';
 import { ActionBar } from './ActionBar.tsx';
 import { listenToClipboard, listenToKeys, listenToSpace, toggleSheet } from '../keys/game-keys.ts';
-import { Sheets } from './PoppedSheets.tsx';
+import { Sheets } from './sheet/PoppedSheets.tsx';
 import { ClockBar } from './clock/ClockBar.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';

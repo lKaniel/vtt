@@ -39,6 +39,16 @@ export function viewToken(token: Token, player: Player, content: Content): Token
     const senses = sensesOf(token, token.monster ? content.monsters.get(token.monster) : undefined);
     return { ...token, ...look, sheet, senses };
   }
-  const { monster: _m, stats: _s, hp: _h, tempHp: _t, inventory: _i, own: _o, currency: _c, ...visible } = token;
+  const {
+    monster: _m,
+    stats: _s,
+    hp: _h,
+    tempHp: _t,
+    inventory: _i,
+    own: _o,
+    currency: _c,
+    biography: _b,
+    ...visible
+  } = token;
   return { ...visible, ...look, health: healthOf(sheet.hp, sheet.maxHp) };
 }

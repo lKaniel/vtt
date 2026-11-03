@@ -1,6 +1,6 @@
 import { currentTurn } from '@vtt/system-dnd5e';
-import type { SheetProps } from './CharacterSheet.tsx';
-import { Button } from './kit/button.tsx';
+import type { SheetProps } from './sheet-props.ts';
+import { Button } from '../kit/button.tsx';
 
 // A legendary creature's pool of legendary actions, its legendary resistance
 // and its lair actions, under its features. The GM spends legendary actions

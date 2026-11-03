@@ -1,19 +1,15 @@
-import { XIcon } from 'lucide-react';
 import { isGm, type Level, levelOf } from '@vtt/shared';
-import { editionOf, toEdition } from '@vtt/system-dnd5e';
-import { gameContent } from '../content/content.ts';
-import { setOwnership, setStat } from '../play/token-edit.ts';
-import type { SheetProps } from './CharacterSheet.tsx';
-import { ClassesEdit } from './ClassesEdit.tsx';
-import { Check, Field, NumberInput, TextInput } from './EditorFields.tsx';
+import { setOwnership } from '../../play/token-edit.ts';
+import { Check, Field, NumberInput, TextInput } from '../EditorFields.tsx';
+import { ColorInput } from '../kit/color-input.tsx';
+import { SelectField } from '../kit/select.tsx';
+import { withKey, type Draft, type Update } from '../sheet-model.ts';
 import { LookFields } from './SheetLook.tsx';
-import { withKey, type Draft, type Update } from './sheet-model.ts';
-import { Button } from './kit/button.tsx';
-import { ColorInput } from './kit/color-input.tsx';
-import { SelectField } from './kit/select.tsx';
+import type { SheetProps } from './sheet-props.ts';
 
-// The Details page: who the creature is and which rules build it. Who owns
-// it and whether it hides are the GM's; a trusted owner sees the rest.
+// The Token tab, in edit mode: how the creature stands on the map (picture,
+// colour, size, vision and light, its look) and, for the GM, whether it
+// hides and who owns it.
 
 const SIZES = [
   [0.5, 'Tiny'],
@@ -23,11 +19,13 @@ const SIZES = [
   [4, 'Gargantuan'],
 ] as const;
 
-export function Details(props: Readonly<SheetProps>) {
+export function TokenTab(props: Readonly<SheetProps>) {
   return (
-    <div className="ed-details">
+    <div className="grid grid-cols-2 gap-6">
       <Identity {...props} />
-      <RulesFields {...props} />
+      <div className="ed-col">
+        <LookFields value={props.value} update={props.update} />
+      </div>
     </div>
   );
 }
@@ -59,7 +57,6 @@ function Identity({ session, value, update }: Readonly<SheetProps>) {
         </Field>
         <LightFields value={value} update={update} />
       </div>
-      <LookFields value={value} update={update} />
       {session.isGm() && (
         <>
           <Check label="Hidden from players" checked={value.hidden} onChange={set('hidden', true)} />
@@ -133,61 +130,5 @@ function OwnershipFields({ session, value, update }: Readonly<Pick<SheetProps, '
         ))}
       </div>
     </>
-  );
-}
-
-function RulesFields({ session, value, update }: Readonly<SheetProps>) {
-  const stat =
-    (key: Parameters<typeof setStat>[1], now = false) =>
-    (v: unknown) =>
-      update((d) => setStat(d, key, v), now);
-  const rules = editionOf(value, session.world ?? {});
-  return (
-    <div className="ed-col">
-      <h4>Rules</h4>
-      <Field label="Monster stat block" wide>
-        <TextInput
-          value={value.monster}
-          onChange={(v) => update((d) => withKey(d, 'monster', v))}
-          list="sheet-monsters"
-          placeholder="none: a character"
-        />
-      </Field>
-      <datalist id="sheet-monsters">
-        {[...gameContent(rules).monsters.values()].map((m) => (
-          <option key={m.id} value={m.id} label={m.name} />
-        ))}
-      </datalist>
-      <Field label="Rules" wide>
-        <SelectField
-          value={value.stats?.rules ?? ''}
-          onValueChange={(r) => stat('rules', true)(r || undefined)}
-          options={[
-            { value: '', label: `World (${toEdition(session.world?.rules)})` },
-            { value: '2014', label: '2014 (SRD 5.1)' },
-            { value: '2024', label: '2024 (SRD 5.2)' },
-          ]}
-        />
-      </Field>
-      <ClassesEdit value={value} update={update} rules={rules} />
-    </div>
-  );
-}
-
-export function RemoveButton({ onClick, className = '' }: Readonly<{ onClick: () => void; className?: string }>) {
-  return (
-    <Button
-      variant="ghost"
-      size="icon-sm"
-      className={`ed-remove ${className}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      aria-label="Remove"
-      title="Remove"
-    >
-      <XIcon />
-    </Button>
   );
 }

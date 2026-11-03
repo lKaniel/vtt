@@ -13,7 +13,7 @@ import { blankChange } from '../../content/effect-edit.ts';
 import { Button } from '../kit/button.tsx';
 import { NumberField } from '../kit/number-field.tsx';
 import { SelectField } from '../kit/select.tsx';
-import { RemoveButton } from '../SheetDetails.tsx';
+import { RemoveButton } from '../RemoveButton.tsx';
 import { choices } from './fields.tsx';
 
 const KEY_OPTIONS = CHANGE_KEYS.map((k) => ({ value: k, label: keyName(k) }));

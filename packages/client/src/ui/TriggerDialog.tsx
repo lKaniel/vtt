@@ -17,7 +17,7 @@ import { Checkbox } from './kit/checkbox.tsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dialog.tsx';
 import { Input } from './kit/input.tsx';
 import { SelectField } from './kit/select.tsx';
-import { RemoveButton } from './SheetDetails.tsx';
+import { RemoveButton } from './RemoveButton.tsx';
 
 // The GM's trigger editor, like Monk's Active Tiles: a tile's chain of
 // actions (and when it runs), or a region's behaviours, row by row. It saves

@@ -55,6 +55,12 @@ describe('viewToken', () => {
     expect(viewToken(rich, ana, srdFor('2024')).currency?.gp).toBe(120);
   });
 
+  it("keeps someone else's biography from other players", () => {
+    const told = { ...hero, biography: 'Born in a ditch.' };
+    expect(viewToken(told, { ...ana, id: 'bob' }, srdFor('2024'))).not.toHaveProperty('biography');
+    expect(viewToken(told, ana, srdFor('2024')).biography).toBe('Born in a ditch.');
+  });
+
   it('adds nothing to tokens without stats', () => {
     const tree = TokenSchema.parse({ id: 'tree', name: 'Tree', x: 0, y: 0 });
     expect(viewToken(tree, ana, srdFor('2024'))).toEqual(tree);

@@ -7,6 +7,7 @@ import {
   moveOnHotbar,
   placeOnHotbar,
   removeFromHotbar,
+  tileFor,
   tileRef,
   floatTransform,
   landTransform,
@@ -41,6 +42,15 @@ function wizard(hotbar?: (string | null)[]): TokenView {
 }
 
 const refs = (t: TokenView) => hotbarTiles(t).map((tile) => (tile ? tileRef(tile) : null));
+
+describe('a tile by its reference', () => {
+  it('finds what the sheet uses: an attack, a spell or a carried item', () => {
+    expect(tileFor(wizard(), 'attack:Quarterstaff')).toMatchObject({ kind: 'attack', name: 'Quarterstaff' });
+    expect(tileFor(wizard(), 'spell:magic-missile')).toMatchObject({ kind: 'spell', slot: 1 });
+    expect(tileFor(wizard(), 'item:potion-of-healing')).toMatchObject({ kind: 'item', uses: '2' });
+    expect(tileFor(wizard(), 'spell:fireball')).toBeUndefined();
+  });
+});
 
 describe('items on the hotbar', () => {
   const potionTile = (t: TokenView) =>

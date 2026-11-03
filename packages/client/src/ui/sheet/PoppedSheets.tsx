@@ -1,8 +1,8 @@
 import { useState, useSyncExternalStore } from 'react';
-import { Popouts } from '../popouts.ts';
-import type { Session } from '../session/session.ts';
+import { Popouts } from '../../popouts.ts';
+import type { Session } from '../../session/session.ts';
 import { CharacterSheet, PoppedSheet } from './CharacterSheet.tsx';
-import { PopOutWindow } from './PopOutWindow.tsx';
+import { PopOutWindow } from '../PopOutWindow.tsx';
 
 /** The sheet open over the map, and every sheet popped out of it into a window of its own. */
 export function Sheets({ session }: Readonly<{ session: Session }>) {

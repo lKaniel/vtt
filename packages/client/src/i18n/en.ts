@@ -2,6 +2,8 @@
 // to. A key is "<screen>.<what>"; `{name}` is filled in by t(). See
 // docs/i18n.md for adding words and languages.
 
+import { EN_SHEET } from './en-sheet.ts';
+
 export const EN = {
   'lang.label': 'Language',
   'lang.hint': 'Kept in this browser. Plugins can add languages.',
@@ -267,6 +269,7 @@ export const EN = {
   'walk.trapUnnamed': 'Trap',
   'walk.blocked': "Can't get there",
 
+  ...EN_SHEET,
   'levels.question': '{name}: which floor?',
   'levels.stay': 'Stay here',
 } as const;
