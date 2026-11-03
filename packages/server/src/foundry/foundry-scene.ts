@@ -1,3 +1,4 @@
+import { foundryWeather } from './foundry-weather.ts';
 import { carried, madeFrom } from './foundry-origin.ts';
 import type { ImportLoss } from '@vtt/core';
 import { lost, lost as lostThings } from './import-losses.ts';
@@ -124,6 +125,8 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     ...lookups,
   });
   skipped.push(...lost);
+  const sky = foundryWeather(data);
+  skipped.push(...sky.skipped);
   const scene: Omit<SceneEntry, 'id'> = {
     name: s.name,
     ...(gridSizePatch(grid.size) as { gridSize: number; chunkSize: number }),
@@ -135,6 +138,7 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     ...navOf(s, lookupIn(media)),
     ...(floors ? { levels: floors.levels } : {}),
     ...view3dOf(data, media),
+    ...(sky.weather ? { weather: sky.weather } : {}),
     tiles: [
       ...background,
       ...floorBackgrounds(s, { x, y }, lookupIn(media), floors),

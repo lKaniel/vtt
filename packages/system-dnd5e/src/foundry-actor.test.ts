@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { foundryDelta, foundrySheet, foundrySheets } from './foundry-actor.ts';
+import { foundryDelta, foundryHomebrew, foundrySheet, foundrySheets } from './foundry-actor.ts';
+import { homebrewIssues } from './homebrew.ts';
 import { ActorSchema } from './token-schema.ts';
 
 // Foundry's dnd5e system data (v3 to v5 field names; older ones where they differ).
@@ -244,6 +245,49 @@ describe('foundrySheet', () => {
       sheet: {},
       skipped: [{ what: 'Sheets of a kind we have no match for', count: 1, examples: ['vehicle'] }],
     });
+  });
+});
+
+describe('an Item Piles actor', () => {
+  it('is a pile of loot, or a merchant', () => {
+    const pile = (type: string) => ({
+      ...goblin,
+      name: 'Chest',
+      flags: { 'item-piles': { data: { enabled: true, type } } },
+    });
+    expect(sheet(pile('pile')).sheet.pile).toEqual({ kind: 'loot' });
+    expect(sheet(pile('merchant')).sheet.pile).toEqual({ kind: 'merchant' });
+    expect(sheet(goblin).sheet).not.toHaveProperty('pile');
+  });
+});
+
+describe('foundryHomebrew', () => {
+  it("makes the world's own items and spells homebrew, and leaves the SRD's to the Compendium", () => {
+    const amulet = {
+      name: 'Amulet of Dusk',
+      type: 'equipment',
+      system: { attunement: 'required', description: { value: '<p>Dark.</p>' } },
+    };
+    const doc = foundryHomebrew(amulet, 'amulet-of-dusk', '2014');
+    expect(doc).toMatchObject({
+      kind: 'item',
+      id: 'amulet-of-dusk',
+      name: 'Amulet of Dusk',
+      item: { attunement: true },
+    });
+    const blade = {
+      name: 'Dusk Blade',
+      type: 'weapon',
+      system: { type: { value: 'martialM' }, damage: { base: { number: 1, denomination: 8, types: ['slashing'] } } },
+    };
+    expect(homebrewIssues(foundryHomebrew(blade, 'dusk-blade', '2014'))).toEqual([]);
+    expect(homebrewIssues(doc)).toEqual([]);
+    const spell = foundryHomebrew({ name: 'Dusk Bolt', type: 'spell', system: { level: 1 } }, 'dusk-bolt', '2014');
+    expect(spell).toMatchObject({ kind: 'spell', id: 'dusk-bolt', level: 1 });
+    expect(homebrewIssues(spell)).toEqual([]);
+    expect(foundryHomebrew({ name: 'Longsword', type: 'weapon' }, 'longsword', '2014')).toBeUndefined();
+    expect(foundryHomebrew({ name: 'Disguise Self', type: 'spell' }, 'disguise-self', '2014')).toBeUndefined();
+    expect(foundryHomebrew({ name: 'Tough', type: 'feat' }, 'tough', '2014')).toBeUndefined();
   });
 });
 

@@ -60,6 +60,10 @@ What comes along:
   Holes in a floor are left out. Upper floors with their own picture get
   it as a tile on that floor. Tokens keep their elevation, raised onto the
   floor v14 says they are on.
+- **Weather**: FXMaster's rain, snow, clouds, fog, embers and birds (crows,
+  eagles, bats) become the scene's weather layers, about as thick and with
+  their tint; without FXMaster, Foundry's own scene weather. FXMaster's
+  filters (colour, lightning) and its rats stay behind.
 - **Monk's Active Tiles** as tile triggers: clicked (or double-clicked)
   tiles are clicked here, right-click and manual ones are the GM's, and
   "on enter" ones fire when a creature walks on. Picture swaps (and the
@@ -83,7 +87,8 @@ What comes along:
   you, the one importing.
 - **Actors**, in their folders ("Monsters / Goblins"), with their token art,
   and the levels Foundry gave everyone and each user (a player owns their
-  character as before). The sheet is read by the game system (see below).
+  character as before). The sheet is read by the game system (see below);
+  an Item Piles actor becomes a pile of loot or a merchant.
 - Journal entries and roll tables keep who may see them, the same way.
 - **Journal entries** (text and image pages), **roll tables** and
   **playlists**, in their folders.
@@ -138,8 +143,10 @@ prints the same list. Mainly:
 - Foundry's automation: effect changes on keys we have no match for
   (Midi-QOL and DAE flags, macros), and item effects that land on a target
   when the item is used.
-- Items in the Items sidebar (drag items from the Compendium instead),
-  macros, card stacks, chat, combats and the explored fog.
+- Items in the Items sidebar that the Compendium already has (the SRD's,
+  by name) or that live only on sheets (features, classes); the world's
+  own spells and gear become the game's homebrew, with Foundry's ownership.
+- Card stacks, chat, combats and the explored fog.
 - Foundry users' passwords (Foundry keeps only hashes): give your players
   new ones on the game's page.
 - Each user's explored fog.

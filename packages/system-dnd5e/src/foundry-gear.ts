@@ -20,7 +20,7 @@ import type { z } from 'zod';
 
 type WeaponProperty = z.infer<typeof WeaponPropertySchema>;
 
-const GEAR_TYPES = new Set(['weapon', 'equipment', 'consumable', 'tool', 'loot', 'backpack', 'container']);
+export const GEAR_TYPES = new Set(['weapon', 'equipment', 'consumable', 'tool', 'loot', 'backpack', 'container']);
 
 /** The names an SRD id might have: "Leather Armor" is leather, "Crossbow, light" is light-crossbow,
  * "Hunter's Mark" is hunters-mark (but "Healer's Kit" is healer-s-kit). */
@@ -129,7 +129,7 @@ function capacityOf(sys: Loose): { capacity: number } {
 }
 
 /** A Foundry item we have no SRD match for, as an own item. */
-function ownItem(id: string, item: Loose): Item {
+export function ownItem(id: string, item: Loose): Item {
   const [name, sys] = [str(item.name) ?? 'Item', obj(item.system)];
   const weapon = item.type === 'weapon' ? weaponOf(id, name, sys) : undefined;
   if (weapon) return weapon;

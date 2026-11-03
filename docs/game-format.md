@@ -860,6 +860,14 @@ starting kit). A player's character keeps a copy of each one it takes
 and its token carries the copy as `own.classes`, so it works in any game; a
 game's own class of that id wins over the copy.
 
+**Homebrew items and spells.** A homebrew file with `"kind": "spell"` has
+the fields of an SRD spell; one with `"kind": "item"` keeps the item's own
+fields in `item` (a weapon has a `kind` of its own):
+`{ "id": "dusk-blade", "kind": "item", "name": "Dusk Blade", "item": { "type": "weapon", ... } }`.
+They join the game's content like a pack's: sheets carry them by id and
+the Compendium lists them under Homebrew. The Foundry import makes them
+from the world's Items sidebar.
+
 **Encounters and experience.** The GM's Encounter button (beside Start
 combat) weighs the monsters on the scene against the party: the
 player-owned characters with class levels. In 2014 rules the monsters' XP

@@ -9,7 +9,7 @@ import type { FoundryMedia } from './foundry-media.ts';
 import { foundryGrid, foundryScene } from './foundry-scene.ts';
 import { foundryClock } from './foundry-time.ts';
 import { tokenModelOf } from './foundry-3d.ts';
-import { foundryPlayers, type OwnershipOf } from './foundry-users.ts';
+import { foundryOwnership, foundryPlayers, type OwnershipOf } from './foundry-users.ts';
 import { foundryTrigger, SceneIndex } from './foundry-active-tiles.ts';
 import { looseActors, type PropContext, propsOf, splitTokens } from './foundry-props.ts';
 import { originOf } from './foundry-origin.ts';
@@ -278,12 +278,36 @@ const time: WorldPart = {
   },
 };
 
+/** The Items sidebar: the world's own spells and gear become the game's homebrew (the system says how). */
+const homebrew: WorldPart = {
+  id: 'homebrew',
+  run: (ctx, out) => {
+    const { items } = ctx.world.docs;
+    const convert = ctx.system.foundry?.system === ctx.world.system ? ctx.system.foundry.homebrew : undefined;
+    const ownership = ctx.made.ownership ?? foundryOwnership();
+    const nextId = idMaker('item');
+    const kept: string[] = [];
+    const docs = items.flatMap((item) => {
+      const name = typeof item.name === 'string' ? item.name : 'Item';
+      const doc = convert?.(item, nextId(name), ctx.rules);
+      if (!doc) return [];
+      kept.push(String(item._id));
+      const owned = ownership(item.ownership, 'none');
+      return [{ ...doc, ...(owned ? { ownership: owned } : {}) }];
+    });
+    add(out, 'homebrew', docs);
+    const rest = items.filter((i) => !kept.includes(String(i._id)));
+    const what = 'Items in the Items sidebar the Compendium already has, or that only live on sheets';
+    if (rest.length) ctx.log.add([lost(what, rest.length, names(rest))]);
+  },
+};
+
 /** What the world has that has no place in a game here (yet). */
 const leftBehind: WorldPart = {
   id: 'left-behind',
   run: (ctx) => {
     const { world, system } = ctx;
-    const { items, cards } = world.docs;
+    const { cards } = world.docs;
     const losses = [
       ...(system.foundry?.system === world.system
         ? []
@@ -293,9 +317,6 @@ const leftBehind: WorldPart = {
               1,
             ),
           ]),
-      ...(items.length
-        ? [lost('Items in the Items sidebar (drag items from the Compendium instead)', items.length, names(items))]
-        : []),
       ...(cards.length ? [lost('Card stacks', cards.length, names(cards))] : []),
     ];
     ctx.log.add(losses);
@@ -312,5 +333,6 @@ export const WORLD_PARTS: readonly WorldPart[] = [
   scenes,
   activeTiles,
   time,
+  homebrew,
   leftBehind,
 ];

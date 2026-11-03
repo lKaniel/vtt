@@ -62,6 +62,7 @@ const keep = {
   padding: 0,
   grid: { size: 100, type: 1, distance: 5 },
   background: { src: 'assets/maps/keep.webp' },
+  flags: { fxmaster: { effects: { r: { type: 'raintop', options: { density: 0.5 } } } } },
   walls: ['W1'],
   tokens: ['T1', 'T2', 'T3', 'T4'],
   lights: [],
@@ -145,7 +146,16 @@ beforeEach(async () => {
     '!macros!M1': { _id: 'M1', name: 'Hail', type: 'chat', command: 'Well met!' },
     '!macros!M2': { _id: 'M2', name: 'Sword', type: 'script', command: 'dnd5e.documents.macro.rollItem("Sword")' },
   });
-  await db('items', { '!items!I9': { _id: 'I9', name: 'Longsword', type: 'weapon' } });
+  await db('items', {
+    '!items!I9': { _id: 'I9', name: 'Longsword', type: 'weapon' },
+    '!items!I8': {
+      _id: 'I8',
+      name: 'Amulet of Dusk',
+      type: 'equipment',
+      ownership: { default: 2 },
+      system: { attunement: 'required' },
+    },
+  });
   await db('settings', {
     '!settings!X1': { _id: 'X1', key: 'dnd5e.rulesVersion', value: '"legacy"' },
     '!settings!X2': { _id: 'X2', key: 'core.time', value: '90000' },
@@ -190,6 +200,7 @@ describe('importFoundryWorld', () => {
     expect(await readJson(join(dir, 'scenes/the-keep/scene.json'))).toMatchObject({
       name: 'The Keep',
       playlist: 'rain',
+      weather: [{ kind: 'rain', density: 0.5 }],
     });
     expect(await readJson(join(dir, 'scenes/the-keep/tiles.json'))).toMatchObject([
       { id: 'background', src: '/assets/foundry/assets/maps/keep.webp' },
@@ -302,12 +313,23 @@ describe('importFoundryWorld', () => {
     expect(issues.filter((i) => !i.warning)).toEqual([]);
   });
 
+  it("makes the world's own items homebrew, seen by whom Foundry showed them", async () => {
+    const { dir } = await imported();
+    expect(await readJson(join(dir, 'homebrew/amulet-of-dusk.json'))).toMatchObject({
+      id: 'amulet-of-dusk',
+      kind: 'item',
+      name: 'Amulet of Dusk',
+      item: { type: 'gear', attunement: true },
+      ownership: { default: 'observer' },
+    });
+  });
+
   it('says what stayed behind', async () => {
     const { report } = await imported();
     expect(report.left).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          what: 'Items in the Items sidebar (drag items from the Compendium instead)',
+          what: 'Items in the Items sidebar the Compendium already has, or that only live on sheets',
           examples: ['Longsword'],
         }),
         expect.objectContaining({ examples: ['Sam'], count: 1 }),

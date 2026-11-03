@@ -2,7 +2,7 @@ import { type FoundrySheets, freeId, type ImportLoss, slugify } from '@vtt/core'
 import { type Content, srdFor, toEdition } from './content.ts';
 import { at, list, type Loose, num, obj, opt, paragraphs, plainText, str } from './foundry-data.ts';
 import { foundryEffects } from './foundry-effects.ts';
-import { attackOf, byName, gearOf } from './foundry-gear.ts';
+import { attackOf, byName, GEAR_TYPES, gearOf, ownItem } from './foundry-gear.ts';
 import { ownSpell } from './foundry-spells.ts';
 import { stateOf } from './foundry-state.ts';
 import { ABILITIES, type Abilities, DamageTypeSchema, type Stats } from './stats-schema.ts';
@@ -267,10 +267,20 @@ export function foundrySheet(data: unknown, ctx: FoundrySheetContext): Converted
     ...biographyOf(sys),
     ...stateOf(sys, actor.items),
     ...opt('effects', effects.effects.length > 0 && effects.effects),
+    ...pileOf(actor),
   };
   if (monster) return { sheet: { monster: monster.id, ...woundsOf(sys), ...more }, skipped: effects.skipped };
   const built = builtSheet(actor, srd);
   return { sheet: { ...built.sheet, ...more }, skipped: [...built.skipped, ...effects.skipped] };
+}
+
+/** An Item Piles actor (flags["item-piles"]) is a pile of loot or a merchant. */
+function pileOf(actor: Loose): Sheet {
+  const data = obj(at(actor, 'flags.item-piles.data'));
+  return opt(
+    'pile',
+    data.enabled === true && ({ kind: data.type === 'merchant' ? 'merchant' : 'loot' } as Sheet['pile']),
+  );
 }
 
 /** The sheet's biography (HTML in Foundry) as text. */
@@ -294,10 +304,27 @@ function rulesOf(setting: (key: string) => unknown): string | undefined {
   return typeof version === 'string' ? editions[version] : undefined;
 }
 
+/**
+ * An item of the world's Items sidebar as a homebrew document: a spell or
+ * gear the SRD has no match for by name (the SRD's are in the Compendium
+ * already); undefined for those and for features, classes and the like.
+ */
+export function foundryHomebrew(raw: unknown, id: string, rules: string): Record<string, unknown> | undefined {
+  const item = obj(raw);
+  const name = str(item.name);
+  const srd = srdFor(toEdition(rules));
+  if (!name) return undefined;
+  if (item.type === 'spell') return byName(srd.spells, name) ? undefined : { kind: 'spell', ...ownSpell(item, id) };
+  if (!GEAR_TYPES.has(String(item.type)) || byName(srd.items, name)) return undefined;
+  const { id: _id, name: _name, ...own } = ownItem(id, item);
+  return { kind: 'item', id, name, item: own };
+}
+
 /** What the world import reads D&D actors with. */
 export const foundrySheets: FoundrySheets = {
   system: 'dnd5e',
   rules: rulesOf,
   sheet: (actor, rules) => foundrySheet(actor, { rules }),
   delta: foundryDelta,
+  homebrew: foundryHomebrew,
 };

@@ -70,6 +70,11 @@ export interface FoundrySheets {
   sheet: (actor: unknown, rules: string) => { sheet: Record<string, unknown>; skipped: ImportLoss[] };
   /** An unlinked Foundry token's own changes to its actor, as token delta fields. */
   delta: (delta: unknown) => Record<string, unknown>;
+  /**
+   * An item of the world's Items sidebar as a homebrew document (with its
+   * `kind`) under the id `id`; undefined for one the game has no use for.
+   */
+  homebrew?: (item: unknown, id: string, rules: string) => Record<string, unknown> | undefined;
 }
 
 /** A pack a system ships: its manifest and its compendia's documents. */
