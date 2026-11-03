@@ -174,4 +174,36 @@ describe('a scene blueprint', () => {
     expect(created(ops, 'tiles')[0]).toMatchObject({ level: 'ground' });
     expect(created(ops, 'regions')[0]).toMatchObject({ levels: ['ground', 'loft'], behaviors: [{ type: 'stairs' }] });
   });
+
+  it('stands 3D models on the map as invisible tiles that carry them', () => {
+    const { ops } = build({
+      models: [
+        {
+          name: 'Ruined tower',
+          x: 2,
+          y: 2,
+          w: 3,
+          h: 3,
+          src: 'pack://ruins/tower.glb',
+          height: 40,
+          rotation: 90,
+          level: 'ground',
+        },
+        { x: 0, y: 6, w: 8, h: 1, src: '/assets/models/hedge.glb', fill: 'tile', piece: 2 },
+      ],
+    });
+    const [tower, hedge] = created(ops, 'tiles');
+    expect(tower).toMatchObject({
+      id: 'ruined-tower',
+      kind: 'image',
+      src: '/art/ui/blank.svg',
+      x: 200,
+      y: 200,
+      w: 300,
+      h: 300,
+      level: 'ground',
+      model: { src: 'pack://ruins/tower.glb', height: 40, rotation: 90 },
+    });
+    expect(hedge).toMatchObject({ id: 'hedge', model: { src: '/assets/models/hedge.glb', fill: 'tile', piece: 2 } });
+  });
 });

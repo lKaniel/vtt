@@ -48,6 +48,7 @@ name.
 | `render_scene`                   | A top-down picture of a scene (or part of it), with a legend                       |
 | `clear_area`                     | Deletes what lies inside a box                                                     |
 | `go_to_scene`                    | Takes your view, or the whole game, to a scene                                     |
+| `list_assets`                    | The pictures, sounds, videos and 3D models the game may use                        |
 
 ## Building scenes
 
@@ -82,12 +83,22 @@ and a locked vault") and it builds it with the scene tools, all as the GM:
      different floors never share walls. Stairs and lifts are regions with
      a `stairs` (`between: [lower, upper]`) or `elevator` behaviour.
 
+   - 3D (see "The 3D view" in game-format.md and `view3d.md`): `models` stand
+     glTF models (`.glb`, `.gltf`; `list_assets` with `kind: "model"` finds
+     them) over boxes of the map: `src`, `height` and `elevation` in feet,
+     `rotation`, `tilt`, `fill: "tile"` with `piece` squares to repeat one
+     (a hedge, a palisade), `color`, `level`. Each is an image tile with a
+     blank picture carrying `model`, so it shows only in the 3D view.
+     `create_scene` takes `view3d` (`sky`, `ground`, `walls: false` when the
+     models are the walls). A creature's figure is its actor's `model`
+     (`{ "src" }`), set with `edit_documents`.
+
 3. `render_scene` draws what was built (`level`: one floor), so Claude can look and fix it;
    `describe_scene` lists the ids, which `edit_documents` (`<scene>/walls`)
    changes and `clear_area` removes.
 
 The code is `scene-tools.ts`, `scene-blueprint.ts` and `room-walls.ts`
-(blueprints), `scene-picture.ts`, `raster.ts` and `png.ts` (the picture) in
+(blueprints), `asset-tools.ts`, `scene-picture.ts`, `raster.ts` and `png.ts` (the picture) in
 `server/src/mcp/`.
 
 Every tool takes an optional `game` (from `list_games`). Without one it uses

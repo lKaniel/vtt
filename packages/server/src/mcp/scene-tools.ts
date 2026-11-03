@@ -7,6 +7,7 @@ import {
   SCENE_COLLECTIONS,
   type SceneLevel,
   SceneLevelSchema,
+  View3DSettingsSchema,
   tokenLevel,
 } from '@vtt/shared';
 import { type ClientMessage, toEdition } from '@vtt/system-dnd5e';
@@ -84,6 +85,9 @@ const CreateSchema = z.object({
   darkness: z.number().min(0).max(1).optional().describe('0 day to 1 night; set it to stop following the clock'),
   background: z.string().optional().describe('Colour where nothing is drawn'),
   show: z.boolean().default(false).describe('Take your own view there (the players stay put)'),
+  view3d: View3DSettingsSchema.optional().describe(
+    'The 3D view: sky (an equirectangular picture), ground (colour beyond the map), walls (false when models are the walls)',
+  ),
   levels: z
     .array(SceneLevelSchema)
     .optional()
@@ -123,6 +127,7 @@ function createOps(w: Welcome, a: Create): { id: string; ops: Op[] } {
     ...(a.darkness !== undefined && { darkness: a.darkness, darknessFollowsClock: false }),
     ...(a.background && { background: a.background }),
     ...(a.levels?.length && { levels: a.levels }),
+    ...(a.view3d && { view3d: a.view3d }),
   });
   return { id, ops: [...ops, ...groundTile(id, a, grid)] };
 }
