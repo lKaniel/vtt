@@ -1,7 +1,7 @@
 import type { DrawnTile, WorldInfo } from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
-import { figures, tileModels } from './content3d.ts';
+import { figures, tileModels, tileSolids } from './content3d.ts';
 
 // The 3D view stands the model tiles of the floors shown, where a player has
 // explored, and creatures with a figure over their square.
@@ -33,6 +33,34 @@ describe('what the 3D view stands up', () => {
     const shown = tileModels(tiles, { world, shown: ['ground'] });
     expect(shown.map((m) => m.model.src)).toEqual(['bridge.glb']);
     expect(shown[0]!.rect).toEqual({ x: 0, y: 0, w: 200, h: 100 });
+  });
+
+  it('raises the drawn solids of the floors shown, outlined on the map', () => {
+    const solid = {
+      points: [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+      ] as [number, number][],
+      height: 10,
+    };
+    const tiles = [
+      tile('cliff', { model: undefined, solid, x: 100 }),
+      tile('loft-ledge', { model: undefined, solid, level: 'loft' }),
+      tile('bridge'),
+    ];
+    const shown = tileSolids(tiles, { world, shown: ['ground'] });
+    expect(shown.map((s) => s.key.startsWith('tile:cliff:'))).toEqual([true]);
+    expect(shown.map(({ outline, solid }) => ({ outline, solid }))).toEqual([
+      {
+        outline: [
+          [100, 0],
+          [300, 0],
+          [100, 100],
+        ],
+        solid,
+      },
+    ]);
   });
 
   it('leaves out what a player has not explored', () => {

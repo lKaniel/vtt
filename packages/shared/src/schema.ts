@@ -5,6 +5,7 @@ import { WeatherSchema } from './weather.ts';
 import { WeatherCycleSchema } from './weather-cycle.ts';
 import { GRID_KINDS } from './grid.ts';
 import { Model3DSchema } from './model3d.ts';
+import { Solid3DSchema } from './solid3d.ts';
 
 // The items in a game folder are described here (game.json and scene.json in
 // game-schema.ts). The checker, the server and docs/game-format.md all follow
@@ -189,6 +190,8 @@ const ImageTileSchema = z.object({
   tint: z.string().optional(),
   /** What stands on the tile in the 3D view (see model3d.ts); a model tile's picture is often blank. */
   model: Model3DSchema.optional(),
+  /** A drawn shape raised on the tile in the 3D view (see solid3d.ts). */
+  solid: Solid3DSchema.optional(),
 });
 /** A group of tiles: no picture or rect of its own, it spans what is in it. */
 const GroupTileSchema = z.object({ kind: z.literal('group'), ...tileTree });

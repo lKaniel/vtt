@@ -310,6 +310,12 @@ pixels.
   degrees) and `color` (a tint) shape it. `"fill": "tile", "piece": 2`
   repeats it instead, one copy every 2 squares (floors, wall runs); `"fill": "fit"` keeps its proportions, as a creature's figure always does. The
   Foundry importer brings 3D Canvas model tiles this way.
+- `"solid": { "points": [[0, 0], [1, 0], [0.5, 1]], "height": 10 }` raises a
+  drawn shape on an image tile in the 3D view (a cliff, a ledge, a pool's
+  rim): `points` are its corners as fractions of the tile's width and
+  height, `height` is in feet, and `elevation`, `rotation` and `color` work
+  as on a model. The Foundry importer brings 3D Canvas's drawn polygons
+  this way.
 - A wall is a line from `a` to `b` that stops movement, sight, light and
   sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.
   Open doors stop nothing.

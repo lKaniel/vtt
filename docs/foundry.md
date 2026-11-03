@@ -44,7 +44,9 @@ What comes along:
 - **3D Canvas** (levels-3d-preview): model tiles become image tiles with a
   `model` (glTF with its files, depth as height, elevation, rotation, tilt,
   fill and tint), tokens keep their figure, and scenes keep their sky,
-  table colour and whether walls show (`view3d`). Drawn shapes, HeroForge
+  table colour and whether walls show (`view3d`). Drawn polygons (cliffs,
+  ledges, pools) become tiles with a `solid` of their outline, height,
+  elevation and colour. Other drawn shapes (cones, spheres), HeroForge
   figures and other non-glTF models stay behind and are reported. See
   docs/view3d.md.
 - **Floors**, from v14's scene levels or the Levels module's flags (see

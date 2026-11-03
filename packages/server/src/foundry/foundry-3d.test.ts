@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scene3dOf, tileModelOf, tokenModelOf } from './foundry-3d.ts';
+import { scene3dOf, tileModelOf, tileSolidOf, tokenModelOf } from './foundry-3d.ts';
 
 // 3D Canvas (levels-3d-preview) keeps its models in flags: a tile's model,
 // its height (`depth`, pixels), tilt and fill; a token's figure; a scene's
@@ -52,6 +52,42 @@ describe('3D Canvas models', () => {
     expect(tileModelOf(flags({ model3d: '0,0,100,0,100,100' }), grid, find)).toBeUndefined();
     expect(tileModelOf(flags({ model3d: 'worlds/x/gone.glb' }), grid, find)).toBeUndefined();
     expect(tileModelOf({}, grid, find)).toBeUndefined();
+  });
+
+  it('raises a drawn polygon as a solid over the tile, as tall as its depth', () => {
+    const cliff = {
+      rotation: 30,
+      elevation: 10,
+      ...flags({ model3d: '10#0,0,200,0,200,100,0,100', dynaMesh: 'polygonbevel', depth: 200, color: '#1e7000' }),
+    };
+    expect(tileSolidOf(cliff, grid)).toEqual({
+      points: [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1],
+      ],
+      height: 10,
+      elevation: 10,
+      rotation: 30,
+      color: '#1e7000',
+    });
+    const box = tileSolidOf(flags({ model3d: '', dynaMesh: 'box', depth: 100 }), grid);
+    expect(box).toEqual({
+      points: [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1],
+      ],
+      height: 5,
+    });
+    const round = tileSolidOf(flags({ model3d: '', dynaMesh: 'cylinder', depth: 100 }), grid);
+    expect(round?.points).toHaveLength(24);
+    expect(round?.points[0]).toEqual([1, 0.5]);
+    expect(tileSolidOf(flags({ model3d: '0,0,10,10', dynaMesh: 'polygon', depth: 50 }), grid)).toBeUndefined();
+    expect(tileSolidOf(flags({ model3d: '', dynaMesh: 'cone', depth: 50 }), grid)).toBeUndefined();
+    expect(tileSolidOf(flags({ model3d: 'a.glb', dynaMesh: 'default' }), grid)).toBeUndefined();
   });
 
   it('gives a token its figure, but not HeroForge links', () => {

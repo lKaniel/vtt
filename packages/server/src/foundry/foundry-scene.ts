@@ -10,7 +10,7 @@ import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
 import { activeTilesNote, FoundryTile, isOverhead, roofOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
-import { scene3dOf, tileModelOf } from './foundry-3d.ts';
+import { scene3dOf, tileModelOf, tileSolidOf } from './foundry-3d.ts';
 
 // A Foundry VTT scene (from a module's compendium, a world, or "Export
 // Data") as one of our scene entries. Foundry draws the scene's background
@@ -287,23 +287,27 @@ interface TileContext {
   keepsTriggers?: boolean;
 }
 
-/** 3D Canvas tiles with a glTF model that came along, as model tiles; those without, reported. */
+/** A 3D Canvas tile as a model tile (a glTF model that came along) or a solid (a drawn shape), if it is either. */
+function tile3d(t: FoundryScene['tiles'][number], c: TileContext): Tile | undefined {
+  const model = tileModelOf(sourceOf(t), c.grid, (p) => c.find(p));
+  const solid = model ? undefined : tileSolidOf(sourceOf(t), c.grid);
+  if (!model && !solid) return undefined;
+  const tile = { id: '', kind: 'image' as const, x: t.x, y: t.y, w: t.width, h: t.height, src: BLANK };
+  return madeFrom({ ...tile, ...(model ? { model } : { solid }), ...c.on(t) }, sourceOf(t));
+}
+
+/** 3D Canvas tiles as model tiles or solids; those we can't draw, reported. */
 function modelTiles(tiles: FoundryScene['tiles'], c: TileContext): Tile[] {
   const out: Tile[] = [];
   let lost = 0;
   for (const t of tiles) {
     if (!is3dModel(t.texture?.src ?? t.img) || t.width <= 0 || t.height <= 0) continue;
-    const model = tileModelOf(sourceOf(t), c.grid, (p) => c.find(p));
-    if (!model) lost++;
-    else
-      out.push(
-        madeFrom(
-          { id: '', kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src: BLANK, model, ...c.on(t) },
-          sourceOf(t),
-        ),
-      );
+    const made = tile3d(t, c);
+    if (made) out.push(made);
+    else lost++;
   }
-  if (lost) c.skipped.push(lostThings('3D Canvas tiles without a glTF model in the Data folder (drawn shapes)', lost));
+  const what = "3D Canvas tiles without a glTF model in the Data folder, or a shape we can't draw (cones, spheres)";
+  if (lost) c.skipped.push(lostThings(what, lost));
   return out;
 }
 

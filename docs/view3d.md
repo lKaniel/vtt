@@ -45,10 +45,13 @@ files), stretched over the tile or repeated across it; creatures with a
 gives it a sky, a ground colour and can turn the standing walls off. See
 `model` and "The 3D view" in `game-format.md`. Players see models only
 where they have explored. `models3d.ts` loads each file once and clones it;
-`model3d.ts` in shared works out where each copy goes.
+`model3d.ts` in shared works out where each copy goes. Tiles with a
+`solid` raise a drawn outline as a solid (`solids3d.ts`, placed by
+`solid3d.ts` in shared).
 
 The Foundry importer brings 3D Canvas (levels-3d-preview) along: model
-tiles with their depth, elevation, rotation, tilt, fill and tint; tokens'
+tiles with their depth, elevation, rotation, tilt, fill and tint; drawn
+polygons as solids; tokens'
 figures; a scene's sky, table colour and whether its walls show.
 
 The floor shown is the scene level shown on the 2D map (see "Scene levels"
