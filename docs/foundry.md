@@ -71,8 +71,12 @@ What comes along:
 - **Lights** put out in Foundry stay out until a trigger or the GM lights them.
 - **Tokens** on their actors: a linked token stays linked; an unlinked one
   becomes a copy whose own name, picture, size and hit points go in its
-  `delta`. Hidden tokens stay hidden. A token whose actor is gone carries
-  its name and picture itself.
+  `delta`. Hidden tokens stay hidden. A token with no actor in the world is
+  one of two things: a prop (a tree, a barrel, a lit brazier: its picture
+  sits in a map-art folder, or it has none) becomes a tile of its size,
+  with its light as a light of its own; a creature becomes an unlinked
+  copy of a new actor named after it (one actor for every "Bandit"), which
+  the GM can fill in later.
 - **Players**: each Foundry user becomes a player of the game with the same
   name and colour (and avatar); Foundry's roles map to ours (player,
   trusted, and assistant GM or gamemaster to GM). The first gamemaster is
@@ -116,8 +120,8 @@ v1 to v5 field names):
 
 ### What stays behind
 
-The import lists it all, grouped by kind with how many and where ("815
-tokens whose actor is not in the world, in 77 scenes"); the terminal import
+The import lists it all, grouped by kind with how many and where ("907
+Monk's Active Tiles actions we have no match for, in 74 scenes"); the terminal import
 prints the same list. Mainly:
 
 - Spells the SRD doesn't have, active effects and Foundry's automation.

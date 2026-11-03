@@ -177,7 +177,7 @@ describe('importFoundryWorld', () => {
     expect(report).toMatchObject({
       name: 'The Lost Keep',
       scenes: 2,
-      actors: 2,
+      actors: 3,
       tokens: 4,
       journals: 1,
       tables: 1,
@@ -218,8 +218,12 @@ describe('importFoundryWorld', () => {
         },
       },
       { id: 'mira', x: 650, y: 650, actor: 'mira', linked: true },
-      { id: 'statue', name: 'Statue', x: 50, y: 50, img: '/assets/foundry/worlds/lost-keep/art/goblin.webp' },
+      { id: 'statue', x: 50, y: 50, actor: 'statue', linked: false },
     ]);
+    expect(await readJson(join(dir, 'actors/statue.json'))).toMatchObject({
+      name: 'Statue',
+      img: '/assets/foundry/worlds/lost-keep/art/goblin.webp',
+    });
   });
 
   it('turns actors into sheets, in their folders, with their token art', async () => {
@@ -302,13 +306,6 @@ describe('importFoundryWorld', () => {
     const { report } = await imported();
     expect(report.left).toEqual(
       expect.arrayContaining([
-        {
-          what: 'Tokens whose actor is not in the world (they keep only their name and picture)',
-          count: 1,
-          examples: ['Statue'],
-          places: ['The Keep'],
-          placeCount: 1,
-        },
         expect.objectContaining({
           what: 'Items in the Items sidebar (drag items from the Compendium instead)',
           examples: ['Longsword'],
