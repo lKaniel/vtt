@@ -16,3 +16,18 @@ export function gameDirFromArgs(): string {
 export function dataDirFor(gameDir: string): string {
   return resolve(process.env.VTT_DATA ?? resolve(dirname(gameDir), 'data'));
 }
+
+/** The installed asset packs, for the import scripts: packs/ in the home game's data folder. */
+export function packsDirFromEnv(): string {
+  const home = resolve(process.env.VTT_GAME ?? process.env.VTT_WORLD ?? resolve(repoRoot, 'world'));
+  return resolve(dataDirFor(home), 'packs');
+}
+
+/** A path typed on the command line: pnpm runs scripts in their package, so relative to where it was typed. */
+export const typedPath = (p: string) => resolve(process.env.INIT_CWD ?? process.cwd(), p);
+
+/** Stops a script that was called wrongly, saying how to call it. */
+export function usage(text: string): never {
+  console.error(`Usage: ${text}`);
+  process.exit(2);
+}

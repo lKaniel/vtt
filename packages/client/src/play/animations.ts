@@ -14,8 +14,8 @@ export interface Animation {
   delivery: Delivery;
   /** Missing keeps the colour of the damage. */
   element?: Element;
-  /** A video's src (a JB2A pack's .webm), for `video`. */
-  src?: string;
+  /** A video's srcs (a JB2A pack's .webm), for `video`: one, or the same video in several lengths. */
+  srcs?: string[];
 }
 
 const LIBRARY: Record<AnimationId, Animation> = {
@@ -46,7 +46,7 @@ const LIBRARY: Record<AnimationId, Animation> = {
 
 /** The animation a log names, or undefined for the default (or an id this client doesn't know). */
 export function animationOf(id: string | undefined): Animation | undefined {
-  if (id && isMediaAnimation(id)) return { delivery: 'video', src: id };
+  if (id && isMediaAnimation(id)) return { delivery: 'video', srcs: [id] };
   return id ? LIBRARY[id as AnimationId] : undefined;
 }
 
@@ -56,6 +56,22 @@ export function animationOf(id: string | undefined): Animation | undefined {
  * range ("…_30ft_…") or keeps them under a "Ranged" folder.
  */
 export const isRangedVideo = (src: string): boolean => /ranged|_\d+ft_/i.test(src);
+
+const lengthOf = (src: string): number | undefined => {
+  const m = /_(\d+)ft(_|\.|$)/i.exec(src);
+  return m ? Number(m[1]) : undefined;
+};
+
+/** Of a video made in lengths ("…_30ft_…"), the one nearest `feet`; a video without lengths is itself. */
+export function nearestLength(srcs: readonly string[], feet: number): string {
+  let best = srcs[0]!;
+  let gap = Infinity;
+  for (const src of srcs) {
+    const off = Math.abs((lengthOf(src) ?? feet) - feet);
+    if (off < gap) [best, gap] = [src, off];
+  }
+  return best;
+}
 
 /** How much of the animations a player wants to see (their own option, kept in this browser). */
 export type Motion = 'full' | 'reduced' | 'off';

@@ -80,6 +80,10 @@ function spellEffectIcon(spell: Spell): Icon | undefined {
   return effectTone(effect) === 'harmful' ? schoolIcon(spell.school) : HELPFUL_ICON(effect);
 }
 
+/** A blow of one damage type, or plain magic. */
+export const damageIcon = (type: DamageType | undefined): Icon =>
+  type ? { glyph: DAMAGE_GLYPH[type], tint: type } : { glyph: 'star', tint: 'arcane' };
+
 export function spellIcon(spell: Spell): Icon {
   if (spell.heal) return { glyph: 'heart', tint: 'heal' };
   if (spell.summon) return { glyph: 'paw', tint: 'arcane' };

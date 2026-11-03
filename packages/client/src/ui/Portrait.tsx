@@ -1,7 +1,7 @@
 import type { TokenView } from '@vtt/system-dnd5e';
 import { effectIcon } from '../icons.ts';
 import { effectBadge, effectLeft } from '../session/session-time.ts';
-import { portraitOf } from '../icon-art.ts';
+import { effectArt, portraitOf } from '../icon-art.ts';
 import { effectTone, hpBar } from '../play/vitals.ts';
 import { IconFace } from './Icon.tsx';
 
@@ -42,7 +42,7 @@ export function EffectBadges({ token, at }: Readonly<{ token: TokenView; at?: Ef
       )}
       {effects.map((e) => (
         <span key={e.id} className={`badge ${effectTone(e)}`} title={effectTitle(e, at)}>
-          <IconFace icon={effectIcon(e)} size={12} />
+          <IconFace icon={{ ...effectIcon(e), art: effectArt(e) }} size={12} />
           <BadgeTime effect={e} at={at} />
         </span>
       ))}

@@ -53,6 +53,8 @@ export const PackManifestSchema = z.object({
   media: innerPath.default('media/'),
   /** Where it came from, e.g. "foundry:module". */
   source: z.string().optional(),
+  /** A JSON file naming its pictures and animations for a system's content (see pack-art.ts). */
+  art: innerPath.optional(),
 });
 export type PackManifest = z.infer<typeof PackManifestSchema>;
 

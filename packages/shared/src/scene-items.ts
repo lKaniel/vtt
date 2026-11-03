@@ -95,6 +95,8 @@ export const TemplateSchema = z.object({
   effect: z.object({ token: id, id: z.string().min(1) }).optional(),
   /** Game-clock second it goes away; kept for world time (a later step), not read yet. */
   endsAt: z.number().optional(),
+  /** A picture or looping video laid over the area (a spell's from the game's packs), like Foundry's template texture. */
+  texture: z.string().max(500).optional(),
 });
 export type Template = z.infer<typeof TemplateSchema>;
 

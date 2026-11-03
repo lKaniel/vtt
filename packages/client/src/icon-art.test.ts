@@ -1,6 +1,17 @@
 import { type Attack, type FeatureSheet, srdFor, type TokenView } from '@vtt/system-dnd5e';
-import { describe, expect, it } from 'vitest';
-import { attackArt, diceArt, featureArt, itemArt, cutoutOf, portraitOf, spellArt } from './icon-art.ts';
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+  attackArt,
+  diceArt,
+  effectArt,
+  featureArt,
+  itemArt,
+  cutoutOf,
+  monsterArt,
+  portraitOf,
+  spellArt,
+} from './icon-art.ts';
+import { packAnimation, setPackArt } from './content/pack-art.ts';
 
 const spell = (id: string) => srdFor('2014').spells.get(id)!;
 const attack = (kind: Attack['kind']): Attack => ({
@@ -69,5 +80,54 @@ describe('painted icon art', () => {
       '/art/tokens/goblin.webp',
     );
     expect(cutoutOf({} as TokenView)).toBeUndefined();
+  });
+});
+
+describe('art from the game’s packs', () => {
+  afterEach(() => setPackArt({}));
+  const pic = (name: string) => [`pack://icons/media/${name}.webp`];
+
+  it('wins over the bundled paintings, found by id or by name', () => {
+    setPackArt({
+      spell: { fireball: pic('fireball'), 'my-hex': pic('hex') },
+      item: { longsword: pic('sword'), 'potion-of-healing': pic('potion') },
+      feature: { 'second-wind': pic('wind') },
+    });
+    expect(spellArt(spell('fireball'))).toBe('/packs/icons/media/fireball.webp');
+    expect(spellArt({ ...spell('fireball'), id: 'x', name: 'My Hex' })).toBe('/packs/icons/media/hex.webp');
+    expect(itemArt(item('potion-of-healing'))).toBe('/packs/icons/media/potion.webp');
+    expect(featureArt({ id: 'second-wind', name: 'Second Wind' })).toBe('/packs/icons/media/wind.webp');
+  });
+
+  it('dresses a magic weapon and a weapon attack as the weapon they are', () => {
+    setPackArt({ item: { longsword: pic('sword') } });
+    expect(itemArt({ ...item('longsword')!, id: 'flame-tongue-longsword', name: 'Flame Tongue Longsword' })).toBe(
+      '/packs/icons/media/sword.webp',
+    );
+    expect(attackArt({ ...attack('melee'), name: '+1 Longsword' })).toBe('/packs/icons/media/sword.webp');
+    expect(attackArt({ ...attack('melee'), name: 'Bite' })).toBe('/art/icons/actions/melee-attack.webp');
+  });
+
+  it('shows a condition, or the spell an effect came from', () => {
+    setPackArt({ condition: { prone: pic('prone') }, spell: { bless: pic('bless') } });
+    expect(effectArt({ conditions: ['prone'] })).toBe('/packs/icons/media/prone.webp');
+    expect(effectArt({ name: 'Bless' })).toBe('/packs/icons/media/bless.webp');
+    expect(effectArt({ name: 'Rage' })).toBeUndefined();
+  });
+
+  it('gives a monster its pack token, and a token’s pack art comes from where the server serves it', () => {
+    setPackArt({ monster: { goblin: pic('goblin') } });
+    expect(monsterArt({ id: 'goblin', img: '/art/tokens/goblin.webp' })).toBe('/packs/icons/media/goblin.webp');
+    expect(monsterArt({ id: 'orc' })).toBeUndefined();
+    expect(cutoutOf({ art: 'pack://icons/media/goblin.webp' } as TokenView)).toBe('/packs/icons/media/goblin.webp');
+  });
+
+  it('finds the animation for an attack or spell, else healing’s', () => {
+    setPackArt({ animation: { 'melee:longsword': ['a.webm'], 'spell:fire-bolt': ['b.webm'], heal: ['h.webm'] } });
+    expect(packAnimation('melee', 'Flame Tongue Longsword')).toEqual(['a.webm']);
+    expect(packAnimation('ranged', 'Longsword')).toBeUndefined();
+    expect(packAnimation('spell', 'fire-bolt')).toEqual(['b.webm']);
+    expect(packAnimation('spell', 'cure-wounds', { heals: true })).toEqual(['h.webm']);
+    expect(packAnimation('spell', 'cure-wounds')).toBeUndefined();
   });
 });

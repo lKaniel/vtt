@@ -3,7 +3,8 @@ import { type ServerMessage, type Token, viewToken } from '@vtt/system-dnd5e';
 import type { WebSocket } from 'ws';
 import type { DocFeed } from './store/doc-feed.ts';
 import type { GameStore } from './store/game-store.ts';
-import { contentFor } from './library/game-packs.ts';
+import { artOf } from '@vtt/core';
+import { contentFor, packArtOf } from './library/game-packs.ts';
 
 // A connection to the live game (game.ts), and what it is sent as its camera moves.
 
@@ -49,9 +50,11 @@ export function chunkMessage(to: { player: Player }, key: string, chunk: Chunk |
   return { t: 'chunk', key, chunk: chunkFor(chunk ?? { tiles: [], walls: [], lights: [] }, isGm(to.player)) };
 }
 
-/** A token as `player` may see it. */
+/** A token as `player` may see it; a monster wears its token from the game's packs, if they have one. */
 export function viewFor(store: GameStore, token: Token, player: Player) {
-  return viewToken(token, player, contentFor(store, token));
+  const view = viewToken(token, player, contentFor(store, token));
+  const art = token.monster ? artOf(packArtOf(store), 'monster', token.monster)?.[0] : undefined;
+  return art ? { ...view, art } : view;
 }
 
 /** What a client is told after what it may see changed: tokens gone, new, or `changed` (walked along `path`). */

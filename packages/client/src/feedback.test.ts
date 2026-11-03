@@ -1,9 +1,10 @@
 import type { MediaEntry } from '@vtt/core';
 import type { AttackLog, ChatMessage, SpellLog, SpellTargetLog } from '@vtt/system-dnd5e';
 import type { Roll } from '@vtt/shared';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { cuesOf, elementColor, IMPACT, type Cue } from './feedback.ts';
-import { videoChoices } from './play/animations.ts';
+import { nearestLength, videoChoices } from './play/animations.ts';
+import { setPackArt } from './content/pack-art.ts';
 
 const roll = (total: number): Roll => ({ formula: '1d20', terms: [], total });
 
@@ -226,15 +227,75 @@ describe('animations from a video pack (JB2A)', () => {
 
   it('stretches a ranged video from the caster to each target', () => {
     const cues = cuesOf(message({ spell: spell({ animation: ranged }) }));
-    expect(only(cues, 'video')[0]).toMatchObject({ src: ranged, from: 'wiz', to: 'goblin', ranged: true });
+    expect(only(cues, 'video')[0]).toMatchObject({ srcs: [ranged], from: 'wiz', to: 'goblin', ranged: true });
     expect(kinds(cues)).not.toContain('missile');
     expect(kinds(cues)).toContain('number');
   });
 
   it('plays any other video on the target', () => {
     const cues = cuesOf(message({ attack: attack({ animation: onTarget }) }));
-    expect(only(cues, 'video')[0]).toMatchObject({ src: onTarget, to: 'goblin', ranged: false });
+    expect(only(cues, 'video')[0]).toMatchObject({ srcs: [onTarget], to: 'goblin', ranged: false });
     expect(kinds(cues)).not.toContain('lunge');
+  });
+});
+
+describe('animations the game’s packs bring, without picking', () => {
+  afterEach(() => setPackArt({}));
+  const bolts = ['FireBolt_05ft_600x400.webm', 'FireBolt_30ft_1600x400.webm', 'FireBolt_90ft_4000x400.webm'];
+
+  it('plays the pack’s video for a spell, in all its lengths', () => {
+    setPackArt({ animation: { 'spell:fire-bolt': bolts } });
+    const cues = cuesOf(message({ spell: spell() }));
+    expect(only(cues, 'video')[0]).toMatchObject({ srcs: bolts, from: 'wiz', to: 'goblin', ranged: true });
+    expect(kinds(cues)).not.toContain('missile');
+  });
+
+  it('plays the pack’s video for a weapon attack, named by its weapon', () => {
+    setPackArt({ animation: { 'melee:longsword': ['Sword.webm'] } });
+    const cues = cuesOf(message({ attack: attack({ attack: '+1 Longsword' }) }));
+    expect(only(cues, 'video')[0]).toMatchObject({ srcs: ['Sword.webm'], to: 'goblin', ranged: false });
+  });
+
+  it('heals with the pack’s healing when the spell has no video of its own', () => {
+    setPackArt({ animation: { heal: ['Heal.webm'] } });
+    const cure = spell({ spellId: 'cure-wounds', damageType: undefined, attackKind: 'melee' });
+    const cues = cuesOf(message({ spell: { ...cure, results: [hitOn('goblin', { healed: 8 })] } }));
+    expect(only(cues, 'video')[0]).toMatchObject({ srcs: ['Heal.webm'], to: 'goblin' });
+  });
+
+  it('the attacker’s own pick wins over the pack', () => {
+    setPackArt({ animation: { 'melee:longsword': ['Sword.webm'] } });
+    expect(kinds(cuesOf(message({ attack: attack({ animation: 'fire-arrow' }) })))).toContain('missile');
+  });
+
+  it('bursts an area spell’s video where it was aimed, as wide as the area', () => {
+    setPackArt({ animation: { 'spell:fireball': ['Boom.webm'] } });
+    const area = { shape: 'sphere' as const, size: 20, width: 5 };
+    const log = spell({ spellId: 'fireball', attackKind: undefined, point: [500, 500], area });
+    const cues = cuesOf(message({ spell: log }));
+    expect(only(cues, 'video')[0]).toMatchObject({ srcs: ['Boom.webm'], to: [500, 500], radius: 20, ranged: false });
+    expect(kinds(cues)).not.toContain('burst');
+  });
+
+  it('sends a cone or line out from the caster as long as the area', () => {
+    setPackArt({ animation: { 'spell:cone-of-cold': ['Cone.webm'] } });
+    const log = spell({ spellId: 'cone-of-cold', point: [500, 0], area: { shape: 'cone', size: 60, width: 5 } });
+    expect(only(cuesOf(message({ spell: log })), 'video')[0]).toMatchObject({
+      from: 'wiz',
+      to: [500, 0],
+      length: 60,
+      ranged: true,
+    });
+  });
+});
+
+describe('a video in lengths', () => {
+  it('plays the length nearest the distance', () => {
+    const srcs = ['a_05ft_1.webm', 'a_30ft_1.webm', 'a_90ft_1.webm'];
+    expect(nearestLength(srcs, 25)).toBe('a_30ft_1.webm');
+    expect(nearestLength(srcs, 2)).toBe('a_05ft_1.webm');
+    expect(nearestLength(srcs, 200)).toBe('a_90ft_1.webm');
+    expect(nearestLength(['one.webm'], 50)).toBe('one.webm');
   });
 });
 

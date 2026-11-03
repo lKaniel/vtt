@@ -3,6 +3,7 @@
 // docs/i18n.md for adding words and languages.
 
 import { EN_BAILEYWIKI } from './en-lobby.ts';
+import { EN_MAP } from './en-map.ts';
 import { EN_SHEET } from './en-sheet.ts';
 
 export const EN = {
@@ -405,19 +406,9 @@ export const EN = {
   'characters.levelUp': 'Level up',
   'characters.deleteAsk': 'Delete {name} for good? Their token stays on the map as an actor.',
 
-  'walk.opportunity': 'Opportunity attack: {name}',
-  'walk.tooFar': 'Not enough movement',
-  'walk.difficult': 'Difficult terrain',
-  'walk.trap': 'Trap: {name}',
-  'walk.trapUnnamed': 'Trap',
-  'walk.blocked': "Can't get there",
-
   ...EN_SHEET,
   ...EN_BAILEYWIKI,
-  'levels.question': '{name}: which floor?',
-  'view3d.on': '3D view',
-  'view3d.off': 'Back to the 2D map',
-  'levels.stay': 'Stay here',
+  ...EN_MAP,
 } as const;
 
 export type MessageKey = keyof typeof EN;

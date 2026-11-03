@@ -1,4 +1,5 @@
-import type { ServerMessage } from '@vtt/system-dnd5e';
+import { type ServerMessage, srdFor } from '@vtt/system-dnd5e';
+import { spellArt } from '../icon-art.ts';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { assetUrl } from '../assets.ts';
 import { compendium } from '../content/compendium.ts';
@@ -14,7 +15,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  ws.receive({ t: 'packContent', compendia: [] });
+  ws.receive({ t: 'packContent', compendia: [], art: {} });
   closeSession(session);
 });
 
@@ -55,6 +56,7 @@ describe('pack content in the client', () => {
     ws.receive({
       t: 'packContent',
       compendia: [{ pack: 'goblins', id: 'm', type: 'monster', path: 'm.json', docs: [warlord] }],
+      art: {},
     });
     expect(gameContent('2014').monsters.get('goblin-warlord')?.ac).toBe(17);
     expect(compendium('monsters', '2014', 'warlord').map((e) => e.id)).toEqual(['goblin-warlord']);
@@ -73,15 +75,22 @@ describe('pack content in the client', () => {
       features: [],
     };
     ws.receive({ ...base, docs: { ...base.docs, homebrew: [seer] } });
-    ws.receive({ t: 'packContent', compendia: [] });
+    ws.receive({ t: 'packContent', compendia: [], art: {} });
     expect(gameContent('2014').classes.get('seer')?.name).toBe('Seer');
   });
 
   it('plays by the game’s settings', () => {
     const base = gmWelcome() as Extract<ServerMessage, { t: 'welcome' }>;
     ws.receive({ ...base, world: { ...base.world, settings: { encumbrance: 'variant' } } });
-    ws.receive({ t: 'packContent', compendia: [] });
+    ws.receive({ t: 'packContent', compendia: [], art: {} });
     expect(gameContent('2014').settings?.encumbrance).toBe('variant');
+  });
+
+  it('dresses spells, items and the rest in the art of the game’s packs', () => {
+    ws.receive(gmWelcome());
+    const art = { spell: { fireball: ['pack://icons/media/fire.webp'] } };
+    ws.receive({ t: 'packContent', compendia: [], art });
+    expect(spellArt(srdFor('2014').spells.get('fireball')!)).toBe('/packs/icons/media/fire.webp');
   });
 
   it('shows pack files from where the server serves them', () => {
