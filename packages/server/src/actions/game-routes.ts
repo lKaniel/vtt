@@ -127,6 +127,7 @@ function gmRoutes(p: GameParts) {
     relinkToken: (s, m) => p.gm.relink(s.player, m.token, m.how),
     ...each(['hotbar', 'animation'], (s, m) => p.moves.arrange(s.player, s.canSee, m)),
     spawn: (s, m) => p.gm.spawn(s.player, m.from, m.at, m.hidden),
+    build: (s, m) => p.gm.build(s.player, m),
     saveActor: (s, m) => p.gm.saveActor(s.player, m.actor),
     deleteActor: (s, m) => p.gm.deleteActor(s.player, m.actor),
     setRole: (s, m) => p.gm.setRole(s.player, m.player, m.role),

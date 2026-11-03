@@ -1,9 +1,10 @@
 import type { Player } from '@vtt/shared';
-import type { ClientMessage, ServerMessage, TokenView } from '@vtt/system-dnd5e';
+import type { ClientMessage, TokenView } from '@vtt/system-dnd5e';
 import { z } from 'zod';
 import type { Game } from '../game.ts';
 import type { McpTool } from './mcp-protocol.ts';
-import { act, look, type Welcome } from './mcp-seat.ts';
+import { act, look, outcome, type Welcome } from './mcp-seat.ts';
+import { sceneTools } from './scene-tools.ts';
 
 // The tools Claude gets over the bridge (mcp-http.ts): look at a live game
 // as the caller's seat, read and change its documents, talk and roll in
@@ -52,16 +53,6 @@ function lookSummary(w: Welcome) {
     tokens: w.tokens.map(tokenSummary),
     documents: docs,
   };
-}
-
-/** The game's answer to what was sent: thrown when it refused, else a short note. */
-function outcome(replies: readonly ServerMessage[]): string {
-  const error = replies.find((m) => m.t === 'error');
-  if (error?.t === 'error') throw new Error(error.message);
-  const reject = replies.find((m) => m.t === 'reject');
-  if (reject?.t === 'reject') throw new Error(`Refused: ${reject.reason}`);
-  const chat = replies.flatMap((m) => (m.t === 'chat' ? [m.message] : []));
-  return chat.length ? `Done. Chat: ${out(chat)}` : 'Done.';
 }
 
 function lookTools(table: BridgeTable): McpTool[] {
@@ -150,7 +141,7 @@ function actTools(table: BridgeTable): McpTool[] {
       description:
         'Creates, changes or deletes documents in one undoable step, all or nothing. A created doc needs id, type ' +
         '(token, actor, wall, light, tile, journal...) and rev 0; an update patch sets fields (null removes one).',
-      input: z.object({ ...ON_GAME, label: z.string().max(80).optional(), ops: z.array(OpSchema).min(1).max(500) }),
+      input: z.object({ ...ON_GAME, label: z.string().max(40).optional(), ops: z.array(OpSchema).min(1).max(500) }),
       run: (a: { game?: string; label?: string; ops: unknown[] }) =>
         send(a.game, [{ t: 'ops', txn: `claude-${++txns}`, label: a.label ?? 'Claude', ops: a.ops }]),
     },
@@ -171,5 +162,5 @@ function actTools(table: BridgeTable): McpTool[] {
 }
 
 export function mcpTools(table: BridgeTable): McpTool[] {
-  return [...lookTools(table), ...actTools(table)];
+  return [...lookTools(table), ...actTools(table), ...sceneTools(table)];
 }

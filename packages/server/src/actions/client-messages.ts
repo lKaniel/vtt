@@ -31,6 +31,19 @@ const MAX_TARGETS = 50;
 const MAX_CARDS = 200;
 const cardStack = z.string().max(80);
 
+/** A new creature: a monster's stock actor or an actor of the list, placed at a point. */
+const SpawnSchema = z.object({
+  from: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('monster'), id: z.string(), rules: EditionSchema }),
+    z.object({ kind: z.literal('actor'), id: z.string() }),
+  ]),
+  at: PointSchema,
+  hidden: z.boolean().optional(),
+});
+
+/** Creatures one build may place. */
+const MAX_SPAWNS = 500;
+
 const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({
     t: z.literal('drawCards'),
@@ -172,14 +185,13 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     token: z.string(),
     slots: z.array(z.string().max(80).nullable()).max(60),
   }),
+  z.object({ t: z.literal('spawn'), ...SpawnSchema.shape }),
   z.object({
-    t: z.literal('spawn'),
-    from: z.discriminatedUnion('kind', [
-      z.object({ kind: z.literal('monster'), id: z.string(), rules: EditionSchema }),
-      z.object({ kind: z.literal('actor'), id: z.string() }),
-    ]),
-    at: PointSchema,
-    hidden: z.boolean().optional(),
+    t: z.literal('build'),
+    scene: z.string(),
+    label: z.string().max(40).optional(),
+    ops: z.array(OpSchema).max(20000),
+    spawns: z.array(SpawnSchema).max(MAX_SPAWNS),
   }),
   z.object({
     t: z.literal('drop'),
