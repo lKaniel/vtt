@@ -3,11 +3,19 @@
 // goblins, all in the GM's browser at once, and gone again with one undo.
 
 import type { APIRequestContext, Page } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { expect, test } from '../support/fixtures.ts';
+import { TRIANGLE } from '../support/models.ts';
 import { GM, atTable } from '../support/table.ts';
 
 const KEY = 'e2e-claude';
-test.use({ serverOptions: { mcpKey: KEY } });
+/** A model in the game's assets for Claude to find and stand on the map. */
+async function addModel(dir: string): Promise<void> {
+  await writeFile(join(dir, 'assets', 'triangle.gltf'), JSON.stringify(TRIANGLE));
+}
+
+test.use({ serverOptions: { mcpKey: KEY, prepare: addModel } });
 
 interface ToolAnswer {
   result?: { content: { type: string; text?: string }[]; isError?: boolean };
@@ -54,4 +62,15 @@ test('Claude makes a scene, builds a warren in it, and one undo takes the build 
   await tool(request, 'undo', {});
   await expect.poll(() => goblinsSeen(page)).toBe(0);
   await expect.poll(() => wallsOf(page, 'goblin-warren')).toBe(0);
+});
+
+test('Claude finds a 3D model and stands it on the map, seen in the 3D view', async ({ page, request }) => {
+  await atTable(page, GM);
+  const found = JSON.parse(await tool(request, 'list_assets', { kind: 'model' })) as { assets: { src: string }[] };
+  expect(found.assets.map((a) => a.src)).toEqual(['/assets/triangle.gltf']);
+  await tool(request, 'build_scene', {
+    models: [{ name: 'Ramp', x: 10, y: 8, w: 2, h: 1, src: found.assets[0]!.src, fill: 'tile', piece: 1, height: 5 }],
+  });
+  await page.getByRole('button', { name: '3D view' }).click();
+  await expect(page.getByTestId('view3d')).toHaveAttribute('data-models', '2', { timeout: 30_000 });
 });

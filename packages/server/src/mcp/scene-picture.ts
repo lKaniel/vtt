@@ -35,6 +35,8 @@ const COLOURS = {
   limited: rgba('#7fd07f'),
   ethereal: rgba('#b0b0b0'),
   image: rgba('#5a6070', 0.85),
+  model: rgba('#2aa198', 0.55),
+  modelEdge: rgba('#5fe0d0'),
   imageEdge: rgba('#c8d0e0'),
   light: rgba('#ffd060', 0.55),
   bright: rgba('#ffe090', 0.14),
@@ -96,9 +98,11 @@ function drawTile(r: Raster, v: View, t: Doc): void {
   const [x, y] = v.p([num(t.x), num(t.y)]);
   const box = { x, y, w: v.len(num(t.w)), h: v.len(num(t.h)) };
   if (t.kind !== 'image') return r.rect(box, tileColour(t));
-  r.rect(box, COLOURS.image);
-  outline(r, box, COLOURS.imageEdge);
-  r.line([x, y], [x + box.w, y + box.h], { colour: COLOURS.imageEdge });
+  const model = t.model !== undefined;
+  r.rect(box, model ? COLOURS.model : COLOURS.image);
+  const edge = model ? COLOURS.modelEdge : COLOURS.imageEdge;
+  outline(r, box, edge);
+  r.line([x, y], [x + box.w, y + box.h], { colour: edge });
 }
 
 /** Ground first, then the rest in file order; groups have no picture. */
@@ -215,7 +219,7 @@ function legend(s: SceneItems, view: View, size: [number, number]): string {
   const lines = [
     `Picture ${size[0]}×${size[1]} px of scene pixels x ${box.x}..${box.x + box.w}, y ${box.y}..${box.y + box.h} (scale ${+scale.toFixed(4)}; square = ${num(s.scene.gridSize, 100)} px).`,
     'Key: white wall, orange door (dashed: open), purple secret door, blue window, green dashed terrain wall, grey dashed ethereal wall,',
-    'light: soft disc of bright light, thin ring where dim light ends (dark disc: magical darkness), pink dashed outline region, grey box with a diagonal = picture tile,',
+    'light: soft disc of bright light, thin ring where dim light ends (dark disc: magical darkness), pink dashed outline region, grey box with a diagonal = picture tile, teal box = 3D model (3D view only),',
     'green disc linked creature, red disc other creature, grey disc hidden, cyan square note, blue ring sound.',
   ];
   const tokens = s.items.tokens ?? [];

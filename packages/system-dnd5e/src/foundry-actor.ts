@@ -1,4 +1,4 @@
-import { type FoundrySheets, slugify } from '@vtt/core';
+import { type FoundrySheets, type ImportLoss, slugify } from '@vtt/core';
 import { type Content, srdFor, toEdition } from './content.ts';
 import { at, list, type Loose, num, obj, opt, paragraphs, plainText, str } from './foundry-data.ts';
 import { attackOf, byName, gearOf } from './foundry-gear.ts';
@@ -22,7 +22,7 @@ export type Sheet = Partial<Omit<Actor, 'id' | 'name' | 'img' | 'ownership' | 'f
 export interface ConvertedSheet {
   sheet: Sheet;
   /** What could not come along. */
-  skipped: string[];
+  skipped: ImportLoss[];
 }
 
 const SIZES: Record<string, number> = { tiny: 0.5, sm: 1, med: 1, lg: 2, huge: 3, grg: 4 };
@@ -110,7 +110,7 @@ interface Classes {
   stats: Partial<Stats>;
   /** SRD classes it has, for telling class features from others. */
   srd: string[];
-  skipped: string[];
+  skipped: ImportLoss[];
 }
 
 interface FoundryClass {
@@ -161,15 +161,17 @@ function classesOf(items: Loose[], srd: Content, sys: Loose): Classes {
   return { stats: { classes: entries }, srd: srdIds, skipped: [] };
 }
 
-function spellsOf(items: Loose[], srd: Content): { spells: string[]; skipped: string[] } {
-  const out = { spells: [] as string[], skipped: [] as string[] };
+function spellsOf(items: Loose[], srd: Content): { spells: string[]; skipped: ImportLoss[] } {
+  const spells: string[] = [];
+  const unknown: string[] = [];
   for (const item of items.filter((i) => i.type === 'spell')) {
     const name = str(item.name) ?? '?';
     const id = byName(srd.spells, name);
-    if (id) out.spells.push(id);
-    else out.skipped.push(`spell "${name}", which the ${srd.edition} rules have no match for`);
+    if (id) spells.push(id);
+    else unknown.push(name);
   }
-  return out;
+  const what = `Spells the ${srd.edition} rules have no match for`;
+  return { spells, skipped: unknown.length ? [{ what, count: unknown.length, examples: unknown }] : [] };
 }
 
 /** Features that aren't its SRD classes' own (those come with the class), as features of its own. */
@@ -244,7 +246,10 @@ export function foundrySheet(data: unknown, ctx: FoundrySheetContext): Converted
   const actor = obj(data);
   const srd = srdFor(toEdition(ctx.rules));
   if (actor.type !== 'npc' && actor.type !== 'character')
-    return { sheet: {}, skipped: [`a ${str(actor.type) ?? 'nameless'} sheet, which we have no match for`] };
+    return {
+      sheet: {},
+      skipped: [{ what: 'Sheets of a kind we have no match for', count: 1, examples: [str(actor.type) ?? 'nameless'] }],
+    };
   const monster = actor.type === 'npc' ? srd.monsters.get(slugify(str(actor.name) ?? '')) : undefined;
   const story = biographyOf(obj(actor.system));
   if (monster) return { sheet: { monster: monster.id, ...woundsOf(obj(actor.system)), ...story }, skipped: [] };

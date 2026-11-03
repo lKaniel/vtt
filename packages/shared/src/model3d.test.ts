@@ -32,6 +32,15 @@ describe('3D models on tiles', () => {
     expect(piece!.base).toBeCloseTo(40);
   });
 
+  it('fits a figure in proportion: as tall as asked, else as wide as its square', () => {
+    const rect = { x: 0, y: 0, w: 100, h: 100 };
+    const man = { size: [0.5, 1.5, 0.25] as const };
+    const [tall] = modelPieces(rect, { src: 'man.glb', fill: 'fit', height: 6 }, { ...GRID, floor: 0 }, man);
+    expect(tall!.scale).toEqual([80, 80, 80]);
+    const [wide] = modelPieces(rect, { src: 'man.glb', fill: 'fit' }, { ...GRID, floor: 0 }, man);
+    expect(wide!.scale).toEqual([200, 200, 200]);
+  });
+
   it('repeats a tiling model, one piece every `piece` squares', () => {
     const rect = { x: 0, y: 0, w: 400, h: 200 };
     const pieces = modelPieces(rect, { src: 'floor.glb', fill: 'tile', piece: 2 }, { ...GRID, floor: 0 }, unit);

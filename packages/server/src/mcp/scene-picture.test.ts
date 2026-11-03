@@ -18,6 +18,7 @@ describe('the scene sketch', () => {
             doc('statue', { kind: 'image', x: 100, y: 100, w: 100, h: 100, src: '/s.webp' }),
             doc('trap', { kind: 'rect', x: 300, y: 100, w: 100, h: 100, texture: 'water', hidden: true }),
             doc('g', { kind: 'group' }),
+            doc('tower', { kind: 'image', x: 500, y: 100, w: 100, h: 100, src: '/b.svg', model: { src: 't.glb' } }),
           ],
           walls: [
             doc('w', { a: [0, 0], b: [1000, 0] }),

@@ -15,8 +15,12 @@ export const Model3DSchema = z.object({
   rotation: z.number().optional(),
   /** Degrees it leans round the map's x axis and round its y axis. */
   tilt: z.tuple([z.number(), z.number()]).optional(),
-  /** `stretch` (the default): one model fills the tile; `tile`: the model repeats, one every `piece` squares. */
-  fill: z.enum(['stretch', 'tile']).optional(),
+  /**
+   * `stretch` (the default): one model fills the tile; `fit`: one model in
+   * its own proportions, `height` feet tall or as wide as the tile allows (a
+   * creature's figure); `tile`: the model repeats, one every `piece` squares.
+   */
+  fill: z.enum(['stretch', 'fit', 'tile']).optional(),
   piece: z.number().positive().optional(),
   /** A colour multiplied into it. */
   color: z.string().optional(),
@@ -63,13 +67,12 @@ export function modelPieces(
   const [nx, ny] = model.fill === 'tile' ? cellsOf(rect, (model.piece ?? 1) * ground.grid) : [1, 1];
   const [cw, ch] = [rect.w / nx, rect.h / ny];
   const [sx, sy, sz] = bounds.size.map((n) => n || 1) as [number, number, number];
-  const across: [number, number] = [cw / sx, ch / sz];
-  const up = model.height === undefined ? (across[0] + across[1]) / 2 : (model.height * px) / sy;
+  const scale = scaleOf(model, [cw / sx, ch / sz], model.height === undefined ? undefined : (model.height * px) / sy);
   const turn = (model.rotation ?? 0) * DEG;
   const middle: [number, number] = [rect.x + rect.w / 2, rect.y + rect.h / 2];
   const piece = {
     base: ((model.elevation ?? ground.floor) - ground.floor) * px,
-    scale: [across[0], up, across[1]] as const,
+    scale,
     yaw: -turn,
     tilt: [(model.tilt?.[0] ?? 0) * DEG, (model.tilt?.[1] ?? 0) * DEG] as const,
   };
@@ -80,6 +83,15 @@ export function modelPieces(
       out.push({ ...piece, at: turned(middle, off, turn) });
     }
   return out;
+}
+
+/** Model units to pixels: `across` fits the cell, `up` the height asked for. */
+function scaleOf(model: Model3D, across: [number, number], up: number | undefined): readonly [number, number, number] {
+  if (model.fill === 'fit') {
+    const k = up ?? Math.min(...across);
+    return [k, k, k];
+  }
+  return [across[0], up ?? (across[0] + across[1]) / 2, across[1]];
 }
 
 /** How many pieces of `side` pixels fit across and down, at least one each way. */

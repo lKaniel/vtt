@@ -30,8 +30,20 @@ export interface FoundryImportReport {
   macros?: number;
   /** Pictures and sounds copied. */
   media: number;
-  /** What could not come along, one line each. */
-  skipped: string[];
+  /** What could not come along, grouped by kind, the most first. */
+  left: LeftOut[];
+}
+
+/** One kind of thing a Foundry import left out, over the whole world. */
+export interface LeftOut {
+  /** What it is: "Walls that stop nothing". */
+  what: string;
+  count: number;
+  /** Some of their names or files. */
+  examples: string[];
+  /** Some of the scenes, actors or entries it happened in, and how many there were. */
+  places: string[];
+  placeCount: number;
 }
 
 /** Asking the server to import a Foundry world folder on its disk (the admin only). */
@@ -124,4 +136,40 @@ export interface GameDetail extends GameSummary {
   me?: string;
   /** You may manage its players, backups and files: you joined as its GM, or you are the server's admin. */
   manage: boolean;
+}
+
+/**
+ * The server's Baileywiki sign-in (content.baileywiki.com), as the admin
+ * sees it: never the code itself, which stays on the server.
+ */
+export interface BaileywikiStatus {
+  signedIn: boolean;
+  /** What the account unlocks: none, free, standard, advanced or vip. */
+  tier: string;
+  /** Where the admin signs in to get the code to paste. */
+  signInUrl: string;
+}
+
+/** A scene in one of Baileywiki's online scene compendia. */
+export interface BaileywikiScene {
+  /** The compendium, e.g. `baileywiki-content.maps`. */
+  compendium: string;
+  /** Its Foundry id there. */
+  id: string;
+  name: string;
+  /** The compendium's title, e.g. "Baileywiki 2D Scenes". */
+  group: string;
+  /** A public preview picture's address, if it has one. */
+  thumb?: string;
+  /** Already in the server's Baileywiki pack. */
+  imported: boolean;
+}
+
+/** What a Baileywiki import brought into the server's Baileywiki pack. */
+export interface BaileywikiImportReport {
+  pack: string;
+  scenes: number;
+  /** Files downloaded this time. */
+  media: number;
+  skipped: string[];
 }

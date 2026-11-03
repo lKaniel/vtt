@@ -1,3 +1,5 @@
+import type { ImportLoss } from '@vtt/core';
+import { lost, placed, type PlacedLoss } from './import-losses.ts';
 import { freeId, type FoundrySheets, slugify, type SystemDefinition } from '@vtt/core';
 import type { Model3D } from '@vtt/shared';
 import type { FoundryDoc } from './foundry-db.ts';
@@ -13,7 +15,6 @@ import type { MediaLookup } from './foundry-scene.ts';
 const obj = (x: unknown): FoundryDoc => (x && typeof x === 'object' && !Array.isArray(x) ? (x as FoundryDoc) : {});
 export const str = (x: unknown) => (typeof x === 'string' && x ? x : undefined);
 export const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : undefined);
-const plural = (n: number, what: string) => `${n} ${what}${n === 1 ? '' : 's'}`;
 
 /** Ids from names, each free in its list. */
 export function idMaker(fallback: string) {
@@ -39,7 +40,7 @@ export interface ConvertedActors {
   actors: Record<string, unknown>[];
   /** By Foundry actor id. */
   byFoundryId: Map<string, PlacedActor>;
-  skipped: string[];
+  skipped: PlacedLoss[];
 }
 
 /** What the import needs of a game system. */
@@ -89,7 +90,7 @@ function actorBase(a: FoundryDoc, id: string, ctx: ActorContext): Record<string,
 interface OneActor {
   file: Record<string, unknown>;
   placed: PlacedActor;
-  skipped: string[];
+  skipped: PlacedLoss[];
 }
 
 /** One actor file: the shared fields and its system's sheet (left out if the system can't read it). */
@@ -100,10 +101,10 @@ function actorOf(a: FoundryDoc, id: string, ctx: ActorContext): OneActor {
   const full = { ...base, ...fromSystem.sheet };
   const ok = ctx.system.actorSchema.safeParse(full).success;
   const file = ok ? full : base;
-  const skipped = fromSystem.skipped.map((s) => `actor "${name}": ${s}`);
-  if (!ok) skipped.push(`actor "${name}": its sheet, which could not be read (only its name and picture came along)`);
-  const placed = { id, name, img: str(file.img), size: num(file.size) ?? 1, linked: file.linked === true };
-  return { file, placed, skipped };
+  const skipped = placed(name, fromSystem.skipped);
+  if (!ok) skipped.push({ ...lost('Actor sheets we could not read (only the name and picture came)', 1, [name]) });
+  const where = { id, name, img: str(file.img), size: num(file.size) ?? 1, linked: file.linked === true };
+  return { file, placed: where, skipped };
 }
 
 /** Converts a world's actors. */
@@ -204,19 +205,15 @@ function tokenOf(t: FoundryDoc, id: string, ctx: TokenContext): Record<string, u
 export function foundryTokens(
   raw: unknown,
   ctx: TokenContext,
-): { tokens: Record<string, unknown>[]; skipped: string[] } {
+): { tokens: Record<string, unknown>[]; skipped: ImportLoss[] } {
   const nextId = idMaker('token');
-  const skipped: string[] = [];
+  const orphans: string[] = [];
   const tokens = (Array.isArray(raw) ? raw : []).map((x) => {
     const t = obj(x);
     const token = tokenOf(t, nextId(str(t.name) ?? 'token'), ctx);
-    if (!token.actor)
-      skipped.push(
-        `token "${String(token.name)}" stands for an actor that is not in the world, so it carries only its name and picture`,
-      );
+    if (!token.actor) orphans.push(String(token.name));
     return token;
   });
-  return { tokens, skipped };
+  const what = 'Tokens whose actor is not in the world (they keep only their name and picture)';
+  return { tokens, skipped: orphans.length ? [lost(what, orphans.length, orphans)] : [] };
 }
-
-export { plural };

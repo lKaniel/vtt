@@ -19,6 +19,8 @@ export interface ServerOptions {
   mcpKey?: string;
   /** Seeds the server's dice (support/seeded-random.ts), so a spec rolls the same numbers every run. */
   seed?: number;
+  /** VTT_BAILEYWIKI_URL: a stand-in for Baileywiki's content server. */
+  baileywiki?: string;
 }
 
 export interface RunningServer {
@@ -79,8 +81,10 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
   const env: NodeJS.ProcessEnv = { ...process.env, PORT: String(port), VTT_GAME: gameDir, VTT_DATA: dataDir };
   delete env.VTT_ADMIN_PASSWORD;
   delete env.VTT_MCP_KEY;
+  delete env.VTT_BAILEYWIKI_URL;
   if (options.adminPassword) env.VTT_ADMIN_PASSWORD = options.adminPassword;
   if (options.mcpKey) env.VTT_MCP_KEY = options.mcpKey;
+  if (options.baileywiki) env.VTT_BAILEYWIKI_URL = options.baileywiki;
   const seeded =
     options.seed === undefined ? [] : ['--import', join(repoRoot, 'packages/e2e/support/seeded-random.ts')];
   if (options.seed !== undefined) env.E2E_RANDOM_SEED = String(options.seed);

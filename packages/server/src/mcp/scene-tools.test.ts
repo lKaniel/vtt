@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from '../game.ts';
 import { GameStore } from '../store/game-store.ts';
@@ -7,11 +9,13 @@ import type { McpContent } from './mcp-protocol.ts';
 
 // Claude making and changing scenes over the bridge, as the test game's GM.
 
+let dir: string;
 let store: GameStore;
 let game: Game;
 
 beforeEach(async () => {
-  store = new GameStore(await makeTwoScenes());
+  dir = await makeTwoScenes();
+  store = new GameStore(dir);
   await store.load();
   game = new Game(store, { rng: () => 0 });
 });
@@ -74,6 +78,21 @@ describe('scene tools', () => {
     const [all, ground, loft] = [await sketch(), await sketch('ground'), await sketch('loft')];
     expect(new Set([all, ground, loft]).size).toBe(3);
     await expect(gm('render_scene', { scene: 'barn', level: 'attic' })).rejects.toThrow(/No level "attic"/);
+  });
+
+  it('set how a scene looks in 3D, and find the models it can use', async () => {
+    const gm = toolsFor('gm');
+    await gm('create_scene', { name: 'Vale', view3d: { sky: '/assets/sky.webp', walls: false } });
+    expect(store.docs.get('scenes', 'vale')).toMatchObject({ view3d: { sky: '/assets/sky.webp', walls: false } });
+    await mkdir(join(dir, 'assets/models/ruins'), { recursive: true });
+    await writeFile(join(dir, 'assets/models/ruins/tower.glb'), 'glTF');
+    await writeFile(join(dir, 'assets/models/ruins/moss.webp'), 'RIFF');
+    const listed = json(await gm('list_assets', { kind: 'model', search: 'ruins' }));
+    expect(listed).toEqual({
+      total: 1,
+      assets: [{ src: '/assets/models/ruins/tower.glb', name: 'tower', kind: 'model', tags: ['models', 'ruins'] }],
+    });
+    await expect(toolsFor('ana')('list_assets', {})).rejects.toThrow(/GM/);
   });
 
   it('build rooms, lights and creatures in one step that one undo takes back', async () => {

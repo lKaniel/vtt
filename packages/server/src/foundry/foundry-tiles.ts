@@ -1,3 +1,5 @@
+import type { ImportLoss } from '@vtt/core';
+import { lost } from './import-losses.ts';
 import { z } from 'zod';
 
 // Which Foundry tiles are roofs. v10-v11 mark them `overhead` (and `roof`);
@@ -38,12 +40,11 @@ export const FoundryTile = z.object({
 export type FoundryTileData = z.infer<typeof FoundryTile>;
 
 /** What Monk's Active Tiles did on these tiles (its triggers stay behind): a report line, if any. */
-export function activeTilesNote(tiles: FoundryTileData[]): string | undefined {
+export function activeTilesNote(tiles: FoundryTileData[]): ImportLoss | undefined {
   const acting = tiles.filter((t) => t.flags?.['monks-active-tiles']?.actions.length);
   if (!acting.length) return undefined;
   const actions = new Set(acting.flatMap((t) => t.flags!['monks-active-tiles']!.actions.map((a) => a.action ?? '?')));
-  const count = `${acting.length} tile${acting.length === 1 ? '' : 's'}`;
-  return `Monk's Active Tiles triggers on ${count} (${[...actions].join(', ')}): the tile comes, not what it does`;
+  return lost("Monk's Active Tiles triggers (the tile comes, not what it does)", acting.length, [...actions]);
 }
 
 /** Whether a tile is drawn over the tokens; `foreground` is the scene's foreground elevation (v12+). */

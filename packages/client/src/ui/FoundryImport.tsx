@@ -1,7 +1,9 @@
 import type { FoundryImportReport } from '@vtt/shared';
 import { useState } from 'react';
 import { api } from '../server-api.ts';
-import { importSummary } from '../foundry-report.ts';
+import { importSummary, leftOutDetail } from '../foundry-report.ts';
+import { t, useLanguage } from '../i18n/index.ts';
+import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
 import { Card } from './kit/card.tsx';
 import { Input } from './kit/input.tsx';
@@ -11,22 +13,27 @@ import { Input } from './kit/input.tsx';
 // box then says what came along and what stayed behind.
 
 function ImportDone({ report, onOpen }: Readonly<{ report: FoundryImportReport; onOpen: () => void }>) {
+  useLanguage();
   return (
     <div className="flex flex-col gap-2" data-testid="foundry-report">
-      <p className="text-sm">
-        <strong>{report.name}</strong> is ready: {importSummary(report)}.
-      </p>
-      {report.skipped.length > 0 && (
-        <Card className="max-h-48 overflow-y-auto p-2 text-xs">
-          <p className="mb-1 font-semibold">Left out</p>
-          <ul className="list-disc pl-4">
-            {report.skipped.map((line, i) => (
-              <li key={i}>{line}</li>
+      <p className="text-sm">{t('foundry.ready', { name: report.name, summary: importSummary(report) })}</p>
+      {report.left.length > 0 && (
+        <Card className="max-h-64 overflow-y-auto p-2 text-xs">
+          <p className="mb-1 font-semibold">{t('foundry.leftOut')}</p>
+          <ul className="flex flex-col gap-1.5">
+            {report.left.map((l) => (
+              <li key={l.what}>
+                <div className="flex items-start gap-2">
+                  <Badge variant="muted">{l.count}</Badge>
+                  <span>{l.what}</span>
+                </div>
+                {leftOutDetail(l) && <p className="pl-9 text-muted-foreground">{leftOutDetail(l)}</p>}
+              </li>
             ))}
           </ul>
         </Card>
       )}
-      <Button onClick={onOpen}>Open the game</Button>
+      <Button onClick={onOpen}>{t('foundry.open')}</Button>
     </div>
   );
 }

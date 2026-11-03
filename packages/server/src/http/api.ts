@@ -12,7 +12,9 @@ import {
   type Call,
   type Routes,
 } from './http-json.ts';
+import { BaileywikiRoutes } from './baileywiki-api.ts';
 import { LobbyRoutes } from './lobby-api.ts';
+import { BaileywikiError } from '../foundry/baileywiki-client.ts';
 import { mcpHandler } from '../mcp/mcp-http.ts';
 import { BackupError } from '../library/backups.ts';
 import { ArchiveError } from '../library/game-archive.ts';
@@ -29,6 +31,8 @@ export interface ApiDeps {
   hub: GameHub;
   /** The server's own key for Claude (VTT_MCP_KEY): it sits as the home game's GM. */
   mcpKey?: string;
+  /** Baileywiki's content server; content.baileywiki.com unless a test runs its own. */
+  baileywiki?: string;
 }
 
 const AdminInput = z.object({ password: z.string().max(200) });
@@ -36,11 +40,15 @@ const AdminPasswordInput = z.object({ password: z.string().max(200).nullable() }
 
 /** An error whose message is the answer: a 400. */
 const isRefusal = (e: unknown): e is Error =>
-  e instanceof SessionError || e instanceof HubError || e instanceof BackupError || e instanceof ArchiveError;
+  e instanceof SessionError ||
+  e instanceof BaileywikiError ||
+  e instanceof HubError ||
+  e instanceof BackupError ||
+  e instanceof ArchiveError;
 
 /** Handles /api/ requests about the session and games; returns false for anything else. */
 export function apiHandler(deps: ApiDeps): (req: IncomingMessage, res: ServerResponse) => Promise<boolean> {
-  const all: Routes[] = [new SessionRoutes(deps), new LobbyRoutes(deps)];
+  const all: Routes[] = [new SessionRoutes(deps), new LobbyRoutes(deps), new BaileywikiRoutes(deps)];
   const mcp = mcpHandler(deps);
   return async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');

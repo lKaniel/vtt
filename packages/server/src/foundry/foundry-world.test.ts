@@ -270,7 +270,12 @@ describe('importFoundryWorld', () => {
     const { dir, report } = await imported();
     expect(await readJson(join(dir, 'macros/hail.json'))).toMatchObject({ name: 'Hail', command: 'Well met!' });
     expect(report.macros).toBe(1);
-    expect(report.skipped).toContain('1 macro that rolls an item from the hotbar: our hotbar does that already');
+    expect(report.left).toContainEqual(
+      expect.objectContaining({
+        what: 'Macros that roll an item from the hotbar (our hotbar does that already)',
+        count: 1,
+      }),
+    );
   });
 
   it('keeps the world’s time on the game clock', async () => {
@@ -286,11 +291,20 @@ describe('importFoundryWorld', () => {
 
   it('says what stayed behind', async () => {
     const { report } = await imported();
-    expect(report.skipped).toEqual(
+    expect(report.left).toEqual(
       expect.arrayContaining([
-        'scene "The Keep": token "Statue" stands for an actor that is not in the world, so it carries only its name and picture',
-        '1 item in the Items sidebar (Longsword): drag items from the Compendium instead',
-        "Foundry users (Sam): add your players on the game's page; their characters are actors to give them",
+        {
+          what: 'Tokens whose actor is not in the world (they keep only their name and picture)',
+          count: 1,
+          examples: ['Statue'],
+          places: ['The Keep'],
+          placeCount: 1,
+        },
+        expect.objectContaining({
+          what: 'Items in the Items sidebar (drag items from the Compendium instead)',
+          examples: ['Longsword'],
+        }),
+        expect.objectContaining({ what: "Foundry users (add your players on the game's page)", examples: ['Sam'] }),
       ]),
     );
   });

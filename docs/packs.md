@@ -201,10 +201,32 @@ with `module.json`, `world.json` or `system.json`). It makes a pack in
 To play a whole Foundry world (its tokens and actors too), import it as a
 game instead: see [foundry.md](foundry.md).
 
+## Baileywiki
+
+Setup has a **Baileywiki** box for the server's admin. "Open the
+Baileywiki sign-in" opens content.baileywiki.com (Patreon, Discord or a
+Baileywiki account); paste the code it shows and the server checks it
+there and keeps it in `data/baileywiki.json`, never sending it to a
+browser. "Show scenes" lists the scenes of Baileywiki's online compendia
+(their 2D and 3D scene browsers) with their public previews; tick some and
+"Import" downloads each scene and the Baileywiki files it uses into a pack
+`baileywiki` in `data/packs/`, keeping Baileywiki's paths, so a file shared
+by many scenes comes down once. Importing a scene again replaces it in
+place. Games then turn the pack on and import its scenes like any pack's.
+
+It talks to Baileywiki's server the way their own Foundry module does
+(`server/src/foundry/baileywiki-*.ts`): Baileywiki decides what the
+membership unlocks, and what it turns down is listed as left out. Files from
+other modules (JB2A, core icons) aren't Baileywiki's to give and stay out
+too. The pack is paid content: it lives in the gitignored `data/` and is
+never committed or shared. `VTT_BAILEYWIKI_URL` points the server at
+another content server (the tests' stand-in).
+
 ## Not done yet
 
 - Foundry actors and items in a pack's compendia (a world import reads
   them, see [foundry.md](foundry.md)).
+- Baileywiki prefabs (Mass Edit presets) and their tile sets.
 - Installing a pack from the browser (zip upload) and per-pack permissions.
 - Art: picking a template's texture by hand in the inspector; JB2A's
   on-token loops for conditions and auras.

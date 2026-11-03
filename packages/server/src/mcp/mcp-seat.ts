@@ -69,6 +69,27 @@ export function act(game: Game, player: Player, msgs: readonly ClientMessage[]):
   });
 }
 
+/** Sends one message as `player` and waits (up to `wait` ms) for the reply of kind `t`, which may come later (a disk read). */
+export function ask<T extends ServerMessage['t']>(
+  game: Game,
+  player: Player,
+  msg: ClientMessage,
+  t: T,
+): Promise<Extract<ServerMessage, { t: T }>> {
+  const wait = 10_000;
+  return seated(game, player, async (ws) => {
+    ws.sent = [];
+    ws.emit('message', Buffer.from(JSON.stringify(msg)));
+    for (const started = Date.now(); Date.now() - started < wait; await new Promise((r) => setTimeout(r, 5))) {
+      const error = ws.sent.find((m) => m.t === 'error');
+      if (error?.t === 'error') throw new Error(error.message);
+      const found = ws.sent.find((m): m is Extract<ServerMessage, { t: T }> => m.t === t);
+      if (found) return found;
+    }
+    throw new Error('The game did not answer');
+  });
+}
+
 /** The game's answer to what was sent: thrown when it refused, else a short note. */
 export function outcome(replies: readonly ServerMessage[]): string {
   const error = replies.find((m) => m.t === 'error');

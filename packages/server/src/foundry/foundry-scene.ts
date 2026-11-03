@@ -1,3 +1,5 @@
+import type { ImportLoss } from '@vtt/core';
+import { lost, lost as lostThings } from './import-losses.ts';
 import { gridSizePatch, type SceneEntry, type Tile, type Wall } from '@vtt/shared';
 import { z } from 'zod';
 import { foundryList, sourceOf } from './foundry-lists.ts';
@@ -65,7 +67,7 @@ export type MediaLookup = (foundryPath: string) => string | undefined;
 export interface ConvertedScene {
   scene: Omit<SceneEntry, 'id'>;
   /** What could not come along, for the import report. */
-  skipped: string[];
+  skipped: ImportLoss[];
 }
 
 export interface Grid {
@@ -108,7 +110,7 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
   const grid = gridOf(s);
   const pad = (side: number) => Math.ceil((side * s.padding) / grid.size) * grid.size;
   const [x, y] = [pad(s.width), pad(s.height)];
-  const skipped: string[] = [];
+  const skipped: ImportLoss[] = [];
   const floors = foundryFloors(data, feetIn(grid));
   const on = (item: object) => floors?.on(sourceOf(item)) ?? {};
   const background = backgroundTile(s, { x, y }, lookupIn(media), skipped);
@@ -142,25 +144,23 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
   };
   const tokens = s.tokens?.length ?? 0;
   if (tokens && !lookups.keepsTokens)
-    skipped.push(`${plural(tokens, 'token')} (place the creatures from the Actors tab)`);
+    skipped.push(lostThings('Tokens (place the creatures from the Actors tab)', tokens));
   return { scene, skipped };
 }
 
 /** Foundry grid units in feet, rounded. */
 const feetIn = (grid: Grid) => (units: number) => Math.round((units * 5) / grid.distance);
 
-const plural = (n: number, what: string) => `${n} ${what}${n === 1 ? '' : 's'}`;
-
 function backgroundTile(
   s: FoundryScene,
   at: { x: number; y: number },
   find: ReturnType<typeof lookupIn>,
-  skipped: string[],
+  skipped: ImportLoss[],
 ): Tile[] {
   const path = s.background?.src ?? s.img ?? levelBackground(s.levels);
   const src = find(path);
   if (!src) {
-    if (path) skipped.push(`the background picture, which is not in the module (${path})`);
+    if (path) skipped.push(lost('Background pictures that could not be found', 1, [path]));
     return [];
   }
   return [
@@ -274,7 +274,7 @@ function view3dOf(data: unknown, media: MediaLookup): Pick<SceneEntry, 'view3d'>
 
 interface TileContext {
   find: ReturnType<typeof lookupIn>;
-  skipped: string[];
+  skipped: ImportLoss[];
   on: OnFloors;
   grid: Grid;
 }
@@ -289,10 +289,7 @@ function modelTiles(tiles: FoundryScene['tiles'], c: TileContext): Tile[] {
     if (!model) lost++;
     else out.push({ id: '', kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src: BLANK, model, ...c.on(t) });
   }
-  if (lost)
-    c.skipped.push(
-      `${plural(lost, '3D Canvas tile')} without a glTF model from the Data folder (drawn shapes stay behind)`,
-    );
+  if (lost) c.skipped.push(lostThings('3D Canvas tiles without a glTF model in the Data folder (drawn shapes)', lost));
   return out;
 }
 
@@ -316,17 +313,16 @@ function tilesOf(s: FoundryScene, c: TileContext): Tile[] {
       out.push({ id: '', kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src, ...roofOf(t, fg), ...on(t) });
     } else missing.push(path ?? '(none)');
   }
-  if (missing.length)
-    skipped.push(`${plural(missing.length, 'tile')} whose picture is not in the module (${missing.join(', ')})`);
+  if (missing.length) skipped.push(lost('Tiles whose picture could not be found', missing.length, missing));
   return out.map((t, i) => ({ ...t, id: `tile-${i + 1}` }));
 }
 
-function wallsOf(s: FoundryScene, grid: Grid, skipped: string[], on: OnFloors): Wall[] {
+function wallsOf(s: FoundryScene, grid: Grid, skipped: ImportLoss[], on: OnFloors): Wall[] {
   const walls = s.walls.flatMap((w) => {
     const wall = wallOf(w, feetIn(grid));
     return wall ? [{ ...wall, ...on(w) }] : [];
   });
   const inert = s.walls.length - walls.length;
-  if (inert) skipped.push(`${plural(inert, 'wall')} that ${inert === 1 ? 'stops' : 'stop'} nothing`);
+  if (inert) skipped.push(lost('Walls that stop nothing', inert));
   return walls.map((wall, i) => ({ id: `wall-${i + 1}`, ...wall }));
 }
