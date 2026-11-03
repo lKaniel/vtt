@@ -30,7 +30,7 @@ export function TokenTab(props: Readonly<SheetProps>) {
   );
 }
 
-function Identity({ session, kind, value, update }: Readonly<SheetProps>) {
+function Identity({ session, value, update }: Readonly<SheetProps>) {
   const set =
     (key: keyof Draft, now = false) =>
     (v: unknown) =>
@@ -41,11 +41,6 @@ function Identity({ session, kind, value, update }: Readonly<SheetProps>) {
       <Field label="Picture URL" wide>
         <TextInput value={value.img} onChange={set('img')} placeholder="Default portrait" />
       </Field>
-      {kind === 'actor' && (
-        <Field label="Folder" wide>
-          <TextInput value={value.folder} onChange={set('folder')} placeholder="No folder" />
-        </Field>
-      )}
       <div className="ed-grid">
         <Field label="Colour">
           <ColorInput value={value.color} onChange={(e) => set('color')(e.target.value)} />

@@ -28,7 +28,7 @@ import { SceneState, sameScene, tellSky } from './scene-state.ts';
 import { StoreAccess, type DocAccess } from './store-access.ts';
 import { ACTORS, CLOCK, COMBAT, docsOf, FIGHT, fileOf, GAME, SCENES, scopeOf, type TYPE } from './store-colls.ts';
 import { StoreHistory, touchedBy, type Touched } from './store-history.ts';
-import { sceneDeleteOps } from './scene-ops.ts';
+import { cascadeOps } from './scene-ops.ts';
 import { isEntryColl } from './entry-files.ts';
 import { actorDeleteOps, chunkOps, putOps, relinkOps, tokenOps, unlinkActorOps, type Relink } from './token-ops.ts';
 
@@ -328,7 +328,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
     const scenes = this.docs.all(SCENES).map((d) => d.id);
     const made = new Set(ops.flatMap((op) => (op.op === 'create' && op.coll === SCENES ? [op.doc.id] : [])));
     const validate = clientCheck((id) => made.has(id) || !!this.docs.get(SCENES, id));
-    const extra = actorDeleteOps(this.docs, scenes, ops, this.actors).concat(sceneDeleteOps(this.docs, this.game, ops));
+    const extra = actorDeleteOps(this.docs, scenes, ops, this.actors).concat(cascadeOps(this.docs, this.game, ops));
     this.commit([...extra, ...ops], { validate, txn });
   }
 

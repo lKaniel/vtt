@@ -2,23 +2,16 @@ import { basename, join } from 'node:path';
 import { defaultEdition } from '@vtt/core';
 import { DEFAULT_SYSTEM, type FoundryImportReport, type Game, type Player, type SceneEntry } from '@vtt/shared';
 import { z } from 'zod';
-import {
-  type ActorSystem,
-  foundryActors,
-  folderNames,
-  foundryTokens,
-  idMaker,
-  plural,
-  type PlacedActor,
-} from './foundry-actors.ts';
+import { type ActorSystem, foundryActors, foundryTokens, idMaker, plural, type PlacedActor } from './foundry-actors.ts';
 import { type FoundryDoc, readFoundryDb } from './foundry-db.ts';
 import { foundryMacros } from './foundry-macros.ts';
-import { type ConvertedEntries, foundryEntries } from './foundry-entries.ts';
+import { type ConvertedEntries, type FolderLookup, foundryEntries } from './foundry-entries.ts';
+import { foundryFolders } from './foundry-folders.ts';
 import { dataFolderOf, FoundryMedia } from './foundry-media.ts';
 import { foundryGrid, foundryScene, type MediaLookup } from './foundry-scene.ts';
 import { foundryClock } from './foundry-time.ts';
 import { readJson, writeJson } from '../store/json-files.ts';
-import { FORMAT } from '../migrate/migrate-ownership.ts';
+import { FORMAT } from '../migrate/migrate-folders.ts';
 import { SYSTEMS } from '../systems.ts';
 
 // A whole Foundry VTT world as a new game: every scene with its walls,
@@ -117,10 +110,12 @@ interface SceneContext {
   entries: ConvertedEntries;
   actors: Map<string, PlacedActor>;
   system: ActorSystem;
+  folderOf: FolderLookup;
 }
 
 interface ConvertedScene {
   id: string;
+  folder?: string;
   entry: SceneEntry;
   tokens: Record<string, unknown>[];
   playlist?: string;
@@ -143,7 +138,8 @@ function convertScenes(raw: FoundryDoc[], ctx: SceneContext, skipped: string[]):
     });
     skipped.push(...[...lost, ...tokens.skipped].map((what) => `scene "${scene.name}": ${what}`));
     const playlist = typeof data.playlist === 'string' ? ctx.entries.playlistIds(data.playlist) : undefined;
-    return { id, entry: { id, ...scene }, tokens: tokens.tokens, playlist, active: data.active === true };
+    const folder = ctx.folderOf(typeof data.folder === 'string' ? data.folder : undefined);
+    return { id, folder, entry: { id, ...scene }, tokens: tokens.tokens, playlist, active: data.active === true };
   });
 }
 
@@ -154,6 +150,7 @@ async function writeScene(game: string, s: ConvertedScene): Promise<void> {
   const { id: _id, ...entry } = s.entry;
   const settings = Object.fromEntries(Object.entries(entry).filter(([k]) => !(PARTS as readonly string[]).includes(k)));
   if (s.playlist) settings.playlist = s.playlist;
+  if (s.folder) settings.folder = s.folder;
   for (const part of PARTS) if (entry[part].length) await writeJson(join(dir, `${part}.json`), entry[part]);
   if (s.tokens.length) await writeJson(join(dir, 'tokens.json'), s.tokens);
   await writeJson(join(dir, 'scene.json'), settings);
@@ -199,7 +196,7 @@ export async function importFoundryWorld(from: string, game: string, opts: World
   const setting = settingsOf(world.docs.settings);
   const rules = system.foundry?.rules(setting) ?? defaultEdition(system);
   const media = new FoundryMedia({ dir: from, id: world.id }, opts.dataDir ?? dataFolderOf(from));
-  const folderOf = folderNames(world.docs.folders);
+  const { folders, folderOf } = foundryFolders(world.docs.folders);
   const { docs } = world;
   const entries = foundryEntries(
     { journals: docs.journal, tables: docs.tables, playlists: docs.playlists },
@@ -211,7 +208,7 @@ export async function importFoundryWorld(from: string, game: string, opts: World
   const skipped = [...entries.skipped, ...actors.skipped, ...macros.skipped];
   const scenes = convertScenes(
     docs.scenes,
-    { media: media.lookup, entries, actors: actors.byFoundryId, system },
+    { media: media.lookup, entries, actors: actors.byFoundryId, system, folderOf },
     skipped,
   );
   skipped.push(...leftBehind(world, system));
@@ -221,6 +218,7 @@ export async function importFoundryWorld(from: string, game: string, opts: World
   await writeEach(join(game, 'tables'), entries.tables);
   await writeEach(join(game, 'playlists'), entries.playlists);
   await writeEach(join(game, 'macros'), macros.macros);
+  await writeEach(join(game, 'folders'), folders);
   const name = opts.name?.trim() ? opts.name.trim() : world.title;
   const active = scenes.find((s) => s.active) ?? scenes[0];
   if (!active) await writeJson(join(game, 'scenes/main/scene.json'), { name: 'Main', darkness: 0 });
