@@ -15,6 +15,9 @@ Client to server:
   so an edit can't write a file the server would refuse to load. Deleting an
   actor first leaves its tokens carrying its sheet, as `deleteActor` does.
 - `{ t: 'undo', card? }` and `{ t: 'redo' }`.
+- `{ t: 'build', scene, label?, ops, spawns }` (GM): ops plus new
+  creatures (`spawn`'s `from`, `at`, `hidden`) on any scene, all or nothing,
+  as one step. Claude's `build_scene` sends it.
 - Game actions (`move`, `attack`, `cast`, `rest`, ...) and the older GM
   intents (`editToken`, `spawn`, `mapEdit`, `darkness`, ...) stay as they
   are: the server runs the rules and turns them into ops itself.

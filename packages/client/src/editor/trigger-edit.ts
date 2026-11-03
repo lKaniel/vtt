@@ -23,7 +23,7 @@ export interface StepField {
 }
 
 const ACTION_TYPES = TRIGGER_ACTIONS.map((a) => a.shape.type.value);
-const REGION_ONLY = ['difficult', 'trap', 'level', 'reveal'];
+const REGION_ONLY = ['difficult', 'trap', 'level', 'stairs', 'elevator', 'reveal'];
 
 /** The step types a tile's trigger or a region may have. */
 export function stepTypes(on: 'tile' | 'region'): string[] {
@@ -41,6 +41,8 @@ const BLANK: Record<string, Omit<Step, 'type'>> = {
   difficult: {},
   trap: {},
   level: { to: '' },
+  stairs: { between: ['', ''] },
+  elevator: {},
   reveal: {},
 };
 
@@ -83,6 +85,11 @@ const FIELDS: Record<string, StepField[]> = {
     { key: 'once', label: 'Springs once', kind: 'check' },
   ],
   level: [{ key: 'to', label: 'To level', kind: 'select', choices: 'levels' }],
+  stairs: [
+    { key: 'between.0', label: 'Lower level', kind: 'select', choices: 'levels' },
+    { key: 'between.1', label: 'Upper level', kind: 'select', choices: 'levels' },
+  ],
+  elevator: [{ key: 'floors', label: 'Floors (level ids, comma between; none = all)', kind: 'list' }],
   reveal: [],
 };
 

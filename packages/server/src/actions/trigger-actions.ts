@@ -27,6 +27,8 @@ export interface TriggerOut {
   say(text: string, gmOnly: boolean): void;
   scene(msg: Extract<EngineServerMessage, { t: 'sound' }>): void;
   show(entry: string, page?: string): void;
+  /** Asks whoever moves `token` (its players, else the GM) to choose. */
+  ask(token: Token, msg: Extract<EngineServerMessage, { t: 'levelChoice' }>): void;
 }
 
 /** What set the actions off: the tile, and the creature that walked onto it or clicked with. */
@@ -40,7 +42,7 @@ type Act<T extends TriggerAction['type']> = (a: Extract<TriggerAction, { type: T
 export class TriggerActions {
   constructor(
     private table: Table,
-    private out: TriggerOut,
+    readonly out: TriggerOut,
   ) {}
 
   private get store() {

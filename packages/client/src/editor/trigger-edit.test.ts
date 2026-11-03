@@ -20,6 +20,19 @@ describe('trigger steps', () => {
     expect(getStep(setStep(blankStep('message'), 'gmOnly', true), 'gmOnly')).toBe(true);
   });
 
+  it('builds stairs between two levels and an elevator to some floors', () => {
+    expect(stepTypes('region')).toEqual(expect.arrayContaining(['stairs', 'elevator']));
+    let stairs = setStep(blankStep('stairs'), 'between.0', 'ground');
+    stairs = setStep(stairs, 'between.1', 'loft');
+    expect(stairs).toEqual({ type: 'stairs', between: ['ground', 'loft'] });
+    expect(problemOf([stairs], 'region')).toBeUndefined();
+    expect(setStep(blankStep('elevator'), 'floors', 'cellar, loft')).toEqual({
+      type: 'elevator',
+      floors: ['cellar', 'loft'],
+    });
+    expect(problemOf([blankStep('elevator')], 'region')).toBeUndefined();
+  });
+
   it('has fields for every step type', () => {
     for (const type of stepTypes('region')) expect(Array.isArray(stepFields(type))).toBe(true);
     expect(stepFields('door').map((f) => f.key)).toEqual(['wall', 'to']);

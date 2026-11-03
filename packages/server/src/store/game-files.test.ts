@@ -226,9 +226,12 @@ describe('crossCheck', () => {
 
   it('reports notes on missing journal entries, teleports to missing scenes and unknown levels', () => {
     const scene = {
-      scene: SceneSchema.parse({ levels: [{ id: 'ground', name: 'Ground', bottom: 0 }] }),
+      scene: SceneSchema.parse({ levels: [{ id: 'ground', name: 'Ground', bottom: 0, sees: ['pit'] }] }),
       tiles: [],
-      walls: [{ id: 'w', a: [0, 0], b: [1, 0], level: 'attic' }],
+      walls: [
+        { id: 'w', a: [0, 0], b: [1, 0], level: 'attic' },
+        { id: 'v', a: [0, 0], b: [1, 0], levels: ['ground', 'cellar'] },
+      ],
       lights: [],
       tokens: [],
       notes: [
@@ -254,14 +257,30 @@ describe('crossCheck', () => {
           ],
           behaviors: [{ type: 'level', to: 'roof' }],
         },
+        {
+          id: 'steps',
+          points: [
+            [0, 0],
+            [1, 0],
+            [0, 1],
+          ],
+          behaviors: [
+            { type: 'stairs', between: ['ground', 'tower'] },
+            { type: 'elevator', floors: ['ground', 'moon'] },
+          ],
+        },
       ],
     } as GameState['scenes'] extends Map<string, infer S> ? S : never;
     const journals = new Map([['the-inn', { id: 'the-inn', name: 'The inn', pages: [] }]]);
     expect(crossCheck({ ...state([]), scenes: new Map([['main', scene]]), journals })).toEqual([
+      { file: 'scenes/main/scene.json', message: 'level "ground": sees unknown level "pit"' },
       { file: 'scenes/main/walls.json', message: 'wall "w": unknown level "attic"' },
+      { file: 'scenes/main/walls.json', message: 'wall "v": unknown level "cellar"' },
       { file: 'scenes/main/notes.json', message: 'note "pin": unknown journal entry "lost-diary"' },
       { file: 'scenes/main/regions.json', message: 'region "portal": unknown scene "mars"' },
       { file: 'scenes/main/regions.json', message: 'region "stairs": unknown level "roof"' },
+      { file: 'scenes/main/regions.json', message: 'region "steps": unknown level "tower"' },
+      { file: 'scenes/main/regions.json', message: 'region "steps": unknown level "moon"' },
     ]);
   });
 });

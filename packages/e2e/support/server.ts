@@ -15,6 +15,8 @@ export interface ServerOptions {
   adminPassword?: string;
   /** Changes the game's files before the server starts (an encounter set up by hand). */
   prepare?: (gameDir: string) => Promise<void>;
+  /** VTT_MCP_KEY: a key for the Claude bridge (POST /mcp) that sits as the home game's GM. */
+  mcpKey?: string;
   /** Seeds the server's dice (support/seeded-random.ts), so a spec rolls the same numbers every run. */
   seed?: number;
 }
@@ -78,6 +80,7 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
   delete env.VTT_ADMIN_PASSWORD;
   delete env.VTT_MCP_KEY;
   if (options.adminPassword) env.VTT_ADMIN_PASSWORD = options.adminPassword;
+  if (options.mcpKey) env.VTT_MCP_KEY = options.mcpKey;
   const seeded =
     options.seed === undefined ? [] : ['--import', join(repoRoot, 'packages/e2e/support/seeded-random.ts')];
   if (options.seed !== undefined) env.E2E_RANDOM_SEED = String(options.seed);

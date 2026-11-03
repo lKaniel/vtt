@@ -1,4 +1,4 @@
-import { type Chunk, chunkFor, isGm, type Player, type Point, type RollMode } from '@vtt/shared';
+import { canControl, type Chunk, chunkFor, isGm, type Player, type Point, type RollMode } from '@vtt/shared';
 import { type ServerMessage, type Token, viewToken } from '@vtt/system-dnd5e';
 import type { WebSocket } from 'ws';
 import type { DocFeed } from './store/doc-feed.ts';
@@ -69,4 +69,15 @@ export function visibilityChanges(
     else if (id === changed) out.push(path ? { t: 'moved', id, path } : { t: 'token', token });
   }
   return out;
+}
+
+/** Sends `msg` to the players on the scene who move `token`; when none of them is here, to the GM. */
+export function askMovers(
+  here: readonly Client[],
+  token: Token,
+  msg: ServerMessage,
+  send: (c: Client, msg: ServerMessage) => void,
+): void {
+  const players = here.filter((c) => !isGm(c.player) && canControl(token, c.player));
+  for (const c of players.length ? players : here.filter((c) => isGm(c.player))) send(c, msg);
 }

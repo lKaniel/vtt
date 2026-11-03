@@ -68,3 +68,13 @@ export function act(game: Game, player: Player, msgs: readonly ClientMessage[]):
     return ws.sent;
   });
 }
+
+/** The game's answer to what was sent: thrown when it refused, else a short note. */
+export function outcome(replies: readonly ServerMessage[]): string {
+  const error = replies.find((m) => m.t === 'error');
+  if (error?.t === 'error') throw new Error(error.message);
+  const reject = replies.find((m) => m.t === 'reject');
+  if (reject?.t === 'reject') throw new Error(`Refused: ${reject.reason}`);
+  const chat = replies.flatMap((m) => (m.t === 'chat' ? [m.message] : []));
+  return chat.length ? `Done. Chat: ${JSON.stringify(chat)}` : 'Done.';
+}
