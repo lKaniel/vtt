@@ -119,6 +119,30 @@ describe('shape tools in the session', () => {
     expect(session.levels.current).toBeUndefined();
   });
 
+  it('show the levels seen from the one shown, bottom first', () => {
+    const levels = [
+      { id: 'loft', name: 'Loft', bottom: 10, sees: ['ground'] },
+      { id: 'ground', name: 'Ground', bottom: 0 },
+    ];
+    const base = welcome([{ ...token('hero'), elevation: 12 }]) as Extract<ServerMessage, { t: 'welcome' }>;
+    ws.receive({ ...base, world: { ...base.world, levels } });
+    expect(session.levels.shown).toEqual(['ground', 'loft']);
+  });
+
+  it('ask which floor an elevator goes to, and send the pick', () => {
+    const levels = [
+      { id: 'ground', name: 'Ground', bottom: 0 },
+      { id: 'loft', name: 'Loft', bottom: 10 },
+    ];
+    const base = welcome() as Extract<ServerMessage, { t: 'welcome' }>;
+    ws.receive({ ...base, world: { ...base.world, levels } });
+    ws.receive({ t: 'levelChoice', token: 'hero', levels: ['loft'] });
+    expect(session.levels.choice).toEqual({ token: 'hero', levels: [levels[1]] });
+    session.levels.pick('loft');
+    expect(ws.sent.at(-1)).toEqual({ t: 'changeLevel', token: 'hero', level: 'loft' });
+    expect(session.levels.choice).toBeUndefined();
+  });
+
   it('let the inspector edit only what this seat may', () => {
     joinAs('player');
     session.editor.setMode('drawings');

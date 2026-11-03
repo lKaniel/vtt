@@ -1,5 +1,5 @@
 import { type Level, levelFor, type Ownership } from '@vtt/core';
-import { onLevel, tokenLevel } from './levels.ts';
+import { levelsSeen, onLevel, tokenLevel } from './levels.ts';
 import type { PlacedToken, Player, Point, SceneLevel, Wall, World } from './schema.ts';
 import { type Eyes, type LightContext, type Perceiver, perceives } from './senses.ts';
 import { hasLineOfSight, type LightSource } from './vision.ts';
@@ -106,10 +106,13 @@ export interface SightContext<T> {
 interface LevelEyes {
   eyes: Eyes;
   level: string | undefined;
-  light: LightContext;
+  /** The levels these eyes see (their own and those it looks down on); undefined on a scene without levels. */
+  seen: readonly string[] | undefined;
+  /** The light on `level`, past the walls of the viewer's own level. */
+  light: (level: string | undefined) => LightContext;
 }
 
-/** A viewer's eyes, with the light and walls of their own level. */
+/** A viewer's eyes, with the walls of their own level and the light of whichever level they look at. */
 function eyesOf<T extends PlacedToken>(v: T, ctx: SightContext<T>): LevelEyes {
   const p = ctx.perceiver(v);
   const level = tokenLevel(ctx.levels, v);
@@ -121,14 +124,20 @@ function eyesOf<T extends PlacedToken>(v: T, ctx: SightContext<T>): LevelEyes {
       wallsAt(ctx.wallsBetween(a, b), v.elevation).filter((w) => onLevel(w, level)),
       { kind, gridSize },
     );
-  const light: LightContext = {
+  const light = (on: string | undefined): LightContext => ({
     darkness: ctx.world.darkness,
     gridSize,
-    lights: ctx.lights.filter((l) => onLevel(l, level)),
+    lights: ctx.lights.filter((l) => onLevel(l, on)),
     clear: past('sight'),
     lit: past('light'),
-  };
-  return { eyes: { at: [v.x, v.y], senses: p.senses, blinded: p.blinded }, level, light };
+  });
+  const eyes = { at: [v.x, v.y] as Point, senses: p.senses, blinded: p.blinded };
+  return { eyes, level, seen: levelsSeen(ctx.levels, level), light };
+}
+
+/** Whether eyes see a target on `level`: on their own floor, or one they look down on. */
+function looksAt(e: LevelEyes, level: string | undefined): boolean {
+  return e.level === level || !!(level && e.seen?.includes(level));
 }
 
 /**
@@ -147,7 +156,7 @@ export function tokensVisibleTo<T extends PlacedToken>(
   const spotted = (t: T) => {
     const target = { at: [t.x, t.y] as Point, invisible: ctx.perceiver(t).invisible };
     const level = tokenLevel(ctx.levels, t);
-    return eyes.some((e) => e.level === level && perceives(e.eyes, target, e.light));
+    return eyes.some((e) => looksAt(e, level) && perceives(e.eyes, target, e.light(level)));
   };
   const ids = tokens
     .filter((t) => canSee(t, player))

@@ -12,6 +12,8 @@ const placed = {
   id,
   /** The scene level it is on (scene.json `levels`); missing = on every level. */
   level: id.optional(),
+  /** The several levels it is on (a staircase on two floors); with `level`, on all of them. */
+  levels: z.array(id).optional(),
   /** GM only: players don't get it. */
   hidden: z.boolean().optional(),
   /** Clicks and marquees pass through it. */
@@ -110,6 +112,10 @@ export const RegionBehaviorSchema = z.discriminatedUnion('type', [
   }),
   /** Takes the token to another level of the scene (stairs, a ladder, a trapdoor). */
   z.object({ type: z.literal('level'), to: id }),
+  /** Stairs (Levels' stairs): a token on one of the two levels goes to the other. */
+  z.object({ type: z.literal('stairs'), between: z.tuple([id, id]) }),
+  /** A lift (Levels' elevator): whoever moves the token picks one of `floors` (missing: any level). */
+  z.object({ type: z.literal('elevator'), floors: z.array(id).optional() }),
   /** Players whose token enters see the whole region as explored. */
   z.object({ type: z.literal('reveal') }),
   /** Teleport, message, door, sound, image, show/hide and journal: what a tile trigger does too. */

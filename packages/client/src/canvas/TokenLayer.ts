@@ -1,4 +1,4 @@
-import { canObserve, displays, isGm, isParty, ownersOf, type Point, type TokenLook } from '@vtt/shared';
+import { canObserve, displays, isGm, isParty, ownersOf, type Point, tokenLevel, type TokenLook } from '@vtt/shared';
 import { actsNow, hasCondition, type Health, type TokenView } from '@vtt/system-dnd5e';
 import {
   Assets,
@@ -22,6 +22,8 @@ import { spaceKey } from '../play/space-pan.ts';
 const WALK_SPEED = 900;
 /** Token radius as a share of its size in pixels: effects, bars and the ground ring are laid out on it. */
 const DISC = 0.42;
+/** How a creature on a floor the GM isn't looking at shows. */
+const OFF_FLOOR_ALPHA = 0.25;
 /** Ring around the token whose turn it is. */
 const TURN_COLOR = '#e8c070';
 /** Ground rings of party members and of everyone else, bright enough to read on any floor. */
@@ -93,8 +95,15 @@ export class TokenLayer {
     view.label.text = label;
     view.label.position.set(0, r * 1.15);
     this.refreshLook(view);
-    view.root.alpha = faint ? 0.5 : 1;
+    view.root.alpha = this.alphaOf(token, faint);
     view.root.cursor = this.isTarget(token) ? 'crosshair' : 'pointer';
+  }
+
+  /** Faint when hidden from players, fainter on a floor not shown (the GM looks at another level). */
+  private alphaOf(token: TokenView, faint: boolean): number {
+    const shown = this.session.levels.shown;
+    if (shown && !shown.includes(tokenLevel(this.session.world?.levels, token) ?? '')) return OFF_FLOOR_ALPHA;
+    return faint ? 0.5 : 1;
   }
 
   redrawAll(): void {

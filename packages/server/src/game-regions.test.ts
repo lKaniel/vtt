@@ -109,6 +109,55 @@ describe('regions', () => {
     expect(store.tokens.get('hero')).toMatchObject({ elevation: 10 });
   });
 
+  describe('between levels', () => {
+    const levels = [
+      { id: 'cellar', name: 'Cellar', bottom: -10 },
+      { id: 'ground', name: 'Ground', bottom: 0 },
+      { id: 'loft', name: 'Loft', bottom: 10 },
+    ];
+    beforeEach(() => {
+      store.applyOps([{ op: 'update', coll: 'scenes', id: 'main', patch: { levels } }]);
+    });
+    const stepBack = (ws: FakeSocket) => ws.receive({ t: 'move', token: 'hero', to: [150, 150] });
+
+    it('climb stairs up, and down again the next time', () => {
+      region([{ type: 'stairs', between: ['ground', 'loft'] }], { levels: ['ground', 'loft'] });
+      const ana = seat('ana');
+      stepEast(ana);
+      expect(store.tokens.get('hero')).toMatchObject({ elevation: 10 });
+      stepBack(ana);
+      stepEast(ana);
+      expect(store.tokens.get('hero')!.elevation ?? 0).toBe(0);
+    });
+
+    it("do nothing for a creature on another level than the region's", () => {
+      region([{ type: 'message', text: 'Creak' }], { level: 'loft' });
+      const ana = seat('ana');
+      stepEast(ana);
+      expect(texts(ana)).toEqual([]);
+    });
+
+    it('ask the owner which floor an elevator goes to, then take them there', () => {
+      region([{ type: 'elevator', floors: ['cellar', 'ground', 'loft'] }]);
+      const ana = seat('ana');
+      const gm = seat('gm');
+      stepEast(ana);
+      expect(ana.take('levelChoice')).toEqual([{ t: 'levelChoice', token: 'hero', levels: ['cellar', 'loft'] }]);
+      expect(gm.take('levelChoice')).toEqual([]);
+      ana.receive({ t: 'changeLevel', token: 'hero', level: 'cellar' });
+      expect(store.tokens.get('hero')).toMatchObject({ elevation: -10 });
+    });
+
+    it('refuse a floor change away from an elevator, except for the GM', () => {
+      const ana = seat('ana');
+      ana.receive({ t: 'changeLevel', token: 'hero', level: 'loft' });
+      expect(store.tokens.get('hero')!.elevation ?? 0).toBe(0);
+      expect(ana.take('error')).toHaveLength(1);
+      seat('gm').receive({ t: 'changeLevel', token: 'hero', level: 'loft' });
+      expect(store.tokens.get('hero')).toMatchObject({ elevation: 10 });
+    });
+  });
+
   it('say something in chat, to everyone or to the GM alone', () => {
     region([
       { type: 'message', text: 'The floor creaks.' },

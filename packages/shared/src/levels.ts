@@ -19,9 +19,52 @@ export function tokenLevel(
   return levelAt(levels, token.elevation ?? 0)?.id;
 }
 
+/** What a map item says about its floors: one `level`, several `levels`, or neither (every level). */
+export interface OnLevels {
+  level?: string;
+  levels?: readonly string[];
+}
+
 /** Whether an item shows (and blocks) on `level`: items without one are on every level, and so is everything when no level is picked. */
-export function onLevel(item: { level?: string }, level: string | undefined): boolean {
-  return !item.level || !level || item.level === level;
+export function onLevel(item: OnLevels, level: string | undefined): boolean {
+  if (!level || (!item.level && !item.levels?.length)) return true;
+  return item.level === level || !!item.levels?.includes(level);
+}
+
+/** Whether an item is on any of `shown` (undefined: no level picked, so everything shows). */
+export function onLevels(item: OnLevels, shown: readonly string[] | undefined): boolean {
+  return !shown || shown.some((l) => onLevel(item, l));
+}
+
+/** The levels a viewer on `level` sees: its own and those it `sees`, bottom first; undefined when none is picked. */
+export function levelsSeen(levels: readonly SceneLevel[] | undefined, level: string | undefined): string[] | undefined {
+  const own = levels?.find((l) => l.id === level);
+  if (!own) return undefined;
+  const ids = new Set([own.id, ...(own.sees ?? [])]);
+  return [...(levels ?? [])]
+    .filter((l) => ids.has(l.id))
+    .sort((a, b) => a.bottom - b.bottom)
+    .map((l) => l.id);
+}
+
+/** Where a level draws among those seen: lower floors under higher ones. */
+export function levelRank(levels: readonly SceneLevel[] | undefined, level: string | undefined): number {
+  const sorted = [...(levels ?? [])].sort((a, b) => a.bottom - b.bottom);
+  return Math.max(
+    0,
+    sorted.findIndex((l) => l.id === level),
+  );
+}
+
+/** The floors an elevator serving `floors` (missing: every one) can take a token on `from` to, bottom first. */
+export function levelChoices(
+  levels: readonly SceneLevel[] | undefined,
+  floors: readonly string[] | undefined,
+  from: string | undefined,
+): SceneLevel[] {
+  return [...(levels ?? [])]
+    .filter((l) => l.id !== from && (!floors?.length || floors.includes(l.id)))
+    .sort((a, b) => a.bottom - b.bottom);
 }
 
 /**
