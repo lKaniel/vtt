@@ -51,7 +51,7 @@ describe('the games on a server', () => {
     expect(id).toBe('lost-mine');
     const dir = join(dataDir, 'games', 'lost-mine');
     const game = JSON.parse(await readFile(join(dir, 'game.json'), 'utf8')) as Record<string, unknown>;
-    expect(game).toMatchObject({ id: 'lost-mine', name: 'Lost Mine', rules: '2024', system: 'dnd5e', format: 4 });
+    expect(game).toMatchObject({ id: 'lost-mine', name: 'Lost Mine', rules: '2024', system: 'dnd5e', format: 5 });
     expect(game.players).toEqual([kaniel]);
     const { store } = await hub.open(id);
     expect(store.sceneIds()).toEqual([game.scene]);

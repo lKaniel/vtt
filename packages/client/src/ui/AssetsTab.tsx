@@ -373,5 +373,5 @@ function importDoc(session: Session, type: string, doc: unknown, folder: string)
   if (type === 'scene') session.packs.importScene(doc);
   else if (type === 'prefab') session.packs.importPrefab(doc);
   else if (type === 'journal' || type === 'rolltable' || type === 'playlist') session.packs.importEntry(type, doc);
-  else session.packs.importActor(doc, folder);
+  else session.packs.importActor(doc, session.folders.ensure('actors', folder));
 }

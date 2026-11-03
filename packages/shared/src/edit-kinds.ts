@@ -81,6 +81,8 @@ export const EDIT_KINDS: Kinds = {
   macro: { coll: () => 'macros' },
   homebrew: { coll: () => 'homebrew' },
   cards: { coll: () => 'cards' },
+  // A folder takes the folders inside it along; what they hold moves up when they go (folders.ts).
+  folder: { coll: () => 'folders', refs: { parent: 'folder' }, parent: 'parent' },
 };
 
 interface Source {

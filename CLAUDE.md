@@ -31,8 +31,9 @@ with `pnpm check-game data/games/<id>`.
 - Always run `pnpm check-game` after editing and fix every error.
 - Hidden enemies for an encounter: `"hidden": true`, the GM reveals them.
 - Creatures the GM may want later (an ambush, reinforcements) go in
-  `actors/<id>.json` with an optional `folder` and no token yet. The GM
-  drags them onto the map from the Actors tab.
+  `actors/<id>.json` with no token yet, optionally in a folder (`folder`:
+  the id of a `folders/<id>.json` with `"kind": "actors"`, see "Folders" in
+  the format doc). The GM drags them onto the map from the Actors tab.
 - Creatures: `"monster": "<srd id>"` for a stat block, or `stats` + `inventory`
   for a character (see "Creatures" in the format doc). Monster and item ids
   are in `packages/system-dnd5e/content/srd/`, or in a pack the game turns on

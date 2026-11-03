@@ -45,3 +45,4 @@ export * from './item-shapes.ts';
 export * from './clock.ts';
 export * from './walking.ts';
 export * from './roll-modes.ts';
+export * from './folders.ts';

@@ -31,6 +31,7 @@ describe('the edit kinds', () => {
       'actor',
       'cards',
       'drawing',
+      'folder',
       'homebrew',
       'journal',
       'light',

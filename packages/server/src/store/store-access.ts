@@ -9,8 +9,8 @@ import { fromDoc } from './doc-sync.ts';
 /** What a stored document is, for deciding who may touch it. */
 export type OwnedDoc = Owned & { name?: unknown; hidden?: boolean; visibleTo?: string[] };
 
-/** Journal entries, roll tables, macros, homebrew and cards: missing ownership means only the GM sees them. */
-const SIDEBAR = new Set(['journals', 'tables', 'macros', 'homebrew', 'cards']);
+/** Journal entries, roll tables, macros, homebrew, cards and folders: missing ownership means only the GM sees them. */
+const SIDEBAR = new Set(['journals', 'tables', 'macros', 'homebrew', 'cards', 'folders']);
 
 /** A sidebar entry's ownership: the GM's alone when it has none; a macro's author owns it. */
 function sidebarOwnership(doc: Doc): OwnedDoc['ownership'] {
@@ -24,6 +24,8 @@ export interface DocAccess {
   owned(coll: string, doc: Doc): OwnedDoc;
   /** Every document, by collection. */
   all(): Record<string, Doc[]>;
+  /** The documents of one collection. */
+  list(coll: string): Doc[];
   /** Token documents, on any scene, that stand for actor `id`. */
   tokenDocsOf(id: string): { coll: string; doc: Doc }[];
 }
@@ -48,6 +50,10 @@ export class StoreAccess implements DocAccess {
 
   all(): Record<string, Doc[]> {
     return Object.fromEntries(this.docs.collections().map((coll) => [coll, this.docs.all(coll)]));
+  }
+
+  list(coll: string): Doc[] {
+    return this.docs.all(coll);
   }
 
   tokenDocsOf(id: string): { coll: string; doc: Doc }[] {

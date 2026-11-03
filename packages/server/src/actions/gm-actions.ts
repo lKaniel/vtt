@@ -16,7 +16,10 @@ import {
 } from '@vtt/system-dnd5e';
 import {
   canEdit,
+  FOLDERS,
+  type FolderKind,
   isGm,
+  newFolderOps,
   lockedPatchKeys,
   placeToken,
   type Player,
@@ -128,9 +131,19 @@ export class GmActions {
     const actors = this.store.actors;
     const found = [...actors.values()].find((a) => sameJson(sheetFields(a), sheetFields(fresh)));
     if (found) return found;
-    const actor = { ...fresh, id: uniqueId(monster.id, (id) => actors.has(id)) };
+    const folder = fresh.folder && this.folderNamed('actors', fresh.folder);
+    const actor = { ...fresh, id: uniqueId(monster.id, (id) => actors.has(id)), ...(folder ? { folder } : {}) };
     this.store.setActor(actor);
     return actor;
+  }
+
+  /** The top-level folder of a list by its name, made when there is none. */
+  private folderNamed(kind: FolderKind, name: string): string {
+    const top = this.store.docs.all(FOLDERS).find((f) => f.kind === kind && !f.parent && f.name === name);
+    if (top) return top.id;
+    const made = newFolderOps(this.store.docs, { kind, name });
+    this.store.applyOps(made.ops);
+    return made.id;
   }
 
   private copy(id: string, at: Point, hidden?: boolean): Token {

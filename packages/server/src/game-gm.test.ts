@@ -88,7 +88,8 @@ describe('spawning', () => {
     gm.receive({ ...goblin, at: [820, 480] });
     // The map's own "goblin" actor isn't the stock one (migrated from a hand-made token).
     const stock = [...store.actors.values()].filter((a) => a.monster === 'goblin');
-    expect(stock).toMatchObject([{ id: 'goblin-2', name: 'Goblin', folder: 'Monsters' }]);
+    expect(stock).toMatchObject([{ id: 'goblin-2', name: 'Goblin', folder: 'monsters' }]);
+    expect(store.docs.all('folders')).toMatchObject([{ id: 'monsters', name: 'Monsters', kind: 'actors' }]);
     expect(store.tokens.get('goblin-3')).toMatchObject({ actor: 'goblin-2', linked: false, name: 'Goblin 3' });
     await store.flush();
     const entries = (await readJson('scenes/main/tokens.json')) as { id: string }[];

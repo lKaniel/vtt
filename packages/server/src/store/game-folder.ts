@@ -13,6 +13,7 @@ import {
 } from './game-files.ts';
 import type { PackStore } from '../library/pack-store.ts';
 import { ENTRY_COLLS } from './entry-files.ts';
+import { folderIssues } from './folder-checks.ts';
 
 // Reading a whole game folder: every file the game knows, parsed. The
 // server loads from this and `check-game` reports from it.
@@ -118,6 +119,6 @@ export async function checkFolder(dir: string, packs?: PackStore): Promise<{ iss
   const entries = await readFolder(dir);
   for (const e of entries) for (const message of e.errors) issues.push({ file: e.rel, message });
   const state = stateOf(entries);
-  if (state) issues.push(...crossCheck(state, undefined, packs), ...orphans(entries, state));
+  if (state) issues.push(...crossCheck(state, undefined, packs), ...orphans(entries, state), ...folderIssues(entries));
   return { issues, state };
 }

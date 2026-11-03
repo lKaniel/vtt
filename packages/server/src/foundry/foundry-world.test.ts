@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { Player } from '@vtt/shared';
@@ -81,7 +81,16 @@ beforeEach(async () => {
   const db = (name: string, docs: Record<string, unknown>) => writeLevelDb(join(world, 'data', name), docs);
   await db('scenes', {
     '!scenes!S1': keep,
-    '!scenes!S2': { _id: 'S2', name: 'Cellar', width: 500, height: 500, padding: 0, tokens: [], walls: [] },
+    '!scenes!S2': {
+      _id: 'S2',
+      name: 'Cellar',
+      folder: 'F6',
+      width: 500,
+      height: 500,
+      padding: 0,
+      tokens: [],
+      walls: [],
+    },
     '!scenes.walls!S1.W1': { _id: 'W1', c: [100, 100, 500, 100] },
     '!scenes.tokens!S1.T1': { _id: 'T1', name: 'Goblin', actorId: 'A1', x: 200, y: 300, width: 1, height: 1 },
     '!scenes.tokens!S1.T2': {
@@ -111,9 +120,12 @@ beforeEach(async () => {
     '!actors.items!A2.I1': { _id: 'I1', name: 'Dagger', type: 'weapon', system: { equipped: true } },
   });
   await db('folders', {
-    '!folders!F1': { _id: 'F1', name: 'Monsters', type: 'Actor', folder: null },
+    '!folders!F1': { _id: 'F1', name: 'Monsters', type: 'Actor', folder: null, color: '#7f1d1d', sort: 200 },
     '!folders!F2': { _id: 'F2', name: 'Goblins', type: 'Actor', folder: 'F1' },
     '!folders!F3': { _id: 'F3', name: 'Lore', type: 'JournalEntry' },
+    '!folders!F4': { _id: 'F4', name: 'Allies', type: 'Actor', sort: 100 },
+    '!folders!F5': { _id: 'F5', name: 'Gear', type: 'Item' },
+    '!folders!F6': { _id: 'F6', name: 'Dungeons', type: 'Scene' },
   });
   await db('journal', {
     '!journal!J1': { _id: 'J1', name: 'History', folder: 'F3', pages: ['G1'] },
@@ -209,10 +221,22 @@ describe('importFoundryWorld', () => {
       id: 'goblin',
       name: 'Goblin',
       img: '/assets/foundry/worlds/lost-keep/art/goblin.webp',
-      folder: 'Monsters / Goblins',
+      folder: 'goblins',
       linked: false,
       monster: 'goblin',
     });
+    expect(await readJson(join(dir, 'folders/monsters.json'))).toMatchObject({
+      id: 'monsters',
+      name: 'Monsters',
+      kind: 'actors',
+      color: '#7f1d1d',
+    });
+    expect(await readJson(join(dir, 'folders/goblins.json'))).toMatchObject({ kind: 'actors', parent: 'monsters' });
+    // Foundry's order among siblings is kept, and folders of lists we don't have stay behind.
+    const sortOf = async (id: string) => ((await readJson(join(dir, `folders/${id}.json`))) as { sort: string }).sort;
+    expect((await sortOf('allies')) < (await sortOf('monsters'))).toBe(true);
+    expect(await readdir(join(dir, 'folders'))).not.toContain('gear.json');
+    expect(await readJson(join(dir, 'scenes/cellar/scene.json'))).toMatchObject({ folder: 'dungeons' });
     expect(await readJson(join(dir, 'actors/mira.json'))).toMatchObject({
       id: 'mira',
       img: '/assets/foundry/worlds/lost-keep/art/mira.webp',
@@ -226,7 +250,7 @@ describe('importFoundryWorld', () => {
   it('brings journal entries, tables and playlists in their folders', async () => {
     const { dir } = await imported();
     expect(await readJson(join(dir, 'journals/history.json'))).toMatchObject({
-      folder: 'Lore',
+      folder: 'lore',
       pages: [{ text: '<p>Old.</p>' }],
     });
     expect(await readJson(join(dir, 'tables/loot.json'))).toMatchObject({ results: [{ text: 'A coin' }] });

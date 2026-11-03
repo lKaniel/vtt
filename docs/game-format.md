@@ -25,6 +25,7 @@ world/                      the example game (another folder: VTT_GAME); lobby g
   playlists/<id>.json       music
   macros/<id>.json          chat and script macros for the hotbar
   cards/<id>.json           card decks, hands and piles
+  folders/<id>.json         the folders of the sidebar lists
   combat.json               the fight in progress, if any
   time.json                 the game clock and its calendar (made on first start)
   assets/                   images referenced by tiles and tokens (uploads in assets/uploads/)
@@ -452,8 +453,8 @@ middle of the screen.
 ## Journal entries, roll tables, playlists, macros and cards
 
 One file each, in `journals/`, `tables/` and `playlists/` (schemas in
-`shared/journals.ts`). Each has `id`, `name`, and may have `folder`, `sort`
-and `ownership` (missing: only the GM sees it; `limited` shows the title,
+`shared/journals.ts`). Each has `id`, `name`, and may have `folder` (see
+"Folders"), `sort` and `ownership` (missing: only the GM sees it; `limited` shows the title,
 `observer` the pages).
 
 ```json
@@ -631,7 +632,7 @@ without one):
 | `light`                      | A light it carries, like a placed light: `{ "bright": 20, "dim": 20 }`.                                                                             |
 | `hidden`                     | A token's: `true` = only the GM sees it.                                                                                                            |
 | `visibleTo`                  | A token's: only these players (and the GM) see it. Used for illusions.                                                                              |
-| `folder`                     | An actor's: groups it in the Actors list.                                                                                                           |
+| `folder`                     | An actor's: the id of its folder in the Actors list (see "Folders").                                                                                |
 
 ### Ownership
 
@@ -969,17 +970,42 @@ they're told how hurt the creature looks (unhurt, hurt, bloodied, down).
 
 ## The Actors list
 
-`actors/` doubles as the GM's Actors list, grouped by `folder`. Creatures for
+`actors/` doubles as the GM's Actors list, grouped in folders. Creatures for
 later (an ambush, reinforcements) are actors with no token yet:
 
 ```json
-{ "id": "bandit", "name": "Bandit", "folder": "Road", "monster": "bandit" }
+{ "id": "bandit", "name": "Bandit", "folder": "road", "monster": "bandit" }
 ```
+
+with `folders/road.json` being `{ "id": "road", "name": "Road", "kind": "actors" }`.
 
 Dragging one onto the map adds a token for it to the scene's `tokens.json`
 with a free id (`bandit`, `bandit-2`, ...). Placing an SRD monster from the
 Compendium uses its stock actor in the Monsters folder, made the first time.
 The GM can also save a token without an actor as a new actor.
+
+## Folders
+
+The sidebar lists (actors, scenes, journal entries, roll tables, playlists,
+macros, cards) keep their documents in folders, as Foundry does. A folder is
+a file in `folders/` (schema in `shared/folders.ts`):
+
+```json
+{ "id": "road", "name": "Road", "kind": "actors", "parent": "npcs", "color": "#7f1d1d" }
+```
+
+| Field    | What it is                                                                                                                       |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`   | The list it is in, by the folder its documents are in: `actors`, `scenes`, `journals`, `tables`, `playlists`, `macros`, `cards`. |
+| `parent` | The folder it sits in (of the same list); missing = the top of the list.                                                         |
+| `color`  | Its colour in the list, `#rrggbb`.                                                                                               |
+| `sort`   | Its place among its siblings (a fractional key); missing sorts first.                                                            |
+
+A document names its folder by id in `folder` (a scene in its `scene.json`).
+`check-game` flags a `folder` or `parent` that isn't in `folders/`, or is a
+folder of another list. Deleting a folder moves what was in it up to its
+parent. Players see a folder only when something in it, or in a folder
+below it, is theirs to see.
 
 ## combat.json
 
@@ -1085,3 +1111,12 @@ starts (or run `pnpm migrate-world`): `{ "controllers": ["ana"],
 "ana": "owner", "bo": "observer" } }`, in actors, tokens and unlinked
 tokens' `delta`. The scenes, actors and `game.json` are copied to
 `.v3-backup/<time>/` first, and `game.json` gets `"format": 4` last.
+
+## Format 5: folder documents
+
+Before format 5 a document's `folder` was a name, with `" / "` between the
+names of folders inside each other (`"Monsters / Goblins"`). The server
+makes a folder in `folders/` for each name, per list and nested as the
+names were, and puts its id in `folder` (or run `pnpm migrate-world`). What
+it changes is copied to `.v4-backup/<time>/` first, and `game.json` gets
+`"format": 5` last.
