@@ -10,7 +10,7 @@ import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
 import { activeTilesNote, FoundryTile, isOverhead, lookOf, roofOf, topLeftOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
-import { scene3dOf, tileModelOf, tileSolidOf } from './foundry-3d.ts';
+import { mergedCopiesOf, scene3dOf, tileModelOf, tileSolidOf } from './foundry-3d.ts';
 
 // A Foundry VTT scene (from a module's compendium, a world, or "Export
 // Data") as one of our scene entries. Foundry draws the scene's background
@@ -301,13 +301,28 @@ interface TileContext {
   anchored: boolean;
 }
 
-/** A 3D Canvas tile as a model tile (a glTF model that came along) or a solid (a drawn shape), if it is either. */
-function tile3d(t: FoundryScene['tiles'][number], c: TileContext): Tile | undefined {
+/** A 3D Canvas tile as model tiles (a glTF model that came along; a merged tile's copies) or a solid (a drawn shape), if it is either. */
+function tile3d(t: FoundryScene['tiles'][number], c: TileContext): Tile[] | undefined {
   const model = tileModelOf(sourceOf(t), c.grid, (p) => c.find(p));
   const solid = model ? undefined : tileSolidOf(sourceOf(t), c.grid);
   if (!model && !solid) return undefined;
-  const tile = { id: '', kind: 'image' as const, ...topLeftOf(t, c.anchored), w: t.width, h: t.height, src: BLANK };
-  return madeFrom({ ...tile, ...(model ? { model } : { solid }), ...c.on(t) }, sourceOf(t));
+  const at = topLeftOf(t, c.anchored);
+  const tile = { id: '', kind: 'image' as const, ...at, w: t.width, h: t.height, src: BLANK, ...c.on(t) };
+  const copies = model && mergedCopiesOf(sourceOf(t), c.grid);
+  if (!model || !copies) return [madeFrom({ ...tile, ...(model ? { model } : { solid }) }, sourceOf(t))];
+  return copies.map((copy, i) => {
+    const { rotation: _r, tilt: _t, ...base } = model;
+    const elevation = (model.elevation ?? 0) + copy.rise;
+    const one: Tile = {
+      ...tile,
+      x: at.x + copy.rect.x,
+      y: at.y + copy.rect.y,
+      w: Math.max(1, copy.rect.w),
+      h: Math.max(1, copy.rect.h),
+      model: { ...base, ...copy.model, ...(elevation ? { elevation } : {}) },
+    };
+    return i === 0 ? madeFrom(one, sourceOf(t)) : one;
+  });
 }
 
 /** 3D Canvas tiles as model tiles or solids; those we can't draw, reported. */
@@ -317,7 +332,7 @@ function modelTiles(tiles: FoundryScene['tiles'], c: TileContext): Tile[] {
   for (const t of tiles) {
     if (!is3dModel(t.texture?.src ?? t.img) || t.width <= 0 || t.height <= 0) continue;
     const made = tile3d(t, c);
-    if (made) out.push(made);
+    if (made) out.push(...made);
     else lost++;
   }
   const what = "3D Canvas tiles without a glTF model in the Data folder, or a shape we can't draw (cones, spheres)";

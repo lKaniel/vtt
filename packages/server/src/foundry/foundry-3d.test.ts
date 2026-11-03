@@ -21,6 +21,8 @@ describe('3D Canvas models', () => {
         tiltZ: 10,
         color: '#ffffff',
         fillType: 'stretch',
+        autoCenter: true,
+        autoGround: true,
       }),
     };
     expect(tileModelOf(tile, grid, find)).toEqual({
@@ -45,6 +47,9 @@ describe('3D Canvas models', () => {
       fill: 'tile',
       piece: 2,
       color: '#aa8866',
+      // Without autoCenter and autoGround, 3D Canvas stands the model by its own origin.
+      center: false,
+      ground: false,
     });
   });
 

@@ -1,4 +1,4 @@
-import { type Model3D, type ModelGround, modelPieces } from '@vtt/shared';
+import { type Model3D, type ModelGround, modelOffset, modelPieces } from '@vtt/shared';
 import * as THREE from 'three';
 import { clone as cloneRigged } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { at3d } from './scene3d.ts';
@@ -19,8 +19,8 @@ export interface ModelShown {
 interface Loaded {
   scene: THREE.Group;
   size: [number, number, number];
-  /** Moves the model so its middle is over the origin and its base on it. */
-  offset: THREE.Vector3;
+  /** Its bounds in its own units, to centre and ground it (`modelOffset`). */
+  bounds: { min: [number, number, number]; max: [number, number, number] };
 }
 
 const loader = modelLoader();
@@ -33,11 +33,10 @@ function load(src: string): Promise<Loaded | undefined> {
       if (!gltf) return undefined;
       const box = new THREE.Box3().setFromObject(gltf.scene);
       const size = box.getSize(new THREE.Vector3());
-      const centre = box.getCenter(new THREE.Vector3());
       return {
         scene: gltf.scene,
         size: [size.x, size.y, size.z] as [number, number, number],
-        offset: new THREE.Vector3(-centre.x, -box.min.y, -centre.z),
+        bounds: { min: box.min.toArray(), max: box.max.toArray() },
       };
     });
     files.set(src, file);
@@ -89,7 +88,7 @@ class Placed {
     // Rigged figures need their bones cloned with them, or they draw in pieces.
     const model = cloneRigged(l.scene);
     if (this.shown.model.color) tinted(model, this.shown.model.color);
-    model.position.copy(l.offset);
+    model.position.set(...modelOffset(l.bounds, this.shown.model));
     pivot.add(model);
     this.group.add(pivot);
     return pivot;

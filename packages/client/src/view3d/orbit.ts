@@ -25,13 +25,13 @@ const DEG = Math.PI / 180;
 /** The camera's limits; distances in squares. */
 export const ORBIT = {
   minDistance: 3,
-  maxDistance: 40,
+  maxDistance: 120,
   /** Pitch (down from level) when closest and farthest. */
   lowPitch: 32 * DEG,
   highPitch: 68 * DEG,
   tacticalPitch: 89 * DEG,
   /** How far from the target the ground drawn reaches, in squares. */
-  maxReach: 30,
+  maxReach: 90,
   /** A wheel notch scales the distance by this. */
   zoomStep: 1.15,
   /** How quickly the camera catches up with a creature it follows, per second. */

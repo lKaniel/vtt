@@ -58,3 +58,9 @@ describe('the orbit camera', () => {
     expect(low.center[1]).toBeLessThan(1000);
   });
 });
+
+describe('zooming out', () => {
+  it('goes far enough to see a whole 100-square map', () => {
+    expect(zoomBy(start, 1000, GRID).distance).toBeGreaterThanOrEqual(100 * GRID);
+  });
+});

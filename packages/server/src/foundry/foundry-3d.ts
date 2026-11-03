@@ -56,7 +56,74 @@ export function tileModelOf(
     ...(rotation && { rotation }),
     ...((tilt[0] || tilt[1]) && { tilt }),
     ...tintOf(f.color),
+    ...originOf(f),
   };
+}
+
+/** 3D Canvas centres a model on its tile and stands it on the ground only when asked; else its own origin is the spot. */
+const originOf = (f: Flags): Partial<Model3D> => ({
+  ...(f.autoCenter !== true && { center: false }),
+  ...(f.autoGround !== true && { ground: false }),
+});
+
+/** One copy of a merged tile: its rect from the group's corner, in pixels, and how its model differs. */
+export interface MergedCopy {
+  rect: { x: number; y: number; w: number; h: number };
+  /** Feet above the group's elevation. */
+  rise: number;
+  model: Partial<Model3D>;
+}
+
+const round = (n: number) => Math.round(n * 100) / 100;
+
+/** A copy's turn and tilt, when it has them. */
+function turnOf(m: MergedEntry): Partial<Model3D> {
+  const tilt: [number, number] = [m.tiltX ?? 0, m.tiltZ ?? 0];
+  return { ...(m.rotation ? { rotation: m.rotation } : {}), ...(tilt[0] || tilt[1] ? { tilt } : {}) };
+}
+
+/** 3D Canvas's units: 1000 pixels each. */
+const UNIT = 1000;
+
+interface MergedEntry {
+  width: number;
+  height: number;
+  depth: number;
+  x: number;
+  y: number;
+  z: number;
+  rotation?: number;
+  tiltX?: number;
+  tiltZ?: number;
+  color?: string;
+}
+
+const isEntry = (m: unknown): m is MergedEntry =>
+  !!m &&
+  typeof m === 'object' &&
+  ['width', 'height', 'depth', 'x', 'y', 'z'].every((k) => typeof (m as Flags)[k] === 'number');
+
+/**
+ * The copies a merged 3D Canvas tile holds ("merge tiles": several copies of
+ * one model, the tile only their bounds), each at its own size and spot,
+ * scaled with the tile if it was resized after merging. None for a plain tile.
+ */
+export function mergedCopiesOf(raw: unknown, grid: { size: number; distance: number }): MergedCopy[] | undefined {
+  const f = flagsOf(raw);
+  const entries = Array.isArray(f?.mergedMatrix) ? f.mergedMatrix.filter(isEntry) : [];
+  if (!f || !entries.length) return undefined;
+  const tile = raw as { width?: unknown; height?: unknown };
+  const was = (f.originalDimensions ?? {}) as Flags;
+  const ratio = (now: number | undefined, then: unknown) => (now && num(then) ? now / (num(then)! * UNIT) : 1);
+  const [sx, sy] = [ratio(num(tile.width), was.width), ratio(num(tile.height), was.height)];
+  const sd = ratio(num(f.depth), was.depth);
+  const px = (units: number, scale: number) => round(units * UNIT * scale);
+  const feet = (units: number) => round((units * UNIT * sd * 5) / grid.size);
+  return entries.map((m) => ({
+    rect: { x: px(m.x, sx), y: px(m.y, sy), w: px(m.width, sx), h: px(m.height, sy) },
+    rise: feet(m.z),
+    model: { height: feet(m.depth), ...turnOf(m), ...tintOf(m.color) },
+  }));
 }
 
 /** The figure a 3D Canvas token stands as, if it has a glTF one that came along. */

@@ -53,7 +53,10 @@ copied by `vite.config.ts`), and a model that fails says why in the console.
 `solid3d.ts` in shared).
 
 The Foundry importer brings 3D Canvas (levels-3d-preview) along: model
-tiles with their depth, elevation, rotation, tilt, fill and tint; drawn
+tiles with their depth, elevation, rotation, tilt, fill and tint (merged
+tiles split into their copies; `center: false` / `ground: false` keep a
+model's own origin on its spot, as 3D Canvas does without autoCenter and
+autoGround); drawn
 polygons as solids; tokens'
 figures; a scene's sky, table colour and whether its walls show.
 

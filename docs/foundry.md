@@ -44,7 +44,9 @@ What comes along:
 - **3D Canvas** (levels-3d-preview): model tiles become image tiles with a
   `model` (glTF with its files, even a text glTF named `.glb` whose meshes
   and textures sit in sibling folders like `../zz-meshes`, depth as height, elevation, rotation, tilt,
-  fill and tint), tokens keep their figure, and scenes keep their sky,
+  fill and tint; a merged tile becomes one model tile per copy, each at
+  its own size and spot; without autoCenter/autoGround a model stands by its
+  own origin, `center`/`ground: false`), tokens keep their figure, and scenes keep their sky,
   table colour and whether walls show (`view3d`). Drawn polygons (cliffs,
   ledges, pools) become tiles with a `solid` of their outline, height,
   elevation and colour. Other drawn shapes (cones, spheres), HeroForge
