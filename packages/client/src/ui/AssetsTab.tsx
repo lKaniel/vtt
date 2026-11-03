@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { assetUrl } from '../assets.ts';
 import type { Session } from '../session/session.ts';
 import { startDrag } from './ActorsTab.tsx';
+import { BaileywikiView } from './BaileywikiView.tsx';
 import { PluginsView } from './PluginsView.tsx';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
@@ -15,9 +16,9 @@ import { Checkbox } from './kit/checkbox.tsx';
 // packs it uses (search, tags, upload; drag a picture onto the map to make
 // it a tile), and the packs themselves: turn installed packs on for this
 // game, and copy scenes and actors in from their compendia; and the plugins
-// it loads (PluginsView.tsx).
+// it loads (PluginsView.tsx); and Baileywiki's scenes (BaileywikiView.tsx).
 
-type View = 'media' | 'packs' | 'plugins';
+type View = 'media' | 'packs' | 'plugins' | 'baileywiki';
 /** Thumbnails shown at once; typing narrows the rest. */
 const SHOWN = 150;
 const TAGS = 14;
@@ -45,10 +46,14 @@ export function AssetsTab({ session }: Readonly<{ session: Session }>) {
         <Toggle pressed={view === 'plugins'} onPressedChange={() => setView('plugins')}>
           Plugins
         </Toggle>
+        <Toggle pressed={view === 'baileywiki'} onPressedChange={() => setView('baileywiki')}>
+          Baileywiki
+        </Toggle>
       </nav>
       {view === 'media' && <MediaView session={session} />}
       {view === 'packs' && <PacksView session={session} />}
       {view === 'plugins' && <PluginsView session={session} />}
+      {view === 'baileywiki' && <BaileywikiView session={session} />}
     </div>
   );
 }

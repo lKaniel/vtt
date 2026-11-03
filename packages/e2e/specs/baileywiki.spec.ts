@@ -4,7 +4,10 @@ import {
   GOOD_CODE,
   type FakeBaileywiki,
 } from '../../server/src/test/fake-baileywiki.ts';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { expect, test as base } from '../support/fixtures.ts';
+import { GM, atTable } from '../support/table.ts';
 
 // Setup's Baileywiki box: the admin signs the server in with the code from
 // Baileywiki's site (here a stand-in server), picks a scene from the online
@@ -42,4 +45,29 @@ test('the admin signs in to Baileywiki and downloads a scene into its pack', asy
     '1 scenes in the Baileywiki pack, 2 files downloaded.',
   );
   await expect(box.getByText('in the pack')).toBeVisible();
+});
+
+test('the GM imports a Baileywiki scene straight into the game from the Assets tab', async ({ page, server }) => {
+  await atTable(page, GM);
+  await page.getByRole('tab', { name: 'Assets' }).click();
+  await page.getByRole('button', { name: 'Baileywiki' }).click();
+  const view = page.getByRole('region', { name: 'Baileywiki' });
+  await view.getByLabel('Code').fill(GOOD_CODE);
+  await view.getByRole('button', { name: 'Sign in' }).click();
+  await view.getByRole('button', { name: 'Show scenes' }).click();
+  await view.getByRole('checkbox', { name: 'Town Square' }).click();
+  await view.getByRole('button', { name: 'Import 1 scenes' }).click();
+  await expect(view.getByTestId('baileywiki-report')).toContainText('1 scenes');
+
+  const scene = join(server.gameDir, 'scenes/town-square/scene.json');
+  await expect
+    .poll(() =>
+      readFile(scene, 'utf8').then(
+        (text) => text.includes('Town Square'),
+        () => false,
+      ),
+    )
+    .toBe(true);
+  const game = JSON.parse(await readFile(join(server.gameDir, 'game.json'), 'utf8')) as { packs?: string[] };
+  expect(game.packs).toContain('baileywiki');
 });

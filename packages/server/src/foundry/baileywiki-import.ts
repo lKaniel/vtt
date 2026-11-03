@@ -159,13 +159,15 @@ async function readState(dir: string): Promise<PackState> {
 }
 
 /** Puts a scene in the list, in place of the one it came from before. */
-function place(state: PackState, key: string, scene: Omit<SceneEntry, 'id'>): void {
+function place(state: PackState, key: string, scene: Omit<SceneEntry, 'id'>): SceneEntry {
   const taken = new Set(state.scenes.map((s) => s.id));
   const id = state.sources[key] ?? freeId(slugify(scene.name) || 'scene', (x) => taken.has(x), { bare: true });
   state.sources[key] = id;
   const at = state.scenes.findIndex((s) => s.id === id);
-  if (at < 0) state.scenes.push({ id, ...scene });
-  else state.scenes[at] = { id, ...scene };
+  const entry = { id, ...scene };
+  if (at < 0) state.scenes.push(entry);
+  else state.scenes[at] = entry;
+  return entry;
 }
 
 async function writeState(dir: string, state: PackState): Promise<void> {
@@ -195,16 +197,15 @@ export async function importBaileywiki(
   const run: Run = { client, dir, have: new Set(), downloaded: 0, skipped: [] };
   const state = await readState(dir);
   const metas = new Map<string, Meta | undefined>();
-  let scenes = 0;
+  const entries: SceneEntry[] = [];
   for (const pick of picks) {
     if (!metas.has(pick.compendium)) metas.set(pick.compendium, await readMeta(client, pick.compendium));
     const meta = metas.get(pick.compendium);
     const scene = meta && (await importOne(run, meta, pick.id));
     if (!meta) run.skipped.push(`compendium ${pick.compendium}: Baileywiki didn't give it`);
     if (!scene) continue;
-    place(state, sourceKey(meta.id, pick.id), scene);
-    scenes++;
+    entries.push(place(state, sourceKey(meta.id, pick.id), scene));
   }
   await writeState(dir, state);
-  return { pack: PACK, scenes, media: run.downloaded, skipped: run.skipped };
+  return { pack: PACK, scenes: entries.length, media: run.downloaded, skipped: run.skipped, entries };
 }

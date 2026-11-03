@@ -2,6 +2,8 @@
 
 export const EN_BAILEYWIKI = {
   'baileywiki.title': 'Baileywiki',
+  'baileywiki.gameIntro':
+    'Sign in with your Baileywiki membership and import its scenes straight into this game. Their files go into the private Baileywiki pack on this server.',
   'baileywiki.intro':
     'Sign in with your Baileywiki membership to download its scenes into a private Baileywiki pack on this server. Games then turn the pack on and import scenes from it.',
   'baileywiki.open': 'Open the Baileywiki sign-in',

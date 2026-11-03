@@ -1,4 +1,5 @@
 import { dirname } from 'node:path';
+import { isGm } from '@vtt/shared';
 import { z } from 'zod';
 import { BaileywikiAccount } from '../foundry/baileywiki-account.ts';
 import { BAILEYWIKI_URL } from '../foundry/baileywiki-client.ts';
@@ -11,7 +12,8 @@ import type { SessionStore } from './sessions.ts';
 // code from content.baileywiki.com (GET status, POST sign-in, DELETE signs
 // out), lists the scenes of Baileywiki's online compendia (GET scenes) and
 // imports picked ones into the private "baileywiki" pack (POST import),
-// which games then turn on like any pack.
+// which games then turn on like any pack. A game's GM may do the same from
+// the game's Assets tab (`?game=<id>`), and adds the scenes it hands back.
 
 export interface BaileywikiDeps {
   sessions: SessionStore;
@@ -39,9 +41,18 @@ export class BaileywikiRoutes implements Routes {
   }
 
   async serve(call: Call): Promise<void> {
-    if (!this.deps.sessions.isAdmin(call.token))
-      throw new HttpError(403, 'Only the server admin can do that: give the admin password.');
+    if (!(await this.allowed(call))) throw new HttpError(403, "Only the server admin or a game's GM can do that.");
     send(call.res, 200, await this.answer(call));
+  }
+
+  /** The admin, or the GM of the game named in `?game=` (the game's Assets tab). */
+  private async allowed(call: Call): Promise<boolean> {
+    if (this.deps.sessions.isAdmin(call.token)) return true;
+    const game = new URL(call.req.url ?? '/', 'http://localhost').searchParams.get('game');
+    if (!game || !this.deps.hub.has(game)) return false;
+    const seat = this.deps.sessions.seatIn(call.token, game);
+    const player = (await this.deps.hub.info(game)).players.find((p) => p.id === seat);
+    return !!player && isGm(player);
   }
 
   private async answer(call: Call): Promise<unknown> {
