@@ -152,7 +152,12 @@ export class Journal implements SessionPart {
 
   /** Removes a macro (yours, or any for the GM). */
   deleteMacro(id: string): void {
-    this.s.edits.sendChanges('delete macro', [{ op: 'delete', coll: 'macros', id }]);
+    this.deleteEntry('macros', id);
+  }
+
+  /** Removes a sidebar document: an entry, a table, a playlist, a macro, a card stack. */
+  deleteEntry(coll: string, id: string): void {
+    this.s.edits.sendChanges('delete', [{ op: 'delete', coll, id }]);
   }
 
   /** Whether you may change a macro: the GM any, a player their own. */

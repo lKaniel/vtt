@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readPref, writePref } from './prefs.ts';
+import { readListPref, readPref, writeListPref, writePref } from './prefs.ts';
 
 const memory = () => {
   const m = new Map<string, string>();
@@ -32,5 +32,16 @@ describe('options kept in this browser', () => {
     };
     expect(() => writePref('motion', 'off', broken)).not.toThrow();
     expect(readPref('motion', ['full', 'off'], 'full', broken)).toBe('full');
+  });
+
+  it('keeps a list of ids, and an empty one for anything else', () => {
+    const store = memory();
+    expect(readListPref('closed', store)).toEqual([]);
+    writeListPref('closed', ['lore', 'gods'], store);
+    expect(readListPref('closed', store)).toEqual(['lore', 'gods']);
+    store.setItem('vtt:closed', '{"no":1}');
+    expect(readListPref('closed', store)).toEqual([]);
+    store.setItem('vtt:closed', 'not json');
+    expect(readListPref('closed', store)).toEqual([]);
   });
 });

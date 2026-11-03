@@ -36,3 +36,21 @@ export function writePref(key: string, value: string, storage: Storage | undefin
     // Not kept: the option still holds until the page reloads.
   }
 }
+
+/** A stored list of strings (folders closed in a list), or none. */
+export function readListPref(key: string, storage: Storage | undefined = browserStorage()): string[] {
+  try {
+    const value: unknown = JSON.parse(storage?.getItem(PREFIX + key) ?? '[]');
+    return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function writeListPref(
+  key: string,
+  values: readonly string[],
+  storage: Storage | undefined = browserStorage(),
+): void {
+  writePref(key, JSON.stringify(values), storage);
+}

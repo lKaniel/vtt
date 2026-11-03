@@ -1,11 +1,16 @@
 import type { Doc, Patch } from '@vtt/core';
 import { gridSizePatch, isGm, sceneThumb } from '@vtt/shared';
+import { CopyIcon, EyeIcon, MapIcon, PlayIcon, SendIcon, SettingsIcon, Trash2Icon, PlusIcon } from 'lucide-react';
 import { assetUrl } from '../assets.ts';
 import { useState } from 'react';
+import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
+import { Directory, type DirItem } from './directory/Directory.tsx';
+import type { MenuEntry } from './directory/menu.tsx';
+import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
+import { Dialog, DialogContent, DialogTitle } from './kit/dialog.tsx';
 import { Input } from './kit/input.tsx';
-import { Toggle } from './kit/toggle.tsx';
 import { SelectField } from './kit/select.tsx';
 import { ColorInput } from './kit/color-input.tsx';
 import { Slider } from './kit/slider.tsx';
@@ -13,125 +18,125 @@ import { Checkbox } from './kit/checkbox.tsx';
 import { WeatherFields } from './WeatherFields.tsx';
 
 /**
- * GM: the game's scenes. View looks at one (to prepare it) without moving
- * anyone; Play here moves the game there with everyone. Each scene can be
- * copied, deleted (Ctrl+Z brings it back) and set up: grid, lighting, fog,
- * weather.
+ * GM: the game's scenes, in folders. A click views one (to prepare it)
+ * without moving anyone; the right-click menu plays the game there with
+ * everyone, sends one player there, opens its settings (grid, lighting,
+ * fog, weather), copies it or deletes it (Ctrl+Z brings it back).
  */
 export function ScenesTab({ session }: Readonly<{ session: Session }>) {
-  const [name, setName] = useState('');
-  const [open, setOpen] = useState<string>();
-  const add = (e: React.SubmitEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    session.scenes.create(name.trim());
-    setName('');
-  };
+  const [settings, setSettings] = useState<string>();
+  const items = session.scenes.list().map((doc) => sceneItem(session, doc, setSettings));
+  const open = settings ? session.docs.get('scenes', settings) : undefined;
   return (
-    <div className="scenes-tab">
-      <form className="scene-new" onSubmit={add}>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="New scene name" />
-        <Button variant="outline" size="sm" disabled={!name.trim()}>
-          Add
-        </Button>
-      </form>
-      <ul className="rows">
-        {session.scenes.list().map((doc) => (
-          <SceneRow
-            key={doc.id}
-            session={session}
-            doc={doc}
-            open={open === doc.id}
-            onToggle={() => setOpen(open === doc.id ? undefined : doc.id)}
-          />
-        ))}
-      </ul>
-      <p className="muted">
-        View: look at a scene and edit it; the players stay where they are. Play here: the game and everyone move there.
-        Send a player on their own to split the party.
-      </p>
-    </div>
+    <>
+      <Directory
+        session={session}
+        id="scenes"
+        items={items}
+        folders={{ kind: 'scenes', editable: true }}
+        what={t('scenes.what')}
+        filters={[
+          {
+            key: 'nav',
+            label: t('scenes.nav'),
+            options: [
+              { value: 'yes', label: t('scenes.nav.yes') },
+              { value: 'no', label: t('scenes.nav.no') },
+            ],
+          },
+        ]}
+        actions={
+          <Button variant="outline" size="sm" onClick={() => setSettings(session.scenes.create(t('scenes.newName')))}>
+            <PlusIcon />
+            {t('scenes.new')}
+          </Button>
+        }
+        empty={t('scenes.none')}
+        hint={t('scenes.hint')}
+      />
+      <Dialog open={!!open} onOpenChange={(on) => !on && setSettings(undefined)}>
+        {open && (
+          <DialogContent>
+            <DialogTitle>{nameOf(open)}</DialogTitle>
+            <SceneSettings session={session} doc={open} />
+          </DialogContent>
+        )}
+      </Dialog>
+    </>
   );
 }
 
 const nameOf = (doc: Doc) => (typeof doc.name === 'string' ? doc.name : doc.id);
 
-function SceneRow({
-  session,
-  doc,
-  open,
-  onToggle,
-}: Readonly<{ session: Session; doc: Doc; open: boolean; onToggle: () => void }>) {
+/** Who may be sent here on their own: the players on other scenes. */
+function sendMenu(session: Session, scene: string): MenuEntry {
+  const elsewhere = session.players.filter((p) => !isGm(p) && !session.scenes.seatsOn(scene).includes(p));
+  return {
+    label: t('scenes.send'),
+    icon: SendIcon,
+    disabled: !elsewhere.length,
+    items: elsewhere.map((p) => ({
+      label: p.name,
+      swatch: p.color,
+      run: () => session.scenes.sendPlayer(p.id, scene === session.scenes.active ? undefined : scene),
+    })),
+  };
+}
+
+function sceneBadges(here: boolean, active: boolean) {
+  if (!here && !active) return undefined;
+  return (
+    <span className="flex gap-1">
+      {active && <Badge>{t('scenes.game')}</Badge>}
+      {here && <Badge variant="muted">{t('scenes.you')}</Badge>}
+    </span>
+  );
+}
+
+function sceneItem(session: Session, doc: Doc, settings: (id: string) => void): DirItem {
   const id = doc.id;
   const here = session.scene === id;
   const active = session.scenes.active === id;
   const seats = session.scenes.seatsOn(id).filter((p) => !isGm(p));
   const thumb = sceneThumb(session.docs, id);
-  return (
-    <li className={`scene-row${here ? ' here' : ''}`}>
-      <div className="scene-head">
-        {thumb && <img src={assetUrl(thumb)} alt="" className="h-8 w-12 rounded-sm object-cover" />}
-        <span className="row-name">{nameOf(doc)}</span>
-        {active && <span className="scene-badge">Game</span>}
-        {here && <span className="scene-badge you">You</span>}
-      </div>
-      {seats.length > 0 && (
-        <div className="scene-seats">
-          {seats.map((p) => (
-            <span key={p.id} className="seat-chip" style={{ borderColor: p.color }}>
-              {p.name}
-            </span>
-          ))}
-        </div>
-      )}
-      <div className="scene-actions">
-        <Button variant="outline" size="sm" disabled={here} onClick={() => session.scenes.view(id)}>
-          View
-        </Button>
-        <Button variant="outline" size="sm" disabled={active} onClick={() => session.scenes.activate(id)}>
-          Play here
-        </Button>
-        <SendPlayer session={session} scene={id} />
-        <Toggle variant="plate" pressed={open} onPressedChange={onToggle}>
-          Settings
-        </Toggle>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => session.scenes.duplicate(id)}
-          title="A copy with everything on it"
-        >
-          Copy
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={active}
-          title={active ? 'Play another scene first' : 'Delete it and everything on it (Ctrl+Z undoes)'}
-          onClick={() => session.scenes.delete(id)}
-        >
-          Delete
-        </Button>
-      </div>
-      {open && <SceneSettings session={session} doc={doc} />}
-    </li>
-  );
-}
-
-/** Sends one player to this scene on their own. */
-function SendPlayer({ session, scene }: Readonly<{ session: Session; scene: string }>) {
-  const elsewhere = session.players.filter((p) => !isGm(p) && !session.scenes.seatsOn(scene).includes(p));
-  if (!elsewhere.length) return null;
-  return (
-    <SelectField
-      value=""
-      aria-label="Send a player here"
-      placeholder="Send…"
-      className="h-8 text-xs"
-      onValueChange={(id) => session.scenes.sendPlayer(id, scene === session.scenes.active ? undefined : scene)}
-      options={elsewhere.map((p) => ({ value: p.id, label: p.name }))}
-    />
-  );
+  return {
+    key: id,
+    ref: { coll: 'scenes', id },
+    name: nameOf(doc),
+    folder: typeof doc.folder === 'string' ? doc.folder : undefined,
+    tags: { nav: doc.navigation === true ? 'yes' : 'no' },
+    look: {
+      picture: thumb ? (
+        <img src={assetUrl(thumb)} alt="" className="object-cover" draggable={false} />
+      ) : (
+        <span className="flex items-center justify-center text-gold">
+          <MapIcon className="size-4" />
+        </span>
+      ),
+      sub: seats.map((p) => p.name).join(', '),
+      on: here,
+      badge: sceneBadges(here, active),
+    },
+    open: () => !here && session.scenes.view(id),
+    openTwice: () => settings(id),
+    title: t('scenes.clickHint'),
+    menu: [
+      { label: t('scenes.view'), icon: EyeIcon, disabled: here, run: () => session.scenes.view(id) },
+      { label: t('scenes.play'), icon: PlayIcon, disabled: active, run: () => session.scenes.activate(id) },
+      sendMenu(session, id),
+      { label: t('scenes.settings'), icon: SettingsIcon, run: () => settings(id) },
+      { label: t('scenes.copy'), icon: CopyIcon, title: t('scenes.copyHint'), run: () => session.scenes.duplicate(id) },
+      'separator',
+      {
+        label: t('list.delete'),
+        icon: Trash2Icon,
+        danger: true,
+        disabled: active,
+        title: t(active ? 'scenes.deleteActive' : 'scenes.deleteHint'),
+        run: () => session.scenes.delete(id),
+      },
+    ],
+  };
 }
 
 const num = (doc: Doc, key: string, fallback: number) => (typeof doc[key] === 'number' ? doc[key] : fallback);
