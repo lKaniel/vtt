@@ -1,10 +1,12 @@
 import { SceneEntrySchema } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
-import { foundryScene } from './foundry-scene.ts';
+import { BLANK, foundryScene } from './foundry-scene.ts';
 
 // Media the import copied, by their path in the Foundry data folder.
 const media = (path: string) =>
-  ['modules/caves/maps/goblin cave.webp', 'modules/caves/tiles/barrel.png'].includes(path)
+  ['modules/caves/maps/goblin cave.webp', 'modules/caves/tiles/barrel.png', 'modules/caves/models/bridge.glb'].includes(
+    path,
+  )
     ? `pack://caves/media/${path.slice('modules/caves/'.length)}`
     : undefined;
 
@@ -287,6 +289,16 @@ describe('Foundry v14 scenes', () => {
       { texture: { src: 'modules/levels-3d-preview/assets/blank.webp' }, x: 0, y: 0, width: 100, height: 100 },
       { texture: { src: 'modules/levels-3d-preview/assets/blank.webp' }, x: 100, y: 0, width: 100, height: 100 },
       {
+        texture: { src: 'modules/levels-3d-preview/assets/blank.webp' },
+        x: 0,
+        y: 300,
+        width: 400,
+        height: 100,
+        rotation: 90,
+        elevation: 10,
+        flags: { 'levels-3d-preview': { model3d: 'modules/caves/models/bridge.glb', depth: 40 } },
+      },
+      {
         texture: { src: 'modules/caves/tiles/barrel.png' },
         x: 200,
         y: 0,
@@ -302,12 +314,18 @@ describe('Foundry v14 scenes', () => {
     expect(scene.tiles[0]).toMatchObject({ id: 'background', src: 'pack://caves/media/maps/goblin cave.webp' });
   });
 
-  it('leaves out 3D Canvas model tiles, which are blank squares in 2D', () => {
+  it('stands 3D Canvas model tiles as models, invisible on the 2D map, and says which models stayed behind', () => {
     const { scene, skipped } = foundryScene(v14, media);
-    expect(scene.tiles.filter((t) => t.id.startsWith('tile-')).map((t) => ('src' in t ? t.src : undefined))).toEqual([
-      'pack://caves/media/tiles/barrel.png',
-    ]);
-    expect(skipped).toContain('2 3D Canvas model tiles (3D only, they show as blank squares)');
+    const tiles = scene.tiles.filter((t) => t.id.startsWith('tile-'));
+    expect(tiles.map((t) => ('src' in t ? t.src : undefined))).toEqual([BLANK, 'pack://caves/media/tiles/barrel.png']);
+    expect(tiles[0]).toMatchObject({
+      x: 0,
+      y: 300,
+      w: 400,
+      h: 100,
+      model: { src: 'pack://caves/media/models/bridge.glb', elevation: 10, height: 2, rotation: 90 },
+    });
+    expect(skipped).toContain('2 3D Canvas tiles without a glTF model from the Data folder (drawn shapes stay behind)');
   });
 
   it('makes its floors our levels, each upper floor with its own picture', () => {

@@ -160,3 +160,41 @@ export class Standees {
     for (const t of this.textures.values()) t.dispose();
   }
 }
+
+/** What is round the map: the sky (a panorama picture, or the background colour) and the ground beyond the map. */
+export class Backdrop {
+  readonly table: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+  private sky?: { src: string; texture: THREE.Texture };
+  private loader = new THREE.TextureLoader();
+
+  constructor() {
+    const geometry = new THREE.PlaneGeometry(1e6, 1e6);
+    geometry.rotateX(-Math.PI / 2);
+    this.table = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x1b1d22 }));
+  }
+
+  /** Lays the ground just under the floor at height `floor`; the sky's picture, else `background`. */
+  show(scene: THREE.Scene, look: { sky?: string; ground: string; background: string }, floor: number): void {
+    this.table.position.set(0, floor - 2, 0);
+    this.table.material.color.set(look.ground);
+    scene.background = this.skyOf(look.sky) ?? new THREE.Color(look.background);
+  }
+
+  private skyOf(src: string | undefined): THREE.Texture | undefined {
+    if (!src) return undefined;
+    if (this.sky?.src !== src) {
+      this.sky?.texture.dispose();
+      const texture = this.loader.load(src);
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      this.sky = { src, texture };
+    }
+    return this.sky.texture;
+  }
+
+  dispose(): void {
+    this.sky?.texture.dispose();
+    this.table.geometry.dispose();
+    this.table.material.dispose();
+  }
+}

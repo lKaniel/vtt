@@ -201,6 +201,14 @@ skipping time, or undoing it, changes it too:
 }
 ```
 
+### The 3D view
+
+`"view3d": { "sky": "/assets/sky/day.webp", "ground": "#341f0f", "walls": false }`
+sets how the 3D view (docs/view3d.md) shows the scene: `sky` is a panorama
+picture all round (equirectangular), `ground` the colour beyond the map,
+and `"walls": false` leaves the walls lying flat when the scene's models
+are its walls. All optional.
+
 ### Explored fog of war
 
 With `vision` and `exploration` on, the server works out what each player's
@@ -292,6 +300,15 @@ pixels.
 - `"tint": "#88aaff"` colours an image tile's picture (moonlight, a sickly
   swamp), and `"shadow": {}` gives it a soft drop shadow (trees, roofs,
   floating rocks), optionally `{ "offset": 12, "blur": 8, "alpha": 0.5 }`.
+- `"model": { "src": "/assets/models/bridge.glb" }` stands a glTF model
+  (`.glb`, or `.gltf` with its files beside it) on an image tile in the 3D
+  view (docs/view3d.md); the 2D map shows only the tile's picture, usually
+  `/art/ui/blank.svg`. The model is centred on the tile and stretched to it;
+  `height` (feet, else in proportion), `elevation` (feet its base stands
+  at, else the floor), `rotation` (degrees clockwise), `tilt` (`[x, z]`
+  degrees) and `color` (a tint) shape it. `"fill": "tile", "piece": 2`
+  repeats it instead, one copy every 2 squares (floors, wall runs). The
+  Foundry importer brings 3D Canvas model tiles this way.
 - A wall is a line from `a` to `b` that stops movement, sight, light and
   sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.
   Open doors stop nothing.
@@ -645,6 +662,7 @@ without one):
 | `mirrorX`, `mirrorY`         | Flip its picture left to right, or upside down.                                                                                                     |
 | `ring`                       | A ring round its picture: `{ "color": "#e0b040", "background": "#202020" }`.                                                                        |
 | `filter`                     | A colour filter over its picture: `grayscale` (petrified), `sepia`, `invert`, `ghost` (pale, see-through) or `shadow` (dark).                       |
+| `model`                      | Its figure in the 3D view: `{ "src": "/assets/minis/orc.glb" }`, as wide as its square (see `model` on tiles).                                      |
 | `randomImg`                  | With `"img": "/assets/tokens/goblin-*.webp"`: each new unlinked copy picks one of the files the `*` pattern matches.                                |
 | `speed`                      | Walking speed in feet. Default 30.                                                                                                                  |
 | `ownership`                  | Who may see, read and act with it; see Ownership below.                                                                                             |

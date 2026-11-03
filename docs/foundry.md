@@ -40,8 +40,13 @@ What comes along:
   navigation bar, its name there and its thumbnail come along too.
 - **Foundry v14** scenes: the background comes from the lowest floor that
   has one (v14 keeps it in the scene's `levels`), templates that v14 stores
-  as regions become templates again, and 3D Canvas model tiles (blank
-  squares in 2D) are left out.
+  as regions become templates again.
+- **3D Canvas** (levels-3d-preview): model tiles become image tiles with a
+  `model` (glTF with its files, depth as height, elevation, rotation, tilt,
+  fill and tint), tokens keep their figure, and scenes keep their sky,
+  table colour and whether walls show (`view3d`). Drawn shapes, HeroForge
+  figures and other non-glTF models stay behind and are reported. See
+  docs/view3d.md.
 - **Floors**, from v14's scene levels or the Levels module's flags (see
   "Scene levels" in game-format.md): one level per floor, named by the
   tightest band starting there (v14's migration makes overlapping bands).

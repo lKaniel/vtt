@@ -1,12 +1,14 @@
-import { levelAt, onLevel, type Point, tokenLevel } from '@vtt/shared';
+import { levelAt, onLevel, type Point } from '@vtt/shared';
 import * as THREE from 'three';
 import type { TokenLayer } from '../canvas/TokenLayer.ts';
 import { portraitOf } from '../icon-art.ts';
 import type { Session } from '../session/session.ts';
+import { figures, onShownFloor, type Table3D, tileModels } from './content3d.ts';
 import { CameraInput } from './input3d.ts';
+import { Models, type ModelShown } from './models3d.ts';
 import { eyeOf, follow, groundSquare, type MapPoint, ORBIT, type Orbit, panBy, rotateBy, zoomBy } from './orbit.ts';
 import { type FlatMap, PixiBridge } from './pixi-bridge.ts';
-import { at3d, Ground, Standees, type Standing, Walls } from './scene3d.ts';
+import { at3d, Backdrop, Ground, Standees, type Standing, Walls } from './scene3d.ts';
 import { cutaway, wallBoxes } from './walls3d.ts';
 
 // The map in 3D, with a camera like Baldur's Gate 3's (orbit.ts): the 2D map
@@ -34,6 +36,11 @@ export class View3D {
   private ground: Ground;
   private walls = new Walls();
   private standees = new Standees();
+  private models = new Models();
+  private backdrop = new Backdrop();
+  /** The model tiles to stand, worked out with the walls. */
+  private tileModels: ModelShown[] = [];
+  private floorShown?: number;
   private bridge: PixiBridge;
   private input: CameraInput;
   private hemi = new THREE.HemisphereLight(0xfff4e0, 0x403830, 1.2);
@@ -66,7 +73,8 @@ export class View3D {
       centre: () => (this.following = true),
       toggle: () => session.view3d.toggle(),
     });
-    this.scene.add(this.ground.mesh, this.walls.group, this.standees.group, this.hemi, this.sun, this.sun.target);
+    this.scene.add(this.ground.mesh, this.walls.group, this.standees.group, this.models.group, this.backdrop.table);
+    this.scene.add(this.hemi, this.sun, this.sun.target);
   }
 
   start(): void {
@@ -100,6 +108,7 @@ export class View3D {
     this.ground.dispose();
     this.walls.dispose();
     this.standees.dispose();
+    this.backdrop.dispose();
     this.renderer.dispose();
   }
 
@@ -139,6 +148,7 @@ export class View3D {
     this.wallsDue -= dt;
     if (this.wallsDirty || this.wallsDue <= 0) this.standWalls(floor);
     this.standees.show(this.standing(), floor);
+    this.standModels(floor);
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -163,8 +173,10 @@ export class View3D {
     this.sun.intensity = 1.4 * light;
     this.sun.position.set(t[0] - 2000, t[2] + 4000, t[1] - 1500);
     this.sun.target.position.set(t[0], t[2], t[1]);
-    const back = new THREE.Color(world.background ?? '#1b1d22');
-    this.scene.background = back;
+    const background = world.background ?? '#1b1d22';
+    const look = { sky: world.view3d?.sky, ground: world.view3d?.ground ?? background, background };
+    this.backdrop.show(this.scene, look, t[2]);
+    const back = new THREE.Color(background);
     const reach = ORBIT.maxReach * this.grid();
     this.scene.fog = new THREE.Fog(back, this.orbit.distance + reach * 0.4, this.orbit.distance + reach * 1.1);
   }
@@ -189,32 +201,59 @@ export class View3D {
     this.orbit = panBy(this.orbit, [-by[0] * perPixel, -by[1] * perPixel]);
   }
 
+  /** What is on the table, for the floors shown and as far as you have explored. */
+  private table(): Table3D {
+    const fog = this.session.isGm() || !this.session.world?.vision ? undefined : this.session.fog.shown();
+    return {
+      world: this.session.world!,
+      shown: this.session.levels.shown,
+      ...(fog && { explored: (p: Point) => fog.explored(p) }),
+    };
+  }
+
+  /** Stands the walls (unless the scene's models are its walls) and works out the model tiles. */
   private standWalls(floor: number): void {
     this.wallsDirty = false;
     this.wallsDue = WALLS_EVERY;
     const level = this.level();
     const current = this.session.levels.current;
-    const walls = [...this.session.chunks.values()].flatMap((c) => c.walls.filter((w) => onLevel(w, current)));
-    const fog = this.session.isGm() || !this.session.world?.vision ? undefined : this.session.fog.shown();
+    const table = this.table();
+    const chunks = [...this.session.chunks.values()];
+    this.tileModels = tileModels(
+      chunks.flatMap((c) => c.tiles),
+      table,
+    );
+    const walls =
+      table.world.view3d?.walls === false ? [] : chunks.flatMap((c) => c.walls.filter((w) => onLevel(w, current)));
     const boxes = wallBoxes(walls, {
       bottom: level?.bottom ?? 0,
       top: level?.top,
       grid: this.grid(),
-      ...(fog && { explored: (p: Point) => fog.explored(p) }),
+      explored: table.explored,
     });
     const t = this.orbit.target;
     const cut = { target: [t[0], t[1]] as Point, yaw: this.orbit.yaw, radius: CUT.radius * this.grid(), low: CUT.low };
     this.walls.show(this.orbit.tactical ? boxes : cutaway(boxes, cut), floor);
   }
 
-  /** The creatures you see on the floors shown, where the 2D map has them now. */
+  /** The model tiles, and the creatures that have a figure; all stood again when the floor shown changes. */
+  private standModels(floor: number): void {
+    if (this.floorShown !== floor) this.models.restand();
+    this.floorShown = floor;
+    const placeOf = (id: string) => this.map.tokens.placeOf(id);
+    const all = [...this.tileModels, ...figures(this.session.tokens.values(), this.table(), placeOf)];
+    const ground = { grid: this.grid(), feet: 5, floor: this.level()?.bottom ?? 0 };
+    this.models.show(all, ground, floor);
+    this.surface.dataset.models = String(this.models.count);
+  }
+
+  /** The creatures you see on the floors shown (but those with a figure), where the 2D map has them now. */
   private standing(): Standing[] {
-    const levels = this.session.world?.levels;
-    const shown = this.session.levels.shown;
+    const table = this.table();
     const out: Standing[] = [];
     for (const t of this.session.tokens.values()) {
       const place = this.map.tokens.placeOf(t.id);
-      if (!place || (shown && !shown.includes(tokenLevel(levels, t) ?? ''))) continue;
+      if (!place || t.model || !onShownFloor(t, table)) continue;
       const floorFeet = this.level()?.bottom ?? 0;
       out.push({
         id: t.id,
