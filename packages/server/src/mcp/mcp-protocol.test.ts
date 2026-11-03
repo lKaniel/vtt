@@ -16,7 +16,17 @@ const broken: McpTool = {
   input: z.object({}),
   run: () => Promise.reject(new Error('No such game')),
 };
-const tools = [echo, broken];
+const picture: McpTool = {
+  name: 'picture',
+  description: 'A picture and a caption.',
+  input: z.object({}),
+  run: () =>
+    Promise.resolve([
+      { type: 'image', data: 'iVBOR', mimeType: 'image/png' },
+      { type: 'text', text: 'A map' },
+    ]),
+};
+const tools = [echo, broken, picture];
 const ask = (method: string, params?: unknown) => answerRpc({ jsonrpc: '2.0', id: 1, method, params }, tools);
 
 describe('the MCP protocol', () => {
@@ -36,7 +46,7 @@ describe('the MCP protocol', () => {
   it('lists its tools with JSON schemas for their arguments', async () => {
     const r = await ask('tools/list');
     const listed = (r?.result as { tools: { name: string; inputSchema: { properties?: object } }[] }).tools;
-    expect(listed.map((t) => t.name)).toEqual(['echo', 'broken']);
+    expect(listed.map((t) => t.name)).toEqual(['echo', 'broken', 'picture']);
     expect(listed[0]?.inputSchema).toMatchObject({ type: 'object', properties: { text: { type: 'string' } } });
   });
 
@@ -50,6 +60,15 @@ describe('the MCP protocol', () => {
     });
     const misused = (await ask('tools/call', { name: 'echo', arguments: {} }))?.result as { isError: boolean };
     expect(misused.isError).toBe(true);
+  });
+
+  it('answers with pictures when a tool gives them', async () => {
+    expect((await ask('tools/call', { name: 'picture' }))?.result).toEqual({
+      content: [
+        { type: 'image', data: 'iVBOR', mimeType: 'image/png' },
+        { type: 'text', text: 'A map' },
+      ],
+    });
   });
 
   it('refuses unknown methods and tools', async () => {

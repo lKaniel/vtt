@@ -6,12 +6,16 @@ import { z } from 'zod';
 
 const PROTOCOL = '2025-06-18';
 
+/** A piece of a tool's answer: words, or a picture (base64). */
+export type McpContent = { type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string };
+
 /** A tool Claude may call: its arguments are checked against `input` first. */
 export interface McpTool {
   name: string;
   description: string;
   input: z.ZodType;
-  run: (args: never) => Promise<string>;
+  /** Its answer: words, or pieces of words and pictures. */
+  run: (args: never) => Promise<string | McpContent[]>;
 }
 
 const RequestSchema = z.object({
@@ -49,7 +53,8 @@ function initialize(params: unknown): unknown {
     serverInfo: { name: 'vtt', version: '1.0.0' },
     instructions:
       'A virtual tabletop. Call `guide` first to learn the game format, then `look` to see the table. ' +
-      'You act as your own seat at the table, with its rights.',
+      'You act as your own seat at the table, with its rights. To make or change a map (GM): create_scene, ' +
+      'build_scene from a blueprint, then render_scene to look at it and fix what is off.',
   };
 }
 
@@ -64,7 +69,8 @@ async function callTool(params: unknown, tools: readonly McpTool[]): Promise<unk
   const args = tool.input.safeParse(call.data.arguments ?? {});
   if (!args.success) return text(`Bad arguments: ${z.prettifyError(args.error)}`, true);
   try {
-    return text(await tool.run(args.data as never));
+    const answer = await tool.run(args.data as never);
+    return typeof answer === 'string' ? text(answer) : { content: answer };
   } catch (e) {
     return text((e as Error).message, true);
   }

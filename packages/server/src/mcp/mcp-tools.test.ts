@@ -30,7 +30,7 @@ function toolsFor(player: string): (name: string, args?: Record<string, unknown>
   });
   return (name, args = {}) => {
     const tool = tools.find((t) => t.name === name)!;
-    return tool.run(tool.input.parse(args) as never);
+    return tool.run(tool.input.parse(args) as never) as Promise<string>;
   };
 }
 

@@ -31,7 +31,11 @@ import { Refusal, requireGm, type Table } from '../play/table.ts';
 import { packContent } from '../library/game-packs.ts';
 import { SheetDrops } from './sheet-drop-actions.ts';
 import { gameMedia } from './pack-actions.ts';
-import { isWildcard, pickWildcard } from '@vtt/core';
+import { isWildcard, OpError, pickWildcard } from '@vtt/core';
+import { checkOps } from '../store/op-permissions.ts';
+import type { ClientMessage } from './client-messages.ts';
+
+type Build = Extract<ClientMessage, { t: 'build' }>;
 
 /**
  * The GM's tools: editing any token, placing new ones, keeping the Actors
@@ -81,6 +85,31 @@ export class GmActions {
   spawn(player: Player, from: SpawnSource, at: Point, hidden?: boolean): void {
     requireGm(player);
     this.store.setToken(from.kind === 'monster' ? this.monster(from, at, hidden) : this.copy(from.id, at, hidden));
+  }
+
+  /** Map documents and new creatures for a scene, all or nothing (Claude's build_scene tool). */
+  build(player: Player, msg: Build): void {
+    requireGm(player);
+    if (!this.store.docs.get('scenes', msg.scene)) throw new Refusal(`No scene "${msg.scene}"`);
+    for (const s of msg.spawns) this.spawnable(s.from);
+    try {
+      checkOps(player, msg.ops, this.store.access);
+      if (msg.ops.length) this.store.applyOps(msg.ops);
+    } catch (e) {
+      if (e instanceof OpError) throw new Refusal(e.message);
+      throw e;
+    }
+    this.store.inScene(msg.scene, () => {
+      for (const s of msg.spawns) this.spawn(player, s.from, s.at, s.hidden);
+    });
+  }
+
+  /** Refuses a creature that can't be placed: an unknown monster or actor. */
+  private spawnable(from: SpawnSource): void {
+    if (from.kind === 'actor' && !this.store.actors.has(from.id)) throw new Refusal(`No actor "${from.id}"`);
+    if (from.kind === 'monster' && !contentWith(from.rules, packContent(this.store)).monsters.has(from.id)) {
+      throw new Refusal(`No monster "${from.id}" in the ${from.rules} rules`);
+    }
   }
 
   /** Links a token to its actor, unlinks it, or saves or resets an unlinked copy's changes. */
