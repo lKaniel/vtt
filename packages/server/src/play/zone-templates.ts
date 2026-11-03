@@ -1,12 +1,14 @@
-import type { Doc, Op } from '@vtt/core';
+import { artOf, type Doc, type Op } from '@vtt/core';
 import type { Template } from '@vtt/shared';
 import { withChoice, type ZoneHit, zonesOf, zoneTemplate } from '@vtt/system-dnd5e';
 import type { Table } from './table.ts';
+import { packArtOf } from '../library/game-packs.ts';
 
 // Lasting zones show as templates on the map. After every step the templates
 // are brought in line with the zones: one per zone, following a caster it is
 // attached to, gone when the spell is. The GM may move one; the zone is then
-// where its template is.
+// where its template is. A template wears the spell's loop from the game's
+// packs (JB2A's), if they have one.
 
 const idOf = (z: ZoneHit) => `zone-${z.effect.id}`;
 type Owner = NonNullable<Template['effect']>;
@@ -50,7 +52,8 @@ export class ZoneTemplates {
     const shape = spell && !spell.places?.wall && zoneTemplate(z, spell);
     if (!shape) return [];
     const effect: Owner = { token: z.bearer.id, id: z.effect.id };
-    const doc = { id: idOf(z), type: 'template', rev: 0, ...shape, effect } as Doc;
+    const texture = artOf(packArtOf(this.store), 'animation', `zone:${z.effect.zone.spell}`)?.[0];
+    const doc = { id: idOf(z), type: 'template', rev: 0, ...shape, effect, ...(texture && { texture }) } as Doc;
     return [{ op: 'create', coll: this.coll, doc }];
   }
 

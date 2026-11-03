@@ -10,10 +10,16 @@ const LONGEST = 5000;
 /** An on-target video covers this many times the target's radius. */
 const ON_TARGET = 3;
 
-interface Path {
+/** How a video lies: stretched toward `to` (`reach` px long, else all the way), or over it, `cover` times its radius. */
+export interface VideoLayout {
+  ranged: boolean;
+  reach?: number;
+  cover?: number;
+}
+
+interface Path extends VideoLayout {
   from: Place;
   to: Place;
-  ranged: boolean;
 }
 
 interface Place {
@@ -32,7 +38,7 @@ function videoElement(url: string): HTMLVideoElement {
 }
 
 /** Lays the sprite out once the video knows its size. */
-function layout(sprite: Sprite, video: HTMLVideoElement, { from, to, ranged }: Path): void {
+function layout(sprite: Sprite, video: HTMLVideoElement, { from, to, ranged, reach, cover }: Path): void {
   const w = video.videoWidth || 1;
   const h = video.videoHeight || 1;
   if (ranged) {
@@ -41,25 +47,27 @@ function layout(sprite: Sprite, video: HTMLVideoElement, { from, to, ranged }: P
     sprite.anchor.set(0, 0.5);
     sprite.position.set(from.at[0], from.at[1]);
     sprite.rotation = Math.atan2(dy, dx);
-    const scale = Math.hypot(dx, dy) / w;
+    const scale = (reach ?? Math.hypot(dx, dy)) / w;
     sprite.scale.set(scale);
   } else {
     sprite.anchor.set(0.5);
     sprite.position.set(to.at[0], to.at[1]);
-    sprite.scale.set((to.r * 2 * ON_TARGET) / Math.max(w, h));
+    sprite.scale.set((to.r * 2 * (cover ?? ON_TARGET)) / Math.max(w, h));
   }
 }
 
-export function videoFx(url: string, from: Place, to: Place, ranged: boolean): Fx {
+export function videoFx(url: string, from: Place, to: Place, how: VideoLayout): Fx {
   const video = videoElement(url);
-  const sprite = new Sprite(Texture.from(video));
+  // The texture is made once the video has a frame: uploading an empty one fails (bad image data).
+  const sprite = new Sprite(Texture.EMPTY);
   sprite.visible = false;
   let placed = false;
   return {
     view: sprite,
     update(ms) {
-      if (!placed && video.videoWidth) {
-        layout(sprite, video, { from, to, ranged });
+      if (!placed && video.readyState >= 2) {
+        sprite.texture = Texture.from(video);
+        layout(sprite, video, { from, to, ...how });
         placed = true;
         sprite.visible = true;
       }

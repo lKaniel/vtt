@@ -15,6 +15,7 @@ import {
 } from '@vtt/shared';
 import { type Actor, ActorSchema, type ClientMessage, type ServerMessage } from '@vtt/system-dnd5e';
 import { setHomebrewSource, setPackContent, setSettingsSource } from '../content/content.ts';
+import { setPackArt } from '../content/pack-art.ts';
 
 // Asset packs on the client: the rules content of the game's packs (for
 // everyone), and for the GM the Assets tab: which packs the game uses, the
@@ -178,6 +179,7 @@ export class Packs implements SessionPart {
     switch (msg.t) {
       case 'packContent':
         setPackContent(msg.compendia);
+        setPackArt(msg.art);
         setHomebrewSource(() => this.s.docs.all('homebrew'));
         setSettingsSource(() => this.s.world?.settings);
         return true;

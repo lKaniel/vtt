@@ -1,4 +1,11 @@
-import { enabledPacks, type PackCompendium, type PackInfo, type SystemDefinition } from '@vtt/core';
+import {
+  type ArtIndex,
+  enabledPacks,
+  mergeArt,
+  type PackCompendium,
+  type PackInfo,
+  type SystemDefinition,
+} from '@vtt/core';
 import {
   type Content,
   contentWith,
@@ -35,16 +42,21 @@ export function packInfos(store: PackStore | undefined, game: GamePacks, system:
   return [...builtin, ...installed];
 }
 
-const cache = new WeakMap<PackStore, { revision: number; lists: Map<string, PackCompendium[]> }>();
+interface Cached {
+  revision: number;
+  lists: Map<string, PackCompendium[]>;
+  art: Map<string, ArtIndex>;
+}
+const cache = new WeakMap<PackStore, Cached>();
 
-/** The cached lists of a store, emptied when its packs were read again. */
-function listsOf(store: PackStore): Map<string, PackCompendium[]> {
+/** What is cached of a store, emptied when its packs were read again. */
+function cachedOf(store: PackStore): Cached {
   let known = cache.get(store);
   if (known?.revision !== store.revision) {
-    known = { revision: store.revision, lists: new Map() };
+    known = { revision: store.revision, lists: new Map(), art: new Map() };
     cache.set(store, known);
   }
-  return known.lists;
+  return known;
 }
 
 /**
@@ -55,7 +67,7 @@ function listsOf(store: PackStore): Map<string, PackCompendium[]> {
 export function contentCompendia(store: PackStore | undefined, game: GamePacks, system: System): PackCompendium[] {
   if (!store || !game.packs?.length || !system.contentTypes?.length) return [];
   const key = `${system.id}|${game.packs.join(',')}`;
-  const known = listsOf(store);
+  const known = cachedOf(store).lists;
   const hit = known.get(key);
   if (hit) return hit;
   const types = new Set(system.contentTypes);
@@ -64,6 +76,30 @@ export function contentCompendia(store: PackStore | undefined, game: GamePacks, 
   );
   known.set(key, list);
   return list;
+}
+
+/**
+ * The pictures and animations the packs a game turned on offer its content:
+ * each pack's art file, then what the system matches in its media by name,
+ * a pack listed earlier in game.json winning (see core/pack-art.ts). The
+ * same object while the packs and the game's choice stay the same.
+ */
+export function gameArt(
+  store: PackStore | undefined,
+  game: GamePacks,
+  system: Pick<SystemDefinition, 'id' | 'packArt'>,
+): ArtIndex {
+  if (!store || !game.packs?.length) return {};
+  const key = `${system.id}|${game.packs.join(',')}`;
+  const known = cachedOf(store).art;
+  const hit = known.get(key);
+  if (hit) return hit;
+  const matched = (id: string) => system.packArt?.(store.listedMedia(id)) ?? {};
+  const packs = enabledPacks(store.list(), game.packs, system.id);
+  const ordered = game.packs.flatMap((id) => packs.filter((p) => p.id === id));
+  const art = mergeArt(ordered.flatMap((p) => [store.art(p.id), matched(p.id)]));
+  known.set(key, art);
+  return art;
 }
 
 /**
@@ -96,6 +132,9 @@ export function packContent(store: RunningGame): PackCompendium[] {
   const packs = contentCompendia(store.packs, store.campaign, store.system);
   return gameCompendia(store, packs, store.docs.all('homebrew'), (d) => fromDoc(d));
 }
+
+/** The art of a running game's packs. */
+export const packArtOf = (store: RunningGame): ArtIndex => gameArt(store.packs, store.campaign, store.system);
 
 /** What a token in a running game can refer to: its edition's SRD plus the game's packs. */
 export function contentFor(

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { dnd5e } from '@vtt/system-dnd5e';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { contentCompendia, gamePackIssues, packInfos } from './game-packs.ts';
+import { contentCompendia, gameArt, gamePackIssues, packInfos } from './game-packs.ts';
 import { PackStore } from './pack-store.ts';
 
 let packs: PackStore;
@@ -27,6 +27,10 @@ beforeAll(async () => {
   await put(dir, 'goblins/monsters.json', [{ id: 'goblin-warlord' }]);
   await put(dir, 'goblins/lairs.json', [{ id: 'cave' }]);
   await put(dir, 'forest/pack.json', { id: 'forest', name: 'Forest' });
+  await put(dir, 'forest/media/spells/Fireball.webp', 'x');
+  await put(dir, 'icons/pack.json', { id: 'icons', name: 'Icons', art: 'art.json' });
+  await put(dir, 'icons/art.json', { spell: { fireball: 'media/fire.webp' }, item: { rope: 'media/rope.webp' } });
+  await put(dir, 'icons/media/svg/chest.svg', 'x');
   await put(dir, 'stars/pack.json', { id: 'stars', name: 'Stars', system: 'starfinder' });
   packs = new PackStore(dir);
   await packs.load();
@@ -42,6 +46,7 @@ describe('the packs of a game', () => {
       ['dnd5e-srd-2024', true, true],
       ['forest', false, false],
       ['goblins', true, false],
+      ['icons', false, false],
     ]);
   });
 
@@ -62,5 +67,22 @@ describe('the packs of a game', () => {
       'pack "stars" is for the "starfinder" system',
     ]);
     expect(gamePackIssues(undefined, game(['goblins']), dnd5e)).toEqual([]);
+  });
+});
+
+describe('the art of a game’s packs', () => {
+  it('puts the packs’ art files and what the system matches by name together, the first pack winning', () => {
+    const art = gameArt(packs, game(['forest', 'icons']), dnd5e);
+    expect(art.spell).toEqual({ fireball: ['pack://forest/media/spells/Fireball.webp'] });
+    expect(art.item).toEqual({ rope: ['pack://icons/media/rope.webp'], chest: ['pack://icons/media/svg/chest.svg'] });
+    expect(gameArt(packs, game(['icons', 'forest']), dnd5e).spell).toEqual({
+      fireball: ['pack://icons/media/fire.webp'],
+    });
+  });
+
+  it('has none without packs, and keeps the same art while nothing changed', () => {
+    expect(gameArt(packs, game(), dnd5e)).toEqual({});
+    expect(gameArt(undefined, game(['icons']), dnd5e)).toEqual({});
+    expect(gameArt(packs, game(['icons']), dnd5e)).toBe(gameArt(packs, game(['icons']), dnd5e));
   });
 });

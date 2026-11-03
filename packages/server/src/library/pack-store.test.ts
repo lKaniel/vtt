@@ -79,4 +79,23 @@ describe('the packs installed on a server', () => {
     expect(packs.mediaFile('forest', 'media/../pack.json')).toBeUndefined();
     expect(packs.mediaFile('nope', 'media/x.png')).toBeUndefined();
   });
+
+  it('reads a pack’s art file as pack srcs, and knows its media without waiting', async () => {
+    await put('forest/pack.json', { id: 'forest', name: 'Forest', art: 'art.json' });
+    await put('forest/art.json', { item: { oak: 'media/Trees/oak.webp' } });
+    const packs = new PackStore(dir);
+    await packs.load();
+    expect(packs.art('forest')).toEqual({ item: { oak: ['pack://forest/media/Trees/oak.webp'] } });
+    expect(packs.listedMedia('forest').map((m) => m.name)).toEqual(['stump', 'oak']);
+    expect(packs.art('nope')).toEqual({});
+  });
+
+  it('reports an art file it cannot read', async () => {
+    await put('forest/pack.json', { id: 'forest', name: 'Forest', art: 'art.json' });
+    await put('forest/art.json', { item: { oak: '../out.webp' } });
+    const packs = new PackStore(dir);
+    await packs.load();
+    expect(packs.art('forest')).toEqual({});
+    expect(packs.problems).toEqual(['forest/pack.json: its art file art.json is not a list of pack files by kind']);
+  });
 });

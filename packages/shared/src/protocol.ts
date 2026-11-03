@@ -1,4 +1,4 @@
-import type { Doc, MediaEntry, Op, PackCompendium, PackInfo, PluginInfo } from '@vtt/core';
+import type { ArtIndex, Doc, MediaEntry, Op, PackCompendium, PackInfo, PluginInfo } from '@vtt/core';
 import type { Roll } from './dice.ts';
 import type { ClockAction } from './clock.ts';
 import type { Weather } from './weather.ts';
@@ -177,8 +177,11 @@ export type EngineServerMessage =
   | { t: 'undone'; label: string; redo: boolean }
   /** The GM undid (or redid) the game action these chat cards report. */
   | { t: 'chatUndone'; ids: string[]; undone: boolean }
-  /** The rules content of the game's packs (monsters, items, spells for D&D): sent on joining and when it changes. */
-  | { t: 'packContent'; compendia: PackCompendium[] }
+  /**
+   * The rules content of the game's packs (monsters, items, spells for D&D)
+   * and the pictures and animations they offer it: sent on joining and when it changes.
+   */
+  | { t: 'packContent'; compendia: PackCompendium[]; art: ArtIndex }
   /** GM: the packs the game may use; `problems` are packs the server couldn't read. */
   | { t: 'packs'; packs: PackInfo[]; problems: string[] }
   /** GM: the plugins the game may use; `problems` are plugins the server couldn't read or this game can't load. */

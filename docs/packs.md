@@ -102,6 +102,69 @@ so sheets, tooltips and the Compendium know pack monsters too.
   use each in this game. Open a pack to see its compendia: import a scene,
   or add an actor to the Actors list.
 
+## Art for the game's content
+
+Turning a pack on dresses everything it has art for, with no picking per
+item: spell, item, feature and condition icons (sheets, hotbar, action
+bar, Compendium, character creator, effect badges, chat cards), monster
+tokens, attack and spell animations on the map, and the loop a lasting
+spell's template plays. Where a pack has nothing, the bundled paintings and
+drawn icons stay.
+
+A pack's art comes two ways, the first pack listed in game.json `packs`
+winning for each thing:
+
+- **An art file** (pack.json `"art": "art.json"`): slot → key → a file in
+  the pack, or several (the same video in lengths). Keys are ids, or names
+  as lowercase words joined by dashes (`potion-of-healing`). D&D's slots:
+  `spell`, `item`, `feature`, `condition`, `monster` (tokens) and
+  `animation` (keys below). The schema is `ArtFileSchema` in
+  `core/pack-art.ts`.
+
+  ```json
+  {
+    "spell": { "fireball": "media/icons/magic/fire/explosion.webp" },
+    "monster": { "goblin": "media/tokens/Goblin.webp" }
+  }
+  ```
+
+- **Matched by name** (the system's `packArt`, D&D's in
+  `system-dnd5e/src/pack-art.ts` and `pack-animations.ts`):
+  - a picture named like an SRD spell, item or condition is its icon;
+    any picture under an `items/`, `spells/`, `features/`, `conditions/`
+    or `statuses/` folder is, by its file name;
+  - a picture under a folder with "token" in its name is the token of the
+    monster it is named after, loosely (`BlackDragonAdult` → adult black
+    dragon, `SwarmBats` → swarm of bats, `Goblin` → goblin boss);
+  - videos in a folder named after a spell animate it (`spell:<id>`) and
+    its lasting area (`zone:<id>`, a loop if there is one), picked in the
+    colour of its damage: a projectile for spells that fly, a burst for
+    areas and touches;
+  - videos under `Weapon_Attacks`, `Unarmed_Attacks` or `Creature` folders
+    whose name holds a weapon animate it (`melee:<weapon>`,
+    `ranged:<weapon>`); a `Healing` folder animates healing without its own.
+
+  That is how JB2A's library lays itself out, so a JB2A pack needs no art
+  file. A creature's own animation choice (its sheet's Animations page)
+  still wins over the pack's. Videos made in lengths (`_05ft_`, `_30ft_`…)
+  play the length nearest the shot.
+
+The server sends a game's art to everyone with its pack content
+(`packContent`), and puts a monster's pack token on its token itself, so
+players who may not see what a creature is still see its picture.
+
+### Foundry's icons
+
+```
+pnpm import-foundry-art "<Foundry>/resources/app/public/icons" "<Foundry data>/Data/systems/dnd5e" [--id foundry-icons] [--overwrite]
+```
+
+Makes a private pack from your own Foundry install: its core icons
+(`media/icons/`), the system's icons and tokens (`media/dnd5e/`), and an
+art file giving each spell, item, feature and monster of the system's
+compendia the picture Foundry gives it. Foundry's art is licensed for your
+own games: the pack stays in `data/packs`, never in the repo.
+
 ## Importing from Foundry VTT
 
 ```
@@ -143,3 +206,5 @@ game instead: see [foundry.md](foundry.md).
 - Foundry actors and items in a pack's compendia (a world import reads
   them, see [foundry.md](foundry.md)).
 - Installing a pack from the browser (zip upload) and per-pack permissions.
+- Art: picking a template's texture by hand in the inspector; JB2A's
+  on-token loops for conditions and auras.
