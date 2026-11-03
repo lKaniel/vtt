@@ -72,6 +72,7 @@ export class TokenLayer {
   readonly container = new Container();
   private views = new Map<string, Sprite>();
   private labelsVisible = true;
+  private facesShown = true;
   private lastClick = { id: '', at: 0 };
   /** Called when a token you control is pressed, so the map can let you drag it somewhere. */
   onGrab?: (id: string, at: Point) => void;
@@ -90,6 +91,7 @@ export class TokenLayer {
     const cutout = cutoutOf(token) && !token.ring;
     drawPlaceholder(view, cutout ? undefined : (token.ring?.background ?? token.color));
     showTexture(view.face, portraitOf(token), cutout ? box : r * 2, token);
+    view.face.alpha = this.facesShown ? 1 : 0;
     applyTokenFilter(view.face, token.filter);
     const { label, faint } = describe(token);
     view.label.text = label;
@@ -104,6 +106,13 @@ export class TokenLayer {
     const shown = this.session.levels.shown;
     if (shown && !shown.includes(tokenLevel(this.session.world?.levels, token) ?? '')) return OFF_FLOOR_ALPHA;
     return faint ? 0.5 : 1;
+  }
+
+  /** The 3D view stands the creatures up itself: their faces on the map go see-through (they still take clicks). */
+  // fallow-ignore-next-line unused-class-member -- View3D calls it through its Map2D type
+  showFaces(on: boolean): void {
+    this.facesShown = on;
+    for (const v of this.views.values()) v.face.alpha = on ? 1 : 0;
   }
 
   redrawAll(): void {

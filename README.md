@@ -72,8 +72,14 @@ on, shared live between players.
   slot level to cast it with, or _Free_ to cast without spending one (the log
   says so). In the sheet's edit mode the GM clicks slot and feature charge
   pips to spend or restore them.
-- **Character sheet (C, or double-click your token).** Abilities, AC, HP and
-  tabs for Inventory, Spells, Features and Effects; click an item to equip it.
+- **Character sheet (C, or double-click your token).** Laid out like
+  Foundry's dnd5e sheet: name, level and XP across the top over the six
+  abilities (click a modifier for a check, _Save_ for a saving throw), the
+  portrait with AC, HP, hit dice, death saves and exhaustion down the left,
+  and icon tabs down the right: Details (skills, click one to roll it,
+  senses, defences), Inventory, Features, Spells, Effects and Animations.
+  The lists are sectioned with columns and a search box; click a name to
+  read it, use the row's buttons to attack, cast, drink, equip or attune.
 - **Arrange the action bar.** Drag spells, attacks, features and items from
   the sheet onto the bar, and drag tiles to swap them. The layout is saved
   on the token (`hotbar`); new abilities fill the gaps.
@@ -186,11 +192,12 @@ git, so plain git tools still work.
 ### GM tools
 
 - **Edit any token.** The character sheet has an edit mode for the GM:
-  press E (or _Edit_ on the sheet, or click the name on the action bar).
-  Name, abilities, HP (with quick Hit and Heal), AC, speed, proficiency,
-  defences, inventory and spells become editable in place, and a _Details_
-  tab holds the picture, size, vision, light, hidden, ownership, monster,
-  rules edition, class and level. Every change saves itself.
+  press E (or the _Edit_ switch on the sheet, or click the name on the action
+  bar). Name, abilities, HP (with quick Hit and Heal), AC, speed,
+  proficiency, skill proficiencies, defences, inventory and spells become
+  editable in place; the _Details_ tab adds the monster, rules edition,
+  classes and levels, and a _Token_ tab holds the picture, size, vision,
+  light, look, hidden and ownership. Every change saves itself.
 - **Actors.** The GM's side panel has an _Actors_ tab: every creature on the
   map (click to find it, toggle hidden, edit) and the Actors list, kept in
   `actors/` in the world folder and grouped by `folder`. Every creature's

@@ -201,6 +201,14 @@ skipping time, or undoing it, changes it too:
 }
 ```
 
+### The 3D view
+
+`"view3d": { "sky": "/assets/sky/day.webp", "ground": "#341f0f", "walls": false }`
+sets how the 3D view (docs/view3d.md) shows the scene: `sky` is a panorama
+picture all round (equirectangular), `ground` the colour beyond the map,
+and `"walls": false` leaves the walls lying flat when the scene's models
+are its walls. All optional.
+
 ### Explored fog of war
 
 With `vision` and `exploration` on, the server works out what each player's
@@ -292,6 +300,15 @@ pixels.
 - `"tint": "#88aaff"` colours an image tile's picture (moonlight, a sickly
   swamp), and `"shadow": {}` gives it a soft drop shadow (trees, roofs,
   floating rocks), optionally `{ "offset": 12, "blur": 8, "alpha": 0.5 }`.
+- `"model": { "src": "/assets/models/bridge.glb" }` stands a glTF model
+  (`.glb`, or `.gltf` with its files beside it) on an image tile in the 3D
+  view (docs/view3d.md); the 2D map shows only the tile's picture, usually
+  `/art/ui/blank.svg`. The model is centred on the tile and stretched to it;
+  `height` (feet, else in proportion), `elevation` (feet its base stands
+  at, else the floor), `rotation` (degrees clockwise), `tilt` (`[x, z]`
+  degrees) and `color` (a tint) shape it. `"fill": "tile", "piece": 2`
+  repeats it instead, one copy every 2 squares (floors, wall runs). The
+  Foundry importer brings 3D Canvas model tiles this way.
 - A wall is a line from `a` to `b` that stops movement, sight, light and
   sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.
   Open doors stop nothing.
@@ -645,6 +662,7 @@ without one):
 | `mirrorX`, `mirrorY`         | Flip its picture left to right, or upside down.                                                                                                     |
 | `ring`                       | A ring round its picture: `{ "color": "#e0b040", "background": "#202020" }`.                                                                        |
 | `filter`                     | A colour filter over its picture: `grayscale` (petrified), `sepia`, `invert`, `ghost` (pale, see-through) or `shadow` (dark).                       |
+| `model`                      | Its figure in the 3D view: `{ "src": "/assets/minis/orc.glb" }`, as wide as its square (see `model` on tiles).                                      |
 | `randomImg`                  | With `"img": "/assets/tokens/goblin-*.webp"`: each new unlinked copy picks one of the files the `*` pattern matches.                                |
 | `speed`                      | Walking speed in feet. Default 30.                                                                                                                  |
 | `ownership`                  | Who may see, read and act with it; see Ownership below.                                                                                             |
@@ -904,6 +922,11 @@ its stat block (2024 giant insect, summon dragon, find steed, animated
 objects) carries the one the server built for the slot it was cast with, and
 its `monster` names it.
 
+**Biography.** `biography` is the creature's story, looks and personality as
+text (a blank line between paragraphs; content links and inline rolls work as
+in journals), shown on the sheet's Biography tab to whoever may read the sheet.
+The Foundry importer fills it from the actor's biography.
+
 The server writes the rest of a creature's magic to its token, and you can
 edit it too:
 
@@ -912,7 +935,7 @@ edit it too:
 | `effects`       | What is affecting it now: `[{ "id", "name", "rounds"?, "source"?, "concentration"?, ...modifiers }]`.                                                                                                                                                                                                                                                                                                                                 |
 | `deathSaves`    | `{ "successes", "failures", "stable"?, "dead"? }`: a character at 0 hp rolls these at the start of its turns. Monsters just die at 0.                                                                                                                                                                                                                                                                                                 |
 | `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                                                                                                                                                                                                                                                                                 |
-| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st), feature uses, and `hitDice` spent (one per level, of the class die; an owner spends one from the Effects page to heal die + Con; a long rest gives back half in 2014, all in 2024).                                                                                                                                                             |
+| `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st), feature uses, and `hitDice` spent (one per level, of the class die; an owner spends one from the sheet's sidebar to heal die + Con; a long rest gives back half in 2014, all in 2024).                                                                                                                                                          |
 | `exhaustion`    | 1 to 6. 2014: disadvantage on checks, speed halved, disadvantage on attacks and saves, HP max halved, speed 0, dead (cumulative). 2024: −2 per level to d20 tests, −5 ft speed per level, dead at 6. A long rest takes one level away.                                                                                                                                                                                                |
 | `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                                                                                                                                                                                                                                                                                         |
 | `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"`, `"scroll:fireball"` or `null`.                                                                                                                                                                                                                                            |

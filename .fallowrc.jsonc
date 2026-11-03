@@ -25,6 +25,19 @@
         "files": ["packages/client/src/canvas/**", "packages/client/src/ui/**"],
         "maxCrap": 160,
       },
+      {
+        // The 3D view's three.js glue, checked in the browser (e2e view3d.spec.ts)
+        // like the canvas; its maths (orbit.ts, walls3d.ts) stays unit-tested.
+        "files": [
+          "packages/client/src/view3d/View3D.ts",
+          "packages/client/src/view3d/input3d.ts",
+          "packages/client/src/view3d/scene3d.ts",
+          "packages/client/src/view3d/pixi-bridge.ts",
+          "packages/client/src/view3d/view3d-switch.ts",
+          "packages/client/src/view3d/models3d.ts",
+        ],
+        "maxCrap": 160,
+      },
     ],
   },
   "rules": {

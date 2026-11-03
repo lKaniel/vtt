@@ -175,32 +175,9 @@
 
 /* ---------- Character sheet ---------- */
 
-.sheet {
-  top: 6vh;
-  width: min(960px, calc(100vw - 32px));
-  max-height: 84vh;
-}
-.sheet-head {
-  padding-bottom: 8px;
-  margin-bottom: 12px;
-  background: none;
-  border-bottom: 1px solid var(--hairline);
-}
-.sheet-head h2 {
-  font-size: 22px;
-}
-.sheet-cols {
-  grid-template-columns: 124px 240px 1fr;
-  gap: 18px;
-}
-.sheet-abilities {
-  gap: 6px;
-}
-
 /* ---------- Tooltips that are not the action bar's ---------- */
 
 .chat .tip,
-.sheet .tip,
 .lib .tip {
   padding: 8px 12px;
   background: var(--slim-fill);

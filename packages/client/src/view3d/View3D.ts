@@ -1,0 +1,288 @@
+import { levelAt, onLevel, type Point } from '@vtt/shared';
+import * as THREE from 'three';
+import type { TokenLayer } from '../canvas/TokenLayer.ts';
+import { portraitOf } from '../icon-art.ts';
+import type { Session } from '../session/session.ts';
+import { figures, onShownFloor, type Table3D, tileModels } from './content3d.ts';
+import { CameraInput } from './input3d.ts';
+import { Models, type ModelShown } from './models3d.ts';
+import { eyeOf, follow, groundSquare, type MapPoint, ORBIT, type Orbit, panBy, rotateBy, zoomBy } from './orbit.ts';
+import { type FlatMap, PixiBridge } from './pixi-bridge.ts';
+import { at3d, Backdrop, Ground, Standees, type Standing, Walls } from './scene3d.ts';
+import { cutaway, wallBoxes } from './walls3d.ts';
+
+// The map in 3D, with a camera like Baldur's Gate 3's (orbit.ts): the 2D map
+// still draws the ground, light and fog and takes the clicks (pixi-bridge.ts);
+// this view lays that picture on the floor shown, stands the walls up to the
+// ceiling and the creatures on their spots, and follows the creature you act
+// with. The map view (MapView) hands itself over while it is on.
+
+/** What the 3D view needs of the 2D map. */
+export interface Map2D extends FlatMap {
+  readonly tokens: Pick<TokenLayer, 'placeOf' | 'showFaces'>;
+}
+
+const FOV = 45;
+/** Walls on the camera's side of the target are cut down this close to it (squares), to this many pixels. */
+const CUT = { radius: 9, low: 14 };
+/** How often the walls are worked out again when nothing says they changed, seconds. */
+const WALLS_EVERY = 0.25;
+
+export class View3D {
+  private renderer = new THREE.WebGLRenderer({ antialias: true });
+  private scene = new THREE.Scene();
+  private camera = new THREE.PerspectiveCamera(FOV, 1, 5, 200000);
+  private surface = document.createElement('div');
+  private ground: Ground;
+  private walls = new Walls();
+  private standees = new Standees();
+  private models = new Models();
+  private backdrop = new Backdrop();
+  /** The model tiles to stand, worked out with the walls. */
+  private tileModels: ModelShown[] = [];
+  private floorShown?: number;
+  private bridge: PixiBridge;
+  private input: CameraInput;
+  private hemi = new THREE.HemisphereLight(0xfff4e0, 0x403830, 1.2);
+  private sun = new THREE.DirectionalLight(0xffffff, 1.4);
+  private orbit: Orbit;
+  /** The square the 2D map drew last, which the ground shows now. */
+  private drawn?: { center: Point; half: number };
+  private following = true;
+  private followed?: string;
+  private wallsDue = 0;
+  private wallsDirty = true;
+  private ray = new THREE.Raycaster();
+  private off: (() => void)[] = [];
+  private tick = () => this.frame(this.map.app.ticker.deltaMS / 1000);
+
+  constructor(
+    private readonly map: Map2D,
+    private readonly host: HTMLElement,
+    private readonly session: Session,
+  ) {
+    const start = map.cam.center;
+    this.orbit = { target: [start[0], start[1], this.floor()], yaw: 0, distance: 14 * this.grid(), tactical: false };
+    this.ground = new Ground(map.app.canvas);
+    this.bridge = new PixiBridge(map, (x, y) => this.pick(x, y));
+    this.input = new CameraInput(this.surface, {
+      zoom: (n) => (this.orbit = zoomBy(this.orbit, n, this.grid())),
+      turn: (r) => (this.orbit = rotateBy(this.orbit, r)),
+      pan: (by) => this.pan(by),
+      tactical: () => (this.orbit = { ...this.orbit, tactical: !this.orbit.tactical }),
+      centre: () => (this.following = true),
+      toggle: () => session.view3d.toggle(),
+    });
+    this.scene.add(this.ground.mesh, this.walls.group, this.standees.group, this.models.group, this.backdrop.table);
+    this.scene.add(this.hemi, this.sun, this.sun.target);
+  }
+
+  start(): void {
+    this.surface.className = 'view3d';
+    this.surface.style.cssText = 'position:absolute;inset:0;';
+    this.surface.dataset.testid = 'view3d';
+    this.renderer.setPixelRatio(devicePixelRatio);
+    this.surface.appendChild(this.renderer.domElement);
+    this.host.appendChild(this.surface);
+    this.bridge.attach(this.surface);
+    this.map.tokens.showFaces(false);
+    const dirty = () => (this.wallsDirty = true);
+    this.off.push(
+      this.session.on('chunk', dirty),
+      this.session.on('chunkGone', dirty),
+      this.session.on('fog', dirty),
+      this.session.on('editor', dirty),
+      this.session.on('select', () => (this.following = true)),
+    );
+    // After the 2D map has drawn the frame (its render runs at LOW priority).
+    this.map.app.ticker.add(this.tick, undefined, -50);
+  }
+
+  destroy(): void {
+    this.map.app.ticker.remove(this.tick);
+    for (const off of this.off) off();
+    this.input.dispose();
+    this.bridge.detach(this.host);
+    this.map.tokens.showFaces(true);
+    this.surface.remove();
+    this.ground.dispose();
+    this.walls.dispose();
+    this.standees.dispose();
+    this.backdrop.dispose();
+    this.renderer.dispose();
+  }
+
+  private grid(): number {
+    return this.session.world?.gridSize ?? 100;
+  }
+
+  /** Pixels per foot. */
+  private px(): number {
+    return this.grid() / 5;
+  }
+
+  /** The level shown, and its floor's height in pixels. */
+  private level() {
+    const levels = this.session.world?.levels;
+    const id = this.session.levels.current;
+    return levels?.find((l) => l.id === id) ?? (levels?.length ? levelAt(levels, 0) : undefined);
+  }
+
+  private floor(): number {
+    return (this.level()?.bottom ?? 0) * this.px();
+  }
+
+  private frame(dt: number): void {
+    if (!this.session.world) return;
+    this.input.tick(dt);
+    this.followCreature(dt);
+    const floor = this.floor();
+    this.orbit = { ...this.orbit, target: [this.orbit.target[0], this.orbit.target[1], floor] };
+    // The 2D map has just drawn the square asked for last frame: lay it down, then ask for the next.
+    if (this.drawn) this.ground.show(this.drawn.center, this.drawn.half, floor);
+    this.fitView();
+    const square = groundSquare(this.orbit, { fov: FOV, aspect: this.camera.aspect, grid: this.grid() });
+    this.bridge.frame(square.center, square.half);
+    this.drawn = square;
+    this.placeCamera();
+    this.wallsDue -= dt;
+    if (this.wallsDirty || this.wallsDue <= 0) this.standWalls(floor);
+    this.standees.show(this.standing(), floor);
+    this.standModels(floor);
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  private fitView(): void {
+    const { clientWidth: w, clientHeight: h } = this.host;
+    const size = this.renderer.getSize(new THREE.Vector2());
+    if (size.x === w && size.y === h) return;
+    this.renderer.setSize(w, h);
+    this.camera.aspect = w / Math.max(1, h);
+    this.camera.updateProjectionMatrix();
+  }
+
+  /** The camera from the orbit; light and fog by the scene's darkness. */
+  private placeCamera(): void {
+    const eye = eyeOf(this.orbit, this.grid());
+    const t = this.orbit.target;
+    this.camera.position.set(eye[0], eye[2], eye[1]);
+    this.camera.lookAt(t[0], t[2], t[1]);
+    const world = this.session.world!;
+    const light = 1 - 0.8 * world.darkness;
+    this.hemi.intensity = 1.2 * light;
+    this.sun.intensity = 1.4 * light;
+    this.sun.position.set(t[0] - 2000, t[2] + 4000, t[1] - 1500);
+    this.sun.target.position.set(t[0], t[2], t[1]);
+    const background = world.background ?? '#1b1d22';
+    const look = { sky: world.view3d?.sky, ground: world.view3d?.ground ?? background, background };
+    this.backdrop.show(this.scene, look, t[2]);
+    const back = new THREE.Color(background);
+    const reach = ORBIT.maxReach * this.grid();
+    this.scene.fog = new THREE.Fog(back, this.orbit.distance + reach * 0.4, this.orbit.distance + reach * 1.1);
+  }
+
+  /** The camera keeps up with the creature you act with, until you move it yourself. */
+  private followCreature(dt: number): void {
+    const id = this.session.selected;
+    if (id !== this.followed) {
+      this.followed = id;
+      this.following = true;
+    }
+    const place = id && this.following ? this.map.tokens.placeOf(id) : undefined;
+    if (!place) return;
+    const goal: MapPoint = [place.at[0], place.at[1], this.orbit.target[2]];
+    this.orbit = follow(this.orbit, goal, dt);
+  }
+
+  /** A right drag moves the camera over the ground, as far as the ground under the pointer moved. */
+  private pan(by: Point): void {
+    this.following = false;
+    const perPixel = (2 * this.orbit.distance * Math.tan((FOV * Math.PI) / 360)) / Math.max(1, this.host.clientHeight);
+    this.orbit = panBy(this.orbit, [-by[0] * perPixel, -by[1] * perPixel]);
+  }
+
+  /** What is on the table, for the floors shown and as far as you have explored. */
+  private table(): Table3D {
+    const fog = this.session.isGm() || !this.session.world?.vision ? undefined : this.session.fog.shown();
+    return {
+      world: this.session.world!,
+      shown: this.session.levels.shown,
+      ...(fog && { explored: (p: Point) => fog.explored(p) }),
+    };
+  }
+
+  /** Stands the walls (unless the scene's models are its walls) and works out the model tiles. */
+  private standWalls(floor: number): void {
+    this.wallsDirty = false;
+    this.wallsDue = WALLS_EVERY;
+    const level = this.level();
+    const current = this.session.levels.current;
+    const table = this.table();
+    const chunks = [...this.session.chunks.values()];
+    this.tileModels = tileModels(
+      chunks.flatMap((c) => c.tiles),
+      table,
+    );
+    const walls =
+      table.world.view3d?.walls === false ? [] : chunks.flatMap((c) => c.walls.filter((w) => onLevel(w, current)));
+    const boxes = wallBoxes(walls, {
+      bottom: level?.bottom ?? 0,
+      top: level?.top,
+      grid: this.grid(),
+      explored: table.explored,
+    });
+    const t = this.orbit.target;
+    const cut = { target: [t[0], t[1]] as Point, yaw: this.orbit.yaw, radius: CUT.radius * this.grid(), low: CUT.low };
+    this.walls.show(this.orbit.tactical ? boxes : cutaway(boxes, cut), floor);
+  }
+
+  /** The model tiles, and the creatures that have a figure; all stood again when the floor shown changes. */
+  private standModels(floor: number): void {
+    if (this.floorShown !== floor) this.models.restand();
+    this.floorShown = floor;
+    const placeOf = (id: string) => this.map.tokens.placeOf(id);
+    const all = [...this.tileModels, ...figures(this.session.tokens.values(), this.table(), placeOf)];
+    const ground = { grid: this.grid(), feet: 5, floor: this.level()?.bottom ?? 0 };
+    this.models.show(all, ground, floor);
+    this.surface.dataset.models = String(this.models.count);
+  }
+
+  /** The creatures you see on the floors shown (but those with a figure), where the 2D map has them now. */
+  private standing(): Standing[] {
+    const table = this.table();
+    const out: Standing[] = [];
+    for (const t of this.session.tokens.values()) {
+      const place = this.map.tokens.placeOf(t.id);
+      if (!place || t.model || !onShownFloor(t, table)) continue;
+      const floorFeet = this.level()?.bottom ?? 0;
+      out.push({
+        id: t.id,
+        at: place.at,
+        height: Math.max(0, (t.elevation ?? 0) - floorFeet) * this.px(),
+        size: t.size * this.grid(),
+        picture: portraitOf(t),
+        faint: t.hidden,
+      });
+    }
+    return out;
+  }
+
+  /** The map point under the pointer: a creature's spot when it is their picture, else the floor. */
+  private pick(clientX: number, clientY: number): Point {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1,
+      -((clientY - rect.top) / Math.max(1, rect.height)) * 2 + 1,
+    );
+    this.ray.setFromCamera(ndc, this.camera);
+    const token = this.standees.hit(this.ray);
+    const place = token ? this.map.tokens.placeOf(token) : undefined;
+    if (place) return place.at;
+    const floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.floor());
+    const hit = this.ray.ray.intersectPlane(floor, new THREE.Vector3());
+    if (hit) return [hit.x, hit.z];
+    const t = this.orbit.target;
+    const far = at3d([t[0], t[1]], t[2]).add(this.ray.ray.direction.clone().setY(0).normalize().multiplyScalar(1e5));
+    return [far.x, far.z];
+  }
+}

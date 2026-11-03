@@ -52,6 +52,8 @@ describe('media', () => {
     expect(mediaKind('maps/cave.WEBP')).toBe('image');
     expect(mediaKind('sfx/door.ogg')).toBe('audio');
     expect(mediaKind('fx/fire.webm')).toBe('video');
+    expect(mediaKind('models/bridge.GLB')).toBe('model');
+    expect(mediaKind('models/house.gltf')).toBe('model');
     expect(mediaKind('module.json')).toBeUndefined();
   });
 

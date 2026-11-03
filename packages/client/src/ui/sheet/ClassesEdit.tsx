@@ -1,13 +1,13 @@
 import { type Class, type Edition, findClass } from '@vtt/system-dnd5e';
 import { XIcon } from 'lucide-react';
-import { gameContent } from '../content/content.ts';
-import { choicesDue } from '../content/homebrew-edit.ts';
-import { classRows, type ClassRow, setClasses, toggleFeature } from '../play/token-edit.ts';
-import type { SheetProps } from './CharacterSheet.tsx';
-import { Field, NumberInput, TextInput } from './EditorFields.tsx';
-import { Button } from './kit/button.tsx';
-import { SelectField } from './kit/select.tsx';
-import { Toggle } from './kit/toggle.tsx';
+import { gameContent } from '../../content/content.ts';
+import { choicesDue } from '../../content/homebrew-edit.ts';
+import { classRows, type ClassRow, setClasses, toggleFeature } from '../../play/token-edit.ts';
+import type { SheetProps } from './sheet-props.ts';
+import { Field, NumberInput, TextInput } from '../EditorFields.tsx';
+import { Button } from '../kit/button.tsx';
+import { SelectField } from '../kit/select.tsx';
+import { Toggle } from '../kit/toggle.tsx';
 
 // The creature's classes in the sheet's Details editor: one row per class
 // with its levels, so a multiclassed character is "Fighter 3, Wizard 2";

@@ -35,6 +35,7 @@ import { Actions, type ActionEvents } from './session-actions.ts';
 import { Fog, type FogEvents } from './session-fog.ts';
 import { Draw } from './session-items.ts';
 import { Levels } from './session-levels.ts';
+import { View3DSwitch } from './session-view3d.ts';
 import { Editor, type EditorEvents } from './session-editor.ts';
 import { mayEditRefs } from './authorship.ts';
 import { Requests } from './session-requests.ts';
@@ -135,6 +136,8 @@ export class Session {
   readonly fog = new Fog(this, this.ev);
   readonly draw = new Draw(this, this.ev);
   readonly levels = new Levels(this, this.ev);
+  /** Whether this browser shows the map in 3D. */
+  readonly view3d = new View3DSwitch(this.ev);
   readonly turns = new Turns(this);
   /** The open character sheet. */
   readonly sheets = new Sheets(this, this.ev);
@@ -449,12 +452,9 @@ export class Session {
   }
 
   private onActor(msg: Extract<ServerMessage, { t: 'actor' | 'actorGone' }>): void {
-    if (msg.t === 'actor') {
-      this.actors.set(msg.actor.id, msg.actor);
-      return;
-    }
-    this.actors.delete(msg.id);
-    this.sheets.close('actor', msg.id);
+    if (msg.t === 'actor') this.actors.set(msg.actor.id, msg.actor);
+    // A sheet can only be open on an actor the session knows.
+    else if (this.actors.delete(msg.id)) this.sheets.close('actor', msg.id);
   }
 
   private onTokenGone(id: string): boolean {

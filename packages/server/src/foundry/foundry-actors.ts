@@ -1,4 +1,5 @@
 import { freeId, type FoundrySheets, slugify, type SystemDefinition } from '@vtt/core';
+import type { Model3D } from '@vtt/shared';
 import type { FoundryDoc } from './foundry-db.ts';
 import type { FolderLookup } from './foundry-entries.ts';
 import type { MediaLookup } from './foundry-scene.ts';
@@ -126,6 +127,8 @@ export interface TokenContext {
   media: MediaLookup;
   /** A token's elevation in feet (on the floor it is on). */
   elevation?: (t: FoundryDoc) => number;
+  /** The 3D figure a token stands as (3D Canvas), if any. */
+  model?: (t: FoundryDoc) => Model3D | undefined;
 }
 
 /** A Foundry token's centre: Foundry keeps the top-left corner, sizes in squares. */
@@ -144,6 +147,7 @@ function deltaOf(t: FoundryDoc, actor: PlacedActor, ctx: TokenContext, size: num
     ...(name && name !== actor.name ? { name } : {}),
     ...(img && img !== actor.img ? { img } : {}),
     ...(size !== actor.size ? { size } : {}),
+    ...modelOf(t, ctx),
     ...(ctx.sheets?.delta(t.delta ?? t.actorData) ?? {}),
   };
 }
@@ -160,8 +164,15 @@ function looseToken(t: FoundryDoc, id: string, at: ReturnType<typeof centreOf>, 
     ...elevationOf(t, ctx),
     ...(at.size !== 1 ? { size: at.size } : {}),
     ...(img ? { img } : {}),
+    ...modelOf(t, ctx),
     ...(t.hidden === true ? { hidden: true } : {}),
   };
+}
+
+/** A token's 3D figure, if it has one. */
+function modelOf(t: FoundryDoc, ctx: TokenContext): { model?: Model3D } {
+  const model = ctx.model?.(t);
+  return model ? { model } : {};
 }
 
 /** A token's elevation in feet, left out on the ground. */

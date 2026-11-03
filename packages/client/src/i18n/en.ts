@@ -2,6 +2,8 @@
 // to. A key is "<screen>.<what>"; `{name}` is filled in by t(). See
 // docs/i18n.md for adding words and languages.
 
+import { EN_SHEET } from './en-sheet.ts';
+
 export const EN = {
   'lang.label': 'Language',
   'lang.hint': 'Kept in this browser. Plugins can add languages.',
@@ -49,6 +51,7 @@ export const EN = {
   'keys.group.Action bar': 'Action bar',
   'keys.group.Map tools': 'Map tools',
   'keys.group.Walking': 'Walking',
+  'keys.group.Camera': 'Camera',
   'keys.sheet': 'Open or close the sheet',
   'keys.editSheet': 'Edit the sheet',
   'keys.endTurn': 'End your turn',
@@ -66,6 +69,11 @@ export const EN = {
   'keys.step-down': 'Step down',
   'keys.step-left': 'Step left',
   'keys.step-right': 'Step right',
+  'keys.view3d': '3D view on or off',
+  'keys.cam-left': '3D: turn the camera left',
+  'keys.cam-right': '3D: turn the camera right',
+  'keys.cam-tactical': '3D: look straight down (tactical)',
+  'keys.cam-centre': '3D: back to your creature',
 
   'panel.hide': 'Hide panel',
   'panel.show': 'Show panel',
@@ -267,7 +275,10 @@ export const EN = {
   'walk.trapUnnamed': 'Trap',
   'walk.blocked': "Can't get there",
 
+  ...EN_SHEET,
   'levels.question': '{name}: which floor?',
+  'view3d.on': '3D view',
+  'view3d.off': 'Back to the 2D map',
   'levels.stay': 'Stay here',
 } as const;
 

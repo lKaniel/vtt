@@ -1,11 +1,13 @@
-import { Redo2Icon, Undo2Icon } from 'lucide-react';
+import { BoxIcon, MapIcon, Redo2Icon, Undo2Icon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { SoundScape } from '../audio/audio.ts';
 import { MapView } from '../canvas/MapView.ts';
+import { t } from '../i18n/index.ts';
+import { followView3d } from '../view3d/view3d-switch.ts';
 import { Session } from '../session/session.ts';
 import { ActionBar } from './ActionBar.tsx';
 import { listenToClipboard, listenToKeys, listenToSpace, toggleSheet } from '../keys/game-keys.ts';
-import { Sheets } from './PoppedSheets.tsx';
+import { Sheets } from './sheet/PoppedSheets.tsx';
 import { ClockBar } from './clock/ClockBar.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
@@ -93,11 +95,30 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
       </span>
       <PauseButton session={session} />
       <UndoButtons session={session} />
+      <View3DButton session={session} />
       <SettingsMenu session={session} />
       <Button variant="link" onClick={onLeave}>
         Leave
       </Button>
     </header>
+  );
+}
+
+/** The map in 3D or flat (key V). */
+function View3DButton({ session }: Readonly<{ session: Session }>) {
+  const on = session.view3d.on;
+  const label = on ? t('view3d.off') : t('view3d.on');
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-pressed={on}
+      onClick={() => session.view3d.toggle()}
+      title={label}
+      aria-label={label}
+    >
+      {on ? <MapIcon /> : <BoxIcon />}
+    </Button>
   );
 }
 
@@ -134,9 +155,15 @@ function UndoButtons({ session }: Readonly<{ session: Session }>) {
 function openMap(session: Session, host: HTMLDivElement): () => void {
   const map = new MapView(session);
   let live = true;
-  void map.init(host).then(() => live && session.connect());
+  let off3d: (() => void) | undefined;
+  void map.init(host).then(() => {
+    if (!live) return;
+    off3d = followView3d(session, map, host);
+    session.connect();
+  });
   return () => {
     live = false;
+    off3d?.();
     session.close();
     map.destroy();
   };

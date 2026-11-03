@@ -27,7 +27,8 @@ const card = (player: Player, check: CheckLog): ChatMessage => ({
 });
 
 function checkTitle(check: CheckKind & { dc?: number }): string {
-  const what = check.skill ? skillName(check.skill) : `${check.ability.toUpperCase()} check`;
+  const roll = check.save ? 'save' : 'check';
+  const what = check.skill ? skillName(check.skill) : `${check.ability.toUpperCase()} ${roll}`;
   return check.dc ? `${what} (DC ${check.dc})` : what;
 }
 
@@ -38,7 +39,8 @@ export function checkAction(table: Table, cards: CheckCards, player: Player, msg
   if (msg.card) return rollOnCard(table, cards, fighter, msg.card);
   const { token, sheet } = fighter;
   const entry = { token: token.id, name: token.name, ...rollCheck(token, sheet, msg, table.rng) };
-  cards.post(card(player, { ability: msg.ability, skill: msg.skill, kind: 'each', entries: [entry] }));
+  const { ability, skill, save } = msg;
+  cards.post(card(player, { ability, skill, ...(save && { save }), kind: 'each', entries: [entry] }));
 }
 
 /** The creature's roll on the GM's request card, which then tells how a group check or contest went. */

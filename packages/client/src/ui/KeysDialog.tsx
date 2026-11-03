@@ -15,7 +15,7 @@ import {
 import { Button } from './kit/button.tsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from './kit/dialog.tsx';
 
-const GROUPS = ['Table', 'Action bar', 'Map tools', 'Walking'] as const;
+const GROUPS = ['Table', 'Action bar', 'Map tools', 'Walking', 'Camera'] as const;
 const IGNORED = new Set(['shift', 'control', 'alt', 'meta', 'escape', 'tab']);
 
 /** The keybindings screen: press a key's button, then the new key; Esc keeps the old one. */

@@ -42,6 +42,15 @@ describe('checks', () => {
     expect(ana.take('error')[0]?.message).toMatch(/No such/);
   });
 
+  it('include saving throws, rolled from the sheet', () => {
+    const ana = join_('ana');
+    ana.receive({ t: 'rollCheck', token: 'hero', ability: 'dex', save: true });
+    // Rogue: DEX save proficiency, 1d20 (11) + 3 + 3.
+    const card = cards(ana).at(-1);
+    expect(card?.text).toBe('DEX save');
+    expect(card?.check).toMatchObject({ save: true, entries: [{ token: 'hero', total: 17 }] });
+  });
+
   it('are asked for by the GM, and each owner rolls on the request card', () => {
     const gm = join_('gm');
     gm.receive({
