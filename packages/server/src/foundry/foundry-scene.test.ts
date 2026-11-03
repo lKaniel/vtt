@@ -304,11 +304,23 @@ describe('Foundry v14 scenes', () => {
 
   it('leaves out 3D Canvas model tiles, which are blank squares in 2D', () => {
     const { scene, skipped } = foundryScene(v14, media);
-    expect(scene.tiles.map((t) => ('src' in t ? t.src : undefined))).toEqual([
-      'pack://caves/media/maps/goblin cave.webp',
+    expect(scene.tiles.filter((t) => t.id.startsWith('tile-')).map((t) => ('src' in t ? t.src : undefined))).toEqual([
       'pack://caves/media/tiles/barrel.png',
     ]);
     expect(skipped).toContain('2 3D Canvas model tiles (3D only, they show as blank squares)');
+  });
+
+  it('makes its floors our levels, each upper floor with its own picture', () => {
+    const { scene } = foundryScene(v14, media);
+    expect(scene.levels).toEqual([
+      { id: 'level-1', name: 'Ground', bottom: 0, top: 10 },
+      { id: 'level-2', name: 'Upstairs', bottom: 10, top: 20 },
+    ]);
+    expect(scene.tiles.find((t) => t.id === 'floor-1')).toMatchObject({
+      name: 'Upstairs',
+      src: 'pack://caves/media/tiles/barrel.png',
+      level: 'level-2',
+    });
   });
 
   it("says which tiles had Monk's Active Tiles triggers, which stay behind", () => {
@@ -316,5 +328,66 @@ describe('Foundry v14 scenes', () => {
     expect(skipped).toContain(
       "Monk's Active Tiles triggers on 1 tile (teleport, playsound): the tile comes, not what it does",
     );
+  });
+});
+
+describe('a scene the Levels module split into floors', () => {
+  const keep = {
+    name: 'Keep',
+    width: 1000,
+    height: 1000,
+    padding: 0,
+    grid: { size: 100, type: 1, distance: 5 },
+    flags: {
+      levels: {
+        sceneLevels: [
+          ['0', '9', 'Ground'],
+          ['10', '19', 'Hall'],
+        ],
+      },
+    },
+    tiles: [
+      {
+        texture: { src: 'modules/caves/tiles/barrel.png' },
+        x: 0,
+        y: 0,
+        width: 1000,
+        height: 1000,
+        elevation: 10,
+        flags: { levels: { rangeTop: 19 } },
+      },
+    ],
+    walls: [
+      { c: [0, 0, 100, 0], flags: { 'wall-height': { bottom: 0, top: 9 } } },
+      { c: [0, 0, 0, 100], flags: { 'wall-height': { bottom: 10, top: 19 } } },
+    ],
+    lights: [{ x: 50, y: 50, config: { bright: 10, dim: 20 }, elevation: 10, flags: { levels: { rangeTop: 19 } } }],
+    drawings: [
+      {
+        x: 100,
+        y: 100,
+        elevation: 0,
+        shape: { type: 'r', width: 100, height: 100 },
+        flags: { levels: { drawingMode: 2, rangeTop: 9 } },
+      },
+      { x: 0, y: 0, shape: { type: 'r', width: 50, height: 50 }, flags: { levels: { drawingMode: 0 } } },
+    ],
+  };
+
+  it('puts tiles, walls and lights on their floors, and makes the stairs a region', () => {
+    const { scene } = foundryScene(keep, media);
+    expect(scene.levels?.map((l) => l.name)).toEqual(['Ground', 'Hall']);
+    expect(scene.tiles.find((t) => t.id === 'tile-1')).toMatchObject({ level: 'level-2' });
+    expect(scene.walls.map((w) => w.level)).toEqual(['level-1', 'level-2']);
+    expect(scene.lights[0]).toMatchObject({ level: 'level-2' });
+    expect(scene.drawings).toHaveLength(1);
+    expect(scene.regions).toEqual([
+      expect.objectContaining({
+        name: 'Stairs',
+        levels: ['level-1', 'level-2'],
+        behaviors: [{ type: 'stairs', between: ['level-1', 'level-2'] }],
+      }),
+    ]);
+    expect(SceneEntrySchema.safeParse({ id: 'keep', ...scene }).success).toBe(true);
   });
 });

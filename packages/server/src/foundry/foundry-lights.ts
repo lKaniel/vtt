@@ -101,6 +101,15 @@ function lightOf(l: FoundryLightData, feet: (units: number) => number): Omit<Pla
 }
 
 /** A scene's lights as ours, numbered; `feet` turns Foundry's grid units into feet. */
-export function foundryLights(lights: readonly FoundryLightData[], feet: (units: number) => number): PlacedLight[] {
-  return lights.flatMap((l) => lightOf(l, feet) ?? []).map((light, i) => ({ id: `light-${i + 1}`, ...light }));
+export function foundryLights(
+  lights: readonly FoundryLightData[],
+  feet: (units: number) => number,
+  floor: (l: FoundryLightData) => { level?: string; levels?: string[] } = () => ({}),
+): PlacedLight[] {
+  return lights
+    .flatMap((l) => {
+      const light = lightOf(l, feet);
+      return light ? [{ ...light, ...floor(l) }] : [];
+    })
+    .map((light, i) => ({ id: `light-${i + 1}`, ...light }));
 }

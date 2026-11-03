@@ -1,6 +1,7 @@
 import { gridSizePatch, type SceneEntry, type Tile, type Wall } from '@vtt/shared';
 import { z } from 'zod';
-import { foundryList } from './foundry-lists.ts';
+import { foundryList, sourceOf } from './foundry-lists.ts';
+import { type Floors, foundryFloors } from './foundry-levels.ts';
 import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
 import { activeTilesNote, FoundryTile, isOverhead, roofOf } from './foundry-tiles.ts';
@@ -107,10 +108,13 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
   const pad = (side: number) => Math.ceil((side * s.padding) / grid.size) * grid.size;
   const [x, y] = [pad(s.width), pad(s.height)];
   const skipped: string[] = [];
+  const floors = foundryFloors(data, feetIn(grid));
+  const on = (item: object) => floors?.on(sourceOf(item)) ?? {};
   const background = backgroundTile(s, { x, y }, lookupIn(media), skipped);
   const { skipped: lost, ...placeables } = foundryPlaceables(data, {
     grid,
     media: (p) => media(decoded(p)),
+    floors,
     ...lookups,
   });
   skipped.push(...lost);
@@ -123,9 +127,15 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     ...(grid.gridless ? { grid: 'none' as const } : {}),
     ...(s.backgroundColor ? { background: s.backgroundColor } : {}),
     ...navOf(s, lookupIn(media)),
-    tiles: [...background, ...tilesOf(s, lookupIn(media), skipped), ...foregroundTile(s, { x, y }, lookupIn(media))],
-    walls: wallsOf(s, grid, skipped),
-    lights: foundryLights(s.lights, feetIn(grid)),
+    ...(floors ? { levels: floors.levels } : {}),
+    tiles: [
+      ...background,
+      ...floorBackgrounds(s, { x, y }, lookupIn(media), floors),
+      ...tilesOf(s, lookupIn(media), skipped, on),
+      ...foregroundTile(s, { x, y }, lookupIn(media)),
+    ],
+    walls: wallsOf(s, grid, skipped, on),
+    lights: foundryLights(s.lights, feetIn(grid), on),
     ...placeables,
   };
   const tokens = s.tokens?.length ?? 0;
@@ -198,6 +208,8 @@ function navOf(s: FoundryScene, find: ReturnType<typeof lookupIn>): Partial<Scen
 }
 
 const FoundryLevel = z.object({
+  _id: str,
+  name: str,
   elevation: z.object({ bottom: num }).optional().catch(undefined),
   background: z.object({ src: str.nullable() }).optional().catch(undefined),
 });
@@ -206,6 +218,37 @@ const FoundryLevel = z.object({
 function darknessOf(s: FoundryScene): Pick<SceneEntry, 'darkness' | 'darknessFollowsClock'> {
   const darkness = Math.min(1, Math.max(0, s.environment?.darknessLevel ?? s.darkness ?? 0));
   return s.flags?.smalltime?.['darkness-link'] ? { darkness, darknessFollowsClock: true } : { darkness };
+}
+
+/** v14 floors with pictures of their own, above the lowest: each as a background tile on its floor. */
+function floorBackgrounds(
+  s: FoundryScene,
+  at: { x: number; y: number },
+  find: ReturnType<typeof lookupIn>,
+  floors: Floors | undefined,
+): Tile[] {
+  if (!floors) return [];
+  const lowest = levelBackground(s.levels);
+  const parsed = (s.levels ?? []).flatMap((l) => FoundryLevel.safeParse(l).data ?? []);
+  return parsed.flatMap((l, i) => {
+    const path = l.background?.src;
+    const src = path && path !== lowest ? find(path) : undefined;
+    if (!src || !l._id) return [];
+    const where = floors.on({ levels: [l._id] });
+    return [
+      {
+        id: `floor-${i + 1}`,
+        name: l.name ?? 'Floor',
+        kind: 'image' as const,
+        ...at,
+        w: s.width,
+        h: s.height,
+        src,
+        locked: true,
+        ...where,
+      },
+    ];
+  });
 }
 
 /** v14 keeps the background on the scene's floors: the lowest one that has a picture. */
@@ -218,7 +261,10 @@ function levelBackground(levels: unknown[] | undefined): string | undefined {
 /** 3D Canvas puts its models on the map as tiles of a blank picture. */
 const is3dModel = (path: string | null | undefined) => !!path && /levels-3d-preview\/.*blank\.webp$/.test(path);
 
-function tilesOf(s: FoundryScene, find: ReturnType<typeof lookupIn>, skipped: string[]): Tile[] {
+/** Where an item is among the scene's floors. */
+type OnFloors = (item: object) => { level?: string; levels?: string[] };
+
+function tilesOf(s: FoundryScene, find: ReturnType<typeof lookupIn>, skipped: string[], on: OnFloors): Tile[] {
   const fg = s.foregroundElevation;
   const order = (t: FoundryScene['tiles'][number]) => (isOverhead(t, fg) ? 1e9 : 0) + (t.sort ?? t.z ?? 0);
   const sorted = [...s.tiles].sort((a, b) => order(a) - order(b));
@@ -234,7 +280,7 @@ function tilesOf(s: FoundryScene, find: ReturnType<typeof lookupIn>, skipped: st
     const src = find(path);
     if (src && t.width > 0 && t.height > 0) {
       const id = `tile-${out.length + 1}`;
-      out.push({ id, kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src, ...roofOf(t, fg) });
+      out.push({ id, kind: 'image', x: t.x, y: t.y, w: t.width, h: t.height, src, ...roofOf(t, fg), ...on(t) });
     } else missing.push(path ?? '(none)');
   }
   if (missing.length)
@@ -242,8 +288,11 @@ function tilesOf(s: FoundryScene, find: ReturnType<typeof lookupIn>, skipped: st
   return out;
 }
 
-function wallsOf(s: FoundryScene, grid: Grid, skipped: string[]): Wall[] {
-  const walls = s.walls.flatMap((w) => wallOf(w, feetIn(grid)) ?? []);
+function wallsOf(s: FoundryScene, grid: Grid, skipped: string[], on: OnFloors): Wall[] {
+  const walls = s.walls.flatMap((w) => {
+    const wall = wallOf(w, feetIn(grid));
+    return wall ? [{ ...wall, ...on(w) }] : [];
+  });
   const inert = s.walls.length - walls.length;
   if (inert) skipped.push(`${plural(inert, 'wall')} that ${inert === 1 ? 'stops' : 'stop'} nothing`);
   return walls.map((wall, i) => ({ id: `wall-${i + 1}`, ...wall }));

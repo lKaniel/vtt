@@ -15,6 +15,7 @@ import { type FoundryDoc, readFoundryDb } from './foundry-db.ts';
 import { foundryMacros } from './foundry-macros.ts';
 import { type ConvertedEntries, foundryEntries } from './foundry-entries.ts';
 import { dataFolderOf, FoundryMedia } from './foundry-media.ts';
+import { foundryFloors } from './foundry-levels.ts';
 import { foundryGrid, foundryScene, type MediaLookup } from './foundry-scene.ts';
 import { foundryClock } from './foundry-time.ts';
 import { readJson, writeJson } from '../store/json-files.ts';
@@ -135,16 +136,25 @@ function convertScenes(raw: FoundryDoc[], ctx: SceneContext, skipped: string[]):
   return [...raw].sort(bySort).map((data) => {
     const { scene, skipped: lost } = foundryScene(data, ctx.media, { ...ctx.entries, keepsTokens: true });
     const id = nextId(scene.name);
+    const grid = foundryGrid(data);
     const tokens = foundryTokens(data.tokens, {
-      grid: foundryGrid(data).size,
+      grid: grid.size,
       actors: ctx.actors,
       sheets: ctx.system.foundry,
       media: ctx.media,
+      elevation: tokenElevation(data, grid.distance),
     });
     skipped.push(...[...lost, ...tokens.skipped].map((what) => `scene "${scene.name}": ${what}`));
     const playlist = typeof data.playlist === 'string' ? ctx.entries.playlistIds(data.playlist) : undefined;
     return { id, entry: { id, ...scene }, tokens: tokens.tokens, playlist, active: data.active === true };
   });
+}
+
+/** A token's elevation in feet: on the floor v14 says it is on, else its own. */
+function tokenElevation(scene: FoundryDoc, distance: number): (t: FoundryDoc) => number {
+  const feet = (units: number) => Math.round((units * 5) / distance);
+  const floors = foundryFloors(scene, feet);
+  return (t) => floors?.elevationOf(t) ?? (typeof t.elevation === 'number' ? feet(t.elevation) : 0);
 }
 
 const PARTS = ['tiles', 'walls', 'lights', 'drawings', 'notes', 'templates', 'regions', 'sounds'] as const;
