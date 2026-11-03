@@ -72,6 +72,11 @@ export function levelChoices(
  * low wraps round: [0.8, 0.2] is dusk to dawn. The game clock (a later step)
  * sets the darkness, so this is the one place time of day is read.
  */
+/** Whether a placed light shines now: not put out, and in its darkness band. */
+export function lightShines(light: { hidden?: boolean; activeAt?: [number, number] }, darkness: number): boolean {
+  return !light.hidden && activeAt(light.activeAt, darkness);
+}
+
 export function activeAt(band: readonly [number, number] | undefined, darkness: number): boolean {
   if (!band) return true;
   const [from, to] = band;

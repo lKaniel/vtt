@@ -51,6 +51,36 @@ const errors = (ws: FakeSocket) => ws.take('error').map((e) => e.message);
 const lever = () => store.docs.get('main/tiles', 'lever')!;
 
 describe('clicking a trigger tile', () => {
+  it('puts a light out and lights it again, and the light stops shining', () => {
+    tile({ actions: [{ type: 'visibility', target: { coll: 'lights', id: 'torch' }, to: 'toggle' }] });
+    store.applyOps([
+      {
+        op: 'create',
+        coll: 'main/lights',
+        doc: { id: 'torch', type: 'light', rev: 0, x: 150, y: 150, bright: 20, dim: 40 },
+      },
+    ]);
+    const lit = store.lights().length;
+    const ana = seat('ana');
+    pull(ana);
+    expect(store.docs.get('main/lights', 'torch')!.hidden).toBe(true);
+    expect(store.lights()).toHaveLength(lit - 1);
+    pull(ana);
+    expect(store.lights()).toHaveLength(lit);
+  });
+
+  it("turns another tile's trigger off and on", () => {
+    tile({ actions: [{ type: 'activate', target: { coll: 'tiles', id: 'trap' }, to: 'toggle' }] });
+    const trap = { id: 'trap', type: 'tile', rev: 0, kind: 'image', x: 200, y: 0, w: 100, h: 100, src: '/t.png' };
+    const trigger = { on: 'enter', actions: [{ type: 'message', text: 'Click.' }] };
+    store.applyOps([{ op: 'create', coll: 'main/tiles', doc: { ...trap, trigger } }]);
+    const ana = seat('ana');
+    pull(ana);
+    expect(store.docs.get('main/tiles', 'trap')!.trigger).toMatchObject({ disabled: true });
+    pull(ana);
+    expect(store.docs.get('main/tiles', 'trap')!.trigger).toMatchObject({ disabled: false });
+  });
+
   it('swaps its picture round, and the GM can undo it', () => {
     tile({ actions: [{ type: 'image', images: ['/assets/lever-up.png', '/assets/lever-down.png'] }] });
     const ana = seat('ana');

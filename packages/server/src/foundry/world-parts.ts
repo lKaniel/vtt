@@ -10,6 +10,8 @@ import { foundryGrid, foundryScene } from './foundry-scene.ts';
 import { foundryClock } from './foundry-time.ts';
 import { tokenModelOf } from './foundry-3d.ts';
 import { foundryPlayers, type OwnershipOf } from './foundry-users.ts';
+import { foundryTrigger, SceneIndex } from './foundry-active-tiles.ts';
+import { originOf } from './foundry-origin.ts';
 import { lost, type LossLog, placed } from './import-losses.ts';
 import type { World } from './foundry-world-read.ts';
 
@@ -26,6 +28,8 @@ export interface Made {
   ownership?: OwnershipOf;
   entries?: ConvertedEntries;
   actors?: ConvertedActors;
+  /** Our scene id by Foundry scene id. */
+  scenes: Map<string, string>;
 }
 
 export interface WorldContext {
@@ -147,7 +151,7 @@ function tokenElevation(scene: FoundryDoc, distance: number): (t: FoundryDoc) =>
 }
 
 function sceneOf(data: FoundryDoc, id: (name: string) => string, ctx: WorldContext): SceneOut {
-  const lookups = { ...ctx.made.entries!, keepsTokens: true };
+  const lookups = { ...ctx.made.entries!, keepsTokens: true, keepsTriggers: true };
   const { scene, skipped } = foundryScene(data, ctx.media.lookup, lookups);
   const grid = foundryGrid(data);
   const tokens = foundryTokens(data.tokens, {
@@ -160,6 +164,7 @@ function sceneOf(data: FoundryDoc, id: (name: string) => string, ctx: WorldConte
   });
   ctx.log.add(placed(scene.name, [...skipped, ...tokens.skipped]));
   const sceneId = id(scene.name);
+  if (typeof data._id === 'string') ctx.made.scenes.set(data._id, sceneId);
   const playlist = typeof data.playlist === 'string' ? ctx.made.entries!.playlistIds(data.playlist) : undefined;
   const folder = ctx.made.folderOf(typeof data.folder === 'string' ? data.folder : undefined);
   return {
@@ -179,6 +184,70 @@ const scenes: WorldPart = {
     out.scenes.push(...[...ctx.world.docs.scenes].sort(bySort).map((s) => sceneOf(s, nextId, ctx)));
     const active = out.scenes.find((s) => s.active) ?? out.scenes[0];
     if (active) out.game.scene = active.id;
+  },
+};
+
+const MONKS_LOST = "Monk's Active Tiles actions we have no match for";
+const MONKS_TILES = "Monk's Active Tiles triggers that do nothing we can do (the tile comes without it)";
+
+/** Every placeable of a converted scene, to find by Foundry id or Tagger tag. */
+function indexOf(s: SceneOut): SceneIndex {
+  const e = s.entry;
+  return new SceneIndex()
+    .add('tiles', e.tiles)
+    .add('walls', e.walls)
+    .add('lights', e.lights)
+    .add('sounds', e.sounds)
+    .add('regions', e.regions)
+    .add('drawings', e.drawings)
+    .add('notes', e.notes)
+    .add('tokens', s.tokens as { id: string }[]);
+}
+
+/** The pictures Monk's Active Tiles cycles a tile through (its `files`, patterns spelled out). */
+function monksImages(index: SceneIndex, media: WorldContext['media']) {
+  return (tile: string): string[] => {
+    const flags = index.rawOf({ coll: 'tiles', id: tile })?.flags as Record<string, { files?: unknown }> | undefined;
+    const files = flags?.['monks-active-tiles']?.files;
+    const names = (Array.isArray(files) ? files : [])
+      .map((f) => (f as { name?: unknown }).name)
+      .filter((n) => typeof n === 'string');
+    return names.flatMap((n) => (n.includes('*') ? media.glob(n) : (media.lookup(n) ?? [])));
+  };
+}
+
+function monksTiles(s: SceneOut, ctx: WorldContext): void {
+  const index = indexOf(s);
+  const media = ctx.media;
+  const lookups = {
+    index,
+    media: media.lookup,
+    glob: (p: string) => media.glob(p),
+    scene: (id: string) => ctx.made.scenes.get(id),
+    imagesOf: monksImages(index, media),
+  };
+  const missing: string[] = [];
+  let idle = 0;
+  for (const tile of s.entry.tiles) {
+    const raw = originOf(tile);
+    if (!raw) continue;
+    const converted = foundryTrigger(raw, tile.id, lookups);
+    missing.push(...converted.lost);
+    if (converted.trigger && tile.kind !== 'group') (tile as { trigger?: unknown }).trigger = converted.trigger;
+    else if (converted.lost.length) idle++;
+  }
+  const losses = [
+    ...(missing.length ? [lost(MONKS_LOST, missing.length, [...new Set(missing)])] : []),
+    ...(idle ? [lost(MONKS_TILES, idle)] : []),
+  ];
+  ctx.log.add(placed(s.entry.name, losses));
+}
+
+/** Monk's Active Tiles as tile triggers, once every scene (and its id) is known. */
+const activeTiles: WorldPart = {
+  id: 'active-tiles',
+  run: (ctx, out) => {
+    for (const s of out.scenes) monksTiles(s, ctx);
   },
 };
 
@@ -215,4 +284,14 @@ const leftBehind: WorldPart = {
 };
 
 /** Every part, in the order they run. */
-export const WORLD_PARTS: readonly WorldPart[] = [folders, players, entries, macros, actors, scenes, time, leftBehind];
+export const WORLD_PARTS: readonly WorldPart[] = [
+  folders,
+  players,
+  entries,
+  macros,
+  actors,
+  scenes,
+  activeTiles,
+  time,
+  leftBehind,
+];

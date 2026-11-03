@@ -1,3 +1,5 @@
+import { carried, madeFrom } from './foundry-origin.ts';
+import { sourceOf } from './foundry-lists.ts';
 import type { Light, PlacedLight } from '@vtt/shared';
 import { z } from 'zod';
 
@@ -12,6 +14,8 @@ const str = z.string().optional().catch(undefined);
 export const FoundryLight = z.object({
   x: z.number(),
   y: z.number(),
+  /** Put out (Foundry keeps the light but it does not shine). */
+  hidden: z.boolean().optional().catch(undefined),
   config: z
     .object({
       bright: num,
@@ -109,7 +113,7 @@ export function foundryLights(
   return lights
     .flatMap((l) => {
       const light = lightOf(l, feet);
-      return light ? [{ ...light, ...floor(l) }] : [];
+      return light ? [madeFrom({ ...light, ...floor(l), ...(l.hidden ? { hidden: true } : {}) }, sourceOf(l))] : [];
     })
-    .map((light, i) => ({ id: `light-${i + 1}`, ...light }));
+    .map((light, i) => carried(light, { id: `light-${i + 1}`, ...light }));
 }

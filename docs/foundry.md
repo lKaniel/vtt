@@ -60,6 +60,15 @@ What comes along:
   Holes in a floor are left out. Upper floors with their own picture get
   it as a tile on that floor. Tokens keep their elevation, raised onto the
   floor v14 says they are on.
+- **Monk's Active Tiles** as tile triggers: clicked (or double-clicked)
+  tiles are clicked here, right-click and manual ones are the GM's, and
+  "on enter" ones fire when a creature walks on. Picture swaps (and the
+  tile's picture list, patterns spelled out), sounds, show and hide,
+  switching lights and other tiles' triggers on and off, teleports, doors
+  and chat notes come along; things are found by Tagger tag or Foundry id.
+  A trigger with Monk's jumps (a dialog, anchors) keeps the path a click
+  most likely takes. Macros, "alter" and the rest are reported.
+- **Lights** put out in Foundry stay out until a trigger or the GM lights them.
 - **Tokens** on their actors: a linked token stays linked; an unlinked one
   becomes a copy whose own name, picture, size and hit points go in its
   `delta`. Hidden tokens stay hidden. A token whose actor is gone carries
@@ -117,7 +126,8 @@ prints the same list. Mainly:
 - Foundry users' passwords (Foundry keeps only hashes): give your players
   new ones on the game's page.
 - Each user's explored fog.
-- Data that other Foundry modules keep in `flags` (Monk's, Tagger...).
+- Data that other Foundry modules keep in `flags` (other than Monk's
+  Active Tiles, Levels and 3D Canvas).
 - Sheets of other Foundry systems: their actors keep only their name and
   picture, everything else still comes along.
 

@@ -1,3 +1,4 @@
+import { carried, madeFrom } from './foundry-origin.ts';
 import type { ImportLoss } from '@vtt/core';
 import { lost } from './import-losses.ts';
 import type { Drawing, Note, Point, Region, RegionBehavior, Sound, Template } from '@vtt/shared';
@@ -240,14 +241,17 @@ const placed = <T extends object>(floors: Floors | undefined, from: object, item
   item && floors ? { ...item, ...floors.on(sourceOf(from)) } : item;
 
 const numbered = <T>(prefix: string, list: readonly (T | undefined)[]) =>
-  list.flatMap((item) => (item ? [item] : [])).map((item, i) => ({ id: `${prefix}-${i + 1}`, ...item }));
+  list
+    .flatMap((item) => (item ? [item] : []))
+    .map((item, i) => carried(item as object, { id: `${prefix}-${i + 1}`, ...item }));
 
 function soundsOf(s: z.infer<typeof FoundryPlaceables>, look: PlaceableLookups, feet: (u: number) => number) {
   const missing: string[] = [];
   const sounds = s.sounds.map((snd) => {
     const src = snd.path ? look.media(snd.path) : undefined;
     if (!src) missing.push(snd.path ?? '(none)');
-    return placed(look.floors, snd, src ? soundOf(snd, src, feet) : undefined);
+    const sound = placed(look.floors, snd, src ? soundOf(snd, src, feet) : undefined);
+    return sound && madeFrom(sound, sourceOf(snd));
   });
   const skipped = missing.length ? [lost('Ambient sounds whose file could not be found', missing.length, missing)] : [];
   return { sounds: numbered('sound', sounds) as Sound[], skipped };
@@ -275,7 +279,10 @@ export function foundryPlaceables(data: unknown, look: PlaceableLookups): Conver
   const floors = look.floors;
   const levelsOwn = levelsDrawings(s, floors);
   const regions = numbered('region', [
-    ...s.regions.map((r) => regionOf(r, unknown, floors)),
+    ...s.regions.map((r) => {
+      const region = regionOf(r, unknown, floors);
+      return region && madeFrom(region, sourceOf(r));
+    }),
     ...levelsOwn.regions,
   ]) as Region[];
   if (unknown.length) skipped.push(lost('Region behaviours we have no match for', unknown.length, unknown));

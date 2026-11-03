@@ -275,15 +275,16 @@ pixels.
   only the GM click it. Players are told only that a tile can be clicked. The
   actions, in order (regions take them as behaviours too):
 
-  | Action                                                                                 | What it does                                                           |
-  | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-  | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                | Shows the next picture, round and round; `tile` names another tile.    |
-  | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }` | Shows, hides or toggles a tile, token, region, drawing, note or sound. |
-  | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                       | Plays once for everyone on the scene.                                  |
-  | `{ "type": "teleport", "to": [x, y], "scene": "cellar" }`                              | Moves the creature that set it off (the actions after it wait).        |
-  | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                   | Opens, closes, locks or toggles a door.                                |
-  | `{ "type": "message", "text": "…", "gmOnly": true }`                                   | Says it in chat.                                                       |
-  | `{ "type": "journal", "entry": "letter", "page": "p1" }`                               | Shares the entry with the players and opens it on their screens.       |
+  | Action                                                                                 | What it does                                                                                          |
+  | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+  | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                | Shows the next picture, round and round; `tile` names another tile.                                   |
+  | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }` | Shows, hides or toggles a tile, token, region, drawing, note, sound or light (a hidden light is out). |
+  | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                       | Plays once for everyone on the scene.                                                                 |
+  | `{ "type": "teleport", "to": [x, y], "scene": "cellar" }`                              | Moves the creature that set it off (the actions after it wait).                                       |
+  | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                   | Opens, closes, locks or toggles a door.                                                               |
+  | `{ "type": "message", "text": "…", "gmOnly": true }`                                   | Says it in chat.                                                                                      |
+  | `{ "type": "journal", "entry": "letter", "page": "p1" }`                               | Shares the entry with the players and opens it on their screens.                                      |
+  | `{ "type": "activate", "target": { "coll": "tiles", "id": "trap" }, "to": "off" }`     | Turns another tile's trigger (or a region) `on`, `off` or `toggle`.                                   |
 
   The GM edits a trigger (or a region's behaviours) with the inspector's
   **Add trigger…** button.
@@ -358,6 +359,9 @@ rules: `bright` light, then `dim` light beyond it.
   { "id": "shadow", "x": 900, "y": 1400, "bright": 15, "darkness": true }
 ]
 ```
+
+`"hidden": true` puts a light out: it stays on the map but doesn't shine
+until a trigger (a `visibility` action on `lights`) or the GM lights it.
 
 | Field            | Meaning                                                                          |
 | ---------------- | -------------------------------------------------------------------------------- |
