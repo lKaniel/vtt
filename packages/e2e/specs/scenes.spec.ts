@@ -60,6 +60,7 @@ test.describe('a closed door', () => {
 });
 
 test('Play here takes everyone to a new scene', async ({ page, seat }) => {
+  test.slow(); // two tables, a dialog and a right-click menu
   await atTable(page, GM);
   const player = await seat(PLAYER_2);
   await page.getByRole('tab', { name: 'Scenes' }).click();
@@ -67,7 +68,6 @@ test('Play here takes everyone to a new scene', async ({ page, seat }) => {
   // A new scene opens its settings, to name it.
   const settings = page.getByRole('dialog');
   await settings.getByRole('textbox', { name: 'Name', exact: true }).fill('Cellar');
-  await settings.getByRole('textbox', { name: 'Name', exact: true }).press('Tab');
   await settings.getByRole('button', { name: 'Close' }).click();
   await page.getByRole('listitem').filter({ hasText: 'Cellar' }).click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Play here' }).click();
