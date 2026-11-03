@@ -76,7 +76,13 @@ and a locked vault") and it builds it with the scene tools, all as the GM:
    `build` message: checked like any edit, applied all or nothing, and one
    Ctrl+Z takes it back.
 
-3. `render_scene` draws what was built, so Claude can look and fix it;
+   - Floors (scene levels, see "Scene levels" in game-format.md):
+     `create_scene` takes `levels`; rooms and items take `level` (or
+     `levels` for several floors, a staircase or a tower), and rooms on
+     different floors never share walls. Stairs and lifts are regions with
+     a `stairs` (`between: [lower, upper]`) or `elevator` behaviour.
+
+3. `render_scene` draws what was built (`level`: one floor), so Claude can look and fix it;
    `describe_scene` lists the ids, which `edit_documents` (`<scene>/walls`)
    changes and `clear_area` removes.
 

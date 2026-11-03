@@ -5,6 +5,8 @@ import { BlueprintSchema, blueprintBuild } from './scene-blueprint.ts';
 // A scene described the way Claude thinks of one (rooms with doors, a torch
 // here, three goblins there) turned into the documents the game stores.
 
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
 const ctx = (taken: Record<string, string[]> = {}) => ({
   scene: 'crypt',
   gridSize: 100,
@@ -142,5 +144,34 @@ describe('a scene blueprint', () => {
       },
     );
     expect(created(ops, 'lights').map((l) => l.id)).toEqual(['torch-3', 'torch-4']);
+  });
+
+  it('keeps floors apart: rooms on different levels each get their own walls, and stairs join them', () => {
+    const { ops } = build({
+      rooms: [
+        { name: 'Hall', x: 0, y: 0, w: 2, h: 2, level: 'ground', floor: 'stone' },
+        { name: 'Loft', x: 0, y: 0, w: 2, h: 2, level: 'loft' },
+        { name: 'Tower', x: 2, y: 0, w: 1, h: 1, levels: ['ground', 'loft'] },
+      ],
+      regions: [
+        {
+          name: 'Stairs',
+          x: 1,
+          y: 1,
+          w: 1,
+          h: 1,
+          levels: ['ground', 'loft'],
+          behaviors: [{ type: 'stairs', between: ['ground', 'loft'] }],
+        },
+      ],
+    });
+    const walls = created(ops, 'walls');
+    const north = (level: unknown) =>
+      walls.filter((w) => sameJson(w.a, [0, 0]) && sameJson(w.b, [200, 0]) && w.level === level);
+    expect(north('ground')).toHaveLength(1);
+    expect(north('loft')).toHaveLength(1);
+    expect(walls.filter((w) => sameJson(w.levels, ['ground', 'loft']))).toHaveLength(4);
+    expect(created(ops, 'tiles')[0]).toMatchObject({ level: 'ground' });
+    expect(created(ops, 'regions')[0]).toMatchObject({ levels: ['ground', 'loft'], behaviors: [{ type: 'stairs' }] });
   });
 });
