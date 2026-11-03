@@ -43,7 +43,11 @@ export function figures(
     if (!t.model || !place) continue;
     const side = t.size * grid * (t.scale ?? 1);
     const rect = { x: place.at[0] - side / 2, y: place.at[1] - side / 2, w: side, h: side };
-    out.push({ key: `token:${t.id}:${t.model.src}`, rect, model: { ...t.model, elevation: t.elevation ?? 0 } });
+    out.push({
+      key: `token:${t.id}:${t.model.src}`,
+      rect,
+      model: { fill: 'fit', ...t.model, elevation: t.elevation ?? 0 },
+    });
   }
   return out;
 }
