@@ -103,7 +103,9 @@ v1 to v5 field names):
 
 ### What stays behind
 
-The import lists it all; mainly:
+The import lists it all, grouped by kind with how many and where ("815
+tokens whose actor is not in the world, in 77 scenes"); the terminal import
+prints the same list. Mainly:
 
 - Spells the SRD doesn't have, active effects and Foundry's automation.
 - Items in the Items sidebar (drag items from the Compendium instead),
@@ -112,6 +114,17 @@ The import lists it all; mainly:
 - Data that other Foundry modules keep in `flags` (Monk's, Tagger...).
 - Sheets of other Foundry systems: their actors keep only their name and
   picture, everything else still comes along.
+
+## How the import is built
+
+`server/src/foundry/foundry-world.ts` reads the world (`foundry-world-read.ts`)
+and runs `WORLD_PARTS` (`world-parts.ts`) in order: folders, journal entries
+and the rest of the sidebar, macros, actors, scenes, time, and what stays
+behind. Each part reads the Foundry documents and what earlier parts made
+(our ids for Foundry's folders, entries and actors) and adds files to the
+game; a Foundry collection or a module's flags to bring along is a new part.
+Converters say what they could not bring as `ImportLoss` values (a kind, a
+count, some names), which `import-losses.ts` groups for the report.
 
 ## Not done yet
 

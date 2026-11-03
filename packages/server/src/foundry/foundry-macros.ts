@@ -1,3 +1,5 @@
+import type { ImportLoss } from '@vtt/core';
+import { lost } from './import-losses.ts';
 import type { Macro } from '@vtt/shared';
 import { z } from 'zod';
 import { each, type FolderLookup, ids, inFolder } from './foundry-entries.ts';
@@ -17,7 +19,6 @@ const FoundryMacro = z.object({
 });
 type FoundryMacro = z.infer<typeof FoundryMacro>;
 
-const plural = (n: number, what: string) => `${n} ${what}${n === 1 ? '' : 's'}`;
 const ROLLS_ITEM = /\brollItem\s*\(/;
 
 function macroOf(m: FoundryMacro, id: string, media: MediaLookup, folderOf?: FolderLookup): Macro {
@@ -26,17 +27,15 @@ function macroOf(m: FoundryMacro, id: string, media: MediaLookup, folderOf?: Fol
 }
 
 /** What stayed behind of the script macros. */
-function scriptsSkipped(scripts: FoundryMacro[]): string[] {
+function scriptsSkipped(scripts: FoundryMacro[]): ImportLoss[] {
   const rolls = scripts.filter((m) => ROLLS_ITEM.test(m.command));
   const others = scripts.filter((m) => !rolls.includes(m));
-  const names = others.map((m) => m.name).join(', ');
+  const names = (ms: FoundryMacro[]) => ms.map((m) => m.name);
   return [
     ...(rolls.length
-      ? [
-          `${plural(rolls.length, 'macro')} that ${rolls.length === 1 ? 'rolls' : 'roll'} an item from the hotbar: our hotbar does that already`,
-        ]
+      ? [lost('Macros that roll an item from the hotbar (our hotbar does that already)', rolls.length, names(rolls))]
       : []),
-    ...(others.length ? [`${plural(others.length, 'script macro')} (${names}): scripts are Foundry’s own`] : []),
+    ...(others.length ? [lost('Script macros (their code is Foundry’s own)', others.length, names(others))] : []),
   ];
 }
 
@@ -45,7 +44,7 @@ export function foundryMacros(
   raw: unknown[] | undefined,
   media: MediaLookup,
   folderOf?: FolderLookup,
-): { macros: Macro[]; skipped: string[] } {
+): { macros: Macro[]; skipped: ImportLoss[] } {
   const all = each(FoundryMacro, raw);
   const macroId = ids();
   const macros = all

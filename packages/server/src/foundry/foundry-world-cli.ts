@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { FIRST_GM } from '@vtt/shared';
+import { leftOutLine } from './import-losses.ts';
 import { GameHub } from '../library/game-hub.ts';
 import { dataDirFor, repoRoot } from '../paths.ts';
 
@@ -36,7 +37,7 @@ try {
     `Made "${r.name}" (data/games/${id}): ${r.scenes} scenes, ${r.actors} actors, ${r.tokens} tokens, ` +
       `${r.journals} journal entries, ${r.tables} tables, ${r.playlists} playlists, ${r.media} files.`,
   );
-  for (const line of r.skipped) console.log(`  left out: ${line}`);
+  for (const l of r.left) console.log(`  left out: ${leftOutLine(l)}`);
 } catch (e) {
   console.error((e as Error).message);
   process.exit(1);

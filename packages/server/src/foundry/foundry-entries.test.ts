@@ -77,7 +77,12 @@ describe('Foundry sidebar documents', () => {
     for (const j of out.journals) JournalSchema.parse(j);
     expect(out.entries('Jx1')).toBe('the-old-well');
     expect(out.pages('Pg1')).toBe('history');
-    expect(out.skipped).toContain('journal "The Old Well": 1 page of a kind we have no match for (video)');
+    expect(out.skipped).toContainEqual({
+      what: 'Journal pages of a kind we have no match for',
+      count: 1,
+      examples: ['video'],
+      place: 'The Old Well',
+    });
   });
 
   it('point links between entries at the entries as we named them', () => {
@@ -112,6 +117,11 @@ describe('Foundry sidebar documents', () => {
       },
     ]);
     for (const p of out.playlists) PlaylistSchema.parse(p);
-    expect(out.skipped).toContain('playlist "Inn": 1 track whose file is not in the module (music/gone.ogg)');
+    expect(out.skipped).toContainEqual({
+      what: 'Playlist tracks whose file could not be found',
+      count: 1,
+      examples: ['music/gone.ogg'],
+      place: 'Inn',
+    });
   });
 });

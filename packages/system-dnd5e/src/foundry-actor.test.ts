@@ -154,7 +154,9 @@ describe('foundrySheet', () => {
       ],
       own: { items: [{ type: 'gear', id: 'lucky-coin', name: 'Lucky Coin', weight: 0.1, description: 'Shiny.' }] },
     });
-    expect(skipped).toEqual(['spell "Glimmer of Amar", which the 2014 rules have no match for']);
+    expect(skipped).toEqual([
+      { what: 'Spells the 2014 rules have no match for', count: 1, examples: ['Glimmer of Amar'] },
+    ]);
     expect(ActorSchema.safeParse({ id: 'mira', name: 'Mira', ...s }).success).toBe(true);
   });
 
@@ -191,7 +193,7 @@ describe('foundrySheet', () => {
   it('gives a vehicle or group nothing to play with', () => {
     expect(sheet({ name: 'Cart', type: 'vehicle', system: {} })).toEqual({
       sheet: {},
-      skipped: ['a vehicle sheet, which we have no match for'],
+      skipped: [{ what: 'Sheets of a kind we have no match for', count: 1, examples: ['vehicle'] }],
     });
   });
 });

@@ -30,8 +30,20 @@ export interface FoundryImportReport {
   macros?: number;
   /** Pictures and sounds copied. */
   media: number;
-  /** What could not come along, one line each. */
-  skipped: string[];
+  /** What could not come along, grouped by kind, the most first. */
+  left: LeftOut[];
+}
+
+/** One kind of thing a Foundry import left out, over the whole world. */
+export interface LeftOut {
+  /** What it is: "Walls that stop nothing". */
+  what: string;
+  count: number;
+  /** Some of their names or files. */
+  examples: string[];
+  /** Some of the scenes, actors or entries it happened in, and how many there were. */
+  places: string[];
+  placeCount: number;
 }
 
 /** Asking the server to import a Foundry world folder on its disk (the admin only). */

@@ -340,6 +340,11 @@ export const EN = {
   'lobby.players': '{n} players',
   'lobby.online': '{n} playing now',
   'lobby.home': 'server game',
+  'foundry.ready': '{name} is ready: {summary}.',
+  'foundry.leftOut': 'Left out',
+  'foundry.in': 'in {places}',
+  'foundry.inMany': 'in {count} places: {places}, …',
+  'foundry.open': 'Open the game',
 
   'setup.title': 'Setup',
   'setup.kicker': 'The games on this server',

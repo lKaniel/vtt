@@ -35,8 +35,12 @@ describe('Foundry macros', () => {
     );
     expect(out.macros).toEqual([]);
     expect(out.skipped).toEqual([
-      '1 macro that rolls an item from the hotbar: our hotbar does that already',
-      '1 script macro (Torch): scripts are Foundry’s own',
+      {
+        what: 'Macros that roll an item from the hotbar (our hotbar does that already)',
+        count: 1,
+        examples: ['Longsword'],
+      },
+      { what: 'Script macros (their code is Foundry’s own)', count: 1, examples: ['Torch'] },
     ]);
   });
 });

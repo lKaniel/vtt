@@ -141,7 +141,11 @@ describe('a Foundry scene', () => {
     expect(scene.tiles.slice(1)).toEqual([
       { id: 'tile-1', kind: 'image', x: 1200, y: 1000, w: 200, h: 200, src: 'pack://caves/media/tiles/barrel.png' },
     ]);
-    expect(skipped).toContain('1 tile whose picture is not in the module (icons/svg/mystery-man.svg)');
+    expect(skipped).toContainEqual({
+      what: 'Tiles whose picture could not be found',
+      count: 1,
+      examples: ['icons/svg/mystery-man.svg'],
+    });
   });
 
   it('turns walls, doors and windows into ours with what each one stops, leaving out walls that stop nothing', () => {
@@ -170,8 +174,8 @@ describe('a Foundry scene', () => {
         doorSound: 'iron',
       },
     ]);
-    expect(skipped).toContain('1 wall that stops nothing');
-    expect(skipped).toContain('1 token (place the creatures from the Actors tab)');
+    expect(skipped).toContainEqual({ what: 'Walls that stop nothing', count: 1 });
+    expect(skipped).toContainEqual({ what: 'Tokens (place the creatures from the Actors tab)', count: 1 });
   });
 
   it('turns lights into ours, in feet', () => {
@@ -325,7 +329,10 @@ describe('Foundry v14 scenes', () => {
       h: 100,
       model: { src: 'pack://caves/media/models/bridge.glb', elevation: 10, height: 2, rotation: 90 },
     });
-    expect(skipped).toContain('2 3D Canvas tiles without a glTF model from the Data folder (drawn shapes stay behind)');
+    expect(skipped).toContainEqual({
+      what: '3D Canvas tiles without a glTF model in the Data folder (drawn shapes)',
+      count: 2,
+    });
   });
 
   it('makes its floors our levels, each upper floor with its own picture', () => {
@@ -343,9 +350,11 @@ describe('Foundry v14 scenes', () => {
 
   it("says which tiles had Monk's Active Tiles triggers, which stay behind", () => {
     const { skipped } = foundryScene(v14, media);
-    expect(skipped).toContain(
-      "Monk's Active Tiles triggers on 1 tile (teleport, playsound): the tile comes, not what it does",
-    );
+    expect(skipped).toContainEqual({
+      what: "Monk's Active Tiles triggers (the tile comes, not what it does)",
+      count: 1,
+      examples: ['teleport', 'playsound'],
+    });
   });
 });
 
