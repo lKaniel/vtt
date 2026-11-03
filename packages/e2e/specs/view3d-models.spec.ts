@@ -1,6 +1,7 @@
 // 3D models in the 3D view (model3d.ts in shared): a tile with a glTF model
 // stands it on the map; the 2D map draws nothing for it. A tile with a drawn
-// solid (solid3d.ts) raises its outline.
+// solid (solid3d.ts) raises its outline; a terrain tile (terrain3d.ts) raises
+// ground from its heightmap.
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -26,7 +27,23 @@ async function addModelTile(dir: string): Promise<void> {
     color: '#556b2f',
   };
   const ledge = { id: 'ledge', kind: 'image', x: 1300, y: 800, w: 200, h: 200, src: '/art/ui/blank.svg', solid };
-  await writeFile(file, JSON.stringify([...tiles, tile, ledge], null, 2));
+  // A heightmap whiter (higher) to the east.
+  const ramp =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><defs><linearGradient id="g">' +
+    '<stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient></defs>' +
+    '<rect width="64" height="64" fill="url(#g)"/></svg>';
+  await writeFile(join(dir, 'assets', 'ramp.svg'), ramp);
+  const terrain = {
+    heightmap: '/assets/ramp.svg',
+    highIsWhite: true,
+    height: 15,
+    layers: [
+      { from: 0, color: '#556b2f' },
+      { from: 0.6, color: '#8a7f70' },
+    ],
+  };
+  const hill = { id: 'hill', kind: 'image', x: 1600, y: 600, w: 400, h: 400, src: '/art/ui/blank.svg', terrain };
+  await writeFile(file, JSON.stringify([...tiles, tile, ledge, hill], null, 2));
 }
 
 test.use({ serverOptions: { prepare: addModelTile } });
@@ -36,4 +53,5 @@ test('a model tile stands its model in the 3D view, repeated across the tile', a
   await page.getByRole('button', { name: '3D view' }).click();
   await expect(page.getByTestId('view3d')).toHaveAttribute('data-models', '2', { timeout: 30_000 });
   await expect(page.getByTestId('view3d')).toHaveAttribute('data-solids', '1');
+  await expect(page.getByTestId('view3d')).toHaveAttribute('data-terrain', '1');
 });

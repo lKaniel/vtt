@@ -1,7 +1,7 @@
 import type { DrawnTile, WorldInfo } from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
-import { figures, tileModels, tileSolids } from './content3d.ts';
+import { figures, tileModels, tileSolids, tileTerrains } from './content3d.ts';
 
 // The 3D view stands the model tiles of the floors shown, where a player has
 // explored, and creatures with a figure over their square.
@@ -60,6 +60,19 @@ describe('what the 3D view stands up', () => {
         ],
         solid,
       },
+    ]);
+  });
+
+  it('raises the terrain of the floors shown over its tile', () => {
+    const terrain = { heightmap: '/hills.webp', height: 50 };
+    const tiles = [
+      tile('hills', { model: undefined, terrain, x: 100 }),
+      tile('loft-hills', { model: undefined, terrain, level: 'loft' }),
+      tile('bridge'),
+    ];
+    const shown = tileTerrains(tiles, { world, shown: ['ground'] });
+    expect(shown.map(({ rect, terrain }) => ({ rect, terrain }))).toEqual([
+      { rect: { x: 100, y: 0, w: 200, h: 100 }, terrain },
     ]);
   });
 

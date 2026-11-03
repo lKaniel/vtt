@@ -4,6 +4,7 @@ import {
   type Point,
   type Solid3D,
   solidOutline,
+  type Terrain3D,
   tokenLevel,
   type WorldInfo,
 } from '@vtt/shared';
@@ -45,20 +46,38 @@ export interface SolidShown {
   solid: Solid3D;
 }
 
+/** The image tiles on the floors shown, where a player has explored, that carry `what`. */
+function* shownTiles<K extends 'solid' | 'terrain'>(tiles: Iterable<DrawnTile>, table: Table3D, what: K) {
+  for (const t of tiles) {
+    if (t.kind !== 'image' || !t[what] || !onLevels(t, table.shown)) continue;
+    if (table.explored && !table.explored([t.x + t.w / 2, t.y + t.h / 2])) continue;
+    yield { t: t as typeof t & Required<Pick<typeof t, K>>, rect: { x: t.x, y: t.y, w: t.w, h: t.h } };
+  }
+}
+
 /** The tiles' drawn solids to raise. */
 export function tileSolids(tiles: Iterable<DrawnTile>, table: Table3D): SolidShown[] {
-  const out: SolidShown[] = [];
-  for (const t of tiles) {
-    if (t.kind !== 'image' || !t.solid || !onLevels(t, table.shown)) continue;
-    if (table.explored && !table.explored([t.x + t.w / 2, t.y + t.h / 2])) continue;
-    const rect = { x: t.x, y: t.y, w: t.w, h: t.h };
-    out.push({
-      key: `tile:${t.id}:${JSON.stringify([rect, t.solid])}`,
-      outline: solidOutline(rect, t.solid),
-      solid: t.solid,
-    });
-  }
-  return out;
+  return [...shownTiles(tiles, table, 'solid')].map(({ t, rect }) => ({
+    key: `tile:${t.id}:${JSON.stringify([rect, t.solid])}`,
+    outline: solidOutline(rect, t.solid),
+    solid: t.solid,
+  }));
+}
+
+/** Ground a heightmap raises over a tile's rect. */
+export interface TerrainShown {
+  key: string;
+  rect: { x: number; y: number; w: number; h: number };
+  terrain: Terrain3D;
+}
+
+/** The tiles' terrain to raise. */
+export function tileTerrains(tiles: Iterable<DrawnTile>, table: Table3D): TerrainShown[] {
+  return [...shownTiles(tiles, table, 'terrain')].map(({ t, rect }) => ({
+    key: `tile:${t.id}:${JSON.stringify([rect, t.terrain])}`,
+    rect,
+    terrain: t.terrain,
+  }));
 }
 
 /** The creatures standing as figures, each over its square where the map has it now. */

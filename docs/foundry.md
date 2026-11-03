@@ -49,7 +49,12 @@ What comes along:
   own origin, `center`/`ground: false`), tokens keep their figure, and scenes keep their sky,
   table colour and whether walls show (`view3d`). Drawn polygons (cliffs,
   ledges, pools) become tiles with a `solid` of their outline, height,
-  elevation and colour. Other drawn shapes (cones, spheres), HeroForge
+  elevation and colour. Terrain tiles (a box with a heightmap, also the
+  map-data-less "mapGen" that 3D Canvas builds as a box) become tiles with
+  `terrain`: the heightmap and the part of it read (`displacementMatrix`),
+  the peak height (`depth`), its painted layers (textureGradient) and
+  turn; a heightmap that did not come along is reported, not drawn as a
+  box. Other drawn shapes (cones, spheres), HeroForge
   figures and other non-glTF models stay behind and are reported. Files a
   world names by their Forge address (`https://assets.forge-vtt.com/<id>/…`)
   are looked up in the Data folder by their path. See docs/view3d.md.
