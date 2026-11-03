@@ -1,5 +1,5 @@
 import { freeId, type Op, slugify } from '@vtt/core';
-import type { Point } from '@vtt/shared';
+import { Model3DSchema, type Point } from '@vtt/shared';
 import { z } from 'zod';
 import { roomWalls, type Opening, type Side } from './room-walls.ts';
 
@@ -109,6 +109,8 @@ const RegionSchema = z.looseObject({
     .optional(),
 });
 const PlacedSchema = z.looseObject({ ...named, ...at });
+/** A 3D model standing on a box of the map (see "The 3D view" in game-format.md). */
+const ModelSchema = z.looseObject({ ...named, ...box, ...Model3DSchema.shape });
 
 export const BlueprintSchema = z.object({
   units: z
@@ -123,6 +125,10 @@ export const BlueprintSchema = z.object({
   regions: z.array(RegionSchema).default([]),
   sounds: z.array(PlacedSchema).default([]),
   notes: z.array(PlacedSchema).default([]),
+  models: z
+    .array(ModelSchema)
+    .default([])
+    .describe('3D models (glTF .glb/.gltf, find them with list_assets) over boxes; height and elevation in feet'),
 });
 export type Blueprint = z.infer<typeof BlueprintSchema>;
 
@@ -286,6 +292,23 @@ function addLights(b: Builder, bp: Blueprint): void {
   }
 }
 
+/** A picture the 2D map draws as nothing: model tiles show only in the 3D view. */
+const BLANK = '/art/ui/blank.svg';
+const MODEL_KEYS = Object.keys(Model3DSchema.shape);
+
+function addModels(b: Builder, bp: Blueprint): void {
+  for (const m of bp.models) {
+    const model = Object.fromEntries(MODEL_KEYS.flatMap((k) => (m[k] === undefined ? [] : [[k, m[k]]])));
+    const place = { x: b.len(m.x), y: b.len(m.y), w: b.len(m.w), h: b.len(m.h) };
+    const file = m.src
+      .split('/')
+      .at(-1)!
+      .replace(/\.[^.]*$/, '');
+    const rest = strip(m, ['id', 'x', 'y', 'w', 'h', ...MODEL_KEYS]);
+    b.add('tiles', m.id ?? m.name ?? file, { ...rest, kind: 'image', src: BLANK, ...place, model });
+  }
+}
+
 function addTiles(b: Builder, bp: Blueprint): void {
   for (const tile of bp.tiles) {
     const src = tile.src as string | undefined;
@@ -337,6 +360,7 @@ function addPlaced(b: Builder, coll: 'sounds' | 'notes', items: Blueprint['sound
 export function blueprintBuild(bp: Blueprint, ctx: BlueprintContext): { ops: Op[]; spawns: Spawn[] } {
   const b = new Builder(ctx, bp.units === 'squares');
   addTiles(b, bp);
+  addModels(b, bp);
   addRooms(b, bp);
   addWalls(b, bp);
   addLights(b, bp);
