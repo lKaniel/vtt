@@ -6,16 +6,16 @@ import type { Model3D, Solid3D, View3DSettings } from '@vtt/shared';
 // figure; a scene's sky and table. They become our `model` and `view3d`
 // (docs/view3d.md). Only glTF files that came along are kept.
 
-type MediaFind = (path: string) => string | undefined;
-type Flags = Record<string, unknown>;
+export type MediaFind = (path: string) => string | undefined;
+export type Flags = Record<string, unknown>;
 
-const flagsOf = (raw: unknown): Flags | undefined => {
+export const flagsOf = (raw: unknown): Flags | undefined => {
   const all = (raw as { flags?: Record<string, unknown> } | undefined)?.flags;
   const mine = all?.['levels-3d-preview'];
   return mine && typeof mine === 'object' ? (mine as Flags) : undefined;
 };
-const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
-const text = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
+export const finite = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+export const text = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
 
 /** Our URL for a glTF model the flags name, if it is one and came along. */
 function modelFile(path: unknown, find: MediaFind): string | undefined {
@@ -31,8 +31,8 @@ const tintOf = (v: unknown) => {
 
 /** How the model fills the tile: stretched to the tile and its depth, or repeated in proportion. */
 function fillOf(f: Flags, grid: { size: number; distance: number }): Partial<Model3D> {
-  if (f.fillType === 'tile') return { fill: 'tile', piece: num(f.tileScale) ?? 1 };
-  const depth = num(f.depth);
+  if (f.fillType === 'tile') return { fill: 'tile', piece: finite(f.tileScale) ?? 1 };
+  const depth = finite(f.depth);
   return depth ? { height: (depth / grid.size) * 5 } : {};
 }
 
@@ -46,9 +46,9 @@ export function tileModelOf(
   const src = f && modelFile(f.model3d, find);
   if (!f || !src) return undefined;
   const tile = raw as { elevation?: unknown; rotation?: unknown };
-  const rotation = num(tile.rotation);
-  const elevation = ((num(tile.elevation) ?? 0) * 5) / grid.distance;
-  const tilt: [number, number] = [num(f.tiltX) ?? 0, num(f.tiltZ) ?? 0];
+  const rotation = finite(tile.rotation);
+  const elevation = ((finite(tile.elevation) ?? 0) * 5) / grid.distance;
+  const tilt: [number, number] = [finite(f.tiltX) ?? 0, finite(f.tiltZ) ?? 0];
   return {
     src,
     ...(elevation && { elevation }),
@@ -114,9 +114,9 @@ export function mergedCopiesOf(raw: unknown, grid: { size: number; distance: num
   if (!f || !entries.length) return undefined;
   const tile = raw as { width?: unknown; height?: unknown };
   const was = (f.originalDimensions ?? {}) as Flags;
-  const ratio = (now: number | undefined, then: unknown) => (now && num(then) ? now / (num(then)! * UNIT) : 1);
-  const [sx, sy] = [ratio(num(tile.width), was.width), ratio(num(tile.height), was.height)];
-  const sd = ratio(num(f.depth), was.depth);
+  const ratio = (now: number | undefined, then: unknown) => (now && finite(then) ? now / (finite(then)! * UNIT) : 1);
+  const [sx, sy] = [ratio(finite(tile.width), was.width), ratio(finite(tile.height), was.height)];
+  const sd = ratio(finite(f.depth), was.depth);
   const px = (units: number, scale: number) => round(units * UNIT * scale);
   const feet = (units: number) => round((units * UNIT * sd * 5) / grid.size);
   return entries.map((m) => ({
@@ -139,7 +139,7 @@ export function scene3dOf(raw: unknown, find: MediaFind): View3DSettings | undef
   if (!f) return undefined;
   const skyPath = text(f.exr) ?? text(f.skybox);
   const sky = skyPath && mediaKind(skyPath) === 'image' ? find(skyPath) : undefined;
-  const ground = text(f.tableColor);
+  const ground = f.renderTable === 'none' ? 'none' : colorIn(f.tableColor);
   const out: View3DSettings = {
     ...(sky && { sky }),
     ...(ground && { ground }),
@@ -147,6 +147,9 @@ export function scene3dOf(raw: unknown, find: MediaFind): View3DSettings | undef
   };
   return Object.keys(out).length ? out : undefined;
 }
+
+/** The #rgb or #rrggbb in a colour setting, which old worlds sometimes store wrapped (`default="#000000"`). */
+const colorIn = (v: unknown) => /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/i.exec(text(v) ?? '')?.[0];
 
 /** 3D Canvas's polygon outline ("x,y,x,y,…", maybe after "n#"), as fractions of its own bounds. */
 function outlineOf(raw: unknown): [number, number][] | undefined {
@@ -185,11 +188,11 @@ export function tileSolidOf(raw: unknown, grid: { size: number; distance: number
   const f = flagsOf(raw);
   const points = f && shapeOf(f);
   if (!f) return undefined;
-  const depth = num(f.depth);
+  const depth = finite(f.depth);
   if (!points || !depth || depth <= 0) return undefined;
   const tile = raw as { elevation?: unknown; rotation?: unknown };
-  const elevation = ((num(tile.elevation) ?? 0) * 5) / grid.distance;
-  const rotation = num(tile.rotation);
+  const elevation = ((finite(tile.elevation) ?? 0) * 5) / grid.distance;
+  const rotation = finite(tile.rotation);
   const color = text(f.color);
   return {
     points,

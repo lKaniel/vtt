@@ -3,8 +3,18 @@ import * as THREE from 'three';
 import type { TokenLayer } from '../canvas/TokenLayer.ts';
 import { portraitOf } from '../icon-art.ts';
 import type { Session } from '../session/session.ts';
-import { figures, onShownFloor, type SolidShown, type Table3D, tileModels, tileSolids } from './content3d.ts';
+import {
+  figures,
+  onShownFloor,
+  type SolidShown,
+  type Table3D,
+  type TerrainShown,
+  tileModels,
+  tileSolids,
+  tileTerrains,
+} from './content3d.ts';
 import { Solids } from './solids3d.ts';
+import { Terrains } from './terrain3d.ts';
 import { CameraInput } from './input3d.ts';
 import { Models, type ModelShown } from './models3d.ts';
 import { eyeOf, follow, groundSquare, type MapPoint, ORBIT, type Orbit, panBy, rotateBy, zoomBy } from './orbit.ts';
@@ -40,6 +50,8 @@ export class View3D {
   private models = new Models();
   private solids = new Solids();
   private tileSolids: SolidShown[] = [];
+  private terrains = new Terrains();
+  private tileTerrains: TerrainShown[] = [];
   private backdrop = new Backdrop();
   /** The model tiles to stand, worked out with the walls. */
   private tileModels: ModelShown[] = [];
@@ -82,6 +94,7 @@ export class View3D {
       this.standees.group,
       this.models.group,
       this.solids.group,
+      this.terrains.group,
       this.backdrop.table,
     );
     this.scene.add(this.hemi, this.sun, this.sun.target);
@@ -117,6 +130,7 @@ export class View3D {
     this.surface.remove();
     this.ground.dispose();
     this.solids.dispose();
+    this.terrains.dispose();
     this.walls.dispose();
     this.standees.dispose();
     this.backdrop.dispose();
@@ -148,7 +162,9 @@ export class View3D {
     this.input.tick(dt);
     this.followCreature(dt);
     const floor = this.floor();
-    this.orbit = { ...this.orbit, target: [this.orbit.target[0], this.orbit.target[1], floor] };
+    const [x, y] = this.orbit.target;
+    // On terrain the camera looks at the ground under it, not the bare floor.
+    this.orbit = { ...this.orbit, target: [x, y, Math.max(floor, this.terrains.heightAt(x, y) ?? floor)] };
     // The 2D map has just drawn the square asked for last frame: lay it down, then ask for the next.
     if (this.drawn) this.ground.show(this.drawn.center, this.drawn.half, floor);
     this.fitView();
@@ -186,7 +202,7 @@ export class View3D {
     this.sun.target.position.set(t[0], t[2], t[1]);
     const background = world.background ?? '#1b1d22';
     const look = { sky: world.view3d?.sky, ground: world.view3d?.ground ?? background, background };
-    this.backdrop.show(this.scene, look, t[2]);
+    this.backdrop.show(this.scene, look, this.floor());
     const back = new THREE.Color(background);
     const reach = ORBIT.maxReach * this.grid();
     this.scene.fog = new THREE.Fog(back, this.orbit.distance + reach * 0.4, this.orbit.distance + reach * 1.1);
@@ -233,6 +249,7 @@ export class View3D {
     const tiles = chunks.flatMap((c) => c.tiles);
     this.tileModels = tileModels(tiles, table);
     this.tileSolids = tileSolids(tiles, table);
+    this.tileTerrains = tileTerrains(tiles, table);
     const walls =
       table.world.view3d?.walls === false ? [] : chunks.flatMap((c) => c.walls.filter((w) => onLevel(w, current)));
     const boxes = wallBoxes(walls, {
@@ -251,6 +268,7 @@ export class View3D {
     if (this.floorShown !== floor) {
       this.models.restand();
       this.solids.restand();
+      this.terrains.restand();
     }
     this.floorShown = floor;
     const placeOf = (id: string) => this.map.tokens.placeOf(id);
@@ -258,8 +276,10 @@ export class View3D {
     const ground = { grid: this.grid(), feet: 5, floor: this.level()?.bottom ?? 0 };
     this.models.show(all, ground, floor);
     this.solids.show(this.tileSolids, ground, floor);
+    this.terrains.show(this.tileTerrains, ground, floor);
     this.surface.dataset.models = String(this.models.count);
     this.surface.dataset.solids = String(this.solids.count);
+    this.surface.dataset.terrain = String(this.terrains.count);
   }
 
   /** The creatures you see on the floors shown (but those with a figure), where the 2D map has them now. */
@@ -293,6 +313,8 @@ export class View3D {
     const token = this.standees.hit(this.ray);
     const place = token ? this.map.tokens.placeOf(token) : undefined;
     if (place) return place.at;
+    const ground = this.ray.intersectObjects(this.terrains.meshes, false)[0];
+    if (ground) return [ground.point.x, ground.point.z];
     const floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.floor());
     const hit = this.ray.ray.intersectPlane(floor, new THREE.Vector3());
     if (hit) return [hit.x, hit.z];

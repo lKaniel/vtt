@@ -50,14 +50,19 @@ copied by `vite.config.ts`), and a model that fails says why in the console.
 `models3d.ts` loads each file once and clones it;
 `model3d.ts` in shared works out where each copy goes. Tiles with a
 `solid` raise a drawn outline as a solid (`solids3d.ts`, placed by
-`solid3d.ts` in shared).
+`solid3d.ts` in shared). Tiles with `terrain` raise ground from a
+heightmap (`terrain3d.ts`, as 3D Canvas builds it: a box whose vertices
+above its bottom the picture's red lifts, stretched so its peak stands
+`height` up, painted by `terrain-paint.ts` with up to four pictures by
+height or slope); the camera looks at the terrain under it, and clicks land
+on it. A scene `view3d.ground` of `none` draws no ground beyond the map.
 
 The Foundry importer brings 3D Canvas (levels-3d-preview) along: model
 tiles with their depth, elevation, rotation, tilt, fill and tint (merged
 tiles split into their copies; `center: false` / `ground: false` keep a
 model's own origin on its spot, as 3D Canvas does without autoCenter and
 autoGround); drawn
-polygons as solids; tokens'
+polygons as solids; heightmap boxes as terrain; tokens'
 figures; a scene's sky, table colour and whether its walls show.
 
 The floor shown is the scene level shown on the 2D map (see "Scene levels"

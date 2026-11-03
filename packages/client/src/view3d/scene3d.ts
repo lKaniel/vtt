@@ -174,10 +174,11 @@ export class Backdrop {
     this.table = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x1b1d22 }));
   }
 
-  /** Lays the ground just under the floor at height `floor`; the sky's picture, else `background`. */
+  /** Lays the ground (none for `none`) just under the floor at height `floor`; the sky's picture, else `background`. */
   show(scene: THREE.Scene, look: { sky?: string; ground: string; background: string }, floor: number): void {
     this.table.position.set(0, floor - 2, 0);
-    this.table.material.color.set(look.ground);
+    this.table.visible = look.ground !== 'none';
+    if (this.table.visible) this.table.material.color.set(look.ground);
     scene.background = this.skyOf(look.sky) ?? new THREE.Color(look.background);
   }
 

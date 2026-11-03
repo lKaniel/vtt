@@ -11,6 +11,7 @@ import { FoundryLight, foundryLights } from './foundry-lights.ts';
 import { activeTilesNote, FoundryTile, isOverhead, lookOf, roofOf, topLeftOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
 import { mergedCopiesOf, scene3dOf, tileModelOf, tileSolidOf } from './foundry-3d.ts';
+import { tileTerrainOf } from './foundry-terrain.ts';
 
 // A Foundry VTT scene (from a module's compendium, a world, or "Export
 // Data") as one of our scene entries. Foundry draws the scene's background
@@ -301,15 +302,31 @@ interface TileContext {
   anchored: boolean;
 }
 
-/** A 3D Canvas tile as model tiles (a glTF model that came along; a merged tile's copies) or a solid (a drawn shape), if it is either. */
+/** What a 3D Canvas tile stands in 3D: a model, else terrain (a heightmap), else a solid (a drawn shape). */
+function made3d(t: FoundryScene['tiles'][number], c: TileContext) {
+  const find = (p: string) => c.find(p);
+  const model = tileModelOf(sourceOf(t), c.grid, find);
+  if (model) return { model };
+  const terrain = tileTerrainOf(sourceOf(t), c.grid, find);
+  if (terrain) return { terrain };
+  // A heightmap that did not come along is not a box as tall as its hills.
+  if (flagOf(t, 'displacementMap')) return undefined;
+  const solid = tileSolidOf(sourceOf(t), c.grid);
+  return solid && { solid };
+}
+
+const flagOf = (t: FoundryScene['tiles'][number], key: string) =>
+  (sourceOf(t) as { flags?: { 'levels-3d-preview'?: Record<string, unknown> } }).flags?.['levels-3d-preview']?.[key];
+
+/** A 3D Canvas tile as model tiles (a glTF model that came along; a merged tile's copies), terrain or a solid, if any. */
 function tile3d(t: FoundryScene['tiles'][number], c: TileContext): Tile[] | undefined {
-  const model = tileModelOf(sourceOf(t), c.grid, (p) => c.find(p));
-  const solid = model ? undefined : tileSolidOf(sourceOf(t), c.grid);
-  if (!model && !solid) return undefined;
+  const made = made3d(t, c);
+  if (!made) return undefined;
   const at = topLeftOf(t, c.anchored);
   const tile = { id: '', kind: 'image' as const, ...at, w: t.width, h: t.height, src: BLANK, ...c.on(t) };
+  const model = 'model' in made ? made.model : undefined;
   const copies = model && mergedCopiesOf(sourceOf(t), c.grid);
-  if (!model || !copies) return [madeFrom({ ...tile, ...(model ? { model } : { solid }) }, sourceOf(t))];
+  if (!model || !copies) return [madeFrom({ ...tile, ...made }, sourceOf(t))];
   return copies.map((copy, i) => {
     const { rotation: _r, tilt: _t, ...base } = model;
     const elevation = (model.elevation ?? 0) + copy.rise;
@@ -335,7 +352,8 @@ function modelTiles(tiles: FoundryScene['tiles'], c: TileContext): Tile[] {
     if (made) out.push(...made);
     else lost++;
   }
-  const what = "3D Canvas tiles without a glTF model in the Data folder, or a shape we can't draw (cones, spheres)";
+  const what =
+    "3D Canvas tiles without a glTF model or heightmap in the Data folder, or a shape we can't draw (cones, spheres)";
   if (lost) c.skipped.push(lostThings(what, lost));
   return out;
 }

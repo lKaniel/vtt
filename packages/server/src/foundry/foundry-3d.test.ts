@@ -112,4 +112,13 @@ describe('3D Canvas models', () => {
     });
     expect(scene3dOf({}, find)).toBeUndefined();
   });
+
+  it('draws no table under a scene that has none', () => {
+    expect(scene3dOf(flags({ renderTable: 'none', tableColor: '#341f0f' }), find)).toEqual({ ground: 'none' });
+  });
+
+  it('reads the colour out of a mangled table colour, and drops one with none', () => {
+    expect(scene3dOf(flags({ tableColor: 'default="#000000"' }), find)).toEqual({ ground: '#000000' });
+    expect(scene3dOf(flags({ tableColor: 'default' }), find)).toBeUndefined();
+  });
 });

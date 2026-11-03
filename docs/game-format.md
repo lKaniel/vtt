@@ -320,6 +320,17 @@ pixels.
   height, `height` is in feet, and `elevation`, `rotation` and `color` work
   as on a model. The Foundry importer brings 3D Canvas's drawn polygons
   this way.
+- `"terrain": { "heightmap": "/assets/hills.webp", "height": 50 }` raises
+  ground across an image tile in the 3D view from a heightmap picture's red
+  (black is high, or white with `"highIsWhite": true`); `height` is the
+  highest peak over its bottom in feet, `window` (`[a, b, c, d]`) reads
+  only part of the picture (u' = a + u/c, v' = b + v/d, wrapping),
+  `detail` is segments a square, `elevation` and `rotation` work as on a
+  model, and `layers` (up to four `{ "src", "color", "repeat", "from" }`,
+  `from` a share of the height, or of flatness with `"bySlope": true`,
+  fading over `blend`) paint it. The Foundry importer brings 3D Canvas
+  terrain this way. A scene's `view3d.ground` of `"none"` leaves no ground
+  beyond the map.
 - A wall is a line from `a` to `b` that stops movement, sight, light and
   sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.
   Open doors stop nothing.
