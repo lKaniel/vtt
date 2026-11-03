@@ -50,7 +50,12 @@ type WallKind = keyof typeof WALL_KINDS;
 const WallKindSchema = z.enum(Object.keys(WALL_KINDS) as [WallKind, ...WallKind[]]);
 const OpeningKindSchema = z.enum([...WallKindSchema.options, 'arch']);
 
-const named = { id: z.string().optional(), name: z.string().optional(), level: z.string().optional() };
+const named = {
+  id: z.string().optional(),
+  name: z.string().optional(),
+  level: z.string().optional().describe('The scene level (floor) it is on; leave out for every floor'),
+  levels: z.array(z.string()).optional().describe('Several floors (a staircase, a tower)'),
+};
 const box = { x: num, y: num, w: num.positive(), h: num.positive() };
 const at = { x: num, y: num };
 
@@ -195,6 +200,8 @@ export function groundOf(floor: string | undefined, color: string | undefined): 
 function addRooms(b: Builder, bp: Blueprint): void {
   const lines: { lo: Point; hi: Point; owner: string; level?: string }[] = [];
   const openings: Opening[] = [];
+  // Walls merge per floor: rooms on other floors (or sets of floors) never share one.
+  const floors = new Map<string, Record<string, unknown>>();
   bp.rooms.forEach((room, i) => {
     const owner = room.name ?? room.id ?? `room-${i + 1}`;
     const [x, y, w, h] = [b.len(room.x), b.len(room.y), b.len(room.w), b.len(room.h)];
@@ -205,6 +212,8 @@ function addRooms(b: Builder, bp: Blueprint): void {
     if (room.light)
       b.add('lights', `${owner}-light`, { ...lightOf(room.light), x: x + w / 2, y: y + h / 2, ...lvl(room) });
     if (!room.walls) return;
+    const floor = floorKey(room);
+    floors.set(floor, lvl(room));
     const corners: Point[] = [
       [x, y],
       [x + w, y],
@@ -213,18 +222,29 @@ function addRooms(b: Builder, bp: Blueprint): void {
     ];
     corners.forEach((c, k) => {
       const d = corners[(k + 1) % 4]!;
-      lines.push({ lo: c, hi: d, owner, level: room.level });
+      lines.push({ lo: c, hi: d, owner, level: floor });
     });
-    for (const door of room.doors) openings.push(openingOf(b, { x, y, w, h }, door, room.level));
+    for (const door of room.doors) openings.push(openingOf(b, { x, y, w, h }, door, floor));
   });
   for (const seg of roomWalls(lines, openings)) {
     const kind = seg.kind === 'wall' ? {} : WALL_KINDS[seg.kind as WallKind];
-    const doc = { a: seg.a, b: seg.b, ...kind, ...(seg.level && { level: seg.level }) };
+    const doc = { a: seg.a, b: seg.b, ...kind, ...floors.get(seg.level ?? '') };
     b.add('walls', `${seg.owner}-${seg.kind}`, doc, true);
   }
 }
 
-const lvl = (item: { level?: string }) => (item.level ? { level: item.level } : {});
+interface OnFloors {
+  level?: string;
+  levels?: string[];
+}
+
+/** The floor fields an item carries into its documents. */
+function lvl(item: OnFloors): Record<string, unknown> {
+  if (item.level) return { level: item.level };
+  return item.levels?.length ? { levels: item.levels } : {};
+}
+
+const floorKey = (item: OnFloors): string => item.level ?? item.levels?.join(',') ?? '';
 
 function openingOf(
   b: Builder,

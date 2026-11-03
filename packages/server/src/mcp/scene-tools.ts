@@ -1,5 +1,14 @@
 import type { Doc, Op } from '@vtt/core';
-import { newSceneOps, SCENE_COLLECTIONS, type Player } from '@vtt/shared';
+import {
+  newSceneOps,
+  onLevel,
+  type OnLevels,
+  type Player,
+  SCENE_COLLECTIONS,
+  type SceneLevel,
+  SceneLevelSchema,
+  tokenLevel,
+} from '@vtt/shared';
 import { type ClientMessage, toEdition } from '@vtt/system-dnd5e';
 import { z } from 'zod';
 import type { Game } from '../game.ts';
@@ -75,6 +84,12 @@ const CreateSchema = z.object({
   darkness: z.number().min(0).max(1).optional().describe('0 day to 1 night; set it to stop following the clock'),
   background: z.string().optional().describe('Colour where nothing is drawn'),
   show: z.boolean().default(false).describe('Take your own view there (the players stay put)'),
+  levels: z
+    .array(SceneLevelSchema)
+    .optional()
+    .describe(
+      'Floors, bottom up: {id, name, bottom (feet), top?, sees? (floors seen from it)}; see guide "Scene levels"',
+    ),
 });
 type Create = z.infer<typeof CreateSchema>;
 
@@ -107,6 +122,7 @@ function createOps(w: Welcome, a: Create): { id: string; ops: Op[] } {
     ...(a.grid && a.grid !== 'none' && { grid: a.grid }),
     ...(a.darkness !== undefined && { darkness: a.darkness, darknessFollowsClock: false }),
     ...(a.background && { background: a.background }),
+    ...(a.levels?.length && { levels: a.levels }),
   });
   return { id, ops: [...ops, ...groundTile(id, a, grid)] };
 }
@@ -168,7 +184,9 @@ function buildScene(b: Bridge): McpTool {
       'lantern, magic, darkness), tiles (rect with texture/color, or image with src), creatures (monster SRD id ' +
       'or actor id, count), regions (x,y,w,h or points, with behaviors), sounds and notes. Units are squares ' +
       'by default: walls and boxes run on grid lines, points sit on the square centre. Any other field is ' +
-      'stored as given (see guide), e.g. level, hidden, trigger.',
+      'stored as given (see guide), e.g. hidden, trigger. Floors: give rooms and items `level` (or `levels` for ' +
+      'several); stairs are a region with behaviors [{"type":"stairs","between":["ground","upper"]}], a lift ' +
+      '[{"type":"elevator"}].',
     input: z.object({ ...ON, label: z.string().max(40).optional(), ...BlueprintSchema.shape }),
     run: async (a: z.infer<typeof BlueprintSchema> & { game?: string; scene?: string; label?: string }) => {
       const s = await b.seat(a);
@@ -207,18 +225,24 @@ function renderScene(b: Bridge): McpTool {
       ...ON,
       size: z.number().int().min(64).max(2048).default(1024),
       area: z.object(AREA).optional().describe('Only this part (default: everything)'),
+      level: z.string().optional().describe('Only this floor: its items, those on every floor, and creatures on it'),
     }),
     run: async (a: {
       game?: string;
       scene?: string;
       size: number;
       area?: Box & { units: string };
+      level?: string;
     }): Promise<McpContent[]> => {
       const s = await b.seat(a);
       const scene = sceneDoc(s.welcome, s.scene);
       const area = a.area && toPixels(a.area, Number(scene.gridSize ?? 100));
       const { png, legend } = sceneSketch(
-        { scene, items: itemsOf(s.welcome, s.scene), actors: sourceOf(s.welcome).all('actors') },
+        {
+          scene,
+          items: floorItems(scene, itemsOf(s.welcome, s.scene), a.level),
+          actors: sourceOf(s.welcome).all('actors'),
+        },
         a.size,
         area,
       );
@@ -228,6 +252,18 @@ function renderScene(b: Bridge): McpTool {
       ];
     },
   };
+}
+
+/** What stands on one floor: its items, those on every floor, and the creatures whose elevation is on it. */
+function floorItems(scene: Doc, items: Record<string, Doc[]>, level?: string): Record<string, Doc[]> {
+  if (!level) return items;
+  const levels = (scene.levels ?? []) as SceneLevel[];
+  if (!levels.some((l) => l.id === level)) {
+    throw new Error(`No level "${level}" (levels: ${levels.map((l) => l.id).join(', ') || 'none'})`);
+  }
+  const on = (coll: string, d: Doc) =>
+    coll === 'tokens' ? tokenLevel(levels, d as { elevation?: number }) === level : onLevel(d as OnLevels, level);
+  return Object.fromEntries(Object.entries(items).map(([coll, docs]) => [coll, docs.filter((d) => on(coll, d))]));
 }
 
 function clearArea(b: Bridge): McpTool {

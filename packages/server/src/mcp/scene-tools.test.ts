@@ -48,6 +48,34 @@ describe('scene tools', () => {
     ]);
   });
 
+  it('make a scene with floors, and sketch one floor at a time', async () => {
+    const gm = toolsFor('gm');
+    const levels = [
+      { id: 'ground', name: 'Ground', bottom: 0 },
+      { id: 'loft', name: 'Loft', bottom: 10 },
+    ];
+    await gm('create_scene', { name: 'Barn', width: 10, height: 10, levels });
+    expect(store.docs.get('scenes', 'barn')).toMatchObject({ levels });
+    await gm('build_scene', {
+      scene: 'barn',
+      rooms: [
+        { name: 'Stalls', x: 1, y: 1, w: 4, h: 4, level: 'ground' },
+        { name: 'Hayloft', x: 1, y: 1, w: 2, h: 2, level: 'loft' },
+      ],
+    });
+    const sketch = async (level?: string) => {
+      const [picture] = (await gm('render_scene', {
+        scene: 'barn',
+        size: 200,
+        ...(level && { level }),
+      })) as McpContent[];
+      return Buffer.from((picture as { data: string }).data, 'base64').toString('base64');
+    };
+    const [all, ground, loft] = [await sketch(), await sketch('ground'), await sketch('loft')];
+    expect(new Set([all, ground, loft]).size).toBe(3);
+    await expect(gm('render_scene', { scene: 'barn', level: 'attic' })).rejects.toThrow(/No level "attic"/);
+  });
+
   it('build rooms, lights and creatures in one step that one undo takes back', async () => {
     const gm = toolsFor('gm');
     const said = await gm('build_scene', {
