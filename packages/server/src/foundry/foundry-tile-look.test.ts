@@ -48,4 +48,25 @@ describe('Foundry tiles keep their look', () => {
     const [roof] = tilesOf([tile({ flags: { betterroofs: { brMode: true } } })]);
     expect(roof).toMatchObject({ overhead: true });
   });
+
+  it('places a v14 tile by its anchor: x and y are where the anchor is, turned about it', () => {
+    const v14 = (tiles: object[]) =>
+      foundryScene({ ...scene(tiles), _stats: { coreVersion: '14.367' } }, (p) => `pack://town/${p}`).scene.tiles.map(
+        (t) => ('x' in t ? [t.x, t.y] : []),
+      );
+    expect(
+      v14([
+        tile({ texture: { anchorX: 0, anchorY: 0 } }),
+        tile({ x: 300, y: 300, rotation: 270, texture: { anchorX: 0.5, anchorY: 0.5 } }),
+        tile({ x: 100, y: 200, rotation: 90, texture: { anchorX: 0, anchorY: 0 } }),
+      ]),
+    ).toEqual([
+      [100, 200],
+      [100, 200],
+      // Turned a quarter about its top-left corner, its centre is at (0, 400).
+      [-200, 300],
+    ]);
+    // Before v14 x and y are the top-left corner, whatever the anchor says.
+    expect(tilesOf([tile({ texture: { anchorX: 0.5, anchorY: 0.5 } })])[0]).toMatchObject({ x: 100, y: 200 });
+  });
 });

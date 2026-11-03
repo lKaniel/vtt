@@ -25,6 +25,9 @@ const TYPES: Record<string, string> = {
   '.webm': 'video/webm',
   '.mp4': 'video/mp4',
   '.m4v': 'video/mp4',
+  '.glb': 'model/gltf-binary',
+  '.gltf': 'model/gltf+json',
+  '.wasm': 'application/wasm',
 };
 
 export interface HttpOptions {

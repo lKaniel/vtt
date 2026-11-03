@@ -8,7 +8,7 @@ import { foundryList, sourceOf } from './foundry-lists.ts';
 import { type Floors, foundryFloors } from './foundry-levels.ts';
 import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
-import { activeTilesNote, FoundryTile, isOverhead, lookOf, roofOf } from './foundry-tiles.ts';
+import { activeTilesNote, FoundryTile, isOverhead, lookOf, roofOf, topLeftOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
 import { scene3dOf, tileModelOf, tileSolidOf } from './foundry-3d.ts';
 
@@ -57,6 +57,8 @@ const FoundrySceneSchema = z.object({
   lights: list(FoundryLight),
   tiles: list(FoundryTile),
   tokens: z.array(z.unknown()).optional().catch(undefined),
+  /** The Foundry version that last saved it: from v14 tiles stand by their anchor. */
+  _stats: z.object({ coreVersion: str }).optional().catch(undefined),
 });
 type FoundryScene = z.infer<typeof FoundrySceneSchema>;
 
@@ -142,7 +144,14 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     tiles: [
       ...background,
       ...floorBackgrounds(s, { x, y }, lookupIn(media), floors),
-      ...tilesOf(s, { find: lookupIn(media), skipped, on, grid, keepsTriggers: lookups.keepsTriggers }),
+      ...tilesOf(s, {
+        find: lookupIn(media),
+        skipped,
+        on,
+        grid,
+        keepsTriggers: lookups.keepsTriggers,
+        anchored: isV14(s),
+      }),
       ...foregroundTile(s, { x, y }, lookupIn(media)),
     ],
     walls: wallsOf(s, grid, skipped, on),
@@ -154,6 +163,9 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     skipped.push(lostThings('Tokens (place the creatures from the Actors tab)', tokens));
   return { scene, skipped };
 }
+
+/** Saved by Foundry v14 or later. */
+const isV14 = (s: FoundryScene) => Number(s._stats?.coreVersion?.split('.')[0] ?? 0) >= 14;
 
 /** Foundry grid units in feet, rounded. */
 const feetIn = (grid: Grid) => (units: number) => Math.round((units * 5) / grid.distance);
@@ -285,6 +297,8 @@ interface TileContext {
   on: OnFloors;
   grid: Grid;
   keepsTriggers?: boolean;
+  /** Tiles stand by their anchor (v14). */
+  anchored: boolean;
 }
 
 /** A 3D Canvas tile as a model tile (a glTF model that came along) or a solid (a drawn shape), if it is either. */
@@ -292,7 +306,7 @@ function tile3d(t: FoundryScene['tiles'][number], c: TileContext): Tile | undefi
   const model = tileModelOf(sourceOf(t), c.grid, (p) => c.find(p));
   const solid = model ? undefined : tileSolidOf(sourceOf(t), c.grid);
   if (!model && !solid) return undefined;
-  const tile = { id: '', kind: 'image' as const, x: t.x, y: t.y, w: t.width, h: t.height, src: BLANK };
+  const tile = { id: '', kind: 'image' as const, ...topLeftOf(t, c.anchored), w: t.width, h: t.height, src: BLANK };
   return madeFrom({ ...tile, ...(model ? { model } : { solid }), ...c.on(t) }, sourceOf(t));
 }
 
@@ -331,8 +345,7 @@ function tilesOf(s: FoundryScene, c: TileContext): Tile[] {
       const tile: Tile = {
         id: '',
         kind: 'image',
-        x: t.x,
-        y: t.y,
+        ...topLeftOf(t, c.anchored),
         w: t.width,
         h: t.height,
         src,
