@@ -1,8 +1,8 @@
 import { type Model3D, type ModelGround, modelPieces } from '@vtt/shared';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneRigged } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { at3d } from './scene3d.ts';
+import { loadModel, modelLoader } from './model-loader.ts';
 
 // The glTF models of the 3D view: on tiles (model3d.ts in shared says where
 // each copy goes) and as creatures' figures. Each file loads once; every
@@ -23,25 +23,23 @@ interface Loaded {
   offset: THREE.Vector3;
 }
 
-const loader = new GLTFLoader();
+const loader = modelLoader();
 const files = new Map<string, Promise<Loaded | undefined>>();
 
 function load(src: string): Promise<Loaded | undefined> {
   let file = files.get(src);
   if (!file) {
-    file = loader.loadAsync(src).then(
-      (gltf) => {
-        const box = new THREE.Box3().setFromObject(gltf.scene);
-        const size = box.getSize(new THREE.Vector3());
-        const centre = box.getCenter(new THREE.Vector3());
-        return {
-          scene: gltf.scene,
-          size: [size.x, size.y, size.z],
-          offset: new THREE.Vector3(-centre.x, -box.min.y, -centre.z),
-        };
-      },
-      () => undefined,
-    );
+    file = loadModel(loader, src).then((gltf) => {
+      if (!gltf) return undefined;
+      const box = new THREE.Box3().setFromObject(gltf.scene);
+      const size = box.getSize(new THREE.Vector3());
+      const centre = box.getCenter(new THREE.Vector3());
+      return {
+        scene: gltf.scene,
+        size: [size.x, size.y, size.z] as [number, number, number],
+        offset: new THREE.Vector3(-centre.x, -box.min.y, -centre.z),
+      };
+    });
     files.set(src, file);
   }
   return file;

@@ -17,7 +17,7 @@ const bool = z.boolean().optional().catch(undefined);
 
 export const FoundryTile = z.object({
   texture: z
-    .object({ src: str.nullable(), scaleX: num, scaleY: num, tint: str.nullable() })
+    .object({ src: str.nullable(), scaleX: num, scaleY: num, tint: str.nullable(), anchorX: num, anchorY: num })
     .optional()
     .catch(undefined),
   img: str.nullable(),
@@ -97,4 +97,20 @@ export function lookOf(t: FoundryTileData): Look {
     alpha: alpha < 1 ? alpha : undefined,
     hidden: t.hidden,
   });
+}
+
+/**
+ * Where the tile's rectangle starts, unturned. Before v14 a tile's x and y
+ * are its top-left corner; from v14 they are where its anchor is (a fraction
+ * of its size, the centre for tiles placed in v14), and it turns about that.
+ */
+export function topLeftOf(t: FoundryTileData, anchored: boolean): { x: number; y: number } {
+  if (!anchored) return { x: t.x, y: t.y };
+  const [ax, ay] = [t.width * (t.texture?.anchorX ?? 0), t.height * (t.texture?.anchorY ?? 0)];
+  const a = ((t.rotation ?? 0) * Math.PI) / 180;
+  const [dx, dy] = [t.width / 2 - ax, t.height / 2 - ay];
+  const cx = t.x + dx * Math.cos(a) - dy * Math.sin(a);
+  const cy = t.y + dx * Math.sin(a) + dy * Math.cos(a);
+  const round = (n: number) => Math.round(n * 100) / 100;
+  return { x: round(cx - t.width / 2), y: round(cy - t.height / 2) };
 }

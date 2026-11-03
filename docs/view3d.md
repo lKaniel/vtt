@@ -44,7 +44,10 @@ files), stretched over the tile or repeated across it; creatures with a
 `model` stand as that figure instead of their picture. A scene's `view3d`
 gives it a sky, a ground colour and can turn the standing walls off. See
 `model` and "The 3D view" in `game-format.md`. Players see models only
-where they have explored. `models3d.ts` loads each file once and clones it;
+where they have explored. Draco-compressed meshes and WebP textures load
+too: the client serves three's Draco decoder at `/draco/` (`model-loader.ts`,
+copied by `vite.config.ts`), and a model that fails says why in the console.
+`models3d.ts` loads each file once and clones it;
 `model3d.ts` in shared works out where each copy goes. Tiles with a
 `solid` raise a drawn outline as a solid (`solids3d.ts`, placed by
 `solid3d.ts` in shared).

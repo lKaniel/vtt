@@ -17,6 +17,9 @@ beforeAll(async () => {
   await mkdir(join(dir, 'other', 'assets'), { recursive: true });
   await writeFile(join(dir, 'other', 'assets', 'map.png'), 'other png');
   await writeFile(join(dir, 'client', 'index.html'), '<h1>vtt</h1>');
+  await mkdir(join(dir, 'client', 'draco'));
+  await writeFile(join(dir, 'client', 'draco', 'draco_decoder.wasm'), 'wasm');
+  await writeFile(join(dir, 'assets', 'wall.glb'), 'glb');
   await writeFile(join(dir, 'secret.txt'), 'nope');
   await writeFile(join(dir, 'main.js'), 'export default () => {};');
   await mkdir(join(dir, 'packs', 'forest', 'media'), { recursive: true });
@@ -62,6 +65,11 @@ describe('httpHandler', () => {
     expect(res.headers.get('content-type')).toBe('text/javascript');
     expect(await res.text()).toBe('export default () => {};');
     expect(await (await fetch(`${base}/plugins/turn-alert/secret.txt`)).text()).toBe('<h1>vtt</h1>');
+  });
+
+  it('serves models and the Draco decoder with their types', async () => {
+    expect((await fetch(`${base}/assets/wall.glb`)).headers.get('content-type')).toBe('model/gltf-binary');
+    expect((await fetch(`${base}/draco/draco_decoder.wasm`)).headers.get('content-type')).toBe('application/wasm');
   });
 
   it('falls back to the client for unknown paths', async () => {

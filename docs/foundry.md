@@ -42,13 +42,15 @@ What comes along:
   has one (v14 keeps it in the scene's `levels`), templates that v14 stores
   as regions become templates again.
 - **3D Canvas** (levels-3d-preview): model tiles become image tiles with a
-  `model` (glTF with its files, depth as height, elevation, rotation, tilt,
+  `model` (glTF with its files, even a text glTF named `.glb` whose meshes
+  and textures sit in sibling folders like `../zz-meshes`, depth as height, elevation, rotation, tilt,
   fill and tint), tokens keep their figure, and scenes keep their sky,
   table colour and whether walls show (`view3d`). Drawn polygons (cliffs,
   ledges, pools) become tiles with a `solid` of their outline, height,
   elevation and colour. Other drawn shapes (cones, spheres), HeroForge
-  figures and other non-glTF models stay behind and are reported. See
-  docs/view3d.md.
+  figures and other non-glTF models stay behind and are reported. Files a
+  world names by their Forge address (`https://assets.forge-vtt.com/<id>/…`)
+  are looked up in the Data folder by their path. See docs/view3d.md.
 - **Floors**, from v14's scene levels or the Levels module's flags (see
   "Scene levels" in game-format.md): one level per floor, named by the
   tightest band starting there (v14's migration makes overlapping bands).

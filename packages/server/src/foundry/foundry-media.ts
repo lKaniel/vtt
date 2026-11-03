@@ -1,6 +1,6 @@
 import { readdirSync, statSync } from 'node:fs';
 import { copyFile, mkdir, readFile } from 'node:fs/promises';
-import { basename, dirname, isAbsolute, join } from 'node:path';
+import { basename, dirname, isAbsolute, join, posix } from 'node:path';
 import { mediaKind } from '@vtt/core';
 import type { MediaLookup } from './foundry-scene.ts';
 
@@ -30,6 +30,9 @@ const isFile = (path: string) => {
   }
 };
 
+/** A file on The Forge's CDN, by its path in the Data folder (`<user id>/` or `bazaar/` before it). */
+const FORGE = /^https?:\/\/assets\.forge-vtt\.com\/[^/]+\/(.+)$/;
+
 export class FoundryMedia {
   /** Foundry path to the file on disk, for each file a document used. */
   private used = new Map<string, string>();
@@ -52,6 +55,8 @@ export class FoundryMedia {
 
   /** Our URL for a Foundry path: a copied file's, or a web address as it is. */
   readonly lookup: MediaLookup = (raw) => {
+    const forge = FORGE.exec(raw);
+    if (forge) return this.lookup(forge[1]!) ?? raw;
     if (/^https?:\/\//.test(raw)) return raw;
     // Tokenizer and Foundry's uploads add a cache-busting `?1693669309657` to the path.
     const path = decoded(raw.split(/[?#]/)[0]!).replace(/^\/+/, '').replace(/\\/g, '/');
@@ -90,14 +95,21 @@ export class FoundryMedia {
       const to = join(game, 'assets', 'foundry', path);
       await mkdir(dirname(to), { recursive: true });
       await copyFile(file, to);
-      if (path.toLowerCase().endsWith('.gltf')) await copyParts(file, to);
+      if (await isGltfText(file)) await copyParts(file, path, game);
     }
     return this.used.size;
   }
 }
 
-/** The files a .gltf names beside it (buffers, textures), never outside its folder or embedded. */
-async function partsOf(file: string): Promise<string[]> {
+/** Whether a model file is glTF text (JSON naming its parts), whatever its name says: some kits call them .glb. */
+async function isGltfText(file: string): Promise<boolean> {
+  if (!/\.(gltf|glb)$/i.test(file)) return false;
+  const head = (await readFile(file)).subarray(0, 64).toString('utf8').trimStart();
+  return head.startsWith('{');
+}
+
+/** The files a glTF names (buffers, textures), as Data-folder paths, never outside it or embedded. */
+async function partsOf(file: string, path: string): Promise<string[]> {
   try {
     const gltf = JSON.parse(await readFile(file, 'utf8')) as {
       buffers?: { uri?: unknown }[];
@@ -105,20 +117,21 @@ async function partsOf(file: string): Promise<string[]> {
     };
     const uris = [...(gltf.buffers ?? []), ...(gltf.images ?? [])].map((b) => b.uri);
     return uris
-      .filter((u): u is string => typeof u === 'string' && !u.startsWith('data:'))
-      .map((u) => decoded(u))
-      .filter((u) => !u.split('/').includes('..') && !isAbsolute(u));
+      .filter((u): u is string => typeof u === 'string' && !u.startsWith('data:') && !isAbsolute(u))
+      .map((u) => posix.normalize(posix.join(posix.dirname(path), decoded(u))))
+      .filter((p) => !p.startsWith('../') && p !== '..' && !isAbsolute(p));
   } catch {
     return [];
   }
 }
 
-/** Copies a .gltf's own files from beside `file` to beside `to`. */
-async function copyParts(file: string, to: string): Promise<void> {
-  for (const part of await partsOf(file)) {
-    const from = join(dirname(file), part);
+/** Copies a glTF's own files, found from `file` (at Data path `path`), into the game at their Data paths. */
+async function copyParts(file: string, path: string, game: string): Promise<void> {
+  for (const part of await partsOf(file, path)) {
+    const from = join(dirname(file), posix.relative(posix.dirname(path), part));
     if (!isFile(from)) continue;
-    await mkdir(dirname(join(dirname(to), part)), { recursive: true });
-    await copyFile(from, join(dirname(to), part));
+    const to = join(game, 'assets', 'foundry', part);
+    await mkdir(dirname(to), { recursive: true });
+    await copyFile(from, to);
   }
 }
