@@ -1,3 +1,4 @@
+import { lossLine, placed } from './import-losses.ts';
 import { mkdir, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { freeId, mediaKind, type PackManifest, packRef, slugify } from '@vtt/core';
@@ -143,7 +144,7 @@ async function importOne(run: Run, meta: Meta, id: string): Promise<Omit<SceneEn
     return run.have.has(p) ? packRef(PACK, `media/${p}`) : undefined;
   };
   const { scene, skipped } = foundryScene(doc, media);
-  run.skipped.push(...skipped.map((what) => `scene "${scene.name}": ${what}`));
+  run.skipped.push(...placed(`scene "${scene.name}"`, skipped).map(lossLine));
   return scene;
 }
 
