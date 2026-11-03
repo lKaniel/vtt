@@ -9,6 +9,7 @@ import {
   DamageTypeSchema,
   type InventoryEntry,
   type Item,
+  MAX_ATTUNED,
   type Weapon,
   type WeaponPropertySchema,
 } from './stats-schema.ts';
@@ -115,6 +116,18 @@ const weightOf = (sys: Loose) => num(at(sys, 'weight.value')) ?? num(sys.weight)
 
 const ARMOR = new Set(['light', 'medium', 'heavy', 'shield']);
 
+/** Foundry dnd5e: "required" from 3.0; 1 required and 2 attuned before. */
+const needsAttunement = (sys: Loose) => sys.attunement === 'required' || sys.attunement === 1 || sys.attunement === 2;
+const isAttuned = (sys: Loose) => sys.attuned === true || sys.attunement === 2;
+
+/** A bag's capacity in pounds (30, a backpack's, when Foundry counts it otherwise). */
+function capacityOf(sys: Loose): { capacity: number } {
+  const pounds =
+    num(at(sys, 'capacity.weight.value')) ??
+    (at(sys, 'capacity.type') === 'weight' ? num(at(sys, 'capacity.value')) : undefined);
+  return { capacity: pounds && pounds > 0 ? pounds : 30 };
+}
+
 /** A Foundry item we have no SRD match for, as an own item. */
 function ownItem(id: string, item: Loose): Item {
   const [name, sys] = [str(item.name) ?? 'Item', obj(item.system)];
@@ -132,8 +145,24 @@ function ownItem(id: string, item: Loose): Item {
       ac,
       stealthDisadvantage: false,
     };
+  return gearItem(id, name, item);
+}
+
+const BAGS = new Set(['container', 'backpack']);
+
+/** Gear of its own: a bag holds things, a magic item may need attuning. */
+function gearItem(id: string, name: string, item: Loose): Item {
+  const sys = obj(item.system);
   const description = plainText(str(at(sys, 'description.value')) ?? '');
-  return { type: 'gear', id, name, weight: weightOf(sys), ...opt('description', description || undefined) };
+  return {
+    type: 'gear',
+    id,
+    name,
+    weight: weightOf(sys),
+    ...opt('attunement', needsAttunement(sys)),
+    ...opt('container', BAGS.has(String(item.type)) && capacityOf(sys)),
+    ...opt('description', description || undefined),
+  };
 }
 
 export interface Gear {
@@ -141,25 +170,57 @@ export interface Gear {
   own: Item[];
 }
 
-/** A character's (or an unmatched NPC's) gear: SRD items by name, the rest its own. */
+function entryOf(item: Loose, id: string, attuned: boolean): InventoryEntry {
+  const sys = obj(item.system);
+  const qty = num(sys.quantity);
+  return {
+    item: id,
+    ...opt('equipped', sys.equipped === true),
+    ...opt('attuned', attuned),
+    ...opt('qty', qty !== undefined && qty > 1 && Math.round(qty)),
+  } as InventoryEntry;
+}
+
+/** Names the entries other entries are carried in (Foundry: `system.container`, the bag's id) and points those at them. */
+function packed(entries: InventoryEntry[], items: Loose[], holds: (item: string) => boolean): InventoryEntry[] {
+  const bags = new Map<string, string>();
+  const named = new Set<string>();
+  const bagOf = (i: number) => str(obj(items[i]!.system).container);
+  for (const [i, e] of entries.entries()) {
+    const fid = str(items[i]!._id);
+    if (!fid || !holds(e.item) || !items.some((_, j) => bagOf(j) === fid)) continue;
+    const id = freeId(e.item, (x) => named.has(x), { bare: true });
+    named.add(id);
+    bags.set(fid, id);
+  }
+  return entries.map((e, i) => {
+    const own = bags.get(str(items[i]!._id) ?? '');
+    const bag = bags.get(bagOf(i) ?? '');
+    return { ...(own ? { id: own } : {}), ...e, ...(bag ? { in: bag } : {}) };
+  });
+}
+
+/** A character's (or an unmatched NPC's) gear: SRD items by name, the rest its own; bags with what is in them. */
 export function gearOf(items: Loose[], srd: Content): Gear {
   const out: Gear = { inventory: [], own: [] };
-  for (const item of items) {
-    const name = str(item.name);
-    if (!GEAR_TYPES.has(String(item.type)) || !name) continue;
+  const carried = items.filter((item) => GEAR_TYPES.has(String(item.type)) && str(item.name));
+  let attuned = 0;
+  for (const item of carried) {
+    const name = str(item.name)!;
     let id = byName(srd.items, name);
     if (!id) {
       id = freeId(slugify(name) || 'item', (x) => srd.items.has(x) || out.own.some((o) => o.id === x), { bare: true });
       out.own.push(ownItem(id, item));
     }
-    const sys = obj(item.system);
-    const qty = num(sys.quantity);
-    out.inventory.push({
-      item: id,
-      ...opt('equipped', sys.equipped === true),
-      ...opt('qty', qty !== undefined && qty > 1 && Math.round(qty)),
-    } as InventoryEntry);
+    const attunes = isAttuned(obj(item.system)) && attuned < MAX_ATTUNED;
+    if (attunes) attuned++;
+    out.inventory.push(entryOf(item, id, attunes));
   }
+  const holds = (id: string) => {
+    const item = srd.items.get(id) ?? out.own.find((o) => o.id === id);
+    return item?.type === 'gear' && !!item.container;
+  };
+  out.inventory = packed(out.inventory, carried, holds);
   return out;
 }
 

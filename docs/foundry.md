@@ -117,6 +117,17 @@ v1 to v5 field names):
   A multiclassed character keeps every class (`stats.classes`, the
   original class first, with its subclass); classes the SRD doesn't have,
   like a Blood Hunter, keep their name and levels.
+- Spells the SRD doesn't have become the sheet's own spells: level, school,
+  casting time, range, duration and, from their activities, the attack or
+  save and the damage they roll (with its upcasting). One that does nothing
+  we can read comes as its text, for the GM to apply.
+- Where the creature stands: its coins, spent spell slots and hit dice,
+  exhaustion, death saves, what is packed in which bag, and the magic items
+  it is attuned to.
+- Active effects: the actor's own (with their conditions) and those its
+  items give their bearer while worn (a race's resistance, a ring's +1 AC)
+  become effects whose `changes` are ours (ability scores, AC, hit points,
+  speed, initiative, saves, resistances and immunities).
 
 ### What stays behind
 
@@ -124,7 +135,9 @@ The import lists it all, grouped by kind with how many and where ("907
 Monk's Active Tiles actions we have no match for, in 74 scenes"); the terminal import
 prints the same list. Mainly:
 
-- Spells the SRD doesn't have, active effects and Foundry's automation.
+- Foundry's automation: effect changes on keys we have no match for
+  (Midi-QOL and DAE flags, macros), and item effects that land on a target
+  when the item is used.
 - Items in the Items sidebar (drag items from the Compendium instead),
   macros, card stacks, chat, combats and the explored fog.
 - Foundry users' passwords (Foundry keeps only hashes): give your players
