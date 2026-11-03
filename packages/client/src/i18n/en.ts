@@ -397,6 +397,9 @@ export const EN = {
   'walk.trap': 'Trap: {name}',
   'walk.trapUnnamed': 'Trap',
   'walk.blocked': "Can't get there",
+
+  'levels.question': '{name}: which floor?',
+  'levels.stay': 'Stay here',
 } as const;
 
 export type MessageKey = keyof typeof EN;

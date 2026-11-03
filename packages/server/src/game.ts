@@ -29,7 +29,7 @@ import { startOf, welcomeOf } from './welcome.ts';
 import { packContent } from './library/game-packs.ts';
 import { WorldClock } from './play/world-clock.ts';
 import { isPresenceMessage, Presence } from './play/presence.ts';
-import { chunkMessage, type Client, viewFor, visibilityChanges } from './game-client.ts';
+import { askMovers, chunkMessage, type Client, viewFor, visibilityChanges } from './game-client.ts';
 import { gameRoutes, route, type Routes, type Step } from './actions/game-routes.ts';
 
 /**
@@ -106,7 +106,12 @@ export class Game {
     const say = (text: string, gmOnly: boolean) => this.chat.post(gameCard(text, gmOnly));
     const scene = (msg: ServerMessage) => this.on(store.currentScene).forEach((c) => this.send(c, msg));
     const rules = { combat: this.combat, zones: this.zones, reactions: this.reactions };
-    this.moves = tokenMoves(table, rules, { say, scene, show });
+    this.moves = tokenMoves(table, rules, {
+      say,
+      scene,
+      show,
+      ask: (token, msg) => askMovers(this.on(store.currentScene), token, msg, (c, m) => this.send(c, m)),
+    });
     this.history = new History(store, (ids, undone) => this.chat.undone(ids, undone));
     this.clock = new WorldClock(table, { now, step: (fn) => this.timePasses(fn), say });
     this.packs = new PackActions(store);

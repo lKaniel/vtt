@@ -162,15 +162,9 @@ export class MapView {
     const stage = this.app.stage;
     stage.eventMode = 'static';
     stage.hitArea = this.app.screen;
-    stage.on('pointerdown', (e) => {
-      this.onPointerDown(e);
-    });
-    stage.on('globalpointermove', (e) => {
-      this.onPointerMove(e);
-    });
-    stage.on('pointerup', (e) => {
-      this.onPointerUp(e);
-    });
+    stage.on('pointerdown', (e) => this.onPointerDown(e));
+    stage.on('globalpointermove', (e) => this.onPointerMove(e));
+    stage.on('pointerup', (e) => this.onPointerUp(e));
     stage.on('pointerupoutside', (e) => {
       // Let go over a panel or off the window: a drag in the editor still lands where the pointer is.
       if (this.presence.up() || this.fogBrush.up()) return;
@@ -280,6 +274,7 @@ export class MapView {
     for (const key of this.chunks.keys) this.chunks.remove(key);
     this.wallsChanged();
     this.items.redraw();
+    this.tokens.redrawAll();
   }
 
   private wallsChanged(): void {
@@ -287,6 +282,13 @@ export class MapView {
     this.visionDirty = true;
     this.dirty = true;
     this.updatePreview(true);
+  }
+
+  /** Another floor is shown: its tiles, walls and items. */
+  private floorChanged(): void {
+    this.wallsChanged();
+    this.items.redraw();
+    this.tokens.redrawAll();
   }
 
   /** The walls on the level shown (and those on every level). */
@@ -303,7 +305,7 @@ export class MapView {
     this.tokens.animateFeedback(now);
     this.effects.tick(now);
     this.presence.tick(dt, now);
-    this.chunks.tick(dt);
+    this.chunks.tick(dt, () => this.floorChanged());
     this.weather.tick(dt, this.app.screen);
     if (!this.session.world) return;
     if (this.cam.step(dt)) this.dirty = true;

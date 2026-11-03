@@ -1,4 +1,14 @@
-import { canObserve, type Chunk, isGm, type Point, tileClickable, type Wall } from '@vtt/shared';
+import {
+  canObserve,
+  type Chunk,
+  isGm,
+  levelRank,
+  onLevel,
+  onLevels,
+  type Point,
+  tileClickable,
+  type Wall,
+} from '@vtt/shared';
 import { Circle, Container, Graphics } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
 import { drawDoor, drawWalls, drawWallShadows } from './art/walls.ts';
@@ -25,6 +35,8 @@ interface ChunkView {
 
 /** Wall shadows draw over every tile. */
 const SHADOW_Z = 1e9;
+/** Each floor up draws over the ones below it. */
+const LEVEL_Z = 1e7;
 
 /** Draws the tiles, walls and doors of every loaded chunk. */
 export class ChunkLayer {
@@ -42,10 +54,19 @@ export class ChunkLayer {
     private placeOf: (id: string) => { at: Point } | undefined,
   ) {}
 
-  /** Moves scrolling tiles on and fades roofs over your creatures. */
-  tick(dt: number): void {
+  /** The floors last drawn, to draw again when another is shown. */
+  private floor = '';
+
+  /** Moves scrolling tiles on and fades roofs over your creatures; draws another floor when it comes into view, then calls `floorShown`. */
+  tick(dt: number, floorShown: () => void): void {
     const watchers = roofWatchers(this.eyes(), this.placeOf);
     for (const v of this.views.values()) for (const t of v.moving) t.tick?.(dt, watchers);
+    const { shown, current } = this.session.levels;
+    const floor = `${current ?? ''}|${shown?.join(' ') ?? ''}`;
+    if (floor === this.floor) return;
+    this.floor = floor;
+    for (const [key, chunk] of this.session.chunks) this.draw(key, chunk);
+    floorShown();
   }
 
   private eyes(): RoofEyes {
@@ -59,8 +80,22 @@ export class ChunkLayer {
     return [...this.views.keys()];
   }
 
-  draw(key: string, chunk: Chunk): void {
+  /** The chunk as the level shown sees it: the tiles of the floors in view, lower ones beneath, and its own walls. */
+  private onFloor(chunk: Chunk): Chunk {
+    const { shown, current } = this.session.levels;
+    if (!shown) return chunk;
+    const levels = this.session.world?.levels;
+    const rank = (t: Chunk['tiles'][number]) =>
+      Math.max(0, ...shown.filter((l) => onLevel(t, l) && (t.level ?? t.levels)).map((l) => levelRank(levels, l)));
+    const tiles = chunk.tiles
+      .map((t, i) => ({ ...t, z: rank(t) * LEVEL_Z + (t.z ?? i) }))
+      .filter((t) => onLevels(t, shown));
+    return { ...chunk, tiles, walls: chunk.walls.filter((w) => onLevel(w, current)) };
+  }
+
+  draw(key: string, whole: Chunk): void {
     this.remove(key);
+    const chunk = this.onFloor(whole);
     const world = this.session.world;
     const ctx = { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 };
     const tiles = drawTiles(chunk, ctx, (root, tile) => this.dress(root, tile));

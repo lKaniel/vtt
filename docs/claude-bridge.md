@@ -42,6 +42,47 @@ name.
 | `move_token`                     | Walk a token to a point                                                            |
 | `undo`                           | Undo your last step                                                                |
 | `send`                           | Any other message a browser sends (start combat, run a macro...)                   |
+| `create_scene`                   | A new scene, with a ground tile of a given size                                    |
+| `build_scene`                    | Rooms, walls, doors, lights, floors, creatures, regions... from a blueprint        |
+| `describe_scene`                 | A scene's settings and every item on it, by collection                             |
+| `render_scene`                   | A top-down picture of a scene (or part of it), with a legend                       |
+| `clear_area`                     | Deletes what lies inside a box                                                     |
+| `go_to_scene`                    | Takes your view, or the whole game, to a scene                                     |
+
+## Building scenes
+
+Ask Claude for a scene ("a ruined chapel with a crypt below, four skeletons
+and a locked vault") and it builds it with the scene tools, all as the GM:
+
+1. `create_scene` makes the scene: name, size in squares, grid, ground
+   texture, darkness.
+2. `build_scene` takes a blueprint, in squares unless `units` is `pixels`:
+   - `rooms`: boxes `x, y, w, h` with a `floor` (a ground texture or a
+     colour), a `light` preset and `doors` (`side` n/s/e/w, `at` squares from
+     the side's west or north end, `width`, `kind`: door, open, locked,
+     secret, window, arch, terrain...). Where rooms touch, the wall between
+     them is made once and the doors of both are cut into it.
+   - `walls`: paths of `points` (`closed` to go round), with a `kind`.
+   - `lights` (presets torch, candle, campfire, lamp, lantern, magic,
+     darkness, or your own `bright`, `dim`, `color`...), `tiles` (painted
+     ground, or pictures with `src`), `regions` (box or points, with
+     behaviours: traps, difficult ground, teleports, stairs), `sounds`, `notes`.
+   - `tokens`: an SRD `monster` or an `actor`, a `count`, `hidden`; placed
+     like the GM's drag from the Compendium (numbered names, stock actors).
+
+   Points (lights, creatures) sit on the centre of square `x, y`; walls and
+   boxes run along the grid lines. Any other field goes into the document as
+   it is (`level`, `trigger`, `hidden`...). The whole build is the server's
+   `build` message: checked like any edit, applied all or nothing, and one
+   Ctrl+Z takes it back.
+
+3. `render_scene` draws what was built, so Claude can look and fix it;
+   `describe_scene` lists the ids, which `edit_documents` (`<scene>/walls`)
+   changes and `clear_area` removes.
+
+The code is `scene-tools.ts`, `scene-blueprint.ts` and `room-walls.ts`
+(blueprints), `scene-picture.ts`, `raster.ts` and `png.ts` (the picture) in
+`server/src/mcp/`.
 
 Every tool takes an optional `game` (from `list_games`). Without one it uses
 the home game if you sit there, or else your first game.

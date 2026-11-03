@@ -34,6 +34,7 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   deleteToken: { label: 'delete' },
   relinkToken: { label: 'actor link change' },
   spawn: { label: 'new creature' },
+  build: { label: 'scene build' },
   drop: { label: 'drop' },
   give: { label: 'hand-over', action: true },
   trade: { label: 'trade', action: true },
@@ -95,7 +96,7 @@ const CLOCK_LABELS: Record<string, string> = {
 
 /** "Undid the …": an edit can name itself, a clock change says what it did. */
 function labelOf(msg: ClientMessage, label: string): string {
-  if (msg.t === 'ops') return msg.label ?? label;
+  if (msg.t === 'ops' || msg.t === 'build') return msg.label ?? label;
   if (msg.t === 'clock') return CLOCK_LABELS[msg.action.do] ?? label;
   return label;
 }

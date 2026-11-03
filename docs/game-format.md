@@ -371,21 +371,40 @@ devil's sight, truesight, blindsight and tremorsense work inside it.
 
 ## Scene levels
 
-A scene can have floors, like Foundry's Levels module. `levels` in
-`scene.json` names them by the elevation (feet) where each starts:
+A scene can have floors, like Foundry's Levels module (and Foundry v14's
+scene levels). `levels` in `scene.json` names them by the elevation (feet)
+where each starts:
 
 ```json
-"levels": [{ "id": "ground", "name": "Ground", "bottom": 0 }, { "id": "loft", "name": "Loft", "bottom": 10 }]
+"levels": [
+  { "id": "ground", "name": "Ground", "bottom": 0, "top": 10 },
+  { "id": "gallery", "name": "Gallery", "bottom": 10, "top": 20, "sees": ["ground"] }
+]
 ```
 
 A token is on the highest level its `elevation` (feet, default 0) reaches.
+`top` is where the floor's ceiling is (missing: the next level's bottom); the
+3D view stands walls up to it. `sees` lists the other levels seen from this
+one: their tiles draw beneath it (lower floors under higher ones), and a
+creature on one of them can be seen from here, in that floor's own light,
+past the walls of the viewer's floor (a gallery over a hall, a balcony).
+
 Tiles, walls, lights, drawings, notes, templates, regions and sounds take a
-`level`; without one they are on every level. A token sees, and is lit and
-blocked by, only what is on its own level, and players don't see creatures
-on another floor (`tokensVisibleTo` in `shared/permissions.ts`, the fog
-keeper on the server, `Vision` on the client). The GM picks the floor shown
-in the map tools; a player sees their token's. A region with a `level`
-behaviour moves a token between floors (stairs, a ladder).
+`level`, or `levels` (a list) when they are on several floors (a staircase,
+a pillar through two storeys); with neither they are on every level. A
+token sees, and is lit and blocked by, only what is on its own level, and
+players don't see creatures on floors their own doesn't see
+(`tokensVisibleTo` in `shared/permissions.ts`, the fog keeper on the server,
+`Vision` on the client). The map draws the floor shown: the GM picks it in
+the map tools (creatures on other floors show faintly); a player sees their
+creature's.
+
+A region only works for creatures on its own levels. Three behaviours move
+creatures between floors: `level` (always to that level), `stairs` (between
+two levels: up from one, down from the other; walk out and in again to go
+back) and `elevator` (whoever moves the creature picks one of its `floors`,
+or of every level when it has none). The GM may also move any creature to
+any level with the `changeLevel` message.
 
 ## Drawings, notes, templates, regions and sounds
 
@@ -439,6 +458,8 @@ with `endsAt` (a game-clock second, see time.json) goes when the clock reaches i
 | `{ "type": "trap", "message": "…", "once": true, "system": { … } }` | The game system springs it; D&D: `system` is `{ "save": "dex", "dc": 15, "damage": "2d6", "type": "piercing", "half": true }`. `once` turns the region off after. |
 | `{ "type": "teleport", "to": [x, y], "scene": "cellar" }`           | Moves the token there (and, to another scene, the players who own it).                                                                                            |
 | `{ "type": "level", "to": "loft" }`                                 | Takes the token to that level (its elevation becomes the level's bottom).                                                                                         |
+| `{ "type": "stairs", "between": ["ground", "loft"] }`               | Stairs: a token on one of the two levels goes to the other.                                                                                                       |
+| `{ "type": "elevator", "floors": ["cellar", "ground", "loft"] }`    | Asks whoever moves the token which of these floors to go to (none listed: every level).                                                                           |
 | `{ "type": "reveal" }`                                              | The players whose token walked in see the whole region as explored.                                                                                               |
 | `{ "type": "message", "text": "…", "gmOnly": true }`                | Says it in chat (to the GM alone with `gmOnly`).                                                                                                                  |
 

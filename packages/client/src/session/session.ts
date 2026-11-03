@@ -33,7 +33,8 @@ import { Rulers } from './rulers.ts';
 import type { SessionEvents } from './session-events.ts';
 import { Actions, type ActionEvents } from './session-actions.ts';
 import { Fog, type FogEvents } from './session-fog.ts';
-import { Draw, Levels } from './session-items.ts';
+import { Draw } from './session-items.ts';
+import { Levels } from './session-levels.ts';
 import { Editor, type EditorEvents } from './session-editor.ts';
 import { mayEditRefs } from './authorship.ts';
 import { Requests } from './session-requests.ts';
@@ -152,6 +153,7 @@ export class Session {
     this.hud,
     this.piles,
     this.sheets,
+    this.levels,
   ];
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;

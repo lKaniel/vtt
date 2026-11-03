@@ -148,4 +148,26 @@ describe('what observers see', () => {
     const east = { ...up, x: 100 };
     expect(tokensVisibleTo(bo, [east, upstairs, below], ctx)).toEqual(new Set(['eye', 'upstairs']));
   });
+
+  it('see creatures on a level their own looks down on, in that level’s light', () => {
+    const levels = [
+      { id: 'ground', name: 'Ground', bottom: 0 },
+      { id: 'gallery', name: 'Gallery', bottom: 10, sees: ['ground'] },
+    ];
+    const torch = { x: 200, y: 0, bright: 20, dim: 0, level: 'ground' };
+    const ctx = {
+      world: { darkness: 1, vision: true, gridSize: 100 },
+      lights: [torch],
+      wallsBetween: () => [],
+      perceiver,
+      levels,
+    };
+    const below = token('below', { x: 200 });
+    const onGallery = token('eye', { elevation: 10, ownership: { default: 'limited', bo: 'owner' } });
+    expect(tokensVisibleTo(bo, [onGallery, below], ctx)).toEqual(new Set(['eye', 'below']));
+    // From the ground the gallery isn't seen.
+    const upThere = token('up', { x: 200, elevation: 10, light: { bright: 20, dim: 0 } });
+    const onGround = token('eye', { ownership: { default: 'limited', bo: 'owner' } });
+    expect(tokensVisibleTo(bo, [onGround, upThere], ctx)).toEqual(new Set(['eye']));
+  });
 });
