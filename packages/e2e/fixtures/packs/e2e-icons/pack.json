@@ -1,0 +1,7 @@
+{
+  "id": "e2e-icons",
+  "name": "Test icons",
+  "license": "CC0-1.0",
+  "description": "A tiny pack of drawn icons for the end-to-end tests: an art file names a spell and a weapon, and a token is matched by its name.",
+  "art": "art.json"
+}

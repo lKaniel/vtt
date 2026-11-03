@@ -32,6 +32,9 @@ import { MacrosTab } from './MacrosTab.tsx';
 import { PlayersTab } from './PlayersTab.tsx';
 import { ScenesTab } from './ScenesTab.tsx';
 import { diceArt } from '../icon-art.ts';
+import { attackLogIcon, spellLogIcon } from '../play/log-icons.ts';
+import type { Icon } from '../icons.ts';
+import { IconFace } from './Icon.tsx';
 import { targetText } from '../text/spell-text.ts';
 import { t } from '../i18n/index.ts';
 import { Button } from './kit/button.tsx';
@@ -311,6 +314,7 @@ function AttackLine({ a }: Readonly<{ a: AttackLog }>) {
   return (
     <span className="attack-log">
       <span className="msg-text">
+        <CardIcon icon={attackLogIcon(a)} />
         {a.attacker} → {a.target}, {a.attack}
       </span>
       <span className="roll">
@@ -338,10 +342,20 @@ function AttackLine({ a }: Readonly<{ a: AttackLog }>) {
 }
 
 /** "Wiz casts Fireball (3rd level)", then a line per target. */
+/** The attack's or spell's icon at the head of its card. */
+function CardIcon({ icon }: Readonly<{ icon: Icon }>) {
+  return (
+    <span data-slot="card-icon" className="mr-1.5 inline-block size-6 overflow-hidden rounded align-middle">
+      <IconFace icon={icon} size={16} />
+    </span>
+  );
+}
+
 function SpellLine({ s }: Readonly<{ s: SpellLog }>) {
   return (
     <span className="attack-log spell-log">
       <span className="msg-text">
+        <CardIcon icon={spellLogIcon(s)} />
         <b>{s.caster}</b> casts <b className="spell-name">{s.spell}</b>
         {s.slot > 0 && <span className="muted"> (level {s.slot} slot)</span>}
       </span>

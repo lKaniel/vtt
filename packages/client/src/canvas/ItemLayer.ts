@@ -3,6 +3,7 @@ import { hitTest, onLevel, type Point, shapeOf } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
 import type { Session } from '../session/session.ts';
 import { drawItem } from './item-draw.ts';
+import { TemplateLooks } from './template-looks.ts';
 
 // Drawings, templates and map notes for everyone; regions and sounds for the
 // GM, in their modes (players are sent regions they should see, which are
@@ -15,10 +16,11 @@ export class ItemLayer {
   readonly container = new Container();
   private g = new Graphics();
   private texts = new Container();
+  private looks = new TemplateLooks();
   private zoom = 1;
 
   constructor(private session: Session) {
-    this.container.addChild(this.g, this.texts);
+    this.container.addChild(this.looks.container, this.g, this.texts);
     this.container.eventMode = 'none';
   }
 
@@ -55,7 +57,12 @@ export class ItemLayer {
     const g = this.g.clear();
     for (const t of this.texts.removeChildren()) t.destroy();
     const ctx = { px: 1 / this.zoom, gridSize: this.session.world?.gridSize ?? 100 };
-    for (const doc of this.shown()) {
+    const shown = this.shown();
+    this.looks.sync(
+      shown.filter((d) => d.type === 'template'),
+      ctx.gridSize,
+    );
+    for (const doc of shown) {
       drawItem(g, doc, ctx);
       this.label(doc, ctx.px);
     }

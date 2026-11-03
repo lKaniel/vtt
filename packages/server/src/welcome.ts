@@ -2,7 +2,7 @@ import { chatFor, type HistoryState, isGm, type Player, type WorldInfo } from '@
 import type { ChatMessage, ServerMessage, Token, TokenView } from '@vtt/system-dnd5e';
 import type { DocFeed } from './store/doc-feed.ts';
 import type { GameStore } from './store/game-store.ts';
-import { packContent } from './library/game-packs.ts';
+import { packArtOf, packContent } from './library/game-packs.ts';
 import { pluginLoads } from './library/game-plugins.ts';
 import { withoutSettings } from './actions/seat-settings.ts';
 
@@ -70,5 +70,5 @@ export function welcomeOf(store: GameStore, c: Joining, parts: WelcomeParts): Se
     ...(parts.paused && { paused: true }),
     ...(gm ? { players: store.world.players, actors: [...store.actors.values()] } : {}),
   };
-  return [welcome, { t: 'packContent', compendia: packContent(store) }];
+  return [welcome, { t: 'packContent', compendia: packContent(store), art: packArtOf(store) }];
 }

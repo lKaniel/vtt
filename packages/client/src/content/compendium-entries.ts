@@ -1,8 +1,7 @@
 import type { PackCompendium } from '@vtt/core';
 import type { Class, Content, Edition, Item, Monster, Spell } from '@vtt/system-dnd5e';
-import { assetUrl } from '../assets.ts';
 import type { DragPayload } from '../play/drops.ts';
-import { featureArt, itemArt, spellArt } from '../icon-art.ts';
+import { featureArt, itemArt, monsterArt, spellArt } from '../icon-art.ts';
 import { featureIcon, type Icon, itemIcon, spellIcon } from '../icons.ts';
 import { spellTip } from '../text/tooltip.ts';
 
@@ -73,7 +72,7 @@ function monsterEntry(m: Monster, rules: Edition, sources: Sources): Entry {
     name: m.name,
     sub: [`CR ${crText(m.cr)}`, m.type].filter(Boolean).join(' '),
     drag: { kind: 'monster', id: m.id, rules },
-    icon: { ...MONSTER_GLYPH, art: m.img && assetUrl(m.img) },
+    icon: { ...MONSTER_GLYPH, art: monsterArt(m) },
     source: sources.get(`monster:${m.id}`) ?? 'SRD',
     order: m.cr,
     facets: { kind: ['Monster'], cr: [String(m.cr)], ...(type && { type: [type] }) },

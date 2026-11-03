@@ -1,5 +1,6 @@
 import type { z } from 'zod';
-import type { PackCompendium, PackManifest } from './packs.ts';
+import type { ArtIndex } from './pack-art.ts';
+import type { MediaEntry, PackCompendium, PackManifest } from './packs.ts';
 
 // A game system: the rules, content and creature sheets a game runs on
 // (D&D 5e lives in packages/system-dnd5e). The engine (scenes, walls, fog,
@@ -39,6 +40,12 @@ export interface SystemDefinition<TToken = unknown, TActor = unknown> extends Sy
   contentTypes?: readonly string[];
   /** What is wrong with the documents of one of its content compendia. */
   packContentIssues?: (compendium: PackCompendium) => string[];
+  /**
+   * The pictures and animations a pack's media offer the system's content,
+   * matched by file and folder names (pack-art.ts), so a pack turned on
+   * dresses the game without an art file.
+   */
+  packArt?: (media: readonly MediaEntry[]) => ArtIndex;
   /** Reads the creature sheets of a Foundry VTT world made for one Foundry system, for importing it. */
   foundry?: FoundrySheets;
 }

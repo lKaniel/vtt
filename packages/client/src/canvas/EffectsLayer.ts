@@ -5,6 +5,7 @@ import { burst, channel, floatingText, missile, rise, slash, spray, type Fx } fr
 import type { TokenLayer } from './TokenLayer.ts';
 import { videoFx } from './video-fx.ts';
 import { assetUrl } from '../assets.ts';
+import { nearestLength } from '../play/animations.ts';
 
 interface Playing {
   fx: Fx;
@@ -76,10 +77,22 @@ export class EffectsLayer {
       case 'number':
         return this.number(cue, now);
       case 'video':
-        return this.between(cue.from, cue.to, (a, b) => videoFx(assetUrl(cue.src), a, b, cue.ranged));
+        return this.video(cue);
       default:
         return this.drawn(cue);
     }
+  }
+
+  /** A video: its length nearest the distance, flying, reaching `length` feet, or covering the target or area. */
+  private video(cue: Extract<Cue, { kind: 'video' }>): Fx | undefined {
+    const from = this.find(cue.from);
+    const to = this.find(cue.to);
+    if (!from || !to) return undefined;
+    const reach = cue.length ? this.feet(cue.length) : Math.hypot(to.at[0] - from.at[0], to.at[1] - from.at[1]);
+    const src = nearestLength(cue.srcs, (reach / this.gridSize()) * 5);
+    const target = cue.radius ? { at: to.at, r: this.feet(cue.radius) } : to;
+    const layout = { ranged: cue.ranged, reach: cue.length ? reach : undefined, cover: cue.radius ? 1 : undefined };
+    return videoFx(assetUrl(src), from, target, layout);
   }
 
   /** The target flinches, and sparks of the blow's colour fly off it. */

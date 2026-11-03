@@ -1,6 +1,9 @@
 import { readdir } from 'node:fs/promises';
 import { join, normalize, sep } from 'node:path';
 import {
+  artFromFile,
+  ArtFileSchema,
+  type ArtIndex,
   mediaEntry,
   type MediaEntry,
   type PackCompendium,
@@ -20,6 +23,8 @@ interface Installed {
   manifest: PackManifest;
   dir: string;
   compendia: PackCompendium[];
+  /** Its art file's art (pack.json `art`), as pack srcs. */
+  art: ArtIndex;
 }
 
 /** Every file under `dir`, as paths relative to it with forward slashes. */
@@ -43,7 +48,7 @@ function mediaFolder(m: PackManifest): string {
 
 export class PackStore {
   private packs = new Map<string, Installed>();
-  private mediaCache = new Map<string, Promise<MediaEntry[]>>();
+  private listed = new Map<string, MediaEntry[]>();
   /** What load() could not read, one line each. */
   problems: string[] = [];
   /** Goes up on every load, so what is worked out from the packs can be cached until then. */
@@ -54,12 +59,15 @@ export class PackStore {
   async load(): Promise<void> {
     const packs = new Map<string, Installed>();
     const problems: string[] = [];
+    const listed = new Map<string, MediaEntry[]>();
     for (const found of await readManifests(this.dir, 'pack.json', PackManifestSchema, problems)) {
-      packs.set(found.manifest.id, await this.withCompendia(found, problems));
+      const installed = await this.withCompendia(found, problems);
+      packs.set(found.manifest.id, installed);
+      listed.set(found.manifest.id, await listMedia(installed));
     }
     this.packs = packs;
+    this.listed = listed;
     this.problems = problems;
-    this.mediaCache.clear();
     this.revision++;
   }
 
@@ -72,7 +80,7 @@ export class PackStore {
       if (Array.isArray(docs)) compendia.push({ ...info, pack: manifest.id, docs });
       else problems.push(`${where}: compendium "${info.id}" has no readable list in ${info.path}`);
     }
-    return { manifest, dir, compendia };
+    return { manifest, dir, compendia, art: await readArt({ manifest, dir }, problems) };
   }
 
   list(): PackManifest[] {
@@ -94,20 +102,17 @@ export class PackStore {
 
   /** The pictures, sounds and videos in a pack's media folder, tagged with their folders. */
   media(pack: string): Promise<MediaEntry[]> {
-    const installed = this.packs.get(pack);
-    if (!installed) return Promise.resolve([]);
-    let listed = this.mediaCache.get(pack);
-    if (!listed) {
-      listed = this.listMedia(installed);
-      this.mediaCache.set(pack, listed);
-    }
-    return listed;
+    return Promise.resolve(this.listedMedia(pack));
   }
 
-  private async listMedia({ manifest, dir }: Installed): Promise<MediaEntry[]> {
-    const folder = mediaFolder(manifest);
-    const files = await filesUnder(join(dir, folder));
-    return files.flatMap((rel) => mediaEntry(packRef(manifest.id, `${folder}/${rel}`), rel, manifest.id) ?? []);
+  /** A pack's media as listed on load. */
+  listedMedia(pack: string): MediaEntry[] {
+    return this.listed.get(pack) ?? [];
+  }
+
+  /** What a pack's art file names (pack.json `art`); empty without one. */
+  art(pack: string): ArtIndex {
+    return this.packs.get(pack)?.art ?? {};
   }
 
   /** The file a `pack://<pack>/<path>` names, if it is in the pack's media folder. */
@@ -118,4 +123,19 @@ export class PackStore {
     const file = normalize(join(installed.dir, path));
     return file.startsWith(root + sep) ? file : undefined;
   }
+}
+
+async function listMedia({ manifest, dir }: Pick<Installed, 'manifest' | 'dir'>): Promise<MediaEntry[]> {
+  const folder = mediaFolder(manifest);
+  const files = await filesUnder(join(dir, folder));
+  return files.flatMap((rel) => mediaEntry(packRef(manifest.id, `${folder}/${rel}`), rel, manifest.id) ?? []);
+}
+
+/** A pack's art file as pack srcs; one that can't be read is reported. */
+async function readArt({ manifest, dir }: Found<PackManifest>, problems: string[]): Promise<ArtIndex> {
+  if (!manifest.art) return {};
+  const parsed = ArtFileSchema.safeParse(await readJson(join(dir, manifest.art)));
+  if (parsed.success) return artFromFile(manifest.id, parsed.data);
+  problems.push(`${manifest.id}/pack.json: its art file ${manifest.art} is not a list of pack files by kind`);
+  return {};
 }

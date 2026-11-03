@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { changeText, type Effect } from '@vtt/system-dnd5e';
 import { auraText, newEffect, removeEffect, setEffect } from '../../content/effect-edit.ts';
 import { effectIcon } from '../../icons.ts';
+import { effectArt } from '../../icon-art.ts';
 import { effectLeft } from '../../session/session-time.ts';
 import { PlusIcon } from 'lucide-react';
 import { t } from '../../i18n/index.ts';
@@ -78,7 +79,7 @@ function EffectRow(props: Readonly<SheetProps & { effect: Effect; onOpen: () => 
   const own = !e.auraFrom;
   return (
     <ListRow
-      icon={effectIcon(e)}
+      icon={{ ...effectIcon(e), art: effectArt(e) }}
       name={e.name}
       columns={columns()}
       cells={[effectDetail(e, nameOf), effectLeft(e, at) ?? '']}

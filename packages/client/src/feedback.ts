@@ -1,6 +1,7 @@
 import type { AttackLog, ChatMessage, DamageType, SpellLog, SpellTargetLog } from '@vtt/system-dnd5e';
 import type { Point } from '@vtt/shared';
 import { type Animation, animationOf, isRangedVideo, type Motion } from './play/animations.ts';
+import { packAnimation } from './content/pack-art.ts';
 
 // What the map plays when an attack or spell comes through chat: a timeline
 // of cues (swing, missile, burst, flinch, floating number). Cues name tokens
@@ -39,8 +40,21 @@ export type Cue = { at: number } & (
   /** Healing or a blessing settling on a creature. */
   | { kind: 'glow'; token: string; element: Element }
   | { kind: 'number'; token: string; text: string; tone: Tone }
-  /** A video (a JB2A pack's): stretched from `from` to `to` when `ranged`, else played on `to`. */
-  | { kind: 'video'; from: string; to: string; src: string; ranged: boolean }
+  /**
+   * A video (a JB2A pack's): stretched from `from` to `to` when `ranged`, or
+   * `length` feet toward it (a cone or line); else played on `to`, as wide as
+   * `radius` feet when given. `srcs` are its lengths: the map plays the one
+   * nearest the distance.
+   */
+  | {
+      kind: 'video';
+      from: string;
+      to: Where;
+      srcs: string[];
+      ranged: boolean;
+      radius?: number;
+      length?: number;
+    }
 );
 
 /** When a blow lands after it starts, ms. */
@@ -131,17 +145,22 @@ function delivered(
     case 'fall':
       return { cues: [{ at, kind: 'glow', token: to, element }], lands: at + IMPACT.melee };
     case 'video':
-      return video(anim.src!, { from, to, at });
+      return video(anim.srcs!, { from, to, at });
     case 'none':
       return { cues: [], lands: at };
   }
 }
 
 /** A video blow: a projectile lands when it arrives, anything else as it peaks. */
-function video(src: string, { from, to, at }: { from: string; to: string; at: number }) {
-  const ranged = isRangedVideo(src);
-  const cues: Cue[] = [{ at, kind: 'video', from, to, src, ranged }];
+function video(srcs: string[], { from, to, at }: { from: string; to: string; at: number }) {
+  const ranged = srcs.some(isRangedVideo);
+  const cues: Cue[] = [{ at, kind: 'video', from, to, srcs, ranged }];
   return { cues, lands: at + (ranged ? VIDEO_FLIGHT : VIDEO_PEAK) };
+}
+
+/** The game's packs' video for what the log shows, as an animation; undefined plays the drawn default. */
+function packVideo(srcs: string[] | undefined): Animation | undefined {
+  return srcs?.length ? { delivery: 'video', srcs } : undefined;
 }
 
 /** Weapons glow in their first magical damage type, else they're plain steel. */
@@ -152,7 +171,7 @@ function weaponElement(log: AttackLog): Element {
 function attackCues(log: AttackLog): Cue[] {
   // An attack at empty ground has no one to strike.
   if (!log.targetId) return [];
-  const chosen = animationOf(log.animation);
+  const chosen = animationOf(log.animation) ?? packVideo(packAnimation(log.kind, log.attack));
   const element = chosen?.element ?? weaponElement(log);
   const { attackerId: from, targetId: to } = log;
   const how = chosen ?? { delivery: log.kind === 'melee' ? 'swing' : 'arrow' };
@@ -186,15 +205,31 @@ function spellElement(log: SpellLog): Element {
 }
 
 function spellCues(log: SpellLog): Cue[] {
-  const chosen = animationOf(log.animation);
+  const heals = log.results.some((r) => r.healed);
+  const chosen = animationOf(log.animation) ?? packVideo(packAnimation('spell', log.spellId, { heals }));
   const element = chosen?.element ?? spellElement(log);
   const channel: Cue = { at: 0, kind: 'channel', token: log.casterId, element };
-  const body = log.area ? areaCues(log, element) : targetCues(log, element, chosen);
+  const body = log.area ? areaCues(log, element, chosen) : targetCues(log, element, chosen);
   return [channel, ...body];
 }
 
+/** An area's video: bursting where it was aimed (or around the caster), or a cone or line out from the caster. */
+function areaVideo(log: SpellLog, srcs: string[]): Cue {
+  const area = log.area!;
+  const from = log.casterId;
+  const at = CHANNEL;
+  if (log.point && (area.shape === 'cone' || area.shape === 'line'))
+    return { at, kind: 'video', from, to: log.point, srcs, ranged: true, length: area.size };
+  const to = area.shape === 'emanation' || !log.point ? from : log.point;
+  return { at, kind: 'video', from, to, srcs, ranged: false, radius: area.size };
+}
+
 /** One area: everyone in it is hit when it goes off. */
-function areaCues(log: SpellLog, element: Element): Cue[] {
+function areaCues(log: SpellLog, element: Element, chosen?: Animation): Cue[] {
+  if (chosen?.srcs) {
+    const lands = CHANNEL + VIDEO_PEAK;
+    return [areaVideo(log, chosen.srcs), ...log.results.flatMap((r) => landing(r, lands, element))];
+  }
   const area = log.area!;
   const from = log.casterId;
   let blast: Cue[];
