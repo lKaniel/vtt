@@ -88,7 +88,8 @@ describe('3D Canvas terrain', () => {
       grid,
       tiles: [
         {
-          texture: { src: 'modules/levels-3d-preview/assets/blank.webp' },
+          // Terrain tiles often have no picture at all.
+          texture: { src: null },
           x: 0,
           y: 0,
           width: 400,

@@ -283,6 +283,14 @@ function levelBackground(levels: unknown[] | undefined): string | undefined {
 /** 3D Canvas puts its models on the map as tiles of a blank picture. */
 const is3dModel = (path: string | null | undefined) => !!path && /levels-3d-preview\/.*blank\.webp$/.test(path);
 
+/** A tile 3D Canvas draws: its blank picture, or no picture and a 3D Canvas shape or model (terrain often has none). */
+function is3dTile(t: FoundryScene['tiles'][number]): boolean {
+  const path = t.texture?.src ?? t.img;
+  if (path) return is3dModel(path);
+  const mesh = flagOf(t, 'dynaMesh');
+  return !!flagOf(t, 'model3d') || (typeof mesh === 'string' && mesh !== 'default');
+}
+
 /** The picture of a model tile: nothing, on the 2D map. */
 export const BLANK = '/art/ui/blank.svg';
 
@@ -347,7 +355,7 @@ function modelTiles(tiles: FoundryScene['tiles'], c: TileContext): Tile[] {
   const out: Tile[] = [];
   let lost = 0;
   for (const t of tiles) {
-    if (!is3dModel(t.texture?.src ?? t.img) || t.width <= 0 || t.height <= 0) continue;
+    if (!is3dTile(t) || t.width <= 0 || t.height <= 0) continue;
     const made = tile3d(t, c);
     if (made) out.push(...made);
     else lost++;
@@ -372,7 +380,7 @@ function tilesOf(s: FoundryScene, c: TileContext): Tile[] {
   if (triggers) skipped.push(triggers);
   for (const t of sorted) {
     const path = t.texture?.src ?? t.img;
-    if (is3dModel(path)) continue;
+    if (is3dTile(t)) continue;
     const src = find(path);
     if (src && t.width > 0 && t.height > 0) {
       const tile: Tile = {

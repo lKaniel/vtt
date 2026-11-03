@@ -60,6 +60,11 @@ describe('copying a world’s media', () => {
     expect(media.lookup('https://assets.forge-vtt.com/bazaar/modules/c3d/hill.webp')).toBe(
       '/assets/foundry/modules/c3d/hill.webp',
     );
+    // The Bazaar's copy of a module can sit one folder deeper ("assets/assets/") than the installed one.
+    await put(join(data, 'modules/c3d/assets/Terrain/hills-1.webp'), 'webp');
+    expect(media.lookup('https://assets.forge-vtt.com/bazaar/modules/c3d/assets/assets/Terrain/hills-1.webp')).toBe(
+      '/assets/foundry/modules/c3d/assets/Terrain/hills-1.webp',
+    );
     expect(media.lookup('https://assets.forge-vtt.com/bazaar/modules/c3d/gone.webp')).toBe(
       'https://assets.forge-vtt.com/bazaar/modules/c3d/gone.webp',
     );
