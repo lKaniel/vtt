@@ -184,9 +184,7 @@ export class Session {
     const set = this.listeners.get(event) ?? new Set();
     this.listeners.set(event, set);
     set.add(fn);
-    return () => {
-      set.delete(fn);
-    };
+    return () => set.delete(fn);
   }
 
   private emit<K extends keyof SessionEvents>(event: K, ...args: Parameters<SessionEvents[K]>): void {
