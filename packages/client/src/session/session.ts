@@ -454,12 +454,9 @@ export class Session {
   }
 
   private onActor(msg: Extract<ServerMessage, { t: 'actor' | 'actorGone' }>): void {
-    if (msg.t === 'actor') {
-      this.actors.set(msg.actor.id, msg.actor);
-      return;
-    }
-    this.actors.delete(msg.id);
-    this.sheets.close('actor', msg.id);
+    if (msg.t === 'actor') this.actors.set(msg.actor.id, msg.actor);
+    // A sheet can only be open on an actor the session knows.
+    else if (this.actors.delete(msg.id)) this.sheets.close('actor', msg.id);
   }
 
   private onTokenGone(id: string): boolean {
