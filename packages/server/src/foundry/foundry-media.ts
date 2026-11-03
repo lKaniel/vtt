@@ -33,6 +33,9 @@ const isFile = (path: string) => {
 /** A file on The Forge's CDN, by its path in the Data folder (`<user id>/` or `bazaar/` before it). */
 const FORGE = /^https?:\/\/assets\.forge-vtt\.com\/[^/]+\/(.+)$/;
 
+/** A path with a folder named twice in a row once ("assets/assets/"), as some Bazaar copies of modules are. */
+const undoubled = (path: string) => path.replace(/(^|\/)([^/]+)\/\2\//, '$1$2/');
+
 export class FoundryMedia {
   /** Foundry path to the file on disk, for each file a document used. */
   private used = new Map<string, string>();
@@ -56,7 +59,7 @@ export class FoundryMedia {
   /** Our URL for a Foundry path: a copied file's, or a web address as it is. */
   readonly lookup: MediaLookup = (raw) => {
     const forge = FORGE.exec(raw);
-    if (forge) return this.lookup(forge[1]!) ?? raw;
+    if (forge) return this.lookup(forge[1]!) ?? this.lookup(undoubled(forge[1]!)) ?? raw;
     if (/^https?:\/\//.test(raw)) return raw;
     // Tokenizer and Foundry's uploads add a cache-busting `?1693669309657` to the path.
     const path = decoded(raw.split(/[?#]/)[0]!).replace(/^\/+/, '').replace(/\\/g, '/');
