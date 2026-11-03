@@ -26,7 +26,7 @@ export function PauseButton({ session }: Readonly<{ session: Session }>) {
       size="icon-sm"
       aria-label={paused ? 'Resume the game' : 'Pause the game'}
       title={paused ? 'Resume the game' : 'Pause the game: players can’t act'}
-      onClick={() => session.setPaused(!paused)}
+      onClick={() => session.requests.setPaused(!paused)}
     >
       {paused ? <PlayIcon /> : <PauseIcon />}
     </Button>

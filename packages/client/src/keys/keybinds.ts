@@ -8,7 +8,7 @@ type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem'>;
 
 export interface KeyAction {
   id: string;
-  group: 'Table' | 'Action bar' | 'Map tools' | 'Walking';
+  group: 'Table' | 'Action bar' | 'Map tools' | 'Walking' | 'Camera';
   /** The default key, as comboOf names it. */
   key: string;
   /** Actions it shares its key with on purpose (they never apply at once). */
@@ -35,6 +35,11 @@ export const KEY_ACTIONS: readonly KeyAction[] = [
   { id: 'step-down', group: 'Walking', key: 'arrowdown' },
   { id: 'step-left', group: 'Walking', key: 'arrowleft' },
   { id: 'step-right', group: 'Walking', key: 'arrowright' },
+  { id: 'view3d', group: 'Camera', key: 'v' },
+  { id: 'cam-left', group: 'Camera', key: ',' },
+  { id: 'cam-right', group: 'Camera', key: '.' },
+  { id: 'cam-tactical', group: 'Camera', key: 'o' },
+  { id: 'cam-centre', group: 'Camera', key: 'home' },
 ];
 
 /** What an action is called, in the player's language: "Slot 3" for hotbar-3. */

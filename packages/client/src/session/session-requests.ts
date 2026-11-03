@@ -85,6 +85,11 @@ export class Requests {
     this.s.send({ t: 'removeEffect', token, effect });
   }
 
+  /** GM: pauses the game, or lets it go on. */
+  setPaused(on: boolean): void {
+    this.s.send({ t: 'pause', on });
+  }
+
   endTurn(): void {
     this.s.send({ t: 'endTurn' });
   }
