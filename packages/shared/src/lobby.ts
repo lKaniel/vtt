@@ -172,4 +172,6 @@ export interface BaileywikiImportReport {
   /** Files downloaded this time. */
   media: number;
   skipped: string[];
+  /** The scenes imported, as the pack holds them (a scene entry each), for a GM to add to their game. */
+  entries: unknown[];
 }

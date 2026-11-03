@@ -39,6 +39,10 @@ export class ApiError extends Error {
   }
 }
 
+/** A Baileywiki route, for a game's GM when `game` is given. */
+const bw = (path: string, game?: string) =>
+  game ? `/api/baileywiki${path}?game=${encodeURIComponent(game)}` : `/api/baileywiki${path}`;
+
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const init: RequestInit = { method };
   if (body instanceof Blob) {
@@ -82,16 +86,17 @@ export const api = {
   /** Admin: makes a game from a Foundry world folder on the server's disk. */
   importFoundry: (input: FoundryImportInput) =>
     call<{ game: GameSummary; report: FoundryImportReport }>('POST', '/api/games/import-foundry', input),
-  /** Admin: the server's Baileywiki sign-in. */
-  baileywiki: () => call<BaileywikiStatus>('GET', '/api/baileywiki'),
-  /** Admin: signs the server in to Baileywiki with the code their site shows. */
-  baileywikiSignIn: (code: string) => call<BaileywikiStatus>('POST', '/api/baileywiki/sign-in', { code }),
-  baileywikiSignOut: () => call<BaileywikiStatus>('DELETE', '/api/baileywiki'),
-  /** Admin: the scenes in Baileywiki's online compendia. */
-  baileywikiScenes: async () => (await call<{ scenes: BaileywikiScene[] }>('GET', '/api/baileywiki/scenes')).scenes,
-  /** Admin: downloads picked scenes into the server's Baileywiki pack. */
-  baileywikiImport: (scenes: { compendium: string; id: string }[]) =>
-    call<BaileywikiImportReport>('POST', '/api/baileywiki/import', { scenes }),
+  /** Admin (or, with `game`, that game's GM): the server's Baileywiki sign-in. */
+  baileywiki: (game?: string) => call<BaileywikiStatus>('GET', bw('', game)),
+  /** Signs the server in to Baileywiki with the code their site shows. */
+  baileywikiSignIn: (code: string, game?: string) => call<BaileywikiStatus>('POST', bw('/sign-in', game), { code }),
+  baileywikiSignOut: (game?: string) => call<BaileywikiStatus>('DELETE', bw('', game)),
+  /** The scenes in Baileywiki's online compendia. */
+  baileywikiScenes: async (game?: string) =>
+    (await call<{ scenes: BaileywikiScene[] }>('GET', bw('/scenes', game))).scenes,
+  /** Downloads picked scenes into the server's Baileywiki pack; hands them back for a game to add. */
+  baileywikiImport: (scenes: { compendium: string; id: string }[], game?: string) =>
+    call<BaileywikiImportReport>('POST', bw('/import', game), { scenes }),
   /** Admin: a new game from an exported zip. */
   importZip: async (file: Blob) => (await call<{ game: GameSummary }>('POST', '/api/games/import-zip', file)).game,
 

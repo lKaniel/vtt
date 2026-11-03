@@ -214,6 +214,12 @@ browser. "Show scenes" lists the scenes of Baileywiki's online compendia
 by many scenes comes down once. Importing a scene again replaces it in
 place. Games then turn the pack on and import its scenes like any pack's.
 
+A game's GM has the same sign-in and list in the Assets tab, under
+**Baileywiki**: there an import also adds the scenes straight to the game
+(and turns the Baileywiki pack on for it), as Foundry does. The sign-in is
+the server's either way: the API takes `?game=<id>` and lets that game's GM
+in.
+
 It talks to Baileywiki's server the way their own Foundry module does
 (`server/src/foundry/baileywiki-*.ts`): Baileywiki decides what the
 membership unlocks, and what it turns down is listed as left out. Files from

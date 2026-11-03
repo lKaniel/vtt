@@ -112,3 +112,25 @@ describe('Baileywiki scenes', () => {
     expect((res.json.skipped as string[]).join('\n')).toContain('modules/baileywiki-maps-premium/maps/town.webp');
   });
 });
+
+describe('Baileywiki inside a game', () => {
+  it("is open to that game's GM, not its players", async () => {
+    const gm = await api.joined('test', 'gm');
+    const ana = await api.joined('test', 'ana');
+    expect((await ana('GET', '/api/baileywiki?game=test')).status).toBe(403);
+    expect((await gm('GET', '/api/baileywiki')).status).toBe(403);
+    expect((await gm('POST', '/api/baileywiki/sign-in?game=test', { code: GOOD_CODE })).json).toMatchObject({
+      signedIn: true,
+    });
+    expect((await gm('GET', '/api/baileywiki/scenes?game=nope')).status).toBe(403);
+  });
+
+  it('hands back the imported scenes, for the GM to add to the game', async () => {
+    const gm = await api.joined('test', 'gm');
+    await gm('POST', '/api/baileywiki/sign-in?game=test', { code: GOOD_CODE });
+    const res = await gm('POST', '/api/baileywiki/import?game=test', {
+      scenes: [{ compendium: 'baileywiki-content.maps', id: 'town00000000001' }],
+    });
+    expect(res.json.entries).toMatchObject([{ id: 'town-square', name: 'Town Square' }]);
+  });
+});

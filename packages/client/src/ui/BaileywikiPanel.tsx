@@ -8,22 +8,27 @@ import { Card } from './kit/card.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 import { Input } from './kit/input.tsx';
 
-// The admin's Baileywiki box in Setup: sign the server in with the code
-// content.baileywiki.com shows, pick scenes from Baileywiki's online
-// compendia, and download them into the private Baileywiki pack
-// (server/foundry/baileywiki-import.ts). Baileywiki decides what the
-// membership unlocks.
+// Baileywiki: sign the server in with the code content.baileywiki.com
+// shows, pick scenes from Baileywiki's online compendia, and download them
+// into the private Baileywiki pack (server/foundry/baileywiki-import.ts).
+// Baileywiki decides what the membership unlocks. The admin's box in Setup
+// is BaileywikiPanel; a GM's game has BaileywikiBrowser in its Assets tab,
+// with `game` set, and adds the imported scenes to the game.
 
 const keyOf = (s: { compendium: string; id: string }) => `${s.compendium}.${s.id}`;
 
-function SignIn({ status, onSigned }: Readonly<{ status: BaileywikiStatus; onSigned: (s: BaileywikiStatus) => void }>) {
+function SignIn({
+  status,
+  game,
+  onSigned,
+}: Readonly<{ status: BaileywikiStatus; game?: string; onSigned: (s: BaileywikiStatus) => void }>) {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string>();
   const submit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     setError(undefined);
     try {
-      onSigned(await api.baileywikiSignIn(code));
+      onSigned(await api.baileywikiSignIn(code, game));
     } catch (err) {
       setError((err as Error).message);
     }
@@ -81,18 +86,24 @@ function Report({ report }: Readonly<{ report: BaileywikiImportReport }>) {
   );
 }
 
-function useScenes() {
+function useScenes(game?: string) {
   const [scenes, setScenes] = useState<BaileywikiScene[]>();
   const [error, setError] = useState<string>();
   const load = () => {
     setError(undefined);
-    api.baileywikiScenes().then(setScenes, (e: unknown) => setError((e as Error).message));
+    api.baileywikiScenes(game).then(setScenes, (e: unknown) => setError((e as Error).message));
   };
   return { scenes, error, load };
 }
 
-function ScenePicker() {
-  const { scenes, error, load } = useScenes();
+interface Picking {
+  game?: string;
+  /** Called with each import's report (a game adds the scenes). */
+  onImported?: (report: BaileywikiImportReport) => void;
+}
+
+function ScenePicker({ game, onImported }: Readonly<Picking>) {
+  const { scenes, error, load } = useScenes(game);
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState(new Set<string>());
   const [busy, setBusy] = useState(false);
@@ -112,7 +123,12 @@ function ScenePicker() {
     setBusy(true);
     try {
       const chosen = (scenes ?? []).filter((s) => picked.has(keyOf(s)));
-      setReport(await api.baileywikiImport(chosen.map(({ compendium, id }) => ({ compendium, id }))));
+      const done = await api.baileywikiImport(
+        chosen.map(({ compendium, id }) => ({ compendium, id })),
+        game,
+      );
+      setReport(done);
+      onImported?.(done);
       setPicked(new Set());
       load();
     } finally {
@@ -145,29 +161,34 @@ function ScenePicker() {
   );
 }
 
-export function BaileywikiPanel() {
+/** Sign-in, scene list and import, for the admin (no `game`) or a game's GM. */
+export function BaileywikiBrowser({ game, onImported }: Readonly<Picking>) {
   const [status, setStatus] = useState<BaileywikiStatus>();
   useEffect(() => {
-    api.baileywiki().then(setStatus, () => undefined);
-  }, []);
+    api.baileywiki(game).then(setStatus, () => undefined);
+  }, [game]);
   if (!status) return null;
-  const signOut = async () => setStatus(await api.baileywikiSignOut());
+  const signOut = async () => setStatus(await api.baileywikiSignOut(game));
+  if (!status.signedIn) return <SignIn status={status} game={game} onSigned={setStatus} />;
+  return (
+    <>
+      <p className="text-sm">{t('baileywiki.signedIn', { tier: status.tier })}</p>
+      <p className="menu-note">{t('baileywiki.private')}</p>
+      <ScenePicker game={game} onImported={onImported} />
+      <Button variant="ghost" onClick={() => void signOut()}>
+        {t('baileywiki.signOut')}
+      </Button>
+    </>
+  );
+}
+
+/** The admin's box in Setup. */
+export function BaileywikiPanel() {
   return (
     <section className="auth frame lobby-form" aria-label={t('baileywiki.title')}>
       <h2 className="lobby-heading">{t('baileywiki.title')}</h2>
       <p className="menu-note">{t('baileywiki.intro')}</p>
-      {status.signedIn ? (
-        <>
-          <p className="text-sm">{t('baileywiki.signedIn', { tier: status.tier })}</p>
-          <p className="menu-note">{t('baileywiki.private')}</p>
-          <ScenePicker />
-          <Button variant="ghost" onClick={() => void signOut()}>
-            {t('baileywiki.signOut')}
-          </Button>
-        </>
-      ) : (
-        <SignIn status={status} onSigned={setStatus} />
-      )}
+      <BaileywikiBrowser />
     </section>
   );
 }
