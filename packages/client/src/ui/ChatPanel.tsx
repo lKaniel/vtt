@@ -1,21 +1,5 @@
 import type { AttackLog, ChatMessage, SpellLog } from '@vtt/system-dnd5e';
 import type { DiceTerm } from '@vtt/shared';
-import {
-  ArmchairIcon,
-  BookOpenIcon,
-  DicesIcon,
-  ImageIcon,
-  LibraryIcon,
-  MapIcon,
-  PanelRightCloseIcon,
-  PanelRightOpenIcon,
-  MusicIcon,
-  SpadeIcon,
-  SquareTerminalIcon,
-  ScrollTextIcon,
-  UsersIcon,
-  type LucideIcon,
-} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { assetUrl } from '../assets.ts';
 import type { Session } from '../session/session.ts';
@@ -36,134 +20,18 @@ import { attackLogIcon, spellLogIcon } from '../play/log-icons.ts';
 import type { Icon } from '../icons.ts';
 import { IconFace } from './Icon.tsx';
 import { targetText } from '../text/spell-text.ts';
-import { t } from '../i18n/index.ts';
-import { readPref, writePref } from '../prefs.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
-import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
+import type { Tab } from './panel-tabs.ts';
 import { SelectField } from './kit/select.tsx';
 import { HIDDEN_ROLL, modeNote, ROLL_MODE_OPTIONS } from '../play/roll-mode.ts';
 import type { RollMode } from '@vtt/shared';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
-/** The side panel has tabs, like a VTT sidebar: the log, journal and macros for everyone, and cards once some are shared; for the GM the scenes, Actors, Compendium, tables, music, assets and packs, and the seats; the Compendium for trusted players. */
-const TABS = [
-  'Adventure log',
-  'Journal',
-  'Scenes',
-  'Actors',
-  'Compendium',
-  'Tables',
-  'Macros',
-  'Cards',
-  'Music',
-  'Assets',
-  'Players',
-] as const;
-type Tab = (typeof TABS)[number];
-const PLAYER_TABS: readonly Tab[] = ['Adventure log', 'Journal', 'Macros'];
-
-/** Each tab is an icon in one slim row; its name is the panel's title and the icon's tooltip. */
-const TAB_ICONS: Record<Tab, LucideIcon> = {
-  'Adventure log': ScrollTextIcon,
-  Journal: BookOpenIcon,
-  Scenes: MapIcon,
-  Actors: UsersIcon,
-  Compendium: LibraryIcon,
-  Tables: DicesIcon,
-  Macros: SquareTerminalIcon,
-  Cards: SpadeIcon,
-  Music: MusicIcon,
-  Assets: ImageIcon,
-  Players: ArmchairIcon,
-};
-
-/** Players get Cards when some are shared with them, and the Compendium when they may edit a creature (trusted owners), to fill their sheets from. */
-function playerTabs(session: Session): readonly Tab[] {
-  const cards: Tab[] = session.cards.stacks().length ? ['Cards'] : [];
-  const compendium: Tab[] = [...session.tokens.keys()].some((id) => session.canEdit(id)) ? ['Compendium'] : [];
-  return [...PLAYER_TABS, ...cards, ...compendium];
-}
-
-/** The side panel's tab and whether it is folded, as left in this browser. */
-function usePanelState(): [Tab, (tab: Tab) => void, boolean, (open: boolean) => void] {
-  const [tab, setTab] = useState<Tab>(() => readPref('sidebar-tab', TABS, 'Adventure log'));
-  const [open, setOpen] = useState(() => readPref('sidebar', ['open', 'folded'], 'open') === 'open');
-  return [
-    tab,
-    (next) => {
-      setTab(next);
-      writePref('sidebar-tab', next);
-    },
-    open,
-    (next) => {
-      setOpen(next);
-      writePref('sidebar', next ? 'open' : 'folded');
-    },
-  ];
-}
-
-/** The side panel down the right edge, top to bottom (as Foundry's sidebar); folded, it is a strip of its tab icons. */
-export function ChatPanel({ session }: Readonly<{ session: Session }>) {
-  const [tab, setTab, open, setOpen] = usePanelState();
-  const tabs = session.isGm() ? TABS : playerTabs(session);
-  const shown = tabs.includes(tab) ? tab : 'Adventure log';
-  const fold = <FoldButton open={open} onClick={() => setOpen(!open)} />;
-  const pick = (id: Tab) => {
-    setTab(id);
-    setOpen(true);
-  };
-  return (
-    <aside className={`chat frame${open ? '' : ' closed'}`}>
-      {open ? (
-        <header className="chat-head">
-          <span>{t(`panel.${shown}`)}</span>
-          {fold}
-        </header>
-      ) : (
-        fold
-      )}
-      <PanelTabs tabs={tabs} shown={open ? shown : undefined} onPick={pick} />
-      {open && (shown === 'Adventure log' ? <Log session={session} open /> : <Library tab={shown} session={session} />)}
-    </aside>
-  );
-}
-
-function FoldButton({ open, onClick }: Readonly<{ open: boolean; onClick: () => void }>) {
-  const label = t(open ? 'panel.hide' : 'panel.show');
-  return (
-    <Button variant="ghost" size="icon-sm" onClick={onClick} aria-label={label} title={label}>
-      {open ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
-    </Button>
-  );
-}
-
-/** The tab icons: one row over the open panel, or the folded panel's column (none chosen). */
-function PanelTabs({
-  tabs,
-  shown,
-  onPick,
-}: Readonly<{ tabs: readonly Tab[]; shown?: Tab; onPick: (tab: Tab) => void }>) {
-  return (
-    <Tabs value={shown ?? ''} onValueChange={(v) => onPick(v as Tab)} orientation={shown ? 'horizontal' : 'vertical'}>
-      <TabsList className={shown ? 'mb-1.5' : 'h-auto flex-col items-stretch gap-1 border-b-0 pt-1'}>
-        {tabs.map((id) => (
-          <TabIcon key={id} id={id} />
-        ))}
-      </TabsList>
-    </Tabs>
-  );
-}
-
-function TabIcon({ id }: Readonly<{ id: Tab }>) {
-  const Icon = TAB_ICONS[id];
-  const name = t(`panel.${id}`);
-  return (
-    <TabsTrigger value={id} title={name} aria-label={name} className="px-1 pt-0.5 pb-1.5 [&_svg]:size-4">
-      <Icon />
-    </TabsTrigger>
-  );
+/** What a side panel tab shows: the log, or one of the lists. */
+export function PanelPage({ tab, session }: Readonly<{ tab: Tab; session: Session }>) {
+  return tab === 'Adventure log' ? <Log session={session} /> : <Library tab={tab} session={session} />;
 }
 
 /** The tabs other than the log. */
@@ -183,13 +51,13 @@ function Library({ tab, session }: Readonly<{ tab: Exclude<Tab, 'Adventure log'>
   return <Panel session={session} />;
 }
 
-function Log({ session, open }: Readonly<{ session: Session; open: boolean }>) {
+function Log({ session }: Readonly<{ session: Session }>) {
   const [text, setText] = useState('');
   const list = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     list.current?.scrollTo({ top: list.current.scrollHeight });
-  }, [session.chat.length, open]);
+  }, [session.chat.length]);
 
   const submit = (e: React.SubmitEvent) => {
     e.preventDefault();

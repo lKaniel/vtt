@@ -85,6 +85,7 @@ export const EN = {
   'window.resize': 'Resize',
   'panel.hide': 'Hide panel',
   'panel.show': 'Show panel',
+  'panel.popOut': 'Open in a window',
   'panel.Adventure log': 'Adventure log',
   'panel.Journal': 'Journal',
   'panel.Scenes': 'Scenes',

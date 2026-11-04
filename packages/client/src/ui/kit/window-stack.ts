@@ -31,6 +31,7 @@ const CASCADE = 30;
 /** Which window is on top: the order they were last touched in. */
 export class WindowStack {
   private order: string[] = [];
+  private closers = new Map<string, () => void>();
   private listeners = new Set<() => void>();
 
   /** For useSyncExternalStore: call `fn` on every change; returns the unsubscribe. */
@@ -49,6 +50,20 @@ export class WindowStack {
 
   remove(id: string): void {
     if (this.order.includes(id)) this.set(this.order.filter((o) => o !== id));
+  }
+
+  /** How window `id` closes (Esc on the table closes the top one); undefined forgets. */
+  setCloser(id: string, close: (() => void) | undefined): void {
+    if (close) this.closers.set(id, close);
+    else this.closers.delete(id);
+  }
+
+  /** Closes the highest window that can be closed this way; false when there is none. */
+  closeTop(): boolean {
+    const id = this.order.findLast((o) => this.closers.has(o));
+    if (id === undefined) return false;
+    this.closers.get(id)?.();
+    return true;
   }
 
   top(): string | undefined {

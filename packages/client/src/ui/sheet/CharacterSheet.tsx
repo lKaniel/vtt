@@ -64,31 +64,34 @@ const AREA: Partial<Record<Tab, SheetArea>> = { inventory: 'inventory', spells: 
 
 const tabLabel = (tab: Tab) => t(`sheet.tab.${tab}` as MessageKey);
 
-/** The sheet over the map, of what the session has open. */
+/** Every sheet the session has open over the map, each in its own window. */
 export function CharacterSheet({
   session,
   onPopOut,
 }: Readonly<{ session: Session; onPopOut: (target: SheetTarget & { edit: boolean }) => void }>) {
-  const target = session.sheets.current;
-  const live = target && liveOf(session, target);
-  if (!target || !live) return null;
-  const controls: SheetControls = {
-    setEdit: (edit) => session.sheets.setEdit(edit),
-    close: () => session.sheets.open(undefined),
-    popOut: () => {
-      onPopOut(target);
-      session.sheets.open(undefined);
-    },
-  };
-  return (
-    <SheetWindow
-      key={`${target.kind}:${target.id}`}
-      session={session}
-      target={target}
-      live={live}
-      controls={controls}
-    />
-  );
+  const front = session.sheets.current;
+  return session.sheets.list.map((target, n) => {
+    const live = liveOf(session, target);
+    if (!live) return null;
+    const controls: SheetControls = {
+      setEdit: (edit) => session.sheets.setEdit(edit, target),
+      close: () => session.sheets.shut(target),
+      popOut: () => {
+        onPopOut(target);
+        session.sheets.shut(target);
+      },
+    };
+    return (
+      <SheetWindow
+        key={`${target.kind}:${target.id}`}
+        session={session}
+        target={target}
+        live={live}
+        controls={controls}
+        place={{ offset: n, front: target === front }}
+      />
+    );
+  });
 }
 
 const liveOf = (session: Session, t: SheetTarget): Draft | undefined =>
@@ -113,7 +116,15 @@ function SheetWindow({
   target,
   live,
   controls,
-}: Readonly<{ session: Session; target: SheetTarget & { edit: boolean }; live: Draft; controls: SheetControls }>) {
+  place,
+}: Readonly<{
+  session: Session;
+  target: SheetTarget & { edit: boolean };
+  live: Draft;
+  controls: SheetControls;
+  /** Over the map: how many sheets opened before it, and whether it is the front one. */
+  place?: { offset: number; front: boolean };
+}>) {
   const liveRef = useRef(live);
   useEffect(() => {
     liveRef.current = live;
@@ -137,7 +148,11 @@ function SheetWindow({
   );
   if (!controls.popOut) {
     return (
-      <section className={cn('sheet frame flex flex-col p-0', POPPED)} aria-label={label} {...sheetDropTarget(session)}>
+      <section
+        className={cn('sheet frame flex flex-col p-0', POPPED)}
+        aria-label={label}
+        {...sheetDropTarget(session, target)}
+      >
         {body}
       </section>
     );
@@ -147,6 +162,8 @@ function SheetWindow({
       id={`sheet:${target.kind}:${target.id}`}
       kind="sheet"
       initial={sheetPlace}
+      offset={place?.offset}
+      front={place?.front}
       title={value.name}
       label={label}
       actions={<SheetButtons {...props} controls={controls} />}
@@ -155,7 +172,7 @@ function SheetWindow({
       resizable
       className={cn('sheet', target.edit && 'ring-1 ring-gold-bright/30')}
       bodyClassName="overflow-hidden"
-      {...sheetDropTarget(session)}
+      {...sheetDropTarget(session, target)}
     >
       {body}
     </Window>

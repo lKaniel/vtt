@@ -1,3 +1,4 @@
+import { windows } from '../ui/kit/window-stack.ts';
 import { editKey, editorKey, type EditKey, type EditorKey, type LayerKey } from './edit-keys.ts';
 import { hotbarTiles } from '../play/hotbar.ts';
 import { actionOf, currentKeys } from './keybinds.ts';
@@ -124,20 +125,29 @@ function switches(session: Session, key: Extract<EditorKey, { mode: unknown }>):
   return key.mode !== session.editor.mode || (!!key.tool && key.tool !== session.editor.tool);
 }
 
-/** C opens the selected creature's sheet, or closes the open one. */
+/** C opens or closes the selected creature's sheet; with nothing selected it closes the front sheet. */
 export function toggleSheet(session: Session): void {
-  if (session.sheets.current) session.sheets.open(undefined);
-  else if (session.selected) session.sheets.open({ kind: 'token', id: session.selected });
+  const mine = selectedSheet(session);
+  if (mine && session.sheets.isOpen(mine)) session.sheets.shut(mine);
+  else if (mine) session.sheets.open(mine);
+  else session.sheets.open(undefined);
 }
 
+/** The selected creature's sheet, if one is selected. */
+const selectedSheet = (session: Session) =>
+  session.selected ? { kind: 'token' as const, id: session.selected } : undefined;
+
 /**
- * E switches the open sheet to edit mode and back, or opens the selected
- * creature's sheet for editing: for the GM, and trusted players on their own tokens.
+ * E switches the selected creature's open sheet (or the front one) to edit
+ * mode and back, or opens the selected creature's sheet for editing: for the
+ * GM, and trusted players on their own tokens.
  */
 function toggleEditor(session: Session): void {
-  if (session.sheets.current) session.sheets.setEdit(!session.sheets.current.edit);
-  else if (session.selected && session.canEdit(session.selected))
-    session.sheets.open({ kind: 'token', id: session.selected }, true);
+  const mine = selectedSheet(session);
+  const open = mine && session.sheets.list.find((s) => s.kind === mine.kind && s.id === mine.id);
+  const sheet = open ?? (mine ? undefined : session.sheets.current);
+  if (sheet) session.sheets.setEdit(!sheet.edit, sheet);
+  else if (mine && session.canEdit(mine.id)) session.sheets.open(mine, true);
 }
 
 /** Arrow keys walk the selected creature one square. */
@@ -151,8 +161,9 @@ function step(session: Session, e: Key): boolean {
   return true;
 }
 
-/** Esc closes the sheet, puts away a readied attack or spell, or lets go of the selection. */
+/** Esc closes the top window (a sheet, a journal entry), puts away a readied attack or spell, or lets go of the selection. */
 function backOut(session: Session): void {
+  if (windows.closeTop()) return;
   if (session.sheets.current) session.sheets.open(undefined);
   else if (session.actions.armed ?? session.actions.aiming) session.actions.arm(undefined);
   else session.select(undefined);

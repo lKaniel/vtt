@@ -78,3 +78,34 @@ test('the side panel runs the height of the screen and folds into its tab icons'
   ).toBeVisible();
   expect((await panel.boundingBox())!.width).toBeGreaterThan(250);
 });
+
+test('several sheets stay open at once, and Esc closes the top one', async ({ page }) => {
+  await atTable(page, GM);
+  await page.getByRole('button', { name: /^Bram / }).click();
+  await page.keyboard.press('c');
+  // Bram's sheet covers the portraits on this small screen.
+  await page.getByRole('button', { name: /^Orrin / }).dispatchEvent('click');
+  await page.keyboard.press('c');
+  const bram = page.getByRole('region', { name: "Bram's character sheet" });
+  const orrin = page.getByRole('region', { name: "Orrin's character sheet" });
+  await expect(bram).toBeVisible();
+  await expect(orrin).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(orrin).toHaveCount(0);
+  await expect(bram).toBeVisible();
+});
+
+test('a side panel tab opens in a window of its own, beside another tab', async ({ page }) => {
+  await atTable(page, GM);
+  await page.getByRole('button', { name: 'Open in a window' }).click();
+  const log = page.getByRole('dialog', { name: 'Adventure log' });
+  await expect(log.getByRole('textbox')).toBeVisible();
+  await page.getByRole('complementary').getByRole('tab', { name: 'Actors' }).click();
+  await expect(page.getByRole('complementary').getByPlaceholder(/Search actors/)).toBeVisible();
+  await log.getByRole('textbox').fill('/r 1d20');
+  await log.getByRole('textbox').press('Enter');
+  await expect(log).toContainText('1d20');
+  await log.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(log).toHaveCount(0);
+});
