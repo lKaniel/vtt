@@ -332,7 +332,7 @@ function tile3d(t: FoundryScene['tiles'][number], c: TileContext): Tile[] | unde
   if (!made) return undefined;
   const at = topLeftOf(t, c.anchored);
   const tile = { id: '', kind: 'image' as const, ...at, w: t.width, h: t.height, src: BLANK, ...c.on(t) };
-  const copies = 'terrain' in made ? undefined : mergedCopiesOf(sourceOf(t), c.grid);
+  const copies = 'terrain' in made ? undefined : mergedCopiesOf(sourceOf(t), c.grid)?.filter((m) => standsUp(made, m));
   if (!copies) return [madeFrom({ ...tile, ...made }, sourceOf(t))];
   return copies.map((copy, i) => {
     const place = {
@@ -346,6 +346,9 @@ function tile3d(t: FoundryScene['tiles'][number], c: TileContext): Tile[] | unde
     return i === 0 ? madeFrom(one, sourceOf(t)) : one;
   });
 }
+
+/** Whether a merged copy stands at all: a flat solid draws nothing (and no solid may be 0 ft tall). */
+const standsUp = (made: { model?: Model3D }, copy: MergedCopy) => !!made.model || (copy.model.height ?? 1) > 0;
 
 /** One copy of a merged model or solid, at its own height. */
 function copyOf(made: { model?: Model3D; solid?: Solid3D }, copy: MergedCopy) {
