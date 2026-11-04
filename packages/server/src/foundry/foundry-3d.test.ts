@@ -95,6 +95,18 @@ describe('3D Canvas models', () => {
     expect(tileSolidOf(flags({ model3d: 'a.glb', dynaMesh: 'default' }), grid)).toBeUndefined();
   });
 
+  it('covers a box in its picture, repeated as often as 3D Canvas repeats it, but not the blank one', () => {
+    const water = 'modules/canvas3dcompendium/assets/Materials/Water_01/Water_01_Color.webp';
+    const box = (f: object) => tileSolidOf(flags({ model3d: '', dynaMesh: 'box', depth: 100, ...f }), grid, find);
+    expect(box({ imageTexture: water, textureRepeat: 10 })).toMatchObject({
+      texture: `/assets/foundry/${water}`,
+      repeat: 10,
+    });
+    expect(box({ imageTexture: water, textureRepeat: 1 })).not.toHaveProperty('repeat');
+    expect(box({ imageTexture: 'modules/levels-3d-preview/assets/blankTex.jpg' })).not.toHaveProperty('texture');
+    expect(box({ imageTexture: 'gone/water.webp' })).not.toHaveProperty('texture');
+  });
+
   it('gives a token its figure, but not HeroForge links', () => {
     expect(tokenModelOf(flags({ model3d: 'modules/minis/orc.glb', scale: 1.5 }), find)).toEqual({
       src: '/assets/foundry/modules/minis/orc.glb',

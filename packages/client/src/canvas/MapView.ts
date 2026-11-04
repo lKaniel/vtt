@@ -121,6 +121,7 @@ export class MapView {
     await this.app.init({
       resizeTo: host,
       background: 0x1b1d22,
+      backgroundAlpha: 0, // the canvas keeps alpha: see Vision.seeThrough
       antialias: true,
       // The lighting filter is written in GLSL.
       preference: 'webgl',
@@ -152,9 +153,7 @@ export class MapView {
 
   /** Under the 3D view, empty ground shows what lies below it (view3d/pixi-bridge.ts). */
   // fallow-ignore-next-line unused-class-member -- the 3D view calls it through its FlatMap type
-  seeThrough(on: boolean): void {
-    this.vision?.seeThrough(on);
-  }
+  readonly seeThrough = (on: boolean): void => this.vision?.seeThrough(on);
 
   destroy(): void {
     this.destroyed = true;

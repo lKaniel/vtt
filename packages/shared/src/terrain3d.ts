@@ -18,6 +18,16 @@ export const TerrainLayerSchema = z.object({
   from: fraction,
 });
 
+/** A picture painted where a mask picture is white (3D Canvas's mask shader: paths, mud, sand). */
+export const TerrainMaskSchema = z.object({
+  /** The mask picture; only its red is read, across the whole tile. */
+  map: z.string(),
+  src: z.string().optional(),
+  color: z.string().optional(),
+  /** Times the picture repeats across the tile. */
+  repeat: z.number().positive().optional(),
+});
+
 export const Terrain3DSchema = z.object({
   /** The heightmap picture; only its red is read. */
   heightmap: z.string(),
@@ -39,6 +49,8 @@ export const Terrain3DSchema = z.object({
   blend: z.number().min(0).max(0.25).optional(),
   /** Layers go by flatness (1 flat, 0 a cliff) instead of height. */
   bySlope: z.boolean().optional(),
+  /** A picture painted over the layers where its mask says. */
+  mask: TerrainMaskSchema.optional(),
   /** Its colour where no layer covers it. */
   color: z.string().optional(),
 });

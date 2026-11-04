@@ -325,8 +325,10 @@ pixels.
   drawn shape on an image tile in the 3D view (a cliff, a ledge, a pool's
   rim): `points` are its corners as fractions of the tile's width and
   height, `height` is in feet, and `elevation`, `rotation` and `color` work
-  as on a model. The Foundry importer brings 3D Canvas's drawn polygons
-  this way, and a merged box as its pieces.
+  as on a model. `texture` covers it in a picture (tinted by `color`),
+  repeated `repeat` times across it (a lake's water, a wall's stone). The
+  Foundry importer brings 3D Canvas's drawn polygons this way, with their
+  picture, and a merged box as its pieces.
 - `"only2d": true` keeps a tile on the flat map only: the 3D view leaves it
   out. The Foundry importer marks a 3D scene's top-down picture this way
   (3D Canvas raises it as a box high above the map, for the 2D view).
@@ -338,8 +340,10 @@ pixels.
   `detail` is segments a square, `elevation` and `rotation` work as on a
   model, and `layers` (up to four `{ "src", "color", "repeat", "from" }`,
   `from` a share of the height, or of flatness with `"bySlope": true`,
-  fading over `blend`) paint it. The Foundry importer brings 3D Canvas
-  terrain this way. A scene's `view3d.ground` of `"none"` leaves no ground
+  fading over `blend`) paint it. `mask` (`{ "map", "src", "color",
+"repeat" }`) paints one more picture on top wherever the `map` picture
+  is white (paths, mud). The Foundry importer brings 3D Canvas terrain this
+  way, as tall as its depth times its heightmap strength. A scene's `view3d.ground` of `"none"` leaves no ground
   beyond the map.
 - A wall is a line from `a` to `b` that stops movement, sight, light and
   sound. Add `door` to make it a door: `"closed"`, `"open"` or `"locked"`.

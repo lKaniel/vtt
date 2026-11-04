@@ -4,10 +4,12 @@ import { type Flags, flagsOf, type MediaFind, finite, text } from './foundry-3d.
 
 // 3D Canvas terrain (levels-3d-preview 9.x, tile3d.js): a box tile with a
 // `displacementMap` has every vertex above its bottom raised by the
-// picture's red, then is stretched so its highest peak stands `depth` up;
+// picture's red, then is stretched so its highest peak stands `depth` times
+// `displacementIntensity` up;
 // `displacementMatrix` "a,b,c,d" reads the picture at u' = a + u/c, v' =
 // b + v/d. Its textureGradient shader paints up to four pictures by height
-// (or by flatness with useNormals). A "mapGen" tile without map data falls
+// (or by flatness with useNormals), its mask shader one more where a mask
+// picture is white. A "mapGen" tile without map data falls
 // back to that box. It becomes our tile `terrain` (shared terrain3d.ts).
 
 interface Grid {
@@ -58,7 +60,9 @@ export function tileTerrainOf(raw: unknown, grid: Grid, find: MediaFind): Terrai
   const heightmap = f && heightmapOf(f, find);
   const depth = f && finite(f.depth);
   if (!f || !heightmap || !depth || depth <= 0) return undefined;
-  const height = (depth / grid.size) * 5;
+  const strength = finite(f.displacementIntensity);
+  const height = ((depth * (strength && strength > 0 ? strength : 1)) / grid.size) * 5;
+  const mask = maskOf(f, find);
   return {
     heightmap,
     ...readOf(f),
@@ -66,6 +70,26 @@ export function tileTerrainOf(raw: unknown, grid: Grid, find: MediaFind): Terrai
     ...placeOf(raw, f, height, grid),
     ...(!white(f.color) && { color: String(f.color) }),
     ...layersOf(f, find),
+    ...(mask && { mask }),
+  };
+}
+
+/** The picture at `path`, if it is one and came along. */
+const pictureAt = (path: string | undefined, find: MediaFind) =>
+  path && mediaKind(path) === 'image' ? find(path) : undefined;
+
+/** The mask shader's picture and where it shows, if it is on and its mask came along. */
+function maskOf(f: Flags, find: MediaFind): Terrain3D['mask'] {
+  const m = ((f.shaders as Flags | undefined)?.mask ?? {}) as Flags;
+  const map = m.enabled === true ? pictureAt(text(m.textureMask), find) : undefined;
+  if (!map) return undefined;
+  const src = pictureAt(text(m.textureDiffuse), find);
+  const repeat = finite(m.repeat) ?? 1;
+  return {
+    map,
+    ...(src && { src }),
+    ...(!white(m.color) && { color: String(m.color) }),
+    ...(repeat !== 1 && repeat > 0 && { repeat }),
   };
 }
 

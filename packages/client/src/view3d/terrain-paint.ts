@@ -6,7 +6,8 @@ import { assetUrl } from '../assets.ts';
 // to four pictures, each tinted and repeated across the tile, laid in order
 // over the ground where it stands high enough (its share of the height, or of
 // flatness when `bySlope`), fading in over `blend`. The first shows only up
-// to where the second starts.
+// to where the second starts. A `mask` paints one more picture on top
+// wherever its mask picture is white (3D Canvas's mask shader: paths, mud).
 
 const BASE = '#8a8a8a';
 const loader = new THREE.TextureLoader();
@@ -41,8 +42,14 @@ function shareOf(i: number): string {
   return `clamp((p - (uFrom[${i}] - uBlend)) / max(uBlend, 0.0001), 0.0, 1.0)`;
 }
 
-/** The fragment code laying the layers over the base colour. */
-export function paintCode(count: number): string {
+const MASK = `{
+      vec4 t = texture2D(uMaskPicture, vTerrainUv * uMaskRepeat);
+      t.rgb *= uMaskColor;
+      paint = mix(paint, t, t.a * texture2D(uMask, vTerrainUv).r);
+    }`;
+
+/** The fragment code laying the layers over the base colour, then the masked picture. */
+export function paintCode(count: number, masked = false): string {
   const layers = Array.from(
     { length: count },
     (_, i) => `{
@@ -55,24 +62,46 @@ export function paintCode(count: number): string {
     float p = vTerrainRise;
     vec4 paint = vec4(1.0);
     ${layers}
+    ${masked ? MASK : ''}
     diffuseColor.rgb *= paint.rgb;`;
 }
 
-/** Terrain's material: lit, its base colour, the layers painted over it. */
+/** The shader's inputs: the layers' pictures, where each starts, and the mask's. */
+export function paintUniforms(terrain: Terrain3D): Record<string, THREE.IUniform> {
+  const layers = terrain.layers ?? [];
+  // The first layer runs up to where the second starts (to the top when it is alone).
+  const uniforms: Record<string, THREE.IUniform> = {
+    uFrom: { value: [0, 1, 2, 3].map((i) => layers[i]?.from ?? 1) },
+    uBlend: { value: terrain.blend ?? 0.1 },
+    uRepeat: { value: [0, 1, 2, 3].map((i) => layers[i]?.repeat ?? 1) },
+    uColor: { value: [0, 1, 2, 3].map((i) => new THREE.Color(layers[i]?.color ?? '#ffffff')) },
+  };
+  layers.forEach((l, i) => (uniforms[`uLayer${i}`] = { value: pictureOf(l.src) }));
+  return terrain.mask ? { ...uniforms, ...maskUniforms(terrain.mask) } : uniforms;
+}
+
+function maskUniforms(mask: NonNullable<Terrain3D['mask']>): Record<string, THREE.IUniform> {
+  return {
+    uMask: { value: pictureOf(mask.map) },
+    uMaskPicture: { value: pictureOf(mask.src) },
+    uMaskRepeat: { value: mask.repeat ?? 1 },
+    uMaskColor: { value: new THREE.Color(mask.color ?? '#ffffff') },
+  };
+}
+
+const MASK_UNIFORMS =
+  'uniform sampler2D uMask;\nuniform sampler2D uMaskPicture;\nuniform float uMaskRepeat;\nuniform vec3 uMaskColor;';
+
+/** Terrain's material: lit, its base colour, the layers painted over it, then the masked picture. */
 export function terrainMaterial(terrain: Terrain3D): THREE.MeshStandardMaterial {
   const layers = terrain.layers ?? [];
+  const masked = !!terrain.mask;
   // Under painted layers the ground is white, so the pictures keep their own colours.
-  const color = terrain.color ?? (layers.length ? '#ffffff' : BASE);
+  const color = terrain.color ?? (layers.length || masked ? '#ffffff' : BASE);
   const material = new THREE.MeshStandardMaterial({ color, roughness: 0.95 });
-  if (!layers.length) return material;
-  // The first layer runs up to where the second starts (to the top when it is alone).
-  const from = [0, 1, 2, 3].map((i) => layers[i]?.from ?? 1);
+  if (!layers.length && !masked) return material;
   material.onBeforeCompile = (shader) => {
-    shader.uniforms.uFrom = { value: from };
-    shader.uniforms.uBlend = { value: terrain.blend ?? 0.1 };
-    shader.uniforms.uRepeat = { value: [0, 1, 2, 3].map((i) => layers[i]?.repeat ?? 1) };
-    shader.uniforms.uColor = { value: [0, 1, 2, 3].map((i) => new THREE.Color(layers[i]?.color ?? '#ffffff')) };
-    layers.forEach((l, i) => (shader.uniforms[`uLayer${i}`] = { value: pictureOf(l.src) }));
+    Object.assign(shader.uniforms, paintUniforms(terrain));
     const rise = terrain.bySlope ? 'max(0.0, normal.y)' : 'clamp(rise, 0.0, 1.0)';
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -84,10 +113,10 @@ export function terrainMaterial(terrain: Terrain3D): THREE.MeshStandardMaterial 
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
-        `#include <common>\nuniform float uFrom[4];\nuniform float uBlend;\nuniform float uRepeat[4];\nuniform vec3 uColor[4];\n${samplers}\nvarying float vTerrainRise;\nvarying vec2 vTerrainUv;`,
+        `#include <common>\nuniform float uFrom[4];\nuniform float uBlend;\nuniform float uRepeat[4];\nuniform vec3 uColor[4];\n${samplers}\n${masked ? MASK_UNIFORMS : ''}\nvarying float vTerrainRise;\nvarying vec2 vTerrainUv;`,
       )
-      .replace('#include <map_fragment>', paintCode(layers.length));
+      .replace('#include <map_fragment>', paintCode(layers.length, masked));
   };
-  material.customProgramCacheKey = () => `terrain:${layers.length}:${terrain.bySlope ? 1 : 0}`;
+  material.customProgramCacheKey = () => `terrain:${layers.length}:${terrain.bySlope ? 1 : 0}${masked ? ':mask' : ''}`;
   return material;
 }

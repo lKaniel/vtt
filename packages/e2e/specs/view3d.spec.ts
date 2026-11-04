@@ -39,6 +39,13 @@ test.describe('on a 3D scene', () => {
     const view = page.getByTestId('view3d');
     await expect(view.locator('canvas')).toBeVisible();
     await expect(page.locator('.map > canvas').first()).toBeHidden();
+    // The flat map under the 3D floor keeps its empty ground see-through, so its canvas has alpha.
+    const alpha = () =>
+      page.evaluate(() => {
+        const canvas = document.querySelector<HTMLCanvasElement>('.map > canvas')!;
+        return canvas.getContext('webgl2')?.getContextAttributes()?.alpha;
+      });
+    expect(await alpha()).toBe(true);
     // Only the GM can lay it flat.
     await expect(page.getByRole('button', { name: /flat/ })).toHaveCount(0);
 
