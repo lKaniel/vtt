@@ -8,7 +8,8 @@ import type { MediaLookup } from './foundry-scene.ts';
 // things by Tagger tag, Foundry id or "this tile"; the scene's index finds
 // ours. Monk's jumps (anchors, goto, dialogs) become the one path a click
 // most likely takes: the actions before the first anchor, else the "next"
-// branch. What has no match (macros, alter, animations) is reported.
+// branch. A change of the creature's elevation becomes a ladder between
+// floors. What has no match (macros, other alters, animations) is reported.
 
 /** Where a converted thing came from, to find it again by Foundry id or tag. */
 interface Indexed {
@@ -76,6 +77,8 @@ export interface TriggerLookups {
   scene: (foundryId: string) => string | undefined;
   /** The pictures Monk's cycles a tile through, by our tile id. */
   imagesOf: (tile: string) => string[];
+  /** The scene's floor at an elevation (feet); none on a scene without floors. */
+  floorAt?: (feet: number) => string | undefined;
 }
 
 interface MonkAction {
@@ -162,6 +165,37 @@ function teleport(a: MonkAction, c: ActionContext): TriggerAction[] {
   return [{ type: 'teleport', to: [Math.round(at.x), Math.round(at.y)], ...(scene ? { scene } : {}) }];
 }
 
+/** "={{entity.data.elevation}} == 0 ? 10 : 0" and the like: a ladder between the two elevations. */
+const TOGGLE = /\?\s*(-?\d+(?:\.\d+)?)\s*:\s*(-?\d+(?:\.\d+)?)\s*$/;
+const ABSOLUTE = /^=?\s*(-?\d+(?:\.\d+)?)$/;
+
+/** Monk's "alter" of the creature's elevation: a ladder to a floor, or both ways between two. Other changes have no match. */
+function alter(a: MonkAction, c: ActionContext): TriggerAction[] {
+  if (a.data?.attribute !== 'elevation' || !c.floorAt) return [];
+  const raw = a.data.value;
+  const value = typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim() : '';
+  const toggle = TOGGLE.exec(value);
+  if (toggle) {
+    const [one, other] = [c.floorAt(Number(toggle[1])), c.floorAt(Number(toggle[2]))];
+    return one && other && one !== other ? [{ type: 'stairs', between: [one, other] }] : [];
+  }
+  const at = ABSOLUTE.exec(value);
+  const to = at ? c.floorAt(Number(at[1])) : undefined;
+  return to ? [{ type: 'level', to }] : [];
+}
+
+const FLOOR_CHANGES = new Set<TriggerAction['type']>(['level', 'stairs']);
+
+/** Floor changes go first: a teleport ends the actions after it, and the creature changes floor where it stands. */
+const floorsFirst = (actions: TriggerAction[]) => [
+  ...actions.filter((a) => FLOOR_CHANGES.has(a.type)),
+  ...actions.filter((a) => !FLOOR_CHANGES.has(a.type)),
+];
+
+/** Monk's actions with no match here: unknown ones, and alters of anything but elevation. */
+const unmatched = (a: MonkAction) =>
+  a.action === 'alter' ? a.data?.attribute !== 'elevation' : !ACTIONS[a.action ?? ''] && !QUIET.has(a.action ?? '');
+
 const DOOR: Record<string, 'open' | 'closed' | 'locked' | 'toggle'> = {
   open: 'open',
   closed: 'closed',
@@ -191,6 +225,7 @@ const ACTIONS: Record<string, (a: MonkAction, c: ActionContext) => TriggerAction
   playsound: sound,
   teleport,
   changedoor: door,
+  alter,
   notification: message,
   chatmessage: message,
 };
@@ -258,8 +293,8 @@ export function foundryTrigger(raw: FoundryDoc, self: string, lookups: TriggerLo
   const all = flags?.actions ?? [];
   if (!flags || !all.length) return { lost: [] };
   const c: ActionContext = { ...lookups, self };
-  const actions = path(all).flatMap((a) => ACTIONS[a.action ?? '']?.(a, c) ?? []);
-  const lost = all.map((a) => a.action ?? '?').filter((name) => !ACTIONS[name] && !QUIET.has(name));
+  const actions = floorsFirst(path(all).flatMap((a) => ACTIONS[a.action ?? '']?.(a, c) ?? []));
+  const lost = all.filter(unmatched).map((a) => a.action ?? '?');
   const when = onOf(flags.trigger);
   if (!when) return { lost: [...lost, `when: ${JSON.stringify(flags.trigger)}`] };
   if (!actions.length) return { lost };

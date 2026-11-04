@@ -30,8 +30,11 @@ export interface LevelChoice {
   levels: SceneLevel[];
 }
 
+/** The GM's pick that shows every floor at once. */
+export const EVERY_LEVEL = '*';
+
 export class Levels implements SessionPart {
-  /** GM: the scene level picked to view and edit; none = every level. */
+  /** GM: the scene level picked to view and edit, or `EVERY_LEVEL`; none = the selected creature's floor (every level when none is selected). */
   view?: string;
   /** An elevator asks where your creature goes. */
   choice?: LevelChoice;
@@ -42,16 +45,23 @@ export class Levels implements SessionPart {
   ) {}
 
   /**
-   * The level the map shows: the GM's pick, or for a player the level of the
-   * token they act with (else their first). None on a scene without levels.
+   * The level the map shows: the GM's pick, else the floor of the creature
+   * they selected; for a player the level of the token they act with (else
+   * their first). None on a scene without levels, or when the GM shows every level.
    */
   get current(): string | undefined {
     const levels = this.s.world?.levels;
     if (!levels?.length) return undefined;
-    if (this.s.isGm()) return this.view;
     const acting = this.s.selected ? this.s.tokens.get(this.s.selected) : undefined;
+    if (this.s.isGm()) return this.gmView(acting);
     const eye = acting ?? [...this.s.tokens.values()].find((t) => this.s.canControl(t));
     return eye ? tokenLevel(levels, eye) : undefined;
+  }
+
+  private gmView(acting: TokenView | undefined): string | undefined {
+    if (this.view === EVERY_LEVEL) return undefined;
+    if (this.view) return this.view;
+    return acting ? tokenLevel(this.s.world?.levels, acting) : undefined;
   }
 
   /** The levels drawn: the one shown and those it looks down on, bottom first; undefined = every level. */

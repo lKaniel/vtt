@@ -11,7 +11,7 @@ import {
 } from '@vtt/shared';
 import { Circle, Container, Graphics } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
-import { drawDoor, drawWalls, drawWallShadows } from './art/walls.ts';
+import { drawDoor, drawWalls, drawWallShadows, wallsDrawn } from './art/walls.ts';
 import type { Session } from '../session/session.ts';
 import { clickTile, openDoor } from '../play/interact.ts';
 import { imageTile, type TileView } from './tile-draw.ts';
@@ -109,10 +109,11 @@ export class ChunkLayer {
     const tiles = drawTiles(chunk, ctx, (root, tile) => this.dress(root, tile));
     const view: ChunkView = { ...tiles, walls: new Container(), doors: [] };
     view.walls.cullable = true;
-    const shadows = shadowsOf(chunk.walls);
+    const drawn = wallsDrawn(chunk.walls, world ?? {});
+    const shadows = shadowsOf(drawn);
     shadows.zIndex = SHADOW_Z;
     view.ground.push(shadows);
-    view.walls.addChild(wallsOf(chunk.walls));
+    view.walls.addChild(wallsOf(drawn));
     for (const wall of chunk.walls) {
       if (!wall.door) continue;
       const door = this.door(key, wall);

@@ -68,7 +68,10 @@ What comes along:
   below with Levels. v14's change-level regions become stairs (two floors)
   or an elevator (more); so do Levels' stair (both ways, up only, down
   only) and elevator drawings, and its stair and elevator region scripts.
-  Levels' hole drawings become holes (`fall` regions) on the floor at the
+  Tiles above every floor (Levels roofs) become roofs that fade over
+  whoever is under them. Monk's Active Tiles that change a creature's
+  elevation (ladders, trapdoors) take it to that floor, or both ways
+  between two. Levels' hole drawings become holes (`fall` regions) on the floor at the
   top of their range, unless that is the lowest floor. Upper floors with their own picture get
   it as a tile on that floor. Tokens keep their elevation, raised onto the
   floor v14 says they are on.
@@ -83,7 +86,7 @@ What comes along:
   switching lights and other tiles' triggers on and off, teleports, doors
   and chat notes come along; things are found by Tagger tag or Foundry id.
   A trigger with Monk's jumps (a dialog, anchors) keeps the path a click
-  most likely takes. Macros, "alter" and the rest are reported.
+  most likely takes. Macros, "alter" (except of elevation) and the rest are reported.
 - **Lights** put out in Foundry stay out until a trigger or the GM lights them.
 - **Tokens** on their actors: a linked token stays linked; an unlinked one
   becomes a copy whose own name, picture, size and hit points go in its

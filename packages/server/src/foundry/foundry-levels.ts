@@ -33,6 +33,8 @@ export interface Floors {
   behaviors(region: unknown): RegionBehavior[];
   /** A Levels stair or elevator drawing as a region; undefined for any other drawing. */
   drawingRegion(drawing: unknown): Omit<Region, 'id'> | undefined;
+  /** Whether a tile stands above every floor (a roof, with Levels): it hangs over all of them. */
+  above(item: unknown): boolean;
   /** A token's elevation in feet, raised onto the floor v14 says it is on. */
   elevationOf(token: unknown): number;
 }
@@ -259,7 +261,26 @@ class FloorPlan implements Floors {
         (p.levels ?? []).flatMap((id) => this.byId.get(id) ?? []),
       );
     const band = bandOf(p, this.feet);
-    return band ? placement(this.levels, within(this.levels, band[0], band[1])) : {};
+    return band ? placement(this.levels, this.floorsIn(band)) : {};
+  }
+
+  /** The floors that start inside a band; a band inside one floor (a trapdoor a foot up) is on that floor. */
+  private floorsIn([bottom, top]: [number, number]): string[] {
+    const starting = within(this.levels, bottom, top);
+    if (starting.length || !Number.isFinite(bottom) || this.aboveAll(bottom)) return starting;
+    return [this.floorAt(bottom) ?? ''];
+  }
+
+  private aboveAll(feet: number): boolean {
+    return feet > Math.max(...this.levels.map((l) => l.bottom));
+  }
+
+  above(item: unknown): boolean {
+    if (this.v14) return false;
+    const band = bandOf(Placed.safeParse(item).data ?? {}, this.feet);
+    return (
+      !!band && Number.isFinite(band[0]) && this.aboveAll(band[0]) && !within(this.levels, band[0], band[1]).length
+    );
   }
 
   /** Stairs between two floors, an elevator among more. */

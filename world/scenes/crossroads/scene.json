@@ -3,5 +3,6 @@
   "gridSize": 100,
   "chunkSize": 2000,
   "start": [1000, 900],
-  "darkness": 0.85
+  "darkness": 0.85,
+  "wallArt": true
 }

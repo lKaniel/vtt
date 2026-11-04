@@ -8,12 +8,16 @@ describe('trigger steps', () => {
       'visibility',
       'sound',
       'teleport',
+      'level',
+      'stairs',
       'door',
       'message',
       'activate',
       'journal',
     ]);
-    expect(stepTypes('region')).toEqual(expect.arrayContaining(['difficult', 'trap', 'level', 'reveal', 'door']));
+    expect(stepTypes('region')).toEqual(
+      expect.arrayContaining(['difficult', 'trap', 'level', 'stairs', 'elevator', 'fall', 'reveal', 'door']),
+    );
   });
 
   it('reads and writes nested fields: a target, a point, a list of pictures', () => {

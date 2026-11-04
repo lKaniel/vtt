@@ -14,4 +14,8 @@ export const EN_MAP = {
   'view3d.flat': 'Lay the 3D scene flat to edit it',
   'view3d.stand': 'Back to the 3D view',
   'levels.stay': 'Stay here',
+  'levels.picker': 'Level',
+  'levels.pickerHint': 'The floor shown: walls, lights, tiles and drawings on others are left out',
+  'levels.follow': "Selected creature's floor",
+  'levels.every': 'Every level',
 } as const;

@@ -14,11 +14,19 @@ const index = new SceneIndex()
   .add('lights', [madeFrom({ id: 'light-1' }, tagged(['torch-1'])), madeFrom({ id: 'light-2' }, tagged(['torch-2']))])
   .add('walls', [madeFrom({ id: 'wall-3' }, tagged(['villa-gate-1']))]);
 
+/** The scene's floors by the elevation each starts at. */
+const FLOORS = [
+  [-10, 'cellar'],
+  [0, 'ground'],
+  [10, 'loft'],
+] as const;
+
 const lookups: TriggerLookups = {
   index,
   media: (p) => `/assets/foundry/${p}`,
   glob: (p) => (p === 'lever-*.webp' ? ['/assets/foundry/lever-up.webp', '/assets/foundry/lever-down.webp'] : []),
   scene: (id) => (id === 'S2' ? 'cellar' : undefined),
+  floorAt: (feet) => [...FLOORS].reverse().find(([bottom]) => feet >= bottom)?.[1] ?? 'cellar',
   imagesOf: (tile) => {
     const flags = index.rawOf({ coll: 'tiles', id: tile })?.flags as Record<string, { files: { name: string }[] }>;
     const files = flags['monks-active-tiles']!.files;
@@ -55,6 +63,35 @@ describe("Monk's Active Tiles as tile triggers", () => {
       },
       lost: ['runmacro'],
     });
+  });
+
+  it('takes whoever uses a ladder to the floor its elevation change names, before the teleport beside it', () => {
+    const ladder = (value: string) =>
+      foundryTrigger(
+        monk({
+          trigger: ['click'],
+          actions: [
+            { action: 'teleport', data: { location: { x: 2742, y: 2150, sceneId: null } } },
+            { action: 'alter', data: { entity: { id: 'token' }, attribute: 'elevation', value } },
+          ],
+        }),
+        'tile-1',
+        lookups,
+      ).trigger?.actions;
+    expect(ladder('-10')).toEqual([
+      { type: 'level', to: 'cellar' },
+      { type: 'teleport', to: [2742, 2150] },
+    ]);
+    expect(ladder('= ({{entity.data.elevation}} || 0) == 0 ? 10 : 0')?.[0]).toEqual({
+      type: 'stairs',
+      between: ['loft', 'ground'],
+    });
+    expect(ladder('={{entity.data.elevation}} == 0 ? -10 : 0')?.[0]).toEqual({
+      type: 'stairs',
+      between: ['cellar', 'ground'],
+    });
+    // A step relative to where the creature is can't be told apart from here.
+    expect(ladder('+ 22.5')).toEqual([{ type: 'teleport', to: [2742, 2150] }]);
   });
 
   it('teleports whoever walks on, to another scene, and says so to the GM', () => {

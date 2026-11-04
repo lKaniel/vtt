@@ -3,6 +3,7 @@ import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Session } from './session.ts';
 import { closeSession, openSession, token, welcome, type FakeWebSocket } from './session.fixtures.ts';
+import { EVERY_LEVEL } from './session-levels.ts';
 
 // Drawings, notes, templates, regions and sounds made with the shape tools,
 // and what players may do with the drawings and templates they make.
@@ -117,6 +118,21 @@ describe('shape tools in the session', () => {
     expect(session.levels.current).toBe('ground');
     ws.receive({ ...base });
     expect(session.levels.current).toBeUndefined();
+  });
+
+  it('follow the floor of the creature the GM selects, unless they pick one or every level', () => {
+    const levels = [
+      { id: 'ground', name: 'Ground', bottom: 0 },
+      { id: 'loft', name: 'Loft', bottom: 10 },
+    ];
+    const base = welcome([{ ...token('hero'), elevation: 12 }]) as Extract<ServerMessage, { t: 'welcome' }>;
+    ws.receive({ ...base, world: { ...base.world, levels }, you: { id: 'gm', name: 'GM', role: 'gm', color: '#fc0' } });
+    session.select('hero');
+    expect(session.levels.current).toBe('loft');
+    session.levels.setView(EVERY_LEVEL);
+    expect(session.levels.current).toBeUndefined();
+    session.levels.setView('ground');
+    expect(session.levels.current).toBe('ground');
   });
 
   it('show the levels seen from the one shown, bottom first', () => {

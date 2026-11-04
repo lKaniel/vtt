@@ -104,7 +104,7 @@ export class RegionActions {
       (r) => this.onTokenLevel(r, token) && inRegion(r, [token.x, token.y]) && r.behaviors.some(offered),
     );
     if (!isGm(player) && !inLift) throw new Refusal('There is no way to that level here');
-    if (!this.level(token, to)) throw new Refusal('No such level');
+    if (!this.triggers.toLevel(token, to)) throw new Refusal('No such level');
   }
 
   /** Runs one behaviour (`at`: where the token stepped in); true when the token was taken away (a teleport, a fall). */
@@ -114,12 +114,6 @@ export class RegionActions {
         return false;
       case 'trap':
         this.trap(token, region, b);
-        return false;
-      case 'level':
-        this.level(token, b.to);
-        return false;
-      case 'stairs':
-        this.stairs(token, b.between);
         return false;
       case 'elevator':
         this.elevator(token, b.floors);
@@ -149,20 +143,6 @@ export class RegionActions {
     const sprung = springTrap(sheet, rules.data, this.table.rng, this.table.rng);
     if (sprung.damage > 0) this.table.hurt(token, { hp: sprung.hp, tempHp: sprung.tempHp }, sprung.damage);
     this.say(`${lead}${token.name}: ${sprung.text}`.trim());
-  }
-
-  /** Puts the token on level `to`, at its bottom; false when the scene has no such level. */
-  private level(token: Token, to: string): boolean {
-    const level = this.store.world.levels?.find((l) => l.id === to);
-    if (level) this.store.setToken({ ...token, elevation: level.bottom });
-    return !!level;
-  }
-
-  /** Up the stairs from the lower of the two levels, down from the other. */
-  private stairs(token: Token, [a, b]: readonly [string, string]): void {
-    const here = this.levelOf(token);
-    if (here === a) this.level(token, b);
-    else if (here === b) this.level(token, a);
   }
 
   /** Through a hole: down to `to` (or the floor below), where the token stepped in, hurt by the drop when the hole says so. */

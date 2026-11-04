@@ -205,12 +205,7 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
       </label>
       <WeatherFields value={doc.weather} cycle={doc.weatherCycle} edit={edit} />
       <NavFields doc={doc} edit={edit} />
-      <Check label="Fog of war" value={flag(doc, 'vision', true)} onChange={(v) => edit({ vision: v })} />
-      <Check
-        label="Remember explored ground"
-        value={flag(doc, 'exploration', true)}
-        onChange={(v) => edit({ exploration: v })}
-      />
+      <SightFields doc={doc} edit={edit} />
       <Check
         label="Darkness follows the clock"
         value={flag(doc, 'darknessFollowsClock', false)}
@@ -218,6 +213,26 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
         title="The darkness is the time of day on the game clock"
       />
     </div>
+  );
+}
+
+/** Fog of war, remembered ground, and whether walls are drawn. */
+function SightFields({ doc, edit }: Readonly<{ doc: Doc; edit: (patch: Patch) => void }>) {
+  return (
+    <>
+      <Check label="Fog of war" value={flag(doc, 'vision', true)} onChange={(v) => edit({ vision: v })} />
+      <Check
+        label="Draw walls"
+        value={flag(doc, 'wallArt', false)}
+        onChange={(v) => edit({ wallArt: v })}
+        title="Walls as stone and doors that swing, for a map made of plain tiles; off, walls only block"
+      />
+      <Check
+        label="Remember explored ground"
+        value={flag(doc, 'exploration', true)}
+        onChange={(v) => edit({ exploration: v })}
+      />
+    </>
   );
 }
 
