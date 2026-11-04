@@ -1,6 +1,7 @@
 // The adventure book's English words (ui/book/, J).
 
 export const EN_BOOK = {
+  'keys.journal': 'Open or close the adventure book: quests, maps, lore and the party log',
   'book.title': 'Adventure book',
   'book.open': 'Adventure book (J)',
   'book.tab.quests': 'Quests',

@@ -58,7 +58,6 @@ export const EN = {
   'keys.group.Walking': 'Walking',
   'keys.group.Camera': 'Camera',
   'keys.sheet': 'Open or close the sheet',
-  'keys.journal': 'Open or close the adventure book: quests, maps, lore and the party log',
   'keys.editSheet': 'Edit the sheet',
   'keys.endTurn': 'End your turn',
   'keys.target': 'Target the token under the pointer',
