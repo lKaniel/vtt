@@ -6,7 +6,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { clampPlace, type Place, readPlace, resized, type Size, windows, writePlace } from './window-stack.ts';
+import { cascade, clampPlace, type Place, readPlace, resized, type Size, windows, writePlace } from './window-stack.ts';
 
 // What makes a panel a window (window.tsx, and the kit's dialogs): dragged
 // by its title bar, rolled up to it, resized from its corner, raised when
@@ -19,6 +19,12 @@ export interface FrameOptions {
   kind?: string;
   /** Where it opens when nothing is remembered; undefined leaves it where its own CSS puts it (centred). */
   initial?: (view: Size) => Place | undefined;
+  /** Opens this many steps down and right of where it would (the second sheet open at once, …). */
+  offset?: number;
+  /** Puts it on top whenever this turns true (a sheet opened again comes to the front). */
+  front?: boolean;
+  /** How it closes: Esc on the table closes the top window that has one. */
+  onClose?: () => void;
 }
 
 /** What a press on these starts: their own thing, never a drag of the window. */
@@ -57,8 +63,9 @@ function dragged(start: Place, box: Box, by: { dx: number; dy: number; view: Siz
   return { ...start, x: start.x + to.x - box.left, y: start.y + to.y - box.top };
 }
 
-function firstPlace({ kind, initial }: FrameOptions): Place | undefined {
-  return (kind ? readPlace(kind) : undefined) ?? initial?.(viewOf(null));
+function firstPlace({ kind, initial, offset }: FrameOptions): Place | undefined {
+  const place = (kind ? readPlace(kind) : undefined) ?? initial?.(viewOf(null));
+  return place && offset ? cascade(place, offset) : place;
 }
 
 /** Where the window `el` is now: its place, or (never moved) where its CSS put it. */
@@ -68,7 +75,7 @@ function hereOf(el: HTMLElement | null, place: Place | undefined): { place: Plac
 }
 
 export function useWindowFrame(options: FrameOptions) {
-  const { id, kind } = options;
+  const { id, kind, onClose, front } = options;
   const [el, setEl] = useState<HTMLElement | null>(null);
   const [place, setPlace] = useState<Place | undefined>(() => firstPlace(options));
   const [collapsed, setCollapsed] = useState(false);
@@ -77,6 +84,13 @@ export function useWindowFrame(options: FrameOptions) {
     windows.raise(id);
     return () => windows.remove(id);
   }, [id]);
+  useEffect(() => {
+    if (front) windows.raise(id);
+  }, [id, front]);
+  useEffect(() => {
+    windows.setCloser(id, onClose);
+    return () => windows.setCloser(id, undefined);
+  }, [id, onClose]);
 
   /** Follows a drag from `e`, placing the window where `to` says; remembers where it ends. */
   const track = (e: ReactPointerEvent<HTMLElement>, to: (dx: number, dy: number) => Place) => {

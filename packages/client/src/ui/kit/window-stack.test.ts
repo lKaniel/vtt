@@ -42,6 +42,24 @@ describe('the window stack', () => {
     expect(stack.zOf('w49')).toBeLessThan(1000);
   });
 
+  it('closes the top window that can be closed (Esc)', () => {
+    const stack = new WindowStack();
+    const closed: string[] = [];
+    stack.raise('sheet');
+    stack.setCloser('sheet', () => closed.push('sheet'));
+    stack.raise('journal');
+    stack.setCloser('journal', () => closed.push('journal'));
+    stack.raise('dialog');
+    expect(stack.closeTop()).toBe(true);
+    expect(closed).toEqual(['journal']);
+    stack.remove('journal');
+    stack.setCloser('journal', undefined);
+    expect(stack.closeTop()).toBe(true);
+    expect(closed).toEqual(['journal', 'sheet']);
+    stack.remove('sheet');
+    expect(stack.closeTop()).toBe(false);
+  });
+
   it('does not tell anyone when the top window is raised again', () => {
     const stack = new WindowStack();
     stack.raise('a');

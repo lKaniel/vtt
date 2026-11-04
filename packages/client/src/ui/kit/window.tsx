@@ -15,6 +15,8 @@ function Window({
   id,
   kind,
   initial,
+  offset,
+  front,
   title,
   label,
   actions,
@@ -41,7 +43,7 @@ function Window({
       bodyClassName?: string;
     }
 >) {
-  const { ref, ...frame } = useWindowFrame({ id, kind, initial });
+  const { ref, ...frame } = useWindowFrame({ id, kind, initial, offset, front, onClose });
   return (
     <section
       ref={ref}

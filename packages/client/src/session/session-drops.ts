@@ -59,9 +59,8 @@ export class Drops {
     this.send(dropMessage(payload, p, ctx));
   }
 
-  /** Something let go on the open character sheet, on its `area` when it landed on one. */
-  onSheet(payload: DragPayload, area?: SheetArea): void {
-    const target = this.s.sheets.current;
+  /** Something let go on `target`'s sheet (else the front one), on its `area` when it landed on one. */
+  onSheet(payload: DragPayload, area?: SheetArea, target: SheetTarget | undefined = this.s.sheets.current): void {
     if (!target) return;
     const actor = target.kind === 'actor' ? this.s.actors.get(target.id) : undefined;
     if (actor && payload.kind === 'media') return this.s.requests.saveActor({ ...actor, img: payload.src });
