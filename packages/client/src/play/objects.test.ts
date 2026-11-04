@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Chunk, Wall } from '@vtt/shared';
-import { nameFromFile, objectAt, objectOf } from './objects.ts';
+import { nameFromFile, objectAt, objectOf, refKey } from './objects.ts';
 import { objectMenu } from './object-uses.ts';
 import { closeSession, openSession, token, welcome, type FakeWebSocket } from '../session/session.fixtures.ts';
 import type { Session } from '../session/session.ts';
@@ -80,6 +80,14 @@ describe('objects on the map', () => {
     expect(session.inspect.current).toEqual({ kind: 'door', chunk: '0_0', id: 'plain' });
     open!.run();
     expect(ws.sent.at(-1)).toEqual({ t: 'door', chunk: '0_0', wall: 'plain', state: 'open' });
+  });
+});
+
+describe('refKey', () => {
+  it('names an object the same way each time, apart from any other', () => {
+    expect(refKey({ kind: 'door', chunk: '0_0', id: 'cell' })).toBe('door:0_0:cell');
+    expect(refKey({ kind: 'tile', id: 'lever' })).not.toBe(refKey({ kind: 'pile', id: 'lever' }));
+    expect(refKey(undefined)).toBe('');
   });
 });
 

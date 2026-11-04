@@ -15,6 +15,7 @@ import { drawDoor, drawWalls, drawWallShadows, wallsDrawn } from './art/walls.ts
 import type { Session } from '../session/session.ts';
 import { clickTile, openDoor } from '../play/interact.ts';
 import { imageTile, type TileView } from './tile-draw.ts';
+import { ObjectGlow } from './object-glow.ts';
 import { type RoofEyes, roofWatchers } from './tile-motion.ts';
 import { paintedUnder3d } from '../view3d/content3d.ts';
 
@@ -30,6 +31,8 @@ interface ChunkView {
   roofs: Container[];
   /** Tiles that move: scrolling pictures and fading roofs. */
   moving: TileView[];
+  /** Every tile as drawn, by id (to light the one under the pointer). */
+  byId: Map<string, TileView>;
   walls: Container;
   doors: Graphics[];
 }
@@ -43,8 +46,9 @@ const LEVEL_Z = 1e7;
 export class ChunkLayer {
   /** Floor tiles, under everything else, in the scene's draw order. */
   readonly ground = new Container({ sortableChildren: true });
-  /** Walls and doors, above the grid. */
-  readonly walls = new Container();
+  /** Walls and doors, above the grid; the object under the pointer's outline on top. */
+  readonly walls = new Container({ sortableChildren: true });
+  private readonly glow = new ObjectGlow();
   /** Roofs and canopies, over the creatures. */
   readonly roofs = new Container({ sortableChildren: true, eventMode: 'none' });
   private views = new Map<string, ChunkView>();
@@ -53,7 +57,9 @@ export class ChunkLayer {
   constructor(
     private session: Session,
     private placeOf: (id: string) => { at: Point } | undefined,
-  ) {}
+  ) {
+    this.walls.addChild(this.glow.outline);
+  }
 
   /** The floors last drawn, to draw again when another is shown. */
   private floor = '';
@@ -62,6 +68,11 @@ export class ChunkLayer {
   tick(dt: number, floorShown: () => void): void {
     const watchers = roofWatchers(this.eyes(), this.placeOf);
     for (const v of this.views.values()) for (const t of v.moving) t.tick?.(dt, watchers);
+    this.glow.update({
+      chunks: this.session.chunks,
+      hover: this.session.inspect.hover,
+      tileView: (id) => this.tileView(id),
+    });
     const { shown, current } = this.session.levels;
     const floor = `${current ?? ''}|${shown?.join(' ') ?? ''}|${this.session.view3d.on}`;
     if (floor === this.floor) return;
@@ -75,6 +86,15 @@ export class ChunkLayer {
     const gm = !you || isGm(you);
     const yours = gm ? [] : [...this.session.tokens.values()].filter((t) => canObserve(t, you)).map((t) => t.id);
     return { gm, yours, selected: selected ? [selected] : [] };
+  }
+
+  /** A tile as drawn now, if it is. */
+  private tileView(id: string): TileView | undefined {
+    for (const v of this.views.values()) {
+      const view = v.byId.get(id);
+      if (view) return view;
+    }
+    return undefined;
   }
 
   get keys(): string[] {
@@ -184,10 +204,16 @@ function drawTiles(
   chunk: Chunk,
   ctx: GroundContext,
   dress: (root: Container, tile: Chunk['tiles'][number]) => void,
-): Pick<ChunkView, 'ground' | 'roofs' | 'moving'> {
-  const out: Pick<ChunkView, 'ground' | 'roofs' | 'moving'> = { ground: [], roofs: [], moving: [] };
+): Pick<ChunkView, 'ground' | 'roofs' | 'moving' | 'byId'> {
+  const out: Pick<ChunkView, 'ground' | 'roofs' | 'moving' | 'byId'> = {
+    ground: [],
+    roofs: [],
+    moving: [],
+    byId: new Map(),
+  };
   chunk.tiles.forEach((tile, i) => {
-    const drawn = tile.kind === 'rect' ? { root: rectTile(tile, ctx) } : imageTile(tile);
+    const drawn: TileView = tile.kind === 'rect' ? { root: rectTile(tile, ctx) } : imageTile(tile);
+    out.byId.set(tile.id, drawn);
     drawn.root.zIndex = tile.z ?? i;
     dress(drawn.root, tile);
     (tile.kind === 'image' && tile.overhead ? out.roofs : out.ground).push(drawn.root);

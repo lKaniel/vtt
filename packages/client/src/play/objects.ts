@@ -14,6 +14,12 @@ import { type Snap, snapAt } from './snapping.ts';
 export type ObjectRef =
   { kind: 'door'; chunk: string; id: string } | { kind: 'tile'; id: string } | { kind: 'pile'; id: string };
 
+/** One string per object, to tell whether the one under the pointer changed; '' for none. */
+export function refKey(ref: ObjectRef | undefined): string {
+  if (!ref) return '';
+  return ref.kind === 'door' ? `door:${ref.chunk}:${ref.id}` : `${ref.kind}:${ref.id}`;
+}
+
 export interface MapObject {
   ref: ObjectRef;
   name: string;

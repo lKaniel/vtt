@@ -399,7 +399,9 @@ pixels.
 
 ### Objects
 
-Doors, chests, levers and the like are objects, as in BG3: a player
+Doors, chests, levers and the like are objects, as in BG3: in the tokens
+mode the one under the pointer glows gold (a picture tile around its
+outline, a door along its leaf, a 3D model lit, a pile's ring), and a player
 right-clicks one to **Inspect** it (a card with its name, picture, state
 and description) or to use it, and the creature they act with walks up to
 it first. Objects are not a list of their own; they are what is already on
