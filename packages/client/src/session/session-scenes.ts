@@ -1,5 +1,15 @@
 import type { Doc, DocRef, DocStore, Op, Patch } from '@vtt/core';
-import { duplicateSceneOps, newSceneOps, type Player, sceneList } from '@vtt/shared';
+import {
+  addLevel,
+  duplicateSceneOps,
+  editLevel,
+  newSceneOps,
+  offLevelUpdates,
+  type Player,
+  removeLevel,
+  type SceneLevel,
+  sceneList,
+} from '@vtt/shared';
 import type { ClientMessage, ServerMessage } from '@vtt/system-dnd5e';
 import type { SessionPart, Welcome } from './session-part.ts';
 
@@ -74,6 +84,30 @@ export class Scenes implements SessionPart {
 
   duplicate(scene: string): void {
     this.s.edits.sendChanges('scene copy', duplicateSceneOps(this.s.docs, scene).ops);
+  }
+
+  private levelsOf(scene: string): SceneLevel[] {
+    const levels = this.s.docs.get('scenes', scene)?.levels;
+    return Array.isArray(levels) ? (levels as SceneLevel[]) : [];
+  }
+
+  /** A new floor on top of the scene's others (the first is the ground floor). */
+  addLevel(scene: string): void {
+    this.edit(scene, { levels: addLevel(this.levelsOf(scene)) });
+  }
+
+  /** Renames a floor, moves its heights or what it looks down on. */
+  editLevel(scene: string, id: string, patch: Partial<Omit<SceneLevel, 'id'>>): void {
+    this.edit(scene, { levels: editLevel(this.levelsOf(scene), id, patch) });
+  }
+
+  /** Takes a floor away; what stood on it is then on every floor (one undo step). */
+  removeLevel(scene: string, id: string): void {
+    const levels = removeLevel(this.levelsOf(scene), id);
+    this.on.updates('scene settings', [
+      { ref: { coll: 'scenes', id: scene }, patch: { levels: levels.length ? levels : null } },
+      ...offLevelUpdates(this.s.docs, scene, id),
+    ]);
   }
 
   /** Changes a scene's settings (name, grid, lighting, fog). */

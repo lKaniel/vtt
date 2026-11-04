@@ -1,5 +1,5 @@
 import type { Doc, Patch } from '@vtt/core';
-import { type Field, type FieldValue, flag, options, plain } from './field-kit.ts';
+import { type Field, type FieldValue, flag, LEVEL, media, options, plain } from './field-kit.ts';
 
 // Inspector fields of drawings, notes, templates, regions and sounds. A
 // region shows its first behaviour (more can be written in its file).
@@ -12,11 +12,7 @@ const shapeIs =
     shapes.includes(d.shape as string);
 
 /** Every placed thing: its level, whether players see it, whether it is locked. */
-const PLACED: Field[] = [
-  plain('level', 'Level', 'select', { choices: 'levels' }),
-  flag('hidden', 'Hidden from players'),
-  flag('locked', 'Locked'),
-];
+const PLACED: Field[] = [LEVEL, flag('hidden', 'Hidden from players'), flag('locked', 'Locked')];
 
 const DRAWING_FIELDS: Field[] = [
   plain('stroke', 'Line colour', 'color', { when: notText }),
@@ -60,7 +56,7 @@ const band: Field = {
 
 const SOUND_FIELDS: Field[] = [
   plain('name', 'Name', 'text'),
-  plain('src', 'File', 'text'),
+  media('src', 'File', 'audio'),
   plain('radius', 'Reach (ft)', 'number'),
   plain('volume', 'Volume (0-1)', 'number'),
   flag('walls', 'Muffled by walls'),
@@ -115,7 +111,7 @@ const REGION_FIELDS: Field[] = [
     get: (d) => first(d)?.once === true,
   }),
   behaviorField('difficult', 'multiplier', 'Cost ×', 'number'),
-  behaviorField('level', 'to', 'To level', 'text'),
+  { ...behaviorField('level', 'to', 'To level', 'select'), choices: 'levels' },
   band,
   ...PLACED,
 ];

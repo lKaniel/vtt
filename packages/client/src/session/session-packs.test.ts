@@ -172,6 +172,26 @@ describe('the GM’s asset browser', () => {
     });
   });
 
+  it('places a 3D model as a model tile two squares across', () => {
+    ws.receive(gmWelcome());
+    session.drops.onMap({ kind: 'media', src: 'pack://forest/models/oak tree.glb' }, [500, 500]);
+    expect(sent()).toMatchObject({
+      ops: [
+        {
+          op: 'create',
+          doc: {
+            id: 'oak-tree',
+            kind: 'image',
+            src: '/art/ui/blank.svg',
+            model: { src: 'pack://forest/models/oak tree.glb' },
+            x: 400,
+            y: 400,
+          },
+        },
+      ],
+    });
+  });
+
   it('imports a scene from a compendium as a new scene', () => {
     ws.receive(gmWelcome());
     session.packs.importScene({ id: 'cave', name: 'Goblin Cave', walls: [{ id: 'w', a: [0, 0], b: [100, 0] }] });

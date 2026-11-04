@@ -63,7 +63,7 @@ export type SceneLevel = z.infer<typeof SceneLevelSchema>;
 export const DarknessBandSchema = z.tuple([z.number().min(0).max(1), z.number().min(0).max(1)]);
 
 /** The scene level a map item is on (scene.json `levels`), or the several it is on; neither = on every level. */
-const onLevel = { level: id.optional(), levels: z.array(id).optional() };
+export const OnLevelShape = { level: id.optional(), levels: z.array(id).optional() };
 
 /** How the 3D view shows a scene. */
 export const View3DSettingsSchema = z.object({
@@ -146,7 +146,7 @@ const tileTree = {
   sort: z.string().optional(),
   /** Clicks and marquees pass through it; select it in the layers panel. */
   locked: z.boolean().optional(),
-  ...onLevel,
+  ...OnLevelShape,
 };
 
 const tileBase = {
@@ -284,7 +284,7 @@ export const WallSchema = z.preprocess(
     /** Feet above the ground the wall stands between (Wall Height): a creature above `top` passes over. */
     height: z.object({ bottom: z.number().optional(), top: z.number().optional() }).optional(),
     ...onTile,
-    ...onLevel,
+    ...OnLevelShape,
   }),
 );
 export type Wall = z.infer<typeof WallSchema>;
@@ -325,7 +325,7 @@ export const PlacedLightSchema = LightSchema.extend({
   x: z.number(),
   y: z.number(),
   ...onTile,
-  ...onLevel,
+  ...OnLevelShape,
   /** Shines only while the scene's darkness is in this band ("only at night"). */
   activeAt: DarknessBandSchema.optional(),
   /** Put out: it doesn't shine until a trigger (or the GM) lights it again. */

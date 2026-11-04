@@ -59,14 +59,21 @@ export class Levels implements SessionPart {
   }
 
   private gmView(acting: TokenView | undefined): string | undefined {
+    const levels = this.s.world?.levels ?? [];
     if (this.view === EVERY_LEVEL) return undefined;
-    if (this.view) return this.view;
-    return acting ? tokenLevel(this.s.world?.levels, acting) : undefined;
+    if (levels.some((l) => l.id === this.view)) return this.view;
+    return acting ? tokenLevel(levels, acting) : undefined;
   }
 
   /** The levels drawn: the one shown and those it looks down on, bottom first; undefined = every level. */
   get shown(): string[] | undefined {
     return levelsSeen(this.s.world?.levels, this.current);
+  }
+
+  /** What a new thing on the map takes so it lands on the floor shown: none when every floor shows. */
+  get placing(): { level?: string } {
+    const level = this.current;
+    return level ? { level } : {};
   }
 
   setView(level: string | undefined): void {
