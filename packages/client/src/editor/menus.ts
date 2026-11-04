@@ -75,6 +75,8 @@ export interface MenuTarget {
   under?: TokenView;
   /** Where the menu opens, in screen pixels (the token HUD opens there too). */
   screen?: Point;
+  /** The object under the pointer's entries (inspect, open, use: play/object-uses.ts), listed first. */
+  uses?: MenuItem[];
 }
 
 type Entry = MenuItem | false | undefined;
@@ -99,8 +101,9 @@ const run = (on: string, target: MenuTarget, api: MenuApi): MenuItem[] =>
 /** The menu for a target: its type's entries then the shared ones, or the ground's. */
 export function menuFor(target: MenuTarget, api: MenuApi): MenuItem[] {
   const type = target.docs[0]?.doc.type;
-  if (!type) return run('ground', target, api);
-  return [...run(type, target, api), ...run('selection', target, api)];
+  const uses = target.uses ?? [];
+  if (!type) return [...uses, ...run('ground', target, api)];
+  return [...uses, ...run(type, target, api), ...run('selection', target, api)];
 }
 
 // Built-in entries ---------------------------------------------------------------
@@ -128,7 +131,7 @@ registerMenu('token', (t, api) => {
   if (!id) return [];
   const hidden = allDocs(t, (d) => d.hidden === true);
   return [
-    openEntry(t.token, id, api),
+    !t.uses?.length && openEntry(t.token, id, api),
     hudEntry(id, t.screen, api),
     api.canEdit(id) && { label: 'Edit sheet', run: () => api.sheets.open({ kind: 'token', id }, true) },
     api.isGm() && {

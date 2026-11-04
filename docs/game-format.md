@@ -397,6 +397,36 @@ pixels.
 
 - Ids must be unique within the list.
 
+### Objects
+
+Doors, chests, levers and the like are objects, as in BG3: a player
+right-clicks one to **Inspect** it (a card with its name, picture, state
+and description) or to use it, and the creature they act with walks up to
+it first. Objects are not a list of their own; they are what is already on
+the map:
+
+- a door (a wall with `door`),
+- a pile of loot or a merchant (a token with `pile`, see "Actors and tokens"),
+- a tile with a click `trigger` (a lever, a lift button), or any tile with a
+  `description` (a statue, a mural: inspect only).
+
+A door takes `name` (else "Door") and `description`; a tile takes
+`description` beside its `name` (else a name read off its picture's file,
+`Lever_Wood-02.webp` is "Lever wood"); a pile shows its token's name and
+biography. A closed secret door's name and description are kept from
+players with the rest of it.
+
+```json
+{
+  "id": "cell",
+  "a": [700, 800],
+  "b": [800, 800],
+  "door": "locked",
+  "name": "Cell door",
+  "description": "Rusted iron bars."
+}
+```
+
 ## Lights
 
 `lights.json` lists placed light sources. Radii are in feet, like the

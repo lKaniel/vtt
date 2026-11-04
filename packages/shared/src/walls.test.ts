@@ -138,6 +138,19 @@ describe('secret doors', () => {
     });
     expect(wallFor(wall(0, { door: 'closed' }), false)).toEqual(wall(0, { door: 'closed' }));
   });
+
+  it('keep their name and description from players until they are opened', () => {
+    const named = { ...secret, name: 'Bookcase passage', description: 'A draught from behind the shelves.' };
+    expect(wallFor(named, false)).toEqual({ id: 'w300', a: [300, -500], b: [300, 500] });
+    expect(wallFor({ ...named, door: 'open' }, false)).toMatchObject({ name: 'Bookcase passage', door: 'open' });
+  });
+});
+
+describe('named doors', () => {
+  it('carry a name and a description players read when they inspect them', () => {
+    const door = WallSchema.parse({ ...wall(0), door: 'closed', name: 'Cell door', description: 'Rusted iron bars.' });
+    expect(door).toMatchObject({ name: 'Cell door', description: 'Rusted iron bars.' });
+  });
 });
 
 describe('door sounds', () => {

@@ -1,6 +1,6 @@
 import type { Doc } from '@vtt/core';
 import { HOUR, TileTextureSchema, TOKEN_FILTERS, WALL_PRESETS, type WallRules, wallPreset } from '@vtt/shared';
-import { type Field, type FieldValue, flag, LEVEL, media, MIXED, options, plain } from './field-kit.ts';
+import { describe, type Field, type FieldValue, flag, LEVEL, media, MIXED, options, plain } from './field-kit.ts';
 import { MODEL_FIELDS } from './model-fields.ts';
 import { ITEM_FIELDS } from './item-fields.ts';
 import { doorFields, presetPatch, wallRuleFields } from './wall-fields.ts';
@@ -21,6 +21,8 @@ const WALL_FIELDS: Field[] = [
     patch: (value) => presetPatch(String(value)),
   },
   plain('door', 'Door', 'select', { options: options('closed', 'open', 'locked'), when: (d) => !!d.door }),
+  plain('name', 'Name', 'text', { when: (d) => !!d.door }),
+  describe({ when: (d) => !!d.door }),
   ...doorFields(),
   ...wallRuleFields(),
   ON_TILE,
@@ -98,6 +100,7 @@ const SHADOW_FIELDS: Field[] = [
 
 const TILE_FIELDS: Field[] = [
   plain('name', 'Name', 'text'),
+  describe({ when: drawn }),
   plain('x', 'X', 'number', { when: drawn }),
   plain('y', 'Y', 'number', { when: drawn }),
   plain('w', 'Width', 'number', { when: drawn }),

@@ -3,6 +3,7 @@ import type { Doc } from '@vtt/core';
 import { commonValue, fieldsFor, MIXED, type Field, type FieldValue } from '../editor/inspector.ts';
 import type { Session } from '../session/session.ts';
 import { Input } from './kit/input.tsx';
+import { Textarea } from './kit/textarea.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Button } from './kit/button.tsx';
@@ -125,7 +126,26 @@ function FieldInput({ session, field, value, onChange }: Readonly<FieldProps>) {
     const kind = field.media ?? 'image';
     return <MediaInput {...{ session, kind, value: shown, placeholder, onChange }} label={field.label} />;
   }
+  if (field.kind === 'longtext') return <LongTextInput value={shown} mixed={mixed} onChange={onChange} />;
   return <TextInput field={field} value={shown} mixed={mixed} onChange={onChange} />;
+}
+
+/** Text over several lines (a description) that sends its value when you leave it. */
+function LongTextInput({
+  value,
+  mixed,
+  onChange,
+}: Readonly<{ value: string; mixed: boolean; onChange: (v: FieldValue) => void }>) {
+  const [text, setText] = useState(value);
+  return (
+    <Textarea
+      value={text}
+      rows={3}
+      placeholder={mixed ? 'Mixed' : undefined}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={() => text !== value && onChange(text)}
+    />
+  );
 }
 
 /** A text, number or colour box that sends its value when you press Enter or leave it. */
