@@ -15,6 +15,8 @@ export type ImageTile = Extract<Chunk['tiles'][number], { kind: 'image' }>;
 /** A drawn picture tile; `tick` moves it on (scroll, roof fade). */
 export interface TileView {
   root: Container;
+  /** Settles once the picture has loaded (or failed to). */
+  loaded?: Promise<void>;
   tick?: (dt: number, watchers: readonly Point[]) => void;
 }
 
@@ -64,7 +66,7 @@ export function imageTile(tile: ImageTile): TileView {
   root.angle = pose.angle;
   root.scale.set(...pose.scale);
   let view: Sprite | TilingSprite | GifSprite | undefined;
-  load(tile)
+  const loaded = load(tile)
     .then((picture) => {
       if (root.destroyed) return;
       view = sizedView(tile, picture);
@@ -75,7 +77,7 @@ export function imageTile(tile: ImageTile): TileView {
     .catch(() => {
       console.warn(`Missing image assets/${tile.src}`);
     });
-  if (!tile.overhead && !tile.scroll) return { root };
+  if (!tile.overhead && !tile.scroll) return { root, loaded };
   let seconds = 0;
   const tick = (dt: number, watchers: readonly Point[]) => {
     seconds += dt;
@@ -84,5 +86,5 @@ export function imageTile(tile: ImageTile): TileView {
       view.tilePosition.set(...scrollOffset(tile.scroll, seconds, tile.w, tile.h));
     }
   };
-  return { root, tick };
+  return { root, loaded, tick };
 }

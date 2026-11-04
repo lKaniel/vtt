@@ -6,10 +6,11 @@ import {
   onLevel,
   onLevels,
   type Point,
+  type Rect,
   tileClickable,
   type Wall,
 } from '@vtt/shared';
-import { Circle, Container, Graphics } from 'pixi.js';
+import { Circle, Container, Graphics, type Renderer } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
 import { drawDoor, drawWalls, drawWallShadows } from './art/walls.ts';
 import type { Session } from '../session/session.ts';
@@ -17,17 +18,36 @@ import { clickTile, openDoor } from '../play/interact.ts';
 import { imageTile, type TileView } from './tile-draw.ts';
 import { type RoofEyes, roofWatchers } from './tile-motion.ts';
 import { paintedUnder3d } from '../view3d/content3d.ts';
+import { bakeRuns, roofStill, tileBounds, tileStill } from './tile-bake.ts';
+import { TileBaker } from './TileBaker.ts';
 
 const DOOR_COLORS = { closed: 0xd08a3a, open: 0x7ac06a, locked: 0xd04a4a } as const;
 const DOOR_HANDLE_RADIUS = 11;
 /** How a tile hidden from players shows to the GM. */
 const HIDDEN_ALPHA = 0.45;
 
+type ChunkTile = Chunk['tiles'][number];
+
+/** A drawn floor tile: still ones are baked (TileBaker), live ones sit straight in `ground`. */
+interface GroundTile {
+  id: string;
+  z: number;
+  still: boolean;
+  root: Container;
+  bounds: Rect;
+  loaded?: Promise<void>;
+}
+
+interface Roof extends GroundTile {
+  tile: ChunkTile;
+}
+
 interface ChunkView {
-  /** The chunk's tiles and wall shadows: each sits straight in `ground`, so tiles of all chunks stack by `z`. */
-  ground: Container[];
-  /** Its overhead tiles (roofs), straight in `roofs`. */
-  roofs: Container[];
+  /** The chunk's floor tiles, stacked with those of every chunk by `z`. */
+  tiles: GroundTile[];
+  shadows: Graphics;
+  /** Its overhead tiles (roofs), stacked in `roofs`: baked while fully drawn, live while they fade. */
+  roofs: Roof[];
   /** Tiles that move: scrolling pictures and fading roofs. */
   moving: TileView[];
   walls: Container;
@@ -38,6 +58,8 @@ interface ChunkView {
 const SHADOW_Z = 1e9;
 /** Each floor up draws over the ones below it. */
 const LEVEL_Z = 1e7;
+/** How far past its rectangle a tile may draw (rough edges, see art/ground.ts). */
+const EDGE_PAD = 24;
 
 /** Draws the tiles, walls and doors of every loaded chunk. */
 export class ChunkLayer {
@@ -48,6 +70,12 @@ export class ChunkLayer {
   /** Roofs and canopies, over the creatures. */
   readonly roofs = new Container({ sortableChildren: true, eventMode: 'none' });
   private views = new Map<string, ChunkView>();
+  private baker = new TileBaker();
+  private roofBaker = new TileBaker();
+  /** Tiles came or went since the floor was last stacked. */
+  private restack = false;
+  /** A roof started or stopped fading. */
+  private restackRoofs = false;
 
   /** `placeOf`: where a token is drawn now, for the roofs it walks under. */
   constructor(
@@ -64,10 +92,59 @@ export class ChunkLayer {
     for (const v of this.views.values()) for (const t of v.moving) t.tick?.(dt, watchers);
     const { shown, current } = this.session.levels;
     const floor = `${current ?? ''}|${shown?.join(' ') ?? ''}|${this.session.view3d.on}`;
-    if (floor === this.floor) return;
-    this.floor = floor;
-    for (const [key, chunk] of this.session.chunks) this.draw(key, chunk);
-    floorShown();
+    if (floor !== this.floor) {
+      this.floor = floor;
+      for (const [key, chunk] of this.session.chunks) this.draw(key, chunk);
+      floorShown();
+    }
+    this.roofsFading();
+    if (this.restack) this.stack();
+    if (this.restackRoofs) this.stackRoofs();
+    this.baker.tick();
+    this.roofBaker.tick();
+  }
+
+  /** The part of the map on screen, `zoom` its screen pixels per map pixel (before the device's). */
+  setView(view: Rect, zoom: number, renderer: Renderer): void {
+    this.baker.setView(view, zoom * renderer.resolution, renderer);
+    this.roofBaker.setView(view, zoom * renderer.resolution, renderer);
+  }
+
+  /** A roof that starts fading comes out of the bake; one fully drawn again goes back in. */
+  private roofsFading(): void {
+    const gm = this.session.isGm();
+    for (const v of this.views.values()) {
+      for (const roof of v.roofs) {
+        const still = roofStill(roof.tile, gm, roof.root.alpha);
+        if (still === roof.still) continue;
+        roof.still = still;
+        this.restackRoofs = true;
+      }
+    }
+  }
+
+  /** Puts every chunk's floor tiles in draw order: runs of still tiles baked, live ones between them. */
+  private stack(): void {
+    this.restack = false;
+    stackInto(
+      this.ground,
+      this.baker,
+      [...this.views.values()].flatMap((v) => v.tiles),
+    );
+  }
+
+  private stackRoofs(): void {
+    this.restackRoofs = false;
+    stackInto(
+      this.roofs,
+      this.roofBaker,
+      [...this.views.values()].flatMap((v) => v.roofs),
+    );
+  }
+
+  destroy(): void {
+    this.baker.destroy();
+    this.roofBaker.destroy();
   }
 
   private eyes(): RoofEyes {
@@ -106,12 +183,13 @@ export class ChunkLayer {
     const chunk = this.flat(this.onFloor(whole));
     const world = this.session.world;
     const ctx = { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 };
-    const tiles = drawTiles(chunk, ctx, (root, tile) => this.dress(root, tile));
-    const view: ChunkView = { ...tiles, walls: new Container(), doors: [] };
-    view.walls.cullable = true;
+    const gm = this.session.isGm();
+    const tiles = drawTiles(chunk, ctx, gm, (root, tile) => this.dress(root, tile));
     const shadows = shadowsOf(chunk.walls);
     shadows.zIndex = SHADOW_Z;
-    view.ground.push(shadows);
+    shadows.cullable = true;
+    const view: ChunkView = { ...tiles, shadows, walls: new Container(), doors: [] };
+    view.walls.cullable = true;
     view.walls.addChild(wallsOf(chunk.walls));
     for (const wall of chunk.walls) {
       if (!wall.door) continue;
@@ -119,21 +197,21 @@ export class ChunkLayer {
       view.doors.push(door);
       view.walls.addChild(door);
     }
-    for (const item of view.ground) {
-      item.cullable = true;
-      this.ground.addChild(item);
-    }
-    for (const roof of view.roofs) this.roofs.addChild(roof);
+    for (const t of [...view.tiles, ...view.roofs]) t.root.cullable = true;
+    this.ground.addChild(shadows);
     this.walls.addChild(view.walls);
     this.views.set(key, view);
+    this.restack = this.restackRoofs = true;
   }
 
   remove(key: string): boolean {
     const v = this.views.get(key);
     if (!v) return false;
-    for (const item of [...v.ground, ...v.roofs]) item.destroy({ children: true });
+    for (const t of [...v.tiles, ...v.roofs]) t.root.destroy({ children: true });
+    v.shadows.destroy();
     v.walls.destroy({ children: true });
     this.views.delete(key);
+    this.restack = this.restackRoofs = true;
     return true;
   }
 
@@ -177,21 +255,45 @@ export class ChunkLayer {
   }
 }
 
-/** The chunk's tiles, each at its place in the scene's draw order: floor tiles, roofs, and those that move; `dress` makes triggers clickable. */
+/** The chunk's tiles at their places in the scene's draw order: floor tiles (still or live), roofs, and those that move; `dress` makes triggers clickable. */
 function drawTiles(
   chunk: Chunk,
   ctx: GroundContext,
-  dress: (root: Container, tile: Chunk['tiles'][number]) => void,
-): Pick<ChunkView, 'ground' | 'roofs' | 'moving'> {
-  const out: Pick<ChunkView, 'ground' | 'roofs' | 'moving'> = { ground: [], roofs: [], moving: [] };
+  gm: boolean,
+  dress: (root: Container, tile: ChunkTile) => void,
+): Pick<ChunkView, 'tiles' | 'roofs' | 'moving'> {
+  const out: Pick<ChunkView, 'tiles' | 'roofs' | 'moving'> = { tiles: [], roofs: [], moving: [] };
   chunk.tiles.forEach((tile, i) => {
-    const drawn = tile.kind === 'rect' ? { root: rectTile(tile, ctx) } : imageTile(tile);
-    drawn.root.zIndex = tile.z ?? i;
+    const drawn: TileView = tile.kind === 'rect' ? { root: rectTile(tile, ctx) } : imageTile(tile);
+    const z = tile.z ?? i;
+    drawn.root.zIndex = z;
     dress(drawn.root, tile);
-    (tile.kind === 'image' && tile.overhead ? out.roofs : out.ground).push(drawn.root);
     if (drawn.tick) out.moving.push(drawn);
+    const bounds = tileBounds(tile, padOf(tile));
+    const placed = { id: tile.id, z, root: drawn.root, bounds, loaded: drawn.loaded };
+    if (tile.kind === 'image' && tile.overhead) out.roofs.push({ ...placed, tile, still: roofStill(tile, gm, 1) });
+    else out.tiles.push({ ...placed, still: tileStill(tile, gm) });
   });
   return out;
+}
+
+/** How far past its rectangle a tile draws: rough edges, and its drop shadow. */
+function padOf(tile: ChunkTile): number {
+  const shadow = tile.kind === 'image' ? tile.shadow : undefined;
+  return EDGE_PAD + (shadow ? shadow.offset + shadow.blur * 3 : 0);
+}
+
+/** Stacks tiles into `layer` in draw order: runs of still ones baked by `baker`, live ones between them. */
+function stackInto(layer: Container, baker: TileBaker, tiles: GroundTile[]): void {
+  const stack = bakeRuns(tiles);
+  const runs = stack.flatMap((s) => ('run' in s ? [{ key: s.run.key, pieces: s.run.items }] : []));
+  const baked = baker.layout(runs);
+  let run = 0;
+  stack.forEach((s, i) => {
+    const item = 'run' in s ? baked[run++]! : s.tile.root;
+    item.zIndex = i;
+    layer.addChild(item);
+  });
 }
 
 function shadowsOf(walls: readonly Wall[]): Graphics {

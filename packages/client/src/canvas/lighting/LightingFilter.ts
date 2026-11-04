@@ -16,6 +16,7 @@ uniform sampler2D uTexture;
 uniform sampler2D uLight;
 uniform sampler2D uSight;
 uniform highp vec4 uInputSize;
+uniform highp vec4 uOutputFrame;
 uniform vec2 uScreen;
 uniform float uFog;
 uniform float uFloor;
@@ -47,7 +48,8 @@ float exploredAt(vec2 uv) {
 void main(void) {
   vec4 tex = texture(uTexture, vTextureCoord);
   vec4 c = vec4(tex.rgb + uVoid * (1.0 - tex.a) * uOpaque, mix(tex.a, 1.0, uOpaque));
-  vec2 uv = vTextureCoord * uInputSize.xy / uScreen;
+  // Where this pixel is on screen: the filter may cover only part of it (tokens, roofs).
+  vec2 uv = (vTextureCoord * uInputSize.xy + uOutputFrame.xy) / uScreen;
   vec3 light = min(texture(uLight, uv).rgb, vec3(1.25));
   vec3 sight = sightAt(uv);
   float grey = dot(c.rgb, LUMA);
