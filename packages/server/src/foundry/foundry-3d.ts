@@ -188,7 +188,11 @@ function shapeOf(f: Flags): [number, number][] | undefined {
 }
 
 /** The solid a 3D Canvas tile draws (a box, a cylinder, a polygon), if it is one. */
-export function tileSolidOf(raw: unknown, grid: { size: number; distance: number }): Solid3D | undefined {
+export function tileSolidOf(
+  raw: unknown,
+  grid: { size: number; distance: number },
+  find?: MediaFind,
+): Solid3D | undefined {
   const f = flagsOf(raw);
   const points = f && shapeOf(f);
   if (!f) return undefined;
@@ -204,5 +208,15 @@ export function tileSolidOf(raw: unknown, grid: { size: number; distance: number
     ...(elevation && { elevation }),
     ...(rotation && { rotation }),
     ...(color && { color }),
+    ...(find && pictureOf(f, find)),
   };
+}
+
+/** The picture 3D Canvas covers a shape in, and how often it repeats; none for its blank one. */
+function pictureOf(f: Flags, find: MediaFind): Pick<Solid3D, 'texture' | 'repeat'> {
+  const path = text(f.imageTexture);
+  if (!path || path.endsWith('/blankTex.jpg') || mediaKind(path) !== 'image') return {};
+  const texture = find(path);
+  const repeat = finite(f.textureRepeat);
+  return texture ? { texture, ...(repeat && repeat > 0 && repeat !== 1 && { repeat }) } : {};
 }

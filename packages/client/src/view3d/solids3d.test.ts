@@ -42,4 +42,19 @@ describe('solids in the 3D view', () => {
     solids.dispose();
     expect(solids.count).toBe(0);
   });
+
+  it('covers a solid in its picture, repeated across its width as often as asked', () => {
+    const solids = new Solids(() => new THREE.Texture());
+    const water = ledge('w');
+    solids.show(
+      [{ ...water, solid: { ...water.solid, texture: '/assets/water.webp', repeat: 10 } }, ledge('a')],
+      ground,
+      0,
+    );
+    const [lake, plain] = solids.group.children.map((m) => (m as THREE.Mesh).material as THREE.MeshStandardMaterial);
+    expect(lake!.map?.repeat.toArray()).toEqual([0.1, 0.1]);
+    expect(lake!.map?.wrapS).toBe(THREE.RepeatWrapping);
+    expect(plain!.map).toBeNull();
+    solids.dispose();
+  });
 });

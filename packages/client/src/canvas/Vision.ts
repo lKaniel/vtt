@@ -69,9 +69,14 @@ export class Vision {
     this.tokenFilter = new LightingFilter({ ...maps, fog: 0, floor: TOKEN_FLOOR, opaque: 0 });
     this.roofFilter = new LightingFilter({ ...maps, fog: 1, floor: 0, opaque: 0 });
     this.resize();
+    this.seeThrough(false);
   }
 
-  /** Under the 3D view, empty ground stays see-through instead of getting the void colour. */
+  /**
+   * Under the 3D view, empty ground stays see-through instead of getting the
+   * void colour. Pixi gives the canvas alpha only if it starts see-through,
+   * so the map starts at background alpha 0 (MapView.init) and turns opaque here.
+   */
   seeThrough(on: boolean): void {
     this.mapFilter.opaque = on ? 0 : 1;
     this.app.renderer.background.alpha = on ? 0 : 1;

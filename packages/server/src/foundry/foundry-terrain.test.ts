@@ -68,6 +68,30 @@ describe('3D Canvas terrain', () => {
     expect(tileTerrainOf(tile(terrainFlags({ autoGround: false })), grid, find)?.elevation).toBe(-15);
   });
 
+  it('stands as tall as its depth times the heightmap strength', () => {
+    expect(tileTerrainOf(tile(terrainFlags({ displacementIntensity: 5 })), grid, find)?.height).toBe(250);
+    expect(tileTerrainOf(tile(terrainFlags({ displacementIntensity: 0 })), grid, find)?.height).toBe(50);
+  });
+
+  it('paints the mask shader picture where its mask is white', () => {
+    const mask = {
+      enabled: true,
+      textureMask: 'modules/maps/mask.jpg',
+      textureDiffuse: 'modules/c3d/Ground042_Color.webp',
+      color: '#a88948',
+      repeat: 10,
+    };
+    const shaders = (m: object) => ({ shaders: { ...terrainFlags().shaders, mask: m } });
+    expect(tileTerrainOf(tile(terrainFlags(shaders(mask))), grid, find)?.mask).toEqual({
+      map: '/assets/foundry/modules/maps/mask.jpg',
+      src: '/assets/foundry/modules/c3d/Ground042_Color.webp',
+      color: '#a88948',
+      repeat: 10,
+    });
+    expect(tileTerrainOf(tile(terrainFlags(shaders({ ...mask, enabled: false }))), grid, find)?.mask).toBeUndefined();
+    expect(tileTerrainOf(tile(terrainFlags(shaders({ ...mask, textureMask: '' }))), grid, find)?.mask).toBeUndefined();
+  });
+
   it('builds the misnamed "mapGen" with no map data as the box it falls back to', () => {
     expect(tileTerrainOf(tile(terrainFlags({ dynaMesh: 'mapGen' })), grid, find)?.height).toBe(50);
     expect(tileTerrainOf(tile(terrainFlags({ dynaMesh: 'mapGen', mapgen: { rows: 1 } })), grid, find)).toBeUndefined();

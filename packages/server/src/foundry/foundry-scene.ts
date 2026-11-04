@@ -319,7 +319,7 @@ function made3d(t: FoundryScene['tiles'][number], c: TileContext) {
   if (terrain) return { terrain };
   // A heightmap that did not come along is not a box as tall as its hills.
   if (flagOf(t, 'displacementMap')) return undefined;
-  const solid = tileSolidOf(sourceOf(t), c.grid);
+  const solid = tileSolidOf(sourceOf(t), c.grid, find);
   return solid && { solid };
 }
 

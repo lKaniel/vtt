@@ -18,6 +18,10 @@ export const Solid3DSchema = z.object({
   /** Degrees it turns clockwise round the tile's middle, seen from above. */
   rotation: z.number().optional(),
   color: z.string().optional(),
+  /** A picture covering it, tinted by its colour. */
+  texture: z.string().optional(),
+  /** Times the picture repeats across the tile (default 1). */
+  repeat: z.number().positive().optional(),
 });
 export type Solid3D = z.infer<typeof Solid3DSchema>;
 
