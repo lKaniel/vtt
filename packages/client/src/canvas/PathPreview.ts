@@ -10,7 +10,7 @@ import {
   type WalkOptions,
   walkPath,
   type Wall,
-  wallsAt,
+  wallsOnFloor,
 } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
 import { previewLabel } from '../text/spell-text.ts';
@@ -96,7 +96,7 @@ export class PathPreview {
     const target = this.aim(hover, ctx);
     if (!this.needsRedraw(`walk:${target[0]},${target[1]}:${token.x},${token.y}`, ctx.force)) return undefined;
     const shown = { token: token.id, to: target };
-    const path = walkPath([token.x, token.y], target, wallsAt(ctx.walls, token.elevation), {
+    const path = walkPath([token.x, token.y], target, ctx.walls, {
       ...ctx.walk,
       cost: ctx.cost,
     });
@@ -243,6 +243,7 @@ export function showPreview(
   at: {
     token: TokenView;
     hover: Point;
+    /** Every wall loaded; the preview keeps those of the creature's floor. */
     walls: readonly Wall[];
     zoom: number;
     force: boolean;
@@ -255,7 +256,8 @@ export function showPreview(
   const ctx = {
     gridSize: world.gridSize,
     grid: gridKind(world),
-    walls: at.walls,
+    // The walls the creature meets: those of its own floor.
+    walls: wallsOnFloor(at.walls, world.levels, token),
     zoom: at.zoom,
     force: at.force,
     cost: regionCost(regions, world.darkness),

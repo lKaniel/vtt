@@ -8,8 +8,9 @@ import {
   sceneLattice,
   type Player,
   type Point,
+  sameFloor,
   walkPath,
-  wallsAt,
+  wallsOnFloor,
 } from '@vtt/shared';
 import { AnimationChoiceSchema, type ClientMessage, inTheWay, type Token } from '@vtt/system-dnd5e';
 import type { CombatActions } from '../actions/combat-actions.ts';
@@ -59,7 +60,7 @@ export class TokenMoves {
       w: Math.abs(token.x - to[0]) + 2 * m,
       h: Math.abs(token.y - to[1]) + 2 * m,
     });
-    const walls = wallsAt(around, token.elevation);
+    const walls = wallsOnFloor(around, this.store.world.levels, token);
     const { combat, zones, reactions, regions } = this.rules;
     const path = walkPath([token.x, token.y], to, walls, {
       gridSize: g,
@@ -82,11 +83,12 @@ export class TokenMoves {
     regions.entered(token.id, steps);
   }
 
-  /** The creatures in `token`'s way that you know of. */
+  /** The creatures on `token`'s floor in its way that you know of. */
   private others(token: Token, seen: (id: string) => boolean): Token[] {
+    const levels = this.store.world.levels;
     return inTheWay(
       token,
-      [...this.store.tokens.values()].filter((t) => seen(t.id)),
+      [...this.store.tokens.values()].filter((t) => seen(t.id) && sameFloor(levels, token, t)),
     );
   }
 

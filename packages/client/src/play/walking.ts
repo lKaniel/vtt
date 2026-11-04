@@ -6,13 +6,14 @@ import {
   type EditorMode,
   isGridless,
   type Point,
+  sameFloor,
   sceneLattice,
   snapToCell,
   type WalkOptions,
   type WorldInfo,
 } from '@vtt/shared';
 
-type Scene = Pick<WorldInfo, 'gridSize' | 'grid'>;
+type Scene = Pick<WorldInfo, 'gridSize' | 'grid' | 'levels'>;
 
 /** Where a click at `hover` sends a token: the very point, or its cell on a grid. */
 export function aimPoint(hover: Point, world: Scene): Point {
@@ -28,7 +29,10 @@ export function walkOptions(world: Scene, mover: Token, tokens: Iterable<TokenVi
     gridless: isGridless(world),
     lattice: sceneLattice(world),
     radius: bodyOf(mover, g).r,
-    bodies: inTheWay(mover, tokens).map((t) => bodyOf(t, g)),
+    bodies: inTheWay(
+      mover,
+      [...tokens].filter((t) => sameFloor(world.levels, mover, t)),
+    ).map((t) => bodyOf(t, g)),
   };
 }
 

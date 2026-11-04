@@ -22,8 +22,8 @@ export const TRIGGER_ACTIONS = [
   z.object({ type: z.literal('visibility'), target: TriggerTargetSchema, to: z.enum(['show', 'hide', 'toggle']) }),
   /** Plays a sound once for everyone on the scene. */
   z.object({ type: z.literal('sound'), src: z.string().min(1), volume: z.number().min(0).max(1).optional() }),
-  /** Moves the token that set it off to `to`, on this scene or on `scene`. */
-  z.object({ type: z.literal('teleport'), to: point, scene: id.optional() }),
+  /** Moves the token that set it off to `to`, on this scene or on `scene`, and onto that scene's `level` when named. */
+  z.object({ type: z.literal('teleport'), to: point, scene: id.optional(), level: id.optional() }),
   /** Opens, closes, locks or flips a door by its wall id. */
   z.object({ type: z.literal('door'), wall: id, to: z.enum(['open', 'closed', 'locked', 'toggle']) }),
   /** Posts `text` in chat; `gmOnly` whispers it to the GM. */

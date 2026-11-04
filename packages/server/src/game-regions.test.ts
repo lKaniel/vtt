@@ -137,6 +137,69 @@ describe('regions', () => {
       expect(texts(ana)).toEqual([]);
     });
 
+    const wallDoc = (id: string, extra: Record<string, unknown>) =>
+      ({ id, type: 'wall', rev: 0, a: [200, 0], b: [200, 300], ...extra }) as Doc;
+    const across = (points: number[][], behaviors: unknown[], extra: Record<string, unknown> = {}) => {
+      const doc = { id: 'across', type: 'region', rev: 0, points, behaviors, ...extra } as Doc;
+      store.applyOps([{ op: 'create', coll: 'main/regions', doc }]);
+    };
+    // A strip the walk from (150, 150) to (250, 150) crosses, and leaves.
+    const STRIP = [
+      [180, 100],
+      [220, 100],
+      [220, 200],
+      [180, 200],
+    ];
+
+    it('walk past the walls of other floors, and stop at those of their own', () => {
+      store.applyOps([{ op: 'create', coll: 'main/walls', doc: wallDoc('loft-wall', { level: 'loft' }) }]);
+      const ana = seat('ana');
+      stepEast(ana);
+      expect(store.tokens.get('hero')).toMatchObject({ x: 250, y: 150 });
+      stepBack(ana);
+      store.setToken({ ...store.tokens.get('hero')!, elevation: 10 });
+      stepEast(ana);
+      expect(store.tokens.get('hero')).toMatchObject({ x: 150, y: 150 });
+      expect(ana.take('error')).toHaveLength(1);
+    });
+
+    it('walk under a creature on another floor', () => {
+      store.setToken({ ...store.tokens.get('goblin')!, x: 250, y: 150, elevation: 10 });
+      stepEast(seat('ana'));
+      expect(store.tokens.get('hero')).toMatchObject({ x: 250, y: 150 });
+    });
+
+    it('take stairs only where the walk ends, not on the way past them', () => {
+      across(STRIP, [{ type: 'stairs', between: ['ground', 'loft'] }]);
+      stepEast(seat('ana'));
+      expect(store.tokens.get('hero')!.elevation ?? 0).toBe(0);
+    });
+
+    it('fall through a hole to the floor below, stopping where they stepped in', () => {
+      across(STRIP, [{ type: 'fall' }], { level: 'loft' });
+      store.setToken({ ...store.tokens.get('hero')!, elevation: 10 });
+      stepEast(seat('ana'));
+      const hero = store.tokens.get('hero')!;
+      expect(hero.elevation ?? 0).toBe(0);
+      expect(hero.x).toBeGreaterThan(180);
+      expect(hero.x).toBeLessThanOrEqual(220);
+    });
+
+    it('hurt a creature for the drop when the hole says so', () => {
+      across(STRIP, [{ type: 'fall', damage: true }], { level: 'loft' });
+      store.setToken({ ...store.tokens.get('hero')!, elevation: 10 });
+      const ana = seat('ana');
+      stepEast(ana);
+      expect(store.tokens.get('hero')!.hp).toBeLessThan(12);
+      expect(texts(ana).join(' ')).toMatch(/falls 10 ft/);
+    });
+
+    it('teleport onto another floor', () => {
+      region([{ type: 'teleport', to: [100, 100], level: 'loft' }]);
+      stepEast(seat('ana'));
+      expect(store.tokens.get('hero')).toMatchObject({ x: 100, y: 100, elevation: 10 });
+    });
+
     it('ask the owner which floor an elevator goes to, then take them there', () => {
       region([{ type: 'elevator', floors: ['cellar', 'ground', 'loft'] }]);
       const ana = seat('ana');

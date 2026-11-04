@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { springTrap, TrapRulesSchema } from './traps.ts';
+import { fallRules, springTrap, TrapRulesSchema } from './traps.ts';
 
 const sheet = {
   effects: [],
@@ -57,5 +57,14 @@ describe('traps', () => {
       () => 0,
     );
     expect(save).toMatchObject({ damage: 0, hp: 20, text: 'DEX save 3 vs DC 25: failed' });
+  });
+});
+
+describe('falling', () => {
+  it('deals 1d6 bludgeoning per 10 ft fallen, at most 20d6, nothing under 10 ft', () => {
+    expect(fallRules(10)).toEqual({ damage: '1d6', type: 'bludgeoning' });
+    expect(fallRules(35)).toEqual({ damage: '3d6', type: 'bludgeoning' });
+    expect(fallRules(500)).toEqual({ damage: '20d6', type: 'bludgeoning' });
+    expect(fallRules(5)).toBeUndefined();
   });
 });

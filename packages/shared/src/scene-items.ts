@@ -118,6 +118,12 @@ export const RegionBehaviorSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('stairs'), between: z.tuple([id, id]) }),
   /** A lift (Levels' elevator): whoever moves the token picks one of `floors` (missing: any level). */
   z.object({ type: z.literal('elevator'), floors: z.array(id).optional() }),
+  /**
+   * A hole in the floor: a creature walking over it falls to `to` (missing:
+   * the floor below), landing where it stepped in; `damage` lets the game
+   * system hurt it for the drop (D&D: 1d6 per 10 ft).
+   */
+  z.object({ type: z.literal('fall'), to: id.optional(), damage: z.boolean().optional() }),
   /** Players whose token enters see the whole region as explored. */
   z.object({ type: z.literal('reveal') }),
   /** Teleport, message, door, sound, image, show/hide and journal: what a tile trigger does too. */

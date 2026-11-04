@@ -103,7 +103,7 @@ export class TriggerActions {
       image: (a, c) => this.image(a.tile ?? c.tile, a.images),
       visibility: (a) => this.visibility(a.target, a.to),
       sound: (a) => this.sound(a.src, a.volume),
-      teleport: (a, c) => !!c.token && this.teleport(c.token, a.to, a.scene),
+      teleport: (a, c) => !!c.token && this.teleport(c.token, a.to, a.scene, a.level),
       door: (a) => this.door(a.wall, a.to),
       message: (a) => this.say(a.text, !!a.gmOnly),
       journal: (a) => this.journal(a.entry, a.page),
@@ -167,18 +167,20 @@ export class TriggerActions {
     return false;
   }
 
-  /** Moves the token to `to`, on this scene or on `scene` (and the players who own it with it). */
-  teleport(token: Token, [x, y]: Point, scene?: string): boolean {
+  /** Moves the token to `to`, on this scene or on `scene` (and the players who own it with it), onto `level` when named. */
+  teleport(token: Token, [x, y]: Point, scene?: string, level?: string): boolean {
     const here = this.store.currentScene;
+    const onto = this.store.inScene(scene ?? here, () => this.store.world.levels?.find((l) => l.id === level));
+    const lift = onto ? { elevation: onto.bottom } : {};
     if (!scene || scene === here) {
-      this.store.setToken({ ...token, x, y });
+      this.store.setToken({ ...token, x, y, ...lift });
       return true;
     }
     if (!this.store.hasScene(scene)) return false;
     const doc = this.store.docs.get(`${here}/tokens`, token.id)!;
     this.store.applyOps([
       { op: 'delete', coll: `${here}/tokens`, id: token.id },
-      { op: 'create', coll: `${scene}/tokens`, doc: { ...doc, x, y } },
+      { op: 'create', coll: `${scene}/tokens`, doc: { ...doc, x, y, ...lift } },
     ]);
     const owners = this.store.world.players.filter(
       (p) => !isGm(p) && canControl(token, p) && sceneOf(p, this.store) === here,

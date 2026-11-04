@@ -1,4 +1,5 @@
-import type { SceneLevel } from './schema.ts';
+import type { SceneLevel, Wall } from './schema.ts';
+import { wallsAt } from './walls.ts';
 
 // Scene levels, like Foundry's Levels module: a scene names its floors as
 // elevation bands, map items say which floor they are on, and a token is on
@@ -65,6 +66,40 @@ export function levelChoices(
   return [...(levels ?? [])]
     .filter((l) => l.id !== from && (!floors?.length || floors.includes(l.id)))
     .sort((a, b) => a.bottom - b.bottom);
+}
+
+/** Where a creature stands: its elevation in feet (none: on the ground, 0). */
+export interface Standing {
+  elevation?: number;
+}
+
+/**
+ * The walls that stop a creature: those on its own floor (and on every
+ * floor) that stand at its elevation. A creature without one stands at 0 ft,
+ * so the walls of the floors above never get in its way.
+ */
+export function wallsOnFloor<W extends Pick<Wall, 'height'> & OnLevels>(
+  walls: readonly W[],
+  levels: readonly SceneLevel[] | undefined,
+  creature: Standing,
+): W[] {
+  const level = tokenLevel(levels, creature);
+  return wallsAt(walls, creature.elevation ?? 0).filter((w) => onLevel(w, level));
+}
+
+/** Whether two creatures stand on the same floor (always, on a scene without levels). */
+export function sameFloor(levels: readonly SceneLevel[] | undefined, a: Standing, b: Standing): boolean {
+  return tokenLevel(levels, a) === tokenLevel(levels, b);
+}
+
+/** The floor just below `level`, where something falling through a hole lands; none under the lowest. */
+export function levelBelow(
+  levels: readonly SceneLevel[] | undefined,
+  level: string | undefined,
+): SceneLevel | undefined {
+  const sorted = [...(levels ?? [])].sort((a, b) => a.bottom - b.bottom);
+  const at = sorted.findIndex((l) => l.id === level);
+  return at > 0 ? sorted[at - 1] : undefined;
 }
 
 /**

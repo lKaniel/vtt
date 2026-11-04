@@ -9,7 +9,7 @@ import { z } from 'zod';
 // - the Levels module's flags (v13 and before, or a v14 scene not migrated):
 //   `sceneLevels` bands on the scene, and on each placeable its elevation
 //   (or `rangeBottom`) and `rangeTop`; walls by Wall Height's bottom/top.
-//   Stairs and elevators are drawings with a `drawingMode`.
+//   Holes, stairs and elevators are drawings with a `drawingMode`.
 // Our levels are floors by where each starts: one per distinct bottom, the
 // tightest band naming it. A band stands for the floors that start inside
 // it, so a 0-59 band is "the ground floor and the one above it".
@@ -303,8 +303,9 @@ class FloorPlan implements Floors {
     const d = Drawing.safeParse(drawing).data;
     const flags = d?.flags?.levels;
     const mode = toNumber(flags?.drawingMode) ?? 0;
-    const points = d && mode > 1 ? outlineOf(d) : [];
+    const points = d && mode > 0 ? outlineOf(d) : [];
     if (!d || points.length < 3) return undefined;
+    if (mode === 1) return this.holeRegion(points, bandOf(d, this.feet));
     if (mode === 3) return this.liftRegion(points, flags?.elevatorFloors);
     return this.stairsRegion(points, mode, bandOf(d, this.feet));
   }
@@ -318,6 +319,14 @@ class FloorPlan implements Floors {
     const [lower, upper] = this.stairsOf(band);
     if (!lower || !upper || lower === upper) return undefined;
     return { points, ...stairsKind(mode, lower, upper) };
+  }
+
+  /** A Levels hole: a gap in the floor at the top of its band, that creatures walking over fall through. */
+  private holeRegion(points: Point[], band: [number, number] | undefined): Omit<Region, 'id'> | undefined {
+    const on = band && Number.isFinite(band[1]) ? this.floorAt(band[1]) : undefined;
+    const lowest = [...this.levels].sort((a, b) => a.bottom - b.bottom)[0];
+    if (!on || on === lowest?.id) return undefined;
+    return { name: 'Hole', points, level: on, behaviors: [{ type: 'fall' }] };
   }
 
   /** A Levels elevator drawing: the floors its list names. */
