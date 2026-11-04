@@ -45,9 +45,18 @@ function checkUpdate(player: Player, access: DocAccess, op: Extract<Op, { op: 'u
   if (!may(owned, player)) throw new Refusal(`You can't edit ${nameOf(owned, op.id)}`);
 }
 
-/** Drawings, templates and macros: a player adds their own (`author`), and changes or removes only those. */
+/** Drawings, templates, macros and notes (journal entries): a player adds their own (`author`), and changes or removes only those. */
 const AUTHORED = new Set(['drawings', 'templates']);
-const authored = (coll: string) => coll === 'macros' || AUTHORED.has(sceneCollOf(coll)?.name ?? '');
+const SIDEBAR_AUTHORED = new Set(['macros', 'journals']);
+const authored = (coll: string) => SIDEBAR_AUTHORED.has(coll) || AUTHORED.has(sceneCollOf(coll)?.name ?? '');
+
+/** A player's note stays a note: quests and calendar notes (which the chat announces) are the GM's. */
+function checkNote(op: Op): void {
+  if (op.coll !== 'journals' || op.op === 'delete') return;
+  const fields = op.op === 'create' ? op.doc : op.patch;
+  const gmOnly = ['quest', 'date'].some((k) => fields[k] !== undefined && fields[k] !== null);
+  if (gmOnly) throw new Refusal('Only the GM can make quests and calendar notes');
+}
 
 /** Script macros are code the GM runs, so a player may not write one, or turn theirs into one. */
 function checkScript(access: DocAccess, op: Op): void {
@@ -63,14 +72,21 @@ function checkScript(access: DocAccess, op: Op): void {
 function checkAuthored(player: Player, access: DocAccess, op: Op): boolean {
   if (!authored(op.coll) || player.role === 'observer') return false;
   checkScript(access, op);
+  const doc = op.op === 'create' ? op.doc : access.get(op.coll, op.id);
+  // The GM's entries are changed as any document is (a trusted owner may edit one).
+  if (op.coll === 'journals' && doc && typeof doc.author !== 'string') return false;
+  checkNote(op);
   if (op.op === 'create') return op.doc.author === player.id;
-  const doc = access.get(op.coll, op.id);
-  if (!doc) return true; // The store reports the missing document.
-  if (doc.author !== player.id) throw new Refusal(`You can't edit ${nameOf(doc as OwnedDoc, op.id)}`);
+  if (doc) checkOwnAuthor(player, doc, op);
+  return true; // Without the document, the store reports it missing.
+}
+
+/** A change to an authored document: only its author's, and it stays theirs. */
+function checkOwnAuthor(player: Player, doc: Doc, op: Op): void {
+  if (doc.author !== player.id) throw new Refusal(`You can't edit ${nameOf(doc as OwnedDoc, doc.id)}`);
   if (op.op === 'update' && 'author' in op.patch && op.patch.author !== player.id) {
     throw new Refusal('Only the GM can change author');
   }
-  return true;
 }
 
 /** Players move cards only by drawing, passing and playing them (card-actions.ts). */

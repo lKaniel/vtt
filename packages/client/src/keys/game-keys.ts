@@ -176,10 +176,16 @@ export function gameKey(session: Session, e: Key): void {
   if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
   if (e.key === 'Escape' && backOutOfEditor(session)) return;
   if (targetKey(session, e) || runEditorKey(session, e)) return;
-  const sheetKey = actionOf(e, currentKeys(), ['sheet', 'editSheet']);
-  if (sheetKey === 'sheet') toggleSheet(session);
-  else if (sheetKey === 'editSheet') toggleEditor(session);
-  else handleGameKey(session, e);
+  if (!windowKey(session, e)) handleGameKey(session, e);
+}
+
+/** C opens the sheet, E edits it, J opens the adventure book; true when the key was one of them. */
+function windowKey(session: Session, e: Key): boolean {
+  const key = actionOf(e, currentKeys(), ['sheet', 'editSheet', 'journal']);
+  if (key === 'journal') session.book.toggle();
+  else if (key === 'sheet') toggleSheet(session);
+  else if (key === 'editSheet') toggleEditor(session);
+  return key !== undefined;
 }
 
 /** Listens for the game's keys on the page; returns the cleanup. */

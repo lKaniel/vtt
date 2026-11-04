@@ -20,6 +20,7 @@ const HOTBAR = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 export const KEY_ACTIONS: readonly KeyAction[] = [
   { id: 'sheet', group: 'Table', key: 'c' },
   { id: 'editSheet', group: 'Table', key: 'e' },
+  { id: 'journal', group: 'Table', key: 'j' },
   { id: 'endTurn', group: 'Table', key: 'space' },
   { id: 'target', group: 'Table', key: 't', shares: ['mode-tokens'] },
   ...HOTBAR.map((k): KeyAction => ({ id: `hotbar-${k}`, group: 'Action bar', key: k })),

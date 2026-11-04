@@ -49,6 +49,7 @@ import { type SceneEvents, Scenes } from './session-scenes.ts';
 import { Targets } from './targets.ts';
 import { Hud, type HudEvents } from './session-hud.ts';
 import { Journal, type JournalEvents } from './session-journal.ts';
+import { Book } from './session-book.ts';
 import { type PackEvents, Packs } from './session-packs.ts';
 import { Piles } from './session-piles.ts';
 import { Inspecting } from './session-inspect.ts';
@@ -134,6 +135,8 @@ export class Session {
   readonly inspect = new Inspecting(this.ev);
   readonly hud = new Hud(this, this.ev);
   readonly journal = new Journal(this, this.ev);
+  /** The adventure book (J): quests, maps, lore, the party log, the timeline. */
+  readonly book = new Book(this, this.ev);
   readonly packs = new Packs(this, this.ev);
   readonly scenes = new Scenes(this, this.ev);
   readonly fog = new Fog(this, this.ev);

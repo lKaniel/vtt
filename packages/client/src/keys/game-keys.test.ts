@@ -54,6 +54,13 @@ describe('the game keys', () => {
     expect(session.sheets.current).toBeUndefined();
   });
 
+  it('opens and shuts the adventure book with J', () => {
+    gameKey(session, press('j'));
+    expect(session.book.tab).toBe('quests');
+    gameKey(session, press('j'));
+    expect(session.book.tab).toBeUndefined();
+  });
+
   it('C closes only the selected creature’s sheet when several are open', () => {
     session.sheets.open({ kind: 'actor', id: 'wolf' });
     session.select('hero');

@@ -103,7 +103,7 @@ const entries: WorldPart = {
   id: 'entries',
   run: (ctx, out) => {
     const { journal, tables, playlists } = ctx.world.docs;
-    const raw = { journals: journal, tables, playlists };
+    const raw = { journals: journal, tables, playlists, folders: ctx.world.docs.folders };
     const e = foundryEntries(raw, ctx.media.lookup, ctx.made.folderOf, ctx.made.ownership);
     ctx.made.entries = e;
     ctx.log.add(e.skipped);

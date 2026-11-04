@@ -631,6 +631,16 @@ may see the entry, else to the GM alone:
 }
 ```
 
+Players read entries in the adventure book (J): quests, maps, lore, the
+party log and the timeline. `"book": "map"` shelves an entry under Map (its
+image pages shown large), `"book": "log"` under the party log; dated entries
+make the timeline, and the rest is lore. A player's own note has `author`
+(their player id): they write, rename and remove it, and share it with the
+party by setting its `ownership` default to `observer`. Notes can't be quests
+or calendar notes. The Foundry importer brings Simple Quest's pages along:
+each quest page becomes a quest (its list items the objectives), map pages
+go under Map, and entries in its party folder under the party log.
+
 A roll table has `results` (`text`, `weight` default 1, `drawn`), and
 `replacement: false` draws each result once until it is reset. A playlist
 has `mode` (`"sequence"`, `"shuffle"`, `"together"`), `volume`, and

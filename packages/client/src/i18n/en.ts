@@ -2,6 +2,7 @@
 // to. A key is "<screen>.<what>"; `{name}` is filled in by t(). See
 // docs/i18n.md for adding words and languages.
 
+import { EN_BOOK } from './en-book.ts';
 import { EN_EDITOR } from './en-editor.ts';
 import { EN_BAILEYWIKI } from './en-lobby.ts';
 import { EN_FOUNDRY } from './en-foundry.ts';
@@ -413,6 +414,7 @@ export const EN = {
   ...EN_BAILEYWIKI,
   ...EN_MAP,
   ...EN_EDITOR,
+  ...EN_BOOK,
 } as const;
 
 export type MessageKey = keyof typeof EN;
