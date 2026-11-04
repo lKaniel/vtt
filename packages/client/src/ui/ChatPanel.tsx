@@ -7,9 +7,9 @@ import {
   ImageIcon,
   LibraryIcon,
   MapIcon,
-  MinusIcon,
+  PanelRightCloseIcon,
+  PanelRightOpenIcon,
   MusicIcon,
-  PlusIcon,
   SpadeIcon,
   SquareTerminalIcon,
   ScrollTextIcon,
@@ -37,6 +37,7 @@ import type { Icon } from '../icons.ts';
 import { IconFace } from './Icon.tsx';
 import { targetText } from '../text/spell-text.ts';
 import { t } from '../i18n/index.ts';
+import { readPref, writePref } from '../prefs.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
@@ -85,46 +86,83 @@ function playerTabs(session: Session): readonly Tab[] {
   return [...PLAYER_TABS, ...cards, ...compendium];
 }
 
+/** The side panel's tab and whether it is folded, as left in this browser. */
+function usePanelState(): [Tab, (tab: Tab) => void, boolean, (open: boolean) => void] {
+  const [tab, setTab] = useState<Tab>(() => readPref('sidebar-tab', TABS, 'Adventure log'));
+  const [open, setOpen] = useState(() => readPref('sidebar', ['open', 'folded'], 'open') === 'open');
+  return [
+    tab,
+    (next) => {
+      setTab(next);
+      writePref('sidebar-tab', next);
+    },
+    open,
+    (next) => {
+      setOpen(next);
+      writePref('sidebar', next ? 'open' : 'folded');
+    },
+  ];
+}
+
+/** The side panel down the right edge, top to bottom (as Foundry's sidebar); folded, it is a strip of its tab icons. */
 export function ChatPanel({ session }: Readonly<{ session: Session }>) {
-  const [open, setOpen] = useState(true);
-  const [tab, setTab] = useState<Tab>('Adventure log');
+  const [tab, setTab, open, setOpen] = usePanelState();
   const tabs = session.isGm() ? TABS : playerTabs(session);
   const shown = tabs.includes(tab) ? tab : 'Adventure log';
+  const fold = <FoldButton open={open} onClick={() => setOpen(!open)} />;
+  const pick = (id: Tab) => {
+    setTab(id);
+    setOpen(true);
+  };
   return (
-    <aside className={`chat frame${open ? '' : ' closed'}${shown === 'Adventure log' ? '' : ' library'}`}>
-      <header className="chat-head">
-        <span>{t(`panel.${shown}`)}</span>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setOpen(!open)}
-          aria-label={t(open ? 'panel.hide' : 'panel.show')}
-          title={t(open ? 'panel.hide' : 'panel.show')}
-        >
-          {open ? <MinusIcon /> : <PlusIcon />}
-        </Button>
-      </header>
-      <Tabs value={shown} onValueChange={(v) => setTab(v as Tab)}>
-        <TabsList className="mb-1.5">
-          {tabs.map((id) => {
-            const Icon = TAB_ICONS[id];
-            const name = t(`panel.${id}`);
-            return (
-              <TabsTrigger
-                key={id}
-                value={id}
-                title={name}
-                aria-label={name}
-                className="px-1 pt-0.5 pb-1.5 [&_svg]:size-4"
-              >
-                <Icon />
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-      </Tabs>
-      {shown === 'Adventure log' ? <Log session={session} open={open} /> : <Library tab={shown} session={session} />}
+    <aside className={`chat frame${open ? '' : ' closed'}`}>
+      {open ? (
+        <header className="chat-head">
+          <span>{t(`panel.${shown}`)}</span>
+          {fold}
+        </header>
+      ) : (
+        fold
+      )}
+      <PanelTabs tabs={tabs} shown={open ? shown : undefined} onPick={pick} />
+      {open && (shown === 'Adventure log' ? <Log session={session} open /> : <Library tab={shown} session={session} />)}
     </aside>
+  );
+}
+
+function FoldButton({ open, onClick }: Readonly<{ open: boolean; onClick: () => void }>) {
+  const label = t(open ? 'panel.hide' : 'panel.show');
+  return (
+    <Button variant="ghost" size="icon-sm" onClick={onClick} aria-label={label} title={label}>
+      {open ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
+    </Button>
+  );
+}
+
+/** The tab icons: one row over the open panel, or the folded panel's column (none chosen). */
+function PanelTabs({
+  tabs,
+  shown,
+  onPick,
+}: Readonly<{ tabs: readonly Tab[]; shown?: Tab; onPick: (tab: Tab) => void }>) {
+  return (
+    <Tabs value={shown ?? ''} onValueChange={(v) => onPick(v as Tab)} orientation={shown ? 'horizontal' : 'vertical'}>
+      <TabsList className={shown ? 'mb-1.5' : 'h-auto flex-col items-stretch gap-1 border-b-0 pt-1'}>
+        {tabs.map((id) => (
+          <TabIcon key={id} id={id} />
+        ))}
+      </TabsList>
+    </Tabs>
+  );
+}
+
+function TabIcon({ id }: Readonly<{ id: Tab }>) {
+  const Icon = TAB_ICONS[id];
+  const name = t(`panel.${id}`);
+  return (
+    <TabsTrigger value={id} title={name} aria-label={name} className="px-1 pt-0.5 pb-1.5 [&_svg]:size-4">
+      <Icon />
+    </TabsTrigger>
   );
 }
 
