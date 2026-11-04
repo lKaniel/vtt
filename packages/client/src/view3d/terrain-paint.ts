@@ -122,12 +122,41 @@ function vertexCode(shader: { vertexShader: string }, bySlope: boolean): void {
     .replace('#include <common>', `#include <common>\nattribute float rise;\n${VARYINGS}`)
     .replace(
       '#include <begin_vertex>',
-      `#include <begin_vertex>\nvTerrainRise = ${rise};\nvTerrainHeight = clamp(rise, 0.0, 1.0);\nvTerrainUp = normal.y;\nvTerrainUv = uv;`,
+      `#include <begin_vertex>\nvTerrainRise = ${rise};\nvTerrainHeight = clamp(rise, 0.0, 1.0);\nvTerrainUp = normal.y;\nvTerrainUv = uv;\nvDrapeXZ = (modelMatrix * vec4(transformed, 1.0)).xz;`,
     );
 }
 
 const VARYINGS =
-  'varying float vTerrainRise;\nvarying float vTerrainHeight;\nvarying float vTerrainUp;\nvarying vec2 vTerrainUv;';
+  'varying float vTerrainRise;\nvarying float vTerrainHeight;\nvarying float vTerrainUp;\nvarying vec2 vTerrainUv;\nvarying vec2 vDrapeXZ;';
+
+/**
+ * The flat map's drawing (walk paths, selection rings, spell areas, fog of
+ * war), which the 3D view lays on its floor (scene3d.ts Ground), draped over
+ * terrain too, where it would hide under the hills: one set of inputs shared
+ * by every terrain, moved each frame (`drapeOver`).
+ */
+export const DRAPE = {
+  uDrape: { value: null as THREE.Texture | null },
+  /** The square it covers: x, z of its corner, then its width and depth (pixels). */
+  uDrapeRect: { value: new THREE.Vector4(0, 0, 1, 1) },
+};
+
+/** Lays the flat map's picture over terrain, over the square `half` pixels round `center`. */
+export function drapeOver(picture: THREE.Texture, [x, y]: readonly [number, number], half: number): void {
+  DRAPE.uDrape.value = picture;
+  DRAPE.uDrapeRect.value.set(x - half, y - half, 2 * half, 2 * half);
+}
+
+const DRAPE_DECLARATIONS = 'uniform sampler2D uDrape;\nuniform vec4 uDrapeRect;';
+/** Drawn over the lit ground, as the flat map drew it (its own light and fog). */
+const DRAPE_CODE = `{
+      vec2 d = (vDrapeXZ - uDrapeRect.xy) / uDrapeRect.zw;
+      if (d.x >= 0.0 && d.x <= 1.0 && d.y >= 0.0 && d.y <= 1.0) {
+        vec4 drawn = texture2D(uDrape, vec2(d.x, 1.0 - d.y));
+        outgoingLight = mix(outgoingLight, drawn.rgb, drawn.a);
+      }
+    }
+    #include <opaque_fragment>`;
 const LAYER_UNIFORMS =
   'uniform float uFrom[4];\nuniform float uBlend;\nuniform float uRepeat[4];\nuniform vec3 uColor[4];';
 
@@ -141,9 +170,8 @@ export function terrainMaterial(terrain: Terrain3D): THREE.MeshStandardMaterial 
     color: terrain.color ?? (painted ? '#ffffff' : BASE),
     roughness: 0.95,
   });
-  if (!painted) return material;
   material.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, paintUniforms(terrain));
+    Object.assign(shader.uniforms, paintUniforms(terrain), DRAPE);
     vertexCode(shader, !!terrain.bySlope);
     const declarations = [
       LAYER_UNIFORMS,
@@ -151,11 +179,13 @@ export function terrainMaterial(terrain: Terrain3D): THREE.MeshStandardMaterial 
       SWAP_DECLARATIONS,
       paint?.overlay ? OVERLAY_DECLARATIONS : '',
       mask ? MASK_UNIFORMS : '',
+      DRAPE_DECLARATIONS,
       VARYINGS,
     ].join('\n');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\n${declarations}`)
-      .replace('#include <map_fragment>', paintCode(layers.length, { paint, mask: !!mask }));
+      .replace('#include <map_fragment>', paintCode(layers.length, { paint, mask: !!mask }))
+      .replace('#include <opaque_fragment>', DRAPE_CODE);
   };
   material.customProgramCacheKey = () => terrainKey(terrain);
   return material;

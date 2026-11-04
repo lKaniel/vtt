@@ -1,6 +1,6 @@
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { paintCode, paintUniforms, terrainMaterial } from './terrain-paint.ts';
+import { DRAPE, drapeOver, paintCode, paintUniforms, terrainMaterial } from './terrain-paint.ts';
 
 // Terrain paint: 3D Canvas's textureGradient, layer by layer.
 
@@ -56,5 +56,23 @@ describe('terrain paint', () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     const material = terrainMaterial({ heightmap: '/h.webp', height: 5, paint });
     expect(material.customProgramCacheKey()).toBe('terrain:0:0:swap-over-');
+  });
+
+  it("drapes the flat map's drawing (paths, rings, spell areas, fog) over the terrain, lit as drawn", () => {
+    const shader = {
+      uniforms: {} as Record<string, THREE.IUniform>,
+      vertexShader: '#include <common>\n#include <begin_vertex>',
+      fragmentShader: '#include <common>\n#include <map_fragment>\n#include <opaque_fragment>',
+    };
+    terrainMaterial({ heightmap: '/h.webp', height: 5 }).onBeforeCompile(shader as never, undefined as never);
+    expect(shader.uniforms.uDrape).toBe(DRAPE.uDrape);
+    expect(shader.fragmentShader.indexOf('uDrapeRect')).toBeLessThan(
+      shader.fragmentShader.indexOf('<opaque_fragment>'),
+    );
+    expect(shader.vertexShader).toContain('vDrapeXZ = (modelMatrix * vec4(transformed, 1.0)).xz');
+    const picture = new THREE.Texture();
+    drapeOver(picture, [1000, 2000], 500);
+    expect(DRAPE.uDrape.value).toBe(picture);
+    expect(DRAPE.uDrapeRect.value.toArray()).toEqual([500, 1500, 1000, 1000]);
   });
 });
