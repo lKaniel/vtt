@@ -21,8 +21,14 @@ export function snapPoint(p: Point, gridSize: number, snap: boolean): Point {
 const { wall, door, window } = WALL_PRESETS;
 const WALL_KINDS = { wall, door, window };
 
-export function wallEdit(tool: keyof typeof WALL_KINDS, a: Point, b: Point): Extract<MapEdit, { op: 'addWall' }> {
-  return { op: 'addWall', wall: { a, b, ...WALL_KINDS[tool] } };
+/** A wall, door or window from `a` to `b`, on the floor `on` names (none: every floor). */
+export function wallEdit(
+  tool: keyof typeof WALL_KINDS,
+  a: Point,
+  b: Point,
+  on: { level?: string } = {},
+): Extract<MapEdit, { op: 'addWall' }> {
+  return { op: 'addWall', wall: { a, b, ...WALL_KINDS[tool], ...on } };
 }
 
 /** What the tile tool draws, by texture: ground (under everything, never a container) or floors and objects. */

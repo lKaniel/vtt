@@ -145,6 +145,24 @@ describe('shape tools in the session', () => {
     expect(session.levels.shown).toEqual(['ground', 'loft']);
   });
 
+  it('put what is drawn on the floor shown', () => {
+    const levels = [
+      { id: 'ground', name: 'Ground', bottom: 0 },
+      { id: 'loft', name: 'Loft', bottom: 10 },
+    ];
+    const base = welcome([]) as Extract<ServerMessage, { t: 'welcome' }>;
+    ws.receive({ ...base, world: { ...base.world, levels }, you: { id: 'gm', name: 'GM', role: 'gm', color: '#fc0' } });
+    session.levels.setView('loft');
+    session.draw.create({ mode: 'notes', data: { x: 50, y: 50 } });
+    expect(lastOps()?.ops?.[0]?.doc).toMatchObject({ type: 'note', level: 'loft' });
+    expect(session.levels.placing).toEqual({ level: 'loft' });
+    session.levels.setView('gone');
+    expect(session.levels.placing).toEqual({});
+    expect(session.levels.current).toBeUndefined();
+    session.levels.setView(undefined);
+    expect(session.levels.placing).toEqual({});
+  });
+
   it('ask which floor an elevator goes to, and send the pick', () => {
     const levels = [
       { id: 'ground', name: 'Ground', bottom: 0 },

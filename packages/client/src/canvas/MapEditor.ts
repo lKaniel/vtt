@@ -22,7 +22,7 @@ import { clickSnapped } from '../play/interact.ts';
 import { moveSelectionTo } from '../play/map-clicks.ts';
 import { dragsFreely } from '../play/walking.ts';
 import { DrawTools } from './DrawTools.ts';
-import { drawHandles, drawLight, drawMarquee, drawOutline, drawWall, type DrawCtx } from './editor-draw.ts';
+import { drawHandles, drawLight, drawMarquee, drawModel, drawOutline, drawWall, type DrawCtx } from './editor-draw.ts';
 
 /** How close (screen pixels) the pointer must be to pick a wall, light or handle. */
 const PICK_PX = 10;
@@ -265,6 +265,7 @@ export class MapEditor {
     for (const { doc } of docs) {
       if (doc.type === 'wall') drawWall(g, doc, ctx);
       else if (doc.type === 'light') drawLight(g, doc, ctx);
+      else if (doc.type === 'tile' && doc.model) drawModel(g, doc, ctx);
     }
     this.drawSelection(g, docs, ctx);
   }

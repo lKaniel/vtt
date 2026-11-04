@@ -14,4 +14,8 @@ describe('wallEdit', () => {
     expect(wallEdit('door', [0, 0], [100, 0]).wall.door).toBe('closed');
     expect(wallEdit('window', [0, 0], [100, 0]).wall).toMatchObject({ sight: 'none', light: 'none' });
   });
+
+  it('puts the wall on the floor shown', () => {
+    expect(wallEdit('wall', [0, 0], [100, 0], { level: 'loft' }).wall).toMatchObject({ level: 'loft' });
+  });
 });

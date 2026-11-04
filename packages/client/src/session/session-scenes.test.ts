@@ -50,6 +50,32 @@ describe('scenes in the client', () => {
     expect(sent()).toEqual({ t: 'sendPlayer', player: 'ana' });
   });
 
+  it('adds floors and takes one away with what was on it put on every floor, in one step', () => {
+    const base = gmWelcome() as Extract<ServerMessage, { t: 'welcome' }>;
+    const levels = [
+      { id: 'ground', name: 'Ground', bottom: 0, top: 10 },
+      { id: 'loft', name: 'Loft', bottom: 10, top: 20 },
+    ];
+    const scenes = [{ ...sceneDoc('main', 'a'), levels }];
+    ws.receive({ ...base, docs: { scenes, 'main/tiles': [{ id: 'bed', type: 'tile', rev: 1, level: 'loft' }] } });
+    session.scenes.addLevel('main');
+    expect(sent()).toMatchObject({
+      ops: [{ op: 'update', id: 'main', patch: { levels: [...levels, { id: 'floor-3', bottom: 20 }] } }],
+    });
+    session.scenes.editLevel('main', 'loft', { name: 'Attic' });
+    const edited = (sent().ops as { patch: { levels: { name: string }[] } }[])[0]!.patch.levels;
+    expect(edited.map((l) => l.name)).toEqual(['Ground', 'Attic', 'Floor 3']);
+    session.levels.setView('loft');
+    session.scenes.removeLevel('main', 'loft');
+    expect(sent()).toMatchObject({
+      label: 'scene settings',
+      ops: [
+        { op: 'update', coll: 'scenes', patch: { levels: [levels[0], { id: 'floor-3' }] } },
+        { op: 'update', coll: 'main/tiles', id: 'bed', patch: { level: null } },
+      ],
+    });
+  });
+
   it('makes, copies, edits and deletes scenes as ops', () => {
     ws.receive(gmWelcome());
     session.scenes.create('Goblin cave');

@@ -180,4 +180,50 @@ describe('drawing tiles', () => {
     expect(doc).toMatchObject({ background: true });
     expect((doc!.sort as string) < 'A').toBe(true);
   });
+
+  it('puts new tiles and pictures on the floor the GM is looking at', () => {
+    const base = gmWelcome() as Extract<ServerMessage, { t: 'welcome' }>;
+    const levels = [
+      { id: 'ground', name: 'Ground', bottom: 0 },
+      { id: 'loft', name: 'Loft', bottom: 10 },
+    ];
+    ws.receive({ ...base, world: { ...base.world, levels } });
+    session.tiles.create({ x: 2500, y: 2500, w: 100, h: 100 });
+    expect(lastOps()?.ops?.[0]?.doc?.level).toBeUndefined();
+    session.levels.setView('loft');
+    session.tiles.create({ x: 2500, y: 2500, w: 100, h: 100 });
+    expect(lastOps()?.ops?.[0]?.doc).toMatchObject({ level: 'loft' });
+    session.tiles.createImage({ x: 0, y: 0, w: 100, h: 100 }, '/assets/bed.png');
+    expect(lastOps()?.ops?.[0]?.doc).toMatchObject({ kind: 'image', level: 'loft' });
+  });
+
+  it('makes a picture the map: a new ground picture at its own size, or the old one changed', () => {
+    session.tiles.setMap('/assets/cave.webp', { w: 4000, h: 3000 });
+    expect(lastOps()?.ops?.[0]).toMatchObject({
+      op: 'create',
+      doc: { id: 'map', kind: 'image', src: '/assets/cave.webp', background: true, x: 0, y: 0, w: 4000, h: 3000 },
+    });
+    const base = gmWelcome() as Extract<ServerMessage, { t: 'welcome' }>;
+    const map = {
+      id: 'map',
+      type: 'tile',
+      rev: 1,
+      kind: 'image',
+      src: '/a.png',
+      background: true,
+      x: 0,
+      y: 0,
+      w: 10,
+      h: 10,
+    };
+    ws.receive({ ...base, docs: { ...base.docs, 'main/tiles': [...base.docs!['main/tiles']!, map] } });
+    session.tiles.setMap('/assets/cave.webp');
+    expect(lastOps()?.ops).toEqual([
+      expect.objectContaining({ op: 'update', id: 'map', patch: { src: '/assets/cave.webp' } }),
+    ]);
+    session.tiles.setMap('/assets/big.webp', { w: 20, h: 20 });
+    expect(patchOf('map')).toEqual({ src: '/assets/big.webp', w: 20, h: 20 });
+    session.tiles.setMap('/assets/cellar.webp', undefined, 'cellar');
+    expect(lastOps()?.ops?.[0]).toMatchObject({ op: 'create', coll: 'cellar/tiles', doc: { w: 2000 } });
+  });
 });

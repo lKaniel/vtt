@@ -1,5 +1,6 @@
 import { type MediaEntry, type MediaKind, type PackInfo, searchMedia, topTags } from '@vtt/core';
-import { EyeIcon } from 'lucide-react';
+import { EyeIcon, MapIcon } from 'lucide-react';
+import { t } from '../i18n/index.ts';
 import { useEffect, useState } from 'react';
 import { assetUrl } from '../assets.ts';
 import type { Session } from '../session/session.ts';
@@ -181,7 +182,8 @@ function MediaView({ session }: Readonly<{ session: Session }>) {
         {list.length === 0 && <li className="muted lib-hint">Nothing here. Upload files, or turn packs on.</li>}
       </ul>
       <p className="muted lib-hint">
-        Drag a picture onto the map to place it as a tile, or click it to place it in view.
+        Drag a picture or 3D model onto the map to place it as a tile, or click it to place it in view. The map button
+        makes a picture the scene's map.
       </p>
     </>
   );
@@ -221,6 +223,21 @@ function MediaTile({ session, media }: Readonly<{ session: Session; media: Media
           }}
         >
           <EyeIcon />
+        </Button>
+      )}
+      {media.kind === 'image' && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="absolute top-1 left-1 bg-black/60"
+          aria-label={t('assets.useAsMap', { name: media.name })}
+          title={t('assets.useAsMapHint')}
+          onClick={(e) => {
+            e.stopPropagation();
+            session.tiles.setMap(media.src, size);
+          }}
+        >
+          <MapIcon />
         </Button>
       )}
     </li>

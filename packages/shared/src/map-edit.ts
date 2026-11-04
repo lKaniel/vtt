@@ -7,6 +7,7 @@ import {
   PointSchema,
   type Wall,
   type WallRules,
+  OnLevelShape,
   WallRulesSchema,
 } from './schema.ts';
 
@@ -17,11 +18,11 @@ import {
 export const MapEditSchema = z.discriminatedUnion('op', [
   z.object({
     op: z.literal('addWall'),
-    wall: z.object({ a: PointSchema, b: PointSchema, ...WallRulesSchema.shape }),
+    wall: z.object({ a: PointSchema, b: PointSchema, ...WallRulesSchema.shape, ...OnLevelShape }),
   }),
   /** Give a wall new rules (a door, a window, what it stops); what is left out goes back to the default. */
   z.object({ op: z.literal('setWall'), chunk: z.string(), id: z.string(), ...WallRulesSchema.shape }),
-  z.object({ op: z.literal('addLight'), light: LightSchema.extend({ x: z.number(), y: z.number() }) }),
+  z.object({ op: z.literal('addLight'), light: LightSchema.extend({ x: z.number(), y: z.number(), ...OnLevelShape }) }),
   z.object({ op: z.literal('moveLight'), chunk: z.string(), id: z.string(), to: PointSchema }),
   /** Erase a wall or a light. */
   z.object({ op: z.literal('remove'), chunk: z.string(), id: z.string() }),
