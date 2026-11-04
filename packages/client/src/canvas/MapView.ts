@@ -159,6 +159,7 @@ export class MapView {
     this.destroyed = true;
     for (const off of this.unsubscribe) off();
     this.vision?.destroy();
+    this.chunks.destroy();
     if ((this.app.renderer as unknown) !== undefined) {
       this.app.destroy(true, { children: true });
     }
@@ -336,9 +337,9 @@ export class MapView {
     }
     const view = this.visibleRect();
     this.session.editor.viewRect = view;
-    // Lighting covers the whole screen, even where nothing is drawn yet.
+    // Lighting covers the whole screen, even where nothing is drawn yet; tokens and roofs only where they are.
     this.ground.filterArea = new Rectangle(view.x, view.y, view.w, view.h);
-    this.tokens.container.filterArea = this.chunks.roofs.filterArea = this.ground.filterArea;
+    this.chunks.setView(view, this.zoom, this.app.renderer);
     this.requestChunks();
     drawGrid(this.grid, this.session.world!, view, this.zoom);
     this.editor.setZoom(this.zoom);

@@ -15,6 +15,8 @@ export type ImageTile = Extract<Chunk['tiles'][number], { kind: 'image' }>;
 /** A drawn picture tile; `tick` moves it on (scroll, roof fade). */
 export interface TileView {
   root: Container;
+  /** Settles once the picture has loaded (or failed to). */
+  loaded?: Promise<void>;
   tick?: (dt: number, watchers: readonly Point[]) => void;
   /** Outlines it in gold while the pointer is on it (an object, as in BG3), or stops. */
   glow?: (on: boolean) => void;
@@ -100,21 +102,21 @@ export function imageTile(tile: ImageTile): TileView {
   root.angle = pose.angle;
   root.scale.set(...pose.scale);
   let view: Sprite | TilingSprite | GifSprite | undefined;
-  let loaded: Texture | GifSource | undefined;
-  const glow = glowSwitch(tile, root, () => loaded);
-  load(tile)
-    .then((picture) => {
+  let picture: Texture | GifSource | undefined;
+  const glow = glowSwitch(tile, root, () => picture);
+  const loaded = load(tile)
+    .then((got) => {
       if (root.destroyed) return;
-      loaded = picture;
-      view = sizedView(tile, picture);
-      const shadow = shadowView(tile, picture);
+      picture = got;
+      view = sizedView(tile, got);
+      const shadow = shadowView(tile, got);
       if (shadow) root.addChild(shadow);
       root.addChild(view);
     })
     .catch(() => {
       console.warn(`Missing image assets/${tile.src}`);
     });
-  if (!tile.overhead && !tile.scroll) return { root, glow };
+  if (!tile.overhead && !tile.scroll) return { root, loaded, glow };
   let seconds = 0;
   const tick = (dt: number, watchers: readonly Point[]) => {
     seconds += dt;
@@ -123,5 +125,5 @@ export function imageTile(tile: ImageTile): TileView {
       view.tilePosition.set(...scrollOffset(tile.scroll, seconds, tile.w, tile.h));
     }
   };
-  return { root, tick, glow };
+  return { root, loaded, tick, glow };
 }
