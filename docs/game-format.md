@@ -286,16 +286,18 @@ pixels.
   only the GM click it. Players are told only that a tile can be clicked. The
   actions, in order (regions take them as behaviours too):
 
-  | Action                                                                                 | What it does                                                                                          |
-  | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-  | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                | Shows the next picture, round and round; `tile` names another tile.                                   |
-  | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }` | Shows, hides or toggles a tile, token, region, drawing, note, sound or light (a hidden light is out). |
-  | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                       | Plays once for everyone on the scene.                                                                 |
-  | `{ "type": "teleport", "to": [x, y], "scene": "cellar", "level": "loft" }`             | Moves the creature that set it off (the actions after it wait), onto `level` when named.              |
-  | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                   | Opens, closes, locks or toggles a door.                                                               |
-  | `{ "type": "message", "text": "…", "gmOnly": true }`                                   | Says it in chat.                                                                                      |
-  | `{ "type": "journal", "entry": "letter", "page": "p1" }`                               | Shares the entry with the players and opens it on their screens.                                      |
-  | `{ "type": "activate", "target": { "coll": "tiles", "id": "trap" }, "to": "off" }`     | Turns another tile's trigger (or a region) `on`, `off` or `toggle`.                                   |
+  | Action                                                                                  | What it does                                                                                                                                                                  |
+  | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                 | Shows the next picture, round and round; `tile` names another tile.                                                                                                           |
+  | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }`  | Shows, hides or toggles a tile, token, region, drawing, note, sound or light (a hidden light is out).                                                                         |
+  | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                        | Plays once for everyone on the scene.                                                                                                                                         |
+  | `{ "type": "teleport", "to": [x, y], "scene": "cellar", "level": "loft" }`              | Moves the creature that set it off (the actions after it wait), onto `level` when named.                                                                                      |
+  | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                    | Opens, closes, locks or toggles a door.                                                                                                                                       |
+  | `{ "type": "message", "text": "…", "gmOnly": true }`                                    | Says it in chat.                                                                                                                                                              |
+  | `{ "type": "journal", "entry": "letter", "page": "p1" }`                                | Shares the entry with the players and opens it on their screens.                                                                                                              |
+  | `{ "type": "activate", "target": { "coll": "tiles", "id": "trap" }, "to": "off" }`      | Turns another tile's trigger (or a region) `on`, `off` or `toggle`.                                                                                                           |
+  | `{ "type": "elevation", "target": { "coll": "tiles", "id": "lift" }, "by": 20 }`        | Raises or lowers a tile (its model) or a creature `by` feet, or `to` a height; no `target`: the creature that set it off. Creatures standing on a tile ride with it (a lift). |
+  | `{ "type": "shift", "target": { "coll": "tiles", "id": "cell-door" }, "by": [0, 130] }` | Slides a tile or a creature that many pixels (a sliding door).                                                                                                                |
 
   The GM edits a trigger (or a region's behaviours) with the inspector's
   **Add trigger…** button.

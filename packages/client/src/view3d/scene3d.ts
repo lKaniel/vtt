@@ -44,6 +44,11 @@ export class Ground {
     );
   }
 
+  /** The 2D map's picture (draped over terrain too: terrain-paint.ts). */
+  get picture(): THREE.Texture {
+    return this.texture;
+  }
+
   /** Lays the picture just drawn over the square it shows. */
   show(center: Point, half: number, floor: number): void {
     this.mesh.position.copy(at3d(center, floor));

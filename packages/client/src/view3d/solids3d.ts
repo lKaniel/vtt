@@ -2,6 +2,7 @@ import { type ModelGround, solidSpan } from '@vtt/shared';
 import * as THREE from 'three';
 import { assetUrl } from '../assets.ts';
 import type { SolidShown } from './content3d.ts';
+import { peekable } from './peek3d.ts';
 
 // The drawn solids of the 3D view (solid3d.ts in shared): each outline
 // extruded as tall as asked, standing from its base, covered in its picture
@@ -66,7 +67,7 @@ export class Solids {
 
   private add(shown: SolidShown, ground: ModelGround): void {
     const geometry = solidGeometry(shown.outline, solidSpan(shown.solid, ground).height);
-    const mesh = new THREE.Mesh(geometry, this.material(shown));
+    const mesh = new THREE.Mesh(geometry, peekable(this.material(shown)));
     // An unseen box (3D Canvas transparency 0) is only there to stand on.
     mesh.visible = shown.solid.opacity !== 0;
     this.meshes.set(shown.key, { mesh, shown });
