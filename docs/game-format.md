@@ -149,6 +149,7 @@ Optional, all set from the Scenes tab too:
 | `gridOpacity`          | 0 to 1, default 0.16.                                                                                                        |
 | `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                                                                         |
 | `darknessFollowsClock` | The darkness follows the game clock's time of day (see time.json); `darkness` is ignored. New scenes start with it on.       |
+| `wallArt`              | `true`: walls are drawn as stone and doors swing (a map made of plain tiles). Missing: walls are invisible and only block.   |
 | `levels`               | Floors of the scene, see "Scene levels" below.                                                                               |
 | `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.                                               |
 | `navigation`           | `true`: the scene is in the GM's navigation bar under the top bar.                                                           |
@@ -451,9 +452,11 @@ a pillar through two storeys); with neither they are on every level. A
 token sees, and is lit and blocked by, only what is on its own level, and
 players don't see creatures on floors their own doesn't see
 (`tokensVisibleTo` in `shared/permissions.ts`, the fog keeper on the server,
-`Vision` on the client). The map draws the floor shown: the GM picks it in
-the map tools (creatures on other floors show faintly); a player sees their
-creature's.
+`Vision` on the client). The map draws the floor shown: the GM sees the
+floor of the creature they selected, or picks one (or every level) in the
+map tools (creatures on other floors show faintly); a player sees their
+creature's. Tiles over every floor (a roof) are drawn over the creatures
+and fade while one stands under them.
 
 A region only works for creatures on its own levels. These behaviours move
 creatures between floors: `level` (always to that level), `stairs` (between

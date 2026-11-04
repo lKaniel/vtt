@@ -106,6 +106,11 @@ export const SceneSettingsSchema = z.object({
   background: z.string().optional(),
   /** The time of day follows the game clock (world time, a later step); stored, not used yet. */
   darknessFollowsClock: z.boolean().optional(),
+  /**
+   * Walls drawn as stone, with doors that swing (a map made of plain tiles).
+   * Missing: walls are invisible and only block, as on a map with a picture.
+   */
+  wallArt: z.boolean().optional(),
   /** Floors of the scene, bottom up (see levels.ts); none = one level. */
   levels: z.array(SceneLevelSchema).optional(),
   /** A playlist that starts when the game moves to this scene. */

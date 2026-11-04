@@ -141,6 +141,35 @@ describe('clicking a trigger tile', () => {
     expect(errors(ana)).toEqual(['No such token']);
   });
 
+  it('takes the creature up or down a ladder: to its other floor, then teleported beside it', () => {
+    const levels = [
+      { id: 'cellar', name: 'Cellar', bottom: -10 },
+      { id: 'ground', name: 'Ground', bottom: 0 },
+    ];
+    store.applyOps([{ op: 'update', coll: 'scenes', id: 'main', patch: { levels } }]);
+    tile({
+      actions: [
+        { type: 'stairs', between: ['cellar', 'ground'] },
+        { type: 'teleport', to: [50, 250] },
+      ],
+    });
+    const ana = seat('ana');
+    pull(ana, 'hero');
+    expect(store.tokens.get('hero')).toMatchObject({ x: 50, y: 250, elevation: -10 });
+    pull(ana, 'hero');
+    expect(store.tokens.get('hero')).toMatchObject({ elevation: 0 });
+    store.applyOps([
+      {
+        op: 'update',
+        coll: 'main/tiles',
+        id: 'lever',
+        patch: { trigger: { actions: [{ type: 'level', to: 'cellar' }] } },
+      },
+    ]);
+    pull(ana, 'hero');
+    expect(store.tokens.get('hero')).toMatchObject({ elevation: -10 });
+  });
+
   it('runs once when meant to, and not when off, GM-only or hidden', () => {
     tile({ once: true, actions: [{ type: 'message', text: 'Click.' }] });
     const ana = seat('ana');

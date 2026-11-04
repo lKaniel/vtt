@@ -62,9 +62,13 @@ export function activeTilesNote(tiles: FoundryTileData[]): ImportLoss | undefine
   return lost("Monk's Active Tiles triggers (the tile comes, not what it does)", acting.length, [...actions]);
 }
 
-/** Whether a tile is drawn over the tokens; `foreground` is the scene's foreground elevation (v12+). */
-export function isOverhead(t: FoundryTileData, foreground: number | undefined): boolean {
-  if (t.overhead || t.roof || Number(t.flags?.betterroofs?.brMode ?? 0) > 0) return true;
+/**
+ * Whether a tile is drawn over the tokens; `foreground` is the scene's
+ * foreground elevation (v12+), `above` says it stands over every floor (a
+ * roof with Levels, whatever Better Roofs says).
+ */
+export function isOverhead(t: FoundryTileData, foreground: number | undefined, above = false): boolean {
+  if (above || t.overhead || t.roof || Number(t.flags?.betterroofs?.brMode ?? 0) > 0) return true;
   return foreground !== undefined && t.elevation !== undefined && t.elevation >= foreground;
 }
 
@@ -72,8 +76,9 @@ export function isOverhead(t: FoundryTileData, foreground: number | undefined): 
 export function roofOf(
   t: FoundryTileData,
   foreground: number | undefined,
+  above = false,
 ): { overhead?: true; occludedAlpha?: number } {
-  if (!isOverhead(t, foreground)) return {};
+  if (!isOverhead(t, foreground, above)) return {};
   const alpha = Math.min(1, Math.max(0, t.occlusion?.alpha ?? 0));
   return { overhead: true, ...(alpha > 0 ? { occludedAlpha: alpha } : {}) };
 }

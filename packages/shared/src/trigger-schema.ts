@@ -24,6 +24,10 @@ export const TRIGGER_ACTIONS = [
   z.object({ type: z.literal('sound'), src: z.string().min(1), volume: z.number().min(0).max(1).optional() }),
   /** Moves the token that set it off to `to`, on this scene or on `scene`, and onto that scene's `level` when named. */
   z.object({ type: z.literal('teleport'), to: point, scene: id.optional(), level: id.optional() }),
+  /** Takes the creature to another level of the scene (a ladder, a trapdoor), at that level's bottom. */
+  z.object({ type: z.literal('level'), to: id }),
+  /** Stairs or a ladder both ways: a creature on one of the two levels goes to the other. */
+  z.object({ type: z.literal('stairs'), between: z.tuple([id, id]) }),
   /** Opens, closes, locks or flips a door by its wall id. */
   z.object({ type: z.literal('door'), wall: id, to: z.enum(['open', 'closed', 'locked', 'toggle']) }),
   /** Posts `text` in chat; `gmOnly` whispers it to the GM. */

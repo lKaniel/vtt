@@ -1,4 +1,4 @@
-import type { Game, Player, SceneEntry, Tile } from '@vtt/shared';
+import { type Game, levelAt, type Player, type SceneEntry, type Tile } from '@vtt/shared';
 import { type ActorSystem, type ConvertedActors, foundryActors, foundryTokens, idMaker } from './foundry-actors.ts';
 import type { FoundryDoc } from './foundry-db.ts';
 import { type ConvertedEntries, type FolderLookup, foundryEntries } from './foundry-entries.ts';
@@ -244,6 +244,7 @@ function monksTiles(s: SceneOut, ctx: WorldContext): void {
     glob: (p: string) => media.glob(p),
     scene: (id: string) => ctx.made.scenes.get(id),
     imagesOf: monksImages(index, media),
+    floorAt: (feet: number) => (s.entry.levels?.length ? levelAt(s.entry.levels, feet)?.id : undefined),
   };
   const missing: string[] = [];
   let idle = 0;

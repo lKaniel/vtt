@@ -4,6 +4,7 @@ import {
   type DrawnTile,
   type EngineServerMessage,
   isGm,
+  tokenLevel,
   nextImage,
   type Player,
   type Point,
@@ -103,13 +104,41 @@ export class TriggerActions {
       image: (a, c) => this.image(a.tile ?? c.tile, a.images),
       visibility: (a) => this.visibility(a.target, a.to),
       sound: (a) => this.sound(a.src, a.volume),
-      teleport: (a, c) => !!c.token && this.teleport(c.token, a.to, a.scene, a.level),
+      teleport: (a, c) => !!c.token && this.teleport(this.now(c.token), a.to, a.scene, a.level),
+      level: (a, c) => !!c.token && this.ladder(this.now(c.token), a.to),
+      stairs: (a, c) => !!c.token && this.stairs(this.now(c.token), a.between),
       door: (a) => this.door(a.wall, a.to),
       message: (a) => this.say(a.text, !!a.gmOnly),
       journal: (a) => this.journal(a.entry, a.page),
       activate: (a) => this.activate(a.target, a.to),
     };
     return (acts[action.type] as Act<TriggerAction['type']>)(action, ctx);
+  }
+
+  /** The creature as it stands now: an earlier action may have moved it. */
+  private now(token: Token): Token {
+    return this.store.tokens.get(token.id) ?? token;
+  }
+
+  /** Puts the creature on level `to`, at its bottom; false when the scene has no such level. */
+  toLevel(token: Token, to: string): boolean {
+    const level = this.store.world.levels?.find((l) => l.id === to);
+    if (level) this.store.setToken({ ...token, elevation: level.bottom });
+    return !!level;
+  }
+
+  /** A ladder or trapdoor to one level; the creature stays to run the actions after it. */
+  private ladder(token: Token, to: string): false {
+    this.toLevel(token, to);
+    return false;
+  }
+
+  /** Up from one of the two levels, down from the other. */
+  private stairs(token: Token, [a, b]: readonly [string, string]): false {
+    const here = tokenLevel(this.store.world.levels, token);
+    if (here === a) this.toLevel(token, b);
+    else if (here === b) this.toLevel(token, a);
+    return false;
   }
 
   private sound(src: string, volume: number | undefined): false {
