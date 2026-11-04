@@ -9,7 +9,7 @@ import { ActionBar } from './ActionBar.tsx';
 import { listenToClipboard, listenToKeys, listenToSpace, toggleSheet } from '../keys/game-keys.ts';
 import { Sheets } from './sheet/PoppedSheets.tsx';
 import { ClockBar } from './clock/ClockBar.tsx';
-import { ChatPanel } from './ChatPanel.tsx';
+import { SidePanel } from './SidePanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
 import { blockNativeMenu } from '../keys/native-menu.ts';
 import { ImageViewer } from './ImageViewer.tsx';
@@ -51,9 +51,8 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
   }, [session]);
 
   return (
-    // The party portraits move down under the scene navigation bar while it shows,
-    // and the inspector moves left of the side panel while a full-height tab (Scenes, Assets) is open.
-    <div className="game has-[[data-slot=scene-nav]]:[&_.party]:top-[84px]! has-[.chat.library:not(.closed)]:[&_.inspector]:right-[344px]!">
+    // The party portraits move down under the scene navigation bar while it shows.
+    <div className="game has-[[data-slot=scene-nav]]:[&_.party]:top-[84px]!">
       <div className="map" ref={host} />
       <TopBar session={session} onLeave={onLeave} />
       <SceneNav session={session} />
@@ -74,7 +73,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <LevelPrompt session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <Sheets session={session} />
-      <ChatPanel session={session} />
+      <SidePanel session={session} />
       <Toast session={session} />
       <ContextMenu session={session} />
       <TokenHud session={session} />

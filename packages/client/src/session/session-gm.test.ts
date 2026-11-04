@@ -153,6 +153,14 @@ describe('the GM tools', () => {
     expect(ws.sent.at(-1)).toMatchObject({ t: 'saveActor', actor: { id: 'bandit', img: 'art/bandit.png' } });
   });
 
+  it('sends a drop to the sheet it landed on, not the front one', () => {
+    ws.receive(gmWelcome());
+    session.sheets.open({ kind: 'token', id: 'hero' });
+    session.sheets.open({ kind: 'actor', id: 'bandit' });
+    session.drops.onSheet({ kind: 'item', id: 'dagger' }, 'inventory', { kind: 'token', id: 'hero' });
+    expect(ws.sent.at(-1)).toMatchObject({ t: 'drop', onto: { kind: 'token', id: 'hero' } });
+  });
+
   it('pins a journal entry dropped on the map as a note', () => {
     ws.receive(gmWelcome());
     session.drops.onMap({ kind: 'journal', id: 'lore', name: 'Lore' }, [40, 60]);

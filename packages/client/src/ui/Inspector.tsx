@@ -9,6 +9,11 @@ import { SelectField } from './kit/select.tsx';
 import { Button } from './kit/button.tsx';
 import { MediaInput } from './MediaPicker.tsx';
 import { TriggerDialog } from './TriggerDialog.tsx';
+import { Window } from './kit/window.tsx';
+import type { Size } from './kit/window-stack.ts';
+
+/** High on the right, just left of the side panel (336 px) and clear of the action bar, until moved. */
+const inspectorPlace = (view: Size) => ({ x: Math.max(8, view.width - 336 - 268), y: 110 });
 
 /** Fields only the GM sets. */
 const GM_FIELDS = new Set(['hidden', 'level']);
@@ -51,11 +56,22 @@ export function Inspector({ session }: Readonly<{ session: Session }>) {
   const fields = shownFields(session, docs);
   const count = session.editor.selection.length;
   return (
-    <div className="inspector frame max-h-[calc(100vh-24px)] overflow-y-auto" aria-label="Inspector">
-      <div className="inspector-head">
-        {count === 1 ? (docs[0]?.id ?? '') : `${count} selected`}
-        <span className="inspector-type">{docs[0]?.type}</span>
-      </div>
+    <Window
+      id="inspector"
+      kind="inspector"
+      initial={inspectorPlace}
+      title={
+        <>
+          {count === 1 ? (docs[0]?.id ?? '') : `${count} selected`}
+          <span className="inspector-type ml-2">{docs[0]?.type}</span>
+        </>
+      }
+      label="Inspector"
+      onClose={() => session.editor.setSelection([])}
+      closeLabel="Deselect"
+      className="inspector w-[260px]"
+      bodyClassName="gap-1.5 px-3 py-2"
+    >
       {fields.map((field) => {
         const value = commonValue(docs, field);
         // Keyed by the value, so a box shows the new value after any edit, ours or not.
@@ -72,7 +88,7 @@ export function Inspector({ session }: Readonly<{ session: Session }>) {
       })}
       {!fields.length && <p className="inspector-note">Nothing to edit together here.</p>}
       {session.isGm() && count === 1 && triggerable(docs[0]!) && <TriggerButton session={session} doc={docs[0]!} />}
-    </div>
+    </Window>
   );
 }
 

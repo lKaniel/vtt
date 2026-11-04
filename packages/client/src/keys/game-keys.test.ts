@@ -61,6 +61,31 @@ describe('the game keys', () => {
     expect(session.book.tab).toBeUndefined();
   });
 
+  it('C closes only the selected creature’s sheet when several are open', () => {
+    session.sheets.open({ kind: 'actor', id: 'wolf' });
+    session.select('hero');
+    gameKey(session, press('c'));
+    expect(session.sheets.list.map((s) => s.id)).toEqual(['wolf', 'hero']);
+    session.sheets.open({ kind: 'actor', id: 'wolf' });
+    gameKey(session, press('c'));
+    expect(session.sheets.list.map((s) => s.id)).toEqual(['wolf']);
+  });
+
+  it('E opens the selected creature’s sheet for editing and switches its edit mode', () => {
+    ws.receive({ ...welcome([token('hero')]), you: { id: 'gm', name: 'GM', role: 'gm', color: '#fff' } } as never);
+    gameKey(session, press('e'));
+    expect(session.sheets.current).toBeUndefined();
+    session.sheets.open({ kind: 'token', id: 'hero' });
+    gameKey(session, press('e'));
+    expect(session.sheets.current?.edit).toBe(true);
+    session.select('hero');
+    session.sheets.shut({ kind: 'token', id: 'hero' });
+    gameKey(session, press('e'));
+    expect(session.sheets.current).toEqual({ kind: 'token', id: 'hero', edit: true });
+    gameKey(session, press('e'));
+    expect(session.sheets.current?.edit).toBe(false);
+  });
+
   it('backs out with Esc: the sheet first, then the selection', () => {
     session.select('hero');
     session.sheets.open({ kind: 'token', id: 'hero' });

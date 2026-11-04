@@ -81,8 +81,13 @@ export const EN = {
   'keys.cam-tactical': '3D: look straight down (tactical)',
   'keys.cam-centre': '3D: back to your creature',
 
+  'window.collapse': 'Roll up',
+  'window.expand': 'Roll down',
+  'window.close': 'Close',
+  'window.resize': 'Resize',
   'panel.hide': 'Hide panel',
   'panel.show': 'Show panel',
+  'panel.popOut': 'Open in a window',
   'panel.Adventure log': 'Adventure log',
   'panel.Journal': 'Journal',
   'panel.Scenes': 'Scenes',

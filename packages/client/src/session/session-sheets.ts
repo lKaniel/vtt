@@ -15,40 +15,75 @@ export interface SheetHost {
   canEdit(id: string): boolean;
 }
 
-/** The open character sheet; `edit` is edit mode (the GM's, or a trusted owner's). */
+export type OpenSheet = SheetTarget & { edit: boolean };
+
+const same = (a: SheetTarget, b: SheetTarget) => a.kind === b.kind && a.id === b.id;
+
+/**
+ * The open character sheets, several at once as in Foundry; the last
+ * opened is in front (`current`). `edit` is edit mode (the GM's, or a
+ * trusted owner's).
+ */
 export class Sheets implements SessionPart {
-  current?: SheetTarget & { edit: boolean };
+  list: readonly OpenSheet[] = [];
 
   constructor(
     private readonly s: SheetHost,
     private readonly on: { changed(): void },
   ) {}
 
-  /** Opens a sheet (or closes it with undefined); only those who may edit it can open it for editing. */
-  open(target: SheetTarget | undefined, edit = false): void {
-    const editable = target && (target.kind === 'actor' ? this.s.isGm() : this.s.canEdit(target.id));
-    this.current = target && { ...target, edit: edit && !!editable };
-    this.on.changed();
+  /** The sheet in front: the last one opened. */
+  get current(): OpenSheet | undefined {
+    return this.list.at(-1);
   }
 
-  setEdit(edit: boolean): void {
-    if (this.current) this.open(this.current, edit);
+  isOpen(target: SheetTarget): boolean {
+    return this.list.some((o) => same(o, target));
+  }
+
+  /**
+   * Opens a sheet in front (one already open moves there), or with undefined
+   * closes the front one; only those who may edit it can open it for editing.
+   */
+  open(target: SheetTarget | undefined, edit = false): void {
+    if (!target) return this.set(this.list.slice(0, -1));
+    const editable = target.kind === 'actor' ? this.s.isGm() : this.s.canEdit(target.id);
+    const sheet = { kind: target.kind, id: target.id, edit: edit && editable };
+    this.set([...this.list.filter((o) => !same(o, target)), sheet]);
+  }
+
+  /** Closes one sheet; the others stay. */
+  shut(target: SheetTarget): void {
+    this.set(this.list.filter((o) => !same(o, target)));
+  }
+
+  /** Edit mode on or off for `target` (the front sheet when unset), in place. */
+  setEdit(edit: boolean, target: SheetTarget | undefined = this.current): void {
+    if (!target) return;
+    const editable = target.kind === 'actor' ? this.s.isGm() : this.s.canEdit(target.id);
+    this.set(this.list.map((o) => (same(o, target) ? { ...o, edit: edit && editable } : o)));
   }
 
   /** After a welcome: a new role may take edit mode away (or the creature out of sight). */
   reopen(): void {
-    const sheet = this.current;
-    if (!sheet) return;
-    const there = sheet.kind === 'token' ? this.s.tokens.has(sheet.id) : this.s.actors.has(sheet.id);
-    this.open(there ? sheet : undefined, sheet.edit);
+    const there = (o: SheetTarget) => (o.kind === 'token' ? this.s.tokens.has(o.id) : this.s.actors.has(o.id));
+    const kept = this.list.filter(there);
+    this.list = kept;
+    for (const o of kept) this.setEdit(o.edit, o);
+    if (!kept.length) this.on.changed();
   }
 
   /** Closes the sheet of a creature that is gone. */
   close(kind: SheetTarget['kind'], id: string): void {
-    if (this.current?.kind === kind && this.current.id === id) this.current = undefined;
+    this.list = this.list.filter((o) => !same(o, { kind, id }));
   }
 
   gone(id: string): void {
     this.close('token', id);
+  }
+
+  private set(list: readonly OpenSheet[]): void {
+    this.list = list;
+    this.on.changed();
   }
 }
