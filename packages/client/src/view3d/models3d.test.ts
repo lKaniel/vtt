@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { faded, Models, seeThrough } from './models3d.ts';
+import { faded, glowing, Models, seeThrough } from './models3d.ts';
 
 // How much of a model shows: 3D Canvas's transparency.
 
@@ -33,5 +33,23 @@ describe('models in the 3D view', () => {
     models.restand();
     models.show([], ground, 0);
     expect(models.stood).toBe(2);
+  });
+
+  it('glows gold while the pointer is on its object, on copies of its materials, then looks as before', () => {
+    const own = new THREE.MeshStandardMaterial();
+    const scene = new THREE.Group().add(new THREE.Mesh(new THREE.BoxGeometry(), own));
+    const mesh = scene.children[0] as THREE.Mesh;
+    glowing(scene, true);
+    const lit = mesh.material as THREE.MeshStandardMaterial;
+    expect([lit === own, lit.emissive.getHex() > 0, own.emissive.getHex()]).toEqual([false, true, 0]);
+    glowing(scene, true);
+    expect(mesh.material).toBe(lit);
+    glowing(scene, false);
+    expect(mesh.material).toBe(own);
+  });
+
+  it("lights only the hovered tile's model", () => {
+    const models = new Models();
+    expect(models.glow('tile:lever')).toBe(false);
   });
 });

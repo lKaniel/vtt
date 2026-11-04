@@ -1,5 +1,5 @@
 import type { Chunk, Point } from '@vtt/shared';
-import { Assets, BlurFilter, Container, Sprite, type Texture, TilingSprite } from 'pixi.js';
+import { Assets, BlurFilter, ColorMatrixFilter, Container, Sprite, type Texture, TilingSprite } from 'pixi.js';
 import { type GifSource, GifSprite } from 'pixi.js/gif';
 import { assetUrl } from '../assets.ts';
 import { easeAlpha, roofAlpha, scrollOffset, tileMedia } from './tile-motion.ts';
@@ -16,6 +16,8 @@ export type ImageTile = Extract<Chunk['tiles'][number], { kind: 'image' }>;
 export interface TileView {
   root: Container;
   tick?: (dt: number, watchers: readonly Point[]) => void;
+  /** Outlines it in gold while the pointer is on it (an object, as in BG3), or stops. */
+  glow?: (on: boolean) => void;
 }
 
 /** Videos loop and stay quiet; `preload` must be set, or Pixi's loader trips over it. */
@@ -56,6 +58,40 @@ function shadowView(tile: ImageTile, picture: Texture | GifSource): Container | 
   return shadow;
 }
 
+/** Gold where the picture is opaque: each colour channel is the pixel's alpha times gold's. */
+const GOLD_MATRIX = [0, 0, 0, 1, 0, 0, 0, 0, 0.78, 0, 0, 0, 0, 0.36, 0, 0, 0, 0, 1, 0] as const;
+
+/** Pixels the glow reaches past the picture's edge. */
+const GLOW_RIM = 6;
+
+/** A blurred gold copy of the picture, a little larger, behind it: its outline glowing. */
+function glowView(tile: ImageTile, picture: Texture | GifSource): Container {
+  const glow = sizedView(tile, picture);
+  glow.alpha = 1;
+  // A few pixels bigger all round, so a crisp rim shows past the picture's edge before the blur softens it.
+  if (!(glow instanceof TilingSprite)) {
+    glow.setSize(tile.w + 2 * GLOW_RIM, tile.h + 2 * GLOW_RIM);
+    glow.position.set(-GLOW_RIM, -GLOW_RIM);
+  }
+  const gold = new ColorMatrixFilter();
+  gold.matrix = [...GOLD_MATRIX];
+  glow.filters = [gold, new BlurFilter({ strength: 4, quality: 3 })];
+  return glow;
+}
+
+/** The picture's glow, put in behind it or taken away. */
+function glowSwitch(tile: ImageTile, root: Container, picture: () => Texture | GifSource | undefined) {
+  let glow: Container | undefined;
+  return (on: boolean) => {
+    const loaded = picture();
+    if (on && !glow && loaded) glow = root.addChildAt(glowView(tile, loaded), 0);
+    if (!on && glow) {
+      if (!glow.destroyed) glow.destroy();
+      glow = undefined;
+    }
+  };
+}
+
 export function imageTile(tile: ImageTile): TileView {
   const root = new Container();
   const pose = tilePose(tile);
@@ -64,9 +100,12 @@ export function imageTile(tile: ImageTile): TileView {
   root.angle = pose.angle;
   root.scale.set(...pose.scale);
   let view: Sprite | TilingSprite | GifSprite | undefined;
+  let loaded: Texture | GifSource | undefined;
+  const glow = glowSwitch(tile, root, () => loaded);
   load(tile)
     .then((picture) => {
       if (root.destroyed) return;
+      loaded = picture;
       view = sizedView(tile, picture);
       const shadow = shadowView(tile, picture);
       if (shadow) root.addChild(shadow);
@@ -75,7 +114,7 @@ export function imageTile(tile: ImageTile): TileView {
     .catch(() => {
       console.warn(`Missing image assets/${tile.src}`);
     });
-  if (!tile.overhead && !tile.scroll) return { root };
+  if (!tile.overhead && !tile.scroll) return { root, glow };
   let seconds = 0;
   const tick = (dt: number, watchers: readonly Point[]) => {
     seconds += dt;
@@ -84,5 +123,5 @@ export function imageTile(tile: ImageTile): TileView {
       view.tilePosition.set(...scrollOffset(tile.scroll, seconds, tile.w, tile.h));
     }
   };
-  return { root, tick };
+  return { root, tick, glow };
 }

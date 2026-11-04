@@ -103,6 +103,34 @@ export function seeThrough(scene: THREE.Object3D): void {
   });
 }
 
+/** The gold an object's model glows while the pointer is on it, as in BG3. */
+const GLOW = new THREE.Color(0xffc45a);
+const GLOW_STRENGTH = 0.45;
+
+/** A copy of a material glowing gold, keeping its shader changes (painted, see-through), which a clone leaves behind. */
+function lit(m: THREE.Material): THREE.Material {
+  const copy = Object.assign(m.clone(), {
+    onBeforeCompile: m.onBeforeCompile.bind(m),
+    customProgramCacheKey: m.customProgramCacheKey.bind(m),
+  });
+  if (copy instanceof THREE.MeshStandardMaterial) copy.emissive.copy(GLOW).multiplyScalar(GLOW_STRENGTH);
+  return copy;
+}
+
+/** Lights a model gold (on copies of its materials), or puts its own materials back. */
+export function glowing(scene: THREE.Object3D, on: boolean): void {
+  scene.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const mesh = o as THREE.Mesh;
+    const own = mesh.userData.unlit as THREE.Mesh['material'] | undefined;
+    if (!on && own) mesh.material = own;
+    if (!on) delete mesh.userData.unlit;
+    if (!on || own) return;
+    mesh.userData.unlit = mesh.material;
+    mesh.material = Array.isArray(mesh.material) ? mesh.material.map(lit) : lit(mesh.material);
+  });
+}
+
 /** The copies of one model over one rect. */
 class Placed {
   readonly group = new THREE.Group();
@@ -167,6 +195,21 @@ export class Models {
     this.stale = false;
     this.stood++;
     for (const p of this.placed.values()) p.place(ground, floorPx);
+  }
+
+  /**
+   * Lights the models whose key starts with `prefix` (a tile's: "tile:<id>"),
+   * and puts out the rest that were lit. True when one is lit.
+   */
+  glow(prefix: string | undefined): boolean {
+    let lit = false;
+    for (const [key, p] of this.placed) {
+      const on = !!prefix && key.startsWith(`${prefix}:`);
+      if (on || p.group.userData.lit) glowing(p.group, on);
+      p.group.userData.lit = on;
+      lit ||= on;
+    }
+    return lit;
   }
 
   /** How many copies stand (the e2e tests read it off the 3D view). */

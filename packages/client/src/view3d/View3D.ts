@@ -307,6 +307,8 @@ export class View3D {
     const all = [...this.tileModels, ...figures(this.session.tokens.values(), this.table(), placeOf)];
     const ground = { grid: this.grid(), feet: 5, floor: this.level()?.bottom ?? 0 };
     this.models.show(all, ground, floor);
+    const hover = this.session.inspect.hover;
+    this.models.glow(hover?.kind === 'tile' ? `tile:${hover.id}` : undefined);
     this.solids.show(this.tileSolids, ground, floor);
     this.terrains.show(this.tileTerrains, ground, floor);
     const seen = `${this.models.stood}:${this.solids.count}:${this.terrains.count}:${floor}`;

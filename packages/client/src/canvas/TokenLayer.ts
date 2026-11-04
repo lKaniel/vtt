@@ -239,6 +239,8 @@ export class TokenLayer {
   }
 
   private ringColor(token: TokenView): string {
+    // A pile of loot is an object: it glows gold, like a door or a lever (object-glow.ts).
+    if (token.pile) return TURN_COLOR;
     const you = this.session.you;
     if (you && ownersOf(token).includes(you.id)) return you.color;
     return isParty(token) ? ALLY_RIM : OTHER_RIM;

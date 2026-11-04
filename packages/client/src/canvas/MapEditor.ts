@@ -105,6 +105,9 @@ export class MapEditor {
 
   pointerMove(at: Point, mods: Mods): void {
     this.hover = at;
+    // The object under the pointer glows, as in BG3 (tokens mode only: the other modes edit).
+    const s = this.session;
+    s.inspect.hover = s.editor.mode === 'tokens' ? objectAt(s, at)?.ref : undefined;
     this.free = mods.shift;
     if (this.measuring) this.session.rulers.hover(at);
     this.controller.move(at, this.dragMods(mods));
