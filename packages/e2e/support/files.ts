@@ -33,3 +33,8 @@ export async function editActor(
   const actor = JSON.parse(await readFile(file, 'utf8')) as Record<string, unknown>;
   await writeFile(file, JSON.stringify(edit(actor), null, 2));
 }
+
+/** Merges `patch` into wall `id` of the crossroads (a door's name and description). */
+export function editWall(gameDir: string, id: string, patch: Record<string, unknown>): Promise<void> {
+  return editSceneList(gameDir, 'walls', (walls) => walls.map((w) => (w.id === id ? { ...w, ...patch } : w)));
+}

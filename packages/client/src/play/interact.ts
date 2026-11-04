@@ -39,13 +39,13 @@ export function clickTile(s: Session, id: string): void {
 }
 
 /** The creature you act with: selected, and yours to control. */
-function actor(s: Session) {
+export function actor(s: Session) {
   const token = s.selected ? s.tokens.get(s.selected) : undefined;
   return token && s.canControl(token) ? token : undefined;
 }
 
 /** A player's creature walks up to `snap` unless it is there already. */
-function approach(s: Session, snap: Snap): void {
+export function approach(s: Session, snap: Snap): void {
   const token = actor(s);
   if (!token || s.isGm() || !s.world) return;
   const g = s.world.gridSize;

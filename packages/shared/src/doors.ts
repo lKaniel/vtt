@@ -6,12 +6,12 @@ import { tileFor } from './triggers.ts';
 
 /**
  * The wall as a player is shown it: a closed secret door is a plain wall
- * (no door, nothing saying it is secret); the GM sees it as it is.
+ * (no door, no name, nothing saying it is secret); the GM sees it as it is.
  */
 export function wallFor(wall: Wall, gm: boolean): Wall {
   if (gm || !wall.secret) return wall;
-  const { door, secret: _secret, ...plain } = wall;
-  return door === 'open' ? { ...plain, door } : plain;
+  const { door, secret: _secret, name, description, ...plain } = wall;
+  return door === 'open' ? { ...plain, door, ...(name && { name }), ...(description && { description }) } : plain;
 }
 
 /**

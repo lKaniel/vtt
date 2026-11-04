@@ -51,6 +51,7 @@ import { Hud, type HudEvents } from './session-hud.ts';
 import { Journal, type JournalEvents } from './session-journal.ts';
 import { type PackEvents, Packs } from './session-packs.ts';
 import { Piles } from './session-piles.ts';
+import { Inspecting } from './session-inspect.ts';
 import { Cards } from './session-cards.ts';
 import { Folders } from './session-folders.ts';
 import { ScriptHost } from '../scripting/script-api.ts';
@@ -130,6 +131,7 @@ export class Session {
   /** The selected creature's readied attack or aimed spell, and your roll mode. */
   readonly actions = new Actions(this, this.ev);
   readonly piles = new Piles(this, this.ev);
+  readonly inspect = new Inspecting(this.ev);
   readonly hud = new Hud(this, this.ev);
   readonly journal = new Journal(this, this.ev);
   readonly packs = new Packs(this, this.ev);

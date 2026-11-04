@@ -4,7 +4,8 @@ import type { Doc, MediaKind, Patch } from '@vtt/core';
 
 export const MIXED = Symbol('mixed');
 
-export type FieldKind = 'number' | 'text' | 'color' | 'select' | 'check' | 'media';
+/** `longtext`: text over several lines (a description). */
+export type FieldKind = 'number' | 'text' | 'longtext' | 'color' | 'select' | 'check' | 'media';
 export type FieldValue = string | number | boolean;
 
 export interface Field {
@@ -42,6 +43,10 @@ function toValue(kind: FieldKind, value: FieldValue): unknown {
 }
 
 export const options = (...values: string[]) => values.map((value) => ({ value, label: value || 'none' }));
+
+/** What players read when they inspect an object (play/objects.ts). */
+export const describe = (extra: Partial<Field> = {}): Field =>
+  plain('description', 'Description (players read it)', 'longtext', extra);
 
 export const flag = (key: string, label: string, extra: Partial<Field> = {}): Field => ({
   ...plain(key, label, 'check', extra),

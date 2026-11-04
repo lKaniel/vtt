@@ -149,8 +149,10 @@ export class ChunkLayer {
     if (!tileClickable(tile, gm)) return;
     drawn.eventMode = 'static';
     drawn.cursor = 'pointer';
-    drawn.on('pointerdown', (e) => e.stopPropagation());
+    // A right click goes through to the map, which opens the object's menu.
+    drawn.on('pointerdown', (e) => e.button === 0 && e.stopPropagation());
     drawn.on('pointertap', (e) => {
+      if (e.button !== 0) return;
       e.stopPropagation();
       clickTile(this.session, tile.id);
     });
@@ -167,10 +169,9 @@ export class ChunkLayer {
     door.hitArea = new Circle(mid[0], mid[1], DOOR_HANDLE_RADIUS * 2);
     door.eventMode = 'static';
     door.cursor = 'pointer';
-    door.on('pointerdown', (e) => {
-      e.stopPropagation();
-    });
+    door.on('pointerdown', (e) => e.button === 0 && e.stopPropagation());
     door.on('pointertap', (e) => {
+      if (e.button !== 0) return;
       e.stopPropagation();
       openDoor(this.session, key, wall, e.shiftKey);
     });

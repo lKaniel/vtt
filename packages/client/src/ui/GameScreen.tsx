@@ -14,6 +14,7 @@ import { ContextMenu } from './ContextMenu.tsx';
 import { blockNativeMenu } from '../keys/native-menu.ts';
 import { ImageViewer } from './ImageViewer.tsx';
 import { PileWindow } from './PileWindow.tsx';
+import { InspectCard } from './InspectCard.tsx';
 import { DiceOverlay } from './DiceOverlay.tsx';
 import { Inspector } from './Inspector.tsx';
 import { JournalViewer } from './JournalViewer.tsx';
@@ -65,6 +66,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <JournalViewer session={session} />
       <ImageViewer session={session} />
       <PileWindow session={session} />
+      <InspectCard session={session} />
       <DiceOverlay session={session} />
       <ReactionPrompt session={session} />
       <LevelPrompt session={session} />

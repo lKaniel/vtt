@@ -10,3 +10,10 @@ describe('image tiles', () => {
     expect(TileSchema.safeParse({ ...image, occludedAlpha: 2 }).success).toBe(false);
   });
 });
+
+describe('described tiles', () => {
+  it('carry a description players read when they inspect them', () => {
+    const lever = TileSchema.parse({ ...image, name: 'Lever', description: 'A rusty lever in the wall.' });
+    expect(lever).toMatchObject({ name: 'Lever', description: 'A rusty lever in the wall.' });
+  });
+});

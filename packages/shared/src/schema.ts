@@ -138,6 +138,9 @@ export const WorldSchema = SceneSettingsSchema.extend({
 });
 export type World = z.infer<typeof WorldSchema>;
 
+/** What players read when they inspect an object on the map (game-format.md, "Objects"). */
+const ObjectDescription = z.string().max(10_000).optional();
+
 /** Where a tile sits in the tile tree (see tiles.ts). */
 const tileTree = {
   id,
@@ -165,6 +168,8 @@ const tileBase = {
   only2d: z.boolean().optional(),
   /** Runs actions when it is clicked or walked onto (see triggers.ts). */
   trigger: TileTriggerSchema.optional(),
+  /** What players read when they inspect it (a lever, a chest, a statue); it makes the tile an object (game-format.md, "Objects"). */
+  description: ObjectDescription,
 };
 
 /** Painted ground for rect tiles, tinted by the tile's colour. */
@@ -283,6 +288,10 @@ export const WallSchema = z.preprocess(
     a: PointSchema,
     b: PointSchema,
     ...WallRulesSchema.shape,
+    /** A door's name when players inspect it ("Cell door"); "Door" otherwise. */
+    name: z.string().optional(),
+    /** What players read when they inspect the door. */
+    description: ObjectDescription,
     /** Feet above the ground the wall stands between (Wall Height): a creature above `top` passes over. */
     height: z.object({ bottom: z.number().optional(), top: z.number().optional() }).optional(),
     ...onTile,
