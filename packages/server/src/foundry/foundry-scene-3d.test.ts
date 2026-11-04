@@ -154,4 +154,19 @@ describe('merged 3D Canvas boxes', () => {
       { x: 500, y: 500, w: 100, h: 100, solid: { height: 5, elevation: 10, color: '#000000' } },
     ]);
   });
+
+  it('leaves out a flat copy, which 3D Canvas draws as nothing', () => {
+    const copy = { width: 0.1, height: 0.1, x: 0, y: 0, z: 0, rotation: 0, tiltX: 0, tiltZ: 0 };
+    const merged = shape(0, {
+      dynaMesh: 'box',
+      depth: 100,
+      mergedMatrix: [
+        { ...copy, depth: 0 },
+        { ...copy, depth: 0.1, x: 0.5 },
+      ],
+      originalDimensions: { width: 1, height: 1, depth: 0.1 },
+    });
+    const { scene: s } = foundryScene({ ...scene, tiles: [{ ...merged, width: 1000, height: 1000 }] }, () => undefined);
+    expect(s.tiles).toMatchObject([{ x: 500, solid: { height: 5 } }]);
+  });
 });
