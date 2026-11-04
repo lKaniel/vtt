@@ -89,8 +89,9 @@ and a locked vault") and it builds it with the scene tools, all as the GM:
      `rotation`, `tilt`, `fill: "tile"` with `piece` squares to repeat one
      (a hedge, a palisade), `color`, `level`. Each is an image tile with a
      blank picture carrying `model`, so it shows only in the 3D view.
-     `create_scene` takes `view3d` (`sky`, `ground`, `walls: false` when the
-     models are the walls). A creature's figure is its actor's `model`
+     `create_scene` takes `view: "3d"` (a 3D scene; flat scenes never show
+     in 3D) and `view3d` (`sky`, `ground`, `walls: false` when the models
+     are the walls, `background: false` when they are the floor). A creature's figure is its actor's `model`
      (`{ "src" }`), set with `edit_documents`.
 
 3. `render_scene` draws what was built (`level`: one floor), so Claude can look and fix it;

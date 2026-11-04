@@ -13,6 +13,8 @@ export interface FlatMap {
   readonly app: Application;
   readonly cam: CameraMotion;
   dirty: boolean;
+  /** Empty ground stays see-through (on) or gets the void colour. */
+  seeThrough(on: boolean): void;
 }
 
 /** Side of the square the 2D map draws for the 3D view, pixels. */
@@ -21,6 +23,8 @@ const GROUND_PIXELS = 2048;
 interface Saved {
   resizeTo: unknown;
   display: string;
+  /** The flat map's zoom, to go back to (the 3D view zooms it to its square of ground). */
+  zoom: number;
 }
 
 export class PixiBridge {
@@ -36,10 +40,11 @@ export class PixiBridge {
   attach(surface: HTMLElement): void {
     const { app } = this.map;
     const resizable = app as unknown as { resizeTo: unknown };
-    this.saved = { resizeTo: resizable.resizeTo, display: app.canvas.style.display };
+    this.saved = { resizeTo: resizable.resizeTo, display: app.canvas.style.display, zoom: this.map.cam.zoom };
     resizable.resizeTo = null;
     app.renderer.resize(GROUND_PIXELS, GROUND_PIXELS, 1);
     app.canvas.style.display = 'none';
+    this.map.seeThrough(true);
     const events = app.renderer.events;
     events.mapPositionToPoint = (point, x, y) => {
       const [sx, sy] = this.toScreen(this.pick(x, y));
@@ -58,8 +63,11 @@ export class PixiBridge {
     delete events.mapPositionToPoint;
     app.renderer.events.setTargetElement(app.canvas);
     app.canvas.style.display = saved.display;
+    this.map.seeThrough(false);
     (app as unknown as { resizeTo: unknown }).resizeTo = saved.resizeTo ?? host;
     app.resize();
+    // Back over the ground the 3D view looked at, as close as the flat map was.
+    this.map.cam.jumpTo(this.map.cam.center, saved.zoom);
     this.map.dirty = true;
     this.saved = undefined;
   }

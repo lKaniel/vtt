@@ -1,8 +1,10 @@
 # The 3D view
 
-The top bar's cube button (or **V**) stands the map up in 3D, with a camera
-like Baldur's Gate 3's. It is each player's own choice, kept in their
-browser (`session.view3d`); the game files don't change.
+A 3D scene (scene.json `"view": "3d"`, set in the scene's settings) shows
+in 3D, with a camera like Baldur's Gate 3's, for everyone on it; a flat
+scene never does (`session.view3d`). The GM alone can lay a 3D scene flat
+for a while to edit it on the 2D map: the top bar's map button (or **V**),
+and the cube button stands it up again.
 
 ## The camera
 
@@ -37,6 +39,12 @@ dialog under Camera.
 - `View3D.ts` ties them together; `view3d-switch.ts` turns it on and off
   with the session switch.
 
+Under the 3D view the flat map paints only what lies on the ground: not
+the tiles that stand in 3D (models, solids, terrain), nor the background
+picture when the scene's `view3d.background` is `false`
+(`paintedUnder3d` in `content3d.ts`). Where it paints nothing the ground is
+see-through, so the 3D floor, the table colour or the sky shows there.
+
 ## Models
 
 Image tiles with a `model` stand glTF models (`.glb`, or `.gltf` with its
@@ -60,7 +68,9 @@ above its bottom the picture's red lifts, stretched so its peak stands
 height or slope); the camera looks at the terrain under it, and clicks land
 on it. A scene `view3d.ground` of `none` draws no ground beyond the map.
 
-The Foundry importer brings 3D Canvas (levels-3d-preview) along: model
+The Foundry importer brings 3D Canvas (levels-3d-preview) along: a scene
+3D Canvas opens in 3D ("Auto 3D") becomes a 3D scene, one that hides its
+2D background in 3D keeps it off the 3D floor; model
 tiles with their depth, elevation, rotation, tilt, fill and tint (merged
 tiles split into their copies; `center: false` / `ground: false` keep a
 model's own origin on its spot, as 3D Canvas does without autoCenter and

@@ -108,6 +108,11 @@ export class LightingFilter extends Filter {
     this.uniforms.uFog = value;
   }
 
+  /** 1: empty space gets the void colour; 0: it stays see-through. */
+  set opaque(value: number) {
+    this.uniforms.uOpaque = value;
+  }
+
   /** What empty space shows (a scene's background colour, "#rrggbb"); the default when unset. */
   set voidColor(hex: string | undefined) {
     const v = this.uniforms.uVoid as Float32Array;

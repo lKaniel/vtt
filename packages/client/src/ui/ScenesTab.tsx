@@ -156,6 +156,7 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
           }
         />
       </label>
+      <KindField doc={doc} edit={edit} />
       <label>
         <span>Grid</span>
         <SelectField
@@ -217,6 +218,23 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
         title="The darkness is the time of day on the game clock"
       />
     </div>
+  );
+}
+
+/** A flat map or a 3D scene, which everyone sees in 3D. */
+function KindField({ doc, edit }: Readonly<{ doc: Doc; edit: (patch: Patch) => void }>) {
+  return (
+    <label>
+      <span>{t('scene.kind')}</span>
+      <SelectField
+        value={str(doc, 'view', '2d')}
+        onValueChange={(view) => edit({ view: view === '3d' ? '3d' : null })}
+        options={[
+          { value: '2d', label: t('scene.kind.2d') },
+          { value: '3d', label: t('scene.kind.3d') },
+        ]}
+      />
+    </label>
   );
 }
 

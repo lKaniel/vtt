@@ -1,7 +1,7 @@
 import type { DrawnTile, WorldInfo } from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
-import { figures, tileModels, tileSolids, tileTerrains } from './content3d.ts';
+import { figures, paintedUnder3d, tileModels, tileSolids, tileTerrains } from './content3d.ts';
 
 // The 3D view stands the model tiles of the floors shown, where a player has
 // explored, and creatures with a figure over their square.
@@ -95,5 +95,29 @@ describe('what the 3D view stands up', () => {
         model: { fill: 'fit', src: 'bram.glb', elevation: 5 },
       },
     ]);
+  });
+});
+
+describe('the flat map under the 3D view', () => {
+  const blank = '/art/ui/blank.svg';
+  const flat = (id: string, more: Partial<DrawnTile> = {}) =>
+    tile(id, { src: `/assets/${id}.webp`, model: undefined, ...more });
+  it('paints the tiles lying on the ground, not what stands in 3D', () => {
+    expect(paintedUnder3d(flat('rug'))).toBe(true);
+    expect(paintedUnder3d(flat('tower', { src: blank, model: { src: '/assets/t.glb' } }))).toBe(false);
+    expect(paintedUnder3d(flat('ledge', { src: blank, solid: { points: [], height: 5 } }))).toBe(false);
+    expect(paintedUnder3d(flat('hill', { src: blank, terrain: { heightmap: '/h.png', height: 10 } }))).toBe(false);
+  });
+
+  it("paints the scene's background picture unless the scene's 3D look leaves it out", () => {
+    const back = flat('background', { background: true });
+    expect(paintedUnder3d(back)).toBe(true);
+    expect(paintedUnder3d(back, { background: true })).toBe(true);
+    expect(paintedUnder3d(back, { background: false })).toBe(false);
+    expect(paintedUnder3d(flat('rug'), { background: false })).toBe(true);
+  });
+
+  it('leaves out a picture meant for the flat map only', () => {
+    expect(paintedUnder3d(flat('top-down', { only2d: true }))).toBe(false);
   });
 });

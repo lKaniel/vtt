@@ -71,6 +71,8 @@ test('Claude finds a 3D model and stands it on the map, seen in the 3D view', as
   await tool(request, 'build_scene', {
     models: [{ name: 'Ramp', x: 10, y: 8, w: 2, h: 1, src: found.assets[0]!.src, fill: 'tile', piece: 1, height: 5 }],
   });
-  await page.getByRole('button', { name: '3D view' }).click();
+  await tool(request, 'edit_documents', {
+    ops: [{ op: 'update', coll: 'scenes', id: 'crossroads', patch: { view: '3d' } }],
+  });
   await expect(page.getByTestId('view3d')).toHaveAttribute('data-models', '2', { timeout: 30_000 });
 });

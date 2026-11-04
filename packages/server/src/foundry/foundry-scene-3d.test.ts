@@ -102,3 +102,56 @@ describe('3D Canvas drawn shapes', () => {
     expect(tiles[0]).not.toHaveProperty('model.ground');
   });
 });
+
+describe('3D scenes', () => {
+  it('are the scenes 3D Canvas opens in 3D; their background picture stays off the 3D floor when 3D Canvas leaves it out', () => {
+    const flags = { 'levels-3d-preview': { auto3d: true, renderBackground: false } };
+    const { scene: s } = foundryScene({ ...scene, flags }, () => undefined);
+    expect(s.view).toBe('3d');
+    expect(s.view3d).toEqual({ background: false });
+    expect(foundryScene(scene, () => undefined).scene.view).toBeUndefined();
+  });
+});
+
+describe('pictures 3D Canvas raises as boxes', () => {
+  it('show on the flat map only, like the top-down picture a 3D map keeps high above itself', () => {
+    const board = { ...shape(0, { dynaMesh: 'box', depth: 391 }), texture: { src: 'modules/maps/top-down.webp' } };
+    const { scene: s } = foundryScene({ ...scene, tiles: [{ ...board, elevation: 280 }] }, (p) => `/assets/${p}`);
+    expect(s.tiles).toMatchObject([{ src: '/assets/modules/maps/top-down.webp', only2d: true }]);
+    expect(s.tiles[0]).not.toHaveProperty('solid');
+  });
+});
+
+describe('merged 3D Canvas boxes', () => {
+  it('stand only their copies, as 3D Canvas draws them, not one box over the whole group', () => {
+    const merged = shape(0, {
+      dynaMesh: 'box',
+      depth: 300,
+      color: '#ffffff',
+      mergedMatrix: [
+        { width: 0.1, height: 0.2, depth: 0.3, x: 0, y: 0, z: 0, color: '#000000', rotation: 0, tiltX: 0, tiltZ: 0 },
+        {
+          width: 0.1,
+          height: 0.1,
+          depth: 0.1,
+          x: 0.5,
+          y: 0.5,
+          z: 0.1,
+          color: '#000000',
+          rotation: 0,
+          tiltX: 0,
+          tiltZ: 0,
+        },
+      ],
+      originalDimensions: { width: 1, height: 1, depth: 0.3 },
+    });
+    const { scene: s } = foundryScene(
+      { ...scene, tiles: [{ ...merged, width: 1000, height: 1000, elevation: 5 }] },
+      () => undefined,
+    );
+    expect(s.tiles).toMatchObject([
+      { x: 0, y: 0, w: 100, h: 200, solid: { height: 15, elevation: 5, color: '#000000' } },
+      { x: 500, y: 500, w: 100, h: 100, solid: { height: 5, elevation: 10, color: '#000000' } },
+    ]);
+  });
+});

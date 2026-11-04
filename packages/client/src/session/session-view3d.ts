@@ -1,30 +1,43 @@
-import { readPref, writePref } from '../prefs.ts';
+// Whether the map shows in 3D (view3d/View3D.ts), as `session.view3d`: the
+// scene decides. A 3D scene (scene.json `view: "3d"`) shows in 3D, a 2D
+// scene flat. The GM alone may lay a 3D scene flat for a while, to edit it
+// on the 2D map; that lasts until they stand it up again.
 
-// Whether this browser shows the map in 3D (view3d/View3D.ts), as
-// `session.view3d`: a player's own choice, kept in this browser.
-
-const PREF = 'view3d';
+/** What the switch reads of the table. */
+interface Table {
+  readonly world?: { readonly view?: '2d' | '3d' };
+  isGm(): boolean;
+}
 
 export class View3DSwitch {
-  /** The map shows in 3D. */
-  on: boolean;
+  /** The GM laid this 3D scene flat. */
+  private flat = false;
 
   /** `ui.changed`: the screen and the map (view3d/view3d-switch.ts) follow the switch. */
   constructor(
     private readonly ui: { changed(): void },
-    stored: 'on' | 'off' = readPref(PREF, ['on', 'off'] as const, 'off'),
-  ) {
-    this.on = stored === 'on';
+    private readonly table: Table,
+  ) {}
+
+  /** The scene is a 3D scene. */
+  get scene3d(): boolean {
+    return this.table.world?.view === '3d';
   }
 
-  set(on: boolean): void {
-    if (on === this.on) return;
-    this.on = on;
-    writePref(PREF, on ? 'on' : 'off');
-    this.ui.changed();
+  /** The map shows in 3D. */
+  get on(): boolean {
+    return this.scene3d && !this.flat;
   }
 
+  /** You may lay this scene flat and stand it up again: the GM, on a 3D scene. */
+  get canFlip(): boolean {
+    return this.scene3d && this.table.isGm();
+  }
+
+  /** The GM lays the 3D scene flat or stands it up again; nobody else can. */
   toggle(): void {
-    this.set(!this.on);
+    if (!this.canFlip) return;
+    this.flat = !this.flat;
+    this.ui.changed();
   }
 }

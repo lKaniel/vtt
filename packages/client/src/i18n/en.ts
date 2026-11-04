@@ -72,7 +72,7 @@ export const EN = {
   'keys.step-down': 'Step down',
   'keys.step-left': 'Step left',
   'keys.step-right': 'Step right',
-  'keys.view3d': '3D view on or off',
+  'keys.view3d': 'GM: lay a 3D scene flat, or stand it up again',
   'keys.cam-left': '3D: turn the camera left',
   'keys.cam-right': '3D: turn the camera right',
   'keys.cam-tactical': '3D: look straight down (tactical)',

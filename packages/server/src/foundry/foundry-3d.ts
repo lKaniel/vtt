@@ -133,17 +133,21 @@ export function tokenModelOf(raw: unknown, find: MediaFind): Model3D | undefined
   return src ? { src } : undefined;
 }
 
-/** A 3D Canvas scene's sky, table colour and whether its walls stand. */
+/** 3D Canvas opens the scene in 3D ("Auto 3D"): it is a 3D scene. */
+export const is3dScene = (raw: unknown): boolean => flagsOf(raw)?.auto3d === true;
+
+/** A 3D Canvas scene's sky, table colour, whether its walls stand and whether its background picture shows. */
 export function scene3dOf(raw: unknown, find: MediaFind): View3DSettings | undefined {
   const f = flagsOf(raw);
   if (!f) return undefined;
   const skyPath = text(f.exr) ?? text(f.skybox);
   const sky = skyPath && mediaKind(skyPath) === 'image' ? find(skyPath) : undefined;
-  const ground = f.renderTable === 'none' ? 'none' : colorIn(f.tableColor);
+  const ground = f.renderTable === 'none' || f.renderTable === false ? 'none' : colorIn(f.tableColor);
   const out: View3DSettings = {
     ...(sky && { sky }),
     ...(ground && { ground }),
     ...(f.showSceneWalls === false && { walls: false }),
+    ...(f.renderBackground === false && { background: false }),
   };
   return Object.keys(out).length ? out : undefined;
 }

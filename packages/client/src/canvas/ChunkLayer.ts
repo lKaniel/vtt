@@ -16,6 +16,7 @@ import type { Session } from '../session/session.ts';
 import { clickTile, openDoor } from '../play/interact.ts';
 import { imageTile, type TileView } from './tile-draw.ts';
 import { type RoofEyes, roofWatchers } from './tile-motion.ts';
+import { paintedUnder3d } from '../view3d/content3d.ts';
 
 const DOOR_COLORS = { closed: 0xd08a3a, open: 0x7ac06a, locked: 0xd04a4a } as const;
 const DOOR_HANDLE_RADIUS = 11;
@@ -62,7 +63,7 @@ export class ChunkLayer {
     const watchers = roofWatchers(this.eyes(), this.placeOf);
     for (const v of this.views.values()) for (const t of v.moving) t.tick?.(dt, watchers);
     const { shown, current } = this.session.levels;
-    const floor = `${current ?? ''}|${shown?.join(' ') ?? ''}`;
+    const floor = `${current ?? ''}|${shown?.join(' ') ?? ''}|${this.session.view3d.on}`;
     if (floor === this.floor) return;
     this.floor = floor;
     for (const [key, chunk] of this.session.chunks) this.draw(key, chunk);
@@ -93,9 +94,16 @@ export class ChunkLayer {
     return { ...chunk, tiles, walls: chunk.walls.filter((w) => onLevel(w, current)) };
   }
 
+  /** Under the 3D view, the chunk without what stands in 3D (view3d/content3d.ts). */
+  private flat(chunk: Chunk): Chunk {
+    if (!this.session.view3d.on) return chunk;
+    const look = this.session.world?.view3d;
+    return { ...chunk, tiles: chunk.tiles.filter((t) => paintedUnder3d(t, look)) };
+  }
+
   draw(key: string, whole: Chunk): void {
     this.remove(key);
-    const chunk = this.onFloor(whole);
+    const chunk = this.flat(this.onFloor(whole));
     const world = this.session.world;
     const ctx = { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 };
     const tiles = drawTiles(chunk, ctx, (root, tile) => this.dress(root, tile));

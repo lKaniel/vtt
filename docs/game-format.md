@@ -203,11 +203,18 @@ skipping time, or undoing it, changes it too:
 
 ### The 3D view
 
-`"view3d": { "sky": "/assets/sky/day.webp", "ground": "#341f0f", "walls": false }`
-sets how the 3D view (docs/view3d.md) shows the scene: `sky` is a panorama
-picture all round (equirectangular), `ground` the colour beyond the map,
-and `"walls": false` leaves the walls lying flat when the scene's models
-are its walls. All optional.
+A scene is a flat map or a 3D scene, and says which: `"view": "3d"` makes
+it a 3D scene, which everyone sees in the 3D view (docs/view3d.md) as soon
+as they are on it; missing or `"2d"` is a flat map, which never shows in 3D.
+The GM can lay a 3D scene flat for a while to edit it (the top bar's map
+button, or V). Set it in the scene's settings.
+
+`"view3d": { "sky": "/assets/sky/day.webp", "ground": "#341f0f", "walls": false, "background": false }`
+sets how a 3D scene looks: `sky` is a panorama picture all round
+(equirectangular), `ground` the colour beyond the map, `"walls": false`
+leaves the walls lying flat when the scene's models are its walls, and
+`"background": false` keeps the background tile's picture off the 3D floor
+when the scene's models and terrain are the floor. All optional.
 
 ### Explored fog of war
 
@@ -319,7 +326,10 @@ pixels.
   rim): `points` are its corners as fractions of the tile's width and
   height, `height` is in feet, and `elevation`, `rotation` and `color` work
   as on a model. The Foundry importer brings 3D Canvas's drawn polygons
-  this way.
+  this way, and a merged box as its pieces.
+- `"only2d": true` keeps a tile on the flat map only: the 3D view leaves it
+  out. The Foundry importer marks a 3D scene's top-down picture this way
+  (3D Canvas raises it as a box high above the map, for the 2D view).
 - `"terrain": { "heightmap": "/assets/hills.webp", "height": 50 }` raises
   ground across an image tile in the 3D view from a heightmap picture's red
   (black is high, or white with `"highIsWhite": true`); `height` is the

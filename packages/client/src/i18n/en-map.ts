@@ -8,7 +8,10 @@ export const EN_MAP = {
   'walk.trapUnnamed': 'Trap',
   'walk.blocked': "Can't get there",
   'levels.question': '{name}: which floor?',
-  'view3d.on': '3D view',
-  'view3d.off': 'Back to the 2D map',
+  'scene.kind': 'Scene',
+  'scene.kind.2d': 'Flat map (2D)',
+  'scene.kind.3d': '3D scene: everyone sees it in 3D',
+  'view3d.flat': 'Lay the 3D scene flat to edit it',
+  'view3d.stand': 'Back to the 3D view',
   'levels.stay': 'Stay here',
 } as const;

@@ -2,7 +2,7 @@ import { foundryWeather } from './foundry-weather.ts';
 import { carried, madeFrom } from './foundry-origin.ts';
 import type { ImportLoss } from '@vtt/core';
 import { lost, lost as lostThings } from './import-losses.ts';
-import { gridSizePatch, type SceneEntry, type Tile, type Wall } from '@vtt/shared';
+import { gridSizePatch, type Model3D, type SceneEntry, type Solid3D, type Tile, type Wall } from '@vtt/shared';
 import { z } from 'zod';
 import { foundryList, sourceOf } from './foundry-lists.ts';
 import { type Floors, foundryFloors } from './foundry-levels.ts';
@@ -10,7 +10,7 @@ import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
 import { activeTilesNote, FoundryTile, isOverhead, lookOf, roofOf, topLeftOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
-import { mergedCopiesOf, scene3dOf, tileModelOf, tileSolidOf } from './foundry-3d.ts';
+import { is3dScene, type MergedCopy, mergedCopiesOf, scene3dOf, tileModelOf, tileSolidOf } from './foundry-3d.ts';
 import { tileTerrainOf } from './foundry-terrain.ts';
 
 // A Foundry VTT scene (from a module's compendium, a world, or "Export
@@ -294,10 +294,10 @@ function is3dTile(t: FoundryScene['tiles'][number]): boolean {
 /** The picture of a model tile: nothing, on the 2D map. */
 export const BLANK = '/art/ui/blank.svg';
 
-/** A 3D Canvas scene's sky and table, as `view3d`. */
-function view3dOf(data: unknown, media: MediaLookup): Pick<SceneEntry, 'view3d'> {
+/** A 3D Canvas scene: a 3D scene when 3D Canvas opens it in 3D, and its sky and table as `view3d`. */
+function view3dOf(data: unknown, media: MediaLookup): Pick<SceneEntry, 'view' | 'view3d'> {
   const view3d = scene3dOf(data, (p) => media(decoded(p)));
-  return view3d ? { view3d } : {};
+  return { ...(is3dScene(data) && { view: '3d' as const }), ...(view3d && { view3d }) };
 }
 
 interface TileContext {
@@ -326,28 +326,46 @@ function made3d(t: FoundryScene['tiles'][number], c: TileContext) {
 const flagOf = (t: FoundryScene['tiles'][number], key: string) =>
   (sourceOf(t) as { flags?: { 'levels-3d-preview'?: Record<string, unknown> } }).flags?.['levels-3d-preview']?.[key];
 
-/** A 3D Canvas tile as model tiles (a glTF model that came along; a merged tile's copies), terrain or a solid, if any. */
+/** A 3D Canvas tile as model tiles or solids (a merged tile as its copies), or terrain, if any. */
 function tile3d(t: FoundryScene['tiles'][number], c: TileContext): Tile[] | undefined {
   const made = made3d(t, c);
   if (!made) return undefined;
   const at = topLeftOf(t, c.anchored);
   const tile = { id: '', kind: 'image' as const, ...at, w: t.width, h: t.height, src: BLANK, ...c.on(t) };
-  const model = 'model' in made ? made.model : undefined;
-  const copies = model && mergedCopiesOf(sourceOf(t), c.grid);
-  if (!model || !copies) return [madeFrom({ ...tile, ...made }, sourceOf(t))];
+  const copies = 'terrain' in made ? undefined : mergedCopiesOf(sourceOf(t), c.grid);
+  if (!copies) return [madeFrom({ ...tile, ...made }, sourceOf(t))];
   return copies.map((copy, i) => {
-    const { rotation: _r, tilt: _t, ...base } = model;
-    const elevation = (model.elevation ?? 0) + copy.rise;
-    const one: Tile = {
+    const place = {
       ...tile,
       x: at.x + copy.rect.x,
       y: at.y + copy.rect.y,
       w: Math.max(1, copy.rect.w),
       h: Math.max(1, copy.rect.h),
-      model: { ...base, ...copy.model, ...(elevation ? { elevation } : {}) },
     };
+    const one: Tile = { ...place, ...copyOf(made, copy) };
     return i === 0 ? madeFrom(one, sourceOf(t)) : one;
   });
+}
+
+/** One copy of a merged model or solid, at its own height. */
+function copyOf(made: { model?: Model3D; solid?: Solid3D }, copy: MergedCopy) {
+  if (made.model) {
+    const { rotation: _r, tilt: _t, ...base } = made.model;
+    const elevation = (made.model.elevation ?? 0) + copy.rise;
+    return { model: { ...base, ...copy.model, ...(elevation ? { elevation } : {}) } };
+  }
+  const solid = made.solid!;
+  const elevation = (solid.elevation ?? 0) + copy.rise;
+  const { color, height, rotation } = copy.model;
+  return {
+    solid: {
+      ...solid,
+      height: height ?? solid.height,
+      ...(elevation ? { elevation } : {}),
+      ...(rotation ? { rotation } : {}),
+      ...(color ? { color } : {}),
+    },
+  };
 }
 
 /** 3D Canvas tiles as model tiles or solids; those we can't draw, reported. */
@@ -365,6 +383,10 @@ function modelTiles(tiles: FoundryScene['tiles'], c: TileContext): Tile[] {
   if (lost) c.skipped.push(lostThings(what, lost));
   return out;
 }
+
+/** A picture 3D Canvas raises as a box (a 3D map's picture of itself, high above it): for the flat map only. */
+const flatOnly = (t: FoundryScene['tiles'][number], grid: Grid) =>
+  tileSolidOf(sourceOf(t), grid) ? { only2d: true } : {};
 
 /** Where an item is among the scene's floors. */
 type OnFloors = (item: object) => { level?: string; levels?: string[] };
@@ -393,6 +415,7 @@ function tilesOf(s: FoundryScene, c: TileContext): Tile[] {
         ...lookOf(t),
         ...roofOf(t, fg),
         ...on(t),
+        ...flatOnly(t, c.grid),
       };
       out.push(madeFrom(tile, sourceOf(t)));
     } else missing.push(path ?? '(none)');

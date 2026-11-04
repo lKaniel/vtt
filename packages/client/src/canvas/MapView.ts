@@ -150,6 +150,12 @@ export class MapView {
     this.tokens.redrawAll();
   }
 
+  /** Under the 3D view, empty ground shows what lies below it (view3d/pixi-bridge.ts). */
+  // fallow-ignore-next-line unused-class-member -- the 3D view calls it through its FlatMap type
+  seeThrough(on: boolean): void {
+    this.vision?.seeThrough(on);
+  }
+
   destroy(): void {
     this.destroyed = true;
     for (const off of this.unsubscribe) off();
@@ -180,7 +186,7 @@ export class MapView {
     listenToDrops(this.app.canvas, this.session, (x, y) => this.screenToWorld(x, y));
     this.app.renderer.on('resize', () => {
       this.vision?.resize();
-      this.dirty = true;
+      this.dirty = this.visionDirty = true;
     });
   }
 
