@@ -73,6 +73,8 @@ export const View3DSettingsSchema = z.object({
   ground: z.string().optional(),
   /** Stand the scene's walls up (default true); off when its models are the walls. */
   walls: z.boolean().optional(),
+  /** Lay the background picture under the 3D view (default true); off when its models and terrain are the floor. */
+  background: z.boolean().optional(),
 });
 export type View3DSettings = z.infer<typeof View3DSettingsSchema>;
 
@@ -112,7 +114,9 @@ export const SceneSettingsSchema = z.object({
   weather: z.array(WeatherSchema).optional(),
   /** The weather changes with world time instead (see weather-cycle.ts); `weather` is ignored. */
   weatherCycle: WeatherCycleSchema.optional(),
-  /** The 3D view of the scene (docs/view3d.md). */
+  /** "3d": a 3D scene, which everyone sees in the 3D view; "2d" (the default): a flat map. */
+  view: z.enum(['2d', '3d']).optional(),
+  /** How a 3D scene looks in the 3D view (docs/view3d.md). */
   view3d: View3DSettingsSchema.optional(),
 });
 
@@ -150,6 +154,8 @@ const tileBase = {
   background: z.boolean().optional(),
   /** GM only: players don't get it (a trigger can show it). */
   hidden: z.boolean().optional(),
+  /** On the flat map only: the 3D view leaves it out (a 3D scene's top-down picture, for the 2D map). */
+  only2d: z.boolean().optional(),
   /** Runs actions when it is clicked or walked onto (see triggers.ts). */
   trigger: TileTriggerSchema.optional(),
 };

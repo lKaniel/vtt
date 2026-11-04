@@ -5,6 +5,7 @@ import {
   type Solid3D,
   solidOutline,
   type Terrain3D,
+  type View3DSettings,
   tokenLevel,
   type WorldInfo,
 } from '@vtt/shared';
@@ -22,6 +23,19 @@ export interface Table3D {
   shown?: string[];
   /** For a player with fog of war: whether a map point has been seen. */
   explored?: (p: Point) => boolean;
+}
+
+/**
+ * Whether the flat map still paints a tile on the ground under the 3D view:
+ * not what stands in 3D (models, solids, terrain), nor what is for the flat
+ * map only, nor the background picture of a scene whose 3D look leaves it
+ * out (its 3D content is the floor).
+ */
+export function paintedUnder3d(tile: DrawnTile, look?: View3DSettings): boolean {
+  if (tile.only2d) return false;
+  if (tile.kind !== 'image') return true;
+  if (tile.model || tile.solid || tile.terrain) return false;
+  return !(tile.background && look?.background === false);
 }
 
 /** The model tiles to stand. */

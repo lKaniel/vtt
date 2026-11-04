@@ -44,13 +44,15 @@ async function addModelTile(dir: string): Promise<void> {
   };
   const hill = { id: 'hill', kind: 'image', x: 1600, y: 600, w: 400, h: 400, src: '/art/ui/blank.svg', terrain };
   await writeFile(file, JSON.stringify([...tiles, tile, ledge, hill], null, 2));
+  const sceneFile = join(dir, 'scenes', 'crossroads', 'scene.json');
+  const scene = JSON.parse(await readFile(sceneFile, 'utf8')) as object;
+  await writeFile(sceneFile, JSON.stringify({ ...scene, view: '3d' }, null, 2));
 }
 
 test.use({ serverOptions: { prepare: addModelTile } });
 
 test('a model tile stands its model in the 3D view, repeated across the tile', async ({ page }) => {
   await atTable(page, GM);
-  await page.getByRole('button', { name: '3D view' }).click();
   await expect(page.getByTestId('view3d')).toHaveAttribute('data-models', '2', { timeout: 30_000 });
   await expect(page.getByTestId('view3d')).toHaveAttribute('data-solids', '1');
   await expect(page.getByTestId('view3d')).toHaveAttribute('data-terrain', '1');

@@ -104,15 +104,16 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
   );
 }
 
-/** The map in 3D or flat (key V). */
+/** On a 3D scene, the GM lays the map flat to edit it and stands it up again (key V); nobody else has the button. */
 function View3DButton({ session }: Readonly<{ session: Session }>) {
+  if (!session.view3d.canFlip) return null;
   const on = session.view3d.on;
-  const label = on ? t('view3d.off') : t('view3d.on');
+  const label = on ? t('view3d.flat') : t('view3d.stand');
   return (
     <Button
       variant="ghost"
       size="icon-sm"
-      aria-pressed={on}
+      aria-pressed={!on}
       onClick={() => session.view3d.toggle()}
       title={label}
       aria-label={label}

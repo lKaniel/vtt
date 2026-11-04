@@ -21,7 +21,10 @@ export class Ground {
     this.texture.anisotropy = 4;
     const geometry = new THREE.PlaneGeometry(1, 1);
     geometry.rotateX(-Math.PI / 2);
-    this.mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ map: this.texture }));
+    this.mesh = new THREE.Mesh(
+      geometry,
+      new THREE.MeshBasicMaterial({ map: this.texture, transparent: true, depthWrite: false }),
+    );
   }
 
   /** Lays the picture just drawn over the square it shows. */

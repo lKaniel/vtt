@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scene3dOf, tileModelOf, tileSolidOf, tokenModelOf } from './foundry-3d.ts';
+import { is3dScene, scene3dOf, tileModelOf, tileSolidOf, tokenModelOf } from './foundry-3d.ts';
 
 // 3D Canvas (levels-3d-preview) keeps its models in flags: a tile's model,
 // its height (`depth`, pixels), tilt and fill; a token's figure; a scene's
@@ -115,6 +115,18 @@ describe('3D Canvas models', () => {
 
   it('draws no table under a scene that has none', () => {
     expect(scene3dOf(flags({ renderTable: 'none', tableColor: '#341f0f' }), find)).toEqual({ ground: 'none' });
+    expect(scene3dOf(flags({ renderTable: false }), find)).toEqual({ ground: 'none' });
+  });
+
+  it('leaves the background picture out of the 3D view when 3D Canvas does not draw it', () => {
+    expect(scene3dOf(flags({ renderBackground: false }), find)).toEqual({ background: false });
+    expect(scene3dOf(flags({ renderBackground: true }), find)).toBeUndefined();
+  });
+
+  it('makes a 3D scene of one 3D Canvas opens in 3D, and leaves the rest flat', () => {
+    expect(is3dScene(flags({ auto3d: true, enablePlayers: true }))).toBe(true);
+    expect(is3dScene(flags({ auto3d: false, renderBackground: true }))).toBe(false);
+    expect(is3dScene({ name: 'Plain' })).toBe(false);
   });
 
   it('reads the colour out of a mangled table colour, and drops one with none', () => {

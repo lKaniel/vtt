@@ -82,8 +82,11 @@ describe('scene tools', () => {
 
   it('set how a scene looks in 3D, and find the models it can use', async () => {
     const gm = toolsFor('gm');
-    await gm('create_scene', { name: 'Vale', view3d: { sky: '/assets/sky.webp', walls: false } });
-    expect(store.docs.get('scenes', 'vale')).toMatchObject({ view3d: { sky: '/assets/sky.webp', walls: false } });
+    await gm('create_scene', { name: 'Vale', view: '3d', view3d: { sky: '/assets/sky.webp', walls: false } });
+    expect(store.docs.get('scenes', 'vale')).toMatchObject({
+      view: '3d',
+      view3d: { sky: '/assets/sky.webp', walls: false },
+    });
     await mkdir(join(dir, 'assets/models/ruins'), { recursive: true });
     await writeFile(join(dir, 'assets/models/ruins/tower.glb'), 'glTF');
     await writeFile(join(dir, 'assets/models/ruins/moss.webp'), 'RIFF');

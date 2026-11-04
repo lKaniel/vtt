@@ -138,7 +138,7 @@ export class Session {
   readonly draw = new Draw(this, this.ev);
   readonly levels = new Levels(this, this.ev);
   /** Whether this browser shows the map in 3D. */
-  readonly view3d = new View3DSwitch(this.ev);
+  readonly view3d = new View3DSwitch(this.ev, this);
   readonly turns = new Turns(this);
   /** The open character sheet. */
   readonly sheets = new Sheets(this, this.ev);

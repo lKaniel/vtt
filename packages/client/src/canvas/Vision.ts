@@ -71,6 +71,12 @@ export class Vision {
     this.resize();
   }
 
+  /** Under the 3D view, empty ground stays see-through instead of getting the void colour. */
+  seeThrough(on: boolean): void {
+    this.mapFilter.opaque = on ? 0 : 1;
+    this.app.renderer.background.alpha = on ? 0 : 1;
+  }
+
   resize(): void {
     const { width, height } = this.app.screen;
     this.light.resize(width, height);
