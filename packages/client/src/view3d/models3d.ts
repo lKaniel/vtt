@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { clone as cloneRigged } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { at3d } from './scene3d.ts';
 import { loadModel, modelLoader } from './model-loader.ts';
+import { paintedMaterial } from './paint3d.ts';
+import { pictureOf } from './terrain-paint.ts';
 
 // The glTF models of the 3D view: on tiles (model3d.ts in shared says where
 // each copy goes) and as creatures' figures. Each file loads once; every
@@ -56,6 +58,40 @@ const tinted = (scene: THREE.Object3D, color: string) =>
     mesh.material = mats.length === 1 ? mats[0]! : mats;
   });
 
+/** How much of it shows: none hides it (3D Canvas transparency 0), part lets the rest through. */
+export function faded(scene: THREE.Object3D, opacity: number): void {
+  if (opacity <= 0) {
+    scene.visible = false;
+    return;
+  }
+  scene.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const fade = (m: THREE.Material) => Object.assign(m.clone(), { transparent: true, opacity });
+    o.material = Array.isArray(o.material) ? o.material.map(fade) : fade(o.material as THREE.Material);
+  });
+}
+
+const paintedCopies = new Map<string, THREE.Material>();
+
+/** Its materials painted as 3D Canvas paints them (paint3d.ts), one copy per material and paint for every copy of it. */
+function painted(scene: THREE.Object3D, paint: NonNullable<Model3D['paint']>, l: Loaded): void {
+  const span: [number, number] = [l.bounds.min[1], l.bounds.max[1] - l.bounds.min[1]];
+  const key = JSON.stringify([paint, span]);
+  const paintOne = (m: THREE.Material) => {
+    const k = `${m.uuid}:${key}`;
+    const known = paintedCopies.get(k);
+    if (known) return known;
+    const copy = paintedMaterial(m, paint, span, pictureOf);
+    paintedCopies.set(k, copy);
+    return copy;
+  };
+  scene.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const mesh = o as THREE.Mesh;
+    mesh.material = Array.isArray(mesh.material) ? mesh.material.map(paintOne) : paintOne(mesh.material);
+  });
+}
+
 /** The copies of one model over one rect. */
 class Placed {
   readonly group = new THREE.Group();
@@ -88,6 +124,9 @@ class Placed {
     // Rigged figures need their bones cloned with them, or they draw in pieces.
     const model = cloneRigged(l.scene);
     if (this.shown.model.color) tinted(model, this.shown.model.color);
+    if (this.shown.model.paint) painted(model, this.shown.model.paint, l);
+    const { opacity } = this.shown.model;
+    if (opacity !== undefined && opacity < 1) faded(model, opacity);
     model.position.set(...modelOffset(l.bounds, this.shown.model));
     pivot.add(model);
     this.group.add(pivot);

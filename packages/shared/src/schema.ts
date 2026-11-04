@@ -75,6 +75,8 @@ export const View3DSettingsSchema = z.object({
   walls: z.boolean().optional(),
   /** Lay the background picture under the 3D view (default true); off when its models and terrain are the floor. */
   background: z.boolean().optional(),
+  /** A haze of this colour, thickening to hide everything `distance` pixels from the camera; it is the sky too. */
+  fog: z.object({ color: z.string(), distance: z.number().positive() }).optional(),
 });
 export type View3DSettings = z.infer<typeof View3DSettingsSchema>;
 

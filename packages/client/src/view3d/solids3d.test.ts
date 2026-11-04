@@ -57,4 +57,31 @@ describe('solids in the 3D view', () => {
     expect(plain!.map).toBeNull();
     solids.dispose();
   });
+
+  it('hides an unseen box, lets a part-seen one through, and takes its gloss and maps', () => {
+    const solids = new Solids(() => new THREE.Texture());
+    const a = ledge('a');
+    const glossy = {
+      ...a.solid,
+      texture: '/w.webp',
+      roughness: 0.3,
+      maps: { roughness: '/r.webp', normal: '/n.webp' },
+    };
+    solids.show(
+      [
+        { ...a, solid: glossy },
+        { ...ledge('b'), solid: { ...a.solid, opacity: 0 } },
+        { ...ledge('c'), solid: { ...a.solid, opacity: 0.5 } },
+      ],
+      ground,
+      0,
+    );
+    const [water, unseen, faint] = solids.group.children as THREE.Mesh[];
+    const m = water!.material as THREE.MeshStandardMaterial;
+    expect([m.roughness, !!m.roughnessMap, !!m.normalMap, !!m.metalnessMap]).toEqual([0.3, true, true, false]);
+    expect(unseen!.visible).toBe(false);
+    const f = faint!.material as THREE.MeshStandardMaterial;
+    expect([f.transparent, f.opacity]).toEqual([true, 0.5]);
+    solids.dispose();
+  });
 });

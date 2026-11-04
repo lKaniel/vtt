@@ -19,7 +19,7 @@ import { CameraInput } from './input3d.ts';
 import { Models, type ModelShown } from './models3d.ts';
 import { eyeOf, follow, groundSquare, type MapPoint, ORBIT, type Orbit, panBy, rotateBy, zoomBy } from './orbit.ts';
 import { type FlatMap, PixiBridge } from './pixi-bridge.ts';
-import { at3d, Backdrop, Ground, Standees, type Standing, Walls } from './scene3d.ts';
+import { at3d, Backdrop, Ground, hazeOf, Standees, type Standing, Walls } from './scene3d.ts';
 import { cutaway, wallBoxes } from './walls3d.ts';
 
 // The map in 3D, with a camera like Baldur's Gate 3's (orbit.ts): the 2D map
@@ -41,6 +41,8 @@ const WALLS_EVERY = 0.25;
 
 export class View3D {
   private renderer = new THREE.WebGLRenderer({ antialias: true });
+  private pmrem = new THREE.PMREMGenerator(this.renderer);
+  private litBy?: THREE.Texture;
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(FOV, 1, 5, 200000);
   private surface = document.createElement('div');
@@ -105,6 +107,8 @@ export class View3D {
     this.surface.style.cssText = 'position:absolute;inset:0;';
     this.surface.dataset.testid = 'view3d';
     this.renderer.setPixelRatio(devicePixelRatio);
+    // As 3D Canvas renders, so imported scenes keep their light.
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.surface.appendChild(this.renderer.domElement);
     this.host.appendChild(this.surface);
     this.bridge.attach(this.surface);
@@ -134,6 +138,8 @@ export class View3D {
     this.walls.dispose();
     this.standees.dispose();
     this.backdrop.dispose();
+    this.scene.environment?.dispose();
+    this.pmrem.dispose();
     this.renderer.dispose();
   }
 
@@ -201,11 +207,21 @@ export class View3D {
     this.sun.position.set(t[0] - 2000, t[2] + 4000, t[1] - 1500);
     this.sun.target.position.set(t[0], t[2], t[1]);
     const background = world.background ?? '#1b1d22';
-    const look = { sky: world.view3d?.sky, ground: world.view3d?.ground ?? background, background };
+    const v = world.view3d;
+    const look = { sky: v?.sky, ground: v?.ground ?? background, background, ...(v?.fog && { fog: v.fog }) };
     this.backdrop.show(this.scene, look, this.floor());
-    const back = new THREE.Color(background);
     const reach = ORBIT.maxReach * this.grid();
-    this.scene.fog = new THREE.Fog(back, this.orbit.distance + reach * 0.4, this.orbit.distance + reach * 1.1);
+    this.scene.fog = hazeOf(look, this.grid(), [this.orbit.distance + reach * 0.4, this.orbit.distance + reach * 1.1]);
+    this.skyLight(this.backdrop.skyPicture);
+  }
+
+  /** The sky lights the scene as 3D Canvas lets it (its picture as the environment), once it has loaded. */
+  private skyLight(sky: THREE.Texture | undefined): void {
+    const ready = sky?.image ? sky : undefined;
+    if (ready === this.litBy) return;
+    this.litBy = ready;
+    this.scene.environment?.dispose();
+    this.scene.environment = ready ? this.pmrem.fromEquirectangular(ready).texture : null;
   }
 
   /** The camera keeps up with the creature you act with, until you move it yourself. */

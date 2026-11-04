@@ -215,7 +215,10 @@ sets how a 3D scene looks: `sky` is a panorama picture all round
 (equirectangular), `ground` the colour beyond the map, `"walls": false`
 leaves the walls lying flat when the scene's models are its walls, and
 `"background": false` keeps the background tile's picture off the 3D floor
-when the scene's models and terrain are the floor. All optional.
+when the scene's models and terrain are the floor, and `"fog": { "color":
+"#d9d0b4", "distance": 8000 }` hazes everything from 10 squares out until
+`distance` pixels hide it, the fog's colour all round instead of the sky.
+The sky's picture also lights the scene. All optional.
 
 ### Explored fog of war
 
@@ -319,7 +322,14 @@ pixels.
   `/art/ui/blank.svg`. The model is centred on the tile and stretched to it;
   `height` (feet, else in proportion), `elevation` (feet its base stands
   at, else the floor), `rotation` (degrees clockwise), `tilt` (`[x, z]`
-  degrees) and `color` (a tint) shape it. `"fill": "tile", "piece": 2`
+  degrees) and `color` (a tint) shape it, and `opacity` (0–1; 0 hides it)
+  lets it fade. `paint` repaints it as 3D Canvas's shaders do: `swaps`
+  (up to three `{ "from", "to", "within" }`: colours within `within` of
+  `from` become `to` at their own brightness) and an `overlay` (`{ "src",
+"color", "strength", "repeat", "cover", "slope", "blackClear", "blend" }`:
+  a picture laid over the top, by height and flatness). Paint colours are
+  used as 3D Canvas uses them, channel by channel, not turned from sRGB.
+  `"fill": "tile", "piece": 2`
   repeats it instead, one copy every 2 squares (floors, wall runs); `"fill": "fit"` keeps its proportions, as a creature's figure always does. The
   Foundry importer brings 3D Canvas model tiles this way.
 - `"solid": { "points": [[0, 0], [1, 0], [0.5, 1]], "height": 10 }` raises a
@@ -327,7 +337,9 @@ pixels.
   rim): `points` are its corners as fractions of the tile's width and
   height, `height` is in feet, and `elevation`, `rotation` and `color` work
   as on a model. `texture` covers it in a picture (tinted by `color`),
-  repeated `repeat` times across it (a lake's water, a wall's stone). The
+  repeated `repeat` times across it (a lake's water, a wall's stone), with
+  `maps` (`roughness`, `metalness`, `normal` pictures) and `roughness`,
+  `metalness` and `opacity` (0 hides it: something only to stand on). The
   Foundry importer brings 3D Canvas's drawn polygons this way, with their
   picture, and a merged box as its pieces.
 - `"only2d": true` keeps a tile on the flat map only: the 3D view leaves it
@@ -341,7 +353,7 @@ pixels.
   `detail` is segments a square, `elevation` and `rotation` work as on a
   model, and `layers` (up to four `{ "src", "color", "repeat", "from" }`,
   `from` a share of the height, or of flatness with `"bySlope": true`,
-  fading over `blend`) paint it. `mask` (`{ "map", "src", "color",
+  fading over `blend`) paint it, then its `paint` (as on a model). `mask` (`{ "map", "src", "color",
 "repeat" }`) paints one more picture on top wherever the `map` picture
   is white (paths, mud). The Foundry importer brings 3D Canvas terrain this
   way, as tall as its depth times its heightmap strength. A scene's `view3d.ground` of `"none"` leaves no ground

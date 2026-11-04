@@ -1,5 +1,6 @@
 import { mediaKind } from '@vtt/core';
 import type { Model3D, Solid3D, View3DSettings } from '@vtt/shared';
+import { mapsBeside, paintOf, surfaceOf } from './foundry-paint.ts';
 
 // 3D Canvas (the levels-3d-preview module) keeps its 3D in flags: a tile's
 // model with its height (`depth`, in pixels), tilt, fill and tint; a token's
@@ -57,8 +58,20 @@ export function tileModelOf(
     ...((tilt[0] || tilt[1]) && { tilt }),
     ...tintOf(f.color),
     ...originOf(f),
+    ...paintIn(f, find),
+    ...opacityOf(f),
   };
 }
+
+const opacityOf = (f: Flags): Partial<Model3D> => {
+  const { opacity } = surfaceOf(f);
+  return opacity === undefined ? {} : { opacity };
+};
+
+const paintIn = (f: Flags, find: MediaFind): Partial<Model3D> => {
+  const paint = paintOf(f, find);
+  return paint ? { paint } : {};
+};
 
 /** 3D Canvas centres a model on its tile and stands it on the ground only when asked; else its own origin is the spot. */
 const originOf = (f: Flags): Partial<Model3D> => ({
@@ -148,8 +161,17 @@ export function scene3dOf(raw: unknown, find: MediaFind): View3DSettings | undef
     ...(ground && { ground }),
     ...(f.showSceneWalls === false && { walls: false }),
     ...(f.renderBackground === false && { background: false }),
+    ...fogOf(f),
   };
   return Object.keys(out).length ? out : undefined;
+}
+
+/** 3D Canvas's fog: from 1,000 pixels out it thickens until `fogDistance` (default 3,000) hides all. */
+function fogOf(f: Flags): Pick<View3DSettings, 'fog'> {
+  const color = colorIn(f.fogColor);
+  if (f.enableFog !== true || !color) return {};
+  const distance = finite(f.fogDistance);
+  return { fog: { color, distance: distance && distance > 0 ? distance : 3000 } };
 }
 
 /** The #rgb or #rrggbb in a colour setting, which old worlds sometimes store wrapped (`default="#000000"`). */
@@ -209,6 +231,7 @@ export function tileSolidOf(
     ...(rotation && { rotation }),
     ...(color && { color }),
     ...(find && pictureOf(f, find)),
+    ...surfaceOf(f),
   };
 }
 
@@ -218,5 +241,6 @@ function pictureOf(f: Flags, find: MediaFind): Pick<Solid3D, 'texture' | 'repeat
   if (!path || path.endsWith('/blankTex.jpg') || mediaKind(path) !== 'image') return {};
   const texture = find(path);
   const repeat = finite(f.textureRepeat);
-  return texture ? { texture, ...(repeat && repeat > 0 && repeat !== 1 && { repeat }) } : {};
+  const maps = texture && mapsBeside(path, find);
+  return texture ? { texture, ...(repeat && repeat > 0 && repeat !== 1 && { repeat }), ...(maps && { maps }) } : {};
 }
