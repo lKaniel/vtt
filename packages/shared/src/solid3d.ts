@@ -22,6 +22,15 @@ export const Solid3DSchema = z.object({
   texture: z.string().optional(),
   /** Times the picture repeats across the tile (default 1). */
   repeat: z.number().positive().optional(),
+  /** Pictures beside it giving its roughness, metalness and bumps (a PBR material, as 3D Canvas finds them). */
+  maps: z
+    .object({ roughness: z.string().optional(), metalness: z.string().optional(), normal: z.string().optional() })
+    .optional(),
+  /** 0 matte to 1 glossy is 1 to 0 here (default 1, matte). */
+  roughness: z.number().min(0).max(1).optional(),
+  metalness: z.number().min(0).max(1).optional(),
+  /** How much of it shows, 0–1 (0: an unseen box, only something to stand on). */
+  opacity: z.number().min(0).max(1).optional(),
 });
 export type Solid3D = z.infer<typeof Solid3DSchema>;
 

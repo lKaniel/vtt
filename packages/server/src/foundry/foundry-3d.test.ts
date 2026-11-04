@@ -107,6 +107,28 @@ describe('3D Canvas models', () => {
     expect(box({ imageTexture: 'gone/water.webp' })).not.toHaveProperty('texture');
   });
 
+  it("brings a box's see-through share, gloss and the maps beside its picture, as 3D Canvas reads them", () => {
+    const color = 'modules/c3d/Water_01/Water_01_Color.webp';
+    const near = (p: string) =>
+      p.includes('Roughness') || p.includes('NormalGL') || p.includes('Color') ? find(p) : undefined;
+    const box = (f: object) => tileSolidOf(flags({ model3d: '', dynaMesh: 'box', depth: 100, ...f }), grid, near);
+    expect(box({ imageTexture: color })).toMatchObject({
+      maps: {
+        roughness: '/assets/foundry/modules/c3d/Water_01/Water_01_Roughness.webp',
+        normal: '/assets/foundry/modules/c3d/Water_01/Water_01_NormalGL.webp',
+      },
+    });
+    expect(box({ transparency: 0 })).toMatchObject({ opacity: 0 });
+    expect(box({ transparency: 0.4, roughness: 0.2, metalness: -0.01 })).toMatchObject({
+      opacity: 0.4,
+      roughness: 0.2,
+    });
+    expect(box({ transparency: -0.01 })).not.toHaveProperty('opacity');
+    expect(box({ transparency: 1 })).not.toHaveProperty('opacity');
+    const model = tileModelOf(flags({ model3d: 'modules/rock.glb', depth: 100, transparency: 0 }), grid, find);
+    expect(model?.opacity).toBe(0);
+  });
+
   it('gives a token its figure, but not HeroForge links', () => {
     expect(tokenModelOf(flags({ model3d: 'modules/minis/orc.glb', scale: 1.5 }), find)).toEqual({
       src: '/assets/foundry/modules/minis/orc.glb',

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Paint3DSchema } from './paint3d.ts';
 
 // 3D models (glTF) for the 3D view (client view3d/): on an image tile, a
 // model stretched over the tile or repeated across it, like Foundry's 3D
@@ -24,6 +25,10 @@ export const Model3DSchema = z.object({
   piece: z.number().positive().optional(),
   /** A colour multiplied into it. */
   color: z.string().optional(),
+  /** How much of it shows, 0–1 (0: unseen). */
+  opacity: z.number().min(0).max(1).optional(),
+  /** Colours swapped and pictures laid over it, as 3D Canvas's shaders do (paint3d.ts). */
+  paint: Paint3DSchema.optional(),
   /** false: the model's own origin stands on the tile's middle, not the middle of its footprint (3D Canvas without autoCenter). */
   center: z.boolean().optional(),
   /** false: the model's own origin stands at its elevation, not the bottom of its bounds (3D Canvas without autoGround). */

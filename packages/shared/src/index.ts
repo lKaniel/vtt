@@ -13,6 +13,7 @@ export * from './light-shape.ts';
 export * from './light-time.ts';
 export * from './token-look.ts';
 export * from './model3d.ts';
+export * from './paint3d.ts';
 export * from './solid3d.ts';
 export * from './terrain3d.ts';
 export * from './doors.ts';
