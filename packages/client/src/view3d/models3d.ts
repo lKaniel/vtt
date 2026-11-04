@@ -4,6 +4,7 @@ import { clone as cloneRigged } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { at3d } from './scene3d.ts';
 import { loadModel, modelLoader } from './model-loader.ts';
 import { paintedMaterial } from './paint3d.ts';
+import { peekable } from './peek3d.ts';
 import { pictureOf } from './terrain-paint.ts';
 
 // The glTF models of the 3D view: on tiles (model3d.ts in shared says where
@@ -16,6 +17,8 @@ export interface ModelShown {
   key: string;
   rect: { x: number; y: number; w: number; h: number };
   model: Model3D;
+  /** A creature's figure: never faded to see in (peek3d.ts). */
+  figure?: boolean;
 }
 
 interface Loaded {
@@ -92,6 +95,14 @@ function painted(scene: THREE.Object3D, paint: NonNullable<Model3D['paint']>, l:
   });
 }
 
+/** Lets its materials fade when your creature is inside (peek3d.ts). */
+export function seeThrough(scene: THREE.Object3D): void {
+  scene.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) peekable(m as THREE.Material);
+  });
+}
+
 /** The copies of one model over one rect. */
 class Placed {
   readonly group = new THREE.Group();
@@ -127,6 +138,7 @@ class Placed {
     if (this.shown.model.paint) painted(model, this.shown.model.paint, l);
     const { opacity } = this.shown.model;
     if (opacity !== undefined && opacity < 1) faded(model, opacity);
+    if (!this.shown.figure) seeThrough(model);
     model.position.set(...modelOffset(l.bounds, this.shown.model));
     pivot.add(model);
     this.group.add(pivot);

@@ -13,6 +13,7 @@ import {
   tileSolids,
   tileTerrains,
 } from './content3d.ts';
+import { hides, SeeIn } from './peek3d.ts';
 import { Solids } from './solids3d.ts';
 import { Surface } from './surface3d.ts';
 import { drapeOver } from './terrain-paint.ts';
@@ -51,6 +52,8 @@ export class View3D {
     () => 6 * this.px(),
   );
   private surfacesSeen = '';
+  /** BG3's look inside: the roof and near walls round your creature fade while it is under a roof. */
+  private seeIn = new SeeIn(() => [this.models.group, this.solids.group]);
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(FOV, 1, 5, 200000);
   private surface = document.createElement('div');
@@ -191,7 +194,9 @@ export class View3D {
     this.placeCamera();
     this.wallsDue -= dt;
     if (this.wallsDirty || this.wallsDue <= 0) this.standWalls(floor);
-    this.standees.show(this.standing(), floor);
+    const standing = this.standing();
+    this.standees.show(standing, floor);
+    this.seeIn.update(this.acting(standing, floor), this.orbit.yaw, { px: this.px(), grid: this.grid() });
     this.standModels(floor);
     this.renderer.render(this.scene, this.camera);
   }
@@ -305,7 +310,10 @@ export class View3D {
     this.solids.show(this.tileSolids, ground, floor);
     this.terrains.show(this.tileTerrains, ground, floor);
     const seen = `${this.models.count}:${this.solids.count}:${this.terrains.count}:${floor}`;
-    if (seen !== this.surfacesSeen) this.underfoot.forget();
+    if (seen !== this.surfacesSeen) {
+      this.underfoot.forget();
+      this.seeIn.forget();
+    }
     this.surfacesSeen = seen;
     this.surface.dataset.models = String(this.models.count);
     this.surface.dataset.solids = String(this.solids.count);
@@ -334,6 +342,14 @@ export class View3D {
     return out;
   }
 
+  /** The creature you act with, where it stands (none from above, the tactical view). */
+  private acting(standing: readonly Standing[], floor: number) {
+    const id = this.session.selected;
+    const stood = standing.find((s) => s.id === id);
+    if (!stood || this.orbit.tactical) return undefined;
+    return { id: stood.id, at: stood.at, feet: floor + stood.height };
+  }
+
   /** What the pointer and creatures' feet meet: terrain, the model tiles and the boxes. */
   private solidsHit(): THREE.Object3D[] {
     return [...this.terrains.meshes, this.models.group, this.solids.group];
@@ -350,7 +366,9 @@ export class View3D {
     const token = this.standees.hit(this.ray);
     const place = token ? this.map.tokens.placeOf(token) : undefined;
     if (place) return place.at;
-    const ground = this.ray.intersectObjects(this.solidsHit(), true).find((h) => h.object.visible)?.point;
+    const ground = this.ray
+      .intersectObjects(this.solidsHit(), true)
+      .find((h) => h.object.visible && !hides(this.seeIn.peek, h.point.toArray()))?.point;
     if (ground) return [ground.x, ground.z];
     const floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.floor());
     const hit = this.ray.ray.intersectPlane(floor, new THREE.Vector3());

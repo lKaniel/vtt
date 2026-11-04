@@ -43,6 +43,13 @@ describe('solids in the 3D view', () => {
     expect(solids.count).toBe(0);
   });
 
+  it('fade to let you see in when your creature is inside (peek3d.ts)', () => {
+    const solids = new Solids();
+    solids.show([ledge('a')], ground, 0);
+    const mesh = solids.group.children[0] as THREE.Mesh;
+    expect((mesh.material as THREE.Material).customProgramCacheKey()).toContain('peek');
+  });
+
   it('covers a solid in its picture, repeated across its width as often as asked', () => {
     const solids = new Solids(() => new THREE.Texture());
     const water = ledge('w');

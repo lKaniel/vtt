@@ -110,6 +110,7 @@ export function figures(
     out.push({
       key: `token:${t.id}:${t.model.src}`,
       rect,
+      figure: true,
       model: { fill: 'fit', ...t.model, elevation: t.elevation ?? 0 },
     });
   }
