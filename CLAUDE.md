@@ -136,7 +136,11 @@ with `pnpm check-game data/games/<id>`.
   to the kit first (shadcn's version when there is one, in the same style,
   with a `data-slot`) and dress it in the painted art through the
   `art-*` utilities in `index.css` (panel, button plates, slots, divider),
-  then use it. Lay screens out with Tailwind classes;
+  then use it. Anything that floats over the table is a window: the kit's
+  `Window` (`kit/window.tsx`: drag by the title bar, roll up, resize, last
+  touched on top, place remembered per `kind`) or a kit `Dialog`, which is
+  the same kind of window (not modal unless asked). Never a fixed panel of
+  its own. Lay screens out with Tailwind classes;
   `style.css` is the older hand-written layer and only shrinks.
 - Claude bridge (`docs/claude-bridge.md`): `POST /mcp` speaks MCP; tools
   act through a browserless seat (`mcp-seat.ts`) so they keep the caller's

@@ -50,9 +50,8 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
   }, [session]);
 
   return (
-    // The party portraits move down under the scene navigation bar while it shows,
-    // and the inspector moves left of the side panel while a full-height tab (Scenes, Assets) is open.
-    <div className="game has-[[data-slot=scene-nav]]:[&_.party]:top-[84px]! has-[.chat.library:not(.closed)]:[&_.inspector]:right-[344px]!">
+    // The party portraits move down under the scene navigation bar while it shows.
+    <div className="game has-[[data-slot=scene-nav]]:[&_.party]:top-[84px]!">
       <div className="map" ref={host} />
       <TopBar session={session} onLeave={onLeave} />
       <SceneNav session={session} />

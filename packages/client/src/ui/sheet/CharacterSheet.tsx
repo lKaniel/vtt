@@ -28,7 +28,9 @@ import { EffectsTab } from './EffectsTab.tsx';
 import { FeaturesTab } from './FeaturesTab.tsx';
 import { InventoryTab } from './InventoryTab.tsx';
 import { SheetFoot } from './SheetFoot.tsx';
-import { SheetHeader, type SheetControls } from './SheetHeader.tsx';
+import { SheetButtons, SheetHeader, type SheetControls } from './SheetHeader.tsx';
+import { Window } from '../kit/window.tsx';
+import type { Place, Size } from '../kit/window-stack.ts';
 import { SheetSidebar } from './SheetSidebar.tsx';
 import { SpellsTab } from './SpellsTab.tsx';
 import { TokenTab } from './TokenTab.tsx';
@@ -104,7 +106,7 @@ export function PoppedSheet({
 }
 
 /** A sheet in its own window fills it instead of floating over the map. */
-const POPPED = 'static h-auto min-h-screen w-full translate-x-0';
+const POPPED = 'static h-auto min-h-screen w-full';
 
 function SheetWindow({
   session,
@@ -124,22 +126,47 @@ function SheetWindow({
   const sheet = sheetOf(session, target, live, previewSheet(value, rules));
   if (!sheet) return null;
   const props: SheetProps = { session, kind: target.kind, value, update, sheet, edit: target.edit };
-  return (
-    <section
-      className={cn(
-        'sheet frame absolute top-[5vh] left-1/2 z-5 flex h-[min(780px,88vh)] w-[min(1060px,calc(100vw-32px))] -translate-x-1/2 flex-col p-0',
-        target.edit && 'ring-1 ring-gold-bright/30',
-        !controls.popOut && POPPED,
-      )}
-      aria-label={t('sheet.label', { name: value.name })}
-      {...sheetDropTarget(session)}
-    >
+  const label = t('sheet.label', { name: value.name });
+  const body = (
+    <>
       <SheetHeader {...props} controls={controls} />
       <AbilityRow {...props} />
       <SheetBody {...props} rules={rules} />
       {target.edit && <SheetFoot {...props} />}
-    </section>
+    </>
   );
+  if (!controls.popOut) {
+    return (
+      <section className={cn('sheet frame flex flex-col p-0', POPPED)} aria-label={label} {...sheetDropTarget(session)}>
+        {body}
+      </section>
+    );
+  }
+  return (
+    <Window
+      id={`sheet:${target.kind}:${target.id}`}
+      kind="sheet"
+      initial={sheetPlace}
+      title={value.name}
+      label={label}
+      actions={<SheetButtons {...props} controls={controls} />}
+      onClose={controls.close}
+      closeLabel={t('sheet.close')}
+      resizable
+      className={cn('sheet', target.edit && 'ring-1 ring-gold-bright/30')}
+      bodyClassName="overflow-hidden"
+      {...sheetDropTarget(session)}
+    >
+      {body}
+    </Window>
+  );
+}
+
+/** Centred, as big as fits up to 1060 × 780, until moved or resized. */
+function sheetPlace(view: Size): Place {
+  const w = Math.min(1060, view.width - 32);
+  const h = Math.min(780, Math.round(view.height * 0.88));
+  return { x: Math.round((view.width - w) / 2), y: Math.round(view.height * 0.05), w, h };
 }
 
 /** The stats shown: as the server sent them, or as edited; a plain token (no stats) shows only to the GM. */

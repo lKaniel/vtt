@@ -103,21 +103,26 @@
 
 /* ---------- Side panel ---------- */
 
+/* Top to bottom down the right edge, like Foundry's sidebar; folded, a slim strip of its tab icons. */
 .chat {
   top: 8px;
   right: 8px;
   width: 320px;
-  height: min(46vh, 460px);
+  height: calc(100vh - 16px);
+}
+.chat.closed {
+  width: auto;
+  height: auto;
+  align-items: center;
 }
 .chat.frame {
   padding: 2px 12px 12px;
 }
 .chat.frame.closed {
-  padding-bottom: 2px;
+  padding: 4px 2px 6px;
 }
 .chat-head,
-.chat.frame:not(.closed) .chat-head,
-.chat.library:not(.closed) .chat-head {
+.chat.frame:not(.closed) .chat-head {
   justify-content: space-between;
   height: 30px;
   margin: 0;
@@ -127,9 +132,6 @@
   color: var(--gold-bright);
   text-shadow: none;
   background: none;
-}
-.chat.library {
-  height: calc(100vh - 16px);
 }
 .chat-list {
   font-size: 14px;
@@ -224,4 +226,24 @@
 .cc-card {
   padding: 10px 12px;
   border-radius: 3px;
+}
+
+/* ---------- Room for the side panel ----------
+   The panel runs the full height of the right edge. On a wide screen the
+   action bar centres in the room left of it; on a narrow one it stays in
+   the middle and sits over the panel's foot, so neither covers the map more. */
+
+.game {
+  --side-w: 336px;
+}
+.game:has(.chat.closed) {
+  --side-w: 56px;
+}
+.actionbar-wrap {
+  z-index: 6;
+}
+@media (min-width: 1440px) {
+  .actionbar-wrap {
+    left: calc(50% - var(--side-w) / 2);
+  }
 }

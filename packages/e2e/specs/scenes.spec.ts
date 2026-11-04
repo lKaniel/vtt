@@ -28,8 +28,8 @@ test('the GM draws a wall in the editor and undoes it', async ({ page, server })
   await page.getByRole('button', { name: 'Walls' }).click();
   await page.getByRole('button', { name: 'Wall', exact: true }).click();
   const ends: [number, number][] = [
-    [1100, 1300],
-    [1500, 1300],
+    [800, 1300],
+    [1200, 1300],
   ];
   for (const [x, y] of ends) {
     const at = await screenOf(page, x, y);
@@ -38,7 +38,7 @@ test('the GM draws a wall in the editor and undoes it', async ({ page, server })
   await page.keyboard.press('Escape');
   await expect
     .poll(async () => (await wallsOnDisk(server.gameDir)).at(-1))
-    .toMatchObject({ a: [1100, 1300], b: [1500, 1300] });
+    .toMatchObject({ a: [800, 1300], b: [1200, 1300] });
 
   await page.getByRole('button', { name: 'Undo' }).click();
   await expect.poll(async () => (await wallsOnDisk(server.gameDir)).length).toBe(before);

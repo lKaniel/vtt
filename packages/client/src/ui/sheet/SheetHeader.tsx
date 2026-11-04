@@ -14,39 +14,48 @@ export interface SheetControls {
   popOut?: () => void;
 }
 
-/** Name and classes on the left; level, experience, rests, edit mode and the window's buttons on the right. */
+/** Name and classes on the left; level, experience and rests on the right, and (in its own browser window) edit mode and close. */
 export function SheetHeader(props: Readonly<SheetProps & { controls: SheetControls }>) {
-  const { session, kind, value, edit, controls } = props;
-  const editable = kind === 'actor' ? session.isGm() : session.canEdit(value.id);
+  const { session, kind, edit, controls } = props;
   return (
     <header className="flex items-center gap-4 border-b border-gold-dim/50 px-5 pt-3 pb-2">
       <SheetTitle {...props} />
       <LevelBadge {...props} />
       {kind === 'token' && session.isGm() && !edit && <RestButtons {...props} />}
-      <div className="flex items-center gap-2">
-        {editable && (
-          <label
-            className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
-            title={t('sheet.editMode')}
-          >
-            {t('sheet.edit')}
-            <Switch checked={edit} onCheckedChange={controls.setEdit} aria-label={t('sheet.editMode')} />
-          </label>
-        )}
-        {controls.popOut && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={controls.popOut}
-            title={t('sheet.popOut')}
-            aria-label={t('sheet.popOut')}
-          >
-            <ExternalLinkIcon />
-          </Button>
-        )}
-        <Button variant="close" onClick={controls.close} aria-label={t('sheet.close')} title={t('sheet.close')} />
-      </div>
+      {!controls.popOut && <SheetButtons {...props} />}
     </header>
+  );
+}
+
+/** Edit mode (for those who may edit it), pop out, and close when the sheet has no window round it to close it. */
+export function SheetButtons(props: Readonly<SheetProps & { controls: SheetControls }>) {
+  const { session, kind, value, edit, controls } = props;
+  const editable = kind === 'actor' ? session.isGm() : session.canEdit(value.id);
+  return (
+    <div className="flex items-center gap-2">
+      {editable && (
+        <label
+          className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
+          title={t('sheet.editMode')}
+        >
+          {t('sheet.edit')}
+          <Switch checked={edit} onCheckedChange={controls.setEdit} aria-label={t('sheet.editMode')} />
+        </label>
+      )}
+      {controls.popOut ? (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={controls.popOut}
+          title={t('sheet.popOut')}
+          aria-label={t('sheet.popOut')}
+        >
+          <ExternalLinkIcon />
+        </Button>
+      ) : (
+        <Button variant="close" onClick={controls.close} aria-label={t('sheet.close')} title={t('sheet.close')} />
+      )}
+    </div>
   );
 }
 

@@ -39,11 +39,17 @@ export function writePref(key: string, value: string, storage: Storage | undefin
 
 /** A stored list of strings (folders closed in a list), or none. */
 export function readListPref(key: string, storage: Storage | undefined = browserStorage()): string[] {
+  const value = readJsonPref(key, storage);
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+}
+
+/** A stored JSON value (where a window was left), unchecked; undefined when there is none or it doesn't parse. */
+export function readJsonPref(key: string, storage: Storage | undefined = browserStorage()): unknown {
   try {
-    const value: unknown = JSON.parse(storage?.getItem(PREFIX + key) ?? '[]');
-    return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+    const raw = storage?.getItem(PREFIX + key);
+    return raw ? (JSON.parse(raw) as unknown) : undefined;
   } catch {
-    return [];
+    return undefined;
   }
 }
 
