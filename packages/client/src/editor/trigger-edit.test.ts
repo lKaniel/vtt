@@ -8,12 +8,18 @@ describe('trigger steps', () => {
       'visibility',
       'sound',
       'teleport',
+      'level',
+      'stairs',
       'door',
       'message',
       'activate',
+      'elevation',
+      'shift',
       'journal',
     ]);
-    expect(stepTypes('region')).toEqual(expect.arrayContaining(['difficult', 'trap', 'level', 'reveal', 'door']));
+    expect(stepTypes('region')).toEqual(
+      expect.arrayContaining(['difficult', 'trap', 'level', 'stairs', 'elevator', 'fall', 'reveal', 'door']),
+    );
   });
 
   it('reads and writes nested fields: a target, a point, a list of pictures', () => {
@@ -40,6 +46,20 @@ describe('trigger steps', () => {
       floors: ['cellar', 'loft'],
     });
     expect(problemOf([blankStep('elevator')], 'region')).toBeUndefined();
+  });
+
+  it('builds a lift that raises a tile, and a sliding door', () => {
+    expect(problemOf([setStep(blankStep('elevation'), 'by', '-20')], 'tile')).toBeUndefined();
+    let lift = setStep(blankStep('elevation'), 'target.coll', 'tiles');
+    lift = setStep(lift, 'target.id', 'cage');
+    expect(lift).toEqual({ type: 'elevation', by: 10, target: { coll: 'tiles', id: 'cage' } });
+    const door = setStep(blankStep('shift'), 'target.id', 'cell');
+    expect(setStep(door, 'by.1', '130')).toEqual({
+      type: 'shift',
+      target: { coll: 'tiles', id: 'cell' },
+      by: [0, 130],
+    });
+    expect(problemOf([door], 'tile')).toBeUndefined();
   });
 
   it('has fields for every step type', () => {

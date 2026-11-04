@@ -23,7 +23,7 @@ export interface StepField {
 }
 
 const ACTION_TYPES = TRIGGER_ACTIONS.map((a) => a.shape.type.value);
-const REGION_ONLY = ['difficult', 'trap', 'level', 'stairs', 'elevator', 'reveal'];
+const REGION_ONLY = ['difficult', 'trap', 'elevator', 'fall', 'reveal'];
 
 /** The step types a tile's trigger or a region may have. */
 export function stepTypes(on: 'tile' | 'region'): string[] {
@@ -39,11 +39,14 @@ const BLANK: Record<string, Omit<Step, 'type'>> = {
   message: { text: '' },
   journal: { entry: '' },
   activate: { target: { coll: 'tiles', id: '' }, to: 'toggle' },
+  elevation: { by: 10 },
+  shift: { target: { coll: 'tiles', id: '' }, by: [0, 0] },
   difficult: {},
   trap: {},
   level: { to: '' },
   stairs: { between: ['', ''] },
   elevator: {},
+  fall: {},
   reveal: {},
 };
 
@@ -67,6 +70,7 @@ const FIELDS: Record<string, StepField[]> = {
     { key: 'to.0', label: 'To x', kind: 'number' },
     { key: 'to.1', label: 'To y', kind: 'number' },
     { key: 'scene', label: 'Scene', kind: 'select', choices: 'scenes', none: 'this scene' },
+    { key: 'level', label: 'Onto level', kind: 'select', choices: 'levels', none: 'the same' },
   ],
   door: [
     { key: 'wall', label: 'Door', kind: 'select', choices: 'doors' },
@@ -85,6 +89,18 @@ const FIELDS: Record<string, StepField[]> = {
     { key: 'target.id', label: 'Which', kind: 'select', choices: 'target' },
     { key: 'to', label: 'Turn it', kind: 'select', options: ['on', 'off', 'toggle'] },
   ],
+  elevation: [
+    { key: 'by', label: 'Up by (feet; below 0 goes down)', kind: 'number' },
+    { key: 'to', label: 'Or to (feet)', kind: 'number' },
+    { key: 'target.coll', label: 'What', kind: 'select', options: ['tiles', 'tokens'] },
+    { key: 'target.id', label: 'Which', kind: 'select', choices: 'target', none: 'the creature that set it off' },
+  ],
+  shift: [
+    { key: 'target.coll', label: 'What', kind: 'select', options: ['tiles', 'tokens'] },
+    { key: 'target.id', label: 'Which', kind: 'select', choices: 'target' },
+    { key: 'by.0', label: 'Across by (pixels)', kind: 'number' },
+    { key: 'by.1', label: 'Down by (pixels)', kind: 'number' },
+  ],
   difficult: [{ key: 'multiplier', label: 'Cost ×', kind: 'number' }],
   trap: [
     { key: 'message', label: 'Trap says', kind: 'text' },
@@ -96,6 +112,10 @@ const FIELDS: Record<string, StepField[]> = {
     { key: 'between.1', label: 'Upper level', kind: 'select', choices: 'levels' },
   ],
   elevator: [{ key: 'floors', label: 'Floors (level ids, comma between; none = all)', kind: 'list' }],
+  fall: [
+    { key: 'to', label: 'Falls to', kind: 'select', choices: 'levels', none: 'the floor below' },
+    { key: 'damage', label: 'Hurts (fall damage)', kind: 'check' },
+  ],
   reveal: [],
 };
 
@@ -138,7 +158,7 @@ function write(at: unknown, [part, ...rest]: string[], value: unknown): unknown 
     copy[Number(part)] = (rest.length ? write(copy[Number(part)], rest, value) : value) ?? 0;
     return copy;
   }
-  const { [part!]: old, ...others } = at as Record<string, unknown>;
+  const { [part!]: old, ...others } = (at ?? {}) as Record<string, unknown>;
   const here = rest.length ? write(old, rest, value) : value;
   return here === undefined ? others : { ...others, [part!]: here };
 }

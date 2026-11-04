@@ -8,7 +8,8 @@ import type { MediaLookup } from './foundry-scene.ts';
 // things by Tagger tag, Foundry id or "this tile"; the scene's index finds
 // ours. Monk's jumps (anchors, goto, dialogs) become the one path a click
 // most likely takes: the actions before the first anchor, else the "next"
-// branch. What has no match (macros, alter, animations) is reported.
+// branch. A change of the creature's elevation becomes a ladder between
+// floors. What has no match (macros, other alters, animations) is reported.
 
 /** Where a converted thing came from, to find it again by Foundry id or tag. */
 interface Indexed {
@@ -76,6 +77,8 @@ export interface TriggerLookups {
   scene: (foundryId: string) => string | undefined;
   /** The pictures Monk's cycles a tile through, by our tile id. */
   imagesOf: (tile: string) => string[];
+  /** The scene's floor at an elevation (feet); none on a scene without floors. */
+  floorAt?: (feet: number) => string | undefined;
 }
 
 interface MonkAction {
@@ -162,6 +165,105 @@ function teleport(a: MonkAction, c: ActionContext): TriggerAction[] {
   return [{ type: 'teleport', to: [Math.round(at.x), Math.round(at.y)], ...(scene ? { scene } : {}) }];
 }
 
+/** "={{entity.data.elevation}} == 0 ? 10 : 0" and the like: a ladder between the two elevations. */
+const TOGGLE = /\?\s*(-?\d+(?:\.\d+)?)\s*:\s*(-?\d+(?:\.\d+)?)\s*$/;
+const ABSOLUTE = /^=?\s*(-?\d+(?:\.\d+)?)$/;
+
+/** "+ 22.5", "- 22": a step up or down from where it is ("-10", with no space, is a height). */
+const RELATIVE = /^(\+|-(?=\s))\s*(\d+(?:\.\d+)?)$/;
+
+type HeightChange = { to: number } | { by: number };
+
+const valueOf = (raw: unknown) => (typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim() : '');
+
+/** The step a relative value takes, up (+) or down; undefined for a height or a formula. */
+function stepOf(value: string): number | undefined {
+  const m = RELATIVE.exec(value);
+  if (!m) return undefined;
+  return m[1] === '+' ? Number(m[2]) : -Number(m[2]);
+}
+
+/** A step from where it is, or a height to go to; undefined for anything else (a formula). */
+function heightChange(value: string): HeightChange | undefined {
+  const by = stepOf(value);
+  if (by !== undefined) return { by };
+  const at = ABSOLUTE.exec(value);
+  return at ? { to: Number(at[1]) } : undefined;
+}
+
+/** Raises or lowers the creature that set it off ("token"), or the tiles and creatures named (a lift). */
+function raiseOf(entity: Entity, c: ActionContext, change: HeightChange | undefined): TriggerAction[] {
+  if (!change) return [];
+  if (entity === 'token') return [{ type: 'elevation', ...change }];
+  return targets(entity, c, ['tiles', 'tokens']).map((t) => ({
+    type: 'elevation' as const,
+    target: { coll: t.coll as 'tiles' | 'tokens', id: t.id },
+    ...change,
+  }));
+}
+
+/** Monk's "elevation": the creature or the tagged tiles (a lift) up, down or to a height. */
+function elevation(a: MonkAction, c: ActionContext): TriggerAction[] {
+  return raiseOf(entityOf(a.data), c, heightChange(valueOf(a.data?.value)));
+}
+
+/** Monk's "alter" of x or y by a step: a sliding door, tile or creature. */
+function shiftOf(a: MonkAction, c: ActionContext, axis: 'x' | 'y'): TriggerAction[] {
+  const d = stepOf(valueOf(a.data?.value));
+  if (d === undefined) return [];
+  const by: [number, number] = axis === 'x' ? [d, 0] : [0, d];
+  return targets(entityOf(a.data), c, ['tiles', 'tokens']).map((t) => ({
+    type: 'shift' as const,
+    target: { coll: t.coll as 'tiles' | 'tokens', id: t.id },
+    by,
+  }));
+}
+
+/**
+ * Monk's "alter": x or y slides it; the creature's elevation takes it to a
+ * floor, or both ways between two (a ladder), on a scene with floors, and
+ * up or down (or to a height) elsewhere. Other changes have no match.
+ */
+function alter(a: MonkAction, c: ActionContext): TriggerAction[] {
+  const attribute = a.data?.attribute;
+  if (attribute === 'x' || attribute === 'y') return shiftOf(a, c, attribute);
+  if (attribute !== 'elevation') return [];
+  const value = valueOf(a.data?.value);
+  if (!c.floorAt || RELATIVE.test(value)) return raiseOf(entityOf(a.data) ?? 'token', c, heightChange(value));
+  return floorChange(value, c.floorAt);
+}
+
+/** A height that names a floor: a ladder to it, or both ways between two. */
+function floorChange(value: string, floorAt: (feet: number) => string | undefined): TriggerAction[] {
+  const toggle = TOGGLE.exec(value);
+  if (toggle) {
+    const [one, other] = [floorAt(Number(toggle[1])), floorAt(Number(toggle[2]))];
+    return one && other && one !== other ? [{ type: 'stairs', between: [one, other] }] : [];
+  }
+  const at = ABSOLUTE.exec(value);
+  const to = at ? floorAt(Number(at[1])) : undefined;
+  return to ? [{ type: 'level', to }] : [];
+}
+
+const FLOOR_CHANGES = new Set<TriggerAction['type']>(['level', 'stairs']);
+
+/** A change of floor or height for the creature that set it off. */
+const ownHeight = (a: TriggerAction) => FLOOR_CHANGES.has(a.type) || (a.type === 'elevation' && !a.target);
+
+/** The creature's floor and height changes go first: a teleport ends the actions after it, and it changes where it stands. */
+const floorsFirst = (actions: TriggerAction[]) => [
+  ...actions.filter(ownHeight),
+  ...actions.filter((a) => !ownHeight(a)),
+];
+
+const ALTERED = new Set(['elevation', 'x', 'y']);
+
+/** Monk's actions with no match here: unknown ones, and alters of anything but elevation and place. */
+const unmatched = (a: MonkAction) =>
+  a.action === 'alter'
+    ? !ALTERED.has(String(a.data?.attribute))
+    : !ACTIONS[a.action ?? ''] && !QUIET.has(a.action ?? '');
+
 const DOOR: Record<string, 'open' | 'closed' | 'locked' | 'toggle'> = {
   open: 'open',
   closed: 'closed',
@@ -191,6 +293,8 @@ const ACTIONS: Record<string, (a: MonkAction, c: ActionContext) => TriggerAction
   playsound: sound,
   teleport,
   changedoor: door,
+  alter,
+  elevation,
   notification: message,
   chatmessage: message,
 };
@@ -258,8 +362,8 @@ export function foundryTrigger(raw: FoundryDoc, self: string, lookups: TriggerLo
   const all = flags?.actions ?? [];
   if (!flags || !all.length) return { lost: [] };
   const c: ActionContext = { ...lookups, self };
-  const actions = path(all).flatMap((a) => ACTIONS[a.action ?? '']?.(a, c) ?? []);
-  const lost = all.map((a) => a.action ?? '?').filter((name) => !ACTIONS[name] && !QUIET.has(name));
+  const actions = floorsFirst(path(all).flatMap((a) => ACTIONS[a.action ?? '']?.(a, c) ?? []));
+  const lost = all.filter(unmatched).map((a) => a.action ?? '?');
   const when = onOf(flags.trigger);
   if (!when) return { lost: [...lost, `when: ${JSON.stringify(flags.trigger)}`] };
   if (!actions.length) return { lost };

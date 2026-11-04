@@ -132,7 +132,7 @@ export class DrawTools {
   private placeLight(at: Point, free: boolean): void {
     const { label: _label, ...light } = LIGHT_PRESETS[this.session.editor.lightPreset];
     const [x, y] = this.lightSpot(at, free);
-    this.session.requests.editMap({ op: 'addLight', light: { ...light, x, y } });
+    this.session.requests.editMap({ op: 'addLight', light: { ...light, x, y, ...this.session.levels.placing } });
   }
 
   private pressWall(tool: 'wall' | 'door' | 'window', p: Point, free: boolean): void {
@@ -143,7 +143,7 @@ export class DrawTools {
       return;
     }
     if (from[0] === at[0] && from[1] === at[1]) return;
-    this.session.requests.editMap(wallEdit(tool, from, at));
+    this.session.requests.editMap(wallEdit(tool, from, at, this.session.levels.placing));
     this.chain = tool === 'door' ? undefined : at;
   }
 }

@@ -12,10 +12,11 @@ import {
 } from '@vtt/shared';
 import { Circle, Container, Graphics, type Renderer } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
-import { drawDoor, drawWalls, drawWallShadows } from './art/walls.ts';
+import { drawDoor, drawWalls, drawWallShadows, wallsDrawn } from './art/walls.ts';
 import type { Session } from '../session/session.ts';
 import { clickTile, openDoor } from '../play/interact.ts';
 import { imageTile, type TileView } from './tile-draw.ts';
+import { ObjectGlow } from './object-glow.ts';
 import { type RoofEyes, roofWatchers } from './tile-motion.ts';
 import { paintedUnder3d } from '../view3d/content3d.ts';
 import { bakeRuns, roofStill, tileBounds, tileStill } from './tile-bake.ts';
@@ -50,6 +51,8 @@ interface ChunkView {
   roofs: Roof[];
   /** Tiles that move: scrolling pictures and fading roofs. */
   moving: TileView[];
+  /** Every tile as drawn, by id (to light the one under the pointer). */
+  byId: Map<string, TileView>;
   walls: Container;
   doors: Graphics[];
 }
@@ -65,8 +68,9 @@ const EDGE_PAD = 24;
 export class ChunkLayer {
   /** Floor tiles, under everything else, in the scene's draw order. */
   readonly ground = new Container({ sortableChildren: true });
-  /** Walls and doors, above the grid. */
-  readonly walls = new Container();
+  /** Walls and doors, above the grid; the object under the pointer's outline on top. */
+  readonly walls = new Container({ sortableChildren: true });
+  private readonly glow = new ObjectGlow();
   /** Roofs and canopies, over the creatures. */
   readonly roofs = new Container({ sortableChildren: true, eventMode: 'none' });
   private views = new Map<string, ChunkView>();
@@ -81,7 +85,9 @@ export class ChunkLayer {
   constructor(
     private session: Session,
     private placeOf: (id: string) => { at: Point } | undefined,
-  ) {}
+  ) {
+    this.walls.addChild(this.glow.outline);
+  }
 
   /** The floors last drawn, to draw again when another is shown. */
   private floor = '';
@@ -90,6 +96,11 @@ export class ChunkLayer {
   tick(dt: number, floorShown: () => void): void {
     const watchers = roofWatchers(this.eyes(), this.placeOf);
     for (const v of this.views.values()) for (const t of v.moving) t.tick?.(dt, watchers);
+    this.glow.update({
+      chunks: this.session.chunks,
+      hover: this.session.inspect.hover,
+      tileView: (id) => this.tileView(id),
+    });
     const { shown, current } = this.session.levels;
     const floor = `${current ?? ''}|${shown?.join(' ') ?? ''}|${this.session.view3d.on}`;
     if (floor !== this.floor) {
@@ -154,6 +165,15 @@ export class ChunkLayer {
     return { gm, yours, selected: selected ? [selected] : [] };
   }
 
+  /** A tile as drawn now, if it is. */
+  private tileView(id: string): TileView | undefined {
+    for (const v of this.views.values()) {
+      const view = v.byId.get(id);
+      if (view) return view;
+    }
+    return undefined;
+  }
+
   get keys(): string[] {
     return [...this.views.keys()];
   }
@@ -185,12 +205,13 @@ export class ChunkLayer {
     const ctx = { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 };
     const gm = this.session.isGm();
     const tiles = drawTiles(chunk, ctx, gm, (root, tile) => this.dress(root, tile));
-    const shadows = shadowsOf(chunk.walls);
+    const drawn = wallsDrawn(chunk.walls, world ?? {});
+    const shadows = shadowsOf(drawn);
     shadows.zIndex = SHADOW_Z;
     shadows.cullable = true;
     const view: ChunkView = { ...tiles, shadows, walls: new Container(), doors: [] };
     view.walls.cullable = true;
-    view.walls.addChild(wallsOf(chunk.walls));
+    view.walls.addChild(wallsOf(drawn));
     for (const wall of chunk.walls) {
       if (!wall.door) continue;
       const door = this.door(key, wall);
@@ -226,8 +247,10 @@ export class ChunkLayer {
     if (!tileClickable(tile, gm)) return;
     drawn.eventMode = 'static';
     drawn.cursor = 'pointer';
-    drawn.on('pointerdown', (e) => e.stopPropagation());
+    // A right click goes through to the map, which opens the object's menu.
+    drawn.on('pointerdown', (e) => e.button === 0 && e.stopPropagation());
     drawn.on('pointertap', (e) => {
+      if (e.button !== 0) return;
       e.stopPropagation();
       clickTile(this.session, tile.id);
     });
@@ -244,10 +267,9 @@ export class ChunkLayer {
     door.hitArea = new Circle(mid[0], mid[1], DOOR_HANDLE_RADIUS * 2);
     door.eventMode = 'static';
     door.cursor = 'pointer';
-    door.on('pointerdown', (e) => {
-      e.stopPropagation();
-    });
+    door.on('pointerdown', (e) => e.button === 0 && e.stopPropagation());
     door.on('pointertap', (e) => {
+      if (e.button !== 0) return;
       e.stopPropagation();
       openDoor(this.session, key, wall, e.shiftKey);
     });
@@ -261,10 +283,16 @@ function drawTiles(
   ctx: GroundContext,
   gm: boolean,
   dress: (root: Container, tile: ChunkTile) => void,
-): Pick<ChunkView, 'tiles' | 'roofs' | 'moving'> {
-  const out: Pick<ChunkView, 'tiles' | 'roofs' | 'moving'> = { tiles: [], roofs: [], moving: [] };
+): Pick<ChunkView, 'tiles' | 'roofs' | 'moving' | 'byId'> {
+  const out: Pick<ChunkView, 'tiles' | 'roofs' | 'moving' | 'byId'> = {
+    tiles: [],
+    roofs: [],
+    moving: [],
+    byId: new Map(),
+  };
   chunk.tiles.forEach((tile, i) => {
     const drawn: TileView = tile.kind === 'rect' ? { root: rectTile(tile, ctx) } : imageTile(tile);
+    out.byId.set(tile.id, drawn);
     const z = tile.z ?? i;
     drawn.root.zIndex = z;
     dress(drawn.root, tile);

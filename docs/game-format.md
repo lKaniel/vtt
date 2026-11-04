@@ -149,6 +149,7 @@ Optional, all set from the Scenes tab too:
 | `gridOpacity`          | 0 to 1, default 0.16.                                                                                                        |
 | `background`           | What shows where nothing is drawn, e.g. `"#1b1d22"`.                                                                         |
 | `darknessFollowsClock` | The darkness follows the game clock's time of day (see time.json); `darkness` is ignored. New scenes start with it on.       |
+| `wallArt`              | `true`: walls are drawn as stone and doors swing (a map made of plain tiles). Missing: walls are invisible and only block.   |
 | `levels`               | Floors of the scene, see "Scene levels" below.                                                                               |
 | `playlist`             | A playlist id: it starts (and the one playing stops) when the game moves here.                                               |
 | `navigation`           | `true`: the scene is in the GM's navigation bar under the top bar.                                                           |
@@ -214,7 +215,10 @@ sets how a 3D scene looks: `sky` is a panorama picture all round
 (equirectangular), `ground` the colour beyond the map, `"walls": false`
 leaves the walls lying flat when the scene's models are its walls, and
 `"background": false` keeps the background tile's picture off the 3D floor
-when the scene's models and terrain are the floor. All optional.
+when the scene's models and terrain are the floor, and `"fog": { "color":
+"#d9d0b4", "distance": 8000 }` hazes everything from 10 squares out until
+`distance` pixels hide it, the fog's colour all round instead of the sky.
+The sky's picture also lights the scene. All optional.
 
 ### Explored fog of war
 
@@ -282,16 +286,18 @@ pixels.
   only the GM click it. Players are told only that a tile can be clicked. The
   actions, in order (regions take them as behaviours too):
 
-  | Action                                                                                 | What it does                                                                                          |
-  | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-  | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                | Shows the next picture, round and round; `tile` names another tile.                                   |
-  | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }` | Shows, hides or toggles a tile, token, region, drawing, note, sound or light (a hidden light is out). |
-  | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                       | Plays once for everyone on the scene.                                                                 |
-  | `{ "type": "teleport", "to": [x, y], "scene": "cellar", "level": "loft" }`             | Moves the creature that set it off (the actions after it wait), onto `level` when named.              |
-  | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                   | Opens, closes, locks or toggles a door.                                                               |
-  | `{ "type": "message", "text": "…", "gmOnly": true }`                                   | Says it in chat.                                                                                      |
-  | `{ "type": "journal", "entry": "letter", "page": "p1" }`                               | Shares the entry with the players and opens it on their screens.                                      |
-  | `{ "type": "activate", "target": { "coll": "tiles", "id": "trap" }, "to": "off" }`     | Turns another tile's trigger (or a region) `on`, `off` or `toggle`.                                   |
+  | Action                                                                                  | What it does                                                                                                                                                                  |
+  | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                 | Shows the next picture, round and round; `tile` names another tile.                                                                                                           |
+  | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }`  | Shows, hides or toggles a tile, token, region, drawing, note, sound or light (a hidden light is out).                                                                         |
+  | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                        | Plays once for everyone on the scene.                                                                                                                                         |
+  | `{ "type": "teleport", "to": [x, y], "scene": "cellar", "level": "loft" }`              | Moves the creature that set it off (the actions after it wait), onto `level` when named.                                                                                      |
+  | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                    | Opens, closes, locks or toggles a door.                                                                                                                                       |
+  | `{ "type": "message", "text": "…", "gmOnly": true }`                                    | Says it in chat.                                                                                                                                                              |
+  | `{ "type": "journal", "entry": "letter", "page": "p1" }`                                | Shares the entry with the players and opens it on their screens.                                                                                                              |
+  | `{ "type": "activate", "target": { "coll": "tiles", "id": "trap" }, "to": "off" }`      | Turns another tile's trigger (or a region) `on`, `off` or `toggle`.                                                                                                           |
+  | `{ "type": "elevation", "target": { "coll": "tiles", "id": "lift" }, "by": 20 }`        | Raises or lowers a tile (its model) or a creature `by` feet, or `to` a height; no `target`: the creature that set it off. Creatures standing on a tile ride with it (a lift). |
+  | `{ "type": "shift", "target": { "coll": "tiles", "id": "cell-door" }, "by": [0, 130] }` | Slides a tile or a creature that many pixels (a sliding door).                                                                                                                |
 
   The GM edits a trigger (or a region's behaviours) with the inspector's
   **Add trigger…** button.
@@ -318,7 +324,14 @@ pixels.
   `/art/ui/blank.svg`. The model is centred on the tile and stretched to it;
   `height` (feet, else in proportion), `elevation` (feet its base stands
   at, else the floor), `rotation` (degrees clockwise), `tilt` (`[x, z]`
-  degrees) and `color` (a tint) shape it. `"fill": "tile", "piece": 2`
+  degrees) and `color` (a tint) shape it, and `opacity` (0–1; 0 hides it)
+  lets it fade. `paint` repaints it as 3D Canvas's shaders do: `swaps`
+  (up to three `{ "from", "to", "within" }`: colours within `within` of
+  `from` become `to` at their own brightness) and an `overlay` (`{ "src",
+"color", "strength", "repeat", "cover", "slope", "blackClear", "blend" }`:
+  a picture laid over the top, by height and flatness). Paint colours are
+  used as 3D Canvas uses them, channel by channel, not turned from sRGB.
+  `"fill": "tile", "piece": 2`
   repeats it instead, one copy every 2 squares (floors, wall runs); `"fill": "fit"` keeps its proportions, as a creature's figure always does. The
   Foundry importer brings 3D Canvas model tiles this way.
 - `"solid": { "points": [[0, 0], [1, 0], [0.5, 1]], "height": 10 }` raises a
@@ -326,7 +339,9 @@ pixels.
   rim): `points` are its corners as fractions of the tile's width and
   height, `height` is in feet, and `elevation`, `rotation` and `color` work
   as on a model. `texture` covers it in a picture (tinted by `color`),
-  repeated `repeat` times across it (a lake's water, a wall's stone). The
+  repeated `repeat` times across it (a lake's water, a wall's stone), with
+  `maps` (`roughness`, `metalness`, `normal` pictures) and `roughness`,
+  `metalness` and `opacity` (0 hides it: something only to stand on). The
   Foundry importer brings 3D Canvas's drawn polygons this way, with their
   picture, and a merged box as its pieces.
 - `"only2d": true` keeps a tile on the flat map only: the 3D view leaves it
@@ -340,7 +355,7 @@ pixels.
   `detail` is segments a square, `elevation` and `rotation` work as on a
   model, and `layers` (up to four `{ "src", "color", "repeat", "from" }`,
   `from` a share of the height, or of flatness with `"bySlope": true`,
-  fading over `blend`) paint it. `mask` (`{ "map", "src", "color",
+  fading over `blend`) paint it, then its `paint` (as on a model). `mask` (`{ "map", "src", "color",
 "repeat" }`) paints one more picture on top wherever the `map` picture
   is white (paths, mud). The Foundry importer brings 3D Canvas terrain this
   way, as tall as its depth times its heightmap strength. A scene's `view3d.ground` of `"none"` leaves no ground
@@ -381,6 +396,38 @@ pixels.
   ```
 
 - Ids must be unique within the list.
+
+### Objects
+
+Doors, chests, levers and the like are objects, as in BG3: in the tokens
+mode the one under the pointer glows gold (a picture tile around its
+outline, a door along its leaf, a 3D model lit, a pile's ring), and a player
+right-clicks one to **Inspect** it (a card with its name, picture, state
+and description) or to use it, and the creature they act with walks up to
+it first. Objects are not a list of their own; they are what is already on
+the map:
+
+- a door (a wall with `door`),
+- a pile of loot or a merchant (a token with `pile`, see "Actors and tokens"),
+- a tile with a click `trigger` (a lever, a lift button), or any tile with a
+  `description` (a statue, a mural: inspect only).
+
+A door takes `name` (else "Door") and `description`; a tile takes
+`description` beside its `name` (else a name read off its picture's file,
+`Lever_Wood-02.webp` is "Lever wood"); a pile shows its token's name and
+biography. A closed secret door's name and description are kept from
+players with the rest of it.
+
+```json
+{
+  "id": "cell",
+  "a": [700, 800],
+  "b": [800, 800],
+  "door": "locked",
+  "name": "Cell door",
+  "description": "Rusted iron bars."
+}
+```
 
 ## Lights
 
@@ -451,9 +498,11 @@ a pillar through two storeys); with neither they are on every level. A
 token sees, and is lit and blocked by, only what is on its own level, and
 players don't see creatures on floors their own doesn't see
 (`tokensVisibleTo` in `shared/permissions.ts`, the fog keeper on the server,
-`Vision` on the client). The map draws the floor shown: the GM picks it in
-the map tools (creatures on other floors show faintly); a player sees their
-creature's.
+`Vision` on the client). The map draws the floor shown: the GM sees the
+floor of the creature they selected, or picks one (or every level) in the
+map tools (creatures on other floors show faintly); a player sees their
+creature's. Tiles over every floor (a roof) are drawn over the creatures
+and fade while one stands under them.
 
 A region only works for creatures on its own levels. These behaviours move
 creatures between floors: `level` (always to that level), `stairs` (between

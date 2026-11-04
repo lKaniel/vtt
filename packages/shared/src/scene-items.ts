@@ -112,10 +112,6 @@ export const RegionBehaviorSchema = z.discriminatedUnion('type', [
     once: z.boolean().optional(),
     system: z.record(z.string(), z.unknown()).optional(),
   }),
-  /** Takes the token to another level of the scene (stairs, a ladder, a trapdoor). */
-  z.object({ type: z.literal('level'), to: id }),
-  /** Stairs (Levels' stairs): a token on one of the two levels goes to the other. */
-  z.object({ type: z.literal('stairs'), between: z.tuple([id, id]) }),
   /** A lift (Levels' elevator): whoever moves the token picks one of `floors` (missing: any level). */
   z.object({ type: z.literal('elevator'), floors: z.array(id).optional() }),
   /**

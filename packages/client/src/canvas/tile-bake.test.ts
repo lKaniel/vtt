@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { bakeRuns, bakeScale, cellsOver, overlaps, roofStill, tileBounds, tileStill } from './tile-bake.ts';
 
 // Still tiles are drawn once into map pieces (cells) and shown as pictures;
-// tiles that move or answer clicks stay live, between the baked runs.
+// tiles that move, answer clicks or glow as objects stay live, between the baked runs.
 
 describe('bake scale', () => {
   it('bakes at the power of two at or above the screen pixels per map pixel', () => {
@@ -69,6 +69,10 @@ describe('still tiles', () => {
       trigger: { on: 'click' as const, actions: [{ type: 'message' as const, text: 'Click' }] },
     };
     expect(tileStill(lever, false)).toBe(false);
+  });
+
+  it('keeps an object with a description live, so it can glow under the pointer', () => {
+    expect(tileStill({ ...picture, description: 'A dusty statue.' }, false)).toBe(false);
   });
 });
 

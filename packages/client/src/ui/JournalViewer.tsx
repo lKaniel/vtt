@@ -9,6 +9,8 @@ import { EntryHeader, EntryTools } from './JournalParts.tsx';
 import { Textarea } from './kit/textarea.tsx';
 import { Button } from './kit/button.tsx';
 import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
+import { Window } from './kit/window.tsx';
+import type { Size } from './kit/window-stack.ts';
 
 interface Page {
   id: string;
@@ -38,11 +40,17 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
     setPageId(id);
   };
   return (
-    <div className="journal frame" role="dialog" aria-label={String(doc.name)}>
-      <header className="chat-head">
-        <span>{String(doc.name)}</span>
-        <Button variant="close" onClick={() => session.journal.close()} aria-label="Close" title="Close" />
-      </header>
+    <Window
+      id="journal"
+      kind="journal"
+      initial={journalPlace}
+      role="dialog"
+      title={String(doc.name)}
+      onClose={() => session.journal.close()}
+      resizable
+      className="journal"
+      bodyClassName="px-3 pt-1 pb-3"
+    >
       <div className="mb-2 flex items-end gap-1">
         <Tabs value={page?.id ?? ''} onValueChange={setPageId} className="min-w-0 flex-1">
           <TabsList className="flex-wrap">
@@ -73,9 +81,15 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
       ) : (
         <p className="muted">{gm ? 'Add a page.' : 'You may know of this, but not what it says.'}</p>
       )}
-    </div>
+    </Window>
   );
 }
+
+/** Centred near the top, until moved. */
+const journalPlace = (view: Size) => {
+  const w = Math.min(560, view.width - 32);
+  return { x: Math.round((view.width - w) / 2), y: Math.round(view.height * 0.1), w };
+};
 
 interface PageProps {
   session: Session;

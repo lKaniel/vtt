@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Paint3DSchema } from './paint3d.ts';
 
 // Ground raised from a heightmap picture on a tile, like 3D Canvas's terrain
 // tiles: hills, terraces, a cave floor. The picture's red says how high each
@@ -49,6 +50,8 @@ export const Terrain3DSchema = z.object({
   blend: z.number().min(0).max(0.25).optional(),
   /** Layers go by flatness (1 flat, 0 a cliff) instead of height. */
   bySlope: z.boolean().optional(),
+  /** Colours swapped and a picture laid over the layers (paint3d.ts), before the mask. */
+  paint: Paint3DSchema.optional(),
   /** A picture painted over the layers where its mask says. */
   mask: TerrainMaskSchema.optional(),
   /** Its colour where no layer covers it. */

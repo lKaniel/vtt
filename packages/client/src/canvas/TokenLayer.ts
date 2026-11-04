@@ -239,6 +239,8 @@ export class TokenLayer {
   }
 
   private ringColor(token: TokenView): string {
+    // A pile of loot is an object: it glows gold, like a door or a lever (object-glow.ts).
+    if (token.pile) return TURN_COLOR;
     const you = this.session.you;
     if (you && ownersOf(token).includes(you.id)) return you.color;
     return isParty(token) ? ALLY_RIM : OTHER_RIM;
@@ -267,8 +269,9 @@ export class TokenLayer {
     root.eventMode = 'static';
     root.cursor = 'pointer';
     root.on('pointerdown', (e) => {
-      // Right and middle clicks go through to the map: panning, or cancelling an action.
-      if (e.button !== 0) return;
+      // Right and middle clicks go through to the map: panning, or cancelling
+      // an action; so does a left click with an area aimed (it goes at the creature).
+      if (e.button !== 0 || this.session.actions.aiming?.mode === 'point') return;
       e.stopPropagation();
       const t = this.session.tokens.get(token.id);
       if (!t) return;

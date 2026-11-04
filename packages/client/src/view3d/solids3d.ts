@@ -2,6 +2,7 @@ import { type ModelGround, solidSpan } from '@vtt/shared';
 import * as THREE from 'three';
 import { assetUrl } from '../assets.ts';
 import type { SolidShown } from './content3d.ts';
+import { peekable } from './peek3d.ts';
 
 // The drawn solids of the 3D view (solid3d.ts in shared): each outline
 // extruded as tall as asked, standing from its base, covered in its picture
@@ -66,20 +67,43 @@ export class Solids {
 
   private add(shown: SolidShown, ground: ModelGround): void {
     const geometry = solidGeometry(shown.outline, solidSpan(shown.solid, ground).height);
-    const map = pictureOf(shown, this.load);
-    const color = shown.solid.color ?? (map ? '#ffffff' : GREY);
-    const material = new THREE.MeshStandardMaterial({ color, map, roughness: 0.9 });
-    const mesh = new THREE.Mesh(geometry, material);
+    const mesh = new THREE.Mesh(geometry, peekable(this.material(shown)));
+    // An unseen box (3D Canvas transparency 0) is only there to stand on.
+    mesh.visible = shown.solid.opacity !== 0;
     this.meshes.set(shown.key, { mesh, shown });
     this.group.add(mesh);
     this.stale = true;
+  }
+
+  /** Its colour and picture, its gloss and the maps beside its picture, and how much it shows. */
+  private material(shown: SolidShown): THREE.MeshStandardMaterial {
+    const { solid } = shown;
+    const map = pictureOf(shown, this.load);
+    const beside = (src: string | undefined) => {
+      if (!src) return null;
+      const t = this.load(assetUrl(src));
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      if (map) t.repeat.copy(map.repeat);
+      return t;
+    };
+    const opacity = solid.opacity ?? 1;
+    return new THREE.MeshStandardMaterial({
+      color: solid.color ?? (map ? '#ffffff' : GREY),
+      map,
+      roughness: solid.roughness ?? (solid.maps?.roughness ? 1 : 0.9),
+      metalness: solid.metalness ?? 0,
+      roughnessMap: beside(solid.maps?.roughness),
+      metalnessMap: beside(solid.maps?.metalness),
+      normalMap: beside(solid.maps?.normal),
+      ...(opacity < 1 && { transparent: true, opacity }),
+    });
   }
 
   private drop(key: string, mesh: THREE.Mesh): void {
     this.group.remove(mesh);
     mesh.geometry.dispose();
     const material = mesh.material as THREE.MeshStandardMaterial;
-    material.map?.dispose();
+    for (const t of [material.map, material.roughnessMap, material.metalnessMap, material.normalMap]) t?.dispose();
     material.dispose();
     this.meshes.delete(key);
   }

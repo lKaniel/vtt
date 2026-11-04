@@ -113,6 +113,22 @@ describe('context menus', () => {
     expect(labels(kara, api(false))).not.toContain('Make it a merchant');
   });
 
+  it("an object's inspect and uses come first, in place of a pile's own Open entry", () => {
+    const uses = [
+      { label: 'Inspect', run: vi.fn() },
+      { label: 'Open', run: vi.fn() },
+    ];
+    const ground: MenuTarget = { mode: 'tokens', at: [0, 0], docs: [], uses };
+    expect(labels(ground, api(false))).toEqual(['Inspect', 'Open', 'Select all']);
+    const pile: MenuTarget = {
+      ...on({ id: 'p', type: 'token', rev: 1 }),
+      mode: 'tokens',
+      token: { id: 'p', name: 'Chest', pile: { kind: 'loot' } } as TokenView,
+      uses,
+    };
+    expect(labels(pile, api(false))).toEqual(['Inspect', 'Open', 'Target']);
+  });
+
   it('the GM shows a token’s art or a picture tile to the players', () => {
     const a = api();
     const token: MenuTarget = {

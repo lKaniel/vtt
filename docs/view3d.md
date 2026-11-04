@@ -34,6 +34,14 @@ dialog under Camera.
   walk preview, targeting and menus work in 3D as they do flat.
 - `walls3d.ts`: walls as boxes, from the shown floor up to its ceiling
   (`top`, or the wall's own height), and the cutaway.
+- `peek3d.ts`: seeing in, as in BG3. While the creature you act with stands
+  under a roof (a model or box over its head), the models and boxes within
+  5 squares of it fade. That covers everything over its head and the walls
+  between it and the camera, above their foot. Clicks go through what has
+  faded. Outside, buildings show whole.
+- `surface3d.ts`: what creatures stand on (terrain, model floors, boxes).
+  The flat map's drawing (paths, rings, spell areas) is draped over
+  terrain (`drapeOver` in `terrain-paint.ts`).
 - `scene3d.ts`: three.js meshes: the ground picture, instanced walls,
   creatures as standing pictures.
 - `View3D.ts` ties them together; `view3d-switch.ts` turns it on and off

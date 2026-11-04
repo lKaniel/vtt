@@ -1,5 +1,6 @@
 import { mediaKind } from '@vtt/core';
 import type { Terrain3D } from '@vtt/shared';
+import { paintOf } from './foundry-paint.ts';
 import { type Flags, flagsOf, type MediaFind, finite, text } from './foundry-3d.ts';
 
 // 3D Canvas terrain (levels-3d-preview 9.x, tile3d.js): a box tile with a
@@ -63,6 +64,7 @@ export function tileTerrainOf(raw: unknown, grid: Grid, find: MediaFind): Terrai
   const strength = finite(f.displacementIntensity);
   const height = ((depth * (strength && strength > 0 ? strength : 1)) / grid.size) * 5;
   const mask = maskOf(f, find);
+  const paint = paintOf(f, find);
   return {
     heightmap,
     ...readOf(f),
@@ -70,6 +72,7 @@ export function tileTerrainOf(raw: unknown, grid: Grid, find: MediaFind): Terrai
     ...placeOf(raw, f, height, grid),
     ...(!white(f.color) && { color: String(f.color) }),
     ...layersOf(f, find),
+    ...(paint && { paint }),
     ...(mask && { mask }),
   };
 }

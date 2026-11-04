@@ -56,7 +56,7 @@ export function tileBounds(tile: Posed, pad: number): Rect {
 
 /** Whether a tile looks the same every frame, so it can be baked: not a roof, video, GIF, scrolling picture or click target. */
 export function tileStill(tile: Chunk['tiles'][number], gm: boolean): boolean {
-  if (tileClickable(tile, gm)) return false;
+  if (tileClickable(tile, gm) || tile.description) return false;
   if (tile.kind !== 'image') return true;
   return !tile.overhead && !tile.scroll && tileMedia(tile.src) === 'image';
 }

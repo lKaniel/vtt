@@ -13,13 +13,16 @@ import {
   tileSolids,
   tileTerrains,
 } from './content3d.ts';
+import { hides, SeeIn } from './peek3d.ts';
 import { Solids } from './solids3d.ts';
+import { Surface } from './surface3d.ts';
+import { drapeOver } from './terrain-paint.ts';
 import { Terrains } from './terrain3d.ts';
 import { CameraInput } from './input3d.ts';
 import { Models, type ModelShown } from './models3d.ts';
 import { eyeOf, follow, groundSquare, type MapPoint, ORBIT, type Orbit, panBy, rotateBy, zoomBy } from './orbit.ts';
 import { type FlatMap, PixiBridge } from './pixi-bridge.ts';
-import { at3d, Backdrop, Ground, Standees, type Standing, Walls } from './scene3d.ts';
+import { at3d, Backdrop, Ground, hazeOf, Standees, type Standing, Walls } from './scene3d.ts';
 import { cutaway, wallBoxes } from './walls3d.ts';
 
 // The map in 3D, with a camera like Baldur's Gate 3's (orbit.ts): the 2D map
@@ -41,6 +44,16 @@ const WALLS_EVERY = 0.25;
 
 export class View3D {
   private renderer = new THREE.WebGLRenderer({ antialias: true });
+  private pmrem = new THREE.PMREMGenerator(this.renderer);
+  private litBy?: THREE.Texture;
+  /** What creatures stand on: terrain, model floors and boxes, reached 6 ft up from their feet. */
+  private underfoot = new Surface(
+    () => this.solidsHit(),
+    () => 6 * this.px(),
+  );
+  private surfacesSeen = '';
+  /** BG3's look inside: the roof and near walls round your creature fade while it is under a roof. */
+  private seeIn = new SeeIn(() => [this.models.group, this.solids.group]);
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(FOV, 1, 5, 200000);
   private surface = document.createElement('div');
@@ -105,6 +118,8 @@ export class View3D {
     this.surface.style.cssText = 'position:absolute;inset:0;';
     this.surface.dataset.testid = 'view3d';
     this.renderer.setPixelRatio(devicePixelRatio);
+    // As 3D Canvas renders, so imported scenes keep their light.
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.surface.appendChild(this.renderer.domElement);
     this.host.appendChild(this.surface);
     this.bridge.attach(this.surface);
@@ -134,6 +149,8 @@ export class View3D {
     this.walls.dispose();
     this.standees.dispose();
     this.backdrop.dispose();
+    this.scene.environment?.dispose();
+    this.pmrem.dispose();
     this.renderer.dispose();
   }
 
@@ -166,7 +183,10 @@ export class View3D {
     // On terrain the camera looks at the ground under it, not the bare floor.
     this.orbit = { ...this.orbit, target: [x, y, Math.max(floor, this.terrains.heightAt(x, y) ?? floor)] };
     // The 2D map has just drawn the square asked for last frame: lay it down, then ask for the next.
-    if (this.drawn) this.ground.show(this.drawn.center, this.drawn.half, floor);
+    if (this.drawn) {
+      this.ground.show(this.drawn.center, this.drawn.half, floor);
+      drapeOver(this.ground.picture, this.drawn.center, this.drawn.half);
+    }
     this.fitView();
     const square = groundSquare(this.orbit, { fov: FOV, aspect: this.camera.aspect, grid: this.grid() });
     this.bridge.frame(square.center, square.half);
@@ -174,7 +194,9 @@ export class View3D {
     this.placeCamera();
     this.wallsDue -= dt;
     if (this.wallsDirty || this.wallsDue <= 0) this.standWalls(floor);
-    this.standees.show(this.standing(), floor);
+    const standing = this.standing();
+    this.standees.show(standing, floor);
+    this.seeIn.update(this.acting(standing, floor), this.orbit.yaw, { px: this.px(), grid: this.grid() });
     this.standModels(floor);
     this.renderer.render(this.scene, this.camera);
   }
@@ -201,11 +223,21 @@ export class View3D {
     this.sun.position.set(t[0] - 2000, t[2] + 4000, t[1] - 1500);
     this.sun.target.position.set(t[0], t[2], t[1]);
     const background = world.background ?? '#1b1d22';
-    const look = { sky: world.view3d?.sky, ground: world.view3d?.ground ?? background, background };
+    const v = world.view3d;
+    const look = { sky: v?.sky, ground: v?.ground ?? background, background, ...(v?.fog && { fog: v.fog }) };
     this.backdrop.show(this.scene, look, this.floor());
-    const back = new THREE.Color(background);
     const reach = ORBIT.maxReach * this.grid();
-    this.scene.fog = new THREE.Fog(back, this.orbit.distance + reach * 0.4, this.orbit.distance + reach * 1.1);
+    this.scene.fog = hazeOf(look, this.grid(), [this.orbit.distance + reach * 0.4, this.orbit.distance + reach * 1.1]);
+    this.skyLight(this.backdrop.skyPicture);
+  }
+
+  /** The sky lights the scene as 3D Canvas lets it (its picture as the environment), once it has loaded. */
+  private skyLight(sky: THREE.Texture | undefined): void {
+    const ready = sky?.image ? sky : undefined;
+    if (ready === this.litBy) return;
+    this.litBy = ready;
+    this.scene.environment?.dispose();
+    this.scene.environment = ready ? this.pmrem.fromEquirectangular(ready).texture : null;
   }
 
   /** The camera keeps up with the creature you act with, until you move it yourself. */
@@ -275,8 +307,16 @@ export class View3D {
     const all = [...this.tileModels, ...figures(this.session.tokens.values(), this.table(), placeOf)];
     const ground = { grid: this.grid(), feet: 5, floor: this.level()?.bottom ?? 0 };
     this.models.show(all, ground, floor);
+    const hover = this.session.inspect.hover;
+    this.models.glow(hover?.kind === 'tile' ? `tile:${hover.id}` : undefined);
     this.solids.show(this.tileSolids, ground, floor);
     this.terrains.show(this.tileTerrains, ground, floor);
+    const seen = `${this.models.stood}:${this.solids.count}:${this.terrains.count}:${floor}`;
+    if (seen !== this.surfacesSeen) {
+      this.underfoot.forget();
+      this.seeIn.forget();
+    }
+    this.surfacesSeen = seen;
     this.surface.dataset.models = String(this.models.count);
     this.surface.dataset.solids = String(this.solids.count);
     this.surface.dataset.terrain = String(this.terrains.count);
@@ -285,21 +325,36 @@ export class View3D {
   /** The creatures you see on the floors shown (but those with a figure), where the 2D map has them now. */
   private standing(): Standing[] {
     const table = this.table();
+    const floor = this.floor();
     const out: Standing[] = [];
     for (const t of this.session.tokens.values()) {
       const place = this.map.tokens.placeOf(t.id);
       if (!place || t.model || !onShownFloor(t, table)) continue;
       const floorFeet = this.level()?.bottom ?? 0;
+      const feet = floor + Math.max(0, (t.elevation ?? 0) - floorFeet) * this.px();
       out.push({
         id: t.id,
         at: place.at,
-        height: Math.max(0, (t.elevation ?? 0) - floorFeet) * this.px(),
+        height: (this.underfoot.under(t.id, place.at, feet) ?? feet) - floor,
         size: t.size * this.grid(),
         picture: portraitOf(t),
         faint: t.hidden,
       });
     }
     return out;
+  }
+
+  /** The creature you act with, where it stands (none from above, the tactical view). */
+  private acting(standing: readonly Standing[], floor: number) {
+    const id = this.session.selected;
+    const stood = standing.find((s) => s.id === id);
+    if (!stood || this.orbit.tactical) return undefined;
+    return { id: stood.id, at: stood.at, feet: floor + stood.height };
+  }
+
+  /** What the pointer and creatures' feet meet: terrain, the model tiles and the boxes. */
+  private solidsHit(): THREE.Object3D[] {
+    return [...this.terrains.meshes, this.models.group, this.solids.group];
   }
 
   /** The map point under the pointer: a creature's spot when it is their picture, else the floor. */
@@ -313,8 +368,10 @@ export class View3D {
     const token = this.standees.hit(this.ray);
     const place = token ? this.map.tokens.placeOf(token) : undefined;
     if (place) return place.at;
-    const ground = this.ray.intersectObjects(this.terrains.meshes, false)[0];
-    if (ground) return [ground.point.x, ground.point.z];
+    const ground = this.ray
+      .intersectObjects(this.solidsHit(), true)
+      .find((h) => h.object.visible && !hides(this.seeIn.peek, h.point.toArray()))?.point;
+    if (ground) return [ground.x, ground.z];
     const floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.floor());
     const hit = this.ray.ray.intersectPlane(floor, new THREE.Vector3());
     if (hit) return [hit.x, hit.z];

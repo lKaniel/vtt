@@ -141,6 +141,67 @@ describe('clicking a trigger tile', () => {
     expect(errors(ana)).toEqual(['No such token']);
   });
 
+  it("raises a lift and whoever stands on it, and lowers it again (Monk's elevation)", () => {
+    const cage = { id: 'cage', type: 'tile', rev: 0, kind: 'image', x: 100, y: 100, w: 100, h: 100, src: '/c.png' };
+    const model = { src: '/cage.glb', elevation: 10 };
+    store.applyOps([{ op: 'create', coll: 'main/tiles', doc: { ...cage, model } }]);
+    store.setToken({ ...store.tokens.get('hero')!, elevation: 10 });
+    tile({ actions: [{ type: 'elevation', target: { coll: 'tiles', id: 'cage' }, by: 20 }] });
+    const ana = seat('ana');
+    pull(ana);
+    expect(store.docs.get('main/tiles', 'cage')!.model).toMatchObject({ elevation: 30 });
+    expect(store.tokens.get('hero')!.elevation).toBe(30);
+    expect(store.tokens.get('goblin')!.elevation ?? 0).toBe(0);
+  });
+
+  it('sets the elevation of the creature that set it off, then teleports it', () => {
+    tile({
+      actions: [
+        { type: 'elevation', to: 60 },
+        { type: 'teleport', to: [50, 250] },
+      ],
+    });
+    pull(seat('ana'), 'hero');
+    expect(store.tokens.get('hero')).toMatchObject({ x: 50, y: 250, elevation: 60 });
+  });
+
+  it('slides a tile across the map (a cell door)', () => {
+    const door = { id: 'cell', type: 'tile', rev: 0, kind: 'image', x: 200, y: 0, w: 100, h: 20, src: '/d.png' };
+    store.applyOps([{ op: 'create', coll: 'main/tiles', doc: door }]);
+    tile({ actions: [{ type: 'shift', target: { coll: 'tiles', id: 'cell' }, by: [0, 130] }] });
+    pull(seat('ana'));
+    expect(store.docs.get('main/tiles', 'cell')).toMatchObject({ x: 200, y: 130 });
+  });
+
+  it('takes the creature up or down a ladder: to its other floor, then teleported beside it', () => {
+    const levels = [
+      { id: 'cellar', name: 'Cellar', bottom: -10 },
+      { id: 'ground', name: 'Ground', bottom: 0 },
+    ];
+    store.applyOps([{ op: 'update', coll: 'scenes', id: 'main', patch: { levels } }]);
+    tile({
+      actions: [
+        { type: 'stairs', between: ['cellar', 'ground'] },
+        { type: 'teleport', to: [50, 250] },
+      ],
+    });
+    const ana = seat('ana');
+    pull(ana, 'hero');
+    expect(store.tokens.get('hero')).toMatchObject({ x: 50, y: 250, elevation: -10 });
+    pull(ana, 'hero');
+    expect(store.tokens.get('hero')).toMatchObject({ elevation: 0 });
+    store.applyOps([
+      {
+        op: 'update',
+        coll: 'main/tiles',
+        id: 'lever',
+        patch: { trigger: { actions: [{ type: 'level', to: 'cellar' }] } },
+      },
+    ]);
+    pull(ana, 'hero');
+    expect(store.tokens.get('hero')).toMatchObject({ elevation: -10 });
+  });
+
   it('runs once when meant to, and not when off, GM-only or hidden', () => {
     tile({ once: true, actions: [{ type: 'message', text: 'Click.' }] });
     const ana = seat('ana');

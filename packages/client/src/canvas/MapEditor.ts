@@ -14,6 +14,8 @@ import {
 import { Container, Graphics } from 'pixi.js';
 import { EditorController, type EditorHost } from '../editor/controller.ts';
 import type { MenuTarget } from '../editor/menus.ts';
+import { objectAt, objectOf } from '../play/objects.ts';
+import { objectMenu } from '../play/object-uses.ts';
 import { previewDoc, previewTiles } from '../editor/preview.ts';
 import { keyOf, refOf, type Mods } from '../editor/selection.ts';
 import { TileItems } from '../editor/tile-items.ts';
@@ -22,7 +24,7 @@ import { clickSnapped } from '../play/interact.ts';
 import { moveSelectionTo } from '../play/map-clicks.ts';
 import { dragsFreely } from '../play/walking.ts';
 import { DrawTools } from './DrawTools.ts';
-import { drawHandles, drawLight, drawMarquee, drawOutline, drawWall, type DrawCtx } from './editor-draw.ts';
+import { drawHandles, drawLight, drawMarquee, drawModel, drawOutline, drawWall, type DrawCtx } from './editor-draw.ts';
 
 /** How close (screen pixels) the pointer must be to pick a wall, light or handle. */
 const PICK_PX = 10;
@@ -103,6 +105,9 @@ export class MapEditor {
 
   pointerMove(at: Point, mods: Mods): void {
     this.hover = at;
+    // The object under the pointer glows, as in BG3 (tokens mode only: the other modes edit).
+    const s = this.session;
+    s.inspect.hover = s.editor.mode === 'tokens' ? objectAt(s, at)?.ref : undefined;
     this.free = mods.shift;
     if (this.measuring) this.session.rulers.hover(at);
     this.controller.move(at, this.dragMods(mods));
@@ -223,11 +228,14 @@ export class MapEditor {
     const token = id ? s.tokens.get(id) : undefined;
     if (token && s.canControl(token)) {
       if (!s.editor.isSelected(token.id)) s.select(token.id);
-      return { mode: 'tokens', at, docs: s.editor.selectedDocs(), token };
+      const pile = token.pile && objectOf(s, { kind: 'pile', id: token.id });
+      return { mode: 'tokens', at, docs: s.editor.selectedDocs(), token, ...(pile && { uses: objectMenu(s, pile) }) };
     }
     const selected = s.selected ? s.tokens.get(s.selected) : undefined;
     const mine = selected && s.canControl(selected) ? selected : undefined;
-    return { mode: 'tokens', at, docs: [], token: mine, ...(token && { under: token }) };
+    const object = objectAt(s, at);
+    const found = { ...(token && { under: token }), ...(object && { uses: objectMenu(s, object) }) };
+    return { mode: 'tokens', at, docs: [], token: mine, ...found };
   }
 
   private host(): EditorHost {
@@ -265,6 +273,7 @@ export class MapEditor {
     for (const { doc } of docs) {
       if (doc.type === 'wall') drawWall(g, doc, ctx);
       else if (doc.type === 'light') drawLight(g, doc, ctx);
+      else if (doc.type === 'tile' && doc.model) drawModel(g, doc, ctx);
     }
     this.drawSelection(g, docs, ctx);
   }

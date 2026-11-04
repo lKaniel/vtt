@@ -149,6 +149,7 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
         find: lookupIn(media),
         skipped,
         on,
+        above: (item) => floors?.above(sourceOf(item)) ?? false,
         grid,
         keepsTriggers: lookups.keepsTriggers,
         anchored: isV14(s),
@@ -304,6 +305,8 @@ interface TileContext {
   find: ReturnType<typeof lookupIn>;
   skipped: ImportLoss[];
   on: OnFloors;
+  /** Whether a tile stands above every floor: a roof over them all. */
+  above: (item: object) => boolean;
   grid: Grid;
   keepsTriggers?: boolean;
   /** Tiles stand by their anchor (v14). */
@@ -397,7 +400,7 @@ type OnFloors = (item: object) => { level?: string; levels?: string[] };
 function tilesOf(s: FoundryScene, c: TileContext): Tile[] {
   const { find, skipped, on } = c;
   const fg = s.foregroundElevation;
-  const order = (t: FoundryScene['tiles'][number]) => (isOverhead(t, fg) ? 1e9 : 0) + (t.sort ?? t.z ?? 0);
+  const order = (t: FoundryScene['tiles'][number]) => (isOverhead(t, fg, c.above(t)) ? 1e9 : 0) + (t.sort ?? t.z ?? 0);
   const sorted = [...s.tiles].sort((a, b) => order(a) - order(b));
   const out: Tile[] = modelTiles(sorted, c);
   const missing: string[] = [];
@@ -416,7 +419,7 @@ function tilesOf(s: FoundryScene, c: TileContext): Tile[] {
         h: t.height,
         src,
         ...lookOf(t),
-        ...roofOf(t, fg),
+        ...roofOf(t, fg, c.above(t)),
         ...on(t),
         ...flatOnly(t, c.grid),
       };

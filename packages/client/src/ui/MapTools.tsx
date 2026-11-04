@@ -15,6 +15,8 @@ import {
 import { useState } from 'react';
 import { LIGHT_PRESETS, TILE_PRESETS, type LightPreset } from '../play/map-tools.ts';
 import type { Session } from '../session/session.ts';
+import { EVERY_LEVEL } from '../session/session-levels.ts';
+import { t } from '../i18n/index.ts';
 import type { EditorTool } from '../session/session-editor.ts';
 import { LayersPanel } from './LayersPanel.tsx';
 import { Button } from './kit/button.tsx';
@@ -316,10 +318,14 @@ function LevelPicker({ session }: Readonly<{ session: Session }>) {
   return (
     <SelectField
       value={session.levels.view ?? ''}
-      aria-label="Level"
-      title="The floor shown: walls, lights, tiles and drawings on others are left out"
+      aria-label={t('levels.picker')}
+      title={t('levels.pickerHint')}
       onValueChange={(id) => session.levels.setView(id || undefined)}
-      options={[{ value: '', label: 'Every level' }, ...levels.map((l) => ({ value: l.id, label: l.name }))]}
+      options={[
+        { value: '', label: t('levels.follow') },
+        { value: EVERY_LEVEL, label: t('levels.every') },
+        ...levels.map((l) => ({ value: l.id, label: l.name })),
+      ]}
     />
   );
 }

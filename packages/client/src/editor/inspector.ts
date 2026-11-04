@@ -1,6 +1,7 @@
 import type { Doc } from '@vtt/core';
 import { HOUR, TileTextureSchema, TOKEN_FILTERS, WALL_PRESETS, type WallRules, wallPreset } from '@vtt/shared';
-import { type Field, type FieldValue, flag, MIXED, options, plain } from './field-kit.ts';
+import { describe, type Field, type FieldValue, flag, LEVEL, media, MIXED, options, plain } from './field-kit.ts';
+import { MODEL_FIELDS } from './model-fields.ts';
 import { ITEM_FIELDS } from './item-fields.ts';
 import { doorFields, presetPatch, wallRuleFields } from './wall-fields.ts';
 
@@ -20,9 +21,12 @@ const WALL_FIELDS: Field[] = [
     patch: (value) => presetPatch(String(value)),
   },
   plain('door', 'Door', 'select', { options: options('closed', 'open', 'locked'), when: (d) => !!d.door }),
+  plain('name', 'Name', 'text', { when: (d) => !!d.door }),
+  describe({ when: (d) => !!d.door }),
   ...doorFields(),
   ...wallRuleFields(),
   ON_TILE,
+  LEVEL,
 ];
 
 const LIGHT_FIELDS: Field[] = [
@@ -48,6 +52,7 @@ const LIGHT_FIELDS: Field[] = [
     patch: (v) => ({ lasts: Number(v) > 0 ? Math.round(Number(v) * HOUR) : null, endsAt: null }),
   },
   ON_TILE,
+  LEVEL,
 ];
 
 const isRect = (d: Doc) => d.kind === 'rect';
@@ -95,15 +100,17 @@ const SHADOW_FIELDS: Field[] = [
 
 const TILE_FIELDS: Field[] = [
   plain('name', 'Name', 'text'),
+  describe({ when: drawn }),
   plain('x', 'X', 'number', { when: drawn }),
   plain('y', 'Y', 'number', { when: drawn }),
   plain('w', 'Width', 'number', { when: drawn }),
   plain('h', 'Height', 'number', { when: drawn }),
   flag('background', 'Ground', { when: drawn }),
   flag('locked', 'Locked'),
+  LEVEL,
   plain('color', 'Colour', 'color', { when: isRect }),
   plain('texture', 'Texture', 'select', { options: options('', ...TileTextureSchema.options), when: isRect }),
-  plain('src', 'Picture', 'text', { when: isImage }),
+  media('src', 'Picture', 'image', { when: isImage }),
   flag('overhead', 'Roof (over creatures)', { when: isImage }),
   plain('occludedAlpha', 'Opacity under it (0-1)', 'number', { when: (d) => isImage(d) && d.overhead === true }),
   scrollField('x', 'Scrolls across (px/s)'),
@@ -114,6 +121,7 @@ const TILE_FIELDS: Field[] = [
   flag('flipY', 'Mirrored top to bottom', { when: isImage }),
   plain('alpha', 'Opacity (0-1)', 'number', { when: isImage }),
   ...SHADOW_FIELDS,
+  ...MODEL_FIELDS,
 ];
 
 const TOKEN_FIELDS: Field[] = [

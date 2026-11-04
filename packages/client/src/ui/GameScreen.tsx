@@ -9,11 +9,12 @@ import { ActionBar } from './ActionBar.tsx';
 import { listenToClipboard, listenToKeys, listenToSpace, toggleSheet } from '../keys/game-keys.ts';
 import { Sheets } from './sheet/PoppedSheets.tsx';
 import { ClockBar } from './clock/ClockBar.tsx';
-import { ChatPanel } from './ChatPanel.tsx';
+import { SidePanel } from './SidePanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
 import { blockNativeMenu } from '../keys/native-menu.ts';
 import { ImageViewer } from './ImageViewer.tsx';
 import { PileWindow } from './PileWindow.tsx';
+import { InspectCard } from './InspectCard.tsx';
 import { DiceOverlay } from './DiceOverlay.tsx';
 import { Inspector } from './Inspector.tsx';
 import { JournalViewer } from './JournalViewer.tsx';
@@ -64,12 +65,13 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <JournalViewer session={session} />
       <ImageViewer session={session} />
       <PileWindow session={session} />
+      <InspectCard session={session} />
       <DiceOverlay session={session} />
       <ReactionPrompt session={session} />
       <LevelPrompt session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <Sheets session={session} />
-      <ChatPanel session={session} />
+      <SidePanel session={session} />
       <Toast session={session} />
       <ContextMenu session={session} />
       <TokenHud session={session} />

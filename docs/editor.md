@@ -103,9 +103,18 @@ one player on a scene of their own. Add, Copy (everything on it, token ids
 made new) and Delete (with everything on it) are document ops
 (`shared/scenes.ts`), so Ctrl+Z undoes them; the server deletes what is on
 a deleted scene in the same step (`server/scene-ops.ts`) and won't delete
-the scene the game is on. Settings: name, grid (none, the default, or squares; pixels per 5 ft,
+the scene the game is on. New scene takes the GM there at once (no one else
+moves) with its settings open. Settings: name, 2D or 3D, the map picture
+(picked from the media; it becomes the ground picture, as big as the
+picture), grid (none, the default, or squares; pixels per 5 ft,
 colour, opacity), darkness, background, fog of war, remembering explored
-ground. Scenes aren't in `EDIT_KINDS`: a scene isn't a placeable, and the
+ground, and on their own tab the floors (`ui/SceneFloors.tsx`, rules in
+`shared/level-edit.ts`): add one on top (the first is the ground floor,
+0–10 ft), rename it, move its floor and ceiling, pick the floors it looks
+down on, or remove it (what stood on it is then on every floor, in the same
+undo step). With floors, the level picker in the map tools picks the floor
+shown, and new tiles, walls, lights, drawings, notes, regions and sounds go
+on it (`session.levels.placing`); the inspector's Level moves them. Scenes aren't in `EDIT_KINDS`: a scene isn't a placeable, and the
 list's buttons build their own ops.
 
 ## Fog of war
@@ -136,6 +145,11 @@ Tiles work like Figma's layers (rules in `shared/tiles.ts`, format in
 - Locked tiles (and what is in them) let clicks and marquees through.
 - The Draw tool drags out a rect tile of the preset picked under it: ground
   presets go under everything, the rest into the container under them.
+- From the Assets tab, a picture dragged (or clicked) onto the map becomes an
+  image tile at its own size; a 3D model becomes a model tile (a blank picture
+  with `model`), two squares across, drawn in the tiles mode as a teal box
+  with a cross so it can be found on the flat map. A picture's map button
+  makes it the scene's map (on the floor shown).
 - The layers panel (under the tools) lists the topmost first. Click selects
   (Shift adds, Ctrl removes), a double click renames, the lock button locks.
   Drag a row onto the top or bottom edge of another to put it above or below,
@@ -156,9 +170,15 @@ select tool, then deselects, then returns to Tokens.
 
 ## Inspector
 
-Bottom right: the fields of the selection (`editor/inspector.ts`). A field
+Bottom right (left of the side panel while Scenes, Assets or another
+full-height tab is open): the fields of the selection (`editor/inspector.ts`). A field
 that differs across the selection shows "Mixed"; setting it sets it on all of
-them, as one undo step.
+them, as one undo step. Files (a tile's picture, its 3D model, a sound's
+file) are typed or picked from the game's and its packs' media with the
+folder button beside them (`ui/MediaPicker.tsx`). On a scene with floors,
+everything has a Level. A picture tile's 3D model fields
+(`editor/model-fields.ts`) set its height, elevation, turn and how it fills
+the tile.
 
 A wall's Kind picks one of the usual kinds (wall, door, window, terrain,
 invisible, ethereal); below it, Movement, Sight, Light and Sound set what it

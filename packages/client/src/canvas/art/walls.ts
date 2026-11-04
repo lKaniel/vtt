@@ -3,6 +3,9 @@ import type { Graphics } from 'pixi.js';
 
 // How walls, windows and doors look: stone walls with a soft shadow on the
 // floor, glazed windows, and plank doors that swing open on their hinge.
+// Only a scene with `wallArt` (a map made of plain tiles) draws them: on a
+// map with a picture, walls are invisible and only block (doors keep their
+// handle to click).
 
 const LEAF = 10;
 /** How far an open door swings, in radians. */
@@ -10,6 +13,11 @@ const SWING = (80 * Math.PI) / 180;
 const WOOD = 0x6b4426;
 const WOOD_EDGE = 0x24160b;
 const IRON = 0x8f8572;
+
+/** The walls a scene draws: all of them with `wallArt`, else none. */
+export function wallsDrawn<W>(walls: readonly W[], scene: { wallArt?: boolean }): readonly W[] {
+  return scene.wallArt ? walls : [];
+}
 
 /** The door leaf as a flat polygon: across the doorway, or swung open from the hinge at `a`. */
 export function doorLeaf(a: Point, b: Point, open: boolean): number[] {

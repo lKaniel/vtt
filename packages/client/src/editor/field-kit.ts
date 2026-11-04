@@ -1,10 +1,11 @@
-import type { Doc, Patch } from '@vtt/core';
+import type { Doc, MediaKind, Patch } from '@vtt/core';
 
 // The pieces inspector fields are made of (see inspector.ts).
 
 export const MIXED = Symbol('mixed');
 
-export type FieldKind = 'number' | 'text' | 'color' | 'select' | 'check';
+/** `longtext`: text over several lines (a description). */
+export type FieldKind = 'number' | 'text' | 'longtext' | 'color' | 'select' | 'check' | 'media';
 export type FieldValue = string | number | boolean;
 
 export interface Field {
@@ -20,6 +21,8 @@ export interface Field {
   when?: (doc: Doc) => boolean;
   /** A select whose options the session fills in: the game's journal entries, the scene's levels or its tiles. */
   choices?: 'journals' | 'levels' | 'tiles';
+  /** A `media` field: the kind of file it picks from the game's and its packs' media. */
+  media?: MediaKind;
 }
 
 export function plain(key: string, label: string, kind: FieldKind, extra: Partial<Field> = {}): Field {
@@ -41,7 +44,23 @@ function toValue(kind: FieldKind, value: FieldValue): unknown {
 
 export const options = (...values: string[]) => values.map((value) => ({ value, label: value || 'none' }));
 
+/** What players read when they inspect an object (play/objects.ts). */
+export const describe = (extra: Partial<Field> = {}): Field =>
+  plain('description', 'Description (players read it)', 'longtext', extra);
+
 export const flag = (key: string, label: string, extra: Partial<Field> = {}): Field => ({
   ...plain(key, label, 'check', extra),
   get: (d) => d[key] === true,
 });
+
+/** A file from the media: typed in, or picked from the game's and its packs' files of that kind. */
+export const media = (key: string, label: string, kind: MediaKind, extra: Partial<Field> = {}): Field => ({
+  ...plain(key, label, 'media', extra),
+  media: kind,
+});
+
+/** Which floor it is on (the scene's levels); picking one takes it off the several it may have been on. */
+export const LEVEL: Field = {
+  ...plain('level', 'Level', 'select', { choices: 'levels' }),
+  patch: (value) => ({ level: value === '' ? null : value, levels: null }),
+};

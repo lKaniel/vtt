@@ -37,6 +37,13 @@ describe('applyMapEdit', () => {
     expect(glass[0]!.chunk.walls[0]!.id).toBe('window-1');
   });
 
+  it('keeps the floor a new wall or light is put on', () => {
+    const wall = MapEditSchema.parse({ op: 'addWall', wall: { a: [0, 0], b: [100, 0], level: 'loft' } });
+    const light = MapEditSchema.parse({ op: 'addLight', light: { x: 5, y: 5, bright: 5, level: 'loft' } });
+    expect(applyMapEdit(new Map(), SIZE, wall)[0]!.chunk.walls[0]).toMatchObject({ level: 'loft' });
+    expect(applyMapEdit(new Map(), SIZE, light)[0]!.chunk.lights[0]).toMatchObject({ level: 'loft' });
+  });
+
   it('refuses a wall with no length', () => {
     expect(() => applyMapEdit(new Map(), SIZE, { op: 'addWall', wall: { a: [5, 5], b: [5, 5] } })).toThrow();
   });

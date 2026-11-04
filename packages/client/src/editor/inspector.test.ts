@@ -29,6 +29,7 @@ describe('the inspector', () => {
       'walls',
       'lasts',
       'tile',
+      'level',
     ]);
     expect(fieldsFor([light, wall()])).toEqual([]);
     expect(fieldsFor([])).toEqual([]);
@@ -46,6 +47,15 @@ describe('the inspector', () => {
     expect(commonValue([light], lasts)).toBeUndefined();
     expect(lasts.patch(2)).toEqual({ lasts: 7200, endsAt: null });
     expect(lasts.patch(0)).toEqual({ lasts: null, endsAt: null });
+  });
+
+  it('names and describes a door for players who inspect it, in a box that takes lines', () => {
+    const keys = (d: Doc) => fieldsFor([d]).map((f) => f.key);
+    expect(keys(wall({ door: 'closed' }))).toEqual(expect.arrayContaining(['name', 'description']));
+    expect(keys(wall())).not.toContain('description');
+    const description = field([wall({ door: 'closed' })], 'description');
+    expect(description.kind).toBe('longtext');
+    expect(description.patch('')).toEqual({ description: null });
   });
 
   it('turns a wall into a door, window or terrain wall, and back', () => {
@@ -97,10 +107,13 @@ describe('the inspector', () => {
       'height.bottom',
       'height.top',
       'tile',
+      'level',
     ]);
     expect(fieldsFor([wall({ door: 'open' })]).map((f) => f.key)).toEqual([
       'kind',
       'door',
+      'name',
+      'description',
       'secret',
       'doorSound',
       'move',
@@ -111,6 +124,7 @@ describe('the inspector', () => {
       'height.bottom',
       'height.top',
       'tile',
+      'level',
     ]);
   });
 
@@ -157,7 +171,7 @@ describe('the inspector', () => {
   it('shows rect tile fields for rect tiles and the picture for image tiles', () => {
     const rect: Doc = { id: 't', type: 'tile', rev: 1, kind: 'rect', x: 0, y: 0, w: 1, h: 1, color: '#000' };
     const image: Doc = { id: 'i', type: 'tile', rev: 1, kind: 'image', x: 0, y: 0, w: 1, h: 1, src: 'a.png' };
-    const both = ['name', 'x', 'y', 'w', 'h', 'background', 'locked'];
+    const both = ['name', 'description', 'x', 'y', 'w', 'h', 'background', 'locked', 'level'];
     expect(fieldsFor([rect]).map((f) => f.key)).toEqual([...both, 'color', 'texture']);
     expect(fieldsFor([image]).map((f) => f.key)).toEqual([
       ...both,
@@ -171,8 +185,39 @@ describe('the inspector', () => {
       'flipY',
       'alpha',
       'shadow',
+      'model.src',
+      'only2d',
     ]);
     expect(fieldsFor([rect, image]).map((f) => f.key)).toEqual(both);
+  });
+
+  it('picks pictures and models from the media, and puts a 3D model on a picture tile', () => {
+    const image: Doc = { id: 'i', type: 'tile', rev: 1, kind: 'image', x: 0, y: 0, w: 1, h: 1, src: 'a.png' };
+    expect(field([image], 'src')).toMatchObject({ kind: 'media', media: 'image' });
+    const model = field([image], 'model.src');
+    expect(model).toMatchObject({ kind: 'media', media: 'model' });
+    expect(model.patch('/assets/tree.glb', image)).toEqual({ model: { src: '/assets/tree.glb' } });
+    const tree = { ...image, model: { src: '/assets/tree.glb', height: 20 } };
+    expect(commonValue([tree], field([tree], 'model.src'))).toBe('/assets/tree.glb');
+    expect(model.patch('', tree)).toEqual({ model: null });
+    expect(fieldsFor([tree]).map((f) => f.key)).toEqual(
+      expect.arrayContaining(['model.height', 'model.elevation', 'model.rotation', 'model.fill', 'only2d']),
+    );
+    expect(field([tree], 'model.height').patch('', tree)).toEqual({ model: { src: '/assets/tree.glb' } });
+    expect(field([tree], 'model.rotation').patch('90', tree)).toEqual({
+      model: { src: '/assets/tree.glb', height: 20, rotation: 90 },
+    });
+    expect(fieldsFor([tree]).some((f) => f.key === 'model.piece')).toBe(false);
+    const wall = { ...tree, model: { src: 'w.glb', fill: 'tile' } };
+    expect(fieldsFor([wall]).some((f) => f.key === 'model.piece')).toBe(true);
+  });
+
+  it('moves a thing to another floor, off the several it was on', () => {
+    const image: Doc = { id: 'i', type: 'tile', rev: 1, kind: 'image', x: 0, y: 0, w: 1, h: 1, src: 'a.png' };
+    const stairs = { ...image, levels: ['ground', 'loft'] };
+    expect(field([stairs], 'level')).toMatchObject({ kind: 'select', choices: 'levels' });
+    expect(field([stairs], 'level').patch('loft', stairs)).toEqual({ level: 'loft', levels: null });
+    expect(field([image], 'level').patch('', image)).toEqual({ level: null, levels: null });
   });
 
   it('makes a picture a roof that fades, or a scrolling one', () => {
@@ -198,7 +243,7 @@ describe('the inspector', () => {
 
   it('shows a group its name and lock only', () => {
     const group: Doc = { id: 'g', type: 'tile', rev: 1, kind: 'group' };
-    expect(fieldsFor([group]).map((f) => f.key)).toEqual(['name', 'locked']);
+    expect(fieldsFor([group]).map((f) => f.key)).toEqual(['name', 'locked', 'level']);
   });
 
   it('lets the GM hide tokens', () => {
@@ -255,6 +300,6 @@ describe('the inspector', () => {
       'locked',
     ]);
     const sound: Doc = { id: 's', type: 'sound', rev: 1, x: 0, y: 0, radius: 30, src: 'a.ogg' };
-    expect(fieldsFor([sound]).map((f) => f.key)).toContain('src');
+    expect(field([sound], 'src')).toMatchObject({ kind: 'media', media: 'audio' });
   });
 });

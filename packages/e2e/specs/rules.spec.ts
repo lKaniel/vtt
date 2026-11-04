@@ -80,6 +80,17 @@ test('Magic Missile always hits and spends a spell slot', async ({ page }) => {
   await page.keyboard.press('Escape');
 });
 
+test('an area spell clicked on a creature goes at it, not a walk there', async ({ page }) => {
+  await atTable(page, PLAYER_1);
+  await clickOnMap(page, ORRIN);
+  await page.getByRole('tab', { name: 'Spells' }).click();
+  await page.getByRole('button', { name: 'Burning Hands' }).click();
+  await expect(page.getByText('Click where Burning Hands goes')).toBeVisible();
+  await clickOnMap(page, GOBLIN);
+  await expect(chatLog(page).getByText(/Orrin casts Burning Hands/)).toBeVisible();
+  expect(await page.evaluate(() => vtt.token('orrin')?.x)).toBe(ORRIN[0]);
+});
+
 test('a fight rolls initiative and the turn moves on', async ({ page }) => {
   await atTable(page, GM);
   await page.getByRole('button', { name: 'Start combat' }).click();

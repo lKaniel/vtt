@@ -1,4 +1,14 @@
-import { attachedTo, type Doc, type DocRef, type DocStore, freeId, type Op, type Patch, slugify } from '@vtt/core';
+import {
+  attachedTo,
+  type Doc,
+  type DocRef,
+  type DocStore,
+  freeId,
+  mediaKind,
+  type Op,
+  type Patch,
+  slugify,
+} from '@vtt/core';
 import {
   applyPatch,
   applyTileEdit,
@@ -33,6 +43,12 @@ import { TILE_PRESETS } from '../play/map-tools.ts';
 // shared/tiles.ts; this turns them into one transaction per command.
 // Reached as `session.tiles`; the editor hands it moves in the tiles mode.
 
+/** The picture under a 3D model: the flat map shows nothing of it. */
+const BLANK = '/art/ui/blank.svg';
+
+/** A scene's map: a ground picture at the top of the tile tree. */
+const isMap = (t: Doc) => t.background === true && t.kind === 'image' && t.parent === undefined;
+
 /** Only the fields a patch really changes. */
 function changed(doc: Doc, patch: Patch): Patch {
   return Object.fromEntries(Object.entries(patch).filter(([key, value]) => doc[key] !== value));
@@ -49,6 +65,8 @@ export interface TileHost {
     setSelection(keys: string[]): void;
   };
   readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
+  /** The floor shown, which new tiles go on. */
+  readonly levels: { readonly placing: { level?: string } };
 }
 
 /** What the tiles tell the session. */
@@ -193,26 +211,78 @@ export class Tiles {
     const tiles = this.all();
     const look = TILE_PRESETS[preset];
     const id = freeId(preset, (i) => tiles.some((t) => t.id === i), { bare: true });
-    const base: Doc = { id, type: 'tile', rev: 0, kind: 'rect', color: look.color, texture: preset, ...r };
+    const base: Doc = {
+      id,
+      type: 'tile',
+      rev: 0,
+      kind: 'rect',
+      color: look.color,
+      texture: preset,
+      ...r,
+      ...this.onFloor,
+    };
     const doc = placeNewTile(tiles, look.background ? { ...base, background: true } : base);
     this.sendTileEdit('draw', { creates: [doc], updates: [], deletes: [] });
     this.s.editor.setSelection(this.tileKeys([id]));
   }
 
-  /** A picture tile; it goes inside a container tile it lands on, like a drawn one. */
+  /** A picture tile (or a 3D model's, on a blank picture); it goes inside a container tile it lands on, like a drawn one. */
   createImage(r: Rect, src: string): void {
     const tiles = this.all();
     const file = src.split('/').at(-1) ?? '';
     const name = slugify(file.replace(/\.[^.]*$/, '')) || 'image';
     const id = freeId(/^[a-z0-9]/.test(name) ? name : 'image', (i) => tiles.some((t) => t.id === i), { bare: true });
-    const doc = placeNewTile(tiles, { id, type: 'tile', rev: 0, kind: 'image', src, ...r });
+    const look = mediaKind(src) === 'model' ? { src: BLANK, model: { src } } : { src };
+    const doc = placeNewTile(tiles, { id, type: 'tile', rev: 0, kind: 'image', ...look, ...r, ...this.onFloor });
     this.sendTileEdit('place', { creates: [doc], updates: [], deletes: [] });
     this.s.editor.setSelection(this.tileKeys([id]));
   }
 
+  /**
+   * Makes a picture the map of `scene` (named: on every floor), or of the one
+   * you are on, on the floor shown: the ground picture there gets it (and its size, when
+   * known), or a new one goes under everything at the top left corner, as
+   * big as the picture.
+   */
+  setMap(src: string, size?: { w: number; h: number }, scene?: string): void {
+    const coll = scene ? `${scene}/tiles` : this.s.editor.modeColl('tiles');
+    const tiles = this.s.docs.all(coll);
+    const floor = scene ? {} : this.onFloor;
+    const ground = tiles.find((t) => isMap(t) && t.level === floor.level);
+    if (ground)
+      return this.sendTileEdit(
+        'map',
+        { creates: [], updates: [{ id: ground.id, patch: { src, ...size } }], deletes: [] },
+        [],
+        coll,
+      );
+    const side = this.on.gridSize() * 20;
+    const id = freeId('map', (i) => tiles.some((t) => t.id === i), { bare: true });
+    const rect = { x: 0, y: 0, w: size?.w ?? side, h: size?.h ?? side };
+    const doc = placeNewTile(tiles, {
+      id,
+      type: 'tile',
+      rev: 0,
+      kind: 'image',
+      src,
+      background: true,
+      ...rect,
+      ...floor,
+    });
+    this.sendTileEdit('map', { creates: [doc], updates: [], deletes: [] }, [], coll);
+  }
+
+  private get onFloor(): { level?: string } {
+    return this.s.levels.placing;
+  }
+
   /** Sends a tile edit as one transaction, shown at once. */
-  private sendTileEdit(label: string, edit: TileEdit, more: readonly Op[] = []): void {
-    const coll = this.s.editor.modeColl('tiles');
+  private sendTileEdit(
+    label: string,
+    edit: TileEdit,
+    more: readonly Op[] = [],
+    coll = this.s.editor.modeColl('tiles'),
+  ): void {
     const ops: Op[] = [
       ...edit.creates.map((doc): Op => ({ op: 'create', coll, doc })),
       ...edit.updates.flatMap(({ id, patch }): Op[] => {

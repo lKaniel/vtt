@@ -16,6 +16,9 @@ import { ColorInput } from './kit/color-input.tsx';
 import { Slider } from './kit/slider.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 import { WeatherFields } from './WeatherFields.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './kit/tabs.tsx';
+import { MediaInput } from './MediaPicker.tsx';
+import { SceneFloors } from './SceneFloors.tsx';
 
 /**
  * GM: the game's scenes, in folders. A click views one (to prepare it)
@@ -46,7 +49,7 @@ export function ScenesTab({ session }: Readonly<{ session: Session }>) {
           },
         ]}
         actions={
-          <Button variant="outline" size="sm" onClick={() => setSettings(session.scenes.create(t('scenes.newName')))}>
+          <Button variant="outline" size="sm" onClick={() => setSettings(newScene(session))}>
             <PlusIcon />
             {t('scenes.new')}
           </Button>
@@ -58,7 +61,18 @@ export function ScenesTab({ session }: Readonly<{ session: Session }>) {
         {open && (
           <DialogContent>
             <DialogTitle>{nameOf(open)}</DialogTitle>
-            <SceneSettings session={session} doc={open} />
+            <Tabs defaultValue="general">
+              <TabsList>
+                <TabsTrigger value="general">{t('sceneSettings.general')}</TabsTrigger>
+                <TabsTrigger value="floors">{t('sceneSettings.floors')}</TabsTrigger>
+              </TabsList>
+              <TabsContent value="general">
+                <SceneSettings session={session} doc={open} />
+              </TabsContent>
+              <TabsContent value="floors">
+                <SceneFloors session={session} doc={open} />
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         )}
       </Dialog>
@@ -67,6 +81,13 @@ export function ScenesTab({ session }: Readonly<{ session: Session }>) {
 }
 
 const nameOf = (doc: Doc) => (typeof doc.name === 'string' ? doc.name : doc.id);
+
+/** A new scene, which you go to at once (no one else moves) to build it; its settings open. */
+function newScene(session: Session): string {
+  const id = session.scenes.create(t('scenes.newName'));
+  session.scenes.view(id);
+  return id;
+}
 
 /** Who may be sent here on their own: the players on other scenes. */
 function sendMenu(session: Session, scene: string): MenuEntry {
@@ -157,6 +178,7 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
         />
       </label>
       <KindField doc={doc} edit={edit} />
+      <MapField session={session} scene={doc.id} />
       <label>
         <span>Grid</span>
         <SelectField
@@ -204,13 +226,8 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
         />
       </label>
       <WeatherFields value={doc.weather} cycle={doc.weatherCycle} edit={edit} />
-      <NavFields doc={doc} edit={edit} />
-      <Check label="Fog of war" value={flag(doc, 'vision', true)} onChange={(v) => edit({ vision: v })} />
-      <Check
-        label="Remember explored ground"
-        value={flag(doc, 'exploration', true)}
-        onChange={(v) => edit({ exploration: v })}
-      />
+      <NavFields session={session} doc={doc} edit={edit} />
+      <SightFields doc={doc} edit={edit} />
       <Check
         label="Darkness follows the clock"
         value={flag(doc, 'darknessFollowsClock', false)}
@@ -218,6 +235,26 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
         title="The darkness is the time of day on the game clock"
       />
     </div>
+  );
+}
+
+/** Fog of war, remembered ground, and whether walls are drawn. */
+function SightFields({ doc, edit }: Readonly<{ doc: Doc; edit: (patch: Patch) => void }>) {
+  return (
+    <>
+      <Check label="Fog of war" value={flag(doc, 'vision', true)} onChange={(v) => edit({ vision: v })} />
+      <Check
+        label="Draw walls"
+        value={flag(doc, 'wallArt', false)}
+        onChange={(v) => edit({ wallArt: v })}
+        title="Walls as stone and doors that swing, for a map made of plain tiles; off, walls only block"
+      />
+      <Check
+        label="Remember explored ground"
+        value={flag(doc, 'exploration', true)}
+        onChange={(v) => edit({ exploration: v })}
+      />
+    </>
   );
 }
 
@@ -238,8 +275,42 @@ function KindField({ doc, edit }: Readonly<{ doc: Doc; edit: (patch: Patch) => v
   );
 }
 
+/** The scene's map: its ground picture, set at the picture's own size. */
+function MapField({ session, scene }: Readonly<{ session: Session; scene: string }>) {
+  const map = session.docs
+    .all(`${scene}/tiles`)
+    .find((t) => t.background === true && t.kind === 'image' && t.parent === undefined && !t.level);
+  const set = (src: string) => {
+    if (!src) return;
+    void pictureSize(src).then((size) => session.tiles.setMap(src, size, scene));
+  };
+  return (
+    <label title={t('sceneSettings.mapHint')}>
+      <span>{t('sceneSettings.map')}</span>
+      <MediaInput
+        key={typeof map?.src === 'string' ? map.src : ''}
+        session={session}
+        kind="image"
+        label={t('sceneSettings.map')}
+        value={typeof map?.src === 'string' ? map.src : ''}
+        onChange={set}
+      />
+    </label>
+  );
+}
+
+/** A picture's own size, once it loads; undefined when it doesn't. */
+function pictureSize(src: string): Promise<{ w: number; h: number } | undefined> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img.naturalWidth ? { w: img.naturalWidth, h: img.naturalHeight } : undefined);
+    img.onerror = () => resolve(undefined);
+    img.src = assetUrl(src);
+  });
+}
+
 /** The navigation bar: whether the scene is in it, its name there, and its picture. */
-function NavFields({ doc, edit }: Readonly<{ doc: Doc; edit: (patch: Patch) => void }>) {
+function NavFields({ session, doc, edit }: Readonly<{ session: Session; doc: Doc; edit: (patch: Patch) => void }>) {
   const text = (key: string) => (e: React.FocusEvent<HTMLInputElement>) => {
     const v = e.target.value.trim();
     if (v !== str(doc, key, '')) edit({ [key]: v || null });
@@ -256,8 +327,16 @@ function NavFields({ doc, edit }: Readonly<{ doc: Doc; edit: (patch: Patch) => v
         <Input defaultValue={str(doc, 'navName', '')} placeholder={nameOf(doc)} onBlur={text('navName')} />
       </label>
       <label>
-        <span>Thumbnail</span>
-        <Input defaultValue={str(doc, 'thumb', '')} placeholder="The background's picture" onBlur={text('thumb')} />
+        <span>{t('sceneSettings.thumb')}</span>
+        <MediaInput
+          key={str(doc, 'thumb', '')}
+          session={session}
+          kind="image"
+          label={t('sceneSettings.thumb')}
+          value={str(doc, 'thumb', '')}
+          placeholder={t('sceneSettings.thumbHint')}
+          onChange={(src) => edit({ thumb: src || null })}
+        />
       </label>
     </>
   );

@@ -10,6 +10,23 @@ import type { WallBox, WallKind } from './walls3d.ts';
 /** A map point at a height, as three.js has it. */
 export const at3d = ([x, y]: Point, height: number) => new THREE.Vector3(x, height, y);
 
+/** What surrounds the map: its sky, the ground beyond it, the colour behind and the scene's fog. */
+export interface Look {
+  sky?: string;
+  ground: string;
+  background: string;
+  fog?: { color: string; distance: number };
+}
+
+/**
+ * The haze: the scene's fog as 3D Canvas has it (from 10 squares out until
+ * `distance` hides all), else the background colour from `fallback` [near, far].
+ */
+export function hazeOf(look: Look, grid: number, fallback: [number, number]): THREE.Fog {
+  if (look.fog) return new THREE.Fog(new THREE.Color(look.fog.color), 10 * grid, look.fog.distance);
+  return new THREE.Fog(new THREE.Color(look.background), ...fallback);
+}
+
 /** The 2D map's picture of the ground it was asked to draw, lying on the floor. */
 export class Ground {
   readonly mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
@@ -25,6 +42,11 @@ export class Ground {
       geometry,
       new THREE.MeshBasicMaterial({ map: this.texture, transparent: true, depthWrite: false }),
     );
+  }
+
+  /** The 2D map's picture (draped over terrain too: terrain-paint.ts). */
+  get picture(): THREE.Texture {
+    return this.texture;
   }
 
   /** Lays the picture just drawn over the square it shows. */
@@ -177,12 +199,18 @@ export class Backdrop {
     this.table = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x1b1d22 }));
   }
 
-  /** Lays the ground (none for `none`) just under the floor at height `floor`; the sky's picture, else `background`. */
-  show(scene: THREE.Scene, look: { sky?: string; ground: string; background: string }, floor: number): void {
+  /** Lays the ground (none for `none`) just under the floor at height `floor`; the fog's colour, else the sky's picture, else `background`. */
+  show(scene: THREE.Scene, look: Look, floor: number): void {
     this.table.position.set(0, floor - 2, 0);
     this.table.visible = look.ground !== 'none';
     if (this.table.visible) this.table.material.color.set(look.ground);
-    scene.background = this.skyOf(look.sky) ?? new THREE.Color(look.background);
+    const sky = this.skyOf(look.sky);
+    scene.background = look.fog ? new THREE.Color(look.fog.color) : (sky ?? new THREE.Color(look.background));
+  }
+
+  /** The sky's picture, for the light it casts (`scene.environment`), if the scene has one. */
+  get skyPicture(): THREE.Texture | undefined {
+    return this.sky?.texture;
   }
 
   private skyOf(src: string | undefined): THREE.Texture | undefined {

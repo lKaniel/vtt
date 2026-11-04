@@ -3,6 +3,9 @@ import * as THREE from 'three';
 import { clone as cloneRigged } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { at3d } from './scene3d.ts';
 import { loadModel, modelLoader } from './model-loader.ts';
+import { paintedMaterial } from './paint3d.ts';
+import { peekable } from './peek3d.ts';
+import { pictureOf } from './terrain-paint.ts';
 
 // The glTF models of the 3D view: on tiles (model3d.ts in shared says where
 // each copy goes) and as creatures' figures. Each file loads once; every
@@ -14,6 +17,8 @@ export interface ModelShown {
   key: string;
   rect: { x: number; y: number; w: number; h: number };
   model: Model3D;
+  /** A creature's figure: never faded to see in (peek3d.ts). */
+  figure?: boolean;
 }
 
 interface Loaded {
@@ -56,6 +61,76 @@ const tinted = (scene: THREE.Object3D, color: string) =>
     mesh.material = mats.length === 1 ? mats[0]! : mats;
   });
 
+/** How much of it shows: none hides it (3D Canvas transparency 0), part lets the rest through. */
+export function faded(scene: THREE.Object3D, opacity: number): void {
+  if (opacity <= 0) {
+    scene.visible = false;
+    return;
+  }
+  scene.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const fade = (m: THREE.Material) => Object.assign(m.clone(), { transparent: true, opacity });
+    o.material = Array.isArray(o.material) ? o.material.map(fade) : fade(o.material as THREE.Material);
+  });
+}
+
+const paintedCopies = new Map<string, THREE.Material>();
+
+/** Its materials painted as 3D Canvas paints them (paint3d.ts), one copy per material and paint for every copy of it. */
+function painted(scene: THREE.Object3D, paint: NonNullable<Model3D['paint']>, l: Loaded): void {
+  const span: [number, number] = [l.bounds.min[1], l.bounds.max[1] - l.bounds.min[1]];
+  const key = JSON.stringify([paint, span]);
+  const paintOne = (m: THREE.Material) => {
+    const k = `${m.uuid}:${key}`;
+    const known = paintedCopies.get(k);
+    if (known) return known;
+    const copy = paintedMaterial(m, paint, span, pictureOf);
+    paintedCopies.set(k, copy);
+    return copy;
+  };
+  scene.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const mesh = o as THREE.Mesh;
+    mesh.material = Array.isArray(mesh.material) ? mesh.material.map(paintOne) : paintOne(mesh.material);
+  });
+}
+
+/** Lets its materials fade when your creature is inside (peek3d.ts). */
+export function seeThrough(scene: THREE.Object3D): void {
+  scene.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) peekable(m as THREE.Material);
+  });
+}
+
+/** The gold an object's model glows while the pointer is on it, as in BG3. */
+const GLOW = new THREE.Color(0xffc45a);
+const GLOW_STRENGTH = 0.45;
+
+/** A copy of a material glowing gold, keeping its shader changes (painted, see-through), which a clone leaves behind. */
+function lit(m: THREE.Material): THREE.Material {
+  const copy = Object.assign(m.clone(), {
+    onBeforeCompile: m.onBeforeCompile.bind(m),
+    customProgramCacheKey: m.customProgramCacheKey.bind(m),
+  });
+  if (copy instanceof THREE.MeshStandardMaterial) copy.emissive.copy(GLOW).multiplyScalar(GLOW_STRENGTH);
+  return copy;
+}
+
+/** Lights a model gold (on copies of its materials), or puts its own materials back. */
+export function glowing(scene: THREE.Object3D, on: boolean): void {
+  scene.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const mesh = o as THREE.Mesh;
+    const own = mesh.userData.unlit as THREE.Mesh['material'] | undefined;
+    if (!on && own) mesh.material = own;
+    if (!on) delete mesh.userData.unlit;
+    if (!on || own) return;
+    mesh.userData.unlit = mesh.material;
+    mesh.material = Array.isArray(mesh.material) ? mesh.material.map(lit) : lit(mesh.material);
+  });
+}
+
 /** The copies of one model over one rect. */
 class Placed {
   readonly group = new THREE.Group();
@@ -88,6 +163,10 @@ class Placed {
     // Rigged figures need their bones cloned with them, or they draw in pieces.
     const model = cloneRigged(l.scene);
     if (this.shown.model.color) tinted(model, this.shown.model.color);
+    if (this.shown.model.paint) painted(model, this.shown.model.paint, l);
+    const { opacity } = this.shown.model;
+    if (opacity !== undefined && opacity < 1) faded(model, opacity);
+    if (!this.shown.figure) seeThrough(model);
     model.position.set(...modelOffset(l.bounds, this.shown.model));
     pivot.add(model);
     this.group.add(pivot);
@@ -100,6 +179,8 @@ export class Models {
   readonly group = new THREE.Group();
   private placed = new Map<string, Placed>();
   private stale = true;
+  /** How many times the copies were stood again: what creatures stand on may have moved (a lift). */
+  stood = 0;
 
   /** Shows exactly these models; `ground` and `floorPx` say where the floor shown is. */
   show(all: readonly ModelShown[], ground: ModelGround, floorPx: number): void {
@@ -112,7 +193,23 @@ export class Models {
     for (const shown of all) this.update(shown);
     if (!this.stale) return;
     this.stale = false;
+    this.stood++;
     for (const p of this.placed.values()) p.place(ground, floorPx);
+  }
+
+  /**
+   * Lights the models whose key starts with `prefix` (a tile's: "tile:<id>"),
+   * and puts out the rest that were lit. True when one is lit.
+   */
+  glow(prefix: string | undefined): boolean {
+    let lit = false;
+    for (const [key, p] of this.placed) {
+      const on = !!prefix && key.startsWith(`${prefix}:`);
+      if (on || p.group.userData.lit) glowing(p.group, on);
+      p.group.userData.lit = on;
+      lit ||= on;
+    }
+    return lit;
   }
 
   /** How many copies stand (the e2e tests read it off the 3D view). */

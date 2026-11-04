@@ -96,6 +96,15 @@ describe('Levels module flags', () => {
     expect(floors.on({ flags: { levels: { rangeBottom: 0, rangeTop: 9 } } })).toEqual({ level: 'level-1' });
     expect(floors.on({ flags: { 'wall-height': { bottom: 20, top: 29 } } })).toEqual({ level: 'level-3' });
     expect(floors.on({ flags: { 'wall-height': { bottom: null, top: null } } })).toEqual({});
+    // A trapdoor a foot above the ground floor's bottom is on that floor.
+    expect(floors.on({ elevation: 1, flags: { levels: { rangeTop: 9 } } })).toEqual({ level: 'level-1' });
+  });
+
+  it('tell the roofs: tiles standing above every floor', () => {
+    expect(floors.above({ elevation: 30, flags: { levels: { rangeBottom: null, rangeTop: null } } })).toBe(true);
+    expect(floors.above({ elevation: 20, flags: { levels: { rangeTop: 29 } } })).toBe(false);
+    expect(floors.above({ elevation: 0 })).toBe(false);
+    expect(floors.above({})).toBe(false);
   });
 
   it('turn stair, one-way stair and elevator drawings into regions', () => {

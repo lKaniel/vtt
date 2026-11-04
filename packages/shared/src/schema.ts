@@ -63,7 +63,7 @@ export type SceneLevel = z.infer<typeof SceneLevelSchema>;
 export const DarknessBandSchema = z.tuple([z.number().min(0).max(1), z.number().min(0).max(1)]);
 
 /** The scene level a map item is on (scene.json `levels`), or the several it is on; neither = on every level. */
-const onLevel = { level: id.optional(), levels: z.array(id).optional() };
+export const OnLevelShape = { level: id.optional(), levels: z.array(id).optional() };
 
 /** How the 3D view shows a scene. */
 export const View3DSettingsSchema = z.object({
@@ -75,6 +75,8 @@ export const View3DSettingsSchema = z.object({
   walls: z.boolean().optional(),
   /** Lay the background picture under the 3D view (default true); off when its models and terrain are the floor. */
   background: z.boolean().optional(),
+  /** A haze of this colour, thickening to hide everything `distance` pixels from the camera; it is the sky too. */
+  fog: z.object({ color: z.string(), distance: z.number().positive() }).optional(),
 });
 export type View3DSettings = z.infer<typeof View3DSettingsSchema>;
 
@@ -106,6 +108,11 @@ export const SceneSettingsSchema = z.object({
   background: z.string().optional(),
   /** The time of day follows the game clock (world time, a later step); stored, not used yet. */
   darknessFollowsClock: z.boolean().optional(),
+  /**
+   * Walls drawn as stone, with doors that swing (a map made of plain tiles).
+   * Missing: walls are invisible and only block, as on a map with a picture.
+   */
+  wallArt: z.boolean().optional(),
   /** Floors of the scene, bottom up (see levels.ts); none = one level. */
   levels: z.array(SceneLevelSchema).optional(),
   /** A playlist that starts when the game moves to this scene. */
@@ -131,6 +138,9 @@ export const WorldSchema = SceneSettingsSchema.extend({
 });
 export type World = z.infer<typeof WorldSchema>;
 
+/** What players read when they inspect an object on the map (game-format.md, "Objects"). */
+const ObjectDescription = z.string().max(10_000).optional();
+
 /** Where a tile sits in the tile tree (see tiles.ts). */
 const tileTree = {
   id,
@@ -141,7 +151,7 @@ const tileTree = {
   sort: z.string().optional(),
   /** Clicks and marquees pass through it; select it in the layers panel. */
   locked: z.boolean().optional(),
-  ...onLevel,
+  ...OnLevelShape,
 };
 
 const tileBase = {
@@ -158,6 +168,8 @@ const tileBase = {
   only2d: z.boolean().optional(),
   /** Runs actions when it is clicked or walked onto (see triggers.ts). */
   trigger: TileTriggerSchema.optional(),
+  /** What players read when they inspect it (a lever, a chest, a statue); it makes the tile an object (game-format.md, "Objects"). */
+  description: ObjectDescription,
 };
 
 /** Painted ground for rect tiles, tinted by the tile's colour. */
@@ -276,10 +288,14 @@ export const WallSchema = z.preprocess(
     a: PointSchema,
     b: PointSchema,
     ...WallRulesSchema.shape,
+    /** A door's name when players inspect it ("Cell door"); "Door" otherwise. */
+    name: z.string().optional(),
+    /** What players read when they inspect the door. */
+    description: ObjectDescription,
     /** Feet above the ground the wall stands between (Wall Height): a creature above `top` passes over. */
     height: z.object({ bottom: z.number().optional(), top: z.number().optional() }).optional(),
     ...onTile,
-    ...onLevel,
+    ...OnLevelShape,
   }),
 );
 export type Wall = z.infer<typeof WallSchema>;
@@ -320,7 +336,7 @@ export const PlacedLightSchema = LightSchema.extend({
   x: z.number(),
   y: z.number(),
   ...onTile,
-  ...onLevel,
+  ...OnLevelShape,
   /** Shines only while the scene's darkness is in this band ("only at night"). */
   activeAt: DarknessBandSchema.optional(),
   /** Put out: it doesn't shine until a trigger (or the GM) lights it again. */

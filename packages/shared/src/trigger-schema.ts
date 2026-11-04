@@ -7,6 +7,9 @@ import { z } from 'zod';
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digits and dashes');
 const point = z.tuple([z.number(), z.number()]);
 
+/** A tile or creature an action moves. */
+const movable = z.object({ coll: z.enum(['tiles', 'tokens']), id });
+
 /** Something on the scene an action points at: a tile, token, region, drawing, note, sound or light. */
 export const TriggerTargetSchema = z.object({
   coll: z.enum(['tiles', 'tokens', 'regions', 'drawings', 'notes', 'sounds', 'lights']),
@@ -24,6 +27,10 @@ export const TRIGGER_ACTIONS = [
   z.object({ type: z.literal('sound'), src: z.string().min(1), volume: z.number().min(0).max(1).optional() }),
   /** Moves the token that set it off to `to`, on this scene or on `scene`, and onto that scene's `level` when named. */
   z.object({ type: z.literal('teleport'), to: point, scene: id.optional(), level: id.optional() }),
+  /** Takes the creature to another level of the scene (a ladder, a trapdoor), at that level's bottom. */
+  z.object({ type: z.literal('level'), to: id }),
+  /** Stairs or a ladder both ways: a creature on one of the two levels goes to the other. */
+  z.object({ type: z.literal('stairs'), between: z.tuple([id, id]) }),
   /** Opens, closes, locks or flips a door by its wall id. */
   z.object({ type: z.literal('door'), wall: id, to: z.enum(['open', 'closed', 'locked', 'toggle']) }),
   /** Posts `text` in chat; `gmOnly` whispers it to the GM. */
@@ -34,6 +41,19 @@ export const TRIGGER_ACTIONS = [
     target: z.object({ coll: z.enum(['tiles', 'regions']), id }),
     to: z.enum(['on', 'off', 'toggle']),
   }),
+  /**
+   * Raises or lowers a tile (its model, when it has one) or a creature: to
+   * `to` feet, or by `by`. No target: the creature that set it off. The
+   * creatures standing on a tile ride with it (a lift).
+   */
+  z.object({
+    type: z.literal('elevation'),
+    target: movable.optional(),
+    to: z.number().optional(),
+    by: z.number().optional(),
+  }),
+  /** Slides a tile or a creature `by` pixels across the map (a sliding door). */
+  z.object({ type: z.literal('shift'), target: movable, by: point }),
   /** Opens a journal entry (at `page`) on the screens of the players, and shares it with them. */
   z.object({ type: z.literal('journal'), entry: id, page: id.optional() }),
 ] as const;
