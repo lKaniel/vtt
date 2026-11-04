@@ -12,11 +12,8 @@ import { TriggerDialog } from './TriggerDialog.tsx';
 import { Window } from './kit/window.tsx';
 import type { Size } from './kit/window-stack.ts';
 
-/** Low on the right, just left of the side panel (336 px), until moved. */
-const inspectorPlace = (view: Size) => ({
-  x: Math.max(8, view.width - 336 - 268),
-  y: Math.max(60, view.height - 330),
-});
+/** High on the right, just left of the side panel (336 px) and clear of the action bar, until moved. */
+const inspectorPlace = (view: Size) => ({ x: Math.max(8, view.width - 336 - 268), y: 110 });
 
 /** Fields only the GM sets. */
 const GM_FIELDS = new Set(['hidden', 'level']);

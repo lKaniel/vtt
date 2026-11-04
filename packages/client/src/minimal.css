@@ -227,3 +227,19 @@
   padding: 10px 12px;
   border-radius: 3px;
 }
+
+/* ---------- Room for the side panel ----------
+   The panel runs the full height of the right edge, so the action bar
+   centres in the room left of it, and sits over the panel's foot when a
+   narrow screen has no room for both. */
+
+.game {
+  --side-w: 336px;
+}
+.game:has(.chat.closed) {
+  --side-w: 56px;
+}
+.actionbar-wrap {
+  left: calc(50% - var(--side-w) / 2);
+  z-index: 6;
+}
