@@ -46,6 +46,10 @@ export const JournalSchema = z.object({
   quest: QuestSchema.optional(),
   /** A calendar note: the game time (seconds, see clock.ts) it is dated to. */
   date: z.number().int().optional(),
+  /** Where the adventure book (J) shelves it: a map, or the party log (see adventure-book.ts). */
+  book: z.enum(['map', 'log']).optional(),
+  /** The player who wrote it: their own note, which they may change and remove. */
+  author: z.string().optional(),
 });
 export type Journal = z.infer<typeof JournalSchema>;
 

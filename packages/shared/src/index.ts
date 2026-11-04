@@ -32,6 +32,7 @@ export * from './placing.ts';
 export * from './scene-colls.ts';
 export * from './scene-items.ts';
 export * from './journals.ts';
+export * from './adventure-book.ts';
 export * from './levels.ts';
 export * from './level-edit.ts';
 export * from './templates.ts';

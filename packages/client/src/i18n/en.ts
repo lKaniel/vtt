@@ -2,6 +2,7 @@
 // to. A key is "<screen>.<what>"; `{name}` is filled in by t(). See
 // docs/i18n.md for adding words and languages.
 
+import { EN_BOOK } from './en-book.ts';
 import { EN_EDITOR } from './en-editor.ts';
 import { EN_BAILEYWIKI } from './en-lobby.ts';
 import { EN_FOUNDRY } from './en-foundry.ts';
@@ -57,6 +58,7 @@ export const EN = {
   'keys.group.Walking': 'Walking',
   'keys.group.Camera': 'Camera',
   'keys.sheet': 'Open or close the sheet',
+  'keys.journal': 'Open or close the adventure book: quests, maps, lore and the party log',
   'keys.editSheet': 'Edit the sheet',
   'keys.endTurn': 'End your turn',
   'keys.target': 'Target the token under the pointer',
@@ -408,6 +410,7 @@ export const EN = {
   ...EN_BAILEYWIKI,
   ...EN_MAP,
   ...EN_EDITOR,
+  ...EN_BOOK,
 } as const;
 
 export type MessageKey = keyof typeof EN;

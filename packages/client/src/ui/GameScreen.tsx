@@ -1,4 +1,4 @@
-import { BoxIcon, MapIcon, Redo2Icon, Undo2Icon } from 'lucide-react';
+import { BookOpenIcon, BoxIcon, MapIcon, Redo2Icon, Undo2Icon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { SoundScape } from '../audio/audio.ts';
 import { MapView } from '../canvas/MapView.ts';
@@ -18,6 +18,7 @@ import { InspectCard } from './InspectCard.tsx';
 import { DiceOverlay } from './DiceOverlay.tsx';
 import { Inspector } from './Inspector.tsx';
 import { JournalViewer } from './JournalViewer.tsx';
+import { AdventureBook } from './book/AdventureBook.tsx';
 import { MapTools } from './MapTools.tsx';
 import { PartyBar } from './PartyBar.tsx';
 import { ObserveBanner } from './ObserveBanner.tsx';
@@ -64,6 +65,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <MapTools session={session} />
       <Inspector session={session} />
       <JournalViewer session={session} />
+      <AdventureBook session={session} />
       <ImageViewer session={session} />
       <PileWindow session={session} />
       <InspectCard session={session} />
@@ -97,6 +99,7 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
         {session.you?.name}
       </span>
       <PauseButton session={session} />
+      <BookButton session={session} />
       <UndoButtons session={session} />
       <View3DButton session={session} />
       <SettingsMenu session={session} />
@@ -104,6 +107,22 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
         Leave
       </Button>
     </header>
+  );
+}
+
+/** Opens the adventure book (J): quests, maps, lore, the party log. */
+function BookButton({ session }: Readonly<{ session: Session }>) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-pressed={!!session.book.tab}
+      onClick={() => session.book.toggle()}
+      title={t('book.open')}
+      aria-label={t('book.open')}
+    >
+      <BookOpenIcon />
+    </Button>
   );
 }
 

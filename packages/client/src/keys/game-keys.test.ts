@@ -54,6 +54,13 @@ describe('the game keys', () => {
     expect(session.sheets.current).toBeUndefined();
   });
 
+  it('opens and shuts the adventure book with J', () => {
+    gameKey(session, press('j'));
+    expect(session.book.tab).toBe('quests');
+    gameKey(session, press('j'));
+    expect(session.book.tab).toBeUndefined();
+  });
+
   it('backs out with Esc: the sheet first, then the selection', () => {
     session.select('hero');
     session.sheets.open({ kind: 'token', id: 'hero' });

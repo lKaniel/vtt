@@ -4,6 +4,14 @@ import { freeId, slugify } from '@vtt/core';
 import type { Journal, JournalPage, Playlist, RollTable, Track } from '@vtt/shared';
 import { z } from 'zod';
 import type { MediaLookup } from './foundry-scene.ts';
+import {
+  bookOfPages,
+  isQuestPage,
+  isSimpleQuest,
+  partyFolders,
+  questOfPage,
+  simpleQuestPages,
+} from './foundry-simple-quest.ts';
 
 // The journal entries, roll tables and playlists of a Foundry module or
 // world, as our sidebar documents. Journal ids are kept in a lookup so the
@@ -18,7 +26,10 @@ const FoundryPage = z.object({
   type: z.string().catch('text'),
   text: z.object({ content: str }).optional().catch(undefined),
   src: str,
+  /** A module's page data (Simple Quest's quests, maps and lore). */
+  system: z.unknown().optional(),
 });
+type FoundryPage = z.infer<typeof FoundryPage>;
 
 const FoundryJournal = z.object({
   _id: str,
@@ -66,6 +77,8 @@ const FoundryPlaylist = z.object({
 });
 
 export interface RawEntries {
+  /** The world's folders, for the ones a module gives a meaning (Simple Quest's party folder). */
+  folders?: unknown[];
   journals?: unknown[];
   tables?: unknown[];
   playlists?: unknown[];
@@ -102,10 +115,15 @@ export function ids() {
   };
 }
 
-function pageOf(p: z.infer<typeof FoundryPage>, id: string, media: MediaLookup): JournalPage | undefined {
-  if (p.type === 'text') return { id, name: p.name, kind: 'text', text: p.text?.content ?? '' };
+type PageIds = (name: string, fallback: string) => string;
+
+/** A Foundry page as ours (a Simple Quest page may make two: its picture and its text); none for a kind we lack. */
+function pagesOf(p: FoundryPage, pageId: PageIds, media: MediaLookup): JournalPage[] {
+  if (isSimpleQuest(p)) return simpleQuestPages(p, pageId, media);
+  if (p.type === 'text')
+    return [{ id: pageId(p.name, 'page'), name: p.name, kind: 'text', text: p.text?.content ?? '' }];
   const src = p.type === 'image' && p.src ? media(p.src) : undefined;
-  return src ? { id, name: p.name, kind: 'image', src } : undefined;
+  return src ? [{ id: pageId(p.name, 'page'), name: p.name, kind: 'image', src }] : [];
 }
 
 interface Maps {
@@ -115,6 +133,8 @@ interface Maps {
   skipped: PlacedLoss[];
   folderOf?: FolderLookup;
   ownership?: OwnershipOf;
+  /** Foundry folders whose entries go to the party log. */
+  party: Set<string>;
 }
 
 /** `ownership` for a Foundry document's levels (players see entries Foundry let them see). */
@@ -132,15 +152,39 @@ export const inFolder = (folderOf: FolderLookup | undefined, id: string | null |
   return folder ? { folder } : {};
 };
 
-function journalOf(j: z.infer<typeof FoundryJournal>, id: string, media: MediaLookup, maps: Maps): Journal {
+type FoundryJournal = Omit<z.infer<typeof FoundryJournal>, 'pages'> & { pages: FoundryPage[] };
+
+/** An entry's pages: its own, or v9's one page of HTML. */
+const pagesIn = (j: z.infer<typeof FoundryJournal>): FoundryPage[] =>
+  j.pages ? each(FoundryPage, j.pages) : [{ name: 'Text', type: 'text', text: { content: j.content } }];
+
+/** Each Simple Quest quest page as an entry of its own; the rest stay together (an entry of only quests goes). */
+function splitQuests(raw: z.infer<typeof FoundryJournal>): FoundryJournal[] {
+  const pages = pagesIn(raw);
+  const quests = pages.filter(isQuestPage);
+  const rest = { ...raw, pages: pages.filter((p) => !isQuestPage(p)) };
+  if (!quests.length) return [rest];
+  const keep = rest.pages.length > 0;
+  const alone = quests.map((p, i) => ({ ...raw, _id: !keep && i === 0 ? raw._id : null, name: p.name, pages: [p] }));
+  return keep ? [rest, ...alone] : alone;
+}
+
+/** What the adventure book makes of the entry: a quest, and its shelf. */
+function shelfOf(j: FoundryJournal, maps: Maps): Pick<Journal, 'quest' | 'book'> {
+  const quest = j.pages.find(isQuestPage);
+  if (quest) return { quest: questOfPage(quest) };
+  const book = j.folder && maps.party.has(j.folder) ? 'log' : bookOfPages(j.pages);
+  return book ? { book } : {};
+}
+
+function journalOf(j: FoundryJournal, id: string, media: MediaLookup, maps: Maps): Journal {
   const pageId = ids();
-  const raw = j.pages ? each(FoundryPage, j.pages) : [{ name: 'Text', type: 'text', text: { content: j.content } }];
   const lost: string[] = [];
-  const pages = raw.flatMap((p) => {
-    const page = pageOf(p, pageId(p.name, 'page'), media);
-    if (!page) lost.push(p.type);
-    else if ('_id' in p && p._id) maps.pages.set(p._id, page.id);
-    return page ?? [];
+  const pages = j.pages.flatMap((p) => {
+    const made = pagesOf(p, pageId, media);
+    if (!made.length && !isSimpleQuest(p)) lost.push(p.type);
+    else if (made[0] && p._id) maps.pages.set(p._id, made[0].id);
+    return made;
   });
   if (lost.length)
     maps.skipped.push({
@@ -148,7 +192,8 @@ function journalOf(j: z.infer<typeof FoundryJournal>, id: string, media: MediaLo
       place: j.name,
     });
   if (j._id) maps.entries.set(j._id, id);
-  return { id, name: j.name, ...inFolder(maps.folderOf, j.folder), ...ownedBy(maps, j.ownership), pages };
+  const placed = { ...inFolder(maps.folderOf, j.folder), ...ownedBy(maps, j.ownership) };
+  return { id, name: j.name, ...placed, ...shelfOf(j, maps), pages };
 }
 
 function tableOf(t: z.infer<typeof FoundryTable>, id: string, maps: Maps): RollTable {
@@ -212,9 +257,19 @@ export function foundryEntries(
   folderOf?: FolderLookup,
   ownership?: OwnershipOf,
 ): ConvertedEntries {
-  const maps: Maps = { entries: new Map(), pages: new Map(), playlists: new Map(), skipped: [], folderOf, ownership };
+  const party = partyFolders(raw.folders);
+  const maps: Maps = {
+    entries: new Map(),
+    pages: new Map(),
+    playlists: new Map(),
+    skipped: [],
+    folderOf,
+    ownership,
+    party,
+  };
   const [journalId, tableId, playlistId] = [ids(), ids(), ids()];
   const journals = each(FoundryJournal, raw.journals)
+    .flatMap(splitQuests)
     .map((j) => journalOf(j, journalId(j.name, 'entry'), media, maps))
     .map((j) => relinked(j, maps));
   const tables = each(FoundryTable, raw.tables)

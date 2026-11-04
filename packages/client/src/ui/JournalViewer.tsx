@@ -10,7 +10,7 @@ import { Textarea } from './kit/textarea.tsx';
 import { Button } from './kit/button.tsx';
 import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
 
-interface Page {
+export interface Page {
   id: string;
   name: string;
   kind?: 'text' | 'image';
@@ -44,15 +44,7 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
         <Button variant="close" onClick={() => session.journal.close()} aria-label="Close" title="Close" />
       </header>
       <div className="mb-2 flex items-end gap-1">
-        <Tabs value={page?.id ?? ''} onValueChange={setPageId} className="min-w-0 flex-1">
-          <TabsList className="flex-wrap">
-            {pages.map((p) => (
-              <TabsTrigger key={p.id} value={p.id} className="flex-none px-2 pb-1.5 text-[13px]">
-                {p.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <PageTabs pages={pages} value={page?.id} onChange={setPageId} />
         {gm && (
           <>
             <EntryTools session={session} doc={doc} />
@@ -77,20 +69,40 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
   );
 }
 
+/** An entry's pages as tabs to turn between. */
+export function PageTabs({
+  pages,
+  value,
+  onChange,
+}: Readonly<{ pages: Page[]; value?: string; onChange: (id: string) => void }>) {
+  return (
+    <Tabs value={value ?? ''} onValueChange={onChange} className="min-w-0 flex-1">
+      <TabsList className="flex-wrap">
+        {pages.map((p) => (
+          <TabsTrigger key={p.id} value={p.id} className="flex-none px-2 pb-1.5 text-[13px]">
+            {p.name}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
+  );
+}
+
 interface PageProps {
   session: Session;
   page: Page;
   onChange: (p: Page) => void;
+  /** Whether you may edit the text: by default, when you are the GM. */
+  editable?: boolean;
 }
 
-/** A page: a picture, or text with its links and rolls live; the GM switches to editing the text. */
-function PageView({ session, page, onChange }: Readonly<PageProps>) {
-  const gm = session.isGm();
-  const [editing, setEditing] = useState(gm && !page.text);
+/** A page: a picture, or text with its links and rolls live; whoever may edit it switches to editing the text. */
+export function PageView({ session, page, onChange, editable = session.isGm() }: Readonly<PageProps>) {
+  const [editing, setEditing] = useState(editable && !page.text);
   if (page.kind === 'image' && page.src)
     return <img className="journal-image" src={assetUrl(page.src)} alt={page.name} />;
   const text = <ContentText session={session} text={pageText(page.text ?? '')} className="rich journal-text" />;
-  if (!gm) return text;
+  if (!editable) return text;
   return (
     <>
       {editing ? <PageEditor page={page} onChange={onChange} /> : text}
@@ -101,7 +113,7 @@ function PageView({ session, page, onChange }: Readonly<PageProps>) {
   );
 }
 
-function PageEditor({ page, onChange }: Readonly<Omit<PageProps, 'session'>>) {
+function PageEditor({ page, onChange }: Readonly<Pick<PageProps, 'page' | 'onChange'>>) {
   const [draft, setDraft] = useState(page.text ?? '');
   return (
     <Textarea
