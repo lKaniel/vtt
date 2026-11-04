@@ -10,6 +10,8 @@ const index = new SceneIndex()
   .add('tiles', [
     madeFrom({ id: 'tile-1' }, { _id: 'T1', flags: { 'monks-active-tiles': { files: [{ name: 'lever-*.webp' }] } } }),
     madeFrom({ id: 'tile-2' }, { _id: 'T2', flags: { 'monks-active-tiles': { files: [{ name: 'chest.webp' }] } } }),
+    madeFrom({ id: 'lift' }, tagged(['Lift'], 'T3')),
+    madeFrom({ id: 'cell-1' }, tagged(['DoorLeft'], 'T4')),
   ])
   .add('lights', [madeFrom({ id: 'light-1' }, tagged(['torch-1'])), madeFrom({ id: 'light-2' }, tagged(['torch-2']))])
   .add('walls', [madeFrom({ id: 'wall-3' }, tagged(['villa-gate-1']))]);
@@ -90,8 +92,50 @@ describe("Monk's Active Tiles as tile triggers", () => {
       type: 'stairs',
       between: ['cellar', 'ground'],
     });
-    // A step relative to where the creature is can't be told apart from here.
-    expect(ladder('+ 22.5')).toEqual([{ type: 'teleport', to: [2742, 2150] }]);
+    // A step from where the creature is names no floor: it goes up or down that far.
+    expect(ladder('+ 22.5')).toEqual([
+      { type: 'elevation', by: 22.5 },
+      { type: 'teleport', to: [2742, 2150] },
+    ]);
+  });
+
+  it('raises a tagged lift and slides tagged cell doors when a lever is pulled', () => {
+    const lever = foundryTrigger(
+      monk({
+        trigger: ['', 'click'],
+        actions: [
+          { action: 'elevation', data: { entity: { id: 'tagger:Lift' }, value: '- 22' } },
+          { action: 'alter', data: { entity: { id: 'tagger:DoorLeft' }, attribute: 'y', value: '+ 130' } },
+          { action: 'alter', data: { entity: { id: 'tagger:DoorLeft' }, attribute: 'x', value: '- 40' } },
+        ],
+      }),
+      'tile-1',
+      lookups,
+    );
+    expect(lever.trigger?.actions).toEqual([
+      { type: 'elevation', target: { coll: 'tiles', id: 'lift' }, by: -22 },
+      { type: 'shift', target: { coll: 'tiles', id: 'cell-1' }, by: [0, 130] },
+      { type: 'shift', target: { coll: 'tiles', id: 'cell-1' }, by: [-40, 0] },
+    ]);
+    expect(lever.lost).toEqual([]);
+  });
+
+  it('sets the height of whoever walks onto a teleport pad, before it is taken away', () => {
+    const pad = foundryTrigger(
+      monk({
+        trigger: ['', 'enter'],
+        actions: [
+          { action: 'teleport', data: { entity: { id: 'token' }, location: { x: 4581, y: 5629, sceneId: null } } },
+          { action: 'elevation', data: { entity: { id: 'token' }, value: '62' } },
+        ],
+      }),
+      'tile-1',
+      { ...lookups, floorAt: undefined },
+    );
+    expect(pad.trigger?.actions).toEqual([
+      { type: 'elevation', to: 62 },
+      { type: 'teleport', to: [4581, 5629] },
+    ]);
   });
 
   it('teleports whoever walks on, to another scene, and says so to the GM', () => {

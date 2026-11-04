@@ -309,7 +309,7 @@ export class View3D {
     this.models.show(all, ground, floor);
     this.solids.show(this.tileSolids, ground, floor);
     this.terrains.show(this.tileTerrains, ground, floor);
-    const seen = `${this.models.count}:${this.solids.count}:${this.terrains.count}:${floor}`;
+    const seen = `${this.models.stood}:${this.solids.count}:${this.terrains.count}:${floor}`;
     if (seen !== this.surfacesSeen) {
       this.underfoot.forget();
       this.seeIn.forget();

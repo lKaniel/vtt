@@ -151,6 +151,8 @@ export class Models {
   readonly group = new THREE.Group();
   private placed = new Map<string, Placed>();
   private stale = true;
+  /** How many times the copies were stood again: what creatures stand on may have moved (a lift). */
+  stood = 0;
 
   /** Shows exactly these models; `ground` and `floorPx` say where the floor shown is. */
   show(all: readonly ModelShown[], ground: ModelGround, floorPx: number): void {
@@ -163,6 +165,7 @@ export class Models {
     for (const shown of all) this.update(shown);
     if (!this.stale) return;
     this.stale = false;
+    this.stood++;
     for (const p of this.placed.values()) p.place(ground, floorPx);
   }
 

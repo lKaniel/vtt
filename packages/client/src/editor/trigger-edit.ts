@@ -39,6 +39,8 @@ const BLANK: Record<string, Omit<Step, 'type'>> = {
   message: { text: '' },
   journal: { entry: '' },
   activate: { target: { coll: 'tiles', id: '' }, to: 'toggle' },
+  elevation: { by: 10 },
+  shift: { target: { coll: 'tiles', id: '' }, by: [0, 0] },
   difficult: {},
   trap: {},
   level: { to: '' },
@@ -86,6 +88,18 @@ const FIELDS: Record<string, StepField[]> = {
     { key: 'target.coll', label: 'What', kind: 'select', options: ['tiles', 'regions'] },
     { key: 'target.id', label: 'Which', kind: 'select', choices: 'target' },
     { key: 'to', label: 'Turn it', kind: 'select', options: ['on', 'off', 'toggle'] },
+  ],
+  elevation: [
+    { key: 'by', label: 'Up by (feet; below 0 goes down)', kind: 'number' },
+    { key: 'to', label: 'Or to (feet)', kind: 'number' },
+    { key: 'target.coll', label: 'What', kind: 'select', options: ['tiles', 'tokens'] },
+    { key: 'target.id', label: 'Which', kind: 'select', choices: 'target', none: 'the creature that set it off' },
+  ],
+  shift: [
+    { key: 'target.coll', label: 'What', kind: 'select', options: ['tiles', 'tokens'] },
+    { key: 'target.id', label: 'Which', kind: 'select', choices: 'target' },
+    { key: 'by.0', label: 'Across by (pixels)', kind: 'number' },
+    { key: 'by.1', label: 'Down by (pixels)', kind: 'number' },
   ],
   difficult: [{ key: 'multiplier', label: 'Cost ×', kind: 'number' }],
   trap: [
@@ -144,7 +158,7 @@ function write(at: unknown, [part, ...rest]: string[], value: unknown): unknown 
     copy[Number(part)] = (rest.length ? write(copy[Number(part)], rest, value) : value) ?? 0;
     return copy;
   }
-  const { [part!]: old, ...others } = at as Record<string, unknown>;
+  const { [part!]: old, ...others } = (at ?? {}) as Record<string, unknown>;
   const here = rest.length ? write(old, rest, value) : value;
   return here === undefined ? others : { ...others, [part!]: here };
 }

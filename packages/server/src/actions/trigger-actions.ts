@@ -111,6 +111,8 @@ export class TriggerActions {
       message: (a) => this.say(a.text, !!a.gmOnly),
       journal: (a) => this.journal(a.entry, a.page),
       activate: (a) => this.activate(a.target, a.to),
+      elevation: (a, c) => this.raise(a, c.token),
+      shift: (a) => this.shift(a.target, a.by),
     };
     return (acts[action.type] as Act<TriggerAction['type']>)(action, ctx);
   }
@@ -190,6 +192,43 @@ export class TriggerActions {
     return false;
   }
 
+  /** Raises or lowers a creature, or a tile with whoever stands on it. */
+  private raise(a: Extract<TriggerAction, { type: 'elevation' }>, by: Token | undefined): false {
+    const next = (now: number) => a.to ?? now + (a.by ?? 0);
+    if (a.target?.coll === 'tiles') return this.raiseTile(a.target.id, next);
+    const token = a.target ? this.store.tokens.get(a.target.id) : by && this.now(by);
+    if (token) this.store.setToken({ ...token, elevation: next(token.elevation ?? 0) });
+    return false;
+  }
+
+  /** A lift: the tile (its model, when it has one) goes up or down, and the creatures standing on it with it. */
+  private raiseTile(id: string, next: (now: number) => number): false {
+    const tile = this.tiles().find((t) => t.id === id);
+    const doc = this.store.docs.get(this.coll('tiles'), id);
+    if (tile && doc) this.lift(tile, doc.model as { elevation?: number } | undefined, next);
+    return false;
+  }
+
+  private lift(tile: DrawnTile, model: { elevation?: number } | undefined, next: (now: number) => number): void {
+    const was = model?.elevation ?? (tile as { elevation?: number }).elevation ?? 0;
+    const to = next(was);
+    this.update('tiles', tile.id, model ? { model: { ...model, elevation: to } } : { elevation: to });
+    for (const t of [...this.store.tokens.values()].filter((t) => standsOn(t, tile, was)))
+      this.store.setToken({ ...t, elevation: (t.elevation ?? 0) + to - was });
+  }
+
+  /** Slides a tile or a creature across the map. */
+  private shift(target: { coll: 'tiles' | 'tokens'; id: string }, [dx, dy]: Point): false {
+    if (target.coll === 'tokens') {
+      const token = this.store.tokens.get(target.id);
+      if (token) this.store.setToken({ ...token, x: token.x + dx, y: token.y + dy });
+      return false;
+    }
+    const doc = this.store.docs.get(this.coll('tiles'), target.id);
+    if (doc) this.update('tiles', target.id, { x: Number(doc.x) + dx, y: Number(doc.y) + dy });
+    return false;
+  }
+
   private door(wall: string, to: Extract<TriggerAction, { type: 'door' }>['to']): false {
     const doc = this.store.docs.get(this.coll('walls'), wall);
     if (typeof doc?.door === 'string') this.update('walls', wall, { door: doorAfter(doc.door as 'open', to) });
@@ -221,4 +260,14 @@ export class TriggerActions {
     );
     return true;
   }
+}
+
+/** How far over a lift's floor a creature still rides it, feet. */
+const RIDE_FEET = 5;
+
+/** Whether the creature stands on the tile, whose floor is at `floor` feet. */
+function standsOn(t: Token, tile: DrawnTile, floor: number): boolean {
+  const inside = t.x >= tile.x && t.x <= tile.x + tile.w && t.y >= tile.y && t.y <= tile.y + tile.h;
+  const up = (t.elevation ?? 0) - floor;
+  return inside && up >= 0 && up <= RIDE_FEET;
 }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { faded, seeThrough } from './models3d.ts';
+import { faded, Models, seeThrough } from './models3d.ts';
 
 // How much of a model shows: 3D Canvas's transparency.
 
@@ -22,5 +22,16 @@ describe('models in the 3D view', () => {
     seeThrough(scene);
     const [m] = (scene.children[0] as THREE.Mesh).material as THREE.Material[];
     expect(m!.customProgramCacheKey()).toContain('peek');
+  });
+
+  it('counts each time the copies are stood again, so what stands on them looks again (a lift)', () => {
+    const models = new Models();
+    const ground = { grid: 100, feet: 5, floor: 0 };
+    models.show([], ground, 0);
+    models.show([], ground, 0);
+    expect(models.stood).toBe(1);
+    models.restand();
+    models.show([], ground, 0);
+    expect(models.stood).toBe(2);
   });
 });

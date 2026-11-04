@@ -7,6 +7,9 @@ import { z } from 'zod';
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digits and dashes');
 const point = z.tuple([z.number(), z.number()]);
 
+/** A tile or creature an action moves. */
+const movable = z.object({ coll: z.enum(['tiles', 'tokens']), id });
+
 /** Something on the scene an action points at: a tile, token, region, drawing, note, sound or light. */
 export const TriggerTargetSchema = z.object({
   coll: z.enum(['tiles', 'tokens', 'regions', 'drawings', 'notes', 'sounds', 'lights']),
@@ -38,6 +41,19 @@ export const TRIGGER_ACTIONS = [
     target: z.object({ coll: z.enum(['tiles', 'regions']), id }),
     to: z.enum(['on', 'off', 'toggle']),
   }),
+  /**
+   * Raises or lowers a tile (its model, when it has one) or a creature: to
+   * `to` feet, or by `by`. No target: the creature that set it off. The
+   * creatures standing on a tile ride with it (a lift).
+   */
+  z.object({
+    type: z.literal('elevation'),
+    target: movable.optional(),
+    to: z.number().optional(),
+    by: z.number().optional(),
+  }),
+  /** Slides a tile or a creature `by` pixels across the map (a sliding door). */
+  z.object({ type: z.literal('shift'), target: movable, by: point }),
   /** Opens a journal entry (at `page`) on the screens of the players, and shares it with them. */
   z.object({ type: z.literal('journal'), entry: id, page: id.optional() }),
 ] as const;
