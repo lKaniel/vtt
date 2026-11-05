@@ -42,6 +42,17 @@ export function setStat<D extends Draft>(draft: D, key: keyof Stats, value: unkn
   return withField(draft, 'stats', Object.keys(stats).length ? stats : undefined);
 }
 
+/** A skill on the sheet: untrained, then proficient, then expertise, then untrained again. */
+export function cycleSkill<D extends Draft>(draft: D, skill: string): D {
+  const skills = draft.stats?.skills ?? [];
+  const expertise = draft.stats?.expertise ?? [];
+  const orNone = (list: string[]) => (list.length ? list : undefined);
+  if (!skills.includes(skill)) return setStat(draft, 'skills', [...skills, skill]);
+  if (!expertise.includes(skill)) return setStat(draft, 'expertise', [...expertise, skill]);
+  const dropped = setStat(draft, 'skills', orNone(skills.filter((s) => s !== skill)));
+  return setStat(dropped, 'expertise', orNone(expertise.filter((s) => s !== skill)));
+}
+
 export interface ClassRow {
   class: string;
   level: number;

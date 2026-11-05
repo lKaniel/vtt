@@ -133,11 +133,8 @@
             }
           }
         },
-        "jack-of-all-trades": {
-          "manual": "Add half your proficiency bonus to ability checks without proficiency. Add it by hand for now."
-        },
         "expertise": {
-          "manual": "Double the proficiency bonus of two chosen skills. Add the extra bonus by hand for now."
+          "manual": "Double the proficiency bonus of two chosen skills: pick them under Expertise in the creator or on the sheet."
         },
         "font-of-inspiration": {
           "manual": "Built into Bardic Inspiration: from 5th level its uses come back on a short rest (2024: also turn a spell slot into a use)."
@@ -954,7 +951,7 @@
           "bonusActions": ["dash", "disengage"]
         },
         "expertise": {
-          "manual": "Double the proficiency bonus of two chosen skills (or thieves’ tools). Add the extra bonus by hand for now."
+          "manual": "Double the proficiency bonus of two chosen skills (or thieves’ tools): pick them under Expertise in the creator or on the sheet."
         },
         "thieves-cant": {
           "manual": "You know Thieves’ Cant, the rogues’ secret code."

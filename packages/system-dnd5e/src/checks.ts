@@ -17,23 +17,24 @@ export interface CheckKind {
   save?: boolean;
 }
 
+type CheckSheet = Pick<Creature, 'abilities' | 'proficiency' | 'saves'> & Partial<Pick<Creature, 'features'>>;
+
+/** Proficiency the check adds: twice with expertise, half (Jack of All Trades) without proficiency. */
+function proficiencyFor(token: Pick<Token, 'stats'>, sheet: CheckSheet, skill: string | undefined): number {
+  if (skill && token.stats?.expertise?.includes(skill)) return 2 * sheet.proficiency;
+  if (skill && token.stats?.skills?.includes(skill)) return sheet.proficiency;
+  const jack = sheet.features?.some((f) => f.id === 'jack-of-all-trades');
+  return jack ? Math.floor(sheet.proficiency / 2) : 0;
+}
+
 /** The check's bonus: the ability modifier, plus proficiency in the skill; a save's bonus from the sheet. */
-export function checkBonus(
-  token: Pick<Token, 'stats'>,
-  sheet: Pick<Creature, 'abilities' | 'proficiency' | 'saves'>,
-  check: CheckKind,
-): number {
+export function checkBonus(token: Pick<Token, 'stats'>, sheet: CheckSheet, check: CheckKind): number {
   if (check.save) return sheet.saves[check.ability];
-  const proficient = check.skill && token.stats?.skills?.includes(check.skill);
-  return abilityMod(sheet.abilities[check.ability]) + (proficient ? sheet.proficiency : 0);
+  return abilityMod(sheet.abilities[check.ability]) + proficiencyFor(token, sheet, check.skill);
 }
 
 /** A passive score (passive Perception): 10 plus the skill's bonus. */
-export function passiveScore(
-  token: Pick<Token, 'stats'>,
-  sheet: Pick<Creature, 'abilities' | 'proficiency' | 'saves'>,
-  skill: Skill,
-): number {
+export function passiveScore(token: Pick<Token, 'stats'>, sheet: CheckSheet, skill: Skill): number {
   return 10 + checkBonus(token, sheet, { ability: SKILLS[skill], skill });
 }
 

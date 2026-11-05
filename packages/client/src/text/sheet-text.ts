@@ -34,6 +34,8 @@ export interface SkillRow {
   bonus: number;
   passive: number;
   proficient: boolean;
+  /** Proficiency counts twice. */
+  expert: boolean;
 }
 
 /** All 18 skills by name, with the creature's bonus and passive score in each. */
@@ -45,6 +47,7 @@ export function skillRows(token: Pick<Token, 'stats'>, sheet: Creature): SkillRo
     bonus: checkBonus(token, sheet, { ability: SKILLS[skill], skill }),
     passive: passiveScore(token, sheet, skill),
     proficient: token.stats?.skills?.includes(skill) === true,
+    expert: token.stats?.expertise?.includes(skill) === true,
   }));
 }
 

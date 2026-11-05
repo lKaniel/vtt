@@ -7,6 +7,13 @@ import type { Token } from './token-schema.ts';
 import { ClassSchema, type Class } from './spell-schema.ts';
 import { withHomebrewClasses } from './homebrew-book.ts';
 import {
+  CUSTOM,
+  customBackground,
+  CustomBackgroundSchema,
+  customSpecies,
+  CustomSpeciesSchema,
+} from './character-custom.ts';
+import {
   ABILITIES,
   type Abilities,
   type Ability,
@@ -32,14 +39,18 @@ export const CharacterSchema = z.object({
   game: id.optional(),
   name: z.string().trim().min(1).max(40),
   rules: EditionSchema.default('2014'),
+  /** A species from the book, or `custom` for `customSpecies`. */
   species: id,
+  customSpecies: CustomSpeciesSchema.optional(),
   /** Subrace (2014) or lineage (2024). */
   subspecies: id.optional(),
   /** For species that may be small or medium. */
   size: z.enum(['small', 'medium']).optional(),
   class: id,
   subclass: id.optional(),
+  /** A background from the book, or `custom` for `customBackground`. */
   background: id,
+  customBackground: CustomBackgroundSchema.optional(),
   /** Levels in `class`, the class taken at 1st level. */
   level: z.number().int().min(1).max(20).default(1),
   /** Levels in other classes, in the order they were taken. */
@@ -55,6 +66,12 @@ export const CharacterSchema = z.object({
   features: z.array(z.string().regex(/^[a-z0-9-]+\/[a-z0-9-]+$/)).default([]),
   /** Skills picked from the class list; background skills come on top. */
   skills: z.array(id).default([]),
+  /** Custom proficiencies: skills beyond the class and background ones. */
+  extraSkills: z.array(id).default([]),
+  /** Skills with expertise (proficiency counts twice). */
+  expertise: z.array(id).default([]),
+  /** Custom proficiencies in words: tools, languages, armor, weapons. */
+  proficiencies: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
   /** Hit points gained at each level after the first (rolled or average), before Constitution. */
   hpRolls: z.array(z.number().int().min(1)).default([]),
   /** One per ability score improvement taken: two +1s or one +2. */
@@ -94,15 +111,25 @@ export interface Parts {
 /** Looks up everything a character names; missing parts are undefined. */
 export function partsOf(c: Character): Parts {
   const book = bookFor(c.rules, c.homebrew);
-  const species = book.origins.species.find((s) => s.id === c.species);
+  const species = speciesOf(c, book);
   return {
     book,
     species,
     subspecies: species?.subspecies.find((s) => s.id === c.subspecies),
-    background: book.origins.backgrounds.find((b) => b.id === c.background),
+    background: backgroundOf(c, book),
     cls: book.content.classes.get(c.class),
     options: book.origins.classes.find((o) => o.id === c.class),
   };
+}
+
+function speciesOf(c: Character, book: Book): Species | undefined {
+  if (c.species === CUSTOM) return c.customSpecies && customSpecies(c.customSpecies);
+  return book.origins.species.find((s) => s.id === c.species);
+}
+
+function backgroundOf(c: Character, book: Book): Background | undefined {
+  if (c.background === CUSTOM) return c.customBackground && customBackground(c.customBackground);
+  return book.origins.backgrounds.find((b) => b.id === c.background);
 }
 
 /** The character's level: its levels in every class. */
@@ -134,7 +161,7 @@ export function characterMaxHp(c: Character, parts = partsOf(c)): number {
 }
 
 export function characterSkills(c: Character, parts = partsOf(c)): string[] {
-  return [...new Set([...(parts.background?.skills ?? []), ...c.skills])];
+  return [...new Set([...(parts.background?.skills ?? []), ...c.skills, ...c.extraSkills])];
 }
 
 /** The steps whose condition holds, each with the option picked (the first by default). */
@@ -180,6 +207,8 @@ function characterStats(c: Character, parts: Parts): Stats {
     abilities: abilityScores(c, parts),
     maxHp: characterMaxHp(c, parts),
     skills: characterSkills(c, parts),
+    ...(c.expertise.length && { expertise: c.expertise }),
+    ...(c.proficiencies.length && { proficiencies: c.proficiencies }),
     spells: c.spells,
   };
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   classRows,
+  cycleSkill,
   listText,
   parseList,
   setAbility,
@@ -78,5 +79,16 @@ describe('ownership in the editor', () => {
     const d = toggleFeature(start, 'seer/b');
     expect(d.stats?.features).toEqual(['seer/a', 'seer/b']);
     expect(toggleFeature(toggleFeature(d, 'seer/a'), 'seer/b').stats?.features).toBeUndefined();
+  });
+});
+
+describe('cycleSkill', () => {
+  it('goes from untrained to proficient to expertise and back', () => {
+    const blank: Parameters<typeof setStat>[0] = {};
+    const one = cycleSkill(blank, 'stealth');
+    expect(one.stats).toEqual({ skills: ['stealth'] });
+    const two = cycleSkill(one, 'stealth');
+    expect(two.stats).toEqual({ skills: ['stealth'], expertise: ['stealth'] });
+    expect(cycleSkill(two, 'stealth').stats).toBeUndefined();
   });
 });

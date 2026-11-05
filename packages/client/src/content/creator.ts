@@ -9,6 +9,7 @@ import {
   characterClasses,
   choicesDue,
   type CreatorStep,
+  CUSTOM,
   type Edition,
   isImprovementLevel,
   issuesByStep,
@@ -23,13 +24,18 @@ import {
   totalLevel,
 } from '@vtt/system-dnd5e';
 
+import { NEW_SPECIES, newBackground } from './creator-custom.ts';
+
 // The character creator's state changes, kept out of React so they can be
 // tested. Each takes a character and returns the changed copy.
 
+/** `species` from the book, or `custom` (starting from the last one described). */
 export function chooseSpecies(c: Character, species: string): Character {
-  const found = partsOf({ ...c, species }).species;
+  const customSpecies = species === CUSTOM ? (c.customSpecies ?? NEW_SPECIES) : c.customSpecies;
+  const found = partsOf({ ...c, species, customSpecies }).species;
   const size = found?.sizes.length === 1 ? found.sizes[0] : undefined;
-  return { ...c, species, subspecies: undefined, size, bonusPicks: c.rules === '2014' ? {} : c.bonusPicks };
+  const bonusPicks = c.rules === '2014' ? {} : c.bonusPicks;
+  return { ...c, species, customSpecies, subspecies: undefined, size, bonusPicks };
 }
 
 /** `c` carrying a copy of the homebrew class `cls` (homebrew.ts) when it doesn't have it yet. */
@@ -66,7 +72,8 @@ export function toggleOption(c: Character, classId: string, option: string): Cha
 }
 
 export function chooseBackground(c: Character, background: string): Character {
-  const next = { ...c, background, bonusPicks: c.rules === '2024' ? {} : c.bonusPicks };
+  const customBackground = background === CUSTOM ? (c.customBackground ?? newBackground(c)) : c.customBackground;
+  const next = { ...c, background, customBackground, bonusPicks: c.rules === '2024' ? {} : c.bonusPicks };
   const given = partsOf(next).background?.skills ?? [];
   return { ...next, skills: c.skills.filter((s) => !given.includes(s)) };
 }

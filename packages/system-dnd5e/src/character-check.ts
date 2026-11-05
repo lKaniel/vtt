@@ -1,4 +1,12 @@
-import { abilityScores, type Character, characterClasses, type Parts, partsOf, totalLevel } from './character.ts';
+import {
+  abilityScores,
+  type Character,
+  characterClasses,
+  characterSkills,
+  type Parts,
+  partsOf,
+  totalLevel,
+} from './character.ts';
 import { multiclassProblem } from './multiclass.ts';
 import { choicesDue, classFeature } from './class-options.ts';
 import {
@@ -10,6 +18,8 @@ import {
   STANDARD_ARRAY,
 } from './character-rules.ts';
 import { abilityMod, abilityName } from './creature-math.ts';
+import { customBackgroundIssues, customSpeciesIssues, hasFreeBonuses } from './character-custom.ts';
+import { SKILLS, skillName } from './origins.ts';
 import { ABILITIES, type Ability } from './stats-schema.ts';
 
 // Whether a character follows the rules of its edition. The creator shows
@@ -37,7 +47,7 @@ export function issuesByStep(c: Character): Record<CreatorStep, string[]> {
   const missing = {
     species: speciesIssues(c, p),
     class: p.cls && p.options ? [] : [`Unknown class "${c.class}".`],
-    background: p.background ? [] : [`Unknown background "${c.background}".`],
+    background: backgroundIssues(c, p),
   };
   if (Object.values(missing).some((m) => m.length)) return { ...missing, ...none };
   return {
@@ -50,7 +60,15 @@ export function issuesByStep(c: Character): Record<CreatorStep, string[]> {
   };
 }
 
+function backgroundIssues(c: Character, p: Parts): string[] {
+  const custom = customBackgroundIssues(c);
+  if (custom.length) return custom;
+  return p.background ? [] : [`Unknown background "${c.background}".`];
+}
+
 function speciesIssues(c: Character, p: Parts): string[] {
+  const custom = customSpeciesIssues(c);
+  if (custom.length) return custom;
   if (!p.species) return [`Unknown species "${c.species}".`];
   if (p.species.subspecies.length && !p.subspecies) {
     return [`Choose a ${c.rules === '2014' ? 'subrace' : 'lineage'} for ${p.species.name}.`];
@@ -76,6 +94,7 @@ function scoreIssues(c: Character): string[] {
 function bonusIssues(c: Character, p: Parts): string[] {
   const picks = Object.entries(c.bonusPicks) as [Ability, number][];
   if (c.rules === '2024') return backgroundBonusIssues(picks, p);
+  if (hasFreeBonuses(c)) return plusTwoPlusOne(picks);
   const choice = p.species?.bonusChoice;
   if (!choice) return picks.length ? [`${p.species?.name} has no ability bonuses to pick.`] : [];
   const ok = picks.length === choice.count && picks.every(([a, v]) => choice.from.includes(a) && v === choice.amount);
@@ -85,6 +104,10 @@ function bonusIssues(c: Character, p: Parts): string[] {
 function backgroundBonusIssues(picks: [Ability, number][], p: Parts): string[] {
   const allowed = p.background?.abilities ?? [];
   if (picks.some(([a]) => !allowed.includes(a))) return [`${p.background?.name} raises only ${listNames(allowed)}.`];
+  return plusTwoPlusOne(picks);
+}
+
+function plusTwoPlusOne(picks: [Ability, number][]): string[] {
   const values = picks.map(([, v]) => v).sort((a, b) => a - b);
   const ok = values.join() === '1,2' || values.join() === '1,1,1';
   return ok ? [] : ['Give one ability +2 and another +1, or three +1.'];
@@ -95,7 +118,17 @@ function skillIssues(c: Character, p: Parts): string[] {
   const out: string[] = [];
   if (c.skills.length !== pick || new Set(c.skills).size !== pick) out.push(`Choose ${pick} class skills.`);
   for (const s of c.skills) if (!from.includes(s)) out.push(`${p.cls!.name}s can't pick "${s}".`);
-  return out;
+  return [...out, ...customSkillIssues(c, p)];
+}
+
+/** Extra skills must be skills, and expertise needs proficiency in the skill. */
+function customSkillIssues(c: Character, p: Parts): string[] {
+  const proficient = characterSkills(c, p);
+  const unknown = [...c.extraSkills, ...c.expertise].filter((s) => !(s in SKILLS)).map((s) => `Unknown skill "${s}".`);
+  const unskilled = c.expertise
+    .filter((s) => s in SKILLS && !proficient.includes(s))
+    .map((s) => `Expertise needs proficiency in ${skillName(s)}.`);
+  return [...unknown, ...unskilled];
 }
 
 /** Ability score improvements the classes give at their levels. */

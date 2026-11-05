@@ -3,6 +3,8 @@ import { chooseBackground, chooseClass, chooseSpecies } from '../../content/crea
 import { Chips, Detail, OptionCard, RichText, StepHead, TraitList } from './Parts.tsx';
 import { classesToPick } from './use-homebrew.ts';
 import { ClassChoices } from './ClassChoices.tsx';
+import { CustomBackgroundForm, CustomSpeciesForm } from './CustomSteps.tsx';
+import { t } from '../../i18n/index.ts';
 
 export interface StepProps {
   c: Character;
@@ -20,6 +22,11 @@ function speciesLine(s: Species): string {
   const parts = [s.sizes.join(' or '), `${s.speed} ft`];
   if (s.darkvision) parts.push(`darkvision ${s.darkvision} ft`);
   return parts.join(' · ');
+}
+
+/** The card that picks the Custom option, last in a grid. */
+function CustomCard({ on, onClick }: Readonly<{ on: boolean; onClick: () => void }>) {
+  return <OptionCard title={t('creator.custom')} sub={t('creator.customSub')} on={on} onClick={onClick} />;
 }
 
 export function SpeciesStep({ c, set }: Readonly<StepProps>) {
@@ -40,9 +47,15 @@ export function SpeciesStep({ c, set }: Readonly<StepProps>) {
               onClick={() => set(chooseSpecies(c, s.id))}
             />
           ))}
+          <CustomCard on={c.species === 'custom'} onClick={() => set(chooseSpecies(c, 'custom'))} />
         </div>
       </div>
-      {p.species && (
+      {c.species === 'custom' && (
+        <aside className="cc-aside">
+          <CustomSpeciesForm c={c} set={set} />
+        </aside>
+      )}
+      {p.species && c.species !== 'custom' && (
         <aside className="cc-aside">
           <Detail title={p.species.name}>
             {Object.keys(p.species.bonuses).length > 0 && <p className="cc-facts">{bonusText(p.species.bonuses)}</p>}
@@ -156,12 +169,18 @@ export function BackgroundStep({ c, set }: Readonly<StepProps>) {
               onClick={() => set(chooseBackground(c, b.id))}
             />
           ))}
+          <CustomCard on={c.background === 'custom'} onClick={() => set(chooseBackground(c, 'custom'))} />
         </div>
         {c.rules === '2014' && (
           <p className="cc-note">The 2014 SRD has one background. Your GM can add more as homebrew.</p>
         )}
       </div>
-      {bg && (
+      {c.background === 'custom' && (
+        <aside className="cc-aside">
+          <CustomBackgroundForm c={c} set={set} />
+        </aside>
+      )}
+      {bg && c.background !== 'custom' && (
         <aside className="cc-aside">
           <Detail title={bg.name}>
             <p className="cc-facts">Skills: {bg.skills.map(skillName).join(', ')}.</p>
