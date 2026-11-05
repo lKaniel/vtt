@@ -26,6 +26,7 @@ import { CameraInput } from './input3d.ts';
 import { Models, type ModelShown } from './models3d.ts';
 import { eyeOf, groundSquare, ORBIT } from './orbit.ts';
 import { type FlatMap, PixiBridge } from './pixi-bridge.ts';
+import { Play3D, type Play3DHost } from './play3d.ts';
 import { Backdrop, Ground, hazeOf, Standees, type Standing, Walls } from './scene3d.ts';
 import { cutaway, wallBoxes } from './walls3d.ts';
 
@@ -37,7 +38,8 @@ import { cutaway, wallBoxes } from './walls3d.ts';
 
 /** What the 3D view needs of the 2D map. */
 export interface Map2D extends FlatMap {
-  readonly tokens: Pick<TokenLayer, 'placeOf' | 'showFaces'>;
+  readonly tokens: Pick<TokenLayer, 'placeOf' | 'showFaces' | 'release'>;
+  readonly effects: Play3DHost['effects'];
 }
 
 const FOV = 45;
@@ -108,6 +110,8 @@ export class View3D {
     floor: () => this.floor(),
     target: () => this.orbit.target,
   });
+  /** Attacks and spells, lunges and flinches. */
+  private play: Play3D;
   private off: (() => void)[] = [];
   private tick = () => this.frame(this.map.app.ticker.deltaMS / 1000);
 
@@ -119,6 +123,14 @@ export class View3D {
     this.rig = new CameraRig({ grid: () => this.grid(), height: () => this.host.clientHeight, fov: FOV }, () => {
       const start = session.world?.start ?? map.cam.center;
       return [start[0], start[1], this.floor()];
+    });
+    this.play = new Play3D({
+      effects: map.effects,
+      tokens: map.tokens,
+      floor: () => this.floor(),
+      groundAt: ([x, y]) => this.terrains.heightAt(x, y) ?? this.floor(),
+      px: () => this.px(),
+      sizeOf: (id) => (this.session.tokens.get(id)?.size ?? 0) * this.grid() || undefined,
     });
     this.ground = new Ground(map.app.canvas);
     this.bridge = new PixiBridge(map, (x, y) => this.pick(x, y));
@@ -134,6 +146,7 @@ export class View3D {
       this.solids.group,
       this.terrains.group,
       this.backdrop.table,
+      this.play.group,
     );
     this.scene.add(this.hemi, this.sun, this.sun.target);
   }
@@ -156,6 +169,7 @@ export class View3D {
       return this.pick(x + r.left, y + r.top);
     });
     this.map.tokens.showFaces(false);
+    this.play.start();
     this.watchHeld();
     const dirty = () => (this.wallsDirty = true);
     this.off.push(
@@ -188,6 +202,7 @@ export class View3D {
   destroy(): void {
     this.map.app.ticker.remove(this.tick);
     for (const off of this.off) off();
+    this.play.dispose();
     this.input.dispose();
     this.bridge.detach(this.host);
     this.map.tokens.showFaces(true);
@@ -253,7 +268,9 @@ export class View3D {
     this.placeCamera();
     this.wallsDue -= dt;
     if (this.wallsDirty || this.wallsDue <= 0) this.standWalls(floor);
-    const standing = this.standing();
+    const now = performance.now();
+    const standing = this.standing().map((s) => this.play.pose(s, now));
+    this.play.frame(standing, now);
     this.pokeIfWalking(standing);
     this.standees.show(standing, floor);
     const eye = this.camera.position;
@@ -413,7 +430,8 @@ export class View3D {
       this.terrains.restand();
     }
     this.floorShown = floor;
-    const placeOf = (id: string) => this.map.tokens.placeOf(id);
+    const now = performance.now();
+    const placeOf = (id: string) => this.play.placeOf(id, now);
     const all = [...this.tileModels, ...figures(this.session.tokens.values(), this.table(), placeOf)];
     const ground = { grid: this.grid(), feet: 5, floor: this.level()?.bottom ?? 0 };
     this.models.show(all, ground, floor);

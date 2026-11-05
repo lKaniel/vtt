@@ -66,7 +66,7 @@ export class MapView {
   private grid = new Graphics();
   private chunks: ChunkLayer;
   readonly tokens: TokenLayer;
-  private effects: EffectsLayer;
+  readonly effects: EffectsLayer;
   private preview = new PathPreview();
   private editor: MapEditor;
   private fogBrush: FogBrush;
