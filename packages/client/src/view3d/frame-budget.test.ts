@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GROUND, groundToDraw, groundDue, Resolution, tooSmallToSee } from './frame-budget.ts';
+import { chunkArea, GROUND, groundToDraw, groundDue, REACH, Resolution, tooSmallToSee } from './frame-budget.ts';
 
 // What the 3D view saves each frame: the 2D map draws the ground again only
 // when the camera leaves the square it drew (or something on it moves), the
@@ -74,5 +74,28 @@ describe('small things far off', () => {
   it('the further, the bigger they must be', () => {
     expect(tooSmallToSee(150, 12000, grid)).toBe(true);
     expect(tooSmallToSee(150, 3000, grid)).toBe(false);
+  });
+});
+
+describe('the map pieces the 3D view keeps loaded', () => {
+  const sizes = { grid: 100, chunkSize: 2000 };
+
+  it('loads a wide square round the camera, whichever way it faces', () => {
+    const area = chunkArea([3000, 3000], sizes, undefined)!;
+    expect(area.x).toBeLessThanOrEqual(3000 - REACH.squares * 100);
+    expect(area.x + area.w).toBeGreaterThanOrEqual(3000 + REACH.squares * 100);
+    expect(area.w).toBe(area.h);
+  });
+
+  it('keeps the same pieces while the camera moves a little (turning never changes them)', () => {
+    const area = chunkArea([3000, 3000], sizes, undefined)!;
+    expect(chunkArea([3000, 3000], sizes, area)).toBeUndefined();
+    expect(chunkArea([3800, 2500], sizes, area)).toBeUndefined();
+    expect(chunkArea([3000 + REACH.squares * 100, 3000], sizes, area)).toBeDefined();
+  });
+
+  it('never asks for more pieces than the map may load at once', () => {
+    const area = chunkArea([3000, 3000], { grid: 100, chunkSize: 200 }, undefined)!;
+    expect(area.w / 200).toBeLessThanOrEqual(22);
   });
 });

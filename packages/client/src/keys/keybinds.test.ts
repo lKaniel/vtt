@@ -55,7 +55,7 @@ describe('key bindings', () => {
   });
 
   it('say which keys do two things', () => {
-    expect(conflicts({ sheet: 'w' })).toEqual(new Map([['w', ['sheet', 'mode-walls']]]));
+    expect(conflicts({ sheet: 'w' })).toEqual(new Map([['w', ['sheet', 'mode-walls', 'cam-forward']]]));
     expect(conflicts({}).size).toBe(0); // T targets in the tokens mode and switches to it elsewhere, on purpose
   });
 

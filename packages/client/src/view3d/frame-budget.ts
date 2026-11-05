@@ -1,4 +1,4 @@
-import type { Point } from '@vtt/shared';
+import type { Point, Rect } from '@vtt/shared';
 
 // What the 3D view saves each frame (View3D.ts). The 2D map draws the ground
 // picture only when the camera leaves the square it drew last, or something
@@ -83,4 +83,27 @@ const TINY = 0.015;
 /** Whether something `size` across (pixels) at `distance` from the camera is too small to draw. */
 export function tooSmallToSee(size: number, distance: number, grid: number): boolean {
   return distance > NEAR_SQUARES * grid && size / distance < TINY;
+}
+
+/** The map the 3D view keeps loaded round the camera: this many squares each way; moved once the camera has gone `move` of that. */
+export const REACH = { squares: 60, move: 0.35 } as const;
+/** At most this many chunks across (the 2D map's own cap is 24, with a chunk's margin each side). */
+const MOST_CHUNKS = 20;
+
+/**
+ * The area whose map pieces (chunks) stay loaded round `target`, or undefined
+ * while `was` still serves. It is a square round the camera's target, not the
+ * ground in sight, so turning the camera never drops pieces that then pop back.
+ */
+export function chunkArea(
+  target: Point,
+  sizes: { grid: number; chunkSize: number },
+  was: Rect | undefined,
+): Rect | undefined {
+  const half = Math.min(REACH.squares * sizes.grid, (MOST_CHUNKS * sizes.chunkSize) / 2);
+  if (was) {
+    const off = Math.max(Math.abs(target[0] - (was.x + was.w / 2)), Math.abs(target[1] - (was.y + was.h / 2)));
+    if (off < half * REACH.move) return undefined;
+  }
+  return { x: target[0] - half, y: target[1] - half, w: 2 * half, h: 2 * half };
 }

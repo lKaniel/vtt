@@ -79,6 +79,10 @@ export const EN = {
   'keys.cam-right': '3D: turn the camera right',
   'keys.cam-tactical': '3D: look straight down (tactical)',
   'keys.cam-centre': '3D: back to your creature',
+  'keys.cam-forward': '3D: move the camera forward',
+  'keys.cam-pan-left': '3D: move the camera left',
+  'keys.cam-back': '3D: move the camera back',
+  'keys.cam-pan-right': '3D: move the camera right',
 
   'window.collapse': 'Roll up',
   'window.expand': 'Roll down',

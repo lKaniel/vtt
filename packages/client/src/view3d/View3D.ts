@@ -1,4 +1,4 @@
-import { levelAt, onLevel, type Point, tokenLevel, type WorldInfo } from '@vtt/shared';
+import { levelAt, onLevel, type Point, type Rect, tokenLevel, type WorldInfo } from '@vtt/shared';
 import * as THREE from 'three';
 import { listenToDrops } from '../canvas/sidebar-drops.ts';
 import type { TokenLayer } from '../canvas/TokenLayer.ts';
@@ -14,17 +14,19 @@ import {
   tileSolids,
   tileTerrains,
 } from './content3d.ts';
-import { hides, type Peek, SeeIn } from './peek3d.ts';
+import { SeeIn } from './peek3d.ts';
+import { Picker } from './pick3d.ts';
 import { Solids } from './solids3d.ts';
 import { Surface } from './surface3d.ts';
 import { drapeOver } from './terrain-paint.ts';
 import { Terrains } from './terrain3d.ts';
-import { groundDue, groundToDraw, Resolution, type Square } from './frame-budget.ts';
+import { chunkArea, groundDue, groundToDraw, Resolution, type Square } from './frame-budget.ts';
+import { CameraRig } from './camera3d.ts';
 import { CameraInput } from './input3d.ts';
-import { isFigure, Models, type ModelShown } from './models3d.ts';
-import { eyeOf, follow, groundSquare, type MapPoint, ORBIT, type Orbit, panBy, rotateBy, zoomBy } from './orbit.ts';
+import { Models, type ModelShown } from './models3d.ts';
+import { eyeOf, groundSquare, ORBIT } from './orbit.ts';
 import { type FlatMap, PixiBridge } from './pixi-bridge.ts';
-import { at3d, Backdrop, Ground, hazeOf, Standees, type Standing, Walls } from './scene3d.ts';
+import { Backdrop, Ground, hazeOf, Standees, type Standing, Walls } from './scene3d.ts';
 import { cutaway, wallBoxes } from './walls3d.ts';
 
 // The map in 3D, with a camera like Baldur's Gate 3's (orbit.ts): the 2D map
@@ -75,7 +77,7 @@ export class View3D {
   private input: CameraInput;
   private hemi = new THREE.HemisphereLight(0xfff4e0, 0x403830, 1.2);
   private sun = new THREE.DirectionalLight(0xffffff, 1.4);
-  private orbit: Orbit;
+  private rig: CameraRig;
   /** The square the 2D map drew last, which the ground shows now, and the one it was asked for since. */
   private drawn?: Square;
   private asked?: Square;
@@ -85,13 +87,27 @@ export class View3D {
   private walkersSeen = '';
   /** Drops the 3D picture's resolution while frames are slow. */
   private resolution = new Resolution();
-  private following = true;
-  private followed?: string;
+  /** The map whose pieces stay loaded round the camera. */
+  private reach?: Rect;
+  private frames = 0;
+  /** The camera has been to the scene's start since it loaded. */
+  private homed = false;
+
+  private get orbit() {
+    return this.rig.orbit;
+  }
   private wallsDue = 0;
   private wallsDirty = true;
-  private ray = new THREE.Raycaster();
-  /** The left button is down: a drag (a creature carried, a marquee) looks through creatures to the ground. */
-  private held = false;
+  private picker = new Picker({
+    camera: this.camera,
+    canvas: this.renderer.domElement,
+    creature: (ray) => this.standees.hit(ray),
+    placeOf: (id) => this.map.tokens.placeOf(id)?.at,
+    surfaces: () => this.solidsHit(),
+    peek: () => this.seeIn.peek,
+    floor: () => this.floor(),
+    target: () => this.orbit.target,
+  });
   private off: (() => void)[] = [];
   private tick = () => this.frame(this.map.app.ticker.deltaMS / 1000);
 
@@ -100,18 +116,16 @@ export class View3D {
     private readonly host: HTMLElement,
     private readonly session: Session,
   ) {
-    const start = map.cam.center;
-    this.orbit = { target: [start[0], start[1], this.floor()], yaw: 0, distance: 14 * this.grid(), tactical: false };
+    this.rig = new CameraRig({ grid: () => this.grid(), height: () => this.host.clientHeight, fov: FOV }, () => {
+      const start = session.world?.start ?? map.cam.center;
+      return [start[0], start[1], this.floor()];
+    });
     this.ground = new Ground(map.app.canvas);
     this.bridge = new PixiBridge(map, (x, y) => this.pick(x, y));
-    this.input = new CameraInput(this.surface, {
-      zoom: (n) => (this.orbit = zoomBy(this.orbit, n, this.grid())),
-      turn: (r) => (this.orbit = rotateBy(this.orbit, r)),
-      pan: (by) => this.pan(by),
-      tactical: () => (this.orbit = { ...this.orbit, tactical: !this.orbit.tactical }),
-      centre: () => (this.following = true),
-      toggle: () => session.view3d.toggle(),
-    });
+    this.input = new CameraInput(
+      this.surface,
+      this.rig.steer(() => session.view3d.toggle()),
+    );
     this.scene.add(
       this.ground.mesh,
       this.walls.group,
@@ -149,7 +163,9 @@ export class View3D {
       this.session.on('chunkGone', dirty),
       this.session.on('fog', dirty),
       this.session.on('editor', dirty),
-      this.session.on('select', () => (this.following = true)),
+      this.session.on('select', () => this.rig.back()),
+      // A new scene: the camera starts at its start, until it finds your creature.
+      this.session.on('welcome', () => (this.homed = false)),
     );
     const poke = () => (this.poked = true);
     for (const type of ['pointermove', 'pointerdown', 'pointerup', 'wheel']) {
@@ -162,8 +178,8 @@ export class View3D {
 
   /** Notes the left button going down after the 2D map took the press, and up after it took the release. */
   private watchHeld(): void {
-    const down = (e: PointerEvent) => (this.held ||= e.button === 0);
-    const up = () => (this.held = false);
+    const down = (e: PointerEvent) => (this.picker.held ||= e.button === 0);
+    const up = () => (this.picker.held = false);
     this.surface.addEventListener('pointerdown', down);
     window.addEventListener('pointerup', up);
     this.off.push(() => window.removeEventListener('pointerup', up));
@@ -221,12 +237,16 @@ export class View3D {
 
   private frame(dt: number): void {
     if (!this.session.world) return;
+    if (!this.homed) this.rig.goHome();
+    this.homed = true;
+    this.frames++;
     this.input.tick(dt);
-    this.followCreature(dt);
     const floor = this.floor();
-    const [x, y] = this.orbit.target;
     // On terrain the camera looks at the ground under it, not the bare floor.
-    this.orbit = { ...this.orbit, target: [x, y, Math.max(floor, this.terrains.heightAt(x, y) ?? floor)] };
+    if (!this.followCreature(dt, floor))
+      this.rig.settle((x, y) => Math.max(floor, this.terrains.heightAt(x, y) ?? floor));
+    this.rig.keepInBounds();
+    this.streamChunks();
     this.layGround(dt);
     this.fitView();
     this.askGround();
@@ -236,7 +256,8 @@ export class View3D {
     const standing = this.standing();
     this.pokeIfWalking(standing);
     this.standees.show(standing, floor);
-    this.seeIn.update(this.acting(standing, floor), this.orbit.yaw, { px: this.px(), grid: this.grid() });
+    const eye = this.camera.position;
+    this.seeIn.update(this.acting(standing, floor), [eye.x, eye.y, eye.z], { px: this.px(), grid: this.grid() });
     this.standModels(floor);
     this.renderer.render(this.scene, this.camera);
   }
@@ -297,7 +318,8 @@ export class View3D {
     const background = world.background ?? '#1b1d22';
     const v = world.view3d;
     const look = { sky: v?.sky, ground: v?.ground ?? background, background, ...(v?.fog && { fog: v.fog }) };
-    this.backdrop.show(this.scene, look, this.floor());
+    // The ground beyond the map lies under the lowest floor, so the floors below yours show.
+    this.backdrop.show(this.scene, look, this.lowest());
     const reach = ORBIT.maxReach * this.grid();
     this.scene.fog = hazeOf(look, this.grid(), [this.orbit.distance + reach * 0.4, this.orbit.distance + reach * 1.1]);
     this.skyLight(this.backdrop.skyPicture);
@@ -312,24 +334,41 @@ export class View3D {
     this.scene.environment = ready ? this.pmrem.fromEquirectangular(ready).texture : null;
   }
 
-  /** The camera keeps up with the creature you act with, until you move it yourself. */
-  private followCreature(dt: number): void {
+  /**
+   * The camera keeps with the creature you act with, turning round its feet,
+   * until you move it yourself; it comes back once the creature moves. True
+   * while it follows.
+   */
+  private followCreature(dt: number, floor: number): boolean {
     const id = this.session.selected;
-    if (id !== this.followed) {
-      this.followed = id;
-      this.following = true;
-    }
-    const place = id && this.following ? this.map.tokens.placeOf(id) : undefined;
-    if (!place) return;
-    const goal: MapPoint = [place.at[0], place.at[1], this.orbit.target[2]];
-    this.orbit = follow(this.orbit, goal, dt);
+    const at = id ? this.map.tokens.placeOf(id)?.at : undefined;
+    const feet = id && at ? this.feetOf(id, at) : undefined;
+    return this.rig.keepWith(id, at, feet ?? floor, dt);
   }
 
-  /** A right drag moves the camera over the ground, as far as the ground under the pointer moved. */
-  private pan(by: Point): void {
-    this.following = false;
-    const perPixel = (2 * this.orbit.distance * Math.tan((FOV * Math.PI) / 360)) / Math.max(1, this.host.clientHeight);
-    this.orbit = panBy(this.orbit, [-by[0] * perPixel, -by[1] * perPixel]);
+  /** Where a creature's feet stand, three's y (pixels). */
+  private feetOf(id: string, at: Point): number | undefined {
+    const t = this.session.tokens.get(id);
+    if (!t) return undefined;
+    const feet = Math.max(t.elevation ?? 0, levelOf(this.session.world?.levels, t)?.bottom ?? -Infinity) * this.px();
+    return this.underfoot.under(id, at, feet) ?? feet;
+  }
+
+  /** Keeps the map's pieces loaded round the camera, not round the ground in sight, so turning drops none. */
+  private streamChunks(): void {
+    const world = this.session.world!;
+    const t = this.orbit.target;
+    const next = chunkArea([t[0], t[1]], { grid: this.grid(), chunkSize: world.chunkSize }, this.reach);
+    if (!next) return;
+    this.reach = next;
+    this.map.chunkArea = next;
+    this.map.dirty = true;
+  }
+
+  /** The lowest floor's height (the street), pixels. */
+  private lowest(): number {
+    const levels = this.session.world?.levels ?? [];
+    return Math.min(0, ...levels.map((l) => l.bottom)) * this.px();
   }
 
   /** What is on the table, on every floor (the world stands whole, as in BG3), as far as you have explored. */
@@ -429,34 +468,10 @@ export class View3D {
     return [...this.terrains.meshes, this.models.group, this.solids.group];
   }
 
-  /** The map point under the pointer: a creature's spot when it is their picture, else the floor. */
+  /** The map point under the pointer: a creature's spot when it is their picture, else what it is on. */
   private pick(clientX: number, clientY: number): Point {
-    const rect = this.renderer.domElement.getBoundingClientRect();
-    const ndc = new THREE.Vector2(
-      ((clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1,
-      -((clientY - rect.top) / Math.max(1, rect.height)) * 2 + 1,
-    );
-    this.ray.setFromCamera(ndc, this.camera);
-    const token = this.held ? undefined : this.standees.hit(this.ray);
-    const place = token ? this.map.tokens.placeOf(token) : undefined;
-    if (place) return place.at;
-    const ground = this.ray
-      .intersectObjects(this.solidsHit(), true)
-      .find((h) => pointable(h, this.seeIn.peek, this.held))?.point;
-    if (ground) return [ground.x, ground.z];
-    const floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.floor());
-    const hit = this.ray.ray.intersectPlane(floor, new THREE.Vector3());
-    if (hit) return [hit.x, hit.z];
-    const t = this.orbit.target;
-    const far = at3d([t[0], t[1]], t[2]).add(this.ray.ray.direction.clone().setY(0).normalize().multiplyScalar(1e5));
-    return [far.x, far.z];
+    return this.picker.pick(clientX, clientY, this.frames).at;
   }
-}
-
-/** What the pointer may land on: shown, not faded to see in, and no creature's figure while dragging. */
-function pointable(hit: THREE.Intersection, peek: Peek | undefined, held: boolean): boolean {
-  if (!hit.object.visible || hides(peek, hit.point.toArray())) return false;
-  return !held || !isFigure(hit.object);
 }
 
 /** The level a creature stands on. */

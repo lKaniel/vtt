@@ -1,4 +1,4 @@
-import type { Point } from '@vtt/shared';
+import type { Point, Rect } from '@vtt/shared';
 import { type Application, UPDATE_PRIORITY } from 'pixi.js';
 import type { CameraMotion } from '../canvas/camera-motion.ts';
 
@@ -15,6 +15,8 @@ export interface FlatMap {
   readonly app: Application;
   readonly cam: CameraMotion;
   dirty: boolean;
+  /** The map whose pieces stay loaded (the 3D view's reach), instead of what the 2D camera frames. */
+  chunkArea?: Rect;
   /** Empty ground stays see-through (on) or gets the void colour. */
   seeThrough(on: boolean): void;
 }
@@ -94,6 +96,7 @@ export class PixiBridge {
     app.renderer.events.setTargetElement(app.canvas);
     app.canvas.style.display = saved.display;
     this.map.seeThrough(false);
+    this.map.chunkArea = undefined;
     (app as unknown as { resizeTo: unknown }).resizeTo = saved.resizeTo ?? host;
     app.resize();
     // Back over the ground the 3D view looked at, as close as the flat map was.

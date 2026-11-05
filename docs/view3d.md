@@ -8,15 +8,19 @@ and the cube button stands it up again.
 
 ## The camera
 
-| Control                | Does                                                                        |
-| ---------------------- | --------------------------------------------------------------------------- |
-| Wheel                  | Zooms; close in the camera drops behind the shoulder, far out it tilts down |
-| Middle drag, `,` / `.` | Turns the camera round what it looks at                                     |
-| Right drag             | Moves the camera over the ground (a right click still opens the menu)       |
-| `O`                    | Tactical view: straight down, as BG3's                                      |
-| `Home`                 | Back to your creature                                                       |
+| Control         | Does                                                                        |
+| --------------- | --------------------------------------------------------------------------- |
+| Wheel           | Zooms; close in the camera drops behind the shoulder, far out it tilts down |
+| Middle drag     | Sideways turns the camera round your creature, up and down tilts it         |
+| `,` / `.`       | Turns the camera                                                            |
+| `W` `A` `S` `D` | Moves the camera (the flat map's W and D tools stay on the flat map)        |
+| Right drag      | Moves the camera over the ground (a right click still opens the menu)       |
+| `O`             | Tactical view: straight down, as BG3's                                      |
+| `Home`          | Back to your creature                                                       |
 
-The camera follows the creature you act with until you move it yourself.
+The camera keeps with the creature you act with and turns round its feet.
+Moved away (W A S D, a right drag), it stays until that creature moves,
+you pick another or press Home, then glides back (`camera3d.ts`).
 Walls between the camera and that creature are cut low, so the room stays
 in view; the tactical view shows them whole. The keys are in the Keys
 dialog under Camera.
@@ -34,17 +38,21 @@ dialog under Camera.
   walk preview, targeting and menus work in 3D as they do flat.
 - `walls3d.ts`: walls as boxes, from the shown floor up to its ceiling
   (`top`, or the wall's own height), and the cutaway.
-- `peek3d.ts`: seeing in, as in BG3. While the creature you act with stands
-  under a roof (a model or box over its head), the models and boxes within
-  5 squares of it fade. That covers everything over its head and the walls
-  between it and the camera, above their foot. Clicks go through what has
-  faded. Outside, buildings show whole.
+- `peek3d.ts`: seeing your creature, as in BG3. Whatever stands between
+  the creature you act with and the camera (a tube from its chest to the
+  eye, wider the farther out the camera is) is not drawn, above its knees:
+  a roof, the floor above, a house in front. Everything else stays whole, so
+  the floors above and below show. While it is inside a building
+  (`inside3d.ts`), that building's side towards the camera is cut down to
+  its knees too, so the room shows. Clicks go through what is cut.
 - `surface3d.ts`: what creatures stand on (terrain, model floors, boxes).
   The flat map's drawing (paths, rings, spell areas) is draped over
   terrain (`drapeOver` in `terrain-paint.ts`).
 - `scene3d.ts`: three.js meshes: the ground picture, instanced walls,
   creatures as standing pictures.
-- `frame-budget.ts`: what a frame saves. The 2D map draws the ground only
+- `frame-budget.ts`: what a frame saves. The map's pieces (chunks) stay
+  loaded in a wide square round the camera (`chunkArea`), not round the
+  ground in sight, so turning the camera never drops a building. The 2D map draws the ground only
   when the camera leaves the square it drew last (it draws a quarter more
   than it needs), when the pointer moves or a creature walks, and 15 times
   a second for what flickers. The 3D picture drops to as little as half

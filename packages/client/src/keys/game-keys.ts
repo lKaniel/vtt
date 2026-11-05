@@ -109,8 +109,12 @@ function targetKey(session: Session, e: Key): boolean {
   return session.actions.toggleTargetAtPointer();
 }
 
+const CAMERA_GLIDES = ['cam-forward', 'cam-pan-left', 'cam-back', 'cam-pan-right'];
+
 /** T, Shift+T, W, L, D, N and M switch modes (those this seat may use), R picks up the ruler; the arrows nudge outside the tokens mode. */
 function runEditorKey(session: Session, e: Key): boolean {
+  // In 3D, W A S D move the camera (view3d/input3d.ts).
+  if (session.view3d.on && !e.shiftKey && actionOf(e, currentKeys(), CAMERA_GLIDES)) return false;
   const key = editorKey(e, session.editor.mode !== 'tokens');
   if (!key || ('mode' in key && !switches(session, key))) return false;
   e.preventDefault();
