@@ -25,6 +25,11 @@ export class Surface {
     return y;
   }
 
+  /** Three's y of the surface under map point `at` a walker with feet at `feet` steps on (up to `step` higher); `feet` when there is none. */
+  at(at: readonly [number, number], feet: number, step = this.step()): number {
+    return this.hit(at, feet + step) ?? feet;
+  }
+
   /** Forgets what it knew (the surfaces changed). */
   forget(): void {
     this.known.clear();

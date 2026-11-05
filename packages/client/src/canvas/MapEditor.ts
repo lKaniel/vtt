@@ -259,6 +259,13 @@ export class MapEditor {
 
   // Drawing ---------------------------------------------------------------------
 
+  /** The marquee being dragged, on the map (the 3D view draws it too). */
+  // fallow-ignore-next-line unused-class-member -- the 3D view calls it through its Map2D type
+  marquee(): Rect | undefined {
+    const preview = this.controller.preview();
+    return preview?.kind === 'marquee' ? preview.rect : undefined;
+  }
+
   redraw(): void {
     const g = this.g.clear();
     const ctx = this.ctx;

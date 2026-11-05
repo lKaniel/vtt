@@ -16,6 +16,7 @@ import {
 } from './content3d.ts';
 import { SeeIn } from './peek3d.ts';
 import { Picker } from './pick3d.ts';
+import { Overlay3D, type OverlayHost } from './overlay3d.ts';
 import { Solids } from './solids3d.ts';
 import { Surface } from './surface3d.ts';
 import { drapeOver } from './terrain-paint.ts';
@@ -26,7 +27,8 @@ import { CameraInput } from './input3d.ts';
 import { Models, type ModelShown } from './models3d.ts';
 import { eyeOf, groundSquare, ORBIT } from './orbit.ts';
 import { type FlatMap, PixiBridge } from './pixi-bridge.ts';
-import { Backdrop, Ground, hazeOf, Standees, type Standing, Walls } from './scene3d.ts';
+import { Ground, Standees, type Standing, Walls } from './scene3d.ts';
+import { Lighting } from './light3d.ts';
 import { cutaway, wallBoxes } from './walls3d.ts';
 
 // The map in 3D, with a camera like Baldur's Gate 3's (orbit.ts): the 2D map
@@ -38,6 +40,8 @@ import { cutaway, wallBoxes } from './walls3d.ts';
 /** What the 3D view needs of the 2D map. */
 export interface Map2D extends FlatMap {
   readonly tokens: Pick<TokenLayer, 'placeOf' | 'showFaces'>;
+  readonly preview: OverlayHost['preview'];
+  readonly editor: { marquee(): Rect | undefined };
 }
 
 const FOV = 45;
@@ -48,8 +52,6 @@ const WALLS_EVERY = 0.25;
 
 export class View3D {
   private renderer = new THREE.WebGLRenderer({ antialias: true });
-  private pmrem = new THREE.PMREMGenerator(this.renderer);
-  private litBy?: THREE.Texture;
   /** What creatures stand on: terrain, model floors and boxes, reached 6 ft up from their feet. */
   private underfoot = new Surface(
     () => this.solidsHit(),
@@ -69,14 +71,12 @@ export class View3D {
   private tileSolids: SolidShown[] = [];
   private terrains = new Terrains();
   private tileTerrains: TerrainShown[] = [];
-  private backdrop = new Backdrop();
+  private lighting = new Lighting(this.renderer, this.scene);
   /** The model tiles to stand, worked out with the walls. */
   private tileModels: ModelShown[] = [];
   private floorShown?: number;
   private bridge: PixiBridge;
   private input: CameraInput;
-  private hemi = new THREE.HemisphereLight(0xfff4e0, 0x403830, 1.2);
-  private sun = new THREE.DirectionalLight(0xffffff, 1.4);
   private rig: CameraRig;
   /** The square the 2D map drew last, which the ground shows now, and the one it was asked for since. */
   private drawn?: Square;
@@ -90,6 +90,8 @@ export class View3D {
   /** The map whose pieces stay loaded round the camera. */
   private reach?: Rect;
   private frames = 0;
+  /** The pointer's ring, the previews and the walk's marker, over the surfaces. */
+  private overlay: Overlay3D;
   /** The camera has been to the scene's start since it loaded. */
   private homed = false;
 
@@ -122,6 +124,16 @@ export class View3D {
     });
     this.ground = new Ground(map.app.canvas);
     this.bridge = new PixiBridge(map, (x, y) => this.pick(x, y));
+    this.overlay = new Overlay3D({
+      surface: this.surface,
+      camera: this.camera,
+      picker: this.picker,
+      preview: map.preview,
+      grid: () => this.grid(),
+      heightAt: (x, y, from) => this.walkerGround(x, y, from),
+      walker: () => (session.selected ? map.tokens.placeOf(session.selected)?.at : undefined),
+      marquee: () => map.editor.marquee(),
+    });
     this.input = new CameraInput(
       this.surface,
       this.rig.steer(() => session.view3d.toggle()),
@@ -133,9 +145,8 @@ export class View3D {
       this.models.group,
       this.solids.group,
       this.terrains.group,
-      this.backdrop.table,
+      this.overlay.marks.group,
     );
-    this.scene.add(this.hemi, this.sun, this.sun.target);
   }
 
   start(): void {
@@ -156,6 +167,7 @@ export class View3D {
       return this.pick(x + r.left, y + r.top);
     });
     this.map.tokens.showFaces(false);
+    this.overlay.start();
     this.watchHeld();
     const dirty = () => (this.wallsDirty = true);
     this.off.push(
@@ -189,6 +201,7 @@ export class View3D {
     this.map.app.ticker.remove(this.tick);
     for (const off of this.off) off();
     this.input.dispose();
+    this.overlay.destroy();
     this.bridge.detach(this.host);
     this.map.tokens.showFaces(true);
     this.surface.remove();
@@ -197,9 +210,7 @@ export class View3D {
     this.terrains.dispose();
     this.walls.dispose();
     this.standees.dispose();
-    this.backdrop.dispose();
-    this.scene.environment?.dispose();
-    this.pmrem.dispose();
+    this.lighting.dispose();
     this.renderer.dispose();
   }
 
@@ -259,6 +270,7 @@ export class View3D {
     const eye = this.camera.position;
     this.seeIn.update(this.acting(standing, floor), [eye.x, eye.y, eye.z], { px: this.px(), grid: this.grid() });
     this.standModels(floor);
+    this.overlay.frame(dt, this.frames);
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -309,29 +321,9 @@ export class View3D {
     const t = this.orbit.target;
     this.camera.position.set(eye[0], eye[2], eye[1]);
     this.camera.lookAt(t[0], t[2], t[1]);
-    const world = this.session.world!;
-    const light = 1 - 0.8 * world.darkness;
-    this.hemi.intensity = 1.2 * light;
-    this.sun.intensity = 1.4 * light;
-    this.sun.position.set(t[0] - 2000, t[2] + 4000, t[1] - 1500);
-    this.sun.target.position.set(t[0], t[2], t[1]);
-    const background = world.background ?? '#1b1d22';
-    const v = world.view3d;
-    const look = { sky: v?.sky, ground: v?.ground ?? background, background, ...(v?.fog && { fog: v.fog }) };
-    // The ground beyond the map lies under the lowest floor, so the floors below yours show.
-    this.backdrop.show(this.scene, look, this.lowest());
     const reach = ORBIT.maxReach * this.grid();
-    this.scene.fog = hazeOf(look, this.grid(), [this.orbit.distance + reach * 0.4, this.orbit.distance + reach * 1.1]);
-    this.skyLight(this.backdrop.skyPicture);
-  }
-
-  /** The sky lights the scene as 3D Canvas lets it (its picture as the environment), once it has loaded. */
-  private skyLight(sky: THREE.Texture | undefined): void {
-    const ready = sky?.image ? sky : undefined;
-    if (ready === this.litBy) return;
-    this.litBy = ready;
-    this.scene.environment?.dispose();
-    this.scene.environment = ready ? this.pmrem.fromEquirectangular(ready).texture : null;
+    const seen = { target: [t[0], t[2], t[1]] as const, distance: this.orbit.distance, reach, grid: this.grid() };
+    this.lighting.show(this.session.world!, { ...seen, lowest: this.lowest() });
   }
 
   /**
@@ -363,6 +355,15 @@ export class View3D {
     this.reach = next;
     this.map.chunkArea = next;
     this.map.dirty = true;
+  }
+
+  /** What the creature you act with would walk on at a map point (the floor shown with no one). */
+  private walkerGround(x: number, y: number, from?: number): number {
+    const id = this.session.selected;
+    const at = id ? this.map.tokens.placeOf(id)?.at : undefined;
+    const feet = from ?? (id && at ? this.feetOf(id, at) : undefined) ?? this.floor();
+    // A step along a path climbs a stair, not a table.
+    return this.underfoot.at([x, y], feet, from === undefined ? undefined : 2 * this.px());
   }
 
   /** The lowest floor's height (the street), pixels. */
