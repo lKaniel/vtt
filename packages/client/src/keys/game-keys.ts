@@ -230,6 +230,7 @@ function handleGameKey(session: Session, e: Key): void {
     return;
   }
   if (id === 'view3d') return session.view3d.toggle();
+  if (id === 'throughWalls') return session.throughWalls.toggle();
   if (id?.startsWith('hotbar-')) pressSlot(session, id.slice(7));
 }
 

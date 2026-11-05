@@ -4,12 +4,12 @@ import { moveSelectionTo } from '../play/map-clicks.ts';
 import type { Session } from '../session/session.ts';
 import type { ItemLayer } from './ItemLayer.ts';
 
-/** The GM drags actors, monsters, items and spells in from the side panel onto the map. */
-export function listenToDrops(
-  canvas: HTMLCanvasElement,
-  session: Session,
-  toMap: (x: number, y: number) => Point,
-): void {
+/**
+ * The GM drags actors, monsters, items and spells in from the side panel onto
+ * the map: `canvas` is the 2D map's canvas, or the 3D view over it.
+ * `toMap` takes a point on it (from its top left).
+ */
+export function listenToDrops(canvas: HTMLElement, session: Session, toMap: (x: number, y: number) => Point): void {
   canvas.addEventListener('dragover', (e) => {
     if (!e.dataTransfer?.types.includes(DRAG_TYPE)) return;
     e.preventDefault();
