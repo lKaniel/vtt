@@ -54,6 +54,8 @@ export const dnd5e: Dnd5eSystem = {
   packContentIssues,
   foundry: foundrySheets,
   packArt: dnd5ePackArt,
+  // What it is (a stat block, a shape it was turned into, a pile of loot), not for a player to swap.
+  gmOnlyFields: ['monster', 'trueForm', 'pile', 'banished', 'summon'],
   perceiver: (token, rules, packs) => {
     const monster = token.monster
       ? contentWith(editionOf(token, { rules: toEdition(rules) }), packs).monsters.get(token.monster)

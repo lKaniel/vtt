@@ -95,7 +95,7 @@ export function CharacterSheet({
 }
 
 const liveOf = (session: Session, t: SheetTarget): Draft | undefined =>
-  t.kind === 'token' ? session.tokens.get(t.id) : session.actors.get(t.id);
+  t.kind === 'token' ? session.tokens.get(t.id) : session.character.readActor(t.id);
 
 /** A sheet popped out into its own window (PopOutWindow.tsx), with its own edit mode. */
 export function PoppedSheet({
@@ -197,8 +197,8 @@ function sheetOf(
   return target.kind === 'token' && !live.sheet && !session.isGm() ? undefined : preview;
 }
 
-/** Which tabs the creature has: spells for a caster, animations for something to animate, the token in edit mode. */
-function tabsOf({ sheet, edit, value }: Readonly<SheetProps>): Tab[] {
+/** Which tabs the creature has: spells for a caster, animations for something to animate, the token in the GM's edit mode. */
+function tabsOf({ session, sheet, edit, value }: Readonly<SheetProps>): Tab[] {
   const shown: Record<Tab, boolean> = {
     details: true,
     inventory: true,
@@ -207,7 +207,8 @@ function tabsOf({ sheet, edit, value }: Readonly<SheetProps>): Tab[] {
     effects: true,
     biography: true,
     animations: sheet.attacks.length > 0 || !!sheet.caster?.spells.length,
-    token: edit,
+    // How it stands on the map and what it sees are the GM's (permissions.ts): a player can't break their token.
+    token: edit && session.isGm(),
   };
   return TABS.filter((tab) => shown[tab]);
 }

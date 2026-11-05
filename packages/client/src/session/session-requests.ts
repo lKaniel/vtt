@@ -150,6 +150,11 @@ export class Requests {
     this.s.send({ t: 'awardXp', tokens, xp });
   }
 
+  /** Takes the next level for a character that is only an actor (actor-level-up.ts in system-dnd5e). */
+  levelUp(msg: Omit<Extract<ClientMessage, { t: 'levelUp' }>, 't'>): void {
+    this.s.send({ t: 'levelUp', ...msg });
+  }
+
   /** Spends one of the creature's hit dice to heal. */
   spendHitDie(token: string): void {
     this.s.send({ t: 'hitDie', token });
@@ -168,6 +173,11 @@ export class Requests {
   /** GM: change what a seat may do at the table. */
   setRole(player: string, role: Role): void {
     this.s.send({ t: 'setRole', player, role });
+  }
+
+  /** GM: the actor a seat plays (it becomes theirs); none for the one they own. */
+  setCharacter(player: string, actor: string | undefined): void {
+    this.s.send({ t: 'setCharacter', player, ...(actor && { actor }) });
   }
 
   /** Saves how the creature's action bar is arranged. */

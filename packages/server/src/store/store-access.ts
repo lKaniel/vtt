@@ -28,12 +28,15 @@ export interface DocAccess {
   list(coll: string): Doc[];
   /** Token documents, on any scene, that stand for actor `id`. */
   tokenDocsOf(id: string): { coll: string; doc: Doc }[];
+  /** Creature fields the game's system keeps for the GM (SystemDefinition `gmOnlyFields`). */
+  readonly gmOnlyFields?: readonly string[];
 }
 
 export class StoreAccess implements DocAccess {
   constructor(
     private docs: DocStore,
     private actors: ReadonlyMap<string, Actor>,
+    readonly gmOnlyFields: readonly string[] = [],
   ) {}
 
   get(coll: string, id: string): Doc | undefined {

@@ -72,6 +72,16 @@ describe('the GM tools', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'setRole', player: 'ana', role: 'trusted' });
   });
 
+  it("sends the GM's pick of a seat's character, and a level up", () => {
+    ws.receive(gmWelcome());
+    session.requests.setCharacter('ana', 'hero');
+    expect(ws.sent.at(-1)).toEqual({ t: 'setCharacter', player: 'ana', actor: 'hero' });
+    session.requests.setCharacter('ana', undefined);
+    expect(ws.sent.at(-1)).toEqual({ t: 'setCharacter', player: 'ana' });
+    session.requests.levelUp({ token: 'hero', class: 'fighter', hp: 'roll' });
+    expect(ws.sent.at(-1)).toEqual({ t: 'levelUp', token: 'hero', class: 'fighter', hp: 'roll' });
+  });
+
   it('saves a hotbar layout', () => {
     ws.receive(welcome());
     session.requests.setHotbar('hero', ['spell:fire-bolt', null]);

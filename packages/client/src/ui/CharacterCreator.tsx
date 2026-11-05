@@ -40,7 +40,7 @@ export function CharacterCreator({
   owner: string;
   rules: Edition;
   initial?: Character;
-  onDone: () => void;
+  onDone: (saved: Character) => void;
   onCancel: () => void;
 }>) {
   const [c, set] = useState<Character>(() => initial ?? newCharacter({ id: NEW, owner, rules }));

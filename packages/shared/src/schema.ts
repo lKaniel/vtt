@@ -39,6 +39,8 @@ export const PlayerSchema = z.object({
   scene: id.optional(),
   /** The seat's own options for this game, as its system names them (D&D: how reactions are offered). */
   settings: z.record(z.string().max(40), z.string().max(40)).optional(),
+  /** The actor this seat plays (Foundry's User.character); missing: the one they own, as the game's system decides. */
+  character: id.optional(),
 });
 export type Player = z.infer<typeof PlayerSchema>;
 

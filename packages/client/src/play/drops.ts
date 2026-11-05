@@ -24,6 +24,12 @@ export type DragPayload =
   /** A picture from the Assets tab, placed as a tile; `w` and `h` are its size in pixels when known. */
   | { kind: 'media'; src: string; w?: number; h?: number };
 
+/** Starts dragging `payload` from a list or sheet. */
+export function startDrag(e: React.DragEvent, payload: DragPayload): void {
+  e.dataTransfer.setData(DRAG_TYPE, JSON.stringify(payload));
+  e.dataTransfer.effectAllowed = 'copy';
+}
+
 /** What the server places or hands out on the map (media and journal entries are made into tiles and notes here). */
 export type MapDrop = Exclude<DragPayload, { kind: 'media' } | { kind: 'journal' }>;
 

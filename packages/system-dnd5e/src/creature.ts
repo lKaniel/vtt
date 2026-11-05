@@ -273,7 +273,7 @@ function saveBonuses(
 }
 
 /** Max hit points from the classes: the first class's full hit die at 1st level, each die's average after, plus Con each level. */
-function classHp(levels: readonly ClassLevel[], abilities: Abilities): number | undefined {
+export function classHp(levels: readonly ClassLevel[], abilities: Abilities): number | undefined {
   if (!levels.length || levels.some((l) => !l.cls)) return undefined;
   const con = abilityMod(abilities.con);
   const average = levels.reduce((n, l) => n + l.level * (l.cls!.hitDie / 2 + 1 + con), 0);

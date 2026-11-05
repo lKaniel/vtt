@@ -4,7 +4,7 @@ import { t } from '../i18n/index.ts';
 import { useEffect, useState } from 'react';
 import { assetUrl } from '../assets.ts';
 import type { Session } from '../session/session.ts';
-import { startDrag } from './ActorsTab.tsx';
+import { startDrag } from '../play/drops.ts';
 import { BaileywikiView } from './BaileywikiView.tsx';
 import { PluginsView } from './PluginsView.tsx';
 import { Button } from './kit/button.tsx';

@@ -98,6 +98,18 @@ describe('crossCheck', () => {
     ]);
   });
 
+  it('names a player whose character is not an actor', () => {
+    const base = state([]).game;
+    const game = {
+      ...base,
+      players: [...base.players, { id: 'ana', name: 'Ana', role: 'player' as const, color: '#fff', character: 'gone' }],
+    };
+    expect(crossCheck({ ...state([]), game }, dnd5e)).toContainEqual({
+      file: 'game.json',
+      message: 'player "ana" plays "gone", which is not in actors/',
+    });
+  });
+
   it('lets tokens refer to the monsters of the packs the game uses, and warns about packs it lacks', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'vtt-packs-'));
     await mkdir(join(dir, 'goblins'));

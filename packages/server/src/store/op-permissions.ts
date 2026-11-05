@@ -39,7 +39,7 @@ function checkUpdate(player: Player, access: DocAccess, op: Extract<Op, { op: 'u
   if (!doc) return; // The store reports the missing document.
   const owned = access.owned(op.coll, doc);
   const keys = changedKeys(doc, op.patch);
-  const locked = lockedPatchKeys(Object.fromEntries(keys.map((k) => [k, true])), player);
+  const locked = lockedPatchKeys(Object.fromEntries(keys.map((k) => [k, true])), player, access.gmOnlyFields);
   if (locked.length) throw new Refusal(`Only the GM can change ${locked.join(', ')}`);
   const may = keys.every((k) => CONTROL_FIELDS.has(k)) ? canControl : canEdit;
   if (!may(owned, player)) throw new Refusal(`You can't edit ${nameOf(owned, op.id)}`);

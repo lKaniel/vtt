@@ -105,6 +105,13 @@ describe('editing a document', () => {
     expect(lockedPatchKeys(patch, tess)).toEqual(['ownership', 'x', 'hidden', 'actor', 'linked']);
   });
 
+  it('keeps how a token looks and sees for the GM, and the fields its system names', () => {
+    const patch = { name: 'X', img: 'a.webp', size: 3, darkvision: 60, light: {}, monster: 'lich' };
+    expect(lockedPatchKeys(patch, tess)).toEqual(['img', 'size', 'darkvision', 'light']);
+    expect(lockedPatchKeys(patch, tess, ['monster'])).toEqual(['img', 'size', 'darkvision', 'light', 'monster']);
+    expect(lockedPatchKeys(patch, gm, ['monster'])).toEqual([]);
+  });
+
   it('sets one player’s level, keeping the default', () => {
     expect(withLevel(scout.ownership, 'bo', 'owner')).toEqual({ default: 'limited', ana: 'owner', bo: 'owner' });
     expect(withLevel(scout.ownership, 'ana', 'none')).toEqual({ default: 'limited', ana: 'none', bo: 'observer' });

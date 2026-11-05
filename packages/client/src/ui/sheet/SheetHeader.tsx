@@ -6,6 +6,7 @@ import { Button } from '../kit/button.tsx';
 import { Input } from '../kit/input.tsx';
 import { Switch } from '../kit/switch.tsx';
 import type { SheetProps } from './sheet-props.ts';
+import { LevelUpButton } from './LevelUpButton.tsx';
 
 /** What the sheet's header buttons do: the sheet over the map, or one in its own window (no pop-out). */
 export interface SheetControls {
@@ -20,6 +21,7 @@ export function SheetHeader(props: Readonly<SheetProps & { controls: SheetContro
   return (
     <header className="flex items-center gap-4 border-b border-gold-dim/50 px-5 pt-3 pb-2">
       <SheetTitle {...props} />
+      <LevelUpButton {...props} />
       <LevelBadge {...props} />
       {kind === 'token' && session.isGm() && !edit && <RestButtons {...props} />}
       {!controls.popOut && <SheetButtons {...props} />}

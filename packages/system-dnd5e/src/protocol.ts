@@ -152,6 +152,16 @@ export type ClientMessage =
   | { t: 'exhaustion'; token: string; level: number }
   /** GM: gives each of these characters `xp` experience points. */
   | { t: 'awardXp'; tokens: string[]; xp: number }
+  /** The next level for a character that is only an actor: a token's, or one in the Actors list. */
+  | {
+      t: 'levelUp';
+      token?: string;
+      actor?: string;
+      class: string;
+      subclass?: string;
+      hp: 'average' | 'roll';
+      improvement?: Partial<Record<Ability, number>>;
+    }
   /** GM: asks these creatures for a check: each for itself, as a group, or two in a contest. */
   | {
       t: 'requestCheck';

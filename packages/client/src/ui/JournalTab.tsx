@@ -12,7 +12,7 @@ import {
   UsersIcon,
 } from 'lucide-react';
 import { t } from '../i18n/index.ts';
-import { startDrag } from './ActorsTab.tsx';
+import { startDrag } from '../play/drops.ts';
 import { Directory, type DirItem } from './directory/Directory.tsx';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
