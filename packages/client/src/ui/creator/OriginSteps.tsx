@@ -2,6 +2,7 @@ import { abilityName, type Character, type Class, partsOf, skillName, type Speci
 import { chooseBackground, chooseClass, chooseSpecies } from '../../content/creator.ts';
 import { Chips, Detail, OptionCard, RichText, StepHead, TraitList } from './Parts.tsx';
 import { classesToPick } from './use-homebrew.ts';
+import { ClassChoices } from './ClassChoices.tsx';
 
 export interface StepProps {
   c: Character;
@@ -106,8 +107,9 @@ export function ClassStep({ c, set, homebrew = [] }: Readonly<StepProps>) {
 function ClassDetail({ c, set }: Readonly<StepProps>) {
   const { cls, options } = partsOf(c);
   if (!cls || !options) return null;
-  const features = cls.features.filter((f) => f.level <= c.level);
   const subclass = options.subclasses.find((s) => s.id === c.subclass);
+  const own = cls.subclasses?.find((s) => s.id === c.subclass)?.features ?? [];
+  const features = [...cls.features, ...own].filter((f) => f.level <= c.level && !f.choice);
   return (
     <aside className="cc-aside">
       <Detail title={cls.name}>
@@ -129,6 +131,7 @@ function ClassDetail({ c, set }: Readonly<StepProps>) {
           {subclass && <RichText text={subclass.description} className="rich small" />}
         </Detail>
       )}
+      <ClassChoices c={c} set={set} classId={cls.id} />
       <Detail title={`Features to level ${c.level}`}>
         <TraitList traits={features.map((f) => ({ name: `${f.name} (${f.level})`, description: f.description }))} />
       </Detail>

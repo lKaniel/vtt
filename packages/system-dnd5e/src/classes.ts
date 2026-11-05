@@ -1,5 +1,6 @@
 import type { Content } from './content.ts';
-import { knownSpellIds, ownFeatures } from './own-content.ts';
+import { knownSpellIds } from './own-content.ts';
+import { featureSpellIds, levelFeatures } from './class-options.ts';
 import { abilityMod } from './creature-math.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Feature, LevelTable, Spell, Spellcasting } from './spell-schema.ts';
@@ -164,7 +165,7 @@ export function casterSheet(
     left: slots.map((n, i) => Math.max(0, n - (spent[i] ?? 0))),
     pact: casting.allPact,
     ...(casting.pact && { pactSlots: casting.pact }),
-    spells: knownSpellIds(token)
+    spells: [...new Set([...knownSpellIds(token), ...featureSpellIds(token, content)])]
       .map((id) => content.spells.get(id))
       .filter((s): s is Spell => !!s),
   };
@@ -183,7 +184,7 @@ export interface FeatureSheet extends Omit<Feature, 'spell'> {
 
 /** Most uses at `level`: a fixed table, an ability modifier (at least 1), or hit points per level. */
 function maxUses(f: Feature, level: number, abilities: Abilities): number | undefined {
-  if (f.usesAbility) return Math.max(1, abilityMod(abilities[f.usesAbility]));
+  if (f.usesAbility) return Math.max(1, abilityMod(abilities[f.usesAbility])) + (f.usesBonus ?? 0);
   if (f.poolPerLevel) return f.poolPerLevel * level;
   return f.uses && levelValue(f.uses, level);
 }
@@ -201,7 +202,8 @@ function passiveAt(f: Feature, level: number): Feature['passive'] {
   if (!p) return undefined;
   const speed = f.speed && { speed: levelValue(f.speed, level) };
   const aura = f.auraRadius && p.aura && { aura: { ...p.aura, radius: levelValue(f.auraRadius, level) } };
-  return { ...p, ...speed, ...aura };
+  const hp = f.hpPerLevel && { maxHp: f.hpPerLevel * level };
+  return { ...p, ...speed, ...aura, ...hp };
 }
 
 function sheetOf(f: Feature, level: number, abilities: Abilities, spent: Record<string, number>): FeatureSheet {
@@ -238,12 +240,6 @@ export function featureSheets(
   });
 }
 
-/** A class's features up to its level, its subclass's too; options of a choice only when picked (granted). */
-function levelFeatures(l: ClassLevel): Feature[] {
-  const sub = l.subclass ? l.cls?.subclasses?.find((s) => s.id === l.subclass) : undefined;
-  return [...(l.cls?.features ?? []), ...(sub?.features ?? [])].filter((f) => f.level <= l.level && !f.choice);
-}
-
 /** The class's scale values at its level (custom advancement). */
 export function classScales(levels: readonly ClassLevel[]): ScaleValue[] {
   return levels.flatMap((l) =>
@@ -255,19 +251,4 @@ export interface ScaleValue {
   id: string;
   name: string;
   value: number;
-}
-
-/** The features a token was granted on top of its class ("barbarian/rage"); unknown ones are left out. */
-export function grantedFeatures(token: Token, content: Content): Feature[] {
-  const fromClasses = (token.stats?.features ?? []).flatMap((ref) => {
-    const found = classFeature(ref, content);
-    return found ? [found] : [];
-  });
-  return [...fromClasses, ...ownFeatures(token)];
-}
-
-/** A class feature by "<class>/<feature>". */
-export function classFeature(ref: string, content: Content): Feature | undefined {
-  const [cls, id] = ref.split('/');
-  return content.classes.get(cls ?? '')?.features.find((f) => f.id === id);
 }

@@ -3,7 +3,7 @@
 // plus the species, backgrounds and starting kits the character creator offers.
 //
 //   npm pack @opencharacter/5e-srd-5.1 @opencharacter/5e-srd-5.2   (then untar each)
-//   node --experimental-strip-types scripts/import-srd.ts <5.1 package dir> <5.2 package dir>
+//   node --experimental-strip-types scripts/import-srd.ts <5.1 package dir> <5.2 package dir> [classes|spells|monsters|origins]
 //
 // Automation the packs don't describe (beams, summons, repeat saves...) is
 // written by hand in content/srd/*-automation.json and merged at load time,
@@ -12,7 +12,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { convertOrigins } from './origins-convert.ts';
-import { convertClass, convertMonster, convertSpell, ofType, type Entry, type Pack } from './srd-convert.ts';
+import { convertClass } from './class-convert.ts';
+import { convertMonster, convertSpell, ofType, type Entry, type Pack } from './srd-convert.ts';
 
 const OUT = join(import.meta.dirname, '../content/srd');
 
@@ -24,12 +25,18 @@ function loadPack(dir: string): Pack {
 
 // ---- Output -------------------------------------------------------------
 
+/** `classes`, `spells`, `monsters` or `origins` to write only those files; everything when missing. */
+const only = process.argv[4];
+const wanted = (name: string) => !only || name.startsWith(only);
+
 function write(name: string, data: object[]): void {
+  if (!wanted(name)) return;
   writeFileSync(join(OUT, name), `${JSON.stringify(data, null, 2)}\n`);
   console.log(`${name}: ${data.length}`);
 }
 
 function writeOrigins(name: string, origins: object): void {
+  if (!wanted(name)) return;
   writeFileSync(join(OUT, name), `${JSON.stringify(origins, null, 2)}\n`);
   console.log(`${name}: written`);
 }

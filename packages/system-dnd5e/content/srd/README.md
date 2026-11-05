@@ -24,6 +24,14 @@ and `@opencharacter/5e-srd-5.2` npm packages (also CC-BY-4.0):
 pnpm --filter @vtt/system-dnd5e import-srd <5.1 package dir> <5.2 package dir>
 ```
 
+Add `classes` (or `spells`, `monsters`, `origins`) after the two folders to
+write only those files. Classes come with their subclasses, the options a
+character picks (fighting styles, invocations, metamagic, a druid's land) as
+features with a `choice`, and `grantsSpells` for spells a feature always has
+prepared (domain and oath spells). Every class and subclass feature up to 5th
+level is either run by the engine or carries a `manual` note saying how the GM
+runs it (`src/class-coverage.test.ts`).
+
 The import only brings the text and the plain numbers (damage dice, saves,
 areas, range). What the rules automate beyond that is written by hand in two
 overlays that are merged in when the content loads, keyed `"both"`, `"2014"`

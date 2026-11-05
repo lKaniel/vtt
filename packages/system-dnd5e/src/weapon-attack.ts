@@ -7,6 +7,7 @@ import type { Attack, Damage, DamageType } from './stats-schema.ts';
 import type { GridKind, Rng } from '@vtt/shared';
 import { divineSmite, hitRiders, markDamage, withWeaponBonus } from './riders.ts';
 import { mirrorImage, weakenedDamage } from './wards.ts';
+import { critRangeOf, duelingDamage } from './class-styles.ts';
 
 // One attack with a weapon or natural weapon, with everything that changes
 // it: conditions, bless, sneak attack, rage, and 2024 weapon masteries.
@@ -120,7 +121,12 @@ export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.ra
   const rolled = rollAttack(
     attack,
     target.sheet,
-    { ...mods, disadvantage, extraDamage: extraDamage({ ...input, attack }, sneak) },
+    {
+      ...mods,
+      disadvantage,
+      critRange: critRangeOf(attacker.sheet),
+      extraDamage: [...extraDamage({ ...input, attack }, sneak), ...duelingDamage(attacker.sheet, attack)],
+    },
     rng,
   );
   const { result, decoy } = landing(input, attack, rolled, rng);

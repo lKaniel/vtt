@@ -77,6 +77,40 @@
         "level": 20,
         "description": "At 20th level, you embody the power of the wilds. Your Strength and Constitution scores increase by 4. Your maximum for those scores is now 24."
       }
+    ],
+    "subclassLevel": 3,
+    "subclasses": [
+      {
+        "id": "path-of-the-berserker",
+        "name": "Path of the Berserker",
+        "description": "For some barbarians, rage is a means to an end—that end being violence. The Path of the Berserker is a path of untrammeled fury, slick with blood. As you enter the berserker's rage, you thrill in the chaos of battle, heedless of your own health or well-being.",
+        "features": [
+          {
+            "id": "frenzy",
+            "name": "Frenzy",
+            "level": 3,
+            "description": "Starting when you choose this path at 3rd level, you can go into a frenzy when you rage. If you do so, for the duration of your rage you can make a single melee weapon attack as a bonus action on each of your turns after this one. When your rage ends, you suffer one level of exhaustion (as described in appendix PH-A)."
+          },
+          {
+            "id": "mindless-rage",
+            "name": "Mindless Rage",
+            "level": 6,
+            "description": "Beginning at 6th level, you can't be charmed or frightened while raging. If you are charmed or frightened when you enter your rage, the effect is suspended for the duration of the rage."
+          },
+          {
+            "id": "intimidating-presence",
+            "name": "Intimidating Presence",
+            "level": 10,
+            "description": "Beginning at 10th level, you can use your action to frighten someone with your menacing presence. When you do so, choose one creature that you can see within 30 feet of you. If the creature can see or hear you, it must succeed on a Wisdom saving throw (DC equal to 8 + your proficiency bonus + your Charisma modifier) or be frightened of you until the end of your next turn. On subsequent turns, you can use your action to extend the duration of this effect on the frightened creature until the end of your next turn. This effect ends if the creature ends its turn out of line of sight or more than 60 feet away from you.\n\nIf the creature succeeds on its saving throw, you can't use this feature on that creature again for 24 hours."
+          },
+          {
+            "id": "retaliation",
+            "name": "Retaliation",
+            "level": 14,
+            "description": "Starting at 14th level, when you take damage from a creature that is within 5 feet of you, you can use your reaction to make a melee weapon attack against that creature."
+          }
+        ]
+      }
     ]
   },
   {
@@ -139,6 +173,40 @@
         "level": 20,
         "description": "At 20th level, when you roll initiative and have no uses of Bardic Inspiration left, you regain one use."
       }
+    ],
+    "subclassLevel": 3,
+    "subclasses": [
+      {
+        "id": "college-of-lore",
+        "name": "College of Lore",
+        "description": "Bards of the College of Lore know something about most things, collecting bits of knowledge from sources as diverse as scholarly tomes and peasant tales. Whether singing folk ballads in taverns or elaborate compositions in royal courts, these bards use their gifts to hold audiences spellbound. When the applause dies down, the audience members might find themselves questioning everything they held to be true, from their faith in the priesthood of the local temple to their loyalty to the king.\n\nThe loyalty of these bards lies in the pursuit of beauty and truth, not in fealty to a monarch or following the tenets of a deity. A noble who keeps such a bard as a herald or advisor knows that the bard would rather be honest than politic.\n\nThe college's members gather in libraries and sometimes in actual colleges, complete with classrooms and dormitories, to share their lore with one another. They also meet at festivals or affairs of state, where they can expose corruption, unravel lies, and poke fun at self-important figures of authority.",
+        "features": [
+          {
+            "id": "bonus-proficiencies",
+            "name": "Bonus Proficiencies",
+            "level": 3,
+            "description": "When you join the College of Lore at 3rd level, you gain proficiency with three skills of your choice."
+          },
+          {
+            "id": "cutting-words",
+            "name": "Cutting Words",
+            "level": 3,
+            "description": "Also at 3rd level, you learn how to use your wit to distract, confuse, and otherwise sap the confidence and competence of others. When a creature that you can see within 60 feet of you makes an attack roll, an ability check, or a damage roll, you can use your reaction to expend one of your uses of Bardic Inspiration, rolling a Bardic Inspiration die and subtracting the number rolled from the creature's roll. You can choose to use this feature after the creature makes its roll, but before the GM determines whether the attack roll or ability check succeeds or fails, or before the creature deals its damage. The creature is immune if it can't hear you or if it's immune to being charmed."
+          },
+          {
+            "id": "additional-magical-secrets",
+            "name": "Additional Magical Secrets",
+            "level": 6,
+            "description": "At 6th level, you learn two spells of your choice from any class. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip. The chosen spells count as bard spells for you but don't count against the number of bard spells you know."
+          },
+          {
+            "id": "peerless-skill",
+            "name": "Peerless Skill",
+            "level": 14,
+            "description": "Starting at 14th level, when you make an ability check, you can expend one use of Bardic Inspiration. Roll a Bardic Inspiration die and add the number rolled to your ability check. You can choose to do so after you roll the die for the ability check, but before the GM tells you whether you succeed or fail."
+          }
+        ]
+      }
     ]
   },
   {
@@ -176,6 +244,70 @@
         "name": "Divine Intervention",
         "level": 10,
         "description": "Beginning at 10th level, you can call on your deity to intervene on your behalf when your need is great.\n\nImploring your deity's aid requires you to use your action. Describe the assistance you seek, and roll percentile dice. If you roll a number equal to or lower than your cleric level, your deity intervenes. The GM chooses the nature of the intervention; the effect of any cleric spell or cleric domain spell would be appropriate.\n\nIf your deity intervenes, you can't use this feature again for 7 days. Otherwise, you can use it again after you finish a long rest.\n\nAt 20th level, your call for intervention succeeds automatically, no roll required."
+      }
+    ],
+    "subclassLevel": 1,
+    "subclasses": [
+      {
+        "id": "life-domain",
+        "name": "Life Domain",
+        "description": "The Life domain focuses on the vibrant positive energy—one of the fundamental forces of the universe—that sustains all life. The gods of life promote vitality and health through healing the sick and wounded, caring for those in need, and driving away the forces of death and undeath. Almost any non-evil deity can claim influence over this domain, particularly agricultural deities (such as Chauntea, Arawai, and Demeter), sun gods (such as Lathander, Pelor, and Re-Horakhty), gods of healing or endurance (such as Ilmater, Mishakal, Apollo, and Diancecht), and gods of home and community (such as Hestia, Hathor, and Boldrei).",
+        "features": [
+          {
+            "id": "bonus-proficiency",
+            "name": "Bonus Proficiency",
+            "level": 1,
+            "description": "When you choose this domain at 1st level, you gain proficiency with heavy armor."
+          },
+          {
+            "id": "disciple-of-life",
+            "name": "Disciple of Life",
+            "level": 1,
+            "description": "Also starting at 1st level, your healing spells are more effective. Whenever you use a spell of 1st level or higher to restore hit points to a creature, the creature regains additional hit points equal to 2 + the spell's level."
+          },
+          {
+            "id": "life-domain-spells",
+            "name": "Life Domain Spells",
+            "level": 1,
+            "description": "Spells you always have prepared.",
+            "grantsSpells": [
+              [1, "bless"],
+              [1, "cure-wounds"],
+              [3, "lesser-restoration"],
+              [3, "spiritual-weapon"],
+              [5, "beacon-of-hope"],
+              [5, "revivify"],
+              [7, "death-ward"],
+              [7, "guardian-of-faith"],
+              [9, "mass-cure-wounds"],
+              [9, "raise-dead"]
+            ]
+          },
+          {
+            "id": "preserve-life",
+            "name": "Channel Divinity: Preserve Life",
+            "level": 2,
+            "description": "Starting at 2nd level, you can use your Channel Divinity to heal the badly injured.\n\nAs an action, you present your holy symbol and evoke healing energy that can restore a number of hit points equal to five times your cleric level. Choose any creatures within 30 feet of you, and divide those hit points among them. This feature can restore a creature to no more than half of its hit point maximum. You can't use this feature on an undead or a construct."
+          },
+          {
+            "id": "blessed-healer",
+            "name": "Blessed Healer",
+            "level": 6,
+            "description": "Beginning at 6th level, the healing spells you cast on others heal you as well. When you cast a spell of 1st level or higher that restores hit points to a creature other than you, you regain hit points equal to 2 + the spell's level."
+          },
+          {
+            "id": "divine-strike",
+            "name": "Divine Strike",
+            "level": 8,
+            "description": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 radiant damage to the target. When you reach 14th level, the extra damage increases to 2d8."
+          },
+          {
+            "id": "supreme-healing",
+            "name": "Supreme Healing",
+            "level": 17,
+            "description": "Starting at 17th level, when you would normally roll one or more dice to restore hit points with a spell, you instead use the highest number possible for each die. For example, instead of restoring 2d6 hit points to a creature, you restore 12."
+          }
+        ]
       }
     ]
   },
@@ -221,6 +353,195 @@
         "level": 20,
         "description": "At 20th level, you can use your Wild Shape an unlimited number of times.\n\nAdditionally, you can ignore the verbal and somatic components of your druid spells, as well as any material components that lack a cost and aren't consumed by a spell. You gain this benefit in both your normal shape and your beast shape from Wild Shape."
       }
+    ],
+    "subclassLevel": 2,
+    "subclasses": [
+      {
+        "id": "circle-of-the-land",
+        "name": "Circle of the Land",
+        "description": "The Circle of the Land is made up of mystics and sages who safeguard ancient knowledge and rites through a vast oral tradition. These druids meet within sacred circles of trees or standing stones to whisper primal secrets in Druidic. The circle's wisest members preside as the chief priests of communities that hold to the Old Faith and serve as advisors to the rulers of those folk. As a member of this circle, your magic is influenced by the land where you were initiated into the circle's mysterious rites.",
+        "features": [
+          {
+            "id": "bonus-cantrip",
+            "name": "Bonus Cantrip",
+            "level": 2,
+            "description": "When you choose this circle at 2nd level, you learn one additional druid cantrip of your choice."
+          },
+          {
+            "id": "natural-recovery",
+            "name": "Natural Recovery",
+            "level": 2,
+            "description": "Starting at 2nd level, you can regain some of your magical energy by sitting in meditation and communing with nature. During a short rest, you choose expended spell slots to recover. The spell slots can have a combined level that is equal to or less than half your druid level (rounded up), and none of the slots can be 6th level or higher. You can't use this feature again until you finish a long rest.\n\nFor example, when you are a 4th-level druid, you can recover up to two levels worth of spell slots. You can recover either a 2nd-level slot or two 1st-level slots."
+          },
+          {
+            "id": "circle-spells",
+            "name": "Circle Spells",
+            "level": 3,
+            "description": "Your mystical connection to the land infuses you with the ability to cast certain spells. At 3rd, 5th, 7th, and 9th level you gain access to circle spells connected to the land where you became a druid. Choose that land—arctic, coast, desert, forest, grassland, mountain, or swamp—and consult the associated list of spells.\n\nOnce you gain access to a circle spell, you always have it prepared, and it doesn't count against the number of spells you can prepare each day. If you gain access to a spell that doesn't appear on the druid spell list, the spell is nonetheless a druid spell for you.\n\n**Arctic**\n\n| Druid Level | Circle Spells |\n| --- | --- |\n| 3rd | *hold person*, *spike growth* |\n| 5th | *sleet storm*, *slow* |\n| 7th | *freedom of movement*, *ice storm* |\n| 9th | *commune with nature*, *cone of cold* |\n\n**Coast**\n\n| Druid Level | Circle Spells |\n| --- | --- |\n| 3rd | *mirror image*, *misty step* |\n| 5th | *water breathing*, *water walk* |\n| 7th | *control water*, *freedom of movement* |\n| 9th | *conjure elemental*, *scrying* |\n\n**Desert**\n\n| Druid Level | Circle Spells |\n| --- | --- |\n| 3rd | *blur*, *silence* |\n| 5th | *create food and water*, *protection from energy* |\n| 7th | *blight*, *hallucinatory terrain* |\n| 9th | *insect plague*, *wall of stone* |\n\n**Forest**\n\n| Druid Level | Circle Spells |\n| --- | --- |\n| 3rd | *barkskin*, *spider climb* |\n| 5th | *call lightning*, *plant growth* |\n| 7th | *divination*, *freedom of movement* |\n| 9th | *commune with nature*, *tree stride* |\n\n**Grassland**\n\n| Druid Level | Circle Spells |\n| --- | --- |\n| 3rd | *invisibility*, *pass without trace* |\n| 5th | *daylight*, *haste* |\n| 7th | *divination*, *freedom of movement* |\n| 9th | *dream*, *insect plague* |\n\n**Mountain**\n\n| Druid Level | Circle Spells |\n| --- | --- |\n| 3rd | *spider climb*, *spike growth* |\n| 5th | *lightning bolt*, *meld into stone* |\n| 7th | *stone shape*, *stoneskin* |\n| 9th | *passwall*, *wall of stone* |\n\n**Swamp**\n\n| Druid Level | Circle Spells |\n| --- | --- |\n| 3rd | *acid arrow, darkness* |\n| 5th | *water walk*, *stinking cloud* |\n| 7th | *freedom of movement*, *locate creature* |\n| 9th | *insect plague*, *scrying* |"
+          },
+          {
+            "id": "arctic",
+            "name": "Arctic",
+            "level": 3,
+            "choice": "circle-spells",
+            "description": "",
+            "grantsSpells": [
+              [3, "hold-person"],
+              [3, "spike-growth"],
+              [5, "sleet-storm"],
+              [5, "slow"],
+              [7, "freedom-of-movement"],
+              [7, "ice-storm"],
+              [9, "commune-with-nature"],
+              [9, "cone-of-cold"]
+            ]
+          },
+          {
+            "id": "coast",
+            "name": "Coast",
+            "level": 3,
+            "choice": "circle-spells",
+            "description": "",
+            "grantsSpells": [
+              [3, "mirror-image"],
+              [3, "misty-step"],
+              [5, "water-breathing"],
+              [5, "water-walk"],
+              [7, "control-water"],
+              [7, "freedom-of-movement"],
+              [9, "conjure-elemental"],
+              [9, "scrying"]
+            ]
+          },
+          {
+            "id": "desert",
+            "name": "Desert",
+            "level": 3,
+            "choice": "circle-spells",
+            "description": "",
+            "grantsSpells": [
+              [3, "blur"],
+              [3, "silence"],
+              [5, "create-food-and-water"],
+              [5, "protection-from-energy"],
+              [7, "blight"],
+              [7, "hallucinatory-terrain"],
+              [9, "insect-plague"],
+              [9, "wall-of-stone"]
+            ]
+          },
+          {
+            "id": "forest",
+            "name": "Forest",
+            "level": 3,
+            "choice": "circle-spells",
+            "description": "",
+            "grantsSpells": [
+              [3, "barkskin"],
+              [3, "spider-climb"],
+              [5, "call-lightning"],
+              [5, "plant-growth"],
+              [7, "divination"],
+              [7, "freedom-of-movement"],
+              [9, "commune-with-nature"],
+              [9, "tree-stride"]
+            ]
+          },
+          {
+            "id": "grassland",
+            "name": "Grassland",
+            "level": 3,
+            "choice": "circle-spells",
+            "description": "",
+            "grantsSpells": [
+              [3, "invisibility"],
+              [3, "pass-without-trace"],
+              [5, "daylight"],
+              [5, "haste"],
+              [7, "divination"],
+              [7, "freedom-of-movement"],
+              [9, "dream"],
+              [9, "insect-plague"]
+            ]
+          },
+          {
+            "id": "mountain",
+            "name": "Mountain",
+            "level": 3,
+            "choice": "circle-spells",
+            "description": "",
+            "grantsSpells": [
+              [3, "spider-climb"],
+              [3, "spike-growth"],
+              [5, "lightning-bolt"],
+              [5, "meld-into-stone"],
+              [7, "stone-shape"],
+              [7, "stoneskin"],
+              [9, "passwall"],
+              [9, "wall-of-stone"]
+            ]
+          },
+          {
+            "id": "swamp",
+            "name": "Swamp",
+            "level": 3,
+            "choice": "circle-spells",
+            "description": "",
+            "grantsSpells": [
+              [3, "acid-arrow"],
+              [3, "darkness"],
+              [5, "water-walk"],
+              [5, "stinking-cloud"],
+              [7, "freedom-of-movement"],
+              [7, "locate-creature"],
+              [9, "insect-plague"],
+              [9, "scrying"]
+            ]
+          },
+          {
+            "id": "underdark",
+            "name": "Underdark",
+            "level": 3,
+            "choice": "circle-spells",
+            "description": "",
+            "grantsSpells": [
+              [3, "spider-climb"],
+              [3, "web"],
+              [5, "gaseous-form"],
+              [5, "stinking-cloud"],
+              [7, "greater-invisibility"],
+              [7, "stone-shape"],
+              [9, "cloudkill"],
+              [9, "insect-plague"]
+            ]
+          },
+          {
+            "id": "lands-stride",
+            "name": "Land's Stride",
+            "level": 6,
+            "description": "Starting at 6th level, moving through nonmagical difficult terrain costs you no extra movement. You can also pass through nonmagical plants without being slowed by them and without taking damage from them if they have thorns, spines, or a similar hazard.\n\nIn addition, you have advantage on saving throws against plants that are magically created or manipulated to impede movement, such those created by the *entangle* spell."
+          },
+          {
+            "id": "natures-ward",
+            "name": "Nature's Ward",
+            "level": 10,
+            "description": "When you reach 10th level, you can't be charmed or frightened by elementals or fey, and you are immune to poison and disease."
+          },
+          {
+            "id": "natures-sanctuary",
+            "name": "Nature's Sanctuary",
+            "level": 14,
+            "description": "When you reach 14th level, creatures of the natural world sense your connection to nature and become hesitant to attack you. When a beast or plant creature attacks you, that creature must make a Wisdom saving throw against your druid spell save DC. On a failed save, the creature must choose a different target, or the attack automatically misses. On a successful save, the creature is immune to this effect for 24 hours. The creature is aware of this effect before it makes its attack against you."
+          }
+        ],
+        "choices": [
+          {
+            "id": "circle-spells",
+            "name": "Circle Spells",
+            "count": [[3, 1]]
+          }
+        ]
+      }
     ]
   },
   {
@@ -234,6 +555,48 @@
         "name": "Second Wind",
         "level": 1,
         "description": "You have a limited well of stamina that you can draw on to protect yourself from harm. On your turn, you can use a bonus action to regain hit points equal to 1d10 + your fighter level. Once you use this feature, you must finish a short or long rest before you can use it again."
+      },
+      {
+        "id": "archery",
+        "name": "Archery",
+        "level": 1,
+        "choice": "fighting-style",
+        "description": "You gain a +2 bonus to attack rolls you make with ranged weapons."
+      },
+      {
+        "id": "defense",
+        "name": "Defense",
+        "level": 1,
+        "choice": "fighting-style",
+        "description": "While you are wearing armor, you gain a +1 bonus to AC."
+      },
+      {
+        "id": "dueling",
+        "name": "Dueling",
+        "level": 1,
+        "choice": "fighting-style",
+        "description": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon."
+      },
+      {
+        "id": "great-weapon-fighting",
+        "name": "Great Weapon Fighting",
+        "level": 1,
+        "choice": "fighting-style",
+        "description": "When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit."
+      },
+      {
+        "id": "protection",
+        "name": "Protection",
+        "level": 1,
+        "choice": "fighting-style",
+        "description": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield."
+      },
+      {
+        "id": "two-weapon-fighting",
+        "name": "Two-Weapon Fighting",
+        "level": 1,
+        "choice": "fighting-style",
+        "description": "When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack."
       },
       {
         "id": "action-surge",
@@ -264,6 +627,96 @@
         "name": "Extra Attack (3)",
         "level": 20,
         "description": "Beginning at 5th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.\n\nThe number of attacks increases to three when you reach 11th level in this class and to four when you reach 20th level in this class."
+      }
+    ],
+    "choices": [
+      {
+        "id": "fighting-style",
+        "name": "Fighting Style",
+        "count": [[1, 1]]
+      }
+    ],
+    "subclassLevel": 3,
+    "subclasses": [
+      {
+        "id": "champion",
+        "name": "Champion",
+        "description": "The archetypal Champion focuses on the development of raw physical power honed to deadly perfection. Those who model themselves on this archetype combine rigorous training with physical excellence to deal devastating blows.",
+        "features": [
+          {
+            "id": "improved-critical",
+            "name": "Improved Critical",
+            "level": 3,
+            "description": "Beginning when you choose this archetype at 3rd level, your weapon attacks score a critical hit on a roll of 19 or 20."
+          },
+          {
+            "id": "remarkable-athlete",
+            "name": "Remarkable Athlete",
+            "level": 7,
+            "description": "Starting at 7th level, you can add half your proficiency bonus (round up) to any Strength, Dexterity, or Constitution check you make that doesn't already use your proficiency bonus.\n\nIn addition, when you make a running long jump, the distance you can cover increases by a number of feet equal to your Strength modifier."
+          },
+          {
+            "id": "archery",
+            "name": "Archery",
+            "level": 10,
+            "choice": "additional-fighting-style",
+            "description": "You gain a +2 bonus to attack rolls you make with ranged weapons."
+          },
+          {
+            "id": "defense",
+            "name": "Defense",
+            "level": 10,
+            "choice": "additional-fighting-style",
+            "description": "While you are wearing armor, you gain a +1 bonus to AC."
+          },
+          {
+            "id": "dueling",
+            "name": "Dueling",
+            "level": 10,
+            "choice": "additional-fighting-style",
+            "description": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon."
+          },
+          {
+            "id": "great-weapon-fighting",
+            "name": "Great Weapon Fighting",
+            "level": 10,
+            "choice": "additional-fighting-style",
+            "description": "When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit."
+          },
+          {
+            "id": "protection",
+            "name": "Protection",
+            "level": 10,
+            "choice": "additional-fighting-style",
+            "description": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield."
+          },
+          {
+            "id": "two-weapon-fighting",
+            "name": "Two-Weapon Fighting",
+            "level": 10,
+            "choice": "additional-fighting-style",
+            "description": "When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack."
+          },
+          {
+            "id": "superior-critical",
+            "name": "Superior Critical",
+            "level": 15,
+            "description": "Starting at 15th level, your weapon attacks score a critical hit on a roll of 18–20."
+          },
+          {
+            "id": "survivor",
+            "name": "Survivor",
+            "level": 18,
+            "description": "At 18th level, you attain the pinnacle of resilience in battle. At the start of each of your turns, you regain hit points equal to 5 + your Constitution modifier if you have no more than half of your hit points left. You don't gain this benefit if you have 0 hit points."
+          }
+        ],
+        "choices": [
+          {
+            "id": "additional-fighting-style",
+            "name": "Second fighting style",
+            "count": [[10, 1]]
+          }
+        ]
       }
     ]
   },
@@ -375,6 +828,40 @@
         "level": 20,
         "description": "At 20th level, when you roll for initiative and have no ki points remaining, you regain 4 ki points."
       }
+    ],
+    "subclassLevel": 3,
+    "subclasses": [
+      {
+        "id": "way-of-the-open-hand",
+        "name": "Way of the Open Hand",
+        "description": "Monks of the Way of the Open Hand are the ultimate masters of martial arts combat, whether armed or unarmed. They learn techniques to push and trip their opponents, manipulate ki to heal damage to their bodies, and practice advanced meditation that can protect them from harm.",
+        "features": [
+          {
+            "id": "open-hand-technique",
+            "name": "Open Hand Technique",
+            "level": 3,
+            "description": "Starting when you choose this tradition at 3rd level, you can manipulate your enemy's ki when you harness your own. Whenever you hit a creature with one of the attacks granted by your Flurry of Blows, you can impose one of the following effects on that target:\n\n- It must succeed on a Dexterity saving throw or be knocked prone.\n- It must make a Strength saving throw. If it fails, you can push it up to 15 feet away from you.\n- It can't take reactions until the end of your next turn."
+          },
+          {
+            "id": "wholeness-of-body",
+            "name": "Wholeness of Body",
+            "level": 6,
+            "description": "At 6th level, you gain the ability to heal yourself. As an action, you can regain hit points equal to three times your monk level. You must finish a long rest before you can use this feature again."
+          },
+          {
+            "id": "tranquility",
+            "name": "Tranquility",
+            "level": 11,
+            "description": "Beginning at 11th level, you can enter a special meditation that surrounds you with an aura of peace. At the end of a long rest, you gain the effect of a *sanctuary* spell that lasts until the start of your next long rest (the spell can end early as normal). The saving throw DC for the spell equals 8 + your Wisdom modifier + your proficiency bonus."
+          },
+          {
+            "id": "quivering-palm",
+            "name": "Quivering Palm",
+            "level": 17,
+            "description": "At 17th level, you gain the ability to set up lethal vibrations in someone's body. When you hit a creature with an unarmed strike, you can spend 3 ki points to start these imperceptible vibrations, which last for a number of days equal to your monk level. The vibrations are harmless unless you use your action to end them. To do so, you and the target must be on the same plane of existence. When you use this action, the creature must make a Constitution saving throw. If it fails, it is reduced to 0 hit points. If it succeeds, it takes 10d10 necrotic damage.\n\nYou can have only one creature under the effect of this feature at a time. You can choose to end the vibrations harmlessly without using an action."
+          }
+        ]
+      }
     ]
   },
   {
@@ -406,6 +893,34 @@
         "name": "Divine Smite",
         "level": 2,
         "description": "Starting at 2nd level, when you hit a creature with a melee weapon attack, you can expend one spell slot to deal radiant damage to the target, in addition to the weapon's damage. The extra damage is 2d8 for a 1st-level spell slot, plus 1d8 for each spell level higher than 1st, to a maximum of 5d8. The damage increases by 1d8 if the target is an undead or a fiend."
+      },
+      {
+        "id": "defense",
+        "name": "Defense",
+        "level": 2,
+        "choice": "fighting-style",
+        "description": "While you are wearing armor, you gain a +1 bonus to AC."
+      },
+      {
+        "id": "dueling",
+        "name": "Dueling",
+        "level": 2,
+        "choice": "fighting-style",
+        "description": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon."
+      },
+      {
+        "id": "great-weapon-fighting",
+        "name": "Great Weapon Fighting",
+        "level": 2,
+        "choice": "fighting-style",
+        "description": "When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit."
+      },
+      {
+        "id": "protection",
+        "name": "Protection",
+        "level": 2,
+        "choice": "fighting-style",
+        "description": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield."
       },
       {
         "id": "divine-health",
@@ -449,6 +964,71 @@
         "level": 18,
         "description": "At 18th level, the range of this aura increases to 30 feet."
       }
+    ],
+    "choices": [
+      {
+        "id": "fighting-style",
+        "name": "Fighting Style",
+        "count": [[2, 1]]
+      }
+    ],
+    "subclassLevel": 3,
+    "subclasses": [
+      {
+        "id": "oath-of-devotion",
+        "name": "Oath of Devotion",
+        "description": "The Oath of Devotion binds a paladin to the loftiest ideals of justice, virtue, and order. Sometimes called cavaliers, white knights, or holy warriors, these paladins meet the ideal of the knight in shining armor, acting with honor in pursuit of justice and the greater good. They hold themselves to the highest standards of conduct, and some, for better or worse, hold the rest of the world to the same standards. Many who swear this oath are devoted to gods of law and good and use their gods' tenets as the measure of their devotion. They hold angels—the perfect servants of good—as their ideals, and incorporate images of angelic wings into their helmets or coats of arms.",
+        "features": [
+          {
+            "id": "sacred-weapon",
+            "name": "Channel Divinity: Sacred Weapon",
+            "level": 3,
+            "description": "As an action, you can imbue one weapon that you are holding with positive energy, using your Channel Divinity. For 1 minute, you add your Charisma modifier to attack rolls made with that weapon (with a minimum bonus of +1). The weapon also emits bright light in a 20-foot radius and dim light 20 feet beyond that. If the weapon is not already magical, it becomes magical for the duration.\n\nYou can end this effect on your turn as part of any other action. If you are no longer holding or carrying this weapon, or if you fall unconscious, this effect ends."
+          },
+          {
+            "id": "turn-the-unholy",
+            "name": "Channel Divinity: Turn the Unholy",
+            "level": 3,
+            "description": "As an action, you present your holy symbol and speak a prayer censuring fiends and undead, using your Channel Divinity. Each fiend or undead that can see or hear you within 30 feet of you must make a Wisdom saving throw. If the creature fails its saving throw, it is turned for 1 minute or until it takes damage.\n\nA turned creature must spend its turns trying to move as far away from you as it can, and it can't willingly move to a space within 30 feet of you. It also can't take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there's nowhere to move, the creature can use the Dodge action."
+          },
+          {
+            "id": "oath-of-devotion-spells",
+            "name": "Oath of Devotion Spells",
+            "level": 3,
+            "description": "Spells you always have prepared.",
+            "grantsSpells": [
+              [3, "protection-from-evil-and-good"],
+              [3, "sanctuary"],
+              [5, "lesser-restoration"],
+              [5, "zone-of-truth"],
+              [9, "beacon-of-hope"],
+              [9, "dispel-magic"],
+              [13, "freedom-of-movement"],
+              [13, "guardian-of-faith"],
+              [17, "commune"],
+              [17, "flame-strike"]
+            ]
+          },
+          {
+            "id": "aura-of-devotion",
+            "name": "Aura of Devotion",
+            "level": 7,
+            "description": "Starting at 7th level, you and friendly creatures within 10 feet of you can't be charmed while you are conscious.\n\nAt 18th level, the range of this aura increases to 30 feet."
+          },
+          {
+            "id": "purity-of-spirit",
+            "name": "Purity of Spirit",
+            "level": 15,
+            "description": "Beginning at 15th level, you are always under the effects of a *protection from evil and good* spell."
+          },
+          {
+            "id": "holy-nimbus",
+            "name": "Holy Nimbus",
+            "level": 20,
+            "description": "At 20th level, as an action, you can emanate an aura of sunlight. For 1 minute, bright light shines from you in a 30-foot radius, and dim light shines 30 feet beyond that.\n\nWhenever an enemy creature starts its turn in the bright light, the creature takes 10 radiant damage.\n\nIn addition, for the duration, you have advantage on saving throws against spells cast by fiends or undead.\n\nOnce you use this feature, you can't use it again until you finish a long rest."
+          }
+        ]
+      }
     ]
   },
   {
@@ -464,16 +1044,198 @@
         "description": "Beginning at 1st level, you have significant experience studying, tracking, hunting, and even talking to a certain type of enemy.\n\nChoose a type of favored enemy: aberrations, beasts, celestials, constructs, dragons, elementals, fey, fiends, giants, monstrosities, oozes, plants, or undead. Alternatively, you can select two races of humanoid (such as gnolls and orcs) as favored enemies.\n\nYou have advantage on Wisdom (Survival) checks to track your favored enemies, as well as on Intelligence checks to recall information about them.\n\nWhen you gain this feature, you also learn one language of your choice that is spoken by your favored enemies, if they speak one at all.\n\nYou choose one additional favored enemy, as well as an associated language, at 6th and 14th level. As you gain levels, your choices should reflect the types of monsters you have encountered on your adventures."
       },
       {
+        "id": "aberrations",
+        "name": "Aberrations",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "beasts",
+        "name": "Beasts",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "celestials",
+        "name": "Celestials",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "constructs",
+        "name": "Constructs",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "dragons",
+        "name": "Dragons",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "elementals",
+        "name": "Elementals",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "fey",
+        "name": "Fey",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "fiends",
+        "name": "Fiends",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "giants",
+        "name": "Giants",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "monstrosities",
+        "name": "Monstrosities",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "oozes",
+        "name": "Oozes",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "plants",
+        "name": "Plants",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "undead",
+        "name": "Undead",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
+        "id": "humanoids",
+        "name": "Two races of humanoid",
+        "level": 1,
+        "choice": "favored-enemy",
+        "description": ""
+      },
+      {
         "id": "natural-explorer",
         "name": "Natural Explorer",
         "level": 1,
         "description": "You are particularly familiar with one type of natural environment and are adept at traveling and surviving in such regions. Choose one type of favored terrain: arctic, coast, desert, forest, grassland, mountain, or swamp. When you make an Intelligence or Wisdom check related to your favored terrain, your proficiency bonus is doubled if you are using a skill that you're proficient in.\n\nWhile traveling for an hour or more in your favored terrain, you gain the following benefits:\n\n- Difficult terrain doesn't slow your group's travel.\n- Your group can't become lost except by magical means.\n- Even when you are engaged in another activity while traveling (such as foraging, navigating, or tracking), you remain alert to danger.\n- If you are traveling alone, you can move stealthily at a normal pace.\n- When you forage, you find twice as much food as you normally would.\n- While tracking other creatures, you also learn their exact number, their sizes, and how long ago they passed through the area.\n\nYou choose additional favored terrain types at 6th and 10th level."
       },
       {
+        "id": "arctic",
+        "name": "Arctic",
+        "level": 1,
+        "choice": "natural-explorer",
+        "description": ""
+      },
+      {
+        "id": "coast",
+        "name": "Coast",
+        "level": 1,
+        "choice": "natural-explorer",
+        "description": ""
+      },
+      {
+        "id": "desert",
+        "name": "Desert",
+        "level": 1,
+        "choice": "natural-explorer",
+        "description": ""
+      },
+      {
+        "id": "forest",
+        "name": "Forest",
+        "level": 1,
+        "choice": "natural-explorer",
+        "description": ""
+      },
+      {
+        "id": "grassland",
+        "name": "Grassland",
+        "level": 1,
+        "choice": "natural-explorer",
+        "description": ""
+      },
+      {
+        "id": "mountain",
+        "name": "Mountain",
+        "level": 1,
+        "choice": "natural-explorer",
+        "description": ""
+      },
+      {
+        "id": "swamp",
+        "name": "Swamp",
+        "level": 1,
+        "choice": "natural-explorer",
+        "description": ""
+      },
+      {
+        "id": "underdark",
+        "name": "Underdark",
+        "level": 1,
+        "choice": "natural-explorer",
+        "description": ""
+      },
+      {
         "id": "spellcasting",
         "name": "Spellcasting",
         "level": 2,
         "description": "By the time you reach 2nd level, you have learned to use the magical essence of nature to cast spells, much as a druid does.\n\n**Spell Slots**\n\nThe Ranger table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell's level or higher. You regain all expended spell slots when you finish a long rest.\n\nFor example, if you know the 1st-level spell *animal friendship* and have a 1st-level and a 2nd-level spell slot available, you can cast *animal friendship* using either slot.\n\n**Spells Known of 1st Level and Higher**\n\nYou know two 1st-level spells of your choice from the ranger spell list.\n\nThe Spells Known column of the Ranger table shows when you learn more ranger spells of your choice. Each of these spells must be of a level for which you have spell slots. For instance, when you reach 5th level in this class, you can learn one new spell of 1st or 2nd level.\n\nAdditionally, when you gain a level in this class, you can choose one of the ranger spells you know and replace it with another spell from the ranger spell list, which also must be of a level for which you have spell slots.\n\n**Spellcasting Ability**\n\nWisdom is your spellcasting ability for your ranger spells, since your magic draws on your attunement to nature. You use your Wisdom whenever a spell refers to your spellcasting ability. In addition, you use your Wisdom modifier when setting the saving throw DC for a ranger spell you cast and when making an attack roll with one.\n\n**Spell save DC** = 8 + your proficiency bonus + your Wisdom modifier\n\n**Spell attack modifier** = your proficiency bonus + your Wisdom modifier"
+      },
+      {
+        "id": "archery",
+        "name": "Archery",
+        "level": 2,
+        "choice": "fighting-style",
+        "description": "You gain a +2 bonus to attack rolls you make with ranged weapons."
+      },
+      {
+        "id": "defense",
+        "name": "Defense",
+        "level": 2,
+        "choice": "fighting-style",
+        "description": "While you are wearing armor, you gain a +1 bonus to AC."
+      },
+      {
+        "id": "dueling",
+        "name": "Dueling",
+        "level": 2,
+        "choice": "fighting-style",
+        "description": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon."
+      },
+      {
+        "id": "two-weapon-fighting",
+        "name": "Two-Weapon Fighting",
+        "level": 2,
+        "choice": "fighting-style",
+        "description": "When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack."
       },
       {
         "id": "primeval-awareness",
@@ -516,6 +1278,140 @@
         "name": "Foe Slayer",
         "level": 20,
         "description": "At 20th level, you become an unparalleled hunter of your enemies. Once on each of your turns, you can add your Wisdom modifier to the attack roll or the damage roll of an attack you make against one of your favored enemies. You can choose to use this feature before or after the roll, but before any effects of the roll are applied."
+      }
+    ],
+    "choices": [
+      {
+        "id": "favored-enemy",
+        "name": "Favored Enemy",
+        "count": [
+          [1, 1],
+          [6, 2],
+          [14, 3]
+        ]
+      },
+      {
+        "id": "natural-explorer",
+        "name": "Natural Explorer",
+        "count": [
+          [1, 1],
+          [6, 2],
+          [10, 3]
+        ]
+      },
+      {
+        "id": "fighting-style",
+        "name": "Fighting Style",
+        "count": [[2, 1]]
+      }
+    ],
+    "subclassLevel": 3,
+    "subclasses": [
+      {
+        "id": "hunter",
+        "name": "Hunter",
+        "description": "Emulating the Hunter archetype means accepting your place as a bulwark between civilization and the terrors of the wilderness. As you walk the Hunter's path, you learn specialized techniques for fighting the threats you face, from rampaging ogres and hordes of orcs to towering giants and terrifying dragons.",
+        "features": [
+          {
+            "id": "colossus-slayer",
+            "name": "Colossus Slayer",
+            "level": 3,
+            "choice": "hunters-prey",
+            "description": ""
+          },
+          {
+            "id": "giant-killer",
+            "name": "Giant Killer",
+            "level": 3,
+            "choice": "hunters-prey",
+            "description": ""
+          },
+          {
+            "id": "horde-breaker",
+            "name": "Horde Breaker",
+            "level": 3,
+            "choice": "hunters-prey",
+            "description": ""
+          },
+          {
+            "id": "escape-the-horde",
+            "name": "Escape the Horde",
+            "level": 7,
+            "choice": "defensive-tactics",
+            "description": ""
+          },
+          {
+            "id": "multiattack-defense",
+            "name": "Multiattack Defense",
+            "level": 7,
+            "choice": "defensive-tactics",
+            "description": ""
+          },
+          {
+            "id": "steel-will",
+            "name": "Steel Will",
+            "level": 7,
+            "choice": "defensive-tactics",
+            "description": ""
+          },
+          {
+            "id": "volley",
+            "name": "Volley",
+            "level": 11,
+            "choice": "multiattack",
+            "description": ""
+          },
+          {
+            "id": "whirlwind-attack",
+            "name": "Whirlwind Attack",
+            "level": 11,
+            "choice": "multiattack",
+            "description": ""
+          },
+          {
+            "id": "evasion",
+            "name": "Evasion",
+            "level": 15,
+            "choice": "superior-hunters-defense",
+            "description": ""
+          },
+          {
+            "id": "stand-against-the-tide",
+            "name": "Stand Against the Tide",
+            "level": 15,
+            "choice": "superior-hunters-defense",
+            "description": ""
+          },
+          {
+            "id": "uncanny-dodge",
+            "name": "Uncanny Dodge",
+            "level": 15,
+            "choice": "superior-hunters-defense",
+            "description": ""
+          }
+        ],
+        "choices": [
+          {
+            "id": "hunters-prey",
+            "name": "Hunter's Prey",
+            "count": [[3, 1]]
+          },
+          {
+            "id": "defensive-tactics",
+            "name": "Defensive Tactics",
+            "count": [[7, 1]]
+          },
+          {
+            "id": "multiattack",
+            "name": "Multiattack",
+            "count": [[11, 1]]
+          },
+          {
+            "id": "superior-hunters-defense",
+            "name": "Superior Hunter's Defense",
+            "count": [[15, 1]]
+          }
+        ]
       }
     ]
   },
@@ -591,6 +1487,46 @@
         "level": 20,
         "description": "At 20th level, you have an uncanny knack for succeeding when you need to. If your attack misses a target within range, you can turn the miss into a hit. Alternatively, if you fail an ability check, you can treat the d20 roll as a 20.\n\nOnce you use this feature, you can't use it again until you finish a short or long rest."
       }
+    ],
+    "subclassLevel": 3,
+    "subclasses": [
+      {
+        "id": "thief",
+        "name": "Thief",
+        "description": "You hone your skills in the larcenous arts. Burglars, bandits, cutpurses, and other criminals typically follow this archetype, but so do rogues who prefer to think of themselves as professional treasure seekers, explorers, delvers, and investigators. In addition to improving your agility and stealth, you learn skills useful for delving into ancient ruins, reading unfamiliar languages, and using magic items you normally couldn't employ.",
+        "features": [
+          {
+            "id": "fast-hands",
+            "name": "Fast Hands",
+            "level": 3,
+            "description": "Starting at 3rd level, you can use the bonus action granted by your Cunning Action to make a Dexterity (Sleight of Hand) check, use your thieves' tools to disarm a trap or open a lock, or take the Use an Object action."
+          },
+          {
+            "id": "second-story-work",
+            "name": "Second-Story Work",
+            "level": 3,
+            "description": "When you choose this archetype at 3rd level, you gain the ability to climb faster than normal; climbing no longer costs you extra movement.\n\nIn addition, when you make a running jump, the distance you cover increases by a number of feet equal to your Dexterity modifier."
+          },
+          {
+            "id": "supreme-sneak",
+            "name": "Supreme Sneak",
+            "level": 9,
+            "description": "Starting at 9th level, you have advantage on a Dexterity (Stealth) check if you move no more than half your speed on the same turn."
+          },
+          {
+            "id": "use-magic-device",
+            "name": "Use Magic Device",
+            "level": 13,
+            "description": "By 13th level, you have learned enough about the workings of magic that you can improvise the use of items even when they are not intended for you. You ignore all class, race, and level requirements on the use of magic items."
+          },
+          {
+            "id": "thiefs-reflexes",
+            "name": "Thief's Reflexes",
+            "level": 17,
+            "description": "When you reach 17th level, you have become adept at laying ambushes and quickly escaping danger. You can take two turns during the first round of any combat. You take your first turn at your normal initiative and your second turn at your initiative minus 10. You can't use this feature when you are surprised."
+          }
+        ]
+      }
     ]
   },
   {
@@ -618,10 +1554,194 @@
         "description": "At 3rd level, you gain the ability to twist your spells to suit your needs. You gain two of the following Metamagic options of your choice. You gain another one at 10th and 17th level.\n\nYou can use only one Metamagic option on a spell when you cast it, unless otherwise noted."
       },
       {
+        "id": "careful-spell",
+        "name": "Careful Spell",
+        "level": 3,
+        "choice": "metamagic",
+        "description": "When you cast a spell that forces other creatures to make a saving throw, you can protect some of those creatures from the spell's full force. To do so, you spend 1 sorcery point and choose a number of those creatures up to your Charisma modifier (minimum of one creature). A chosen creature automatically succeeds on its saving throw against the spell."
+      },
+      {
+        "id": "distant-spell",
+        "name": "Distant Spell",
+        "level": 3,
+        "choice": "metamagic",
+        "description": "When you cast a spell that has a range of 5 feet or greater, you can spend 1 sorcery point to double the range of the spell.\n\nWhen you cast a spell that has a range of touch, you can spend 1 sorcery point to make the range of the spell 30 feet."
+      },
+      {
+        "id": "empowered-spell",
+        "name": "Empowered Spell",
+        "level": 3,
+        "choice": "metamagic",
+        "description": "When you roll damage for a spell, you can spend 1 sorcery point to reroll a number of the damage dice up to your Charisma modifier (minimum of one). You must use the new rolls.\n\nYou can use Empowered Spell even if you have already used a different Metamagic option during the casting of the spell."
+      },
+      {
+        "id": "extended-spell",
+        "name": "Extended Spell",
+        "level": 3,
+        "choice": "metamagic",
+        "description": "When you cast a spell that has a duration of 1 minute or longer, you can spend 1 sorcery point to double its duration, to a maximum duration of 24 hours."
+      },
+      {
+        "id": "heightened-spell",
+        "name": "Heightened Spell",
+        "level": 3,
+        "choice": "metamagic",
+        "description": "When you cast a spell that forces a creature to make a saving throw to resist its effects, you can spend 3 sorcery points to give one target of the spell disadvantage on its first saving throw made against the spell."
+      },
+      {
+        "id": "quickened-spell",
+        "name": "Quickened Spell",
+        "level": 3,
+        "choice": "metamagic",
+        "description": "When you cast a spell that has a casting time of 1 action, you can spend 2 sorcery points to change the casting time to 1 bonus action for this casting."
+      },
+      {
+        "id": "subtle-spell",
+        "name": "Subtle Spell",
+        "level": 3,
+        "choice": "metamagic",
+        "description": "When you cast a spell, you can spend 1 sorcery point to cast it without any somatic or verbal components."
+      },
+      {
+        "id": "twinned-spell",
+        "name": "Twinned Spell",
+        "level": 3,
+        "choice": "metamagic",
+        "description": "When you cast a spell that targets only one creature and doesn't have a range of self, you can spend a number of sorcery points equal to the spell's level to target a second creature in range with the same spell (1 sorcery point if the spell is a cantrip).\n\nTo be eligible, a spell must be incapable of targeting more than one creature at the spell's current level. For example, *magic missile* and *scorching ray* aren't eligible, but *ray of frost* is."
+      },
+      {
         "id": "sorcerous-restoration",
         "name": "Sorcerous Restoration",
         "level": 20,
         "description": "At 20th level, you regain 4 expended sorcery points whenever you finish a short rest."
+      }
+    ],
+    "choices": [
+      {
+        "id": "metamagic",
+        "name": "Metamagic",
+        "count": [
+          [3, 2],
+          [10, 3],
+          [17, 4]
+        ]
+      }
+    ],
+    "subclassLevel": 1,
+    "subclasses": [
+      {
+        "id": "draconic-bloodline",
+        "name": "Draconic Bloodline",
+        "description": "Your innate magic comes from draconic magic that was mingled with your blood or that of your ancestors. Most often, sorcerers with this origin trace their descent back to a mighty sorcerer of ancient times who made a bargain with a dragon or who might even have claimed a dragon parent. Some of these bloodlines are well established in the world, but most are obscure. Any given sorcerer could be the first of a new bloodline, as a result of a pact or some other exceptional circumstance.",
+        "features": [
+          {
+            "id": "dragon-ancestor",
+            "name": "Dragon Ancestor",
+            "level": 1,
+            "description": "At 1st level, you choose one type of dragon as your ancestor. The damage type associated with each dragon is used by features you gain later. You can speak, read, and write Draconic. Additionally, whenever you make a Charisma check when interacting with dragons, your proficiency bonus is doubled if it applies to the check.\n\n**Draconic Ancestry**\n\n| Dragon | Damage Type |\n| --- | --- |\n| Black | Acid |\n| Blue | Lightning |\n| Brass | Fire |\n| Bronze | Lightning |\n| Copper | Acid |\n| Gold | Fire |\n| Green | Poison |\n| Red | Fire |\n| Silver | Cold |\n| White | Cold |"
+          },
+          {
+            "id": "black",
+            "name": "Black dragon",
+            "level": 1,
+            "choice": "dragon-ancestor",
+            "description": "| Dragon | Damage Type | Breath Weapon |\n| --- | --- | --- |\n| Black | Acid | 5 by 30 ft. line (Dex. save) |"
+          },
+          {
+            "id": "blue",
+            "name": "Blue dragon",
+            "level": 1,
+            "choice": "dragon-ancestor",
+            "description": "| Dragon | Damage Type | Breath Weapon |\n| --- | --- | --- |\n| Blue | Lightning | 5 by 30 ft. line (Dex. save) |"
+          },
+          {
+            "id": "brass",
+            "name": "Brass dragon",
+            "level": 1,
+            "choice": "dragon-ancestor",
+            "description": "| Dragon | Damage Type | Breath Weapon |\n| --- | --- | --- |\n| Brass | Fire | 5 by 30 ft. line (Dex. save) |"
+          },
+          {
+            "id": "bronze",
+            "name": "Bronze dragon",
+            "level": 1,
+            "choice": "dragon-ancestor",
+            "description": "| Dragon | Damage Type | Breath Weapon |\n| --- | --- | --- |\n| Bronze | Lightning | 5 by 30 ft. line (Dex. save) |"
+          },
+          {
+            "id": "copper",
+            "name": "Copper dragon",
+            "level": 1,
+            "choice": "dragon-ancestor",
+            "description": "| Dragon | Damage Type | Breath Weapon |\n| --- | --- | --- |\n| Copper | Acid | 5 by 30 ft. line (Dex. save) |"
+          },
+          {
+            "id": "gold",
+            "name": "Gold dragon",
+            "level": 1,
+            "choice": "dragon-ancestor",
+            "description": "| Dragon | Damage Type | Breath Weapon |\n| --- | --- | --- |\n| Gold | Fire | 15 ft. cone (Dex. save) |"
+          },
+          {
+            "id": "green",
+            "name": "Green dragon",
+            "level": 1,
+            "choice": "dragon-ancestor",
+            "description": "| Dragon | Damage Type | Breath Weapon |\n| --- | --- | --- |\n| Green | Poison | 15 ft. cone (Con. save) |"
+          },
+          {
+            "id": "red",
+            "name": "Red dragon",
+            "level": 1,
+            "choice": "dragon-ancestor",
+            "description": "| Dragon | Damage Type | Breath Weapon |\n| --- | --- | --- |\n| Red | Fire | 15 ft. cone (Dex. save) |"
+          },
+          {
+            "id": "silver",
+            "name": "Silver dragon",
+            "level": 1,
+            "choice": "dragon-ancestor",
+            "description": "| Dragon | Damage Type | Breath Weapon |\n| --- | --- | --- |\n| Silver | Cold | 15 ft. cone (Con. save) |"
+          },
+          {
+            "id": "white",
+            "name": "White dragon",
+            "level": 1,
+            "choice": "dragon-ancestor",
+            "description": "| Dragon | Damage Type | Breath Weapon |\n| --- | --- | --- |\n| White | Cold | 15 ft. cone (Con. save) |"
+          },
+          {
+            "id": "draconic-resilience",
+            "name": "Draconic Resilience",
+            "level": 1,
+            "description": "As magic flows through your body, it causes physical traits of your dragon ancestors to emerge. At 1st level, your hit point maximum increases by 1 and increases by 1 again whenever you gain a level in this class.\n\nAdditionally, parts of your skin are covered by a thin sheen of dragon-like scales. When you aren't wearing armor, your AC equals 13 + your Dexterity modifier."
+          },
+          {
+            "id": "elemental-affinity",
+            "name": "Elemental Affinity",
+            "level": 6,
+            "description": "Starting at 6th level, when you cast a spell that deals damage of the type associated with your draconic ancestry, you can add your Charisma modifier to one damage roll of that spell. At the same time, you can spend 1 sorcery point to gain resistance to that damage type for 1 hour."
+          },
+          {
+            "id": "dragon-wings",
+            "name": "Dragon Wings",
+            "level": 14,
+            "description": "At 14th level, you gain the ability to sprout a pair of dragon wings from your back, gaining a flying speed equal to your current speed. You can create these wings as a bonus action on your turn. They last until you dismiss them as a bonus action on your turn.\n\nYou can't manifest your wings while wearing armor unless the armor is made to accommodate them, and clothing not made to accommodate your wings might be destroyed when you manifest them."
+          },
+          {
+            "id": "draconic-presence",
+            "name": "Draconic Presence",
+            "level": 18,
+            "description": "Beginning at 18th level, you can channel the dread presence of your dragon ancestor, causing those around you to become awestruck or frightened. As an action, you can spend 5 sorcery points to draw on this power and exude an aura of awe or fear (your choice) to a distance of 60 feet. For 1 minute or until you lose your concentration (as if you were casting a concentration spell), each hostile creature that starts its turn in this aura must succeed on a Wisdom saving throw or be charmed (if you chose awe) or frightened (if you chose fear) until the aura ends. A creature that succeeds on this saving throw is immune to your aura for 24 hours."
+          }
+        ],
+        "choices": [
+          {
+            "id": "dragon-ancestor",
+            "name": "Dragon Ancestor",
+            "count": [[1, 1]]
+          }
+        ]
       }
     ]
   },
@@ -644,10 +1764,237 @@
         "description": "In your study of occult lore, you have unearthed eldritch invocations, fragments of forbidden knowledge that imbue you with an abiding magical ability.\n\nAt 2nd level, you gain two eldritch invocations of your choice. Your invocation options are detailed at the end of the class description. When you gain certain warlock levels, you gain additional invocations of your choice, as shown in the Invocations Known column of the Warlock table.\n\nAdditionally, when you gain a level in this class, you can choose one of the invocations you know and replace it with another invocation that you could learn at that level."
       },
       {
+        "id": "agonizing-blast",
+        "name": "Agonizing Blast",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "When you cast *eldritch blast*, add your Charisma modifier to the damage it deals on a hit."
+      },
+      {
+        "id": "armor-of-shadows",
+        "name": "Armor of Shadows",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *mage armor* on yourself at will, without expending a spell slot or material components.",
+        "grantsSpells": [[2, "mage-armor"]]
+      },
+      {
+        "id": "beast-speech",
+        "name": "Beast Speech",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *speak with animals* at will, without expending a spell slot.",
+        "grantsSpells": [[2, "speak-with-animals"]]
+      },
+      {
+        "id": "beguiling-influence",
+        "name": "Beguiling Influence",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You gain proficiency in the Deception and Persuasion skills."
+      },
+      {
+        "id": "book-of-ancient-secrets",
+        "name": "Book of Ancient Secrets",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can now inscribe magical rituals in your Book of Shadows. Choose two 1st-level spells that have the ritual tag from any class's spell list (the two needn't be from the same list). The spells appear in the book and don't count against the number of spells you know. With your Book of Shadows in hand, you can cast the chosen spells as rituals. You can't cast the spells except as rituals, unless you've learned them by some other means. You can also cast a warlock spell you know as a ritual if it has the ritual tag.\n\nOn your adventures, you can add other ritual spells to your Book of Shadows. When you find such a spell, you can add it to the book if the spell's level is equal to or less than half your warlock level (rounded up) and if you can spare the time to transcribe the spell. For each level of the spell, the transcription process takes 2 hours and costs 50 gp for the rare inks needed to inscribe it."
+      },
+      {
+        "id": "devils-sight",
+        "name": "Devil's Sight",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can see normally in darkness, both magical and nonmagical, to a distance of 120 feet."
+      },
+      {
+        "id": "eldritch-sight",
+        "name": "Eldritch Sight",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *detect magic* at will, without expending a spell slot.",
+        "grantsSpells": [[2, "detect-magic"]]
+      },
+      {
+        "id": "eldritch-spear",
+        "name": "Eldritch Spear",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "When you cast *eldritch blast*, its range is 300 feet."
+      },
+      {
+        "id": "eyes-of-the-rune-keeper",
+        "name": "Eyes of the Rune Keeper",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can read all writing."
+      },
+      {
+        "id": "fiendish-vigor",
+        "name": "Fiendish Vigor",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *false life* on yourself at will as a 1st-level spell, without expending a spell slot or material components.",
+        "grantsSpells": [[2, "false-life"]]
+      },
+      {
+        "id": "gaze-of-two-minds",
+        "name": "Gaze of Two Minds",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can use your action to touch a willing humanoid and perceive through its senses until the end of your next turn. As long as the creature is on the same plane of existence as you, you can use your action on subsequent turns to maintain this connection, extending the duration until the end of your next turn. While perceiving through the other creature's senses, you benefit from any special senses possessed by that creature, and you are blinded and deafened to your own surroundings."
+      },
+      {
+        "id": "mask-of-many-faces",
+        "name": "Mask of Many Faces",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *disguise self* at will, without expending a spell slot.",
+        "grantsSpells": [[2, "disguise-self"]]
+      },
+      {
+        "id": "misty-visions",
+        "name": "Misty Visions",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *silent image* at will, without expending a spell slot or material components.",
+        "grantsSpells": [[2, "silent-image"]]
+      },
+      {
+        "id": "repelling-blast",
+        "name": "Repelling Blast",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "When you hit a creature with *eldritch blast*, you can push the creature up to 10 feet away from you in a straight line."
+      },
+      {
+        "id": "thief-of-five-fates",
+        "name": "Thief of Five Fates",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *bane* once using a warlock spell slot. You can't do so again until you finish a long rest.",
+        "grantsSpells": [[2, "bane"]]
+      },
+      {
+        "id": "voice-of-the-chain-master",
+        "name": "Voice of the Chain Master",
+        "level": 2,
+        "choice": "eldritch-invocations",
+        "description": "You can communicate telepathically with your familiar and perceive through your familiar's senses as long as you are on the same plane of existence. Additionally, while perceiving through your familiar's senses, you can also speak through your familiar in your own voice, even if your familiar is normally incapable of speech."
+      },
+      {
         "id": "pact-boon",
         "name": "Pact Boon",
         "level": 3,
         "description": "At 3rd level, your otherworldly patron bestows a gift upon you for your loyal service. You gain one of the following features of your choice.\n\n**Pact of the Chain**\n\nYou learn the *find familiar* spell and can cast it as a ritual. The spell doesn't count against your number of spells known.\n\nWhen you cast the spell, you can choose one of the normal forms for your familiar or one of the following special forms: imp, pseudodragon, quasit, or sprite.\n\nAdditionally, when you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction.\n\n**Pact of the Blade**\n\nYou can use your action to create a pact weapon in your empty hand. You can choose the form that this melee weapon takes each time you create it. You are proficient with it while you wield it. This weapon counts as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.\n\nYour pact weapon disappears if it is more than 5 feet away from you for 1 minute or more. It also disappears if you use this feature again, if you dismiss the weapon (no action required), or if you die.\n\nYou can transform one magic weapon into your pact weapon by performing a special ritual while you hold the weapon. You perform the ritual over the course of 1 hour, which can be done during a short rest. You can then dismiss the weapon, shunting it into an extradimensional space, and it appears whenever you create your pact weapon thereafter. You can't affect an artifact or a sentient weapon in this way. The weapon ceases being your pact weapon if you die, if you perform the 1-hour ritual on a different weapon, or if you use a 1-hour ritual to break your bond to it. The weapon appears at your feet if it is in the extradimensional space when the bond breaks.\n\n**Pact of the Tome**\n\nYour patron gives you a grimoire called a Book of Shadows. When you gain this feature, choose three cantrips from any class's spell list (the three needn't be from the same list). While the book is on your person, you can cast those cantrips at will. They don't count against your number of cantrips known. If they don't appear on the warlock spell list, they are nonetheless warlock spells for you.\n\nIf you lose your Book of Shadows, you can perform a 1-hour ceremony to receive a replacement from your patron. This ceremony can be performed during a short or long rest, and it destroys the previous book. The book turns to ash when you die."
+      },
+      {
+        "id": "blade",
+        "name": "Pact of the Blade",
+        "level": 3,
+        "choice": "pact-boon",
+        "description": "You can use your action to create a pact weapon in your empty hand. You can choose the form that this melee weapon takes each time you create it. You are proficient with it while you wield it. This weapon counts as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.\n\nYour pact weapon disappears if it is more than 5 feet away from you for 1 minute or more. It also disappears if you use this feature again, if you dismiss the weapon (no action required), or if you die.\n\nYou can transform one magic weapon into your pact weapon by performing a special ritual while you hold the weapon. You perform the ritual over the course of 1 hour, which can be done during a short rest. You can then dismiss the weapon, shunting it into an extradimensional space, and it appears whenever you create your pact weapon thereafter. You can't affect an artifact or a sentient weapon in this way. The weapon ceases being your pact weapon if you die, if you perform the 1-hour ritual on a different weapon, or if you use a 1-hour ritual to break your bond to it. The weapon appears at your feet if it is in the extradimensional space when the bond breaks."
+      },
+      {
+        "id": "chain",
+        "name": "Pact of the Chain",
+        "level": 3,
+        "choice": "pact-boon",
+        "description": "You learn the *find familiar* spell and can cast it as a ritual. The spell doesn't count against your number of spells known.\n\nWhen you cast the spell, you can choose one of the normal forms for your familiar or one of the following special forms: imp, pseudodragon, quasit, or sprite.\n\nAdditionally, when you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction.",
+        "grantsSpells": [[3, "find-familiar"]]
+      },
+      {
+        "id": "tome",
+        "name": "Pact of the Tome",
+        "level": 3,
+        "choice": "pact-boon",
+        "description": "Your patron gives you a grimoire called a Book of Shadows. When you gain this feature, choose three cantrips from any class's spell list (the three needn't be from the same list). While the book is on your person, you can cast those cantrips at will. They don't count against your number of cantrips known. If they don't appear on the warlock spell list, they are nonetheless warlock spells for you.\n\nIf you lose your Book of Shadows, you can perform a 1-hour ceremony to receive a replacement from your patron. This ceremony can be performed during a short or long rest, and it destroys the previous book. The book turns to ash when you die."
+      },
+      {
+        "id": "mire-the-mind",
+        "name": "Mire the Mind",
+        "level": 5,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *slow* once using a warlock spell slot. You can't do so again until you finish a long rest.",
+        "grantsSpells": [[5, "slow"]]
+      },
+      {
+        "id": "one-with-shadows",
+        "name": "One with Shadows",
+        "level": 5,
+        "choice": "eldritch-invocations",
+        "description": "When you are in an area of dim light or darkness, you can use your action to become invisible until you move or take an action or a reaction."
+      },
+      {
+        "id": "sign-of-ill-omen",
+        "name": "Sign of Ill Omen",
+        "level": 5,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *bestow curse* once using a warlock spell slot. You can't do so again until you finish a long rest.",
+        "grantsSpells": [[5, "bestow-curse"]]
+      },
+      {
+        "id": "thirsting-blade",
+        "name": "Thirsting Blade",
+        "level": 5,
+        "choice": "eldritch-invocations",
+        "description": "You can attack with your pact weapon twice, instead of once, whenever you take the Attack action on your turn."
+      },
+      {
+        "id": "bewitching-whispers",
+        "name": "Bewitching Whispers",
+        "level": 7,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *compulsion* once using a warlock spell slot. You can't do so again until you finish a long rest.",
+        "grantsSpells": [[7, "compulsion"]]
+      },
+      {
+        "id": "dreadful-word",
+        "name": "Dreadful Word",
+        "level": 7,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *confusion* once using a warlock spell slot. You can't do so again until you finish a long rest.",
+        "grantsSpells": [[7, "confusion"]]
+      },
+      {
+        "id": "sculptor-of-flesh",
+        "name": "Sculptor of Flesh",
+        "level": 7,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *polymorph* once using a warlock spell slot. You can't do so again until you finish a long rest.",
+        "grantsSpells": [[7, "polymorph"]]
+      },
+      {
+        "id": "ascendant-step",
+        "name": "Ascendant Step",
+        "level": 9,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *levitate* on yourself at will, without expending a spell slot or material components.",
+        "grantsSpells": [[9, "levitate"]]
+      },
+      {
+        "id": "minions-of-chaos",
+        "name": "Minions of Chaos",
+        "level": 9,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *conjure elemental* once using a warlock spell slot. You can't do so again until you finish a long rest.",
+        "grantsSpells": [[9, "conjure-elemental"]]
+      },
+      {
+        "id": "otherworldly-leap",
+        "name": "Otherworldly Leap",
+        "level": 9,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *jump* on yourself at will, without expending a spell slot or material components.",
+        "grantsSpells": [[9, "jump"]]
+      },
+      {
+        "id": "whispers-of-the-grave",
+        "name": "Whispers of the Grave",
+        "level": 9,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *speak with dead* at will, without expending a spell slot.",
+        "grantsSpells": [[9, "speak-with-dead"]]
       },
       {
         "id": "mystic-arcanum",
@@ -656,10 +2003,200 @@
         "description": "At 11th level, your patron bestows upon you a magical secret called an arcanum. Choose one 6th-level spell from the warlock spell list as this arcanum.\n\nYou can cast your arcanum spell once without expending a spell slot. You must finish a long rest before you can do so again.\n\nAt higher levels, you gain more warlock spells of your choice that can be cast in this way: one 7th-level spell at 13th level, one 8th-level spell at 15th level, and one 9th-level spell at 17th level. You regain all uses of your Mystic Arcanum when you finish a long rest."
       },
       {
+        "id": "lifedrinker",
+        "name": "Lifedrinker",
+        "level": 12,
+        "choice": "eldritch-invocations",
+        "description": "When you hit a creature with your pact weapon, the creature takes extra necrotic damage equal to your Charisma modifier (minimum 1)."
+      },
+      {
+        "id": "chains-of-carceri",
+        "name": "Chains of Carceri",
+        "level": 15,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *hold monster* at will—targeting a celestial, fiend, or elemental—without expending a spell slot or material components. You must finish a long rest before you can use this invocation on the same creature again.",
+        "grantsSpells": [[15, "hold-monster"]]
+      },
+      {
+        "id": "master-of-myriad-forms",
+        "name": "Master of Myriad Forms",
+        "level": 15,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *alter self* at will, without expending a spell slot.",
+        "grantsSpells": [[15, "alter-self"]]
+      },
+      {
+        "id": "visions-of-distant-realms",
+        "name": "Visions of Distant Realms",
+        "level": 15,
+        "choice": "eldritch-invocations",
+        "description": "You can cast *arcane eye* at will, without expending a spell slot.",
+        "grantsSpells": [[15, "arcane-eye"]]
+      },
+      {
+        "id": "witch-sight",
+        "name": "Witch Sight",
+        "level": 15,
+        "choice": "eldritch-invocations",
+        "description": "You can see the true form of any shapechanger or creature concealed by illusion or transmutation magic while the creature is within 30 feet of you and within line of sight."
+      },
+      {
         "id": "eldritch-master",
         "name": "Eldritch Master",
         "level": 20,
         "description": "At 20th level, you can draw on your inner reserve of mystical power while entreating your patron to regain expended spell slots. You can spend 1 minute entreating your patron for aid to regain all your expended spell slots from your Pact Magic feature. Once you regain spell slots with this feature, you must finish a long rest before you can do so again."
+      }
+    ],
+    "choices": [
+      {
+        "id": "eldritch-invocations",
+        "name": "Eldritch Invocations",
+        "count": [
+          [2, 2],
+          [5, 3],
+          [7, 4],
+          [9, 5],
+          [12, 6],
+          [15, 7],
+          [18, 8]
+        ]
+      },
+      {
+        "id": "pact-boon",
+        "name": "Pact Boon",
+        "count": [[3, 1]]
+      }
+    ],
+    "subclassLevel": 1,
+    "subclasses": [
+      {
+        "id": "the-fiend",
+        "name": "The Fiend",
+        "description": "You have made a pact with a fiend from the lower planes of existence, a being whose aims are evil, even if you strive against those aims. Such beings desire the corruption or destruction of all things, ultimately including you. Fiends powerful enough to forge a pact include demon lords such as Demogorgon, Orcus, Fraz'Urb-luu, and Baphomet; archdevils such as Asmodeus, Dispater, Mephistopheles, and Belial; pit fiends and balors that are especially mighty; and ultroloths and other lords of the yugoloths.",
+        "features": [
+          {
+            "id": "dark-ones-blessing",
+            "name": "Dark One's Blessing",
+            "level": 1,
+            "description": "Starting at 1st level, when you reduce a hostile creature to 0 hit points, you gain temporary hit points equal to your Charisma modifier + your warlock level (minimum of 1)."
+          },
+          {
+            "id": "dark-ones-own-luck",
+            "name": "Dark One's Own Luck",
+            "level": 6,
+            "description": "Starting at 6th level, you can call on your patron to alter fate in your favor. When you make an ability check or a saving throw, you can use this feature to add a d10 to your roll. You can do so after seeing the initial roll but before any of the roll's effects occur.\n\nOnce you use this feature, you can't use it again until you finish a short or long rest."
+          },
+          {
+            "id": "fiendish-resilience",
+            "name": "Fiendish Resilience",
+            "level": 10,
+            "description": "Starting at 10th level, you can choose one damage type when you finish a short or long rest. You gain resistance to that damage type until you choose a different one with this feature. Damage from magical weapons or silver weapons ignores this resistance."
+          },
+          {
+            "id": "acid",
+            "name": "Acid",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "bludgeoning",
+            "name": "Bludgeoning",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "cold",
+            "name": "Cold",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "fire",
+            "name": "Fire",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "force",
+            "name": "Force",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "lightning",
+            "name": "Lightning",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "necrotic",
+            "name": "Necrotic",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "piercing",
+            "name": "Piercing",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "poison",
+            "name": "Poison",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "psychic",
+            "name": "Psychic",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "radiant",
+            "name": "Radiant",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "slashing",
+            "name": "Slashing",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "thunder",
+            "name": "Thunder",
+            "level": 10,
+            "choice": "fiendish-resilience",
+            "description": ""
+          },
+          {
+            "id": "hurl-through-hell",
+            "name": "Hurl Through Hell",
+            "level": 14,
+            "description": "Starting at 14th level, when you hit a creature with an attack, you can use this feature to instantly transport the target through the lower planes. The creature disappears and hurtles through a nightmare landscape.\n\nAt the end of your next turn, the target returns to the space it previously occupied, or the nearest unoccupied space. If the target is not a fiend, it takes 10d10 psychic damage as it reels from its horrific experience.\n\nOnce you use this feature, you can't use it again until you finish a long rest."
+          }
+        ],
+        "choices": [
+          {
+            "id": "fiendish-resilience",
+            "name": "Fiendish Resilience",
+            "count": [[10, 1]]
+          }
+        ]
       }
     ]
   },
@@ -692,6 +2229,46 @@
         "name": "Signature Spells",
         "level": 20,
         "description": "When you reach 20th level, you gain mastery over two powerful spells and can cast them with little effort. Choose two 3rd-level wizard spells in your spellbook as your signature spells. You always have these spells prepared, they don't count against the number of spells you have prepared, and you can cast each of them once at 3rd level without expending a spell slot. When you do so, you can't do so again until you finish a short or long rest.\n\nIf you want to cast either spell at a higher level, you must expend a spell slot as normal."
+      }
+    ],
+    "subclassLevel": 2,
+    "subclasses": [
+      {
+        "id": "school-of-evocation",
+        "name": "School of Evocation",
+        "description": "You focus your study on magic that creates powerful elemental effects such as bitter cold, searing flame, rolling thunder, crackling lightning, and burning acid. Some evokers find employment in military forces, serving as artillery to blast enemy armies from afar. Others use their spectacular power to protect the weak, while some seek their own gain as bandits, adventurers, or aspiring tyrants.",
+        "features": [
+          {
+            "id": "evocation-savant",
+            "name": "Evocation Savant",
+            "level": 2,
+            "description": "Beginning when you select this school at 2nd level, the gold and time you must spend to copy an evocation spell into your spellbook is halved."
+          },
+          {
+            "id": "sculpt-spells",
+            "name": "Sculpt Spells",
+            "level": 2,
+            "description": "Beginning at 2nd level, you can create pockets of relative safety within the effects of your evocation spells. When you cast an evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 + the spell's level. The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save."
+          },
+          {
+            "id": "potent-cantrip",
+            "name": "Potent Cantrip",
+            "level": 6,
+            "description": "Starting at 6th level, your damaging cantrips affect even creatures that avoid the brunt of the effect. When a creature succeeds on a saving throw against your cantrip, the creature takes half the cantrip's damage (if any) but suffers no additional effect from the cantrip."
+          },
+          {
+            "id": "empowered-evocation",
+            "name": "Empowered Evocation",
+            "level": 10,
+            "description": "Beginning at 10th level, you can add your Intelligence modifier to one damage roll of any wizard evocation spell you cast."
+          },
+          {
+            "id": "overchannel",
+            "name": "Overchannel",
+            "level": 14,
+            "description": "Starting at 14th level, you can increase the power of your simpler spells. When you cast a wizard spell of 1st through 5th level that deals damage, you can deal maximum damage with that spell.\n\nThe first time you do so, you suffer no adverse effect. If you use this feature again before you finish a long rest, you take 2d12 necrotic damage for each level of the spell, immediately after you cast it. Each time you use this feature again before finishing a long rest, the necrotic damage per spell level increases by 1d12. This damage ignores resistance and immunity."
+          }
+        ]
       }
     ]
   }

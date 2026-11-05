@@ -1,5 +1,5 @@
 import { freeId, slugify } from '@vtt/core';
-import { type Class, ClassSchema, type LevelTable, levelValue } from '@vtt/system-dnd5e';
+import { type Class, ClassSchema, type LevelTable } from '@vtt/system-dnd5e';
 
 // The GM's homebrew class editor: level tables written as text, a class to
 // start from, and the options a character of the class still has to pick.
@@ -26,29 +26,6 @@ export function blankClass(id: string, name: string): Class & { id: string; kind
 
 export const withAt = <T>(list: readonly T[], i: number, value: T): T[] => list.map((x, j) => (j === i ? value : x));
 export const withoutAt = <T>(list: readonly T[], i: number): T[] => list.filter((_, j) => j !== i);
-
-export interface ChoiceDue {
-  id: string;
-  name: string;
-  /** How many the class level gives. */
-  count: number;
-  /** The option ids picked. */
-  picked: string[];
-  /** The options open at this level. */
-  options: { id: string; name: string }[];
-}
-
-/** The class's choices at `level`, with what `features` ("class/feature") picked of each. */
-export function choicesDue(cls: Class, level: number, features: readonly string[]): ChoiceDue[] {
-  return (cls.choices ?? []).flatMap((c) => {
-    const count = levelValue(c.count, level);
-    if (!count) return [];
-    const all = cls.features.filter((f) => f.choice === c.id);
-    const picked = all.filter((f) => features.includes(`${cls.id}/${f.id}`)).map((f) => f.id);
-    const options = all.filter((f) => f.level <= level).map((f) => ({ id: f.id, name: f.name }));
-    return [{ id: c.id, name: c.name, count, picked, options }];
-  });
-}
 
 /** A homebrew document as a class to edit; what the rules can't read starts over from a blank class. */
 export function classOfDoc(doc: { id: string; name?: unknown } & Record<string, unknown>): Class {

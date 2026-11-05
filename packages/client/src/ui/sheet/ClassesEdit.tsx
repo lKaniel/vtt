@@ -1,7 +1,6 @@
-import { type Class, type Edition, findClass } from '@vtt/system-dnd5e';
+import { choicesDue, type Class, type Edition, findClass } from '@vtt/system-dnd5e';
 import { XIcon } from 'lucide-react';
 import { gameContent } from '../../content/content.ts';
-import { choicesDue } from '../../content/homebrew-edit.ts';
 import { classRows, type ClassRow, setClasses, toggleFeature } from '../../play/token-edit.ts';
 import type { SheetProps } from './sheet-props.ts';
 import { Field, NumberInput, TextInput } from '../EditorFields.tsx';
@@ -48,7 +47,7 @@ export function ClassesEdit({ value, update, rules }: Props) {
                 <SubclassField cls={cls} value={r.subclass} onChange={(subclass) => change(i, { subclass })} />
               ) : null}
             </div>
-            {cls && <ClassOptions cls={cls} level={r.level} value={value} update={update} />}
+            {cls && <ClassOptions cls={cls} level={r.level} subclass={r.subclass} value={value} update={update} />}
           </div>
         );
       })}
@@ -84,10 +83,11 @@ function SubclassField({
 function ClassOptions({
   cls,
   level,
+  subclass,
   value,
   update,
-}: Readonly<{ cls: Class; level: number } & Pick<SheetProps, 'value' | 'update'>>) {
-  const due = choicesDue(cls, level, value.stats?.features ?? []);
+}: Readonly<{ cls: Class; level: number; subclass?: string } & Pick<SheetProps, 'value' | 'update'>>) {
+  const due = choicesDue(cls, level, value.stats?.features ?? [], subclass);
   return due.map((c) => (
     <div key={c.id} className="flex flex-wrap items-center gap-1" data-slot="class-options">
       <span className="text-sm text-muted-foreground">

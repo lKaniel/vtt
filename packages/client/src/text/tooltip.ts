@@ -10,6 +10,8 @@ export interface Tip {
   facts: string[];
   body: string;
   warning?: string;
+  /** What the GM runs by hand (a feature the engine doesn't apply). */
+  note?: string;
 }
 
 const COST: Record<string, string> = {
@@ -78,6 +80,7 @@ export function featureTip(f: FeatureSheet): Tip {
     subtitle: 'Class feature',
     facts: [COST[f.action ?? 'free']!, ...uses],
     body: plainText(f.description),
+    ...(f.manual && { note: f.manual }),
   };
 }
 

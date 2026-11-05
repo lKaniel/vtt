@@ -126,6 +126,11 @@ function Summary({ tip }: Readonly<{ tip: Tip }>) {
         </div>
       )}
       {tip.body && <p className="m-0 whitespace-pre-line text-foreground/85">{tip.body}</p>}
+      {tip.note && (
+        <p className="m-0 mt-1 text-xs text-gold" data-slot="gm-note">
+          {t('sheet.gmNote')} {tip.note}
+        </p>
+      )}
       {tip.warning && <p className="m-0 mt-1 text-xs text-destructive">{tip.warning}</p>}
     </div>
   );

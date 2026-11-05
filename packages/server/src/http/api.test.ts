@@ -22,6 +22,7 @@ const sorcerer = {
   species: 'tiefling',
   class: 'sorcerer',
   subclass: 'draconic-bloodline',
+  features: ['sorcerer/red'],
   background: 'acolyte',
   base: { str: 8, dex: 14, con: 14, int: 10, wis: 10, cha: 15 },
   skills: ['arcana', 'deception'],
@@ -63,7 +64,7 @@ describe('characters', () => {
       actor: id,
       linked: true,
       ownership: { default: 'limited', ana: 'owner' },
-      stats: { class: 'sorcerer', level: 1 },
+      stats: { classes: [{ class: 'sorcerer', level: 1, subclass: 'draconic-bloodline' }] },
     });
     expect(store.actors.get(id)).toMatchObject({ name: 'Vex', ownership: { default: 'limited', ana: 'owner' } });
     const bo = await api.joined('test', 'bo');
@@ -82,6 +83,6 @@ describe('characters', () => {
       spells: [...sorcerer.spells, 'sleep'],
     });
     expect(res.status).toBe(200);
-    expect(store.tokens.get(id)).toMatchObject({ x: 950, y: 950, hp: 3, stats: { level: 2 } });
+    expect(store.tokens.get(id)).toMatchObject({ x: 950, y: 950, hp: 3, stats: { classes: [{ level: 2 }] } });
   });
 });
