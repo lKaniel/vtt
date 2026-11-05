@@ -152,7 +152,6 @@ export class MapView {
   }
 
   /** The map whose pieces stay loaded instead of what the camera sees: the 3D view's (view3d/frame-budget.ts). */
-  // fallow-ignore-next-line unused-class-member -- the 3D view sets it through its FlatMap type
   chunkArea?: Rect;
 
   /** Under the 3D view, empty ground shows what lies below it (view3d/pixi-bridge.ts). */
