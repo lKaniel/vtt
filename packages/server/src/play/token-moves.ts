@@ -50,9 +50,10 @@ export class TokenMoves {
    * the creatures you know of (`seen`): to the exact point without a grid,
    * square to square on one.
    */
-  move(player: Player, seen: (id: string) => boolean, { token: id, to, throughWalls }: Move): void {
+  move(player: Player, seen: (id: string) => boolean, { token: id, to, throughWalls, elevation }: Move): void {
     const token = this.controlled(player, seen, id);
-    if (throughWalls && isGm(player)) return this.straight(token, to);
+    const climb = this.climb(elevation);
+    if (throughWalls && isGm(player)) return this.straight({ ...token, ...climb }, to);
     const g = this.store.world.gridSize;
     const m = PATH_MARGIN * g;
     const around = this.store.wallsIn({
@@ -76,12 +77,17 @@ export class TokenMoves {
     const [x, y] = path.points.at(-1)!;
     if (path.points.length < 2) return;
     const walker = combat.move(token, path.feet);
-    this.store.setToken({ ...walker, x, y }, path.points);
+    this.store.setToken({ ...walker, x, y, ...climb }, path.points);
     // Zones, reactions and regions look at every step of the way.
     const steps = densify(path.points, g / 4);
     zones.moved(token.id, steps);
     reactions.moved(token, steps);
     regions.entered(token.id, steps);
+  }
+
+  /** The height a walk ends at: what the 3D view says it climbed onto, on a 3D scene only. */
+  private climb(elevation: number | undefined): { elevation?: number } {
+    return elevation !== undefined && this.store.world.view === '3d' ? { elevation } : {};
   }
 
   /**

@@ -8,6 +8,7 @@ import type { ObjectRef } from '../play/objects.ts';
 import { Leaves, type ModelDoor, ModelDoors } from './doors3d.ts';
 import { type Body, Effects3D } from './effects3d.ts';
 import { FlightMarks } from './flight3d.ts';
+import { TriggerMarks, triggerMarks } from './triggers3d.ts';
 import { type Carried, Lamps, lampsOf } from './lamps3d.ts';
 import type { Standing } from './scene3d.ts';
 import { doorBoxes, type DoorBox, type FloorSpan } from './walls3d.ts';
@@ -27,10 +28,12 @@ export interface Play3DHost {
     readonly effects: Pick<EffectsLayer, 'relay'>;
     readonly tokens: Pick<TokenLayer, 'placeOf' | 'release'>;
   };
-  readonly session: Pick<Session, 'tokens' | 'chunks' | 'world'>;
+  readonly session: Pick<Session, 'tokens' | 'chunks' | 'world' | 'isGm'>;
   /** The floor shown and the ground at a point, pixels up. */
   floor(): number;
   groundAt(p: Point): number;
+  /** What a creature on the floor shown would stand on at a point (a floor, a ledge), pixels up. */
+  surfaceAt(p: Point): number;
   /** Pixels per foot and per square. */
   px(): number;
   grid(): number;
@@ -51,6 +54,7 @@ export class Play3D {
   readonly group = new THREE.Group();
   private fx: Effects3D;
   private flight = new FlightMarks();
+  private triggers = new TriggerMarks();
   private lamps = new Lamps(LAMPS);
   private leaves = new Leaves();
   private modelDoors = new ModelDoors();
@@ -69,7 +73,7 @@ export class Play3D {
       px: () => host.px(),
       released: (id, now) => host.map.tokens.release(id, now),
     });
-    this.group.add(this.fx.group, this.flight.group, this.lamps.group, this.leaves.group);
+    this.group.add(this.fx.group, this.flight.group, this.lamps.group, this.leaves.group, this.triggers.group);
   }
 
   /** Takes the attack and spell cues from the flat map while the 3D view is on. */
@@ -97,6 +101,7 @@ export class Play3D {
     this.stood = new Map(standing.map((s) => [s.id, s]));
     this.fx.tick(now);
     this.flight.show(standing, this.host.floor(), this.host.px());
+    this.triggers.tick(now, this.host.px());
     this.light(now);
     this.swing(now);
   }
@@ -105,6 +110,8 @@ export class Play3D {
   doors(walls: readonly Wall[], span: FloorSpan, tiles: readonly DrawnTile[]): void {
     this.doorTiles = [];
     this.movedBy.clear();
+    const gm = this.host.session.isGm();
+    this.triggers.show(triggerMarks(tiles, gm), (p) => this.host.surfaceAt(p), this.host.px());
     for (const t of tiles) {
       if (t.kind !== 'image' || !t.door || !t.model) continue;
       this.doorTiles.push({ key: `tile:${t.id}`, look: t.door, src: t.model.src });
@@ -169,6 +176,7 @@ export class Play3D {
     this.fx.dispose();
     this.flight.dispose();
     this.leaves.dispose();
+    this.triggers.dispose();
   }
 
   private body(id: string): Body | undefined {

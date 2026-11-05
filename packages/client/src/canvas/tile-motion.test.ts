@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { easeAlpha, roofAlpha, roofWatchers, scrollOffset, tileMedia } from './tile-motion.ts';
+import { easeAlpha, roofAlpha, roofsOver, roofWatchers, scrollOffset, tileMedia } from './tile-motion.ts';
 
 const roof = { x: 0, y: 0, w: 400, h: 300, overhead: true };
 
@@ -45,5 +45,19 @@ describe('scrolling tiles', () => {
   it('slide their picture round and round', () => {
     expect(scrollOffset({ x: 50, y: -20 }, 3, 100, 100)).toEqual([50, 40]);
     expect(scrollOffset({ x: 0, y: 0 }, 3, 100, 100)).toEqual([0, 0]);
+  });
+});
+
+describe('roofs over a building', () => {
+  const house = { x: 0, y: 0, w: 1000, h: 800 };
+  const flag = { x: 100, y: 100, w: 100, h: 100 };
+  const tree = { x: 900, y: 700, w: 400, h: 400 };
+
+  it('fade together: what lies on a roof you stand under goes with it', () => {
+    const covers = roofsOver([house, flag, tree], [[600, 400]]);
+    expect(covers).toEqual([house]);
+    expect(roofAlpha(flag, [[600, 400]], covers)).toBe(0);
+    // A tree only partly over the house stays.
+    expect(roofAlpha(tree, [[600, 400]], covers)).toBe(1);
   });
 });

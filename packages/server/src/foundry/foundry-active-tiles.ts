@@ -1,5 +1,6 @@
 import type { TileTrigger, TriggerAction, TriggerTarget } from '@vtt/shared';
 import type { FoundryDoc } from './foundry-db.ts';
+import { doorWallFor } from './foundry-doors3d.ts';
 import { originOf } from './foundry-origin.ts';
 import type { MediaLookup } from './foundry-scene.ts';
 
@@ -227,6 +228,7 @@ function shiftOf(a: MonkAction, c: ActionContext, axis: 'x' | 'y'): TriggerActio
 function alter(a: MonkAction, c: ActionContext): TriggerAction[] {
   const attribute = a.data?.attribute;
   if (attribute === 'x' || attribute === 'y') return shiftOf(a, c, attribute);
+  if (attribute === DOOR_STATE) return modelDoor(a, c);
   if (attribute !== 'elevation') return [];
   const value = valueOf(a.data?.value);
   if (!c.floorAt || RELATIVE.test(value)) return raiseOf(entityOf(a.data) ?? 'token', c, heightChange(value));
@@ -256,13 +258,28 @@ const floorsFirst = (actions: TriggerAction[]) => [
   ...actions.filter((a) => !ownHeight(a)),
 ];
 
-const ALTERED = new Set(['elevation', 'x', 'y']);
+/** 3D Canvas keeps a door model's state (0 shut, 1 open, 2 locked) in this flag. */
+const DOOR_STATE = 'flags.levels-3d-preview.doorState';
+const ALTERED = new Set(['elevation', 'x', 'y', DOOR_STATE]);
+
+/** Opens or shuts the door walls 3D Canvas door models (a drawbridge, a trapdoor) move with. */
+function modelDoor(a: MonkAction, c: ActionContext): TriggerAction[] {
+  const to = DOOR_STATES[Number(valueOf(a.data?.value))];
+  if (!to) return [];
+  return targets(entityOf(a.data), c, ['tiles']).flatMap((t) => {
+    const wall = doorWallFor(c.index.rawOf(t));
+    return wall ? [{ type: 'door' as const, wall, to }] : [];
+  });
+}
+
+const DOOR_STATES = ['closed', 'open', 'locked'] as const;
 
 /** Monk's actions with no match here: unknown ones, and alters of anything but elevation and place. */
-const unmatched = (a: MonkAction) =>
-  a.action === 'alter'
-    ? !ALTERED.has(String(a.data?.attribute))
-    : !ACTIONS[a.action ?? ''] && !QUIET.has(a.action ?? '');
+const unmatched = (a: MonkAction) => {
+  if (a.action === 'alter') return !ALTERED.has(String(a.data?.attribute));
+  if (a.action === 'dialog') return !gmNote(a).length;
+  return !ACTIONS[a.action ?? ''] && !QUIET.has(a.action ?? '');
+};
 
 const DOOR: Record<string, 'open' | 'closed' | 'locked' | 'toggle'> = {
   open: 'open',
@@ -277,6 +294,15 @@ function door(a: MonkAction, c: ActionContext): TriggerAction[] {
   const to = DOOR[String(a.data?.state).toLowerCase()];
   if (!to) return [];
   return targets(entityOf(a.data), c, ['walls']).map((w) => ({ type: 'door' as const, wall: w.id, to }));
+}
+
+/** A dialog that only tells the GM something (a note on how the map works), as a word to the GM. */
+function gmNote(a: MonkAction): TriggerAction[] {
+  const d = a.data ?? {};
+  const forGm = d.for === 'gm' || d.showto === 'gm';
+  const buttons = Array.isArray(d.buttons) ? d.buttons.length : 0;
+  const text = plain(d.content);
+  return forGm && !buttons && d.dialogtype !== 'confirm' && text ? [{ type: 'message', text, gmOnly: true }] : [];
 }
 
 function message(a: MonkAction): TriggerAction[] {
@@ -297,6 +323,7 @@ const ACTIONS: Record<string, (a: MonkAction, c: ActionContext) => TriggerAction
   elevation,
   notification: message,
   chatmessage: message,
+  dialog: gmNote,
 };
 
 /** Monk's actions that change nothing on their own (timing, labels). */
@@ -313,7 +340,8 @@ function path(actions: MonkAction[]): MonkAction[] {
     const end = s.findIndex((a) => a.action === 'goto' || a.action === 'stop');
     return end < 0 ? s : s.slice(0, end);
   };
-  const acting = (s: { actions: MonkAction[] }) => s.actions.some((a) => a.action && ACTIONS[a.action]);
+  const acting = (s: { actions: MonkAction[] }) =>
+    s.actions.some((a) => a.action && ACTIONS[a.action] && !unmatched(a));
   const first = acting(segments[0]!) ? segments[0] : undefined;
   const chosen = first ?? segments.find((s) => s.tag === 'next' && acting(s)) ?? segments.find(acting);
   return upToJump(chosen?.actions ?? []);
@@ -322,7 +350,8 @@ function path(actions: MonkAction[]): MonkAction[] {
 /** When Monk's runs it: walked onto, else clicked (right-click and "manual" ones: by the GM). */
 function onOf(trigger: unknown): { on: 'click' | 'enter'; gmOnly?: true } | undefined {
   const all = (Array.isArray(trigger) ? trigger : [trigger]).map(String);
-  if (all.includes('enter')) return { on: 'enter' };
+  // Moving within the tile and stopping on it go off as walking onto it does.
+  if (all.some((t) => t === 'enter' || t === 'movement' || t === 'stop')) return { on: 'enter' };
   if (all.some((t) => t === 'click' || t === 'dblclick' || t === 'both')) return { on: 'click' };
   if (all.some((t) => t === 'rightclick' || t === 'dblrightclick' || t === 'manual'))
     return { on: 'click', gmOnly: true };
@@ -340,7 +369,9 @@ const monksFlags = (raw: FoundryDoc) =>
   (raw.flags as Record<string, unknown> | undefined)?.['monks-active-tiles'] as MonksFlags | undefined;
 
 function triggerOf(when: { on: 'click' | 'enter'; gmOnly?: true }, actions: TriggerAction[], flags: MonksFlags) {
-  const gmOnly = when.gmOnly ?? flags.controlled === 'gm';
+  // A tile that only has words for the GM is the GM's to click.
+  const noteOnly = actions.every((a) => a.type === 'message' && a.gmOnly);
+  const gmOnly = when.gmOnly ?? (flags.controlled === 'gm' || (when.on === 'click' && noteOnly));
   const trigger: TileTrigger = {
     on: when.on,
     actions,

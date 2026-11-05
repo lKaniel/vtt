@@ -12,6 +12,10 @@ const index = new SceneIndex()
     madeFrom({ id: 'tile-2' }, { _id: 'T2', flags: { 'monks-active-tiles': { files: [{ name: 'chest.webp' }] } } }),
     madeFrom({ id: 'lift' }, tagged(['Lift'], 'T3')),
     madeFrom({ id: 'cell-1' }, tagged(['DoorLeft'], 'T4')),
+    madeFrom(
+      { id: 'drawbridge' },
+      { _id: 'Br1dge', flags: { tagger: { tags: ['Bridge'] }, 'levels-3d-preview': { doorType: 1 } } },
+    ),
   ])
   .add('lights', [madeFrom({ id: 'light-1' }, tagged(['torch-1'])), madeFrom({ id: 'light-2' }, tagged(['torch-2']))])
   .add('walls', [madeFrom({ id: 'wall-3' }, tagged(['villa-gate-1']))]);
@@ -188,5 +192,57 @@ describe("Monk's Active Tiles as tile triggers", () => {
   it('leaves a tile without a trigger when nothing it does has a match', () => {
     const raw = monk({ trigger: 'click', actions: [{ action: 'runmacro' }, { action: 'alter' }] });
     expect(foundryTrigger(raw, 'tile-1', lookups)).toEqual({ lost: ['runmacro', 'alter'] });
+  });
+
+  it('works a 3D Canvas door model (a drawbridge, a trapdoor) through its door', () => {
+    const lever = foundryTrigger(
+      monk({
+        trigger: ['', 'click'],
+        actions: [
+          {
+            action: 'alter',
+            data: { entity: { id: 'tagger:Bridge' }, attribute: 'flags.levels-3d-preview.doorState', value: '1' },
+          },
+          {
+            action: 'alter',
+            data: { entity: { id: 'tagger:Bridge' }, attribute: 'flags.levels-3d-preview.doorState', value: '0' },
+          },
+        ],
+      }),
+      'tile-1',
+      lookups,
+    );
+    expect(lever.trigger?.actions).toEqual([
+      { type: 'door', wall: 'door-br1dge', to: 'open' },
+      { type: 'door', wall: 'door-br1dge', to: 'closed' },
+    ]);
+    expect(lever.lost).toEqual([]);
+  });
+
+  it('goes off when a creature moves within the tile or stops on it, as walking onto it does', () => {
+    for (const when of [['', 'movement'], ['', 'stop'], 'stop']) {
+      const raw = monk({ trigger: when, actions: [{ action: 'notification', data: { text: 'Thunder' } }] });
+      expect(foundryTrigger(raw, 'tile-1', lookups).trigger?.on).toBe('enter');
+    }
+  });
+
+  it("tells the GM what a GM's note dialog says, a note only the GM clicks", () => {
+    const raw = monk({
+      trigger: ['click', 'dblclick'],
+      actions: [
+        {
+          action: 'dialog',
+          data: { dialogtype: 'custom', for: 'gm', content: '<p>Use the button to open the door.</p>' },
+        },
+      ],
+    });
+    expect(foundryTrigger(raw, 'tile-1', lookups)).toEqual({
+      trigger: {
+        on: 'click',
+        gmOnly: true,
+        actions: [{ type: 'message', text: 'Use the button to open the door.', gmOnly: true }],
+      },
+      lost: [],
+    });
   });
 });

@@ -5,6 +5,7 @@ import {
   type Solid3D,
   solidOutline,
   type Terrain3D,
+  tileClickable,
   type View3DSettings,
   tokenLevel,
   type WorldInfo,
@@ -36,6 +37,20 @@ export function paintedUnder3d(tile: DrawnTile, look?: View3DSettings): boolean 
   if (tile.kind !== 'image') return true;
   if (tile.model || tile.solid || tile.terrain) return false;
   return !(tile.background && look?.background === false);
+}
+
+/**
+ * The tiles the flat map keeps under the 3D view: those it paints, and the
+ * models you may click (a lever with a trigger) as see-through tiles, so a
+ * click on the model lands on its tile and sets the trigger off.
+ */
+export function flatUnder3d(tiles: readonly DrawnTile[], look: View3DSettings | undefined, gm: boolean): DrawnTile[] {
+  return tiles.flatMap((t) => {
+    if (paintedUnder3d(t, look)) return [t];
+    if (t.kind !== 'image' || !tileClickable(t, gm)) return [];
+    const { model: _m, solid: _s, terrain: _t, only2d: _o, ...flat } = t;
+    return [{ ...flat, alpha: 0 }];
+  });
 }
 
 /** The model tiles to stand. */

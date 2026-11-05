@@ -9,9 +9,14 @@ interface Table {
   isGm(): boolean;
 }
 
+/** How high (feet) a creature's walk to a map point ends, by what it climbs onto; none: where it is. */
+export type Climb = (token: string, to: readonly [number, number]) => number | undefined;
+
 export class View3DSwitch {
   /** The GM laid this 3D scene flat. */
   private flat = false;
+  /** Set by the 3D view while it shows: how high a walk ends (view3d/climb3d.ts). */
+  climb?: Climb;
 
   /** `ui.changed`: the screen and the map (view3d/view3d-switch.ts) follow the switch. */
   constructor(
