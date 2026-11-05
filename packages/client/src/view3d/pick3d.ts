@@ -15,7 +15,7 @@ export interface PickScene {
   camera: THREE.Camera;
   canvas: HTMLElement;
   /** The creature whose picture the ray meets first. */
-  creature(ray: THREE.Raycaster): string | undefined;
+  creature(ray: THREE.Raycaster, slack: number): string | undefined;
   placeOf(id: string): Point | undefined;
   /** What the pointer may land on. */
   surfaces(): THREE.Object3D[];
@@ -38,6 +38,8 @@ export interface Picked {
 }
 
 const UP = new THREE.Vector3(0, 1, 0);
+/** A click this many pixels beside a creature's picture still picks it (they are tiny from afar). */
+const SLACK_PX = 18;
 
 export class Picker {
   /** The left button is down: a drag (a creature carried, a marquee) looks through creatures to the ground. */
@@ -64,11 +66,13 @@ export class Picker {
       -((clientY - rect.top) / Math.max(1, rect.height)) * 2 + 1,
     );
     this.ray.setFromCamera(ndc, s.camera);
-    return this.onCreature() ?? this.onSurface() ?? this.onFloor();
+    const fov = s.camera instanceof THREE.PerspectiveCamera ? s.camera.fov : 45;
+    const slack = (SLACK_PX / Math.max(1, rect.height)) * THREE.MathUtils.degToRad(fov);
+    return this.onCreature(slack) ?? this.onSurface() ?? this.onFloor();
   }
 
-  private onCreature(): Picked | undefined {
-    const id = this.held ? undefined : this.scene.creature(this.ray);
+  private onCreature(slack: number): Picked | undefined {
+    const id = this.held ? undefined : this.scene.creature(this.ray, slack);
     const at = id ? this.scene.placeOf(id) : undefined;
     if (!id || !at) return undefined;
     return { at, point: at3d(at, this.scene.floor()), normal: UP.clone(), creature: id };

@@ -18,7 +18,7 @@ import { Overlay3D, type OverlayHost } from './overlay3d.ts';
 import { Solids } from './solids3d.ts';
 import { Surface } from './surface3d.ts';
 import type { PathPreview } from '../canvas/PathPreview.ts';
-import { Climbing } from './climb3d.ts';
+import { CLIMB_FEET, Climbing } from './climb3d.ts';
 import { Terrains } from './terrain3d.ts';
 import { chunkArea, Resolution } from './frame-budget.ts';
 import { GroundFeed } from './ground-feed.ts';
@@ -107,7 +107,7 @@ export class View3D {
   private picker = new Picker({
     camera: this.camera,
     canvas: this.renderer.domElement,
-    creature: (ray) => this.standees.hit(ray),
+    creature: (ray, slack) => this.standees.hit(ray, slack),
     placeOf: (id) => this.map.tokens.placeOf(id)?.at,
     surfaces: () => this.solidsHit(),
     peek: () => this.seeIn.peek,
@@ -214,7 +214,7 @@ export class View3D {
       // A new scene: the camera starts at its start, until it finds your creature.
       this.session.on('welcome', () => (this.homed = false)),
     );
-    const poke = () => this.feed.poke();
+    const poke = (e: Event) => (e.type === 'pointermove' ? this.feed.hover() : this.feed.poke());
     for (const type of ['pointermove', 'pointerdown', 'pointerup', 'wheel']) {
       this.surface.addEventListener(type, poke, { passive: true });
       this.off.push(() => this.surface.removeEventListener(type, poke));
@@ -375,8 +375,8 @@ export class View3D {
     const id = this.session.selected;
     const at = id ? this.map.tokens.placeOf(id)?.at : undefined;
     const feet = from ?? (id && at ? this.feetOf(id, at) : undefined) ?? this.floor();
-    // A step along a path climbs a stair, not a table.
-    return this.underfoot.at([x, y], feet, from === undefined ? undefined : 2 * this.px());
+    // A step along a path climbs a ledge, not a wall.
+    return this.underfoot.at([x, y], feet, from === undefined ? undefined : CLIMB_FEET * this.px());
   }
 
   /** The lowest floor's height (the street), pixels. */

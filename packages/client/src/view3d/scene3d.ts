@@ -180,16 +180,34 @@ export class Standees {
     sprite.scale.set(s.size, s.size, 1);
   }
 
-  /** The creature whose picture a ray hits first. */
-  hit(ray: THREE.Raycaster): string | undefined {
-    const [first] = ray.intersectObjects([...this.sprites.values()], false);
-    return first?.object.userData.token as string | undefined;
+  /** The creature whose picture a ray hits first, else the nearest within `slack` radians of it (tiny far away). */
+  hit(ray: THREE.Raycaster, slack = 0): string | undefined {
+    const sprites = [...this.sprites.values()];
+    const [first] = ray.intersectObjects(sprites, false);
+    return (first?.object.userData.token as string | undefined) ?? nearestStandee(sprites, ray.ray, slack);
   }
 
   dispose(): void {
     for (const s of this.sprites.values()) s.material.dispose();
     for (const t of this.textures.values()) t.dispose();
   }
+}
+
+/**
+ * The creature nearest a ray, measured to the line from its feet to its
+ * head: within half its width, or `slack` radians as seen from the ray's start.
+ */
+export function nearestStandee(sprites: readonly THREE.Sprite[], ray: THREE.Ray, slack: number): string | undefined {
+  let best: { id: string; score: number } | undefined;
+  const onRay = new THREE.Vector3();
+  for (const s of sprites) {
+    const head = s.position.clone().add(new THREE.Vector3(0, s.scale.y, 0));
+    const off = Math.sqrt(ray.distanceSqToSegment(s.position, head, onRay));
+    const allowed = Math.max(s.scale.x / 2, onRay.distanceTo(ray.origin) * Math.tan(slack));
+    const score = off / allowed;
+    if (score <= 1 && (!best || score < best.score)) best = { id: s.userData.token as string, score };
+  }
+  return best?.id;
 }
 
 /** What is round the map: the sky (a panorama picture, or the background colour) and the ground beyond the map. */

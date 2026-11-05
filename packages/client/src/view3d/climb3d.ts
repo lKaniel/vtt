@@ -2,7 +2,7 @@ import type { Point } from '@vtt/shared';
 import { drape, type HeightAt } from './marks3d.ts';
 
 // Walking up what stands in a 3D scene, as 3D Canvas lifts tokens onto it:
-// a walk climbs the path it takes step by step, a stair at a time (never a
+// a walk climbs the path it takes step by step, a ledge at a time (never a
 // wall), so it ends on a bridge or a tower's top it went up to, and on the
 // ground again when it walks off. The server takes where it ends as the
 // creature's elevation (session-requests.ts).
@@ -39,8 +39,8 @@ export interface ClimbHost {
   grid(): number;
 }
 
-/** The most a step climbs: a stair, not a table. */
-const STAIR = 2;
+/** The most a step climbs, feet: stairs, a crate, a scaffold's platform (pulling up onto it), never a wall. */
+export const CLIMB_FEET = 5;
 
 /**
  * Creatures climbing in 3D: how high a walk ends (`end`, sent with the
@@ -88,7 +88,7 @@ export class Climbing {
   }
 
   private climb(at: Point, from: number): number {
-    return this.host.ground(at, from, STAIR * this.host.px());
+    return this.host.ground(at, from, CLIMB_FEET * this.host.px());
   }
 }
 

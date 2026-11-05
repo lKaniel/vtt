@@ -84,10 +84,13 @@ export interface RoofEyes {
   yours: readonly string[];
   /** The tokens selected on the map. */
   selected: readonly string[];
+  /** The GM's pointer on the map, while nothing is selected. */
+  pointer?: Point;
 }
 
-/** Where the creatures a roof fades for stand: yours, or for the GM the selected ones. */
+/** Where a roof fades: under your creatures, or for the GM the selected ones, else the GM's pointer. */
 export function roofWatchers(eyes: RoofEyes, placeOf: (id: string) => { at: Point } | undefined): Point[] {
+  if (eyes.gm && !eyes.selected.length) return eyes.pointer ? [eyes.pointer] : [];
   const ids = eyes.gm ? eyes.selected : eyes.yours;
   return ids.flatMap((id) => {
     const at = placeOf(id)?.at;

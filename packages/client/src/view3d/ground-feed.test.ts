@@ -47,4 +47,20 @@ describe('when the 3D view draws', () => {
     f.ask(need);
     expect(asks).toEqual(['frame', 'redraw']);
   });
+
+  it('draws the 3D view at once when the pointer moves, but the ground at most HOVER_FPS times a second', () => {
+    const { f, asks } = feed();
+    const need = { center: [0, 0] as [number, number], half: 100 };
+    f.due('a', 0.016);
+    f.ask(need);
+    f.lay(0.016, 0);
+    f.hover();
+    expect(f.due('a', 0.016)).toBe(true);
+    f.ask(need);
+    expect(asks).toEqual(['frame']);
+    f.lay(1 / 8, 0);
+    f.hover();
+    f.ask(need);
+    expect(asks).toEqual(['frame', 'redraw']);
+  });
 });

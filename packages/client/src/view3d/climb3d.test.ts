@@ -107,6 +107,18 @@ describe('a creature climbing as it walks', () => {
     expect(climbing.end('hero', [300, 0])).toBe(10);
   });
 
+  it('pulls itself up onto a ledge as high as a scaffold platform (4 ft), not a wall (8 ft)', () => {
+    const ledge = (high: number) =>
+      (([x]: Point, from: number, step: number) =>
+        x >= 200 && from + step >= high * PX ? high * PX : 0) as ClimbHost['ground'];
+    const up = new Climbing(host([0, 0], { ground: ledge(4) }));
+    up.stood('hero', 0, false);
+    expect(up.end('hero', [300, 0])).toBe(4);
+    const wall = new Climbing(host([0, 0], { ground: ledge(8) }));
+    wall.stood('hero', 0, false);
+    expect(wall.end('hero', [300, 0])).toBeUndefined();
+  });
+
   it('leaves a flyer where it flies', () => {
     const climbing = new Climbing(host([0, 0]));
     climbing.stood('hero', 30 * PX, true);

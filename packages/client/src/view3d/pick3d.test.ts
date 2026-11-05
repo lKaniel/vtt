@@ -6,7 +6,7 @@ import { Picker, type PickScene } from './pick3d.ts';
 // surface it meets, else the floor; asked twice in a frame it looks once.
 
 /** A camera high over (500, 500) looking straight down, a 100 px canvas, and a box 40 px high under the middle. */
-function scene(creature?: string): PickScene & { looks: number } {
+function scene(creature?: string): PickScene & { looks: number; slack: number } {
   const camera = new THREE.PerspectiveCamera(60, 1, 1, 10000);
   camera.position.set(500, 1000, 500);
   camera.lookAt(500, 0, 500);
@@ -16,9 +16,10 @@ function scene(creature?: string): PickScene & { looks: number } {
   box.updateMatrixWorld();
   const s = {
     looks: 0,
+    slack: 0,
     camera,
     canvas: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) } as HTMLElement,
-    creature: () => (s.looks++, creature),
+    creature: (_ray: THREE.Raycaster, slack: number) => ((s.looks++, (s.slack = slack)), creature),
     placeOf: (id: string) => (id === 'bram' ? ([480, 520] as [number, number]) : undefined),
     surfaces: () => [box],
     peek: () => undefined,
@@ -47,6 +48,13 @@ describe('picking in 3D', () => {
     expect(picker.pick(50, 50, 1)).toMatchObject({ at: [480, 520], creature: 'bram' });
     picker.held = true;
     expect(picker.pick(50, 50, 2).creature).toBeUndefined();
+  });
+
+  it('lets a click a few pixels beside a creature pick it', () => {
+    const s = scene();
+    new Picker(s).pick(50, 50, 1);
+    // 60 degrees over 100 px: 18 px is about a fifth of a radian.
+    expect(s.slack).toBeCloseTo((18 / 100) * ((60 * Math.PI) / 180));
   });
 
   it('looks once a frame for the same pointer', () => {
