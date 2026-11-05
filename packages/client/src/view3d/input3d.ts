@@ -2,16 +2,21 @@ import type { Point } from '@vtt/shared';
 import { actionOf, currentKeys } from '../keys/keybinds.ts';
 
 // The 3D camera's own controls, as in BG3: the wheel zooms (and tilts), a
-// middle drag turns the camera round, a right drag moves it, and keys turn
-// it, look straight down, or go back to your creature. Left clicks (and a
-// right click that doesn't move) go on to the map below (pixi-bridge.ts).
+// middle drag turns the camera round (sideways) and tilts it (up and down),
+// a right drag or W A S D moves it, and keys turn it, look straight down, or
+// go back to your creature. Left clicks (and a right click that doesn't
+// move) go on to the map below (pixi-bridge.ts).
 
 /** What the controls do to the camera. */
 export interface CameraSteer {
   zoom(notches: number): void;
   turn(radians: number): void;
+  /** Radians tilted down (negative: up). */
+  tilt(radians: number): void;
   /** Screen pixels the view was dragged by. */
   pan(by: Point): void;
+  /** Moves the camera for `dt` seconds the way the keys held point: [right, down the screen], each -1, 0 or 1. */
+  glide(way: Point, dt: number): void;
   tactical(): void;
   centre(): void;
   /** The 3D view on or off. */
@@ -21,6 +26,15 @@ export interface CameraSteer {
 /** Radians per pixel of a middle drag, and per second while a turn key is held. */
 const TURN_PER_PIXEL = 0.006;
 const TURN_PER_SECOND = 1.8;
+const TILT_PER_PIXEL = 0.004;
+/** The keys that move the camera, and the way each points: [right, down the screen]. */
+const GLIDES: Record<string, Point> = {
+  'cam-forward': [0, -1],
+  'cam-back': [0, 1],
+  'cam-pan-left': [-1, 0],
+  'cam-pan-right': [1, 0],
+};
+const GLIDE_IDS = Object.keys(GLIDES);
 /** A right press that moves less than this is a click (the map's menu). */
 const DRAG_PIXELS = 5;
 
@@ -30,6 +44,8 @@ const typing = (t: EventTarget | null) =>
 export class CameraInput {
   private drag?: { button: number; last: Point; start: Point; moved: boolean };
   private turning = 0;
+  /** The glide keys held. */
+  private gliding = new Set<string>();
   private off: (() => void)[] = [];
 
   constructor(
@@ -42,6 +58,7 @@ export class CameraInput {
     this.listen(window, 'pointerup', () => (this.drag = undefined));
     this.listen(window, 'keydown', (e) => this.key(e as KeyboardEvent, true));
     this.listen(window, 'keyup', (e) => this.key(e as KeyboardEvent, false));
+    this.listen(window, 'blur', () => this.gliding.clear());
     this.listen(surface, 'auxclick', (e) => e.preventDefault());
   }
 
@@ -53,6 +70,13 @@ export class CameraInput {
   /** Turns while a turn key is held; call every frame. */
   tick(dt: number): void {
     if (this.turning) this.steer.turn(this.turning * TURN_PER_SECOND * dt);
+    if (!this.gliding.size) return;
+    const way: Point = [0, 0];
+    for (const id of this.gliding) {
+      way[0] += GLIDES[id]![0];
+      way[1] += GLIDES[id]![1];
+    }
+    if (way[0] || way[1]) this.steer.glide(way, dt);
   }
 
   private wheel(e: WheelEvent): void {
@@ -79,23 +103,41 @@ export class CameraInput {
     const by: Point = [p[0] - d.last[0], p[1] - d.last[1]];
     d.last = p;
     d.moved ||= Math.hypot(p[0] - d.start[0], p[1] - d.start[1]) > DRAG_PIXELS;
-    if (d.button === 1) this.steer.turn(by[0] * TURN_PER_PIXEL);
-    else if (d.moved) this.steer.pan(by);
+    if (d.button === 1) {
+      this.steer.turn(by[0] * TURN_PER_PIXEL);
+      this.steer.tilt(by[1] * TILT_PER_PIXEL);
+    } else if (d.moved) this.steer.pan(by);
   }
 
   private key(e: KeyboardEvent, down: boolean): void {
+    if (!down) this.letGo(e);
     if (typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
-    const keys = currentKeys();
-    const turn = actionOf(e, keys, ['cam-left', 'cam-right']);
-    if (turn) {
-      const way = turn === 'cam-left' ? -1 : 1;
-      this.turning = down ? way : 0;
-      return;
-    }
-    if (!down || e.repeat) return;
-    const action = actionOf(e, keys, ['cam-tactical', 'cam-centre']);
+    if (this.glideKey(e, down) || this.turnKey(e, down) || !down || e.repeat) return;
+    const action = actionOf(e, currentKeys(), ['cam-tactical', 'cam-centre']);
     if (action === 'cam-tactical') this.steer.tactical();
     else if (action === 'cam-centre') this.steer.centre();
+  }
+
+  /** W A S D pressed: held until let go. Shift+W is the GM's walk through walls, not a glide. */
+  private glideKey(e: KeyboardEvent, down: boolean): boolean {
+    const glide = e.shiftKey ? undefined : actionOf(e, currentKeys(), GLIDE_IDS);
+    if (glide && down) this.gliding.add(glide);
+    return !!glide;
+  }
+
+  /** A turn key turns while held. */
+  private turnKey(e: KeyboardEvent, down: boolean): boolean {
+    const turn = actionOf(e, currentKeys(), ['cam-left', 'cam-right']);
+    if (!turn) return false;
+    const way = turn === 'cam-left' ? -1 : 1;
+    this.turning = down ? way : 0;
+    return true;
+  }
+
+  /** A glide key let go, with or without Shift. */
+  private letGo(e: KeyboardEvent): void {
+    const id = actionOf({ key: e.key, shiftKey: false }, currentKeys(), GLIDE_IDS);
+    if (id) this.gliding.delete(id);
   }
 
   dispose(): void {

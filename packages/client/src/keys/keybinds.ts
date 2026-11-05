@@ -26,9 +26,9 @@ export const KEY_ACTIONS: readonly KeyAction[] = [
   ...HOTBAR.map((k): KeyAction => ({ id: `hotbar-${k}`, group: 'Action bar', key: k })),
   { id: 'mode-tokens', group: 'Map tools', key: 't', shares: ['target'] },
   { id: 'mode-tiles', group: 'Map tools', key: 'shift+t' },
-  { id: 'mode-walls', group: 'Map tools', key: 'w' },
+  { id: 'mode-walls', group: 'Map tools', key: 'w', shares: ['cam-forward'] },
   { id: 'mode-lights', group: 'Map tools', key: 'l' },
-  { id: 'mode-drawings', group: 'Map tools', key: 'd' },
+  { id: 'mode-drawings', group: 'Map tools', key: 'd', shares: ['cam-pan-right'] },
   { id: 'mode-notes', group: 'Map tools', key: 'n' },
   { id: 'mode-templates', group: 'Map tools', key: 'm' },
   { id: 'mode-ruler', group: 'Map tools', key: 'r' },
@@ -42,6 +42,11 @@ export const KEY_ACTIONS: readonly KeyAction[] = [
   { id: 'cam-right', group: 'Camera', key: '.' },
   { id: 'cam-tactical', group: 'Camera', key: 'o' },
   { id: 'cam-centre', group: 'Camera', key: 'home' },
+  // In 3D, W A S D move the camera; the map tools on W and D are for the flat map.
+  { id: 'cam-forward', group: 'Camera', key: 'w', shares: ['mode-walls'] },
+  { id: 'cam-pan-left', group: 'Camera', key: 'a' },
+  { id: 'cam-back', group: 'Camera', key: 's' },
+  { id: 'cam-pan-right', group: 'Camera', key: 'd', shares: ['mode-drawings'] },
 ];
 
 /** What an action is called, in the player's language: "Slot 3" for hotbar-3. */

@@ -1,6 +1,10 @@
 // Walking on the map, floors and the 3D view, in English (see en.ts).
 
 export const EN_MAP = {
+  'keys.cam-forward': '3D: move the camera forward',
+  'keys.cam-pan-left': '3D: move the camera left',
+  'keys.cam-back': '3D: move the camera back',
+  'keys.cam-pan-right': '3D: move the camera right',
   'walk.opportunity': 'Opportunity attack: {name}',
   'walk.tooFar': 'Not enough movement',
   'walk.difficult': 'Difficult terrain',

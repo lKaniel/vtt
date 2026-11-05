@@ -18,6 +18,8 @@ export interface Orbit {
   distance: number;
   /** Looking straight down (BG3's tactical camera). */
   tactical: boolean;
+  /** Radians tilted down (or up, negative) from the pitch its distance gives. */
+  tilt?: number;
 }
 
 const DEG = Math.PI / 180;
@@ -30,12 +32,14 @@ export const ORBIT = {
   lowPitch: 32 * DEG,
   highPitch: 68 * DEG,
   tacticalPitch: 89 * DEG,
+  /** The lowest a tilt brings it. */
+  lowestPitch: 12 * DEG,
   /** How far from the target the ground drawn reaches, in squares. */
   maxReach: 90,
   /** A wheel notch scales the distance by this. */
   zoomStep: 1.15,
   /** How quickly the camera catches up with a creature it follows, per second. */
-  followRate: 6,
+  followRate: 10,
 } as const;
 
 /** How far down from level the camera looks. */
@@ -45,7 +49,15 @@ export function pitchOf(o: Orbit, grid: number): number {
   const t = Math.min(1, Math.max(0, (o.distance - ORBIT.minDistance * grid) / span));
   // Eases: most of the tilt happens close in, as BG3's does.
   const eased = Math.sqrt(t);
-  return ORBIT.lowPitch + (ORBIT.highPitch - ORBIT.lowPitch) * eased;
+  const pitch = ORBIT.lowPitch + (ORBIT.highPitch - ORBIT.lowPitch) * eased + (o.tilt ?? 0);
+  return Math.min(ORBIT.tacticalPitch, Math.max(ORBIT.lowestPitch, pitch));
+}
+
+/** Tilts it down (positive radians) or up, kept within what `pitchOf` allows. */
+export function tiltBy(o: Orbit, radians: number, grid: number): Orbit {
+  const base = pitchOf({ ...o, tilt: 0 }, grid);
+  const tilt = (o.tilt ?? 0) + radians;
+  return { ...o, tilt: Math.max(ORBIT.lowestPitch - base, Math.min(ORBIT.tacticalPitch - base, tilt)) };
 }
 
 /** Where the camera is. */

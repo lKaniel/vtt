@@ -151,6 +151,9 @@ export class MapView {
     this.tokens.redrawAll();
   }
 
+  /** The map whose pieces stay loaded instead of what the camera sees: the 3D view's (view3d/frame-budget.ts). */
+  chunkArea?: Rect;
+
   /** Under the 3D view, empty ground shows what lies below it (view3d/pixi-bridge.ts). */
   // fallow-ignore-next-line unused-class-member -- the 3D view calls it through its FlatMap type
   readonly seeThrough = (on: boolean): void => this.vision?.seeThrough(on);
@@ -178,11 +181,7 @@ export class MapView {
       this.editor.pointerUp({ at: this.screenToWorld(e.global.x, e.global.y), button: e.button, mods: modsOf(e) });
       this.drag = undefined;
     });
-    this.unsubscribe.push(
-      listenToWheel(this.app.canvas, this.cam, this.app.screen, () => {
-        this.dirty = true;
-      }),
-    );
+    this.unsubscribe.push(listenToWheel(this.app.canvas, this.cam, this.app.screen, () => (this.dirty = true)));
     listenToDrops(this.app.canvas, this.session, (x, y) => this.screenToWorld(x, y));
     this.app.renderer.on('resize', () => {
       this.vision?.resize();
@@ -192,9 +191,7 @@ export class MapView {
 
   private listenToSession(): void {
     const s = this.session;
-    const visionChanged = () => {
-      this.visionDirty = true;
-    };
+    const visionChanged = () => (this.visionDirty = true);
     this.unsubscribe.push(
       s.on('welcome', () => {
         this.onWelcome();
@@ -363,7 +360,7 @@ export class MapView {
   }
 
   private requestChunks(): void {
-    const keys = chunksInView(this.visibleRect(), this.session.world!.chunkSize);
+    const keys = chunksInView(this.chunkArea ?? this.visibleRect(), this.session.world!.chunkSize);
     if (!keys) return;
     const id = keys.join(' ');
     if (id === this.viewId) return;

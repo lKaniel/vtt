@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { eyeOf, follow, groundSquare, ORBIT, panBy, pitchOf, rotateBy, type Orbit, zoomBy } from './orbit.ts';
+import { eyeOf, follow, groundSquare, ORBIT, panBy, pitchOf, rotateBy, tiltBy, type Orbit, zoomBy } from './orbit.ts';
 
 // The BG3-style camera: it circles a point on the ground; zooming out lifts
 // it from over the shoulder towards straight down, and the tactical view
@@ -26,6 +26,22 @@ describe('the orbit camera', () => {
     const turned = eyeOf(rotateBy(start, Math.PI / 2), GRID);
     expect(turned[0]).toBeGreaterThan(1000);
     expect(turned[1]).toBeCloseTo(1000);
+  });
+
+  it('tilts up and down from its usual pitch, within limits', () => {
+    const usual = pitchOf(start, GRID);
+    expect(pitchOf(tiltBy(start, 0.2, GRID), GRID)).toBeCloseTo(usual + 0.2);
+    expect(pitchOf(tiltBy(start, -10, GRID), GRID)).toBeCloseTo(ORBIT.lowestPitch);
+    expect(pitchOf(tiltBy(start, 10, GRID), GRID)).toBeCloseTo(ORBIT.tacticalPitch);
+    // No dead stretch: tilted all the way, the first nudge back moves it.
+    expect(pitchOf(tiltBy(tiltBy(start, 10, GRID), -0.1, GRID), GRID)).toBeCloseTo(ORBIT.tacticalPitch - 0.1);
+  });
+
+  it('turns round its target: the target stays put, the eye keeps its distance', () => {
+    const turned = rotateBy(start, 1.3);
+    expect(turned.target).toEqual(start.target);
+    const e = eyeOf(turned, GRID);
+    expect(Math.hypot(e[0] - 1000, e[1] - 1000, e[2])).toBeCloseTo(start.distance);
   });
 
   it('zooms within its limits', () => {
