@@ -1,4 +1,4 @@
-import { BookOpenIcon, BoxIcon, MapIcon, Redo2Icon, Undo2Icon } from 'lucide-react';
+import { BookOpenIcon, BoxIcon, GhostIcon, MapIcon, Redo2Icon, Undo2Icon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { SoundScape } from '../audio/audio.ts';
 import { MapView } from '../canvas/MapView.ts';
@@ -100,6 +100,7 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
       <PauseButton session={session} />
       <BookButton session={session} />
       <UndoButtons session={session} />
+      <ThroughWallsButton session={session} />
       <View3DButton session={session} />
       <SettingsMenu session={session} />
       <Button variant="link" onClick={onLeave}>
@@ -140,6 +141,25 @@ function View3DButton({ session }: Readonly<{ session: Session }>) {
       aria-label={label}
     >
       {on ? <MapIcon /> : <BoxIcon />}
+    </Button>
+  );
+}
+
+/** The GM's "ignore walls" switch (Shift+W): creatures they move go straight through walls. */
+function ThroughWallsButton({ session }: Readonly<{ session: Session }>) {
+  if (!session.isGm()) return null;
+  const on = session.throughWalls.on;
+  const label = on ? t('walls.heed') : t('walls.ignore');
+  return (
+    <Button
+      variant={on ? 'default' : 'ghost'}
+      size="icon-sm"
+      aria-pressed={on}
+      onClick={() => session.throughWalls.toggle()}
+      title={label}
+      aria-label={t('walls.ghost')}
+    >
+      <GhostIcon />
     </Button>
   );
 }

@@ -7,10 +7,13 @@ import type { ClockAction, DoorState, MapEdit, Point, Role } from '@vtt/shared';
  * (selection, aiming, sheets).
  */
 export class Requests {
-  constructor(private readonly s: { send(msg: ClientMessage): void }) {}
+  constructor(
+    private readonly s: { send(msg: ClientMessage): void; readonly throughWalls?: { readonly on: boolean } },
+  ) {}
 
+  /** Walks `token` there round the walls; with the GM's "ignore walls" on, straight there. */
   move(token: string, to: Point): void {
-    this.s.send({ t: 'move', token, to });
+    this.s.send({ t: 'move', token, to, ...(this.s.throughWalls?.on && { throughWalls: true }) });
   }
 
   setDoor(chunk: string, wall: string, state: DoorState): void {

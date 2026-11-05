@@ -1,5 +1,6 @@
-import { levelAt, onLevel, type Point } from '@vtt/shared';
+import { levelAt, onLevel, type Point, tokenLevel, type WorldInfo } from '@vtt/shared';
 import * as THREE from 'three';
+import { listenToDrops } from '../canvas/sidebar-drops.ts';
 import type { TokenLayer } from '../canvas/TokenLayer.ts';
 import { portraitOf } from '../icon-art.ts';
 import type { Session } from '../session/session.ts';
@@ -13,14 +14,14 @@ import {
   tileSolids,
   tileTerrains,
 } from './content3d.ts';
-import { hides, SeeIn } from './peek3d.ts';
+import { hides, type Peek, SeeIn } from './peek3d.ts';
 import { Solids } from './solids3d.ts';
 import { Surface } from './surface3d.ts';
 import { drapeOver } from './terrain-paint.ts';
 import { Terrains } from './terrain3d.ts';
 import { groundDue, groundToDraw, Resolution, type Square } from './frame-budget.ts';
 import { CameraInput } from './input3d.ts';
-import { Models, type ModelShown } from './models3d.ts';
+import { isFigure, Models, type ModelShown } from './models3d.ts';
 import { eyeOf, follow, groundSquare, type MapPoint, ORBIT, type Orbit, panBy, rotateBy, zoomBy } from './orbit.ts';
 import { type FlatMap, PixiBridge } from './pixi-bridge.ts';
 import { at3d, Backdrop, Ground, hazeOf, Standees, type Standing, Walls } from './scene3d.ts';
@@ -89,6 +90,8 @@ export class View3D {
   private wallsDue = 0;
   private wallsDirty = true;
   private ray = new THREE.Raycaster();
+  /** The left button is down: a drag (a creature carried, a marquee) looks through creatures to the ground. */
+  private held = false;
   private off: (() => void)[] = [];
   private tick = () => this.frame(this.map.app.ticker.deltaMS / 1000);
 
@@ -130,8 +133,16 @@ export class View3D {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.surface.appendChild(this.renderer.domElement);
     this.host.appendChild(this.surface);
-    this.bridge.attach(this.surface);
+    // The 3D canvas itself, not the box round it: Pixi takes a release over
+    // anything but its target element for one outside the map, and drops nothing.
+    this.bridge.attach(this.renderer.domElement);
+    // Actors and the rest dragged in from the side panel land under the pointer.
+    listenToDrops(this.surface, this.session, (x, y) => {
+      const r = this.surface.getBoundingClientRect();
+      return this.pick(x + r.left, y + r.top);
+    });
     this.map.tokens.showFaces(false);
+    this.watchHeld();
     const dirty = () => (this.wallsDirty = true);
     this.off.push(
       this.session.on('chunk', dirty),
@@ -147,6 +158,15 @@ export class View3D {
     }
     // After the 2D map has drawn the frame (its render runs at LOW priority).
     this.map.app.ticker.add(this.tick, undefined, -50);
+  }
+
+  /** Notes the left button going down after the 2D map took the press, and up after it took the release. */
+  private watchHeld(): void {
+    const down = (e: PointerEvent) => (this.held ||= e.button === 0);
+    const up = () => (this.held = false);
+    this.surface.addEventListener('pointerdown', down);
+    window.addEventListener('pointerup', up);
+    this.off.push(() => window.removeEventListener('pointerup', up));
   }
 
   destroy(): void {
@@ -192,6 +212,13 @@ export class View3D {
     return (this.level()?.bottom ?? 0) * this.px();
   }
 
+  /** The height the 2D map's picture lies at: the lowest floor it draws (the street), pixels. */
+  private street(): number {
+    const lowest = this.session.levels.shown?.[0];
+    const level = this.session.world?.levels?.find((l) => l.id === lowest);
+    return level ? level.bottom * this.px() : this.floor();
+  }
+
   private frame(dt: number): void {
     if (!this.session.world) return;
     this.input.tick(dt);
@@ -200,7 +227,7 @@ export class View3D {
     const [x, y] = this.orbit.target;
     // On terrain the camera looks at the ground under it, not the bare floor.
     this.orbit = { ...this.orbit, target: [x, y, Math.max(floor, this.terrains.heightAt(x, y) ?? floor)] };
-    this.layGround(floor, dt);
+    this.layGround(dt);
     this.fitView();
     this.askGround();
     this.placeCamera();
@@ -215,7 +242,7 @@ export class View3D {
   }
 
   /** The 2D map has drawn the square asked for last: lay that picture down (the ground follows the floor every frame). */
-  private layGround(floor: number, dt: number): void {
+  private layGround(dt: number): void {
     this.sinceDrawn += dt;
     const fresh = this.bridge.takeDrawn();
     if (fresh && this.asked) {
@@ -223,7 +250,7 @@ export class View3D {
       this.sinceDrawn = 0;
     }
     if (!this.drawn) return;
-    this.ground.show(this.drawn.center, this.drawn.half, floor, fresh);
+    this.ground.show(this.drawn.center, this.drawn.half, this.street(), fresh);
     drapeOver(this.ground.picture, this.drawn.center, this.drawn.half);
   }
 
@@ -305,12 +332,11 @@ export class View3D {
     this.orbit = panBy(this.orbit, [-by[0] * perPixel, -by[1] * perPixel]);
   }
 
-  /** What is on the table, for the floors shown and as far as you have explored. */
+  /** What is on the table, on every floor (the world stands whole, as in BG3), as far as you have explored. */
   private table(): Table3D {
     const fog = this.session.isGm() || !this.session.world?.vision ? undefined : this.session.fog.shown();
     return {
       world: this.session.world!,
-      shown: this.session.levels.shown,
       ...(fog && { explored: (p: Point) => fog.explored(p) }),
     };
   }
@@ -376,8 +402,8 @@ export class View3D {
     for (const t of this.session.tokens.values()) {
       const place = this.map.tokens.placeOf(t.id);
       if (!place || t.model || !onShownFloor(t, table)) continue;
-      const floorFeet = this.level()?.bottom ?? 0;
-      const feet = floor + Math.max(0, (t.elevation ?? 0) - floorFeet) * this.px();
+      // On its own floor, wherever the floor shown is.
+      const feet = Math.max(t.elevation ?? 0, levelOf(this.session.world?.levels, t)?.bottom ?? -Infinity) * this.px();
       out.push({
         id: t.id,
         at: place.at,
@@ -411,12 +437,12 @@ export class View3D {
       -((clientY - rect.top) / Math.max(1, rect.height)) * 2 + 1,
     );
     this.ray.setFromCamera(ndc, this.camera);
-    const token = this.standees.hit(this.ray);
+    const token = this.held ? undefined : this.standees.hit(this.ray);
     const place = token ? this.map.tokens.placeOf(token) : undefined;
     if (place) return place.at;
     const ground = this.ray
       .intersectObjects(this.solidsHit(), true)
-      .find((h) => h.object.visible && !hides(this.seeIn.peek, h.point.toArray()))?.point;
+      .find((h) => pointable(h, this.seeIn.peek, this.held))?.point;
     if (ground) return [ground.x, ground.z];
     const floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.floor());
     const hit = this.ray.ray.intersectPlane(floor, new THREE.Vector3());
@@ -425,4 +451,16 @@ export class View3D {
     const far = at3d([t[0], t[1]], t[2]).add(this.ray.ray.direction.clone().setY(0).normalize().multiplyScalar(1e5));
     return [far.x, far.z];
   }
+}
+
+/** What the pointer may land on: shown, not faded to see in, and no creature's figure while dragging. */
+function pointable(hit: THREE.Intersection, peek: Peek | undefined, held: boolean): boolean {
+  if (!hit.object.visible || hides(peek, hit.point.toArray())) return false;
+  return !held || !isFigure(hit.object);
+}
+
+/** The level a creature stands on. */
+function levelOf(levels: WorldInfo['levels'], t: Parameters<typeof tokenLevel>[1]) {
+  const id = tokenLevel(levels, t);
+  return levels?.find((l) => l.id === id);
 }

@@ -14,6 +14,8 @@ export interface LevelHost {
   isGm(): boolean;
   canControl(token: TokenView): boolean;
   send(msg: ClientMessage): void;
+  /** The map shows in 3D. */
+  readonly view3d?: { readonly on: boolean };
 }
 
 /** What the levels tell the session. */
@@ -32,6 +34,15 @@ export interface LevelChoice {
 
 /** The GM's pick that shows every floor at once. */
 export const EVERY_LEVEL = '*';
+
+/** The street (the floor at 0 ft, or `level` when it is below that) and every floor from there up to `level`. */
+function levelsStanding(levels: readonly SceneLevel[] | undefined, level: string | undefined): string[] | undefined {
+  const own = levels?.find((l) => l.id === level);
+  if (!own) return undefined;
+  const sorted = [...levels!].sort((a, b) => a.bottom - b.bottom);
+  const street = own.bottom <= 0 ? own : (sorted.findLast((l) => l.bottom <= 0) ?? sorted[0]!);
+  return sorted.filter((l) => l.bottom >= street.bottom && l.bottom <= own.bottom).map((l) => l.id);
+}
 
 export class Levels implements SessionPart {
   /** GM: the scene level picked to view and edit, or `EVERY_LEVEL`; none = the selected creature's floor (every level when none is selected). */
@@ -65,9 +76,15 @@ export class Levels implements SessionPart {
     return acting ? tokenLevel(levels, acting) : undefined;
   }
 
-  /** The levels drawn: the one shown and those it looks down on, bottom first; undefined = every level. */
+  /**
+   * The levels drawn: the one shown and those it looks down on, bottom
+   * first; undefined = every level. In 3D the world stands whole under you,
+   * as in BG3: the street (the floor at 0 ft) and every floor up to yours.
+   */
   get shown(): string[] | undefined {
-    return levelsSeen(this.s.world?.levels, this.current);
+    const levels = this.s.world?.levels;
+    if (this.s.view3d?.on) return levelsStanding(levels, this.current);
+    return levelsSeen(levels, this.current);
   }
 
   /** What a new thing on the map takes so it lands on the floor shown: none when every floor shows. */

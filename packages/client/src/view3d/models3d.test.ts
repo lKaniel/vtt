@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { faded, glowing, Models, seeThrough } from './models3d.ts';
+import { faded, glowing, isFigure, Models, seeThrough } from './models3d.ts';
 
 // How much of a model shows: 3D Canvas's transparency.
 
@@ -51,5 +51,27 @@ describe('models in the 3D view', () => {
   it("lights only the hovered tile's model", () => {
     const models = new Models();
     expect(models.glow('tile:lever')).toBe(false);
+  });
+});
+
+describe('figures', () => {
+  it('tells a creature’s figure from a tile’s model', () => {
+    const models = new Models();
+    const model = { src: '/none.glb' } as never;
+    const rect = { x: 0, y: 0, w: 100, h: 100 };
+    models.show(
+      [
+        { key: 'token:bram', rect, model, figure: true },
+        { key: 'tile:hut', rect, model },
+      ],
+      { grid: 100, feet: 5, floor: 0 },
+      0,
+    );
+    const [bram, hut] = models.group.children;
+    const piece = new THREE.Mesh();
+    bram!.add(piece);
+    expect(isFigure(piece)).toBe(true);
+    expect(isFigure(hut!)).toBe(false);
+    expect(isFigure(null)).toBe(false);
   });
 });

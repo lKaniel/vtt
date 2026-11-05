@@ -75,7 +75,8 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     avatar: z.string().max(500).nullable().optional(),
   }),
   z.object({ t: z.literal('view'), chunks: z.array(z.string()).max(400) }),
-  z.object({ t: z.literal('move'), token: z.string(), to: PointSchema }),
+  // throughWalls: the GM's "ignore walls" mode, straight there (refused to players: they walk).
+  z.object({ t: z.literal('move'), token: z.string(), to: PointSchema, throughWalls: z.boolean().optional() }),
   z.object({ t: z.literal('ruler'), points: z.array(PointSchema).max(MAX_RULER_POINTS) }),
   z.object({ t: z.literal('cursor'), at: PointSchema.nullable() }),
   z.object({ t: z.literal('ping'), at: PointSchema, pull: z.boolean().optional() }),

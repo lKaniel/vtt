@@ -50,8 +50,9 @@ export class TokenMoves {
    * the creatures you know of (`seen`): to the exact point without a grid,
    * square to square on one.
    */
-  move(player: Player, seen: (id: string) => boolean, id: string, to: Point): void {
+  move(player: Player, seen: (id: string) => boolean, { token: id, to, throughWalls }: Move): void {
     const token = this.controlled(player, seen, id);
+    if (throughWalls && isGm(player)) return this.straight(token, to);
     const g = this.store.world.gridSize;
     const m = PATH_MARGIN * g;
     const around = this.store.wallsIn({
@@ -81,6 +82,19 @@ export class TokenMoves {
     zones.moved(token.id, steps);
     reactions.moved(token, steps);
     regions.entered(token.id, steps);
+  }
+
+  /**
+   * The GM's "ignore walls" mode: straight to `to`, through walls and
+   * creatures, setting nothing off and spending no movement (to free a
+   * creature stuck in a wall, or put one where it belongs).
+   */
+  private straight(token: Token, to: Point): void {
+    if (token.x === to[0] && token.y === to[1]) return;
+    this.store.setToken({ ...token, x: to[0], y: to[1] }, [
+      [token.x, token.y],
+      [to[0], to[1]],
+    ]);
   }
 
   /** The creatures on `token`'s floor in its way that you know of. */
@@ -134,6 +148,7 @@ export class TokenMoves {
 }
 
 type Arrange = Extract<ClientMessage, { t: 'hotbar' | 'animation' }>;
+type Move = Extract<ClientMessage, { t: 'move' }>;
 
 /** The choices with `ref` set to `animation`, or dropped (back to the default); none left is undefined. */
 function withAnimation(choices: Token['animations'], ref: string, animation: string | undefined): Token['animations'] {

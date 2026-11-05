@@ -132,12 +132,20 @@ export function glowing(scene: THREE.Object3D, on: boolean): void {
   });
 }
 
+/** Whether `o` is part of a creature's figure. */
+export function isFigure(o: THREE.Object3D | null): boolean {
+  for (let at = o; at; at = at.parent) if (at.userData.figure) return true;
+  return false;
+}
+
 /** The copies of one model over one rect. */
 class Placed {
   readonly group = new THREE.Group();
   private loaded?: Loaded;
 
-  constructor(public shown: ModelShown) {}
+  constructor(public shown: ModelShown) {
+    this.group.userData.figure = !!shown.figure;
+  }
 
   /** Loads its file, then calls `ready`. */
   async load(ready: () => void): Promise<void> {

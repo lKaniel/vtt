@@ -55,7 +55,8 @@ export interface HistoryState {
 export type EngineClientMessage =
   /** The chunks this client's camera can see; the server streams them. */
   | { t: 'view'; chunks: string[] }
-  | { t: 'move'; token: string; to: Point }
+  /** throughWalls: the GM's "ignore walls" mode, straight there (players walk round them all the same). */
+  | { t: 'move'; token: string; to: Point; throughWalls?: boolean }
   /** Lay your ruler through these waypoints, shown live to everyone on your scene; none puts it away (see ruler.ts). */
   | { t: 'ruler'; points: Point[] }
   /** Where your pointer is on the map, shown live to everyone on your scene; null: it left the map. */

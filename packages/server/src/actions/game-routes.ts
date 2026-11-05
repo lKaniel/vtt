@@ -78,7 +78,7 @@ function each<K extends Kind>(kinds: readonly K[], route: Route<K>): { [P in K]:
 function tableRoutes(p: GameParts) {
   return {
     view: (s, m) => streamChunks(s.client, m.chunks, p.store, s.reply),
-    move: (s, m) => p.moves.move(s.player, s.canSee, m.token, m.to),
+    move: (s, m) => p.moves.move(s.player, s.canSee, m),
     ...each(['door', 'trigger'], (s, m) => p.moves.use(s.player, s.canSee, m)),
     changeLevel: (s, m) => p.moves.changeLevel(s.player, s.canSee, m.token, m.level),
     chat: (s, m) => p.onChat(s.client, m.text.trim()),

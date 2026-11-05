@@ -37,6 +37,7 @@ import { Fog, type FogEvents } from './session-fog.ts';
 import { Draw } from './session-items.ts';
 import { Levels } from './session-levels.ts';
 import { View3DSwitch } from './session-view3d.ts';
+import { ThroughWalls } from './session-through-walls.ts';
 import { Editor, type EditorEvents } from './session-editor.ts';
 import { mayEditRefs } from './authorship.ts';
 import { Requests } from './session-requests.ts';
@@ -103,12 +104,12 @@ export class Session {
   /** The sidebar lists' folders (session-folders.ts). */
   readonly folders = new Folders(this);
   /** The creatures you target (T), and the others'. */
-  readonly targets = new Targets(this.wire(() => this.notify('targets')));
+  readonly targets = new Targets(this.wire(() => this.emit('targets')));
   /** What the parts may ask of the session beyond its public face. */
   private readonly ev: PartEvents = {
     changed: () => this.changed(),
-    armed: () => this.notify('armed'),
-    lit: () => this.notify('lighting'),
+    armed: () => this.emit('armed'),
+    lit: () => this.emit('lighting'),
     editorChanged: () => this.editorChanged(),
     fogChanged: () => this.emit('fog'),
     gridSize: () => this.gridSize(),
@@ -144,6 +145,8 @@ export class Session {
   readonly levels = new Levels(this, this.ev);
   /** Whether this browser shows the map in 3D. */
   readonly view3d = new View3DSwitch(this.ev, this);
+  /** GM: moves go straight through walls (session-through-walls.ts). */
+  readonly throughWalls = new ThroughWalls(this.ev, this);
   readonly turns = new Turns(this);
   /** The open character sheet. */
   readonly sheets = new Sheets(this, this.ev);
@@ -208,10 +211,6 @@ export class Session {
       you: () => this.you,
       focus: (at: Point) => this.focus(at),
     };
-  }
-
-  protected notify(event: 'armed' | 'targets' | 'lighting'): void {
-    this.emit(event);
   }
 
   protected changed(): void {
