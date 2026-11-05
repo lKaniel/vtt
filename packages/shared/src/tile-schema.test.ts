@@ -17,3 +17,16 @@ describe('described tiles', () => {
     expect(lever).toMatchObject({ name: 'Lever', description: 'A rusty lever in the wall.' });
   });
 });
+
+describe('door models', () => {
+  it('move with a door wall: swing, slide, lift, fade or play their own animation', () => {
+    const door = TileSchema.parse({
+      ...image,
+      model: { src: 'door.glb' },
+      door: { wall: 'cell-door', style: 'swing', angle: 90, ms: 400 },
+    });
+    expect(door).toMatchObject({ door: { wall: 'cell-door', style: 'swing', angle: 90, ms: 400 } });
+    expect(TileSchema.safeParse({ ...image, door: { wall: 'x', style: 'spin' } }).success).toBe(false);
+    expect(TileSchema.safeParse({ ...image, door: { style: 'swing' } }).success).toBe(false);
+  });
+});

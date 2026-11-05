@@ -23,6 +23,8 @@ export class EffectsLayer {
   readonly labels = new Container();
   private queue: { at: number; cue: Cue }[] = [];
   private playing: Playing[] = [];
+  /** The 3D view, while it is on: it plays the cues it can in 3D and gives back the rest. */
+  relay?: (cues: Cue[], now: number) => Cue[];
 
   constructor(
     private tokens: TokenLayer,
@@ -32,7 +34,8 @@ export class EffectsLayer {
     this.labels.eventMode = 'none';
   }
 
-  play(cues: Cue[], now: number): void {
+  play(all: Cue[], now: number): void {
+    const cues = this.relay ? this.relay(all, now) : all;
     for (const cue of cues) this.queue.push({ at: now + cue.at, cue });
     this.queue.sort((a, b) => a.at - b.at);
   }
