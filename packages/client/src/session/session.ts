@@ -304,7 +304,7 @@ export class Session {
     return !!this.you && !!token && canEdit(token, this.you);
   }
 
-  focus = (point: Point): void => this.emit('focus', point);
+  focus = (point: Point, gently?: boolean): void => this.emit('focus', point, gently);
 
   canControl(token: Token): boolean {
     return !!this.you && canControl(token, this.you);

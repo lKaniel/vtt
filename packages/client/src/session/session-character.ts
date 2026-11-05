@@ -14,7 +14,7 @@ interface Host {
   readonly docs: { all(coll: string): Doc[] };
   readonly tokens: ReadonlyMap<string, TokenView>;
   select(id: string | undefined): void;
-  focus(point: Point): void;
+  focus(point: Point, gently?: boolean): void;
 }
 
 export class MyCharacter {
@@ -51,6 +51,6 @@ export class MyCharacter {
     const token = this.token();
     if (!token) return;
     this.s.select(token.id);
-    this.s.focus([token.x, token.y]);
+    this.s.focus([token.x, token.y], true);
   }
 }

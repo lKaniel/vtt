@@ -247,8 +247,8 @@ export class MapView {
         this.onEditor();
         visionChanged();
       }),
-      s.on('focus', (p) => {
-        this.cam.glideTo(p);
+      s.on('focus', (p, gently) => {
+        if (!gently || !this.cam.sees(p, this.app.screen)) this.cam.glideTo(p);
         this.dirty = true;
       }),
     );

@@ -20,7 +20,7 @@ function host(tokens: TokenView[], selected?: string) {
     docs: { all: (coll: string) => (coll === 'actors' ? [{ ...hero, type: 'actor', rev: 1 }] : []) },
     tokens: new Map(tokens.map((t) => [t.id, t])),
     select: (id: string | undefined) => calls.push(`select ${id}`),
-    focus: (p: [number, number]) => calls.push(`focus ${p.join(',')}`),
+    focus: (p: [number, number], gently?: boolean) => calls.push(`focus ${p.join(',')}${gently ? ' gently' : ''}`),
   };
   return { part: new MyCharacter(h), calls, h };
 }
@@ -32,10 +32,10 @@ describe('your character', () => {
     expect(part.token()?.id).toBe('hero-1');
   });
 
-  it('is picked and shown when you arrive on a scene with nothing selected', () => {
+  it('is picked, and brought into view if it is off screen, when you arrive on a scene with nothing selected', () => {
     const { part, calls } = host([{ id: 'hero-1', actor: 'hero', linked: true, x: 5, y: 6 } as TokenView]);
     part.arrive();
-    expect(calls).toEqual(['select hero-1', 'focus 5,6']);
+    expect(calls).toEqual(['select hero-1', 'focus 5,6 gently']);
   });
 
   it('leaves a selection alone, and does nothing when it is not on the scene', () => {

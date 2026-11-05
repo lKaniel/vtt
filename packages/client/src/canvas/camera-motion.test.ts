@@ -17,6 +17,13 @@ describe('CameraMotion', () => {
     expect(cam.screenToWorld([900, 400], screen)[0]).toBeCloseTo(before[0]);
   });
 
+  it('sees a point well inside the screen, not one near or past its edge', () => {
+    const cam = new CameraMotion([0, 0], 2);
+    expect(cam.sees([100, 100], screen)).toBe(true);
+    expect(cam.sees([240, 0], screen)).toBe(false);
+    expect(cam.sees([0, -300], screen)).toBe(false);
+  });
+
   it('keeps gliding after a fling and slows to a stop', () => {
     const cam = new CameraMotion([0, 0], 1);
     cam.drag([100, 0], 0.016);
