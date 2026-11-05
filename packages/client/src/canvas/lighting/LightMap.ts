@@ -26,6 +26,9 @@ export interface LightScene {
   /** The area a light reaches from a point, stopped by walls. */
   polygon: ReachPolygon;
   now: number;
+  /** Rooms the sky's light doesn't reach (see indoors.ts), lit as at this darkness instead. */
+  indoors?: readonly Rect[];
+  indoorDarkness?: number;
 }
 
 interface Lamp {
@@ -68,6 +71,7 @@ export class LightMap {
     placeScene(this.scene, transform);
     const { view } = scene;
     this.ambient.clear().rect(view.x, view.y, view.w, view.h).fill(ambientColor(scene.darkness));
+    this.drawIndoors(scene);
     for (const lamp of this.cache.values()) lamp.used = false;
     this.darkness.clear();
     scene.lights.forEach((l, i) => {
@@ -88,6 +92,16 @@ export class LightMap {
     this.scene.destroy({ children: true });
     for (const g of this.gradients.values()) g.destroy(true);
     this.texture.destroy(true);
+  }
+
+  private drawIndoors(scene: LightScene): void {
+    const dark = Math.max(scene.darkness, scene.indoorDarkness ?? 1);
+    if (dark === scene.darkness) return;
+    for (const r of scene.indoors ?? []) {
+      if (overlaps({ x: r.x + r.w / 2, y: r.y + r.h / 2 }, Math.hypot(r.w, r.h) / 2, scene.view)) {
+        this.ambient.rect(r.x, r.y, r.w, r.h).fill(ambientColor(dark));
+      }
+    }
   }
 
   private drawDarkness(l: LightSource, scene: LightScene): void {
@@ -159,7 +173,7 @@ export class LightMap {
   }
 }
 
-function overlaps(l: LightSource, radius: number, view: Rect): boolean {
+function overlaps(l: { x: number; y: number }, radius: number, view: Rect): boolean {
   return (
     l.x + radius > view.x && l.x - radius < view.x + view.w && l.y + radius > view.y && l.y - radius < view.y + view.h
   );

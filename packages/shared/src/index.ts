@@ -34,6 +34,8 @@ export * from './scene-items.ts';
 export * from './journals.ts';
 export * from './adventure-book.ts';
 export * from './levels.ts';
+export * from './floor-tiles.ts';
+export * from './indoors.ts';
 export * from './level-edit.ts';
 export * from './templates.ts';
 export * from './regions.ts';

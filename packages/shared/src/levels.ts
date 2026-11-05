@@ -1,4 +1,5 @@
-import type { SceneLevel, Wall } from './schema.ts';
+import type { PlacedToken, SceneLevel, Wall } from './schema.ts';
+import { type LightSource, tokenLights } from './vision.ts';
 import { wallsAt } from './walls.ts';
 
 // Scene levels, like Foundry's Levels module: a scene names its floors as
@@ -18,6 +19,17 @@ export function tokenLevel(
   token: { elevation?: number },
 ): string | undefined {
   return levelAt(levels, token.elevation ?? 0)?.id;
+}
+
+/** The lights creatures carry, each on the floor its bearer stands on (on every floor when the scene has none). */
+export function floorLights(
+  tokens: Iterable<Pick<PlacedToken, 'x' | 'y' | 'light' | 'hidden' | 'elevation'>>,
+  levels: readonly SceneLevel[] | undefined,
+): LightSource[] {
+  return [...tokens].flatMap((t) => {
+    const level = levels?.length ? tokenLevel(levels, t) : undefined;
+    return tokenLights([t]).map((l) => (level ? { ...l, level } : l));
+  });
 }
 
 /** What a map item says about its floors: one `level`, several `levels`, or neither (every level). */

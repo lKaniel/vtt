@@ -1,4 +1,14 @@
-import { canObserve, type Chunk, isGm, onLevel, type Point, type Rect, tileClickable, type Wall } from '@vtt/shared';
+import {
+  canObserve,
+  type Chunk,
+  isGm,
+  onLevel,
+  type Point,
+  type Rect,
+  tileClickable,
+  tilesOnFloor,
+  type Wall,
+} from '@vtt/shared';
 import { Circle, Container, Graphics, type Renderer } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
 import { drawDoor, drawWalls, drawWallShadows, wallsDrawn } from './art/walls.ts';
@@ -7,7 +17,6 @@ import { clickTile, openDoor } from '../play/interact.ts';
 import { imageTile, type TileView } from './tile-draw.ts';
 import { ObjectGlow } from './object-glow.ts';
 import { type RoofEyes, roofsOver, roofWatchers } from './tile-motion.ts';
-import { tilesOnFloor } from './floor-tiles.ts';
 import { flatUnder3d } from '../view3d/content3d.ts';
 import { bakeRuns, roofStill, tileBounds, tileStill } from './tile-bake.ts';
 import { TileBaker } from './TileBaker.ts';

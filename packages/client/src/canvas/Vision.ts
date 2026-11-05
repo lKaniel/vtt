@@ -1,4 +1,7 @@
 import {
+  floorLights,
+  indoorRects,
+  indoorsOn,
   lightShines,
   isGm,
   onLevel,
@@ -8,7 +11,6 @@ import {
   type Rect,
   type Senses,
   SIGHT_SQUARES,
-  tokenLights,
   visibilityPolygon,
   type Wall,
   wallsAt,
@@ -19,6 +21,7 @@ import type { Session } from '../session/session.ts';
 import { FogLayer } from './lighting/FogLayer.ts';
 import { LightingFilter } from './lighting/LightingFilter.ts';
 import { LightMap, type LightScene } from './lighting/LightMap.ts';
+import { ambientColor } from './lighting/light-style.ts';
 import { SightMap } from './lighting/SightMap.ts';
 
 /** How much darkness the GM sees, relative to players. */
@@ -57,6 +60,8 @@ export class Vision {
   private fogVersion = -1;
   private polyCache = new Map<string, number[]>();
   private wallsVersion = 0;
+  /** The indoors of the floor shown, drawn without the sky's light, for the walls and floor it was worked out for. */
+  private rooms = { key: '', rects: [] as Rect[] };
 
   constructor(
     private app: Application,
@@ -148,6 +153,8 @@ export class Vision {
       lights,
       polygon,
       now: performance.now(),
+      indoors: this.indoors(walls, world.gridSize),
+      indoorDarkness: gm ? GM_DARKNESS : 1,
     };
     this.light.render(scene, transform);
     // The GM's fog brush shows what the players explored instead of what the GM's tokens see.
@@ -161,7 +168,20 @@ export class Vision {
     this.sight.render({ view, gridSize: world.gridSize, viewers: eyes, darkness, sightRadius, polygon }, transform);
     this.mapFilter.fog = this.roofFilter.fog = fogStrength(gm, brushing, world.vision);
     this.mapFilter.voidColor = world.background;
+    this.roofFilter.sky = ambientColor(scene.darkness);
     return this.light.animated(scene);
+  }
+
+  /** Where the floor shown is indoors (roofed and walled in), worked out again when walls or floors change. */
+  private indoors(walls: readonly Wall[], gridSize: number): Rect[] {
+    const level = this.session.levels.current;
+    const key = `${this.wallsVersion},${level}`;
+    if (this.rooms.key !== key) {
+      const tiles = [...this.session.chunks.values()].flatMap((c) => c.tiles);
+      const area = indoorsOn({ tiles, walls }, this.session.world?.levels, level, gridSize);
+      this.rooms = { key, rects: indoorRects(area) };
+    }
+    return this.rooms.rects;
   }
 
   /** Every light, with your own tokens' lights where they're drawn mid-walk. */
@@ -171,13 +191,15 @@ export class Vision {
     const darkness = this.session.world?.darkness ?? 0;
     const shines = (l: { level?: string; activeAt?: [number, number]; hidden?: boolean }) =>
       onLevel(l, level) && lightShines(l, darkness);
-    return [
-      ...[...this.session.chunks.values()].flatMap((c) => c.lights.filter(shines)),
-      ...tokenLights(viewers.map((v) => ({ ...v.token, light: lightOf(v.token), x: v.at[0], y: v.at[1] }))),
-      ...tokenLights(
-        [...this.session.tokens.values()].filter((t) => !yours.has(t.id)).map((t) => ({ ...t, light: lightOf(t) })),
-      ),
+    const levels = this.session.world?.levels;
+    const carried = [
+      ...viewers.map((v) => ({ ...v.token, light: lightOf(v.token), x: v.at[0], y: v.at[1] })),
+      ...[...this.session.tokens.values()].filter((t) => !yours.has(t.id)).map((t) => ({ ...t, light: lightOf(t) })),
     ];
+    // A torch upstairs lights the floor upstairs, not the one you are on.
+    return [...[...this.session.chunks.values()].flatMap((c) => c.lights), ...floorLights(carried, levels)].filter(
+      shines,
+    );
   }
 
   /** Draws explored ground as the server last sent it. */

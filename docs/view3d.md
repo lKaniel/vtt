@@ -59,7 +59,8 @@ dialog under Camera.
   for this; under 3D the flat map's own preview is hidden.
 - `light3d.ts`: the sky light and sun (dimmed by darkness), the sky picture
   as the environment, the ground beyond the map under the lowest floor, and
-  the haze.
+  the haze. While your creature is inside a building (`inside3d.ts`) the sky's
+  light eases down to its midnight share and lamps burn at full strength.
 - `scene3d.ts`: three.js meshes: the ground picture, instanced walls,
   creatures as standing pictures.
 - `frame-budget.ts` and `ground-feed.ts`: what a frame saves. The 2D map

@@ -1,4 +1,4 @@
-import type { Chunk, SceneLevel } from '@vtt/shared';
+import type { Chunk, SceneLevel } from './schema.ts';
 import { describe, expect, it } from 'vitest';
 import { tilesOnFloor } from './floor-tiles.ts';
 

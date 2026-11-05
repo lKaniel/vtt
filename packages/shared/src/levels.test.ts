@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { levelAt, levelsSeen, onLevel, onLevels, levelChoices, levelBelow, sameFloor, wallsOnFloor } from './levels.ts';
+import {
+  levelAt,
+  levelsSeen,
+  onLevel,
+  onLevels,
+  levelChoices,
+  levelBelow,
+  sameFloor,
+  wallsOnFloor,
+  floorLights,
+} from './levels.ts';
 import type { SceneLevel } from './schema.ts';
 
 const levels: SceneLevel[] = [
@@ -60,5 +70,31 @@ describe('levels', () => {
       expect(levelBelow(levels, 'ground')?.id).toBe('cellar');
       expect(levelBelow(levels, 'cellar')).toBeUndefined();
     });
+  });
+});
+
+describe('floorLights', () => {
+  const LEVELS: SceneLevel[] = [
+    { id: 'ground', name: 'Ground', bottom: 0 },
+    { id: 'loft', name: 'Loft', bottom: 10 },
+  ];
+  const torch = { bright: 20, dim: 20 };
+
+  it('puts a carried light on the floor its bearer stands on', () => {
+    const lights = floorLights(
+      [
+        { x: 1, y: 2, light: torch, elevation: 12 },
+        { x: 3, y: 4, light: torch },
+      ],
+      LEVELS,
+    );
+    expect(lights).toEqual([
+      { ...torch, x: 1, y: 2, level: 'loft' },
+      { ...torch, x: 3, y: 4, level: 'ground' },
+    ]);
+  });
+
+  it('leaves the light on every floor on a scene without floors', () => {
+    expect(floorLights([{ x: 1, y: 2, light: torch }], undefined)).toEqual([{ ...torch, x: 1, y: 2 }]);
   });
 });

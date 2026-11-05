@@ -24,7 +24,7 @@ import type { PluginStore } from '../library/plugin-store.ts';
 import { classify, crossCheck, pathOf } from './game-files.ts';
 import { readEntry, readFolder, stateOf, type FolderEntry } from './game-folder.ts';
 import { upgradeFolder } from '../migrate/migrate-all.ts';
-import { SceneState, sameScene, tellSky } from './scene-state.ts';
+import { SceneState, sameScene, taggedEvents, tellSky } from './scene-state.ts';
 import { StoreAccess, type DocAccess } from './store-access.ts';
 import { ACTORS, CLOCK, COMBAT, docsOf, FIGHT, fileOf, GAME, SCENES, scopeOf, type TYPE } from './store-colls.ts';
 import { StoreHistory, touchedBy, type Touched } from './store-history.ts';
@@ -242,6 +242,12 @@ export class GameStore extends EventEmitter<StoreEvents> {
     return scene.wallsBetween(a, b);
   }
 
+  /** Where floor `level` of the current scene is indoors, out of the sky's light. */
+  indoors(level: string | undefined): ReturnType<SceneState['indoors']> {
+    const scene: SceneState = this.here;
+    return scene.indoors(level);
+  }
+
   /** Every light on the current scene: placed ones and those tokens carry. */
   lights(): LightSource[] {
     const scene: SceneState = this.here;
@@ -364,9 +370,8 @@ export class GameStore extends EventEmitter<StoreEvents> {
   }
 
   private worldOps(world: World): Op[] {
-    const here = this.here;
-    const { game, scene } = splitWorld(world, this.game, here.scene);
-    return [...this.putOps(GAME, toDoc('game', game)), ...this.putOps(SCENES, toDoc('scene', scene, here.id))];
+    const { game, scene } = splitWorld(world, this.game, this.here.scene);
+    return [...this.putOps(GAME, toDoc('game', game)), ...this.putOps(SCENES, toDoc('scene', scene, this.here.id))];
   }
 
   /** Applies a transaction, updates what the game reads, tells listeners and saves. */
@@ -432,18 +437,11 @@ export class GameStore extends EventEmitter<StoreEvents> {
   private syncScenes(live: boolean): string[] {
     const changed: string[] = [];
     const ids = new Set(this.docs.all(SCENES).map((d) => d.id));
-    for (const id of [...this.states.keys()].filter((k) => !ids.has(k))) {
-      this.states.delete(id);
-      changed.push(id);
-    }
+    const gone = [...this.states.keys()].filter((k) => !ids.has(k));
+    for (const id of gone) if (this.states.delete(id)) changed.push(id);
     for (const id of ids) {
       if (this.states.has(id)) continue;
-      const state = new SceneState(id, this.docs, this.actors, {
-        chunk: (key, chunk) => this.emit('chunk', key, chunk, id),
-        chunkGone: (key) => this.emit('chunkGone', key, id),
-        token: (token, path) => this.emit('token', token, path, id),
-        tokenGone: (tid) => this.emit('tokenGone', tid, id),
-      });
+      const state = new SceneState(id, this.docs, this.actors, taggedEvents(this, id));
       state.rebuild();
       this.states.set(id, state);
       if (live) changed.push(id);

@@ -147,6 +147,7 @@ export class View3D {
       grid: () => this.grid(),
       target: () => [this.orbit.target[0], this.orbit.target[1]],
       copiesOf: (key) => this.models.copiesOf(key),
+      indoors: () => !!this.seeIn.peek?.room,
     });
     this.ground = new Ground(map.app.canvas);
     this.bridge = new PixiBridge(map, (x, y) => this.pick(x, y), this.quality.groundPixels);
@@ -335,7 +336,7 @@ export class View3D {
     this.camera.lookAt(t[0], t[2], t[1]);
     const reach = ORBIT.maxReach * this.grid();
     const seen = { target: [t[0], t[2], t[1]] as const, distance: this.orbit.distance, reach, grid: this.grid() };
-    this.lighting.show(this.session.world!, { ...seen, lowest: this.lowest() });
+    this.lighting.show(this.session.world!, { ...seen, lowest: this.lowest(), indoors: !!this.seeIn.peek?.room });
   }
 
   /**

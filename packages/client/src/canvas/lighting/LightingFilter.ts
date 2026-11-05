@@ -23,6 +23,7 @@ uniform float uFloor;
 uniform float uOpaque;
 uniform vec3 uVoid;
 uniform float uExploredBlur;
+uniform vec3 uSky;
 
 const vec3 LUMA = vec3(0.299, 0.587, 0.114);
 
@@ -50,7 +51,8 @@ void main(void) {
   vec4 c = vec4(tex.rgb + uVoid * (1.0 - tex.a) * uOpaque, mix(tex.a, 1.0, uOpaque));
   // Where this pixel is on screen: the filter may cover only part of it (tokens, roofs).
   vec2 uv = (vTextureCoord * uInputSize.xy + uOutputFrame.xy) / uScreen;
-  vec3 light = min(texture(uLight, uv).rgb, vec3(1.25));
+  // Roofs are out under the sky, even over rooms it doesn't reach.
+  vec3 light = min(max(texture(uLight, uv).rgb, uSky), vec3(1.25));
   vec3 sight = sightAt(uv);
   float grey = dot(c.rgb, LUMA);
 
@@ -89,6 +91,7 @@ export class LightingFilter extends Filter {
           uOpaque: { value: opaque, type: 'f32' },
           uVoid: { value: new Float32Array([0.106, 0.114, 0.133]), type: 'vec3<f32>' },
           uExploredBlur: { value: 4, type: 'f32' },
+          uSky: { value: new Float32Array([0, 0, 0]), type: 'vec3<f32>' },
         },
         uLight: light.source,
         uSight: sight.source,
@@ -113,6 +116,14 @@ export class LightingFilter extends Filter {
   /** 1: empty space gets the void colour; 0: it stays see-through. */
   set opaque(value: number) {
     this.uniforms.uOpaque = value;
+  }
+
+  /** The least light anything gets: the sky's (`0xrrggbb`), for roofs over rooms it doesn't reach; black for the rest. */
+  set sky(color: number) {
+    const v = this.uniforms.uSky as Float32Array;
+    v[0] = ((color >> 16) & 255) / 255;
+    v[1] = ((color >> 8) & 255) / 255;
+    v[2] = (color & 255) / 255;
   }
 
   /** What empty space shows (a scene's background colour, "#rrggbb"); the default when unset. */

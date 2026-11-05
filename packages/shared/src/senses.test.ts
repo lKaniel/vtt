@@ -37,6 +37,14 @@ describe('light levels', () => {
     const here = lightLevelAt([300, 0], ctx(0, [torch, darkness]));
     expect(here).toEqual({ level: 'dark', magical: true });
   });
+
+  it('keeps daylight out of rooms closed in by walls and a roof, but not lamps', () => {
+    const indoors = (p: Point) => p[0] > 500;
+    const day = { ...ctx(0, [torch]), indoors };
+    expect(lightLevelAt([200, 0], day).level).toBe('bright');
+    expect(lightLevelAt([700, 0], day).level).toBe('dim');
+    expect(lightLevelAt([900, 0], day).level).toBe('dark');
+  });
 });
 
 describe('perceives', () => {
