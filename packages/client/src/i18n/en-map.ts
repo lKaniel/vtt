@@ -27,6 +27,8 @@ export const EN_MAP = {
   'walls.ignore': 'Ignore walls: creatures you move go straight through them (Shift+W)',
   'walls.ghost': 'Ghost mode',
   'walls.heed': 'Walls block again (Shift+W)',
+  'keys.fly-up': 'Fly the selected creature 5 ft higher',
+  'keys.fly-down': 'Fly the selected creature 5 ft lower',
   'keys.throughWalls': 'GM: ignore walls when moving creatures, or heed them again',
   'levels.stay': 'Stay here',
   'levels.picker': 'Level',

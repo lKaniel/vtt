@@ -355,6 +355,12 @@ export class Models {
     return lit;
   }
 
+  /** The copies standing for the model whose key starts with `prefix` (a door tile's "tile:<id>", to move). */
+  copiesOf(prefix: string): readonly THREE.Object3D[] {
+    for (const [key, p] of this.placed) if (key.startsWith(`${prefix}:`)) return p.group.children;
+    return [];
+  }
+
   /** Leaves out what looks smaller than `tiny` from the camera at `eye` (quality3d.ts). */
   cull(eye: THREE.Vector3, grid: number, tiny: number): void {
     // Looked at again once the camera has gone half a square (or the copies moved).

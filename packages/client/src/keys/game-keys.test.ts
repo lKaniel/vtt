@@ -104,6 +104,14 @@ describe('the game keys', () => {
     expect(e.prevented).toBe(true);
   });
 
+  it('flies the selected creature up and down 5 ft with Page Up and Page Down', () => {
+    session.select('hero');
+    gameKey(session, press('PageUp'));
+    expect(sent()).toEqual({ t: 'editToken', token: 'hero', patch: { elevation: 5 } });
+    gameKey(session, press('PageDown'));
+    expect(sent()).toEqual({ t: 'editToken', token: 'hero', patch: { elevation: -5 } });
+  });
+
   it('holds Space to pan, and a tap of it ends your turn', () => {
     ws.receive({ t: 'combat', combat: fight(1) });
     const down = press(' ');

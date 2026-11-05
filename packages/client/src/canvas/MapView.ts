@@ -66,7 +66,7 @@ export class MapView {
   private grid = new Graphics();
   private chunks: ChunkLayer;
   readonly tokens: TokenLayer;
-  private effects: EffectsLayer;
+  readonly effects: EffectsLayer;
   /** The walk, attack and spell previews; the 3D view draws them again (view3d/overlay3d.ts). */
   readonly preview = new PathPreview();
   readonly editor: MapEditor;

@@ -1,6 +1,6 @@
 import type { Wall } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
-import { cutaway, wallBoxes } from './walls3d.ts';
+import { cutaway, doorBoxes, wallBoxes } from './walls3d.ts';
 
 // Walls stand up in 3D: as tall as their own height, else up to the floor's
 // ceiling; those between the camera and what it looks at are cut low, as
@@ -27,7 +27,7 @@ describe('walls in 3D', () => {
     expect(low!.angle).toBeCloseTo(Math.PI / 2);
   });
 
-  it('show doors and windows, leave out open doors and walls you see through', () => {
+  it('show windows, and leave doors (they swing, doors3d.ts) and walls you see through out', () => {
     const boxes = wallBoxes(
       [
         wall('door', [0, 0], [100, 0], { door: 'closed' }),
@@ -37,7 +37,25 @@ describe('walls in 3D', () => {
       ],
       floor,
     );
-    expect(boxes.map((b) => b.kind)).toEqual(['door', 'window']);
+    expect(boxes.map((b) => b.kind)).toEqual(['window']);
+  });
+
+  it('give each door, open or shut, as a leaf; but not doors a model moves', () => {
+    const doors = doorBoxes(
+      [
+        wall('shut', [0, 0], [100, 0], { door: 'locked' }),
+        wall('open', [0, 0], [100, 0], { door: 'open' }),
+        wall('chest', [0, 0], [100, 0], { door: 'closed' }),
+        wall('plain', [0, 0], [100, 0]),
+      ],
+      floor,
+      new Set(['chest']),
+    );
+    expect(doors.map((d) => [d.id, d.open])).toEqual([
+      ['shut', false],
+      ['open', true],
+    ]);
+    expect(doors[0]).toMatchObject({ a: [0, 0], length: 100, height: 200, kind: 'door' });
   });
 
   it('only stand where the viewer has explored', () => {

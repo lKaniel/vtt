@@ -172,6 +172,22 @@ const tileBase = {
   description: ObjectDescription,
 };
 
+/**
+ * A model that moves with a door wall (a door, a chest lid, a secret wall,
+ * a drawbridge): open, it swings round by `angle` degrees, slides `slide`
+ * percent of its length toward `angle`, lifts `slide` percent of its
+ * height, fades to see-through, or plays its own animation (`play`; `rewind`
+ * plays it backward to open). It takes `ms` to move.
+ */
+export const TileDoorSchema = z.object({
+  wall: z.string().min(1),
+  style: z.enum(['swing', 'slide', 'lift', 'fade', 'play', 'rewind']),
+  angle: z.number().optional(),
+  slide: z.number().optional(),
+  ms: z.number().positive().optional(),
+});
+export type TileDoor = z.infer<typeof TileDoorSchema>;
+
 /** Painted ground for rect tiles, tinted by the tile's colour. */
 export const TileTextureSchema = z.enum(['grass', 'dirt', 'sand', 'stone', 'cobble', 'wood', 'water', 'rock']);
 export type TileTexture = z.infer<typeof TileTextureSchema>;
@@ -220,6 +236,8 @@ const ImageTileSchema = z.object({
   solid: Solid3DSchema.optional(),
   /** Ground a heightmap raises across the tile in the 3D view (see terrain3d.ts). */
   terrain: Terrain3DSchema.optional(),
+  /** Its model moves when the door wall it names opens and shuts (`TileDoorSchema`). */
+  door: TileDoorSchema.optional(),
 });
 /** A group of tiles: no picture or rect of its own, it spans what is in it. */
 const GroupTileSchema = z.object({ kind: z.literal('group'), ...tileTree });

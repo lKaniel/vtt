@@ -10,6 +10,7 @@ import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
 import { activeTilesNote, FoundryTile, isOverhead, lookOf, roofOf, topLeftOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
+import { doorWallOf, tileDoorOf } from './foundry-doors3d.ts';
 import { is3dScene, type MergedCopy, mergedCopiesOf, scene3dOf, tileModelOf, tileSolidOf } from './foundry-3d.ts';
 import { tileTerrainOf } from './foundry-terrain.ts';
 
@@ -156,7 +157,7 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
       }),
       ...foregroundTile(s, { x, y }, lookupIn(media)),
     ],
-    walls: wallsOf(s, grid, skipped, on),
+    walls: [...wallsOf(s, grid, skipped, on), ...doorWallsOf(s, grid, on)],
     lights: foundryLights(s.lights, feetIn(grid), on),
     ...placeables,
   };
@@ -336,7 +337,8 @@ function tile3d(t: FoundryScene['tiles'][number], c: TileContext): Tile[] | unde
   const at = topLeftOf(t, c.anchored);
   const tile = { id: '', kind: 'image' as const, ...at, w: t.width, h: t.height, src: BLANK, ...c.on(t) };
   const copies = 'terrain' in made ? undefined : mergedCopiesOf(sourceOf(t), c.grid)?.filter((m) => standsUp(made, m));
-  if (!copies) return [madeFrom({ ...tile, ...made }, sourceOf(t))];
+  const door = tileDoorOf(sourceOf(t));
+  if (!copies) return [madeFrom({ ...tile, ...made, ...(door && { door }) }, sourceOf(t))];
   return copies.map((copy, i) => {
     const place = {
       ...tile,
@@ -428,6 +430,14 @@ function tilesOf(s: FoundryScene, c: TileContext): Tile[] {
   }
   if (missing.length) skipped.push(lost('Tiles whose picture could not be found', missing.length, missing));
   return out.map((t, i) => carried(t, { ...t, id: `tile-${i + 1}` }));
+}
+
+/** The door walls 3D Canvas door models move with (foundry-doors3d.ts). */
+function doorWallsOf(s: FoundryScene, grid: Grid, on: OnFloors): Wall[] {
+  return s.tiles.flatMap((t) => {
+    const wall = doorWallOf(sourceOf(t), topLeftOf(t, isV14(s)), grid);
+    return wall ? [{ ...wall, ...on(t) }] : [];
+  });
 }
 
 function wallsOf(s: FoundryScene, grid: Grid, skipped: ImportLoss[], on: OnFloors): Wall[] {
