@@ -14,6 +14,7 @@ import {
 import { useState } from 'react';
 import { characterSummary, levelUpPlan, spellChoices, withHomebrewClass } from '../content/creator.ts';
 import { classesToPick, useHomebrewClasses } from './creator/use-homebrew.ts';
+import { ClassChoices, choicesOf } from './creator/ClassChoices.tsx';
 import { useSaveCharacter } from './creator/use-save.ts';
 import { SpellPicker } from './creator/PickSteps.tsx';
 import { Chips, Detail, RichText, TraitList } from './creator/Parts.tsx';
@@ -43,8 +44,9 @@ export function LevelUpScreen({
   const [improvement, setImprovement] = useState<Bonus>({});
   const [subclass, setSubclass] = useState<string>();
   const [spells, setSpells] = useState(c.spells);
+  const [features, setFeatures] = useState(c.features);
   const { busy, error, save } = useSaveCharacter(game, onDone);
-  const choice = { hp, class: classId, improvement: plan.improvement ? improvement : undefined, subclass, spells };
+  const choice = { hp, class: classId, improvement: improvementIf(plan, improvement), subclass, spells, features };
   const next = levelUp(c, choice);
   const issues = plan.problem ? [plan.problem] : characterIssues(next);
   const casts = spellChoices(next, plan.classLevel, classId).limits.maxLevel > 0;
@@ -78,6 +80,7 @@ export function LevelUpScreen({
           subclass={subclass}
           setSubclass={setSubclass}
         />
+        <OptionsColumn next={next} classId={classId} setFeatures={setFeatures} />
         {casts && (
           <section className="frame levelup-col wide">
             <SpellPicker c={next} classId={classId} level={plan.classLevel} set={(x) => setSpells(x.spells)} />
@@ -91,6 +94,23 @@ export function LevelUpScreen({
         onConfirm={() => save(next)}
       />
     </div>
+  );
+}
+
+/** The improvement picked, when the level gives one. */
+const improvementIf = (plan: { improvement: boolean }, picked: Bonus) => (plan.improvement ? picked : undefined);
+
+/** The class options the new level asks to pick (a fighting style, invocations), when it asks any. */
+function OptionsColumn({
+  next,
+  classId,
+  setFeatures,
+}: Readonly<{ next: Character; classId: string; setFeatures: (features: string[]) => void }>) {
+  if (!choicesOf(next, classId).length) return null;
+  return (
+    <section className="frame levelup-col" data-slot="levelup-options">
+      <ClassChoices c={next} set={(x) => setFeatures(x.features)} classId={classId} />
+    </section>
   );
 }
 

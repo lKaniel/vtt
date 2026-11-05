@@ -59,6 +59,17 @@
           ],
           "recharge": "long"
         }
+      },
+      "subclasses": {
+        "path-of-the-berserker": {
+          "features": {
+            "frenzy": {
+              "action": "bonus",
+              "grantAttacks": 1,
+              "manual": "Only while raging: one melee weapon attack as a bonus action each turn. When the rage ends you gain a level of exhaustion (set it on the sheet)."
+            }
+          }
+        }
       }
     },
     "2024": {
@@ -73,6 +84,18 @@
             [17, 6]
           ],
           "recharge": "short-one"
+        },
+        "primal-knowledge": {
+          "manual": "Gain one more barbarian skill (add it on the sheet). While raging, Strength replaces Dexterity, Wisdom or Intelligence for Acrobatics, Intimidation, Perception, Stealth and Survival checks."
+        }
+      },
+      "subclasses": {
+        "path-of-the-berserker": {
+          "features": {
+            "frenzy": {
+              "manual": "While raging, when you use Reckless Attack your first Strength hit each turn deals extra damage: d6s equal to your Rage Damage bonus. Roll it by hand."
+            }
+          }
         }
       }
     }
@@ -109,6 +132,36 @@
               "once": true
             }
           }
+        },
+        "jack-of-all-trades": {
+          "manual": "Add half your proficiency bonus to ability checks without proficiency. Add it by hand for now."
+        },
+        "expertise": {
+          "manual": "Double the proficiency bonus of two chosen skills. Add the extra bonus by hand for now."
+        },
+        "font-of-inspiration": {
+          "manual": "Built into Bardic Inspiration: from 5th level its uses come back on a short rest (2024: also turn a spell slot into a use)."
+        }
+      },
+      "subclasses": {
+        "college-of-lore": {
+          "features": {
+            "bonus-proficiencies": {
+              "manual": "Three more skills of your choice: add them on the sheet."
+            },
+            "cutting-words": {
+              "action": "free",
+              "usesFrom": "bardic-inspiration",
+              "manual": "Reaction: spend a Bardic Inspiration die and subtract it from a creature’s attack roll, ability check or damage roll within 60 ft."
+            }
+          }
+        }
+      }
+    },
+    "2014": {
+      "features": {
+        "song-of-rest": {
+          "manual": "On a short rest, allies who spend hit dice regain an extra 1d6 (1d8 at 9th). Add it when they spend dice."
         }
       }
     }
@@ -121,6 +174,23 @@
       "spellcasting": {
         "ability": "wis",
         "progression": "full"
+      },
+      "subclasses": {
+        "life-domain": {
+          "features": {
+            "disciple-of-life": {
+              "passive": {
+                "name": "Disciple of Life",
+                "spellHealBonus": 2
+              }
+            },
+            "preserve-life": {
+              "action": "action",
+              "usesFrom": "channel-divinity",
+              "manual": "Share out hit points equal to five times your cleric level among creatures within 30 ft, none above half its maximum. Heal them from their sheets."
+            }
+          }
+        }
       }
     },
     "2014": {
@@ -152,6 +222,18 @@
               "endsOnDamage": true
             }
           }
+        },
+        "destroy-undead": {
+          "manual": "Undead of CR 1/2 or lower that fail the Turn Undead save are destroyed. The GM removes them."
+        }
+      },
+      "subclasses": {
+        "life-domain": {
+          "features": {
+            "bonus-proficiency": {
+              "manual": "You can wear heavy armor."
+            }
+          }
         }
       }
     },
@@ -181,6 +263,12 @@
               "endsOnDamage": true
             }
           }
+        },
+        "sear-undead": {
+          "manual": "Undead that fail the Turn Undead save take radiant damage: d8s equal to your Wisdom modifier. Roll it by hand."
+        },
+        "divine-order": {
+          "manual": "Protector: heavy armor and martial weapons. Thaumaturge: one more cleric cantrip, and your Wisdom modifier added to Arcana and Religion checks."
         }
       }
     }
@@ -193,6 +281,92 @@
       "spellcasting": {
         "ability": "wis",
         "progression": "full"
+      },
+      "features": {
+        "druidic": {
+          "manual": "You know Druidic, the secret language of druids."
+        }
+      }
+    },
+    "2014": {
+      "features": {
+        "wild-shape": {
+          "action": "action",
+          "uses": [
+            [2, 2],
+            [20, 99]
+          ],
+          "recharge": "short",
+          "manual": "Pick a beast you have seen (CR 1/4 at 2nd, 1/2 at 4th). The GM swaps the token’s stat block for the beast’s."
+        }
+      },
+      "subclasses": {
+        "circle-of-the-land": {
+          "features": {
+            "bonus-cantrip": {
+              "manual": "Learn one more druid cantrip: add it to your spells."
+            },
+            "natural-recovery": {
+              "action": "free",
+              "uses": [[2, 1]],
+              "recharge": "long",
+              "manual": "On a short rest, recover spell slots totaling up to half your druid level (rounded up), none 6th or higher. The GM restores them."
+            }
+          }
+        }
+      }
+    },
+    "2024": {
+      "features": {
+        "wild-shape": {
+          "action": "bonus",
+          "uses": [
+            [2, 2],
+            [6, 3],
+            [17, 4]
+          ],
+          "recharge": "short-one",
+          "manual": "Pick a known beast form (CR 1/4 at 2nd, 1/2 at 4th). The GM swaps the token’s stat block; you gain temporary hit points equal to your druid level."
+        },
+        "primal-order": {
+          "manual": "Magician: one more druid cantrip and your Wisdom modifier added to Arcana and Nature checks. Warden: martial weapons and medium armor."
+        },
+        "wild-resurgence": {
+          "manual": "Once a turn, spend a spell slot to regain a Wild Shape use, or a Wild Shape use for a 1st-level slot (once per long rest)."
+        }
+      },
+      "subclasses": {
+        "circle-of-the-land": {
+          "features": {
+            "lands-aid": {
+              "action": "action",
+              "usesFrom": "wild-shape",
+              "die": [
+                [3, 2],
+                [10, 3],
+                [14, 4]
+              ],
+              "spell": {
+                "range": 60,
+                "area": {
+                  "shape": "sphere",
+                  "size": 10
+                },
+                "save": {
+                  "ability": "con",
+                  "onSave": "half"
+                },
+                "damage": [
+                  {
+                    "dice": "{die}d6",
+                    "type": "necrotic"
+                  }
+                ]
+              },
+              "manual": "One creature you choose in the area also regains {die}d6 hit points: heal it by hand."
+            }
+          }
+        }
       }
     }
   },
@@ -219,6 +393,39 @@
             [17, 2]
           ],
           "recharge": "short"
+        },
+        "archery": {
+          "passive": {
+            "name": "Archery",
+            "rangedAttackBonus": 2
+          }
+        },
+        "defense": {
+          "passive": {
+            "name": "Defense",
+            "armoredAc": 1
+          }
+        },
+        "two-weapon-fighting": {
+          "passive": {
+            "name": "Two-Weapon Fighting",
+            "offHandMod": true
+          }
+        },
+        "great-weapon-fighting": {
+          "manual": "Reroll 1s and 2s on the damage dice of two-handed or versatile melee weapons (2024: count them as 3s); roll that by hand."
+        }
+      },
+      "subclasses": {
+        "champion": {
+          "features": {
+            "improved-critical": {
+              "passive": {
+                "name": "Improved Critical",
+                "critRange": 19
+              }
+            }
+          }
         }
       }
     },
@@ -227,6 +434,15 @@
         "second-wind": {
           "uses": [[1, 1]],
           "recharge": "short"
+        },
+        "dueling": {
+          "passive": {
+            "name": "Dueling",
+            "duelingDamage": 2
+          }
+        },
+        "protection": {
+          "manual": "Reaction with a shield: impose disadvantage on an attack against a creature within 5 ft of you. The GM applies it."
         }
       }
     },
@@ -240,6 +456,23 @@
             [10, 4]
           ],
           "recharge": "short-one"
+        },
+        "tactical-mind": {
+          "action": "free",
+          "usesFrom": "second-wind",
+          "manual": "When you fail an ability check, spend a Second Wind use to add 1d10 (the use isn’t spent if you still fail)."
+        },
+        "tactical-shift": {
+          "manual": "When you use Second Wind you can move up to half your speed without provoking opportunity attacks."
+        }
+      },
+      "subclasses": {
+        "champion": {
+          "features": {
+            "remarkable-athlete": {
+              "manual": "Advantage on initiative rolls and Strength (Athletics) checks; after a critical hit you can move half your speed without provoking opportunity attacks."
+            }
+          }
         }
       }
     }
@@ -254,6 +487,9 @@
         "unarmored-defense": {
           "unarmoredAc": "wis",
           "unarmoredShield": false
+        },
+        "slow-fall": {
+          "manual": "Reaction when you fall: reduce the falling damage by five times your monk level."
         }
       }
     },
@@ -320,6 +556,19 @@
             [14, 25],
             [18, 30]
           ]
+        },
+        "deflect-missiles": {
+          "action": "free",
+          "manual": "Reaction when hit by a ranged weapon attack: reduce the damage by 1d10 + Dexterity modifier + monk level; at 0 you may catch and throw it back for 1 ki."
+        }
+      },
+      "subclasses": {
+        "way-of-the-open-hand": {
+          "features": {
+            "open-hand-technique": {
+              "manual": "When Flurry of Blows hits: the target makes a Dexterity save or falls prone, a Strength save or is pushed 15 ft, or can’t take reactions (2024: Addle, Push, Topple). The GM applies it."
+            }
+          }
         }
       }
     },
@@ -392,6 +641,26 @@
             [14, 25],
             [18, 30]
           ]
+        },
+        "deflect-attacks": {
+          "action": "free",
+          "manual": "Reaction when hit by a bludgeoning, piercing or slashing attack: reduce the damage by 1d10 + Dexterity modifier + monk level; at 0 spend 1 Focus Point to redirect it."
+        },
+        "uncanny-metabolism": {
+          "action": "free",
+          "uses": [[2, 1]],
+          "recharge": "long",
+          "heal": "1d6+level",
+          "manual": "Use it when you roll initiative: you also regain all your Focus Points (set them on the sheet)."
+        }
+      },
+      "subclasses": {
+        "warrior-of-the-open-hand": {
+          "features": {
+            "open-hand-technique": {
+              "manual": "When Flurry of Blows hits: the target makes a Dexterity save or falls prone, a Strength save or is pushed 15 ft, or can’t take reactions (2024: Addle, Push, Topple). The GM applies it."
+            }
+          }
         }
       }
     }
@@ -447,6 +716,34 @@
             },
             "conditionImmunities": ["frightened"]
           }
+        },
+        "defense": {
+          "passive": {
+            "name": "Defense",
+            "armoredAc": 1
+          }
+        },
+        "great-weapon-fighting": {
+          "manual": "Reroll 1s and 2s on the damage dice of two-handed or versatile melee weapons (2024: count them as 3s); roll that by hand."
+        }
+      },
+      "subclasses": {
+        "oath-of-devotion": {
+          "features": {
+            "sacred-weapon": {
+              "action": "action",
+              "usesFrom": "channel-divinity",
+              "effect": {
+                "name": "Sacred Weapon",
+                "rounds": 10,
+                "light": {
+                  "bright": 20,
+                  "dim": 20
+                }
+              },
+              "manual": "Add your Charisma modifier to attack rolls with the weapon for 1 minute (add it by hand); it sheds light and deals radiant damage if you like."
+            }
+          }
         }
       }
     },
@@ -455,6 +752,29 @@
       "features": {
         "lay-on-hands": {
           "action": "bonus"
+        },
+        "archery": {
+          "passive": {
+            "name": "Archery",
+            "rangedAttackBonus": 2
+          }
+        },
+        "two-weapon-fighting": {
+          "passive": {
+            "name": "Two-Weapon Fighting",
+            "offHandMod": true
+          }
+        },
+        "blessed-warrior": {
+          "manual": "Learn two cleric cantrips (add them to your spells); they count as paladin spells and use Charisma."
+        },
+        "channel-divinity": {
+          "uses": [
+            [3, 2],
+            [11, 3]
+          ],
+          "recharge": "short-one",
+          "manual": "Divine Sense: spend a use to learn where celestials, fiends and undead within 60 ft are for 10 minutes."
         }
       }
     },
@@ -467,6 +787,58 @@
       "features": {
         "lay-on-hands": {
           "action": "action"
+        },
+        "dueling": {
+          "passive": {
+            "name": "Dueling",
+            "duelingDamage": 2
+          }
+        },
+        "protection": {
+          "manual": "Reaction with a shield: impose disadvantage on an attack against a creature within 5 ft of you. The GM applies it."
+        },
+        "divine-sense": {
+          "action": "action",
+          "usesAbility": "cha",
+          "usesBonus": 1,
+          "recharge": "long",
+          "manual": "Until the end of your next turn you know where celestials, fiends and undead within 60 ft are. The GM tells you."
+        },
+        "divine-health": {
+          "manual": "You are immune to disease."
+        },
+        "channel-divinity": {
+          "name": "Channel Divinity",
+          "level": 3,
+          "description": "Your oath allows you to channel divine energy to fuel magical effects. Each Channel Divinity option provided by your oath explains how to use it. You regain the use when you finish a short or long rest.",
+          "uses": [[3, 1]],
+          "recharge": "short"
+        }
+      },
+      "subclasses": {
+        "oath-of-devotion": {
+          "features": {
+            "turn-the-unholy": {
+              "action": "action",
+              "usesFrom": "channel-divinity",
+              "spell": {
+                "area": {
+                  "shape": "emanation",
+                  "size": 30
+                },
+                "save": {
+                  "ability": "wis"
+                },
+                "creatureTypes": ["fiend", "undead"],
+                "rounds": 10,
+                "effect": {
+                  "name": "Turned",
+                  "conditions": ["frightened"],
+                  "endsOnDamage": true
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -480,16 +852,94 @@
       "spellcasting": {
         "ability": "wis",
         "progression": "half"
+      },
+      "features": {
+        "archery": {
+          "passive": {
+            "name": "Archery",
+            "rangedAttackBonus": 2
+          }
+        },
+        "defense": {
+          "passive": {
+            "name": "Defense",
+            "armoredAc": 1
+          }
+        },
+        "two-weapon-fighting": {
+          "passive": {
+            "name": "Two-Weapon Fighting",
+            "offHandMod": true
+          }
+        }
+      },
+      "subclasses": {
+        "hunter": {
+          "features": {
+            "colossus-slayer": {
+              "manual": "Once per turn, a weapon hit deals 1d8 extra damage if the target is missing any hit points. Roll it by hand."
+            },
+            "horde-breaker": {
+              "manual": "Once per turn, make another attack with the same weapon against a different creature within 5 ft of the first target."
+            }
+          }
+        }
       }
     },
     "2024": {
-      "weaponMastery": true
+      "weaponMastery": true,
+      "features": {
+        "great-weapon-fighting": {
+          "manual": "Reroll 1s and 2s on the damage dice of two-handed or versatile melee weapons (2024: count them as 3s); roll that by hand."
+        },
+        "druidic-warrior": {
+          "manual": "Learn two druid cantrips (add them to your spells); they count as ranger spells and use Wisdom."
+        },
+        "deft-explorer": {
+          "manual": "Expertise in one of your skills and two more languages: add them on the sheet."
+        }
+      },
+      "subclasses": {
+        "hunter": {
+          "features": {
+            "hunters-lore": {
+              "manual": "You know the immunities, resistances and vulnerabilities of a creature marked by your Hunter’s Mark. The GM tells you."
+            }
+          }
+        }
+      }
     },
     "2014": {
       "spellcasting": {
         "ability": "wis",
         "progression": "half",
         "from": 2
+      },
+      "features": {
+        "dueling": {
+          "passive": {
+            "name": "Dueling",
+            "duelingDamage": 2
+          }
+        },
+        "favored-enemy": {
+          "manual": "Advantage on Wisdom (Survival) checks to track your favored enemies and Intelligence checks to recall information about them; you learn one language they speak."
+        },
+        "natural-explorer": {
+          "manual": "In your favored terrain: double proficiency on Intelligence and Wisdom checks about it, difficult terrain doesn’t slow your group’s travel, and you can’t get lost by non-magical means."
+        },
+        "primeval-awareness": {
+          "manual": "Spend a spell slot to sense aberrations, celestials, dragons, elementals, fey, fiends and undead within 1 mile (6 in favored terrain) for 1 minute per slot level."
+        }
+      },
+      "subclasses": {
+        "hunter": {
+          "features": {
+            "giant-killer": {
+              "manual": "Reaction when a Large or larger creature within 5 ft attacks you: attack it right after."
+            }
+          }
+        }
       }
     }
   },
@@ -502,11 +952,45 @@
       "features": {
         "cunning-action": {
           "bonusActions": ["dash", "disengage"]
+        },
+        "expertise": {
+          "manual": "Double the proficiency bonus of two chosen skills (or thieves’ tools). Add the extra bonus by hand for now."
+        },
+        "thieves-cant": {
+          "manual": "You know Thieves’ Cant, the rogues’ secret code."
+        }
+      },
+      "subclasses": {
+        "thief": {
+          "features": {
+            "fast-hands": {
+              "manual": "Cunning Action also lets you make a Sleight of Hand check, use thieves’ tools or (2014) use an object; 2024: also Use Magic Item."
+            },
+            "second-story-work": {
+              "manual": "Climbing costs no extra movement (2024: climb speed equal to your speed); your running long jump is longer by your Dexterity modifier in feet."
+            }
+          }
         }
       }
     },
     "2024": {
-      "weaponMastery": true
+      "weaponMastery": true,
+      "features": {
+        "steady-aim": {
+          "action": "bonus",
+          "effect": {
+            "name": "Steady Aim",
+            "advantage": true,
+            "immobile": true,
+            "once": true,
+            "rounds": 1
+          },
+          "manual": "Only if you haven’t moved this turn."
+        },
+        "cunning-strike": {
+          "manual": "When Sneak Attack hits, give up sneak attack dice for Poison (1d6: Con save or poisoned), Trip (1d6: Dex save or prone) or Withdraw (1d6: move half speed without provoking). The GM applies it."
+        }
+      }
     }
   },
   "sorcerer": {
@@ -517,6 +1001,88 @@
       "spellcasting": {
         "ability": "cha",
         "progression": "full"
+      },
+      "features": {
+        "font-of-magic": {
+          "action": "free",
+          "uses": [
+            [2, 2],
+            [3, 3],
+            [4, 4],
+            [5, 5],
+            [6, 6],
+            [7, 7],
+            [8, 8],
+            [9, 9],
+            [10, 10],
+            [11, 11],
+            [12, 12],
+            [13, 13],
+            [14, 14],
+            [15, 15],
+            [16, 16],
+            [17, 17],
+            [18, 18],
+            [19, 19],
+            [20, 20]
+          ],
+          "recharge": "long",
+          "manual": "Sorcery points: make a spell slot for 2 (1st), 3 (2nd), 5 (3rd), 6 (4th) or 7 (5th) points, or turn a slot into as many points as its level. The GM adjusts the slots."
+        },
+        "metamagic": {
+          "manual": "Spend sorcery points on a known Metamagic option as you cast; the GM applies it."
+        }
+      }
+    },
+    "2024": {
+      "features": {
+        "innate-sorcery": {
+          "action": "bonus",
+          "uses": [[1, 2]],
+          "recharge": "long",
+          "effect": {
+            "name": "Innate Sorcery",
+            "rounds": 10
+          },
+          "manual": "For 1 minute: +1 to your sorcerer spell save DC and advantage on sorcerer spell attack rolls (add them by hand)."
+        },
+        "sorcerous-restoration": {
+          "action": "free",
+          "uses": [[5, 1]],
+          "recharge": "long",
+          "manual": "On a short rest, regain sorcery points up to half your sorcerer level (set them on Font of Magic)."
+        }
+      },
+      "subclasses": {
+        "draconic-sorcery": {
+          "features": {
+            "draconic-resilience": {
+              "passive": {
+                "name": "Draconic Resilience",
+                "armorBase": 13
+              },
+              "hpPerLevel": 1
+            }
+          }
+        }
+      }
+    },
+    "2014": {
+      "subclasses": {
+        "draconic-bloodline": {
+          "features": {
+            "dragon-ancestor": {
+              "manual": "Your dragon’s damage type is the one picked; you speak Draconic and double your proficiency bonus on Charisma checks with dragons."
+            },
+            "draconic-resilience": {
+              "passive": {
+                "name": "Draconic Resilience",
+                "armorBase": 13
+              },
+              "hpPerLevel": 1
+            }
+          }
+        }
       }
     }
   },
@@ -528,6 +1094,46 @@
       "spellcasting": {
         "ability": "cha",
         "progression": "pact"
+      },
+      "features": {
+        "eldritch-invocations": {
+          "manual": "The GM applies the effects of invocations the sheet doesn’t run on its own."
+        }
+      }
+    },
+    "2014": {
+      "features": {
+        "pact-boon": {
+          "manual": "Blade: create your pact weapon as an action. Chain: Find Familiar with special forms. Tome: three cantrips from any class list."
+        }
+      },
+      "subclasses": {
+        "the-fiend": {
+          "features": {
+            "dark-ones-blessing": {
+              "manual": "When you drop a hostile creature to 0 hit points (2024: or one within 10 ft drops), gain Charisma modifier + warlock level temporary hit points."
+            }
+          }
+        }
+      }
+    },
+    "2024": {
+      "features": {
+        "magical-cunning": {
+          "action": "action",
+          "uses": [[2, 1]],
+          "recharge": "long",
+          "manual": "A 1-minute rite: regain expended pact slots up to half your maximum (rounded up). The GM restores them."
+        }
+      },
+      "subclasses": {
+        "fiend-patron": {
+          "features": {
+            "dark-ones-blessing": {
+              "manual": "When you drop a hostile creature to 0 hit points (2024: or one within 10 ft drops), gain Charisma modifier + warlock level temporary hit points."
+            }
+          }
+        }
       }
     }
   },
@@ -539,6 +1145,53 @@
       "spellcasting": {
         "ability": "int",
         "progression": "full"
+      },
+      "features": {
+        "arcane-recovery": {
+          "action": "free",
+          "uses": [[1, 1]],
+          "recharge": "long",
+          "manual": "On a short rest, recover spell slots totaling up to half your wizard level (rounded up), none 6th or higher. The GM restores them."
+        }
+      }
+    },
+    "2024": {
+      "features": {
+        "ritual-adept": {
+          "manual": "Cast any ritual spell in your spellbook as a ritual without preparing it."
+        },
+        "scholar": {
+          "manual": "Expertise in one of Arcana, History, Investigation, Medicine, Nature or Religion: add it on the sheet."
+        },
+        "memorize-spell": {
+          "manual": "On a short rest, swap one prepared spell for another from your spellbook."
+        }
+      },
+      "subclasses": {
+        "evoker": {
+          "features": {
+            "evocation-savant": {
+              "manual": "2014: copying evocation spells takes half the gold and time. 2024: two evocation spells join your spellbook free, and one more each time you gain a spell level."
+            },
+            "potent-cantrip": {
+              "manual": "When a creature succeeds on the save against your damage cantrip, or you miss with one, it still takes half the damage."
+            }
+          }
+        }
+      }
+    },
+    "2014": {
+      "subclasses": {
+        "school-of-evocation": {
+          "features": {
+            "evocation-savant": {
+              "manual": "2014: copying evocation spells takes half the gold and time. 2024: two evocation spells join your spellbook free, and one more each time you gain a spell level."
+            },
+            "sculpt-spells": {
+              "manual": "Choose up to 1 + the spell’s level creatures in your evocation’s area: they succeed on the save and take no damage. Leave them out of the targets."
+            }
+          }
+        }
       }
     }
   }

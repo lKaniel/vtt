@@ -1,5 +1,6 @@
 import { abilityScores, type Character, characterClasses, type Parts, partsOf, totalLevel } from './character.ts';
 import { multiclassProblem } from './multiclass.ts';
+import { choicesDue, classFeature } from './class-options.ts';
 import {
   isImprovementLevel,
   POINT_BUY_BUDGET,
@@ -41,7 +42,7 @@ export function issuesByStep(c: Character): Record<CreatorStep, string[]> {
   if (Object.values(missing).some((m) => m.length)) return { ...missing, ...none };
   return {
     ...missing,
-    class: [...subclassIssues(c, p), ...multiclassIssues(c, p)],
+    class: [...subclassIssues(c, p), ...optionIssues(c, p), ...multiclassIssues(c, p)],
     abilities: [...scoreIssues(c), ...bonusIssues(c, p)],
     skills: skillIssues(c, p),
     spells: spellIssues(c, p),
@@ -130,6 +131,19 @@ function subclassIssues(c: Character, p: Parts): string[] {
   });
 }
 
+/** Each class's choices due at its level filled, with options it offers (fighting styles, invocations). */
+function optionIssues(c: Character, p: Parts): string[] {
+  const unknown = c.features
+    .filter((ref) => !classFeature(ref, p.book.content))
+    .map((ref) => `Unknown class option "${ref}".`);
+  const due = characterClasses(c).flatMap((k) => {
+    const cls = p.book.content.classes.get(k.class);
+    return cls ? choicesDue(cls, k.level, c.features, k.subclass) : [];
+  });
+  const unfilled = due.filter((d) => d.picked.length !== d.count).map((d) => `Choose ${d.count} ${d.name}.`);
+  return [...unknown, ...unfilled];
+}
+
 /** Each class taken after the first needs its prerequisites, and the earlier classes' too. */
 function multiclassIssues(c: Character, p: Parts): string[] {
   const scores = abilityScores(c, p);
@@ -187,6 +201,8 @@ export interface LevelUpChoice {
   subclass?: string;
   /** The full spell list after levelling, when it changed. */
   spells?: string[];
+  /** The class options picked after levelling ("<class>/<feature>"), when they changed. */
+  features?: string[];
 }
 
 export function levelUp(c: Character, choice: LevelUpChoice): Character {
@@ -195,6 +211,7 @@ export function levelUp(c: Character, choice: LevelUpChoice): Character {
     hpRolls: [...c.hpRolls, choice.hp],
     improvements: choice.improvement ? [...c.improvements, choice.improvement] : c.improvements,
     spells: choice.spells ?? c.spells,
+    features: choice.features ?? c.features,
   };
   const into = choice.class ?? c.class;
   if (into === c.class) return { ...common, level: c.level + 1, subclass: choice.subclass ?? c.subclass };

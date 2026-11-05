@@ -86,6 +86,18 @@ const modifiers = {
   markDamage: z.array(RiderDamageSchema).optional(),
   /** Added to the bearer's weapon attack and damage rolls (magic weapon). */
   weaponBonus: z.number().int().optional(),
+  /** The bearer's weapon attacks are critical hits on this d20 face or higher (19 for a champion). */
+  critRange: z.number().int().min(2).max(20).optional(),
+  /** Added to the bearer's ranged weapon attack rolls (archery). */
+  rangedAttackBonus: z.number().int().optional(),
+  /** Added to the bearer's AC while it wears body armor (defense). */
+  armoredAc: z.number().int().optional(),
+  /** Added to damage with a one-handed melee weapon when the bearer wields no other weapon (dueling). */
+  duelingDamage: z.number().int().optional(),
+  /** The bearer adds its ability modifier to off-hand attack damage (two-weapon fighting style). */
+  offHandMod: z.boolean().optional(),
+  /** Healing spells of 1st level or higher the bearer casts heal this plus the spell's level more (disciple of life). */
+  spellHealBonus: z.number().int().optional(),
   /** The bearer keeps a spell's area going: creatures that start their turn in it or walk into it are hit (spirit guardians). */
   zone: z
     .object({
@@ -493,6 +505,8 @@ export const FeatureSchema = z.object({
   grantAttacks: z.number().int().positive().optional(),
   /** For a `passive` effect's `speed`: the bonus by class level (unarmored movement). */
   speed: LevelTableSchema.optional(),
+  /** For a `passive` effect: this many hit points more per class level (draconic resilience). */
+  hpPerLevel: z.number().int().positive().optional(),
   /** For a `passive` effect's `aura`: its radius in feet by class level (aura of protection). */
   auraRadius: LevelTableSchema.optional(),
   /** Using it gives the creature its speed again as movement (Dash). */
@@ -507,6 +521,8 @@ export const FeatureSchema = z.object({
   unarmoredShield: z.boolean().optional(),
   /** Uses are this ability's modifier, at least 1 (bardic inspiration). */
   usesAbility: AbilitySchema.optional(),
+  /** Added to `usesAbility` uses (divine sense: 1 + Charisma modifier). */
+  usesBonus: z.number().int().optional(),
   /** Uses are class level times this, spent a hit point at a time (lay on hands). */
   poolPerLevel: z.number().int().positive().optional(),
   /** Spends the uses of this other feature (turn undead uses channel divinity). */
@@ -521,6 +537,10 @@ export const FeatureSchema = z.object({
   spell: z.record(z.string(), z.unknown()).optional(),
   /** An option of the class's choice by this id: the character has it only when picked (`stats.features`). */
   choice: id.optional(),
+  /** Spells the character always has prepared from these class levels (a domain's spells, a 2024 paladin's smite). */
+  grantsSpells: z.array(z.tuple([z.number().int().min(1).max(20), id])).optional(),
+  /** Why the GM runs it by hand: what it does that the engine doesn't (yet). */
+  manual: z.string().optional(),
 });
 export type Feature = z.infer<typeof FeatureSchema>;
 
@@ -535,6 +555,8 @@ export const SubclassSchema = z.object({
   name: z.string().min(1),
   description: z.string().default(''),
   features: z.array(FeatureSchema).default([]),
+  /** Picks among the subclass's optional features (a hunter's prey, a dragon ancestor). */
+  choices: z.array(ChoiceSchema).optional(),
 });
 export type Subclass = z.infer<typeof SubclassSchema>;
 
@@ -567,7 +589,7 @@ export const ClassSchema = z.object({
   choices: z.array(ChoiceSchema).optional(),
   /** The class level its subclass is chosen at. */
   subclassLevel: z.number().int().min(1).max(20).optional(),
-  /** Subclasses with their own features (homebrew; the SRD's are named in origins). */
+  /** Subclasses with their own features and choices. */
   subclasses: z.array(SubclassSchema).optional(),
   /** Scores of 13 needed to multiclass into or out of it: every one of `all`, and one of `any`. */
   multiclass: z.object({ all: z.array(AbilitySchema).optional(), any: z.array(AbilitySchema).optional() }).optional(),

@@ -1,8 +1,7 @@
-import { homebrewIssues } from '@vtt/system-dnd5e';
+import { choicesDue, homebrewIssues } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import {
   blankClass,
-  choicesDue,
   classOfDoc,
   classPatch,
   freshId,

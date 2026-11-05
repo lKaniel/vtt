@@ -13,6 +13,7 @@ import {
   type Edition,
   EditionSchema,
   type InventoryEntry,
+  type Stats,
 } from './stats-schema.ts';
 
 // A player's character as built in the character creator. It lives with the
@@ -50,6 +51,8 @@ export const CharacterSchema = z.object({
   method: z.enum(['point-buy', 'standard', 'roll', 'manual']).default('point-buy'),
   /** Ability bonuses the player chose: a half-elf's +1s (2014) or the background's +2/+1 (2024). */
   bonusPicks: Bonuses.default({}),
+  /** Class options picked (fighting styles, invocations, a land), as "<class>/<feature>". */
+  features: z.array(z.string().regex(/^[a-z0-9-]+\/[a-z0-9-]+$/)).default([]),
   /** Skills picked from the class list; background skills come on top. */
   skills: z.array(id).default([]),
   /** Hit points gained at each level after the first (rolled or average), before Constitution. */
@@ -164,6 +167,23 @@ export function characterInventory(c: Character, parts = partsOf(c)): InventoryE
   return kitItems([...(parts.options?.kit ?? []), ...(parts.background?.kit ?? [])], c.kit);
 }
 
+/** One class as `class` and `level`; several, or one with a subclass, as `classes`. */
+function classStats(c: Character): Pick<Stats, 'class' | 'level' | 'classes'> {
+  return c.multiclass.length || c.subclass ? { classes: characterClasses(c) } : { class: c.class, level: c.level };
+}
+
+function characterStats(c: Character, parts: Parts): Stats {
+  return {
+    rules: c.rules,
+    ...classStats(c),
+    ...(c.features.length && { features: c.features }),
+    abilities: abilityScores(c, parts),
+    maxHp: characterMaxHp(c, parts),
+    skills: characterSkills(c, parts),
+    spells: c.spells,
+  };
+}
+
 /** Token fields for a character; the caller adds id and position. */
 export function characterToken(c: Character, parts = partsOf(c)): Omit<Token, 'id' | 'x' | 'y'> {
   const darkvision = Math.max(parts.species?.darkvision ?? 0, parts.subspecies?.darkvision ?? 0);
@@ -176,14 +196,7 @@ export function characterToken(c: Character, parts = partsOf(c)): Omit<Token, 'i
     ownership: { default: 'limited', [c.owner]: 'owner' },
     darkvision,
     hidden: false,
-    stats: {
-      rules: c.rules,
-      ...(c.multiclass.length ? { classes: characterClasses(c) } : { class: c.class, level: c.level }),
-      abilities: abilityScores(c, parts),
-      maxHp: characterMaxHp(c, parts),
-      skills: characterSkills(c, parts),
-      spells: c.spells,
-    },
+    stats: characterStats(c, parts),
     inventory: characterInventory(c, parts),
     ...(c.homebrew.length && { own: { classes: c.homebrew } }),
   };

@@ -118,6 +118,8 @@ export const EN_SHEET = {
   'sheet.roll.saveDc': '{ability} {dc}',
   'sheet.roll.heal': 'Heal',
   'sheet.recharge.long': 'Long rest',
+  'sheet.gmNote': 'GM runs it:',
+  'creator.choice': '{name} ({picked} of {count})',
   'sheet.recharge.short': 'Short rest',
   'sheet.recharge.short-one': 'One a short rest',
   'sheet.spellcasting': 'Spellcasting',

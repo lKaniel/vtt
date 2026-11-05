@@ -6,16 +6,27 @@ export interface Entry {
   id: string;
   type: string;
   fields?: Fields;
-  grants?: { item: string; when?: string }[];
+  grants?: { item: string; when?: unknown }[];
   effects?: { target: unknown; op: string; value: unknown }[];
+}
+export interface PackChoice {
+  id: string;
+  from?: { type?: string; where?: string; items?: string[]; options?: PackOption[]; values?: unknown[] };
+  when?: unknown;
+  pick?: unknown;
+}
+export interface PackOption {
+  id: string;
+  grants?: { item: string; when?: unknown }[];
+  choices?: PackChoice[];
 }
 export interface Pack {
   entries: Map<string, Entry>;
   text: Record<string, string>;
 }
 
-const bare = (ref: string) => ref.slice(ref.indexOf('.') + 1);
-const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
+export const bare = (ref: string) => ref.slice(ref.indexOf('.') + 1);
+export const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
 const num = (v: unknown) => (typeof v === 'number' ? v : undefined);
 const list = (v: unknown) => (Array.isArray(v) ? (v as string[]) : []);
 const formula = (v: unknown) =>
@@ -146,36 +157,6 @@ export function convertSpell(pack: Pack, spell: Entry): object {
     effect,
     automated: [f.attack, save, parts.length, f.heal, effect].some(Boolean),
     description: pack.text[`spells.${key}.description`] ?? '',
-  };
-}
-
-// ---- Classes ------------------------------------------------------------
-
-const level = (when?: string) => Number(/self\.level >= (\d+)/.exec(when ?? '')?.[1] ?? 1);
-
-export function convertClass(pack: Pack, cls: Entry): object {
-  const key = bare(cls.id);
-  const saves = (cls.effects ?? [])
-    .filter((e) => e.target === 'proficiencies.saves')
-    .map((e) => bare((e.value as { tag: string }).tag));
-  const features = (cls.grants ?? [])
-    .filter((g) => !g.item.includes('ability-score-improvement'))
-    .map((g) => {
-      const id = g.item.split('.').at(-1)!;
-      return {
-        id,
-        name: pack.text[`${g.item}.name`] ?? id,
-        level: level(g.when),
-        description: pack.text[`${g.item}.description`] ?? '',
-      };
-    })
-    .sort((a, b) => a.level - b.level);
-  return {
-    id: key,
-    name: pack.text[`classes.${key}.name`] ?? key,
-    hitDie: Number(str(cls.fields?.hitDie)?.slice(2) ?? 8),
-    saves,
-    features,
   };
 }
 

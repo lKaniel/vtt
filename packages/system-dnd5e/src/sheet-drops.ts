@@ -1,5 +1,6 @@
 import { classLevels } from './multiclass.ts';
-import { type CasterSheet, classFeature } from './classes.ts';
+import type { CasterSheet } from './classes.ts';
+import { classFeature } from './class-options.ts';
 import type { Content } from './content.ts';
 import type { Creature } from './creature.ts';
 import type { Spell } from './spell-schema.ts';

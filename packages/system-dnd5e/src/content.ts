@@ -46,7 +46,10 @@ function withOverlay(entry: Entry, overlay: Overlay, edition: Edition): Entry {
 }
 
 function merge(entry: Entry, part: Record<string, unknown>): Entry {
-  const { features, ...rest } = part as { features?: Record<string, object> };
+  const { features, subclasses, ...rest } = part as {
+    features?: Record<string, object>;
+    subclasses?: Record<string, Record<string, unknown>>;
+  };
   // null in the overlay takes a generated field away (false life's healing).
   const kept = Object.entries({ ...entry, ...rest } as Record<string, unknown>).filter(([, value]) => value !== null);
   const out: Entry = Object.fromEntries(kept) as Entry;
@@ -57,6 +60,13 @@ function merge(entry: Entry, part: Record<string, unknown>): Entry {
       .filter(([id]) => !known.some((f) => f.id === id))
       .map(([id, f]) => ({ id, ...f }));
     out.features = [...known.map((f) => ({ ...f, ...features[f.id] })), ...added];
+  }
+  // A class's subclasses take their own overlays the same way, by subclass id.
+  if (subclasses && Array.isArray(entry.subclasses)) {
+    out.subclasses = (entry.subclasses as Entry[]).map((s) => {
+      const extra = subclasses[s.id];
+      return extra ? merge(s, extra) : s;
+    });
   }
   return out;
 }

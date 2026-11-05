@@ -7,6 +7,7 @@ export * from './content.ts';
 export * from './creature-math.ts';
 export * from './creature.ts';
 export * from './classes.ts';
+export * from './class-options.ts';
 export * from './multiclass.ts';
 export * from './encounter.ts';
 export * from './checks.ts';

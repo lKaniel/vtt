@@ -57,6 +57,18 @@ describe('tooltips', () => {
       body: 'Heal.',
     });
   });
+
+  it('says what the GM runs by hand of a feature', () => {
+    const tip = featureTip({
+      id: 'slow-fall',
+      name: 'Slow Fall',
+      level: 4,
+      description: '',
+      recharge: 'long',
+      manual: 'Reduce it.',
+    });
+    expect(tip.note).toBe('Reduce it.');
+  });
 });
 
 describe('plain text', () => {

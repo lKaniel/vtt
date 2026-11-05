@@ -23,6 +23,7 @@ import {
   setEdition,
   spellChoices,
   toggleBonusChoice,
+  toggleOption,
   toggleSkill,
   toggleSpell,
   withHomebrewClass,
@@ -53,8 +54,18 @@ describe('choosing origins and class', () => {
   });
 
   it('clears class picks when the class changes', () => {
-    const c = chooseClass({ ...fresh(), skills: ['athletics'], spells: ['x'], kit: { a: 'b' } }, 'wizard');
-    expect(c).toMatchObject({ class: 'wizard', skills: [], spells: [], kit: {} });
+    const c = chooseClass(
+      { ...fresh(), skills: ['athletics'], spells: ['x'], kit: { a: 'b' }, features: ['fighter/archery'] },
+      'wizard',
+    );
+    expect(c).toMatchObject({ class: 'wizard', skills: [], spells: [], kit: {}, features: [] });
+  });
+
+  it('toggles class options up to the number the choice gives', () => {
+    const one = toggleOption(fresh(), 'fighter', 'archery');
+    expect(one.features).toEqual(['fighter/archery']);
+    expect(toggleOption(one, 'fighter', 'defense').features).toEqual(['fighter/defense']);
+    expect(toggleOption(one, 'fighter', 'archery').features).toEqual([]);
   });
 
   it('copies a homebrew class onto the character, and drops it once unused', () => {

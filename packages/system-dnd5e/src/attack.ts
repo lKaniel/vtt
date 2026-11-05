@@ -10,6 +10,8 @@ export interface AttackOptions {
   bonus?: readonly string[];
   /** A hit is a critical hit (the target is paralyzed or unconscious and within 5 ft). */
   autoCrit?: boolean;
+  /** The lowest d20 face that is a critical hit (20 unless a feature widens it). */
+  critRange?: number;
   /** Damage added on a hit: sneak attack, rage. */
   extraDamage?: readonly Damage[];
 }
@@ -44,8 +46,8 @@ function doubleTerm(term: string): string {
 export function rollAttack(attack: Attack, target: Creature, opts: AttackOptions, rng: Rng = Math.random): AttackRoll {
   const d20 = roll(d20Formula(attack.toHit, opts.bonus ?? [], opts), rng);
   const natural = d20.terms[0]!.value;
-  const hit = natural === 20 || (natural !== 1 && d20.total >= target.ac);
-  const crit = natural === 20 || (hit && !!opts.autoCrit);
+  const hit = natural >= (opts.critRange ?? 20) || (natural !== 1 && d20.total >= target.ac);
+  const crit = natural >= (opts.critRange ?? 20) || (hit && !!opts.autoCrit);
   const parts = [...attack.damage, ...(opts.extraDamage ?? [])];
   const damage = hit ? parts.map((d) => ({ roll: roll(crit ? critDice(d.dice) : d.dice, rng), type: d.type })) : [];
   return { d20, natural, total: d20.total, hit, crit, damage };

@@ -1,5 +1,6 @@
 import { resistSave } from './legendary.ts';
 import { applyDamage, critDice, tokenDistance } from './attack.ts';
+import { spellHealBonus } from './class-styles.ts';
 import type { Creature } from './creature.ts';
 import { abilityMod } from './creature-math.ts';
 import { isDead, makesDeathSaves } from './deaths.ts';
@@ -336,7 +337,10 @@ function heal(cast: Cast, target: CastSide, base: Base): CastResult {
 
 /** Hit points a heal gives one target: rolled, or taken from a shared pool up to what it's missing. */
 function healingFor(cast: Cast, target: CastSide): number {
-  if (!cast.spell.healShared) return roll(cast.spell.heal!, cast.rng).total + (cast.spell.healMod ? cast.mod : 0);
+  if (!cast.spell.healShared) {
+    const bonus = (cast.spell.healMod ? cast.mod : 0) + spellHealBonus(cast.caster.sheet, cast.spell.level);
+    return roll(cast.spell.heal!, cast.rng).total + bonus;
+  }
   cast.pool ??= roll(cast.spell.heal!, cast.rng).total;
   const given = Math.min(cast.pool, Math.max(0, target.sheet.maxHp - target.sheet.hp));
   cast.pool -= given;

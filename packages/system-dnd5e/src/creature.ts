@@ -10,10 +10,11 @@ import {
   type CasterSheet,
   type FeatureSheet,
   featureSheets,
-  grantedFeatures,
   levelValue,
   type ScaleValue,
 } from './classes.ts';
+import { grantedFeatures } from './class-options.ts';
+import { withFightingStyles } from './class-styles.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
 import { changed, changedBase, changedList } from './effect-changes.ts';
@@ -111,7 +112,10 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     proficiency,
     ac:
       ac ??
-      armorClass(abilities, gear.armor, { ...features.find((f) => f.unarmoredAc), armorBase: armorBaseOf(token) }),
+      armorClass(abilities, gear.armor, {
+        ...features.find((f) => f.unarmoredAc),
+        armorBase: armorBaseOf(token, features),
+      }),
     // Clamped once effects have changed the maximum (aid).
     hp: token.hp ?? Number.POSITIVE_INFINITY,
     maxHp,
@@ -128,7 +132,8 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     features,
     senses: sensesOf(token, monster),
   };
-  return withCarrying(applyEffects(withItemBonuses(base, token, content)), token, { monster, content });
+  const styled = withFightingStyles(applyEffects(withItemBonuses(base, token, content)), !!bodyArmor(gear.armor));
+  return withCarrying(styled, token, { monster, content });
 }
 
 /** A creature in another shape: the form's stat block, with its own hit points in 2024 (forms.ts). */
@@ -283,9 +288,12 @@ function classHp(levels: readonly ClassLevel[], abilities: Abilities): number | 
 
 const HELD: readonly Condition[] = ['grappled', 'paralyzed', 'petrified', 'restrained', 'stunned', 'unconscious'];
 
-/** The best unarmored base AC an effect gives (mage armor), or 0. */
-function armorBaseOf(token: Token): number {
-  return Math.max(0, ...(token.effects ?? []).map((e) => e.armorBase ?? 0));
+/** The best unarmored base AC an effect or always-on feature gives (mage armor, draconic resilience), or 0. */
+function armorBaseOf(token: Token, features: readonly FeatureSheet[]): number {
+  return Math.max(
+    0,
+    ...[...(token.effects ?? []), ...features.map((f) => f.passive ?? {})].map((e) => e.armorBase ?? 0),
+  );
 }
 
 /** AC, hit points, speed and resistances changed by spells and features. */
@@ -371,6 +379,8 @@ function equippedItems(token: Token, content: Content): { weapons: Weapon[]; arm
   };
 }
 
+const bodyArmor = (armor: readonly Armor[]) => armor.find((a) => a.category !== 'shield');
+
 /** AC from worn armor and shield, or 10 + dex without armor (plus another ability with unarmored defense). */
 export function armorClass(
   abilities: Abilities,
@@ -379,7 +389,7 @@ export function armorClass(
 ): number {
   const dex = abilityMod(abilities.dex);
   const shield = armor.filter((a) => a.category === 'shield').reduce((sum, a) => sum + a.ac, 0);
-  const body = armor.find((a) => a.category !== 'shield');
+  const body = bodyArmor(armor);
   if (!body) {
     const natural = 10 + unarmoredBonus(abilities, shield > 0, unarmored);
     return Math.max(natural, unarmored?.armorBase ?? 0) + dex + shield;

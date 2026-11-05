@@ -125,6 +125,18 @@ describe('characterIssues', () => {
     expect(characterIssues(cleric({ subspecies: undefined }))).toContain('Choose a subrace for Dwarf.');
   });
 
+  it('checks the class options picked', () => {
+    const fighter = cleric({ class: 'fighter', subclass: undefined, spells: [], skills: ['athletics', 'history'] });
+    expect(issuesByStep(fighter).class).toEqual(['Choose 1 Fighting Style.']);
+    expect(issuesByStep({ ...fighter, features: ['fighter/archery'] }).class).toEqual([]);
+    expect(issuesByStep({ ...fighter, features: ['fighter/archery', 'fighter/defense'] }).class).toEqual([
+      'Choose 1 Fighting Style.',
+    ]);
+    expect(issuesByStep({ ...fighter, features: ['fighter/archery', 'fighter/nope'] }).class).toContain(
+      'Unknown class option "fighter/nope".',
+    );
+  });
+
   it('checks point buy', () => {
     const base = { str: 15, dex: 15, con: 15, int: 8, wis: 15, cha: 8 };
     expect(characterIssues(cleric({ base }))).toContain('Point buy spends 36 of 27 points.');
@@ -199,7 +211,7 @@ describe('multiclassing', () => {
   const c3 = cleric({ level: 3, hpRolls: [5, 5] });
 
   it('takes a level in a new class, then more in it', () => {
-    const c = levelUp(c3, { hp: 6, class: 'fighter' });
+    const c = levelUp(c3, { hp: 6, class: 'fighter', features: ['fighter/defense'] });
     expect(c).toMatchObject({ level: 3, multiclass: [{ class: 'fighter', level: 1 }], hpRolls: [5, 5, 6] });
     expect(totalLevel(c)).toBe(4);
     expect(characterIssues(c)).toEqual([]);
@@ -257,6 +269,13 @@ describe('multiclassing', () => {
 });
 
 describe('characterToken', () => {
+  it('keeps the subclass and the class options picked', () => {
+    const t = characterToken(cleric({ features: ['cleric/x'] }));
+    expect(t.stats?.classes).toEqual([{ class: 'cleric', level: 1, subclass: 'life-domain' }]);
+    expect(t.stats?.features).toEqual(['cleric/x']);
+    expect(characterToken(cleric({ subclass: undefined })).stats).toMatchObject({ class: 'cleric', level: 1 });
+  });
+
   it('turns a character into a token the rules can use', () => {
     const token = characterToken(cleric());
     expect(token).toMatchObject({
@@ -266,8 +285,7 @@ describe('characterToken', () => {
       ownership: { default: 'limited', kaniel: 'owner' },
       stats: {
         rules: '2014',
-        class: 'cleric',
-        level: 1,
+        classes: [{ class: 'cleric', level: 1, subclass: 'life-domain' }],
         maxHp: 12,
         abilities: { con: 17, wis: 16 },
         skills: ['insight', 'religion', 'medicine', 'history'],

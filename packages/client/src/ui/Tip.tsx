@@ -14,6 +14,7 @@ export function TipCard({ tip }: Readonly<{ tip: Tip }>) {
         </ul>
       )}
       {tip.body && <p className="tip-body">{tip.body}</p>}
+      {tip.note && <p className="tip-body">{tip.note}</p>}
       {tip.warning && <p className="tip-warning">{tip.warning}</p>}
     </div>
   );

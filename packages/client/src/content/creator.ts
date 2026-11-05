@@ -7,6 +7,7 @@ import {
   type Character,
   type Class,
   characterClasses,
+  choicesDue,
   type CreatorStep,
   type Edition,
   isImprovementLevel,
@@ -45,7 +46,23 @@ export function chooseClass(c: Character, cls: string, homebrew: readonly Class[
   );
   const used = new Set([cls, ...c.multiclass.map((m) => m.class)]);
   const kept = next.homebrew.filter((h) => used.has(h.id));
-  return { ...next, class: cls, subclass: undefined, skills: [], spells: [], kit: {}, homebrew: kept };
+  const features = next.features.filter((f) => !f.startsWith(`${c.class}/`));
+  return { ...next, class: cls, subclass: undefined, skills: [], spells: [], kit: {}, homebrew: kept, features };
+}
+
+/** Picks or drops an option of one of the class's choices; a choice of one swaps its pick. */
+export function toggleOption(c: Character, classId: string, option: string): Character {
+  const ref = `${classId}/${option}`;
+  if (c.features.includes(ref)) return { ...c, features: c.features.filter((f) => f !== ref) };
+  const k = characterClasses(c).find((x) => x.class === classId);
+  const cls = partsOf(c).book.content.classes.get(classId);
+  if (!k || !cls) return c;
+  const due = choicesDue(cls, k.level, c.features, k.subclass).find((d) => d.options.some((o) => o.id === option));
+  if (!due) return c;
+  if (due.picked.length < due.count) return { ...c, features: [...c.features, ref] };
+  if (due.count !== 1) return c;
+  const others = new Set(due.picked.map((p) => `${classId}/${p}`));
+  return { ...c, features: [...c.features.filter((f) => !others.has(f)), ref] };
 }
 
 export function chooseBackground(c: Character, background: string): Character {

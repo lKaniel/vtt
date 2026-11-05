@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { convertClass, convertMonster, convertSpell, ofType, type Entry, type Pack } from './srd-convert.ts';
+import { convertMonster, convertSpell, ofType, type Entry, type Pack } from './srd-convert.ts';
 
 function pack(entries: Entry[], text: Record<string, string> = {}): Pack {
   return { entries: new Map(entries.map((e) => [e.id, e])), text };
@@ -85,32 +85,6 @@ describe('convertSpell', () => {
       fields: { level: 9, castingTime: '1-minute', rangeKind: 'touch' },
     };
     expect(convertSpell(pack([wish]), wish)).toMatchObject({ castingTime: 'minute', range: 5, automated: false });
-  });
-});
-
-describe('convertClass', () => {
-  it('takes hit die, saves and features by level', () => {
-    const fighter: Entry = {
-      id: 'classes.fighter',
-      type: 'class',
-      fields: { hitDie: '1d10' },
-      effects: [{ target: 'proficiencies.saves', op: 'grant', value: { tag: 'save.str' } }],
-      grants: [
-        { item: 'features.fighter.action-surge', when: 'self.level >= 2' },
-        { item: 'features.fighter.second-wind', when: 'self.level >= 1' },
-        { item: 'features.ability-score-improvement', when: 'self.level >= 4' },
-      ],
-    };
-    const p = pack([fighter], { 'features.fighter.second-wind.name': 'Second Wind' });
-    expect(convertClass(p, fighter)).toMatchObject({
-      id: 'fighter',
-      hitDie: 10,
-      saves: ['str'],
-      features: [
-        { id: 'second-wind', name: 'Second Wind', level: 1 },
-        { id: 'action-surge', level: 2 },
-      ],
-    });
   });
 });
 
