@@ -19,12 +19,12 @@ test('the GM sends Bram through the walls into the locked cellar; players have n
   await expect(page.getByText(/can't get there/i)).toBeVisible();
   expect(await placeSeen(page, 'bram')).toEqual([650, 650]);
 
-  const ghost = page.getByRole('button', { name: /^Ignore walls/ });
+  const ghost = page.getByRole('button', { name: /^Ghost mode/ });
   await ghost.click();
   await expect(ghost).toHaveAttribute('aria-pressed', 'true');
   await page.evaluate(([x, y]) => vtt.move('bram', x, y), CELLAR);
   await expect.poll(() => placeSeen(page, 'bram')).toEqual(CELLAR);
 
   const player = await seat(PLAYER_2);
-  await expect(player.getByRole('button', { name: /^Ignore walls/ })).toHaveCount(0);
+  await expect(player.getByRole('button', { name: /^Ghost mode/ })).toHaveCount(0);
 });

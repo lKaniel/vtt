@@ -157,7 +157,7 @@ function ThroughWallsButton({ session }: Readonly<{ session: Session }>) {
       aria-pressed={on}
       onClick={() => session.throughWalls.toggle()}
       title={label}
-      aria-label={t('walls.ignore')}
+      aria-label={t('walls.ghost')}
     >
       <GhostIcon />
     </Button>

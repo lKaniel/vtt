@@ -14,6 +14,7 @@ export const EN_MAP = {
   'view3d.flat': 'Lay the 3D scene flat to edit it',
   'view3d.stand': 'Back to the 3D view',
   'walls.ignore': 'Ignore walls: creatures you move go straight through them (Shift+W)',
+  'walls.ghost': 'Ghost mode',
   'walls.heed': 'Walls block again (Shift+W)',
   'keys.throughWalls': 'GM: ignore walls when moving creatures, or heed them again',
   'levels.stay': 'Stay here',
