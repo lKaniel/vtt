@@ -235,7 +235,17 @@ function handleGameKey(session: Session, e: Key): void {
   }
   if (id === 'view3d') return session.view3d.toggle();
   if (id === 'throughWalls') return session.throughWalls.toggle();
+  if (id === 'fly-up' || id === 'fly-down') return fly(session, id === 'fly-up' ? FLY_STEP : -FLY_STEP);
   if (id?.startsWith('hotbar-')) pressSlot(session, id.slice(7));
+}
+
+/** Feet a creature flies up or down per key press. */
+const FLY_STEP = 5;
+
+/** Raises or lowers the selected creature (its elevation, as the token HUD sets it). */
+function fly(session: Session, by: number): void {
+  const token = session.selected ? session.tokens.get(session.selected) : undefined;
+  if (token && session.canControl(token)) session.requests.editToken(token.id, { elevation: (token.elevation ?? 0) + by });
 }
 
 /** Uses the selected creature's action bar tile in slot `hotkey` ("1".."0"). */

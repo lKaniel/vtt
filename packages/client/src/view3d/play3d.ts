@@ -3,11 +3,13 @@ import * as THREE from 'three';
 import type { EffectsLayer } from '../canvas/EffectsLayer.ts';
 import type { TokenLayer } from '../canvas/TokenLayer.ts';
 import { type Body, Effects3D } from './effects3d.ts';
+import { FlightMarks } from './flight3d.ts';
 import type { Standing } from './scene3d.ts';
 
 // What happens in play under the 3D view, beside the scenery View3D stands
-// (one hook there): attacks and spells as 3D effects (effects3d.ts), and the
-// creatures' lunges and flinches that go with them.
+// (one hook there): attacks and spells as 3D effects (effects3d.ts), the
+// creatures' lunges and flinches that go with them, and the shadows and
+// heights of those flying (flight3d.ts).
 
 /** What play in 3D needs of the 3D view. */
 export interface Play3DHost {
@@ -25,6 +27,7 @@ export interface Play3DHost {
 export class Play3D {
   readonly group = new THREE.Group();
   private fx: Effects3D;
+  private flight = new FlightMarks();
   /** The creatures as the last frame stood them. */
   private stood = new Map<string, Standing>();
 
@@ -35,7 +38,7 @@ export class Play3D {
       px: () => host.px(),
       released: (id, now) => host.tokens.release(id, now),
     });
-    this.group.add(this.fx.group);
+    this.group.add(this.fx.group, this.flight.group);
   }
 
   /** Takes the attack and spell cues from the flat map while the 3D view is on. */
@@ -62,11 +65,13 @@ export class Play3D {
   frame(standing: readonly Standing[], now: number): void {
     this.stood = new Map(standing.map((s) => [s.id, s]));
     this.fx.tick(now);
+    this.flight.show(standing, this.host.floor(), this.host.px());
   }
 
   dispose(): void {
     if (this.host.effects.relay) delete this.host.effects.relay;
     this.fx.dispose();
+    this.flight.dispose();
   }
 
   private body(id: string): Body | undefined {

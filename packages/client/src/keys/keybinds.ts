@@ -37,6 +37,8 @@ export const KEY_ACTIONS: readonly KeyAction[] = [
   { id: 'step-left', group: 'Walking', key: 'arrowleft' },
   { id: 'step-right', group: 'Walking', key: 'arrowright' },
   { id: 'throughWalls', group: 'Walking', key: 'shift+w' },
+  { id: 'fly-up', group: 'Walking', key: 'pageup' },
+  { id: 'fly-down', group: 'Walking', key: 'pagedown' },
   { id: 'view3d', group: 'Camera', key: 'v' },
   { id: 'cam-left', group: 'Camera', key: ',' },
   { id: 'cam-right', group: 'Camera', key: '.' },

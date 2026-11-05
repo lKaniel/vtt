@@ -125,6 +125,8 @@ export interface Standing {
   size: number;
   picture: string;
   faint: boolean;
+  /** In the air: the ground under it, pixels above the floor shown (flight3d.ts). */
+  ground?: number;
   /** The colour it flashes when struck (effects3d.ts). */
   tint?: THREE.Color;
 }
