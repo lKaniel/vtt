@@ -48,13 +48,40 @@ describe('the resolution of the 3D picture', () => {
 
   it('drops while frames are slow, but not below its floor', () => {
     const r = new Resolution();
-    run(r, 40, 2);
+    run(r, 40, 3);
     expect(r.scale).toBeLessThan(1);
     run(r, 40, 30);
     expect(r.scale).toBeCloseTo(r.lowest);
     const low = new Resolution(0.7);
     run(low, 40, 30);
     expect(low.scale).toBeCloseTo(0.7);
+  });
+
+  it('waits out the first seconds, while the view is still loading', () => {
+    const r = new Resolution();
+    run(r, 80, 1.5);
+    expect(r.scale).toBe(1);
+  });
+
+  it('shakes off a stutter (quick frames between long stalls) by drawing at another size', () => {
+    const r = new Resolution();
+    run(r, 16, 4);
+    const stutter = () => {
+      for (let i = 0; i < 4; i++) r.frame(i === 3 ? 45 : 4);
+    };
+    for (let i = 0; i < 40 && r.scale === 1; i++) stutter();
+    expect(r.scale).toBeLessThan(1);
+    const after = r.scale;
+    for (let i = 0; i < 40 && r.scale === after; i++) stutter();
+    expect(r.scale).not.toBe(after);
+  });
+
+  it('gives up on a stutter that no size cures', () => {
+    const r = new Resolution();
+    run(r, 16, 4);
+    let changes = 0;
+    for (let i = 0; i < 400; i++) for (let j = 0; j < 4; j++) if (r.frame(j === 3 ? 45 : 4)) changes++;
+    expect(changes).toBe(4);
   });
 
   it('climbs back once frames are quick again', () => {
