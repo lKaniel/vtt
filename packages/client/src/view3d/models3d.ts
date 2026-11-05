@@ -1,6 +1,7 @@
 import { type Model3D, type ModelGround, modelOffset, modelPieces } from '@vtt/shared';
 import * as THREE from 'three';
 import { clone as cloneRigged } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { tooSmallToSee } from './frame-budget.ts';
 import { at3d } from './scene3d.ts';
 import { loadModel, modelLoader } from './model-loader.ts';
 import { paintedMaterial } from './paint3d.ts';
@@ -155,7 +156,17 @@ class Placed {
       pivot.position.copy(at3d(p.at, floorPx + p.base));
       pivot.rotation.set(p.tilt[0], p.yaw, p.tilt[1], 'YXZ');
       pivot.scale.set(...p.scale);
+      pivot.userData.size = Math.max(...l.size.map((s, j) => s * Math.abs(p.scale[j]!)));
     });
+  }
+
+  /** Leaves out the copies too small to see from `eye` (never a creature's figure). */
+  cull(eye: THREE.Vector3, grid: number): void {
+    if (this.shown.figure) return;
+    for (const pivot of this.group.children) {
+      const size = (pivot.userData.size as number | undefined) ?? Infinity;
+      pivot.visible = !tooSmallToSee(size, pivot.position.distanceTo(eye), grid);
+    }
   }
 
   private copy(l: Loaded): THREE.Object3D {
@@ -210,6 +221,11 @@ export class Models {
       lit ||= on;
     }
     return lit;
+  }
+
+  /** Leaves out what is too small to see from the camera at `eye`. */
+  cull(eye: THREE.Vector3, grid: number): void {
+    for (const p of this.placed.values()) p.cull(eye, grid);
   }
 
   /** How many copies stand (the e2e tests read it off the 3D view). */

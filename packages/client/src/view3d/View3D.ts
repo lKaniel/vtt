@@ -18,6 +18,7 @@ import { Solids } from './solids3d.ts';
 import { Surface } from './surface3d.ts';
 import { drapeOver } from './terrain-paint.ts';
 import { Terrains } from './terrain3d.ts';
+import { groundDue, groundToDraw, Resolution, type Square } from './frame-budget.ts';
 import { CameraInput } from './input3d.ts';
 import { Models, type ModelShown } from './models3d.ts';
 import { eyeOf, follow, groundSquare, type MapPoint, ORBIT, type Orbit, panBy, rotateBy, zoomBy } from './orbit.ts';
@@ -74,8 +75,15 @@ export class View3D {
   private hemi = new THREE.HemisphereLight(0xfff4e0, 0x403830, 1.2);
   private sun = new THREE.DirectionalLight(0xffffff, 1.4);
   private orbit: Orbit;
-  /** The square the 2D map drew last, which the ground shows now. */
-  private drawn?: { center: Point; half: number };
+  /** The square the 2D map drew last, which the ground shows now, and the one it was asked for since. */
+  private drawn?: Square;
+  private asked?: Square;
+  private sinceDrawn = 0;
+  /** Something on the 2D map may have changed (the pointer moved, a creature walks): draw it again soon. */
+  private poked = true;
+  private walkersSeen = '';
+  /** Drops the 3D picture's resolution while frames are slow. */
+  private resolution = new Resolution();
   private following = true;
   private followed?: string;
   private wallsDue = 0;
@@ -117,7 +125,7 @@ export class View3D {
     this.surface.className = 'view3d';
     this.surface.style.cssText = 'position:absolute;inset:0;';
     this.surface.dataset.testid = 'view3d';
-    this.renderer.setPixelRatio(devicePixelRatio);
+    this.sharpness();
     // As 3D Canvas renders, so imported scenes keep their light.
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.surface.appendChild(this.renderer.domElement);
@@ -132,6 +140,11 @@ export class View3D {
       this.session.on('editor', dirty),
       this.session.on('select', () => (this.following = true)),
     );
+    const poke = () => (this.poked = true);
+    for (const type of ['pointermove', 'pointerdown', 'pointerup', 'wheel']) {
+      this.surface.addEventListener(type, poke, { passive: true });
+      this.off.push(() => this.surface.removeEventListener(type, poke));
+    }
     // After the 2D map has drawn the frame (its render runs at LOW priority).
     this.map.app.ticker.add(this.tick, undefined, -50);
   }
@@ -152,6 +165,11 @@ export class View3D {
     this.scene.environment?.dispose();
     this.pmrem.dispose();
     this.renderer.dispose();
+  }
+
+  /** The screen's resolution (at most 2 pixels a point), lowered while frames are slow. */
+  private sharpness(): void {
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2) * this.resolution.scale);
   }
 
   private grid(): number {
@@ -182,27 +200,54 @@ export class View3D {
     const [x, y] = this.orbit.target;
     // On terrain the camera looks at the ground under it, not the bare floor.
     this.orbit = { ...this.orbit, target: [x, y, Math.max(floor, this.terrains.heightAt(x, y) ?? floor)] };
-    // The 2D map has just drawn the square asked for last frame: lay it down, then ask for the next.
-    if (this.drawn) {
-      this.ground.show(this.drawn.center, this.drawn.half, floor);
-      drapeOver(this.ground.picture, this.drawn.center, this.drawn.half);
-    }
+    this.layGround(floor, dt);
     this.fitView();
-    const square = groundSquare(this.orbit, { fov: FOV, aspect: this.camera.aspect, grid: this.grid() });
-    this.bridge.frame(square.center, square.half);
-    this.drawn = square;
+    this.askGround();
     this.placeCamera();
     this.wallsDue -= dt;
     if (this.wallsDirty || this.wallsDue <= 0) this.standWalls(floor);
     const standing = this.standing();
+    this.pokeIfWalking(standing);
     this.standees.show(standing, floor);
     this.seeIn.update(this.acting(standing, floor), this.orbit.yaw, { px: this.px(), grid: this.grid() });
     this.standModels(floor);
     this.renderer.render(this.scene, this.camera);
   }
 
+  /** The 2D map has drawn the square asked for last: lay that picture down (the ground follows the floor every frame). */
+  private layGround(floor: number, dt: number): void {
+    this.sinceDrawn += dt;
+    const fresh = this.bridge.takeDrawn();
+    if (fresh && this.asked) {
+      this.drawn = this.asked;
+      this.sinceDrawn = 0;
+    }
+    if (!this.drawn) return;
+    this.ground.show(this.drawn.center, this.drawn.half, floor, fresh);
+    drapeOver(this.ground.picture, this.drawn.center, this.drawn.half);
+  }
+
+  /** Asks the 2D map for a new square when the camera leaves the one drawn, else again only when something changed. */
+  private askGround(): void {
+    const need = groundSquare(this.orbit, { fov: FOV, aspect: this.camera.aspect, grid: this.grid() });
+    const next = groundToDraw(need, this.asked);
+    if (next) {
+      this.bridge.frame(next.center, next.half);
+      this.asked = next;
+    } else if (groundDue({ sinceDrawn: this.sinceDrawn, poked: this.poked })) this.bridge.redraw();
+    this.poked = false;
+  }
+
+  /** A creature walking moves its ring on the 2D map: the ground is drawn again while it does. */
+  private pokeIfWalking(standing: readonly Standing[]): void {
+    const seen = standing.map((s) => `${s.at[0]},${s.at[1]}`).join(';');
+    if (seen !== this.walkersSeen) this.poked = true;
+    this.walkersSeen = seen;
+  }
+
   private fitView(): void {
     const { clientWidth: w, clientHeight: h } = this.host;
+    if (this.resolution.frame(this.map.app.ticker.deltaMS)) this.sharpness();
     const size = this.renderer.getSize(new THREE.Vector2());
     if (size.x === w && size.y === h) return;
     this.renderer.setSize(w, h);
@@ -307,6 +352,7 @@ export class View3D {
     const all = [...this.tileModels, ...figures(this.session.tokens.values(), this.table(), placeOf)];
     const ground = { grid: this.grid(), feet: 5, floor: this.level()?.bottom ?? 0 };
     this.models.show(all, ground, floor);
+    this.models.cull(this.camera.position, this.grid());
     const hover = this.session.inspect.hover;
     this.models.glow(hover?.kind === 'tile' ? `tile:${hover.id}` : undefined);
     this.solids.show(this.tileSolids, ground, floor);
