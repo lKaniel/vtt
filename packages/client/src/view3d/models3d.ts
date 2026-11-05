@@ -2,6 +2,8 @@ import { type Model3D, type ModelGround, modelOffset, modelPieces } from '@vtt/s
 import * as THREE from 'three';
 import { clone as cloneRigged } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { tooSmallToSee } from './frame-budget.ts';
+import { type Copy, ghostly, Instances, solidAgain } from './instances3d.ts';
+import { quality3d, shrunkSize } from './quality3d.ts';
 import { at3d } from './scene3d.ts';
 import { loadModel, modelLoader } from './model-loader.ts';
 import { paintedMaterial } from './paint3d.ts';
@@ -20,6 +22,8 @@ export interface ModelShown {
   model: Model3D;
   /** A creature's figure: never faded to see in (peek3d.ts). */
   figure?: boolean;
+  /** Moves on its own (a door that swings): drawn on its own, never with its fellow copies. */
+  animated?: boolean;
 }
 
 interface Loaded {
@@ -37,6 +41,7 @@ function load(src: string): Promise<Loaded | undefined> {
   if (!file) {
     file = loadModel(loader, src).then((gltf) => {
       if (!gltf) return undefined;
+      fitTextures(gltf.scene, quality3d().textureMax);
       const box = new THREE.Box3().setFromObject(gltf.scene);
       const size = box.getSize(new THREE.Vector3());
       return {
@@ -48,6 +53,31 @@ function load(src: string): Promise<Loaded | undefined> {
     files.set(src, file);
   }
   return file;
+}
+
+/** Shrinks the model's textures whose longer side is over `max` pixels (low quality: weak graphics hold less). */
+function fitTextures(scene: THREE.Object3D, max: number): void {
+  const done = new Set<THREE.Texture>();
+  scene.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+      for (const v of Object.values(m as object))
+        if (v instanceof THREE.Texture && !done.has(v)) done.add(shrink(v, max));
+    }
+  });
+}
+
+function shrink(texture: THREE.Texture, max: number): THREE.Texture {
+  const image = texture.image as { width?: number; height?: number } | undefined;
+  const size = image?.width && image.height ? shrunkSize(image.width, image.height, max) : undefined;
+  if (!size) return texture;
+  const canvas = document.createElement('canvas');
+  [canvas.width, canvas.height] = size;
+  canvas.getContext('2d')?.drawImage(texture.image as CanvasImageSource, 0, 0, ...size);
+  if (texture.image instanceof ImageBitmap) texture.image.close();
+  texture.image = canvas;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 const tinted = (scene: THREE.Object3D, color: string) =>
@@ -132,6 +162,37 @@ export function glowing(scene: THREE.Object3D, on: boolean): void {
   });
 }
 
+/** What copies share to be drawn together: the same file, tint and paint. */
+export function variantOf(model: Model3D): string {
+  return JSON.stringify([model.src, model.color ?? '', model.paint ?? null]);
+}
+
+/** Whether copies of `scene` shown so are drawn with their fellow copies: not figures, see-through or rigged models. */
+export function drawnTogether(scene: THREE.Object3D, shown: ModelShown): boolean {
+  if (shown.figure || shown.animated) return false;
+  const { opacity } = shown.model;
+  if (opacity !== undefined && opacity < 1) return false;
+  let rigged = false;
+  scene.traverse((o) => (rigged ||= o instanceof THREE.SkinnedMesh));
+  return !rigged;
+}
+
+/** Each variant's model with its paint and tint, made once: every copy is a clone of it, sharing its materials. */
+const variants = new Map<string, THREE.Object3D>();
+
+function dressed(l: Loaded, shown: ModelShown): THREE.Object3D {
+  const key = `${variantOf(shown.model)}:${shown.figure ? 'figure' : 'tile'}`;
+  let model = variants.get(key);
+  if (!model) {
+    model = cloneRigged(l.scene);
+    if (shown.model.color) tinted(model, shown.model.color);
+    if (shown.model.paint) painted(model, shown.model.paint, l);
+    if (!shown.figure) seeThrough(model);
+    variants.set(key, model);
+  }
+  return model;
+}
+
 /** Whether `o` is part of a creature's figure. */
 export function isFigure(o: THREE.Object3D | null): boolean {
   for (let at = o; at; at = at.parent) if (at.userData.figure) return true;
@@ -142,6 +203,10 @@ export function isFigure(o: THREE.Object3D | null): boolean {
 class Placed {
   readonly group = new THREE.Group();
   private loaded?: Loaded;
+  /** Drawn with its fellow copies (instances3d.ts) rather than on its own. */
+  together = false;
+  /** Lit gold on its own while the pointer is on it. */
+  lit = false;
 
   constructor(public shown: ModelShown) {
     this.group.userData.figure = !!shown.figure;
@@ -150,6 +215,7 @@ class Placed {
   /** Loads its file, then calls `ready`. */
   async load(ready: () => void): Promise<void> {
     this.loaded = await load(this.shown.model.src);
+    this.together = !!this.loaded && drawnTogether(this.loaded.scene, this.shown);
     ready();
   }
 
@@ -166,26 +232,53 @@ class Placed {
       pivot.scale.set(...p.scale);
       pivot.userData.size = Math.max(...l.size.map((s, j) => s * Math.abs(p.scale[j]!)));
     });
+    this.group.updateMatrixWorld(true);
   }
 
-  /** Leaves out the copies too small to see from `eye` (never a creature's figure). */
-  cull(eye: THREE.Vector3, grid: number): void {
-    if (this.shown.figure) return;
+  /** The copies to draw with their fellows: none while it is lit on its own, nor those too small to see. */
+  copies(): Copy[] {
+    if (!this.together || this.lit) return [];
+    const variant = variantOf(this.shown.model);
+    return this.group.children.filter((o) => !o.userData.culled).map((object) => ({ object, variant }));
+  }
+
+  /** Lights it gold, drawn on its own while it glows; false when that changed nothing. */
+  light(on: boolean): boolean {
+    if (on === this.lit) return false;
+    this.lit = on;
+    if (on && this.together) solidAgain(this.group);
+    glowing(this.group, on);
+    if (!on && this.together) ghostly(this.group);
+    return true;
+  }
+
+  /**
+   * Leaves out the copies too small to see from `eye` (never a creature's
+   * figure); true when one drawn together came or went. Copies drawn on their
+   * own hide; those drawn together stay for clicks and are left out of drawing.
+   */
+  cull(eye: THREE.Vector3, grid: number, tiny: number): boolean {
+    if (this.shown.figure) return false;
+    let changed = false;
     for (const pivot of this.group.children) {
       const size = (pivot.userData.size as number | undefined) ?? Infinity;
-      pivot.visible = !tooSmallToSee(size, pivot.position.distanceTo(eye), grid);
+      // A little closer before it shows again, so a copy at the edge doesn't flicker in and out.
+      const limit = pivot.userData.culled ? tiny * UNCULL : tiny;
+      const small = tooSmallToSee(size, pivot.position.distanceTo(eye), grid, limit);
+      if (!this.together) pivot.visible = !small;
+      else if (small !== !!pivot.userData.culled) changed = true;
+      pivot.userData.culled = small;
     }
+    return changed;
   }
 
   private copy(l: Loaded): THREE.Object3D {
     const pivot = new THREE.Group();
     // Rigged figures need their bones cloned with them, or they draw in pieces.
-    const model = cloneRigged(l.scene);
-    if (this.shown.model.color) tinted(model, this.shown.model.color);
-    if (this.shown.model.paint) painted(model, this.shown.model.paint, l);
+    const model = cloneRigged(dressed(l, this.shown));
     const { opacity } = this.shown.model;
     if (opacity !== undefined && opacity < 1) faded(model, opacity);
-    if (!this.shown.figure) seeThrough(model);
+    if (this.together) ghostly(model);
     model.position.set(...modelOffset(l.bounds, this.shown.model));
     pivot.add(model);
     this.group.add(pivot);
@@ -193,11 +286,26 @@ class Placed {
   }
 }
 
+/** A left-out copy shows again once it looks this much bigger than the limit. */
+const UNCULL = 1.25;
+
 /** The models standing in the 3D view. */
 export class Models {
   readonly group = new THREE.Group();
   private placed = new Map<string, Placed>();
   private stale = true;
+  /** The tiles' copies drawn together, by model and part of the map (20 squares of 100 px). */
+  private together = new Instances(2000);
+  /** The copies drawn together changed: they are gathered again. */
+  private regather = true;
+  /** The copies to stand again though nothing else changed (a figure that walked). */
+  private moved = new Set<Placed>();
+  /** Where the camera was when small things were last left out. */
+  private culledFrom?: THREE.Vector3;
+
+  constructor() {
+    this.group.add(this.together.group);
+  }
   /** How many times the copies were stood again: what creatures stand on may have moved (a lift). */
   stood = 0;
 
@@ -208,12 +316,28 @@ export class Models {
       if (keep.has(key)) continue;
       this.group.remove(p.group);
       this.placed.delete(key);
+      this.regather = true;
     }
     for (const shown of all) this.update(shown);
-    if (!this.stale) return;
+    const everything = this.stale;
+    if (everything || this.moved.size) this.stood++;
+    for (const p of everything ? this.placed.values() : this.moved) p.place(ground, floorPx);
+    const together = everything || [...this.moved].some((p) => p.together);
+    if (everything) this.culledFrom = undefined;
     this.stale = false;
-    this.stood++;
-    for (const p of this.placed.values()) p.place(ground, floorPx);
+    this.moved.clear();
+    if (together) this.gather(true);
+    else this.gather();
+  }
+
+  /** Draws together the copies that are, when they changed; `moved`: the copies stood again. */
+  private gather(moved = false): void {
+    if (!this.regather && !moved) return;
+    this.regather = false;
+    this.together.draw(
+      [...this.placed.values()].flatMap((p) => p.copies()),
+      moved,
+    );
   }
 
   /**
@@ -224,10 +348,10 @@ export class Models {
     let lit = false;
     for (const [key, p] of this.placed) {
       const on = !!prefix && key.startsWith(`${prefix}:`);
-      if (on || p.group.userData.lit) glowing(p.group, on);
-      p.group.userData.lit = on;
+      if (p.light(on)) this.regather = true;
       lit ||= on;
     }
+    this.gather();
     return lit;
   }
 
@@ -237,9 +361,13 @@ export class Models {
     return [];
   }
 
-  /** Leaves out what is too small to see from the camera at `eye`. */
-  cull(eye: THREE.Vector3, grid: number): void {
-    for (const p of this.placed.values()) p.cull(eye, grid);
+  /** Leaves out what looks smaller than `tiny` from the camera at `eye` (quality3d.ts). */
+  cull(eye: THREE.Vector3, grid: number, tiny: number): void {
+    // Looked at again once the camera has gone half a square (or the copies moved).
+    if (this.culledFrom && this.culledFrom.distanceTo(eye) < grid / 2 && !this.regather) return;
+    this.culledFrom = eye.clone();
+    for (const p of this.placed.values()) if (p.cull(eye, grid, tiny)) this.regather = true;
+    this.gather();
   }
 
   /** How many copies stand (the e2e tests read it off the 3D view). */
@@ -258,7 +386,8 @@ export class Models {
   private update(shown: ModelShown): void {
     const now = this.placed.get(shown.key);
     if (now) {
-      if (!sameRect(now.shown.rect, shown.rect)) this.stale = true;
+      // Only this one stands again: a creature's figure walking leaves the tiles be.
+      if (!sameRect(now.shown.rect, shown.rect)) this.moved.add(now);
       now.shown = shown;
       return;
     }

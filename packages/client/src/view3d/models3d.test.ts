@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { faded, glowing, isFigure, Models, seeThrough } from './models3d.ts';
+import { drawnTogether, faded, glowing, isFigure, Models, seeThrough, variantOf } from './models3d.ts';
 
 // How much of a model shows: 3D Canvas's transparency.
 
@@ -67,11 +67,38 @@ describe('figures', () => {
       { grid: 100, feet: 5, floor: 0 },
       0,
     );
-    const [bram, hut] = models.group.children;
+    // The first child draws the tiles' copies together.
+    const [, bram, hut] = models.group.children;
     const piece = new THREE.Mesh();
     bram!.add(piece);
     expect(isFigure(piece)).toBe(true);
     expect(isFigure(hut!)).toBe(false);
     expect(isFigure(null)).toBe(false);
+  });
+});
+
+describe('copies drawn together', () => {
+  const box = () => new THREE.Group().add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial()));
+  const model = { src: '/hut.glb' } as never;
+  const rect = { x: 0, y: 0, w: 100, h: 100 };
+
+  it('draws a tile’s plain or painted model with its fellow copies', () => {
+    expect(drawnTogether(box(), { key: 'tile:a', rect, model })).toBe(true);
+  });
+
+  it('draws on its own a figure, a see-through model or a rigged one', () => {
+    expect(drawnTogether(box(), { key: 'token:a', rect, model, figure: true })).toBe(false);
+    expect(drawnTogether(box(), { key: 'tile:a', rect, model: { src: '/hut.glb', opacity: 0.5 } })).toBe(false);
+    const rigged = new THREE.Group().add(
+      new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial()),
+    );
+    expect(drawnTogether(rigged, { key: 'tile:a', rect, model })).toBe(false);
+  });
+
+  it('draws together only copies that look alike', () => {
+    const plain = variantOf({ src: '/hut.glb' });
+    expect(variantOf({ src: '/hut.glb' })).toBe(plain);
+    expect(variantOf({ src: '/hut.glb', color: '#ff0000' })).not.toBe(plain);
+    expect(variantOf({ src: '/inn.glb' })).not.toBe(plain);
   });
 });

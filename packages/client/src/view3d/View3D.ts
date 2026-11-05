@@ -17,9 +17,10 @@ import { Picker } from './pick3d.ts';
 import { Overlay3D, type OverlayHost } from './overlay3d.ts';
 import { Solids } from './solids3d.ts';
 import { Surface } from './surface3d.ts';
-import { drapeOver } from './terrain-paint.ts';
 import { Terrains } from './terrain3d.ts';
-import { chunkArea, groundDue, groundToDraw, Resolution, type Square } from './frame-budget.ts';
+import { chunkArea, Resolution } from './frame-budget.ts';
+import { GroundFeed } from './ground-feed.ts';
+import { quality3d } from './quality3d.ts';
 import { CameraRig } from './camera3d.ts';
 import { CameraInput } from './input3d.ts';
 import { Models, type ModelShown } from './models3d.ts';
@@ -52,7 +53,12 @@ const CUT = { radius: 9, low: 14 };
 const WALLS_EVERY = 0.25;
 
 export class View3D {
-  private renderer = new THREE.WebGLRenderer({ antialias: true });
+  /** How good it looks against how fast it runs (quality3d.ts); a new choice starts the view again. */
+  private quality = quality3d();
+  private renderer = new THREE.WebGLRenderer({
+    antialias: this.quality.antialias,
+    powerPreference: 'high-performance',
+  });
   /** What creatures stand on: terrain, model floors and boxes, reached 6 ft up from their feet. */
   private underfoot = new Surface(
     () => this.solidsHit(),
@@ -79,15 +85,10 @@ export class View3D {
   private bridge: PixiBridge;
   private input: CameraInput;
   private rig: CameraRig;
-  /** The square the 2D map drew last, which the ground shows now, and the one it was asked for since. */
-  private drawn?: Square;
-  private asked?: Square;
-  private sinceDrawn = 0;
-  /** Something on the 2D map may have changed (the pointer moved, a creature walks): draw it again soon. */
-  private poked = true;
-  private walkersSeen = '';
+  /** The ground picture from the 2D map, and when the view draws (ground-feed.ts). */
+  private feed: GroundFeed;
   /** Drops the 3D picture's resolution while frames are slow. */
-  private resolution = new Resolution();
+  private resolution = new Resolution(this.quality.lowestScale);
   /** The map whose pieces stay loaded round the camera. */
   private reach?: Rect;
   private frames = 0;
@@ -136,7 +137,11 @@ export class View3D {
       copiesOf: (key) => this.models.copiesOf(key),
     });
     this.ground = new Ground(map.app.canvas);
-    this.bridge = new PixiBridge(map, (x, y) => this.pick(x, y));
+    this.bridge = new PixiBridge(map, (x, y) => this.pick(x, y), this.quality.groundPixels);
+    this.feed = new GroundFeed(this.bridge, this.ground, {
+      refresh: this.quality.groundRefresh,
+      idleFps: this.quality.idleFps,
+    });
     this.overlay = new Overlay3D({
       surface: this.surface,
       camera: this.camera,
@@ -167,6 +172,7 @@ export class View3D {
     this.surface.className = 'view3d';
     this.surface.style.cssText = 'position:absolute;inset:0;';
     this.surface.dataset.testid = 'view3d';
+    this.surface.dataset.quality = this.quality.level;
     this.sharpness();
     // As 3D Canvas renders, so imported scenes keep their light.
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -194,7 +200,7 @@ export class View3D {
       // A new scene: the camera starts at its start, until it finds your creature.
       this.session.on('welcome', () => (this.homed = false)),
     );
-    const poke = () => (this.poked = true);
+    const poke = () => this.feed.poke();
     for (const type of ['pointermove', 'pointerdown', 'pointerup', 'wheel']) {
       this.surface.addEventListener(type, poke, { passive: true });
       this.off.push(() => this.surface.removeEventListener(type, poke));
@@ -232,7 +238,8 @@ export class View3D {
 
   /** The screen's resolution (at most 2 pixels a point), lowered while frames are slow. */
   private sharpness(): void {
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2) * this.resolution.scale);
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.quality.pixelRatio) * this.resolution.scale);
+    this.feed.touch();
   }
 
   private grid(): number {
@@ -274,53 +281,25 @@ export class View3D {
       this.rig.settle((x, y) => Math.max(floor, this.terrains.heightAt(x, y) ?? floor));
     this.rig.keepInBounds();
     this.streamChunks();
-    this.layGround(dt);
+    this.feed.lay(dt, this.street());
     this.fitView();
-    this.askGround();
+    this.feed.ask(groundSquare(this.orbit, { fov: FOV, aspect: this.camera.aspect, grid: this.grid() }));
     this.placeCamera();
     this.wallsDue -= dt;
     if (this.wallsDirty || this.wallsDue <= 0) this.standWalls(floor);
     const now = performance.now();
     const standing = this.standing().map((s) => this.play.pose(s, now));
     this.play.frame(standing, now);
-    this.pokeIfWalking(standing);
+    this.feed.walkers(standing.map((s) => s.at));
     this.standees.show(standing, floor);
     const eye = this.camera.position;
     this.seeIn.update(this.acting(standing, floor), [eye.x, eye.y, eye.z], { px: this.px(), grid: this.grid() });
     this.standModels(floor);
     this.overlay.frame(dt, this.frames);
-    this.renderer.render(this.scene, this.camera);
-  }
-
-  /** The 2D map has drawn the square asked for last: lay that picture down (the ground follows the floor every frame). */
-  private layGround(dt: number): void {
-    this.sinceDrawn += dt;
-    const fresh = this.bridge.takeDrawn();
-    if (fresh && this.asked) {
-      this.drawn = this.asked;
-      this.sinceDrawn = 0;
-    }
-    if (!this.drawn) return;
-    this.ground.show(this.drawn.center, this.drawn.half, this.street(), fresh);
-    drapeOver(this.ground.picture, this.drawn.center, this.drawn.half);
-  }
-
-  /** Asks the 2D map for a new square when the camera leaves the one drawn, else again only when something changed. */
-  private askGround(): void {
-    const need = groundSquare(this.orbit, { fov: FOV, aspect: this.camera.aspect, grid: this.grid() });
-    const next = groundToDraw(need, this.asked);
-    if (next) {
-      this.bridge.frame(next.center, next.half);
-      this.asked = next;
-    } else if (groundDue({ sinceDrawn: this.sinceDrawn, poked: this.poked })) this.bridge.redraw();
-    this.poked = false;
-  }
-
-  /** A creature walking moves its ring on the 2D map: the ground is drawn again while it does. */
-  private pokeIfWalking(standing: readonly Standing[]): void {
-    const seen = standing.map((s) => `${s.at[0]},${s.at[1]}`).join(';');
-    if (seen !== this.walkersSeen) this.poked = true;
-    this.walkersSeen = seen;
+    // The walk's marker pulses until the walker gets there.
+    if (this.overlay.marks.destination.visible) this.feed.touch();
+    const view = `${JSON.stringify(this.orbit)}:${this.models.stood}:${this.session.inspect.hover?.id}`;
+    if (this.feed.due(view, dt)) this.renderer.render(this.scene, this.camera);
   }
 
   private fitView(): void {
@@ -329,6 +308,7 @@ export class View3D {
     const size = this.renderer.getSize(new THREE.Vector2());
     if (size.x === w && size.y === h) return;
     this.renderer.setSize(w, h);
+    this.feed.touch();
     this.camera.aspect = w / Math.max(1, h);
     this.camera.updateProjectionMatrix();
   }
@@ -401,6 +381,7 @@ export class View3D {
 
   /** Stands the walls (unless the scene's models are its walls) and works out the model tiles. */
   private standWalls(floor: number): void {
+    if (this.wallsDirty) this.feed.touch();
     this.wallsDirty = false;
     this.wallsDue = WALLS_EVERY;
     const level = this.level();
@@ -434,7 +415,7 @@ export class View3D {
     const all = [...this.tileModels, ...figures(this.session.tokens.values(), this.table(), placeOf)];
     const ground = { grid: this.grid(), feet: 5, floor: this.level()?.bottom ?? 0 };
     this.models.show(all, ground, floor);
-    this.models.cull(this.camera.position, this.grid());
+    this.models.cull(this.camera.position, this.grid(), this.quality.tiny);
     const hover = this.session.inspect.hover;
     this.models.glow(this.play.glowOf(hover));
     this.solids.show(this.tileSolids, ground, floor);

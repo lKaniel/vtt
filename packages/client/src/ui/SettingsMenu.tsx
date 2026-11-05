@@ -2,6 +2,7 @@ import { SettingsIcon } from 'lucide-react';
 import { useState } from 'react';
 import { currentMotion, type Motion, setMotion } from '../play/animations.ts';
 import { currentDice, type DiceChoice, setDice } from '../dice/dice-throw.ts';
+import { currentQuality, type QualityChoice, setQuality } from '../view3d/quality3d.ts';
 import { type Automation, automationOf } from '@vtt/system-dnd5e';
 import type { Session } from '../session/session.ts';
 import { i18n, type MessageKey, t, useLanguage } from '../i18n/index.ts';
@@ -95,6 +96,7 @@ export function SettingsMenu({ session }: Readonly<{ session: Session }>) {
         <Separator />
         <MotionRow />
         <DiceRow />
+        <GraphicsRow />
         <LanguageRow />
         <KeysDialog />
       </PopoverContent>
@@ -158,6 +160,30 @@ function DiceRow() {
         <ToggleGroupItem value="on">{t('settings.dice.on')}</ToggleGroupItem>
         <ToggleGroupItem value="off">{t('settings.dice.off')}</ToggleGroupItem>
       </ToggleGroup>
+    </Label>
+  );
+}
+
+const QUALITIES: readonly QualityChoice[] = ['auto', 'low', 'medium', 'high'];
+
+/** How good the 3D view looks against how fast it runs, in this browser (quality3d.ts). */
+function GraphicsRow() {
+  const [quality, choose] = useState(currentQuality);
+  const set = (q: QualityChoice) => {
+    setQuality(q);
+    choose(q);
+  };
+  return (
+    <Label className="flex-col items-stretch gap-1">
+      {t('settings.graphics')}
+      <ToggleGroup type="single" value={quality} onValueChange={(v) => v && set(v as QualityChoice)}>
+        {QUALITIES.map((q) => (
+          <ToggleGroupItem key={q} value={q}>
+            {t(`settings.graphics.${q}`)}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+      <span className="muted text-xs font-normal">{t('settings.graphicsHint')}</span>
     </Label>
   );
 }

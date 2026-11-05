@@ -21,9 +21,6 @@ export interface FlatMap {
   seeThrough(on: boolean): void;
 }
 
-/** Side of the square the 2D map draws for the 3D view, pixels. */
-const GROUND_PIXELS = 2048;
-
 interface Saved {
   resizeTo: unknown;
   display: string;
@@ -47,6 +44,8 @@ export class PixiBridge {
   constructor(
     private readonly map: FlatMap,
     private readonly pick: (clientX: number, clientY: number) => Point,
+    /** Side of the square the 2D map draws for the 3D view, pixels (quality3d.ts). */
+    private readonly side = 2048,
   ) {}
 
   /** The 2D map draws a square offscreen and listens to `surface` instead of its own canvas. */
@@ -55,7 +54,7 @@ export class PixiBridge {
     const resizable = app as unknown as { resizeTo: unknown };
     this.saved = { resizeTo: resizable.resizeTo, display: app.canvas.style.display, zoom: this.map.cam.zoom };
     resizable.resizeTo = null;
-    app.renderer.resize(GROUND_PIXELS, GROUND_PIXELS, 1);
+    app.renderer.resize(this.side, this.side, 1);
     app.canvas.style.display = 'none';
     this.map.seeThrough(true);
     const events = app.renderer.events;
@@ -107,7 +106,7 @@ export class PixiBridge {
 
   /** Points the 2D camera at the square of ground the 3D camera sees. */
   frame(center: Point, half: number): void {
-    const zoom = GROUND_PIXELS / (2 * half);
+    const zoom = this.side / (2 * half);
     const cam = this.map.cam;
     const moved = Math.abs(cam.center[0] - center[0]) + Math.abs(cam.center[1] - center[1]) > 0.5;
     if (!moved && Math.abs(cam.zoom - zoom) < zoom * 1e-3) return;
@@ -119,6 +118,6 @@ export class PixiBridge {
   /** Where a map point is on the 2D map's (offscreen) canvas. */
   private toScreen([x, y]: Point): Point {
     const cam = this.map.cam;
-    return [(x - cam.center[0]) * cam.zoom + GROUND_PIXELS / 2, (y - cam.center[1]) * cam.zoom + GROUND_PIXELS / 2];
+    return [(x - cam.center[0]) * cam.zoom + this.side / 2, (y - cam.center[1]) * cam.zoom + this.side / 2];
   }
 }

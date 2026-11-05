@@ -1,6 +1,13 @@
 // Walking on the map, floors and the 3D view, in English (see en.ts).
 
 export const EN_MAP = {
+  'settings.graphics': '3D graphics',
+  'settings.graphics.auto': 'Auto',
+  'settings.graphics.low': 'Low',
+  'settings.graphics.medium': 'Medium',
+  'settings.graphics.high': 'High',
+  'settings.graphicsHint':
+    'Low runs on weak computers: lower resolution, smaller textures, fewer lights. Auto picks from your graphics card.',
   'keys.cam-forward': '3D: move the camera forward',
   'keys.cam-pan-left': '3D: move the camera left',
   'keys.cam-back': '3D: move the camera back',

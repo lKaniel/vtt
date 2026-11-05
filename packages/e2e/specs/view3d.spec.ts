@@ -62,6 +62,19 @@ test.describe('on a 3D scene', () => {
     // The walk's length shows over the 3D view, beside where it ends.
     await expect(page.getByTestId('walk-label')).toContainText('ft');
   });
+
+  test('a player picks low 3D graphics for a weak computer; the view starts again with them', async ({ page }) => {
+    await atTable(page, PLAYER_2);
+    const view = page.getByTestId('view3d');
+    await expect(view.locator('canvas')).toBeVisible();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.getByRole('radio', { name: 'Low', exact: true }).click();
+    await expect(view).toHaveAttribute('data-quality', 'low');
+    await expect(view.locator('canvas')).toBeVisible();
+    // Kept in this browser.
+    await page.reload();
+    await expect(page.getByTestId('view3d')).toHaveAttribute('data-quality', 'low', { timeout: 60_000 });
+  });
 });
 
 test('the GM makes a flat scene 3D in its settings, lays it flat to edit it and stands it up again', async ({
