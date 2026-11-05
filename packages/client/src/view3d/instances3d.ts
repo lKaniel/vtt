@@ -27,10 +27,10 @@ function standInFor(m: THREE.Material): THREE.Material {
 }
 
 /** The meshes of `o`, in a fixed order (copies of one model list theirs alike). */
-export function meshesOf(o: THREE.Object3D): THREE.Mesh[] {
+function meshesOf(o: THREE.Object3D): THREE.Mesh[] {
   const out: THREE.Mesh[] = [];
   o.traverse((c) => {
-    if (c instanceof THREE.Mesh && !(c instanceof THREE.InstancedMesh)) out.push(c);
+    if (c instanceof THREE.Mesh && !(c instanceof THREE.InstancedMesh)) out.push(c as THREE.Mesh);
   });
   return out;
 }
@@ -87,7 +87,7 @@ export class Instances {
   private fill(had: THREE.InstancedMesh[] | undefined, objects: THREE.Object3D[]): THREE.InstancedMesh[] {
     const parts = objects.map(meshesOf);
     const first = parts[0]!;
-    const fits = had && had.length === first.length && had.every((m) => m.instanceMatrix.count >= objects.length);
+    const fits = had?.length === first.length && had.every((m) => m.instanceMatrix.count >= objects.length);
     const meshes = fits ? had : this.make(first, objects.length, had);
     meshes.forEach((mesh, i) => {
       parts.forEach((p, j) => mesh.setMatrixAt(j, p[i]!.matrixWorld));
@@ -116,10 +116,5 @@ export class Instances {
       this.group.remove(m);
       m.dispose();
     }
-  }
-
-  dispose(): void {
-    for (const meshes of this.drawn.values()) this.drop(meshes);
-    this.drawn.clear();
   }
 }

@@ -60,6 +60,19 @@ test.describe('on a 3D scene', () => {
     expect(to[1]).toBeLessThan(BRAM[1]);
     expect(Math.abs(to[0] - BRAM[0])).toBeLessThan(150);
   });
+
+  test('a player picks low 3D graphics for a weak computer; the view starts again with them', async ({ page }) => {
+    await atTable(page, PLAYER_2);
+    const view = page.getByTestId('view3d');
+    await expect(view.locator('canvas')).toBeVisible();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.getByRole('radio', { name: 'Low', exact: true }).click();
+    await expect(view).toHaveAttribute('data-quality', 'low');
+    await expect(view.locator('canvas')).toBeVisible();
+    // Kept in this browser.
+    await page.reload();
+    await expect(page.getByTestId('view3d')).toHaveAttribute('data-quality', 'low', { timeout: 60_000 });
+  });
 });
 
 test('the GM makes a flat scene 3D in its settings, lays it flat to edit it and stands it up again', async ({

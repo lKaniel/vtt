@@ -50,15 +50,27 @@ dialog under Camera.
   terrain (`drapeOver` in `terrain-paint.ts`).
 - `scene3d.ts`: three.js meshes: the ground picture, instanced walls,
   creatures as standing pictures.
-- `frame-budget.ts`: what a frame saves. The map's pieces (chunks) stay
-  loaded in a wide square round the camera (`chunkArea`), not round the
-  ground in sight, so turning the camera never drops a building. The 2D map draws the ground only
-  when the camera leaves the square it drew last (it draws a quarter more
-  than it needs), when the pointer moves or a creature walks, and 15 times
-  a second for what flickers. The 3D picture drops to as little as half
-  the screen's resolution while frames are slow (over 24 ms) and climbs
-  back once they are quick. Models that would look tinier than about
-  20 pixels are left out (never creatures' figures).
+- `frame-budget.ts` and `ground-feed.ts`: what a frame saves. The 2D map
+  draws the ground only when the camera leaves the square it drew last (it
+  draws a quarter more than it needs), when the pointer moves or a creature
+  walks, and a few times a second for what flickers. The 3D view draws only
+  when something changed, and a few times a second while nothing does. The
+  3D picture drops resolution while frames are slow (over 24 ms) and climbs
+  back once they are quick. Models that would look tiny are left out (never
+  creatures' figures).
+- `instances3d.ts`: copies of one model on tiles are drawn together, one
+  instanced mesh per piece of the model in each 20-square part of the map.
+  Each copy keeps its own meshes for clicks, what creatures stand on and the
+  look inside, with unseen stand-in materials. Figures, see-through models,
+  rigged models and `animated` ones (doors) are drawn on their own; a tile
+  lit gold under the pointer is drawn on its own while it glows.
+- `quality3d.ts`: the Graphics setting (Settings, 3D graphics: Auto, Low,
+  Medium, High), per browser. Auto picks from the graphics card the browser
+  reports. It sets the resolution, smoothing, the ground picture's size, how
+  small far things may be, the most scene lights on models, the largest
+  model texture (Low 512 px, Medium 1024 px; textures shrink when a model
+  file loads) and how often a still view is drawn. A new choice starts the
+  3D view again.
 - `View3D.ts` ties them together; `view3d-switch.ts` turns it on and off
   with the session switch.
 

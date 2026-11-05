@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { levelFor, QUALITY, qualityOf, shrunkSize } from './quality3d.ts';
+import { levelFor, QUALITY, quality3d, qualityOf, shrunkSize } from './quality3d.ts';
 
 // How good the 3D view looks against how fast it runs: Low for weak or
 // software graphics, Medium for laptop graphics, High for a graphics card;
@@ -40,6 +40,12 @@ describe('graphics quality', () => {
       expect(medium[k]).toBeLessThanOrEqual(high[k]);
     }
     expect(low.tiny).toBeGreaterThan(high.tiny);
+  });
+});
+
+describe('the quality the view runs with', () => {
+  it('follows the graphics this browser has, with no choice made', () => {
+    expect(Object.values(QUALITY)).toContain(quality3d());
   });
 });
 

@@ -88,9 +88,7 @@ describe('copies drawn together', () => {
 
   it('draws on its own a figure, a see-through model or a rigged one', () => {
     expect(drawnTogether(box(), { key: 'token:a', rect, model, figure: true })).toBe(false);
-    expect(drawnTogether(box(), { key: 'tile:a', rect, model: { src: '/hut.glb', opacity: 0.5 } as never })).toBe(
-      false,
-    );
+    expect(drawnTogether(box(), { key: 'tile:a', rect, model: { src: '/hut.glb', opacity: 0.5 } })).toBe(false);
     const rigged = new THREE.Group().add(
       new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial()),
     );
@@ -98,9 +96,9 @@ describe('copies drawn together', () => {
   });
 
   it('draws together only copies that look alike', () => {
-    const plain = variantOf({ src: '/hut.glb' } as never);
-    expect(variantOf({ src: '/hut.glb' } as never)).toBe(plain);
-    expect(variantOf({ src: '/hut.glb', color: '#ff0000' } as never)).not.toBe(plain);
-    expect(variantOf({ src: '/inn.glb' } as never)).not.toBe(plain);
+    const plain = variantOf({ src: '/hut.glb' });
+    expect(variantOf({ src: '/hut.glb' })).toBe(plain);
+    expect(variantOf({ src: '/hut.glb', color: '#ff0000' })).not.toBe(plain);
+    expect(variantOf({ src: '/inn.glb' })).not.toBe(plain);
   });
 });

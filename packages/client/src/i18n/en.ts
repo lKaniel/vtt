@@ -33,13 +33,6 @@ export const EN = {
   'settings.dice': '3D dice',
   'settings.dice.on': 'Throw them',
   'settings.dice.off': 'Off',
-  'settings.graphics': '3D graphics',
-  'settings.graphics.auto': 'Auto',
-  'settings.graphics.low': 'Low',
-  'settings.graphics.medium': 'Medium',
-  'settings.graphics.high': 'High',
-  'settings.graphicsHint':
-    'Low runs on weak computers: lower resolution, smaller textures, fewer lights. Auto picks from your graphics card.',
   'settings.game': 'Game',
   'settings.gameHint': 'For everyone at the table. Seats start over with the change.',
   'settings.rules': 'Rules',

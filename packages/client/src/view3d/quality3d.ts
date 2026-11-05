@@ -41,7 +41,7 @@ export const QUALITY: Record<QualityLevel, Quality3D> = {
     antialias: false,
     groundPixels: 1024,
     groundRefresh: 8,
-    tiny: 0.03,
+    tiny: 0.02,
     lights: 2,
     textureMax: 512,
     idleFps: 15,
@@ -117,17 +117,24 @@ let graphics: Graphics | undefined;
 /** What the browser reports of its graphics, asked once of a small WebGL canvas. */
 function probe(): Graphics {
   const memory = (globalThis.navigator as (Navigator & { deviceMemory?: number }) | undefined)?.deviceMemory;
-  const mem = memory === undefined ? {} : { memory };
+  return { gpu: gpuName(), ...(memory !== undefined && { memory }) };
+}
+
+/** The graphics card's name; "software" with no WebGL 2 at all. */
+function gpuName(): string {
   try {
     const gl = document.createElement('canvas').getContext('webgl2');
-    if (!gl) return { gpu: 'software', ...mem };
-    const info = gl.getExtension('WEBGL_debug_renderer_info');
-    const gpu = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) ?? '');
-    gl.getExtension('WEBGL_lose_context')?.loseContext();
-    return { gpu, ...mem };
+    return gl ? rendererOf(gl) : 'software';
   } catch {
-    return { gpu: '', ...mem };
+    return '';
   }
+}
+
+function rendererOf(gl: WebGL2RenderingContext): string {
+  const info = gl.getExtension('WEBGL_debug_renderer_info');
+  const name = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+  gl.getExtension('WEBGL_lose_context')?.loseContext();
+  return name;
 }
 
 /** The settings the 3D view runs with now. */

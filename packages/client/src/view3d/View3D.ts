@@ -50,7 +50,10 @@ const WALLS_EVERY = 0.25;
 export class View3D {
   /** How good it looks against how fast it runs (quality3d.ts); a new choice starts the view again. */
   private quality = quality3d();
-  private renderer = new THREE.WebGLRenderer({ antialias: this.quality.antialias, powerPreference: 'high-performance' });
+  private renderer = new THREE.WebGLRenderer({
+    antialias: this.quality.antialias,
+    powerPreference: 'high-performance',
+  });
   private pmrem = new THREE.PMREMGenerator(this.renderer);
   private litBy?: THREE.Texture;
   /** What creatures stand on: terrain, model floors and boxes, reached 6 ft up from their feet. */
@@ -144,6 +147,7 @@ export class View3D {
     this.surface.className = 'view3d';
     this.surface.style.cssText = 'position:absolute;inset:0;';
     this.surface.dataset.testid = 'view3d';
+    this.surface.dataset.quality = this.quality.level;
     this.sharpness();
     // As 3D Canvas renders, so imported scenes keep their light.
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
