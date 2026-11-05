@@ -76,4 +76,17 @@ describe('copies drawn together', () => {
     all.draw([]);
     expect(meshesOf(all.group)).toHaveLength(0);
   });
+
+  it('leaves alone the parts of the map whose copies did not change', () => {
+    const t = template();
+    const all = new Instances(1000);
+    const near = copyAt(t, 0, 0);
+    all.draw([near, copyAt(t, 5000, 0)]);
+    const [body] = meshesOf(all.group);
+    const before = body!.instanceMatrix.version;
+    all.draw([near, copyAt(t, 5000, 0)]);
+    expect(body!.instanceMatrix.version).toBe(before);
+    all.draw([near, copyAt(t, 5000, 0)], true);
+    expect(body!.instanceMatrix.version).toBeGreaterThan(before);
+  });
 });

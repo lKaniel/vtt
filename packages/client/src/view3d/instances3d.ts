@@ -61,12 +61,18 @@ const at = new THREE.Vector3();
 export class Instances {
   readonly group = new THREE.Group();
   private drawn = new Map<string, THREE.InstancedMesh[]>();
+  /** Which copies each batch holds, so a batch whose copies did not change is left alone. */
+  private holds = new Map<string, string>();
 
   /** `cell`: the side of the parts of the map copies are drawn by, pixels. */
   constructor(private readonly cell: number) {}
 
-  /** Draws exactly these copies (their world matrices must be up to date). */
-  draw(copies: readonly Copy[]): void {
+  /**
+   * Draws exactly these copies (their world matrices must be up to date).
+   * Only batches whose copies changed are filled again, unless `moved`: the
+   * copies themselves moved (stood again on another floor, say).
+   */
+  draw(copies: readonly Copy[], moved = false): void {
     const byKey = new Map<string, THREE.Object3D[]>();
     for (const c of copies) {
       at.setFromMatrixPosition(c.object.matrixWorld);
@@ -79,8 +85,14 @@ export class Instances {
       if (byKey.has(key)) continue;
       this.drop(meshes);
       this.drawn.delete(key);
+      this.holds.delete(key);
     }
-    for (const [key, objects] of byKey) this.drawn.set(key, this.fill(this.drawn.get(key), objects));
+    for (const [key, objects] of byKey) {
+      const holds = objects.map((o) => o.id).join();
+      if (!moved && this.holds.get(key) === holds) continue;
+      this.holds.set(key, holds);
+      this.drawn.set(key, this.fill(this.drawn.get(key), objects));
+    }
   }
 
   /** The instanced meshes for one batch of copies, reused while they hold enough. */

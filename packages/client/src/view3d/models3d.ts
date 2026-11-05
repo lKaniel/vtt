@@ -262,7 +262,9 @@ class Placed {
     let changed = false;
     for (const pivot of this.group.children) {
       const size = (pivot.userData.size as number | undefined) ?? Infinity;
-      const small = tooSmallToSee(size, pivot.position.distanceTo(eye), grid, tiny);
+      // A little closer before it shows again, so a copy at the edge doesn't flicker in and out.
+      const limit = pivot.userData.culled ? tiny * UNCULL : tiny;
+      const small = tooSmallToSee(size, pivot.position.distanceTo(eye), grid, limit);
       if (!this.together) pivot.visible = !small;
       else if (small !== !!pivot.userData.culled) changed = true;
       pivot.userData.culled = small;
@@ -284,6 +286,9 @@ class Placed {
   }
 }
 
+/** A left-out copy shows again once it looks this much bigger than the limit. */
+const UNCULL = 1.25;
+
 /** The models standing in the 3D view. */
 export class Models {
   readonly group = new THREE.Group();
@@ -293,6 +298,10 @@ export class Models {
   private together = new Instances(2000);
   /** The copies drawn together changed: they are gathered again. */
   private regather = true;
+  /** The copies to stand again though nothing else changed (a figure that walked). */
+  private moved = new Set<Placed>();
+  /** Where the camera was when small things were last left out. */
+  private culledFrom?: THREE.Vector3;
 
   constructor() {
     this.group.add(this.together.group);
@@ -310,20 +319,25 @@ export class Models {
       this.regather = true;
     }
     for (const shown of all) this.update(shown);
-    if (this.stale) {
-      this.stale = false;
-      this.regather = true;
-      this.stood++;
-      for (const p of this.placed.values()) p.place(ground, floorPx);
-    }
-    this.gather();
+    const everything = this.stale;
+    if (everything || this.moved.size) this.stood++;
+    for (const p of everything ? this.placed.values() : this.moved) p.place(ground, floorPx);
+    const together = everything || [...this.moved].some((p) => p.together);
+    if (everything) this.culledFrom = undefined;
+    this.stale = false;
+    this.moved.clear();
+    if (together) this.gather(true);
+    else this.gather();
   }
 
-  /** Draws together the copies that are, when they changed. */
-  private gather(): void {
-    if (!this.regather) return;
+  /** Draws together the copies that are, when they changed; `moved`: the copies stood again. */
+  private gather(moved = false): void {
+    if (!this.regather && !moved) return;
     this.regather = false;
-    this.together.draw([...this.placed.values()].flatMap((p) => p.copies()));
+    this.together.draw(
+      [...this.placed.values()].flatMap((p) => p.copies()),
+      moved,
+    );
   }
 
   /**
@@ -343,6 +357,9 @@ export class Models {
 
   /** Leaves out what looks smaller than `tiny` from the camera at `eye` (quality3d.ts). */
   cull(eye: THREE.Vector3, grid: number, tiny: number): void {
+    // Looked at again once the camera has gone half a square (or the copies moved).
+    if (this.culledFrom && this.culledFrom.distanceTo(eye) < grid / 2 && !this.regather) return;
+    this.culledFrom = eye.clone();
     for (const p of this.placed.values()) if (p.cull(eye, grid, tiny)) this.regather = true;
     this.gather();
   }
@@ -363,7 +380,8 @@ export class Models {
   private update(shown: ModelShown): void {
     const now = this.placed.get(shown.key);
     if (now) {
-      if (!sameRect(now.shown.rect, shown.rect)) this.stale = true;
+      // Only this one stands again: a creature's figure walking leaves the tiles be.
+      if (!sameRect(now.shown.rect, shown.rect)) this.moved.add(now);
       now.shown = shown;
       return;
     }

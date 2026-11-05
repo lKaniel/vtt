@@ -64,7 +64,7 @@ export const QUALITY: Record<QualityLevel, Quality3D> = {
     lowestScale: 0.7,
     antialias: true,
     groundPixels: 2048,
-    groundRefresh: 30,
+    groundRefresh: 15,
     tiny: 0.008,
     lights: 12,
     textureMax: 4096,

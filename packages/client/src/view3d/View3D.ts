@@ -278,6 +278,8 @@ export class View3D {
     this.seeIn.update(this.acting(standing, floor), [eye.x, eye.y, eye.z], { px: this.px(), grid: this.grid() });
     this.standModels(floor);
     this.overlay.frame(dt, this.frames);
+    // The walk's marker pulses until the walker gets there.
+    if (this.overlay.marks.destination.visible) this.feed.touch();
     const view = `${JSON.stringify(this.orbit)}:${this.models.stood}:${this.session.inspect.hover?.id}`;
     if (this.feed.due(view, dt)) this.renderer.render(this.scene, this.camera);
   }
