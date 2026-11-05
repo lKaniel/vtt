@@ -1,12 +1,14 @@
 import type { Point } from '@vtt/shared';
-import type { Application } from 'pixi.js';
+import { type Application, UPDATE_PRIORITY } from 'pixi.js';
 import type { CameraMotion } from '../canvas/camera-motion.ts';
 
 // The 2D map (canvas/MapView.ts) keeps doing everything while the 3D view is
 // on: it draws the ground, light and fog into its own canvas, which the 3D
 // view lays on the floor; and it still takes every click. Its canvas is
 // hidden and square, its camera follows the 3D one, and pointer events on
-// the 3D canvas reach it at the map point under the pointer (`pick`).
+// the 3D canvas reach it at the map point under the pointer (`pick`). It
+// draws only when the 3D view asks (`redraw`), not every frame: drawing
+// 2048² and handing it to the 3D view is the dearest part of a frame.
 
 /** What the bridge needs of the 2D map. */
 export interface FlatMap {
@@ -29,6 +31,15 @@ interface Saved {
 
 export class PixiBridge {
   private saved?: Saved;
+  private wanted = true;
+  private drew = false;
+  /** Draws the 2D map when asked, in the slot of the frame its own drawing had. */
+  private gate = () => {
+    if (!this.wanted) return;
+    this.wanted = false;
+    this.drew = true;
+    this.map.app.render();
+  };
 
   /** `pick`: the map point under a pointer at these client coordinates. */
   constructor(
@@ -52,6 +63,22 @@ export class PixiBridge {
       point.y = sy;
     };
     events.setTargetElement(surface);
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- the ticker calls it with `app` as `this`, as Pixi's own TickerPlugin does
+    app.ticker.remove(app.render, app);
+    app.ticker.add(this.gate, undefined, UPDATE_PRIORITY.LOW);
+    this.wanted = true;
+  }
+
+  /** Asks the 2D map to draw on its next frame. */
+  redraw(): void {
+    this.wanted = true;
+  }
+
+  /** Whether the 2D map drew since this was last asked: the 3D view takes the new picture. */
+  takeDrawn(): boolean {
+    const drew = this.drew;
+    this.drew = false;
+    return drew;
   }
 
   /** Back to the plain 2D map. */
@@ -59,6 +86,9 @@ export class PixiBridge {
     const saved = this.saved;
     if (!saved) return;
     const { app } = this.map;
+    app.ticker.remove(this.gate);
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- the ticker calls it with `app` as `this`, as Pixi's own TickerPlugin does
+    app.ticker.add(app.render, app, UPDATE_PRIORITY.LOW);
     const events = app.renderer.events as unknown as Record<string, unknown>;
     delete events.mapPositionToPoint;
     app.renderer.events.setTargetElement(app.canvas);
@@ -80,6 +110,7 @@ export class PixiBridge {
     if (!moved && Math.abs(cam.zoom - zoom) < zoom * 1e-3) return;
     cam.jumpTo(center, zoom);
     this.map.dirty = true;
+    this.wanted = true;
   }
 
   /** Where a map point is on the 2D map's (offscreen) canvas. */

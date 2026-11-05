@@ -44,6 +44,13 @@ dialog under Camera.
   terrain (`drapeOver` in `terrain-paint.ts`).
 - `scene3d.ts`: three.js meshes: the ground picture, instanced walls,
   creatures as standing pictures.
+- `frame-budget.ts`: what a frame saves. The 2D map draws the ground only
+  when the camera leaves the square it drew last (it draws a quarter more
+  than it needs), when the pointer moves or a creature walks, and 15 times
+  a second for what flickers. The 3D picture drops to as little as half
+  the screen's resolution while frames are slow (over 24 ms) and climbs
+  back once they are quick. Models that would look tinier than about
+  20 pixels are left out (never creatures' figures).
 - `View3D.ts` ties them together; `view3d-switch.ts` turns it on and off
   with the session switch.
 

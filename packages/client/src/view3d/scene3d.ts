@@ -49,11 +49,11 @@ export class Ground {
     return this.texture;
   }
 
-  /** Lays the picture just drawn over the square it shows. */
-  show(center: Point, half: number, floor: number): void {
+  /** Lays the picture over the square it shows; `fresh` when the 2D map has drawn it again (it is copied over). */
+  show(center: Point, half: number, floor: number, fresh: boolean): void {
     this.mesh.position.copy(at3d(center, floor));
     this.mesh.scale.set(2 * half, 1, 2 * half);
-    this.texture.needsUpdate = true;
+    if (fresh) this.texture.needsUpdate = true;
   }
 
   dispose(): void {
