@@ -48,6 +48,18 @@ dialog under Camera.
 - `surface3d.ts`: what creatures stand on (terrain, model floors, boxes).
   The flat map's drawing (paths, rings, spell areas) is draped over
   terrain (`drapeOver` in `terrain-paint.ts`).
+- `marks3d.ts`, `overlay3d.ts`: what the pointer and the previews show, as
+  in BG3, drawn over the surfaces (over everything, so a path behind a wall
+  still shows): a ring on the surface under the pointer (at a wall's foot
+  on a wall), the walk's path laid over what it crosses step by step (it
+  climbs stairs, not tables), its end ring and length (an HTML label), the
+  attack and spell lines and areas, the marquee being dragged, and a marker
+  where a walk was sent until the creature gets there. The flat map's
+  previews draw with a `Sketch` (`canvas/sketch.ts`) that keeps its shapes
+  for this; under 3D the flat map's own preview is hidden.
+- `light3d.ts`: the sky light and sun (dimmed by darkness), the sky picture
+  as the environment, the ground beyond the map under the lowest floor, and
+  the haze.
 - `scene3d.ts`: three.js meshes: the ground picture, instanced walls,
   creatures as standing pictures.
 - `frame-budget.ts`: what a frame saves. The map's pieces (chunks) stay

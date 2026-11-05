@@ -13,6 +13,7 @@ import {
   wallsOnFloor,
 } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
+import { Sketch } from './sketch.ts';
 import { previewLabel } from '../text/spell-text.ts';
 import type { Session } from '../session/session.ts';
 import { aimPoint, walkOptions } from '../play/walking.ts';
@@ -55,7 +56,8 @@ interface PreviewContext {
 /** The path a selected token would walk to the hovered square, with its length in feet. */
 export class PathPreview {
   readonly container = new Container();
-  private line = new Graphics();
+  /** What it draws, kept as shapes for the 3D view too (view3d/marks3d.ts). */
+  readonly line = new Sketch(new Graphics());
   private label = new Text({
     text: '',
     style: { fill: OK_COLOR, fontSize: 28, fontWeight: '600', stroke: { color: 0x000000, width: 5 } },
@@ -72,11 +74,13 @@ export class PathPreview {
     },
   });
   private shownFor?: string;
+  /** What it shows now: a walk (to `end`), an attack or a spell aimed; the label and the notes under it, at `end`. */
+  shown?: { kind: 'walk' | 'attack' | 'spell'; end: Point; label: string; color: number; notes: string };
 
   constructor() {
     this.label.anchor.set(0.5, 1.4);
     this.notes.anchor.set(0.5, 0);
-    this.container.addChild(this.line, this.label, this.notes);
+    this.container.addChild(this.line.graphics, this.label, this.notes);
   }
 
   clear(): void {
@@ -84,6 +88,7 @@ export class PathPreview {
     this.label.text = '';
     this.notes.text = '';
     this.shownFor = undefined;
+    this.shown = undefined;
   }
 
   /** Redraws unless the token and the hovered square are unchanged (or `force`); says what it drew. */
@@ -103,7 +108,7 @@ export class PathPreview {
     if (!path) {
       this.line.circle(target[0], target[1], g * 0.3).stroke({ width: 6, color: BLOCKED_COLOR });
       this.setLabel(t('walk.blocked'), BLOCKED_COLOR);
-      this.placeLabel(target, ctx);
+      this.placeLabel(target, ctx, 'walk');
       return { ...shown, feet: null, warnings: [] };
     }
     if (path.points.length < 2) return undefined;
@@ -118,7 +123,7 @@ export class PathPreview {
       tooFar ? TOO_FAR_COLOR : OK_COLOR,
     );
     this.notes.text = warnings.map(warningText).join('\n');
-    this.placeLabel(target, ctx);
+    this.placeLabel(target, ctx, 'walk');
     return {
       ...shown,
       feet: path.feet,
@@ -157,7 +162,7 @@ export class PathPreview {
     const note = { normal: '', long: ' · disadvantage', out: blocked ? ' · no clear shot' : ' · out of range' }[range];
     const at = foe ? ' → ' + foe.name : '';
     this.setLabel(`${attack.name}${at} · ${feet} ft${note}`, color);
-    this.placeLabel(target, ctx);
+    this.placeLabel(target, ctx, 'attack');
   }
 
   /** Where the aimed spell would land: its area, or a line to the hovered creature or point, and whether it's in range. */
@@ -186,7 +191,7 @@ export class PathPreview {
       this.line.circle(target[0], target[1], ctx.gridSize * 0.4).stroke({ width: 6, color });
     }
     this.setLabel(previewLabel({ name: spell.name, count, feet, reach, blocked }), color);
-    this.placeLabel(target, ctx);
+    this.placeLabel(target, ctx, 'spell');
   }
 
   private drawArea(shape: ReturnType<typeof areaShape>): void {
@@ -213,7 +218,9 @@ export class PathPreview {
     this.label.style.fill = color;
   }
 
-  private placeLabel(target: Point, ctx: PreviewContext): void {
+  private placeLabel(target: Point, ctx: PreviewContext, kind: 'walk' | 'attack' | 'spell'): void {
+    const color = typeof this.label.style.fill === 'number' ? this.label.style.fill : OK_COLOR;
+    this.shown = { kind, end: target, label: this.label.text, color, notes: this.notes.text };
     const scale = Math.max(1, 0.8 / ctx.zoom);
     this.label.position.set(target[0], target[1] - ctx.gridSize * 0.3);
     this.label.scale.set(scale);
