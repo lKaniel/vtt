@@ -71,6 +71,7 @@ describe('seeing your creature (BG3)', () => {
     expect(seen).toEqual(['paint']);
     expect(shader.uniforms).toHaveProperty('uPeekBox');
     expect(shader.vertexShader).toContain('vPeekWorld = ');
+    expect(shader.vertexShader).toContain('instanceMatrix * peekLocal');
     expect(shader.fragmentShader.match(/discard/g)).toHaveLength(1);
     expect(material.customProgramCacheKey()).toContain('peek');
   });

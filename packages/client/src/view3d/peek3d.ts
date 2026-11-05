@@ -112,7 +112,8 @@ export function peekable(material: THREE.Material): THREE.Material {
       .replace('#include <common>', '#include <common>\nvarying vec3 vPeekWorld;')
       .replace(
         '#include <project_vertex>',
-        '#include <project_vertex>\nvPeekWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;',
+        // An instanced copy stands where its instance matrix puts it.
+        '#include <project_vertex>\nvec4 peekLocal = vec4(transformed, 1.0);\n#ifdef USE_INSTANCING\npeekLocal = instanceMatrix * peekLocal;\n#endif\nvPeekWorld = (modelMatrix * peekLocal).xyz;',
       );
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\n${DECLARATIONS}`)
