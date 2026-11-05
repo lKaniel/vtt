@@ -354,7 +354,7 @@ export class Session {
       case 'tokenGone':
         return this.onTokenGone(msg.id);
       case 'moved':
-        return this.onMoved(msg.id, msg.path);
+        return this.onMoved(msg.id, msg.path, msg.elevation);
       case 'chat':
         this.chat = withChat(this.chat, msg.message);
         this.emit('chat', msg.message);
@@ -472,11 +472,12 @@ export class Session {
     return true;
   }
 
-  private onMoved(id: string, path: Point[]): boolean {
+  private onMoved(id: string, path: Point[], elevation: number | undefined): boolean {
     const t = this.tokens.get(id);
     const end = path.at(-1);
     if (!t || !end) return false;
-    this.tokens.set(id, { ...t, x: end[0], y: end[1] });
+    const { elevation: _, ...rest } = t;
+    this.tokens.set(id, { ...rest, x: end[0], y: end[1], ...(elevation !== undefined && { elevation }) });
     this.emit('moved', id, path);
     return true;
   }

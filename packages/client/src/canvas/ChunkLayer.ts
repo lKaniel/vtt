@@ -1,15 +1,4 @@
-import {
-  canObserve,
-  type Chunk,
-  isGm,
-  levelRank,
-  onLevel,
-  onLevels,
-  type Point,
-  type Rect,
-  tileClickable,
-  type Wall,
-} from '@vtt/shared';
+import { canObserve, type Chunk, isGm, onLevel, type Point, type Rect, tileClickable, type Wall } from '@vtt/shared';
 import { Circle, Container, Graphics, type Renderer } from 'pixi.js';
 import { rectTile, type GroundContext } from './art/ground.ts';
 import { drawDoor, drawWalls, drawWallShadows, wallsDrawn } from './art/walls.ts';
@@ -17,8 +6,9 @@ import type { Session } from '../session/session.ts';
 import { clickTile, openDoor } from '../play/interact.ts';
 import { imageTile, type TileView } from './tile-draw.ts';
 import { ObjectGlow } from './object-glow.ts';
-import { type RoofEyes, roofWatchers } from './tile-motion.ts';
-import { paintedUnder3d } from '../view3d/content3d.ts';
+import { type RoofEyes, roofsOver, roofWatchers } from './tile-motion.ts';
+import { tilesOnFloor } from './floor-tiles.ts';
+import { flatUnder3d } from '../view3d/content3d.ts';
 import { bakeRuns, roofStill, tileBounds, tileStill } from './tile-bake.ts';
 import { TileBaker } from './TileBaker.ts';
 
@@ -28,6 +18,7 @@ const DOOR_HANDLE_RADIUS = 11;
 const HIDDEN_ALPHA = 0.45;
 
 type ChunkTile = Chunk['tiles'][number];
+type RoofTile = Extract<ChunkTile, { kind: 'image' }>;
 
 /** A drawn floor tile: still ones are baked (TileBaker), live ones sit straight in `ground`. */
 interface GroundTile {
@@ -59,8 +50,6 @@ interface ChunkView {
 
 /** Wall shadows draw over every tile. */
 const SHADOW_Z = 1e9;
-/** Each floor up draws over the ones below it. */
-const LEVEL_Z = 1e7;
 /** How far past its rectangle a tile may draw (rough edges, see art/ground.ts). */
 const EDGE_PAD = 24;
 
@@ -95,7 +84,9 @@ export class ChunkLayer {
   /** Moves scrolling tiles on and fades roofs over your creatures; draws another floor when it comes into view, then calls `floorShown`. */
   tick(dt: number, floorShown: () => void): void {
     const watchers = roofWatchers(this.eyes(), this.placeOf);
-    for (const v of this.views.values()) for (const t of v.moving) t.tick?.(dt, watchers);
+    const roofs = [...this.views.values()].flatMap((v) => v.roofs.map((r) => r.tile as RoofTile));
+    const sight = { watchers, covers: roofsOver(roofs, watchers) };
+    for (const v of this.views.values()) for (const t of v.moving) t.tick?.(dt, sight);
     this.glow.update({
       chunks: this.session.chunks,
       hover: this.session.inspect.hover,
@@ -178,24 +169,18 @@ export class ChunkLayer {
     return [...this.views.keys()];
   }
 
-  /** The chunk as the level shown sees it: the tiles of the floors in view, lower ones beneath, and its own walls. */
+  /** The chunk as the level shown sees it: the tiles of the floors in view, lower ones beneath, those above as roofs, and its own walls. */
   private onFloor(chunk: Chunk): Chunk {
     const { shown, current } = this.session.levels;
     if (!shown) return chunk;
-    const levels = this.session.world?.levels;
-    const rank = (t: Chunk['tiles'][number]) =>
-      Math.max(0, ...shown.filter((l) => onLevel(t, l) && (t.level ?? t.levels)).map((l) => levelRank(levels, l)));
-    const tiles = chunk.tiles
-      .map((t, i) => ({ ...t, z: rank(t) * LEVEL_Z + (t.z ?? i) }))
-      .filter((t) => onLevels(t, shown));
+    const tiles = tilesOnFloor(chunk.tiles, this.session.world?.levels, shown, current);
     return { ...chunk, tiles, walls: chunk.walls.filter((w) => onLevel(w, current)) };
   }
 
   /** Under the 3D view, the chunk without what stands in 3D (view3d/content3d.ts). */
   private flat(chunk: Chunk): Chunk {
     if (!this.session.view3d.on) return chunk;
-    const look = this.session.world?.view3d;
-    return { ...chunk, tiles: chunk.tiles.filter((t) => paintedUnder3d(t, look)) };
+    return { ...chunk, tiles: flatUnder3d(chunk.tiles, this.session.world?.view3d, this.session.isGm()) };
   }
 
   draw(key: string, whole: Chunk): void {

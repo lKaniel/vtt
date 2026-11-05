@@ -49,6 +49,11 @@ function isDoorTile(raw: unknown): boolean {
 /** The id of the door wall a door tile moves with. */
 const doorWallId = (raw: unknown) => `door-${text((raw as RawTile)._id).toLowerCase()}`;
 
+/** The door wall a Foundry tile moves with, when it is a 3D Canvas door. */
+export function doorWallFor(raw: unknown): string | undefined {
+  return raw && isDoorTile(raw) ? doorWallId(raw) : undefined;
+}
+
 const STYLES: TileDoor['style'][] = ['fade', 'swing', 'slide', 'lift', 'play', 'rewind'];
 
 /** How a door tile's model moves with its wall. */

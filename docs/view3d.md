@@ -107,7 +107,13 @@ Videos from an animation pack stay on the flat map, laid on the ground.
 A creature whose elevation keeps it more than 6 ft above what is under it
 flies: it stays up there, with a shadow on the ground, a faint line down
 to it and its height beside it (`flight3d.ts`); one at or near a surface
-(a hill, a bridge, a floor) stands on it (`standing3d.ts`). **Page Up** and
+(a hill, a bridge, a floor) stands on it (`standing3d.ts`). A walk climbs
+what it crosses, a stair at a time (2 ft a step, never a wall): it goes up
+a tower's stairs or a ramp onto a bridge, and its feet follow the steps as
+it walks (`climb3d.ts`). The move then says how high it ends (`elevation`
+on the `move` message, taken on 3D scenes only), so the creature stays up
+there, is blocked by the walls at that height and comes down again when it
+walks off. **Page Up** and
 **Page Down** fly the selected creature 5 ft up or down (its elevation, as
 the token HUD sets it).
 
@@ -115,6 +121,13 @@ Doors swing open on their hinge as in BG3 (`doors3d.ts`): a plain door (a
 wall with `door`) hangs a wooden leaf that turns a quarter round when it
 opens, and a door model (a tile with `door`) swings, slides, lifts, fades or
 plays its own animation as its wall opens, from where it is when it changes.
+Active tiles (tile triggers, Monk's Active Tiles from Foundry) are often
+invisible tiles over a lever, a door or a pad. In 3D a small gold marker
+floats over each one you may click, and the GM also sees a teal one over
+those that go off when walked onto (`triggers3d.ts`). A model with a click
+trigger (a lever) is clicked on the model itself: the flat map keeps its
+tile, see-through, under it (`flatUnder3d` in `content3d.ts`).
+
 The scene's lights light the models too (`lamps3d.ts`): placed lights hang
 8 ft over the ground (or their floor), a creature carrying one lights it
 from its chest, torches flicker and glows pulse; only the 8 nearest the

@@ -55,8 +55,12 @@ export interface HistoryState {
 export type EngineClientMessage =
   /** The chunks this client's camera can see; the server streams them. */
   | { t: 'view'; chunks: string[] }
-  /** throughWalls: the GM's "ignore walls" mode, straight there (players walk round them all the same). */
-  | { t: 'move'; token: string; to: Point; throughWalls?: boolean }
+  /**
+   * throughWalls: the GM's "ignore walls" mode, straight there (players walk
+   * round them all the same). elevation: in a 3D scene, the height (feet) of
+   * what the walk ends on, a bridge or a tower's top, as the 3D view finds it.
+   */
+  | { t: 'move'; token: string; to: Point; throughWalls?: boolean; elevation?: number }
   /** Lay your ruler through these waypoints, shown live to everyone on your scene; none puts it away (see ruler.ts). */
   | { t: 'ruler'; points: Point[] }
   /** Where your pointer is on the map, shown live to everyone on your scene; null: it left the map. */
@@ -149,7 +153,8 @@ export type EngineServerMessage =
    */
   | { t: 'fog'; player: string; cell: number; blocks: Record<string, string>; full?: boolean }
   | { t: 'tokenGone'; id: string }
-  | { t: 'moved'; id: string; path: Point[] }
+  /** A creature walked `path`, ending `elevation` feet up (none: on the ground). */
+  | { t: 'moved'; id: string; path: Point[]; elevation?: number }
   /** Someone else on your scene laid their ruler through these waypoints; none: they put it away. */
   | { t: 'ruler'; player: string; name: string; color: string; points: Point[] }
   /** Someone else on your scene is pointing here; null: their pointer left the map. */

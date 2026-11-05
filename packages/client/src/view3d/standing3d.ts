@@ -27,10 +27,23 @@ export interface StandContext {
   placeOf(id: string): { at: Point } | undefined;
   /** The surface under a creature whose feet are at `feet` (surface3d.ts). */
   under(id: string, at: Point, feet: number): number | undefined;
+  /** Where a walking creature's feet are now, climbing what it crosses (climb3d.ts); none at rest. */
+  walking?(id: string, at: Point): number | undefined;
+  /** A creature at rest stands at `feet`, `flying` or not. */
+  stood?(id: string, feet: number, flying: boolean): void;
 }
 
 /** How far above what is under it a creature still stands on it rather than flies, feet. */
 const STEP = 6;
+
+/** Where a creature stands: climbing as it walks, else on what is under it or in the air. */
+function standOf(id: string, at: Point, { feet, bottom }: { feet: number; bottom?: number }, c: StandContext) {
+  const walking = c.walking?.(id, at);
+  if (walking !== undefined) return { feet: walking };
+  const stand = standAt(feet, c.under(id, at, feet) ?? (bottom ?? 0) * c.px, STEP * c.px);
+  c.stood?.(id, stand.feet, stand.ground !== undefined);
+  return stand;
+}
 
 /** The creatures you see on the floors shown (but those with a figure), where the 2D map has them now. */
 export function standingOf(tokens: Iterable<TokenView>, c: StandContext): Standing[] {
@@ -41,7 +54,7 @@ export function standingOf(tokens: Iterable<TokenView>, c: StandContext): Standi
     // On its own floor, wherever the floor shown is.
     const bottom = levelOf(c.table.world.levels, t)?.bottom;
     const feet = Math.max(t.elevation ?? 0, bottom ?? -Infinity) * c.px;
-    const stand = standAt(feet, c.under(t.id, place.at, feet) ?? (bottom ?? 0) * c.px, STEP * c.px);
+    const stand = standOf(t.id, place.at, { feet, bottom }, c);
     out.push({
       id: t.id,
       at: place.at,

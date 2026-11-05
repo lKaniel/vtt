@@ -76,6 +76,8 @@ export class PathPreview {
   private shownFor?: string;
   /** What it shows now: a walk (to `end`), an attack or a spell aimed; the label and the notes under it, at `end`. */
   shown?: { kind: 'walk' | 'attack' | 'spell'; end: Point; label: string; color: number; notes: string };
+  /** The way the walk shown goes, for the 3D view to climb it (view3d/climb3d.ts). */
+  route?: { token: string; points: readonly Point[] };
 
   constructor() {
     this.label.anchor.set(0.5, 1.4);
@@ -89,6 +91,7 @@ export class PathPreview {
     this.notes.text = '';
     this.shownFor = undefined;
     this.shown = undefined;
+    this.route = undefined;
   }
 
   /** Redraws unless the token and the hovered square are unchanged (or `force`); says what it drew. */
@@ -112,6 +115,7 @@ export class PathPreview {
       return { ...shown, feet: null, warnings: [] };
     }
     if (path.points.length < 2) return undefined;
+    this.route = { token: token.id, points: path.points };
     const warnings = walkWarnings({ ...ctx.plan, mover: token, path: path.points, gridSize: g, grid: ctx.grid });
     const tooFar = warnings.find((w) => w.kind === 'tooFar');
     this.drawRoute(path.points, tooFar ? TOO_FAR_COLOR : OK_COLOR, g);

@@ -11,9 +11,15 @@ const wall = (id: string, door?: Wall['door']): Wall => ({ id, a: [0, 0], b: [10
 function host(walls: Wall[], copies: Record<string, THREE.Object3D[]> = {}): Play3DHost {
   return {
     map: { effects: {}, tokens: { placeOf: () => undefined, release: () => undefined } },
-    session: { tokens: new Map(), chunks: new Map([['0_0', { walls, lights: [] }]]), world: undefined },
+    session: {
+      tokens: new Map(),
+      chunks: new Map([['0_0', { walls, lights: [] }]]),
+      world: undefined,
+      isGm: () => false,
+    },
     floor: () => 0,
     groundAt: () => 0,
+    surfaceAt: () => 0,
     px: () => 20,
     grid: () => 100,
     target: () => [0, 0],
@@ -60,5 +66,19 @@ describe('play in 3D', () => {
     expect(play.glowOf({ kind: 'door', chunk: '0_0', id: 'other' })).toBeUndefined();
     expect(play.glowOf({ kind: 'tile', id: 'statue' })).toBe('tile:statue');
     expect(play.glowOf(undefined)).toBeUndefined();
+  });
+
+  it('floats a marker over a lever you may click', () => {
+    const play = new Play3D(host([]));
+    const lever = {
+      ...chestTile,
+      id: 'lever',
+      door: undefined,
+      trigger: { on: 'click', actions: [{ type: 'message', text: 'Clunk' }] },
+    } as unknown as DrawnTile;
+    play.doors([], { bottom: 0, grid: 100 }, [lever]);
+    const marks: THREE.Object3D[] = [];
+    play.group.traverse((o) => o.userData.trigger === 'lever' && marks.push(o));
+    expect(marks).toHaveLength(1);
   });
 });

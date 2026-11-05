@@ -17,6 +17,8 @@ import { Picker } from './pick3d.ts';
 import { Overlay3D, type OverlayHost } from './overlay3d.ts';
 import { Solids } from './solids3d.ts';
 import { Surface } from './surface3d.ts';
+import type { PathPreview } from '../canvas/PathPreview.ts';
+import { Climbing } from './climb3d.ts';
 import { Terrains } from './terrain3d.ts';
 import { chunkArea, Resolution } from './frame-budget.ts';
 import { GroundFeed } from './ground-feed.ts';
@@ -41,7 +43,7 @@ import { cutaway, wallBoxes } from './walls3d.ts';
 /** What the 3D view needs of the 2D map. */
 export interface Map2D extends FlatMap {
   readonly tokens: Pick<TokenLayer, 'placeOf' | 'showFaces' | 'release'>;
-  readonly preview: OverlayHost['preview'];
+  readonly preview: OverlayHost['preview'] & Pick<PathPreview, 'route'>;
   readonly editor: { marquee(): Rect | undefined };
   readonly effects: Play3DHost['map']['effects'];
 }
@@ -114,6 +116,15 @@ export class View3D {
   });
   /** Attacks and spells, lunges and flinches. */
   private play: Play3D;
+  /** Walks climb what they cross: stairs, bridges, a tower's top. */
+  private climbing = new Climbing({
+    token: (id) => this.session.tokens.get(id),
+    placeOf: (id) => this.map.tokens.placeOf(id)?.at,
+    ground: (at, from, step) => this.underfoot.at(at, from, step),
+    route: (id) => (this.map.preview.route?.token === id ? this.map.preview.route.points : undefined),
+    px: () => this.px(),
+    grid: () => this.grid(),
+  });
   private off: (() => void)[] = [];
   private tick = () => this.frame(this.map.app.ticker.deltaMS / 1000);
 
@@ -131,6 +142,7 @@ export class View3D {
       session,
       floor: () => this.floor(),
       groundAt: ([x, y]) => this.terrains.heightAt(x, y) ?? this.floor(),
+      surfaceAt: (p) => this.underfoot.at(p, this.floor(), 6 * this.px()),
       px: () => this.px(),
       grid: () => this.grid(),
       target: () => [this.orbit.target[0], this.orbit.target[1]],
@@ -189,6 +201,7 @@ export class View3D {
     this.map.tokens.showFaces(false);
     this.overlay.start();
     this.play.start();
+    this.session.view3d.climb = (id, to) => this.climbing.end(id, to);
     this.watchHeld();
     const dirty = () => (this.wallsDirty = true);
     this.off.push(
@@ -219,6 +232,7 @@ export class View3D {
   }
 
   destroy(): void {
+    this.session.view3d.climb = undefined;
     this.map.app.ticker.remove(this.tick);
     for (const off of this.off) off();
     this.play.dispose();
@@ -440,6 +454,8 @@ export class View3D {
       grid: this.grid(),
       placeOf: (id) => this.map.tokens.placeOf(id),
       under: (id, at, feet) => this.underfoot.under(id, at, feet),
+      walking: (id, at) => this.climbing.walking(id, at),
+      stood: (id, feet, flying) => this.climbing.stood(id, feet, flying),
     });
   }
 

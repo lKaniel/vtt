@@ -76,7 +76,14 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   }),
   z.object({ t: z.literal('view'), chunks: z.array(z.string()).max(400) }),
   // throughWalls: the GM's "ignore walls" mode, straight there (refused to players: they walk).
-  z.object({ t: z.literal('move'), token: z.string(), to: PointSchema, throughWalls: z.boolean().optional() }),
+  // elevation: in a 3D scene, how high the walk ends (what it climbed onto).
+  z.object({
+    t: z.literal('move'),
+    token: z.string(),
+    to: PointSchema,
+    throughWalls: z.boolean().optional(),
+    elevation: z.number().min(-10000).max(10000).optional(),
+  }),
   z.object({ t: z.literal('ruler'), points: z.array(PointSchema).max(MAX_RULER_POINTS) }),
   z.object({ t: z.literal('cursor'), at: PointSchema.nullable() }),
   z.object({ t: z.literal('ping'), at: PointSchema, pull: z.boolean().optional() }),

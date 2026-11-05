@@ -511,8 +511,12 @@ players don't see creatures on floors their own doesn't see
 `Vision` on the client). The map draws the floor shown: the GM sees the
 floor of the creature they selected, or picks one (or every level) in the
 map tools (creatures on other floors show faintly); a player sees their
-creature's. Tiles over every floor (a roof) are drawn over the creatures
-and fade while one stands under them.
+creature's. The floors above the one shown stand over it as roofs, as in
+Foundry's Levels: their tiles (and tiles over every floor, a roof) are drawn
+over the creatures and fade while one stands under them, together with what
+lies wholly on them. A floor's own pictures lie under the creatures on it,
+even those Levels keeps overhead (the upper floor's picture, a trapdoor);
+`canvas/floor-tiles.ts` on the client picks them.
 
 A region only works for creatures on its own levels. These behaviours move
 creatures between floors: `level` (always to that level), `stairs` (between

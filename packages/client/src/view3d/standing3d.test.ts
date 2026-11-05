@@ -65,3 +65,18 @@ describe('the creatures standing in 3D', () => {
     ).toEqual([]);
   });
 });
+
+describe('a creature walking in 3D', () => {
+  it('stands where its climb has it while it walks, and says where it rests', () => {
+    const stood: unknown[] = [];
+    const c = context({
+      under: () => 100,
+      walking: (id) => (id === 'hero' ? 140 : undefined),
+      stood: (id, feet, flying) => stood.push([id, feet, flying]),
+    });
+    const [hero, imp] = standingOf([creature('hero'), creature('imp')], c);
+    expect(hero).toMatchObject({ height: 140 });
+    expect(imp).toMatchObject({ height: 100 });
+    expect(stood).toEqual([['imp', 100, false]]);
+  });
+});

@@ -69,9 +69,14 @@ export function visibilityChanges(
   for (const id of c.visible) {
     const token = viewFor(store, store.tokens.get(id)!, c.player);
     if (!before.has(id)) out.push({ t: 'token', token });
-    else if (id === changed) out.push(path ? { t: 'moved', id, path } : { t: 'token', token });
+    else if (id === changed) out.push(path ? movedOf(token, path) : { t: 'token', token });
   }
   return out;
+}
+
+/** A walk along `path`, and the height it ends at. */
+function movedOf(token: { id: string; elevation?: number }, path: Point[]): ServerMessage {
+  return { t: 'moved', id: token.id, path, ...(token.elevation !== undefined && { elevation: token.elevation }) };
 }
 
 /** Sends `msg` to the players on the scene who move `token`; when none of them is here, to the GM. */

@@ -1,8 +1,8 @@
-import type { Chunk, Point } from '@vtt/shared';
+import type { Chunk } from '@vtt/shared';
 import { Assets, BlurFilter, ColorMatrixFilter, Container, Sprite, type Texture, TilingSprite } from 'pixi.js';
 import { type GifSource, GifSprite } from 'pixi.js/gif';
 import { assetUrl } from '../assets.ts';
-import { easeAlpha, roofAlpha, scrollOffset, tileMedia } from './tile-motion.ts';
+import { easeAlpha, roofAlpha, type RoofSight, scrollOffset, tileMedia } from './tile-motion.ts';
 import { tilePose } from './tile-pose.ts';
 
 // One picture tile on the map: a still picture, an animated GIF or a looping
@@ -17,7 +17,7 @@ export interface TileView {
   root: Container;
   /** Settles once the picture has loaded (or failed to). */
   loaded?: Promise<void>;
-  tick?: (dt: number, watchers: readonly Point[]) => void;
+  tick?: (dt: number, sight: RoofSight) => void;
   /** Outlines it in gold while the pointer is on it (an object, as in BG3), or stops. */
   glow?: (on: boolean) => void;
 }
@@ -118,9 +118,9 @@ export function imageTile(tile: ImageTile): TileView {
     });
   if (!tile.overhead && !tile.scroll) return { root, loaded, glow };
   let seconds = 0;
-  const tick = (dt: number, watchers: readonly Point[]) => {
+  const tick = (dt: number, sight: RoofSight) => {
     seconds += dt;
-    if (tile.overhead) root.alpha = easeAlpha(root.alpha, roofAlpha(tile, watchers), dt);
+    if (tile.overhead) root.alpha = easeAlpha(root.alpha, roofAlpha(tile, sight.watchers, sight.covers), dt);
     if (tile.scroll && view instanceof TilingSprite) {
       view.tilePosition.set(...scrollOffset(tile.scroll, seconds, tile.w, tile.h));
     }

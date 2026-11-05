@@ -25,12 +25,47 @@ interface Roof {
   occludedAlpha?: number;
 }
 
-/** How opaque a roof should be: see-through (its `occludedAlpha`, default 0) while a watcher stands under it. */
-export function roofAlpha(roof: Roof, watchers: readonly Point[]): number {
-  const under = watchers.some((at) => {
-    const [x, y] = intoTile(roof, at);
-    return x >= roof.x && x <= roof.x + roof.w && y >= roof.y && y <= roof.y + roof.h;
+/** Whether map point `at` lies on the roof (inside its turned rectangle). */
+function onRoof(roof: Roof, at: Point): boolean {
+  const [x, y] = intoTile(roof, at);
+  return x >= roof.x && x <= roof.x + roof.w && y >= roof.y && y <= roof.y + roof.h;
+}
+
+/** The corners of a tile on the map, turned about its centre. */
+function cornersOf(t: Roof): Point[] {
+  const [cx, cy] = [t.x + t.w / 2, t.y + t.h / 2];
+  const a = ((t.rotation ?? 0) * Math.PI) / 180;
+  return [
+    [-1, -1],
+    [1, -1],
+    [1, 1],
+    [-1, 1],
+  ].map(([sx, sy]) => {
+    const [dx, dy] = [(sx! * t.w) / 2, (sy! * t.h) / 2];
+    return [cx + dx * Math.cos(a) - dy * Math.sin(a), cy + dx * Math.sin(a) + dy * Math.cos(a)] as Point;
   });
+}
+
+/** Who roofs fade for: where they stand, and the roofs over them. */
+export interface RoofSight {
+  watchers: readonly Point[];
+  covers: readonly Roof[];
+}
+
+/** The roofs a watcher stands under. */
+export function roofsOver<R extends Roof>(roofs: readonly R[], watchers: readonly Point[]): R[] {
+  return roofs.filter((r) => watchers.some((at) => onRoof(r, at)));
+}
+
+/**
+ * How opaque a roof should be: see-through (its `occludedAlpha`, default 0)
+ * while a watcher stands under it, or under a roof (`covers`) it lies wholly
+ * on, so a building's upper floor, its roof and what sits on them go together.
+ */
+export function roofAlpha(roof: Roof, watchers: readonly Point[], covers: readonly Roof[] = []): number {
+  const under =
+    watchers.some((at) => onRoof(roof, at)) ||
+    covers.some((c) => c !== roof && cornersOf(roof).every((p) => onRoof(c, p)));
   return under ? (roof.occludedAlpha ?? 0) : 1;
 }
 

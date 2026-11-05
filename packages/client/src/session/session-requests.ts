@@ -1,4 +1,5 @@
 import type { Actor, CarryChange, CheckKind, ClientMessage } from '@vtt/system-dnd5e';
+import type { Climb } from './session-view3d.ts';
 import type { ClockAction, DoorState, MapEdit, Point, Role } from '@vtt/shared';
 
 /**
@@ -8,12 +9,26 @@ import type { ClockAction, DoorState, MapEdit, Point, Role } from '@vtt/shared';
  */
 export class Requests {
   constructor(
-    private readonly s: { send(msg: ClientMessage): void; readonly throughWalls?: { readonly on: boolean } },
+    private readonly s: {
+      send(msg: ClientMessage): void;
+      readonly throughWalls?: { readonly on: boolean };
+      readonly view3d?: { readonly on: boolean; readonly climb?: Climb };
+    },
   ) {}
 
-  /** Walks `token` there round the walls; with the GM's "ignore walls" on, straight there. */
+  /**
+   * Walks `token` there round the walls; with the GM's "ignore walls" on,
+   * straight there. In 3D the walk ends as high as what it climbs onto.
+   */
   move(token: string, to: Point): void {
-    this.s.send({ t: 'move', token, to, ...(this.s.throughWalls?.on && { throughWalls: true }) });
+    const elevation = this.s.view3d?.on ? this.s.view3d.climb?.(token, to) : undefined;
+    this.s.send({
+      t: 'move',
+      token,
+      to,
+      ...(this.s.throughWalls?.on && { throughWalls: true }),
+      ...(elevation !== undefined && { elevation }),
+    });
   }
 
   setDoor(chunk: string, wall: string, state: DoorState): void {
