@@ -42,7 +42,10 @@ let shadowTexture: THREE.Texture | undefined;
 /** A soft dark disc (drawn once). */
 function shadowPicture(): THREE.Texture {
   if (shadowTexture) return shadowTexture;
-  if (typeof document === 'undefined') return (shadowTexture = new THREE.Texture());
+  if (typeof document === 'undefined') {
+    shadowTexture = new THREE.Texture();
+    return shadowTexture;
+  }
   const c = document.createElement('canvas');
   c.width = c.height = 64;
   const g = c.getContext('2d')!;

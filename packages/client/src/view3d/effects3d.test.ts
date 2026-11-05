@@ -25,7 +25,15 @@ describe('3D attack and spell effects', () => {
   it('plays all but videos, which it leaves to the flat map', () => {
     const { fx } = effects();
     const video: Cue = { at: 0, kind: 'video', from: 'hero', to: 'orc', srcs: ['a.webm'], ranged: true };
-    const arrow: Cue = { at: 0, kind: 'missile', from: 'hero', to: 'orc', element: 'piercing', style: 'arrow', duration: 300 };
+    const arrow: Cue = {
+      at: 0,
+      kind: 'missile',
+      from: 'hero',
+      to: 'orc',
+      element: 'piercing',
+      style: 'arrow',
+      duration: 300,
+    };
     expect(fx.play([video, arrow], 0)).toEqual([video]);
     expect(fx.tick(0)).toBe(true);
     expect(fx.group.children).toHaveLength(1);
@@ -49,6 +57,21 @@ describe('3D attack and spell effects', () => {
     expect(fx.tintOf('orc', 70)).toBeDefined();
     expect(fx.tintOf('orc', 2000)).toBeUndefined();
     expect(fx.group.children).toHaveLength(1);
+  });
+
+  it('sprays a cone of fire from the caster, and a line of lightning as one bolt', () => {
+    const { fx } = effects();
+    fx.play(
+      [
+        { at: 0, kind: 'spray', from: 'hero', to: [600, 300], length: 15, wide: true, element: 'fire' },
+        { at: 0, kind: 'spray', from: 'hero', to: [600, 100], length: 100, wide: false, element: 'lightning' },
+        { at: 0, kind: 'spray', from: 'ghost', to: [600, 100], length: 100, wide: false, element: 'cold' },
+      ],
+      0,
+    );
+    fx.tick(10);
+    expect(fx.group.children).toHaveLength(2);
+    expect(fx.tick(2000)).toBe(false);
   });
 
   it('plays nothing for a creature this player cannot see', () => {

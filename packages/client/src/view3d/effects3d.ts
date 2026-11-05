@@ -64,14 +64,16 @@ export class Effects3D {
 
   /** Starts what is due and moves what plays; true while anything does. */
   tick(now: number): boolean {
-    while (this.queue.length && this.queue[0]!.at <= now) this.start(this.queue.shift()!);
-    this.playing = this.playing.filter((p) => {
-      if (p.piece.update(now - p.start)) return true;
+    let due = 0;
+    while (due < this.queue.length && this.queue[due]!.at <= now) due++;
+    for (const q of this.queue.splice(0, due)) this.start(q);
+    const over = this.playing.filter((p) => !p.piece.update(now - p.start));
+    for (const p of over) {
       this.group.remove(p.piece.object);
       p.piece.dispose();
-      return false;
-    });
-    return this.playing.length > 0 || this.queue.length > 0;
+    }
+    this.playing = this.playing.filter((p) => !over.includes(p));
+    return this.playing.length + this.queue.length > 0;
   }
 
   /** How far a creature is off its spot just now (lunging, shaking), pixels on the map. */
@@ -125,7 +127,8 @@ export class Effects3D {
   private make(cue: Cue, now: number): Piece | undefined {
     switch (cue.kind) {
       case 'lunge':
-        return this.lunge(cue.token, cue.toward, now);
+        this.lunge(cue.token, cue.toward, now);
+        return undefined;
       case 'impact':
         return this.impact(cue, now);
       case 'number':
@@ -137,12 +140,15 @@ export class Effects3D {
     }
   }
 
-  private lunge(id: string, toward: string, now: number): undefined {
+  private lunge(id: string, toward: string, now: number): void {
     const a = this.host.body(id);
     const b = this.host.body(toward);
     if (!a || !b) return;
     const d = Math.hypot(b.at[0] - a.at[0], b.at[1] - a.at[1]) || 1;
-    this.motions.set(id, { ...this.motions.get(id), lunge: { at: now, dir: [(b.at[0] - a.at[0]) / d, (b.at[1] - a.at[1]) / d] } });
+    this.motions.set(id, {
+      ...this.motions.get(id),
+      lunge: { at: now, dir: [(b.at[0] - a.at[0]) / d, (b.at[1] - a.at[1]) / d] },
+    });
   }
 
   private impact(cue: Extract<Cue, { kind: 'impact' }>, now: number): Piece | undefined {

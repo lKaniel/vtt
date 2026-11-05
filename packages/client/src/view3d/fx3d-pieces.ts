@@ -24,7 +24,10 @@ let dotTexture: THREE.Texture | undefined;
 function softDot(): THREE.Texture {
   if (dotTexture) return dotTexture;
   // Off a page (the tests) there is nothing to draw on: a plain white dot.
-  if (typeof document === 'undefined') return (dotTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1));
+  if (typeof document === 'undefined') {
+    dotTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+    return dotTexture;
+  }
   const c = document.createElement('canvas');
   c.width = c.height = 64;
   const g = c.getContext('2d')!;
@@ -94,7 +97,7 @@ function sprite(color: number, size: number): THREE.Sprite {
 }
 
 /** A glowing orb flying with a trail of light behind it. */
-export function orb(from: V3, to: V3, { color, duration }: { color: number; duration: number }): Piece {
+function orb(from: V3, to: V3, { color, duration }: { color: number; duration: number }): Piece {
   const group = new THREE.Group();
   const halo = sprite(color, 70);
   const core = sprite(0xffffff, 26);
@@ -121,7 +124,7 @@ export function orb(from: V3, to: V3, { color, duration }: { color: number; dura
 }
 
 /** An arrow (or bolt, stone, dart) lobbed from bow to target, a faint streak behind it. */
-export function arrow(from: V3, to: V3, { color, duration }: { color: number; duration: number }): Piece {
+function arrow(from: V3, to: V3, { color, duration }: { color: number; duration: number }): Piece {
   const group = new THREE.Group();
   const shaft = new THREE.Mesh(
     new THREE.CylinderGeometry(1.6, 1.6, 56, 5).rotateX(Math.PI / 2),
@@ -154,7 +157,7 @@ export function arrow(from: V3, to: V3, { color, duration }: { color: number; du
 }
 
 /** A crackling bolt that strikes along its whole length, flickers and fades. */
-export function bolt(from: V3, to: V3, { color, duration }: { color: number; duration: number }): Piece {
+function bolt(from: V3, to: V3, { color, duration }: { color: number; duration: number }): Piece {
   const group = new THREE.Group();
   const inner = new THREE.MeshBasicMaterial({ ...glowing, color: 0xffffff });
   const outer = new THREE.MeshBasicMaterial({ ...glowing, color, opacity: 0.35 });
@@ -165,7 +168,7 @@ export function bolt(from: V3, to: V3, { color, duration }: { color: number; dur
     group.clear();
     const path = new THREE.CurvePath<THREE.Vector3>();
     const pts = boltPath(from, end, 9).map(v3);
-    for (let i = 1; i < pts.length; i++) path.add(new THREE.LineCurve3(pts[i - 1]!, pts[i]!));
+    pts.slice(1).forEach((p, i) => path.add(new THREE.LineCurve3(pts[i], p)));
     meshes = [
       new THREE.Mesh(new THREE.TubeGeometry(path, 36, 2.5, 4), inner),
       new THREE.Mesh(new THREE.TubeGeometry(path, 36, 10, 5), outer),
@@ -276,26 +279,32 @@ export function blast(at: V3, radius: number, color: number): Piece {
   };
 }
 
-/** Sparks of a blow flying off a struck creature's chest and falling. */
-export function sparks(at: V3, r: number, color: number): Piece {
-  const DURATION = 520;
-  const motes = new Motes(22, color, Math.max(24, r * 0.5));
-  const how = scatter(22);
+/** A swarm of motes alone, each placed `t` of the way through by `place` (undefined: not shown). */
+function swarm<M>(
+  how: readonly M[],
+  look: { color: number; size: number; duration: number },
+  place: (m: M, t: number) => { at: V3; fade: number } | undefined,
+): Piece {
+  const motes = new Motes(how.length, look.color, look.size);
   return {
     object: motes.points,
     update(ms) {
-      const t = ms / DURATION;
+      const t = ms / look.duration;
       if (t >= 1) return false;
-      motes.move((i) => {
-        const m = how[i]!;
-        const d = r * 1.6 * m.speed * easeOut(t);
-        const h = at[2] + r * (m.up - 0.2) * 1.5 * t - r * 2 * t * t;
-        return { at: [at[0] + Math.cos(m.yaw) * d, at[1] + Math.sin(m.yaw) * d, h], fade: 1 - t };
-      });
+      motes.move((i) => place(how[i]!, t));
       return true;
     },
     dispose: () => motes.dispose(),
   };
+}
+
+/** Sparks of a blow flying off a struck creature's chest and falling. */
+export function sparks(at: V3, r: number, color: number): Piece {
+  return swarm(scatter(22), { color, size: Math.max(24, r * 0.5), duration: 520 }, (m, t) => {
+    const d = r * 1.6 * m.speed * easeOut(t);
+    const h = at[2] + r * (m.up - 0.2) * 1.5 * t - r * 2 * t * t;
+    return { at: [at[0] + Math.cos(m.yaw) * d, at[1] + Math.sin(m.yaw) * d, h], fade: 1 - t };
+  });
 }
 
 /** A cone or line of sparks streaming from the caster's chest along `toward` (a unit vector on the map). */
@@ -304,29 +313,20 @@ export function stream(
   toward: [number, number],
   { length, wide, color }: { length: number; wide: boolean; color: number },
 ): Piece {
-  const DURATION = 700;
-  const n = wide ? 90 : 60;
   const spread = wide ? 1.0 : 0.08;
   const facing = Math.atan2(toward[1], toward[0]);
-  const how = scatter(n).map((m) => ({ ...m, yaw: facing + (Math.random() - 0.5) * spread, lift: Math.random() - 0.5 }));
-  const motes = new Motes(n, color, wide ? 120 : 80);
-  return {
-    object: motes.points,
-    update(ms) {
-      const t = ms / DURATION;
-      if (t >= 1) return false;
-      motes.move((i) => {
-        const m = how[i]!;
-        const local = clamp01((t - m.delay) / 0.6);
-        if (local <= 0 || local >= 1) return undefined;
-        const d = length * m.speed * easeOut(local);
-        const h = from[2] + m.lift * d * spread * 0.8 - from[2] * 0.5 * local;
-        return { at: [from[0] + Math.cos(m.yaw) * d, from[1] + Math.sin(m.yaw) * d, h], fade: 1 - local };
-      });
-      return true;
-    },
-    dispose: () => motes.dispose(),
-  };
+  const how = scatter(wide ? 90 : 60).map((m) => ({
+    ...m,
+    yaw: facing + (Math.random() - 0.5) * spread,
+    lift: Math.random() - 0.5,
+  }));
+  return swarm(how, { color, size: wide ? 120 : 80, duration: 700 }, (m, t) => {
+    const local = clamp01((t - m.delay) / 0.6);
+    if (local <= 0 || local >= 1) return undefined;
+    const d = length * m.speed * easeOut(local);
+    const h = from[2] + m.lift * d * spread * 0.8 - from[2] * 0.5 * local;
+    return { at: [from[0] + Math.cos(m.yaw) * d, from[1] + Math.sin(m.yaw) * d, h], fade: 1 - local };
+  });
 }
 
 /** Light gathering round a creature's feet and climbing it: a caster channelling, or healing settling (`rising`). */
@@ -407,7 +407,12 @@ const NUMBER_HEIGHT = 0.1;
 export function number3d(head: V3, text: string, tone: Tone, rise: number): Piece {
   const DURATION = tone === 'crit' ? 1500 : 1150;
   const { texture, aspect } = lettering(tone === 'crit' ? `${text}!` : text, tone);
-  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, sizeAttenuation: false });
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,
+    sizeAttenuation: false,
+  });
   const label = new THREE.Sprite(material);
   label.center.set(0.5, 0);
   label.renderOrder = 10;

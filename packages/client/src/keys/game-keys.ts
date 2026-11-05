@@ -233,11 +233,17 @@ function handleGameKey(session: Session, e: Key): void {
     session.requests.endTurn();
     return;
   }
-  if (id === 'view3d') return session.view3d.toggle();
-  if (id === 'throughWalls') return session.throughWalls.toggle();
-  if (id === 'fly-up' || id === 'fly-down') return fly(session, id === 'fly-up' ? FLY_STEP : -FLY_STEP);
-  if (id?.startsWith('hotbar-')) pressSlot(session, id.slice(7));
+  if (id?.startsWith('hotbar-')) return pressSlot(session, id.slice(7));
+  if (id) TOGGLES[id]?.(session);
 }
+
+/** Keys that switch or nudge something with no more to it. */
+const TOGGLES: Partial<Record<string, (session: Session) => void>> = {
+  view3d: (session) => session.view3d.toggle(),
+  throughWalls: (session) => session.throughWalls.toggle(),
+  'fly-up': (session) => fly(session, FLY_STEP),
+  'fly-down': (session) => fly(session, -FLY_STEP),
+};
 
 /** Feet a creature flies up or down per key press. */
 const FLY_STEP = 5;
@@ -245,7 +251,8 @@ const FLY_STEP = 5;
 /** Raises or lowers the selected creature (its elevation, as the token HUD sets it). */
 function fly(session: Session, by: number): void {
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
-  if (token && session.canControl(token)) session.requests.editToken(token.id, { elevation: (token.elevation ?? 0) + by });
+  if (token && session.canControl(token))
+    session.requests.editToken(token.id, { elevation: (token.elevation ?? 0) + by });
 }
 
 /** Uses the selected creature's action bar tile in slot `hotkey` ("1".."0"). */

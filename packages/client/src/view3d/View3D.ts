@@ -1,12 +1,10 @@
-import { levelAt, onLevel, type Point, type Rect, tokenLevel, type WorldInfo } from '@vtt/shared';
+import { levelAt, onLevel, type Point, type Rect } from '@vtt/shared';
 import * as THREE from 'three';
 import { listenToDrops } from '../canvas/sidebar-drops.ts';
 import type { TokenLayer } from '../canvas/TokenLayer.ts';
-import { portraitOf } from '../icon-art.ts';
 import type { Session } from '../session/session.ts';
 import {
   figures,
-  onShownFloor,
   type SolidShown,
   type Table3D,
   type TerrainShown,
@@ -25,7 +23,7 @@ import { CameraRig } from './camera3d.ts';
 import { CameraInput } from './input3d.ts';
 import { Models, type ModelShown } from './models3d.ts';
 import { eyeOf, groundSquare, ORBIT } from './orbit.ts';
-import { standAt } from './flight3d.ts';
+import { levelOf, standingOf } from './standing3d.ts';
 import { type FlatMap, PixiBridge } from './pixi-bridge.ts';
 import { Play3D, type Play3DHost } from './play3d.ts';
 import { Backdrop, Ground, hazeOf, Standees, type Standing, Walls } from './scene3d.ts';
@@ -454,28 +452,14 @@ export class View3D {
 
   /** The creatures you see on the floors shown (but those with a figure), where the 2D map has them now. */
   private standing(): Standing[] {
-    const table = this.table();
-    const floor = this.floor();
-    const out: Standing[] = [];
-    for (const t of this.session.tokens.values()) {
-      const place = this.map.tokens.placeOf(t.id);
-      if (!place || t.model || !onShownFloor(t, table)) continue;
-      // On its own floor, wherever the floor shown is.
-      const feet = Math.max(t.elevation ?? 0, levelOf(this.session.world?.levels, t)?.bottom ?? -Infinity) * this.px();
-      // High above what is under it, it flies (flight3d.ts).
-      const base = (levelOf(this.session.world?.levels, t)?.bottom ?? 0) * this.px();
-      const stand = standAt(feet, this.underfoot.under(t.id, place.at, feet) ?? base, 6 * this.px());
-      out.push({
-        id: t.id,
-        at: place.at,
-        height: stand.feet - floor,
-        ...(stand.ground !== undefined && { ground: stand.ground - floor }),
-        size: t.size * this.grid(),
-        picture: portraitOf(t),
-        faint: t.hidden,
-      });
-    }
-    return out;
+    return standingOf(this.session.tokens.values(), {
+      table: this.table(),
+      floor: this.floor(),
+      px: this.px(),
+      grid: this.grid(),
+      placeOf: (id) => this.map.tokens.placeOf(id),
+      under: (id, at, feet) => this.underfoot.under(id, at, feet),
+    });
   }
 
   /** The creature you act with, where it stands (none from above, the tactical view). */
@@ -495,10 +479,4 @@ export class View3D {
   private pick(clientX: number, clientY: number): Point {
     return this.picker.pick(clientX, clientY, this.frames).at;
   }
-}
-
-/** The level a creature stands on. */
-function levelOf(levels: WorldInfo['levels'], t: Parameters<typeof tokenLevel>[1]) {
-  const id = tokenLevel(levels, t);
-  return levels?.find((l) => l.id === id);
 }

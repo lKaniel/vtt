@@ -68,6 +68,25 @@ picture when the scene's `view3d.background` is `false`
 (`paintedUnder3d` in `content3d.ts`). Where it paints nothing the ground is
 see-through, so the 3D floor, the table colour or the sky shows there.
 
+## Fights and flying
+
+Attacks and spells play in 3D as they do in BG3 (`effects3d.ts`, the same
+cues the flat map plays, from `feedback.ts`): arrows lob in an arc and
+spells fly from chest to chest, crackling bolts strike along their length,
+blasts swell off the ground with a ring along it, cones spray sparks, the
+attacker lunges and the creature struck flashes and shakes, and the
+numbers pop up over its head at a size you can read from any distance.
+Videos from an animation pack stay on the flat map, laid on the ground.
+`play3d.ts` hooks this into the view (`fx3d-pieces.ts` draws the pieces,
+`fx3d-motion.ts` is their motion as plain maths).
+
+A creature whose elevation keeps it more than 6 ft above what is under it
+flies: it stays up there, with a shadow on the ground, a faint line down
+to it and its height beside it (`flight3d.ts`); one at or near a surface
+(a hill, a bridge, a floor) stands on it (`standing3d.ts`). **Page Up** and
+**Page Down** fly the selected creature 5 ft up or down (its elevation, as
+the token HUD sets it).
+
 ## Models
 
 Image tiles with a `model` stand glTF models (`.glb`, or `.gltf` with its
