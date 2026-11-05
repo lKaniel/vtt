@@ -10,6 +10,7 @@ import {
   NO_SENSES,
   ownersOf,
   type PlacedToken,
+  type Point,
   type Player,
   PlayerSchema,
   tokensVisibleTo,
@@ -169,5 +170,17 @@ describe('what observers see', () => {
     const upThere = token('up', { x: 200, elevation: 10, light: { bright: 20, dim: 0 } });
     const onGround = token('eye', { ownership: { default: 'limited', bo: 'owner' } });
     expect(tokensVisibleTo(bo, [onGround, upThere], ctx)).toEqual(new Set(['eye']));
+  });
+
+  it('do not see creatures in a dark room by daylight, only those in its lamplight', () => {
+    const day = { darkness: 0, vision: true, gridSize: 100 };
+    const indoors = (level: string | undefined) => (p: Point) => level === undefined && p[0] >= 300;
+    const lamp = { x: 600, y: 0, bright: 10, dim: 0 };
+    const ctx = { world: day, lights: [lamp], wallsBetween: () => [], perceiver, indoors };
+    const eye = token('eye', { ownership: { default: 'limited', bo: 'owner' } });
+    const inDark = token('dark', { x: 300 });
+    const inLamp = token('lamp', { x: 600 });
+    const outside = token('out', { x: 200 });
+    expect(tokensVisibleTo(bo, [eye, inDark, inLamp, outside], ctx)).toEqual(new Set(['eye', 'lamp', 'out']));
   });
 });

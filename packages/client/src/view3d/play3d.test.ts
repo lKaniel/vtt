@@ -24,6 +24,7 @@ function host(walls: Wall[], copies: Record<string, THREE.Object3D[]> = {}): Pla
     grid: () => 100,
     target: () => [0, 0],
     copiesOf: (key: string) => copies[key] ?? [],
+    indoors: () => false,
   } as unknown as Play3DHost;
 }
 

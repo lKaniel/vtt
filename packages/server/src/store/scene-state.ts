@@ -10,7 +10,10 @@ import {
   ClockSchema,
   darknessAt,
   timeNow,
+  floorLights,
   type Game,
+  type Indoors,
+  indoorsOn,
   groupChunks,
   isGroup,
   type LightSource,
@@ -19,8 +22,6 @@ import {
   type Rect,
   type Scene,
   type SceneCollection,
-  tokenLevel,
-  tokenLights,
   type Wall,
   type Weather,
   weatherAt,
@@ -47,6 +48,21 @@ export interface SceneEvents {
   tokenGone(id: string): void;
 }
 
+/** Where a store hears of its scenes: events named as SceneEvents, the scene's id last. */
+interface SceneEmitter {
+  emit(event: keyof SceneEvents, ...args: unknown[]): boolean;
+}
+
+/** A scene's events, passed on to the store tagged with the scene's id. */
+export function taggedEvents(to: SceneEmitter, id: string): SceneEvents {
+  return {
+    chunk: (key, chunk) => to.emit('chunk', key, chunk, id),
+    chunkGone: (key) => to.emit('chunkGone', key, id),
+    token: (token, path) => to.emit('token', token, path, id),
+    tokenGone: (tid) => to.emit('tokenGone', tid, id),
+  };
+}
+
 export class SceneState {
   readonly chunks = new Map<string, Chunk>();
   readonly tokens = new Map<string, Token>();
@@ -54,6 +70,8 @@ export class SceneState {
   /** The game's settings and this scene's, with the darkness the scene has set. */
   private base: World;
   private clock?: { doc: Doc | undefined; clock: Clock };
+  /** Each floor's indoors, worked out when first asked for after the map changed. */
+  private rooms = new Map<string, Indoors | undefined>();
 
   constructor(
     readonly id: string,
@@ -100,6 +118,7 @@ export class SceneState {
     const before = this.world.chunkSize;
     this.scene = fromDoc<Scene>(this.docs.get('scenes', this.id)!, false);
     this.base = worldOf(game, this.scene);
+    this.rooms.clear();
     if (before === this.world.chunkSize) return false;
     this.refreshChunks(undefined, false);
     return true;
@@ -135,16 +154,23 @@ export class SceneState {
     });
   }
 
+  /** Where floor `level` is indoors (see indoors.ts), out of reach of the sky's light. */
+  indoors(level: string | undefined): Indoors | undefined {
+    const key = level ?? '';
+    if (!this.rooms.has(key)) {
+      const { tiles, walls } = this.map();
+      this.rooms.set(key, indoorsOn({ tiles, walls }, this.world.levels, level, this.world.gridSize));
+    }
+    return this.rooms.get(key);
+  }
+
   /** Every light shining on the scene: placed ones in their darkness band, and those tokens carry or their effects give (on the token's level). */
   lights(): LightSource[] {
     const { darkness, levels } = this.world;
     const out: LightSource[] = [];
     for (const c of this.chunks.values()) out.push(...c.lights.filter((l) => lightShines(l, darkness)));
-    for (const t of this.tokens.values()) {
-      const level = levels?.length ? tokenLevel(levels, t) : undefined;
-      out.push(...tokenLights([{ ...t, light: lightOf(t) }]).map((l) => ({ ...l, ...(level && { level }) })));
-    }
-    return out;
+    const carried = [...this.tokens.values()].map((t) => ({ ...t, light: lightOf(t) }));
+    return [...out, ...floorLights(carried, levels)];
   }
 
   // Projecting changed documents
@@ -178,6 +204,7 @@ export class SceneState {
   }
 
   refreshChunks(keys: ReadonlySet<string> | undefined, live: boolean): void {
+    this.rooms.clear();
     if (!keys) this.chunks.clear();
     for (const [key, chunk] of groupChunks(this.map(), this.world.chunkSize, keys)) {
       const empty = !chunk.tiles.length && !chunk.walls.length && !chunk.lights.length;

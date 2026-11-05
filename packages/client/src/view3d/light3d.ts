@@ -16,7 +16,17 @@ export interface Seen {
   /** The lowest floor's height, three's y. */
   lowest: number;
   grid: number;
+  /** Your creature is inside a building (inside3d.ts), where the sky's light doesn't reach. */
+  indoors?: boolean;
 }
+
+/** How much of the sky's light falls: less the darker the hour, and inside as little as at midnight. */
+export function skyShare(darkness: number, indoors: boolean): number {
+  return 1 - 0.8 * (indoors ? 1 : darkness);
+}
+
+/** The sky's light eases in and out over half a second as you go in and out. */
+const EASE_PER_SECOND = 2;
 
 export class Lighting {
   readonly backdrop = new Backdrop();
@@ -24,6 +34,8 @@ export class Lighting {
   private sun = new THREE.DirectionalLight(0xffffff, 1.4);
   private pmrem: THREE.PMREMGenerator;
   private litBy?: THREE.Texture;
+  private share?: number;
+  private shownAt = 0;
 
   constructor(
     renderer: THREE.WebGLRenderer,
@@ -36,9 +48,10 @@ export class Lighting {
   /** Lights the scene as `world` has it, round what the camera sees. */
   show(world: WorldInfo, seen: Seen): void {
     const [x, y, z] = seen.target;
-    const light = 1 - 0.8 * world.darkness;
+    const light = this.ease(skyShare(world.darkness, !!seen.indoors));
     this.hemi.intensity = 1.2 * light;
     this.sun.intensity = 1.4 * light;
+    this.scene.environmentIntensity = light;
     this.sun.position.set(x - 2000, y + 4000, z - 1500);
     this.sun.target.position.set(x, y, z);
     const background = world.background ?? '#1b1d22';
@@ -47,6 +60,15 @@ export class Lighting {
     this.backdrop.show(this.scene, look, seen.lowest);
     this.scene.fog = hazeOf(look, seen.grid, [seen.distance + seen.reach * 0.4, seen.distance + seen.reach * 1.1]);
     this.skyLight(this.backdrop.skyPicture);
+  }
+
+  private ease(target: number): number {
+    const now = performance.now();
+    const step = EASE_PER_SECOND * Math.min(1, (now - this.shownAt) / 1000);
+    this.shownAt = now;
+    const from = this.share ?? target;
+    this.share = Math.abs(target - from) <= step ? target : from + Math.sign(target - from) * step;
+    return this.share;
   }
 
   /** The sky lights the scene (its picture as the environment), once it has loaded. */

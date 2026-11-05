@@ -1,4 +1,13 @@
-import { canControl, isGm, type Player, type Point, type Rng, tokensVisibleTo, type World } from '@vtt/shared';
+import {
+  canControl,
+  isGm,
+  isIndoors,
+  type Player,
+  type Point,
+  type Rng,
+  tokensVisibleTo,
+  type World,
+} from '@vtt/shared';
 import { type ChatMessage, type ServerMessage, type Token } from '@vtt/system-dnd5e';
 import { OpError } from '@vtt/core';
 import type { WebSocket } from 'ws';
@@ -247,6 +256,7 @@ export class Game {
         lights: this.store.lights(),
         wallsBetween: (a, b) => this.store.wallsBetween(a, b),
         levels: this.store.world.levels,
+        indoors: (level) => (p) => isIndoors(this.store.indoors(level), p),
         perceiver: (t) => this.store.system.perceiver(t, this.store.world.rules, packContent(this.store)),
       }),
     );

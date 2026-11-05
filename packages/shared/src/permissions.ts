@@ -100,6 +100,8 @@ export interface SightContext<T> {
   perceiver: (token: T) => Perceiver;
   /** The scene's floors (see levels.ts): a viewer sees, is lit and blocked only on their own. */
   levels?: readonly SceneLevel[];
+  /** Where it is indoors on a level (see indoors.ts): the sky's light doesn't reach there. */
+  indoors?: (level: string | undefined) => (p: Point) => boolean;
 }
 
 interface LevelEyes {
@@ -124,6 +126,7 @@ function eyesOf<T extends PlacedToken>(v: T, ctx: SightContext<T>): LevelEyes {
     lights: ctx.lights.filter((l) => onLevel(l, on)),
     clear: past('sight'),
     lit: past('light'),
+    indoors: ctx.indoors?.(on),
   });
   const eyes = { at: [v.x, v.y] as Point, senses: p.senses, blinded: p.blinded };
   return { eyes, level, seen: levelsSeen(ctx.levels, level), light };

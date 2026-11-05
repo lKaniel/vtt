@@ -41,6 +41,8 @@ export interface Play3DHost {
   target(): Point;
   /** The standing copies of a model by its key (models3d.ts). */
   copiesOf(key: string): readonly THREE.Object3D[];
+  /** Your creature is inside a building, where lamps burn as bright as at night. */
+  indoors(): boolean;
 }
 
 /** A door model tile: its model's key, how it moves, its file. */
@@ -157,7 +159,7 @@ export class Play3D {
       groundAt: (p) => this.host.groundAt(p),
       floorOf: (level) => (world.levels?.find((l) => l.id === level)?.bottom ?? 0) * px,
     });
-    this.lamps.show(lamps, this.host.target(), now, world.darkness);
+    this.lamps.show(lamps, this.host.target(), now, this.host.indoors() ? 1 : world.darkness);
   }
 
   /** The creatures standing with a light. */

@@ -67,9 +67,9 @@ export class SightMap {
     const range = (feet: number) => feetToPx(feet, scene.gridSize);
     for (const v of scene.viewers) {
       this.sight.poly(scene.polygon(v.at, scene.sightRadius, 'sight', v.elevation)).fill(0x00ff00);
-      this.area(this.senses, scene, v.at, range(v.senses.darkvision));
+      this.area(this.senses, scene, v, range(v.senses.darkvision));
       const keen = Math.max(v.senses.devilsSight, v.senses.truesight, v.senses.blindsight);
-      this.area(this.keenSenses, scene, v.at, range(keen));
+      this.area(this.keenSenses, scene, v, range(keen));
     }
     // Magical darkness puts out darkvision (red) but leaves sight and memory alone.
     for (const l of scene.darkness) {
@@ -83,8 +83,9 @@ export class SightMap {
     this.texture.destroy(true);
   }
 
-  private area(g: Graphics, scene: SightScene, at: Point, radius: number): void {
+  /** Where a sense reaches, stopped by the walls standing at the viewer's height, as sight is. */
+  private area(g: Graphics, scene: SightScene, v: SightViewer, radius: number): void {
     if (radius <= 0) return;
-    g.poly(scene.polygon(at, radius, 'sight')).fill(0xff0000);
+    g.poly(scene.polygon(v.at, radius, 'sight', v.elevation)).fill(0xff0000);
   }
 }

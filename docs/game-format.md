@@ -131,6 +131,11 @@ Roles, like Foundry's user roles (the GM changes them in the Players tab):
 their players appear. `darkness` (0 to 1, default 0) is the time of day: up to 0.3
 is daylight, up to 0.6 is dim light (dusk, moonlight) and above that is
 darkness, where only lights and senses like darkvision show anything.
+Indoors (ground under a roof, an overhead tile or the floor above, that
+walls close in on every side) the sky's light never reaches: it is dark
+there at any hour, lit only by lamps and seen with darkvision. A missing
+wall, an open door or a window (a wall that lets light through) lets the
+daylight in again.
 `vision` (default `true`) is fog of war: players see only what their tokens
 can. The GM can check what a creature sees with "See through its eyes" in
 its right-click menu (light, sight and fog as its players get them). `chunkSize` (default 2000, a multiple of `gridSize`) is how big the

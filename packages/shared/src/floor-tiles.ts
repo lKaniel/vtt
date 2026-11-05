@@ -1,4 +1,5 @@
-import { type Chunk, levelRank, onLevel, onLevels, type SceneLevel } from '@vtt/shared';
+import type { Chunk, SceneLevel } from './schema.ts';
+import { levelRank, onLevel, onLevels } from './levels.ts';
 
 // Which tiles the flat map draws for the floor shown, as Foundry's Levels
 // does: the floors seen from it (lower ones beneath), and the floors above

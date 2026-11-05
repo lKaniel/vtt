@@ -57,6 +57,8 @@ export interface LightContext {
   clear: (a: Point, b: Point) => boolean;
   /** Whether a light at `a` reaches `b` past the walls; missing: the same as sight. */
   lit?: (a: Point, b: Point) => boolean;
+  /** Whether a point is indoors (see indoors.ts), where the sky's light never reaches; missing: nowhere. */
+  indoors?: (p: Point) => boolean;
 }
 
 export interface LightHere {
@@ -75,7 +77,7 @@ export function lightLevelAt(p: Point, ctx: LightContext): LightHere {
     inLightCone(l, p) &&
     (l.walls === false || lit([l.x, l.y], p));
   if (ctx.lights.some((l) => l.darkness && reaches(l, l.bright + l.dim))) return { level: 'dark', magical: true };
-  let level = ambientLevel(ctx.darkness);
+  let level: LightLevel = ctx.indoors?.(p) ? 'dark' : ambientLevel(ctx.darkness);
   for (const l of ctx.lights) {
     if (l.darkness || level === 'bright') continue;
     if (reaches(l, l.bright)) level = 'bright';
