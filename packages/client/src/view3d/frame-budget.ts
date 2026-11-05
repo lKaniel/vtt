@@ -18,8 +18,6 @@ export const GROUND = {
   margin: 1.25,
   /** Drawn again, sharper, once the square seen is this much smaller than the one drawn. */
   sharper: 1.6,
-  /** Seconds between drawings while nothing pokes it (lights flicker, effects play). */
-  refresh: 1 / 15,
 } as const;
 
 /** The square to draw now so that `need` shows, or undefined while the square `drawn` still covers it well. */
@@ -33,15 +31,13 @@ export function groundToDraw(need: Square, drawn: Square | undefined): Square | 
   return undefined;
 }
 
-/** Whether the ground is drawn again though the camera stayed. */
-export function groundDue({ sinceDrawn, poked }: { sinceDrawn: number; poked: boolean }): boolean {
-  return poked || sinceDrawn > GROUND.refresh;
+/** Whether the ground is drawn again though the camera stayed: poked, or `perSecond` times a second (lights flicker). */
+export function groundDue({ sinceDrawn, poked }: { sinceDrawn: number; poked: boolean }, perSecond: number): boolean {
+  return poked || sinceDrawn > 1 / perSecond;
 }
 
 /** The share of the screen's resolution the 3D view draws at, eased by how long frames take. */
 export class Resolution {
-  /** Never below this share. */
-  static readonly lowest = 0.5;
   /** Frames slower than this (ms) lower it, quicker than `quick` raise it. */
   private static readonly slow = 24;
   private static readonly quick = 15;
@@ -50,6 +46,10 @@ export class Resolution {
   private static readonly step = 0.85;
 
   scale = 1;
+
+  /** `lowest`: it never drops below this share. */
+  constructor(readonly lowest = 0.5) {}
+
   private average = 16;
   private slowFor = 0;
   private quickFor = 0;
@@ -60,8 +60,8 @@ export class Resolution {
     this.average += (ms - this.average) * 0.1;
     this.slowFor = this.average > Resolution.slow ? this.slowFor + dt : 0;
     this.quickFor = this.average < Resolution.quick ? this.quickFor + dt : 0;
-    if (this.slowFor > Resolution.settle.down && this.scale > Resolution.lowest) {
-      return this.set(Math.max(Resolution.lowest, this.scale * Resolution.step));
+    if (this.slowFor > Resolution.settle.down && this.scale > this.lowest) {
+      return this.set(Math.max(this.lowest, this.scale * Resolution.step));
     }
     if (this.quickFor > Resolution.settle.up && this.scale < 1)
       return this.set(Math.min(1, this.scale / Resolution.step));
@@ -77,12 +77,14 @@ export class Resolution {
 
 /** Nothing this close (squares) is left out. */
 const NEAR_SQUARES = 15;
-/** Things that look smaller than this (their size over their distance, about radians) are left out. */
-const TINY = 0.015;
 
-/** Whether something `size` across (pixels) at `distance` from the camera is too small to draw. */
-export function tooSmallToSee(size: number, distance: number, grid: number): boolean {
-  return distance > NEAR_SQUARES * grid && size / distance < TINY;
+/**
+ * Whether something `size` across (pixels) at `distance` from the camera is
+ * too small to draw: it looks smaller than `tiny` (its size over its
+ * distance, about radians).
+ */
+export function tooSmallToSee(size: number, distance: number, grid: number, tiny = 0.015): boolean {
+  return distance > NEAR_SQUARES * grid && size / distance < tiny;
 }
 
 /** The map the 3D view keeps loaded round the camera: this many squares each way; moved once the camera has gone `move` of that. */

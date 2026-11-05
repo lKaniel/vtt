@@ -29,9 +29,9 @@ describe('the ground the 2D map draws', () => {
   });
 
   it('draws again for what moves on it, but not every frame', () => {
-    expect(groundDue({ sinceDrawn: 0.01, poked: false })).toBe(false);
-    expect(groundDue({ sinceDrawn: 0.01, poked: true })).toBe(true);
-    expect(groundDue({ sinceDrawn: GROUND.refresh + 0.001, poked: false })).toBe(true);
+    expect(groundDue({ sinceDrawn: 0.01, poked: false }, 15)).toBe(false);
+    expect(groundDue({ sinceDrawn: 0.01, poked: true }, 15)).toBe(true);
+    expect(groundDue({ sinceDrawn: 1 / 15 + 0.001, poked: false }, 15)).toBe(true);
   });
 });
 
@@ -51,7 +51,10 @@ describe('the resolution of the 3D picture', () => {
     run(r, 40, 2);
     expect(r.scale).toBeLessThan(1);
     run(r, 40, 30);
-    expect(r.scale).toBeCloseTo(Resolution.lowest);
+    expect(r.scale).toBeCloseTo(r.lowest);
+    const low = new Resolution(0.7);
+    run(low, 40, 30);
+    expect(low.scale).toBeCloseTo(0.7);
   });
 
   it('climbs back once frames are quick again', () => {
@@ -70,6 +73,10 @@ describe('small things far off', () => {
   });
   it('unless they are big', () => {
     expect(tooSmallToSee(800, 5000, grid)).toBe(false);
+  });
+  it('on lower quality, sooner', () => {
+    expect(tooSmallToSee(100, 4000, grid)).toBe(false);
+    expect(tooSmallToSee(100, 4000, grid, 0.03)).toBe(true);
   });
   it('the further, the bigger they must be', () => {
     expect(tooSmallToSee(150, 12000, grid)).toBe(true);
