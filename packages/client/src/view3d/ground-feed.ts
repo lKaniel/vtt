@@ -12,6 +12,9 @@ import { drapeOver } from './terrain-paint.ts';
 // changed (the camera, the ground, a creature, a model), and only `idleFps`
 // times a second while nothing does.
 
+/** The pointer moving redraws the ground (hover glows, a spell's area) at most this often; the 3D view at once. */
+const HOVER_FPS = 10;
+
 export class GroundFeed {
   /** The square the 2D map drew last, which the ground shows now, and the one it was asked for since. */
   private drawn?: Square;
@@ -19,6 +22,8 @@ export class GroundFeed {
   private sinceDrawn = 0;
   /** Something on the 2D map may have changed: draw it again soon. */
   private poked = true;
+  /** The pointer moved since the ground was last drawn. */
+  private hovered = false;
   private walkersSeen = '';
   /** Something changed since the 3D view last drew. */
   private changed = true;
@@ -35,6 +40,11 @@ export class GroundFeed {
   /** The pointer moved or something on the map changed: the ground and the view are drawn again. */
   poke(): void {
     this.poked = this.changed = true;
+  }
+
+  /** The pointer moved: the view is drawn again at once, the 2D map's ground soon (drawing it is dear). */
+  hover(): void {
+    this.hovered = this.changed = true;
   }
 
   /** Something in the 3D view changed (its size, the walls): it is drawn again. */
@@ -62,8 +72,16 @@ export class GroundFeed {
     if (next) {
       this.bridge.frame(next.center, next.half);
       this.asked = next;
-    } else if (groundDue({ sinceDrawn: this.sinceDrawn, poked: this.poked }, this.rates.refresh)) this.bridge.redraw();
+      this.hovered = false;
+    } else if (groundDue({ sinceDrawn: this.sinceDrawn, poked: this.poked || this.hoverDue() }, this.rates.refresh)) {
+      this.bridge.redraw();
+      this.hovered = false;
+    }
     this.poked = false;
+  }
+
+  private hoverDue(): boolean {
+    return this.hovered && this.sinceDrawn >= 1 / HOVER_FPS;
   }
 
   /** Creatures walking move their rings on the 2D map: the ground is drawn again while they do. */

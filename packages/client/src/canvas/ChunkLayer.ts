@@ -162,7 +162,8 @@ export class ChunkLayer {
     const { you, selected } = this.session;
     const gm = !you || isGm(you);
     const yours = gm ? [] : [...this.session.tokens.values()].filter((t) => canObserve(t, you)).map((t) => t.id);
-    return { gm, yours, selected: selected ? [selected] : [] };
+    const pointer = gm && !selected && !this.session.view3d.on ? this.session.pointer : undefined;
+    return { gm, yours, selected: selected ? [selected] : [], ...(pointer && { pointer }) };
   }
 
   /** A tile as drawn now, if it is. */

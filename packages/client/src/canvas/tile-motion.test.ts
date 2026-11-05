@@ -39,6 +39,13 @@ describe('roofs', () => {
     expect(roofWatchers({ gm: false, yours: ['a', 'zz'], selected: ['b'] }, placeOf)).toEqual([[10, 10]]);
     expect(roofWatchers({ gm: true, yours: [], selected: ['b'] }, placeOf)).toEqual([[20, 20]]);
   });
+
+  it("fade under the GM's pointer while nothing is selected, and never for players", () => {
+    const placeOf = () => ({ at: [20, 20] as [number, number] });
+    expect(roofWatchers({ gm: true, yours: [], selected: [], pointer: [5, 6] }, placeOf)).toEqual([[5, 6]]);
+    expect(roofWatchers({ gm: true, yours: [], selected: ['b'], pointer: [5, 6] }, placeOf)).toEqual([[20, 20]]);
+    expect(roofWatchers({ gm: false, yours: [], selected: [], pointer: [5, 6] }, placeOf)).toEqual([]);
+  });
 });
 
 describe('scrolling tiles', () => {
