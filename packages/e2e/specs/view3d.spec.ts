@@ -59,6 +59,8 @@ test.describe('on a 3D scene', () => {
     const to = (await last())!.to;
     expect(to[1]).toBeLessThan(BRAM[1]);
     expect(Math.abs(to[0] - BRAM[0])).toBeLessThan(150);
+    // The walk's length shows over the 3D view, beside where it ends.
+    await expect(page.getByTestId('walk-label')).toContainText('ft');
   });
 
   test('a player picks low 3D graphics for a weak computer; the view starts again with them', async ({ page }) => {

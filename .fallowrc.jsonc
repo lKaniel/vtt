@@ -35,6 +35,8 @@
           "packages/client/src/view3d/pixi-bridge.ts",
           "packages/client/src/view3d/view3d-switch.ts",
           "packages/client/src/view3d/models3d.ts",
+          "packages/client/src/view3d/overlay3d.ts",
+          "packages/client/src/view3d/light3d.ts",
         ],
         "maxCrap": 160,
       },

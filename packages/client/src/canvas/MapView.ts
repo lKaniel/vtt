@@ -67,8 +67,9 @@ export class MapView {
   private chunks: ChunkLayer;
   readonly tokens: TokenLayer;
   private effects: EffectsLayer;
-  private preview = new PathPreview();
-  private editor: MapEditor;
+  /** The walk, attack and spell previews; the 3D view draws them again (view3d/overlay3d.ts). */
+  readonly preview = new PathPreview();
+  readonly editor: MapEditor;
   private fogBrush: FogBrush;
   private items: ItemLayer;
   private rulers: RulerLayer;
@@ -152,7 +153,6 @@ export class MapView {
   }
 
   /** The map whose pieces stay loaded instead of what the camera sees: the 3D view's (view3d/frame-budget.ts). */
-  // fallow-ignore-next-line unused-class-member -- the 3D view sets it through its FlatMap type
   chunkArea?: Rect;
 
   /** Under the 3D view, empty ground shows what lies below it (view3d/pixi-bridge.ts). */
