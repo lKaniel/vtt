@@ -125,6 +125,10 @@ export interface Standing {
   size: number;
   picture: string;
   faint: boolean;
+  /** In the air: the ground under it, pixels above the floor shown (flight3d.ts). */
+  ground?: number;
+  /** The colour it flashes when struck (effects3d.ts). */
+  tint?: THREE.Color;
 }
 
 /** The creatures, each a picture standing on its spot and turning to the camera. */
@@ -171,6 +175,7 @@ export class Standees {
       sprite.material.needsUpdate = true;
     }
     sprite.material.opacity = s.faint ? 0.5 : 1;
+    sprite.material.color.set(s.tint ?? 0xffffff);
     sprite.position.copy(at3d(s.at, floor + s.height));
     sprite.scale.set(s.size, s.size, 1);
   }

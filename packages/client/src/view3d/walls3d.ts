@@ -30,36 +30,55 @@ export interface FloorSpan {
   explored?: (p: Point) => boolean;
 }
 
-/** How a wall shows: a door, glass, a wall, or not at all (open doors, walls you see through). */
+/** How a wall shows: glass, a wall, or not at all (doors swing on their own, doors3d.ts; walls you see through). */
 function kindOf(w: Wall): WallKind | undefined {
-  if (w.door) return w.door === 'open' ? undefined : 'door';
+  if (w.door) return undefined;
   if (restriction(w, 'sight') !== 'none') return 'wall';
   return (w.move ?? 'normal') !== 'none' && (w.sound ?? 'normal') !== 'none' ? 'window' : undefined;
 }
 
-/** The boxes of the walls on a floor. */
-export function wallBoxes(walls: readonly Wall[], floor: FloorSpan): WallBox[] {
+/** A wall's box on a floor, if it stands there and the viewer has explored it. */
+function boxOf(w: Wall, kind: WallKind, floor: FloorSpan): WallBox | undefined {
   const px = floor.grid / 5;
   const ceiling = floor.top ?? floor.bottom + DEFAULT_FEET;
-  return walls.flatMap((w): WallBox[] => {
+  const mid: Point = [(w.a[0] + w.b[0]) / 2, (w.a[1] + w.b[1]) / 2];
+  if (floor.explored && !floor.explored(mid)) return undefined;
+  const bottom = Math.max(floor.bottom, w.height?.bottom ?? floor.bottom);
+  const top = Math.min(ceiling, w.height?.top ?? ceiling);
+  const [dx, dy] = [w.b[0] - w.a[0], w.b[1] - w.a[1]];
+  const length = Math.hypot(dx, dy);
+  if (length < 1 || top <= bottom) return undefined;
+  return {
+    mid,
+    length,
+    angle: Math.atan2(dy, dx),
+    bottom: (bottom - floor.bottom) * px,
+    height: (top - bottom) * px,
+    kind,
+  };
+}
+
+/** The boxes of the walls on a floor. */
+export function wallBoxes(walls: readonly Wall[], floor: FloorSpan): WallBox[] {
+  return walls.flatMap((w) => {
     const kind = kindOf(w);
-    const mid: Point = [(w.a[0] + w.b[0]) / 2, (w.a[1] + w.b[1]) / 2];
-    if (!kind || (floor.explored && !floor.explored(mid))) return [];
-    const bottom = Math.max(floor.bottom, w.height?.bottom ?? floor.bottom);
-    const top = Math.min(ceiling, w.height?.top ?? ceiling);
-    const [dx, dy] = [w.b[0] - w.a[0], w.b[1] - w.a[1]];
-    const length = Math.hypot(dx, dy);
-    if (length < 1 || top <= bottom) return [];
-    return [
-      {
-        mid,
-        length,
-        angle: Math.atan2(dy, dx),
-        bottom: (bottom - floor.bottom) * px,
-        height: (top - bottom) * px,
-        kind,
-      },
-    ];
+    const box = kind && boxOf(w, kind, floor);
+    return box ? [box] : [];
+  });
+}
+
+/** A door as its leaf: hinged at its wall's first end, open or shut. */
+export interface DoorBox extends WallBox {
+  id: string;
+  a: Point;
+  open: boolean;
+}
+
+/** The doors on a floor as leaves, open or shut, but those a model moves (`moved`: their wall ids). */
+export function doorBoxes(walls: readonly Wall[], floor: FloorSpan, moved: ReadonlySet<string>): DoorBox[] {
+  return walls.flatMap((w) => {
+    const box = w.door && !moved.has(w.id) ? boxOf(w, 'door', floor) : undefined;
+    return box ? [{ ...box, id: w.id, a: w.a, open: w.door === 'open' }] : [];
   });
 }
 

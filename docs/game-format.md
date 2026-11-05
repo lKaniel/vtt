@@ -334,6 +334,16 @@ pixels.
   `"fill": "tile", "piece": 2`
   repeats it instead, one copy every 2 squares (floors, wall runs); `"fill": "fit"` keeps its proportions, as a creature's figure always does. The
   Foundry importer brings 3D Canvas model tiles this way.
+- `"door": { "wall": "chest-lid", "style": "lift", "slide": 60, "ms": 400 }`
+  makes a model tile a door model (a door, a chest, a secret slab, a
+  drawbridge): its model moves as the door wall `wall` opens and shuts. The
+  wall does the rest (blocking, locks, sound, Inspect). `style` is `swing`
+  (turns `angle` degrees, default 90), `slide` (moves `slide`% of its length,
+  default 50, toward `angle`), `lift` (rises `slide`% of its height), `fade`
+  (goes see-through), `play` or `rewind` (plays the model's own animation
+  forward or backward); `ms` is how long it takes (an animation takes its
+  own length). The Foundry importer turns 3D Canvas door tiles into a door
+  wall through the tile's long middle plus this.
 - `"solid": { "points": [[0, 0], [1, 0], [0.5, 1]], "height": 10 }` raises a
   drawn shape on an image tile in the 3D view (a cliff, a ledge, a pool's
   rim): `points` are its corners as fractions of the tile's width and
