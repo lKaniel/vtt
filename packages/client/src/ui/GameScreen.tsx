@@ -13,6 +13,7 @@ import { SidePanel } from './SidePanel.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
 import { blockNativeMenu } from '../keys/native-menu.ts';
 import { ImageViewer } from './ImageViewer.tsx';
+import { BuilderWindow } from './creator/BuilderWindow.tsx';
 import { PileWindow } from './PileWindow.tsx';
 import { InspectCard } from './InspectCard.tsx';
 import { DiceOverlay } from './DiceOverlay.tsx';
@@ -67,6 +68,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <AdventureBook session={session} />
       <ImageViewer session={session} />
       <PileWindow session={session} />
+      <BuilderWindow session={session} />
       <InspectCard session={session} />
       <DiceOverlay session={session} />
       <ReactionPrompt session={session} />

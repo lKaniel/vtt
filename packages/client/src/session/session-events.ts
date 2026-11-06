@@ -16,7 +16,8 @@ export interface SessionEvents {
   combat: () => void;
   /** An attack or spell was readied or put away. */
   armed: () => void;
-  focus: (point: Point) => void;
+  /** Look at a point; `gently`: only when it isn't already in view. */
+  focus: (point: Point, gently?: boolean) => void;
   /** A chat message arrived live (not the history sent on joining). */
   chat: (message: ChatMessage) => void;
   /** The time of day changed. */

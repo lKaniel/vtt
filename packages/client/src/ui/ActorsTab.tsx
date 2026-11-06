@@ -11,25 +11,21 @@ import {
   Trash2Icon,
 } from 'lucide-react';
 import { useState } from 'react';
-import { DRAG_TYPE, type DragPayload } from '../play/drops.ts';
+import { startDrag } from '../play/drops.ts';
 import { t } from '../i18n/index.ts';
 import { readPref, writePref } from '../prefs.ts';
 import type { Session } from '../session/session.ts';
 import { Directory, type DirItem, type FilterDef } from './directory/Directory.tsx';
 import { Face, HpBar } from './Portrait.tsx';
+import { PlayerActors } from './PlayerActors.tsx';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
 
-// The GM's Actors tab: the Actors list of creatures ready to be placed, in
+// The Actors tab (a player's own is PlayerActors.tsx). The GM's: the Actors list of creatures ready to be placed, in
 // folders (drag one onto the map to place a copy), and every creature on
 // the map. Right-click one for what it can do.
-
-export function startDrag(e: React.DragEvent, payload: DragPayload): void {
-  e.dataTransfer.setData(DRAG_TYPE, JSON.stringify(payload));
-  e.dataTransfer.effectAllowed = 'copy';
-}
 
 function subtitle(t: Pick<TokenView, 'monster' | 'stats'>): string {
   const level = t.stats?.classes ? undefined : t.stats?.level;
@@ -57,6 +53,11 @@ type Show = 'actors' | 'map';
 const SHOWS: readonly Show[] = ['actors', 'map'];
 
 export function ActorsTab({ session }: Readonly<{ session: Session }>) {
+  if (!session.isGm()) return <PlayerActors session={session} />;
+  return <GmActors session={session} />;
+}
+
+function GmActors({ session }: Readonly<{ session: Session }>) {
   const [show, setShow] = useState<Show>(() => readPref('actors-show', SHOWS, 'actors'));
   const pick = (v: string) => {
     if (!v) return;

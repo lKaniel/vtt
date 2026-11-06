@@ -9,7 +9,7 @@ import type { FoundryMedia } from './foundry-media.ts';
 import { foundryGrid, foundryScene } from './foundry-scene.ts';
 import { foundryClock } from './foundry-time.ts';
 import { tokenModelOf } from './foundry-3d.ts';
-import { foundryOwnership, foundryPlayers, type OwnershipOf } from './foundry-users.ts';
+import { foundryCharacters, foundryOwnership, foundryPlayers, type OwnershipOf } from './foundry-users.ts';
 import { foundryTrigger, SceneIndex } from './foundry-active-tiles.ts';
 import { looseActors, type PropContext, propsOf, splitTokens } from './foundry-props.ts';
 import { originOf } from './foundry-origin.ts';
@@ -27,6 +27,8 @@ export interface Made {
   folderOf: FolderLookup;
   /** Foundry's levels as ours, for the game's players. */
   ownership?: OwnershipOf;
+  /** Our player id by Foundry user id. */
+  players?: Map<string, string>;
   entries?: ConvertedEntries;
   actors?: ConvertedActors;
   /** Our scene id by Foundry scene id. */
@@ -93,6 +95,7 @@ const players: WorldPart = {
     const { users } = ctx.world.docs;
     const p = foundryPlayers(users, ctx.gm, ctx.media.lookup);
     ctx.made.ownership = p.ownership;
+    ctx.made.players = p.byUser;
     out.game.players = p.players;
     const locked = users.filter((u) => typeof u.password === 'string' && u.password);
     if (locked.length) ctx.log.add([lost(PASSWORDS, locked.length, names(locked))]);
@@ -140,6 +143,10 @@ const actors: WorldPart = {
     ctx.made.actors = a;
     ctx.log.add(a.skipped);
     add(out, 'actors', a.actors);
+    const { users } = ctx.world.docs;
+    if (out.game.players && ctx.made.players) {
+      out.game.players = foundryCharacters(users, out.game.players, ctx.made.players, a.byFoundryId);
+    }
   },
 };
 

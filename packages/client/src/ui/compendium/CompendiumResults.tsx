@@ -1,7 +1,7 @@
 import type { Entry } from '../../content/compendium.ts';
 import { t } from '../../i18n/index.ts';
 import type { Session } from '../../session/session.ts';
-import { startDrag } from '../ActorsTab.tsx';
+import { startDrag } from '../../play/drops.ts';
 import { IconFace } from '../Icon.tsx';
 import { Badge } from '../kit/badge.tsx';
 import { EntryDetail } from './EntryDetail.tsx';

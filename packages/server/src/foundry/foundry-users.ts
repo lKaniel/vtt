@@ -25,6 +25,8 @@ export interface FoundryPlayers {
   players: Player[];
   /** A Foundry document's levels as ours; undefined when it says no more than `floor` for everyone. */
   ownership: OwnershipOf;
+  /** Our player id by Foundry user id. */
+  byUser: Map<string, string>;
 }
 
 function playerOf(u: FoundryDoc, id: string, media: MediaLookup): Player {
@@ -77,5 +79,22 @@ export function foundryPlayers(users: readonly FoundryDoc[], gm: Player, media: 
     players.push(player);
     byUser.set(u._id as string, player);
   }
-  return { players, ownership: foundryOwnership(byUser) };
+  const ids = new Map([...byUser].map(([user, p]) => [user, p.id]));
+  return { players, ownership: foundryOwnership(byUser), byUser: ids };
+}
+
+/** Each player's character (Foundry's User.character) as one of our actors, once the actors are made. */
+export function foundryCharacters(
+  users: readonly FoundryDoc[],
+  players: Player[],
+  byUser: ReadonlyMap<string, string>,
+  actorOf: ReadonlyMap<string, { id: string }>,
+): Player[] {
+  const character = new Map<string, string>();
+  for (const u of users) {
+    const player = byUser.get(String(u._id));
+    const actor = typeof u.character === 'string' ? actorOf.get(u.character)?.id : undefined;
+    if (player && actor) character.set(player, actor);
+  }
+  return players.map((p) => (character.has(p.id) && p.role !== 'gm' ? { ...p, character: character.get(p.id) } : p));
 }

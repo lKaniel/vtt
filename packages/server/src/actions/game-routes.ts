@@ -17,6 +17,7 @@ import type { MapActions } from './map-actions.ts';
 import type { Reactions } from '../play/reactions.ts';
 import type { SceneActions } from './scene-actions.ts';
 import { checkAction, sheetAction } from './sheet-actions.ts';
+import { levelUp } from './level-actions.ts';
 import type { SpellActions } from './spell-actions.ts';
 import type { Table } from '../play/table.ts';
 import type { TokenMoves } from '../play/token-moves.ts';
@@ -115,6 +116,7 @@ function magicRoutes(p: GameParts) {
 function sheetRoutes(p: GameParts) {
   return {
     ...each(['equip', 'carry', 'hitDie', 'exhaustion', 'awardXp'], (s, m) => sheetAction(p.table, s.player, m)),
+    levelUp: (s, m) => levelUp(p.table, s.player, m),
     ...each(['requestCheck', 'rollCheck'], (s, m) => checkAction(p.table, p.chat, s.player, m)),
     ...each(['drop', 'give', 'trade'], (s, m) => p.gm.drops.handle(s.player, s.canSee, m)),
   } satisfies Partial<Routes>;
@@ -132,6 +134,7 @@ function gmRoutes(p: GameParts) {
     saveActor: (s, m) => p.gm.saveActor(s.player, m.actor),
     deleteActor: (s, m) => p.gm.deleteActor(s.player, m.actor),
     setRole: (s, m) => p.gm.setRole(s.player, m.player, m.role),
+    setCharacter: (s, m) => p.gm.setCharacter(s.player, m.player, m.actor),
     mapEdit: (s, m) => p.map.edit(s.player, m.edit),
     darkness: (s, m) => p.map.darkness(s.player, m.darkness),
     fog: (s, m) => p.fog.edit(s.player, m.edit),

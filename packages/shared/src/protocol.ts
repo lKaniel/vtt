@@ -86,6 +86,7 @@ export type EngineClientMessage =
   | { t: 'relinkToken'; token: string; how: 'link' | 'unlink' | 'save' | 'reset' }
   /** GM: change what a seat may do at the table. */
   | { t: 'setRole'; player: string; role: Role }
+  | { t: 'setCharacter'; player: string; actor?: string }
   /** GM: draw or erase walls, doors, windows and lights. */
   | { t: 'mapEdit'; edit: MapEdit }
   /** GM: the time of day, 0 daylight to 1 pitch black. */

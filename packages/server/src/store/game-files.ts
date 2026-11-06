@@ -40,6 +40,7 @@ import {
   ClockSchema,
   type World,
   worldOf,
+  type Player,
 } from '@vtt/shared';
 import type { z } from 'zod';
 import { toDoc } from './doc-sync.ts';
@@ -303,6 +304,13 @@ interface Refs {
   content: readonly PackCompendium[];
 }
 
+/** Seats whose character is not one of the game's actors. */
+function characterIssues(players: readonly Player[], actors: ReadonlyMap<string, unknown>): Issue[] {
+  return players
+    .filter((p) => p.character && !actors.has(p.character))
+    .map((p) => ({ file: 'game.json', message: `player "${p.id}" plays "${p.character}", which is not in actors/` }));
+}
+
 /**
  * Problems that need the whole game, e.g. a token controlled by an unknown
  * player. `system` checks what tokens refer to (monsters, spells); by
@@ -326,6 +334,7 @@ export function crossCheck(state: GameState, system = SYSTEMS.get(state.game.sys
   for (const a of actors.values()) {
     out.push(...tokenIssues(a, refs).map((message) => ({ file: `actors/${a.id}.json`, message })));
   }
+  out.push(...characterIssues(game.players, actors));
   return [...out, ...combatIssues(combat, active?.tokens ?? [])];
 }
 

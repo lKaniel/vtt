@@ -116,6 +116,16 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('legendary'), token: z.string(), option: z.string(), target: z.string().optional() }),
   z.object({ t: z.literal('lair'), token: z.string(), action: z.string() }),
   z.object({ t: z.literal('exhaustion'), token: z.string(), level: z.number().int().min(0).max(6) }),
+  /** The next level for a character that is only an actor (a token's, or one in the Actors list). */
+  z.object({
+    t: z.literal('levelUp'),
+    token: z.string().optional(),
+    actor: z.string().optional(),
+    class: z.string().min(1).max(60),
+    subclass: z.string().max(60).optional(),
+    hp: z.union([z.literal('average'), z.literal('roll')]),
+    improvement: z.partialRecord(z.enum(ABILITIES), z.number().int().min(0).max(2)).optional(),
+  }),
   z.object({
     t: z.literal('awardXp'),
     tokens: z.array(z.string()).min(1).max(20),
@@ -225,6 +235,8 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('saveActor'), actor: z.unknown() }),
   z.object({ t: z.literal('deleteActor'), actor: z.string() }),
   z.object({ t: z.literal('setRole'), player: z.string(), role: RoleSchema }),
+  /** GM: the actor a seat plays (it becomes theirs); none to go back to the one they own. */
+  z.object({ t: z.literal('setCharacter'), player: z.string(), actor: z.string().optional() }),
   z.object({ t: z.literal('mapEdit'), edit: MapEditSchema }),
   z.object({ t: z.literal('darkness'), darkness: z.number().min(0).max(1) }),
   z.object({

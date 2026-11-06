@@ -161,7 +161,7 @@ beforeEach(async () => {
     '!settings!X2': { _id: 'X2', key: 'core.time', value: '90000' },
   });
   await db('users', {
-    '!users!U1': { _id: 'U1', name: 'Sam', role: 1, color: '#5bcc28', password: 'hash' },
+    '!users!U1': { _id: 'U1', name: 'Sam', role: 1, color: '#5bcc28', password: 'hash', character: 'A2' },
     '!users!U0': { _id: 'U0', name: 'Gamemaster', role: 4 },
   });
 });
@@ -300,6 +300,13 @@ describe('importFoundryWorld', () => {
     expect(files).toContainEqual(
       expect.objectContaining({ name: 'Mira', ownership: { default: 'observer', sam: 'owner' } }),
     );
+  });
+
+  it("names each player's character as Foundry's user did", async () => {
+    const { dir } = await imported();
+    const game = (await readJson(join(dir, 'game.json'))) as { players: { id: string; character?: string }[] };
+    const mira = (await readdir(join(dir, 'actors'))).find((f) => f.startsWith('mira'))!.replace('.json', '');
+    expect(game.players.find((p) => p.id === 'sam')?.character).toBe(mira);
   });
 
   it('keeps the world’s time on the game clock', async () => {

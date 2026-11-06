@@ -5,7 +5,7 @@ import { api, ApiError } from '../../server-api.ts';
 /** Saving a character at `game`: busy while it goes, the server's reasons when it refuses. */
 export function useSaveCharacter(
   game: string,
-  onDone: () => void,
+  onDone: (saved: Character) => void,
 ): {
   busy: boolean;
   error?: string;

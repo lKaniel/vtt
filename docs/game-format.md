@@ -108,6 +108,16 @@ Removing a seat deletes its explored fog. A player's character brought onto the 
 and a linked token, both with the character's id and the player as
 `owner` in `ownership`; saving or levelling the character updates its name, stats and
 senses.
+A seat's `"character"` names the actor that player plays (Foundry's user
+character; the Foundry import fills it in, the GM picks it in the Players
+tab, which also makes the actor theirs). Without one it is the character
+(stats, no stat block) only they own, else one they share. That character's
+token is selected for them when they arrive on a scene, and heads their
+Actors tab, where they place it on the map if it isn't there (a player may
+place a creature they own: shown, a linked one once per scene).
+How a token looks and sees (`img`, `size`, its look, `light` and senses) and
+what creature it is (`monster`, `pile`) are the GM's to change; a trusted
+player edits the rest of their sheet, and levels up from its Level up button.
 
 `format` is the folder's format; the server sets it when it moves an older
 folder up (see the end of this page). Leave it as it is.
