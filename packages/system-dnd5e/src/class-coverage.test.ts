@@ -39,6 +39,7 @@ const RUN_BY_CLASS: Record<string, (c: Class) => boolean> = {
   'weapon-mastery': (c) => !!c.weaponMastery,
   'divine-smite': () => true, // riders.ts
   'uncanny-dodge': () => true, // hit-reactions.ts
+  'jack-of-all-trades': () => true, // checks.ts
 };
 
 function unexplained(cls: Class): string[] {

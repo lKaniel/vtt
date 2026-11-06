@@ -10,11 +10,16 @@ export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8] as const;
 export const POINT_BUY_BUDGET = 27;
 const POINT_COST: Record<number, number> = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
 
+/** Points one score costs, or undefined outside 8 to 15. */
+export function scoreCost(score: number): number | undefined {
+  return POINT_COST[score];
+}
+
 /** Points spent on these scores, or undefined when one is outside 8 to 15. */
 export function pointBuyCost(scores: Record<Ability, number>): number | undefined {
   let total = 0;
   for (const score of Object.values(scores)) {
-    const cost = POINT_COST[score];
+    const cost = scoreCost(score);
     if (cost === undefined) return undefined;
     total += cost;
   }

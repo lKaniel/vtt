@@ -18,6 +18,7 @@ import { ORDINAL } from '../../text/spell-text.ts';
 import { IconFace } from '../Icon.tsx';
 import type { StepProps } from './OriginSteps.tsx';
 import { Detail, RichText, StepHead } from './Parts.tsx';
+import { CustomProficiencies } from './CustomSteps.tsx';
 
 function skillSource(fixed: boolean, offered: boolean): string {
   if (fixed) return 'From your background';
@@ -31,33 +32,41 @@ export function SkillsStep({ c, set }: Readonly<StepProps>) {
   const scores = abilityScores(c);
   const prof = proficiencyForLevel(c.level);
   const known = characterSkills(c);
+  const expert = (s: string) => c.expertise.includes(s);
+  const names = fromBackground.map(skillName).join(' and ');
+  const given = fromBackground.length ? `Your background gives ${names}. ` : '';
   return (
-    <div>
-      <StepHead
-        title="Skills"
-        hint={`Your background gives ${fromBackground.map(skillName).join(' and ')}. Pick ${pick} from your class list.`}
-        right={<span className="cc-counter">{pick - c.skills.length} left</span>}
-      />
-      <div className="cc-skills">
-        {(Object.keys(SKILLS) as Skill[]).map((s) => {
-          const fixed = fromBackground.includes(s);
-          const offered = from.includes(s) && !fixed;
-          const bonus = abilityMod(scores[SKILLS[s]]) + (known.includes(s) ? prof : 0);
-          return (
-            <button
-              key={s}
-              className={`cc-skill${known.includes(s) ? ' on' : ''}${fixed ? ' fixed' : ''}`}
-              disabled={!offered}
-              onClick={() => set(toggleSkill(c, s))}
-              title={skillSource(fixed, offered)}
-            >
-              <span className="cc-skill-name">{skillName(s)}</span>
-              <span className="cc-skill-ability">{abilityName(SKILLS[s]).slice(0, 3)}</span>
-              <span className="cc-skill-bonus">{bonus >= 0 ? `+${bonus}` : bonus}</span>
-            </button>
-          );
-        })}
+    <div className="cc-split">
+      <div>
+        <StepHead
+          title="Skills"
+          hint={`${given}Pick ${pick} from your class list.`}
+          right={<span className="cc-counter">{pick - c.skills.length} left</span>}
+        />
+        <div className="cc-skills">
+          {(Object.keys(SKILLS) as Skill[]).map((s) => {
+            const fixed = fromBackground.includes(s);
+            const offered = from.includes(s) && !fixed;
+            const bonus = abilityMod(scores[SKILLS[s]]) + (known.includes(s) ? prof : 0) * (expert(s) ? 2 : 1);
+            return (
+              <button
+                key={s}
+                className={`cc-skill${known.includes(s) ? ' on' : ''}${fixed ? ' given' : ''}`}
+                disabled={!offered}
+                onClick={() => set(toggleSkill(c, s))}
+                title={skillSource(fixed, offered)}
+              >
+                <span className="cc-skill-name">{skillName(s)}</span>
+                <span className="cc-skill-ability">{abilityName(SKILLS[s]).slice(0, 3)}</span>
+                <span className="cc-skill-bonus">{bonus >= 0 ? `+${bonus}` : bonus}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
+      <aside className="cc-aside">
+        <CustomProficiencies c={c} set={set} />
+      </aside>
     </div>
   );
 }

@@ -228,6 +228,10 @@ export const StatsSchema = z.object({
   features: z.array(z.string().regex(/^[a-z0-9-]+\/[a-z0-9-]+$/, 'use "<class>/<feature>"')).optional(),
   /** Skills the character is proficient in, e.g. "stealth". */
   skills: z.array(id).optional(),
+  /** Skills with expertise: their proficiency bonus counts twice. */
+  expertise: z.array(id).optional(),
+  /** Other proficiencies, as words on the sheet: tools, languages, armor, weapons. */
+  proficiencies: z.array(z.string().trim().min(1).max(60)).max(30).optional(),
   /** Spellcasting for creatures without a caster class (a homebrew class, a monster). */
   spellcasting: z
     .object({

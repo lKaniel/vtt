@@ -1,6 +1,9 @@
 // The character sheet's English words (see en.ts).
 
+import { EN_CREATOR } from './en-creator.ts';
+
 export const EN_SHEET = {
+  ...EN_CREATOR,
   'sheet.label': "{name}'s character sheet",
   'sheet.level': 'Level {level}',
   'sheet.actor': '(actor)',
@@ -56,6 +59,8 @@ export const EN_SHEET = {
   'sheet.prof': 'Prof.',
   'sheet.feet': '{n} ft',
   'sheet.skills': 'Skills',
+  'sheet.expertise': 'Expertise',
+  'sheet.proficiencies': 'Proficiencies',
   'sheet.passive': 'Passive {n}',
   'sheet.toggleSkill': 'Proficient in {skill}',
   'sheet.senses': 'Senses',

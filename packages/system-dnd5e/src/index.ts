@@ -39,6 +39,7 @@ export * from './character-rules.ts';
 export * from './character.ts';
 export * from './character-check.ts';
 export * from './character-token.ts';
+export * from './character-custom.ts';
 export * from './player-character.ts';
 export * from './actor-level-up.ts';
 export * from './token-link.ts';

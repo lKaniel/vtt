@@ -7,8 +7,12 @@ import {
   abilityScores,
   type Character,
   partsOf,
+  POINT_BUY_BUDGET,
+  scoreCost,
   STANDARD_ARRAY,
 } from '@vtt/system-dnd5e';
+import { flexibleBonusAbilities, pickFlexBonus } from '../../content/creator-custom.ts';
+import { t } from '../../i18n/index.ts';
 import {
   adjustPointBuy,
   assignStandard,
@@ -47,6 +51,8 @@ function withMethod(c: Character, method: Method): Character {
 
 export function AbilitiesStep({ c, set }: Readonly<StepProps>) {
   const final = abilityScores(c);
+  const flex = flexibleBonusAbilities(c);
+  const pointBuy = c.method === 'point-buy';
   return (
     <div className="cc-split">
       <div>
@@ -61,7 +67,10 @@ export function AbilitiesStep({ c, set }: Readonly<StepProps>) {
             <tr>
               <th>Ability</th>
               <th>Score</th>
-              <th>Bonus</th>
+              {pointBuy && <th>{t('creator.cost')}</th>}
+              {flex && <th>{t('creator.plus2')}</th>}
+              {flex && <th>{t('creator.plus1')}</th>}
+              {!flex && <th>Bonus</th>}
               <th>Total</th>
               <th>Mod</th>
             </tr>
@@ -73,7 +82,10 @@ export function AbilitiesStep({ c, set }: Readonly<StepProps>) {
                 <td>
                   <ScoreInput c={c} a={a} set={set} />
                 </td>
-                <td className="cc-bonus">{final[a] - c.base[a] ? signed(final[a] - c.base[a]) : ''}</td>
+                {pointBuy && <td className="cc-cost">{scoreCost(c.base[a])}</td>}
+                {flex && <FlexCell c={c} set={set} a={a} amount={2} />}
+                {flex && <FlexCell c={c} set={set} a={a} amount={1} />}
+                {!flex && <td className="cc-bonus">{final[a] - c.base[a] ? signed(final[a] - c.base[a]) : ''}</td>}
                 <td className="cc-total">{final[a]}</td>
                 <td className="cc-mod">{signed(abilityMod(final[a]))}</td>
               </tr>
@@ -88,9 +100,29 @@ export function AbilitiesStep({ c, set }: Readonly<StepProps>) {
   );
 }
 
+/** BG3's bonus columns: a toggle that puts the +2 or the +1 on this ability. */
+function FlexCell({ c, set, a, amount }: Readonly<StepProps & { a: Ability; amount: 1 | 2 }>) {
+  if (!flexibleBonusAbilities(c)?.includes(a)) return <td />;
+  const label = t('creator.putBonus', { amount: `+${amount}`, ability: abilityName(a) });
+  return (
+    <td>
+      <Toggle
+        aria-label={label}
+        title={label}
+        pressed={c.bonusPicks[a] === amount}
+        onPressedChange={() => set(pickFlexBonus(c, a, amount))}
+      >
+        +{amount}
+      </Toggle>
+    </td>
+  );
+}
+
 /** Points left for point buy, a re-roll button for rolled scores. */
 function MethodExtra({ c, set }: Readonly<StepProps>) {
-  if (c.method === 'point-buy') return <span className="cc-counter">{pointsLeft(c)} points left</span>;
+  if (c.method === 'point-buy') {
+    return <span className="cc-counter">{t('creator.points', { left: pointsLeft(c), budget: POINT_BUY_BUDGET })}</span>;
+  }
   if (c.method !== 'roll') return null;
   return (
     <Button variant="outline" size="sm" onClick={() => set(withMethod(c, 'roll'))}>
@@ -143,6 +175,13 @@ function ScoreInput({ c, a, set }: Readonly<StepProps & { a: Ability }>) {
 function BonusPicker({ c, set }: Readonly<StepProps>) {
   const p = partsOf(c);
   if (c.rules === '2024') return <BackgroundBonus c={c} set={set} />;
+  if (flexibleBonusAbilities(c)) {
+    return (
+      <Detail title="Bonuses">
+        <p className="cc-facts">{t('creator.freeBonusHere')}</p>
+      </Detail>
+    );
+  }
   const choice = p.species?.bonusChoice;
   if (!choice) {
     return (
@@ -164,39 +203,16 @@ function BonusPicker({ c, set }: Readonly<StepProps>) {
   );
 }
 
-/** A +2 and a +1 on different abilities; either alone while the other is still unpicked. */
-function bonusFor(c: Character, two: Ability | undefined, one: Ability | undefined): Character {
-  if (two && one && two !== one) return setBackgroundBonus(c, { plus2: two, plus1: one });
-  const picks: Partial<Record<Ability, number>> = {};
-  if (two) picks[two] = 2;
-  if (one && one !== two) picks[one] = 1;
-  return { ...c, bonusPicks: picks };
-}
-
+/** 2024: the background's +2 and +1 go in the table's bonus columns; or +1 to all three here. */
 function BackgroundBonus({ c, set }: Readonly<StepProps>) {
   const bg = partsOf(c).background;
   const abilities = bg?.abilities ?? [];
-  const plus2 = abilities.find((a) => c.bonusPicks[a] === 2);
-  const plus1 = abilities.find((a) => c.bonusPicks[a] === 1);
   const each = abilities.length > 0 && abilities.every((a) => c.bonusPicks[a] === 1);
-  const pick = (two: Ability | undefined, one: Ability | undefined) => set(bonusFor(c, two, one));
-
-  const options = abilities.map((a) => ({ id: a, label: abilityName(a) }));
   return (
     <Detail title={`${bg?.name ?? 'Background'} bonuses`}>
-      <p className="cc-facts">Raise one ability by 2 and another by 1, or all three by 1.</p>
-      <p className="cc-label">+2</p>
-      <Chips
-        options={options}
-        value={each ? undefined : plus2}
-        onPick={(a) => pick(a, plus1 === a ? undefined : plus1)}
-      />
-      <p className="cc-label">+1</p>
-      <Chips
-        options={options}
-        value={each ? undefined : plus1}
-        onPick={(a) => pick(plus2 === a ? undefined : plus2, a)}
-      />
+      <p className="cc-facts">
+        Raise one of {abilities.map(abilityName).join(', ')} by 2 and another by 1 in the table, or all three by 1.
+      </p>
       <Toggle pressed={each} onPressedChange={() => set(setBackgroundBonus(c, 'each'))}>
         +1 to all three
       </Toggle>

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { gameContent } from '../../content/content.ts';
 import { t } from '../../i18n/index.ts';
 import type { MessageKey } from '../../i18n/en.ts';
-import { listText, parseList, setStat } from '../../play/token-edit.ts';
+import { cycleSkill, listText, parseList, setStat } from '../../play/token-edit.ts';
 import { signed, skillRows } from '../../text/sheet-text.ts';
 import { Field, TextInput } from '../EditorFields.tsx';
 import { Badge } from '../kit/badge.tsx';
@@ -24,6 +24,7 @@ export function DetailsTab(props: Readonly<SheetProps>) {
       <Skills {...props} />
       <div className="flex flex-col gap-4">
         <Senses {...props} />
+        <Proficiencies {...props} />
         <Defenses {...props} />
         {props.edit && <RulesFields {...props} />}
       </div>
@@ -42,12 +43,7 @@ function Heading({ children }: Readonly<{ children: React.ReactNode }>) {
 function Skills(props: Readonly<SheetProps>) {
   const { session, value, update, sheet, edit } = props;
   const roll = canAct(props);
-  const toggle = (skill: Skill) =>
-    update((d) => {
-      const had = d.stats?.skills ?? [];
-      const next = had.includes(skill) ? had.filter((s) => s !== skill) : [...had, skill];
-      return setStat(d, 'skills', next.length ? next : undefined);
-    }, true);
+  const toggle = (skill: Skill) => update((d) => cycleSkill(d, skill), true);
   return (
     <section aria-label={t('sheet.skills')}>
       <Heading>{t('sheet.skills')}</Heading>
@@ -63,7 +59,14 @@ function Skills(props: Readonly<SheetProps>) {
               aria-pressed={r.proficient}
               onClick={() => toggle(r.skill)}
             >
-              <span className={cn('size-2 rounded-full border border-gold', r.proficient && 'bg-gold-bright')} />
+              <span
+                title={r.expert ? t('sheet.expertise') : undefined}
+                className={cn(
+                  'size-2 rounded-full border border-gold',
+                  r.proficient && 'bg-gold-bright',
+                  r.expert && 'ring-2 ring-gold/60',
+                )}
+              />
             </Button>
             <span className="w-8 text-xs text-muted-foreground uppercase">{r.ability}</span>
             <Button
@@ -104,6 +107,45 @@ function Senses({ sheet }: Readonly<SheetProps>) {
           <span className="text-sm text-muted-foreground">{t('sheet.noSenses')}</span>
         )}
       </div>
+    </section>
+  );
+}
+
+/** Tools, languages, armor and weapons, in the player's words. */
+function Proficiencies({ value, update, edit }: Readonly<SheetProps>) {
+  const list = value.stats?.proficiencies ?? [];
+  if (!edit && !list.length) return null;
+  const save = (text: string) => {
+    const next = [
+      ...new Set(
+        text
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
+    ];
+    update((d) => setStat(d, 'proficiencies', next.length ? next : undefined), true);
+  };
+  return (
+    <section>
+      <Heading>{t('sheet.proficiencies')}</Heading>
+      {edit ? (
+        <Input
+          key={list.join(', ')}
+          className="h-7 text-sm"
+          defaultValue={list.join(', ')}
+          placeholder={t('creator.otherHint')}
+          onBlur={(e) => save(e.target.value)}
+        />
+      ) : (
+        <div className="flex flex-wrap gap-1">
+          {list.map((p) => (
+            <Badge key={p} variant="muted">
+              {p}
+            </Badge>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
