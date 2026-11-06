@@ -26,6 +26,8 @@ import { openSocket, refusalOf } from './session-socket.ts';
 import { Turns } from './turns.ts';
 
 import { type DropEvents, Drops } from './session-drops.ts';
+import { MyCharacter } from './session-character.ts';
+import { Builder } from './session-builder.ts';
 import { Sheets } from './session-sheets.ts';
 import { refOf } from '../editor/selection.ts';
 import { withOffer } from './reactions.ts';
@@ -152,6 +154,10 @@ export class Session {
   readonly sheets = new Sheets(this, this.ev);
   /** Spawning creatures and what is dropped on the map or the open sheet. */
   readonly drops = new Drops(this, this.ev);
+  /** The character you play, picked for you on arriving at a scene. */
+  readonly character = new MyCharacter(this);
+  /** The character creator or level up, open over the table. */
+  readonly builder = new Builder(this.ev);
   readonly tiles: Tiles = new Tiles(this, this.ev);
   readonly editor: Editor = new Editor(this, this.ev);
   /** The parts that take messages, the welcome and departures. */
@@ -298,9 +304,7 @@ export class Session {
     return !!this.you && !!token && canEdit(token, this.you);
   }
 
-  focus(point: Point): void {
-    this.emit('focus', point);
-  }
+  focus = (point: Point, gently?: boolean): void => this.emit('focus', point, ...(gently ? [true] : []));
 
   canControl(token: Token): boolean {
     return !!this.you && canControl(token, this.you);
@@ -314,13 +318,9 @@ export class Session {
     return [];
   }
 
-  private gridSize(): number {
-    return this.world?.gridSize ?? 100;
-  }
+  private gridSize = (): number => this.world?.gridSize ?? 100;
 
-  moveGrid(): MoveGrid {
-    return (this.world && sceneLattice(this.world)) ?? this.gridSize();
-  }
+  moveGrid = (): MoveGrid => (this.world && sceneLattice(this.world)) ?? this.gridSize();
 
   showError(message: string): void {
     this.error = { message, at: Date.now() };
@@ -452,6 +452,7 @@ export class Session {
     this.chunks.clear();
     this.emit('welcome');
     for (const t of msg.tokens) this.emit('token', t);
+    this.character.arrive();
     if (this.view.length) this.send({ t: 'view', chunks: this.view });
     this.send({ t: 'rollMode', mode: this.actions.rollMode });
   }

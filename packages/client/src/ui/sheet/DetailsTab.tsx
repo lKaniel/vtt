@@ -1,4 +1,4 @@
-import { type DamageType, editionOf, type Skill, toEdition } from '@vtt/system-dnd5e';
+import { type DamageType, type Edition, editionOf, type Skill, toEdition } from '@vtt/system-dnd5e';
 import { cn } from '@/lib/utils';
 import { gameContent } from '../../content/content.ts';
 import { t } from '../../i18n/index.ts';
@@ -186,11 +186,10 @@ function Defenses({ value, update, sheet, edit }: Readonly<SheetProps>) {
   );
 }
 
-function RulesFields({ session, value, update }: Readonly<SheetProps>) {
-  const rules = editionOf(value, session.world ?? {});
+/** The stat block it uses: the GM's to choose (what creature it is). */
+function MonsterField({ value, update, rules }: Readonly<Pick<SheetProps, 'value' | 'update'> & { rules: Edition }>) {
   return (
-    <section className="flex flex-col gap-2">
-      <Heading>{t('sheet.rules')}</Heading>
+    <>
       <Field label="Monster stat block" wide>
         <TextInput
           value={value.monster}
@@ -204,6 +203,16 @@ function RulesFields({ session, value, update }: Readonly<SheetProps>) {
           <option key={m.id} value={m.id} label={m.name} />
         ))}
       </datalist>
+    </>
+  );
+}
+
+function RulesFields({ session, value, update }: Readonly<SheetProps>) {
+  const rules = editionOf(value, session.world ?? {});
+  return (
+    <section className="flex flex-col gap-2">
+      <Heading>{t('sheet.rules')}</Heading>
+      {session.isGm() && <MonsterField value={value} update={update} rules={rules} />}
       <Field label={t('sheet.rules')} wide>
         <SelectField
           value={value.stats?.rules ?? ''}

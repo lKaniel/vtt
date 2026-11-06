@@ -18,7 +18,8 @@ export function Sheets({ session }: Readonly<{ session: Session }>) {
 function PoppedSheets({ session, popouts }: Readonly<{ session: Session; popouts: Popouts }>) {
   const list = useSyncExternalStore(popouts.subscribe, () => popouts.list);
   return list.map((target) => {
-    const name = (target.kind === 'token' ? session.tokens.get(target.id) : session.actors.get(target.id))?.name;
+    const name = (target.kind === 'token' ? session.tokens.get(target.id) : session.character.readActor(target.id))
+      ?.name;
     const controls = { setEdit: (edit: boolean) => popouts.setEdit(target, edit), close: () => popouts.close(target) };
     return (
       <PopOutWindow key={`${target.kind}:${target.id}`} title={name ?? 'Sheet'} onClose={controls.close}>

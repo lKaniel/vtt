@@ -25,6 +25,24 @@ const GM_ONLY_FIELDS = [
   'leader',
   'actor',
   'linked',
+  // How it stands on the map and what it sees: a player can't make it huge, see in the dark or light the map.
+  'img',
+  'size',
+  'scale',
+  'mirrorX',
+  'mirrorY',
+  'randomImg',
+  'ring',
+  'filter',
+  'model',
+  'displayName',
+  'displayBars',
+  'light',
+  'darkvision',
+  'blindsight',
+  'tremorsense',
+  'truesight',
+  'devilsSight',
 ];
 
 const RANK: Record<Level, number> = { none: 0, limited: 1, observer: 2, owner: 3 };
@@ -80,9 +98,13 @@ export function canEdit(doc: Owned, player: Player): boolean {
   return isGm(player) || (player.role === 'trusted' && canControl(doc, player));
 }
 
-/** The keys of an edit that only the GM may make, in the order given. */
-export function lockedPatchKeys(patch: Record<string, unknown>, player: Player): string[] {
-  return isGm(player) ? [] : Object.keys(patch).filter((k) => GM_ONLY_FIELDS.includes(k));
+/** The keys of an edit that only the GM may make, in the order given; `system` adds its own (SystemDefinition `gmOnlyFields`). */
+export function lockedPatchKeys(
+  patch: Record<string, unknown>,
+  player: Player,
+  system: readonly string[] = [],
+): string[] {
+  return isGm(player) ? [] : Object.keys(patch).filter((k) => GM_ONLY_FIELDS.includes(k) || system.includes(k));
 }
 
 /** `ownership` with `player` set to `level`; a level equal to the default is left out. */

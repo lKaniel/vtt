@@ -15,6 +15,7 @@ import {
   TokenSchema,
 } from '@vtt/system-dnd5e';
 import {
+  canControl,
   canEdit,
   FOLDERS,
   type FolderKind,
@@ -27,6 +28,7 @@ import {
   type Role,
   uniqueId,
   uniqueName,
+  withLevel,
 } from '@vtt/shared';
 import type { z } from 'zod';
 import type { Relink } from '../store/token-ops.ts';
@@ -74,7 +76,7 @@ export class GmActions {
     const token = this.store.tokens.get(id);
     if (!token) throw new Refusal('No such token');
     if (!canEdit(token, player)) throw new Refusal(`You can't edit ${token.name}`);
-    const locked = lockedPatchKeys(patch, player);
+    const locked = lockedPatchKeys(patch, player, this.store.system.gmOnlyFields);
     if (locked.length) throw new Refusal(`Only the GM can change ${locked.join(', ')}`);
     this.store.setToken(valid(TokenSchema, applyTokenPatch(token, patch)));
   }
@@ -86,8 +88,21 @@ export class GmActions {
   }
 
   spawn(player: Player, from: SpawnSource, at: Point, hidden?: boolean): void {
+    if (from.kind === 'actor' && !isGm(player)) return this.placeOwn(player, from.id, at);
     requireGm(player);
     this.store.setToken(from.kind === 'monster' ? this.monster(from, at, hidden) : this.copy(from.id, at, hidden));
+  }
+
+  /** A player puts a creature they own on the scene, as in Foundry: shown; a linked one once per scene. */
+  private placeOwn(player: Player, id: string, at: Point): void {
+    const actor = this.store.actors.get(id);
+    if (!actor) throw new Refusal('No such actor');
+    if (!canControl(actor, player)) throw new Refusal(`You can't place ${actor.name}`);
+    const token = this.tokenOf(actor, at, false);
+    if (token.linked && [...this.store.tokens.values()].some((t) => t.actor === id && t.linked)) {
+      throw new Refusal(`${actor.name} is already on this map`);
+    }
+    this.store.setToken(token);
   }
 
   /** Map documents and new creatures for a scene, all or nothing (Claude's build_scene tool). */
@@ -145,6 +160,20 @@ export class GmActions {
     const players = world.players.map((p) => (p.id === id ? { ...p, role } : p));
     if (!players.some(isGm)) throw new Refusal('The table needs a GM');
     this.store.setWorld({ ...world, players });
+  }
+
+  /** Names the actor a seat plays, and makes it theirs; none clears it. */
+  setCharacter(player: Player, id: string, actorId?: string): void {
+    requireGm(player);
+    const world = this.store.world;
+    const seat = world.players.find((p) => p.id === id);
+    if (!seat) throw new Refusal('No such player');
+    const actor = actorId === undefined ? undefined : this.store.actors.get(actorId);
+    if (actorId !== undefined && !actor) throw new Refusal('No such actor');
+    if (actor) this.store.setActor({ ...actor, ownership: withLevel(actor.ownership, id, 'owner') });
+    const { character: _old, ...rest } = seat;
+    const next = actor ? { ...rest, character: actor.id } : rest;
+    this.store.setWorld({ ...world, players: world.players.map((p) => (p.id === id ? next : p)) });
   }
 
   /** An unlinked copy of the monster's stock actor. */

@@ -7,6 +7,7 @@ import { EN_EDITOR } from './en-editor.ts';
 import { EN_BAILEYWIKI } from './en-lobby.ts';
 import { EN_FOUNDRY } from './en-foundry.ts';
 import { EN_MAP } from './en-map.ts';
+import { EN_PLAYERS } from './en-players.ts';
 import { EN_SHEET } from './en-sheet.ts';
 
 export const EN = {
@@ -381,27 +382,6 @@ export const EN = {
   'game.delete': 'Delete this game',
   'game.deleteAsk': 'Delete "{name}" for good? Its scenes, actors and fog are gone with it.',
 
-  'players.title': 'Players',
-  'players.you': '(you)',
-  'players.online': 'Playing now',
-  'players.away': 'Away',
-  'players.remove': 'Remove',
-  'players.removeAsk': 'Remove {name} from this game? Their characters stay as actors.',
-  'players.needsGm': 'The game needs a GM',
-  'players.roleOf': '{name}’s role',
-  'players.role': 'Role',
-  'players.name': 'Name',
-  'players.add': 'Add player',
-  'players.addHint': 'A new player picks this name on the game’s join screen.',
-  'players.hint': 'Players pick their name on this game’s join screen. A password keeps others from playing as them.',
-  'players.password': 'Password',
-  'players.passwordOptional': 'Password (optional)',
-  'players.passwordHint': 'Joining as {name} asks for:',
-  'players.setPassword': 'Set password',
-  'players.removePassword': 'Remove it',
-  'players.hasPassword': '{name} has a password',
-  'players.setPasswordOf': 'Put a password on {name}',
-
   'characters.title': 'Your characters',
   'characters.create': 'Create a character',
   'characters.delete': 'Delete',
@@ -410,6 +390,7 @@ export const EN = {
   'characters.deleteAsk': 'Delete {name} for good? Their token stays on the map as an actor.',
 
   ...EN_SHEET,
+  ...EN_PLAYERS,
   ...EN_FOUNDRY,
   ...EN_BAILEYWIKI,
   ...EN_MAP,

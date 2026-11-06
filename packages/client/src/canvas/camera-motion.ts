@@ -69,6 +69,12 @@ export class CameraMotion {
     this.velocity = [0, 0];
   }
 
+  /** Whether a world point is on screen, clear of a tenth of it at each edge. */
+  sees(p: Point, size: Screen): boolean {
+    const [x, y] = [(p[0] - this.center[0]) * this.zoom, (p[1] - this.center[1]) * this.zoom];
+    return Math.abs(x) < size.width * 0.4 && Math.abs(y) < size.height * 0.4;
+  }
+
   glideTo(p: Point): void {
     this.goal = [...p];
     this.gliding = false;

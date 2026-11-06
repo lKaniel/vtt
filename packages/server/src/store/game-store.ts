@@ -352,7 +352,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
 
   /** Documents as ownership sees them (op-permissions.ts, doc-feed.ts). */
   get access(): DocAccess {
-    return new StoreAccess(this.docs, this.actors);
+    return new StoreAccess(this.docs, this.actors, this.system.gmOnlyFields);
   }
 
   // Ops

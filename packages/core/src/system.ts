@@ -48,6 +48,8 @@ export interface SystemDefinition<TToken = unknown, TActor = unknown> extends Sy
   packArt?: (media: readonly MediaEntry[]) => ArtIndex;
   /** Reads the creature sheets of a Foundry VTT world made for one Foundry system, for importing it. */
   foundry?: FoundrySheets;
+  /** Creature fields only the GM changes, on top of the engine's (what creature it is, a loot pile). */
+  gmOnlyFields?: readonly string[];
 }
 
 /** Things an import could not bring along: what they are (a phrase like "Walls that stop nothing"), how many, and some of their names. */
