@@ -39,7 +39,7 @@ export interface Aiming {
 
 export function aimSpell(spell: Spell, slot: number, casterLevel: number): Aiming {
   const base = { spell, slot, picks: [], ...(spell.choices && { choice: spell.choices[0]!.id }) };
-  if (spell.area || spell.teleport || spell.summon) {
+  if (spell.area || spell.teleport || spell.summon || spell.door) {
     return { ...base, mode: 'point', need: 0, summon: spell.summon?.options[0]?.monster };
   }
   const scaled = scaledSpell(spell, slot, casterLevel);

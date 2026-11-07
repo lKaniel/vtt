@@ -50,6 +50,10 @@ const modifiers = {
   checkDisadvantage: z.boolean().optional(),
   /** Ability checks of these abilities have disadvantage (heavy encumbrance). */
   checkDisadvantageFor: z.array(AbilitySchema).optional(),
+  /** Ability checks of these abilities have advantage (enhance ability). */
+  checkAdvantageFor: z.array(AbilitySchema).optional(),
+  /** Added to checks with these skills, by skill id: "10" for pass without trace, "1d4" for 2024 guidance. */
+  skillBonus: z.record(z.string(), dice).optional(),
   ac: z.number().int().optional(),
   /** Unarmored AC before dex: the bearer's AC without body armor is this + dex (mage armor). */
   armorBase: z.number().int().optional(),
@@ -285,7 +289,7 @@ export const SpellCreatureSchema = z.object({
           .optional(),
       }),
     )
-    .min(1),
+    .default([]),
 });
 export type SpellCreature = z.infer<typeof SpellCreatureSchema>;
 
@@ -329,6 +333,8 @@ export const SpellSchema = z.object({
   range: z.number().nonnegative(),
   ritual: z.boolean().default(false),
   concentration: z.boolean().default(false),
+  /** Verbal, somatic and material components: what silence stops ("v"). */
+  components: z.array(z.enum(['v', 's', 'm'])).default([]),
   /** Duration in rounds; missing for instantaneous spells. */
   rounds: z.number().int().positive().optional(),
   /** Duration as the rules write it, e.g. "1 minute". */
@@ -357,6 +363,8 @@ export const SpellSchema = z.object({
       onSave: z.enum(['half', 'none']).default('none'),
       /** false: no save when cast, only the effect's repeated saves (power word stun, 2014 irresistible dance). */
       onCast: z.boolean().default(true),
+      /** A DC of its own instead of the caster's (contact other plane: 15). */
+      dc: z.number().int().positive().optional(),
     })
     .optional(),
   damage: z.array(DamageSchema).default([]),
@@ -415,6 +423,8 @@ export const SpellSchema = z.object({
       keepMind: z.boolean().optional(),
     })
     .optional(),
+  /** Opens the locked door nearest the point (knock), or locks a closed one (arcane lock). */
+  door: z.enum(['unlock', 'lock']).optional(),
   /** Moves the caster up to this many feet to a point they can see (misty step). */
   teleport: z.number().positive().optional(),
   /** Feet each creature hit (or failing its save) is moved: positive pushes away from the caster, negative pulls closer. */

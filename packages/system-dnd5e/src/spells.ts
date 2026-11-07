@@ -240,13 +240,17 @@ function spellAttack(cast: Cast, target: CastSide, used: UsedEffect[]) {
   return { attack, hit, crit };
 }
 
+/** The target's save when the spell lands, against the spell's own DC or the caster's; none when it saves only later. */
+function castSave({ spell, dc, rng }: Cast, target: CastSide): SaveRoll | undefined {
+  if (!spell.save?.onCast) return undefined;
+  return resistSave(target.sheet, rollSave(target.sheet, spell.save.ability, spell.save.dc ?? dc, rng));
+}
+
 /** Attack roll and/or save: whether the spell lands in full, or for half damage. */
 function landing(cast: Cast, target: CastSide, used: UsedEffect[]) {
-  const { spell, rng } = cast;
+  const { spell } = cast;
   const attack = spell.attack && !spell.autoHit ? spellAttack(cast, target, used) : undefined;
-  const save = spell.save?.onCast
-    ? resistSave(target.sheet, rollSave(target.sheet, spell.save.ability, cast.dc, rng))
-    : undefined;
+  const save = castSave(cast, target);
   const landed = (attack?.hit ?? true) && !save?.success;
   const half = save?.success === true && spell.save?.onSave === 'half';
   return { attack, save, landed, half };
@@ -261,7 +265,7 @@ function unrolled(cast: Cast, target: CastSide, base: Base): CastResult | undefi
   if (spell.rider) return { ...base, effect: effectFor(cast) };
   if (spell.stabilize) return { ...base, stabilized: true };
   if (spell.revive) return revive(target, base, spell.revive === 'full');
-  if (spell.cures) return { ...base, cured: cured(spell, target.token), effect: effectFor(cast) };
+  if (spell.cures && !spell.save) return { ...base, cured: cured(spell, target.token), effect: effectFor(cast) };
   if (spell.dispels) return { ...base, cured: dispelled(spell, target.token, cast) };
   return undefined;
 }
@@ -298,7 +302,7 @@ function rolled(cast: Cast, target: CastSide, base: Base, { attack, save, landed
     ...(attack && { attack: attack.attack, hit: attack.hit, crit: attack.crit }),
     save,
     ...damaged,
-    ...(landed && { effect: effectFor(cast), push: spell.push }),
+    ...(landed && { effect: effectFor(cast), push: spell.push, cured: spell.cures && cured(spell, target.token) }),
   };
 }
 

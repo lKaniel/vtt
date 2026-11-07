@@ -18,9 +18,7 @@ describe('tooltips', () => {
     expect(spellTip(spell('hold-person')).facts).toContain('Concentration, up to 1 minute');
     const manual = { ...spell('fire-bolt'), automated: false };
     expect(spellTip(manual).warning).toBe('Not automated: the GM applies it');
-    expect(spellTip(spell('suggestion')).warning).toBe(
-      'Not automated (social): A suggested course of action the GM plays out.',
-    );
+    expect(spellTip(spell('sending')).warning).toBe('Not automated (social): A short message across any distance.');
   });
 
   it('shows an attack bonus, reach or range and damage', () => {
