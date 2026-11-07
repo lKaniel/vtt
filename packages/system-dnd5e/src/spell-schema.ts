@@ -394,6 +394,8 @@ export const SpellSchema = z.object({
       wall: WallRulesSchema.pick({ move: true, sight: true, light: true, sound: true })
         .extend({ shape: z.enum(['line', 'ring']) })
         .optional(),
+      /** The area is difficult ground: moving costs `multiplier` times as much (spike growth, web, plant growth). */
+      ground: z.object({ multiplier: z.number().int().min(2) }).optional(),
     })
     .optional(),
   /**

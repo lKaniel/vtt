@@ -858,7 +858,12 @@
   },
   "black-tentacles": {
     "both": {
-      "zone": {}
+      "zone": {},
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     },
     "2024": {
       "area": {
@@ -4287,7 +4292,12 @@
   "insect-plague": {
     "both": {
       "zone": {},
-      "gmNote": "The area is lightly obscured and difficult terrain."
+      "gmNote": "The area is lightly obscured.",
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     }
   },
   "instant-summons": {
@@ -4985,10 +4995,23 @@
   },
   "plant-growth": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Overgrowth or richer harvests: terrain the GM paints."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "range": 150,
+      "area": {
+        "shape": "sphere",
+        "size": 100
+      },
+      "zone": {
+        "onCast": false
+      },
+      "places": {
+        "ground": {
+          "multiplier": 4
+        }
+      },
+      "gmNote": "Overgrowth stays until the GM removes it; the caster can leave clear paths. The 8-hour enrichment is narrative."
     }
   },
   "polymorph": {
@@ -6235,6 +6258,14 @@
         "rounds": 1
       },
       "gmNote": "Concentrating casters in the area make a Constitution save; the area is heavily obscured."
+    },
+    "both": {
+      "zone": {},
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     }
   },
   "slow": {
@@ -6413,7 +6444,12 @@
           "type": "piercing"
         }
       ],
-      "gmNote": "A creature takes 2d4 for every 5 ft it moves inside (this rolls once as it enters); the area is difficult terrain."
+      "gmNote": "A creature takes 2d4 for every 5 ft it moves inside (this rolls once as it enters).",
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     }
   },
   "spirit-guardians": {
@@ -7017,7 +7053,15 @@
       "effect": {
         "conditions": ["restrained"]
       },
-      "gmNote": "A restrained creature can use its action for a Strength check to break free; the web is difficult terrain."
+      "gmNote": "A restrained creature can use its action for a Strength check to break free."
+    },
+    "both": {
+      "zone": {},
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     }
   },
   "weird": {
@@ -7102,6 +7146,16 @@
         "rounds": 1
       },
       "gmNote": "You know whether each creature succeeded. Evasive answers are still allowed."
+    }
+  },
+  "grease": {
+    "both": {
+      "zone": {},
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     }
   }
 }

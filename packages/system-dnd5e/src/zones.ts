@@ -1,7 +1,7 @@
-import { inArea } from './areas.ts';
+import { type AreaShape, areaShape, inArea } from './areas.ts';
 import { isParty, type Light, type Point, ringAround, wallAcross, type WallRules } from '@vtt/shared';
 import type { Token } from './token-schema.ts';
-import type { Effect, Spell } from './spell-schema.ts';
+import type { Area, Effect, Spell } from './spell-schema.ts';
 
 // Spells that last: areas that keep hurting creatures in them (spirit
 // guardians, moonbeam) and spells the caster can use again on later turns
@@ -141,23 +141,40 @@ export function zonesOf(tokens: Iterable<Token>): ZoneHit[] {
   return out;
 }
 
-/** What a lasting area puts on the map: a light, and walls with the rules they all share. */
+/** What a lasting area puts on the map: a light, walls with the rules they all share, and difficult ground. */
 export interface ZonePlacements {
   light?: Light & { x: number; y: number };
   walls: { a: Point; b: Point }[];
   rules?: WallRules;
+  region?: { name: string; points: Point[]; behaviors: { type: 'difficult'; multiplier: number }[]; visible: true };
 }
 
-/** The light and walls a zone's spell puts on the map (see Spell `places`), in pixels at `gridSize` per 5 ft. */
+/** The light, walls and ground a zone's spell puts on the map (see Spell `places`), in pixels at `gridSize` per 5 ft. */
 export function zonePlacements({ bearer, effect }: ZoneHit, spell: Spell, gridSize: number): ZonePlacements {
   const places = spell.places;
   const size = spell.area?.size;
   if (!places || size === undefined) return { walls: [] };
   const at: Point = effect.zone.at ?? [bearer.x, bearer.y];
   const light = places.light && { dim: 0, ...places.light, bright: size, x: at[0], y: at[1] };
-  if (!places.wall) return { light, walls: [] };
+  const region = places.ground && {
+    name: spell.name,
+    points: outline(areaShape(spell as Spell & { area: Area }, { caster: bearer, aim: at, gridSize })),
+    behaviors: [{ type: 'difficult' as const, multiplier: places.ground.multiplier }],
+    visible: true as const,
+  };
+  if (!places.wall) return { light, walls: [], ...(region && { region }) };
   const { shape, ...rules } = places.wall;
   const px = (size * gridSize) / 5;
   const ends = shape === 'ring' ? ringAround(at, px) : [wallAcross([bearer.x, bearer.y], at, px)];
-  return { light, walls: ends.map(([a, b]) => ({ a, b })), rules };
+  return { light, walls: ends.map(([a, b]) => ({ a, b })), rules, ...(region && { region }) };
+}
+
+/** An area's outline as points: a circle as 24 of them. */
+function outline(shape: AreaShape): Point[] {
+  if (shape.kind === 'polygon') return shape.points;
+  const [x, y] = shape.center;
+  return Array.from({ length: 24 }, (_, i): Point => {
+    const a = (i / 24) * 2 * Math.PI;
+    return [Math.round(x + shape.radius * Math.cos(a)), Math.round(y + shape.radius * Math.sin(a))];
+  });
 }

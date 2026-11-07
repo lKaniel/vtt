@@ -83,3 +83,21 @@ describe('compulsion', () => {
     expect(tok('goblin').x).toBe(250);
   });
 });
+
+describe('spike growth', () => {
+  it('makes difficult ground for as long as it lasts', () => {
+    store.setToken(
+      TokenSchema.parse({
+        ...tok('hero'),
+        stats: { class: 'druid', level: 5, abilities: { wis: 18 }, spells: ['spike-growth'] },
+      }),
+    );
+    const ana = join_('ana');
+    const regions = () => store.docs.all(`${store.currentScene}/regions`).filter((r) => r.id.startsWith('zone-'));
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'spike-growth', slot: 2, targets: [], point: [250, 150] });
+    expect(ana.take('error')).toEqual([]);
+    expect(regions()).toMatchObject([{ behaviors: [{ type: 'difficult', multiplier: 2 }] }]);
+    ana.receive({ t: 'dropConcentration', token: 'hero' });
+    expect(regions()).toEqual([]);
+  });
+});
