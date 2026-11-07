@@ -214,13 +214,36 @@
 
 /* ---------- Map tools ---------- */
 
+/* The modes stand in a slim rail up the left edge, as in Foundry; a mode's
+   tools and settings open beside it, along the bottom. */
 .map-tools {
   left: 8px;
   bottom: 8px;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 0;
+  max-width: none;
+  pointer-events: none;
+}
+.map-tools > * {
+  pointer-events: auto;
+}
+.map-tools-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+}
+.map-tools-more {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
+  max-width: 300px;
   padding: 6px 8px;
-  /* Room for the nine modes and the GM's fog and daylight button in one row. */
-  max-width: 340px;
+}
+.map-tools-more:empty {
+  display: none;
 }
 .map-tools-row {
   gap: 2px;
@@ -305,4 +328,15 @@
 .lobby-card .roster-rules {
   position: static;
   order: -1;
+}
+
+/* ---------- Action bar on a laptop screen ----------
+   The bar keeps its look; on a screen under 820 px tall it is drawn at four
+   fifths of its size (zoom, so clicks and tooltips follow), centred in the
+   room left of the side panel, clear of the panel and the map tools. */
+@media (min-width: 1200px) and (max-height: 820px) {
+  .actionbar-wrap {
+    left: calc(50% - var(--side-w) / 2);
+    zoom: 0.8;
+  }
 }

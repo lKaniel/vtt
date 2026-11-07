@@ -119,15 +119,14 @@ const TOOLS: Partial<Record<EditorMode, { tool: EditorTool; label: string; hint:
   sounds: itemTools('sounds'),
 };
 
-/** The editor modes down the left side (players: tokens, drawings and templates), each mode's tools, and the GM's map settings. */
+/** The editor modes in a rail up the left edge (players: tokens, drawings and templates), each mode's tools beside it, and the GM's map settings. */
 export function MapTools({ session }: Readonly<{ session: Session }>) {
   const gm = session.isGm();
   const [sceneTools, setSceneTools] = useState(loadSceneTools);
-  const tools = TOOLS[session.editor.mode];
   const modes = MODES.filter((m) => session.editor.canUseMode(m.mode));
   return (
-    <div className="map-tools frame">
-      <div className="map-tools-row" role="toolbar" aria-label="Editor mode">
+    <div className="map-tools">
+      <div className="map-tools-rail frame" role="toolbar" aria-label="Editor mode" aria-orientation="vertical">
         {modes.map(({ mode, label, key, hint, icon: Icon }) => (
           <Toggle
             key={mode}
@@ -145,7 +144,7 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
             pressed={sceneTools}
             title={t('mapTools.sceneToolsHint')}
             aria-label={t('mapTools.sceneTools')}
-            className="ml-auto w-7 px-0 [&_svg]:size-4"
+            className="mt-1 w-7 px-0 [&_svg]:size-4"
             onPressedChange={(on) => {
               setSceneTools(on);
               saveSceneTools(on);
@@ -156,6 +155,17 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
           </Toggle>
         )}
       </div>
+      <ModeTools session={session} sceneTools={gm && sceneTools} />
+    </div>
+  );
+}
+
+/** Beside the rail: the mode's tools and settings, and the GM's floor, fog and daylight. */
+function ModeTools({ session, sceneTools }: Readonly<{ session: Session; sceneTools: boolean }>) {
+  const gm = session.isGm();
+  const tools = TOOLS[session.editor.mode];
+  return (
+    <div className="map-tools-more frame">
       {tools && (
         <div className="map-tools-row" role="toolbar" aria-label="Tool">
           {tools.map(({ tool, label, hint }) => (
@@ -175,7 +185,7 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
       {session.editor.mode === 'tiles' && <LayersPanel session={session} />}
       {session.editor.mode === 'drawings' && <DrawStyle session={session} />}
       {gm && <LevelPicker session={session} />}
-      {gm && sceneTools && <SceneTools session={session} />}
+      {sceneTools && <SceneTools session={session} />}
     </div>
   );
 }
