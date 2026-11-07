@@ -9,6 +9,7 @@ import { EN_FOUNDRY } from './en-foundry.ts';
 import { EN_MAP } from './en-map.ts';
 import { EN_PLAYERS } from './en-players.ts';
 import { EN_SHEET } from './en-sheet.ts';
+import { EN_TABLE } from './en-table.ts';
 
 export const EN = {
   'lang.label': 'Language',
@@ -396,6 +397,7 @@ export const EN = {
   ...EN_MAP,
   ...EN_EDITOR,
   ...EN_BOOK,
+  ...EN_TABLE,
 } as const;
 
 export type MessageKey = keyof typeof EN;
