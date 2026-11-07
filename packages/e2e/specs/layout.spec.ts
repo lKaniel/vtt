@@ -71,6 +71,11 @@ test("the GM's fog and daylight tools stay folded until asked for", async ({ pag
   await atTable(page, GM);
   await expect(page.getByRole('toolbar', { name: 'Editor mode' })).toBeVisible();
   await expect(page.getByRole('toolbar', { name: 'Fog of war' })).toHaveCount(0);
+  // The fog button ends the row of modes rather than taking a row of its own.
+  const modes = page.getByRole('toolbar', { name: 'Editor mode' });
+  const first = (await modes.getByRole('button', { name: 'Tokens' }).boundingBox())!;
+  const fog = (await modes.getByRole('button', { name: 'Fog and daylight' }).boundingBox())!;
+  expect(fog.y).toBe(first.y);
   await page.getByRole('button', { name: 'Fog and daylight' }).click();
   await expect(page.getByRole('toolbar', { name: 'Fog of war' })).toBeVisible();
   await expect(page.getByText('Night', { exact: true })).toBeVisible();

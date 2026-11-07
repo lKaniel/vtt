@@ -219,7 +219,8 @@
   bottom: 8px;
   gap: 6px;
   padding: 6px 8px;
-  max-width: 300px;
+  /* Room for the nine modes and the GM's fog and daylight button in one row. */
+  max-width: 340px;
 }
 .map-tools-row {
   gap: 2px;
