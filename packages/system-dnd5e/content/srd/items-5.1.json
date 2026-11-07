@@ -3204,7 +3204,7 @@
     "weight": 0,
     "description": "While you wear these boots, your steps make no sound, regardless of the surface you are moving across. You also have advantage on Dexterity (Stealth) checks that rely on moving silently.",
     "effect": {
-      "checkAdvantage": ["stealth"]
+      "checkAdvantageFor": ["stealth"]
     }
   },
   {
@@ -3803,7 +3803,7 @@
     "weight": 0,
     "description": "While you wear this cloak with its hood up, Wisdom (Perception) checks made to see you have disadvantage, and you have advantage on Dexterity (Stealth) checks made to hide, as the cloak's color shifts to camouflage you. Pulling the hood up or down requires an action.",
     "effect": {
-      "checkAdvantage": ["stealth"]
+      "checkAdvantageFor": ["stealth"]
     }
   },
   {
@@ -3834,7 +3834,7 @@
     "weight": 0,
     "description": "While wearing this cloak, you have advantage on Dexterity (Stealth) checks. In an area of dim light or darkness, you can grip the edges of the cloak with both hands and use it to fly at a speed of 40 feet. If you ever fail to grip the cloak's edges while flying in this way, or if you are no longer in dim light or darkness, you lose this flying speed.\n\nWhile wearing the cloak in an area of dim light or darkness, you can use your action to cast *polymorph* on yourself, transforming into a bat. While you are in the form of the bat, you retain your Intelligence, Wisdom, and Charisma scores. The cloak can't be used this way again until the next dawn.",
     "effect": {
-      "checkAdvantage": ["stealth"]
+      "checkAdvantageFor": ["stealth"]
     },
     "casts": [
       {
@@ -5245,7 +5245,7 @@
     "weight": 0,
     "description": "These crystal lenses fit over the eyes. While wearing them, you can see much better than normal out to a range of 1 foot. You have advantage on Intelligence (Investigation) checks that rely on sight while searching an area or studying an object within that range.",
     "effect": {
-      "checkAdvantage": ["investigation"]
+      "checkAdvantageFor": ["investigation"]
     }
   },
   {
@@ -5259,7 +5259,7 @@
     "weight": 0,
     "description": "These crystal lenses fit over the eyes. While wearing them, you have advantage on Wisdom (Perception) checks that rely on sight. In conditions of clear visibility, you can make out details of even extremely distant creatures and objects as small as 2 feet across.",
     "effect": {
-      "checkAdvantage": ["perception"]
+      "checkAdvantageFor": ["perception"]
     }
   },
   {
@@ -9912,7 +9912,7 @@
     "description": "When you drink this potion, you gain the \"enlarge\" effect of the *enlarge/reduce* spell for 1d4 hours (no concentration required). The red in the potion's liquid continuously expands from a tiny bead to color the clear liquid around it and then contracts. Shaking the bottle fails to interrupt this process.",
     "use": {
       "effect": {
-        "checkAdvantage": ["str"],
+        "checkAdvantageFor": ["str"],
         "saveAdvantage": ["str"]
       },
       "potion": true
@@ -11238,7 +11238,7 @@
     "weight": 0,
     "description": "This rod has a flanged head and the following properties.\n\n***Alertness.*** While holding the rod, you have advantage on Wisdom (Perception) checks and on rolls for initiative.\n\n***Spells.*** While holding the rod, you can use an action to cast one of the following spells from it: *detect evil and good*, *detect magic*, *detect poison and disease*, or *see invisibility.*\n\n***Protective Aura.*** As an action, you can plant the haft end of the rod in the ground, whereupon the rod's head sheds bright light in a 60-foot radius and dim light for an additional 60 feet. While in that bright light, you and any creature that is friendly to you gain a +1 bonus to AC and saving throws and can sense the location of any invisible hostile creature that is also in the bright light.\n\nThe rod's head stops glowing and the effect ends after 10 minutes, or when a creature uses an action to pull the rod from the ground. This property can't be used again until the next dawn.",
     "effect": {
-      "checkAdvantage": ["perception", "initiative"]
+      "checkAdvantageFor": ["perception", "initiative"]
     },
     "casts": [
       {

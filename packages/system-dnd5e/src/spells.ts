@@ -7,9 +7,10 @@ import { isDead, makesDeathSaves } from './deaths.ts';
 import { markDamage } from './riders.ts';
 import { type GridKind, type Rng, roll, type Roll } from '@vtt/shared';
 import { attackModifiers, d20Formula, rollSpellSave, type SaveRoll, type UsedEffect } from './effects.ts';
+import { contest } from './checks.ts';
 import type { Token } from './token-schema.ts';
 import type { Effect, Spell } from './spell-schema.ts';
-import { dispelled, tierFor, tierSpell } from './spell-options.ts';
+import { dispelled, rolledRays, tierFor, tierSpell } from './spell-options.ts';
 
 export { withAgain, withChoice } from './spell-options.ts';
 import type { Damage, DamageType } from './stats-schema.ts';
@@ -98,6 +99,7 @@ export function castProblem({
 }): string | undefined {
   const caster = sheet.caster;
   if (!caster?.spells.some((s) => s.id === spell.id)) return `doesn't know ${spell.name}`;
+  if (spell.counter) return `casts ${spell.name} only as a reaction to another creature's spell`;
   const stopped = stoppedBy(sheet, spell);
   if (stopped) return stopped;
   if (spell.level === 0) return undefined;
@@ -282,7 +284,8 @@ function effectFor(cast: Cast): Effect | undefined {
     rounds: template.rounds ?? spell.rounds,
     repeatSave,
     saveOnDamage,
-    save: (repeatSave || saveOnDamage) && spell.save ? { ability: spell.save.ability, dc } : undefined,
+    save:
+      (repeatSave || saveOnDamage) && spell.save ? { ability: template.saveWith ?? spell.save.ability, dc } : undefined,
   };
 }
 
@@ -299,8 +302,10 @@ function spellAttack(cast: Cast, target: CastSide, used: UsedEffect[]) {
 }
 
 /** The target's save when the spell lands, against the spell's own DC or the caster's; none when it saves only later. */
-function castSave({ spell, dc, rng }: Cast, target: CastSide): SaveRoll | undefined {
+function castSave(cast: Cast, target: CastSide): SaveRoll | undefined {
+  const { spell, dc, rng } = cast;
   if (!spell.save?.onCast) return undefined;
+  if (spell.save.contest) return contest(spell.save.ability, cast.caster, target, rng);
   return resistSave(target.sheet, rollSpellSave(target.sheet, spell.save.ability, spell.save.dc ?? dc, rng));
 }
 
@@ -464,6 +469,16 @@ function castOf(input: CastInput, rng: Rng): Cast {
  * Rolls a spell against its targets. Beams and repeated targets are rolled
  * one after another, each seeing the damage dealt before it.
  */
+/** The cast as it strikes one creature: once, or once for each ray it rolls (prismatic spray). */
+function raysOf(cast: Cast): Cast[] {
+  if (!cast.spell.rays) return [cast];
+  return rolledRays(cast.spell, cast.rng).map((spell) => ({
+    ...cast,
+    spell: { ...spell, beams: 1 },
+    shared: undefined,
+  }));
+}
+
 export function resolveCast(input: CastInput, rng: Rng = Math.random): CastOutcome {
   const cast = castOf(input, rng);
   if (!cast.spell.attack && cast.spell.beams === 1 && !cast.spell.rider)
@@ -471,12 +486,14 @@ export function resolveCast(input: CastInput, rng: Rng = Math.random): CastOutco
   const reached = pooled(cast, input.targets);
   const hp = new Map<string, Pick<Creature, 'hp' | 'tempHp'>>();
   const used: UsedEffect[] = [];
-  const results = input.targets.map((t) => {
-    const now = { ...t, sheet: { ...t.sheet, ...hp.get(t.token.id) } };
-    if (reached && !reached.has(t.token.id)) return { target: t.token.id, damage: 0, parts: [], hp: now.sheet.hp };
-    const result = oneTarget(cast, now, used);
-    hp.set(t.token.id, { hp: result.hp, tempHp: result.tempHp ?? now.sheet.tempHp });
-    return result;
+  const results = input.targets.flatMap((t) => {
+    if (reached && !reached.has(t.token.id)) return [{ target: t.token.id, damage: 0, parts: [], hp: t.sheet.hp }];
+    return raysOf(cast).map((ray) => {
+      const now = { ...t, sheet: { ...t.sheet, ...hp.get(t.token.id) } };
+      const result = oneTarget(ray, now, used);
+      hp.set(t.token.id, { hp: result.hp, tempHp: result.tempHp ?? now.sheet.tempHp });
+      return result;
+    });
   });
   return { results, used, drained: drainOf(cast, results) };
 }

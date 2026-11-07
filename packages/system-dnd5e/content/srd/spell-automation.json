@@ -858,7 +858,12 @@
   },
   "black-tentacles": {
     "both": {
-      "zone": {}
+      "zone": {},
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     },
     "2024": {
       "area": {
@@ -1275,10 +1280,23 @@
   },
   "compulsion": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Creatures are forced to move where the caster says; the GM moves them."
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Compulsion",
+        "repeatSave": true
+      },
+      "repeat": "bonus",
+      "again": {
+        "steer": true
+      },
+      "gmNote": "Used again with a point: the creatures it holds walk toward it as their turns start."
+    },
+    "2024": {
+      "effect": {
+        "name": "Compulsion",
+        "conditions": ["charmed"],
+        "repeatSave": true
       }
     }
   },
@@ -1911,14 +1929,14 @@
     }
   },
   "counterspell": {
-    "2024": {
-      "automated": false
-    },
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a reaction that interrupts another spell."
-      }
+      "automated": true,
+      "targets": 0,
+      "counter": true,
+      "gmNote": "Offered as a reaction when an enemy within 60 ft casts a spell."
+    },
+    "2024": {
+      "save": null
     }
   },
   "create-food-and-water": {
@@ -3309,9 +3327,10 @@
     "both": {
       "effect": {
         "conditions": ["restrained"],
-        "repeatSave": true
-      },
-      "gmNote": "After three failed saves the target is petrified, after three successes it’s free: swap the effect by hand."
+        "repeatSave": true,
+        "threeTimes": true,
+        "worsens": ["petrified"]
+      }
     }
   },
   "floating-disk": {
@@ -4273,7 +4292,12 @@
   "insect-plague": {
     "both": {
       "zone": {},
-      "gmNote": "The area is lightly obscured and difficult terrain."
+      "gmNote": "The area is lightly obscured.",
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     }
   },
   "instant-summons": {
@@ -4971,10 +4995,23 @@
   },
   "plant-growth": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Overgrowth or richer harvests: terrain the GM paints."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "range": 150,
+      "area": {
+        "shape": "sphere",
+        "size": 100
+      },
+      "zone": {
+        "onCast": false
+      },
+      "places": {
+        "ground": {
+          "multiplier": 4
+        }
+      },
+      "gmNote": "Overgrowth stays until the GM removes it; the caster can leave clear paths. The 8-hour enrichment is narrative."
     }
   },
   "polymorph": {
@@ -5061,11 +5098,224 @@
   },
   "prismatic-spray": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a random ray per creature."
-      }
+      "automated": true,
+      "rays": [
+        {
+          "id": "red",
+          "name": "Red",
+          "set": {
+            "damage": [
+              {
+                "dice": "10d6",
+                "type": "fire"
+              }
+            ],
+            "save": {
+              "ability": "dex",
+              "onSave": "half"
+            }
+          }
+        },
+        {
+          "id": "orange",
+          "name": "Orange",
+          "set": {
+            "damage": [
+              {
+                "dice": "10d6",
+                "type": "acid"
+              }
+            ],
+            "save": {
+              "ability": "dex",
+              "onSave": "half"
+            }
+          }
+        },
+        {
+          "id": "yellow",
+          "name": "Yellow",
+          "set": {
+            "damage": [
+              {
+                "dice": "10d6",
+                "type": "lightning"
+              }
+            ],
+            "save": {
+              "ability": "dex",
+              "onSave": "half"
+            }
+          }
+        },
+        {
+          "id": "green",
+          "name": "Green",
+          "set": {
+            "damage": [
+              {
+                "dice": "10d6",
+                "type": "poison"
+              }
+            ],
+            "save": {
+              "ability": "dex",
+              "onSave": "half"
+            }
+          }
+        },
+        {
+          "id": "blue",
+          "name": "Blue",
+          "set": {
+            "damage": [
+              {
+                "dice": "10d6",
+                "type": "cold"
+              }
+            ],
+            "save": {
+              "ability": "dex",
+              "onSave": "half"
+            }
+          }
+        },
+        {
+          "id": "indigo",
+          "name": "Indigo",
+          "set": {
+            "effect": {
+              "name": "Prismatic Spray (Indigo)",
+              "conditions": ["restrained"],
+              "repeatSave": true,
+              "saveWith": "con",
+              "threeTimes": true,
+              "worsens": ["petrified"]
+            }
+          }
+        },
+        {
+          "id": "violet",
+          "name": "Violet",
+          "set": {
+            "effect": {
+              "name": "Prismatic Spray (Violet)",
+              "conditions": ["blinded"],
+              "rounds": 1
+            }
+          }
+        }
+      ],
+      "gmNote": "Violet: a creature still blinded when the caster's next turn starts saves with Wisdom or goes to another plane (the GM's choice)."
+    },
+    "2024": {
+      "rays": [
+        {
+          "id": "red",
+          "name": "Red",
+          "set": {
+            "damage": [
+              {
+                "dice": "12d6",
+                "type": "fire"
+              }
+            ],
+            "save": {
+              "ability": "dex",
+              "onSave": "half"
+            }
+          }
+        },
+        {
+          "id": "orange",
+          "name": "Orange",
+          "set": {
+            "damage": [
+              {
+                "dice": "12d6",
+                "type": "acid"
+              }
+            ],
+            "save": {
+              "ability": "dex",
+              "onSave": "half"
+            }
+          }
+        },
+        {
+          "id": "yellow",
+          "name": "Yellow",
+          "set": {
+            "damage": [
+              {
+                "dice": "12d6",
+                "type": "lightning"
+              }
+            ],
+            "save": {
+              "ability": "dex",
+              "onSave": "half"
+            }
+          }
+        },
+        {
+          "id": "green",
+          "name": "Green",
+          "set": {
+            "damage": [
+              {
+                "dice": "12d6",
+                "type": "poison"
+              }
+            ],
+            "save": {
+              "ability": "dex",
+              "onSave": "half"
+            }
+          }
+        },
+        {
+          "id": "blue",
+          "name": "Blue",
+          "set": {
+            "damage": [
+              {
+                "dice": "12d6",
+                "type": "cold"
+              }
+            ],
+            "save": {
+              "ability": "dex",
+              "onSave": "half"
+            }
+          }
+        },
+        {
+          "id": "indigo",
+          "name": "Indigo",
+          "set": {
+            "effect": {
+              "name": "Prismatic Spray (Indigo)",
+              "conditions": ["restrained"],
+              "repeatSave": true,
+              "saveWith": "con",
+              "threeTimes": true,
+              "worsens": ["petrified"]
+            }
+          }
+        },
+        {
+          "id": "violet",
+          "name": "Violet",
+          "set": {
+            "effect": {
+              "name": "Prismatic Spray (Violet)",
+              "conditions": ["blinded"],
+              "rounds": 1
+            }
+          }
+        }
+      ]
     }
   },
   "prismatic-wall": {
@@ -5636,11 +5886,12 @@
   },
   "reverse-gravity": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Falling isn’t simulated."
-      }
+      "automated": true,
+      "effect": {
+        "name": "Reverse Gravity",
+        "lifted": 100
+      },
+      "gmNote": "Creatures that make the save hold on to something fixed; ones that walk in later and things in the area are the GM's."
     }
   },
   "revivify": {
@@ -6007,6 +6258,14 @@
         "rounds": 1
       },
       "gmNote": "Concentrating casters in the area make a Constitution save; the area is heavily obscured."
+    },
+    "both": {
+      "zone": {},
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     }
   },
   "slow": {
@@ -6185,7 +6444,12 @@
           "type": "piercing"
         }
       ],
-      "gmNote": "A creature takes 2d4 for every 5 ft it moves inside (this rolls once as it enters); the area is difficult terrain."
+      "gmNote": "A creature takes 2d4 for every 5 ft it moves inside (this rolls once as it enters).",
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     }
   },
   "spirit-guardians": {
@@ -6376,10 +6640,22 @@
     }
   },
   "telekinesis": {
+    "both": {
+      "automated": true,
+      "manual": null,
+      "area": null,
+      "targets": 1,
+      "repeat": "action",
+      "effect": {
+        "name": "Telekinesis",
+        "conditions": ["restrained"]
+      },
+      "gmNote": "The caster can move the held creature up to 30 ft: drag its token. Objects are the GM's."
+    },
     "2014": {
-      "manual": {
-        "kind": "gm",
-        "why": "Moving or holding a creature with a contested check."
+      "save": {
+        "ability": "str",
+        "contest": true
       }
     }
   },
@@ -6424,10 +6700,10 @@
   },
   "time-stop": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Extra turns for the caster; run them by hand."
-      }
+      "automated": true,
+      "targets": 0,
+      "extraTurns": "1d4+1",
+      "gmNote": "Ends early if the caster moves more than 1,000 ft from where it was cast."
     }
   },
   "tiny-hut": {
@@ -6777,7 +7053,15 @@
       "effect": {
         "conditions": ["restrained"]
       },
-      "gmNote": "A restrained creature can use its action for a Strength check to break free; the web is difficult terrain."
+      "gmNote": "A restrained creature can use its action for a Strength check to break free."
+    },
+    "both": {
+      "zone": {},
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     }
   },
   "weird": {
@@ -6862,6 +7146,16 @@
         "rounds": 1
       },
       "gmNote": "You know whether each creature succeeded. Evasive answers are still allowed."
+    }
+  },
+  "grease": {
+    "both": {
+      "zone": {},
+      "places": {
+        "ground": {
+          "multiplier": 2
+        }
+      }
     }
   }
 }

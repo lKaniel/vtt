@@ -70,7 +70,7 @@ function rollFacts(e: EffectTemplate): string[] {
     ...(e.attackBonus ? [t('item.dice', { dice: plusDice(e.attackBonus), what: 'attacks' })] : []),
     ...(e.saveBonus ? [t('item.dice', { dice: plusDice(e.saveBonus), what: 'saves' })] : []),
     ...(e.checkBonus ? [t('item.dice', { dice: plusDice(e.checkBonus), what: 'ability checks' })] : []),
-    ...(e.checkAdvantage?.length ? [t('item.advantage', { what: e.checkAdvantage.join(', ') })] : []),
+    ...(e.checkAdvantageFor?.length ? [t('item.advantage', { what: e.checkAdvantageFor.join(', ') })] : []),
     ...(e.saveAdvantage?.length
       ? [t('item.saveAdvantage', { abilities: e.saveAdvantage.map((a) => a.toUpperCase()).join(', ') })]
       : []),

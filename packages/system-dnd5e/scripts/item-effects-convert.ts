@@ -176,10 +176,10 @@ function advantageOn(r: string, out: Out): boolean {
   if (r === 'save') return !!push(out.effect, 'saveAdvantage', ...ABILITIES);
   const [kind, which] = r.split('.') as [string, string | undefined];
   if (kind === 'save' && ABILITIES.includes(which ?? '')) return !!push(out.effect, 'saveAdvantage', which);
-  if (kind === 'check' && ABILITIES.includes(which ?? '')) return !!push(out.effect, 'checkAdvantage', which);
+  if (kind === 'check' && ABILITIES.includes(which ?? '')) return !!push(out.effect, 'checkAdvantageFor', which);
   const skill = SKILL.exec(r)?.[1];
-  if (skill) return !!push(out.effect, 'checkAdvantage', skill);
-  if (r === 'initiative') return !!push(out.effect, 'checkAdvantage', 'initiative');
+  if (skill) return !!push(out.effect, 'checkAdvantageFor', skill);
+  if (r === 'initiative') return !!push(out.effect, 'checkAdvantageFor', 'initiative');
   return false;
 }
 

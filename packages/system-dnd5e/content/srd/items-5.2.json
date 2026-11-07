@@ -4129,7 +4129,7 @@
     "weight": 0,
     "description": "While you wear these boots, your steps make no sound, regardless of the surface you are moving across. You also have Advantage on Dexterity (Stealth) checks.",
     "effect": {
-      "checkAdvantage": ["stealth"]
+      "checkAdvantageFor": ["stealth"]
     }
   },
   {
@@ -4660,7 +4660,7 @@
     "weight": 0,
     "description": "While you wear this cloak, Wisdom (Perception) checks made to perceive you have Disadvantage, and you have Advantage on Dexterity (Stealth) checks.",
     "effect": {
-      "checkAdvantage": ["stealth"]
+      "checkAdvantageFor": ["stealth"]
     }
   },
   {
@@ -4706,7 +4706,7 @@
     "weight": 0,
     "description": "While wearing this cloak, you have Advantage on Dexterity (Stealth) checks. In an area of Dim Light or Darkness, you can grip the edges of the cloak and use it to gain a Fly Speed of 40 feet. If you ever fail to grip the cloak’s edges while flying in this way, or if you are no longer in Dim Light or Darkness, you lose this Fly Speed.\n\nWhile wearing the cloak in an area of Dim Light or Darkness, you can cast *Polymorph* on yourself, shape-shifting into a **Bat**. While in that form, you retain your Intelligence, Wisdom, and Charisma scores. The cloak can’t be used this way again until the next dawn.",
     "effect": {
-      "checkAdvantage": ["stealth"],
+      "checkAdvantageFor": ["stealth"],
       "speeds": {
         "fly": 40
       }
@@ -12559,7 +12559,7 @@
     "weight": 0,
     "description": "Roughly marble sized, *Ioun Stones* are named after Ioun, a god of knowledge and prophecy revered on some worlds. Many types of *Ioun Stones* exist, each type a distinct combination of shape and color.\n\nWhen you take a Magic action to toss an *Ioun Stone* into the air, the stone orbits your head at a distance of 1d3 feet, conferring its benefit to you while doing so. You can have up to three *Ioun Stones* orbiting your head at the same time.\n\nEach *Ioun Stone* orbiting your head is considered to be an object you are wearing. The orbiting stone avoids contact with other creatures and objects, adjusting its orbit to avoid collisions and thwarting all attempts by other creatures to attack or snatch it.\n\nAs a Utilize action, you can seize and stow any number of *Ioun Stones* orbiting your head. If your Attunement to an *Ioun Stone* ends while it’s orbiting your head, the stone falls as though you had dropped it.\n\nThe type of stone determines its rarity and effects.\n\n***Awareness (Rare).*** While this dark-blue rhomboid orbits your head, you have Advantage on Initiative rolls and Wisdom (Perception) checks.",
     "effect": {
-      "checkAdvantage": ["initiative", "perception"]
+      "checkAdvantageFor": ["initiative", "perception"]
     }
   },
   {
@@ -16239,7 +16239,7 @@
     "description": "When you drink this potion, you gain the “enlarge” effect of the Enlarge/Reduce spell for 10 minutes (no Concentration required).\n\nThe red in the potion’s liquid continuously expands from a tiny bead to color the clear liquid around it and then contracts. Shaking the bottle fails to interrupt this process.",
     "use": {
       "effect": {
-        "checkAdvantage": ["str"],
+        "checkAdvantageFor": ["str"],
         "saveAdvantage": ["str"],
         "rounds": 100
       },
@@ -16655,7 +16655,7 @@
     "base": "quarterstaff",
     "plus": 2,
     "effect": {
-      "checkAdvantage": ["acrobatics"]
+      "checkAdvantageFor": ["acrobatics"]
     }
   },
   {
@@ -17460,7 +17460,7 @@
     "weight": 0,
     "description": "This rod has the following properties.\n\n***Alertness.*** While holding the rod, you have Advantage on Wisdom (Perception) checks and on Initiative rolls.\n\n***Spells.*** While holding the rod, you can cast the following spells from it:\n\n- Detect Evil and Good\n- Detect Magic\n- Detect Poison and Disease\n- See Invisibility\n\n***Protective Aura.*** As a Magic action, you can plant the haft end of the rod in the ground, whereupon the rod’s head sheds Bright Light in a 60-foot radius and Dim Light for an additional 60 feet. While in that Bright Light, you and your allies gain a +1 bonus to Armor Class and saving throws and can sense the location of any Invisible creature that is also in the Bright Light.\n\nThe rod’s head stops glowing and the effect ends after 10 minutes or when a creature takes a Magic action to pull the rod from the ground. Once used, this property can’t be used again until the next dawn.",
     "effect": {
-      "checkAdvantage": ["perception", "initiative"]
+      "checkAdvantageFor": ["perception", "initiative"]
     },
     "casts": [
       {
@@ -17796,7 +17796,7 @@
     "description": "While holding this Shield, you have Advantage on Initiative rolls and Wisdom (Perception) checks. The Shield is emblazoned with a symbol of an eye.",
     "base": "shield",
     "effect": {
-      "checkAdvantage": ["initiative", "perception"]
+      "checkAdvantageFor": ["initiative", "perception"]
     }
   },
   {
@@ -21424,7 +21424,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "battleaxe",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21448,7 +21448,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "blowgun",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21471,7 +21471,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "club",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21495,7 +21495,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "dagger",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21519,7 +21519,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "dart",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21541,7 +21541,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "flail",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21564,7 +21564,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "glaive",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21587,7 +21587,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "greataxe",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21610,7 +21610,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "greatclub",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21633,7 +21633,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "greatsword",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21656,7 +21656,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "halberd",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21680,7 +21680,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "hand-crossbow",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21704,7 +21704,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "handaxe",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21728,7 +21728,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "heavy-crossbow",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21752,7 +21752,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "javelin",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21775,7 +21775,7 @@
     "attunement": true,
     "base": "lance",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21799,7 +21799,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "light-crossbow",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21823,7 +21823,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "light-hammer",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21847,7 +21847,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "longbow",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21871,7 +21871,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "longsword",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21893,7 +21893,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "mace",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21916,7 +21916,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "maul",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21938,7 +21938,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "morningstar",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21962,7 +21962,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "musket",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -21985,7 +21985,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "pike",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22009,7 +22009,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "pistol",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22033,7 +22033,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "quarterstaff",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22056,7 +22056,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "rapier",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22079,7 +22079,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "scimitar",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22103,7 +22103,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "shortbow",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22126,7 +22126,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "shortsword",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22149,7 +22149,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "sickle",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22173,7 +22173,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "sling",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22198,7 +22198,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "spear",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22223,7 +22223,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "trident",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22247,7 +22247,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "war-pick",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22271,7 +22271,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "warhammer",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {
@@ -22294,7 +22294,7 @@
     "description": "As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.\n\n***Alarm.*** The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.\n\n***Supernatural Readiness.*** Each subject has Advantage on its Initiative rolls.",
     "base": "whip",
     "effect": {
-      "checkAdvantage": ["initiative"]
+      "checkAdvantageFor": ["initiative"]
     }
   },
   {

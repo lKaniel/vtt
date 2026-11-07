@@ -6,6 +6,7 @@ import {
   scaledSpell,
   type Spell,
   type TokenView,
+  withAgain,
 } from '@vtt/system-dnd5e';
 import { contentFor, gameContent } from '../content/content.ts';
 import type { Point } from '@vtt/shared';
@@ -41,7 +42,7 @@ export interface Aiming {
 
 export function aimSpell(spell: Spell, slot: number, casterLevel: number): Aiming {
   const base = { spell, slot, picks: [], ...(spell.choices && { choice: spell.choices[0]!.id }) };
-  if (spell.area || spell.teleport || spell.summon || spell.door) {
+  if (spell.area || spell.teleport || spell.summon || spell.door || spell.steer) {
     return { ...base, mode: 'point', need: 0, summon: spell.summon?.options[0]?.monster };
   }
   const scaled = scaledSpell(spell, slot, casterLevel);
@@ -62,7 +63,7 @@ export function aimFor(
   const going = effects.find((e) => e.repeat?.spell === spellId)?.repeat;
   if (going)
     return {
-      ...aimSpell(spell, going.slot, caster.level),
+      ...aimSpell(withAgain(spell), going.slot, caster.level),
       repeat: true,
       ...(going.choice && { choice: going.choice }),
     };

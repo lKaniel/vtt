@@ -5,6 +5,7 @@ import {
   halved,
   hitReactions,
   opportunityAttackers,
+  COUNTERSPELL,
   type ReactionOffer,
   shielded,
   shieldSlot,
@@ -12,6 +13,8 @@ import {
 } from '@vtt/system-dnd5e';
 import { randomUUID } from 'node:crypto';
 import type { CombatActions, PendingHit } from '../actions/combat-actions.ts';
+import type { PendingCast } from '../actions/spell-actions.ts';
+import { counter, spellAnswerers } from './counter-casts.ts';
 import { Refusal, type Table } from './table.ts';
 
 export type ReactionMessage = { t: 'reactionOffer'; offer: ReactionOffer } | { t: 'reactionGone'; id: string };
@@ -25,6 +28,7 @@ export type ReactionMessage = { t: 'reactionOffer'; offer: ReactionOffer } | { t
 export class Reactions {
   private offers = new Map<string, ReactionOffer>();
   private hits = new Map<string, PendingHit>();
+  private casts = new Map<string, PendingCast>();
 
   constructor(
     private table: Table,
@@ -71,7 +75,7 @@ export class Reactions {
     const combat = this.table.store.combat;
     const target = hit.target.token.id;
     if (!combat || combat.reacted.includes(target)) return false;
-    if (automationOf(this.decider(hit.target.token)?.settings).hitReactions === 'never') return false;
+    if (!this.asks(hit.target.token)) return false;
     const choices = hitReactions(hit.target, hit.outcome.roll);
     if (!choices.length) return false;
     const id = randomUUID();
@@ -87,6 +91,25 @@ export class Reactions {
     return true;
   }
 
+  /** A spell is being cast in a fight: enemies who could counter it are asked. True when it waits. */
+  cast(pending: PendingCast): boolean {
+    const combat = this.table.store.combat;
+    if (!combat) return false;
+    const asked = spellAnswerers(this.table, pending, combat.reacted).filter((t) => this.asks(t));
+    for (const token of asked) {
+      const id = randomUUID();
+      this.casts.set(id, pending);
+      const target = pending.caster.token.id;
+      this.offer({ id, reactor: token.id, target, kind: 'spell', choices: [COUNTERSPELL], spell: pending.spell.name });
+    }
+    return asked.length > 0;
+  }
+
+  /** Whether a creature's player wants to be asked about reactions (hits and spells). */
+  private asks(reactor: Token): boolean {
+    return automationOf(this.decider(reactor)?.settings).hitReactions !== 'never';
+  }
+
   /** Takes or declines an offer. */
   react(player: Player, id: string, choice: string | undefined): void {
     const offer = this.offers.get(id);
@@ -95,8 +118,10 @@ export class Reactions {
     if (!canControl(reactor, player)) throw new Refusal(`You don't control ${reactor.name}`);
     if (choice && !offer.choices.includes(choice)) throw new Refusal(`${reactor.name} can't ${choice} now`);
     const hit = this.hits.get(id);
+    const cast = this.casts.get(id);
     this.drop(id);
     if (hit) return this.answer(hit, choice);
+    if (cast) return this.answerCast(cast, offer.reactor, choice);
     if (choice) this.combat.reactionAttack(player, { attacker: offer.reactor, target: offer.target, attack: choice });
   }
 
@@ -104,9 +129,25 @@ export class Reactions {
   clear(): void {
     for (const id of [...this.offers.keys()]) {
       const hit = this.hits.get(id);
+      const cast = this.casts.get(id);
       this.drop(id);
       if (hit) this.answer(hit, undefined);
+      if (cast && !this.waiting(cast)) cast.go();
     }
+  }
+
+  /** Counterspell taken (the others asked aren't any more), or declined: the cast goes on once no one else may answer. */
+  private answerCast(cast: PendingCast, reactor: string, choice: string | undefined): void {
+    if (!choice) {
+      if (!this.waiting(cast)) cast.go();
+      return;
+    }
+    for (const [id, c] of this.casts) if (c === cast) this.drop(id);
+    counter(this.table, reactor, cast);
+  }
+
+  private waiting(cast: PendingCast): boolean {
+    return [...this.casts.values()].includes(cast);
   }
 
   private answer(hit: PendingHit, choice: string | undefined): void {
@@ -145,6 +186,7 @@ export class Reactions {
     const reactor = offer && this.table.store.tokens.get(offer.reactor);
     this.offers.delete(id);
     this.hits.delete(id);
+    this.casts.delete(id);
     if (reactor) this.tell({ t: 'reactionGone', id }, reactor);
   }
 }

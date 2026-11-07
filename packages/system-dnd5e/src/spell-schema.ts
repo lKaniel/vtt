@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { LightSchema, WallRulesSchema } from '@vtt/shared';
-import { ABILITIES, AbilitiesSchema, DamageSchema, DamageTypeSchema } from './stats-schema.ts';
+import { ABILITIES, AbilitiesSchema, DamageSchema, DamageTypeSchema, OtherSpeedsSchema } from './stats-schema.ts';
 import { EffectChangeSchema } from './effect-changes.ts';
+import { WeaponSpellSchema } from './weapon-spell-schema.ts';
 
 // Spells, class features and the effects they leave on creatures. Spells and
 // classes are data in packages/system-dnd5e/content; the engine in spells.ts,
@@ -34,8 +35,6 @@ export type Condition = z.infer<typeof ConditionSchema>;
 export const RiderDamageSchema = z.object({ dice, type: z.union([DamageTypeSchema, z.literal('weapon')]) });
 export type RiderDamage = z.infer<typeof RiderDamageSchema>;
 
-const moveSpeed = z.union([z.number().nonnegative(), z.literal('walk')]);
-
 /** What an effect changes about the creature that has it. */
 const modifiers = {
   /** Changes to any statistic by key, Foundry style: `{ key: "abilities.str", mode: "override", value: 19 }` (see effect-changes.ts). */
@@ -52,8 +51,8 @@ const modifiers = {
   checkDisadvantage: z.boolean().optional(),
   /** Ability checks of these abilities have disadvantage (heavy encumbrance). */
   checkDisadvantageFor: z.array(AbilitySchema).optional(),
-  /** Ability checks of these abilities have advantage (enhance ability). */
-  checkAdvantageFor: z.array(AbilitySchema).optional(),
+  /** Checks of these abilities or skills, or initiative, have advantage (enhance ability, cloak of elvenkind). */
+  checkAdvantageFor: z.array(z.string()).optional(),
   /** Added to checks with these skills, by skill id: "10" for pass without trace, "1d4" for 2024 guidance. */
   skillBonus: z.record(z.string(), dice).optional(),
   ac: z.number().int().optional(),
@@ -75,14 +74,11 @@ const modifiers = {
   turnAttacks: z.number().int().positive().optional(),
   resistances: z.array(DamageTypeSchema).optional(),
   immunities: z.array(DamageTypeSchema).optional(),
-  /** Critical hits against the bearer are normal hits (adamantine armor). */
+  /** Critical hits on the bearer are normal hits (adamantine armor); advantage on saves against spells (a mantle of spell resistance). */
   noCrits: z.boolean().optional(),
-  /** Ability checks of these abilities or skills, or initiative, have advantage (cloak of elvenkind: stealth). */
-  checkAdvantage: z.array(z.string()).optional(),
-  /** The bearer has advantage on saves against spells (a mantle of spell resistance). */
   spellSaveAdvantage: z.boolean().optional(),
   /** Other ways it moves, in feet; "walk" is as fast as it walks (winged boots). */
-  speeds: z.object({ fly: moveSpeed, swim: moveSpeed, climb: moveSpeed, hover: z.boolean() }).partial().optional(),
+  speeds: OtherSpeedsSchema.optional(),
   /** Attacks against the bearer have advantage (faerie fire) or disadvantage. */
   advantageAgainst: z.boolean().optional(),
   disadvantageAgainst: z.boolean().optional(),
@@ -136,19 +132,17 @@ const modifiers = {
    * In a spell, `dice` and `extra.dice` go by cantrip tier and `ability` is the
    * caster's spellcasting ability; `extra` becomes damage on the next hit.
    */
-  weaponSpell: z
-    .object({
-      weapons: z.array(id).default([]),
-      dice: z.array(dice).optional(),
-      ability: AbilitySchema.optional(),
-      type: DamageTypeSchema.optional(),
-      extra: z.object({ dice: z.array(z.string()), type: DamageTypeSchema }).optional(),
-    })
-    .optional(),
+  weaponSpell: WeaponSpellSchema.optional(),
   /** Damage of these types the bearer takes is reduced by this roll, once a turn (2024 resistance). */
   ward: z.object({ dice, types: z.array(DamageTypeSchema).min(1) }).optional(),
   /** The ward has been used this turn. */
   wardUsed: z.boolean().optional(),
+  /** Lifts its bearer this many feet while it lasts; it falls back down when it ends (reverse gravity). */
+  lifted: z.number().positive().optional(),
+  /** Where the bearer is made to walk as each of its turns starts (compulsion, steered by its caster). */
+  towards: z.tuple([z.number(), z.number()]).optional(),
+  /** Turns its bearer takes in a row after this one (time stop); it ends when they affect anyone else. */
+  extraTurns: z.number().int().min(0).optional(),
   /** Damage the bearer takes at the start of each of its turns (searing smite, phantasmal killer). */
   turnDamage: z.array(DamageSchema).optional(),
   /** Hit points the bearer regains at the start of each of its turns (regenerate). */
@@ -242,6 +236,10 @@ export const EffectTemplateSchema = z.object({
   repeatSave: z.boolean().optional(),
   /** Ends when the bearer attacks or casts a spell (invisibility). */
   endsOnAttack: z.boolean().optional(),
+  /** With `repeatSave`: saved with this ability instead of the spell's (prismatic spray's indigo ray: Constitution). */
+  saveWith: AbilitySchema.optional(),
+  /** With `repeatSave`: the saves are tallied, three successes end it and three failures make it `worsens` (flesh to stone). */
+  threeTimes: z.boolean().optional(),
   /** With `repeatSave`: failing the repeated save swaps the conditions for these and ends the saves (2024 sleep). */
   worsens: z.array(ConditionSchema).optional(),
   /**
@@ -265,6 +263,8 @@ export const EffectSchema = EffectTemplateSchema.extend({
   source: z.string().optional(),
   /** Ends when the source stops concentrating. */
   concentration: z.boolean().optional(),
+  /** With `threeTimes`: the saves made so far. */
+  tally: z.object({ saved: z.number().int(), failed: z.number().int() }).optional(),
   /** For `repeatSave`: the ability and DC to save against. */
   save: z.object({ ability: AbilitySchema, dc: z.number().int() }).optional(),
   /** Only attacks by this token get `advantageAgainst` (vex). */
@@ -365,6 +365,9 @@ export type Summon = z.infer<typeof SummonSchema>;
 export const CastingTimeSchema = z.enum(['action', 'bonus', 'reaction', 'minute', 'hour']);
 export type CastingTime = z.infer<typeof CastingTimeSchema>;
 
+/** Spell options that set fields over the spell's own (`null` takes one away): the caster's choices, or rays. */
+const OptionsSchema = z.array(z.object({ id, name: z.string().min(1), set: z.record(z.string(), z.unknown()) })).min(2);
+
 export const SpellSchema = z.object({
   id,
   name: z.string().min(1),
@@ -397,6 +400,8 @@ export const SpellSchema = z.object({
       wall: WallRulesSchema.pick({ move: true, sight: true, light: true, sound: true })
         .extend({ shape: z.enum(['line', 'ring']) })
         .optional(),
+      /** The area is difficult ground: moving costs `multiplier` times as much (spike growth, web, plant growth). */
+      ground: z.object({ multiplier: z.number().int().min(2) }).optional(),
     })
     .optional(),
   /**
@@ -415,6 +420,8 @@ export const SpellSchema = z.object({
       onCast: z.boolean().default(true),
       /** A DC of its own instead of the caster's (contact other plane: 15). */
       dc: z.number().int().positive().optional(),
+      /** An ability check in `ability` against the caster's spellcasting check instead of a save (2014 telekinesis). */
+      contest: z.boolean().optional(),
     })
     .optional(),
   damage: z.array(DamageSchema).default([]),
@@ -505,6 +512,12 @@ export const SpellSchema = z.object({
   again: z.record(z.string(), z.unknown()).optional(),
   /** Casting it lets the caster make one weapon attack at once, as part of the action (2024 true strike). */
   weaponStrike: z.boolean().optional(),
+  /** Cast only as a reaction to another creature casting a spell (counterspell). */
+  counter: z.boolean().optional(),
+  /** Used with a point: the creatures its effect holds walk there as their turns start (compulsion used again). */
+  steer: z.boolean().optional(),
+  /** Dice for the turns its caster takes in a row (time stop). */
+  extraTurns: z.string().optional(),
   /** Effects by the target's hit points: the first tier whose `atMost` it is within applies instead of the spell's effect (power word kill). */
   hpTiers: z
     .array(
@@ -526,10 +539,9 @@ export const SpellSchema = z.object({
    * spell's own (`null` takes one away): a damage type, enlarge or reduce, a
    * curse. Checked against this schema when picked (see `withChoice`).
    */
-  choices: z
-    .array(z.object({ id, name: z.string().min(1), set: z.record(z.string(), z.unknown()) }))
-    .min(2)
-    .optional(),
+  choices: OptionsSchema.optional(),
+  /** Rays: each target gets one at random, set over the spell like a choice; the top face (one past the last) strikes with two (prismatic spray). */
+  rays: OptionsSchema.optional(),
   /** The id of the choice this spell was cast with. */
   chosen: id.optional(),
   /** Only creatures of these types are affected (hold person: humanoid). */

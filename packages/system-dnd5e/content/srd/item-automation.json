@@ -120,7 +120,7 @@
   "eyes-of-the-eagle": {
     "both": {
       "effect": {
-        "checkAdvantage": ["perception"]
+        "checkAdvantageFor": ["perception"]
       },
       "gmNote": "Only for checks that rely on sight."
     }
@@ -128,7 +128,7 @@
   "eyes-of-minute-seeing": {
     "both": {
       "effect": {
-        "checkAdvantage": ["investigation"]
+        "checkAdvantageFor": ["investigation"]
       },
       "gmNote": "Only for checks that rely on sight, within 1 foot."
     }
@@ -1189,7 +1189,7 @@
       "use": {
         "potion": true,
         "effect": {
-          "checkAdvantage": ["str"],
+          "checkAdvantageFor": ["str"],
           "saveAdvantage": ["str"],
           "rounds": 1200
         }

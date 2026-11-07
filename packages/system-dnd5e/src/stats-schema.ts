@@ -16,6 +16,12 @@ const score = z.number().int().min(1).max(30).default(10);
 export const AbilitiesSchema = z.object({ str: score, dex: score, con: score, int: score, wis: score, cha: score });
 export type Abilities = z.infer<typeof AbilitiesSchema>;
 
+/** Other ways of moving, in feet; "walk" is as fast as the creature walks (winged boots). */
+const MoveSpeedSchema = z.union([z.number().nonnegative(), z.literal('walk')]);
+export const OtherSpeedsSchema = z
+  .object({ fly: MoveSpeedSchema, swim: MoveSpeedSchema, climb: MoveSpeedSchema, hover: z.boolean() })
+  .partial();
+
 export const DamageTypeSchema = z.enum([
   'acid',
   'bludgeoning',

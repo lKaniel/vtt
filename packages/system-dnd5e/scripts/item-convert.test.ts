@@ -52,7 +52,7 @@ describe.each(['5.1', '5.2'] as const)('converting the SRD %s items', (v) => {
 
   it('reads worn effects, potions and books', () => {
     expect(out.get('ring-of-protection')).toMatchObject({ effect: { ac: 1 }, bonus: { saves: 1 } });
-    expect(out.get('cloak-of-elvenkind')).toMatchObject({ effect: { checkAdvantage: ['stealth'] } });
+    expect(out.get('cloak-of-elvenkind')).toMatchObject({ effect: { checkAdvantageFor: ['stealth'] } });
     expect(out.get('potion-of-heroism')).toMatchObject({ use: { potion: true, tempHp: 10 } });
     expect(out.get('manual-of-bodily-health')).toMatchObject({ use: { raise: { ability: 'con', by: 2 } } });
   });

@@ -5,7 +5,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '../support/fixtures.ts';
 import { screenOf } from '../support/map.ts';
-import { GM, atTable } from '../support/table.ts';
+import { GM, PLAYER_2, atTable } from '../support/table.ts';
 
 interface Box {
   name: string;
@@ -21,10 +21,11 @@ const PARTS = {
   party: '.party',
   'map tools': '.map-tools',
   'side panel': 'aside.chat',
+  'action bar': '.actionbar-wrap',
 };
 
 /** The boxes of the parts on screen now. */
-function boxes(page: Page): Promise<Box[]> {
+function boxes(page: Page, parts: Record<string, string>): Promise<Box[]> {
   return page.evaluate((parts) => {
     return Object.entries(parts).flatMap(([name, selector]) => {
       const el = document.querySelector(selector);
@@ -32,15 +33,15 @@ function boxes(page: Page): Promise<Box[]> {
       const r = el.getBoundingClientRect();
       return [{ name, x: r.x, y: r.y, width: r.width, height: r.height }];
     });
-  }, PARTS);
+  }, parts);
 }
 
 const overlap = (a: Box, b: Box) =>
   a.x < b.x + b.width - 1 && b.x < a.x + a.width - 1 && a.y < b.y + b.height - 1 && b.y < a.y + a.height - 1;
 
 /** Each pair of parts that lie over each other, by name. */
-async function overlaps(page: Page): Promise<string[]> {
-  const all = await boxes(page);
+async function overlaps(page: Page, parts: Record<string, string> = PARTS): Promise<string[]> {
+  const all = await boxes(page, parts);
   return all.flatMap((a, i) =>
     all
       .slice(i + 1)
@@ -49,9 +50,12 @@ async function overlaps(page: Page): Promise<string[]> {
   );
 }
 
-for (const viewport of [
-  { width: 1024, height: 640 },
-  { width: 1366, height: 768 },
+// On a small screen the action bar may sit over the side panel's foot; from a laptop up it keeps clear.
+const { 'action bar': _bar, ...FRAME } = PARTS;
+
+for (const { viewport, parts } of [
+  { viewport: { width: 1024, height: 640 }, parts: FRAME },
+  { viewport: { width: 1366, height: 768 }, parts: PARTS },
 ]) {
   test(`at ${viewport.width}x${viewport.height} the GM's panels do not overlap, in a fight or out`, async ({
     page,
@@ -59,11 +63,11 @@ for (const viewport of [
     await page.setViewportSize(viewport);
     await atTable(page, GM);
     await expect(page.getByRole('button', { name: 'Start combat' })).toBeVisible();
-    expect(await overlaps(page)).toEqual([]);
+    expect(await overlaps(page, parts)).toEqual([]);
 
     await page.getByRole('button', { name: 'Start combat' }).click();
     await expect(page.getByRole('button', { name: 'End combat' })).toBeVisible();
-    expect(await overlaps(page)).toEqual([]);
+    expect(await overlaps(page, parts)).toEqual([]);
   });
 }
 
@@ -71,11 +75,11 @@ test("the GM's fog and daylight tools stay folded until asked for", async ({ pag
   await atTable(page, GM);
   await expect(page.getByRole('toolbar', { name: 'Editor mode' })).toBeVisible();
   await expect(page.getByRole('toolbar', { name: 'Fog of war' })).toHaveCount(0);
-  // The fog button ends the row of modes rather than taking a row of its own.
+  // The fog button ends the rail of modes rather than standing apart.
   const modes = page.getByRole('toolbar', { name: 'Editor mode' });
   const first = (await modes.getByRole('button', { name: 'Tokens' }).boundingBox())!;
   const fog = (await modes.getByRole('button', { name: 'Fog and daylight' }).boundingBox())!;
-  expect(fog.y).toBe(first.y);
+  expect(fog.x).toBe(first.x);
   await page.getByRole('button', { name: 'Fog and daylight' }).click();
   await expect(page.getByRole('toolbar', { name: 'Fog of war' })).toBeVisible();
   await expect(page.getByText('Night', { exact: true })).toBeVisible();
@@ -128,4 +132,16 @@ test('the right-click menu sets Delete apart from the rest', async ({ page }) =>
   const menu = page.getByRole('menu');
   await expect(menu.getByRole('menuitem', { name: 'Delete' })).toBeVisible();
   await expect(menu.getByRole('separator')).toHaveCount(1);
+});
+
+test("on a laptop screen a player's action bar leaves room for the map, the side panel and the map tools", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await atTable(page, PLAYER_2);
+  await expect.poll(() => page.evaluate(() => vtt.selected()?.id)).toBe('bram');
+  await expect(page.locator('.actionbar-wrap')).toBeVisible();
+  expect(await overlaps(page)).toEqual([]);
+  const bar = (await page.locator('.actionbar-wrap').boundingBox())!;
+  expect(bar.height).toBeLessThan(768 * 0.4);
 });
