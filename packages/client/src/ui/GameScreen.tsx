@@ -1,4 +1,4 @@
-import { BookOpenIcon, BoxIcon, GhostIcon, MapIcon, Redo2Icon, Undo2Icon } from 'lucide-react';
+import { BookOpenIcon, BoxIcon, GhostIcon, LogOutIcon, MapIcon, Redo2Icon, Undo2Icon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { SoundScape } from '../audio/audio.ts';
 import { MapView } from '../canvas/MapView.ts';
@@ -53,14 +53,17 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
 
   return (
     // The party portraits move down under the scene navigation bar while it shows.
-    <div className="game has-[[data-slot=scene-nav]]:[&_.party]:top-[84px]!">
+    <div className="game has-[[data-slot=scene-nav]]:[&_.party]:top-[94px]!">
       <div className="map" ref={host} />
-      <TopBar session={session} onLeave={onLeave} />
+      {/* The top bar and the fight controls share one row, so neither can lie over the other. */}
+      <div className="top-strip">
+        <TopBar session={session} onLeave={onLeave} />
+        <TurnOrder
+          session={session}
+          onStart={(shared) => session.requests.startCombat(session.editor.fightersInView(), shared)}
+        />
+      </div>
       <SceneNav session={session} />
-      <TurnOrder
-        session={session}
-        onStart={(shared) => session.requests.startCombat(session.editor.fightersInView(), shared)}
-      />
       <PartyBar session={session} />
       <MapTools session={session} />
       <Inspector session={session} />
@@ -93,7 +96,9 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
         className={`status status-${session.status}`}
         title={session.status === 'open' ? 'Connected' : session.status}
       />
-      <strong className="world-name">{session.world?.name ?? 'Connecting…'}</strong>
+      <strong className="world-name" title={session.world?.name}>
+        {session.world?.name ?? 'Connecting…'}
+      </strong>
       {session.scenes.name && <span className="scene-name">{session.scenes.name}</span>}
       <ClockBar session={session} />
       <span className="you" style={{ color: session.you?.color }}>
@@ -105,8 +110,8 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
       <ThroughWallsButton session={session} />
       <View3DButton session={session} />
       <SettingsMenu session={session} />
-      <Button variant="link" onClick={onLeave}>
-        Leave
+      <Button variant="ghost" size="icon-sm" onClick={onLeave} title={t('table.leave')} aria-label={t('table.leave')}>
+        <LogOutIcon />
       </Button>
     </header>
   );

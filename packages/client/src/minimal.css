@@ -61,20 +61,70 @@
   background: rgba(14, 13, 11, 0.85);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
 }
-/* They sit between the top bar and the log, wrapping, never over either. */
-@media (min-width: 801px) {
-  .turn-order.idle {
-    left: 610px;
-    right: 350px;
-    max-width: none;
-    transform: none;
+/*
+ * The top strip: the top bar, then the fight controls in what is left of
+ * the row up to the side panel, centred there and wrapping in place. Being
+ * one row, neither can lie over the other on any screen.
+ */
+.top-strip {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: calc(var(--side-w) + 8px);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  pointer-events: none;
+}
+.top-strip > * {
+  pointer-events: auto;
+}
+.top-strip .topbar,
+.top-strip .turn-order,
+.top-strip .turn-order.idle {
+  position: static;
+  max-width: none;
+  transform: none;
+}
+.top-strip .topbar {
+  flex: none;
+}
+.top-strip .turn-order {
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+.top-strip .turns {
+  min-width: 0;
+}
+.topbar .world-name {
+  max-width: 180px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* Too narrow for both in one row: the fight controls take a row of their own, right of the party. */
+@media (min-width: 801px) and (max-width: 1499px) {
+  .top-strip {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .top-strip .turn-order {
+    flex-basis: calc(100% - 180px);
+    margin-left: 180px;
+  }
+}
+@media (max-width: 800px) {
+  .top-strip {
+    right: 8px;
+    flex-wrap: wrap;
   }
 }
 
 /* ---------- Party ---------- */
 
 .party {
-  top: 46px;
+  top: 58px;
   left: 8px;
   gap: 4px;
 }

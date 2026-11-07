@@ -113,7 +113,8 @@ test('a long rest heals the party', async ({ page, seat }) => {
   await atTable(page, GM);
   const player = await seat(PLAYER_2);
   await expect(player.getByRole('button', { name: 'Bram 10/28' })).toBeVisible();
-  await page.getByRole('button', { name: 'Long rest' }).click();
+  await page.getByRole('button', { name: 'Rest' }).click();
+  await page.getByRole('button', { name: /^Long rest/ }).click();
   await expect(player.getByRole('button', { name: 'Bram 28/28' })).toBeVisible();
 });
 

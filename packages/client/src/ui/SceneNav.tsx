@@ -20,7 +20,7 @@ export function SceneNav({ session }: Readonly<{ session: Session }>) {
     <nav
       data-slot="scene-nav"
       aria-label="Scenes"
-      className="absolute top-12 left-2 z-20 flex max-w-[60vw] items-center gap-1"
+      className="absolute top-[58px] left-2 z-20 flex max-w-[60vw] items-center gap-1"
     >
       <Button
         size="icon-sm"
