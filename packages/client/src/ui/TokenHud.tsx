@@ -1,3 +1,4 @@
+import { TOKEN_FILTERS } from '@vtt/shared';
 import { ConditionSchema, type Condition, type TokenView } from '@vtt/system-dnd5e';
 import { XIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
@@ -6,13 +7,15 @@ import { Button } from './kit/button.tsx';
 import { Label } from './kit/label.tsx';
 import { NumberField } from './kit/number-field.tsx';
 import { Toggle } from './kit/toggle.tsx';
+import { SelectField } from './kit/select.tsx';
+import { t } from '../i18n/index.ts';
 
 // The token HUD (session-hud.ts): beside one creature you control, its
 // conditions, hit points and elevation; for the GM also whether players see
 // it and whether it is in the fight.
 
 const WIDTH = 300;
-const HEIGHT = 330;
+const HEIGHT = 370;
 
 /** The HUD the map's menu opened. A click elsewhere or Esc closes it. */
 export function TokenHud({ session }: Readonly<{ session: Session }>) {
@@ -21,7 +24,10 @@ export function TokenHud({ session }: Readonly<{ session: Session }>) {
   useEffect(() => {
     if (!hud) return;
     const away = (e: PointerEvent) => {
-      if (!box.current?.contains(e.target as Node)) session.hud.close();
+      const target = e.target as Element;
+      // A list the HUD opened (the colour filter's) floats outside it, in a portal.
+      if (target.closest('[data-radix-popper-content-wrapper]')) return;
+      if (!box.current?.contains(target)) session.hud.close();
     };
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && session.hud.close();
     addEventListener('pointerdown', away, true);
@@ -52,6 +58,7 @@ export function TokenHud({ session }: Readonly<{ session: Session }>) {
       </div>
       <Numbers session={session} token={token} />
       {session.isGm() && <GmToggles session={session} token={token} />}
+      {session.isGm() && <ColourFilter session={session} token={token} />}
       <Conditions session={session} token={token} />
     </div>
   );
@@ -114,6 +121,23 @@ function GmToggles({ session, token }: Props) {
       >
         In combat
       </Toggle>
+    </div>
+  );
+}
+
+/** GM: a colour filter over the creature's picture (a ghost, a statue, an old photo). */
+function ColourFilter({ session, token }: Props) {
+  const filter = (token as { filter?: string }).filter;
+  const set = (value: string) => session.requests.editToken(token.id, { filter: value || null });
+  return (
+    <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
+      <Label>{t('hud.filter')}</Label>
+      <SelectField
+        aria-label={t('hud.filter')}
+        value={typeof filter === 'string' ? filter : ''}
+        onValueChange={set}
+        options={[{ value: '', label: t('hud.filterNone') }, ...TOKEN_FILTERS.map((f) => ({ value: f, label: f }))]}
+      />
     </div>
   );
 }
