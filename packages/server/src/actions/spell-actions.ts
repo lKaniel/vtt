@@ -11,6 +11,7 @@ import {
   lastingEffects,
   makesDeathSaves,
   manualNote,
+  withAgain,
   withChoice,
   resolveCast,
   scaledSpell,
@@ -22,12 +23,13 @@ import {
   tokenDistance,
   spendResistance,
   characterLevel,
+  stoppedBy,
 } from '@vtt/system-dnd5e';
 import { gridKind, isGridless, placeToken, type Player, type Point } from '@vtt/shared';
 import { castBreaksSanctuary, passSanctuaries } from '../play/spell-wards.ts';
 import { shaped } from '../play/spell-forms.ts';
 import { summon } from '../play/spell-summons.ts';
-import { doorAt, setDoor } from '../play/spell-doors.ts';
+import { type DoorPick, doorAt, setDoor } from '../play/spell-doors.ts';
 import { Refusal, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 export interface CastRequest {
@@ -52,6 +54,8 @@ interface Plan {
   slot: number;
   spend: number;
   again: boolean;
+  /** The DC it was handed on with (dragon's breath): the original caster's. */
+  dc?: number;
 }
 
 const COST: Record<CastingTime, Cost> = {
@@ -82,7 +86,7 @@ export class SpellActions {
     const known = this.table.content(actor.token).spells.get(req.spell);
     if (!known) throw new Refusal(`There is no spell called ${req.spell}`);
     const { caster, plan, reader } = this.prepare(actor, known, req);
-    const picked = chosen(caster, known, req.choice);
+    const picked = chosen(caster, known, req.choice, plan.again);
     this.table.check(caster.token, plan.cost);
     const targets = this.aim(caster, picked, { ...req, slot: plan.slot }, { canSee, again: plan.again });
     const door = picked.door ? doorAt(this.store, req.point!, picked.door) : undefined;
@@ -92,16 +96,28 @@ export class SpellActions {
     castBreaksSanctuary(this.table, caster, spell, targets);
     if (!plan.again) this.begin(caster, spell, plan.spend, !!reader);
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
+    const notes = this.conjure(caster, spell, { ...req, slot: plan.slot }, door);
+    const free = req.free && plan.slot > 0 && !plan.again ? ['cast without a spell slot'] : [];
+    this.strike(caster.token.id, { spell, slot: plan.slot, point: req.point, reader, dc: plan.dc }, targets, [
+      ...free,
+      ...notes,
+    ]);
+  }
+
+  /** What the spell does besides hitting its targets: moves its caster, works a door, summons, or readies a weapon attack. */
+  private conjure(caster: Fighter, spell: Spell, req: CastRequest, door: DoorPick | undefined): string[] {
     if (spell.teleport) this.teleport(caster.token.id, req.point!);
     if (spell.door) setDoor(this.store, door!, spell.door);
-    const summoned = spell.summon
-      ? summon(this.table, this.table.fighter(caster.token.id), spell, { ...req, slot: plan.slot })
-      : [];
-    const free = req.free && plan.slot > 0 && !plan.again ? ['cast without a spell slot'] : [];
-    this.strike(caster.token.id, { spell, slot: plan.slot, point: req.point, reader }, targets, [
-      ...free,
-      ...summonNotes(summoned),
-    ]);
+    if (spell.weaponStrike) this.readyStrike(caster.token.id);
+    if (!spell.summon) return [];
+    return summonNotes(summon(this.table, this.table.fighter(caster.token.id), spell, req));
+  }
+
+  /** 2024 true strike: the attack it is cast with comes on top of the action that cast it. */
+  private readyStrike(id: string): void {
+    const token = this.store.tokens.get(id)!;
+    const left = this.table.budget(token);
+    if (left) this.table.setBudget(token, { ...left, attacks: left.attacks + 1 });
   }
 
   /** Who the spell hits now: no one when casting only conjures it (flame blade) or its zone waits for creatures to enter. */
@@ -121,7 +137,9 @@ export class SpellActions {
     if (req.repeat) {
       const going = caster.sheet.effects.find((e) => e.repeat?.spell === spell.id);
       if (!going || !spell.repeat) throw new Refusal(`${spell.name} isn't going`);
-      return { cost: spell.repeat, slot: going.repeat!.slot, spend: 0, again: true };
+      const stopped = stoppedBy(caster.sheet, spell);
+      if (stopped) throw new Refusal(`${caster.token.name} ${stopped}`);
+      return { cost: spell.repeat, slot: going.repeat!.slot, spend: 0, again: true, dc: going.repeat!.dc };
     }
     const problem = castProblem({ spell, slot: req.slot, sheet: caster.sheet, free: req.free });
     if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
@@ -146,6 +164,8 @@ export class SpellActions {
 
   /** A scroll's spell: cast at its own level with no slot, in a fight only on your turn like any other. */
   private scrollPlan(caster: Fighter, spell: Spell): Plan {
+    const stopped = stoppedBy(caster.sheet, spell);
+    if (stopped) throw new Refusal(`${caster.token.name} ${stopped}`);
     if ((spell.castingTime === 'minute' || spell.castingTime === 'hour') && this.table.inFight(caster.token.id)) {
       throw new Refusal(`${spell.name} takes too long to cast in a fight`);
     }
@@ -155,14 +175,20 @@ export class SpellActions {
   /** Rolls a spell from `casterId` against `targets`, applies it and logs it: casts, features and zones. `reader`: read from a scroll. */
   strike(
     casterId: string,
-    { spell, slot, point, reader }: { spell: Spell; slot: number; point?: Point; reader?: CasterSheet },
+    {
+      spell,
+      slot,
+      point,
+      reader,
+      dc,
+    }: { spell: Spell; slot: number; point?: Point; reader?: CasterSheet; dc?: number },
     targets: Fighter[],
     notes: string[] = [],
   ): void {
     const fighter = this.table.fighter(casterId);
     const caster = reader ? { ...fighter, sheet: { ...fighter.sheet, caster: reader } } : fighter;
     const grid = gridKind(this.store.world);
-    const outcome = resolveCast({ spell, slot, caster, targets, gridSize: this.grid, grid }, this.table.rng);
+    const outcome = resolveCast({ spell, slot, caster, targets, gridSize: this.grid, grid, dc }, this.table.rng);
     this.apply(outcome);
     const pushed = this.push(caster.token, outcome);
     const drained = this.drain(casterId, outcome.drained);
@@ -410,10 +436,11 @@ export class SpellActions {
 }
 
 /** The spell with the option picked for it: the one asked for, else the one a going spell was cast with, else the first. */
-function chosen(caster: Fighter, spell: Spell, choice: string | undefined): Spell {
+function chosen(caster: Fighter, spell: Spell, choice: string | undefined, again: boolean): Spell {
   const going = caster.sheet.effects.find((e) => e.repeat?.spell === spell.id)?.repeat?.choice;
   try {
-    return withChoice(spell, choice ?? going);
+    const picked = withChoice(spell, choice ?? going);
+    return again ? withAgain(picked) : picked;
   } catch (e) {
     throw new Refusal((e as Error).message);
   }

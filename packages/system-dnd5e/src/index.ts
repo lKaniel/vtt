@@ -31,6 +31,7 @@ export * from './weapon-attack.ts';
 export * from './wards.ts';
 export * from './forms.ts';
 export * from './spell-creatures.ts';
+export * from './barriers.ts';
 export * from './riders.ts';
 export * from './spawn.ts';
 export * from './forced-move.ts';

@@ -29,6 +29,7 @@ const doesSomething = (s: Spell) =>
     s.places,
     s.hpTiers,
     s.door,
+    s.field,
   ].some(Boolean);
 
 describe.each(EDITIONS)('automated %s spells', (edition) => {

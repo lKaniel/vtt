@@ -1,6 +1,7 @@
 import type { Creature } from './creature.ts';
 import { type GridKind, type Lattice, latticeOf, type Rng, roll, type Roll } from '@vtt/shared';
 import { d20Formula } from './effects.ts';
+import type { Effect } from './spell-schema.ts';
 import type { Attack, Damage, DamageType } from './stats-schema.ts';
 
 export interface AttackOptions {
@@ -66,15 +67,46 @@ function adjustedDamage(
   return out;
 }
 
-/** Applies damage to a creature, temporary hit points first; returns what each part dealt and what's left. */
-export function applyDamage(
-  target: Pick<Creature, 'hp' | 'tempHp' | 'immunities' | 'resistances' | 'vulnerabilities'>,
+type Struck = Pick<Creature, 'hp' | 'tempHp' | 'immunities' | 'resistances' | 'vulnerabilities'> &
+  Partial<Pick<Creature, 'effects'>>;
+
+/** The ward that takes a roll off this damage (2024 resistance), unless it was used this turn. */
+function wardFor(target: Struck, parts: readonly { type: DamageType }[]): Effect | undefined {
+  return target.effects?.find((e) => e.ward && !e.wardUsed && parts.some((p) => e.ward!.types.includes(p.type)));
+}
+
+/** Damage after a ward's roll comes off the first part of a type it wards. */
+function wardedParts(
   parts: readonly { amount: number; type: DamageType }[],
-): { dealt: number[]; hp: number; tempHp: number } {
-  const dealt = parts.map((p) => adjustedDamage(target, p.amount, p.type));
+  ward: Effect | undefined,
+  rng: Rng | undefined,
+): { amount: number; type: DamageType }[] {
+  if (!ward || !rng) return [...parts];
+  const at = parts.findIndex((p) => ward.ward!.types.includes(p.type));
+  const off = roll(ward.ward!.dice, rng).total;
+  return parts.map((p, i) => (i === at ? { ...p, amount: Math.max(0, p.amount - off) } : p));
+}
+
+/**
+ * Applies damage to a creature, temporary hit points first; returns what each
+ * part dealt and what's left. With `rng`, a ward on the creature (2024
+ * resistance) takes its roll off first, and `warded` names it.
+ */
+export function applyDamage(
+  target: Struck,
+  parts: readonly { amount: number; type: DamageType }[],
+  rng?: Rng,
+): { dealt: number[]; hp: number; tempHp: number; warded?: string } {
+  const ward = rng ? wardFor(target, parts) : undefined;
+  const dealt = wardedParts(parts, ward, rng).map((p) => adjustedDamage(target, p.amount, p.type));
   const total = dealt.reduce((sum, d) => sum + d, 0);
   const absorbed = Math.min(target.tempHp, total);
-  return { dealt, hp: Math.max(0, target.hp - (total - absorbed)), tempHp: target.tempHp - absorbed };
+  return {
+    dealt,
+    hp: Math.max(0, target.hp - (total - absorbed)),
+    tempHp: target.tempHp - absorbed,
+    ...(ward && { warded: ward.id }),
+  };
 }
 
 interface Placed {

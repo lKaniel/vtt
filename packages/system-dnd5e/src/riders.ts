@@ -1,7 +1,8 @@
 import type { Creature } from './creature.ts';
 import type { Affected, UsedEffect } from './effects.ts';
-import type { RiderDamage } from './spell-schema.ts';
-import type { Attack, Damage, DamageType } from './stats-schema.ts';
+import { abilityMod } from './creature-math.ts';
+import type { Effect, RiderDamage } from './spell-schema.ts';
+import type { Abilities, Attack, Damage, DamageType } from './stats-schema.ts';
 
 // Damage that rides on hits: divine favor and smites on the attacker, hunter's
 // mark and hex on the target, magic weapon bonuses and the 2014 paladin's
@@ -55,4 +56,38 @@ export function smiteProblem(sheet: Creature, attack: Attack, slot: number): str
   if (attack.kind !== 'melee') return 'can only smite with a melee attack';
   if (!sheet.caster.left[slot - 1]) return `has no ${ORDINAL[slot] ?? 'such'}-level slots left`;
   return undefined;
+}
+
+const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+/** The weapon spell on these effects that works on this attack (shillelagh: a club or quarterstaff), if any. */
+function weaponSpellFor(attack: Attack, effects: readonly Effect[]): Effect['weaponSpell'] {
+  if (!attack.weapon) return undefined;
+  const name = slug(attack.name);
+  return effects.find(
+    (e) => e.weaponSpell && (!e.weaponSpell.weapons.length || e.weaponSpell.weapons.some((w) => name.startsWith(w))),
+  )?.weaponSpell;
+}
+
+/** Attacks with the weapons a spell empowers: its ability for the roll and damage, its die and damage type. */
+export function withWeaponSpells(
+  attacks: readonly Attack[],
+  effects: readonly Effect[],
+  abilities: Abilities,
+): Attack[] {
+  if (!effects.some((e) => e.weaponSpell)) return [...attacks];
+  return attacks.map((a) => {
+    const ws = weaponSpellFor(a, effects);
+    if (!ws || !a.weapon) return a;
+    const ability = ws.ability ?? a.weapon.ability;
+    const shift = abilityMod(abilities[ability]) - abilityMod(abilities[a.weapon.ability]);
+    const [first, ...rest] = a.damage;
+    const die = /^\d*d\d+/.exec(first!.dice)?.[0] ?? '';
+    const tail = first!.dice.slice(die.length);
+    const bonus = a.offHand || shift === 0 ? '' : signed(shift);
+    const dice = `${ws.dice?.[0] ?? die}${tail}${bonus}`;
+    const damage = [{ dice, type: ws.type ?? first!.type }, ...rest];
+    return { ...a, toHit: a.toHit + shift, damage, weapon: { ...a.weapon, ability } };
+  });
 }

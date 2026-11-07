@@ -477,18 +477,32 @@
   },
   "antilife-shell": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "A barrier creatures can’t push into; the GM stops them."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "area": null,
+      "effect": {
+        "name": "Antilife Shell",
+        "barrier": {
+          "radius": 10,
+          "except": ["undead", "construct"]
+        }
+      },
+      "gmNote": "Creatures already inside may stay. It moves with you, and ends if you push it into a creature it holds back."
     }
   },
   "antimagic-field": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs an area that suppresses magic."
-      }
+      "automated": true,
+      "manual": null,
+      "zone": {
+        "onCast": false
+      },
+      "field": {
+        "name": "Antimagic Field",
+        "antimagic": true
+      },
+      "gmNote": "Magic items stop working and summoned creatures and spell tokens wink out while inside: the GM handles those."
     }
   },
   "antipathy-sympathy": {
@@ -658,10 +672,21 @@
   },
   "aura-of-life": {
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs an aura that gives its effect to allies while they stand in it."
-      }
+      "automated": true,
+      "manual": null,
+      "zone": {
+        "onCast": false
+      },
+      "field": {
+        "name": "Aura of Life",
+        "resistances": ["necrotic"],
+        "lifeline": true,
+        "aura": {
+          "who": "allies",
+          "radius": 30
+        }
+      },
+      "gmNote": "Hit point maximums can't be reduced inside it."
     }
   },
   "awaken": {
@@ -2225,10 +2250,179 @@
   },
   "dragons-breath": {
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a spell handed to another creature, with a damage type chosen."
-      }
+      "automated": true,
+      "manual": null,
+      "area": null,
+      "repeat": "action",
+      "repeatBy": "target",
+      "effect": {
+        "name": "Dragon's Breath"
+      },
+      "again": {
+        "targets": 1,
+        "range": 0,
+        "area": {
+          "shape": "cone",
+          "size": 15
+        },
+        "save": {
+          "ability": "dex",
+          "onSave": "half"
+        },
+        "damage": [
+          {
+            "dice": "3d6",
+            "type": "acid"
+          }
+        ],
+        "effect": null,
+        "upcast": {
+          "damage": "1d6"
+        }
+      },
+      "choices": [
+        {
+          "id": "acid",
+          "name": "Acid",
+          "set": {
+            "again": {
+              "targets": 1,
+              "range": 0,
+              "area": {
+                "shape": "cone",
+                "size": 15
+              },
+              "save": {
+                "ability": "dex",
+                "onSave": "half"
+              },
+              "damage": [
+                {
+                  "dice": "3d6",
+                  "type": "acid"
+                }
+              ],
+              "effect": null,
+              "upcast": {
+                "damage": "1d6"
+              }
+            }
+          }
+        },
+        {
+          "id": "cold",
+          "name": "Cold",
+          "set": {
+            "again": {
+              "targets": 1,
+              "range": 0,
+              "area": {
+                "shape": "cone",
+                "size": 15
+              },
+              "save": {
+                "ability": "dex",
+                "onSave": "half"
+              },
+              "damage": [
+                {
+                  "dice": "3d6",
+                  "type": "cold"
+                }
+              ],
+              "effect": null,
+              "upcast": {
+                "damage": "1d6"
+              }
+            }
+          }
+        },
+        {
+          "id": "fire",
+          "name": "Fire",
+          "set": {
+            "again": {
+              "targets": 1,
+              "range": 0,
+              "area": {
+                "shape": "cone",
+                "size": 15
+              },
+              "save": {
+                "ability": "dex",
+                "onSave": "half"
+              },
+              "damage": [
+                {
+                  "dice": "3d6",
+                  "type": "fire"
+                }
+              ],
+              "effect": null,
+              "upcast": {
+                "damage": "1d6"
+              }
+            }
+          }
+        },
+        {
+          "id": "lightning",
+          "name": "Lightning",
+          "set": {
+            "again": {
+              "targets": 1,
+              "range": 0,
+              "area": {
+                "shape": "cone",
+                "size": 15
+              },
+              "save": {
+                "ability": "dex",
+                "onSave": "half"
+              },
+              "damage": [
+                {
+                  "dice": "3d6",
+                  "type": "lightning"
+                }
+              ],
+              "effect": null,
+              "upcast": {
+                "damage": "1d6"
+              }
+            }
+          }
+        },
+        {
+          "id": "poison",
+          "name": "Poison",
+          "set": {
+            "again": {
+              "targets": 1,
+              "range": 0,
+              "area": {
+                "shape": "cone",
+                "size": 15
+              },
+              "save": {
+                "ability": "dex",
+                "onSave": "half"
+              },
+              "damage": [
+                {
+                  "dice": "3d6",
+                  "type": "poison"
+                }
+              ],
+              "effect": null,
+              "upcast": {
+                "damage": "1d6"
+              }
+            }
+          }
+        }
+      ],
+      "gmNote": "The creature touched exhales with its action, on any of its turns while the spell lasts."
     }
   },
   "dream": {
@@ -3499,10 +3693,19 @@
   },
   "globe-of-invulnerability": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs an area that stops spells of lower level from outside."
-      }
+      "automated": true,
+      "manual": null,
+      "zone": {
+        "onCast": false
+      },
+      "field": {
+        "name": "Globe of Invulnerability",
+        "spellWard": 5
+      },
+      "upcast": {
+        "ward": 1
+      },
+      "gmNote": "The globe doesn't move with you."
     }
   },
   "glyph-of-warding": {
@@ -5260,11 +5463,160 @@
   "resistance": {
     "both": {},
     "2024": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Damage reduced once per turn: not tracked yet."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Resistance (Acid)",
+        "ward": {
+          "dice": "1d4",
+          "types": ["acid"]
+        }
+      },
+      "choices": [
+        {
+          "id": "acid",
+          "name": "Acid",
+          "set": {
+            "effect": {
+              "name": "Resistance (Acid)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["acid"]
+              }
+            }
+          }
+        },
+        {
+          "id": "bludgeoning",
+          "name": "Bludgeoning",
+          "set": {
+            "effect": {
+              "name": "Resistance (Bludgeoning)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["bludgeoning"]
+              }
+            }
+          }
+        },
+        {
+          "id": "cold",
+          "name": "Cold",
+          "set": {
+            "effect": {
+              "name": "Resistance (Cold)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["cold"]
+              }
+            }
+          }
+        },
+        {
+          "id": "fire",
+          "name": "Fire",
+          "set": {
+            "effect": {
+              "name": "Resistance (Fire)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["fire"]
+              }
+            }
+          }
+        },
+        {
+          "id": "lightning",
+          "name": "Lightning",
+          "set": {
+            "effect": {
+              "name": "Resistance (Lightning)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["lightning"]
+              }
+            }
+          }
+        },
+        {
+          "id": "necrotic",
+          "name": "Necrotic",
+          "set": {
+            "effect": {
+              "name": "Resistance (Necrotic)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["necrotic"]
+              }
+            }
+          }
+        },
+        {
+          "id": "piercing",
+          "name": "Piercing",
+          "set": {
+            "effect": {
+              "name": "Resistance (Piercing)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["piercing"]
+              }
+            }
+          }
+        },
+        {
+          "id": "poison",
+          "name": "Poison",
+          "set": {
+            "effect": {
+              "name": "Resistance (Poison)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["poison"]
+              }
+            }
+          }
+        },
+        {
+          "id": "radiant",
+          "name": "Radiant",
+          "set": {
+            "effect": {
+              "name": "Resistance (Radiant)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["radiant"]
+              }
+            }
+          }
+        },
+        {
+          "id": "slashing",
+          "name": "Slashing",
+          "set": {
+            "effect": {
+              "name": "Resistance (Slashing)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["slashing"]
+              }
+            }
+          }
+        },
+        {
+          "id": "thunder",
+          "name": "Thunder",
+          "set": {
+            "effect": {
+              "name": "Resistance (Thunder)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["thunder"]
+              }
+            }
+          }
+        }
+      ]
     },
     "2014": {
       "automated": true,
@@ -5463,11 +5815,51 @@
     }
   },
   "shillelagh": {
-    "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Changes the weapon’s die and attack ability: not modelled yet."
-      }
+    "2014": {
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "effect": {
+        "name": "Shillelagh",
+        "weaponSpell": {
+          "weapons": ["club", "quarterstaff"],
+          "dice": ["1d8"]
+        }
+      },
+      "gmNote": "The weapon counts as magical while it lasts."
+    },
+    "2024": {
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "effect": {
+        "name": "Shillelagh",
+        "weaponSpell": {
+          "weapons": ["club", "quarterstaff"],
+          "dice": ["1d8", "1d10", "1d12", "2d6"]
+        }
+      },
+      "choices": [
+        {
+          "id": "bludgeoning",
+          "name": "Bludgeoning",
+          "set": {}
+        },
+        {
+          "id": "force",
+          "name": "Force",
+          "set": {
+            "effect": {
+              "name": "Shillelagh",
+              "weaponSpell": {
+                "weapons": ["club", "quarterstaff"],
+                "dice": ["1d8", "1d10", "1d12", "2d6"],
+                "type": "force"
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "shining-smite": {
@@ -5489,10 +5881,24 @@
   },
   "silence": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs an area that deafens and stops verbal spells inside it."
-      }
+      "automated": true,
+      "manual": null,
+      "zone": {
+        "onCast": false
+      },
+      "field": {
+        "name": "Silence",
+        "conditions": ["deafened"],
+        "silenced": true,
+        "changes": [
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "thunder"
+          }
+        ]
+      },
+      "gmNote": "No sound reaches into or out of the sphere."
     }
   },
   "silent-image": {
@@ -6104,11 +6510,49 @@
   "true-strike": {
     "both": {},
     "2024": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a weapon attack made as part of a spell."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "weaponStrike": true,
+      "effect": {
+        "name": "True Strike",
+        "endsOnAttack": true,
+        "rounds": 1,
+        "weaponSpell": {
+          "weapons": [],
+          "extra": {
+            "dice": ["", "1d6", "2d6", "3d6"],
+            "type": "radiant"
+          }
+        }
+      },
+      "choices": [
+        {
+          "id": "weapon",
+          "name": "Weapon's damage",
+          "set": {}
+        },
+        {
+          "id": "radiant",
+          "name": "Radiant",
+          "set": {
+            "effect": {
+              "name": "True Strike",
+              "endsOnAttack": true,
+              "rounds": 1,
+              "weaponSpell": {
+                "weapons": [],
+                "type": "radiant",
+                "extra": {
+                  "dice": ["", "1d6", "2d6", "3d6"],
+                  "type": "radiant"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "gmNote": "Make the attack now: casting it gives you one weapon attack."
     },
     "2014": {
       "automated": true,
