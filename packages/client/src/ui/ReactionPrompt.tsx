@@ -5,10 +5,13 @@ import { Button } from './kit/button.tsx';
 const CHOICE_LABELS: Record<string, string> = {
   shield: 'Shield (+5 AC)',
   'uncanny-dodge': 'Uncanny Dodge (half damage)',
+  counterspell: 'Counterspell',
 };
 
 /** What the offer asks, e.g. "Goblin: opportunity attack on Bo?". */
 function question(offer: ReactionOffer, name: (id: string) => string): string {
+  if (offer.kind === 'spell')
+    return `${name(offer.target)} is casting ${offer.spell ?? 'a spell'}. Counter it with ${name(offer.reactor)}?`;
   if (offer.kind === 'hit')
     return `${name(offer.target)} is about to hit ${name(offer.reactor)} (${offer.total}). React?`;
   return `${name(offer.reactor)}: opportunity attack on ${name(offer.target)}?`;

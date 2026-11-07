@@ -26,6 +26,8 @@ export * from './zones.ts';
 export * from './deaths.ts';
 export * from './reactions.ts';
 export * from './hit-reactions.ts';
+export * from './counterspell.ts';
+export * from './gravity.ts';
 export * from './two-weapon.ts';
 export * from './weapon-attack.ts';
 export * from './wards.ts';

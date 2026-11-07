@@ -6,7 +6,6 @@ import {
   castProblem,
   type CastResult,
   type Effect,
-  inArea,
   isDying,
   lastingEffects,
   makesDeathSaves,
@@ -14,22 +13,22 @@ import {
   withAgain,
   withChoice,
   resolveCast,
-  scaledSpell,
   scrollCaster,
   type Spell,
   SPELL_SCROLL,
   type SpellLog,
   type Token,
-  tokenDistance,
   spendResistance,
   characterLevel,
   stoppedBy,
 } from '@vtt/system-dnd5e';
-import { gridKind, isGridless, placeToken, type Player, type Point } from '@vtt/shared';
+import { gridKind, isGridless, placeToken, type Player, type Point, roll } from '@vtt/shared';
 import { castBreaksSanctuary, passSanctuaries } from '../play/spell-wards.ts';
 import { shaped } from '../play/spell-forms.ts';
 import { summon } from '../play/spell-summons.ts';
 import { type DoorPick, doorAt, setDoor } from '../play/spell-doors.ts';
+import { breakTimeStop } from '../play/time-stop.ts';
+import { SpellTargets } from '../play/spell-targets.ts';
 import { Refusal, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 export interface CastRequest {
@@ -46,6 +45,27 @@ export interface CastRequest {
   choice?: string;
   /** The monster a shape-shifting spell turns its targets into (polymorph). */
   form?: string;
+}
+
+/** A cast about to take effect, which others may still stop. */
+export interface PendingCast {
+  caster: Fighter;
+  spell: Spell;
+  slot: number;
+  /** It goes through. */
+  go(): void;
+  /** It was stopped; 2024 counterspell leaves the slot unspent. */
+  fail(keepsSlot: boolean): void;
+}
+
+interface Casting {
+  caster: Fighter;
+  spell: Spell;
+  req: CastRequest;
+  plan: Plan;
+  reader?: CasterSheet;
+  targets: Fighter[];
+  door?: DoorPick;
 }
 
 /** What casting costs: the action, slot and slot spent; using a lasting spell again needs no slot. */
@@ -71,7 +91,13 @@ export class SpellActions {
   constructor(
     private table: Table,
     private logSpell: (log: SpellLog) => void,
-  ) {}
+    /** A cast may wait for others to react (counterspell): true when it waits. */
+    private interrupt: (cast: PendingCast) => boolean = () => false,
+  ) {
+    this.aiming = new SpellTargets(table);
+  }
+
+  private aiming: SpellTargets;
 
   private get store() {
     return this.table.store;
@@ -94,6 +120,20 @@ export class SpellActions {
     passSanctuaries(this.table, caster, spell, targets);
     this.table.pay(caster.token, plan.cost);
     castBreaksSanctuary(this.table, caster, spell, targets);
+    const casting: Casting = { caster, spell, req, plan, reader, targets, door };
+    const pending: PendingCast = {
+      caster,
+      spell,
+      slot: plan.slot,
+      go: () => this.finish(casting),
+      fail: (keepsSlot) => this.fail(casting, keepsSlot),
+    };
+    if (plan.again || !this.interrupt(pending)) pending.go();
+  }
+
+  /** The cast goes through: slot, concentration, lasting effects, and what it does. */
+  private finish({ caster, spell, req, plan, reader, targets, door }: Casting): void {
+    if (plan.again && spell.steer) return this.steer(caster, spell, req.point!);
     if (!plan.again) this.begin(caster, spell, plan.spend, !!reader);
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
     const notes = this.conjure(caster, spell, { ...req, slot: plan.slot }, door);
@@ -104,11 +144,31 @@ export class SpellActions {
     ]);
   }
 
+  /** Compulsion used again: the creatures it holds are made to walk toward `point` as their turns start. */
+  private steer(caster: Fighter, spell: Spell, point: Point): void {
+    for (const token of [...this.store.tokens.values()]) {
+      const held = (e: Effect) => e.spell === spell.id && e.source === caster.token.id;
+      if (!token.effects?.some(held)) continue;
+      const effects = token.effects.map((e) => (held(e) ? { ...e, towards: point } : e));
+      this.store.setToken({ ...token, effects });
+    }
+    this.table.note(`${caster.token.name} compels them toward a point`);
+  }
+
+  /** The cast was countered: it does nothing, and its slot (or scroll) is gone unless `keepsSlot`. */
+  private fail({ caster, spell, plan, reader }: Casting, keepsSlot: boolean): void {
+    if (!keepsSlot) this.table.spendSlot(caster.token.id, plan.spend);
+    const now = this.store.tokens.get(caster.token.id)!;
+    if (!keepsSlot && reader) this.store.setToken(useScroll(now, spell.id));
+    this.table.note(`${caster.token.name}'s ${spell.name} fails`);
+  }
+
   /** What the spell does besides hitting its targets: moves its caster, works a door, summons, or readies a weapon attack. */
   private conjure(caster: Fighter, spell: Spell, req: CastRequest, door: DoorPick | undefined): string[] {
     if (spell.teleport) this.teleport(caster.token.id, req.point!);
     if (spell.door) setDoor(this.store, door!, spell.door);
     if (spell.weaponStrike) this.readyStrike(caster.token.id);
+    if (spell.extraTurns) this.stopTime(caster.token.id, spell);
     if (!spell.summon) return [];
     return summonNotes(summon(this.table, this.table.fighter(caster.token.id), spell, req));
   }
@@ -120,6 +180,12 @@ export class SpellActions {
     if (left) this.table.setBudget(token, { ...left, attacks: left.attacks + 1 });
   }
 
+  /** Time stop: the caster's turns to come, in a row. */
+  private stopTime(id: string, spell: Spell): void {
+    const extraTurns = roll(spell.extraTurns!, this.table.rng).total;
+    this.addEffect(id, { id: `${spell.id}-${id}`, name: spell.name, extraTurns, source: id, spell: spell.id });
+  }
+
   /** Who the spell hits now: no one when casting only conjures it (flame blade) or its zone waits for creatures to enter. */
   private aim(
     caster: Fighter,
@@ -127,7 +193,8 @@ export class SpellActions {
     req: CastRequest,
     how: { canSee: (id: string) => boolean; again: boolean },
   ) {
-    if (!how.again && !spell.attackOnCast) return [];
+    if (spell.steer && !req.point) throw new Refusal(`Pick where ${spell.name} sends them`);
+    if ((!how.again && !spell.attackOnCast) || spell.steer) return [];
     const aimed = this.targets(caster, spell, req, how.canSee);
     return spell.zone && !spell.zone.onCast && !how.again ? [] : aimed;
   }
@@ -190,6 +257,11 @@ export class SpellActions {
     const grid = gridKind(this.store.world);
     const outcome = resolveCast({ spell, slot, caster, targets, gridSize: this.grid, grid, dc }, this.table.rng);
     this.apply(outcome);
+    breakTimeStop(
+      this.table,
+      casterId,
+      outcome.results.map((r) => r.target),
+    );
     const pushed = this.push(caster.token, outcome);
     const drained = this.drain(casterId, outcome.drained);
     this.log(caster, { spell, slot, point }, outcome, [...notes, ...pushed, ...drained]);
@@ -213,80 +285,8 @@ export class SpellActions {
     });
   }
 
-  // ---- Targets -----------------------------------------------------------
-
   targets(caster: Fighter, spell: Spell, req: CastRequest, canSee: (id: string) => boolean): Fighter[] {
-    if (spell.teleport || spell.summon || spell.door) {
-      const point = spell.door && req.point ? this.doorSide(caster, req.point) : req.point;
-      this.checkPoint(caster, spell, point, spell.teleport ?? spell.range);
-      return [];
-    }
-    if (spell.area) return this.areaTargets(caster, spell, req.point);
-    const scaled = scaledSpell(spell, req.slot, caster.sheet.caster?.level ?? 1);
-    if (scaled.targets === 0) return [this.table.fighter(caster.token.id)];
-    return this.picked(caster, spell, req, { most: scaled.beams > 1 ? scaled.beams : scaled.targets, canSee });
-  }
-
-  /** The creatures picked, at most `most`; none, at a point, casts it at empty ground, where it hits no one. */
-  private picked(
-    caster: Fighter,
-    spell: Spell,
-    req: CastRequest,
-    { most, canSee }: { most: number; canSee: (id: string) => boolean },
-  ): Fighter[] {
-    if (!req.targets.length && req.point) return this.atGround(caster, spell, req.point);
-    if (!req.targets.length) throw new Refusal(`Pick a target for ${spell.name}`);
-    if (req.targets.length > most) throw new Refusal(`${spell.name} can target at most ${most}`);
-    return req.targets.map((id) => this.creatureTarget(caster, spell, id, canSee));
-  }
-
-  private creatureTarget(caster: Fighter, spell: Spell, id: string, canSee: (id: string) => boolean): Fighter {
-    if (!canSee(id)) throw new Refusal('No such target');
-    const target = this.table.fighter(id);
-    const feet = tokenDistance(caster.token, target.token, this.grid, gridKind(this.store.world));
-    if (feet > Math.max(5, spell.range)) throw new Refusal(`${target.token.name} is out of range (${feet} ft)`);
-    if (!this.table.clearShot([caster.token.x, caster.token.y], [target.token.x, target.token.y])) {
-      throw new Refusal(`${caster.token.name} has no clear path to ${target.token.name}`);
-    }
-    return target;
-  }
-
-  private atGround(caster: Fighter, spell: Spell, point: Point): Fighter[] {
-    this.checkPoint(caster, spell, point, spell.range);
-    return [];
-  }
-
-  /** A door is aimed at on its wall: the caster needs to see the near side of it. */
-  private doorSide({ token }: Fighter, [x, y]: Point): Point {
-    const d = Math.hypot(token.x - x, token.y - y) || 1;
-    const step = Math.min(d, this.grid / 4);
-    return [x + ((token.x - x) / d) * step, y + ((token.y - y) / d) * step];
-  }
-
-  private checkPoint(caster: Fighter, spell: Spell, point: Point | undefined, range: number): Point {
-    if (!point) throw new Refusal(`Pick a point for ${spell.name}`);
-    const from: Point = [caster.token.x, caster.token.y];
-    const feet = (Math.hypot(point[0] - from[0], point[1] - from[1]) / this.grid) * 5;
-    if (range > 0 && feet > range + 2.5) throw new Refusal(`That point is out of range (${Math.round(feet)} ft)`);
-    if (!this.table.clearShot(from, point)) throw new Refusal(`${caster.token.name} can't see that point`);
-    return point;
-  }
-
-  /** Every creature in the area that the area's origin has a clear line to. */
-  private areaTargets(caster: Fighter, spell: Spell, point: Point | undefined): Fighter[] {
-    const aim =
-      spell.range > 0
-        ? this.checkPoint(caster, spell, point, spell.range)
-        : (point ?? [caster.token.x + 1, caster.token.y]);
-    const origin: Point = spell.area!.shape === 'sphere' || spell.range > 0 ? aim : [caster.token.x, caster.token.y];
-    const area = { area: spell.area!, range: spell.range };
-    return [...this.store.tokens.values()]
-      .filter((t) => inArea(area, { caster: caster.token, aim, token: t, gridSize: this.grid }))
-      .filter((t) => this.table.clearShot(origin, [t.x, t.y]))
-      .flatMap((t) => {
-        const sheet = this.table.sheetOf(t);
-        return sheet ? [{ token: t, sheet }] : [];
-      });
+    return this.aiming.targets(caster, spell, req, canSee);
   }
 
   // ---- Results -----------------------------------------------------------

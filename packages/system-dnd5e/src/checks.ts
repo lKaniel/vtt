@@ -1,7 +1,7 @@
 import { type Rng, roll, type Roll } from '@vtt/shared';
 import { abilityMod } from './creature-math.ts';
 import type { Creature } from './creature.ts';
-import { d20Formula, saveModifiers } from './effects.ts';
+import { d20Formula, type SaveRoll, saveModifiers } from './effects.ts';
 import type { Effect } from './spell-schema.ts';
 import type { Ability } from './stats-schema.ts';
 import type { Token } from './token-schema.ts';
@@ -116,4 +116,16 @@ export function checkOutcome(kind: CheckRequestKind, entries: readonly CheckEntr
   const [a, b] = entries;
   if (!a || !b || a.total === b.total) return 'A tie: nothing changes';
   return `${a.total! > b.total! ? a.name : b.name} wins`;
+}
+
+interface Side {
+  token: Pick<Token, 'stats'>;
+  sheet: Creature;
+}
+
+/** A contest as a save: `target`'s `ability` check against `caster`'s spellcasting check (its total is the DC); a tie goes to the target (2014 telekinesis). */
+export function contest(ability: Ability, caster: Side, target: Side, rng: Rng = Math.random): SaveRoll {
+  const theirs = rollCheck(caster.token, caster.sheet, { ability: caster.sheet.caster?.ability ?? 'int' }, rng);
+  const mine = rollCheck(target.token, target.sheet, { ability }, rng);
+  return { ability, dc: theirs.total, roll: mine.roll, total: mine.total, success: mine.total >= theirs.total };
 }

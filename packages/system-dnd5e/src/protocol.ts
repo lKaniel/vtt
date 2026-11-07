@@ -104,12 +104,14 @@ export interface ReactionOffer {
   id: string;
   reactor: string;
   target: string;
-  /** "opportunity": `target` left the reactor's reach; "hit": `target`'s attack is about to hit the reactor. */
-  kind: 'opportunity' | 'hit';
+  /** "opportunity": `target` left the reactor's reach; "hit": `target`'s attack is about to hit the reactor; "spell": `target` is casting `spell`. */
+  kind: 'opportunity' | 'hit' | 'spell';
   /** What the reactor may do: melee attack names, or reactions to a hit ("shield", "uncanny-dodge"). */
   choices: string[];
   /** For a hit: the attack roll's total. */
   total?: number;
+  /** For a spell: its name. */
+  spell?: string;
 }
 
 /** A change to what a creature carries; `item` and `into` are inventory indexes. */

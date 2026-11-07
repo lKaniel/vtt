@@ -35,7 +35,8 @@ import {
 } from '@vtt/system-dnd5e';
 import { canControl, gridKind, isParty, type Player, type Point } from '@vtt/shared';
 import { attackGround } from './ground-attack.ts';
-import { riseInAura } from '../play/turn-start.ts';
+import { compelled, riseInAura } from '../play/turn-start.ts';
+import { anotherTurn, breakTimeStop } from '../play/time-stop.ts';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
 import { breakSanctuary, loseImage, passSanctuary } from '../play/spell-wards.ts';
 import { Refusal, requireGm, type Cost, type Fighter, type Table } from '../play/table.ts';
@@ -145,7 +146,7 @@ export class CombatActions {
       this.table.turnInfo,
     );
     if (after.turn === combat.turn && after.round === combat.round) this.store.setCombat(after);
-    else this.advance();
+    else if (!anotherTurn(this.table, currentTurn(combat))) this.advance();
   }
 
   /** Passes the turn on; a dying character's turn is only its death save, so it passes again. */
@@ -230,6 +231,7 @@ export class CombatActions {
       if (total > 0) this.table.hurt(token, { hp, tempHp, warded }, total);
     }
     riseInAura(this.table, id);
+    compelled(this.table, id);
     const now = this.store.tokens.get(id)!;
     const sheetNow = this.table.sheetOf(now)!;
     if (heal && sheetNow.hp > 0 && sheetNow.hp < sheetNow.maxHp) {
@@ -358,6 +360,7 @@ export class CombatActions {
     if (outcome.smote) this.table.spendSlot(attacker.token.id, smite!);
     if (outcome.decoy === 'hit') loseImage(this.table, target.token.id);
     this.table.useUp(outcome.used);
+    breakTimeStop(this.table, attacker.token.id, [target.token.id]);
     this.applyOutcome(attacker, target, outcome, { range, name: attack.name, kind: attack.kind });
   }
 
