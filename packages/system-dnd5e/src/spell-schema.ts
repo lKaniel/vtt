@@ -34,6 +34,8 @@ export type Condition = z.infer<typeof ConditionSchema>;
 export const RiderDamageSchema = z.object({ dice, type: z.union([DamageTypeSchema, z.literal('weapon')]) });
 export type RiderDamage = z.infer<typeof RiderDamageSchema>;
 
+const moveSpeed = z.union([z.number().nonnegative(), z.literal('walk')]);
+
 /** What an effect changes about the creature that has it. */
 const modifiers = {
   /** Changes to any statistic by key, Foundry style: `{ key: "abilities.str", mode: "override", value: 19 }` (see effect-changes.ts). */
@@ -50,6 +52,10 @@ const modifiers = {
   checkDisadvantage: z.boolean().optional(),
   /** Ability checks of these abilities have disadvantage (heavy encumbrance). */
   checkDisadvantageFor: z.array(AbilitySchema).optional(),
+  /** Ability checks of these abilities have advantage (enhance ability). */
+  checkAdvantageFor: z.array(AbilitySchema).optional(),
+  /** Added to checks with these skills, by skill id: "10" for pass without trace, "1d4" for 2024 guidance. */
+  skillBonus: z.record(z.string(), dice).optional(),
   ac: z.number().int().optional(),
   /** Unarmored AC before dex: the bearer's AC without body armor is this + dex (mage armor). */
   armorBase: z.number().int().optional(),
@@ -76,15 +82,7 @@ const modifiers = {
   /** The bearer has advantage on saves against spells (a mantle of spell resistance). */
   spellSaveAdvantage: z.boolean().optional(),
   /** Other ways it moves, in feet; "walk" is as fast as it walks (winged boots). */
-  speeds: z
-    .object({
-      fly: z.union([z.number().nonnegative(), z.literal('walk')]),
-      swim: z.union([z.number().nonnegative(), z.literal('walk')]),
-      climb: z.union([z.number().nonnegative(), z.literal('walk')]),
-      hover: z.boolean(),
-    })
-    .partial()
-    .optional(),
+  speeds: z.object({ fly: moveSpeed, swim: moveSpeed, climb: moveSpeed, hover: z.boolean() }).partial().optional(),
   /** Attacks against the bearer have advantage (faerie fire) or disadvantage. */
   advantageAgainst: z.boolean().optional(),
   disadvantageAgainst: z.boolean().optional(),
@@ -128,8 +126,29 @@ const modifiers = {
       choice: id.optional(),
     })
     .optional(),
-  /** The bearer may use this spell again without a slot while it lasts (spiritual weapon, call lightning). */
-  repeat: z.object({ spell: id, slot: z.number().int().min(0).max(9), choice: id.optional() }).optional(),
+  /** The bearer may use this spell again without a slot while it lasts (spiritual weapon, call lightning); `dc` is the caster's when it was handed to another creature (dragon's breath). */
+  repeat: z
+    .object({ spell: id, slot: z.number().int().min(0).max(9), choice: id.optional(), dc: z.number().int().optional() })
+    .optional(),
+  /**
+   * The bearer's attacks with these weapons (all of them when empty) use this
+   * ability and damage die, and deal this type (shillelagh, 2024 true strike).
+   * In a spell, `dice` and `extra.dice` go by cantrip tier and `ability` is the
+   * caster's spellcasting ability; `extra` becomes damage on the next hit.
+   */
+  weaponSpell: z
+    .object({
+      weapons: z.array(id).default([]),
+      dice: z.array(dice).optional(),
+      ability: AbilitySchema.optional(),
+      type: DamageTypeSchema.optional(),
+      extra: z.object({ dice: z.array(z.string()), type: DamageTypeSchema }).optional(),
+    })
+    .optional(),
+  /** Damage of these types the bearer takes is reduced by this roll, once a turn (2024 resistance). */
+  ward: z.object({ dice, types: z.array(DamageTypeSchema).min(1) }).optional(),
+  /** The ward has been used this turn. */
+  wardUsed: z.boolean().optional(),
   /** Damage the bearer takes at the start of each of its turns (searing smite, phantasmal killer). */
   turnDamage: z.array(DamageSchema).optional(),
   /** Hit points the bearer regains at the start of each of its turns (regenerate). */
@@ -161,6 +180,16 @@ const modifiers = {
   weakened: z.union([z.literal('half'), dice]).optional(),
   /** Attackers must pass a Wisdom save against this DC to target the bearer; `true` in a spell takes the caster's DC (sanctuary). */
   sanctuary: z.union([z.literal(true), z.number().int()]).optional(),
+  /** The bearer can't cast spells with a verbal component (silence). */
+  silenced: z.boolean().optional(),
+  /** Magic doesn't work on or from the bearer: no spells cast, none land, other spell effects are suppressed (antimagic field). */
+  antimagic: z.boolean().optional(),
+  /** Spells of this level or lower cast from outside the bearer's globe don't affect it (globe of invulnerability). */
+  spellWard: z.number().int().min(0).max(9).optional(),
+  /** Creatures of other kinds can't move within `radius` feet of the bearer (antilife shell: all but undead and constructs). */
+  barrier: z.object({ radius: z.number().positive(), except: z.array(z.string()).default([]) }).optional(),
+  /** At 0 hit points the bearer regains 1 at the start of its turn (aura of life). */
+  lifeline: z.boolean().optional(),
   /** The bearer's movement doesn't provoke opportunity attacks (disengage). */
   disengaged: z.boolean().optional(),
   /** The bearer's speed is 0 (hypnotic pattern). */
@@ -191,6 +220,8 @@ export const AuraSchema = z.object({
   self: z.boolean().optional(),
   /** Only while the bearer is conscious (default true). */
   conscious: z.boolean().optional(),
+  /** Anchored at this point on the map instead of around the bearer (a lasting area cast at a point: silence). */
+  at: z.tuple([z.number(), z.number()]).optional(),
 });
 export type Aura = z.infer<typeof AuraSchema>;
 
@@ -302,7 +333,7 @@ export const SpellCreatureSchema = z.object({
           .optional(),
       }),
     )
-    .min(1),
+    .default([]),
 });
 export type SpellCreature = z.infer<typeof SpellCreatureSchema>;
 
@@ -346,6 +377,8 @@ export const SpellSchema = z.object({
   range: z.number().nonnegative(),
   ritual: z.boolean().default(false),
   concentration: z.boolean().default(false),
+  /** Verbal, somatic and material components: what silence stops ("v"). */
+  components: z.array(z.enum(['v', 's', 'm'])).default([]),
   /** Duration in rounds; missing for instantaneous spells. */
   rounds: z.number().int().positive().optional(),
   /** Duration as the rules write it, e.g. "1 minute". */
@@ -366,6 +399,12 @@ export const SpellSchema = z.object({
         .optional(),
     })
     .optional(),
+  /**
+   * What creatures inside the lasting area get while they stay in it (silence,
+   * antimagic field, globe of invulnerability): kept as an aura of the area's
+   * size on the caster, anchored where it was cast or around the caster.
+   */
+  field: EffectTemplateSchema.optional(),
   /** A spell attack roll against each target. */
   attack: z.enum(['melee', 'ranged']).optional(),
   save: z
@@ -374,6 +413,8 @@ export const SpellSchema = z.object({
       onSave: z.enum(['half', 'none']).default('none'),
       /** false: no save when cast, only the effect's repeated saves (power word stun, 2014 irresistible dance). */
       onCast: z.boolean().default(true),
+      /** A DC of its own instead of the caster's (contact other plane: 15). */
+      dc: z.number().int().positive().optional(),
     })
     .optional(),
   damage: z.array(DamageSchema).default([]),
@@ -409,6 +450,8 @@ export const SpellSchema = z.object({
       hpPool: dice.optional(),
       targets: z.number().int().optional(),
       beams: z.number().int().optional(),
+      /** Added to the field's `spellWard` (globe of invulnerability). */
+      ward: z.number().int().optional(),
     })
     .optional(),
   /** Cantrips grow at character levels 5, 11 and 17: more dice, or more beams. */
@@ -432,6 +475,8 @@ export const SpellSchema = z.object({
       keepMind: z.boolean().optional(),
     })
     .optional(),
+  /** Opens the locked door nearest the point (knock), or locks a closed one (arcane lock). */
+  door: z.enum(['unlock', 'lock']).optional(),
   /** Moves the caster up to this many feet to a point they can see (misty step). */
   teleport: z.number().positive().optional(),
   /** Feet each creature hit (or failing its save) is moved: positive pushes away from the caster, negative pulls closer. */
@@ -454,6 +499,12 @@ export const SpellSchema = z.object({
     .optional(),
   /** Later turns can use it again without a slot, with this action (spiritual weapon, call lightning). */
   repeat: z.enum(['action', 'bonus']).optional(),
+  /** "target": the creature it lands on uses it again, not the caster, with the caster's DC (dragon's breath). */
+  repeatBy: z.literal('target').optional(),
+  /** Spell fields set over it when used again (dragon's breath: the cone of breath), `null` taking one away. */
+  again: z.record(z.string(), z.unknown()).optional(),
+  /** Casting it lets the caster make one weapon attack at once, as part of the action (2024 true strike). */
+  weaponStrike: z.boolean().optional(),
   /** Effects by the target's hit points: the first tier whose `atMost` it is within applies instead of the spell's effect (power word kill). */
   hpTiers: z
     .array(

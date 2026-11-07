@@ -2,6 +2,7 @@ import type { EditorMode, ItemMode, TileTexture } from '@vtt/shared';
 import { ITEM_TOOLS, type ItemTool } from '../editor/shape-tools.ts';
 import {
   BrickWallIcon,
+  CloudFogIcon,
   LayoutGridIcon,
   LightbulbIcon,
   MousePointer2Icon,
@@ -121,6 +122,7 @@ const TOOLS: Partial<Record<EditorMode, { tool: EditorTool; label: string; hint:
 /** The editor modes down the left side (players: tokens, drawings and templates), each mode's tools, and the GM's map settings. */
 export function MapTools({ session }: Readonly<{ session: Session }>) {
   const gm = session.isGm();
+  const [sceneTools, setSceneTools] = useState(loadSceneTools);
   const tools = TOOLS[session.editor.mode];
   const modes = MODES.filter((m) => session.editor.canUseMode(m.mode));
   return (
@@ -138,6 +140,21 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
             <Icon />
           </Toggle>
         ))}
+        {gm && (
+          <Toggle
+            pressed={sceneTools}
+            title={t('mapTools.sceneToolsHint')}
+            aria-label={t('mapTools.sceneTools')}
+            className="ml-auto w-7 px-0 [&_svg]:size-4"
+            onPressedChange={(on) => {
+              setSceneTools(on);
+              saveSceneTools(on);
+              if (!on) session.fog.setBrush(undefined);
+            }}
+          >
+            <CloudFogIcon />
+          </Toggle>
+        )}
       </div>
       {tools && (
         <div className="map-tools-row" role="toolbar" aria-label="Tool">
@@ -157,9 +174,29 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
       {session.editor.mode === 'tiles' && <TilePresets session={session} />}
       {session.editor.mode === 'tiles' && <LayersPanel session={session} />}
       {session.editor.mode === 'drawings' && <DrawStyle session={session} />}
-      {gm && <SceneTools session={session} />}
+      {gm && <LevelPicker session={session} />}
+      {gm && sceneTools && <SceneTools session={session} />}
     </div>
   );
+}
+
+const SCENE_TOOLS_KEY = 'vtt.sceneTools';
+
+/** Whether the GM keeps the fog and daylight tools open, kept in this browser (folded unless opened). */
+function loadSceneTools(): boolean {
+  try {
+    return localStorage.getItem(SCENE_TOOLS_KEY) === 'open';
+  } catch {
+    return false;
+  }
+}
+
+function saveSceneTools(open: boolean): void {
+  try {
+    localStorage.setItem(SCENE_TOOLS_KEY, open ? 'open' : 'folded');
+  } catch {
+    // Private windows may refuse storage; the choice lasts until reload.
+  }
 }
 
 const BRUSHES = [
@@ -267,11 +304,10 @@ function TilePresets({ session }: Readonly<{ session: Session }>) {
   );
 }
 
-/** GM: the floor shown, fog of war and the time of day. */
+/** GM: fog of war and the time of day, folded behind the cloud button. */
 function SceneTools({ session }: Readonly<{ session: Session }>) {
   return (
     <>
-      <LevelPicker session={session} />
       {session.world?.vision !== false && <FogTools session={session} />}
       <Darkness key={session.world?.darkness ?? 0} session={session} />
     </>

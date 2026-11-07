@@ -22,6 +22,7 @@ import { changed, changedBase, changedList } from './effect-changes.ts';
 import { legendaryParts, type LegendaryParts } from './legendary.ts';
 import { characterLevel, type ClassLevel, classLevels } from './multiclass.ts';
 import { withOwn } from './own-content.ts';
+import { withWeaponSpells } from './riders.ts';
 import { exhausted } from './vigour.ts';
 import { sensesOf } from './perception.ts';
 import { type Form, formOf, shapeToken, withoutForm } from './forms.ts';
@@ -133,13 +134,30 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
     ...kindAndSaves(monster, cls, { abilities, proficiency }),
     ...effectParts(token, features, content.edition, monster?.conditionImmunities),
     ...classParts(levels, monster),
-    caster: casterSheet(token, { abilities, proficiency }, content),
+    caster: withHandedSpells(casterSheet(token, { abilities, proficiency }, content), token, content),
     ...legendaryParts(token, monster),
     features,
     senses: sensesOf(token, monster),
   };
   const styled = withFightingStyles(applyEffects(withItemBonuses(base, token, content)), !!bodyArmor(gear.armor));
   return withCarrying(styled, token, { monster, content });
+}
+
+/**
+ * Spells another creature handed this one to use again (dragon's breath):
+ * on its sheet while they last, cast with the giver's DC. A creature with no
+ * spellcasting of its own gets a spell list just for them.
+ */
+function withHandedSpells(sheet: CasterSheet | undefined, token: Token, content: Content): CasterSheet | undefined {
+  const known = new Set(sheet?.spells.map((s) => s.id));
+  const handed = (token.effects ?? []).flatMap((e) => {
+    const spell =
+      e.repeat?.dc !== undefined && !known.has(e.repeat.spell) ? content.spells.get(e.repeat.spell) : undefined;
+    return spell ? [spell] : [];
+  });
+  if (!handed.length) return sheet;
+  const base = sheet ?? { ability: 'cha', attack: 0, dc: 10, level: 1, slots: [], left: [], pact: false, spells: [] };
+  return { ...base, spells: [...base.spells, ...handed] };
 }
 
 /** A creature in another shape: the form's stat block, with its own hit points in 2024 (forms.ts). */
@@ -227,12 +245,18 @@ function effectParts(
   innate: readonly string[] = [],
 ): Pick<Creature, 'effects' | 'conditions'> {
   // An effect that gives off an aura reaches its bearer only as the aura (auras.ts).
-  const effects = [...ownEffects(token, features), ...downed(token), ...exhausted(token, edition)].filter(
-    (e) => !e.aura,
+  const effects = unsuppressed(
+    [...ownEffects(token, features), ...downed(token), ...exhausted(token, edition)].filter((e) => !e.aura),
   );
   const immune = new Set<string>([...innate, ...effects.flatMap((e) => e.conditionImmunities ?? [])]);
   const conditions = new Set(effects.flatMap((e) => e.conditions ?? []));
   return { effects, conditions: [...conditions].filter((c) => !immune.has(c)) };
+}
+
+/** Inside an antimagic field spells' effects are suppressed while it lasts; the field itself stays. */
+function unsuppressed(effects: Effect[]): Effect[] {
+  if (!effects.some((e) => e.antimagic)) return effects;
+  return effects.filter((e) => !e.spell || e.antimagic);
 }
 
 /** The token's effects, then the ones its features always give (danger sense), auras included. */
@@ -326,7 +350,11 @@ function changedSheet(
   return {
     initiative: changed(c.initiative, effects, 'initiative'),
     saves,
-    attacks: c.attacks.map((a) => ({ ...a, toHit: changed(a.toHit, effects, 'toHit') })),
+    attacks: withWeaponSpells(
+      c.attacks.map((a) => ({ ...a, toHit: changed(a.toHit, effects, 'toHit') })),
+      effects,
+      c.abilities,
+    ),
     immunities: changedList([...c.immunities, ...effects.flatMap((e) => e.immunities ?? [])], effects, 'immunities'),
     vulnerabilities: changedList(c.vulnerabilities, effects, 'vulnerabilities'),
   };

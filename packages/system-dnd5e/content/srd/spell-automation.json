@@ -43,19 +43,51 @@
   },
   "alter-self": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Changing your appearance or body (natural weapons are added by hand)."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Alter Self"
+      },
+      "choices": [
+        {
+          "id": "aquatic",
+          "name": "Aquatic Adaptation",
+          "set": {
+            "effect": {
+              "name": "Aquatic Adaptation"
+            }
+          }
+        },
+        {
+          "id": "appearance",
+          "name": "Change Appearance",
+          "set": {
+            "effect": {
+              "name": "Changed Appearance"
+            }
+          }
+        },
+        {
+          "id": "weapons",
+          "name": "Natural Weapons",
+          "set": {
+            "effect": {
+              "name": "Natural Weapons"
+            }
+          }
+        }
+      ],
+      "gmNote": "Aquatic: breathe water and swim at your speed. Natural weapons: add a 1d6 magic unarmed attack on the sheet."
     }
   },
   "animal-messenger": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "social",
-        "why": "Carries a message."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Messenger"
+      },
+      "gmNote": "The beast carries the message to the place you name."
     }
   },
   "animal-shapes": {
@@ -445,18 +477,32 @@
   },
   "antilife-shell": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "A barrier creatures can’t push into; the GM stops them."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "area": null,
+      "effect": {
+        "name": "Antilife Shell",
+        "barrier": {
+          "radius": 10,
+          "except": ["undead", "construct"]
+        }
+      },
+      "gmNote": "Creatures already inside may stay. It moves with you, and ends if you push it into a creature it holds back."
     }
   },
   "antimagic-field": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs an area that suppresses magic."
-      }
+      "automated": true,
+      "manual": null,
+      "zone": {
+        "onCast": false
+      },
+      "field": {
+        "name": "Antimagic Field",
+        "antimagic": true
+      },
+      "gmNote": "Magic items stop working and summoned creatures and spell tokens wink out while inside: the GM handles those."
     }
   },
   "antipathy-sympathy": {
@@ -469,10 +515,55 @@
   },
   "arcane-eye": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "A scouting eye."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "arcane-eye",
+            "creature": {
+              "name": "Arcane Eye",
+              "size": 0.5,
+              "type": "spell",
+              "speed": 30,
+              "abilities": {
+                "str": 2,
+                "dex": 10,
+                "con": 10,
+                "int": 1,
+                "wis": 10,
+                "cha": 1
+              },
+              "ac": {
+                "base": 10
+              },
+              "hp": {
+                "base": 1
+              },
+              "immunities": [
+                "acid",
+                "bludgeoning",
+                "cold",
+                "fire",
+                "force",
+                "lightning",
+                "necrotic",
+                "piercing",
+                "poison",
+                "psychic",
+                "radiant",
+                "slashing",
+                "thunder"
+              ],
+              "conditionImmunities": ["charmed", "frightened", "poisoned"],
+              "darkvision": 30
+            }
+          }
+        ]
+      },
+      "gmNote": "The eye is invisible and can pass through openings as small as an inch."
     }
   },
   "arcane-hand": {
@@ -541,10 +632,11 @@
   },
   "arcane-lock": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Locks a door or chest."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "door": "lock",
+      "gmNote": "Point at the door. You and creatures you name open it freely; knock suppresses it for 10 minutes."
     }
   },
   "arcane-sword": {
@@ -554,10 +646,12 @@
   },
   "arcanists-magic-aura": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Disguises an aura against detection."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Magic Aura"
+      },
+      "gmNote": "Divination shows the false aura you chose, or none."
     }
   },
   "astral-projection": {
@@ -578,10 +672,21 @@
   },
   "aura-of-life": {
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs an aura that gives its effect to allies while they stand in it."
-      }
+      "automated": true,
+      "manual": null,
+      "zone": {
+        "onCast": false
+      },
+      "field": {
+        "name": "Aura of Life",
+        "resistances": ["necrotic"],
+        "lifeline": true,
+        "aura": {
+          "who": "allies",
+          "radius": 30
+        }
+      },
+      "gmNote": "Hit point maximums can't be reduced inside it."
     }
   },
   "awaken": {
@@ -860,11 +965,14 @@
   },
   "calm-emotions": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "social",
-        "why": "Mostly makes hostile creatures indifferent; to end charm or fear in combat remove the effects by hand."
-      }
+      "automated": true,
+      "manual": null,
+      "cures": ["charmed", "frightened"],
+      "effect": {
+        "name": "Calmed",
+        "conditionImmunities": ["charmed", "frightened"]
+      },
+      "gmNote": "A willing creature can fail the save on purpose. Making hostile creatures indifferent instead is the GM's to play."
     }
   },
   "chain-lightning": {
@@ -967,10 +1075,69 @@
   },
   "clairvoyance": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Remote viewing."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "area": null,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "clairvoyant-sensor",
+            "creature": {
+              "name": "Clairvoyant Sensor",
+              "size": 0.5,
+              "type": "illusion",
+              "speed": 0,
+              "abilities": {
+                "str": 1,
+                "dex": 10,
+                "con": 10,
+                "int": 1,
+                "wis": 10,
+                "cha": 1
+              },
+              "ac": {
+                "base": 10
+              },
+              "hp": {
+                "base": 1
+              },
+              "immunities": [
+                "acid",
+                "bludgeoning",
+                "cold",
+                "fire",
+                "force",
+                "lightning",
+                "necrotic",
+                "piercing",
+                "poison",
+                "psychic",
+                "radiant",
+                "slashing",
+                "thunder"
+              ],
+              "conditionImmunities": [
+                "blinded",
+                "charmed",
+                "deafened",
+                "frightened",
+                "grappled",
+                "paralyzed",
+                "petrified",
+                "poisoned",
+                "prone",
+                "restrained",
+                "stunned",
+                "unconscious"
+              ]
+            }
+          }
+        ]
+      },
+      "gmNote": "The sensor is invisible; you see or hear (your pick) as if you stood there. Put it anywhere you know within a mile.",
+      "teleport": null
     }
   },
   "clone": {
@@ -1098,10 +1265,12 @@
   },
   "comprehend-languages": {
     "both": {
-      "manual": {
-        "kind": "social",
-        "why": "Understanding languages."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Comprehend Languages"
+      },
+      "gmNote": "It understands any spoken language and reads any writing it touches."
     }
   },
   "compulsion": {
@@ -1560,12 +1729,47 @@
     }
   },
   "contact-other-plane": {
-    "both": {
-      "automated": false,
-      "manual": {
-        "kind": "utility",
-        "why": "Divination: questions to an otherworldly being."
-      }
+    "2014": {
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "save": {
+        "ability": "int",
+        "onSave": "none",
+        "dc": 15
+      },
+      "damage": [
+        {
+          "dice": "6d6",
+          "type": "psychic"
+        }
+      ],
+      "effect": {
+        "name": "Insane",
+        "conditions": ["incapacitated"]
+      },
+      "gmNote": "On a success you ask your five questions, which the GM answers. Insanity lasts until a long rest; greater restoration ends it."
+    },
+    "2024": {
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "save": {
+        "ability": "int",
+        "onSave": "none",
+        "dc": 15
+      },
+      "damage": [
+        {
+          "dice": "6d6",
+          "type": "psychic"
+        }
+      ],
+      "effect": {
+        "name": "Insane",
+        "conditions": ["incapacitated"]
+      },
+      "gmNote": "On a success you ask your five questions, which the GM answers. On a failure you are incapacitated until a long rest; greater restoration ends it."
     }
   },
   "contagion": {
@@ -1669,9 +1873,17 @@
   },
   "continual-flame": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "An everlasting flame on an object; place a light by hand."
+      "automated": true,
+      "manual": null,
+      "save": null,
+      "effect": {
+        "name": "Continual Flame",
+        "light": {
+          "bright": 20,
+          "dim": 20,
+          "color": "#ffd49a",
+          "colorIntensity": 0.3
+        }
       }
     }
   },
@@ -1751,10 +1963,24 @@
   },
   "dancing-lights": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Moving lights: place light sources from the map’s Lights tool."
-      }
+      "automated": true,
+      "manual": null,
+      "area": {
+        "shape": "sphere",
+        "size": 10
+      },
+      "zone": {
+        "onCast": false
+      },
+      "places": {
+        "light": {
+          "dim": 10,
+          "color": "#ffe2a8",
+          "animation": "pulse",
+          "colorIntensity": 0.4
+        }
+      },
+      "gmNote": "Shown as one glow where you point; move the light by hand to move the lights."
     }
   },
   "darkness": {
@@ -1848,34 +2074,48 @@
   },
   "detect-evil-and-good": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Senses creature types nearby."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Detect Evil and Good"
+      },
+      "gmNote": "The GM tells you of aberrations, celestials, elementals, fey, fiends and undead within 30 ft.",
+      "targets": 0,
+      "area": null
     }
   },
   "detect-magic": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Senses magic nearby."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Detect Magic"
+      },
+      "gmNote": "The GM tells you where magic is within 30 ft and its school.",
+      "targets": 0,
+      "area": null
     }
   },
   "detect-poison-and-disease": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Senses poison and disease."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Detect Poison and Disease"
+      },
+      "gmNote": "The GM tells you of poisons, poisonous creatures and diseases within 30 ft.",
+      "targets": 0,
+      "area": null
     }
   },
   "detect-thoughts": {
     "both": {
-      "manual": {
-        "kind": "social",
-        "why": "Reading thoughts and probing minds."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Detect Thoughts"
+      },
+      "gmNote": "Reading a mind: the GM answers; probing deeper takes a Wisdom save."
     }
   },
   "dimension-door": {
@@ -1891,10 +2131,12 @@
   },
   "disguise-self": {
     "both": {
-      "manual": {
-        "kind": "social",
-        "why": "Looking like someone else: deception."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Disguised"
+      },
+      "gmNote": "Change the token picture by hand if you like; an Investigation check sees through it."
     }
   },
   "disintegrate": {
@@ -2008,10 +2250,179 @@
   },
   "dragons-breath": {
     "2024": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a spell handed to another creature, with a damage type chosen."
-      }
+      "automated": true,
+      "manual": null,
+      "area": null,
+      "repeat": "action",
+      "repeatBy": "target",
+      "effect": {
+        "name": "Dragon's Breath"
+      },
+      "again": {
+        "targets": 1,
+        "range": 0,
+        "area": {
+          "shape": "cone",
+          "size": 15
+        },
+        "save": {
+          "ability": "dex",
+          "onSave": "half"
+        },
+        "damage": [
+          {
+            "dice": "3d6",
+            "type": "acid"
+          }
+        ],
+        "effect": null,
+        "upcast": {
+          "damage": "1d6"
+        }
+      },
+      "choices": [
+        {
+          "id": "acid",
+          "name": "Acid",
+          "set": {
+            "again": {
+              "targets": 1,
+              "range": 0,
+              "area": {
+                "shape": "cone",
+                "size": 15
+              },
+              "save": {
+                "ability": "dex",
+                "onSave": "half"
+              },
+              "damage": [
+                {
+                  "dice": "3d6",
+                  "type": "acid"
+                }
+              ],
+              "effect": null,
+              "upcast": {
+                "damage": "1d6"
+              }
+            }
+          }
+        },
+        {
+          "id": "cold",
+          "name": "Cold",
+          "set": {
+            "again": {
+              "targets": 1,
+              "range": 0,
+              "area": {
+                "shape": "cone",
+                "size": 15
+              },
+              "save": {
+                "ability": "dex",
+                "onSave": "half"
+              },
+              "damage": [
+                {
+                  "dice": "3d6",
+                  "type": "cold"
+                }
+              ],
+              "effect": null,
+              "upcast": {
+                "damage": "1d6"
+              }
+            }
+          }
+        },
+        {
+          "id": "fire",
+          "name": "Fire",
+          "set": {
+            "again": {
+              "targets": 1,
+              "range": 0,
+              "area": {
+                "shape": "cone",
+                "size": 15
+              },
+              "save": {
+                "ability": "dex",
+                "onSave": "half"
+              },
+              "damage": [
+                {
+                  "dice": "3d6",
+                  "type": "fire"
+                }
+              ],
+              "effect": null,
+              "upcast": {
+                "damage": "1d6"
+              }
+            }
+          }
+        },
+        {
+          "id": "lightning",
+          "name": "Lightning",
+          "set": {
+            "again": {
+              "targets": 1,
+              "range": 0,
+              "area": {
+                "shape": "cone",
+                "size": 15
+              },
+              "save": {
+                "ability": "dex",
+                "onSave": "half"
+              },
+              "damage": [
+                {
+                  "dice": "3d6",
+                  "type": "lightning"
+                }
+              ],
+              "effect": null,
+              "upcast": {
+                "damage": "1d6"
+              }
+            }
+          }
+        },
+        {
+          "id": "poison",
+          "name": "Poison",
+          "set": {
+            "again": {
+              "targets": 1,
+              "range": 0,
+              "area": {
+                "shape": "cone",
+                "size": 15
+              },
+              "save": {
+                "ability": "dex",
+                "onSave": "half"
+              },
+              "damage": [
+                {
+                  "dice": "3d6",
+                  "type": "poison"
+                }
+              ],
+              "effect": null,
+              "upcast": {
+                "damage": "1d6"
+              }
+            }
+          }
+        }
+      ],
+      "gmNote": "The creature touched exhales with its action, on any of its turns while the spell lasts."
     }
   },
   "dream": {
@@ -2076,11 +2487,153 @@
     }
   },
   "enhance-ability": {
-    "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Advantage on ability checks of one ability; the table rolls checks."
-      }
+    "2014": {
+      "automated": true,
+      "manual": null,
+      "upcast": {
+        "targets": 1
+      },
+      "effect": {
+        "name": "Bear's Endurance",
+        "checkAdvantageFor": ["con"]
+      },
+      "choices": [
+        {
+          "id": "bear",
+          "name": "Bear's Endurance",
+          "set": {
+            "effect": {
+              "name": "Bear's Endurance",
+              "checkAdvantageFor": ["con"]
+            },
+            "tempHp": "2d6"
+          }
+        },
+        {
+          "id": "bull",
+          "name": "Bull's Strength",
+          "set": {
+            "effect": {
+              "name": "Bull's Strength",
+              "checkAdvantageFor": ["str"]
+            }
+          }
+        },
+        {
+          "id": "cat",
+          "name": "Cat's Grace",
+          "set": {
+            "effect": {
+              "name": "Cat's Grace",
+              "checkAdvantageFor": ["dex"]
+            }
+          }
+        },
+        {
+          "id": "eagle",
+          "name": "Eagle's Splendor",
+          "set": {
+            "effect": {
+              "name": "Eagle's Splendor",
+              "checkAdvantageFor": ["cha"]
+            }
+          }
+        },
+        {
+          "id": "fox",
+          "name": "Fox's Cunning",
+          "set": {
+            "effect": {
+              "name": "Fox's Cunning",
+              "checkAdvantageFor": ["int"]
+            }
+          }
+        },
+        {
+          "id": "owl",
+          "name": "Owl's Wisdom",
+          "set": {
+            "effect": {
+              "name": "Owl's Wisdom",
+              "checkAdvantageFor": ["wis"]
+            }
+          }
+        }
+      ],
+      "gmNote": "Bull's Strength doubles carrying capacity, Cat's Grace stops falling damage from 20 ft or less."
+    },
+    "2024": {
+      "automated": true,
+      "manual": null,
+      "upcast": {
+        "targets": 1
+      },
+      "effect": {
+        "name": "Bear's Endurance",
+        "checkAdvantageFor": ["con"]
+      },
+      "choices": [
+        {
+          "id": "bear",
+          "name": "Bear's Endurance",
+          "set": {
+            "effect": {
+              "name": "Bear's Endurance",
+              "checkAdvantageFor": ["con"]
+            }
+          }
+        },
+        {
+          "id": "bull",
+          "name": "Bull's Strength",
+          "set": {
+            "effect": {
+              "name": "Bull's Strength",
+              "checkAdvantageFor": ["str"]
+            }
+          }
+        },
+        {
+          "id": "cat",
+          "name": "Cat's Grace",
+          "set": {
+            "effect": {
+              "name": "Cat's Grace",
+              "checkAdvantageFor": ["dex"]
+            }
+          }
+        },
+        {
+          "id": "eagle",
+          "name": "Eagle's Splendor",
+          "set": {
+            "effect": {
+              "name": "Eagle's Splendor",
+              "checkAdvantageFor": ["cha"]
+            }
+          }
+        },
+        {
+          "id": "fox",
+          "name": "Fox's Cunning",
+          "set": {
+            "effect": {
+              "name": "Fox's Cunning",
+              "checkAdvantageFor": ["int"]
+            }
+          }
+        },
+        {
+          "id": "owl",
+          "name": "Owl's Wisdom",
+          "set": {
+            "effect": {
+              "name": "Owl's Wisdom",
+              "checkAdvantageFor": ["wis"]
+            }
+          }
+        }
+      ]
     }
   },
   "enlarge-reduce": {
@@ -2156,19 +2709,91 @@
   },
   "enthrall": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "social",
-        "why": "Holding an audience’s attention."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Enthralled",
+        "checkDisadvantageFor": ["wis"]
+      },
+      "gmNote": "Only Perception checks to notice other creatures have disadvantage; creatures that can't hear you, or are fighting you, have advantage on the save."
     }
   },
   "etherealness": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Stepping into the Ethereal Plane: hide the token by hand."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Ethereal",
+        "conditions": ["invisible"],
+        "changes": [
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "acid"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "bludgeoning"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "cold"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "fire"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "force"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "lightning"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "necrotic"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "piercing"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "poison"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "psychic"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "radiant"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "slashing"
+          },
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "thunder"
+          }
+        ]
+      },
+      "gmNote": "On the Ethereal Plane it can't affect or be affected by the Material Plane, and sees 60 ft into it in gray."
     }
   },
   "expeditious-retreat": {
@@ -2326,10 +2951,13 @@
   },
   "feather-fall": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Slows a fall; falling isn’t simulated."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Feather Fall"
+      },
+      "gmNote": "It falls 60 ft a round and takes no falling damage.",
+      "targets": 5
     }
   },
   "feeblemind": {
@@ -2552,18 +3180,26 @@
   },
   "find-the-path": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Finds the way to a place."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Find the Path"
+      },
+      "gmNote": "You know the shortest, most direct way to the place.",
+      "targets": 0,
+      "area": null
     }
   },
   "find-traps": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Senses traps."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Find Traps"
+      },
+      "gmNote": "The GM tells you of traps in sight within 120 ft.",
+      "targets": 0,
+      "area": null
     }
   },
   "fire-shield": {
@@ -2680,10 +3316,54 @@
   },
   "floating-disk": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Carries a load."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "floating-disk",
+            "creature": {
+              "name": "Floating Disk",
+              "size": 1,
+              "type": "spell",
+              "speed": 30,
+              "abilities": {
+                "str": 2,
+                "dex": 10,
+                "con": 10,
+                "int": 1,
+                "wis": 10,
+                "cha": 1
+              },
+              "ac": {
+                "base": 10
+              },
+              "hp": {
+                "base": 1
+              },
+              "immunities": [
+                "acid",
+                "bludgeoning",
+                "cold",
+                "fire",
+                "force",
+                "lightning",
+                "necrotic",
+                "piercing",
+                "poison",
+                "psychic",
+                "radiant",
+                "slashing",
+                "thunder"
+              ],
+              "conditionImmunities": ["charmed", "frightened", "poisoned"]
+            }
+          }
+        ]
+      },
+      "gmNote": "It carries up to 500 pounds and follows 20 ft behind you."
     }
   },
   "fly": {
@@ -2806,10 +3486,12 @@
   },
   "gentle-repose": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Preserves a corpse."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Gentle Repose"
+      },
+      "gmNote": "The body doesn't decay and can't become undead; the days don't count against raise dead."
     }
   },
   "giant-insect": {
@@ -3001,18 +3683,29 @@
   },
   "glibness": {
     "both": {
-      "manual": {
-        "kind": "social",
-        "why": "Lying convincingly."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Glibness"
+      },
+      "gmNote": "Charisma checks are at least 15 and magic can’t tell it lies."
     }
   },
   "globe-of-invulnerability": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs an area that stops spells of lower level from outside."
-      }
+      "automated": true,
+      "manual": null,
+      "zone": {
+        "onCast": false
+      },
+      "field": {
+        "name": "Globe of Invulnerability",
+        "spellWard": 5
+      },
+      "upcast": {
+        "ward": 1
+      },
+      "gmNote": "The globe doesn't move with you."
     }
   },
   "glyph-of-warding": {
@@ -3072,11 +3765,242 @@
     }
   },
   "guidance": {
-    "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "A bonus to one ability check; the table rolls checks."
+    "2014": {
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Guidance",
+        "checkBonus": "1d4",
+        "once": true
       }
+    },
+    "2024": {
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Guidance",
+        "skillBonus": {
+          "acrobatics": "1d4"
+        }
+      },
+      "choices": [
+        {
+          "id": "acrobatics",
+          "name": "Acrobatics",
+          "set": {
+            "effect": {
+              "name": "Guidance (Acrobatics)",
+              "skillBonus": {
+                "acrobatics": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "animal-handling",
+          "name": "Animal Handling",
+          "set": {
+            "effect": {
+              "name": "Guidance (Animal Handling)",
+              "skillBonus": {
+                "animal-handling": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "arcana",
+          "name": "Arcana",
+          "set": {
+            "effect": {
+              "name": "Guidance (Arcana)",
+              "skillBonus": {
+                "arcana": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "athletics",
+          "name": "Athletics",
+          "set": {
+            "effect": {
+              "name": "Guidance (Athletics)",
+              "skillBonus": {
+                "athletics": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "deception",
+          "name": "Deception",
+          "set": {
+            "effect": {
+              "name": "Guidance (Deception)",
+              "skillBonus": {
+                "deception": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "history",
+          "name": "History",
+          "set": {
+            "effect": {
+              "name": "Guidance (History)",
+              "skillBonus": {
+                "history": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "insight",
+          "name": "Insight",
+          "set": {
+            "effect": {
+              "name": "Guidance (Insight)",
+              "skillBonus": {
+                "insight": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "intimidation",
+          "name": "Intimidation",
+          "set": {
+            "effect": {
+              "name": "Guidance (Intimidation)",
+              "skillBonus": {
+                "intimidation": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "investigation",
+          "name": "Investigation",
+          "set": {
+            "effect": {
+              "name": "Guidance (Investigation)",
+              "skillBonus": {
+                "investigation": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "medicine",
+          "name": "Medicine",
+          "set": {
+            "effect": {
+              "name": "Guidance (Medicine)",
+              "skillBonus": {
+                "medicine": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "nature",
+          "name": "Nature",
+          "set": {
+            "effect": {
+              "name": "Guidance (Nature)",
+              "skillBonus": {
+                "nature": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "perception",
+          "name": "Perception",
+          "set": {
+            "effect": {
+              "name": "Guidance (Perception)",
+              "skillBonus": {
+                "perception": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "performance",
+          "name": "Performance",
+          "set": {
+            "effect": {
+              "name": "Guidance (Performance)",
+              "skillBonus": {
+                "performance": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "persuasion",
+          "name": "Persuasion",
+          "set": {
+            "effect": {
+              "name": "Guidance (Persuasion)",
+              "skillBonus": {
+                "persuasion": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "religion",
+          "name": "Religion",
+          "set": {
+            "effect": {
+              "name": "Guidance (Religion)",
+              "skillBonus": {
+                "religion": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "sleight-of-hand",
+          "name": "Sleight of Hand",
+          "set": {
+            "effect": {
+              "name": "Guidance (Sleight of Hand)",
+              "skillBonus": {
+                "sleight-of-hand": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "stealth",
+          "name": "Stealth",
+          "set": {
+            "effect": {
+              "name": "Guidance (Stealth)",
+              "skillBonus": {
+                "stealth": "1d4"
+              }
+            }
+          }
+        },
+        {
+          "id": "survival",
+          "name": "Survival",
+          "set": {
+            "effect": {
+              "name": "Guidance (Survival)",
+              "skillBonus": {
+                "survival": "1d4"
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "guiding-bolt": {
@@ -3391,18 +4315,21 @@
   },
   "jump": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Longer jumps; jumping isn’t simulated."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Jump"
+      },
+      "gmNote": "Its jump distance is tripled; jumping isn't measured on the map."
     }
   },
   "knock": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Opens a lock."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "door": "unlock",
+      "gmNote": "Point at the door. The knock is loud: audible 300 ft away."
     }
   },
   "legend-lore": {
@@ -3439,7 +4366,12 @@
       "save": null,
       "effect": {
         "name": "Light",
-        "light": { "bright": 20, "dim": 20, "color": "#fff1c8", "colorIntensity": 0.3 }
+        "light": {
+          "bright": 20,
+          "dim": 20,
+          "color": "#fff1c8",
+          "colorIntensity": 0.3
+        }
       }
     }
   },
@@ -3453,18 +4385,22 @@
   },
   "locate-creature": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Finds a creature."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Locate Creature"
+      },
+      "gmNote": "The GM tells you the direction to the creature within 1,000 ft, unless running water is between."
     }
   },
   "locate-object": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Finds an object."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Locate Object"
+      },
+      "gmNote": "The GM tells you the direction to the object within 1,000 ft, unless lead blocks it."
     }
   },
   "longstrider": {
@@ -3488,10 +4424,65 @@
   },
   "mage-hand": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "A spectral hand that handles objects."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "mage-hand",
+            "creature": {
+              "name": "Mage Hand",
+              "size": 0.5,
+              "type": "spell",
+              "speed": 30,
+              "abilities": {
+                "str": 1,
+                "dex": 10,
+                "con": 10,
+                "int": 1,
+                "wis": 10,
+                "cha": 1
+              },
+              "ac": {
+                "base": 10
+              },
+              "hp": {
+                "base": 1
+              },
+              "immunities": [
+                "acid",
+                "bludgeoning",
+                "cold",
+                "fire",
+                "force",
+                "lightning",
+                "necrotic",
+                "piercing",
+                "poison",
+                "psychic",
+                "radiant",
+                "slashing",
+                "thunder"
+              ],
+              "conditionImmunities": [
+                "charmed",
+                "frightened",
+                "grappled",
+                "paralyzed",
+                "petrified",
+                "poisoned",
+                "prone",
+                "restrained",
+                "stunned",
+                "unconscious"
+              ]
+            }
+          }
+        ]
+      },
+      "gmNote": "It can't attack, use magic items or carry more than 10 pounds."
     }
   },
   "magic-circle": {
@@ -3555,10 +4546,68 @@
   },
   "major-image": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "An illusion the GM adjudicates."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "area": null,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "major-image",
+            "creature": {
+              "name": "Major Image",
+              "size": 4,
+              "type": "illusion",
+              "speed": 30,
+              "abilities": {
+                "str": 1,
+                "dex": 10,
+                "con": 10,
+                "int": 1,
+                "wis": 10,
+                "cha": 1
+              },
+              "ac": {
+                "base": 10
+              },
+              "hp": {
+                "base": 1
+              },
+              "immunities": [
+                "acid",
+                "bludgeoning",
+                "cold",
+                "fire",
+                "force",
+                "lightning",
+                "necrotic",
+                "piercing",
+                "poison",
+                "psychic",
+                "radiant",
+                "slashing",
+                "thunder"
+              ],
+              "conditionImmunities": [
+                "blinded",
+                "charmed",
+                "deafened",
+                "frightened",
+                "grappled",
+                "paralyzed",
+                "petrified",
+                "poisoned",
+                "prone",
+                "restrained",
+                "stunned",
+                "unconscious"
+              ]
+            }
+          }
+        ]
+      },
+      "gmNote": "It has sound, smell and temperature. Move it with your action; an Investigation check against your DC reveals it."
     }
   },
   "mass-cure-wounds": {
@@ -3584,10 +4633,21 @@
   },
   "mass-suggestion": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "social",
-        "why": "Suggestions to many creatures."
+      "automated": true,
+      "manual": null,
+      "upcast": null,
+      "targets": 12,
+      "gmNote": "Each creature follows the suggestion as best it can; the GM plays it out."
+    },
+    "2014": {
+      "effect": {
+        "name": "Suggestion"
+      }
+    },
+    "2024": {
+      "effect": {
+        "name": "Suggestion",
+        "conditions": ["charmed"]
       }
     }
   },
@@ -3609,10 +4669,14 @@
   },
   "meld-into-stone": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Hiding inside stone."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "effect": {
+        "name": "Melded into Stone",
+        "banished": true
+      },
+      "gmNote": "Damage to the stone is the GM's: it can expel and hurt the caster."
     }
   },
   "mending": {
@@ -3654,10 +4718,68 @@
   },
   "minor-illusion": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "An illusion the GM adjudicates."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "area": null,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "illusory-object",
+            "creature": {
+              "name": "Minor Illusion",
+              "size": 1,
+              "type": "illusion",
+              "speed": 0,
+              "abilities": {
+                "str": 1,
+                "dex": 10,
+                "con": 10,
+                "int": 1,
+                "wis": 10,
+                "cha": 1
+              },
+              "ac": {
+                "base": 10
+              },
+              "hp": {
+                "base": 1
+              },
+              "immunities": [
+                "acid",
+                "bludgeoning",
+                "cold",
+                "fire",
+                "force",
+                "lightning",
+                "necrotic",
+                "piercing",
+                "poison",
+                "psychic",
+                "radiant",
+                "slashing",
+                "thunder"
+              ],
+              "conditionImmunities": [
+                "blinded",
+                "charmed",
+                "deafened",
+                "frightened",
+                "grappled",
+                "paralyzed",
+                "petrified",
+                "poisoned",
+                "prone",
+                "restrained",
+                "stunned",
+                "unconscious"
+              ]
+            }
+          }
+        ]
+      },
+      "gmNote": "An image of an object up to 5 ft, or a sound. An Investigation check against your DC sees through it; remove the token then."
     }
   },
   "mirage-arcane": {
@@ -3715,18 +4837,31 @@
   },
   "nondetection": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Hides a target from divination."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Nondetection"
+      },
+      "gmNote": "It can't be targeted by divination or seen through scrying sensors."
     }
   },
   "pass-without-trace": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "+10 to Stealth checks; the table rolls checks."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "area": null,
+      "effect": {
+        "name": "Pass without Trace",
+        "skillBonus": {
+          "stealth": "10"
+        },
+        "aura": {
+          "radius": 30,
+          "who": "allies"
+        }
+      },
+      "gmNote": "Creatures you choose are left out by hand; tracks it leaves can't be followed except by magic."
     }
   },
   "passwall": {
@@ -3788,10 +4923,18 @@
   },
   "phantom-steed": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "A riding horse for travel."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "riding-horse"
+          }
+        ]
+      },
+      "gmNote": "It moves 100 ft and vanishes if it takes any damage."
     }
   },
   "planar-ally": {
@@ -4013,10 +5156,68 @@
   },
   "project-image": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "An illusory double far away."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "area": null,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "illusory-double",
+            "creature": {
+              "name": "Illusory Double",
+              "size": 1,
+              "type": "illusion",
+              "speed": 60,
+              "abilities": {
+                "str": 1,
+                "dex": 10,
+                "con": 10,
+                "int": 1,
+                "wis": 10,
+                "cha": 1
+              },
+              "ac": {
+                "base": 10
+              },
+              "hp": {
+                "base": 1
+              },
+              "immunities": [
+                "acid",
+                "bludgeoning",
+                "cold",
+                "fire",
+                "force",
+                "lightning",
+                "necrotic",
+                "piercing",
+                "poison",
+                "psychic",
+                "radiant",
+                "slashing",
+                "thunder"
+              ],
+              "conditionImmunities": [
+                "blinded",
+                "charmed",
+                "deafened",
+                "frightened",
+                "grappled",
+                "paralyzed",
+                "petrified",
+                "poisoned",
+                "prone",
+                "restrained",
+                "stunned",
+                "unconscious"
+              ]
+            }
+          }
+        ]
+      },
+      "gmNote": "It looks and sounds like you; you can see and hear through it. A hit or a successful check reveals it."
     }
   },
   "protection-from-energy": {
@@ -4164,10 +5365,10 @@
   },
   "reincarnate": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "A new body for a dead creature, rolled on a table, out of combat."
-      }
+      "automated": true,
+      "manual": null,
+      "revive": "full",
+      "gmNote": "It comes back in a new body: roll the species on the spell's table."
     }
   },
   "remove-curse": {
@@ -4262,11 +5463,160 @@
   "resistance": {
     "both": {},
     "2024": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Damage reduced once per turn: not tracked yet."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Resistance (Acid)",
+        "ward": {
+          "dice": "1d4",
+          "types": ["acid"]
+        }
+      },
+      "choices": [
+        {
+          "id": "acid",
+          "name": "Acid",
+          "set": {
+            "effect": {
+              "name": "Resistance (Acid)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["acid"]
+              }
+            }
+          }
+        },
+        {
+          "id": "bludgeoning",
+          "name": "Bludgeoning",
+          "set": {
+            "effect": {
+              "name": "Resistance (Bludgeoning)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["bludgeoning"]
+              }
+            }
+          }
+        },
+        {
+          "id": "cold",
+          "name": "Cold",
+          "set": {
+            "effect": {
+              "name": "Resistance (Cold)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["cold"]
+              }
+            }
+          }
+        },
+        {
+          "id": "fire",
+          "name": "Fire",
+          "set": {
+            "effect": {
+              "name": "Resistance (Fire)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["fire"]
+              }
+            }
+          }
+        },
+        {
+          "id": "lightning",
+          "name": "Lightning",
+          "set": {
+            "effect": {
+              "name": "Resistance (Lightning)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["lightning"]
+              }
+            }
+          }
+        },
+        {
+          "id": "necrotic",
+          "name": "Necrotic",
+          "set": {
+            "effect": {
+              "name": "Resistance (Necrotic)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["necrotic"]
+              }
+            }
+          }
+        },
+        {
+          "id": "piercing",
+          "name": "Piercing",
+          "set": {
+            "effect": {
+              "name": "Resistance (Piercing)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["piercing"]
+              }
+            }
+          }
+        },
+        {
+          "id": "poison",
+          "name": "Poison",
+          "set": {
+            "effect": {
+              "name": "Resistance (Poison)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["poison"]
+              }
+            }
+          }
+        },
+        {
+          "id": "radiant",
+          "name": "Radiant",
+          "set": {
+            "effect": {
+              "name": "Resistance (Radiant)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["radiant"]
+              }
+            }
+          }
+        },
+        {
+          "id": "slashing",
+          "name": "Slashing",
+          "set": {
+            "effect": {
+              "name": "Resistance (Slashing)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["slashing"]
+              }
+            }
+          }
+        },
+        {
+          "id": "thunder",
+          "name": "Thunder",
+          "set": {
+            "effect": {
+              "name": "Resistance (Thunder)",
+              "ward": {
+                "dice": "1d4",
+                "types": ["thunder"]
+              }
+            }
+          }
+        }
+      ]
     },
     "2014": {
       "automated": true,
@@ -4338,11 +5688,13 @@
   },
   "scrying": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "utility",
-        "why": "Remote viewing of a creature."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Scrying"
+      },
+      "gmNote": "The target saves first (with modifiers for how well you know it); on a failure you see and hear it through an invisible sensor.",
+      "save": null
     }
   },
   "searing-smite": {
@@ -4399,11 +5751,17 @@
   },
   "seeming": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "social",
-        "why": "Disguising many creatures."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 8,
+      "save": {
+        "ability": "cha",
+        "onSave": "none"
+      },
+      "effect": {
+        "name": "Seeming"
+      },
+      "gmNote": "Willing creatures needn't save. Change the token pictures by hand if you like."
     }
   },
   "sending": {
@@ -4457,11 +5815,51 @@
     }
   },
   "shillelagh": {
-    "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Changes the weapon’s die and attack ability: not modelled yet."
-      }
+    "2014": {
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "effect": {
+        "name": "Shillelagh",
+        "weaponSpell": {
+          "weapons": ["club", "quarterstaff"],
+          "dice": ["1d8"]
+        }
+      },
+      "gmNote": "The weapon counts as magical while it lasts."
+    },
+    "2024": {
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "effect": {
+        "name": "Shillelagh",
+        "weaponSpell": {
+          "weapons": ["club", "quarterstaff"],
+          "dice": ["1d8", "1d10", "1d12", "2d6"]
+        }
+      },
+      "choices": [
+        {
+          "id": "bludgeoning",
+          "name": "Bludgeoning",
+          "set": {}
+        },
+        {
+          "id": "force",
+          "name": "Force",
+          "set": {
+            "effect": {
+              "name": "Shillelagh",
+              "weaponSpell": {
+                "weapons": ["club", "quarterstaff"],
+                "dice": ["1d8", "1d10", "1d12", "2d6"],
+                "type": "force"
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "shining-smite": {
@@ -4483,18 +5881,90 @@
   },
   "silence": {
     "both": {
-      "manual": {
-        "kind": "gm",
-        "why": "Needs an area that deafens and stops verbal spells inside it."
-      }
+      "automated": true,
+      "manual": null,
+      "zone": {
+        "onCast": false
+      },
+      "field": {
+        "name": "Silence",
+        "conditions": ["deafened"],
+        "silenced": true,
+        "changes": [
+          {
+            "key": "immunities",
+            "mode": "add",
+            "value": "thunder"
+          }
+        ]
+      },
+      "gmNote": "No sound reaches into or out of the sphere."
     }
   },
   "silent-image": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "An illusion the GM adjudicates."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "area": null,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "silent-image",
+            "creature": {
+              "name": "Silent Image",
+              "size": 3,
+              "type": "illusion",
+              "speed": 30,
+              "abilities": {
+                "str": 1,
+                "dex": 10,
+                "con": 10,
+                "int": 1,
+                "wis": 10,
+                "cha": 1
+              },
+              "ac": {
+                "base": 10
+              },
+              "hp": {
+                "base": 1
+              },
+              "immunities": [
+                "acid",
+                "bludgeoning",
+                "cold",
+                "fire",
+                "force",
+                "lightning",
+                "necrotic",
+                "piercing",
+                "poison",
+                "psychic",
+                "radiant",
+                "slashing",
+                "thunder"
+              ],
+              "conditionImmunities": [
+                "blinded",
+                "charmed",
+                "deafened",
+                "frightened",
+                "grappled",
+                "paralyzed",
+                "petrified",
+                "poisoned",
+                "prone",
+                "restrained",
+                "stunned",
+                "unconscious"
+              ]
+            }
+          }
+        ]
+      },
+      "gmNote": "Move it with your action. Physical contact or an Investigation check against your DC reveals it; remove the token then."
     }
   },
   "simulacrum": {
@@ -4659,34 +6129,43 @@
   },
   "speak-with-animals": {
     "both": {
-      "manual": {
-        "kind": "social",
-        "why": "Talking with animals."
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Speak with Animals"
       }
     }
   },
   "speak-with-dead": {
     "both": {
-      "manual": {
-        "kind": "social",
-        "why": "Questions to a corpse."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Speaking"
+      },
+      "gmNote": "The corpse answers up to five questions; the GM answers."
     }
   },
   "speak-with-plants": {
     "both": {
-      "manual": {
-        "kind": "social",
-        "why": "Talking with plants."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Speak with Plants"
+      },
+      "gmNote": "Plants within 30 ft can talk and may change the ground the GM paints.",
+      "targets": 0,
+      "area": null
     }
   },
   "spider-climb": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Climbing walls and ceilings; climbing isn’t simulated."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Spider Climb"
+      },
+      "gmNote": "It climbs walls and ceilings with its hands free, at its walking speed."
     }
   },
   "spike-growth": {
@@ -4798,10 +6277,19 @@
   },
   "suggestion": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "social",
-        "why": "A suggested course of action the GM plays out."
+      "automated": true,
+      "manual": null,
+      "gmNote": "The creature follows the suggestion as best it can; the GM plays it out."
+    },
+    "2014": {
+      "effect": {
+        "name": "Suggestion"
+      }
+    },
+    "2024": {
+      "effect": {
+        "name": "Suggestion",
+        "conditions": ["charmed"]
       }
     }
   },
@@ -4897,10 +6385,12 @@
   },
   "telepathic-bond": {
     "both": {
-      "manual": {
-        "kind": "social",
-        "why": "Telepathic link between creatures."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Telepathic Bond"
+      },
+      "targets": 8
     }
   },
   "teleport": {
@@ -4950,26 +6440,29 @@
   },
   "tongues": {
     "both": {
-      "manual": {
-        "kind": "social",
-        "why": "Understanding and speaking any language."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Tongues"
+      },
+      "gmNote": "It understands and speaks every language."
     }
   },
   "transport-via-plants": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Travel between plants."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "teleport": 5280,
+      "gmNote": "Point at a plant of the same kind you have seen or touched; farther places are on another scene, teleport there by hand."
     }
   },
   "tree-stride": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Travel between trees."
-      }
+      "automated": true,
+      "manual": null,
+      "teleport": 500,
+      "gmNote": "Step into a tree and out of another of its kind within 500 ft, once a turn while it lasts: start and end next to a tree."
     }
   },
   "true-polymorph": {
@@ -5017,11 +6510,49 @@
   "true-strike": {
     "both": {},
     "2024": {
-      "automated": false,
-      "manual": {
-        "kind": "gm",
-        "why": "Needs a weapon attack made as part of a spell."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "weaponStrike": true,
+      "effect": {
+        "name": "True Strike",
+        "endsOnAttack": true,
+        "rounds": 1,
+        "weaponSpell": {
+          "weapons": [],
+          "extra": {
+            "dice": ["", "1d6", "2d6", "3d6"],
+            "type": "radiant"
+          }
+        }
+      },
+      "choices": [
+        {
+          "id": "weapon",
+          "name": "Weapon's damage",
+          "set": {}
+        },
+        {
+          "id": "radiant",
+          "name": "Radiant",
+          "set": {
+            "effect": {
+              "name": "True Strike",
+              "endsOnAttack": true,
+              "rounds": 1,
+              "weaponSpell": {
+                "weapons": [],
+                "type": "radiant",
+                "extra": {
+                  "dice": ["", "1d6", "2d6", "3d6"],
+                  "type": "radiant"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "gmNote": "Make the attack now: casting it gives you one weapon attack."
     },
     "2014": {
       "automated": true,
@@ -5036,10 +6567,40 @@
   },
   "unseen-servant": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "An invisible servant for chores."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 0,
+      "summon": {
+        "turn": "shared",
+        "options": [
+          {
+            "monster": "unseen-servant",
+            "creature": {
+              "name": "Unseen Servant",
+              "size": 1,
+              "type": "spell",
+              "speed": 15,
+              "abilities": {
+                "str": 2,
+                "dex": 10,
+                "con": 10,
+                "int": 1,
+                "wis": 10,
+                "cha": 1
+              },
+              "ac": {
+                "base": 10
+              },
+              "hp": {
+                "base": 1
+              },
+              "immunities": ["poison", "psychic"],
+              "conditionImmunities": ["charmed", "frightened", "poisoned"]
+            }
+          }
+        ]
+      },
+      "gmNote": "It is invisible and does simple tasks you command; it can't attack."
     }
   },
   "vampiric-touch": {
@@ -5188,18 +6749,23 @@
   },
   "water-breathing": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Breathing underwater."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Water Breathing"
+      },
+      "targets": 10
     }
   },
   "water-walk": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Walking on liquids."
-      }
+      "automated": true,
+      "manual": null,
+      "effect": {
+        "name": "Water Walk"
+      },
+      "gmNote": "It moves across liquid as if it were solid ground.",
+      "targets": 10
     }
   },
   "web": {
@@ -5242,10 +6808,21 @@
   },
   "wind-walk": {
     "both": {
-      "manual": {
-        "kind": "utility",
-        "why": "Travel as clouds."
-      }
+      "automated": true,
+      "manual": null,
+      "targets": 10,
+      "effect": {
+        "name": "Wind Walk",
+        "changes": [
+          {
+            "key": "speed",
+            "mode": "upgrade",
+            "value": 300
+          }
+        ],
+        "resistances": ["bludgeoning", "piercing", "slashing"]
+      },
+      "gmNote": "As a cloud a creature can't speak, attack or cast spells; changing back takes a minute, and it falls if still aloft."
     }
   },
   "wind-wall": {
@@ -5271,11 +6848,20 @@
   },
   "zone-of-truth": {
     "both": {
-      "automated": false,
-      "manual": {
-        "kind": "social",
-        "why": "Creatures can’t lie."
-      }
+      "automated": true,
+      "manual": null,
+      "save": {
+        "ability": "cha",
+        "onSave": "none"
+      },
+      "zone": {
+        "onCast": true
+      },
+      "effect": {
+        "name": "Can't Lie",
+        "rounds": 1
+      },
+      "gmNote": "You know whether each creature succeeded. Evasive answers are still allowed."
     }
   }
 }

@@ -11,7 +11,7 @@ import type { Token } from './token-schema.ts';
 import type { Effect, Spell } from './spell-schema.ts';
 import { dispelled, tierFor, tierSpell } from './spell-options.ts';
 
-export { withChoice } from './spell-options.ts';
+export { withAgain, withChoice } from './spell-options.ts';
 import type { Damage, DamageType } from './stats-schema.ts';
 
 // Casting a spell: what it does at the slot it's cast with, whether the
@@ -98,10 +98,31 @@ export function castProblem({
 }): string | undefined {
   const caster = sheet.caster;
   if (!caster?.spells.some((s) => s.id === spell.id)) return `doesn't know ${spell.name}`;
+  const stopped = stoppedBy(sheet, spell);
+  if (stopped) return stopped;
   if (spell.level === 0) return undefined;
   if (slot < spell.level || slot > 9) return `needs a slot of ${ORDINAL[spell.level]} level or higher`;
   if (!free && !caster.left[slot - 1]) return `has no ${ORDINAL[slot]}-level slots left`;
   return undefined;
+}
+
+/** What stops a spell being cast at all where the caster stands: silence for a spoken one, an antimagic field for any. */
+export function stoppedBy(
+  sheet: Pick<Creature, 'effects'>,
+  spell: Pick<Spell, 'name' | 'components'>,
+): string | undefined {
+  if (sheet.effects.some((e) => e.antimagic)) return `can't cast ${spell.name} inside an antimagic field`;
+  const hushed = sheet.effects.find((e) => e.silenced);
+  if (hushed && spell.components.includes('v')) return `can't speak ${spell.name}'s words inside ${hushed.name}`;
+  return undefined;
+}
+
+/** Magic can't reach the target: it stands in an antimagic field, or in a globe that stops spells this low from outside. */
+function warded(cast: Cast, target: CastSide): boolean {
+  const effects = target.sheet.effects;
+  if (effects.some((e) => e.antimagic)) return true;
+  const inside = new Set(cast.caster.sheet.effects.map((e) => e.auraFrom).filter(Boolean));
+  return effects.some((e) => e.spellWard !== undefined && cast.slot <= e.spellWard && !inside.has(e.auraFrom));
 }
 
 export interface CastSide {
@@ -118,6 +139,8 @@ export interface CastInput {
   gridSize: number;
   /** The scene's grid (default square; none: distances as the crow flies). */
   grid?: GridKind;
+  /** A save DC of its own: the original caster's, for a spell another creature uses again (dragon's breath). */
+  dc?: number;
 }
 
 export interface DamageDealt {
@@ -154,6 +177,8 @@ export interface CastResult {
   killed?: boolean;
   /** Feet the target is pushed away from the caster (negative: pulled closer). */
   push?: number;
+  /** The target's ward (2024 resistance) took some of the damage and is used for this turn. */
+  warded?: string;
 }
 
 export interface CastOutcome {
@@ -173,6 +198,8 @@ interface Cast {
   shared?: { roll: Roll; type: DamageType }[];
   caster: CastSide;
   dc: number;
+  /** The caster's cantrip tier: 1, then 2, 3 and 4 from levels 5, 11 and 17. */
+  tier: number;
   attackBonus: number;
   mod: number;
   gridSize: number;
@@ -184,11 +211,21 @@ function rollDamage(parts: readonly Damage[], crit: boolean, rng: Rng): { roll: 
   return parts.map((d) => ({ roll: roll(crit ? critDice(d.dice) : d.dice, rng), type: d.type }));
 }
 
-function dealt(target: Creature, rolls: { roll: Roll; type: DamageType }[], half: boolean) {
+function dealt(
+  target: Creature,
+  rolls: { roll: Roll; type: DamageType }[],
+  { half, rng }: { half: boolean; rng: Rng },
+) {
   const amounts = rolls.map((r) => ({ amount: half ? Math.floor(r.roll.total / 2) : r.roll.total, type: r.type }));
-  const { dealt: each, hp, tempHp } = applyDamage(target, amounts);
+  const { dealt: each, hp, tempHp, warded } = applyDamage(target, amounts, rng);
   const parts = rolls.map((r, i) => ({ ...r, dealt: each[i]! }));
-  return { parts, hp, damage: each.reduce((s, d) => s + d, 0), ...(tempHp !== target.tempHp && { tempHp }) };
+  return {
+    parts,
+    hp,
+    damage: each.reduce((s, d) => s + d, 0),
+    ...(tempHp !== target.tempHp && { tempHp }),
+    ...(warded && { warded }),
+  };
 }
 
 /** A rider spell's damage, carried by its effect instead of dealt now. */
@@ -207,12 +244,33 @@ function casterNumbers(cast: Cast, turnTempHp: Effect['turnTempHp'], sanctuary: 
   };
 }
 
+/** A weapon spell's numbers for this caster: its spellcasting ability, and the die and extra damage of its cantrip tier. */
+function weaponNumbers(cast: Cast, ws: Effect['weaponSpell']): Partial<Effect> {
+  if (!ws) return {};
+  const at = <T>(list: readonly T[] | undefined) => list?.[Math.min(cast.tier, list.length) - 1];
+  const die = at(ws.dice);
+  const extra = ws.extra && at(ws.extra.dice);
+  const { extra: _extra, ...rest } = ws;
+  return {
+    weaponSpell: { ...rest, ability: ws.ability ?? cast.caster.sheet.caster?.ability, dice: die ? [die] : undefined },
+    ...(extra && { hitDamage: [{ dice: extra, type: ws.extra!.type }] }),
+  };
+}
+
+/** A spell another creature uses again (dragon's breath): its effect carries the spell, slot, option and the caster's DC. */
+function handedOn({ spell, slot, dc }: Cast): Partial<Effect> {
+  if (spell.repeatBy !== 'target') return {};
+  return { repeat: { spell: spell.id, slot, ...(spell.chosen && { choice: spell.chosen }), dc } };
+}
+
 function effectFor(cast: Cast): Effect | undefined {
   const { spell, caster, dc } = cast;
   if (!spell.effect && !spell.rider) return undefined;
   const { repeatSave, saveOnDamage, turnTempHp, forCaster, ...template } = { ...spell.effect, ...riderOf(cast) };
   return {
     ...template,
+    ...weaponNumbers(cast, template.weaponSpell),
+    ...handedOn(cast),
     ...(forCaster && { onlyFor: caster.token.id }),
     spell: spell.id,
     slot: cast.slot,
@@ -240,13 +298,17 @@ function spellAttack(cast: Cast, target: CastSide, used: UsedEffect[]) {
   return { attack, hit, crit };
 }
 
+/** The target's save when the spell lands, against the spell's own DC or the caster's; none when it saves only later. */
+function castSave({ spell, dc, rng }: Cast, target: CastSide): SaveRoll | undefined {
+  if (!spell.save?.onCast) return undefined;
+  return resistSave(target.sheet, rollSpellSave(target.sheet, spell.save.ability, spell.save.dc ?? dc, rng));
+}
+
 /** Attack roll and/or save: whether the spell lands in full, or for half damage. */
 function landing(cast: Cast, target: CastSide, used: UsedEffect[]) {
-  const { spell, rng } = cast;
+  const { spell } = cast;
   const attack = spell.attack && !spell.autoHit ? spellAttack(cast, target, used) : undefined;
-  const save = spell.save?.onCast
-    ? resistSave(target.sheet, rollSpellSave(target.sheet, spell.save.ability, cast.dc, rng))
-    : undefined;
+  const save = castSave(cast, target);
   const landed = (attack?.hit ?? true) && !save?.success;
   const half = save?.success === true && spell.save?.onSave === 'half';
   return { attack, save, landed, half };
@@ -255,13 +317,14 @@ function landing(cast: Cast, target: CastSide, used: UsedEffect[]) {
 /** Results that need no attack or save: the wrong kind of creature, healing, temporary hit points, riders. */
 function unrolled(cast: Cast, target: CastSide, base: Base): CastResult | undefined {
   const { spell } = cast;
+  if (warded(cast, target)) return { ...base, immune: true };
   if (spell.creatureTypes && !spell.creatureTypes.includes(target.sheet.type)) return { ...base, immune: true };
   if (spell.heal) return heal(cast, target, base);
   if (spell.tempHp) return shield(cast, target, base);
   if (spell.rider) return { ...base, effect: effectFor(cast) };
   if (spell.stabilize) return { ...base, stabilized: true };
   if (spell.revive) return revive(target, base, spell.revive === 'full');
-  if (spell.cures) return { ...base, cured: cured(spell, target.token), effect: effectFor(cast) };
+  if (spell.cures && !spell.save) return { ...base, cured: cured(spell, target.token), effect: effectFor(cast) };
   if (spell.dispels) return { ...base, cured: dispelled(spell, target.token, cast) };
   return undefined;
 }
@@ -292,13 +355,13 @@ function rolled(cast: Cast, target: CastSide, base: Base, { attack, save, landed
   const { spell } = cast;
   const marks = attack ? markDamage(target.sheet, cast.caster.token.id, spell.damage[0]?.type ?? 'force') : [];
   const rolls = cast.shared ?? rollDamage([...spell.damage, ...marks], attack?.crit === true, cast.rng);
-  const damaged = landed || half ? dealt(target.sheet, rolls, half) : undefined;
+  const damaged = landed || half ? dealt(target.sheet, rolls, { half, rng: cast.rng }) : undefined;
   return {
     ...base,
     ...(attack && { attack: attack.attack, hit: attack.hit, crit: attack.crit }),
     save,
     ...damaged,
-    ...(landed && { effect: effectFor(cast), push: spell.push }),
+    ...(landed && { effect: effectFor(cast), push: spell.push, cured: spell.cures && cured(spell, target.token) }),
   };
 }
 
@@ -378,25 +441,31 @@ function drainOf(cast: Cast, results: readonly CastResult[]): number | undefined
   return Math.floor(dealt / 2);
 }
 
+/** The numbers a cast rolls with: the spell at its slot, and the caster's DC, attack bonus, modifier and cantrip tier. */
+function castOf(input: CastInput, rng: Rng): Cast {
+  const { caster, slot, gridSize, grid } = input;
+  const book = caster.sheet.caster;
+  const level = book?.level ?? 1;
+  return {
+    spell: scaledSpell(input.spell, slot, level),
+    slot,
+    caster,
+    dc: input.dc ?? book?.dc ?? 10,
+    tier: 1 + CANTRIP_TIERS.filter((l) => level >= l).length,
+    attackBonus: book?.attack ?? 0,
+    mod: book ? abilityMod(caster.sheet.abilities[book.ability]) : 0,
+    gridSize,
+    grid,
+    rng,
+  };
+}
+
 /**
  * Rolls a spell against its targets. Beams and repeated targets are rolled
  * one after another, each seeing the damage dealt before it.
  */
 export function resolveCast(input: CastInput, rng: Rng = Math.random): CastOutcome {
-  const { caster, slot, gridSize, grid } = input;
-  const book = caster.sheet.caster;
-  const mod = book ? abilityMod(caster.sheet.abilities[book.ability]) : 0;
-  const cast: Cast = {
-    spell: scaledSpell(input.spell, slot, book?.level ?? 1),
-    slot,
-    caster,
-    dc: book?.dc ?? 10,
-    attackBonus: book?.attack ?? 0,
-    mod,
-    gridSize,
-    grid,
-    rng,
-  };
+  const cast = castOf(input, rng);
   if (!cast.spell.attack && cast.spell.beams === 1 && !cast.spell.rider)
     cast.shared = rollDamage(cast.spell.damage, false, rng);
   const reached = pooled(cast, input.targets);

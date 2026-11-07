@@ -1,12 +1,15 @@
 import { actsNow, currentTurn, isLairTurn } from '@vtt/system-dnd5e';
 import { isParty } from '@vtt/shared';
+import { HourglassIcon, MoonIcon, SwordsIcon, UsersIcon } from 'lucide-react';
 import { useState } from 'react';
+import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
 import { Face, HpBar } from './Portrait.tsx';
 import { Button } from './kit/button.tsx';
 import { EncounterButton } from './EncounterPanel.tsx';
 import { RequestCheckButton } from './RequestCheck.tsx';
 import { Toggle } from './kit/toggle.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 
 const SHARED_KEY = 'vtt.sharedTurns';
 
@@ -91,63 +94,72 @@ function LairTurn({ current }: Readonly<{ current: boolean }>) {
   );
 }
 
-/** GM: the whole party takes a short or long rest. */
-function RestButtons({ session }: Readonly<{ session: Session }>) {
-  const party = () => [...session.tokens.values()].filter((t) => isParty(t) && t.sheet).map((t) => t.id);
+/** GM: the whole party takes a short or long rest, from one menu. */
+function RestButton({ session }: Readonly<{ session: Session }>) {
+  const [open, setOpen] = useState(false);
+  const rest = (kind: 'short' | 'long') => {
+    const party = [...session.tokens.values()].filter((t) => isParty(t) && t.sheet).map((t) => t.id);
+    session.requests.rest(party, kind);
+    setOpen(false);
+  };
   return (
-    <>
-      <Button
-        variant="outline"
-        size="sm"
-        title="Party takes a short rest"
-        onClick={() => session.requests.rest(party(), 'short')}
-      >
-        Short rest
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        title="Party takes a long rest"
-        onClick={() => session.requests.rest(party(), 'long')}
-      >
-        Long rest
-      </Button>
-    </>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" title={t('fight.restHint')}>
+          <MoonIcon /> {t('fight.rest')}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="flex w-[260px] flex-col gap-1 p-1.5">
+        {(['short', 'long'] as const).map((kind) => (
+          <Button
+            key={kind}
+            variant="ghost"
+            className="h-auto flex-col items-start gap-0 py-1.5 text-left"
+            onClick={() => rest(kind)}
+          >
+            <span>{t(kind === 'short' ? 'fight.shortRest' : 'fight.longRest')}</span>
+            <span className="text-xs font-normal normal-case tracking-normal text-muted-foreground whitespace-normal">
+              {t(kind === 'short' ? 'fight.shortRestHint' : 'fight.longRestHint')}
+            </span>
+          </Button>
+        ))}
+      </PopoverContent>
+    </Popover>
   );
 }
 
-/** The GM's controls between fights: start one (shared party turns or not), turn-based mode, rests. */
+/** The GM's controls between fights: start one (shared party turns or not), turn-based mode, rests, encounters, checks. */
 function IdleBar({ session, onStart }: StartProps) {
   const [shared, setShared] = useState(loadShared);
   return (
     <div className="turn-order idle flex-wrap justify-center">
-      <Button
-        variant="outline"
-        onClick={() => onStart(shared)}
-        title="Roll initiative for every creature with stats on screen"
-      >
-        Start combat
-      </Button>
-      <Toggle
-        variant="plate"
-        pressed={shared}
-        onPressedChange={(on) => {
-          setShared(on);
-          saveShared(on);
-        }}
-        title="Shared party turns (BG3): party members next to each other in the order act together, in any order"
-      >
-        Party acts together
-      </Toggle>
+      <span className="flex">
+        <Button onClick={() => onStart(shared)} title={t('fight.startHint')}>
+          <SwordsIcon /> {t('fight.start')}
+        </Button>
+        <Toggle
+          variant="plate"
+          className="-ml-px w-8 px-0"
+          pressed={shared}
+          onPressedChange={(on) => {
+            setShared(on);
+            saveShared(on);
+          }}
+          title={t('fight.sharedHint')}
+          aria-label={t('fight.shared')}
+        >
+          <UsersIcon />
+        </Toggle>
+      </span>
       <Button
         variant="outline"
         size="sm"
         onClick={() => session.requests.setTurnBased(true)}
-        title="Turn-based mode: the party takes turns, 6 seconds a round"
+        title={t('fight.turnBasedHint')}
       >
-        Turn-based
+        <HourglassIcon /> {t('fight.turnBased')}
       </Button>
-      <RestButtons session={session} />
+      <RestButton session={session} />
       <EncounterButton session={session} />
       <RequestCheckButton session={session} />
     </div>

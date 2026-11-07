@@ -2,6 +2,7 @@ import { type Rng, roll, type Roll } from '@vtt/shared';
 import { abilityMod } from './creature-math.ts';
 import type { Creature } from './creature.ts';
 import { d20Formula, saveModifiers } from './effects.ts';
+import type { Effect } from './spell-schema.ts';
 import type { Ability } from './stats-schema.ts';
 import type { Token } from './token-schema.ts';
 import { type Skill, SKILLS } from './origins.ts';
@@ -46,9 +47,11 @@ export interface CheckRoll {
   total: number;
   /** Against a DC; undefined without one. */
   success?: boolean;
+  /** Effects that last for one check and are now used up (2014 guidance). */
+  used?: string[];
 }
 
-/** Rolls the check, with its effects' disadvantage and bonus dice, against `dc` when there is one. */
+/** Rolls the check, with its effects' advantage, disadvantage and bonus dice, against `dc` when there is one. */
 export function rollCheck(
   token: Pick<Token, 'stats'>,
   sheet: Creature,
@@ -57,14 +60,28 @@ export function rollCheck(
 ): CheckRoll {
   const { dc } = check;
   if (check.save) return rolledSave(token, sheet, check, rng);
+  const mods = checkModifiers(sheet, check);
+  const result = roll(d20Formula(checkBonus(token, sheet, check), mods.bonus, mods), rng);
+  return {
+    roll: result,
+    total: result.total,
+    ...(dc !== undefined && { success: result.total >= dc }),
+    ...(mods.used.length && { used: mods.used }),
+  };
+}
+
+/** Advantage, disadvantage and bonus dice effects give a check, and the one-check effects it uses up (2014 guidance). */
+function checkModifiers(sheet: Creature, check: CheckKind) {
+  const { effects } = sheet;
   const disadvantage =
-    sheet.effects.some(
-      (e) => e.checkDisadvantage === true || e.checkDisadvantageFor?.includes(check.ability) === true,
-    ) || sheet.conditions.some((c) => HINDERED.includes(c));
-  const extra = sheet.effects.flatMap((e) => (e.checkBonus ? [e.checkBonus] : []));
-  const advantage = hasCheckAdvantage(sheet, check);
-  const result = roll(d20Formula(checkBonus(token, sheet, check), extra, { advantage, disadvantage }), rng);
-  return { roll: result, total: result.total, ...(dc !== undefined && { success: result.total >= dc }) };
+    effects.some((e) => e.checkDisadvantage === true || e.checkDisadvantageFor?.includes(check.ability) === true) ||
+    sheet.conditions.some((c) => HINDERED.includes(c));
+  const advantage =
+    effects.some((e) => e.checkAdvantageFor?.includes(check.ability) === true) || hasCheckAdvantage(sheet, check);
+  const skilled = (e: Effect) => (check.skill ? e.skillBonus?.[check.skill] : undefined);
+  const giving = effects.filter((e) => (e.checkBonus ?? skilled(e)) !== undefined);
+  const bonus = giving.flatMap((e) => [e.checkBonus, skilled(e)].filter((d): d is string => !!d));
+  return { advantage, disadvantage, bonus, used: giving.filter((e) => e.once).map((e) => e.id) };
 }
 
 /** Whether an effect gives the check advantage: its ability, its skill (a cloak of elvenkind's stealth). */
