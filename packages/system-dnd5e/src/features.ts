@@ -147,6 +147,21 @@ function worsen(effect: Effect): Effect {
   return { ...effect, conditions: effect.worsens, worsens: undefined, repeatSave: undefined };
 }
 
+/** An effect after its bearer's repeated save: gone (undefined), worse, or tallied. */
+function afterSave(e: Effect, success: boolean): { effect?: Effect; worse?: boolean } {
+  if (!e.threeTimes) {
+    if (success) return {};
+    return e.worsens ? { effect: worsen(e), worse: true } : { effect: e };
+  }
+  const tally = {
+    saved: (e.tally?.saved ?? 0) + (success ? 1 : 0),
+    failed: (e.tally?.failed ?? 0) + (success ? 0 : 1),
+  };
+  if (tally.saved >= 3) return {};
+  if (tally.failed >= 3) return { effect: { ...worsen(e), threeTimes: undefined, tally: undefined }, worse: true };
+  return { effect: { ...e, tally } };
+}
+
 /** Repeats the saves of effects like hold person; those saved against end, and some failed ones get worse. */
 export function endOfTurnSaves(
   token: Token,
@@ -155,13 +170,15 @@ export function endOfTurnSaves(
 ): { token: Token; saves: { effect: string; save: SaveRoll; worse?: boolean }[] } {
   const saves = (token.effects ?? [])
     .filter((e) => e.repeatSave && e.save)
-    .map((e) => ({ e, save: rollSave(sheet, e.save!.ability, e.save!.dc, rng) }));
-  const ended = new Set(saves.filter((s) => s.save.success).map((s) => s.e.id));
-  const worse = new Set(saves.filter((s) => !s.save.success && s.e.worsens).map((s) => s.e.id));
-  const kept = removeEffects(token, ended);
-  const effects = kept.effects?.map((e) => (worse.has(e.id) ? worsen(e) : e));
+    .map((e) => {
+      const save = rollSave(sheet, e.save!.ability, e.save!.dc, rng);
+      return { e, save, ...afterSave(e, save.success) };
+    });
+  const kept = removeEffects(token, new Set(saves.filter((s) => !s.effect).map((s) => s.e.id)));
+  const changed = new Map(saves.flatMap((s) => (s.effect && s.effect !== s.e ? [[s.e.id, s.effect] as const] : [])));
+  const effects = kept.effects?.map((e) => changed.get(e.id) ?? e);
   return {
-    token: worse.size ? { ...kept, effects } : kept,
-    saves: saves.map(({ e, save }) => ({ effect: e.name, save, ...(worse.has(e.id) && { worse: true }) })),
+    token: changed.size ? { ...kept, effects } : kept,
+    saves: saves.map(({ e, save, worse }) => ({ effect: e.name, save, ...(worse && { worse: true }) })),
   };
 }

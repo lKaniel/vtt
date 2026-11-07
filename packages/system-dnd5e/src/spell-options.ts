@@ -11,9 +11,21 @@ export function withChoice(spell: Spell, choice: string | undefined): Spell {
   if (!spell.choices) return spell;
   const picked = choice === undefined ? spell.choices[0]! : spell.choices.find((c) => c.id === choice);
   if (!picked) throw new Error(`${spell.name} has no option called ${choice}`);
-  const fields: Record<string, unknown> = { ...spell, ...picked.set, chosen: picked.id };
-  const merged = Object.entries(fields).filter(([, v]) => v !== null);
-  return SpellSchema.parse(Object.fromEntries(merged));
+  return overlaid(spell, { ...picked.set, chosen: picked.id });
+}
+
+/** The spell's fields with `set` over them; `null` takes one away. */
+function overlaid(spell: Spell, set: Record<string, unknown>): Spell {
+  const fields: Record<string, unknown> = { ...spell, ...set };
+  return SpellSchema.parse(Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== null)));
+}
+
+/** The rays that strike one creature: one rolled at random, or two (rolled again, never the top face) on the top face. */
+export function rolledRays(spell: Spell, rng: Rng): Spell[] {
+  const rays = spell.rays ?? [];
+  const face = roll(`1d${rays.length + 1}`, rng).total;
+  const faces = face <= rays.length ? [face] : [1, 2].map(() => roll(`1d${rays.length}`, rng).total);
+  return faces.map((f) => overlaid({ ...spell, rays: undefined }, rays[f - 1]!.set));
 }
 
 /** The spell as used again on a later turn: its `again` fields over it (dragon's breath exhaled). */

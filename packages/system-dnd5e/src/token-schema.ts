@@ -82,6 +82,8 @@ export const TokenSchema = z.object({
   hidden: z.boolean().default(false),
   /** Sent off the map by a spell (banishment): the server hid it and shows it again when the spell ends. */
   banished: z.boolean().optional(),
+  /** Feet a spell lifted it (reverse gravity): the server raised its elevation and drops it when the spell ends. */
+  aloft: z.number().positive().optional(),
   /** When set, only these players (and the GM) see the token. Used by illusions. */
   visibleTo: z.array(id).optional(),
   /** SRD monster id whose stat block this token uses, e.g. "goblin-warrior". */
