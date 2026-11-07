@@ -115,8 +115,29 @@ const modifiers = {
       choice: id.optional(),
     })
     .optional(),
-  /** The bearer may use this spell again without a slot while it lasts (spiritual weapon, call lightning). */
-  repeat: z.object({ spell: id, slot: z.number().int().min(0).max(9), choice: id.optional() }).optional(),
+  /** The bearer may use this spell again without a slot while it lasts (spiritual weapon, call lightning); `dc` is the caster's when it was handed to another creature (dragon's breath). */
+  repeat: z
+    .object({ spell: id, slot: z.number().int().min(0).max(9), choice: id.optional(), dc: z.number().int().optional() })
+    .optional(),
+  /**
+   * The bearer's attacks with these weapons (all of them when empty) use this
+   * ability and damage die, and deal this type (shillelagh, 2024 true strike).
+   * In a spell, `dice` and `extra.dice` go by cantrip tier and `ability` is the
+   * caster's spellcasting ability; `extra` becomes damage on the next hit.
+   */
+  weaponSpell: z
+    .object({
+      weapons: z.array(id).default([]),
+      dice: z.array(dice).optional(),
+      ability: AbilitySchema.optional(),
+      type: DamageTypeSchema.optional(),
+      extra: z.object({ dice: z.array(z.string()), type: DamageTypeSchema }).optional(),
+    })
+    .optional(),
+  /** Damage of these types the bearer takes is reduced by this roll, once a turn (2024 resistance). */
+  ward: z.object({ dice, types: z.array(DamageTypeSchema).min(1) }).optional(),
+  /** The ward has been used this turn. */
+  wardUsed: z.boolean().optional(),
   /** Damage the bearer takes at the start of each of its turns (searing smite, phantasmal killer). */
   turnDamage: z.array(DamageSchema).optional(),
   /** Hit points the bearer regains at the start of each of its turns (regenerate). */
@@ -148,6 +169,16 @@ const modifiers = {
   weakened: z.union([z.literal('half'), dice]).optional(),
   /** Attackers must pass a Wisdom save against this DC to target the bearer; `true` in a spell takes the caster's DC (sanctuary). */
   sanctuary: z.union([z.literal(true), z.number().int()]).optional(),
+  /** The bearer can't cast spells with a verbal component (silence). */
+  silenced: z.boolean().optional(),
+  /** Magic doesn't work on or from the bearer: no spells cast, none land, other spell effects are suppressed (antimagic field). */
+  antimagic: z.boolean().optional(),
+  /** Spells of this level or lower cast from outside the bearer's globe don't affect it (globe of invulnerability). */
+  spellWard: z.number().int().min(0).max(9).optional(),
+  /** Creatures of other kinds can't move within `radius` feet of the bearer (antilife shell: all but undead and constructs). */
+  barrier: z.object({ radius: z.number().positive(), except: z.array(z.string()).default([]) }).optional(),
+  /** At 0 hit points the bearer regains 1 at the start of its turn (aura of life). */
+  lifeline: z.boolean().optional(),
   /** The bearer's movement doesn't provoke opportunity attacks (disengage). */
   disengaged: z.boolean().optional(),
   /** The bearer's speed is 0 (hypnotic pattern). */
@@ -178,6 +209,8 @@ export const AuraSchema = z.object({
   self: z.boolean().optional(),
   /** Only while the bearer is conscious (default true). */
   conscious: z.boolean().optional(),
+  /** Anchored at this point on the map instead of around the bearer (a lasting area cast at a point: silence). */
+  at: z.tuple([z.number(), z.number()]).optional(),
 });
 export type Aura = z.infer<typeof AuraSchema>;
 
@@ -355,6 +388,12 @@ export const SpellSchema = z.object({
         .optional(),
     })
     .optional(),
+  /**
+   * What creatures inside the lasting area get while they stay in it (silence,
+   * antimagic field, globe of invulnerability): kept as an aura of the area's
+   * size on the caster, anchored where it was cast or around the caster.
+   */
+  field: EffectTemplateSchema.optional(),
   /** A spell attack roll against each target. */
   attack: z.enum(['melee', 'ranged']).optional(),
   save: z
@@ -400,6 +439,8 @@ export const SpellSchema = z.object({
       hpPool: dice.optional(),
       targets: z.number().int().optional(),
       beams: z.number().int().optional(),
+      /** Added to the field's `spellWard` (globe of invulnerability). */
+      ward: z.number().int().optional(),
     })
     .optional(),
   /** Cantrips grow at character levels 5, 11 and 17: more dice, or more beams. */
@@ -447,6 +488,12 @@ export const SpellSchema = z.object({
     .optional(),
   /** Later turns can use it again without a slot, with this action (spiritual weapon, call lightning). */
   repeat: z.enum(['action', 'bonus']).optional(),
+  /** "target": the creature it lands on uses it again, not the caster, with the caster's DC (dragon's breath). */
+  repeatBy: z.literal('target').optional(),
+  /** Spell fields set over it when used again (dragon's breath: the cone of breath), `null` taking one away. */
+  again: z.record(z.string(), z.unknown()).optional(),
+  /** Casting it lets the caster make one weapon attack at once, as part of the action (2024 true strike). */
+  weaponStrike: z.boolean().optional(),
   /** Effects by the target's hit points: the first tier whose `atMost` it is within applies instead of the spell's effect (power word kill). */
   hpTiers: z
     .array(

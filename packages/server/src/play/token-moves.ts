@@ -2,6 +2,7 @@ import {
   bodyOf,
   canControl,
   densify,
+  gridKind,
   type DoorState,
   isGm,
   isGridless,
@@ -12,7 +13,7 @@ import {
   walkPath,
   wallsOnFloor,
 } from '@vtt/shared';
-import { AnimationChoiceSchema, type ClientMessage, inTheWay, type Token } from '@vtt/system-dnd5e';
+import { AnimationChoiceSchema, barrierStops, type ClientMessage, inTheWay, type Token } from '@vtt/system-dnd5e';
 import type { CombatActions } from '../actions/combat-actions.ts';
 import type { GameStore } from '../store/game-store.ts';
 import type { Reactions } from './reactions.ts';
@@ -29,14 +30,32 @@ export interface MoveRules {
   combat: CombatActions;
   zones: Zones;
   reactions: Reactions;
+  /** Refuses a walk a barrier stops (antilife shell). */
+  barriers: (token: Token, path: readonly Point[]) => void;
   regions: RegionActions;
   triggers: TriggerActions;
 }
 
 /** The walking rules with the regions and tile triggers of the scene: what `out` gets is what they say and play. */
-export function tokenMoves(table: Table, rules: Omit<MoveRules, 'regions' | 'triggers'>, out: TriggerOut): TokenMoves {
+export function tokenMoves(
+  table: Table,
+  rules: Omit<MoveRules, 'regions' | 'triggers' | 'barriers'>,
+  out: TriggerOut,
+): TokenMoves {
   const triggers = new TriggerActions(table, out);
-  return new TokenMoves(table.store, { ...rules, regions: new RegionActions(table, triggers), triggers });
+  const barriers = (token: Token, path: readonly Point[]) => checkBarriers(table, token, path);
+  return new TokenMoves(table.store, { ...rules, barriers, regions: new RegionActions(table, triggers), triggers });
+}
+
+/** Refuses a walk into a barrier that holds the walker's kind back (antilife shell). */
+function checkBarriers(table: Table, token: Token, path: readonly Point[]): void {
+  const type = table.sheetOf(token)?.type;
+  if (!type) return;
+  const { world } = table.store;
+  const others = [...table.store.tokens.values()];
+  const bearer = barrierStops({ mover: token, type, path, others, gridSize: world.gridSize, grid: gridKind(world) });
+  const effect = bearer?.effects?.find((e) => e.barrier);
+  if (bearer && effect) throw new Refusal(`${effect.name} holds ${token.name} back from ${bearer.name}`);
 }
 
 export class TokenMoves {
@@ -76,6 +95,7 @@ export class TokenMoves {
     if (!path) throw new Refusal(`${token.name} can't get there`);
     const [x, y] = path.points.at(-1)!;
     if (path.points.length < 2) return;
+    this.rules.barriers(token, path.points);
     const walker = combat.move(token, path.feet);
     this.store.setToken({ ...walker, x, y, ...climb }, path.points);
     // Zones, reactions and regions look at every step of the way.

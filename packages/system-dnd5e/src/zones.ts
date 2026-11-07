@@ -18,18 +18,9 @@ export function lastingEffects(caster: Token, spell: Spell, slot: number, point?
     concentration: spell.concentration || undefined,
   };
   const out: Effect[] = [];
-  if (spell.zone && spell.area) {
-    const at = spell.range > 0 ? point : undefined;
-    const zone = {
-      spell: spell.id,
-      slot,
-      ...(at && { at }),
-      ...(spell.zone.spares && { spares: spell.zone.spares }),
-      ...(spell.chosen && { choice: spell.chosen }),
-    };
-    out.push({ ...base, id: `${spell.id}-zone-${caster.id}`, name: spell.name, zone });
-  }
-  if (spell.repeat) {
+  if (spell.zone && spell.area) out.push(zoneOf(caster, spell, { slot, point, base }));
+  if (spell.field && spell.area) out.push(fieldOf(caster, spell, { slot, point, base }));
+  if (spell.repeat && spell.repeatBy !== 'target') {
     out.push({
       ...base,
       id: `${spell.id}-repeat-${caster.id}`,
@@ -38,6 +29,45 @@ export function lastingEffects(caster: Token, spell: Spell, slot: number, point?
     });
   }
   return out;
+}
+
+/** The zone a lasting area keeps on its caster: where it is and whom it spares. */
+function zoneOf(
+  caster: Token,
+  spell: Spell,
+  { slot, point, base }: { slot: number; point?: Point; base: Partial<Effect> },
+): Effect {
+  const at = spell.range > 0 ? point : undefined;
+  const zone = {
+    spell: spell.id,
+    slot,
+    ...(at && { at }),
+    ...(spell.zone!.spares && { spares: spell.zone!.spares }),
+    ...(spell.chosen && { choice: spell.chosen }),
+  };
+  return { ...base, id: `${spell.id}-zone-${caster.id}`, name: spell.name, zone };
+}
+
+/** The aura a lasting area keeps while it lasts: what creatures inside it get, around the caster or at the point. */
+function fieldOf(
+  caster: Token,
+  spell: Spell,
+  { slot, point, base }: { slot: number; point?: Point; base: Partial<Effect> },
+): Effect {
+  const { aura, ...field } = spell.field!;
+  const at = spell.range > 0 ? point : undefined;
+  const ward =
+    field.spellWard === undefined
+      ? {}
+      : { spellWard: field.spellWard + Math.max(0, slot - spell.level) * (spell.upcast?.ward ?? 0) };
+  return {
+    ...base,
+    ...field,
+    ...ward,
+    id: `${spell.id}-field-${caster.id}`,
+    name: field.name ?? spell.name,
+    aura: { radius: spell.area!.size, who: aura?.who ?? 'all', self: aura?.self, conscious: false, ...(at && { at }) },
+  };
 }
 
 export interface ZoneHit {

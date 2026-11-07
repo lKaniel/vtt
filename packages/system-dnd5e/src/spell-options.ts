@@ -16,6 +16,13 @@ export function withChoice(spell: Spell, choice: string | undefined): Spell {
   return SpellSchema.parse(Object.fromEntries(merged));
 }
 
+/** The spell as used again on a later turn: its `again` fields over it (dragon's breath exhaled). */
+export function withAgain(spell: Spell): Spell {
+  if (!spell.again) return spell;
+  const fields: Record<string, unknown> = { ...spell, ...spell.again, again: null };
+  return SpellSchema.parse(Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== null)));
+}
+
 export type Tier = NonNullable<Spell['hpTiers']>[number];
 
 /** The hit point tier a creature with `hp` falls in: the lowest one it's within. */
