@@ -53,6 +53,8 @@ function shownFields(session: Session, docs: readonly Doc[]): Field[] {
 export function Inspector({ session }: Readonly<{ session: Session }>) {
   if (!session.editor.selection.length || !session.editor.canEditSelection()) return null;
   const docs = session.editor.selectedDocs().map((d) => d.doc);
+  // A creature picked to play opens nothing: its GM switches are on the token HUD and its sheet.
+  if (docs.every((d) => d.type === 'token')) return null;
   const fields = shownFields(session, docs);
   const count = session.editor.selection.length;
   return (

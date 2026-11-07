@@ -4,6 +4,7 @@
 
 import type { Page } from '@playwright/test';
 import { expect, test } from '../support/fixtures.ts';
+import { screenOf } from '../support/map.ts';
 import { GM, atTable } from '../support/table.ts';
 
 interface Box {
@@ -65,3 +66,34 @@ for (const viewport of [
     expect(await overlaps(page)).toEqual([]);
   });
 }
+
+test("the GM's fog and daylight tools stay folded until asked for", async ({ page }) => {
+  await atTable(page, GM);
+  await expect(page.getByRole('toolbar', { name: 'Editor mode' })).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: 'Fog of war' })).toHaveCount(0);
+  // The fog button ends the row of modes rather than taking a row of its own.
+  const modes = page.getByRole('toolbar', { name: 'Editor mode' });
+  const first = (await modes.getByRole('button', { name: 'Tokens' }).boundingBox())!;
+  const fog = (await modes.getByRole('button', { name: 'Fog and daylight' }).boundingBox())!;
+  expect(fog.y).toBe(first.y);
+  await page.getByRole('button', { name: 'Fog and daylight' }).click();
+  await expect(page.getByRole('toolbar', { name: 'Fog of war' })).toBeVisible();
+  await expect(page.getByText('Night', { exact: true })).toBeVisible();
+});
+
+test('selecting a creature opens no inspector; its HUD sets the colour filter', async ({ page }) => {
+  await atTable(page, GM);
+  const bram = await screenOf(page, 650, 650);
+  await page.mouse.click(bram.x, bram.y);
+  await expect.poll(() => page.evaluate(() => vtt.selected()?.id)).toBe('bram');
+  await expect(page.getByLabel('Inspector')).toHaveCount(0);
+
+  await page.mouse.click(bram.x, bram.y, { button: 'right' });
+  await page.getByText('Token HUD').click();
+  const hud = page.getByRole('dialog', { name: 'Bram HUD' });
+  await hud.getByRole('combobox', { name: 'Colour filter' }).click();
+  await page.getByRole('option', { name: 'sepia' }).click();
+  await expect
+    .poll(() => page.evaluate(() => (vtt.token('bram') as { filter?: string } | undefined)?.filter))
+    .toBe('sepia');
+});

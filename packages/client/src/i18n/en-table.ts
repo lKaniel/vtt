@@ -3,6 +3,10 @@
 
 export const EN_TABLE = {
   'table.leave': 'Leave the table',
+  'mapTools.sceneTools': 'Fog and daylight',
+  'mapTools.sceneToolsHint': 'Fog of war brushes and the time of day on this scene',
+  'hud.filter': 'Colour filter',
+  'hud.filterNone': 'none',
   'fight.start': 'Start combat',
   'fight.startHint': 'Roll initiative for every creature with stats on screen',
   'fight.shared': 'Party acts together',
