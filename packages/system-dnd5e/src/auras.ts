@@ -36,9 +36,16 @@ function emitters({ token, sheet }: AuraBearer): (Effect & { aura: Aura })[] {
 }
 
 function touches(aura: Aura, bearer: Token, other: Token): boolean {
-  if (other.id === bearer.id) return aura.self ?? aura.who !== 'enemies';
+  if (other.id === bearer.id) return aura.at ? aura.who !== 'enemies' : (aura.self ?? aura.who !== 'enemies');
   if (aura.who === 'all') return true;
   return (isParty(other) === isParty(bearer)) === (aura.who === 'allies');
+}
+
+/** Whether `t` is within the aura: around its bearer, or around the point it is anchored at. */
+function within(aura: Aura, bearer: Token, t: Token, ground: Ground): boolean {
+  if (!aura.at) return t.id === bearer.id || tokenDistance(bearer, t, ground.gridSize, ground.grid) <= aura.radius;
+  const feet = (Math.hypot(t.x - aura.at[0], t.y - aura.at[1]) / ground.gridSize) * 5;
+  return feet <= aura.radius;
 }
 
 /** The copy of an aura effect a creature in it gets. */
@@ -63,11 +70,7 @@ function reached(
 ): Token[] {
   return all
     .map((b) => b.token)
-    .filter((t) => {
-      const near =
-        t.id === bearer.token.id || tokenDistance(bearer.token, t, ground.gridSize, ground.grid) <= effect.aura.radius;
-      return near && touches(effect.aura, bearer.token, t);
-    });
+    .filter((t) => within(effect.aura, bearer.token, t, ground) && touches(effect.aura, bearer.token, t));
 }
 
 interface Ground {

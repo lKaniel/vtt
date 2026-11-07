@@ -235,3 +235,9 @@ export function afterDamage(token: Token, sheet: Affected, rng: Rng = Math.rando
   }
   return { token: removeEffects(token, ended), notes };
 }
+
+/** A new turn: wards used in the last one (2024 resistance) work again. */
+export function freshWards(token: Token): Token {
+  if (!token.effects?.some((e) => e.wardUsed)) return token;
+  return { ...token, effects: token.effects.map(({ wardUsed: _used, ...e }) => e) };
+}

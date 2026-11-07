@@ -203,8 +203,8 @@ export class Table {
    * Sets a creature's hit points (and temporary ones) after it took `damage`,
    * ends what damage ends, then checks its concentration.
    */
-  hurt(token: Token, hit: { hp: number; tempHp?: number; crit?: boolean }, damage: number): void {
-    const stored = this.store.tokens.get(token.id) ?? token;
+  hurt(token: Token, hit: { hp: number; tempHp?: number; crit?: boolean; warded?: string }, damage: number): void {
+    const stored = useWard(this.store.tokens.get(token.id) ?? token, hit.warded);
     const before = this.sheetOf(stored)!;
     if (hit.hp <= 0 && formOf(stored)?.hp === 'replace') return this.outOfShape(stored, before, damage);
     const { token: current, hit: after } = this.warded(stored, before.hp, hit);
@@ -311,6 +311,12 @@ export class Table {
     }
     this.store.removeToken(id);
   }
+}
+
+/** A ward (2024 resistance) that took damage off is spent until the next turn starts. */
+function useWard(token: Token, ward: string | undefined): Token {
+  if (!ward) return token;
+  return { ...token, effects: token.effects?.map((e) => (e.id === ward ? { ...e, wardUsed: true } : e)) };
 }
 
 /** The token with new hit points and temporary ones; full hit points are left out. */

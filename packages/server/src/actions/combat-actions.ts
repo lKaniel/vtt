@@ -27,6 +27,7 @@ import {
   smiteProblem,
   startCombat,
   tickEffects,
+  freshWards,
   blinkAway,
   type Token,
   tokenDistance,
@@ -34,6 +35,7 @@ import {
 } from '@vtt/system-dnd5e';
 import { canControl, gridKind, isParty, type Player, type Point } from '@vtt/shared';
 import { attackGround } from './ground-attack.ts';
+import { riseInAura } from '../play/turn-start.ts';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
 import { breakSanctuary, loseImage, passSanctuary } from '../play/spell-wards.ts';
 import { Refusal, requireGm, type Cost, type Fighter, type Table } from '../play/table.ts';
@@ -195,7 +197,7 @@ export class CombatActions {
     const own = this.store.tokens.get(id);
     if (own && refreshLegendary(own) !== own) this.store.setToken(refreshLegendary(own));
     for (const t of [...this.store.tokens.values()]) {
-      const after = tickEffects(t, id);
+      const after = freshWards(tickEffects(t, id));
       if (after !== t) this.store.setToken(after);
     }
     this.hearten(id);
@@ -222,11 +224,12 @@ export class CombatActions {
     if (!token || !sheet) return;
     const { parts, heal } = turnStartHarm(sheet.effects, this.table.rng);
     if (parts.length) {
-      const { dealt, hp, tempHp } = applyDamage(sheet, parts);
+      const { dealt, hp, tempHp, warded } = applyDamage(sheet, parts, this.table.rng);
       const total = dealt.reduce((n, d) => n + d, 0);
       this.table.note(`${token.name} takes ${total} damage from lasting effects`);
-      if (total > 0) this.table.hurt(token, { hp, tempHp }, total);
+      if (total > 0) this.table.hurt(token, { hp, tempHp, warded }, total);
     }
+    riseInAura(this.table, id);
     const now = this.store.tokens.get(id)!;
     const sheetNow = this.table.sheetOf(now)!;
     if (heal && sheetNow.hp > 0 && sheetNow.hp < sheetNow.maxHp) {
@@ -393,9 +396,9 @@ export class CombatActions {
     const parts = result.damage.map((d) => ({ amount: d.roll.total, type: d.type }));
     if (outcome.graze) parts.push(outcome.graze);
     const fresh = this.table.fighter(target.token.id);
-    const { dealt, hp, tempHp } = applyDamage(fresh.sheet, parts);
+    const { dealt, hp, tempHp, warded } = applyDamage(fresh.sheet, parts, this.table.rng);
     const total = dealt.reduce((sum, d) => sum + d, 0);
-    if (total > 0) this.table.hurt(fresh.token, { hp, tempHp, crit: result.crit }, total);
+    if (total > 0) this.table.hurt(fresh.token, { hp, tempHp, crit: result.crit, warded }, total);
     if (result.hit && kind === 'melee') notes0.push(...this.hitBack(attacker.token, fresh));
     this.addEffects(target.token.id, outcome);
     const notes = [...outcome.notes, ...notes0];
@@ -425,9 +428,9 @@ export class CombatActions {
     const parts = retaliation(target.sheet.effects, this.table.rng);
     const struck = this.table.fighter(attacker.id);
     if (!parts.length || this.distance(attacker, target.token) > 5) return [];
-    const { dealt, hp, tempHp } = applyDamage(struck.sheet, parts);
+    const { dealt, hp, tempHp, warded } = applyDamage(struck.sheet, parts, this.table.rng);
     const total = dealt.reduce((n, d) => n + d, 0);
-    if (total > 0) this.table.hurt(struck.token, { hp, tempHp }, total);
+    if (total > 0) this.table.hurt(struck.token, { hp, tempHp, warded }, total);
     return [`${attacker.name} takes ${total} damage back`];
   }
 
