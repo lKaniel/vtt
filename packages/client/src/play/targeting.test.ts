@@ -30,6 +30,11 @@ describe('aiming a spell', () => {
     expect(aimSpell(spell('find-familiar'), 1, 5)).toMatchObject({ mode: 'point', summon: 'bat' });
   });
 
+  it('asks for a point at the door for knock and arcane lock', () => {
+    expect(aimSpell(spell('knock'), 2, 5).mode).toBe('point');
+    expect(aimSpell(spell('arcane-lock'), 2, 5).mode).toBe('point');
+  });
+
   it('conjures a lasting weapon without a target, then attacks with it', () => {
     const blade = spell('flame-blade');
     const caster = { caster: { level: 5, spells: [blade] }, effects: [] } as never;

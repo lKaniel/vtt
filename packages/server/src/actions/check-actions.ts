@@ -38,7 +38,9 @@ export function checkAction(table: Table, cards: CheckCards, player: Player, msg
   if (!canControl(fighter.token, player)) throw new Refusal('No such token');
   if (msg.card) return rollOnCard(table, cards, fighter, msg.card);
   const { token, sheet } = fighter;
-  const entry = { token: token.id, name: token.name, ...rollCheck(token, sheet, msg, table.rng) };
+  const { used, ...rolled } = rollCheck(token, sheet, msg, table.rng);
+  useUp(table, token.id, used);
+  const entry = { token: token.id, name: token.name, ...rolled };
   const { ability, skill, save } = msg;
   cards.post(card(player, { ability, skill, ...(save && { save }), kind: 'each', entries: [entry] }));
 }
@@ -51,10 +53,16 @@ function rollOnCard(table: Table, cards: CheckCards, { token, sheet }: Fighter, 
   if (!before || !asked || at < 0) throw new Refusal(`${token.name} wasn't asked for that check`);
   if (asked.entries[at]!.total !== undefined) throw new Refusal(`${token.name} has already rolled`);
   const kind = asked.kind === 'contest' && at === 1 && asked.versus ? asked.versus : asked;
-  const rolled = rollCheck(token, sheet, { ...kind, dc: asked.dc }, table.rng);
+  const { used, ...rolled } = rollCheck(token, sheet, { ...kind, dc: asked.dc }, table.rng);
+  useUp(table, token.id, used);
   const entries = asked.entries.map((e, i) => (i === at ? { ...e, ...rolled } : e));
   const outcome = checkOutcome(asked.kind, entries);
   cards.update({ ...before, check: { ...asked, entries, ...(outcome && { outcome }) } });
+}
+
+/** Effects that lasted for one check (2014 guidance) end once it's rolled. */
+function useUp(table: Table, token: string, used: readonly string[] | undefined): void {
+  if (used) table.useUp(used.map((effect) => ({ token, effect })));
 }
 
 function request(

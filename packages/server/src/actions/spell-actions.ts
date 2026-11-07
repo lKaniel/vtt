@@ -27,6 +27,7 @@ import { gridKind, isGridless, placeToken, type Player, type Point } from '@vtt/
 import { castBreaksSanctuary, passSanctuaries } from '../play/spell-wards.ts';
 import { shaped } from '../play/spell-forms.ts';
 import { summon } from '../play/spell-summons.ts';
+import { doorAt, setDoor } from '../play/spell-doors.ts';
 import { Refusal, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 export interface CastRequest {
@@ -84,6 +85,7 @@ export class SpellActions {
     const picked = chosen(caster, known, req.choice);
     this.table.check(caster.token, plan.cost);
     const targets = this.aim(caster, picked, { ...req, slot: plan.slot }, { canSee, again: plan.again });
+    const door = picked.door ? doorAt(this.store, req.point!, picked.door) : undefined;
     const spell = shaped(this.table, caster, picked, { form: req.form, targets });
     passSanctuaries(this.table, caster, spell, targets);
     this.table.pay(caster.token, plan.cost);
@@ -91,6 +93,7 @@ export class SpellActions {
     if (!plan.again) this.begin(caster, spell, plan.spend, !!reader);
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
     if (spell.teleport) this.teleport(caster.token.id, req.point!);
+    if (spell.door) setDoor(this.store, door!, spell.door);
     const summoned = spell.summon
       ? summon(this.table, this.table.fighter(caster.token.id), spell, { ...req, slot: plan.slot })
       : [];
@@ -187,8 +190,9 @@ export class SpellActions {
   // ---- Targets -----------------------------------------------------------
 
   targets(caster: Fighter, spell: Spell, req: CastRequest, canSee: (id: string) => boolean): Fighter[] {
-    if (spell.teleport || spell.summon) {
-      this.checkPoint(caster, spell, req.point, spell.teleport ?? spell.range);
+    if (spell.teleport || spell.summon || spell.door) {
+      const point = spell.door && req.point ? this.doorSide(caster, req.point) : req.point;
+      this.checkPoint(caster, spell, point, spell.teleport ?? spell.range);
       return [];
     }
     if (spell.area) return this.areaTargets(caster, spell, req.point);
@@ -224,6 +228,13 @@ export class SpellActions {
   private atGround(caster: Fighter, spell: Spell, point: Point): Fighter[] {
     this.checkPoint(caster, spell, point, spell.range);
     return [];
+  }
+
+  /** A door is aimed at on its wall: the caster needs to see the near side of it. */
+  private doorSide({ token }: Fighter, [x, y]: Point): Point {
+    const d = Math.hypot(token.x - x, token.y - y) || 1;
+    const step = Math.min(d, this.grid / 4);
+    return [x + ((token.x - x) / d) * step, y + ((token.y - y) / d) * step];
   }
 
   private checkPoint(caster: Fighter, spell: Spell, point: Point | undefined, range: number): Point {

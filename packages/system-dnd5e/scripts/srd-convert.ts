@@ -144,6 +144,7 @@ export function convertSpell(pack: Pack, spell: Entry): object {
     range: reach,
     ritual: f.ritual === true,
     concentration: f.concentration === true,
+    components: (['verbal', 'somatic', 'material'] as const).filter((c) => f[c] === true).map((c) => c[0]),
     ...duration(f),
     targets: reach === 0 && !where ? 0 : 1,
     area: where,
