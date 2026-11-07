@@ -99,7 +99,7 @@ function Log({ session }: Readonly<{ session: Session }>) {
           className="min-w-0 flex-1"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Message or /r 2d20kh1+4"
+          placeholder="Message or /r 1d20"
         />
         <SelectField
           className="w-[7.25rem] flex-none"

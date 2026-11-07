@@ -152,7 +152,10 @@ function Toolbar({ s }: Readonly<{ s: State }>) {
   const picked = Object.values(s.search.picks).filter(Boolean).length;
   return (
     <>
-      <SearchBox category={s.category} query={s.search.query} onQuery={(query) => s.narrow({ query })} />
+      {/* In a row of its own: the field grows along a row, and in the panel's column it would grow tall. */}
+      <div className="flex">
+        <SearchBox category={s.category} query={s.search.query} onQuery={(query) => s.narrow({ query })} />
+      </div>
       <div className="flex items-center gap-1.5">
         {!BOOKLESS.includes(s.category) && (
           <SelectField

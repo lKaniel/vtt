@@ -33,7 +33,7 @@ export function MainMenu({ info, error, go }: Readonly<{ info?: SessionInfo; err
   const { data, error: loadError } = useLoad(api.games);
   const [now] = useState(() => Date.now());
   return (
-    <div className="menu main-menu" data-slot="main-menu">
+    <div className="menu main-menu mx-auto" data-slot="main-menu">
       <div className="menu-crest">
         <p className="menu-kicker">{t('menu.kicker')}</p>
         <h1 className="menu-logo">{info ? (info.home?.name ?? t('menu.table')) : t('menu.connecting')}</h1>
@@ -62,7 +62,7 @@ export function JoinScreen({ game: id, go }: Readonly<{ game: string; go: Go }>)
     <MenuShell title={game?.name ?? t('menu.connecting')} kicker={t('join.kicker')}>
       {error && <p className="menu-error">{error}</p>}
       {game && <JoinForm game={game} onJoined={() => go({ name: 'game', game: game.id })} />}
-      <Button variant="outline" className="menu-back" onClick={() => go({ name: 'menu' })}>
+      <Button variant="outline" className="menu-back mx-auto mt-[18px] flex" onClick={() => go({ name: 'menu' })}>
         {t('join.back')}
       </Button>
     </MenuShell>

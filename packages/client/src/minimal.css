@@ -298,3 +298,11 @@
     left: calc(50% - var(--side-w) / 2);
   }
 }
+
+/* ---------- Menu screens ---------- */
+
+/* "server game" sits above the game's name on its card, not over its end. */
+.lobby-card .roster-rules {
+  position: static;
+  order: -1;
+}
