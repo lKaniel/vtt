@@ -2,7 +2,8 @@ import { AnimationChoiceSchema } from './animations.ts';
 import { IdSchema as id, OwnershipSchema } from '@vtt/core';
 import { LightSchema, TokenLookSchema } from '@vtt/shared';
 import { ClassSchema, EffectSchema, FeatureSchema, SpellSchema } from './spell-schema.ts';
-import { CurrencySchema, InventorySchema, ItemSchema, MonsterSchema, StatsSchema } from './stats-schema.ts';
+import { CurrencySchema, InventorySchema, MonsterSchema, StatsSchema } from './stats-schema.ts';
+import { ItemSchema } from './item-schema.ts';
 import { z } from 'zod';
 
 // A D&D creature as it is stored: a token in a scene's tokens.json (where it

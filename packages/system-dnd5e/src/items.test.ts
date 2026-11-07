@@ -93,7 +93,7 @@ describe('lighting what you carry', () => {
   it("won't light a lantern without oil", () => {
     const t = pc('2014', { inventory: [{ item: 'lantern-hooded' }] });
     expect(itemProblem(t, srdFor('2014').items.get('lantern-hooded'), srd)).toBe(
-      'has no Flask of Oil for the Lantern, Hooded',
+      'has no Oil (flask) for the Hooded lantern',
     );
   });
 });

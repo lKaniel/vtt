@@ -2,6 +2,7 @@ import type { Attack, FeatureSheet, Item, Spell, TokenView, TurnBudget } from '@
 import { attackArt, featureArt, spellArt } from '../icon-art.ts';
 import { attackIcon, featureIcon, spellIcon, type Icon } from '../icons.ts';
 import { lowestSlot } from '../text/spell-text.ts';
+import { itemSpellTiles } from './item-spells.ts';
 
 // The tiles on the action bar: what the selected creature can do, in hotkey order.
 
@@ -16,8 +17,15 @@ interface TileBase {
 
 export type ActionTile =
   | (TileBase & { kind: 'attack'; attack: Attack })
-  /** `scroll`: read from a scroll the creature carries, `uses` of them. */
-  | (TileBase & { kind: 'spell'; spell: Spell; slot: number | undefined; scroll?: boolean; uses?: string })
+  /** `scroll`: read from a scroll the creature carries, `uses` of them; `item`: cast from the magic item at that inventory index. */
+  | (TileBase & {
+      kind: 'spell';
+      spell: Spell;
+      slot: number | undefined;
+      scroll?: boolean;
+      item?: number;
+      uses?: string;
+    })
   | (TileBase & { kind: 'feature'; feature: FeatureSheet; uses?: string })
   /** An item put on the bar by hand; `uses` is how many are carried. */
   | (TileBase & { kind: 'item'; item: Item; uses?: string; cost?: 'action' | 'bonus' })
@@ -83,7 +91,7 @@ function featureTiles(token: TokenView): ActionTile[] {
 }
 
 export function actionTiles(token: TokenView): ActionTile[] {
-  const tiles = [...attackTiles(token), ...spellTiles(token), ...featureTiles(token)];
+  const tiles = [...attackTiles(token), ...spellTiles(token), ...itemSpellTiles(token), ...featureTiles(token)];
   return tiles.map((t, i) => (i < HOTKEYS.length ? { ...t, hotkey: HOTKEYS[i] } : t));
 }
 

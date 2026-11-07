@@ -9,22 +9,26 @@
 - `spells-5.1.json`, `spells-5.2.json`: every SRD spell for each edition.
 - `classes-5.1.json`, `classes-5.2.json`: the SRD classes, their features by
   level and spellcasting tables.
-- `items.json`: weapons, armor and gear, shared by both editions (weapon
-  masteries only apply under the 2024 rules). Gear with `use` can be used from
-  the action bar: `{ "heal": "2d4+2", "potion": true }` (a potion is an action
-  in 2014, a bonus action in 2024), or `{ "light": { "bright": 20, "dim": 20, "lasts": 3600 } }`
-  for a torch (`"fuel": "oil-flask"` burns the oil instead of the lantern). Containers carry `"container": { "capacity": 30 }`
-  (pounds; `"weightless": true` for a bag of holding), magic items `"attunement": true`
-  and `"bonus": { "ac": 1, "saves": 1 }`.
+- `items-5.1.json`, `items-5.2.json`: every SRD weapon, armor, tool, piece of
+  gear and magic item for each edition, with Foundry-style variants (a
+  longsword +1, a flame tongue for each sword, armor of resistance for each
+  damage type and armor). Magic items carry what they do: `effect` while worn
+  (the same modifiers as a spell's effect), `bonus` (`ac`, `saves`,
+  `spellAttack`, `spellDc`), `plus` and `hitDamage` riders on weapons,
+  `use` for what drinking or reading does (`heal`, `tempHp`, `effect`,
+  `raise`), `casts` with `charges` (`{ "max": 7, "recharge": "1d6+1" }`) and
+  `dc` for wands and staffs. A world's mundane gear from the other edition
+  fills in what its own lacks (a 2014 world's musket).
+- `items.json`: hand-written items the packs don't have (the spell scroll).
 
-Monsters, spells and classes are converted from the `@opencharacter/5e-srd-5.1`
+Monsters, spells, classes and items are converted from the `@opencharacter/5e-srd-5.1`
 and `@opencharacter/5e-srd-5.2` npm packages (also CC-BY-4.0):
 
 ```sh
 pnpm --filter @vtt/system-dnd5e import-srd <5.1 package dir> <5.2 package dir>
 ```
 
-Add `classes` (or `spells`, `monsters`, `origins`) after the two folders to
+Add `classes` (or `spells`, `monsters`, `origins`, `items`) after the two folders to
 write only those files. Classes come with their subclasses, the options a
 character picks (fighting styles, invocations, metamagic, a druid's land) as
 features with a `choice`, and `grantsSpells` for spells a feature always has
@@ -33,8 +37,8 @@ level is either run by the engine or carries a `manual` note saying how the GM
 runs it (`src/class-coverage.test.ts`).
 
 The import only brings the text and the plain numbers (damage dice, saves,
-areas, range). What the rules automate beyond that is written by hand in two
-overlays that are merged in when the content loads, keyed `"both"`, `"2014"`
+areas, range). What the rules automate beyond that is written by hand in overlays
+that are merged in when the content loads, keyed `"both"`, `"2014"`
 or `"2024"`:
 
 - `spell-automation.json`: per spell id, effects (bless, hold person),
@@ -50,6 +54,13 @@ or `"2024"`:
   `upcast.maxHp` (aid's raised maximum per slot), and a `gmNote` for the part the GM still does by
   hand. `null` takes away a generated field; `"automated": false` makes the
   chat say the GM applies the spell.
+- `item-automation.json`: per item id (or a family, `"vicious-weapon-*"`),
+  what the packs leave out: light sources' `use.light` (a torch, a lantern
+  with `"fuel": "oil-flask"`), `container` (`{ "capacity": 30 }` in pounds,
+  `"weightless": true` for a bag of holding), hand-written effects (a ring of
+  free action), `gmNote`, and `manual` (`{ "kind": "gm" | "utility", "why" }`)
+  for what the GM runs. Every magic item does something or says what the GM
+  runs (`src/item-audit.test.ts`).
 - `class-automation.json`: per class id, spellcasting and features with
   uses, actions and effects (second wind, rage, sneak attack, weapon mastery),
   `grantAttacks` (flurry of blows) and `speed` by level for a passive effect

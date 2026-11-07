@@ -1,5 +1,5 @@
 import type { PackCompendium } from '@vtt/core';
-import type { Class, Content, Edition, Item, Monster, Spell } from '@vtt/system-dnd5e';
+import type { Class, Content, Edition, GearUse, Item, Monster, Spell } from '@vtt/system-dnd5e';
 import type { DragPayload } from '../play/drops.ts';
 import { featureArt, itemArt, monsterArt, spellArt } from '../icon-art.ts';
 import { featureIcon, type Icon, itemIcon, spellIcon } from '../icons.ts';
@@ -22,6 +22,7 @@ export type Facet =
   | 'range'
   | 'damage'
   | 'use'
+  | 'rarity'
   | 'casting'
   | 'tag';
 
@@ -83,17 +84,31 @@ function itemSub(item: Item): string {
   if (item.type === 'weapon') return `${cap(item.category)} ${item.kind} · ${item.damage.dice} ${item.damage.type}`;
   if (item.type === 'armor')
     return item.category === 'shield' ? `Shield · +${item.ac} AC` : `${cap(item.category)} armour · AC ${item.ac}`;
-  return item.description ?? 'Gear';
+  return [rarityText(item), groupText(item)].filter(Boolean).join(' ') || 'Gear';
+}
+
+/** "Very rare", or nothing for mundane gear. */
+const rarityText = (item: Item) => (item.rarity ? cap(item.rarity.replace('-', ' ')) : '');
+/** "wondrous item", "ring", "adventuring gear". */
+const groupText = (item: Item) =>
+  item.type === 'gear' ? (item.group ?? 'gear').replace(/-/g, ' ').replace(/^wondrous$/, 'wondrous item') : '';
+
+/** Magic weapons and armor say what they are made from: "Rare · Martial melee · 1d8 slashing". */
+function magicSub(item: Item, plain: string): string {
+  return item.rarity && item.type !== 'gear' ? `${rarityText(item)} · ${plain}` : plain;
 }
 
 const ITEM_KIND = { weapon: 'Weapon', armor: 'Armour', gear: 'Gear' } as const;
 
 function gearUses(item: Extract<Item, { type: 'gear' }>): string[] {
+  const use: Partial<GearUse> = item.use ?? {};
   const uses = [
-    item.use?.potion && 'Potion',
-    item.use?.heal && 'Healing',
-    item.use?.light && 'Light',
+    use.potion && 'Potion',
+    use.heal && 'Healing',
+    use.light && 'Light',
+    use.effect && 'Effect when used',
     item.container && 'Container',
+    item.effect && 'Effect while worn',
     item.attunement && 'Attunement',
   ].filter((u): u is string => Boolean(u));
   return uses.length ? uses : ['Other'];
@@ -101,10 +116,11 @@ function gearUses(item: Extract<Item, { type: 'gear' }>): string[] {
 
 function itemFacets(item: Item): Entry['facets'] {
   const kind = [ITEM_KIND[item.type]];
+  const rarity = [rarityText(item) || 'Mundane'];
   if (item.type === 'weapon')
-    return { kind, category: [cap(item.category)], range: [cap(item.kind)], damage: [cap(item.damage.type)] };
-  if (item.type === 'armor') return { kind, category: [cap(item.category)] };
-  return { kind, use: gearUses(item) };
+    return { kind, rarity, category: [cap(item.category)], range: [cap(item.kind)], damage: [cap(item.damage.type)] };
+  if (item.type === 'armor') return { kind, rarity, category: [cap(item.category)] };
+  return { kind, rarity, category: [cap(groupText(item))], use: gearUses(item) };
 }
 
 function itemEntry(item: Item, sources: Sources): Entry {
@@ -112,7 +128,7 @@ function itemEntry(item: Item, sources: Sources): Entry {
     id: item.id,
     key: item.id,
     name: item.name,
-    sub: itemSub(item),
+    sub: magicSub(item, itemSub(item)),
     drag: { kind: 'item', id: item.id },
     icon: { ...itemIcon(item), art: itemArt(item) },
     source: sources.get(`item:${item.id}`) ?? 'SRD',

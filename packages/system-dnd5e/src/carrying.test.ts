@@ -53,9 +53,10 @@ describe('carried weight', () => {
         { item: 'rope', in: 'pack' },
       ],
     });
-    expect(carriedWeight(t, book)).toBe(15 + 5 + 5);
+    // SRD 5.1's hempen rope weighs 10 lb.
+    expect(carriedWeight(t, book)).toBe(15 + 5 + 10);
     expect(containerLoad(t, 'boh', book)).toBe(65);
-    expect(containerLoad(t, 'pack', book)).toBe(5);
+    expect(containerLoad(t, 'pack', book)).toBe(10);
   });
 });
 

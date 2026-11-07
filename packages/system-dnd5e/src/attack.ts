@@ -43,12 +43,16 @@ function doubleTerm(term: string): string {
   return `${m[1]}${2 * count}d${m[3]}`;
 }
 
+/** Adamantine armor turns critical hits into normal hits. */
+const critProof = (target: Creature) => target.effects.some((e) => e.noCrits);
+
 /** Rolls an attack against a target: a 20 always hits and crits, a 1 always misses. */
 export function rollAttack(attack: Attack, target: Creature, opts: AttackOptions, rng: Rng = Math.random): AttackRoll {
   const d20 = roll(d20Formula(attack.toHit, opts.bonus ?? [], opts), rng);
   const natural = d20.terms[0]!.value;
-  const hit = natural >= (opts.critRange ?? 20) || (natural !== 1 && d20.total >= target.ac);
-  const crit = natural >= (opts.critRange ?? 20) || (hit && !!opts.autoCrit);
+  const critical = natural >= (opts.critRange ?? 20);
+  const hit = critical || (natural !== 1 && d20.total >= target.ac);
+  const crit = (critical || (hit && !!opts.autoCrit)) && !critProof(target);
   const parts = [...attack.damage, ...(opts.extraDamage ?? [])];
   const damage = hit ? parts.map((d) => ({ roll: roll(crit ? critDice(d.dice) : d.dice, rng), type: d.type })) : [];
   return { d20, natural, total: d20.total, hit, crit, damage };

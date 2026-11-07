@@ -1,0 +1,1249 @@
+{
+  "torch": {
+    "both": {
+      "use": {
+        "light": {
+          "bright": 20,
+          "dim": 20,
+          "color": "#ff9a40",
+          "animation": "flicker",
+          "lasts": 3600
+        }
+      }
+    }
+  },
+  "candle": {
+    "both": {
+      "use": {
+        "light": {
+          "bright": 5,
+          "dim": 5,
+          "color": "#ffb060",
+          "animation": "flicker",
+          "lasts": 3600
+        }
+      }
+    }
+  },
+  "lamp": {
+    "both": {
+      "use": {
+        "light": {
+          "bright": 15,
+          "dim": 30,
+          "color": "#ffc070",
+          "lasts": 21600
+        },
+        "fuel": "oil-flask"
+      }
+    }
+  },
+  "lantern-hooded": {
+    "both": {
+      "use": {
+        "light": {
+          "bright": 30,
+          "dim": 30,
+          "color": "#ffd8a0",
+          "lasts": 21600
+        },
+        "fuel": "oil-flask"
+      }
+    }
+  },
+  "lantern-bullseye": {
+    "both": {
+      "use": {
+        "light": {
+          "bright": 60,
+          "dim": 60,
+          "color": "#ffd8a0",
+          "angle": 53,
+          "lasts": 21600
+        },
+        "fuel": "oil-flask"
+      }
+    }
+  },
+  "backpack": {
+    "both": {
+      "container": {
+        "capacity": 30
+      }
+    }
+  },
+  "pouch": {
+    "both": {
+      "container": {
+        "capacity": 6
+      }
+    }
+  },
+  "sack": {
+    "both": {
+      "container": {
+        "capacity": 30
+      }
+    }
+  },
+  "chest": {
+    "both": {
+      "container": {
+        "capacity": 300
+      }
+    }
+  },
+  "bag-of-holding": {
+    "both": {
+      "container": {
+        "capacity": 500,
+        "weightless": true
+      }
+    }
+  },
+  "ring-of-free-action": {
+    "both": {
+      "effect": {
+        "conditionImmunities": ["paralyzed", "restrained"]
+      },
+      "gmNote": "Difficult terrain costs no extra movement, and it moves and attacks normally underwater: the GM allows for it."
+    }
+  },
+  "ring-of-warmth": {
+    "both": {
+      "effect": {
+        "resistances": ["cold"]
+      },
+      "gmNote": "It and what it wears are unharmed by temperatures down to -50 °F."
+    }
+  },
+  "eyes-of-the-eagle": {
+    "both": {
+      "effect": {
+        "checkAdvantageFor": ["perception"]
+      },
+      "gmNote": "Only for checks that rely on sight."
+    }
+  },
+  "eyes-of-minute-seeing": {
+    "both": {
+      "effect": {
+        "checkAdvantageFor": ["investigation"]
+      },
+      "gmNote": "Only for checks that rely on sight, within 1 foot."
+    }
+  },
+  "horseshoes-of-speed": {
+    "both": {
+      "effect": {
+        "speed": 30
+      },
+      "gmNote": "Worn by a mount: put it in the horse’s inventory."
+    }
+  },
+  "handy-haversack": {
+    "both": {
+      "container": {
+        "capacity": 120,
+        "weightless": true
+      },
+      "gmNote": "Two side pouches of 20 lb and a central pouch of 80 lb; it always weighs 5 lb."
+    }
+  },
+  "portable-hole": {
+    "both": {
+      "container": {
+        "capacity": 20000,
+        "weightless": true
+      },
+      "gmNote": "Holds a 10-foot-deep cylinder; putting it in a bag of holding opens a gate to the Astral Plane."
+    }
+  },
+  "efficient-quiver": {
+    "both": {
+      "container": {
+        "capacity": 60,
+        "weightless": true
+      },
+      "gmNote": "Holds 60 arrows, 18 javelins and 6 bows or staves; it always weighs 2 lb."
+    }
+  },
+  "vicious-weapon-*": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "On a natural 20 the target takes 7 extra damage of the weapon’s type: add it to the critical hit."
+      }
+    }
+  },
+  "sword-of-sharpness-*": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "On a natural 20 against a creature that isn’t immune, roll another d20: on a 20 it cuts off a limb (2014) or deals 14 extra slashing (2024). Maximum damage against objects."
+      }
+    }
+  },
+  "sword-of-wounding-*": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Hit points lost to it come back only by a short or long rest; once a turn a hit wounds for 1d4 necrotic at the start of each of the target’s turns until it makes a DC 15 Con save."
+      }
+    }
+  },
+  "dancing-sword-*": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "As a bonus action it flies 30 feet and attacks on its own for 4 rounds, using the wielder’s attack roll and modifiers."
+      }
+    }
+  },
+  "arrow-of-slaying-*": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Against its chosen creature type the target makes a DC 17 Con save, taking 6d10 extra piercing on a failure or half on a success; then it is mundane."
+      }
+    }
+  },
+  "ammunition-of-slaying-*": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Against its chosen creature type the target makes a DC 17 Con save, taking 6d10 extra damage on a failure or half on a success; then it is mundane."
+      }
+    }
+  },
+  "oathbow": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Speak \"swift death\" to name a sworn enemy: advantage on attacks against it with the bow, it ignores cover short of total, and hits deal 3d6 extra piercing until it dies or 7 days pass."
+      }
+    }
+  },
+  "oathbow-*": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Speak \"swift death\" to name a sworn enemy: advantage on attacks against it with the bow, it ignores cover short of total, and hits deal 3d6 extra piercing until it dies or dawn seven days later."
+      }
+    }
+  },
+  "mace-of-terror": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Spend a charge: creatures of your choice within 30 feet make a DC 15 Wis save or are frightened for 1 minute and run away."
+      }
+    }
+  },
+  "staff-of-withering": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "On a hit, spend a charge for 2d10 extra necrotic; the target makes a DC 15 Con save or has disadvantage on Str and Con checks and saves for an hour."
+      }
+    }
+  },
+  "staff-of-the-python": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "As an action, throw it to become a giant constrictor snake under your command; if the snake drops to 0 hit points the staff is destroyed."
+      }
+    }
+  },
+  "javelin-of-lightning": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Thrown with its command word, it becomes a 5-foot-wide, 120-foot line of lightning: DC 13 Dex save for 4d6 lightning, half on a success, plus 4d6 to the target it hits. Once per dawn."
+      }
+    }
+  },
+  "wand-of-paralysis": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Spend a charge: one creature within 60 feet makes a DC 15 Con save or is paralyzed for 1 minute, repeating the save each turn."
+      }
+    }
+  },
+  "wand-of-wonder": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Spend a charge and roll d100 on the wand’s table for what happens."
+      }
+    }
+  },
+  "ring-of-the-ram": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Spend 1 to 3 charges: a spectral ram attacks a creature within 60 feet (+7 to hit, 2d10 force per charge, pushed 5 feet per charge)."
+      }
+    }
+  },
+  "horn-of-blasting": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "As an action, everything in a 30-foot cone makes a DC 15 Con save: 5d6 thunder and deafened for a minute, half and not deafened on a success. Each use beyond the first in a day can explode it."
+      }
+    }
+  },
+  "rod-of-lordly-might": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Six buttons turn it into a flame tongue, a battleaxe, a spear, a climbing pole or a battering ram; three once-a-day powers paralyze, frighten or drain life on a hit."
+      }
+    }
+  },
+  "animated-shield": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "As a bonus action it floats and guards you for 1 minute, leaving your hands free."
+      }
+    }
+  },
+  "arrow-catching-shield": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "+2 AC against ranged attacks, and as a reaction you can become the target of a ranged attack aimed at a creature within 5 feet."
+      }
+    }
+  },
+  "shield-of-missile-attraction": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Resistance to damage from ranged weapon attacks, but it is cursed: ranged attacks at creatures within 10 feet target you instead."
+      }
+    }
+  },
+  "gloves-of-missile-snaring": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "As a reaction when hit by a ranged weapon attack, reduce the damage by 1d10 + Dex modifier; at 0 you catch the missile."
+      }
+    }
+  },
+  "ring-of-evasion": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "As a reaction when you fail a Dex save, spend a charge to succeed instead."
+      }
+    }
+  },
+  "ioun-stone-of-absorption": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "As a reaction it cancels a spell of 4th level or lower aimed only at you, up to 20 spell levels."
+      }
+    }
+  },
+  "ioun-stone-of-greater-absorption": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "As a reaction it cancels a spell of 8th level or lower aimed only at you, up to 50 spell levels."
+      }
+    }
+  },
+  "ioun-stone-of-regeneration": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "You regain 15 hit points at the end of each hour, as long as you have at least 1."
+      }
+    }
+  },
+  "ioun-stone-of-mastery": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Your proficiency bonus is 1 higher."
+      }
+    }
+  },
+  "ioun-stone-of-reserve": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Stores up to 3 spell levels that a creature wearing it can cast."
+      }
+    }
+  },
+  "ioun-stone-of-sustenance": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "You need no food or drink."
+      }
+    }
+  },
+  "ioun-stone-of-awareness": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "You can’t be surprised while it orbits your head."
+      }
+    }
+  },
+  "ring-of-regeneration": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "You regain 1d6 hit points every 10 minutes while you have at least 1, and lost body parts regrow over 1d6+1 days."
+      }
+    }
+  },
+  "periapt-of-wound-closure": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "You stabilise whenever you are dying at the start of your turn, and you regain double the hit points from hit dice."
+      }
+    }
+  },
+  "periapt-of-health": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "You are immune to contracting any disease (2014), or have advantage on saves against the poisoned condition and regain hit points from hit dice (2024)."
+      }
+    }
+  },
+  "ring-of-invisibility": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "As an action you turn invisible until you attack, cast a spell or end it as a bonus action."
+      }
+    }
+  },
+  "cloak-of-invisibility": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Pull up the hood to turn invisible, using up to 2 hours of the cloak’s time a day."
+      }
+    }
+  },
+  "armor-of-invulnerability": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Resistance to nonmagical damage, and once a day immunity to it for 10 minutes."
+      }
+    }
+  },
+  "ring-of-mind-shielding": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Immune to magic that reads your thoughts, tells if you lie, finds your alignment or type; telepathy only if you let it."
+      }
+    }
+  },
+  "amulet-of-proof-against-detection-and-location": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Hidden from divination magic: you can’t be targeted by it or seen through scrying sensors."
+      }
+    }
+  },
+  "ring-of-x-ray-vision": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "As an action, see through solid matter within 30 feet for 1 minute; more than once a day costs a DC 15 Con save or a level of exhaustion."
+      }
+    }
+  },
+  "lantern-of-revealing": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "While lit it shows invisible creatures and objects in its bright light."
+      }
+    }
+  },
+  "gem-of-brightness": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Spend charges to make light, a blinding beam (DC 15 Con) or a cone of blinding flashes."
+      }
+    }
+  },
+  "necklace-of-adaptation": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "You breathe normally in any environment and have advantage on saves against harmful gases and vapours."
+      }
+    }
+  },
+  "bracers-of-archery": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Proficiency with longbows and shortbows, and +2 damage on ranged attacks made with them."
+      }
+    }
+  },
+  "ring-of-spell-storing": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Holds up to 5 levels of spells that whoever wears it can cast, with the original caster’s DC and attack."
+      }
+    }
+  },
+  "hat-of-many-spells": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Wizards can cast spells through it, and once a day pull a random spell out of it."
+      }
+    }
+  },
+  "pearl-of-power": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Once a day, regain one expended spell slot of 3rd level or lower."
+      }
+    }
+  },
+  "rod-of-absorption": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "As a reaction it absorbs a spell aimed only at you and stores its levels for your own slots."
+      }
+    }
+  },
+  "rod-of-rulership": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Once a day, creatures of your choice within 120 feet make a DC 15 Wis save or are charmed by you for 8 hours."
+      }
+    }
+  },
+  "rod-of-security": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Once a day, carries you and up to 199 others to an extradimensional paradise for up to 200 days."
+      }
+    }
+  },
+  "talisman-of-pure-good": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "A good cleric or paladin uses it as a holy symbol (+2 spell attacks) and can spend charges to send a fiend to its doom."
+      }
+    }
+  },
+  "talisman-of-ultimate-evil": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "An evil cleric or paladin uses it as a holy symbol (+2 spell attacks) and can spend charges to destroy a good creature."
+      }
+    }
+  },
+  "talisman-of-the-sphere": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Doubles your proficiency bonus on checks to control a sphere of annihilation."
+      }
+    }
+  },
+  "ring-of-djinni-summoning": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Once a day, summon a djinni that serves you for an hour."
+      }
+    }
+  },
+  "ring-of-elemental-command": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Powers against the bound element’s creatures: advantage on attacks, their attacks have disadvantage, and its spells and languages."
+      }
+    }
+  },
+  "ring-of-feather-falling": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "When you fall you descend 60 feet a round and take no falling damage."
+      }
+    }
+  },
+  "ring-of-water-walking": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "You can stand and move on any liquid surface as if it were solid ground."
+      }
+    }
+  },
+  "apparatus-of-the-crab": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A Large vehicle the GM runs: levers move it, its claws attack (+8, 2d6)."
+      }
+    }
+  },
+  "bag-of-beans": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Planted beans do random things from the bag’s table."
+      }
+    }
+  },
+  "bag-of-devouring": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A bag of holding look-alike that eats what goes in."
+      }
+    }
+  },
+  "bag-of-tricks": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Pull out a fuzzy ball to make a random beast from its table."
+      }
+    }
+  },
+  "bead-of-force": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Thrown, it bursts into a 10-foot sphere of force: DC 15 Dex save or 5d4 force and trapped inside for a minute."
+      }
+    }
+  },
+  "bead-of-nourishment": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Eating it feeds a creature for a day."
+      }
+    }
+  },
+  "bowl-of-commanding-water-elementals": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Once a day, summon a water elemental."
+      }
+    }
+  },
+  "brazier-of-commanding-fire-elementals": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Once a day, summon a fire elemental."
+      }
+    }
+  },
+  "censer-of-controlling-air-elementals": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Once a day, summon an air elemental."
+      }
+    }
+  },
+  "stone-of-controlling-earth-elementals": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Once a day, summon an earth elemental."
+      }
+    }
+  },
+  "elemental-gem-blue-sapphire": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Breaking it summons an air elemental."
+      }
+    }
+  },
+  "elemental-gem-emerald": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Breaking it summons a water elemental."
+      }
+    }
+  },
+  "elemental-gem-red-corundum": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Breaking it summons a fire elemental."
+      }
+    }
+  },
+  "elemental-gem-yellow-diamond": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Breaking it summons an earth elemental."
+      }
+    }
+  },
+  "broom-of-flying": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Ride it to fly 50 feet (30 with over 200 lb); give the rider a fly speed while mounted."
+      }
+    }
+  },
+  "carpet-of-flying": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A flying carpet of the size on its table; give its riders a fly speed while aboard."
+      }
+    }
+  },
+  "chime-of-opening": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Strike it to open a lock, lid or door within 120 feet; 10 uses."
+      }
+    }
+  },
+  "cube-of-force": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Spend charges to raise a 15-foot cube barrier against chosen things."
+      }
+    }
+  },
+  "decanter-of-endless-water": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Pours a stream, fountain or geyser of fresh or salt water."
+      }
+    }
+  },
+  "deck-of-illusions": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Draw a card to make an illusion of the creature on it."
+      }
+    }
+  },
+  "deck-of-many-things": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Draw cards; each changes the drawer as its table says."
+      }
+    }
+  },
+  "mysterious-deck": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Draw cards; each changes the drawer as its table says."
+      }
+    }
+  },
+  "dimensional-shackles": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Shackled creatures can’t teleport or travel between planes."
+      }
+    }
+  },
+  "dust-of-dryness": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A pinch soaks up water; thrown at a water elemental it deals 10d6 necrotic."
+      }
+    }
+  },
+  "dust-of-sneezing-and-choking": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Creatures in 30 feet make a DC 15 Con save or can’t breathe and are incapacitated."
+      }
+    }
+  },
+  "efreeti-bottle": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Opening it releases an efreeti whose mood is rolled on its table."
+      }
+    }
+  },
+  "eversmoking-bottle": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Opened, it pours out smoke that heavily obscures a growing area."
+      }
+    }
+  },
+  "feather-token-anchor": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Touched to a boat, it moors it in place for a day."
+      }
+    }
+  },
+  "feather-token-bird": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Becomes a roc that carries you up to 144 miles in a day."
+      }
+    }
+  },
+  "feather-token-fan": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Makes a wind that fills a ship’s sails."
+      }
+    }
+  },
+  "feather-token-swan-boat": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Becomes a 50-foot swan boat for a day."
+      }
+    }
+  },
+  "feather-token-tree": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Grows into a 60-foot oak."
+      }
+    }
+  },
+  "feather-token-whip": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Becomes a floating whip that attacks for an hour (+9, 1d6+5 force)."
+      }
+    }
+  },
+  "folding-boat": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Unfolds into a rowboat or a ship."
+      }
+    }
+  },
+  "horn-of-valhalla-brass": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Summons berserkers from Valhalla to fight for you for an hour."
+      }
+    }
+  },
+  "horn-of-valhalla-bronze": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Summons berserkers from Valhalla to fight for you for an hour."
+      }
+    }
+  },
+  "horn-of-valhalla-iron": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Summons berserkers from Valhalla to fight for you for an hour."
+      }
+    }
+  },
+  "horn-of-valhalla-silver": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Summons berserkers from Valhalla to fight for you for an hour."
+      }
+    }
+  },
+  "horseshoes-of-a-zephyr": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A mount wearing them hovers 4 inches up and crosses any surface."
+      }
+    }
+  },
+  "immovable-rod": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Pressing the button fixes it in place; it holds 8,000 lb."
+      }
+    }
+  },
+  "instant-fortress": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Becomes a stone tower with walls; the GM places it on the map."
+      }
+    }
+  },
+  "iron-bands-of-binding": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Thrown at a creature, it is restrained unless it makes a DC 20 Str check."
+      }
+    }
+  },
+  "iron-bands": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Thrown at a creature, it is restrained unless it makes a DC 20 Str check."
+      }
+    }
+  },
+  "iron-flask": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Traps an extraplanar creature that fails a DC 17 Wis save."
+      }
+    }
+  },
+  "manual-of-golems": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Teaches its reader to build a golem."
+      }
+    }
+  },
+  "marvelous-pigments": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Paint becomes real objects and terrain."
+      }
+    }
+  },
+  "mirror-of-life-trapping": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Traps creatures that see their reflection and fail a DC 15 Cha save."
+      }
+    }
+  },
+  "oil-of-etherealness": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Rubbed on, the creature becomes ethereal for an hour, as the etherealness spell."
+      }
+    }
+  },
+  "oil-of-sharpness": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Coats a slashing or piercing weapon: +3 to attack and damage for an hour."
+      }
+    }
+  },
+  "oil-of-slipperiness": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Works like freedom of movement for 8 hours, or makes a 10-foot square slick like grease."
+      }
+    }
+  },
+  "pipes-of-haunting": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Creatures within 30 feet make a DC 15 Wis save or are frightened for a minute."
+      }
+    }
+  },
+  "pipes-of-the-sewers": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Calls and commands swarms of rats."
+      }
+    }
+  },
+  "potion-of-animal-friendship": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Works like animal friendship for an hour: beasts make a DC 13 Wis save or are charmed."
+      }
+    }
+  },
+  "potion-of-clairvoyance": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Works like the clairvoyance spell."
+      }
+    }
+  },
+  "potion-of-mind-reading": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Works like detect thoughts (save DC 13) for 10 minutes."
+      }
+    }
+  },
+  "potion-of-poison": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Looks like a healing potion: 3d6 poison and a DC 13 Con save against being poisoned."
+      }
+    }
+  },
+  "potion-of-water-breathing": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Breathe underwater for an hour."
+      }
+    }
+  },
+  "potion-of-longevity": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Makes the drinker 1d6+6 years younger."
+      }
+    }
+  },
+  "elixir-of-health": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Cures diseases and ends blinded, deafened, paralyzed and poisoned."
+      }
+    }
+  },
+  "robe-of-useful-items": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Patches come off as the objects they show."
+      }
+    }
+  },
+  "rope-of-climbing": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A 60-foot rope that moves, knots and fastens on command."
+      }
+    }
+  },
+  "rope-of-entanglement": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Restrains a creature within 20 feet that fails a DC 15 Dex save."
+      }
+    }
+  },
+  "sovereign-glue": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Bonds two objects for good."
+      }
+    }
+  },
+  "universal-solvent": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Dissolves any adhesive, including sovereign glue."
+      }
+    }
+  },
+  "sphere-of-annihilation": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "A 2-foot sphere of blackness that obliterates matter; moved with Arcana checks."
+      }
+    }
+  },
+  "wand-of-enemy-detection": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Spend a charge to sense hostile creatures within 60 feet for a minute."
+      }
+    }
+  },
+  "wand-of-secrets": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Spend a charge to sense secret doors and traps within 30 feet."
+      }
+    }
+  },
+  "well-of-many-worlds": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Unfolds into a two-way portal to another world."
+      }
+    }
+  },
+  "gloves-of-thievery": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "+5 to Sleight of Hand checks and Dex checks to pick locks; invisible while worn."
+      }
+    }
+  },
+  "figurine-of-wondrous-power-*": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Becomes the creature it shows, under your command, for the time on its table."
+      }
+    }
+  },
+  "mithral-armor-breastplate": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Light and flexible: it can be worn under normal clothes."
+      }
+    }
+  },
+  "mithral-armor-chain-shirt": {
+    "both": {
+      "manual": {
+        "kind": "utility",
+        "why": "Light and flexible: it can be worn under normal clothes."
+      }
+    }
+  },
+  "potion-of-growth": {
+    "both": {
+      "use": {
+        "potion": true,
+        "effect": {
+          "checkAdvantageFor": ["str"],
+          "saveAdvantage": ["str"],
+          "rounds": 1200
+        }
+      },
+      "gmNote": "Size changes as the enlarge/reduce spell for 1d4 hours (about 2): the GM sets the token size and the 1d4 to weapon damage."
+    }
+  },
+  "potion-of-diminution": {
+    "both": {
+      "use": {
+        "potion": true,
+        "effect": {
+          "checkDisadvantageFor": ["str"],
+          "saveDisadvantageFor": ["str"],
+          "rounds": 1200
+        }
+      },
+      "gmNote": "Size changes as the enlarge/reduce spell for 1d4 hours (about 2): the GM sets the token size and the 1d4 to weapon damage."
+    }
+  },
+  "potion-of-invulnerability": {
+    "both": {
+      "use": {
+        "potion": true,
+        "effect": {
+          "resistances": [
+            "acid",
+            "bludgeoning",
+            "cold",
+            "fire",
+            "force",
+            "lightning",
+            "necrotic",
+            "piercing",
+            "poison",
+            "psychic",
+            "radiant",
+            "slashing",
+            "thunder"
+          ],
+          "rounds": 10
+        }
+      }
+    }
+  },
+  "potion-of-vitality": {
+    "both": {
+      "manual": {
+        "kind": "gm",
+        "why": "Ends exhaustion and poison; for 24 hours, hit dice spent heal their maximum."
+      },
+      "use": {
+        "potion": true
+      }
+    }
+  }
+}

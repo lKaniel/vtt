@@ -3,7 +3,7 @@ import { srdFor } from './content.ts';
 import { resolveCreature } from './creature.ts';
 import { blankOwn, changeOwn, dropOwn, makeOwn, withOwn } from './own-content.ts';
 import { FeatureSchema, SpellSchema } from './spell-schema.ts';
-import { ItemSchema } from './stats-schema.ts';
+import { ItemSchema } from './item-schema.ts';
 import { TokenSchema } from './token-schema.ts';
 
 const book = srdFor('2014');

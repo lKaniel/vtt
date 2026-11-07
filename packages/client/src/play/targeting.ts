@@ -34,6 +34,8 @@ export interface Aiming {
   repeat?: boolean;
   /** Read from a spell scroll the caster carries. */
   scroll?: boolean;
+  /** Cast from the magic item at this inventory index (a wand). */
+  item?: number;
   /** Set when a feature is aimed like a spell (bardic inspiration): it's used instead of cast. */
   feature?: string;
 }
@@ -127,6 +129,7 @@ export function castMessage(caster: string, aiming: Aiming, point?: Point): Clie
     ...(aiming.free && { free: true }),
     ...(aiming.repeat && { repeat: true }),
     ...(aiming.scroll && { scroll: true }),
+    ...(aiming.item !== undefined && { item: aiming.item }),
   };
 }
 

@@ -13,19 +13,17 @@ import {
   withAgain,
   withChoice,
   resolveCast,
-  scrollCaster,
   type Spell,
-  SPELL_SCROLL,
   type SpellLog,
   type Token,
   spendResistance,
-  characterLevel,
   stoppedBy,
 } from '@vtt/system-dnd5e';
 import { gridKind, isGridless, placeToken, type Player, type Point, roll } from '@vtt/shared';
 import { castBreaksSanctuary, passSanctuaries } from '../play/spell-wards.ts';
 import { shaped } from '../play/spell-forms.ts';
 import { summon } from '../play/spell-summons.ts';
+import { itemCasting, scrollReader, spentFrom } from '../play/spell-items.ts';
 import { type DoorPick, doorAt, setDoor } from '../play/spell-doors.ts';
 import { breakTimeStop } from '../play/time-stop.ts';
 import { SpellTargets } from '../play/spell-targets.ts';
@@ -41,6 +39,8 @@ export interface CastRequest {
   point?: Point;
   summon?: string;
   scroll?: boolean;
+  /** Cast from the magic item at this inventory index (a wand of fireballs). */
+  item?: number;
   /** The spell's option (see Spell `choices`); a lasting spell used again keeps the one it was cast with. */
   choice?: string;
   /** The monster a shape-shifting spell turns its targets into (polymorph). */
@@ -134,7 +134,7 @@ export class SpellActions {
   /** The cast goes through: slot, concentration, lasting effects, and what it does. */
   private finish({ caster, spell, req, plan, reader, targets, door }: Casting): void {
     if (plan.again && spell.steer) return this.steer(caster, spell, req.point!);
-    if (!plan.again) this.begin(caster, spell, plan.spend, !!reader);
+    if (!plan.again) this.begin(caster, spell, plan, req.item ?? !!reader);
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
     const notes = this.conjure(caster, spell, { ...req, slot: plan.slot }, door);
     const free = req.free && plan.slot > 0 && !plan.again ? ['cast without a spell slot'] : [];
@@ -156,10 +156,11 @@ export class SpellActions {
   }
 
   /** The cast was countered: it does nothing, and its slot (or scroll) is gone unless `keepsSlot`. */
-  private fail({ caster, spell, plan, reader }: Casting, keepsSlot: boolean): void {
+  private fail({ caster, spell, plan, reader, req }: Casting, keepsSlot: boolean): void {
     if (!keepsSlot) this.table.spendSlot(caster.token.id, plan.spend);
     const now = this.store.tokens.get(caster.token.id)!;
-    if (!keepsSlot && reader) this.store.setToken(useScroll(now, spell.id));
+    if (!keepsSlot && reader)
+      this.store.setToken(spentFrom(now, this.table.content(now), { spell, slot: plan.slot }, req.item ?? true));
     this.table.note(`${caster.token.name}'s ${spell.name} fails`);
   }
 
@@ -223,10 +224,23 @@ export class SpellActions {
     spell: Spell,
     req: CastRequest,
   ): { caster: Fighter; plan: Plan; reader?: CasterSheet } {
+    if (req.item !== undefined) return this.fromItem(actor, spell, req);
     if (!req.scroll) return { caster: actor, plan: this.plan(actor, spell, req) };
     const reader = scrollReader(actor, spell);
     const caster = { ...actor, sheet: { ...actor.sheet, caster: reader } };
     return { caster, plan: this.scrollPlan(caster, spell), reader };
+  }
+
+  /** A spell from a magic item: its charges pay instead of a slot, with its DC when it has one. */
+  private fromItem(
+    actor: Fighter,
+    spell: Spell,
+    req: CastRequest,
+  ): { caster: Fighter; plan: Plan; reader: CasterSheet } {
+    const content = this.table.content(actor.token);
+    const { pick, reader } = itemCasting(content, actor, spell, { item: req.item!, slot: req.slot });
+    const plan = { ...this.scrollPlan(actor, spell), slot: pick.slot };
+    return { caster: { ...actor, sheet: { ...actor.sheet, caster: reader } }, plan, reader };
   }
 
   /** A scroll's spell: cast at its own level with no slot, in a fight only on your turn like any other. */
@@ -271,12 +285,12 @@ export class SpellActions {
     for (const e of effects) this.addEffect(id, e);
   }
 
-  /** Spends the slot (or the scroll), ends invisibility and starts concentrating. */
-  private begin(caster: Fighter, spell: Spell, slot: number, scroll: boolean): void {
+  /** Spends the slot (the scroll, or the item's charges at `from`), ends invisibility and starts concentrating. */
+  private begin(caster: Fighter, spell: Spell, plan: Plan, from: boolean | number): void {
     if (spell.concentration && caster.token.concentration) this.table.endConcentration(caster.token.id);
-    this.table.spendSlot(caster.token.id, slot);
+    this.table.spendSlot(caster.token.id, plan.spend);
     const now = this.store.tokens.get(caster.token.id)!;
-    const token = scroll ? useScroll(now, spell.id) : now;
+    const token = spentFrom(now, this.table.content(now), { spell, slot: plan.slot }, from);
     const effects = token.effects?.filter((e) => !e.endsOnAttack);
     this.store.setToken({
       ...token,
@@ -448,22 +462,4 @@ function chosen(caster: Fighter, spell: Spell, choice: string | undefined, again
 
 function summonNotes(summoned: readonly Token[]): string[] {
   return summoned.length ? [`${summoned.map((t) => t.name).join(', ')} appear`] : [];
-}
-
-/** The spellcasting `caster` reads a scroll of `spell` with; refused without such a scroll. */
-function scrollReader({ token, sheet }: Fighter, spell: Spell): CasterSheet {
-  if (!token.inventory?.some((e) => e.item === SPELL_SCROLL && e.spell === spell.id)) {
-    throw new Refusal(`${token.name} has no scroll of ${spell.name}`);
-  }
-  return scrollCaster(sheet, spell, characterLevel(token.stats) ?? 1);
-}
-
-/** One scroll of `spell` fewer: it crumbles to dust. */
-function useScroll(token: Token, spell: string): Token {
-  const list = token.inventory ?? [];
-  const at = list.findIndex((e) => e.item === SPELL_SCROLL && e.spell === spell);
-  const entry = list[at]!;
-  const inventory =
-    entry.qty > 1 ? list.map((e, i) => (i === at ? { ...e, qty: e.qty - 1 } : e)) : list.filter((_, i) => i !== at);
-  return { ...token, inventory: inventory.length ? inventory : undefined };
 }

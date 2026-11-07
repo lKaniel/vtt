@@ -1,6 +1,7 @@
 import type { Content } from './content.ts';
 import type { Token } from './token-schema.ts';
-import { type Currency, type InventoryEntry, type Item, MAX_ATTUNED } from './stats-schema.ts';
+import { type Currency, type InventoryEntry, MAX_ATTUNED } from './stats-schema.ts';
+import { type Item } from './item-schema.ts';
 
 // What a creature carries: coins, the weight of its gear against its
 // carrying capacity, containers, and the three magic items it may attune to.

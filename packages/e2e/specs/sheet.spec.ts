@@ -36,7 +36,7 @@ test('the inventory lists gear by kind, opens a description in place and filters
   await expect(armour.getByRole('listitem', { name: 'Chain Mail' })).toBeVisible();
   await expect(armour.getByRole('button', { name: 'Unequip' }).first()).toHaveAttribute('aria-pressed', 'true');
   await sheet.getByRole('button', { name: 'Potion of Healing', exact: true }).click();
-  await expect(sheet).toContainText('Regain 2d4+2 hit points');
+  await expect(sheet).toContainText('You regain Hit Points when you drink this potion');
   await sheet.getByRole('searchbox', { name: 'Search' }).fill('cross');
   await expect(sheet.getByRole('listitem', { name: 'Light Crossbow' })).toBeVisible();
   await expect(sheet.getByRole('listitem', { name: 'Chain Mail' })).toHaveCount(0);

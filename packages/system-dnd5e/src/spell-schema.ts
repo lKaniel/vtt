@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { LightSchema, WallRulesSchema } from '@vtt/shared';
-import { ABILITIES, AbilitiesSchema, DamageSchema, DamageTypeSchema } from './stats-schema.ts';
+import { ABILITIES, AbilitiesSchema, DamageSchema, DamageTypeSchema, OtherSpeedsSchema } from './stats-schema.ts';
 import { EffectChangeSchema } from './effect-changes.ts';
 import { WeaponSpellSchema } from './weapon-spell-schema.ts';
 
@@ -51,8 +51,8 @@ const modifiers = {
   checkDisadvantage: z.boolean().optional(),
   /** Ability checks of these abilities have disadvantage (heavy encumbrance). */
   checkDisadvantageFor: z.array(AbilitySchema).optional(),
-  /** Ability checks of these abilities have advantage (enhance ability). */
-  checkAdvantageFor: z.array(AbilitySchema).optional(),
+  /** Checks of these abilities or skills, or initiative, have advantage (enhance ability, cloak of elvenkind). */
+  checkAdvantageFor: z.array(z.string()).optional(),
   /** Added to checks with these skills, by skill id: "10" for pass without trace, "1d4" for 2024 guidance. */
   skillBonus: z.record(z.string(), dice).optional(),
   ac: z.number().int().optional(),
@@ -73,6 +73,12 @@ const modifiers = {
   /** Attacks the bearer gets at the start of each of its turns, on top of its action (haste). */
   turnAttacks: z.number().int().positive().optional(),
   resistances: z.array(DamageTypeSchema).optional(),
+  immunities: z.array(DamageTypeSchema).optional(),
+  /** Critical hits on the bearer are normal hits (adamantine armor); advantage on saves against spells (a mantle of spell resistance). */
+  noCrits: z.boolean().optional(),
+  spellSaveAdvantage: z.boolean().optional(),
+  /** Other ways it moves, in feet; "walk" is as fast as it walks (winged boots). */
+  speeds: OtherSpeedsSchema.optional(),
   /** Attacks against the bearer have advantage (faerie fire) or disadvantage. */
   advantageAgainst: z.boolean().optional(),
   disadvantageAgainst: z.boolean().optional(),

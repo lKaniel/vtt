@@ -76,11 +76,17 @@ function checkModifiers(sheet: Creature, check: CheckKind) {
   const disadvantage =
     effects.some((e) => e.checkDisadvantage === true || e.checkDisadvantageFor?.includes(check.ability) === true) ||
     sheet.conditions.some((c) => HINDERED.includes(c));
-  const advantage = effects.some((e) => e.checkAdvantageFor?.includes(check.ability) === true);
+  const advantage = hasCheckAdvantage(sheet, check);
   const skilled = (e: Effect) => (check.skill ? e.skillBonus?.[check.skill] : undefined);
   const giving = effects.filter((e) => (e.checkBonus ?? skilled(e)) !== undefined);
   const bonus = giving.flatMap((e) => [e.checkBonus, skilled(e)].filter((d): d is string => !!d));
   return { advantage, disadvantage, bonus, used: giving.filter((e) => e.once).map((e) => e.id) };
+}
+
+/** Whether an effect gives the check advantage: its ability, its skill (a cloak of elvenkind's stealth). */
+function hasCheckAdvantage(sheet: Creature, check: CheckKind): boolean {
+  const names = [check.ability, check.skill].filter((n): n is string => !!n);
+  return sheet.effects.some((e) => e.checkAdvantageFor?.some((a) => names.includes(a)));
 }
 
 /** A saving throw rolled from the sheet or a request card, with the effects' advantage, disadvantage and dice. */

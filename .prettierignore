@@ -2,4 +2,5 @@ dist
 pnpm-lock.yaml
 packages/e2e/test-results
 packages/e2e/playwright-report
+packages/system-dnd5e/scripts/fixtures
 .claude/skills

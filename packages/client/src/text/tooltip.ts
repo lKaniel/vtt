@@ -1,5 +1,6 @@
 import { type Attack, type Damage, type FeatureSheet, type Item, manualNote, type Spell } from '@vtt/system-dnd5e';
 import { ORDINAL } from './spell-text.ts';
+import { itemFacts, itemNote } from './item-facts.ts';
 
 // What the hover card on an action tile says.
 
@@ -89,14 +90,25 @@ export function macroTip(m: { name: string; command?: string }): Tip {
   return { title: m.name, subtitle: 'Macro', facts: ['Posts to chat'], body: m.command ?? '' };
 }
 
-/** Weapons and armor can be worn; `id` names items missing from the SRD. */
+/** Weapons, armor and magic items can be worn; `id` names items missing from the SRD. */
 export function itemTip(item: Item | undefined, id: string, equipped: boolean): Tip {
   if (!item) return { title: id, subtitle: 'item', facts: [], body: '' };
-  const wearable = item.type !== 'gear';
+  const wearable = item.type !== 'gear' || !!item.effect || !!item.bonus || !!item.attunement;
+  const kind = itemKind(item);
+  const note = itemNote(item);
   return {
     title: item.name,
-    subtitle: equipped ? `${item.type} · equipped` : item.type,
-    facts: wearable ? [equipped ? 'Click to unequip' : 'Click to equip'] : [],
-    body: item.type === 'gear' ? plainText(item.description ?? '') : '',
+    subtitle: equipped ? `${kind} · equipped` : kind,
+    facts: [...itemFacts(item), ...(wearable ? [equipped ? 'Click to unequip' : 'Click to equip'] : [])],
+    body: plainText(item.description ?? ''),
+    ...(note && { note }),
   };
+}
+
+/** "Rare ring", "Uncommon weapon", "gear". */
+function itemKind(item: Item): string {
+  const what = item.type === 'gear' && item.group ? item.group.replace(/-/g, ' ') : item.type;
+  if (!item.rarity) return what;
+  const rarity = item.rarity.replace('-', ' ');
+  return `${rarity[0]!.toUpperCase()}${rarity.slice(1)} ${what === 'wondrous' ? 'wondrous item' : what}`;
 }

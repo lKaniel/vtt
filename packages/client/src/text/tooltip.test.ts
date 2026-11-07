@@ -91,7 +91,7 @@ describe('item tooltips', () => {
   });
 
   it('describes gear and unknown items', () => {
-    expect(itemTip(item('rope'), 'rope', false)).toMatchObject({ subtitle: 'gear', facts: [] });
+    expect(itemTip(item('rope'), 'rope', false)).toMatchObject({ subtitle: 'adventuring gear', facts: [] });
     expect(itemTip(undefined, 'mystery-orb', false)).toEqual({
       title: 'mystery-orb',
       subtitle: 'item',

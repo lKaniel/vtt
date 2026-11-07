@@ -2,7 +2,8 @@ import { type PackCompendium, PackManifestSchema, type SystemPackSource } from '
 import type { z } from 'zod';
 import { type Content, srdFor } from './content.ts';
 import { ClassSchema, SpellSchema } from './spell-schema.ts';
-import { type Edition, ItemSchema, MonsterSchema } from './stats-schema.ts';
+import { type Edition, MonsterSchema } from './stats-schema.ts';
+import { ItemSchema } from './item-schema.ts';
 
 // D&D content in asset packs. The bundled SRD is two packs the system ships
 // (always on), and an installed pack's monster, item and spell compendia add

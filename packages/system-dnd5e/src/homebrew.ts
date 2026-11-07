@@ -1,7 +1,7 @@
 import { IdSchema, OwnershipSchema, type PackCompendium } from '@vtt/core';
 import { z } from 'zod';
 import { ClassSchema, SpellSchema } from './spell-schema.ts';
-import { ItemSchema } from './stats-schema.ts';
+import { ItemSchema } from './item-schema.ts';
 
 // A game's own rules content, made in the app: documents in its homebrew
 // collection (homebrew/<id>.json), each with a `kind`. They join the game's

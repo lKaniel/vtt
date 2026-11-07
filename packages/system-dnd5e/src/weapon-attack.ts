@@ -60,9 +60,18 @@ function extraDamage(input: WeaponAttackInput, sneak: boolean): Damage[] {
   const rage = attacker.sheet.effects.reduce((n, e) => n + (e.meleeDamage ?? 0), 0);
   if (rage && attack.kind === 'melee' && attack.weapon?.ability === 'str') extra.push({ dice: String(rage), type });
   if (sneak) extra.push({ dice: attacker.sheet.sneakAttack!, type });
+  extra.push(...weaponRiders(attack, target.sheet.type));
   extra.push(...hitRiders({ id: attacker.token.id, sheet: attacker.sheet }, type).damage);
   extra.push(...markDamage(target.sheet, attacker.token.id, type));
   return [...extra, ...smiting(input)];
+}
+
+/** A magic weapon's own extra damage: always, or against the creature types it slays. */
+function weaponRiders(attack: Attack, targetType: string): Damage[] {
+  const type = attack.damage[0]!.type;
+  return (attack.weapon?.hitDamage ?? [])
+    .filter((r) => !r.vs || r.vs.includes(targetType))
+    .map((r) => ({ dice: r.dice, type: r.type === 'weapon' ? type : r.type }));
 }
 
 /** Divine Smite on a melee hit, and Improved Divine Smite's 1d8 on every melee hit (2014 paladin). */

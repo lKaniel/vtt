@@ -6,7 +6,7 @@ import { abilityMod } from './creature-math.ts';
 import { isDead, makesDeathSaves } from './deaths.ts';
 import { markDamage } from './riders.ts';
 import { type GridKind, type Rng, roll, type Roll } from '@vtt/shared';
-import { attackModifiers, d20Formula, rollSave, type SaveRoll, type UsedEffect } from './effects.ts';
+import { attackModifiers, d20Formula, rollSpellSave, type SaveRoll, type UsedEffect } from './effects.ts';
 import { contest } from './checks.ts';
 import type { Token } from './token-schema.ts';
 import type { Effect, Spell } from './spell-schema.ts';
@@ -306,7 +306,7 @@ function castSave(cast: Cast, target: CastSide): SaveRoll | undefined {
   const { spell, dc, rng } = cast;
   if (!spell.save?.onCast) return undefined;
   if (spell.save.contest) return contest(spell.save.ability, cast.caster, target, rng);
-  return resistSave(target.sheet, rollSave(target.sheet, spell.save.ability, spell.save.dc ?? dc, rng));
+  return resistSave(target.sheet, rollSpellSave(target.sheet, spell.save.ability, spell.save.dc ?? dc, rng));
 }
 
 /** Attack roll and/or save: whether the spell lands in full, or for half damage. */
