@@ -97,3 +97,35 @@ test('selecting a creature opens no inspector; its HUD sets the colour filter', 
     .poll(() => page.evaluate(() => (vtt.token('bram') as { filter?: string } | undefined)?.filter))
     .toBe('sepia');
 });
+
+test('the main menu and the join screen sit in the middle of the screen', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto('/');
+  const game = page.getByRole('button', { name: /Example: the crossroads/ });
+  await expect(game).toBeVisible();
+  const centre = (box: { x: number; width: number } | null) => (box ? box.x + box.width / 2 : 0);
+  expect(Math.abs(centre(await game.boundingBox()) - 800)).toBeLessThan(20);
+
+  await game.click();
+  const back = page.getByRole('button', { name: 'Back to the games' });
+  expect(Math.abs(centre(await back.boundingBox()) - 800)).toBeLessThan(20);
+});
+
+test("the compendium's search box is one line high", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await atTable(page, GM);
+  await page.getByRole('tab', { name: 'Compendium' }).click();
+  const search = page.getByRole('searchbox', { name: /Search/ });
+  await expect(search).toBeVisible();
+  const box = (await search.locator('..').boundingBox())!;
+  expect(box.height).toBeLessThan(40);
+});
+
+test('the right-click menu sets Delete apart from the rest', async ({ page }) => {
+  await atTable(page, GM);
+  const bram = await screenOf(page, 650, 650);
+  await page.mouse.click(bram.x, bram.y, { button: 'right' });
+  const menu = page.getByRole('menu');
+  await expect(menu.getByRole('menuitem', { name: 'Delete' })).toBeVisible();
+  await expect(menu.getByRole('separator')).toHaveCount(1);
+});

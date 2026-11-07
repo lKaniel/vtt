@@ -64,13 +64,13 @@ export function SetupScreen({
   if (!info) return null;
   if (!info.admin) {
     return (
-      <div className="menu" data-slot="setup-locked">
+      <div className="menu mx-auto" data-slot="setup-locked">
         <h1 className="menu-title">{t('setup.title')}</h1>
         <div className="auth frame">
           <p className="menu-note">{t('setup.locked')}</p>
           <AdminUnlock onUnlocked={refresh} />
         </div>
-        <Button variant="outline" className="menu-back" onClick={() => go({ name: 'menu' })}>
+        <Button variant="outline" className="menu-back mx-auto mt-[18px] flex" onClick={() => go({ name: 'menu' })}>
           {t('join.back')}
         </Button>
       </div>

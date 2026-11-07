@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
+import { Separator } from './kit/separator.tsx';
 
 /** The right-click menu the map opened, at the pointer. A click elsewhere closes it. */
 export function ContextMenu({ session }: Readonly<{ session: Session }>) {
@@ -21,7 +22,11 @@ export function ContextMenu({ session }: Readonly<{ session: Session }>) {
   const top = Math.min(menu.screen[1], innerHeight - 32 * menu.items.length - 16);
   return (
     <div ref={box} className="context-menu frame" style={{ left, top }} role="menu">
-      {menu.items.map((item) => (
+      {menu.items.map((item, i) => [
+        // The red, removing entries stand apart from the rest.
+        item.danger && i > 0 && !menu.items[i - 1]!.danger && (
+          <Separator key={`${item.label}-rule`} decorative={false} className="my-1" />
+        ),
         <Button
           key={item.label}
           role="menuitem"
@@ -34,8 +39,8 @@ export function ContextMenu({ session }: Readonly<{ session: Session }>) {
           }}
         >
           {item.label}
-        </Button>
-      ))}
+        </Button>,
+      ])}
     </div>
   );
 }
