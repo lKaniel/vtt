@@ -8,11 +8,10 @@ import {
   type DamageType,
   DamageTypeSchema,
   type InventoryEntry,
-  type Item,
   MAX_ATTUNED,
-  type Weapon,
   type WeaponPropertySchema,
 } from './stats-schema.ts';
+import { type Item, type Weapon } from './item-schema.ts';
 import type { z } from 'zod';
 
 // The items on a Foundry dnd5e actor as ours: SRD items by name in the
@@ -25,10 +24,11 @@ export const GEAR_TYPES = new Set(['weapon', 'equipment', 'consumable', 'tool', 
 /** The names an SRD id might have: "Leather Armor" is leather, "Crossbow, light" is light-crossbow,
  * "Hunter's Mark" is hunters-mark (but "Healer's Kit" is healer-s-kit). */
 function candidates(name: string): string[] {
-  const slug = slugify(name);
-  const [a, b] = name.split(',');
+  const plain = name.replace(/\+(\d)/g, 'plus $1');
+  const slug = slugify(plain);
+  const [a, b] = plain.split(',');
   const turned = b ? [slugify(`${b} ${a}`)] : [];
-  return [slug, slug.replace(/-armor$/, ''), slugify(name.replace(/['’]/g, '')), ...turned];
+  return [slug, slug.replace(/-armor(?=$|-plus)/, ''), slugify(plain.replace(/['’]/g, '')), ...turned];
 }
 
 /** The id under which `map` has something called `name`. */

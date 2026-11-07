@@ -5,6 +5,7 @@ export type ApplyHow = Extract<ClientMessage, { t: 'applyDamage' }>['how'];
 import type { Player, Point, RollMode } from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
 import { aimAtTargets, aimFor, aimSpell, castMessage, pick, scrollAiming, type Aiming } from '../play/targeting.ts';
+import { itemAiming } from '../play/item-spells.ts';
 import type { Targets } from './targets.ts';
 import { loadRollMode, saveRollMode } from '../play/roll-mode.ts';
 import { tokenAt } from '../play/drops.ts';
@@ -109,6 +110,12 @@ export class Actions {
   aimScroll(spellId: string | undefined): void {
     this.armed = undefined;
     this.aimed(scrollAiming(this.s.selected ? this.s.tokens.get(this.s.selected) : undefined, spellId));
+  }
+
+  /** Readies a spell the selected token casts from a magic item (inventory `index`), at `slot` or the lowest it allows. */
+  aimItem(index: number, spellId: string, slot?: number): void {
+    this.armed = undefined;
+    this.aimed(itemAiming(this.s.selected ? this.s.tokens.get(this.s.selected) : undefined, index, spellId, slot));
   }
 
   /** Aims `aiming`: a self spell goes off at once, and one aimed at creatures picks your targets first. */

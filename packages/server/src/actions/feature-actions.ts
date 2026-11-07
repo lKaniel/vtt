@@ -6,6 +6,7 @@ import {
   itemCost,
   itemProblem,
   removeEffects,
+  rechargeItems,
   rest,
   type Token,
   useFeature,
@@ -77,7 +78,10 @@ export class FeatureActions {
     for (const id of ids) {
       const { token, sheet } = this.table.fighter(id);
       if (kind === 'long' && token.concentration) this.table.endConcentration(id);
-      this.store.setToken(rest(this.store.tokens.get(id)!, sheet, kind));
+      const rested = rest(this.store.tokens.get(id)!, sheet, kind);
+      // A long rest stands in for dawn, when wands and staffs regain their charges.
+      const now = kind === 'long' ? rechargeItems(rested, this.table.content(rested), this.table.rng) : rested;
+      this.store.setToken(now);
     }
     const who = ids.length === 1 ? 'A creature takes' : String(ids.length) + ' creatures take';
     this.table.note(`${who} a ${kind} rest`);

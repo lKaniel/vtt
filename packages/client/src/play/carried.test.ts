@@ -44,7 +44,7 @@ describe('how the bag is laid out', () => {
     const { loose, boxes } = bagLayout(list, '2014');
     expect(loose).toEqual([0, 2, 3, 4]);
     expect(boxes).toEqual([
-      { index: 0, name: 'Backpack', contents: [1], load: 5, capacity: 30 },
+      { index: 0, name: 'Backpack', contents: [1], load: 10, capacity: 30 },
       { index: 4, name: 'Pouch', contents: [], load: 0, capacity: 6 },
     ]);
   });

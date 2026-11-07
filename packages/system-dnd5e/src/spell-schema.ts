@@ -68,6 +68,23 @@ const modifiers = {
   /** Attacks the bearer gets at the start of each of its turns, on top of its action (haste). */
   turnAttacks: z.number().int().positive().optional(),
   resistances: z.array(DamageTypeSchema).optional(),
+  immunities: z.array(DamageTypeSchema).optional(),
+  /** Critical hits against the bearer are normal hits (adamantine armor). */
+  noCrits: z.boolean().optional(),
+  /** Ability checks of these abilities or skills, or initiative, have advantage (cloak of elvenkind: stealth). */
+  checkAdvantage: z.array(z.string()).optional(),
+  /** The bearer has advantage on saves against spells (a mantle of spell resistance). */
+  spellSaveAdvantage: z.boolean().optional(),
+  /** Other ways it moves, in feet; "walk" is as fast as it walks (winged boots). */
+  speeds: z
+    .object({
+      fly: z.union([z.number().nonnegative(), z.literal('walk')]),
+      swim: z.union([z.number().nonnegative(), z.literal('walk')]),
+      climb: z.union([z.number().nonnegative(), z.literal('walk')]),
+      hover: z.boolean(),
+    })
+    .partial()
+    .optional(),
   /** Attacks against the bearer have advantage (faerie fire) or disadvantage. */
   advantageAgainst: z.boolean().optional(),
   disadvantageAgainst: z.boolean().optional(),

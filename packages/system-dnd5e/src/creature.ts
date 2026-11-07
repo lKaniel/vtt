@@ -1,7 +1,8 @@
 import type { Senses } from '@vtt/shared';
 import type { Content } from './content.ts';
 import { withBasicActions } from './basic-actions.ts';
-import { encumbrance, itemWorks } from './carrying.ts';
+import { encumbrance } from './carrying.ts';
+import { ammunitionPlus, otherSpeeds, wearing, withItemBonuses, withWeaponMagic } from './worn-items.ts';
 import { offHandAttacks } from './two-weapon.ts';
 import { makesDeathSaves } from './deaths.ts';
 import {
@@ -31,15 +32,13 @@ import {
   type Abilities,
   AbilitiesSchema,
   type Ability,
-  type Armor,
   type Attack,
   type DamageType,
   type Edition,
-  type Item,
   type Monster,
   type Stats,
-  type Weapon,
 } from './stats-schema.ts';
+import type { Armor, Item, Weapon } from './item-schema.ts';
 
 /** A token's game statistics, with everything derived from its gear, class and effects worked out. */
 export interface Creature extends Affected, LegendaryParts {
@@ -54,6 +53,8 @@ export interface Creature extends Affected, LegendaryParts {
   tempHp: number;
   /** Walking speed in feet after effects; 0 while held in place. */
   speed: number;
+  /** Flying, swimming and climbing speeds its effects and items give, in feet. */
+  speeds?: { fly?: number; swim?: number; climb?: number; hover?: boolean };
   /** Initiative bonus (the dexterity modifier). */
   initiative: number;
   attacks: Attack[];
@@ -87,10 +88,11 @@ function proficiencyForCr(cr: number): number {
  * Works out a token's statistics from its monster stat block and/or its own
  * stats and equipped gear. Undefined for tokens without any (scenery, illusions).
  */
-export function resolveCreature(token: Token, books: Content): Creature | undefined {
-  const form = formOf(token);
-  if (form) return formCreature(token, form, books);
-  const content = withOwn(books, token);
+export function resolveCreature(raw: Token, books: Content): Creature | undefined {
+  const form = formOf(raw);
+  if (form) return formCreature(raw, form, books);
+  const content = withOwn(books, raw);
+  const token = wearing(raw, content);
   const monster = token.monster ? content.monsters.get(token.monster) : undefined;
   if (token.monster ? !monster : !token.stats) return undefined;
   const stats = token.stats ?? {};
@@ -122,7 +124,11 @@ export function resolveCreature(token: Token, books: Content): Creature | undefi
     tempHp: token.tempHp ?? 0,
     speed: token.speed,
     initiative: abilityMod(abilities.dex),
-    attacks: creatureAttacks(stats, monster, gear.weapons, { abilities, proficiency }),
+    attacks: creatureAttacks(stats, monster, gear.weapons, {
+      abilities,
+      proficiency,
+      ammo: ammunitionPlus(token, content),
+    }),
     ...defenses(stats, monster),
     ...kindAndSaves(monster, cls, { abilities, proficiency }),
     ...effectParts(token, features, content.edition, monster?.conditionImmunities),
@@ -144,19 +150,6 @@ function formCreature(token: Token, form: Form, books: Content): Creature | unde
   const shape = resolveCreature(shapeToken(token, form, { int, wis, cha }), books);
   if (!shape) return own;
   return form.hp === 'temp' ? { ...shape, hp: own.hp, maxHp: own.maxHp } : shape;
-}
-
-/** Equipped (and attuned) magic items' bonuses to AC and saving throws. */
-function withItemBonuses(c: Creature, token: Token, content: Content): Creature {
-  const bonuses = (token.inventory ?? []).flatMap((e) => {
-    const item = content.items.get(e.item);
-    return item?.bonus && itemWorks(e, item) ? [item.bonus] : [];
-  });
-  if (!bonuses.length) return c;
-  const ac = bonuses.reduce((n, b) => n + (b.ac ?? 0), 0);
-  const save = bonuses.reduce((n, b) => n + (b.saves ?? 0), 0);
-  const saves = Object.fromEntries(ABILITIES.map((a) => [a, c.saves[a] + save])) as Creature['saves'];
-  return { ...c, ac: c.ac + ac, saves };
 }
 
 /** Speed lost and what else the variant encumbrance rule does at each level. */
@@ -313,6 +306,7 @@ function applyEffects(c: Creature): Creature {
     hp: Math.min(c.hp, maxHp),
     ac: changed(Math.max(c.ac + sum('ac'), minAc), effects, 'ac'),
     speed: held ? 0 : Math.floor(speed * times),
+    speeds: otherSpeeds(effects, Math.floor(speed * times)),
     resistances: changedList(
       [...c.resistances, ...effects.flatMap((e) => e.resistances ?? [])],
       effects,
@@ -333,7 +327,7 @@ function changedSheet(
     initiative: changed(c.initiative, effects, 'initiative'),
     saves,
     attacks: c.attacks.map((a) => ({ ...a, toHit: changed(a.toHit, effects, 'toHit') })),
-    immunities: changedList(c.immunities, effects, 'immunities'),
+    immunities: changedList([...c.immunities, ...effects.flatMap((e) => e.immunities ?? [])], effects, 'immunities'),
     vulnerabilities: changedList(c.vulnerabilities, effects, 'vulnerabilities'),
   };
 }
@@ -342,9 +336,9 @@ function creatureAttacks(
   stats: Stats,
   monster: Monster | undefined,
   weapons: readonly Weapon[],
-  { abilities, proficiency }: { abilities: Abilities; proficiency: number },
+  { abilities, proficiency, ammo }: { abilities: Abilities; proficiency: number; ammo: number },
 ): Attack[] {
-  const fromWeapons = weapons.map((w) => weaponAttack(w, abilities, proficiency));
+  const fromWeapons = weapons.map((w) => withWeaponMagic(weaponAttack(w, abilities, proficiency), w, ammo));
   const natural = monster?.attacks ?? (fromWeapons.length ? [] : [unarmedStrike(abilities, proficiency)]);
   return [...natural, ...fromWeapons, ...offHandAttacks(fromWeapons, abilities), ...(stats.attacks ?? [])];
 }

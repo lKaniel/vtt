@@ -202,7 +202,12 @@ function GearRow(p: Readonly<RowProps>) {
 
 /** Weapons, armour and magic gear are worn to work. */
 const wearable = (item: Item | undefined) =>
-  !!item && (item.type !== 'gear' || item.bonus !== undefined || item.attunement === true);
+  !!item &&
+  (item.type !== 'gear' ||
+    item.bonus !== undefined ||
+    item.effect !== undefined ||
+    item.attunement === true ||
+    (item.group === 'ammunition' && !!item.plus));
 
 const setList =
   ({ update }: Readonly<SheetProps>) =>

@@ -16,9 +16,9 @@ export type Category = (typeof CATEGORIES)[number];
 export const FACETS: Record<Category, readonly Facet[]> = {
   all: ['kind', 'source'],
   monsters: ['cr', 'type', 'source'],
-  weapons: ['category', 'range', 'damage', 'source'],
-  armor: ['category', 'source'],
-  gear: ['use', 'source'],
+  weapons: ['category', 'range', 'damage', 'rarity', 'source'],
+  armor: ['category', 'rarity', 'source'],
+  gear: ['category', 'use', 'rarity', 'source'],
   spells: ['level', 'school', 'class', 'damage', 'casting', 'tag', 'source'],
   features: ['class', 'level', 'source'],
 };

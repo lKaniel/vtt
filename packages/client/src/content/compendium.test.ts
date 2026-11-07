@@ -100,7 +100,7 @@ describe('the Compendium', () => {
   it('searches every book at once, telling the kinds apart', () => {
     const all = compendium('all', '2014', 'shield');
     const kinds = new Set(all.map((e) => e.facets.kind?.[0]));
-    expect(kinds).toEqual(new Set(['Armour', 'Spell', 'Monster']));
+    expect(kinds).toEqual(new Set(['Armour', 'Gear', 'Spell', 'Monster']));
     expect(compendium('all', '2014', { query: 'shield', picks: { kind: 'Spell' } }).map((e) => e.name)).toContain(
       'Shield',
     );

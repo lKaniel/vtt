@@ -1,7 +1,8 @@
 import { type Rng, roll } from '@vtt/shared';
 import type { Creature } from './creature.ts';
 import type { Token } from './token-schema.ts';
-import type { Edition, Item } from './stats-schema.ts';
+import type { Edition } from './stats-schema.ts';
+import type { GearUse, Item } from './item-schema.ts';
 
 // Using what a creature carries: drinking potions, lighting torches and
 // lanterns (the light burns out by world time, see durations.ts).
@@ -52,8 +53,40 @@ export function useItem(token: Token, sheet: Creature, item: Item, rng: Rng = Ma
     const name = light.name ?? item.name;
     return { token: { ...next, light: { ...light, name } }, lit: name };
   }
-  const heal = use?.heal;
-  if (!heal) return { token: next };
-  const hp = Math.min(sheet.maxHp, sheet.hp + Math.max(0, roll(heal, rng).total));
-  return { token: { ...next, hp: hp >= sheet.maxHp ? undefined : hp }, healed: hp - sheet.hp };
+  if (!use) return { token: next };
+  const healed = healing(next, sheet, use, rng);
+  return { ...healed, token: raised(withEffect(withTempHp(healed.token, use, rng), item), use) };
+}
+
+function healing(token: Token, sheet: Creature, use: GearUse, rng: Rng): ItemUse {
+  if (!use.heal) return { token };
+  const hp = Math.min(sheet.maxHp, sheet.hp + Math.max(0, roll(use.heal, rng).total));
+  return { token: { ...token, hp: hp >= sheet.maxHp ? undefined : hp }, healed: hp - sheet.hp };
+}
+
+/** Temporary hit points don't add up: the better of the two is kept. */
+function withTempHp(token: Token, use: GearUse, rng: Rng): Token {
+  if (use.tempHp === undefined) return token;
+  const gained = typeof use.tempHp === 'number' ? use.tempHp : Math.max(0, roll(use.tempHp, rng).total);
+  return { ...token, tempHp: Math.max(token.tempHp ?? 0, gained) };
+}
+
+/** The item's effect on the user (a potion's); drinking another of the same starts it over. */
+function withEffect(token: Token, item: Item): Token {
+  const template = item.type === 'gear' ? item.use?.effect : undefined;
+  if (!template) return token;
+  const id = `item-${item.id}`;
+  const effect = { ...template, id, name: template.name ?? item.name, source: token.id };
+  return { ...token, effects: [...(token.effects ?? []).filter((e) => e.id !== id), effect] };
+}
+
+/** A manual or tome: the score goes up for good, to 30 at most. */
+function raised(token: Token, use: GearUse): Token {
+  if (!use.raise || !token.stats) return token;
+  const { ability, by } = use.raise;
+  const abilities = {
+    ...token.stats.abilities,
+    [ability]: Math.min(30, (token.stats.abilities?.[ability] ?? 10) + by),
+  };
+  return { ...token, stats: { ...token.stats, abilities } };
 }

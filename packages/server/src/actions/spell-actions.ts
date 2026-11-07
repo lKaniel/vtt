@@ -22,6 +22,9 @@ import {
   tokenDistance,
   spendResistance,
   characterLevel,
+  itemCaster,
+  itemCastProblem,
+  spendItemCast,
 } from '@vtt/system-dnd5e';
 import { gridKind, isGridless, placeToken, type Player, type Point } from '@vtt/shared';
 import { castBreaksSanctuary, passSanctuaries } from '../play/spell-wards.ts';
@@ -39,6 +42,8 @@ export interface CastRequest {
   point?: Point;
   summon?: string;
   scroll?: boolean;
+  /** Cast from the magic item at this inventory index (a wand of fireballs). */
+  item?: number;
   /** The spell's option (see Spell `choices`); a lasting spell used again keeps the one it was cast with. */
   choice?: string;
   /** The monster a shape-shifting spell turns its targets into (polymorph). */
@@ -88,7 +93,7 @@ export class SpellActions {
     passSanctuaries(this.table, caster, spell, targets);
     this.table.pay(caster.token, plan.cost);
     castBreaksSanctuary(this.table, caster, spell, targets);
-    if (!plan.again) this.begin(caster, spell, plan.spend, !!reader);
+    if (!plan.again) this.begin(caster, spell, plan, req.item ?? !!reader);
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
     if (spell.teleport) this.teleport(caster.token.id, req.point!);
     const summoned = spell.summon
@@ -135,10 +140,27 @@ export class SpellActions {
     spell: Spell,
     req: CastRequest,
   ): { caster: Fighter; plan: Plan; reader?: CasterSheet } {
+    if (req.item !== undefined) return this.fromItem(actor, spell, req);
     if (!req.scroll) return { caster: actor, plan: this.plan(actor, spell, req) };
     const reader = scrollReader(actor, spell);
     const caster = { ...actor, sheet: { ...actor.sheet, caster: reader } };
     return { caster, plan: this.scrollPlan(caster, spell), reader };
+  }
+
+  /** A spell from a magic item: its charges pay instead of a slot, with its DC when it has one. */
+  private fromItem(
+    actor: Fighter,
+    spell: Spell,
+    req: CastRequest,
+  ): { caster: Fighter; plan: Plan; reader: CasterSheet } {
+    const content = this.table.content(actor.token);
+    const pick = { index: req.item!, spell: spell.id, slot: spell.level === 0 ? 0 : req.slot };
+    const problem = itemCastProblem(actor.token, content, pick);
+    if (problem) throw new Refusal(`${actor.token.name} ${problem}`);
+    const item = content.items.get(actor.token.inventory![pick.index]!.item)!;
+    const reader = itemCaster(actor.sheet, item, spell);
+    const plan = { ...this.scrollPlan(actor, spell), slot: pick.slot };
+    return { caster: { ...actor, sheet: { ...actor.sheet, caster: reader } }, plan, reader };
   }
 
   /** A scroll's spell: cast at its own level with no slot, in a fight only on your turn like any other. */
@@ -170,18 +192,25 @@ export class SpellActions {
     for (const e of effects) this.addEffect(id, e);
   }
 
-  /** Spends the slot (or the scroll), ends invisibility and starts concentrating. */
-  private begin(caster: Fighter, spell: Spell, slot: number, scroll: boolean): void {
+  /** Spends the slot (the scroll, or the item's charges at `from`), ends invisibility and starts concentrating. */
+  private begin(caster: Fighter, spell: Spell, plan: Plan, from: boolean | number): void {
     if (spell.concentration && caster.token.concentration) this.table.endConcentration(caster.token.id);
-    this.table.spendSlot(caster.token.id, slot);
+    this.table.spendSlot(caster.token.id, plan.spend);
     const now = this.store.tokens.get(caster.token.id)!;
-    const token = scroll ? useScroll(now, spell.id) : now;
+    const token = this.spentFrom(now, spell, from, plan.slot);
     const effects = token.effects?.filter((e) => !e.endsOnAttack);
     this.store.setToken({
       ...token,
       effects: effects?.length ? effects : undefined,
       concentration: spell.concentration ? { spell: spell.id, name: spell.name } : token.concentration,
     });
+  }
+
+  /** The caster with what it cast from used: a scroll crumbles, a wand loses charges. */
+  private spentFrom(token: Token, spell: Spell, from: boolean | number, slot: number): Token {
+    if (typeof from === 'number')
+      return spendItemCast(token, this.table.content(token), { index: from, spell: spell.id, slot });
+    return from ? useScroll(token, spell.id) : token;
   }
 
   // ---- Targets -----------------------------------------------------------

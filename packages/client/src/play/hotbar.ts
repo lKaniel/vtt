@@ -18,6 +18,7 @@ export type Slots = (string | null)[];
 /** The reference a slot stores for a tile. */
 export function tileRef(tile: ActionTile): string {
   if (tile.kind === 'attack') return `attack:${tile.name}`;
+  if (tile.kind === 'spell' && tile.item !== undefined) return `item-spell:${tile.item}:${tile.spell.id}`;
   if (tile.kind === 'spell') return `${tile.scroll ? 'scroll' : 'spell'}:${tile.spell.id}`;
   if (tile.kind === 'feature') return `feature:${tile.feature.id}`;
   if (tile.kind === 'macro') return `macro:${tile.macro.id}`;

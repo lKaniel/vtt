@@ -107,11 +107,14 @@ export interface SaveModifiers {
   bonus: string[];
 }
 
-export function saveModifiers(sheet: Affected, ability: Ability): SaveModifiers {
+/** `spell`: the save is against a spell, which some effects resist (a mantle of spell resistance). */
+export function saveModifiers(sheet: Affected, ability: Ability, spell = false): SaveModifiers {
   const strDex = ability === 'str' || ability === 'dex';
   return {
     autoFail: strDex && hasAny(sheet, FAILS_STR_DEX),
-    advantage: sheet.effects.some((e) => e.saveAdvantage?.includes(ability)),
+    advantage: sheet.effects.some(
+      (e) => e.saveAdvantage?.includes(ability) === true || (spell && e.spellSaveAdvantage === true),
+    ),
     disadvantage:
       (ability === 'dex' && sheet.conditions.includes('restrained')) ||
       sheet.effects.some((e) => e.saveDisadvantage === true || e.saveDisadvantageFor?.includes(ability) === true),
@@ -143,11 +146,20 @@ export function d20Formula(
   return `${die}${flat}${dice}`;
 }
 
-export function rollSave(sheet: Affected, ability: Ability, dc: number, rng: Rng = Math.random): SaveRoll {
-  const mods = saveModifiers(sheet, ability);
+function rolled(sheet: Affected, save: { ability: Ability; dc: number; mods: SaveModifiers }, rng: Rng): SaveRoll {
+  const { ability, dc, mods } = save;
   if (mods.autoFail) return { ability, dc, total: 0, success: false };
   const result = roll(d20Formula(sheet.saves[ability], mods.bonus, mods), rng);
   return { ability, dc, roll: result, total: result.total, success: result.total >= dc };
+}
+
+export function rollSave(sheet: Affected, ability: Ability, dc: number, rng: Rng = Math.random): SaveRoll {
+  return rolled(sheet, { ability, dc, mods: saveModifiers(sheet, ability) }, rng);
+}
+
+/** A save against a spell, which some effects resist (a mantle of spell resistance). */
+export function rollSpellSave(sheet: Affected, ability: Ability, dc: number, rng: Rng = Math.random): SaveRoll {
+  return rolled(sheet, { ability, dc, mods: saveModifiers(sheet, ability, true) }, rng);
 }
 
 /** What effects do to their bearer as its turn starts: damage to roll (searing smite) and hit points regained (regenerate). */

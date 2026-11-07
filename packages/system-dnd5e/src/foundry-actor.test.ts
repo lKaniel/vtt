@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { foundryDelta, foundryHomebrew, foundrySheet, foundrySheets } from './foundry-actor.ts';
+import { byName } from './foundry-gear.ts';
+import { srdFor } from './content.ts';
 import { homebrewIssues } from './homebrew.ts';
 import { ActorSchema } from './token-schema.ts';
 
@@ -305,5 +307,15 @@ describe('foundrySheets.rules', () => {
     expect(foundrySheets.rules(world('modern'))).toBe('2024');
     expect(foundrySheets.rules(world('legacy'))).toBe('2014');
     expect(foundrySheets.rules(world(undefined))).toBeUndefined();
+  });
+});
+
+describe('Foundry item names', () => {
+  it('find our SRD items, magic variants too', () => {
+    const items = srdFor('2014').items;
+    expect(byName(items, 'Longsword +1')).toBe('longsword-plus-1');
+    expect(byName(items, 'Flame Tongue Greatsword')).toBe('flame-tongue-greatsword');
+    expect(byName(items, 'Ring of Resistance (Fire)')).toBe('ring-of-resistance-fire');
+    expect(byName(items, 'Plate Armor +2')).toBe('plate-plus-2');
   });
 });

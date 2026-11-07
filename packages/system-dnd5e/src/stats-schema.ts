@@ -1,4 +1,3 @@
-import { LightSchema } from '@vtt/shared';
 import { z } from 'zod';
 
 // Creature statistics and the SRD content they're built from. Monsters and
@@ -39,7 +38,7 @@ export const DamageSchema = z.object({ dice: z.string().min(1), type: DamageType
 export type Damage = z.infer<typeof DamageSchema>;
 
 /** Normal and long range in feet. */
-const RangeSchema = z.tuple([z.number().positive(), z.number().positive()]);
+export const RangeSchema = z.tuple([z.number().positive(), z.number().positive()]);
 
 export const WeaponPropertySchema = z.enum([
   'ammunition',
@@ -52,6 +51,15 @@ export const WeaponPropertySchema = z.enum([
   'two-handed',
   'versatile',
 ]);
+
+/** Extra damage a magic weapon deals on a hit: always, or only against creatures of the `vs` types (dragon slayer). */
+export const WeaponRiderSchema = z.object({
+  dice: z.string().min(1),
+  /** "weapon": the weapon's own damage type (vicious weapon). */
+  type: z.union([DamageTypeSchema, z.literal('weapon')]),
+  vs: z.array(z.string()).optional(),
+});
+export type WeaponRider = z.infer<typeof WeaponRiderSchema>;
 
 /** A ready-to-roll attack, as printed in a stat block. */
 export const AttackSchema = z.object({
@@ -68,6 +76,8 @@ export const AttackSchema = z.object({
       ability: z.enum(ABILITIES),
       properties: z.array(WeaponPropertySchema).default([]),
       mastery: z.string().optional(),
+      /** The magic weapon's extra damage on a hit (flame tongue, dragon slayer). */
+      hitDamage: z.array(WeaponRiderSchema).optional(),
     })
     .optional(),
   /** The bonus attack of two-weapon fighting: no ability modifier to damage. */
@@ -80,64 +90,6 @@ const defenses = {
   immunities: z.array(DamageTypeSchema).default([]),
   vulnerabilities: z.array(DamageTypeSchema).default([]),
 };
-
-const itemBase = {
-  id,
-  name: z.string().min(1),
-  weight: z.number().nonnegative().default(0),
-  /** What it costs in a shop, in gold pieces (0.1 is a silver piece); magic items have none. */
-  price: z.number().nonnegative().optional(),
-  /** A magic item that only works for a creature attuned to it (three at most). */
-  attunement: z.boolean().optional(),
-  /** What it adds while equipped (and attuned, if it needs that): a ring of protection's +1. */
-  bonus: z.object({ ac: z.number().int().optional(), saves: z.number().int().optional() }).optional(),
-};
-
-export const ItemSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('weapon'),
-    ...itemBase,
-    category: z.enum(['simple', 'martial']),
-    kind: z.enum(['melee', 'ranged']),
-    damage: DamageSchema,
-    properties: z.array(WeaponPropertySchema).default([]),
-    range: RangeSchema.optional(),
-    versatile: z.string().optional(),
-    mastery: z.string().optional(),
-  }),
-  z.object({
-    type: z.literal('armor'),
-    ...itemBase,
-    category: z.enum(['light', 'medium', 'heavy', 'shield']),
-    /** Base AC, or the bonus for a shield. */
-    ac: z.number().int(),
-    strength: z.number().int().optional(),
-    stealthDisadvantage: z.boolean().default(false),
-  }),
-  z.object({
-    type: z.literal('gear'),
-    ...itemBase,
-    description: z.string().optional(),
-    /** Holds other gear: `capacity` in pounds; a bag of holding's contents weigh nothing. */
-    container: z.object({ capacity: z.number().positive(), weightless: z.boolean().optional() }).optional(),
-    /** What using it does; items without it can't be used from the action bar. */
-    use: z
-      .object({
-        /** Hit points regained, e.g. "2d4+2". */
-        heal: z.string().optional(),
-        /** A potion: drinking it is an action in 2014 and a bonus action in 2024. */
-        potion: z.boolean().default(false),
-        /** Lighting it: the bearer sheds this light for `lasts` seconds (a torch, a lantern). */
-        light: LightSchema.optional(),
-        /** What lighting it burns instead of the item itself (a lantern burns a flask of oil). */
-        fuel: z.string().optional(),
-      })
-      .optional(),
-  }),
-]);
-export type Item = z.infer<typeof ItemSchema>;
-export type Weapon = Extract<Item, { type: 'weapon' }>;
-export type Armor = Extract<Item, { type: 'armor' }>;
 
 /** Legendary actions: how many per round, and what they can be spent on. */
 export const LegendarySchema = z.object({
@@ -261,6 +213,10 @@ export const InventoryEntrySchema = z.object({
   spell: id.optional(),
   equipped: z.boolean().default(false),
   qty: z.number().int().positive().default(1),
+  /** Charges used from a magic item (a wand); it regains some each dawn. */
+  spent: z.number().int().positive().optional(),
+  /** Spells of the item used today (a cloak of arachnida's web); a long rest clears them. */
+  usedToday: z.array(id).optional(),
 });
 export type InventoryEntry = z.infer<typeof InventoryEntrySchema>;
 

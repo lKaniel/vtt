@@ -62,8 +62,15 @@ export function rollCheck(
       (e) => e.checkDisadvantage === true || e.checkDisadvantageFor?.includes(check.ability) === true,
     ) || sheet.conditions.some((c) => HINDERED.includes(c));
   const extra = sheet.effects.flatMap((e) => (e.checkBonus ? [e.checkBonus] : []));
-  const result = roll(d20Formula(checkBonus(token, sheet, check), extra, { disadvantage }), rng);
+  const advantage = hasCheckAdvantage(sheet, check);
+  const result = roll(d20Formula(checkBonus(token, sheet, check), extra, { advantage, disadvantage }), rng);
   return { roll: result, total: result.total, ...(dc !== undefined && { success: result.total >= dc }) };
+}
+
+/** Whether an effect gives the check advantage: its ability, its skill (a cloak of elvenkind's stealth). */
+function hasCheckAdvantage(sheet: Creature, check: CheckKind): boolean {
+  const names = [check.ability, check.skill].filter((n): n is string => !!n);
+  return sheet.effects.some((e) => e.checkAdvantage?.some((a) => names.includes(a)));
 }
 
 /** A saving throw rolled from the sheet or a request card, with the effects' advantage, disadvantage and dice. */

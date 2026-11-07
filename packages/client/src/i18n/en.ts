@@ -6,6 +6,7 @@ import { EN_BOOK } from './en-book.ts';
 import { EN_EDITOR } from './en-editor.ts';
 import { EN_BAILEYWIKI } from './en-lobby.ts';
 import { EN_FOUNDRY } from './en-foundry.ts';
+import { EN_ITEMS } from './en-items.ts';
 import { EN_MAP } from './en-map.ts';
 import { EN_PLAYERS } from './en-players.ts';
 import { EN_SHEET } from './en-sheet.ts';
@@ -396,6 +397,7 @@ export const EN = {
   ...EN_MAP,
   ...EN_EDITOR,
   ...EN_BOOK,
+  ...EN_ITEMS,
 } as const;
 
 export type MessageKey = keyof typeof EN;

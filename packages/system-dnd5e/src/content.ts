@@ -3,7 +3,10 @@ import { z } from 'zod';
 import classAutomation from '../content/srd/class-automation.json' with { type: 'json' };
 import classes51 from '../content/srd/classes-5.1.json' with { type: 'json' };
 import classes52 from '../content/srd/classes-5.2.json' with { type: 'json' };
-import items from '../content/srd/items.json' with { type: 'json' };
+import itemAutomation from '../content/srd/item-automation.json' with { type: 'json' };
+import handItems from '../content/srd/items.json' with { type: 'json' };
+import items51 from '../content/srd/items-5.1.json' with { type: 'json' };
+import items52 from '../content/srd/items-5.2.json' with { type: 'json' };
 import monsters51 from '../content/srd/monsters-5.1.json' with { type: 'json' };
 import origins51 from '../content/srd/origins-5.1.json' with { type: 'json' };
 import origins52 from '../content/srd/origins-5.2.json' with { type: 'json' };
@@ -15,7 +18,8 @@ import tokenArt from '../content/token-art.json' with { type: 'json' };
 import type { World } from '@vtt/shared';
 import type { Token } from './token-schema.ts';
 import { type Class, ClassSchema, type Spell, SpellSchema } from './spell-schema.ts';
-import { type Edition, EditionSchema, type Item, ItemSchema, type Monster, MonsterSchema } from './stats-schema.ts';
+import { type Edition, EditionSchema, type Monster, MonsterSchema } from './stats-schema.ts';
+import { type Item, ItemSchema } from './item-schema.ts';
 
 /** Everything a token can refer to by id, for one rules edition. */
 export interface Content {
@@ -88,25 +92,50 @@ export function withTokenArt(monsters: Monster[], art: Record<string, string>): 
   return monsters.map((m) => (art[m.id] ? { ...m, img: `/art/tokens/${art[m.id]}.webp` } : m));
 }
 
-const sharedItems = byId(z.array(ItemSchema).parse(items));
 const monsterList = z.array(MonsterSchema);
 
 interface EditionData {
   monsters: unknown[];
   spells: unknown[];
   classes: unknown[];
-  /** Gear from the starting kits (packs, holy symbols...) that items.json doesn't list. */
+  /** The edition's weapons, armor, gear and magic items (items-5.x.json). */
+  items: unknown[];
+  /** The other edition's, whose mundane gear fills in what this one lacks (a 2014 world's musket). */
+  otherItems: unknown[];
+  /** Gear from the starting kits (packs, holy symbols...) the item lists don't have. */
   gear: unknown[];
 }
 
+/** Hand-written items first, then the edition's, the other's mundane gear and the kits' gear, each id once. */
+function itemList(data: EditionData): Entry[] {
+  const seen = new Set<string>();
+  const mundane = (data.otherItems as Entry[]).filter((i) => !i.magic);
+  return [handItems, data.items, mundane, data.gear]
+    .flat()
+    .filter((i) => !seen.has((i as Entry).id) && !!seen.add((i as Entry).id)) as Entry[];
+}
+
+/** The overlay with each family key ("vicious-weapon-*") given to every item of the family. */
+function families(overlay: Overlay, list: readonly Entry[]): Overlay {
+  const keys = Object.keys(overlay).filter((k) => k.endsWith('-*'));
+  if (!keys.length) return overlay;
+  const out: Overlay = { ...overlay };
+  for (const key of keys) {
+    const prefix = key.slice(0, -1);
+    for (const { id } of list) if (id.startsWith(prefix) && !overlay[id]) out[id] = overlay[key]!;
+  }
+  return out;
+}
+
+function items(data: EditionData, edition: Edition) {
+  const list = itemList(data);
+  return load(ItemSchema, list, [families(itemAutomation as Overlay, list), edition]);
+}
+
 function edition(edition: Edition, data: EditionData): Content {
-  const gear = z
-    .array(ItemSchema)
-    .parse(data.gear)
-    .filter((g) => !sharedItems.has(g.id));
   return {
     edition,
-    items: new Map([...sharedItems, ...byId(gear)]),
+    items: items(data, edition),
     monsters: byId(withTokenArt(monsterList.parse(data.monsters), tokenArt as Record<string, string>)),
     spells: load(SpellSchema, data.spells, [spellAutomation as Overlay, edition]),
     classes: load(ClassSchema, data.classes, [classAutomation as Overlay, edition]),
@@ -115,8 +144,14 @@ function edition(edition: Edition, data: EditionData): Content {
 
 /** The bundled SRD content (CC-BY-4.0), validated on load: 5.1 for 2014, 5.2 for 2024. */
 const SRD: Record<Edition, Content> = {
-  '2014': edition('2014', { monsters: monsters51, spells: spells51, classes: classes51, gear: origins51.gear }),
-  '2024': edition('2024', { monsters: monsters52, spells: spells52, classes: classes52, gear: origins52.gear }),
+  '2014': edition('2014', {
+    ...{ monsters: monsters51, spells: spells51, classes: classes51 },
+    ...{ items: items51, otherItems: items52, gear: origins51.gear },
+  }),
+  '2024': edition('2024', {
+    ...{ monsters: monsters52, spells: spells52, classes: classes52 },
+    ...{ items: items52, otherItems: items51, gear: origins52.gear },
+  }),
 };
 
 export function srdFor(edition: Edition): Content {

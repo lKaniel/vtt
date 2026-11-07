@@ -20,7 +20,7 @@ describe('a pile window', () => {
   it('lists the loose gear with what is packed in it, and a merchant’s price for one', () => {
     expect(pileRows(stall, stall.pile!.buy, book)).toEqual([
       { index: 0, name: 'Longsword', qty: 2, price: '30 gp', inside: [] },
-      { index: 1, name: 'Backpack', qty: 1, price: '6 gp', inside: ['Rope'] },
+      { index: 1, name: 'Backpack', qty: 1, price: '6 gp', inside: ['Hempen rope (50 feet)'] },
       { index: 3, name: 'Bag of Holding', qty: 1, inside: [] },
     ]);
     const chest = token({ id: 'chest', pile: {}, inventory: [{ item: 'torch', qty: 3 }] });

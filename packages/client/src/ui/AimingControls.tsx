@@ -1,6 +1,8 @@
 import { formChoices, type Spell, type TokenView } from '@vtt/system-dnd5e';
 import { contentFor } from '../content/content.ts';
 import { slotChoices } from '../play/charges.ts';
+import { itemSlots } from '../play/item-spells.ts';
+import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
 import { ORDINAL } from '../text/spell-text.ts';
 import type { Aiming } from '../play/targeting.ts';
@@ -19,7 +21,8 @@ export function AimingControls({ session, token }: Readonly<{ session: Session; 
     <div className="aiming frame">
       <span className="aiming-name">{spell.name}</span>
       {aiming.scroll && <span className="muted">from a scroll</span>}
-      {spell.level > 0 && !aiming.scroll && token.sheet?.caster && (
+      {aiming.item !== undefined && <ItemSlots session={session} aiming={aiming} token={token} />}
+      {spell.level > 0 && !aiming.scroll && aiming.item === undefined && token.sheet?.caster && (
         <SlotChoices session={session} aiming={aiming} caster={token.sheet.caster} />
       )}
       <SpellOptions session={session} aiming={aiming} />
@@ -107,6 +110,28 @@ function SlotChoices({
       >
         Free
       </Toggle>
+    </span>
+  );
+}
+
+/** The levels a wand or staff can cast its spell at, more charges for each level up. */
+function ItemSlots({ session, aiming, token }: Readonly<{ session: Session; aiming: Aiming; token: TokenView }>) {
+  const index = aiming.item!;
+  const item = contentFor(token).items.get(token.inventory?.[index]?.item ?? '');
+  const levels = itemSlots(token, index, aiming.spell.id);
+  return (
+    <span className="slot-choices" role="group" aria-label={t('item.castLevel')}>
+      <span className="muted">{t('item.castFrom', { item: item?.name ?? '' })}</span>
+      {levels.length > 1 &&
+        levels.map((level) => (
+          <Toggle
+            key={level}
+            pressed={level === aiming.slot}
+            onPressedChange={() => session.actions.aimItem(index, aiming.spell.id, level)}
+          >
+            {ORDINAL[level]}
+          </Toggle>
+        ))}
     </span>
   );
 }

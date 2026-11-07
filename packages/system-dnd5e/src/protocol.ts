@@ -186,6 +186,8 @@ export type ClientMessage =
       repeat?: boolean;
       /** Read it from a spell scroll the caster carries: no slot, the scroll's DC, and the scroll is used up. */
       scroll?: boolean;
+      /** Cast it from the magic item at this inventory index (a wand): its charges pay, its DC holds. */
+      item?: number;
       targets: string[];
       point?: Point;
       summon?: string;

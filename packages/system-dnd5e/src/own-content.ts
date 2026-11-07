@@ -1,6 +1,7 @@
 import type { Content } from './content.ts';
 import { type Feature, FeatureSchema, type Spell, SpellSchema } from './spell-schema.ts';
-import { type InventoryEntry, type Item, ItemSchema } from './stats-schema.ts';
+import { type InventoryEntry } from './stats-schema.ts';
+import { type Item, ItemSchema } from './item-schema.ts';
 import type { Own } from './token-schema.ts';
 
 // Things made on a sheet rather than taken from a compendium (Foundry's

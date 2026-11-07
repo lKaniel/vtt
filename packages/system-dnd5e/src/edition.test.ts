@@ -23,7 +23,14 @@ describe('rules editions', () => {
     expect(resolveCreature(token({ monster: 'goblin-warrior' }), srdFor('2014'))).toBeUndefined();
   });
 
-  it('shares the weapon and armor list between editions', () => {
-    expect(srdFor('2014').items.get('longsword')).toBe(srdFor('2024').items.get('longsword'));
+  it('has the same weapons in both editions, with masteries in 2024', () => {
+    const [old, now] = [srdFor('2014').items.get('longsword'), srdFor('2024').items.get('longsword')];
+    expect(old).toMatchObject({ damage: { dice: '1d8', type: 'slashing' }, versatile: '1d10' });
+    expect(now).toMatchObject({ damage: old!.type === 'weapon' ? old!.damage : {}, mastery: 'sap' });
+  });
+
+  it('fills in the mundane gear one edition lacks from the other', () => {
+    expect(srdFor('2014').items.get('musket')?.type).toBe('weapon');
+    expect(srdFor('2014').items.has('energy-bow')).toBe(false);
   });
 });

@@ -6,7 +6,7 @@ import { abilityMod } from './creature-math.ts';
 import { isDead, makesDeathSaves } from './deaths.ts';
 import { markDamage } from './riders.ts';
 import { type GridKind, type Rng, roll, type Roll } from '@vtt/shared';
-import { attackModifiers, d20Formula, rollSave, type SaveRoll, type UsedEffect } from './effects.ts';
+import { attackModifiers, d20Formula, rollSpellSave, type SaveRoll, type UsedEffect } from './effects.ts';
 import type { Token } from './token-schema.ts';
 import type { Effect, Spell } from './spell-schema.ts';
 import { dispelled, tierFor, tierSpell } from './spell-options.ts';
@@ -245,7 +245,7 @@ function landing(cast: Cast, target: CastSide, used: UsedEffect[]) {
   const { spell, rng } = cast;
   const attack = spell.attack && !spell.autoHit ? spellAttack(cast, target, used) : undefined;
   const save = spell.save?.onCast
-    ? resistSave(target.sheet, rollSave(target.sheet, spell.save.ability, cast.dc, rng))
+    ? resistSave(target.sheet, rollSpellSave(target.sheet, spell.save.ability, cast.dc, rng))
     : undefined;
   const landed = (attack?.hit ?? true) && !save?.success;
   const half = save?.success === true && spell.save?.onSave === 'half';
