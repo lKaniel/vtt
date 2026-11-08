@@ -28,6 +28,8 @@ import { withWeaponSpells } from './riders.ts';
 import { exhausted } from './vigour.ts';
 import { sensesOf } from './perception.ts';
 import { type Form, formOf, shapeToken, withoutForm } from './forms.ts';
+import { armorEffects, trainedWithWeapon, type Training, trainingOf } from './training.ts';
+import { unarmedStrike, weaponAttack } from './gear-attacks.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Condition, Effect } from './spell-schema.ts';
 import {
@@ -84,6 +86,8 @@ export interface Creature extends Affected, LegendaryParts {
   rank?: number;
   /** The saving throws it adds its proficiency to (the class's, or the stat block's). */
   proficientSaves?: Ability[];
+  /** Armor, weapons, tools and languages it is proficient with (training.ts). */
+  proficiencies?: string[];
 }
 
 /** Proficiency bonus by challenge rating. */
@@ -110,6 +114,7 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
     proficiency: defaultProficiency(stats, monster),
   });
   const gear = equippedItems(token, content);
+  const training = trainingOf(token, levels, content);
   const { maxHp, ac } = fixedNumbers(stats, monster, classHp(levels, abilities));
   const features = withBasicActions(
     bloodiedPassives(featureSheets(token, levels, abilities, grantedFeatures(token, content)), token.hp, maxHp),
@@ -135,6 +140,7 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
       abilities,
       proficiency,
       ammo: ammunitionPlus(token, content),
+      training,
     }),
     ...defenses(stats, monster),
     ...kindAndSaves(monster, cls, { abilities, proficiency }),
@@ -144,13 +150,15 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
     ...poolParts(token, levels, { abilities, proficiency }, monster),
     ...legendaryParts(token, monster),
     features,
+    proficiencies: training.list,
     senses: sensesOf(
       token,
       monster,
       features.flatMap((f) => (f.passive ? [f.passive] : [])),
     ),
   };
-  const styled = withFightingStyles(applyEffects(withItemBonuses(base, token, content)), armorWeight(gear.armor));
+  const trained = { ...base, effects: [...base.effects, ...armorEffects(training, gear.armor)] };
+  const styled = withFightingStyles(applyEffects(withItemBonuses(trained, token, content)), armorWeight(gear.armor));
   return withCarrying(styled, token, { monster, content });
 }
 
@@ -375,9 +383,16 @@ function creatureAttacks(
   stats: Stats,
   monster: Monster | undefined,
   weapons: readonly Weapon[],
-  { abilities, proficiency, ammo }: { abilities: Abilities; proficiency: number; ammo: number },
+  {
+    abilities,
+    proficiency,
+    ammo,
+    training,
+  }: { abilities: Abilities; proficiency: number; ammo: number; training: Training },
 ): Attack[] {
-  const fromWeapons = weapons.map((w) => withWeaponMagic(weaponAttack(w, abilities, proficiency), w, ammo));
+  const fromWeapons = weapons.map((w) =>
+    withWeaponMagic(weaponAttack(w, abilities, trainedWithWeapon(training, w) ? proficiency : 0), w, ammo),
+  );
   const natural = monster?.attacks ?? (fromWeapons.length ? [] : [unarmedStrike(abilities, proficiency)]);
   return [...natural, ...fromWeapons, ...offHandAttacks(fromWeapons, abilities), ...(stats.attacks ?? [])];
 }
@@ -432,28 +447,6 @@ export function armorClass(
   return body.ac + dexBonus + shield;
 }
 
-/** Finesse weapons use the better of str and dex, ranged weapons dex, the rest str. */
-function attackAbility(weapon: Weapon, abilities: Abilities): Ability {
-  if (weapon.properties.includes('finesse')) return abilities.dex > abilities.str ? 'dex' : 'str';
-  return weapon.kind === 'ranged' ? 'dex' : 'str';
-}
-
-/** Assumes proficiency with every weapon until class proficiencies arrive. */
-export function weaponAttack(weapon: Weapon, abilities: Abilities, proficiency: number): Attack {
-  const ability = attackAbility(weapon, abilities);
-  const mod = abilityMod(abilities[ability]);
-  const reach = weapon.properties.includes('reach') ? 10 : 5;
-  const where = weapon.kind === 'melee' ? { reach } : { range: weapon.range ?? [80, 320] };
-  return {
-    name: weapon.name,
-    kind: weapon.kind,
-    toHit: mod + proficiency,
-    ...where,
-    damage: [{ dice: withModifier(weapon.damage.dice, mod), type: weapon.damage.type }],
-    weapon: { ability, properties: weapon.properties, mastery: weapon.mastery },
-  };
-}
-
 function unarmoredBonus(
   abilities: Abilities,
   shield: boolean,
@@ -461,20 +454,4 @@ function unarmoredBonus(
 ): number {
   if (!unarmored?.unarmoredAc || (shield && unarmored.unarmoredShield === false)) return 0;
   return abilityMod(abilities[unarmored.unarmoredAc]);
-}
-
-function unarmedStrike(abilities: Abilities, proficiency: number): Attack {
-  const mod = abilityMod(abilities.str);
-  return {
-    name: 'Unarmed Strike',
-    kind: 'melee',
-    toHit: mod + proficiency,
-    reach: 5,
-    damage: [{ dice: String(Math.max(1, 1 + mod)), type: 'bludgeoning' }],
-  };
-}
-
-function withModifier(dice: string, mod: number): string {
-  if (mod === 0) return dice;
-  return mod > 0 ? `${dice}+${mod}` : `${dice}${mod}`;
 }

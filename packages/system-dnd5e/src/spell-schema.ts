@@ -7,6 +7,7 @@ import { AreaSchema } from './area-schema.ts';
 import { classFields, LevelTableSchema, momentumEffectFields } from './class-fields.ts';
 import { ConditionSchema } from './condition-schema.ts';
 import { PoolSchema, powerEffectFields, powerFeatureFields, powerSpellFields } from './power-schema.ts';
+import { ClassTrainingSchema } from './proficiency-grants.ts';
 
 // Spells, class features and the effects they leave on creatures. Spells and
 // classes are data in packages/system-dnd5e/content; the engine in spells.ts,
@@ -165,6 +166,8 @@ const modifiers = {
   sanctuary: z.union([z.literal(true), z.number().int()]).optional(),
   /** The bearer can't cast spells with a verbal component (silence). */
   silenced: z.boolean().optional(),
+  /** The bearer can't cast spells at all (armor it isn't trained with). */
+  noCasting: z.boolean().optional(),
   /** Magic doesn't work on or from the bearer: no spells cast, none land, other spell effects are suppressed (antimagic field). */
   antimagic: z.boolean().optional(),
   /** Spells of this level or lower cast from outside the bearer's globe don't affect it (globe of invulnerability). */
@@ -657,5 +660,7 @@ export const ClassSchema = z.object({
   multiclass: z.object({ all: z.array(AbilitySchema).optional(), any: z.array(AbilitySchema).optional() }).optional(),
   /** A point pool its features spend instead of uses (see power-schema.ts). */
   pool: PoolSchema.optional(),
+  /** Armor, weapons, tools and languages it gives (proficiency-grants.ts); missing: trained with everything. */
+  proficiencies: ClassTrainingSchema.optional(),
 });
 export type Class = z.infer<typeof ClassSchema>;

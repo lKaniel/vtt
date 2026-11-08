@@ -17,8 +17,13 @@ import { z } from 'zod';
 /** Uploads up to 20 MB, as base64. */
 const MAX_UPLOAD_BASE64 = Math.ceil((20 * 1024 * 1024 * 4) / 3) + 4;
 
-/** An ability check, or a skill check using that ability. */
-const checkKind = { ability: z.enum(ABILITIES), skill: z.string().max(40).optional(), save: z.boolean().optional() };
+/** An ability check, or a skill or tool check using that ability. */
+const checkKind = {
+  ability: z.enum(ABILITIES),
+  skill: z.string().max(40).optional(),
+  save: z.boolean().optional(),
+  tool: z.string().max(40).optional(),
+};
 
 /** Waypoints a ruler may have. */
 const MAX_RULER_POINTS = 64;

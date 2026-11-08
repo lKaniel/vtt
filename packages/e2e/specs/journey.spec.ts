@@ -5,6 +5,17 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '../support/fixtures.ts';
 
+/** Makes every tool and language pick the Skills step offers, the first options each time. */
+async function pickProficiencies(page: Page): Promise<void> {
+  const picks = page.locator('[data-slot="proficiency-pick"]');
+  await expect(picks.first()).toBeVisible();
+  for (let i = 0; i < (await picks.count()); i++) {
+    const group = picks.nth(i);
+    const count = Number(await group.getAttribute('data-pick'));
+    for (let j = 0; j < count; j++) await group.getByRole('button', { pressed: false }).first().click();
+  }
+}
+
 /** Makes a character from the creator's last step, fixing what its to-do list names. */
 async function makeCharacter(page: Page, name: string): Promise<void> {
   await page.getByRole('button', { name: /Name & look/ }).click();
@@ -15,6 +26,7 @@ async function makeCharacter(page: Page, name: string): Promise<void> {
   await page.getByRole('button', { name: /^\d+\s*Skills/ }).click();
   await page.getByRole('button', { name: /^Athletics Str/ }).click();
   await page.getByRole('button', { name: /^Perception Wis/ }).click();
+  await pickProficiencies(page);
   await page.getByRole('button', { name: /Name & look/ }).click();
   await expect(todo).toHaveCount(0);
   await page.getByRole('textbox', { name: 'Name' }).fill(name);
@@ -52,6 +64,15 @@ test('a new game, from Setup through an invite link to the first fight', async (
   await player.getByRole('button', { name: 'Enter the game' }).click();
   await player.waitForFunction(() => typeof vtt !== 'undefined' && Boolean(vtt.user()));
   await expect.poll(() => player.evaluate(() => vtt.tokens().map((t) => t.name))).toContain('Mira');
+  // A fighter is trained in heavy armor; the picks came along too.
+  const proficiencies = async () => {
+    const json = await player.evaluate(() => {
+      const id = vtt.tokens().find((t) => t.name === 'Mira')?.id;
+      return JSON.stringify(id ? vtt.token(id) : {});
+    });
+    return (JSON.parse(json) as { stats?: { proficiencies?: string[] } }).stats?.proficiencies ?? [];
+  };
+  await expect.poll(proficiencies).toContain('heavy-armor');
 
   // The GM sits down to an empty scene: the card says what is left.
   await page.getByRole('button', { name: 'Enter the game' }).click();

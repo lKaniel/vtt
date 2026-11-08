@@ -19,6 +19,7 @@ import { IconFace } from '../Icon.tsx';
 import type { StepProps } from './OriginSteps.tsx';
 import { Detail, RichText, StepHead } from './Parts.tsx';
 import { CustomProficiencies } from './CustomSteps.tsx';
+import { ProficiencySection } from './ProficiencyStep.tsx';
 
 function skillSource(fixed: boolean, offered: boolean): string {
   if (fixed) return 'From your background';
@@ -63,6 +64,7 @@ export function SkillsStep({ c, set }: Readonly<StepProps>) {
             );
           })}
         </div>
+        <ProficiencySection c={c} set={set} />
       </div>
       <aside className="cc-aside">
         <CustomProficiencies c={c} set={set} />

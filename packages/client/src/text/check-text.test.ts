@@ -1,3 +1,4 @@
+import { TOOLS } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import { askedOf, CHECK_OPTIONS, checkNamed, checkOf, checkValue } from './check-text.ts';
 
@@ -9,7 +10,8 @@ describe('check choices', () => {
     ]);
     expect(CHECK_OPTIONS).toContainEqual({ value: 'dex:stealth', label: 'Stealth (Dex)' });
     expect(CHECK_OPTIONS).toContainEqual({ value: 'wis:save', label: 'Wisdom save' });
-    expect(CHECK_OPTIONS).toHaveLength(6 + 18 + 6);
+    expect(CHECK_OPTIONS).toContainEqual({ value: 'dex:tool:thieves-tools', label: "Thieves' Tools (Dex)" });
+    expect(CHECK_OPTIONS).toHaveLength(6 + 18 + Object.keys(TOOLS).length + 6);
   });
 
   it('turns a choice into a check and back', () => {
@@ -19,6 +21,8 @@ describe('check choices', () => {
     expect(checkValue({ ability: 'cha' })).toBe('cha');
     expect(checkOf('con:save')).toEqual({ ability: 'con', save: true });
     expect(checkValue({ ability: 'con', save: true })).toBe('con:save');
+    expect(checkOf('dex:tool:thieves-tools')).toEqual({ ability: 'dex', tool: 'thieves-tools' });
+    expect(checkValue({ ability: 'dex', tool: 'thieves-tools' })).toBe('dex:tool:thieves-tools');
   });
 
   it('reads a check named in text', () => {

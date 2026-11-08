@@ -193,8 +193,8 @@ export const StatsSchema = z.object({
   skills: z.array(id).optional(),
   /** Skills with expertise: their proficiency bonus counts twice. */
   expertise: z.array(id).optional(),
-  /** Other proficiencies, as words on the sheet: tools, languages, armor, weapons. */
-  proficiencies: z.array(z.string().trim().min(1).max(60)).max(30).optional(),
+  /** Armor, weapons, tools and languages by id (proficiency-catalog.ts); older ones may be words. */
+  proficiencies: z.array(z.string().trim().min(1).max(60)).max(80).optional(),
   /** Spellcasting for creatures without a caster class (a homebrew class, a monster). */
   spellcasting: z
     .object({

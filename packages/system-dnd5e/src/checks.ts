@@ -16,14 +16,25 @@ export interface CheckKind {
   skill?: string;
   /** A saving throw in `ability` instead of a check. */
   save?: boolean;
+  /** A check with a tool (thieves' tools): proficiency is added when the creature is trained with it. */
+  tool?: string;
 }
 
-type CheckSheet = Pick<Creature, 'abilities' | 'proficiency' | 'saves'> & Partial<Pick<Creature, 'features'>>;
+type CheckSheet = Pick<Creature, 'abilities' | 'proficiency' | 'saves'> &
+  Partial<Pick<Creature, 'features' | 'proficiencies'>>;
+
+/** Proficiency in the skill (twice with expertise) or the tool, if the creature has it. */
+function trainedBonus(token: Pick<Token, 'stats'>, sheet: CheckSheet, { skill, tool }: CheckKind): number | undefined {
+  if (tool) return sheet.proficiencies?.includes(tool) ? sheet.proficiency : undefined;
+  if (!skill) return undefined;
+  if (token.stats?.expertise?.includes(skill)) return 2 * sheet.proficiency;
+  return token.stats?.skills?.includes(skill) ? sheet.proficiency : undefined;
+}
 
 /** Proficiency the check adds: twice with expertise, half (Jack of All Trades) without proficiency. */
-function proficiencyFor(token: Pick<Token, 'stats'>, sheet: CheckSheet, skill: string | undefined): number {
-  if (skill && token.stats?.expertise?.includes(skill)) return 2 * sheet.proficiency;
-  if (skill && token.stats?.skills?.includes(skill)) return sheet.proficiency;
+function proficiencyFor(token: Pick<Token, 'stats'>, sheet: CheckSheet, check: CheckKind): number {
+  const trained = trainedBonus(token, sheet, check);
+  if (trained !== undefined) return trained;
   const jack = sheet.features?.some((f) => f.id === 'jack-of-all-trades');
   return jack ? Math.floor(sheet.proficiency / 2) : 0;
 }
@@ -31,7 +42,7 @@ function proficiencyFor(token: Pick<Token, 'stats'>, sheet: CheckSheet, skill: s
 /** The check's bonus: the ability modifier, plus proficiency in the skill; a save's bonus from the sheet. */
 export function checkBonus(token: Pick<Token, 'stats'>, sheet: CheckSheet, check: CheckKind): number {
   if (check.save) return sheet.saves[check.ability];
-  return abilityMod(sheet.abilities[check.ability]) + proficiencyFor(token, sheet, check.skill);
+  return abilityMod(sheet.abilities[check.ability]) + proficiencyFor(token, sheet, check);
 }
 
 /** A passive score (passive Perception): 10 plus the skill's bonus. */

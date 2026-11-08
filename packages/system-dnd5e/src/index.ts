@@ -75,3 +75,5 @@ export * from './pools.ts';
 export * from './powers.ts';
 export * from './power-casts.ts';
 export * from './pool-reactions.ts';
+export * from './proficiencies.ts';
+export * from './gear-attacks.ts';

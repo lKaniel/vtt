@@ -150,7 +150,11 @@ describe('creatorSteps', () => {
   it('lists the steps with their issues, and skips spells for classes without them', () => {
     const fighter = creatorSteps(fresh());
     expect(fighter.map((s) => s.id)).not.toContain('spells');
-    expect(fighter.find((s) => s.id === 'skills')?.issues).toEqual(['Choose 2 class skills.']);
+    expect(fighter.find((s) => s.id === 'skills')?.issues).toEqual([
+      'Choose 2 class skills.',
+      'Choose 1 language (Human).',
+      'Choose 2 languages (Acolyte).',
+    ]);
     const wizard = creatorSteps(chooseClass(fresh(), 'wizard'));
     expect(wizard.map((s) => s.id)).toContain('spells');
     expect(wizard.find((s) => s.id === 'spells')?.issues).toEqual(['Pick 3 more cantrips and 6 more spells.']);
@@ -166,6 +170,7 @@ describe('levelUpPlan', () => {
     bonusPicks: { int: 2, con: 1 },
     skills: ['arcana', 'medicine'],
     spells: ['fire-bolt', 'light', 'mage-hand', 'magic-missile', 'shield', 'sleep', 'mage-armor'],
+    proficiencyPicks: { 'base:languages': ['elvish', 'dwarvish'] },
   });
 
   it('says what the next level brings', () => {

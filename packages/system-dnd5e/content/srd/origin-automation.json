@@ -1,0 +1,42 @@
+{
+  "$comment": "Armor, weapons, tools and languages species, subspecies and backgrounds give (proficiency-grants.ts), by id and edition: both, 2014 or 2024. `base` is what every character of the edition gets.",
+  "base": {
+    "2024": { "fixed": ["common"], "choices": [{ "id": "languages", "pick": 2, "from": ["standard-languages"] }] }
+  },
+  "species": {
+    "dragonborn": { "2014": { "fixed": ["common", "draconic"] } },
+    "dwarf": {
+      "2014": {
+        "fixed": ["battleaxe", "handaxe", "light-hammer", "warhammer", "common", "dwarvish"],
+        "choices": [{ "id": "tools", "pick": 1, "from": ["smiths-tools", "brewers-supplies", "masons-tools"] }]
+      }
+    },
+    "elf": { "2014": { "fixed": ["common", "elvish"] } },
+    "gnome": { "2014": { "fixed": ["common", "gnomish"] } },
+    "half-elf": {
+      "2014": { "fixed": ["common", "elvish"], "choices": [{ "id": "language", "pick": 1, "from": ["languages"] }] }
+    },
+    "half-orc": { "2014": { "fixed": ["common", "orc"] } },
+    "halfling": { "2014": { "fixed": ["common", "halfling"] } },
+    "human": { "2014": { "fixed": ["common"], "choices": [{ "id": "language", "pick": 1, "from": ["languages"] }] } },
+    "tiefling": { "2014": { "fixed": ["common", "infernal"] } }
+  },
+  "subspecies": {
+    "high-elf": {
+      "2014": {
+        "fixed": ["longsword", "shortsword", "shortbow", "longbow"],
+        "choices": [{ "id": "language", "pick": 1, "from": ["languages"] }]
+      }
+    },
+    "rock-gnome": { "2014": { "fixed": ["tinkers-tools"] } }
+  },
+  "backgrounds": {
+    "acolyte": {
+      "2014": { "choices": [{ "id": "languages", "pick": 2, "from": ["languages"] }] },
+      "2024": { "fixed": ["calligraphers-supplies"] }
+    },
+    "criminal": { "2024": { "fixed": ["thieves-tools"] } },
+    "sage": { "2024": { "fixed": ["calligraphers-supplies"] } },
+    "soldier": { "2024": { "choices": [{ "id": "gaming-set", "pick": 1, "from": ["gaming-sets"] }] } }
+  }
+}

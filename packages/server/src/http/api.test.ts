@@ -27,6 +27,7 @@ const sorcerer = {
   base: { str: 8, dex: 14, con: 14, int: 10, wis: 10, cha: 15 },
   skills: ['arcana', 'deception'],
   spells: ['fire-bolt', 'light', 'mage-hand', 'prestidigitation', 'magic-missile', 'shield'],
+  proficiencyPicks: { 'background:languages': ['elvish', 'draconic'] },
 };
 
 const base = '/api/games/test/characters';

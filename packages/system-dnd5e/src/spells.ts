@@ -59,6 +59,8 @@ export function stoppedBy(
   spell: Pick<Spell, 'name' | 'components'>,
 ): string | undefined {
   if (sheet.effects.some((e) => e.antimagic)) return `can't cast ${spell.name} inside an antimagic field`;
+  const stuck = sheet.effects.find((e) => e.noCasting);
+  if (stuck) return `can't cast ${spell.name}: ${stuck.name}`;
   const hushed = sheet.effects.find((e) => e.silenced);
   if (hushed && spell.components.includes('v')) return `can't speak ${spell.name}'s words inside ${hushed.name}`;
   return undefined;

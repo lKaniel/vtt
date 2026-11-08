@@ -12,10 +12,11 @@ import { Input } from '../kit/input.tsx';
 import { SelectField } from '../kit/select.tsx';
 import { withKey } from '../sheet-model.ts';
 import { ClassesEdit } from './ClassesEdit.tsx';
+import { ProficiencyAdder, ProficiencyList } from '../creator/ProficiencyParts.tsx';
 import { canAct, type SheetProps } from './sheet-props.ts';
 
-// The Details tab: the 18 skills (click one to roll it), senses and damage
-// defences; in edit mode also which rules build the creature: its stat
+// The Details tab: the 18 skills (click one to roll it), senses,
+// proficiencies (click a tool to roll with it) and damage defences; in edit mode also which rules build the creature: its stat
 // block, rules edition and classes.
 
 export function DetailsTab(props: Readonly<SheetProps>) {
@@ -111,41 +112,29 @@ function Senses({ sheet }: Readonly<SheetProps>) {
   );
 }
 
-/** Tools, languages, armor and weapons, in the player's words. */
-function Proficiencies({ value, update, edit }: Readonly<SheetProps>) {
-  const list = value.stats?.proficiencies ?? [];
-  if (!edit && !list.length) return null;
-  const save = (text: string) => {
-    const next = [
-      ...new Set(
-        text
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean),
-      ),
-    ];
-    update((d) => setStat(d, 'proficiencies', next.length ? next : undefined), true);
-  };
+/** Armor, weapons, tools (click one to roll a check with it) and languages; picked from a list in edit mode. */
+function Proficiencies(props: Readonly<SheetProps>) {
+  const { session, value, update, sheet, edit } = props;
+  const stored = value.stats?.proficiencies ?? [];
+  const shown = edit ? stored : (sheet.proficiencies ?? stored);
+  if (!edit && !shown.length) return null;
+  const content = gameContent(editionOf(value, session.world ?? {}));
+  const save = (next: string[]) => update((d) => setStat(d, 'proficiencies', next.length ? next : undefined), true);
+  const roll = canAct(props) && !edit;
   return (
-    <section>
+    <section aria-label={t('sheet.proficiencies')}>
       <Heading>{t('sheet.proficiencies')}</Heading>
-      {edit ? (
-        <Input
-          key={list.join(', ')}
-          className="h-7 text-sm"
-          defaultValue={list.join(', ')}
-          placeholder={t('creator.otherHint')}
-          onBlur={(e) => save(e.target.value)}
+      <div className="flex flex-col gap-2">
+        <ProficiencyList
+          list={shown}
+          content={content}
+          onRemove={edit ? (id) => save(stored.filter((p) => p !== id)) : undefined}
+          onRoll={
+            roll ? (item) => session.requests.rollCheck(value.id, { ability: item.ability!, tool: item.id }) : undefined
+          }
         />
-      ) : (
-        <div className="flex flex-wrap gap-1">
-          {list.map((p) => (
-            <Badge key={p} variant="muted">
-              {p}
-            </Badge>
-          ))}
-        </div>
-      )}
+        {edit && <ProficiencyAdder have={stored} content={content} onAdd={(id) => save([...stored, id])} />}
+      </div>
     </section>
   );
 }

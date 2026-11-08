@@ -1,5 +1,5 @@
 {
-  "$comment": "Hand-written rules merged over classes-5.1.json (2014) and classes-5.2.json (2024) at load: spellcasting, extra attacks and the features the engine runs. Features are matched by id.",
+  "$comment": "Hand-written rules merged over classes-5.1.json (2014) and classes-5.2.json (2024) at load: spellcasting, extra attacks and the features the engine runs. Features are matched by id. `proficiencies`: armor, weapons, tools and languages (proficiency-grants.ts), with `multiclass` for a class taken later.",
   "barbarian": {
     "both": {
       "multiclass": {
@@ -70,6 +70,12 @@
             }
           }
         }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "medium-armor", "shields", "simple-weapons", "martial-weapons"],
+        "multiclass": {
+          "fixed": ["shields", "simple-weapons", "martial-weapons"]
+        }
       }
     },
     "2024": {
@@ -96,6 +102,12 @@
               "manual": "While raging, when you use Reckless Attack your first Strength hit each turn deals extra damage: d6s equal to your Rage Damage bonus. Roll it by hand."
             }
           }
+        }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "medium-armor", "shields", "simple-weapons", "martial-weapons"],
+        "multiclass": {
+          "fixed": ["shields", "martial-weapons"]
         }
       }
     }
@@ -159,6 +171,48 @@
       "features": {
         "song-of-rest": {
           "manual": "On a short rest, allies who spend hit dice regain an extra 1d6 (1d8 at 9th). Add it when they spend dice."
+        }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "simple-weapons", "hand-crossbow", "longsword", "rapier", "shortsword"],
+        "choices": [
+          {
+            "id": "instruments",
+            "pick": 3,
+            "from": ["musical-instruments"]
+          }
+        ],
+        "multiclass": {
+          "fixed": ["light-armor"],
+          "choices": [
+            {
+              "id": "instrument",
+              "pick": 1,
+              "from": ["musical-instruments"]
+            }
+          ]
+        }
+      }
+    },
+    "2024": {
+      "proficiencies": {
+        "fixed": ["light-armor", "simple-weapons"],
+        "choices": [
+          {
+            "id": "instruments",
+            "pick": 3,
+            "from": ["musical-instruments"]
+          }
+        ],
+        "multiclass": {
+          "fixed": ["light-armor"],
+          "choices": [
+            {
+              "id": "instrument",
+              "pick": 1,
+              "from": ["musical-instruments"]
+            }
+          ]
         }
       }
     }
@@ -232,6 +286,12 @@
             }
           }
         }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "medium-armor", "shields", "simple-weapons"],
+        "multiclass": {
+          "fixed": ["light-armor", "medium-armor", "shields"]
+        }
       }
     },
     "2024": {
@@ -266,6 +326,12 @@
         },
         "divine-order": {
           "manual": "Protector: heavy armor and martial weapons. Thaumaturge: one more cleric cantrip, and your Wisdom modifier added to Arcana and Religion checks."
+        }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "medium-armor", "shields", "simple-weapons"],
+        "multiclass": {
+          "fixed": ["light-armor", "medium-armor", "shields"]
         }
       }
     }
@@ -310,6 +376,28 @@
               "manual": "On a short rest, recover spell slots totaling up to half your druid level (rounded up), none 6th or higher. The GM restores them."
             }
           }
+        }
+      },
+      "proficiencies": {
+        "fixed": [
+          "light-armor",
+          "medium-armor",
+          "shields",
+          "club",
+          "dagger",
+          "dart",
+          "javelin",
+          "mace",
+          "quarterstaff",
+          "scimitar",
+          "sickle",
+          "sling",
+          "spear",
+          "herbalism-kit",
+          "druidic"
+        ],
+        "multiclass": {
+          "fixed": ["light-armor", "medium-armor", "shields"]
         }
       }
     },
@@ -363,6 +451,12 @@
               "manual": "One creature you choose in the area also regains {die}d6 hit points: heal it by hand."
             }
           }
+        }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "shields", "simple-weapons", "herbalism-kit", "druidic"],
+        "multiclass": {
+          "fixed": ["light-armor", "shields"]
         }
       }
     }
@@ -441,6 +535,12 @@
         "protection": {
           "manual": "Reaction with a shield: impose disadvantage on an attack against a creature within 5 ft of you. The GM applies it."
         }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "medium-armor", "heavy-armor", "shields", "simple-weapons", "martial-weapons"],
+        "multiclass": {
+          "fixed": ["light-armor", "medium-armor", "shields", "simple-weapons", "martial-weapons"]
+        }
       }
     },
     "2024": {
@@ -470,6 +570,12 @@
               "manual": "Advantage on initiative rolls and Strength (Athletics) checks; after a critical hit you can move half your speed without provoking opportunity attacks."
             }
           }
+        }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "medium-armor", "heavy-armor", "shields", "simple-weapons", "martial-weapons"],
+        "multiclass": {
+          "fixed": ["light-armor", "medium-armor", "shields", "martial-weapons"]
         }
       }
     }
@@ -567,6 +673,19 @@
             }
           }
         }
+      },
+      "proficiencies": {
+        "fixed": ["simple-weapons", "shortsword"],
+        "choices": [
+          {
+            "id": "tool",
+            "pick": 1,
+            "from": ["artisans-tools", "musical-instruments"]
+          }
+        ],
+        "multiclass": {
+          "fixed": ["simple-weapons", "shortsword"]
+        }
       }
     },
     "2024": {
@@ -658,6 +777,19 @@
               "manual": "When Flurry of Blows hits: the target makes a Dexterity save or falls prone, a Strength save or is pushed 15 ft, or can’t take reactions (2024: Addle, Push, Topple). The GM applies it."
             }
           }
+        }
+      },
+      "proficiencies": {
+        "fixed": ["simple-weapons", "martial-light-weapons"],
+        "choices": [
+          {
+            "id": "tool",
+            "pick": 1,
+            "from": ["artisans-tools", "musical-instruments"]
+          }
+        ],
+        "multiclass": {
+          "fixed": []
         }
       }
     }
@@ -773,6 +905,12 @@
           "recharge": "short-one",
           "manual": "Divine Sense: spend a use to learn where celestials, fiends and undead within 60 ft are for 10 minutes."
         }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "medium-armor", "heavy-armor", "shields", "simple-weapons", "martial-weapons"],
+        "multiclass": {
+          "fixed": ["light-armor", "medium-armor", "shields", "martial-weapons"]
+        }
       }
     },
     "2014": {
@@ -836,6 +974,12 @@
               }
             }
           }
+        }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "medium-armor", "heavy-armor", "shields", "simple-weapons", "martial-weapons"],
+        "multiclass": {
+          "fixed": ["light-armor", "medium-armor", "shields", "simple-weapons", "martial-weapons"]
         }
       }
     }
@@ -904,6 +1048,12 @@
             }
           }
         }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "medium-armor", "shields", "simple-weapons", "martial-weapons"],
+        "multiclass": {
+          "fixed": ["light-armor", "medium-armor", "shields", "martial-weapons"]
+        }
       }
     },
     "2014": {
@@ -936,6 +1086,12 @@
               "manual": "Reaction when a Large or larger creature within 5 ft attacks you: attack it right after."
             }
           }
+        }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "medium-armor", "shields", "simple-weapons", "martial-weapons"],
+        "multiclass": {
+          "fixed": ["light-armor", "medium-armor", "shields", "simple-weapons", "martial-weapons"]
         }
       }
     }
@@ -986,6 +1142,36 @@
         },
         "cunning-strike": {
           "manual": "When Sneak Attack hits, give up sneak attack dice for Poison (1d6: Con save or poisoned), Trip (1d6: Dex save or prone) or Withdraw (1d6: move half speed without provoking). The GM applies it."
+        }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "simple-weapons", "martial-finesse-light-weapons", "thieves-tools", "thieves-cant"],
+        "choices": [
+          {
+            "id": "language",
+            "pick": 1,
+            "from": ["languages"]
+          }
+        ],
+        "multiclass": {
+          "fixed": ["light-armor", "thieves-tools"]
+        }
+      }
+    },
+    "2014": {
+      "proficiencies": {
+        "fixed": [
+          "light-armor",
+          "simple-weapons",
+          "hand-crossbow",
+          "longsword",
+          "rapier",
+          "shortsword",
+          "thieves-tools",
+          "thieves-cant"
+        ],
+        "multiclass": {
+          "fixed": ["light-armor", "thieves-tools"]
         }
       }
     }
@@ -1062,6 +1248,12 @@
             }
           }
         }
+      },
+      "proficiencies": {
+        "fixed": ["simple-weapons"],
+        "multiclass": {
+          "fixed": []
+        }
       }
     },
     "2014": {
@@ -1079,6 +1271,12 @@
               "hpPerLevel": 1
             }
           }
+        }
+      },
+      "proficiencies": {
+        "fixed": ["dagger", "dart", "sling", "quarterstaff", "light-crossbow"],
+        "multiclass": {
+          "fixed": []
         }
       }
     }
@@ -1112,6 +1310,12 @@
             }
           }
         }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "simple-weapons"],
+        "multiclass": {
+          "fixed": ["light-armor", "simple-weapons"]
+        }
       }
     },
     "2024": {
@@ -1130,6 +1334,12 @@
               "manual": "When you drop a hostile creature to 0 hit points (2024: or one within 10 ft drops), gain Charisma modifier + warlock level temporary hit points."
             }
           }
+        }
+      },
+      "proficiencies": {
+        "fixed": ["light-armor", "simple-weapons"],
+        "multiclass": {
+          "fixed": ["light-armor"]
         }
       }
     }
@@ -1175,6 +1385,12 @@
             }
           }
         }
+      },
+      "proficiencies": {
+        "fixed": ["simple-weapons"],
+        "multiclass": {
+          "fixed": []
+        }
       }
     },
     "2014": {
@@ -1188,6 +1404,12 @@
               "manual": "Choose up to 1 + the spell’s level creatures in your evocation’s area: they succeed on the save and take no damage. Leave them out of the targets."
             }
           }
+        }
+      },
+      "proficiencies": {
+        "fixed": ["dagger", "dart", "sling", "quarterstaff", "light-crossbow"],
+        "multiclass": {
+          "fixed": []
         }
       }
     }

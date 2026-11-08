@@ -1,7 +1,8 @@
-import { ABILITIES, type Ability, abilityName, type CheckKind, SKILLS, skillName } from '@vtt/system-dnd5e';
+import { ABILITIES, type Ability, abilityName, type CheckKind, SKILLS, skillName, TOOLS } from '@vtt/system-dnd5e';
 
 // How the check pickers name and encode a check: "dex" for an ability
-// check, "dex:stealth" for a skill check, "dex:save" for a saving throw.
+// check, "dex:stealth" for a skill check, "dex:tool:thieves-tools" for a
+// tool check, "dex:save" for a saving throw.
 
 const short = (a: Ability) => a.charAt(0).toUpperCase() + a.slice(1);
 
@@ -11,17 +12,23 @@ export const CHECK_OPTIONS: readonly { value: string; label: string }[] = [
     value: `${a}:${skill}`,
     label: `${skillName(skill)} (${short(a)})`,
   })),
+  ...Object.entries(TOOLS).map(([tool, { name, ability }]) => ({
+    value: `${ability}:tool:${tool}`,
+    label: `${name} (${short(ability)})`,
+  })),
   ...ABILITIES.map((a) => ({ value: `${a}:save`, label: `${abilityName(a)} save` })),
 ];
 
 export function checkOf(value: string): CheckKind {
-  const [ability, skill] = value.split(':') as [Ability, string | undefined];
+  const [ability, skill, tool] = value.split(':') as [Ability, string | undefined, string | undefined];
   if (skill === 'save') return { ability, save: true };
+  if (skill === 'tool' && tool) return { ability, tool };
   return skill ? { ability, skill } : { ability };
 }
 
 export function checkValue(check: CheckKind): string {
   if (check.save) return `${check.ability}:save`;
+  if (check.tool) return `${check.ability}:tool:${check.tool}`;
   return check.skill ? `${check.ability}:${check.skill}` : check.ability;
 }
 

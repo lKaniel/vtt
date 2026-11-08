@@ -6,7 +6,8 @@ import {
   editCustomSpecies,
   flexibleBonusAbilities,
   pickFlexBonus,
-  setProficiencies,
+  addProficiency,
+  removeProficiency,
   toggleBackgroundAbility,
   toggleBackgroundSkill,
   toggleExpertise,
@@ -70,10 +71,9 @@ describe('custom proficiencies', () => {
     });
   });
 
-  it('keeps other proficiencies as a trimmed list without blanks or repeats', () => {
-    expect(setProficiencies(fresh(), 'Thieves’ tools, Elvish,, elvish ').proficiencies).toEqual([
-      'Thieves’ tools',
-      'Elvish',
-    ]);
+  it('adds other proficiencies from the list, each once, and takes them away', () => {
+    const c = addProficiency(addProficiency(addProficiency(fresh(), 'thieves-tools'), 'elvish'), 'elvish');
+    expect(c.proficiencies).toEqual(['thieves-tools', 'elvish']);
+    expect(removeProficiency(c, 'thieves-tools').proficiencies).toEqual(['elvish']);
   });
 });

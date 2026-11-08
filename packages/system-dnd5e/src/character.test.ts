@@ -29,6 +29,7 @@ function cleric(over: Partial<Character> = {}): Character {
     base: { str: 14, dex: 8, con: 15, int: 8, wis: 15, cha: 10 },
     skills: ['medicine', 'history'],
     spells: ['guidance', 'sacred-flame', 'light', 'cure-wounds', 'bless'],
+    proficiencyPicks: { 'species:tools': ['masons-tools'], 'background:languages': ['elvish', 'giant'] },
     ...over,
   });
 }
@@ -48,6 +49,7 @@ function wizard(over: Partial<Character> = {}): Character {
     bonusPicks: { int: 2, con: 1 },
     skills: ['investigation', 'medicine'],
     spells: ['fire-bolt', 'light', 'mage-hand', 'magic-missile', 'shield', 'sleep', 'mage-armor'],
+    proficiencyPicks: { 'base:languages': ['elvish', 'draconic'] },
     ...over,
   });
 }
