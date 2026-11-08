@@ -39,7 +39,7 @@ export class PackActions {
 
   private async answer(player: Player, msg: PackMessage): Promise<ServerMessage> {
     if (msg.t === 'plugins') return this.plugins(player);
-    if (!isGm(player)) throw new Refusal('Only the GM can browse packs');
+    if (!isGm(player)) return this.playerUpload(player, msg);
     switch (msg.t) {
       case 'packs':
         return this.list();
@@ -48,18 +48,37 @@ export class PackActions {
       case 'compendium':
         return { t: 'compendium', pack: msg.pack, compendium: msg.compendium, docs: this.docs(msg) };
       case 'upload':
-        return this.uploaded(msg.ref, () => Promise.resolve({ name: msg.name, data: Buffer.from(msg.data, 'base64') }));
       case 'uploadUrl':
-        return this.uploaded(msg.ref, () => fetchPicture(msg.url));
+        return this.uploaded(msg, () => this.media());
     }
   }
 
-  /** Saves a file, one upload at a time, and answers with the media list and where it went. */
-  private async uploaded(ref: string | undefined, file: () => Promise<{ name: string; data: Buffer }>) {
+  /**
+   * A player may upload a picture (for a token they own), never other media,
+   * and isn't shown the game's files in the answer.
+   */
+  private playerUpload(player: Player, msg: PackMessage): Promise<ServerMessage> {
+    if (msg.t !== 'upload' && msg.t !== 'uploadUrl') throw new Refusal('Only the GM can browse packs');
+    if (player.role === 'observer') throw new Refusal('An observer seat only watches');
+    if (msg.t === 'upload' && !PICTURE.test(msg.name))
+      throw new Refusal('Upload a picture (PNG, JPEG, WebP, GIF or AVIF)');
+    return this.uploaded(msg, () => Promise.resolve([]));
+  }
+
+  /** Saves a file, one upload at a time, and answers with the `entries` after it and where it went. */
+  private async uploaded(
+    msg: Extract<PackMessage, { t: 'upload' | 'uploadUrl' }>,
+    entries: () => Promise<MediaEntry[]>,
+  ) {
+    const file = () =>
+      msg.t === 'upload'
+        ? Promise.resolve({ name: msg.name, data: Buffer.from(msg.data, 'base64') })
+        : fetchPicture(msg.url);
     const done = this.uploads.catch(() => undefined).then(async () => this.upload(await file()));
     this.uploads = done;
     const src = await done;
-    return { t: 'media' as const, entries: await this.media(), uploaded: { src, ...(ref && { ref }) } };
+    const { ref } = msg;
+    return { t: 'media' as const, entries: await entries(), uploaded: { src, ...(ref && { ref }) } };
   }
 
   /** The plugins the game may use, read again so ones copied in show up. */
@@ -108,6 +127,9 @@ export class PackActions {
 }
 
 /** The game's own assets, then the media of each pack it uses; video thumbnails become the videos' previews. */
+/** The pictures a player may upload (no SVG: it can carry script). */
+const PICTURE = /\.(png|jpe?g|webp|gif|avif)$/i;
+
 /** What to tell the GM when a request fails for no reason of theirs. */
 const FAILURES: Partial<Record<PackMessage['t'], string>> = {
   uploadUrl: 'Could not download that picture',

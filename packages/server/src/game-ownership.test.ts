@@ -85,10 +85,11 @@ describe('the ops message for players', () => {
     expect(reasons(ana)).toEqual(["You can't edit Goblin"]);
   });
 
-  it('lets a plain player arrange the action bar of what they own, not edit its sheet', () => {
+  it('lets a plain player edit the sheet of what they own', () => {
     const bo = seat('bo');
     ops(bo, update('main/tokens', 'scout', { delta: { ownership: { default: 'limited', bo: 'owner' }, hp: 1 } }));
-    expect(reasons(bo)).toEqual(["You can't edit Goblin"]);
+    expect(reasons(bo)).toEqual([]);
+    expect(store.tokens.get('scout')!.hp).toBe(1);
   });
 
   it('leaves adding and removing documents, the map and the game settings to the GM', () => {

@@ -9,6 +9,11 @@ import { screenOf } from '../support/map.ts';
 import { GM, PLAYER_2, atTable, chatLog } from '../support/table.ts';
 
 const BRAM: [number, number] = [650, 650];
+/** A one-pixel picture to upload. */
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
 
 async function openBram(page: Page) {
   const p = await screenOf(page, ...BRAM);
@@ -62,16 +67,26 @@ test('the GM uploads a picture for a token from the Token tab', async ({ page, s
   const sheet = await openBram(page);
   await sheet.getByRole('switch', { name: 'Edit mode (E)' }).click();
   await sheet.getByRole('tab', { name: 'Token' }).click();
-  const png = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
-    'base64',
-  );
   await sheet
     .getByLabel('Upload a picture')
-    .setInputFiles({ name: 'Bram Face.png', mimeType: 'image/png', buffer: png });
+    .setInputFiles({ name: 'Bram Face.png', mimeType: 'image/png', buffer: PNG });
   await expect(sheet.getByRole('textbox', { name: 'Picture' })).toHaveValue('/assets/uploads/bram-face.png');
   await expect
     .poll(() => page.evaluate(() => vtt.tokens().find((t) => t.name === 'Bram')?.img))
     .toBe('/assets/uploads/bram-face.png');
   expect(existsSync(join(server.gameDir, 'assets/uploads/bram-face.png'))).toBe(true);
+});
+
+test('a player sets their own token’s picture, but not its size', async ({ page, server }) => {
+  await atTable(page, PLAYER_2);
+  const sheet = await openBram(page);
+  await sheet.getByRole('switch', { name: 'Edit mode (E)' }).click();
+  await sheet.getByRole('tab', { name: 'Token' }).click();
+  await expect(sheet.getByText('Size', { exact: true })).toHaveCount(0);
+  await sheet.getByLabel('Upload a picture').setInputFiles({ name: 'mine.png', mimeType: 'image/png', buffer: PNG });
+  await expect(sheet.getByRole('textbox', { name: 'Picture' })).toHaveValue('/assets/uploads/mine.png');
+  await expect
+    .poll(() => page.evaluate(() => vtt.tokens().find((t) => t.name === 'Bram')?.img))
+    .toBe('/assets/uploads/mine.png');
+  expect(existsSync(join(server.gameDir, 'assets/uploads/mine.png'))).toBe(true);
 });

@@ -32,7 +32,7 @@ export function SheetHeader(props: Readonly<SheetProps & { controls: SheetContro
 /** Edit mode (for those who may edit it), pop out, and close when the sheet has no window round it to close it. */
 export function SheetButtons(props: Readonly<SheetProps & { controls: SheetControls }>) {
   const { session, kind, value, edit, controls } = props;
-  const editable = kind === 'actor' ? session.isGm() : session.canEdit(value.id);
+  const editable = session.canEdit(value.id, kind);
   return (
     <div className="flex items-center gap-2">
       {editable && (

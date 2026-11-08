@@ -12,7 +12,7 @@ import { readBase64 } from './read-file.ts';
 // A file of the game's or its packs' media, picked instead of typed: the
 // tile's picture, a 3D model, a sound's file, a scene's thumbnail. The box
 // still takes a typed path; the button beside it opens a searchable list.
-// For a picture the GM can also upload a file from their computer, and a
+// For a picture anyone at the table (not an observer) can also upload a file from their computer, and a
 // web address typed in is downloaded by the server into the game's uploads
 // (other sites often won't hand their pictures to the map), so the box ends
 // up holding the game's own copy.
@@ -32,12 +32,13 @@ interface MediaInputProps {
 
 const isWebAddress = (src: string) => /^https?:\/\//i.test(src);
 
-/** A path box with a button that picks the file from the media list; for the GM's pictures, upload too. */
+/** A path box with a button that picks the file from the media list (GM); for pictures, upload too. */
 export function MediaInput({ session, kind, value, onChange, placeholder, label }: Readonly<MediaInputProps>) {
   // Callers key it by the value, so it starts over when the value changes.
   const [text, setText] = useState(value);
   const [busy, setBusy] = useState(false);
-  const uploads = kind === 'image' && session.isGm();
+  // Anyone but an observer seat uploads pictures (a token's).
+  const uploads = kind === 'image' && !!session.you && session.you.role !== 'observer';
   const save = (saving: Promise<string>) => {
     setBusy(true);
     saving.then(
@@ -75,7 +76,7 @@ export function MediaInput({ session, kind, value, onChange, placeholder, label 
   );
 }
 
-/** The GM's button that uploads a picture from their computer into the game's assets. */
+/** The button that uploads a picture from your computer into the game's assets. */
 function UploadPicture({
   session,
   busy,

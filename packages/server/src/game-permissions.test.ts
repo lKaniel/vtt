@@ -1,3 +1,4 @@
+import { ActorSchema } from '@vtt/system-dnd5e';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -54,7 +55,7 @@ describe('a trusted player editing their own token', () => {
     expect(store.tokens.get('hero')).toMatchObject({ ownership: { default: 'limited', ana: 'owner' }, x: 150 });
   });
 
-  it("can't change how its token looks and sees, or what creature it is", () => {
+  it("can't change how big its token is and what it sees, or what creature it is", () => {
     const ana = seat('ana');
     ana.receive({ t: 'ops', txn: 't1', ops: [{ op: 'update', coll: 'actors', id: 'hero', patch: { size: 4 } }] });
     expect(ana.take('reject').map((r) => r.reason)).toEqual(['Only the GM can change size']);
@@ -62,11 +63,23 @@ describe('a trusted player editing their own token', () => {
     ana.receive({ t: 'editToken', token: 'hero', patch: { light: { bright: 999, dim: 0 }, scale: 3 } });
     ana.receive({ t: 'editToken', token: 'hero', patch: { monster: 'ancient-red-dragon' } });
     expect(ana.take('error').map((e) => e.message)).toEqual([
-      'Only the GM can change img, size, darkvision',
-      'Only the GM can change light, scale',
+      'Only the GM can change size, darkvision',
+      'Only the GM can change light',
       'Only the GM can change monster',
     ]);
     expect(store.tokens.get('hero')).toMatchObject({ size: 1, darkvision: 0 });
+    expect(store.tokens.get('hero')!.img).toBeUndefined();
+  });
+
+  it('changes its picture and how it looks', () => {
+    const ana = seat('ana');
+    ana.receive({
+      t: 'editToken',
+      token: 'hero',
+      patch: { img: '/assets/uploads/ana.png', scale: 1.2, mirrorX: true },
+    });
+    expect(ana.take('error')).toEqual([]);
+    expect(store.tokens.get('hero')).toMatchObject({ img: '/assets/uploads/ana.png', scale: 1.2, mirrorX: true });
   });
 
   it('still leaves deleting and spawning to the GM', () => {
@@ -77,11 +90,36 @@ describe('a trusted player editing their own token', () => {
 });
 
 describe('a plain player', () => {
-  it("can't edit even their own token", () => {
+  it('edits their own token like a trusted one', () => {
     store.setToken({ ...store.tokens.get('hero')!, ownership: { default: 'limited', bo: 'owner' } });
     const bo = seat('bo');
-    bo.receive({ t: 'editToken', token: 'hero', patch: { hp: 99 } });
-    expect(bo.take('error')[0]!.message).toBe("You can't edit Hero");
+    bo.receive({ t: 'editToken', token: 'hero', patch: { hp: 9, img: '/assets/uploads/bo.png' } });
+    expect(bo.take('error')).toEqual([]);
+    expect(store.tokens.get('hero')).toMatchObject({ hp: 9, img: '/assets/uploads/bo.png' });
+  });
+
+  it('saves the sheet of an actor they own, but no other, and not its GM fields', () => {
+    const bo = seat('bo');
+    store.setActor(ActorSchema.parse({ id: 'mira', name: 'Mira', ownership: { default: 'none', bo: 'owner' } }));
+    bo.receive({
+      t: 'saveActor',
+      actor: { id: 'mira', name: 'Mira the Wise', ownership: { default: 'none', bo: 'owner' } },
+    });
+    expect(bo.take('error')).toEqual([]);
+    expect(store.actors.get('mira')!.name).toBe('Mira the Wise');
+    store.setActor(ActorSchema.parse({ id: 'bandit', name: 'Bandit' }));
+    bo.receive({ t: 'saveActor', actor: { id: 'bandit', name: 'Mine now' } });
+    bo.receive({
+      t: 'saveActor',
+      actor: { id: 'mira', name: 'Mira', size: 4, ownership: { default: 'none', bo: 'owner' } },
+    });
+    bo.receive({ t: 'saveActor', actor: { id: 'mira', name: 'Mira', ownership: { default: 'owner' } } });
+    expect(bo.take('error').map((e) => e.message)).toEqual([
+      "You can't edit Bandit",
+      'Only the GM can change size',
+      'Only the GM can change ownership',
+    ]);
+    expect(store.actors.get('mira')!.name).toBe('Mira the Wise');
   });
 });
 

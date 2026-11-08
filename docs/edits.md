@@ -45,7 +45,7 @@ Server to client:
   `leader`, `actor` or `linked` (moves go through the `move` intent, which
   runs the rules);
 - may change `hotbar` on what they own (`canControl`), and anything else on
-  what they own only from a `trusted` seat (`canEdit`);
+  what they own from any seat but an observer's (`canEdit`);
 - has an unlinked token's `delta` checked field by field, as if it were the
   token's own fields.
 

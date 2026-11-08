@@ -12,7 +12,7 @@ export interface Owned {
   ownership?: Ownership;
 }
 
-/** Fields only the GM may change, even on a document a trusted player owns. */
+/** Fields only the GM may change, even on a document a player owns. */
 const GM_ONLY_FIELDS = [
   'id',
   'x',
@@ -25,18 +25,11 @@ const GM_ONLY_FIELDS = [
   'leader',
   'actor',
   'linked',
-  // How it stands on the map and what it sees: a player can't make it huge, see in the dark or light the map.
-  'img',
+  // How big it is and what it sees: a player can't make it huge, see in the dark or light the map.
+  // Its picture and look (img, scale, mirroring, ring, name and bars shown) are the owner's.
   'size',
-  'scale',
-  'mirrorX',
-  'mirrorY',
-  'randomImg',
-  'ring',
   'filter',
   'model',
-  'displayName',
-  'displayBars',
   'light',
   'darkvision',
   'blindsight',
@@ -93,9 +86,9 @@ export function canControl(doc: Owned, player: Player): boolean {
   return levelOf(doc, player) === 'owner';
 }
 
-/** Change it in edit mode: the GM, or a trusted player who owns it. */
+/** Change it in edit mode: the GM, or a player who owns it (an observer seat only watches). */
 export function canEdit(doc: Owned, player: Player): boolean {
-  return isGm(player) || (player.role === 'trusted' && canControl(doc, player));
+  return isGm(player) || (player.role !== 'observer' && canControl(doc, player));
 }
 
 /** The keys of an edit that only the GM may make, in the order given; `system` adds its own (SystemDefinition `gmOnlyFields`). */

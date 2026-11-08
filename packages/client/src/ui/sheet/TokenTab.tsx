@@ -9,7 +9,7 @@ import { LookFields } from './SheetLook.tsx';
 import type { SheetProps } from './sheet-props.ts';
 
 // The Token tab, in edit mode: how the creature stands on the map (picture,
-// colour, size, vision and light, its look) and, for the GM, whether it
+// colour, its look) and, for the GM, its size, vision and light, whether it
 // hides and who owns it.
 
 const SIZES = [
@@ -19,6 +19,13 @@ const SIZES = [
   [3, 'Huge'],
   [4, 'Gargantuan'],
 ] as const;
+
+/** Sets one field of the draft; `now` saves at once. */
+const setter =
+  (update: Update) =>
+  (key: keyof Draft, now = false) =>
+  (v: unknown) =>
+    update((d) => withKey(d, key, v), now);
 
 export function TokenTab(props: Readonly<SheetProps>) {
   return (
@@ -32,10 +39,7 @@ export function TokenTab(props: Readonly<SheetProps>) {
 }
 
 function Identity({ session, value, update }: Readonly<SheetProps>) {
-  const set =
-    (key: keyof Draft, now = false) =>
-    (v: unknown) =>
-      update((d) => withKey(d, key, v), now);
+  const set = setter(update);
   return (
     <div className="ed-col">
       <h4>Token</h4>
@@ -56,17 +60,7 @@ function Identity({ session, value, update }: Readonly<SheetProps>) {
         <Field label="Colour">
           <ColorInput value={value.color} onChange={(e) => set('color')(e.target.value)} />
         </Field>
-        <Field label="Size">
-          <SelectField
-            value={String(value.size)}
-            onValueChange={(n) => set('size', true)(Number(n))}
-            options={SIZES.map(([n, label]) => ({ value: String(n), label }))}
-          />
-        </Field>
-        <Field label="Darkvision (ft)">
-          <NumberInput value={value.darkvision} min={0} onChange={(v) => set('darkvision')(v ?? 0)} />
-        </Field>
-        <LightFields value={value} update={update} />
+        {session.isGm() && <GmFields value={value} update={update} />}
       </div>
       {session.isGm() && (
         <>
@@ -75,6 +69,26 @@ function Identity({ session, value, update }: Readonly<SheetProps>) {
         </>
       )}
     </div>
+  );
+}
+
+/** How big it is, what it sees and the light it gives: the GM's, so a player can't break their token. */
+function GmFields({ value, update }: Readonly<{ value: Draft; update: Update }>) {
+  const set = setter(update);
+  return (
+    <>
+      <Field label="Size">
+        <SelectField
+          value={String(value.size)}
+          onValueChange={(n) => set('size', true)(Number(n))}
+          options={SIZES.map(([n, label]) => ({ value: String(n), label }))}
+        />
+      </Field>
+      <Field label="Darkvision (ft)">
+        <NumberInput value={value.darkvision} min={0} onChange={(v) => set('darkvision')(v ?? 0)} />
+      </Field>
+      <LightFields value={value} update={update} />
+    </>
   );
 }
 

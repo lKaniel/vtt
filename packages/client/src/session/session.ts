@@ -297,10 +297,10 @@ export class Session {
     return !!this.you && isGm(this.you);
   }
 
-  /** The GM edits any token; a trusted player the ones they own. */
-  canEdit(id: string): boolean {
-    const token = this.tokens.get(id);
-    return !!this.you && !!token && canEdit(token, this.you);
+  /** The GM edits any token or actor; a player the ones they own (their character, from the Actors tab too). */
+  canEdit(id: string, kind: 'token' | 'actor' = 'token'): boolean {
+    const doc = kind === 'token' ? this.tokens.get(id) : this.actors.get(id);
+    return !!this.you && !!doc && canEdit(doc, this.you);
   }
 
   /** Opens the side panel on `tab` (one of its tabs, ui/panel-tabs.ts). */

@@ -91,11 +91,12 @@ describe('seeing a document', () => {
 });
 
 describe('editing a document', () => {
-  it('is for the GM, and for trusted players on what they own', () => {
+  it('is for the GM, and for any player on what they own', () => {
     expect(canEdit(hero, gm)).toBe(true);
     expect(canEdit(hero, tess)).toBe(true);
     expect(canEdit(scout, tess)).toBe(false);
-    expect(canEdit(hero, ana)).toBe(false);
+    expect(canEdit(hero, ana)).toBe(true);
+    expect(canEdit(scout, ana)).toBe(true);
     expect(canEdit(hero, otto)).toBe(false);
   });
 
@@ -105,10 +106,10 @@ describe('editing a document', () => {
     expect(lockedPatchKeys(patch, tess)).toEqual(['ownership', 'x', 'hidden', 'actor', 'linked']);
   });
 
-  it('keeps how a token looks and sees for the GM, and the fields its system names', () => {
+  it('keeps how big a token is and what it sees for the GM, and the fields its system names; its picture is the owner’s', () => {
     const patch = { name: 'X', img: 'a.webp', size: 3, darkvision: 60, light: {}, monster: 'lich' };
-    expect(lockedPatchKeys(patch, tess)).toEqual(['img', 'size', 'darkvision', 'light']);
-    expect(lockedPatchKeys(patch, tess, ['monster'])).toEqual(['img', 'size', 'darkvision', 'light', 'monster']);
+    expect(lockedPatchKeys(patch, tess)).toEqual(['size', 'darkvision', 'light']);
+    expect(lockedPatchKeys(patch, tess, ['monster'])).toEqual(['size', 'darkvision', 'light', 'monster']);
     expect(lockedPatchKeys(patch, gm, ['monster'])).toEqual([]);
   });
 
