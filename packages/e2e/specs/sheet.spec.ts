@@ -1,6 +1,8 @@
 // The character sheet, laid out like Foundry's: rolling from it, its tabs
 // and lists, and the GM's edit mode.
 
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { expect, test } from '../support/fixtures.ts';
 import { screenOf } from '../support/map.ts';
@@ -53,4 +55,23 @@ test('the GM makes a skill proficient in edit mode', async ({ page }) => {
   await sheet.getByRole('switch', { name: 'Edit mode (E)' }).click();
   await expect(sheet.getByRole('tab', { name: 'Token' })).toHaveCount(0);
   await expect(sheet.getByRole('button', { name: /^Athletics/ })).toContainText('+5');
+});
+
+test('the GM uploads a picture for a token from the Token tab', async ({ page, server }) => {
+  await atTable(page, GM);
+  const sheet = await openBram(page);
+  await sheet.getByRole('switch', { name: 'Edit mode (E)' }).click();
+  await sheet.getByRole('tab', { name: 'Token' }).click();
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64',
+  );
+  await sheet
+    .getByLabel('Upload a picture')
+    .setInputFiles({ name: 'Bram Face.png', mimeType: 'image/png', buffer: png });
+  await expect(sheet.getByRole('textbox', { name: 'Picture' })).toHaveValue('/assets/uploads/bram-face.png');
+  await expect
+    .poll(() => page.evaluate(() => vtt.tokens().find((t) => t.name === 'Bram')?.img))
+    .toBe('/assets/uploads/bram-face.png');
+  expect(existsSync(join(server.gameDir, 'assets/uploads/bram-face.png'))).toBe(true);
 });

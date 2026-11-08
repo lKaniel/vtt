@@ -6,6 +6,11 @@ export const EN_EDITOR = {
   'media.search': 'Search files',
   'media.more': '{n} more: type to narrow the list.',
   'media.none': 'Nothing here. Upload files in the Assets tab, or turn packs on.',
+  'media.upload': 'Upload a picture',
+  'media.uploadHint':
+    'Upload a picture from your computer. A web address typed in the box is downloaded into the game too.',
+  'media.uploading': 'Saving the picture…',
+  'media.unreadable': 'Could not read {name}',
   'floors.title': 'Floors',
   'floors.none':
     'One floor. Add floors for a building with storeys: then pick the floor to edit in the map tools, and what you draw goes on it.',

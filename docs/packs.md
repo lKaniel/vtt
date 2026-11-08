@@ -97,7 +97,12 @@ so sheets, tooltips and the Compendium know pack monsters too.
   packs it uses. Search by name and tag, pick a tag chip, filter by kind or
   pack. Drag a picture onto the map to place it as a tile at its own size,
   or click it to place it in view. **Upload** adds files to the game's
-  `assets/uploads/` (pictures, sounds and videos up to 20 MB). Videos show
+  `assets/uploads/` (pictures, sounds and videos up to 20 MB). Every picture
+  box (a token's picture on the sheet's Token tab, a tile's, a scene's) has
+  its own upload button too, and a web address typed into one is downloaded
+  by the server into `assets/uploads/` (PNG, JPEG, WebP, GIF, AVIF; never
+  addresses on the server's own network), so the map doesn't depend on
+  another site letting it draw their picture. Videos show
   their first frame and play while the pointer is over them. A still picture
   shipped beside a video (`Bless_01_Thumb.webp` next to `Bless_01.webm`, or
   the same name under a `thumbs/` or `thumbnails/` folder, as JB2A does)

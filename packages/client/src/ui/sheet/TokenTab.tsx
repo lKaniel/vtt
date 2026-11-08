@@ -1,6 +1,7 @@
 import { isGm, type Level, levelOf } from '@vtt/shared';
 import { setOwnership } from '../../play/token-edit.ts';
-import { Check, Field, NumberInput, TextInput } from '../EditorFields.tsx';
+import { Check, Field, NumberInput } from '../EditorFields.tsx';
+import { MediaInput } from '../MediaPicker.tsx';
 import { ColorInput } from '../kit/color-input.tsx';
 import { SelectField } from '../kit/select.tsx';
 import { withKey, type Draft, type Update } from '../sheet-model.ts';
@@ -38,9 +39,19 @@ function Identity({ session, value, update }: Readonly<SheetProps>) {
   return (
     <div className="ed-col">
       <h4>Token</h4>
-      <Field label="Picture URL" wide>
-        <TextInput value={value.img} onChange={set('img')} placeholder="Default portrait" />
-      </Field>
+      {/* Not a <label> like Field: the upload button inside is one. */}
+      <div className="ed-field wide">
+        <span>Picture</span>
+        <MediaInput
+          key={value.img ?? ''}
+          session={session}
+          kind="image"
+          value={value.img ?? ''}
+          onChange={(src) => set('img', true)(src || undefined)}
+          placeholder="Default portrait: upload, pick, or paste a web address"
+          label="Picture"
+        />
+      </div>
       <div className="ed-grid">
         <Field label="Colour">
           <ColorInput value={value.color} onChange={(e) => set('color')(e.target.value)} />

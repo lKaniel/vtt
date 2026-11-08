@@ -275,7 +275,14 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('plugins') }),
   z.object({ t: z.literal('media') }),
   z.object({ t: z.literal('compendium'), pack: z.string().max(80), compendium: z.string().max(80) }),
-  z.object({ t: z.literal('upload'), name: z.string().min(1).max(200), data: z.string().max(MAX_UPLOAD_BASE64) }),
+  z.object({
+    t: z.literal('upload'),
+    name: z.string().min(1).max(200),
+    data: z.string().max(MAX_UPLOAD_BASE64),
+    ref: z.string().max(40).optional(),
+  }),
+  /** GM: the server downloads a picture from the web into the game's uploads. */
+  z.object({ t: z.literal('uploadUrl'), url: z.string().min(1).max(2000), ref: z.string().max(40).optional() }),
 ]);
 
 export type ClientMessage = z.infer<typeof ClientMessageSchema>;

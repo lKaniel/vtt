@@ -151,10 +151,22 @@ describe('the GM’s asset browser', () => {
     expect(session.packs.plugins[0]?.enabled).toBe(true);
   });
 
-  it('uploads a file', () => {
+  it('uploads a file and learns where it was saved', async () => {
     ws.receive(gmWelcome());
-    session.packs.upload('map.png', 'AAAA');
-    expect(sent()).toEqual({ t: 'upload', name: 'map.png', data: 'AAAA' });
+    const saved = session.packs.upload('map.png', 'AAAA');
+    const msg = sent() as { t: 'upload'; ref: string };
+    expect(msg).toMatchObject({ t: 'upload', name: 'map.png', data: 'AAAA' });
+    ws.receive({ t: 'media', entries: [], uploaded: { ref: msg.ref, src: '/assets/uploads/map.png' } });
+    await expect(saved).resolves.toBe('/assets/uploads/map.png');
+  });
+
+  it('has the server download a picture from the web, and hears when it could not', async () => {
+    ws.receive(gmWelcome());
+    const saved = session.packs.uploadUrl('https://example.com/elf.png');
+    const msg = sent() as { t: 'uploadUrl'; ref: string };
+    expect(msg).toMatchObject({ t: 'uploadUrl', url: 'https://example.com/elf.png' });
+    ws.receive({ t: 'error', message: 'The site answered 404', ref: msg.ref });
+    await expect(saved).rejects.toThrow('The site answered 404');
   });
 
   it('places a picture as a tile centred where it lands', () => {
