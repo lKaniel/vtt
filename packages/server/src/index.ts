@@ -9,6 +9,7 @@ import { migrateAccounts } from './migrate/migrate-accounts.ts';
 import { dataDirFor, repoRoot, gameDirFromArgs } from './paths.ts';
 import { SessionStore } from './http/sessions.ts';
 import { socketSeat } from './socket-join.ts';
+import { startHeartbeat } from './http/heartbeat.ts';
 
 const PORT = Number(process.env.PORT ?? 3001);
 const homeDir = gameDirFromArgs();
@@ -56,6 +57,7 @@ const server = createServer((req, res) => {
 });
 
 const wss = new WebSocketServer({ noServer: true });
+startHeartbeat(() => wss.clients);
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
   if (url.pathname !== '/ws') return socket.destroy();
@@ -63,8 +65,9 @@ server.on('upgrade', (req, socket, head) => {
     (seat) =>
       wss.handleUpgrade(req, socket, head, (ws) => {
         if (!seat) return ws.close(4001, 'unknown player');
+        if (seat.taken) return ws.close(4003, 'someone else plays this seat');
         try {
-          hub.connect(seat.game, ws, seat.player);
+          hub.connect(seat.game, ws, seat.player, seat.session);
         } catch {
           ws.close(4004, 'no such game');
         }

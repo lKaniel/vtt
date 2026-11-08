@@ -249,7 +249,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('deleteActor'), actor: z.string() }),
   z.object({ t: z.literal('setRole'), player: z.string(), role: RoleSchema }),
   /** GM: the actor a seat plays (it becomes theirs); none to go back to the one they own. */
-  z.object({ t: z.literal('setCharacter'), player: z.string(), actor: z.string().optional() }),
+  z.object({ t: z.literal('setPlays'), player: z.string(), actor: z.string(), plays: z.boolean() }),
   z.object({ t: z.literal('mapEdit'), edit: MapEditSchema }),
   z.object({ t: z.literal('darkness'), darkness: z.number().min(0).max(1) }),
   z.object({

@@ -29,6 +29,18 @@ remembers the player you joined each game as, so the game connection
 (`/ws?game=<id>`) needs nothing more. _Switch player_ on the game's page
 forgets it.
 
+**One browser per player.** A player's seat is one browser's at a time: while
+someone plays it, another browser can't join as that player (409) and a second
+connection from another browser is closed (4003). Joining from a new browser
+when the seat is free takes it over: the other browsers' sessions forget it.
+The GM's seat may be open in several browsers. A heartbeat drops connections
+whose browser went away without closing, so a seat never stays held.
+
+**What a player plays.** The in-game Players tab ticks, per player, the
+creatures they play: ticking gives them ownership of the actor, unticking
+takes it away (down to everyone's level). The seat's `character` is the first
+one they were given, and moves on to another of theirs when it is taken away.
+
 **Invite links.** Its GM sends players a link instead of the server's address:
 the game page's Players box (and the in-game Players tab) shows the game's
 invite link, `<server>/#/join/<game>`, and a link button on each player copies

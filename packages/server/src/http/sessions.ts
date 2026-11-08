@@ -95,10 +95,13 @@ export class SessionStore {
     });
   }
 
-  /** Every session forgets `player` at `game` (removed from the game, or the game deleted when player is omitted). */
-  async forget(game: string, player?: string): Promise<void> {
+  /**
+   * Every session (but `keep`) forgets `player` at `game`: removed from the
+   * game, joined from another browser, or the game deleted when player is omitted.
+   */
+  async forget(game: string, player?: string, keep?: string): Promise<void> {
     for (const [token, s] of this.sessions) {
-      if (!(game in s.seats) || (player && s.seats[game] !== player)) continue;
+      if (token === keep || !(game in s.seats) || (player && s.seats[game] !== player)) continue;
       const { [game]: _gone, ...seats } = s.seats;
       this.sessions.set(token, { ...s, seats });
     }
