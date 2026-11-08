@@ -49,6 +49,8 @@ describe('the game clock in the client', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'clock', action: { do: 'skip', seconds: MINUTE } });
     session.requests.setTurnBased(true);
     expect(ws.sent.at(-1)).toEqual({ t: 'turnBased', on: true });
+    session.requests.setTurnBased(true, ['hero', 'goblin'], true);
+    expect(ws.sent.at(-1)).toEqual({ t: 'turnBased', on: true, tokens: ['hero', 'goblin'], shared: true });
   });
 
   it('knows a fight and turn-based mode apart', () => {

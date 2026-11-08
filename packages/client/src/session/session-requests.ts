@@ -53,9 +53,9 @@ export class Requests {
     this.s.send({ t: 'clock', action });
   }
 
-  /** GM: turn-based mode outside a fight. */
-  setTurnBased(on: boolean): void {
-    this.s.send({ t: 'turnBased', on });
+  /** GM: turn-based mode outside a fight, for `tokens` (else the party); `shared`: party members next to each other share a turn. */
+  setTurnBased(on: boolean, tokens?: string[], shared = false): void {
+    this.s.send({ t: 'turnBased', on, ...(tokens?.length && { tokens }), ...(shared && { shared }) });
   }
 
   /** Your own options for this game (automation.ts); they replace the old ones. */

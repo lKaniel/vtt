@@ -1,4 +1,4 @@
-import type { TokenView } from '@vtt/system-dnd5e';
+import type { Combat, TokenView } from '@vtt/system-dnd5e';
 
 // The GM's encounter picker: who on the scene may fight, and who is ticked
 // when it opens (the creatures selected, else those on screen).
@@ -28,4 +28,14 @@ export function firstPicks(
   const chosen = candidates.filter((c) => selected.includes(c.id));
   if (chosen.length >= 2) return chosen.map((c) => c.id);
   return candidates.filter((c) => !c.hidden && onScreen.includes(c.id)).map((c) => c.id);
+}
+
+/** Who is ticked at first for turn-based mode: the party and the creatures the GM selected. */
+export function turnPicks(candidates: readonly FightCandidate[], selected: readonly string[]): string[] {
+  return candidates.filter((c) => c.party || selected.includes(c.id)).map((c) => c.id);
+}
+
+/** The creatures not yet in the fight's order: those the GM may add to it. */
+export function notFighting(candidates: readonly FightCandidate[], combat: Pick<Combat, 'order'>): FightCandidate[] {
+  return candidates.filter((c) => !combat.order.some((e) => e.token === c.id));
 }

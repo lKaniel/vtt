@@ -62,6 +62,13 @@ export interface AttackRequest {
 }
 
 /** An attack as a player asks for it: at a creature, or at empty ground (`point`). */
+/** Turn-based mode on or off, and who takes turns. */
+export interface TurnBasedAsk {
+  on: boolean;
+  tokens?: readonly string[];
+  shared?: boolean;
+}
+
 export type AttackAsked = Omit<AttackRequest, 'target'> & { target?: string; point?: Point };
 
 /**
@@ -118,8 +125,8 @@ export class CombatActions {
     this.store.setCombat(undefined);
   }
 
-  /** GM: turn-based mode outside a fight. The party on the scene takes turns, as in a fight but with no one fighting. */
-  turnBased(player: Player, on: boolean): void {
+  /** GM: turn-based mode outside a fight. The creatures picked (else the party on the scene) take turns, as in a fight but with no one fighting. */
+  turnBased(player: Player, { on, tokens, shared }: TurnBasedAsk): void {
     requireGm(player);
     const combat = this.store.combat;
     if (combat && !combat.peaceful) {
@@ -127,13 +134,18 @@ export class CombatActions {
     }
     if (!on) return this.store.setCombat(undefined);
     if (combat) return;
+    const fighters = tokens?.length ? tokens.map((id) => this.table.fighter(id)) : this.partyHere();
+    if (!fighters.length) throw new Refusal('There is no one in the party here to take turns');
+    this.open(fighters, 'Turn-based mode:', { peaceful: true, shared: shared === true });
+  }
+
+  /** The party members on the scene still standing. */
+  private partyHere(): Fighter[] {
     const party = [...this.store.tokens.values()].filter((t) => isParty(t) && !t.leader);
-    const fighters = party.flatMap((t) => {
+    return party.flatMap((t) => {
       const sheet = this.table.sheetOf(t);
       return sheet && sheet.hp > 0 ? [{ token: t, sheet }] : [];
     });
-    if (!fighters.length) throw new Refusal('There is no one in the party here to take turns');
-    this.open(fighters, 'Turn-based mode:', { peaceful: true, shared: true });
   }
 
   /** Ends one creature's turn: `token`, else the first of yours taking it. A shared turn passes on once all have ended theirs. */
@@ -296,7 +308,7 @@ export class CombatActions {
 
   /** Turn-based mode on or off, or the GM's legendary action (its attack made out of turn) or lair action. */
   turnAction(player: Player, canSee: (id: string) => boolean, msg: TurnMessage): void {
-    if (msg.t === 'turnBased') return this.turnBased(player, msg.on);
+    if (msg.t === 'turnBased') return this.turnBased(player, msg);
     legendaryAction(this.table, player, msg, (attacker, targetId, name) => {
       if (!canSee(targetId)) throw new Refusal('No such target');
       const target = this.table.fighter(targetId);

@@ -105,10 +105,29 @@ describe('shared party turns', () => {
     expect(store.combat?.done).toBeUndefined();
   });
 
-  it('is how turn-based mode plays', () => {
+  it('is how turn-based mode plays when the GM shares turns', () => {
     const gm = seat('gm');
     dice = [d20(20), d20(18)];
-    gm.receive({ t: 'turnBased', on: true });
+    gm.receive({ t: 'turnBased', on: true, shared: true });
     expect(store.combat?.group).toHaveLength(1);
+  });
+});
+
+describe('turn-based mode with the creatures the GM picked', () => {
+  it('puts the picked creatures in the order, not only the party', () => {
+    const gm = seat('gm');
+    dice = [d20(20), d20(18), d20(2)];
+    gm.receive({ t: 'turnBased', on: true, tokens: ['hero', 'mage', 'goblin'] });
+    expect(store.combat).toMatchObject({ peaceful: true });
+    expect(store.combat!.order.map((e) => e.token)).toEqual(['hero', 'mage', 'goblin']);
+  });
+
+  it('keeps each to their own turn, in initiative order, unless the GM shares turns', () => {
+    const [gm, bo] = [seat('gm'), seat('bo')];
+    dice = [d20(20), d20(18)];
+    gm.receive({ t: 'turnBased', on: true });
+    expect(store.combat?.group).toBeUndefined();
+    bo.receive({ t: 'move', token: 'mage', to: [250, 250] });
+    expect(bo.take('error')[0]?.message).toMatch(/not Mage's turn/);
   });
 });
