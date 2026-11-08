@@ -77,6 +77,26 @@ describe('the fight from the HUD', () => {
   });
 });
 
+describe('initiative edited by the GM', () => {
+  it('puts the creature in its new place in the order', () => {
+    const gm = seat('gm');
+    gm.receive({ t: 'combatStart', tokens: ['hero', 'goblin'] });
+    gm.receive({ t: 'initiative', token: 'goblin', value: 25 });
+    expect(store.combat?.order[0]).toEqual({ token: 'goblin', initiative: 25 });
+    gm.receive({ t: 'initiative', token: 'goblin', value: -1 });
+    expect(store.combat?.order.at(-1)).toEqual({ token: 'goblin', initiative: -1 });
+  });
+
+  it('is the GM’s', () => {
+    const [gm, ana] = [seat('gm'), seat('ana')];
+    gm.receive({ t: 'combatStart', tokens: ['hero', 'goblin'] });
+    const before = store.combat;
+    ana.receive({ t: 'initiative', token: 'hero', value: 30 });
+    expect(ana.take('error')).toHaveLength(1);
+    expect(store.combat).toEqual(before);
+  });
+});
+
 describe('pausing', () => {
   it('stops the players acting, not the GM, and tells everyone', () => {
     const [ana, gm] = [seat('ana'), seat('gm')];

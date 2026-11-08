@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { addToCombat, type Combat, currentTurn, joinCombat, leaveCombat, nextTurn, startCombat } from './index.ts';
+import {
+  addToCombat,
+  type Combat,
+  currentTurn,
+  joinCombat,
+  leaveCombat,
+  nextTurn,
+  setInitiative,
+  startCombat,
+} from './index.ts';
 import type { Rng } from '@vtt/shared';
 
 /** An rng that returns the given d20 faces in order. */
@@ -102,5 +111,40 @@ describe('addToCombat', () => {
 
   it('leaves a creature already in the fight where it is', () => {
     expect(addToCombat(base, { token: 'a', bonus: 0, speed: 30 }, () => 0)).toBe(base);
+  });
+});
+
+describe('setInitiative', () => {
+  const base: Combat = {
+    round: 1,
+    turn: 1,
+    order: [
+      { token: 'a', initiative: 18 },
+      { token: 'b', initiative: 12 },
+      { token: 'c', initiative: 5 },
+    ],
+    left: { move: 30, action: true, bonus: true, attacks: 0, used: [] },
+    reacted: [],
+    side: {},
+  };
+
+  it('moves the creature to its new place and keeps the turn with whoever has it', () => {
+    const after = setInitiative(base, 'c', 20);
+    expect(after.order).toEqual([
+      { token: 'c', initiative: 20 },
+      { token: 'a', initiative: 18 },
+      { token: 'b', initiative: 12 },
+    ]);
+    expect(currentTurn(after)).toBe('b');
+  });
+
+  it('moves the creature whose turn it is, and its turn goes on', () => {
+    const after = setInitiative(base, 'b', 1);
+    expect(after.order.map((e) => e.token)).toEqual(['a', 'c', 'b']);
+    expect(currentTurn(after)).toBe('b');
+  });
+
+  it('leaves a fight without the creature as it is', () => {
+    expect(setInitiative(base, 'zz', 3)).toBe(base);
   });
 });

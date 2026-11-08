@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
 import { Face, HpBar } from './Portrait.tsx';
+import { InitiativeEdit } from './InitiativeEdit.tsx';
 import { Button } from './kit/button.tsx';
 import { EncounterButton } from './EncounterPanel.tsx';
 import { RequestCheckButton } from './RequestCheck.tsx';
@@ -34,7 +35,7 @@ export function TurnOrder({ session }: Readonly<{ session: Session }>) {
           const now = actsNow(combat, e.token);
           const ended = combat.done?.includes(e.token);
           const cls = ['turn', now && 'current', (down || ended) && 'down', ally ? 'ally' : 'foe'];
-          return (
+          const turn = (
             <button
               key={e.token}
               className={cls.filter(Boolean).join(' ')}
@@ -46,6 +47,13 @@ export function TurnOrder({ session }: Readonly<{ session: Session }>) {
               <HpBar token={t} showLabel={false} />
               <span className="turn-name">{t.name}</span>
             </button>
+          );
+          if (!gm) return turn;
+          return (
+            <span key={e.token} className="relative flex">
+              {turn}
+              <InitiativeEdit session={session} token={e.token} name={t.name} initiative={e.initiative} />
+            </span>
           );
         })}
       </div>

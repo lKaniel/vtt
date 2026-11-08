@@ -77,6 +77,7 @@ const STEPS: Partial<Record<ClientMessage['t'], { label: string; action?: boolea
   applyDamage: { label: 'applied roll', action: true },
   condition: { label: 'condition', action: true },
   combatant: { label: 'fight change', action: true },
+  initiative: { label: 'initiative change', action: true },
   dropConcentration: { label: 'dropped concentration', action: true },
   removeEffect: { label: 'effect removal', action: true },
   rest: { label: 'rest', action: true },

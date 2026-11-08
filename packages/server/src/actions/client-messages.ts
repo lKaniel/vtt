@@ -194,6 +194,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('react'), offer: z.string(), choice: z.string().optional() }),
   z.object({ t: z.literal('condition'), token: z.string(), condition: ConditionSchema, on: z.boolean() }),
   z.object({ t: z.literal('combatant'), token: z.string(), on: z.boolean() }),
+  z.object({ t: z.literal('initiative'), token: z.string(), value: z.number().int().min(-99).max(99) }),
   z.object({ t: z.literal('pause'), on: z.boolean() }),
   z.object({
     t: z.literal('applyDamage'),
