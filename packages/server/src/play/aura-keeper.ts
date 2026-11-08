@@ -3,6 +3,7 @@ import { auraEffects, withAuras, withBanishment } from '@vtt/system-dnd5e';
 import type { Table } from './table.ts';
 import { changeShapes } from './spell-forms.ts';
 import { keepGravity } from './falls.ts';
+import { keepHolds } from './power-casting.ts';
 import { ZonePlacing } from './zone-placements.ts';
 import { ZoneTemplates } from './zone-templates.ts';
 
@@ -56,6 +57,7 @@ export class AfterStep {
     changeShapes(this.table);
     banishments(this.table);
     keepGravity(this.table);
+    keepHolds(this.table);
     this.auras.sync();
   }
 }

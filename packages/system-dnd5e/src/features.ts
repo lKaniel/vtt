@@ -115,7 +115,8 @@ export function rest(token: Token, sheet: Creature, kind: 'short' | 'long'): Tok
   const uses = withResistance(restUses(token, sheet), token);
   const slots = shortRestSlots(token.spent?.slots, sheet.caster);
   const hitDice = token.spent?.hitDice;
-  return { ...token, spent: uses || slots || hitDice ? { slots, uses, hitDice } : undefined };
+  const pool = sheet.pool?.recharge === 'long' ? token.spent?.pool : undefined;
+  return { ...token, spent: uses || slots || hitDice || pool ? { slots, uses, hitDice, pool } : undefined };
 }
 
 /** Spent slots after a short rest: pact slots come back (taken to be the ones spent first). */
@@ -127,6 +128,14 @@ function shortRestSlots(spent: number[] | undefined, caster: Creature['caster'])
   return left.some((n) => n > 0) ? left : undefined;
 }
 
+/** Reserved pool uses (Glamours) last through a long rest, and the effects that keep them. */
+function keptReserves(token: Token): Pick<Token, 'effects' | 'holds'> {
+  const holds = token.holds?.filter((h) => h.reserve);
+  const ids = new Set(holds?.map((h) => h.id));
+  const effects = token.effects?.filter((e) => e.hold !== undefined && ids.has(e.hold));
+  return { effects: effects?.length ? effects : undefined, holds: holds?.length ? holds : undefined };
+}
+
 /** Everything back, but only some hit dice (2014) and one level of exhaustion. */
 function longRest(token: Token, sheet: Creature): Token {
   const total = hitDiceOf(token, sheet)?.total ?? 0;
@@ -136,7 +145,7 @@ function longRest(token: Token, sheet: Creature): Token {
     ...token,
     hp: undefined,
     spent: hitDice ? { hitDice } : undefined,
-    effects: undefined,
+    ...keptReserves(token),
     concentration: undefined,
     exhaustion,
   };

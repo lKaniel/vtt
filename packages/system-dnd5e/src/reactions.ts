@@ -1,6 +1,6 @@
 import { tokenDistance } from './attack.ts';
 import type { Creature } from './creature.ts';
-import { canAct } from './effects.ts';
+import { canReact } from './effects.ts';
 import { type GridKind, isParty, type Point } from '@vtt/shared';
 import type { Token } from './token-schema.ts';
 
@@ -64,7 +64,7 @@ export function opportunityAttackers({
   reacted: readonly string[];
 } & Scale): string[] {
   const threats = others
-    .filter(({ token, sheet }) => sheet.hp > 0 && canAct(sheet) && !reacted.includes(token.id))
+    .filter(({ token, sheet }) => sheet.hp > 0 && canReact(sheet) && !reacted.includes(token.id))
     .map(({ token, sheet }) => ({ token, reach: meleeReach(sheet) }));
   return threatsAlong({ mover, path, threats, ...scale }).map((t) => t.id);
 }

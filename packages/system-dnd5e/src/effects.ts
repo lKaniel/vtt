@@ -168,7 +168,7 @@ export function turnStartHarm(
   rng: Rng = Math.random,
 ): { parts: { amount: number; type: DamageType }[]; heal: number } {
   const parts = effects.flatMap((e) =>
-    (e.turnDamage ?? []).map((d) => ({ amount: roll(d.dice, rng).total, type: d.type })),
+    (e.turnDamage ?? []).map((d) => ({ amount: Math.floor(roll(d.dice, rng).total * (d.times ?? 1)), type: d.type })),
   );
   return { parts, heal: effects.reduce((n, e) => n + (e.turnHeal ?? 0), 0) };
 }
@@ -184,6 +184,11 @@ export function retaliation(
 /** Whether a creature can take actions at all. */
 export function canAct(sheet: Affected): boolean {
   return !hasAny(sheet, CANT_ACT);
+}
+
+/** Whether the creature may take reactions: it can act and no effect stops them (Overcharged, Lingering Pain). */
+export function canReact(sheet: Affected): boolean {
+  return canAct(sheet) && !sheet.effects.some((e) => e.noReactions);
 }
 
 /** DC to keep concentrating after taking damage: half of it, at least 10 (and at most 30 in 2024). */

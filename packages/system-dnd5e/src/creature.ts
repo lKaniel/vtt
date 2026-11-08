@@ -5,6 +5,7 @@ import { encumbrance } from './carrying.ts';
 import { ammunitionPlus, otherSpeeds, wearing, withItemBonuses, withWeaponMagic } from './worn-items.ts';
 import { offHandAttacks } from './two-weapon.ts';
 import { makesDeathSaves } from './deaths.ts';
+import { poolParts, type PoolSheet } from './pools.ts';
 import {
   casterSheet,
   classScales,
@@ -76,6 +77,10 @@ export interface Creature extends Affected, LegendaryParts {
   senses?: Senses;
   /** Numbers by class level a homebrew class shows (a pool's size). */
   scales?: ScaleValue[];
+  /** A homebrew class's point pool (Lucidity), see pools.ts. */
+  pool?: PoolSheet;
+  /** Its challenge rating, or a character's level: what weights go by. */
+  rank?: number;
   /** The saving throws it adds its proficiency to (the class's, or the stat block's). */
   proficientSaves?: Ability[];
 }
@@ -135,6 +140,7 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
     ...effectParts(token, features, content.edition, monster?.conditionImmunities),
     ...classParts(levels, monster),
     caster: withHandedSpells(casterSheet(token, { abilities, proficiency }, content), token, content),
+    ...poolParts(token, levels, { abilities, proficiency }, monster),
     ...legendaryParts(token, monster),
     features,
     senses: sensesOf(token, monster),

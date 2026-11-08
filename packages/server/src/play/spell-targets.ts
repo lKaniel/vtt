@@ -1,4 +1,4 @@
-import { inArea, scaledSpell, type Spell, tokenDistance } from '@vtt/system-dnd5e';
+import { inArea, isLinked, scaledSpell, type Spell, tokenDistance } from '@vtt/system-dnd5e';
 import { gridKind, type Point } from '@vtt/shared';
 import { Refusal, type Fighter, type Table } from './table.ts';
 
@@ -49,8 +49,11 @@ export class SpellTargets {
   }
 
   private creatureTarget(caster: Fighter, spell: Spell, id: string, canSee: (id: string) => boolean): Fighter {
+    const token = this.store.tokens.get(id);
+    if (spell.linkedOnly && token && isLinked(token, caster.token.id)) return this.table.fighter(id);
     if (!canSee(id)) throw new Refusal('No such target');
     const target = this.table.fighter(id);
+    if (spell.linkedOnly) throw new Refusal(`${target.token.name} isn't linked to ${caster.token.name}`);
     const feet = tokenDistance(caster.token, target.token, this.grid, gridKind(this.store.world));
     if (feet > Math.max(5, spell.range)) throw new Refusal(`${target.token.name} is out of range (${feet} ft)`);
     if (!this.table.clearShot([caster.token.x, caster.token.y], [target.token.x, target.token.y])) {

@@ -170,7 +170,12 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     feature: z.string(),
     targets: z.array(z.string()).max(20).optional(),
     point: PointSchema.optional(),
+    /** A pool feature's picked options and entered numbers, and using it as a bonus action instead. */
+    picks: z.array(z.string()).max(30).optional(),
+    inputs: z.record(z.string(), z.number()).optional(),
+    bonus: z.boolean().optional(),
   }),
+  z.object({ t: z.literal('release'), token: z.string(), hold: z.string() }),
   z.object({ t: z.literal('useItem'), token: z.string(), item: z.string() }),
   z.object({ t: z.literal('react'), offer: z.string(), choice: z.string().optional() }),
   z.object({ t: z.literal('condition'), token: z.string(), condition: ConditionSchema, on: z.boolean() }),

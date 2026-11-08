@@ -3,6 +3,9 @@ import { LightSchema, WallRulesSchema } from '@vtt/shared';
 import { ABILITIES, AbilitiesSchema, DamageSchema, DamageTypeSchema, OtherSpeedsSchema } from './stats-schema.ts';
 import { EffectChangeSchema } from './effect-changes.ts';
 import { WeaponSpellSchema } from './weapon-spell-schema.ts';
+import { AreaSchema } from './area-schema.ts';
+import { ConditionSchema } from './condition-schema.ts';
+import { PoolSchema, powerEffectFields, powerFeatureFields, powerSpellFields } from './power-schema.ts';
 
 // Spells, class features and the effects they leave on creatures. Spells and
 // classes are data in packages/system-dnd5e/content; the engine in spells.ts,
@@ -13,23 +16,7 @@ const dice = z.string().min(1);
 
 export const AbilitySchema = z.enum(ABILITIES);
 
-export const ConditionSchema = z.enum([
-  'blinded',
-  'charmed',
-  'deafened',
-  'frightened',
-  'grappled',
-  'incapacitated',
-  'invisible',
-  'paralyzed',
-  'petrified',
-  'poisoned',
-  'prone',
-  'restrained',
-  'stunned',
-  'unconscious',
-]);
-export type Condition = z.infer<typeof ConditionSchema>;
+export { ConditionSchema, type Condition } from './condition-schema.ts';
 
 /** Extra damage an effect adds to hits; "weapon" takes the type of the attack it rides on. */
 export const RiderDamageSchema = z.object({ dice, type: z.union([DamageTypeSchema, z.literal('weapon')]) });
@@ -37,6 +24,7 @@ export type RiderDamage = z.infer<typeof RiderDamageSchema>;
 
 /** What an effect changes about the creature that has it. */
 const modifiers = {
+  ...powerEffectFields,
   /** Changes to any statistic by key, Foundry style: `{ key: "abilities.str", mode: "override", value: 19 }` (see effect-changes.ts). */
   changes: z.array(EffectChangeSchema).optional(),
   conditions: z.array(ConditionSchema).optional(),
@@ -216,6 +204,8 @@ export const AuraSchema = z.object({
   conscious: z.boolean().optional(),
   /** Anchored at this point on the map instead of around the bearer (a lasting area cast at a point: silence). */
   at: z.tuple([z.number(), z.number()]).optional(),
+  /** Only creatures of at most this weight (the source's pool `weight`) get it (a Haunting Zone). */
+  maxWeight: z.number().positive().optional(),
 });
 export type Aura = z.infer<typeof AuraSchema>;
 
@@ -278,16 +268,6 @@ export const EffectSchema = EffectTemplateSchema.extend({
   slot: z.number().int().min(0).max(9).optional(),
 });
 export type Effect = z.infer<typeof EffectSchema>;
-
-export const AreaSchema = z.object({
-  /** sphere: radius around a point; emanation: radius around the caster; cone, line and cube start at the caster. */
-  shape: z.enum(['sphere', 'emanation', 'cone', 'cube', 'line']),
-  /** Feet: radius, cone length, cube side or line length. */
-  size: z.number().positive(),
-  /** Width of a line in feet. */
-  width: z.number().positive().default(5),
-});
-export type Area = z.infer<typeof AreaSchema>;
 
 /**
  * A stat block that comes with a spell (2024 giant insect, summon dragon):
@@ -555,6 +535,7 @@ export const SpellSchema = z.object({
    */
   manual: z.object({ kind: z.enum(['social', 'utility', 'gm']), why: z.string().min(1) }).optional(),
   description: z.string().default(''),
+  ...powerSpellFields,
 });
 export type Spell = z.infer<typeof SpellSchema>;
 
@@ -621,6 +602,7 @@ export const FeatureSchema = z.object({
   grantsSpells: z.array(z.tuple([z.number().int().min(1).max(20), id])).optional(),
   /** Why the GM runs it by hand: what it does that the engine doesn't (yet). */
   manual: z.string().optional(),
+  ...powerFeatureFields,
 });
 export type Feature = z.infer<typeof FeatureSchema>;
 
@@ -673,5 +655,7 @@ export const ClassSchema = z.object({
   subclasses: z.array(SubclassSchema).optional(),
   /** Scores of 13 needed to multiclass into or out of it: every one of `all`, and one of `any`. */
   multiclass: z.object({ all: z.array(AbilitySchema).optional(), any: z.array(AbilitySchema).optional() }).optional(),
+  /** A point pool its features spend instead of uses (see power-schema.ts). */
+  pool: PoolSchema.optional(),
 });
 export type Class = z.infer<typeof ClassSchema>;

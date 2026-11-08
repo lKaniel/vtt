@@ -171,6 +171,8 @@ export class Table {
     if (this.store.combat?.reacted.includes(token.id)) {
       throw new Refusal(`${token.name} has already used their reaction`);
     }
+    if (this.sheetOf(token)?.effects.some((e) => e.noReactions))
+      throw new Refusal(`${token.name} can't take reactions`);
   }
 
   private payReaction(token: Token): void {

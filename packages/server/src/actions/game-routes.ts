@@ -9,6 +9,7 @@ import type { CombatActions } from './combat-actions.ts';
 import type { DamageActions } from './damage-actions.ts';
 import type { EntryActions } from './entry-actions.ts';
 import { castFeature } from '../play/feature-casting.ts';
+import { castPower, isPower, release } from '../play/power-casting.ts';
 import type { FeatureActions } from './feature-actions.ts';
 import type { FogKeeper } from '../play/fog-keeper.ts';
 import type { GmActions } from './gm-actions.ts';
@@ -98,11 +99,13 @@ function magicRoutes(p: GameParts) {
   return {
     cast: (s, m) => p.spells.cast(s.player, s.canSee, m),
     feature: (s, m) => {
-      if (p.features.aimed(m.token, m.feature)) castFeature(p, s.player, s.canSee, m);
+      if (isPower(p.table, m.token, m.feature)) castPower(p, s.player, s.canSee, m);
+      else if (p.features.aimed(m.token, m.feature)) castFeature(p, s.player, s.canSee, m);
       else p.features.use(s.player, m.token, m.feature);
     },
     useItem: (s, m) => p.features.useItem(s.player, m.token, m.item),
     react: (s, m) => p.reactions.react(s.player, m.offer, m.choice),
+    release: (s, m) => release(p.table, s.player, m.token, m.hold),
     dropConcentration: (s, m) => p.features.dropConcentration(s.player, m.token),
     removeEffect: (s, m) => p.features.removeEffect(s.player, m.token, m.effect),
     rest: (s, m) => {
