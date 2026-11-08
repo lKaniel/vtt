@@ -60,6 +60,7 @@ export function TurnOrder({ session, onStart }: StartProps) {
               key={e.token}
               className={cls.filter(Boolean).join(' ')}
               title={`${t.name}: initiative ${e.initiative}`}
+              aria-label={`${t.name}: initiative ${e.initiative}`}
               onClick={() => session.focus([t.x, t.y])}
             >
               <Face token={t} />
