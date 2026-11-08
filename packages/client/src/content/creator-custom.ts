@@ -83,12 +83,12 @@ export function toggleExpertise(c: Character, skill: string): Character {
   return { ...c, expertise: toggled(c.expertise, skill, 18) };
 }
 
-/** Other proficiencies typed as a comma-separated list. */
-export function setProficiencies(c: Character, text: string): Character {
-  const seen = new Set<string>();
-  const proficiencies = text
-    .split(',')
-    .map((s) => s.trim().slice(0, 60))
-    .filter((s) => s && !seen.has(s.toLowerCase()) && seen.add(s.toLowerCase()));
-  return { ...c, proficiencies: proficiencies.slice(0, 30) };
+/** A proficiency beyond the given ones, by id (proficiency-catalog.ts), each once. */
+export function addProficiency(c: Character, id: string): Character {
+  if (c.proficiencies.includes(id) || c.proficiencies.length >= 30) return c;
+  return { ...c, proficiencies: [...c.proficiencies, id] };
+}
+
+export function removeProficiency(c: Character, id: string): Character {
+  return { ...c, proficiencies: c.proficiencies.filter((p) => p !== id) };
 }

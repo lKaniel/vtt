@@ -51,6 +51,17 @@ describe('checks', () => {
     expect(card?.check).toMatchObject({ save: true, entries: [{ token: 'hero', total: 17 }] });
   });
 
+  it('add proficiency with a tool the creature is trained with', () => {
+    const ana = join_('ana');
+    // Rogue 5: thieves' tools from the class, 1d20 (11) + 3 + 3.
+    ana.receive({ t: 'rollCheck', token: 'hero', ability: 'dex', tool: 'thieves-tools' });
+    const card = cards(ana).at(-1);
+    expect(card?.text).toBe("Thieves' Tools check");
+    expect(card?.check).toMatchObject({ tool: 'thieves-tools', entries: [{ total: 17 }] });
+    ana.receive({ t: 'rollCheck', token: 'hero', ability: 'dex', tool: 'forgery-kit' });
+    expect(cards(ana).at(-1)?.check?.entries[0]).toMatchObject({ total: 14 });
+  });
+
   it('are asked for by the GM, and each owner rolls on the request card', () => {
     const gm = join_('gm');
     gm.receive({

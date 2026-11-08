@@ -40,6 +40,7 @@ const nyx = {
   background: 'acolyte',
   base: { str: 8, dex: 14, con: 13, int: 15, wis: 12, cha: 10 },
   skills: ['arcana', 'stealth'],
+  proficiencyPicks: { 'species:language': ['elvish'], 'background:languages': ['dwarvish', 'giant'] },
 };
 
 async function seated() {

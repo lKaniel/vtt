@@ -87,6 +87,21 @@ function SelectItem({
   );
 }
 
+/** Options under one heading in a long list. */
+function SelectGroup(props: Readonly<React.ComponentProps<typeof SelectPrimitive.Group>>) {
+  return <SelectPrimitive.Group data-slot="select-group" {...props} />;
+}
+
+function SelectLabel({ className, ...props }: Readonly<React.ComponentProps<typeof SelectPrimitive.Label>>) {
+  return (
+    <SelectPrimitive.Label
+      data-slot="select-label"
+      className={cn('px-2 pt-2 pb-1 font-display text-[11px] tracking-wider text-gold uppercase', className)}
+      {...props}
+    />
+  );
+}
+
 /** Radix gives no item the empty value; this one stands in for it. */
 const NONE = '\u0000none';
 
@@ -131,4 +146,4 @@ function SelectField({
   );
 }
 
-export { Select, SelectContent, SelectField, SelectItem, SelectTrigger, SelectValue };
+export { Select, SelectContent, SelectField, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue };

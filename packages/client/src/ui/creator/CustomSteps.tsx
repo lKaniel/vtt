@@ -1,4 +1,13 @@
-import { abilityName, ABILITIES, characterSkills, type Skill, SKILLS, skillName } from '@vtt/system-dnd5e';
+import {
+  abilityName,
+  ABILITIES,
+  characterProficiencies,
+  characterSkills,
+  partsOf,
+  type Skill,
+  SKILLS,
+  skillName,
+} from '@vtt/system-dnd5e';
 import { XIcon } from 'lucide-react';
 import { type ReactNode, useId, useState } from 'react';
 import {
@@ -6,7 +15,8 @@ import {
   editCustomSpecies,
   NEW_SPECIES,
   newBackground,
-  setProficiencies,
+  addProficiency,
+  removeProficiency,
   toggleBackgroundAbility,
   toggleBackgroundSkill,
   toggleExpertise,
@@ -21,6 +31,7 @@ import { Textarea } from '../kit/textarea.tsx';
 import { Toggle } from '../kit/toggle.tsx';
 import type { StepProps } from './OriginSteps.tsx';
 import { Chips, Detail } from './Parts.tsx';
+import { ProficiencyAdder, ProficiencyList } from './ProficiencyParts.tsx';
 
 // The forms for the creator's Custom options: a species and a background
 // the player describes, and proficiencies on top of the usual ones.
@@ -196,7 +207,6 @@ function BackgroundOrigin({ c, set }: Readonly<StepProps>) {
 export function CustomProficiencies({ c, set }: Readonly<StepProps>) {
   const known = characterSkills(c);
   const usual = new Set(characterSkills({ ...c, extraSkills: [] }));
-  const [text, setText] = useState(c.proficiencies.join(', '));
   return (
     <Detail title={t('creator.customProf')}>
       <p className="cc-facts">{t('creator.customProfHint')}</p>
@@ -215,17 +225,32 @@ export function CustomProficiencies({ c, set }: Readonly<StepProps>) {
         on={(s) => c.expertise.includes(s)}
         flip={(s) => set(toggleExpertise(c, s))}
       />
-      <Field label={t('creator.other')}>
-        {(id) => (
-          <Input
-            id={id}
-            value={text}
-            placeholder={t('creator.otherHint')}
-            onChange={(e) => setText(e.target.value)}
-            onBlur={() => set(setProficiencies(c, text))}
-          />
-        )}
-      </Field>
+      <OtherProficiencies c={c} set={set} />
     </Detail>
+  );
+}
+
+/** Armor, weapons, tools and languages beyond the given ones, picked from the list. */
+function OtherProficiencies({ c, set }: Readonly<StepProps>) {
+  const parts = partsOf(c);
+  return (
+    <Field label={t('creator.extraProf')}>
+      {(id) => (
+        <>
+          <p className="cc-facts">{t('creator.otherHint')}</p>
+          <ProficiencyAdder
+            id={id}
+            have={characterProficiencies(c, parts)}
+            content={parts.book.content}
+            onAdd={(p) => set(addProficiency(c, p))}
+          />
+          <ProficiencyList
+            list={c.proficiencies}
+            content={parts.book.content}
+            onRemove={(p) => set(removeProficiency(c, p))}
+          />
+        </>
+      )}
+    </Field>
   );
 }

@@ -66,6 +66,13 @@ or `"2024"`:
   `grantAttacks` (flurry of blows) and `speed` by level for a passive effect
   (unarmored movement). A feature id the generated class lacks is added whole,
   with its own `name` and `level` (flurry of blows, folded into ki in the text).
+  `proficiencies` per edition: the armor, weapons, tools and languages it
+  gives (`fixed`), picks it offers (`choices`: `{ "id", "pick", "from" }`,
+  `from` naming ids or groups like `musical-instruments`, `artisans-tools`,
+  `languages`), and its `multiclass` share.
+- `origin-automation.json`: the same `proficiencies` for species, subspecies
+  and backgrounds by id and edition, and `base` for every character of an
+  edition (2024: Common and two standard languages).
 
 A spell or feature without automation still shows its text, and the chat says
 the GM applies it.

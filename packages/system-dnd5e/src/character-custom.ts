@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { Background, Species } from './origins.ts';
 import { SKILLS } from './origins.ts';
-import { ABILITIES } from './stats-schema.ts';
+import { ABILITIES, type Edition } from './stats-schema.ts';
 
 // The creator's Custom options: a species and a background the player
 // describes instead of picking one from the book. A character names them
@@ -46,8 +46,15 @@ export function customSpecies(s: CustomSpecies): Species {
   };
 }
 
-export function customBackground(b: CustomBackground): Background {
+/** A custom background's tools and languages: two of either (2014) or one tool (2024). */
+const CUSTOM_TRAINING = {
+  '2014': { fixed: [], choices: [{ id: 'tools-languages', pick: 2, from: ['tools', 'languages'] }] },
+  '2024': { fixed: [], choices: [{ id: 'tool', pick: 1, from: ['tools'] }] },
+};
+
+export function customBackground(b: CustomBackground, edition: Edition = '2014'): Background {
   return {
+    proficiencies: CUSTOM_TRAINING[edition],
     id: CUSTOM,
     name: b.name,
     description: '',

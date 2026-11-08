@@ -23,6 +23,7 @@ function hero(over: Partial<Character> = {}): Character {
     base: { str: 8, dex: 15, con: 14, int: 12, wis: 10, cha: 13 },
     bonusPicks: { dex: 2, con: 1 },
     skills: ['stealth', 'acrobatics', 'deception', 'insight'],
+    proficiencyPicks: { 'background:tools-languages': ['dice-set', 'elvish'] },
     ...over,
   });
 }
@@ -76,12 +77,18 @@ describe('custom background', () => {
 
 describe('custom proficiencies', () => {
   it('adds skills, expertise and other proficiencies to the token', () => {
-    const c = hero({ extraSkills: ['survival'], expertise: ['stealth'], proficiencies: ['Thieves’ tools', 'Elvish'] });
+    const c = hero({ extraSkills: ['survival'], expertise: ['stealth'], proficiencies: ['poisoners-kit'] });
     expect(characterIssues(c)).toEqual([]);
     const stats = characterToken(c).stats!;
     expect(stats.skills).toContain('survival');
     expect(stats.expertise).toEqual(['stealth']);
-    expect(stats.proficiencies).toEqual(['Thieves’ tools', 'Elvish']);
+    expect(stats.proficiencies).toEqual(
+      expect.arrayContaining(['thieves-tools', 'dice-set', 'elvish', 'poisoners-kit']),
+    );
+  });
+
+  it('asks a custom background for its two tools or languages (2014)', () => {
+    expect(issuesByStep(hero({ proficiencyPicks: {} })).skills).toEqual(['Choose 2 proficiencies (Lamplighter).']);
   });
 
   it('expertise needs proficiency in the skill', () => {

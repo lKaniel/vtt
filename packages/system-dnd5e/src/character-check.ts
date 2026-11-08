@@ -20,6 +20,7 @@ import {
 import { abilityMod, abilityName } from './creature-math.ts';
 import { customBackgroundIssues, customSpeciesIssues, hasFreeBonuses } from './character-custom.ts';
 import { SKILLS, skillName } from './origins.ts';
+import { proficiencyIssues } from './proficiencies.ts';
 import { ABILITIES, type Ability } from './stats-schema.ts';
 
 // Whether a character follows the rules of its edition. The creator shows
@@ -54,7 +55,7 @@ export function issuesByStep(c: Character): Record<CreatorStep, string[]> {
     ...missing,
     class: [...subclassIssues(c, p), ...optionIssues(c, p), ...multiclassIssues(c, p)],
     abilities: [...scoreIssues(c), ...bonusIssues(c, p)],
-    skills: skillIssues(c, p),
+    skills: [...skillIssues(c, p), ...proficiencyIssues(c, p)],
     spells: spellIssues(c, p),
     level: levelIssues(c, p),
   };

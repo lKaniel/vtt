@@ -6,6 +6,7 @@ import { type Background, type ClassOptions, type KitStep, type Origins, origins
 import type { Token } from './token-schema.ts';
 import { ClassSchema, type Class } from './spell-schema.ts';
 import { withHomebrewClasses } from './homebrew-book.ts';
+import { characterProficiencies } from './proficiencies.ts';
 import {
   CUSTOM,
   customBackground,
@@ -70,8 +71,10 @@ export const CharacterSchema = z.object({
   extraSkills: z.array(id).default([]),
   /** Skills with expertise (proficiency counts twice). */
   expertise: z.array(id).default([]),
-  /** Custom proficiencies in words: tools, languages, armor, weapons. */
+  /** Custom proficiencies beyond the given ones: tools, languages, armor, weapons by id (proficiency-catalog.ts). */
   proficiencies: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
+  /** Proficiencies picked where a class, species or background offers a choice, by "<source>:<choice>". */
+  proficiencyPicks: z.record(z.string(), z.array(id).max(5)).default({}),
   /** Hit points gained at each level after the first (rolled or average), before Constitution. */
   hpRolls: z.array(z.number().int().min(1)).default([]),
   /** One per ability score improvement taken: two +1s or one +2. */
@@ -128,7 +131,7 @@ function speciesOf(c: Character, book: Book): Species | undefined {
 }
 
 function backgroundOf(c: Character, book: Book): Background | undefined {
-  if (c.background === CUSTOM) return c.customBackground && customBackground(c.customBackground);
+  if (c.background === CUSTOM) return c.customBackground && customBackground(c.customBackground, c.rules);
   return book.origins.backgrounds.find((b) => b.id === c.background);
 }
 
@@ -200,6 +203,7 @@ function classStats(c: Character): Pick<Stats, 'class' | 'level' | 'classes'> {
 }
 
 function characterStats(c: Character, parts: Parts): Stats {
+  const proficiencies = characterProficiencies(c, parts);
   return {
     rules: c.rules,
     ...classStats(c),
@@ -208,7 +212,7 @@ function characterStats(c: Character, parts: Parts): Stats {
     maxHp: characterMaxHp(c, parts),
     skills: characterSkills(c, parts),
     ...(c.expertise.length && { expertise: c.expertise }),
-    ...(c.proficiencies.length && { proficiencies: c.proficiencies }),
+    ...(proficiencies.length && { proficiencies }),
     spells: c.spells,
   };
 }

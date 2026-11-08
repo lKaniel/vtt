@@ -1,6 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { canControl, type Player } from '@vtt/shared';
-import { type ChatMessage, type CheckKind, type CheckLog, checkOutcome, rollCheck, skillName } from '@vtt/system-dnd5e';
+import {
+  type ChatMessage,
+  type CheckKind,
+  type CheckLog,
+  checkOutcome,
+  proficiencyName,
+  rollCheck,
+  skillName,
+} from '@vtt/system-dnd5e';
 import type { ClientMessage } from './client-messages.ts';
 import { type Fighter, Refusal, requireGm, type Table } from '../play/table.ts';
 
@@ -28,9 +36,12 @@ const card = (player: Player, check: CheckLog): ChatMessage => ({
 
 function checkTitle(check: CheckKind & { dc?: number }): string {
   const roll = check.save ? 'save' : 'check';
-  const what = check.skill ? skillName(check.skill) : `${check.ability.toUpperCase()} ${roll}`;
+  const what = check.skill ? skillName(check.skill) : `${checkSubject(check)} ${roll}`;
   return check.dc ? `${what} (DC ${check.dc})` : what;
 }
+
+/** What a plain check is named by: the tool's name, or the ability. */
+const checkSubject = (check: CheckKind) => (check.tool ? proficiencyName(check.tool) : check.ability.toUpperCase());
 
 export function checkAction(table: Table, cards: CheckCards, player: Player, msg: CheckMessage): void {
   if (msg.t === 'requestCheck') return request(table, cards, player, msg);
@@ -41,8 +52,10 @@ export function checkAction(table: Table, cards: CheckCards, player: Player, msg
   const { used, ...rolled } = rollCheck(token, sheet, msg, table.rng);
   useUp(table, token.id, used);
   const entry = { token: token.id, name: token.name, ...rolled };
-  const { ability, skill, save } = msg;
-  cards.post(card(player, { ability, skill, ...(save && { save }), kind: 'each', entries: [entry] }));
+  const { ability, skill, save, tool } = msg;
+  cards.post(
+    card(player, { ability, skill, ...(save && { save }), ...(tool && { tool }), kind: 'each', entries: [entry] }),
+  );
 }
 
 /** The creature's roll on the GM's request card, which then tells how a group check or contest went. */

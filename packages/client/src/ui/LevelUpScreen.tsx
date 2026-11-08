@@ -17,6 +17,7 @@ import { classesToPick, useHomebrewClasses } from './creator/use-homebrew.ts';
 import { ClassChoices, choicesOf } from './creator/ClassChoices.tsx';
 import { useSaveCharacter } from './creator/use-save.ts';
 import { SpellPicker } from './creator/PickSteps.tsx';
+import { LevelUpProficiencies } from './creator/LevelUpProficiencies.tsx';
 import { Chips, Detail, RichText, TraitList } from './creator/Parts.tsx';
 import { Button } from './kit/button.tsx';
 import { Toggle } from './kit/toggle.tsx';
@@ -45,10 +46,11 @@ export function LevelUpScreen({
   const [subclass, setSubclass] = useState<string>();
   const [spells, setSpells] = useState(c.spells);
   const [features, setFeatures] = useState(c.features);
+  const [picks, setPicks] = useState(c.proficiencyPicks);
   const { busy, error, save } = useSaveCharacter(game, onDone);
   const choice = { hp, class: classId, improvement: improvementIf(plan, improvement), subclass, spells, features };
-  const next = levelUp(c, choice);
-  const issues = plan.problem ? [plan.problem] : characterIssues(next);
+  const next = { ...levelUp(c, choice), proficiencyPicks: picks };
+  const issues = levelUpIssues(plan, next);
   const casts = spellChoices(next, plan.classLevel, classId).limits.maxLevel > 0;
   const pickClass = (id: string) => {
     setClassId(id);
@@ -81,6 +83,7 @@ export function LevelUpScreen({
           setSubclass={setSubclass}
         />
         <OptionsColumn next={next} classId={classId} setFeatures={setFeatures} />
+        <LevelUpProficiencies before={c} next={next} set={setPicks} />
         {casts && (
           <section className="frame levelup-col wide">
             <SpellPicker c={next} classId={classId} level={plan.classLevel} set={(x) => setSpells(x.spells)} />
@@ -96,6 +99,10 @@ export function LevelUpScreen({
     </div>
   );
 }
+
+/** Why the level can't be taken yet: the class can't be taken, or the character breaks a rule. */
+const levelUpIssues = (plan: { problem?: string }, next: Character) =>
+  plan.problem ? [plan.problem] : characterIssues(next);
 
 /** The improvement picked, when the level gives one. */
 const improvementIf = (plan: { improvement: boolean }, picked: Bonus) => (plan.improvement ? picked : undefined);

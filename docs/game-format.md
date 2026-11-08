@@ -905,6 +905,7 @@ better of STR and DEX, ranged weapons DEX), proficiency from `level`:
 | `ac`, `proficiency`                            | Override the computed values.                                                                                                                        |
 | `attacks`                                      | Extra attacks: `{ "name", "kind": "melee"\|"ranged", "toHit", "reach" or "range": [normal, long], "damage": [{ "dice": "1d6+2", "type": "fire" }] }` |
 | `resistances`, `immunities`, `vulnerabilities` | Damage types, e.g. `["fire"]`.                                                                                                                       |
+| `proficiencies`                                | Armor, weapons, tools and languages by id, e.g. `["light-armor", "martial-weapons", "longsword", "thieves-tools", "elvish"]` (see Proficiencies).    |
 
 **Coins, containers and attunement.** `currency` holds the coins carried,
 `{ "pp": 1, "gp": 40, "ep": 0, "sp": 12, "cp": 30 }` (fifty coins weigh a
@@ -1060,6 +1061,25 @@ group (it passes when at least half pass the DC), or as a contest between
 two (the second may use another skill, Acrobatics against Athletics; the
 higher total wins, a tie changes nothing). The request is a chat card where
 each owner presses Roll; the card fills in and says the result.
+
+**Proficiencies.** `stats.proficiencies` lists armor (`light-armor`,
+`medium-armor`, `heavy-armor`, `shields`), weapons (`simple-weapons`,
+`martial-weapons`, 2024's `martial-light-weapons` and
+`martial-finesse-light-weapons`, or one weapon by item id, `longsword`),
+tools (`thieves-tools`, `smiths-tools`, `lute`, `dice-set`...) and languages
+(`common`, `elvish`, `thieves-cant`...); the ids are in
+`system-dnd5e/src/proficiency-catalog.ts`. The creator writes what the class,
+species and background give and what the player picked. A character's
+classes add theirs on top (the first class all of them, later ones their
+multiclass share; `proficiencies` in class-automation.json). A character
+adds its proficiency bonus only to weapons it is trained with, and armor or
+a shield it isn't trained with gives disadvantage on attacks and Strength
+and Dexterity checks and saves, and stops its spells. A class that doesn't
+say what it gives (some homebrew) leaves its character trained with
+everything, as monsters are. Owners roll a check with a tool by clicking it
+on the sheet (the GM's Request check lists tools too); proficiency is added
+when the creature has the tool. Words written before the list (`"Thieves'
+tools"`) still count when they name one.
 
 **Multiclassing.** `stats.classes` splits a character's levels over several
 classes. Proficiency, cantrips and scroll reading follow the total level;

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import origins51 from '../content/srd/origins-5.1.json' with { type: 'json' };
 import origins52 from '../content/srd/origins-5.2.json' with { type: 'json' };
+import originAutomation from '../content/srd/origin-automation.json' with { type: 'json' };
+import { GrantsSchema } from './proficiency-grants.ts';
 import { ABILITIES, type Edition } from './stats-schema.ts';
 
 // What the character creator offers: species, backgrounds and each class's
@@ -21,6 +23,8 @@ const SubspeciesSchema = z.object({
   bonuses: Bonuses,
   traits: z.array(TraitSchema),
   darkvision: z.number().optional(),
+  /** Armor, weapons, tools and languages (origin-automation.json). */
+  proficiencies: GrantsSchema.optional(),
 });
 export type Subspecies = z.infer<typeof SubspeciesSchema>;
 
@@ -38,6 +42,7 @@ export const SpeciesSchema = z.object({
   traits: z.array(TraitSchema),
   /** Subraces (2014) or lineages (2024). */
   subspecies: z.array(SubspeciesSchema),
+  proficiencies: GrantsSchema.optional(),
 });
 export type Species = z.infer<typeof SpeciesSchema>;
 
@@ -61,6 +66,7 @@ export const BackgroundSchema = z.object({
   abilities: z.array(Ability).optional(),
   feat: TraitSchema.optional(),
   kit: z.array(KitStepSchema),
+  proficiencies: GrantsSchema.optional(),
 });
 export type Background = z.infer<typeof BackgroundSchema>;
 
@@ -81,12 +87,41 @@ export const OriginsSchema = z.object({
   classes: z.array(ClassOptionsSchema),
   /** Gear the kits hand out that items.json doesn't have. */
   gear: z.array(GearSchema),
+  /** What every character of the edition gets (2024: Common and two languages). */
+  base: GrantsSchema.optional(),
 });
 export type Origins = z.infer<typeof OriginsSchema>;
 
+type Grants = Partial<Record<'both' | Edition, unknown>>;
+type ByEdition = Record<string, Grants>;
+const automation = originAutomation as unknown as Record<'species' | 'subspecies' | 'backgrounds', ByEdition> & {
+  base: Grants;
+};
+
+/** The edition's grants in one overlay entry. */
+const grantsIn = (entry: Grants | undefined, edition: Edition) => entry?.[edition] ?? entry?.both;
+
+function withGrants<T extends { id: string }>(list: T[], overlay: ByEdition, edition: Edition): T[] {
+  return list.map((x) => {
+    const proficiencies = grantsIn(overlay[x.id], edition);
+    return proficiencies ? { ...x, proficiencies } : x;
+  });
+}
+
+/** The generated origins with the hand-written proficiencies of origin-automation.json. */
+function withOriginAutomation(raw: unknown, edition: Edition): unknown {
+  const o = raw as { species: (Species & { subspecies: { id: string }[] })[]; backgrounds: Background[] };
+  const species = withGrants(o.species, automation.species, edition).map((s) => ({
+    ...s,
+    subspecies: withGrants(s.subspecies, automation.subspecies, edition),
+  }));
+  const backgrounds = withGrants(o.backgrounds, automation.backgrounds, edition);
+  return { ...o, species, backgrounds, base: grantsIn(automation.base, edition) };
+}
+
 const ORIGINS: Record<Edition, Origins> = {
-  '2014': OriginsSchema.parse(origins51),
-  '2024': OriginsSchema.parse(origins52),
+  '2014': OriginsSchema.parse(withOriginAutomation(origins51, '2014')),
+  '2024': OriginsSchema.parse(withOriginAutomation(origins52, '2024')),
 };
 
 export function originsFor(edition: Edition): Origins {
