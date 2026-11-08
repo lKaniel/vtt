@@ -93,6 +93,9 @@ test('an area spell clicked on a creature goes at it, not a walk there', async (
 
 test('a fight rolls initiative and the turn moves on', async ({ page }) => {
   await atTable(page, GM);
+  // One creature at a time: with shared party turns, party members next to
+  // each other in the order would all be up together.
+  await page.getByRole('button', { name: 'Party acts together' }).click();
   await page.getByRole('button', { name: 'Start combat' }).click();
   await page.getByRole('button', { name: /^Roll initiative/ }).click();
   await expect(chatLog(page).getByText(/Roll for initiative!/)).toBeVisible();
@@ -100,7 +103,8 @@ test('a fight rolls initiative and the turn moves on', async ({ page }) => {
   await expect(order).toHaveCount(4);
 
   // The GM is handed whoever is up, first in initiative order.
-  const names = (await order.allTextContents()).map((text) => text.split(':')[0]?.trim());
+  const labels = await order.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label') ?? ''));
+  const names = labels.map((label) => label.split(':')[0]?.trim());
   const upNow = page.getByRole('contentinfo').getByRole('button', { name: /✎/ });
   await expect(upNow).toContainText(names[0] ?? '');
   await page.getByRole('button', { name: 'End turn' }).click();

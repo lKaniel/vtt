@@ -3,7 +3,9 @@ import { XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { t } from '../i18n/index.ts';
 import { Button } from './kit/button.tsx';
-import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, type Tab } from '../play/actions.ts';
+import { barRow, barRows, type BarSize, loadBarSize, ROW_TILES, saveBarSize, wrapRow } from '../play/bar-size.ts';
+import { BarButtons, RowPager, tabSlots } from './BarControls.tsx';
+import { affordable, costOf, TABS, type ActionTile, type Tab } from '../play/actions.ts';
 import {
   dragTile,
   landOn,
@@ -29,8 +31,6 @@ import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 import { TipCard } from './Tip.tsx';
 
-const MIN_TILES = 30;
-
 const TAB_GLYPH: Record<Tab, GlyphName> = { all: 'star', attacks: 'sword', spells: 'flame', features: 'fist' };
 const TAB_LABEL: Record<Tab, string> = {
   all: 'Everything',
@@ -50,34 +50,59 @@ function budgetOf(session: Session, token: TokenView): TurnBudget | undefined {
 /** BG3-style bar along the bottom: portrait, resources, action tiles and end turn. */
 export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onSheet: () => void }>) {
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
+  const [size, setSize] = useState<BarSize>(loadBarSize);
+  const resize = (next: BarSize) => {
+    setSize(next);
+    saveBarSize(next);
+  };
+  const tip = hint(session, token);
   return (
     // The footer is as wide as its widest row; the map beside the narrower
     // rows (around the hint and the aiming panel) must still take clicks.
-    <footer className="actionbar-wrap pointer-events-none *:pointer-events-auto">
-      <div className="hint">{hint(session, token)}</div>
+    <footer className={`actionbar-wrap ${size} pointer-events-none *:pointer-events-auto`}>
+      {/* The how-to line only floats over the map while it asks for a click;
+          the rest of the time it is the bar's help mark. */}
+      {(!token || tip !== IDLE_HINT) && <div className="hint">{tip}</div>}
       {token && <AimingControls session={session} token={token} />}
       {token && <SmiteControls session={session} token={token} />}
       {token && <FinisherControls session={session} token={token} />}
-      {token && <Bar session={session} token={token} onSheet={onSheet} />}
+      {token && <Bar session={session} token={token} onSheet={onSheet} size={size} onSize={resize} />}
     </footer>
   );
 }
 
-/** The painted bar: portrait in the left ring, end turn in the right one, everything else in the tray. */
-function Bar({ session, token, onSheet }: Readonly<{ session: Session; token: TokenView; onSheet: () => void }>) {
+type BarProps = Readonly<{
+  session: Session;
+  token: TokenView;
+  onSheet: () => void;
+  size: BarSize;
+  onSize: (size: BarSize) => void;
+}>;
+
+/** The painted bar: portrait in the left ring, end turn in the right one, everything else in the tray.
+ *  Compact, it is one row of tiles under the name line, paged with the arrows beside it. */
+function Bar({ session, token, onSheet, size, onSize }: BarProps) {
   const [tab, setTab] = useState<Tab>('all');
+  const [row, setRow] = useState(0);
   const budget = budgetOf(session, token);
+  const compact = size === 'compact';
+  const pickTab = (next: Tab) => {
+    setTab(next);
+    setRow(0);
+  };
   return (
-    <div className="actionbar">
+    <div className={compact ? 'actionbar compact' : 'actionbar'}>
       <Portrait token={token} onSheet={onSheet} />
       <div className="ab-tray">
         <div className="ab-top">
           <Who session={session} token={token} />
           <Resources token={token} budget={budget} />
+          <BarButtons size={size} onSize={onSize} help={IDLE_HINT} />
         </div>
         <div className="ab-body">
-          <Tabs tab={tab} onTab={setTab} />
-          <Grid session={session} token={token} tab={tab} budget={budget} />
+          <Tabs tab={tab} onTab={pickTab} />
+          <Grid session={session} token={token} tab={tab} budget={budget} row={compact ? row : undefined} />
+          {compact && <RowPager session={session} token={token} tab={tab} row={row} onRow={setRow} />}
         </div>
       </div>
       <EndTurn session={session} token={token} />
@@ -154,22 +179,28 @@ function Tabs({ tab, onTab }: Readonly<{ tab: Tab; onTab: (tab: Tab) => void }>)
   );
 }
 
-function Grid({
-  session,
-  token,
-  tab,
-  budget,
-}: Readonly<{ session: Session; token: TokenView; tab: Tab; budget: TurnBudget | undefined }>) {
-  if (tab === 'all') return <Hotbar session={session} token={token} budget={budget} />;
-  const shown = filterTiles(actionTiles(token), tab);
+type GridProps = Readonly<{
+  session: Session;
+  token: TokenView;
+  tab: Tab;
+  budget: TurnBudget | undefined;
+  /** The one row a compact bar shows; every row when left out. */
+  row?: number;
+}>;
+
+function Grid({ session, token, tab, budget, row }: GridProps) {
+  if (tab === 'all') return <Hotbar session={session} token={token} budget={budget} row={row} />;
+  const all = tabSlots(session, token, tab);
+  const shown = row === undefined ? all : barRow(all, row);
   return (
     <div className="ab-grid">
-      {shown.map((tile) => (
-        <Tile key={`${tile.kind}-${tile.name}`} session={session} token={token} tile={tile} budget={budget} />
-      ))}
-      {Array.from({ length: Math.max(0, MIN_TILES - shown.length) }, (_, i) => (
-        <span key={`empty-${i}`} className="tile empty" />
-      ))}
+      {shown.map((tile, i) =>
+        tile ? (
+          <Tile key={`${tile.kind}-${tile.name}`} session={session} token={token} tile={tile} budget={budget} />
+        ) : (
+          <span key={`empty-${i}`} className="tile empty" />
+        ),
+      )}
     </div>
   );
 }
@@ -189,7 +220,8 @@ function Hotbar({
   session,
   token,
   budget,
-}: Readonly<{ session: Session; token: TokenView; budget: TurnBudget | undefined }>) {
+  row,
+}: Readonly<{ session: Session; token: TokenView; budget: TurnBudget | undefined; row?: number }>) {
   const save = (slots: Slots) => session.requests.setHotbar(token.id, trimmed(slots));
   const onDrop = (i: number) => (e: React.DragEvent) => {
     const data = e.dataTransfer.getData(TILE_DRAG);
@@ -213,29 +245,37 @@ function Hotbar({
     const box = slotBox(e);
     if (!box.contains(e.relatedTarget as Node | null)) box.classList.remove('drop-target');
   };
+  const all = hotbarTiles(token, session.journal.macroOf);
+  const rows = barRows(all.length);
+  // A compact bar shows one row; its slots keep their place on the whole bar.
+  const first = row === undefined ? 0 : wrapRow(row, rows) * ROW_TILES;
+  const shown = row === undefined ? all : barRow(all, row);
   return (
     <div className="ab-grid">
-      {hotbarTiles(token, session.journal.macroOf).map((tile, i) => (
-        <span key={i} className="ab-slot" onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop(i)}>
-          {tile ? (
-            <Tile
-              session={session}
-              token={token}
-              tile={tile}
-              budget={budget}
-              onDragStart={(e) => dragTile(e, { from: i })}
-              // An item or macro dragged off the bar leaves it.
-              onDragEnd={(e) =>
-                e.dataTransfer.dropEffect === 'none' &&
-                (tile.kind === 'item' || tile.kind === 'macro') &&
-                save(removeFromHotbar(hotbarSlots(token, session.journal.macroOf), i))
-              }
-            />
-          ) : (
-            <span className="tile empty" />
-          )}
-        </span>
-      ))}
+      {shown.map((tile, at) => {
+        const i = first + at;
+        return (
+          <span key={i} className="ab-slot" onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop(i)}>
+            {tile ? (
+              <Tile
+                session={session}
+                token={token}
+                tile={tile}
+                budget={budget}
+                onDragStart={(e) => dragTile(e, { from: i })}
+                // An item or macro dragged off the bar leaves it.
+                onDragEnd={(e) =>
+                  e.dataTransfer.dropEffect === 'none' &&
+                  (tile.kind === 'item' || tile.kind === 'macro') &&
+                  save(removeFromHotbar(hotbarSlots(token, session.journal.macroOf), i))
+                }
+              />
+            ) : (
+              <span className="tile empty" />
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -352,5 +392,8 @@ function hint(session: Session, token: TokenView | undefined): string {
   if (aiming)
     return `Click ${aiming.need - aiming.picks.length} more target(s) for ${aiming.spell.name} · right click or Esc to cancel`;
   if (!token) return 'Click one of your characters to select them';
-  return 'Click the ground to walk · Right click for more · 1–0 for actions · C for the sheet · Space ends your turn';
+  return IDLE_HINT;
 }
+
+const IDLE_HINT =
+  'Click the ground to walk · Right click for more · 1–0 for actions · C for the sheet · Space ends your turn';

@@ -1,5 +1,5 @@
-// The table's frame in English (see en.ts): the top bar and the GM's fight
-// controls.
+// The table's frame in English (see en.ts): the top bar, the GM's fight
+// controls and the action bar's own buttons.
 
 export const EN_TABLE = {
   'table.leave': 'Leave the table',
@@ -31,6 +31,13 @@ export const EN_TABLE = {
   'fight.shortRestHint': 'One hour: spend hit dice, short-rest features come back',
   'fight.longRest': 'Long rest',
   'fight.longRestHint': 'Eight hours: hit points, spell slots and features come back',
+  'bar.compact': 'Smaller action bar: one row at a time',
+  'bar.full': 'Full action bar: three rows',
+  'bar.rowUp': 'Previous row',
+  'bar.rowDown': 'Next row',
+  'bar.row': 'Row {n} of {of}',
+  'bar.help': 'How to play',
+  'turns.initiative': '{name}: initiative {n}',
   'finisher.label': 'Finisher',
   'finisher.dice': '{dice} momentum dice (d{die})',
   'finisher.hint': 'On a hit, spend every momentum die on {name}',

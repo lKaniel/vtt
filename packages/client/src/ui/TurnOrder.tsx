@@ -39,10 +39,12 @@ export function TurnOrder({ session }: Readonly<{ session: Session }>) {
               key={e.token}
               className={cls.filter(Boolean).join(' ')}
               title={`${t.name}: initiative ${e.initiative}`}
+              aria-label={`${t.name}: initiative ${e.initiative}`}
               onClick={() => session.focus([t.x, t.y])}
             >
               <Face token={t} />
               <HpBar token={t} showLabel={false} />
+              <span className="turn-name">{t.name}</span>
             </button>
           );
         })}
