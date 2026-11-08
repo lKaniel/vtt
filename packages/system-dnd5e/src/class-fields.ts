@@ -13,11 +13,14 @@ export const LevelTableSchema = z.array(z.tuple([z.number().int().min(1).max(20)
 export type LevelTable = z.infer<typeof LevelTableSchema>;
 
 /** What a finisher does with the momentum dice it spends. */
-const FINISHERS = ['damage', 'condition', 'bleed', 'chase', 'claw', 'volley'] as const;
+const FINISHERS = ['damage', 'condition', 'bleed', 'chase', 'claw', 'volley', 'cleave', 'drain'] as const;
 
 /** Hit reactions a feature can be (a point each): block damage with a weapon, or step out of the way. */
 const HIT_ARTS = ['parry', 'dodge'] as const;
 export type HitArt = (typeof HIT_ARTS)[number];
+
+/** What sets a trigger off: the creature becoming bloodied, or an ally of its dropping to 0 hit points. */
+const TRIGGERS = ['bloodied', 'ally-down'] as const;
 
 /** The feature fields; `effect` is the effect template schema (passed in to keep the files apart). */
 export const classFields = <E extends z.ZodType>(effect: E) => ({
@@ -27,7 +30,44 @@ export const classFields = <E extends z.ZodType>(effect: E) => ({
    * Spends every momentum die: on a hit with the attack it rides on (`hit`),
    * or as the feature's own action. `does` says what the dice do.
    */
-  finisher: z.object({ when: z.enum(['hit', 'action']), does: z.enum(FINISHERS) }).optional(),
+  finisher: z
+    .object({
+      when: z.enum(['hit', 'action']),
+      does: z.enum(FINISHERS),
+      /** Only with a melee weapon with this property (great cleave: two-handed). */
+      needs: z.literal('two-handed').optional(),
+    })
+    .optional(),
+  /** A focus art a Chapter grants rather than one picked (spell flurry, prayer of salvation). */
+  art: z.boolean().optional(),
+  /**
+   * What it adds to focus arts: Weapon Parry blocks half the class level more
+   * and strikes back with what's left over (`counter`); Dodge Step always
+   * succeeds; spending a point on an art gives advantage on the next weapon attack.
+   */
+  artBoost: z
+    .object({
+      parryBonus: z.literal('half-level'),
+      counter: z.boolean(),
+      sureDodge: z.boolean(),
+      advantageAfter: z.boolean(),
+    })
+    .partial()
+    .optional(),
+  /** On `on`: focus points back and momentum dice gained, then not again for `cooldown` rounds (crimson rage). */
+  trigger: z
+    .object({ on: z.enum(TRIGGERS), focus: count.optional(), momentum: count.optional(), cooldown: count })
+    .optional(),
+  /** After any finisher the target makes a Strength save or falls prone, Large or larger at disadvantage. */
+  finisherProne: z.boolean().optional(),
+  /** Using it doubles the momentum dice held, to one more than the most (titanic strength). */
+  doublesMomentum: z.boolean().optional(),
+  /** The momentum die is a size larger while wielding a two-handed melee weapon (marauder momentum). */
+  dieStep: z.literal('two-handed').optional(),
+  /** Its `spell` from a class level on, these fields set over it (purifying salvation's third target). */
+  spellAt: z.array(z.tuple([z.number().int().min(1).max(20), z.record(z.string(), z.unknown())])).optional(),
+  /** An effect the creature has while bloodied (half its hit points or fewer, but up): blood frenzy. */
+  whileBloodied: effect.optional(),
   /** A reaction to an attack about to hit, for one use: parry (block its damage) or dodge (a Dex save to evade). */
   hitArt: z.enum(HIT_ARTS).optional(),
   /** A spent use comes back on a natural 20 against a foe, and one when initiative is rolled with none left. */
@@ -76,4 +116,12 @@ export const momentumEffectFields = {
    * against `dc` + half the dice left to stop it (hemorrhaging wound).
    */
   bleed: z.object({ dice: count, die: count, dc: z.number().int() }).optional(),
+  /** Feet of speed more in light armor or none (unencumbered movement). */
+  lightSpeed: z.number().int().positive().optional(),
+  /** In medium armor, AC counts Constitution (to +2) instead of Dexterity when higher (marauder momentum). */
+  mediumArmorCon: z.boolean().optional(),
+  /** Two-handed melee weapon hits deal half the Strength modifier (rounded up) more (titanic strength). */
+  twoHandedStrength: z.boolean().optional(),
+  /** Attacks per Attack action, at least (blood frenzy: three). */
+  actionAttacks: count.optional(),
 };

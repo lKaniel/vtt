@@ -1631,6 +1631,244 @@
           "manual": "Needs a firearm in hand; if it damages two or more creatures, add a focus point back on the sheet.",
           "choice": "finisher"
         }
+      },
+      "subclasses": {
+        "absolute-chapter": {
+          "features": {
+            "counter-strike": {
+              "name": "Counter Strike",
+              "level": 3,
+              "artBoost": {
+                "parryBonus": "half-level",
+                "counter": true,
+                "advantageAfter": true
+              }
+            },
+            "unencumbered-movement": {
+              "name": "Unencumbered Movement",
+              "level": 3,
+              "passive": {
+                "name": "Unencumbered Movement",
+                "lightSpeed": 10
+              },
+              "manual": "Dodge Step moves you 5 feet farther; move the token by hand."
+            },
+            "encircling-strike": {
+              "name": "Encircling Strike",
+              "level": 7,
+              "manual": "The first melee hit on a creature you circled to the far side of (or that an ally stands opposite you): add a momentum die of damage by hand."
+            },
+            "mobile-pursuer": {
+              "name": "Mobile Pursuer",
+              "level": 14,
+              "manual": "While moving with Hunter's Pursuit you ignore difficult terrain, pass through hostile creatures and climb or swim at no extra cost."
+            },
+            "the-hunt": {
+              "name": "The Hunt",
+              "level": 17,
+              "action": "free",
+              "uses": [[17, 1]],
+              "recharge": "long",
+              "effect": {
+                "name": "The Hunt",
+                "rounds": 10,
+                "momentumPerPoint": 2,
+                "conditionImmunities": ["paralyzed", "restrained"]
+              },
+              "manual": "Freedom of movement also ignores difficult terrain and slips grapples. The hunt ends if you are incapacitated (remove the effect), or end it as a bonus action."
+            }
+          }
+        },
+        "marauder-chapter": {
+          "features": {
+            "path-of-gore": {
+              "name": "Great Cleave",
+              "level": 3,
+              "usesFrom": "momentum",
+              "finisher": {
+                "when": "hit",
+                "does": "cleave",
+                "needs": "two-handed"
+              },
+              "manual": "Each extra attack must be at a different creature next to you, within reach; a focus point back for each one it drops (the first target counts by itself)."
+            },
+            "marauder-momentum": {
+              "name": "Marauder Momentum",
+              "level": 3,
+              "dieStep": "two-handed",
+              "passive": {
+                "name": "Marauder Momentum",
+                "mediumArmorCon": true
+              }
+            },
+            "leap-attack": {
+              "name": "Leap Attack",
+              "level": 7,
+              "manual": "Once a turn, after moving more than 15 feet straight at a creature (or falling 10 feet or more) into a weapon attack: add a momentum die of damage by hand. Falling onto a creature you hit halves the fall damage and you land on your feet."
+            },
+            "fell-the-leviathan": {
+              "name": "Fell the Leviathan",
+              "level": 14,
+              "finisherProne": true,
+              "manual": "Chasing and Vicious finishers: have the target you attack make the Strength save by hand."
+            },
+            "titanic-strength": {
+              "name": "Titanic Strength",
+              "level": 17,
+              "action": "free",
+              "uses": [[17, 1]],
+              "recharge": "long",
+              "doublesMomentum": true,
+              "passive": {
+                "name": "Titanic Strength",
+                "twoHandedStrength": true
+              },
+              "manual": "You can wield a two-handed weapon in one hand and fight with two weapons that aren’t light. Use it as you take a finisher, to double your dice first."
+            }
+          }
+        },
+        "salvation-chapter": {
+          "features": {
+            "art-of-salvation": {
+              "name": "Prayer of Salvation",
+              "level": 3,
+              "art": true,
+              "usesFrom": "focus",
+              "action": "bonus",
+              "spell": {
+                "targets": 2,
+                "range": 60,
+                "heal": "1d6",
+                "healTemp": true,
+                "cures": ["charmed", "frightened", "poisoned"]
+              },
+              "spellAt": [
+                [
+                  14,
+                  {
+                    "targets": 3,
+                    "heal": "1d12"
+                  }
+                ]
+              ],
+              "manual": "Pick yourself as one of the targets. Short-term madness is ended by hand."
+            },
+            "saviors-focus": {
+              "name": "Savior's Focus",
+              "level": 3,
+              "trigger": {
+                "on": "ally-down",
+                "focus": 1,
+                "cooldown": 10
+              },
+              "manual": "Only for allies you can see or hear."
+            },
+            "sanctifying-light": {
+              "name": "Sanctifying Light",
+              "level": 7,
+              "action": "free",
+              "effect": {
+                "name": "Sanctifying Light",
+                "rounds": 2,
+                "light": {
+                  "bright": 20,
+                  "dim": 20,
+                  "color": "#fff3c4"
+                }
+              },
+              "manual": "Use it right after you spend a focus point. The light is sunlight; allies entering the bright light for the first time on a turn, or starting their turn there, regain 1d6 + your proficiency bonus hit points (heal them by hand). It goes out if you are incapacitated."
+            },
+            "purifying-salvation": {
+              "name": "Purifying Salvation",
+              "level": 14,
+              "manual": "Prayer of Salvation now takes a third target and heals 1d12; it already does so on the sheet."
+            },
+            "light-of-hope": {
+              "name": "Light of Hope",
+              "level": 17,
+              "action": "bonus",
+              "uses": [[17, 1]],
+              "recharge": "long",
+              "effect": {
+                "name": "Light of Hope",
+                "rounds": 10,
+                "attackBonus": "1d4",
+                "saveBonus": "1d4",
+                "aura": {
+                  "radius": 30,
+                  "who": "allies"
+                },
+                "light": {
+                  "bright": 30,
+                  "dim": 30,
+                  "color": "#fff3c4"
+                }
+              },
+              "manual": "Creatures in the bright light have advantage on death saves, don’t die at three failures and stabilize at three successes; Prayer of Salvation gives its focus point back. Apply those by hand."
+            }
+          }
+        },
+        "sanguine-chapter": {
+          "features": {
+            "vital-consumption": {
+              "name": "Blood Drain",
+              "level": 3,
+              "usesFrom": "momentum",
+              "action": "bonus",
+              "finisher": {
+                "when": "action",
+                "does": "drain"
+              },
+              "dcFrom": ["int", "con"],
+              "spell": {
+                "targets": 1,
+                "range": 5,
+                "save": {
+                  "ability": "con",
+                  "onSave": "half",
+                  "onCast": true
+                },
+                "damage": [
+                  {
+                    "dice": "{momentum}",
+                    "type": "necrotic"
+                  }
+                ],
+                "drain": true
+              }
+            },
+            "crimson-rage": {
+              "name": "Crimson Rage",
+              "level": 3,
+              "trigger": {
+                "on": "bloodied",
+                "focus": 1,
+                "momentum": 1,
+                "cooldown": 10
+              }
+            },
+            "blood-hex": {
+              "name": "Blood Hex",
+              "level": 7,
+              "manual": "When Blood Drain’s target fails its save, pick a hex: Blood Puppet (it uses its reaction to move 5 feet your way), Bound Blood (half speed until your next turn), or Burning Blood (fire damage equal to half the necrotic damage). Apply it by hand."
+            },
+            "empowered-blood-hex": {
+              "name": "Empowered Blood Hex",
+              "level": 14,
+              "manual": "For 2 focus points (spend them on the sheet): Blood Puppet adds a weapon attack at a creature you pick, Bound Blood restrains until your next turn, Burning Blood burns each turn until it saves."
+            },
+            "blood-frenzy": {
+              "name": "Blood Frenzy",
+              "level": 17,
+              "whileBloodied": {
+                "name": "Blood Frenzy",
+                "speed": 20,
+                "actionAttacks": 3
+              },
+              "manual": "While bloodied, hit points your jaeger features give back are doubled, and Blood Craze (a reaction for a focus point when dropped to 0 but not killed: 1 hit point instead) is yours. Apply both by hand."
+            }
+          }
+        }
       }
     }
   }

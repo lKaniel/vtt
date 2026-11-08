@@ -359,7 +359,8 @@ export class SpellActions {
   private applyHp(r: CastResult): void {
     const target = this.table.fighter(r.target);
     if (r.healed !== undefined) {
-      this.store.setToken({ ...target.token, hp: r.hp >= target.sheet.maxHp ? undefined : r.hp });
+      const tempHp = r.tempHp ?? target.token.tempHp;
+      this.store.setToken({ ...target.token, hp: r.hp >= target.sheet.maxHp ? undefined : r.hp, tempHp });
     } else if (r.damage > 0) {
       this.table.hurt(target.token, r, r.damage);
     } else if (r.tempHp !== undefined) {

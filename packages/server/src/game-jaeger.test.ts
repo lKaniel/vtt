@@ -19,7 +19,8 @@ beforeEach(async () => {
   dice = [];
   game = new Game(store, { rng: () => dice.shift() ?? 0.5 });
   const gm = join_('gm');
-  const doc = { id: 'jaeger', type: 'homebrew', rev: 0, kind: 'class', name: 'Jaeger' } as unknown as Doc;
+  const subclasses = ['absolute', 'marauder', 'salvation', 'sanguine'].map((c) => ({ id: `${c}-chapter`, name: c }));
+  const doc = { id: 'jaeger', type: 'homebrew', rev: 0, kind: 'class', name: 'Jaeger', subclasses } as unknown as Doc;
   gm.receive({ t: 'ops', txn: 't', ops: [{ op: 'create', coll: 'homebrew', doc }] });
   expect(gm.take('reject')).toEqual([]);
   // Ana's 4th-level jaeger (AC 13, Str 12, Dex 16) with a longsword; a goblin next to her.
@@ -123,5 +124,91 @@ describe('a jaeger in a fight', () => {
     gm.receive({ t: 'endTurn' });
     expect(tok('goblin').hp).toBe(7 - 3);
     expect(tok('goblin').effects?.[0]?.bleed).toEqual({ dice: 1, die: 6, dc: 30 });
+  });
+});
+
+/** Ana's jaeger joins a Chapter at `level`; `data` sets more token fields. */
+function chapter(name: string, level: number, data: Partial<Token> = {}): void {
+  const hero = tok('hero');
+  const { class: _class, level: _level, ...stats } = hero.stats!;
+  const classes = [{ class: 'jaeger', level, subclass: `${name}-chapter` }];
+  store.setToken({ ...hero, stats: { ...stats, classes }, ...data });
+}
+
+describe("a jaeger's Chapter in a fight", () => {
+  it('absolute: a counter strike parries the whole hit and cuts the goblin with the rest', () => {
+    chapter('absolute', 6);
+    const { ana, gm } = fight(true);
+    dice = [face(15), face(5, 6)];
+    gm.receive({ t: 'attack', attacker: 'goblin', target: 'hero', attack: 'Scimitar' });
+    const [offer] = ana.take('reactionOffer');
+    // 12 + 4 hits the goblin's AC 15; 8 + 1 + 3 blocks the 7 and cuts back 5.
+    dice = [face(12), face(8, 8)];
+    ana.receive({ t: 'react', offer: offer!.offer.id, choice: 'weapon-parry' });
+    expect(tok('hero').hp).toBeUndefined();
+    expect(tok('goblin').hp).toBe(7 - 5);
+    expect(tok('hero').effects).toMatchObject([{ name: 'Counter Strike', advantage: true }]);
+  });
+
+  it('sanguine: crimson rage gives a point and a die as the hit leaves it bloodied', () => {
+    chapter('sanguine', 3, { hp: 16 });
+    const { ana, gm } = fight(true);
+    store.setToken({ ...tok('hero'), spent: { uses: { focus: 2 } } });
+    dice = [face(15), face(5, 6)];
+    gm.receive({ t: 'attack', attacker: 'goblin', target: 'hero', attack: 'Scimitar' });
+    expect(ana.take('reactionOffer')).toEqual([]);
+    expect(tok('hero').hp).toBe(16 - 7);
+    expect(tok('hero').spent?.uses).toEqual({ focus: 1 });
+    expect(tok('hero').momentum).toEqual({ dice: 1, fresh: true });
+  });
+
+  it("salvation: savior's focus gives a point back as an ally drops", () => {
+    chapter('salvation', 3);
+    const friend = { ...tok('hero'), id: 'friend', name: 'Bo', x: 250, actor: undefined, linked: false, hp: 1 };
+    store.setToken(TokenSchema.parse({ ...friend, stats: { maxHp: 5 }, ownership: { default: 'owner' } }));
+    const { gm } = fight(true);
+    store.setToken({ ...tok('hero'), spent: { uses: { focus: 2 } } });
+    dice = [face(15), face(5, 6)];
+    gm.receive({ t: 'attack', attacker: 'goblin', target: 'friend', attack: 'Scimitar' });
+    expect(gm.take('error')).toEqual([]);
+    expect(tok('friend').hp).toBe(0);
+    expect(tok('hero').spent?.uses).toEqual({ focus: 1 });
+  });
+
+  it('marauder: great cleave adds a die and an attack for each die spent', () => {
+    chapter('marauder', 4, { momentum: { dice: 2 }, inventory: [{ item: 'greatsword', equipped: true, qty: 1 }] });
+    const { ana } = fight(false);
+    dice = [face(15), face(1, 6), face(1, 6), face(2, 8)];
+    ana.receive({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Greatsword', finisher: 'path-of-gore' });
+    expect(ana.take('error')).toEqual([]);
+    expect(tok('goblin').hp).toBe(7 - (1 + 1 + 1 + 2));
+    // The one attack of the action is spent; the cleave gives two more.
+    expect(store.combat?.left.attacks).toBe(2);
+    expect(tok('hero').momentum).toBeUndefined();
+  });
+});
+
+describe("a jaeger's Chapter arts and finishers", () => {
+  it('salvation: prayer of salvation heals and gives as many temporary hit points', () => {
+    chapter('salvation', 3, { hp: 20 });
+    const ana = join_('ana');
+    dice = [face(4, 6)];
+    ana.receive({ t: 'feature', token: 'hero', feature: 'art-of-salvation', targets: ['hero'] });
+    expect(ana.take('error')).toEqual([]);
+    expect(tok('hero')).toMatchObject({ hp: 24, tempHp: 4, spent: { uses: { focus: 1 } } });
+  });
+
+  it('sanguine: blood drain drinks from a bleeding goblin and gives a point back', () => {
+    const bleed = { id: 'hemorrhaging-wound-hero', name: 'Bleeding', bleed: { dice: 1, die: 6, dc: 30 } };
+    store.setToken({ ...tok('goblin'), effects: [bleed] });
+    chapter('sanguine', 4, { hp: 20, momentum: { dice: 2 }, spent: { uses: { focus: 1 } } });
+    const ana = join_('ana');
+    // The 2d6 of the dice first, then the goblin's Constitution save.
+    dice = [face(3, 6), face(3, 6), face(1)];
+    ana.receive({ t: 'feature', token: 'hero', feature: 'vital-consumption', targets: ['goblin'] });
+    expect(ana.take('error')).toEqual([]);
+    expect(tok('goblin').hp).toBe(7 - 6);
+    expect(tok('hero')).toMatchObject({ hp: 23, spent: { uses: { focus: 0 } } });
+    expect(tok('hero').momentum).toBeUndefined();
   });
 });

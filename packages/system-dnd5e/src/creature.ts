@@ -15,7 +15,8 @@ import {
   type ScaleValue,
 } from './classes.ts';
 import { grantedFeatures } from './class-options.ts';
-import { withFightingStyles } from './class-styles.ts';
+import { type ArmorWeight, withFightingStyles } from './class-styles.ts';
+import { bloodiedPassives } from './chapters.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
 import { changed, changedBase, changedList } from './effect-changes.ts';
@@ -106,7 +107,7 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
   const gear = equippedItems(token, content);
   const { maxHp, ac } = fixedNumbers(stats, monster, classHp(levels, abilities));
   const features = withBasicActions(
-    featureSheets(token, levels, abilities, grantedFeatures(token, content)),
+    bloodiedPassives(featureSheets(token, levels, abilities, grantedFeatures(token, content)), token.hp, maxHp),
     token.effects,
   );
   const base: Creature = {
@@ -143,7 +144,7 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
       features.flatMap((f) => (f.passive ? [f.passive] : [])),
     ),
   };
-  const styled = withFightingStyles(applyEffects(withItemBonuses(base, token, content)), !!bodyArmor(gear.armor));
+  const styled = withFightingStyles(applyEffects(withItemBonuses(base, token, content)), armorWeight(gear.armor));
   return withCarrying(styled, token, { monster, content });
 }
 
@@ -406,6 +407,7 @@ function equippedItems(token: Token, content: Content): { weapons: Weapon[]; arm
 }
 
 const bodyArmor = (armor: readonly Armor[]) => armor.find((a) => a.category !== 'shield');
+const armorWeight = (armor: readonly Armor[]) => bodyArmor(armor)?.category as ArmorWeight | undefined;
 
 /** AC from worn armor and shield, or 10 + dex without armor (plus another ability with unarmored defense). */
 export function armorClass(

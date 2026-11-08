@@ -420,6 +420,8 @@ export const SpellSchema = z.object({
   healMod: z.boolean().default(false),
   /** Temporary hit points given to each target (false life); they don't stack with others. */
   tempHp: dice.optional(),
+  /** Each target healed gets as many temporary hit points too (prayer of salvation). */
+  healTemp: z.boolean().optional(),
   /** Hit points of creatures affected, weakest first, rolled on each cast (2014 sleep). */
   hpPool: dice.optional(),
   /** Ends the target's effects that impose any of these conditions (lesser restoration). */

@@ -45,26 +45,42 @@ export interface Parry {
   blocked: number;
   /** A natural 20 that blocked it all: the attacker is stunned until its next turn starts. */
   stuns: boolean;
+  /** Counter Strike: damage the parry deals back, what it blocked beyond the hit (when its roll beats the attacker's AC). */
+  counter: number;
   note: string;
+}
+
+/** What a Chapter adds to a parry: damage blocked on top, and the attacker's AC to strike back against. */
+export interface ParryBoost {
+  bonus?: number;
+  counterAc?: number;
 }
 
 /**
  * Weapon Parry: a weapon roll against the attacker blocks its damage roll
- * (dice doubled on a 20), nothing on a 1. `bonus` adds to the block.
+ * (dice doubled on a 20), nothing on a 1.
  */
-export function parry(outcome: WeaponAttackOutcome, reactor: Pick<Creature, 'attacks'>, rng: Rng, bonus = 0): Parry {
+export function parry(
+  outcome: WeaponAttackOutcome,
+  reactor: Pick<Creature, 'attacks'>,
+  rng: Rng,
+  boost: ParryBoost = {},
+): Parry {
   const weapon = parryWeapon(reactor.attacks);
-  if (!weapon) return { outcome, blocked: 0, stuns: false, note: 'has no weapon to parry with' };
+  const none = { outcome, blocked: 0, stuns: false, counter: 0 };
+  if (!weapon) return { ...none, note: 'has no weapon to parry with' };
   const d20 = roll(`1d20+${weapon.toHit}`, rng);
   const natural = d20.total - weapon.toHit;
-  if (natural === 1) return { outcome, blocked: 0, stuns: false, note: 'parries and fumbles (a 1)' };
+  if (natural === 1) return { ...none, note: 'parries and fumbles (a 1)' };
   const dice = natural === 20 ? critDice(weapon.damage[0]!.dice) : weapon.damage[0]!.dice;
-  const block = roll(dice, rng).total + bonus;
+  const block = roll(dice, rng).total + (boost.bonus ?? 0);
   const incoming = totalOf(outcome);
   const blocked = Math.min(block, incoming);
   const stuns = natural === 20 && block >= incoming;
+  const lands = boost.counterAc !== undefined && d20.total >= boost.counterAc;
+  const counter = lands ? Math.max(0, block - incoming) : 0;
   const note = `parries with ${weapon.name}, blocking ${blocked} damage${stuns ? ' and stunning the attacker' : ''}`;
-  return { outcome: lessDamage(outcome, blocked), blocked, stuns, note };
+  return { outcome: lessDamage(outcome, blocked), blocked, stuns, counter, note };
 }
 
 /** Dodge Step: a Dex save against the attack roll; a success evades it all, a failure halves it. `sure`: it succeeds. */

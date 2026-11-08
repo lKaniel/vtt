@@ -391,7 +391,8 @@ function heal(cast: Cast, target: CastSide, base: Base): CastResult {
   const before = target.token.effects?.find((e) => e.id === effect?.id)?.maxHp ?? 0;
   const max = target.sheet.maxHp + (effect?.maxHp ?? 0) - before;
   const hp = Math.min(max, target.sheet.hp + Math.max(0, healing));
-  return { ...base, healed: hp - target.sheet.hp, hp, effect, cured: cured(cast.spell, target.token) };
+  const tempHp = cast.spell.healTemp ? { tempHp: Math.max(target.sheet.tempHp, healing) } : {};
+  return { ...base, healed: hp - target.sheet.hp, hp, effect, cured: cured(cast.spell, target.token), ...tempHp };
 }
 
 /** Hit points a heal gives one target: rolled, or taken from a shared pool up to what it's missing. */

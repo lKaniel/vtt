@@ -41,6 +41,7 @@ import {
 } from '@vtt/shared';
 import type { GameStore } from '../store/game-store.ts';
 import { contentFor } from '../library/game-packs.ts';
+import { hurtTriggers } from './class-triggers.ts';
 
 /** A request the rules don't allow; its message goes back to the player. */
 export class Refusal extends Error {}
@@ -218,6 +219,7 @@ export class Table {
     this.store.setToken(shaken.token);
     for (const n of shaken.notes) this.note(n);
     this.checkConcentration(shaken.token, damage);
+    hurtTriggers(this, token.id, before.hp);
   }
 
   /** A 2014 shape dropped to 0: the creature changes back, and damage beyond the shape's hit points carries over. */

@@ -3,6 +3,8 @@ import {
   bleedTick,
   type Damage,
   type Effect,
+  type FeatureSheet,
+  fellOnFinish,
   finisherDamage,
   finisherOnHit,
   finisherProblem,
@@ -29,7 +31,7 @@ import { Refusal, type Fighter, type Table } from './table.ts';
 /** The extra damage of the hit finisher an attack is readied with; refuses one the attacker can't use. */
 export function readiedFinisher(attacker: Fighter, attack: Attack, finisher: string | undefined): Damage | undefined {
   if (!finisher) return undefined;
-  const problem = finisherProblem(attacker.sheet, finisher);
+  const problem = finisherProblem(attacker.sheet, finisher, attack);
   if (problem) throw new Refusal(`${attacker.token.name} ${problem}`);
   return finisherDamage(attacker.sheet, attack, finisher);
 }
@@ -66,10 +68,20 @@ function finish(table: Table, token: Token, struck: Struck & { downed: boolean }
     { attacker: struck.attacker, target: struck.target, feature, downed: struck.downed },
     table.rng,
   );
-  addEffects(table, struck.target.token.id, { targetEffects: out.effects });
-  for (const note of out.notes) table.note(note);
+  const felled = fellOnFinish(struck, table.rng);
+  addEffects(table, struck.target.token.id, {
+    targetEffects: [...out.effects, ...(felled.effect ? [felled.effect] : [])],
+  });
   table.note(`${token.name} uses ${feature.name}`);
+  for (const note of [...out.notes, ...(felled.note ? [felled.note] : [])]) table.note(note);
+  if (out.attacks && struck.onTurn) moreAttacks(table, token, out.attacks);
   return spendMomentum(regainFocus(token, struck.attacker.sheet, out.regain));
+}
+
+/** Attacks a finisher gives on top of the turn's (great cleave). */
+function moreAttacks(table: Table, token: Token, n: number): void {
+  const left = table.budget(token);
+  if (left) table.setBudget(token, { ...left, attacks: left.attacks + n });
 }
 
 /** Lethal Tempo: dice for the first hit on the attacker's turn and for each creature it drops. */
@@ -126,4 +138,36 @@ function bleedOnce(table: Table, id: string, wound: Effect): void {
   table.store.setToken({ ...token, effects: tick.effect ? [...others, tick.effect] : others });
   table.hurt(table.store.tokens.get(id)!, { hp: sheet.hp - tick.lost, tempHp: sheet.tempHp }, tick.lost);
   table.note(`${token.name} bleeds for ${tick.lost}${tick.effect ? '' : ', and the bleeding stops'}`);
+}
+
+interface SpellFinish {
+  caster: Fighter;
+  feature: FeatureSheet;
+  targets: readonly Fighter[];
+  /** The targets' hit points before it struck. */
+  before: ReadonlyMap<string, number>;
+}
+
+/**
+ * A finisher aimed like a spell, once it struck: Volley gives a point back
+ * when it hurt two or more, Blood Drain when its target is left bloodied or
+ * was bleeding; then Fell the Leviathan's save for each target hurt.
+ */
+export function afterSpellFinisher(table: Table, { caster, feature, targets, before }: SpellFinish): void {
+  const hurt = targets.filter((t) => table.fighter(t.token.id).sheet.hp < (before.get(t.token.id) ?? 0));
+  const does = feature.finisher?.does;
+  const regain = (does === 'volley' && hurt.length >= 2) || (does === 'drain' && hurt.some((t) => drained(table, t)));
+  const token = table.store.tokens.get(caster.token.id);
+  if (regain && token) table.store.setToken(regainFocus(token, caster.sheet, 1));
+  for (const target of hurt) {
+    const felled = fellOnFinish({ attacker: caster, target: table.fighter(target.token.id) }, table.rng);
+    if (felled.effect) addEffects(table, target.token.id, { targetEffects: [felled.effect] });
+    if (felled.note) table.note(felled.note);
+  }
+}
+
+/** Blood Drain's point back: the target bleeding when struck, or bloodied after. */
+function drained(table: Table, target: Fighter): boolean {
+  const now = table.fighter(target.token.id).sheet;
+  return !!target.token.effects?.some((e) => e.bleed) || now.hp <= now.maxHp / 2;
 }

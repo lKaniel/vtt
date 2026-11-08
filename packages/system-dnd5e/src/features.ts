@@ -6,6 +6,7 @@ import { hitDiceOf, restedExhaustion, restedHitDice } from './vigour.ts';
 import { type Rng, roll } from '@vtt/shared';
 import { gainMomentum, momentumForSpend, spendMomentum } from './momentum.ts';
 import { actionFinisher } from './finishers.ts';
+import { afterArt, doubleMomentum } from './chapters.ts';
 import { removeEffects, rollSave, type SaveRoll } from './effects.ts';
 import type { Token } from './token-schema.ts';
 import { type Effect, type Spell, SpellSchema } from './spell-schema.ts';
@@ -55,7 +56,8 @@ export function spendUse(token: Token, feature: FeatureSheet, amount = 1, sheet?
   const id = feature.usesFrom ?? feature.id;
   const uses = { ...token.spent?.uses, [id]: (token.spent?.uses?.[id] ?? 0) + amount };
   const spent = { ...token, spent: { ...token.spent, uses } };
-  return sheet ? gainMomentum(spent, sheet, momentumForSpend(sheet, feature, amount)) : spent;
+  if (!sheet) return spent;
+  return afterArt(gainMomentum(spent, sheet, momentumForSpend(sheet, feature, amount)), sheet, feature);
 }
 
 /** The level a feature's tables read: its class's level. */
@@ -81,6 +83,7 @@ export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng =
   const finish = actionFinisher(feature, { token, sheet });
   let next = spendUse(token, feature, 1, sheet);
   if (feature.grantsMomentum) next = gainMomentum(next, sheet, feature.grantsMomentum);
+  if (feature.doublesMomentum) next = doubleMomentum(next, sheet);
   const { token: healedToken, healed } = healFrom(next, sheet, feature, rng);
   next = healedToken;
   const effect = featureEffect(token, feature) ?? finish.effect;

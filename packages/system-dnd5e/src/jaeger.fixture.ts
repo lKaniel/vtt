@@ -17,7 +17,10 @@ const compendium: PackCompendium = {
     {
       id: 'jaeger',
       name: 'Jaeger',
-      subclasses: [{ id: 'absolute-chapter', name: 'Absolute Chapter' }],
+      subclasses: ['absolute', 'heretic', 'marauder', 'salvation', 'sanguine'].map((c) => ({
+        id: `${c}-chapter`,
+        name: `${c} Chapter`,
+      })),
     },
   ],
 };
@@ -25,19 +28,27 @@ const compendium: PackCompendium = {
 export const huntPacks = [compendium];
 export const huntContent: Content = contentWith('2014', huntPacks);
 
+interface JaegerData extends Partial<Token> {
+  features?: string[];
+  /** Its Chapter, e.g. "marauder" for the Marauder Chapter. */
+  chapter?: string;
+  abilities?: Record<string, number>;
+}
+
 /** A jaeger of `level` with Dex 16 (+3) and Str 12 (+1); `data` sets more token fields. */
-export function jaeger(level: number, data: Partial<Token> & { features?: string[] } = {}): Token {
-  const { features, ...rest } = data;
+export function jaeger(level: number, data: JaegerData = {}): Token {
+  const { features, chapter, abilities, ...rest } = data;
   return TokenSchema.parse({
     id: 'hunter',
     name: 'Hunter',
     x: 50,
     y: 50,
     stats: {
-      class: 'jaeger',
-      level,
+      ...(chapter
+        ? { classes: [{ class: 'jaeger', level, subclass: `${chapter}-chapter` }] }
+        : { class: 'jaeger', level }),
       maxHp: 40,
-      abilities: { str: 12, dex: 16, con: 14, int: 12 },
+      abilities: { str: 12, dex: 16, con: 14, int: 12, ...abilities },
       ...(features && { features }),
     },
     ...rest,
