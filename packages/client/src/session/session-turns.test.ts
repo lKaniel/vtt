@@ -35,6 +35,39 @@ describe('turns', () => {
     expect(session.turns.mine()).toBe(false);
   });
 
+  it('ends only the selected creature’s turn on a shared turn', () => {
+    ws.receive(welcome([token('hero'), mage]));
+    const combat = {
+      ...fight(0),
+      order: [
+        { token: 'hero', initiative: 20 },
+        { token: 'mage', initiative: 5 },
+      ],
+    };
+    ws.receive({ t: 'combat', combat: { ...combat, group: ['mage'] } });
+    expect(session.turns.ending('mage')).toBe('mage');
+    session.requests.endTurn(session.turns.ending('mage'));
+    expect(ws.sent.at(-1)).toEqual({ t: 'endTurn', token: 'mage' });
+    ws.receive({ t: 'combat', combat: { ...combat, group: ['mage'], done: ['mage'] } });
+    expect(session.turns.ending('mage')).toBe('hero');
+    expect(session.turns.ending(undefined)).toBe('hero');
+  });
+
+  it('hands you the next of yours sharing the turn once the selected one ends theirs', () => {
+    ws.receive(welcome([token('hero'), mage]));
+    const combat = {
+      ...fight(0),
+      order: [
+        { token: 'hero', initiative: 20 },
+        { token: 'mage', initiative: 5 },
+      ],
+    };
+    ws.receive({ t: 'combat', combat: { ...combat, group: ['mage'] } });
+    expect(session.selected).toBe('hero');
+    ws.receive({ t: 'combat', combat: { ...combat, group: ['mage'], done: ['hero'] } });
+    expect(session.selected).toBe('mage');
+  });
+
   it('starts a fight with shared party turns when asked', () => {
     ws.receive(welcome());
     session.requests.startCombat(['hero'], true);

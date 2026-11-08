@@ -127,7 +127,8 @@ export type ClientMessage =
   | { t: 'combatEnd' }
   /** GM: turn-based mode outside a fight: the party takes turns, 6 seconds a round (fights are always turn-based). */
   | { t: 'turnBased'; on: boolean }
-  | { t: 'endTurn' }
+  /** Ends one creature's turn: `token`, else yours whose turn it is (on a shared turn the others keep theirs). */
+  | { t: 'endTurn'; token?: string }
   /**
    * `smite`: spend a slot of this level on Divine Smite if the attack hits (2014 paladin).
    * Without `target` the attack goes at `point`, empty ground, and hits nothing.

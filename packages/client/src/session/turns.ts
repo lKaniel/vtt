@@ -21,9 +21,34 @@ export class Turns {
 
   /** One of your creatures may act now (its turn, or it shares the party's). */
   mine(): boolean {
+    return this.yours().length > 0;
+  }
+
+  /** Whose turn End turn ends: `selected` when it may act now and is yours, else the first of yours that may. */
+  ending(selected: string | undefined): string | undefined {
+    const yours = this.yours();
+    return selected && yours.includes(selected) ? selected : yours[0];
+  }
+
+  /**
+   * Whom to hand you as the fight changes from `before`: yours whose turn
+   * just started, or on a shared turn the next of yours once `selected` has
+   * ended its part.
+   */
+  handOff(before: Combat | null, selected: string | undefined): string | undefined {
     const combat = this.s.combat;
-    if (!combat) return false;
-    return takers(combat).some((id) => {
+    const token = this.current();
+    if (!combat || !token) return undefined;
+    const same = before?.round === combat.round && currentTurn(before) === token.id;
+    if (!same) return this.s.canControl(token) ? token.id : undefined;
+    return selected && combat.done?.includes(selected) ? this.ending(undefined) : undefined;
+  }
+
+  /** Your creatures taking the turn that haven't ended theirs. */
+  private yours(): string[] {
+    const combat = this.s.combat;
+    if (!combat) return [];
+    return takers(combat).filter((id) => {
       const token = this.s.tokens.get(id);
       return !!token && actsNow(combat, id) && this.s.canControl(token);
     });

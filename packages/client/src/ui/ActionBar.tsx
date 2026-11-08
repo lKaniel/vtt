@@ -1,5 +1,8 @@
 import { actsNow, type TokenView, type TurnBudget } from '@vtt/system-dnd5e';
+import { XIcon } from 'lucide-react';
 import { useState } from 'react';
+import { t } from '../i18n/index.ts';
+import { Button } from './kit/button.tsx';
 import { actionTiles, affordable, costOf, filterTiles, TABS, type ActionTile, type Tab } from '../play/actions.ts';
 import {
   dragTile,
@@ -111,7 +114,24 @@ function Who({ session, token }: Readonly<{ session: Session; token: TokenView }
       )}
       <HpBar token={token} />
       <EffectBadges token={token} at={{ now: session.time.now(), fighting: !!session.combat }} />
+      <Deselect session={session} />
     </div>
+  );
+}
+
+/** Lets go of the selection on purpose (Esc does the same); a drag over empty ground no longer does. */
+function Deselect({ session }: Readonly<{ session: Session }>) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      className="ml-auto"
+      onClick={() => session.select(undefined)}
+      title={t('select.deselectHint')}
+      aria-label={t('select.deselect')}
+    >
+      <XIcon />
+    </Button>
   );
 }
 
@@ -317,7 +337,7 @@ function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenVi
       <button
         className="end-turn"
         disabled={!mine}
-        onClick={() => session.requests.endTurn()}
+        onClick={() => session.requests.endTurn(session.turns.ending(token.id))}
         title={mine ? 'End turn (Space)' : 'Waiting for your turn'}
         aria-label={mine ? 'End turn' : 'Waiting for your turn'}
       />

@@ -101,7 +101,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('combatEnd') }),
   z.object({ t: z.literal('turnBased'), on: z.boolean() }),
   z.object({ t: z.literal('clock'), action: ClockActionSchema }),
-  z.object({ t: z.literal('endTurn') }),
+  z.object({ t: z.literal('endTurn'), token: z.string().optional() }),
   z.object({
     t: z.literal('attack'),
     attacker: z.string(),

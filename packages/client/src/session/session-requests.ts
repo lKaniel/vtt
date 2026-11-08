@@ -108,8 +108,9 @@ export class Requests {
     this.s.send({ t: 'pause', on });
   }
 
-  endTurn(): void {
-    this.s.send({ t: 'endTurn' });
+  /** Ends `token`'s turn (yours whose turn it is when missing); on a shared turn the others keep theirs. */
+  endTurn(token?: string): void {
+    this.s.send({ t: 'endTurn', ...(token && { token }) });
   }
 
   /** GM: a fight; `shared`: party members next to each other share a turn (BG3). */

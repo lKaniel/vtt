@@ -112,14 +112,14 @@ describe('the game keys', () => {
     expect(sent()).toEqual({ t: 'editToken', token: 'hero', patch: { elevation: -5 } });
   });
 
-  it('holds Space to pan, and a tap of it ends your turn', () => {
+  it('holds Space to pan, and a tap of it ends your creature’s turn', () => {
     ws.receive({ t: 'combat', combat: fight(1) });
     const down = press(' ');
     gameKey(session, down);
     expect(down.prevented).toBe(true);
     expect(ws.sent.some((m) => (m as { t: string }).t === 'endTurn')).toBe(false);
     spaceReleased(session, press(' '));
-    expect(sent()).toEqual({ t: 'endTurn' });
+    expect(sent()).toEqual({ t: 'endTurn', token: 'hero' });
   });
 
   it('groups and locks tiles with the layer keys, for the GM in the tiles mode only', () => {
