@@ -1026,8 +1026,11 @@ feature) and `costWhenSpent` (the cost once its `uses` are gone). Spells gain
 creatures under one of the caster's `linked` effects, at any distance),
 `maxWeight`, `split` (one attack, its damage shared out among the targets)
 and `crowd` (a save for every creature when it damages `atLeast` of them);
-effects gain `linked`, `noReactions`, `conditionSaveAdvantage` and
-`bonusFeature`, and auras `maxWeight`.
+effects gain `linked`, `noReactions`, `bonusFeature` (Mind's Eye uses `saveAdvantageVs`),
+and auras `maxWeight`. Features gain `reaction` (Misdirection, Redirect,
+Unreal Self, Phantom Step: offered as an attack is about to hit or a
+Dexterity save is rolled) and a feature spell may `summon` a creature built
+for the class level and the pool's numbers (Shadow Substance).
 
 **Homebrew items and spells.** A homebrew file with `"kind": "spell"` has
 the fields of an SRD spell; one with `"kind": "item"` keeps the item's own

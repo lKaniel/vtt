@@ -42,6 +42,8 @@ export class Actions {
   armed?: string;
   /** Slot level to Divine Smite with on the armed attack. */
   smite?: number;
+  /** The hit finisher (a feature id) to spend momentum dice on if the armed attack hits. */
+  finisher?: string;
   /** The spell the selected token is aiming, and what it has picked so far. */
   aiming?: Aiming;
   /** Who sees your rolls and the cards of your actions (see roll-modes.ts). */
@@ -72,6 +74,7 @@ export class Actions {
   arm(attack: string | undefined): void {
     this.armed = attack;
     this.smite = undefined;
+    this.finisher = undefined;
     this.aiming = undefined;
     const target = attack && this.s.targets.only();
     if (target && target !== this.s.selected) return this.attack(target);
@@ -201,6 +204,12 @@ export class Actions {
     this.on.changed();
   }
 
+  /** Spends every momentum die on this finisher if the armed attack hits; undefined for none. */
+  setFinisher(finisher: string | undefined): void {
+    this.finisher = finisher;
+    this.on.changed();
+  }
+
   /** Spends the readied attack on empty ground at `point`: it hits nothing. */
   attackAt(point: Point): void {
     if (!this.s.selected || !this.armed) return;
@@ -211,7 +220,8 @@ export class Actions {
   attack(target: string): void {
     if (!this.s.selected || !this.armed) return;
     const smite = this.smite ? { smite: this.smite } : {};
-    this.s.send({ t: 'attack', attacker: this.s.selected, target, attack: this.armed, ...smite });
+    const finisher = this.finisher ? { finisher: this.finisher } : {};
+    this.s.send({ t: 'attack', attacker: this.s.selected, target, attack: this.armed, ...smite, ...finisher });
     this.arm(undefined);
   }
 }

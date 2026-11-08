@@ -155,8 +155,6 @@ export const powerEffectFields = {
   hold: z.string().optional(),
   /** The bearer can't take reactions. */
   noReactions: z.boolean().optional(),
-  /** Saves the bearer makes against effects with these conditions have advantage (Mind's Eye: charmed, frightened). */
-  conditionSaveAdvantage: z.array(z.string()).optional(),
   /** With `followUp`: the feature its bearer may use as a bonus action this turn (Twin Thought). */
   bonusFeature: id.optional(),
 };

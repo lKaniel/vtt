@@ -128,7 +128,7 @@ describe('weights and conditions', () => {
       effect: { conditions: ['frightened'] },
     });
     const brave = monster('brave', 'commoner', {
-      effects: [{ id: 'eye', name: "Mind's Eye", conditionSaveAdvantage: ['frightened'] }],
+      effects: [{ id: 'eye', name: "Mind's Eye", saveAdvantageVs: ['frightened'] }],
     });
     const out = cast(1, { spell: fear, targets: [brave] }, rngOf([face(2, 20), face(19, 20)]));
     expect(out.results[0]!.save?.success).toBe(true);

@@ -26,6 +26,8 @@ export interface WeaponAttackInput {
   smite?: number;
   /** Sneak attack was already used this turn. */
   sneakUsed: boolean;
+  /** Extra damage a finisher adds if the attack hits (finishers.ts); the server spends the dice. */
+  finisher?: Damage;
 }
 
 export interface WeaponAttackOutcome {
@@ -63,7 +65,7 @@ function extraDamage(input: WeaponAttackInput, sneak: boolean): Damage[] {
   extra.push(...weaponRiders(attack, target.sheet.type));
   extra.push(...hitRiders({ id: attacker.token.id, sheet: attacker.sheet }, type).damage);
   extra.push(...markDamage(target.sheet, attacker.token.id, type));
-  return [...extra, ...smiting(input)];
+  return [...extra, ...smiting(input), ...(input.finisher ? [input.finisher] : [])];
 }
 
 /** A magic weapon's own extra damage: always, or against the creature types it slays. */

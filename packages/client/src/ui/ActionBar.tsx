@@ -19,6 +19,7 @@ import { ORDINAL } from '../text/spell-text.ts';
 import { activateTile, canActivate } from '../play/tile-use.ts';
 import { AimingControls } from './AimingControls.tsx';
 import { SmiteControls } from './SmiteControls.tsx';
+import { FinisherControls } from './FinisherControls.tsx';
 import { currentKeys, keyLabel, keyOf } from '../keys/keybinds.ts';
 import { attackTip, featureTip, itemTip, macroTip, spellTip } from '../text/tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
@@ -53,6 +54,7 @@ export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onS
       <div className="hint">{hint(session, token)}</div>
       {token && <AimingControls session={session} token={token} />}
       {token && <SmiteControls session={session} token={token} />}
+      {token && <FinisherControls session={session} token={token} />}
       {token && <Bar session={session} token={token} onSheet={onSheet} />}
     </footer>
   );

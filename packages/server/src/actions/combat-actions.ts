@@ -1,7 +1,5 @@
 import {
-  animationRef,
   applyDamage,
-  retaliation,
   turnStartHarm,
   type Attack,
   type AttackLog,
@@ -35,6 +33,8 @@ import {
 } from '@vtt/system-dnd5e';
 import { canControl, gridKind, isParty, type Player, type Point } from '@vtt/shared';
 import { attackGround } from './ground-attack.ts';
+import { applyOutcome } from './attack-outcome.ts';
+import { afterAttack, readiedFinisher, rollInitiative, turnEnds } from '../play/momentum-keeper.ts';
 import { compelled, riseInAura } from '../play/turn-start.ts';
 import { anotherTurn, breakTimeStop } from '../play/time-stop.ts';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
@@ -48,6 +48,8 @@ export interface PendingHit {
   attack: Attack;
   range: 'normal' | 'long';
   smite?: number;
+  /** The hit finisher readied with it (finishers.ts). */
+  finisher?: string;
   outcome: WeaponAttackOutcome;
 }
 
@@ -56,6 +58,7 @@ export interface AttackRequest {
   target: string;
   attack: string;
   smite?: number;
+  finisher?: string;
 }
 
 /** An attack as a player asks for it: at a creature, or at empty ground (`point`). */
@@ -99,6 +102,7 @@ export class CombatActions {
       fighters.map((f) => ({ token: f.token.id, bonus: f.sheet.initiative, speed: f.sheet.speed })),
       this.table.rng,
     );
+    rollInitiative(this.table, fighters);
     const lairs = peaceful ? [] : fighters.filter((f) => f.sheet.lair).map((f) => f.token.id);
     const fight = peaceful ? { ...rolled, peaceful } : withLair(rolled, lairs);
     const combat = shared ? firstTurn({ ...fight, shared }, this.table.turnInfo) : fight;
@@ -191,6 +195,7 @@ export class CombatActions {
     const blinked = blinkAway(after, this.table.rng);
     if (blinked !== after) this.table.note(`${token.name} blinks into the Ethereal Plane`);
     if (blinked !== token) this.store.setToken(blinked);
+    turnEnds(this.table, token.id);
   }
 
   /** Effects made by the creature whose turn starts count down a round. */
@@ -274,7 +279,7 @@ export class CombatActions {
     this.table.pay(attacker.token, cost, attacker.sheet.attacksPerAction);
     if (lightAttack(attack)) this.markUsed(attacker.token, 'light-attack');
     if (attack.offHand && cost === 'free') this.markUsed(attacker.token, 'nick');
-    this.resolve({ attacker, target, attack, range }, { smite: req.smite, reaction: false });
+    this.resolve({ attacker, target, attack, range }, { smite: req.smite, finisher: req.finisher, reaction: false });
   }
 
   /** An attack at empty ground: it costs what an attack costs and hits nothing. */
@@ -331,7 +336,7 @@ export class CombatActions {
 
   private resolve(
     { attacker, target, attack, range }: Pick<PendingHit, 'attacker' | 'target' | 'attack' | 'range'>,
-    { smite, reaction }: { smite: number | undefined; reaction: boolean },
+    { smite, finisher, reaction }: { smite: number | undefined; finisher?: string; reaction: boolean },
   ): void {
     // Out of its turn a creature has no budget; its sneak attack is still unused.
     const sneakUsed = !reaction && !!this.table.budget(attacker.token)?.used.includes('sneak-attack');
@@ -346,22 +351,30 @@ export class CombatActions {
         allyNearTarget: this.allyNear(attacker.token, target.token),
         sneakUsed,
         smite,
+        finisher: readiedFinisher(attacker, attack, finisher),
       },
       this.table.rng,
     );
     if (outcome.sneak && !reaction) this.markUsed(attacker.token, 'sneak-attack');
     breakSanctuary(this.table, attacker.token.id);
-    const hit = { attacker, target, attack, range, smite, outcome };
+    const hit = { attacker, target, attack, range, smite, finisher, outcome };
     if (!outcome.roll.hit || !this.onHit(hit)) this.land(hit);
   }
 
   /** Lands a rolled attack, once any reaction to it is settled. */
-  land({ attacker, target, attack, range, smite, outcome }: PendingHit): void {
+  land({ attacker, target, attack, range, smite, finisher, outcome }: PendingHit): void {
     if (outcome.smote) this.table.spendSlot(attacker.token.id, smite!);
     if (outcome.decoy === 'hit') loseImage(this.table, target.token.id);
     this.table.useUp(outcome.used);
     breakTimeStop(this.table, attacker.token.id, [target.token.id]);
-    this.applyOutcome(attacker, target, outcome, { range, name: attack.name, kind: attack.kind });
+    applyOutcome(
+      this.table,
+      this.logAttack,
+      { attacker, target, outcome },
+      { range, name: attack.name, kind: attack.kind },
+    );
+    const onTurn = !!this.store.combat && actsNow(this.store.combat, attacker.token.id);
+    afterAttack(this.table, { attacker, target, outcome, finisher, onTurn });
   }
 
   private markUsed(token: Token, what: string): void {
@@ -386,70 +399,6 @@ export class CombatActions {
   private distance(a: Token, b: Token): number {
     const { world } = this.store;
     return tokenDistance(a, b, world.gridSize, gridKind(world));
-  }
-
-  private applyOutcome(
-    attacker: Fighter,
-    target: Fighter,
-    outcome: WeaponAttackOutcome,
-    { range, name, kind }: { range: string; name: string; kind: AttackLog['kind'] },
-  ): void {
-    const { roll: result } = outcome;
-    const notes0: string[] = [];
-    const parts = result.damage.map((d) => ({ amount: d.roll.total, type: d.type }));
-    if (outcome.graze) parts.push(outcome.graze);
-    const fresh = this.table.fighter(target.token.id);
-    const { dealt, hp, tempHp, warded } = applyDamage(fresh.sheet, parts, this.table.rng);
-    const total = dealt.reduce((sum, d) => sum + d, 0);
-    if (total > 0) this.table.hurt(fresh.token, { hp, tempHp, crit: result.crit, warded }, total);
-    if (result.hit && kind === 'melee') notes0.push(...this.hitBack(attacker.token, fresh));
-    this.addEffects(target.token.id, outcome);
-    const notes = [...outcome.notes, ...notes0];
-    if (range === 'long') notes.push('long range: disadvantage');
-    if (outcome.graze) notes.push(`graze: ${dealt.at(-1)} damage`);
-    if (total > 0 && hp <= 0) notes.push(`${target.token.name} is down`);
-    notes.push(...this.push(attacker.token, target.token, outcome.push));
-    this.logAttack({
-      attacker: attacker.token.name,
-      target: target.token.name,
-      attackerId: attacker.token.id,
-      targetId: target.token.id,
-      kind,
-      attack: name,
-      d20: result.d20,
-      hit: result.hit,
-      crit: result.crit,
-      damage: total,
-      parts: result.damage.map((d, i) => ({ ...d, dealt: dealt[i]! })),
-      notes,
-      animation: attacker.token.animations?.[animationRef('attack', name)],
-    });
-  }
-
-  /** A melee hit on a creature with fire shield burns the attacker standing within 5 ft. */
-  private hitBack(attacker: Token, target: Fighter): string[] {
-    const parts = retaliation(target.sheet.effects, this.table.rng);
-    const struck = this.table.fighter(attacker.id);
-    if (!parts.length || this.distance(attacker, target.token) > 5) return [];
-    const { dealt, hp, tempHp, warded } = applyDamage(struck.sheet, parts, this.table.rng);
-    const total = dealt.reduce((n, d) => n + d, 0);
-    if (total > 0) this.table.hurt(struck.token, { hp, tempHp, warded }, total);
-    return [`${attacker.name} takes ${total} damage back`];
-  }
-
-  /** The push mastery shoves the target straight away from the attacker. */
-  private push(attacker: Token, target: Token, feet: number | undefined): string[] {
-    if (!feet) return [];
-    const moved = this.table.forceMove(target.id, [attacker.x, attacker.y], feet);
-    return moved > 0 ? [`${target.name} is pushed ${moved} ft`] : [];
-  }
-
-  private addEffects(id: string, outcome: WeaponAttackOutcome): void {
-    if (!outcome.targetEffects.length) return;
-    const token = this.store.tokens.get(id)!;
-    const ids = new Set(outcome.targetEffects.map((e) => e.id));
-    const effects = [...(token.effects ?? []).filter((e) => !ids.has(e.id)), ...outcome.targetEffects];
-    this.store.setToken({ ...token, effects });
   }
 
   /** A token disappeared from the world: take it out of the fight. */

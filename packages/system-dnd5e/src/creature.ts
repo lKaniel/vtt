@@ -143,7 +143,11 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
     ...poolParts(token, levels, { abilities, proficiency }, monster),
     ...legendaryParts(token, monster),
     features,
-    senses: sensesOf(token, monster),
+    senses: sensesOf(
+      token,
+      monster,
+      features.flatMap((f) => (f.passive ? [f.passive] : [])),
+    ),
   };
   const styled = withFightingStyles(applyEffects(withItemBonuses(base, token, content)), !!bodyArmor(gear.armor));
   return withCarrying(styled, token, { monster, content });

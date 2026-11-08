@@ -135,6 +135,8 @@ export const TokenSchema = z.object({
     .optional(),
   /** Pool uses that last (a Weave, a Glamour): held against the pool while their effects do. */
   holds: z.array(HoldSchema).optional(),
+  /** Momentum dice held (momentum.ts); `fresh`: they last through the end of its next turn. */
+  momentum: z.object({ dice: z.number().int().positive(), fresh: z.boolean().optional() }).optional(),
   /** Set on creatures a spell or feature brought in; they vanish when it ends. */
   summon: z
     .object({ by: id, spell: id, concentration: z.boolean().default(false), endsAt: z.number().optional() })

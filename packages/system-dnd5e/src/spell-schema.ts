@@ -4,6 +4,7 @@ import { ABILITIES, AbilitiesSchema, DamageSchema, DamageTypeSchema, OtherSpeeds
 import { EffectChangeSchema } from './effect-changes.ts';
 import { WeaponSpellSchema } from './weapon-spell-schema.ts';
 import { AreaSchema } from './area-schema.ts';
+import { classFields, LevelTableSchema, momentumEffectFields } from './class-fields.ts';
 import { ConditionSchema } from './condition-schema.ts';
 import { PoolSchema, powerEffectFields, powerFeatureFields, powerSpellFields } from './power-schema.ts';
 
@@ -176,18 +177,7 @@ const modifiers = {
   disengaged: z.boolean().optional(),
   /** The bearer's speed is 0 (hypnotic pattern). */
   immobile: z.boolean().optional(),
-  /** Senses the effect grants, in feet (darkvision spell), or the power to see invisible things. */
-  senses: z
-    .object({
-      darkvision: z.number().nonnegative(),
-      blindsight: z.number().nonnegative(),
-      tremorsense: z.number().nonnegative(),
-      truesight: z.number().nonnegative(),
-      devilsSight: z.number().nonnegative(),
-      seeInvisible: z.boolean(),
-    })
-    .partial()
-    .optional(),
+  ...momentumEffectFields,
 };
 
 /**
@@ -540,8 +530,7 @@ export const SpellSchema = z.object({
 export type Spell = z.infer<typeof SpellSchema>;
 
 /** A number that grows with class level: [[1, 2], [3, 3]] means 2 from level 1, 3 from level 3. */
-export const LevelTableSchema = z.array(z.tuple([z.number().int().min(1).max(20), z.number().int()]));
-export type LevelTable = z.infer<typeof LevelTableSchema>;
+export { LevelTableSchema, type LevelTable } from './class-fields.ts';
 
 export const FeatureSchema = z.object({
   id,
@@ -602,6 +591,7 @@ export const FeatureSchema = z.object({
   grantsSpells: z.array(z.tuple([z.number().int().min(1).max(20), id])).optional(),
   /** Why the GM runs it by hand: what it does that the engine doesn't (yet). */
   manual: z.string().optional(),
+  ...classFields(EffectTemplateSchema),
   ...powerFeatureFields,
 });
 export type Feature = z.infer<typeof FeatureSchema>;

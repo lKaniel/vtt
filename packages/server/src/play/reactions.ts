@@ -15,6 +15,7 @@ import { randomUUID } from 'node:crypto';
 import type { CombatActions, PendingHit } from '../actions/combat-actions.ts';
 import type { PendingCast } from '../actions/spell-actions.ts';
 import { counter, spellAnswerers } from './counter-casts.ts';
+import { focusArt } from './focus-art-reactions.ts';
 import { Refusal, type Table } from './table.ts';
 
 export type ReactionMessage = { t: 'reactionOffer'; offer: ReactionOffer } | { t: 'reactionGone'; id: string };
@@ -157,7 +158,7 @@ export class Reactions {
       this.table.note(`${hit.target.token.name} uses Uncanny Dodge`);
       return this.combat.land({ ...hit, outcome: halved(hit.outcome) });
     }
-    this.combat.land(hit);
+    this.combat.land(choice ? focusArt(this.table, hit, choice) : hit);
   }
 
   /** Casts shield with the lowest slot: +5 AC until the caster's next turn, which may make the hit miss. */

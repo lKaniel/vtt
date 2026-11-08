@@ -2,6 +2,7 @@ import { IdSchema, OwnershipSchema, type PackCompendium } from '@vtt/core';
 import { z } from 'zod';
 import { ClassSchema, SpellSchema } from './spell-schema.ts';
 import { ItemSchema } from './item-schema.ts';
+import { withClassAutomation } from './content.ts';
 
 // A game's own rules content, made in the app: documents in its homebrew
 // collection (homebrew/<id>.json), each with a `kind`. They join the game's
@@ -67,7 +68,8 @@ export function gameCompendia<D extends { id: string; rev?: number }>(
 export function homebrewIssues(doc: unknown): string[] {
   const kind = kindOf(doc);
   if (!isKind(kind)) return [`kind must be one of: ${Object.keys(KINDS).join(', ')}`];
-  const parsed = KINDS[kind].safeParse(entryOf(kind, doc));
+  const entry = entryOf(kind, doc);
+  const parsed = KINDS[kind].safeParse(kind === 'class' ? withClassAutomation(entry, '2014') : entry);
   if (parsed.success) return [];
   return parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
 }

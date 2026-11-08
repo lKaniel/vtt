@@ -1,7 +1,7 @@
 import type { Content } from './content.ts';
 import { knownSpellIds } from './own-content.ts';
 import { featureSpellIds, levelFeatures } from './class-options.ts';
-import { abilityMod } from './creature-math.ts';
+import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import { type PowerLevel, powerAt } from './powers.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Feature, LevelTable, Spell, Spellcasting } from './spell-schema.ts';
@@ -207,6 +207,10 @@ function passiveAt(f: Feature, level: number): Feature['passive'] {
   return { ...p, ...speed, ...aura, ...hp };
 }
 
+/** The effect a feature gives at this class level: the highest `effectAt` reached, else its `effect`. */
+const effectAt = (f: Feature, level: number): Feature['effect'] =>
+  (f.effectAt ?? []).filter(([from]) => level >= from).at(-1)?.[1] ?? f.effect;
+
 interface SheetContext {
   level: number;
   abilities: Abilities;
@@ -220,6 +224,7 @@ function sheetOf(raw: Feature, { level, abilities, spent, power }: SheetContext)
   const passive = passiveAt(f, level);
   const base: FeatureSheet = {
     ...f,
+    effect: effectAt(f, level),
     passive,
     spell: featureSpell(f, level),
     classLevel: level,
@@ -256,12 +261,30 @@ export function featureSheets(
   const extra = granted
     .filter((g) => !fresh.some((o) => o.f.id === g.id))
     .map((f) => ({ f, level: total, l: { ...first, level: total } }));
-  const sheets = [...fresh, ...extra].map(({ f, level, l }) =>
-    sheetOf(f, { level, abilities, spent, power: powerLevel(token, l, abilities) }),
+  const sheets = withPools(
+    [...fresh, ...extra].map(({ f, level, l }) =>
+      sheetOf(f, { level, abilities, spent, power: powerLevel(token, l, abilities) }),
+    ),
+    token,
+    abilities,
   );
   return sheets.map((f) => {
     const from = f.usesFrom ? sheets.find((s) => s.id === f.usesFrom) : undefined;
     return from ? { ...f, max: from.max, left: from.left } : f;
+  });
+}
+
+/** More uses another feature gives (focused fighting), and a momentum pool's size and dice held. */
+function withPools(sheets: FeatureSheet[], token: Token, abilities: Abilities): FeatureSheet[] {
+  const more = (id: string) => sheets.reduce((n, s) => n + (s.moreUses?.of === id ? s.moreUses.by : 0), 0);
+  return sheets.map((s) => {
+    if (s.momentum) {
+      const prof = proficiencyForLevel(characterLevel(token.stats) ?? 1);
+      const max = prof + Math.max(abilityMod(abilities.str), abilityMod(abilities.dex));
+      return { ...s, max, left: Math.min(max, token.momentum?.dice ?? 0) };
+    }
+    const by = s.max === undefined ? 0 : more(s.id);
+    return by ? { ...s, max: s.max! + by, left: s.left! + by } : s;
   });
 }
 

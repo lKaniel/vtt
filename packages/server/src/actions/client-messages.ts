@@ -110,6 +110,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     point: PointSchema.optional(),
     attack: z.string(),
     smite: z.number().int().min(1).max(9).optional(),
+    finisher: z.string().max(80).optional(),
   }),
   z.object({ t: z.literal('equip'), token: z.string(), item: z.number().int().nonnegative(), equipped: z.boolean() }),
   z.object({ t: z.literal('hitDie'), token: z.string() }),
@@ -170,6 +171,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     feature: z.string(),
     targets: z.array(z.string()).max(20).optional(),
     point: PointSchema.optional(),
+    choice: z.string().optional(),
     /** A pool feature's picked options and entered numbers, and using it as a bonus action instead. */
     picks: z.array(z.string()).max(30).optional(),
     inputs: z.record(z.string(), z.number()).optional(),

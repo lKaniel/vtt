@@ -4,6 +4,8 @@ import { characterLevel } from './multiclass.ts';
 import type { Creature } from './creature.ts';
 import { hitDiceOf, restedExhaustion, restedHitDice } from './vigour.ts';
 import { type Rng, roll } from '@vtt/shared';
+import { gainMomentum, momentumForSpend, spendMomentum } from './momentum.ts';
+import { actionFinisher } from './finishers.ts';
 import { removeEffects, rollSave, type SaveRoll } from './effects.ts';
 import type { Token } from './token-schema.ts';
 import { type Effect, type Spell, SpellSchema } from './spell-schema.ts';
@@ -46,11 +48,14 @@ export interface FeatureUse {
   grantAttacks?: number;
 }
 
-export function spendUse(token: Token, feature: FeatureSheet, amount = 1): Token {
+/** Spends uses; with the sheet, points of a momentum pool's source build momentum dice. A finisher spends every die. */
+export function spendUse(token: Token, feature: FeatureSheet, amount = 1, sheet?: Creature): Token {
   if (feature.max === undefined) return token;
+  if (feature.finisher) return spendMomentum(token);
   const id = feature.usesFrom ?? feature.id;
   const uses = { ...token.spent?.uses, [id]: (token.spent?.uses?.[id] ?? 0) + amount };
-  return { ...token, spent: { ...token.spent, uses } };
+  const spent = { ...token, spent: { ...token.spent, uses } };
+  return sheet ? gainMomentum(spent, sheet, momentumForSpend(sheet, feature, amount)) : spent;
 }
 
 /** The level a feature's tables read: its class's level. */
@@ -73,15 +78,12 @@ function featureEffect(token: Token, feature: FeatureSheet): Effect | undefined 
 /** Uses a feature: spends a use, then heals, adds its effect or gives back the action. Check `featureProblem` first. */
 export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng = Math.random): FeatureUse {
   const feature = sheet.features.find((f) => f.id === id)!;
-  let next = spendUse(token, feature);
-  let healed: number | undefined;
-  if (feature.heal) {
-    const amount = roll(feature.heal.replace(/level/g, String(featureLevel(token, feature))), rng).total;
-    const hp = Math.min(sheet.maxHp, sheet.hp + amount);
-    healed = hp - sheet.hp;
-    next = { ...next, hp: hp >= sheet.maxHp ? undefined : hp };
-  }
-  const effect = featureEffect(token, feature);
+  const finish = actionFinisher(feature, { token, sheet });
+  let next = spendUse(token, feature, 1, sheet);
+  if (feature.grantsMomentum) next = gainMomentum(next, sheet, feature.grantsMomentum);
+  const { token: healedToken, healed } = healFrom(next, sheet, feature, rng);
+  next = healedToken;
+  const effect = featureEffect(token, feature) ?? finish.effect;
   if (effect) next = { ...next, effects: [...(next.effects ?? []).filter((e) => e.id !== effect.id), effect] };
   return {
     token: next,
@@ -89,9 +91,23 @@ export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng =
     healed,
     effect,
     grantAction: feature.grantAction,
-    dash: feature.dash ? sheet.speed : undefined,
-    grantAttacks: feature.grantAttacks,
+    dash: finish.dash ?? dashOf(feature, sheet.speed),
+    grantAttacks: finish.grantAttacks ?? feature.grantAttacks,
   };
+}
+
+/** The hit points a healing feature gives back (second wind). */
+function healFrom(token: Token, sheet: Creature, feature: FeatureSheet, rng: Rng): { token: Token; healed?: number } {
+  if (!feature.heal) return { token };
+  const amount = roll(feature.heal.replace(/level/g, String(featureLevel(token, feature))), rng).total;
+  const hp = Math.min(sheet.maxHp, sheet.hp + amount);
+  return { token: { ...token, hp: hp >= sheet.maxHp ? undefined : hp }, healed: hp - sheet.hp };
+}
+
+/** Feet of extra movement a feature gives: the creature's speed (dash) or half of it (hunter's pursuit). */
+function dashOf(feature: FeatureSheet, speed: number): number | undefined {
+  if (feature.dash) return speed;
+  return feature.halfDash ? Math.floor(speed / 2) : undefined;
 }
 
 function restUses(token: Token, sheet: Creature): Record<string, number> | undefined {
@@ -116,7 +132,8 @@ export function rest(token: Token, sheet: Creature, kind: 'short' | 'long'): Tok
   const slots = shortRestSlots(token.spent?.slots, sheet.caster);
   const hitDice = token.spent?.hitDice;
   const pool = sheet.pool?.recharge === 'long' ? token.spent?.pool : undefined;
-  return { ...token, spent: uses || slots || hitDice || pool ? { slots, uses, hitDice, pool } : undefined };
+  const spent = uses || slots || hitDice || pool ? { slots, uses, hitDice, pool } : undefined;
+  return { ...token, spent, momentum: undefined };
 }
 
 /** Spent slots after a short rest: pact slots come back (taken to be the ones spent first). */
@@ -147,6 +164,7 @@ function longRest(token: Token, sheet: Creature): Token {
     spent: hitDice ? { hitDice } : undefined,
     ...keptReserves(token),
     concentration: undefined,
+    momentum: undefined,
     exhaustion,
   };
 }

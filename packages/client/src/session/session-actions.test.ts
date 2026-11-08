@@ -57,4 +57,15 @@ describe('Session actions', () => {
     session.actions.applyRoll('card', 'half');
     expect(ws.sent.at(-1)).toEqual({ t: 'applyDamage', card: 'card', tokens: ['goblin'], how: 'half' });
   });
+
+  it('spends momentum on a chosen finisher with the armed attack, then forgets it', () => {
+    ws.receive(welcome([token('hero'), token('goblin', 250, 50)]));
+    session.select('hero');
+    session.actions.arm('Longsword');
+    session.actions.setFinisher('brutal-finisher');
+    session.actions.attack('goblin');
+    expect(ws.sent.at(-1)).toMatchObject({ t: 'attack', attack: 'Longsword', finisher: 'brutal-finisher' });
+    session.actions.arm('Longsword');
+    expect(session.actions.finisher).toBeUndefined();
+  });
 });
