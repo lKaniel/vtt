@@ -1,4 +1,3 @@
-import { resistSave } from './legendary.ts';
 import { applyDamage, critDice, tokenDistance } from './attack.ts';
 import { spellHealBonus } from './class-styles.ts';
 import type { Creature } from './creature.ts';
@@ -6,8 +5,8 @@ import { abilityMod } from './creature-math.ts';
 import { isDead, makesDeathSaves } from './deaths.ts';
 import { markDamage } from './riders.ts';
 import { type GridKind, type Rng, roll, type Roll } from '@vtt/shared';
-import { attackModifiers, d20Formula, rollSpellSave, type SaveRoll, type UsedEffect } from './effects.ts';
-import { contest } from './checks.ts';
+import { attackModifiers, d20Formula, type SaveRoll, type UsedEffect } from './effects.ts';
+import { castSave, withEvasion } from './spell-saves.ts';
 import type { Token } from './token-schema.ts';
 import type { Effect, Spell } from './spell-schema.ts';
 import { dispelled, rolledRays, tierFor, tierSpell } from './spell-options.ts';
@@ -191,7 +190,7 @@ export interface CastOutcome {
   drained?: number;
 }
 
-interface Cast {
+export interface Cast {
   spell: Spell & { beams: number };
   slot: number;
   /** What's left of a healing pool shared out among the targets (mass heal). */
@@ -301,14 +300,6 @@ function spellAttack(cast: Cast, target: CastSide, used: UsedEffect[]) {
   return { attack, hit, crit };
 }
 
-/** The target's save when the spell lands, against the spell's own DC or the caster's; none when it saves only later. */
-function castSave(cast: Cast, target: CastSide): SaveRoll | undefined {
-  const { spell, dc, rng } = cast;
-  if (!spell.save?.onCast) return undefined;
-  if (spell.save.contest) return contest(spell.save.ability, cast.caster, target, rng);
-  return resistSave(target.sheet, rollSpellSave(target.sheet, spell.save.ability, spell.save.dc ?? dc, rng));
-}
-
 /** Attack roll and/or save: whether the spell lands in full, or for half damage. */
 function landing(cast: Cast, target: CastSide, used: UsedEffect[]) {
   const { spell } = cast;
@@ -316,7 +307,7 @@ function landing(cast: Cast, target: CastSide, used: UsedEffect[]) {
   const save = castSave(cast, target);
   const landed = (attack?.hit ?? true) && !save?.success;
   const half = save?.success === true && spell.save?.onSave === 'half';
-  return { attack, save, landed, half };
+  return withEvasion(target.sheet, spell, { attack, save, landed, half });
 }
 
 /** Results that need no attack or save: the wrong kind of creature, healing, temporary hit points, riders. */

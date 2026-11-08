@@ -1,4 +1,12 @@
-import { featureProblem, type FeatureSheet, featureSpell, spendUse } from '@vtt/system-dnd5e';
+import {
+  type Spell,
+  featureProblem,
+  type FeatureSheet,
+  featureSpell,
+  poolSpell,
+  spendUse,
+  withChoice,
+} from '@vtt/system-dnd5e';
 import type { Player, Point } from '@vtt/shared';
 import type { SpellActions } from '../actions/spell-actions.ts';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
@@ -8,6 +16,8 @@ export interface FeatureRequest {
   feature: string;
   targets?: string[];
   point?: Point;
+  /** The option picked for a feature aimed like a spell with choices (elemental art's damage type). */
+  choice?: string;
 }
 
 /** Hit points a healing pool spends on its target: what it's missing, as far as the pool goes. */
@@ -16,6 +26,15 @@ function poolHealing(feature: FeatureSheet, targets: readonly Fighter[]): number
   const missing = target ? target.sheet.maxHp - target.sheet.hp : 0;
   if (missing <= 0) throw new Refusal(`${target?.token.name ?? 'Nobody'} isn't hurt`);
   return Math.min(missing, feature.left ?? 0);
+}
+
+/** The spell with the option picked; refuses one it doesn't have. */
+function chosen(spell: Spell, choice: string | undefined): Spell {
+  try {
+    return withChoice(spell, choice);
+  } catch {
+    throw new Refusal(`${spell.name} has no option called ${choice}`);
+  }
 }
 
 /** Uses a feature aimed like a spell (bardic inspiration, lay on hands, turn undead): one use, no slot. */
@@ -31,12 +50,12 @@ export function castFeature(
   const feature = caster.sheet.features.find((f) => f.id === req.feature)!;
   const cost: Cost = feature.action ?? 'free';
   table.check(caster.token, cost);
-  let spell = featureSpell(feature);
+  let spell = chosen(poolSpell(featureSpell(feature), feature, caster.sheet), req.choice);
   const aim = { ...req, caster: req.token, spell: spell.id, slot: 0, targets: req.targets ?? [] };
   const targets = spells.targets(caster, spell, aim, canSee);
   const spend = feature.healPool ? poolHealing(feature, targets) : 1;
   if (feature.healPool) spell = { ...spell, heal: String(spend) };
   table.pay(caster.token, cost);
-  table.store.setToken(spendUse(table.store.tokens.get(caster.token.id)!, feature, spend));
+  table.store.setToken(spendUse(table.store.tokens.get(caster.token.id)!, feature, spend, caster.sheet));
   spells.strike(caster.token.id, { spell, slot: 0, point: req.point }, targets);
 }

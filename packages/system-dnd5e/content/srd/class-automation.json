@@ -1191,5 +1191,447 @@
         }
       }
     }
+  },
+  "jaeger": {
+    "both": {
+      "hitDie": 8,
+      "saves": ["dex", "int"],
+      "subclassLevel": 3,
+      "attacks": [[5, 2]],
+      "choices": [
+        {
+          "id": "fighting-style",
+          "name": "Fighting Style",
+          "count": [[2, 1]]
+        },
+        {
+          "id": "focus-art",
+          "name": "Focus Art",
+          "count": [
+            [2, 1],
+            [7, 2],
+            [13, 3],
+            [17, 4]
+          ]
+        },
+        {
+          "id": "finisher",
+          "name": "Finisher",
+          "count": [
+            [4, 1],
+            [6, 2],
+            [8, 3],
+            [12, 4]
+          ]
+        }
+      ],
+      "features": {
+        "flexible-combatant": {
+          "name": "Flexible Combatant",
+          "level": 1,
+          "manual": "Draw or stow two one-handed weapons at once and reload without a free hand: the table doesn't track drawing or reloading, and ranged attacks next to a foe aren't at disadvantage here."
+        },
+        "focus": {
+          "name": "Focus",
+          "level": 1,
+          "uses": [
+            [1, 1],
+            [2, 2],
+            [5, 3],
+            [9, 4],
+            [13, 5],
+            [17, 6]
+          ],
+          "recharge": "short",
+          "regain": {
+            "nat20": true,
+            "initiative": true
+          },
+          "manual": "A natural 20 on a saving throw against a foe's effect also gives a point back: add it on the sheet."
+        },
+        "weapon-parry": {
+          "name": "Weapon Parry",
+          "level": 1,
+          "usesFrom": "focus",
+          "hitArt": "parry"
+        },
+        "dodge-step": {
+          "name": "Dodge Step",
+          "level": 1,
+          "usesFrom": "focus",
+          "hitArt": "dodge"
+        },
+        "eldritch-hunter": {
+          "name": "Eldritch Hunter",
+          "level": 1,
+          "manual": "Add your proficiency bonus (doubled if proficient) to checks to track or identify aberrations, celestials, fiends, monstrosities and undead."
+        },
+        "momentum": {
+          "name": "Momentum",
+          "level": 2,
+          "momentum": {
+            "from": "focus"
+          },
+          "die": [
+            [2, 6],
+            [11, 8],
+            [17, 10]
+          ]
+        },
+        "brutal-finisher": {
+          "name": "Brutal Finisher",
+          "level": 2,
+          "usesFrom": "momentum",
+          "finisher": {
+            "when": "hit",
+            "does": "damage"
+          }
+        },
+        "piercing-gaze": {
+          "name": "Piercing Gaze",
+          "level": 3,
+          "action": "free",
+          "effect": {
+            "name": "Piercing Gaze",
+            "rounds": 600,
+            "darkvisionPlus": 60
+          },
+          "effectAt": [
+            [
+              3,
+              {
+                "name": "Piercing Gaze",
+                "rounds": 600,
+                "darkvisionPlus": 60
+              }
+            ],
+            [
+              7,
+              {
+                "name": "Piercing Gaze",
+                "rounds": 600,
+                "darkvisionPlus": 60,
+                "senses": {
+                  "seeInvisible": true
+                }
+              }
+            ],
+            [
+              13,
+              {
+                "name": "Piercing Gaze",
+                "rounds": 600,
+                "darkvisionPlus": 60,
+                "senses": {
+                  "seeInvisible": true,
+                  "truesight": 120
+                }
+              }
+            ]
+          ]
+        },
+        "seasoned-survivor": {
+          "name": "Seasoned Survivor",
+          "level": 4,
+          "manual": "Advantage on Investigation checks to find secret passages, read marks left by creatures, or tell what happened from blood and remains."
+        },
+        "hunters-pursuit": {
+          "name": "Hunter's Pursuit",
+          "level": 6,
+          "action": "free",
+          "usesFrom": "focus",
+          "halfDash": true,
+          "manual": "Use it at the start of your turn; this movement doesn't provoke opportunity attacks (take the Disengage-free path by hand if a foe would react)."
+        },
+        "evasion": {
+          "name": "Evasion",
+          "level": 9,
+          "passive": {
+            "name": "Evasion",
+            "evasion": true
+          }
+        },
+        "lethal-tempo": {
+          "name": "Lethal Tempo",
+          "level": 11,
+          "momentumOn": {
+            "firstHit": 1,
+            "kill": 1
+          }
+        },
+        "relentless-pursuit": {
+          "name": "Relentless Pursuit",
+          "level": 13,
+          "manual": "When Hunter's Pursuit ends next to a foe, add the focus point back on the sheet."
+        },
+        "inured-to-madness": {
+          "name": "Inured to Madness",
+          "level": 15,
+          "passive": {
+            "name": "Inured to Madness",
+            "saveAdvantageVs": ["charmed", "frightened"]
+          },
+          "manual": "Saves against madness have advantage too, and a failed one can be rerolled for a focus point: the GM runs madness."
+        },
+        "eternal-watch": {
+          "name": "Eternal Watch",
+          "level": 18,
+          "passive": {
+            "name": "Eternal Watch",
+            "darkvisionPlus": 60,
+            "senses": {
+              "seeInvisible": true,
+              "truesight": 120
+            }
+          }
+        },
+        "always-ready": {
+          "name": "Always Ready",
+          "level": 20,
+          "manual": "Once a round you have a second reaction for a Focus Art, and its point comes straight back: use the art from the sheet and add the point back."
+        },
+        "great-weapon-fighting": {
+          "name": "Great Weapon Fighting",
+          "level": 2,
+          "choice": "fighting-style",
+          "manual": "Reroll 1s and 2s on the damage dice of two-handed or versatile melee weapons wielded with two hands; roll that by hand."
+        },
+        "flexible-fighting": {
+          "name": "Flexible Fighting",
+          "level": 2,
+          "choice": "fighting-style",
+          "manual": "Two-weapon fighting with any one-handed weapons, ranged ones too, and +1 damage with both: the table offers off-hand attacks with light weapons only, so make the others and add the +1 by hand."
+        },
+        "dueling": {
+          "name": "Dueling",
+          "level": 2,
+          "choice": "fighting-style",
+          "passive": {
+            "name": "Dueling",
+            "duelingDamage": 2
+          }
+        },
+        "focused-fighting": {
+          "name": "Focused Fighting",
+          "level": 2,
+          "choice": "fighting-style",
+          "moreUses": {
+            "of": "focus",
+            "by": 1
+          },
+          "morePicks": {
+            "of": "focus-art",
+            "by": 1
+          }
+        },
+        "two-weapon-fighting": {
+          "name": "Two-Weapon Fighting",
+          "level": 2,
+          "choice": "fighting-style",
+          "passive": {
+            "name": "Two-Weapon Fighting",
+            "offHandMod": true
+          }
+        },
+        "aerial-vault": {
+          "name": "Aerial Vault",
+          "level": 2,
+          "choice": "focus-art",
+          "usesFrom": "focus",
+          "manual": "Spend a point as you jump: double the distance, not limited by your speed, and ignore difficult terrain this turn. Jumps are moved by hand."
+        },
+        "elemental-art": {
+          "name": "Elemental Art",
+          "level": 2,
+          "choice": "focus-art",
+          "usesFrom": "focus",
+          "action": "bonus",
+          "spell": {
+            "targets": 0,
+            "rounds": 10,
+            "effect": {
+              "name": "Elemental Art",
+              "weaponSpell": {
+                "weapons": [],
+                "type": "fire"
+              }
+            },
+            "choices": [
+              {
+                "id": "acid",
+                "name": "Acid",
+                "set": {
+                  "effect": {
+                    "name": "Elemental Art",
+                    "weaponSpell": {
+                      "weapons": [],
+                      "type": "acid"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "cold",
+                "name": "Cold",
+                "set": {
+                  "effect": {
+                    "name": "Elemental Art",
+                    "weaponSpell": {
+                      "weapons": [],
+                      "type": "cold"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "fire",
+                "name": "Fire",
+                "set": {
+                  "effect": {
+                    "name": "Elemental Art",
+                    "weaponSpell": {
+                      "weapons": [],
+                      "type": "fire"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "lightning",
+                "name": "Lightning",
+                "set": {
+                  "effect": {
+                    "name": "Elemental Art",
+                    "weaponSpell": {
+                      "weapons": [],
+                      "type": "lightning"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "focus-mind": {
+          "name": "Focus Mind",
+          "level": 2,
+          "choice": "focus-art",
+          "usesFrom": "focus",
+          "manual": "As a reaction to a save against being charmed, frightened or having your mind read, spend a point for advantage (or a reroll of one die if you have it): roll it by hand."
+        },
+        "flourish": {
+          "name": "Flourish",
+          "level": 2,
+          "choice": "focus-art",
+          "usesFrom": "focus",
+          "action": "bonus",
+          "grantsMomentum": 1
+        },
+        "i-dont-want-to-be-eaten-today": {
+          "name": "I Don't Want To Be Eaten Today",
+          "level": 2,
+          "choice": "focus-art",
+          "usesFrom": "focus",
+          "manual": "As a reaction to being grappled or restrained (or a contested roll against it), spend a point to try to escape at once with Athletics or Acrobatics, or gain advantage on the contest."
+        },
+        "jaegers-rush": {
+          "name": "Jaeger's Rush",
+          "level": 2,
+          "choice": "focus-art",
+          "usesFrom": "focus",
+          "action": "bonus",
+          "dash": true
+        },
+        "jaegers-assessment": {
+          "name": "Jaeger's Assessment",
+          "level": 2,
+          "choice": "focus-art",
+          "usesFrom": "focus",
+          "action": "bonus",
+          "manual": "Investigation against the creature's Deception: on a success the GM tells you its type, AC, resistances, immunities and the spells on it. You may take the Search action instead."
+        },
+        "breaking-blow": {
+          "name": "Breaking Blow",
+          "level": 4,
+          "usesFrom": "momentum",
+          "finisher": {
+            "when": "hit",
+            "does": "condition"
+          },
+          "dcFrom": ["str", "dex"],
+          "choice": "finisher"
+        },
+        "chasing-finisher": {
+          "name": "Chasing Finisher",
+          "level": 4,
+          "usesFrom": "momentum",
+          "finisher": {
+            "when": "action",
+            "does": "chase"
+          },
+          "action": "bonus",
+          "manual": "If you move at least 30 feet with it, add a focus point back on the sheet.",
+          "choice": "finisher"
+        },
+        "hemorrhaging-wound": {
+          "name": "Hemorrhaging Wound",
+          "level": 4,
+          "usesFrom": "momentum",
+          "finisher": {
+            "when": "hit",
+            "does": "bleed"
+          },
+          "dcFrom": ["str", "dex"],
+          "choice": "finisher"
+        },
+        "opportunistic-shot": {
+          "name": "Opportunistic Shot",
+          "level": 4,
+          "usesFrom": "momentum",
+          "manual": "A reaction when a creature within 20 ft becomes paralyzed, restrained or stunned: one firearm attack adding the dice, the target falls prone and you get a focus point back. Take it as an opportunity-style attack with the GM.",
+          "choice": "finisher"
+        },
+        "vicious-finisher": {
+          "name": "Vicious Finisher",
+          "level": 4,
+          "usesFrom": "momentum",
+          "finisher": {
+            "when": "action",
+            "does": "claw"
+          },
+          "action": "bonus",
+          "choice": "finisher"
+        },
+        "volley-finisher": {
+          "name": "Volley Finisher",
+          "level": 4,
+          "usesFrom": "momentum",
+          "finisher": {
+            "when": "action",
+            "does": "volley"
+          },
+          "action": "bonus",
+          "dcFrom": ["dex"],
+          "spell": {
+            "area": {
+              "shape": "cone",
+              "size": 30
+            },
+            "save": {
+              "ability": "dex",
+              "onCast": true
+            },
+            "damage": [
+              {
+                "dice": "{momentum}",
+                "type": "piercing"
+              }
+            ]
+          },
+          "manual": "Needs a firearm in hand; if it damages two or more creatures, add a focus point back on the sheet.",
+          "choice": "finisher"
+        }
+      }
+    }
   }
 }
