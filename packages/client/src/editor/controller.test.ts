@@ -57,14 +57,14 @@ describe('EditorController', () => {
     expect(h.selected).toEqual(['a']);
   });
 
-  it('a marquee that catches nothing deselects, even when clicks on empty space go to the host', () => {
+  it('a marquee that catches nothing keeps the selection: a slip of the mouse must not let go of it', () => {
     const h = host(['a']);
     h.clickEmpty = () => true;
     const c = new EditorController(h);
     c.down([20, 50], none);
     c.move([60, 80], none);
     c.up([60, 80], none);
-    expect(h.selected).toEqual([]);
+    expect(h.selected).toEqual(['a']);
   });
 
   it('shift-click adds to the selection', () => {
@@ -78,10 +78,10 @@ describe('EditorController', () => {
   it('a marquee adds or takes away by the keys held when it started, not the free-drag shift the tokens mode passes', () => {
     const h = host(['a']);
     const c = new EditorController(h);
-    c.down([20, 50], none);
-    c.move([60, 80], { ...none, shift: true });
-    c.up([60, 80], { ...none, shift: true });
-    expect(h.selected).toEqual([]);
+    c.down([90, -20], none);
+    c.move([110, 20], { ...none, shift: true });
+    c.up([110, 20], { ...none, shift: true });
+    expect(h.selected).toEqual(['b']);
     h.selected = ['a'];
     c.down([90, -20], { ...none, shift: true });
     c.up([110, 20], { ...none, shift: true });

@@ -132,17 +132,19 @@ export class CombatActions {
     this.open(fighters, 'Turn-based mode:', { peaceful: true, shared: true });
   }
 
-  endTurn(player: Player): void {
+  /** Ends one creature's turn: `token`, else the first of yours taking it. A shared turn passes on once all have ended theirs. */
+  endTurn(player: Player, token?: string): void {
     const combat = this.store.combat;
     if (!combat) throw new Refusal('There is no fight going on');
     if (isLairTurn(currentTurn(combat))) requireGm(player);
     const acting = takers(combat).flatMap((id) => this.store.tokens.get(id) ?? []);
     const mine = acting.filter((t) => actsNow(combat, t.id) && canControl(t, player));
-    if (acting.length && !mine.length) throw new Refusal("It's not your turn");
-    for (const token of mine) this.endOfTurn(token);
+    const ending = token ? mine.filter((t) => t.id === token) : mine.slice(0, 1);
+    if ((acting.length || token) && !ending.length) throw new Refusal("It's not your turn");
+    for (const t of ending) this.endOfTurn(t);
     const after = endTurns(
       this.store.combat!,
-      mine.map((t) => t.id),
+      ending.map((t) => t.id),
       this.table.turnInfo,
     );
     if (after.turn === combat.turn && after.round === combat.round) this.store.setCombat(after);

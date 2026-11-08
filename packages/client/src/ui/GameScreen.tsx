@@ -58,10 +58,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       {/* The top bar and the fight controls share one row, so neither can lie over the other. */}
       <div className="top-strip">
         <TopBar session={session} onLeave={onLeave} />
-        <TurnOrder
-          session={session}
-          onStart={(shared) => session.requests.startCombat(session.editor.fightersInView(), shared)}
-        />
+        <TurnOrder session={session} />
       </div>
       <SceneNav session={session} />
       <PartyBar session={session} />

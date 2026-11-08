@@ -85,7 +85,7 @@ function tableRoutes(p: GameParts) {
     chat: (s, m) => p.onChat(s.client, m.text.trim()),
     combatStart: (s, m) => p.combat.start(s.player, m.tokens, m.shared),
     combatEnd: (s) => p.combat.end(s.player),
-    endTurn: (s) => p.combat.endTurn(s.player),
+    endTurn: (s, m) => p.combat.endTurn(s.player, m.token),
     attack: (s, m) => p.combat.attack(s.player, s.canSee, m),
     ...each(['turnBased', 'legendary', 'lair'], (s, m) => p.combat.turnAction(s.player, s.canSee, m)),
     applyDamage: (s, m) => p.damage.apply(s.player, s.canSee, m),
