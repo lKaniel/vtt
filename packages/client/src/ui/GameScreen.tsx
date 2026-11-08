@@ -10,6 +10,7 @@ import { listenToClipboard, listenToKeys, listenToSpace, toggleSheet } from '../
 import { Sheets } from './sheet/PoppedSheets.tsx';
 import { ClockBar } from './clock/ClockBar.tsx';
 import { SidePanel } from './SidePanel.tsx';
+import { TableReady } from './TableReady.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
 import { blockNativeMenu } from '../keys/native-menu.ts';
 import { ImageViewer } from './ImageViewer.tsx';
@@ -81,6 +82,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <TokenHud session={session} />
       <PauseBanner session={session} />
       <ObserveBanner session={session} />
+      <TableReady key={session.scene} session={session} />
     </div>
   );
 }

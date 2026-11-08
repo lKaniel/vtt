@@ -6,8 +6,8 @@ export type Route =
   | { name: 'menu' }
   /** Setup (the admin password): making, importing and deleting games. */
   | { name: 'setup' }
-  /** A game's join screen: pick your player. */
-  | { name: 'join'; game: string }
+  /** A game's join screen: pick your player (`player`, from an invite link, picked already). */
+  | { name: 'join'; game: string; player?: string }
   /** A game's page: entering it, your characters, and for its GM the players. */
   | { name: 'game'; game: string }
   /** The character creator at a game: a new character, or `id` to edit one. */
@@ -21,7 +21,10 @@ const dec = decodeURIComponent;
 /** Routes by their first part, given the rest. */
 const PARSE: Record<string, (rest: string[]) => Route | undefined> = {
   setup: () => ({ name: 'setup' }),
-  join: ([game]) => (game ? { name: 'join', game: dec(game) } : undefined),
+  join: ([game, player]) => {
+    if (!game) return undefined;
+    return player ? { name: 'join', game: dec(game), player: dec(player) } : { name: 'join', game: dec(game) };
+  },
   games: ([game]) => (game ? { name: 'game', game: dec(game) } : undefined),
   create: ([game]) => (game ? { name: 'create', game: dec(game) } : undefined),
   edit: ([game, id]) => (game && id ? { name: 'create', game: dec(game), id: dec(id) } : undefined),
@@ -43,7 +46,7 @@ export function routeHash(route: Route): string {
     case 'setup':
       return '#/setup';
     case 'join':
-      return `#/join/${enc(route.game)}`;
+      return route.player ? `#/join/${enc(route.game)}/${enc(route.player)}` : `#/join/${enc(route.game)}`;
     case 'game':
       return `#/games/${enc(route.game)}`;
     case 'create':

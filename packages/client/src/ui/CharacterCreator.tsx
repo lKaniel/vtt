@@ -6,6 +6,7 @@ import { EquipmentStep } from './creator/KitStep.tsx';
 import { BackgroundStep, ClassStep, SpeciesStep, type StepProps } from './creator/OriginSteps.tsx';
 import { SkillsStep, SpellPicker } from './creator/PickSteps.tsx';
 import { IdentityStep, Summary } from './creator/Summary.tsx';
+import { t } from '../i18n/index.ts';
 import { Button } from './kit/button.tsx';
 import { Toggle } from './kit/toggle.tsx';
 import { useHomebrewClasses } from './creator/use-homebrew.ts';
@@ -66,6 +67,7 @@ export function CharacterCreator({
       <main className="cc-main frame">
         <View c={c} set={set} homebrew={homebrew} />
         {step.issues.length > 0 && <p className="cc-issues">{step.issues.join(' ')}</p>}
+        {index === steps.length - 1 && <ToFinish steps={steps} onPick={setStep} />}
       </main>
       <Summary c={c} />
       <CreatorFoot
@@ -79,6 +81,23 @@ export function CharacterCreator({
         editing={!!initial}
         onSave={() => save({ ...c, id: c.id === NEW ? '' : c.id })}
       />
+    </div>
+  );
+}
+
+/** At the last step, what still keeps the character from being made, each a way back to its step. */
+function ToFinish({ steps, onPick }: Readonly<{ steps: readonly StepInfo[]; onPick: (id: StepId) => void }>) {
+  const open = steps.filter((s) => s.issues.length);
+  if (!open.length) return null;
+  return (
+    <div className="cc-issues mt-4 flex flex-col items-start gap-1" data-slot="to-finish">
+      <strong>{t('creator.toFinish')}</strong>
+      <span className="text-sm">{t('creator.toFinishHint')}</span>
+      {open.map((s) => (
+        <Button key={s.id} variant="link" className="text-left whitespace-normal" onClick={() => onPick(s.id)}>
+          {s.label}: {s.issues.join(' ')}
+        </Button>
+      ))}
     </div>
   );
 }

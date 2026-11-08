@@ -29,6 +29,15 @@ remembers the player you joined each game as, so the game connection
 (`/ws?game=<id>`) needs nothing more. _Switch player_ on the game's page
 forgets it.
 
+**Invite links.** Its GM sends players a link instead of the server's address:
+the game page's Players box (and the in-game Players tab) shows the game's
+invite link, `<server>/#/join/<game>`, and a link button on each player copies
+their own, `<server>/#/join/<game>/<player>`, which opens the join screen with
+their name picked. On a game with players but no map or foes yet, the GM's
+table shows a _Getting the table ready_ card: a map picture, the players'
+characters on the map and creatures, each a button to the side panel tab that
+does it, then Start combat.
+
 A game's page has the door to the table, your characters there, your key for
 Claude, and the game's players. Its GM (or the server's admin) adds players
 (a name, a role, an optional password), changes their roles and passwords and

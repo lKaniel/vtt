@@ -52,7 +52,7 @@ export function App() {
     case 'setup':
       return <SetupScreen info={info} refresh={refresh} go={go} />;
     case 'join':
-      return <JoinScreen game={route.game} go={go} />;
+      return <JoinScreen game={route.game} player={route.player} go={go} />;
     case 'game':
       return <GamePage key={route.game} game={route.game} admin={!!info?.admin} go={go} />;
     case 'create':
