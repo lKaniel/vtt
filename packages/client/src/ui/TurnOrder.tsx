@@ -1,6 +1,6 @@
 import { actsNow, currentTurn, isLairTurn } from '@vtt/system-dnd5e';
 import { isParty } from '@vtt/shared';
-import { HourglassIcon, MoonIcon } from 'lucide-react';
+import { MoonIcon } from 'lucide-react';
 import { useState } from 'react';
 import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
@@ -8,7 +8,7 @@ import { Face, HpBar } from './Portrait.tsx';
 import { Button } from './kit/button.tsx';
 import { EncounterButton } from './EncounterPanel.tsx';
 import { RequestCheckButton } from './RequestCheck.tsx';
-import { StartCombat } from './StartCombat.tsx';
+import { AddFighters, StartCombat, StartTurns } from './StartCombat.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 
 /** Initiative order across the top of the screen, plus the GM's fight controls. */
@@ -49,6 +49,7 @@ export function TurnOrder({ session }: Readonly<{ session: Session }>) {
           );
         })}
       </div>
+      {gm && <AddFighters session={session} />}
       {gm && peaceful && (
         <Button variant="outline" size="sm" onClick={() => session.requests.setTurnBased(false)}>
           Real time
@@ -114,14 +115,7 @@ function IdleBar({ session }: Readonly<{ session: Session }>) {
   return (
     <div className="turn-order idle flex-wrap justify-center">
       <StartCombat session={session} />
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => session.requests.setTurnBased(true)}
-        title={t('fight.turnBasedHint')}
-      >
-        <HourglassIcon /> {t('fight.turnBased')}
-      </Button>
+      <StartTurns session={session} />
       <RestButton session={session} />
       <EncounterButton session={session} />
       <RequestCheckButton session={session} />

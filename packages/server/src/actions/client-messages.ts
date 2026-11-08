@@ -104,7 +104,14 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     shared: z.boolean().optional(),
   }),
   z.object({ t: z.literal('combatEnd') }),
-  z.object({ t: z.literal('turnBased'), on: z.boolean() }),
+  z.object({
+    t: z.literal('turnBased'),
+    on: z.boolean(),
+    /** Who takes turns; missing or empty: the party on the scene. */
+    tokens: z.array(z.string()).optional(),
+    /** BG3's shared party turns. */
+    shared: z.boolean().optional(),
+  }),
   z.object({ t: z.literal('clock'), action: ClockActionSchema }),
   z.object({ t: z.literal('endTurn'), token: z.string().optional() }),
   z.object({

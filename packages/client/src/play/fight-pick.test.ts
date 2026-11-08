@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { firstPicks, fightCandidates, type FightCandidate } from './fight-pick.ts';
+import { firstPicks, fightCandidates, notFighting, turnPicks, type FightCandidate } from './fight-pick.ts';
 
 // Who the GM may put in a fight, and who is ticked when the picker opens.
 
@@ -37,5 +37,31 @@ describe('firstPicks', () => {
 
   it('else ticks those on screen and not hidden', () => {
     expect(firstPicks(all, ['hero'], ['hero', 'goblin', 'ghost'])).toEqual(['hero', 'goblin']);
+  });
+});
+
+describe('turnPicks', () => {
+  const all: FightCandidate[] = [
+    { id: 'hero', name: 'Hero', party: true, hidden: false },
+    { id: 'mage', name: 'Mage', party: true, hidden: false },
+    { id: 'goblin', name: 'Goblin', party: false, hidden: false },
+  ];
+
+  it('ticks the party and whoever the GM selected', () => {
+    expect(turnPicks(all, ['goblin'])).toEqual(['hero', 'mage', 'goblin']);
+  });
+
+  it('ticks only the party when nothing is selected', () => {
+    expect(turnPicks(all, [])).toEqual(['hero', 'mage']);
+  });
+});
+
+describe('notFighting', () => {
+  it('leaves out the creatures already in the order', () => {
+    const all: FightCandidate[] = [
+      { id: 'hero', name: 'Hero', party: true, hidden: false },
+      { id: 'goblin', name: 'Goblin', party: false, hidden: false },
+    ];
+    expect(notFighting(all, { order: [{ token: 'hero', initiative: 12 }] }).map((c) => c.id)).toEqual(['goblin']);
   });
 });

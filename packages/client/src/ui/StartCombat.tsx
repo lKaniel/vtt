@@ -1,9 +1,10 @@
 import { isParty } from '@vtt/shared';
-import { EyeOffIcon, SwordsIcon, UsersIcon } from 'lucide-react';
+import { EyeOffIcon, HourglassIcon, PlusIcon, SwordsIcon, UsersIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { refOf } from '../editor/selection.ts';
 import { t } from '../i18n/index.ts';
-import { fightCandidates, firstPicks, type FightCandidate } from '../play/fight-pick.ts';
+import { fightCandidates, firstPicks, notFighting, turnPicks, type FightCandidate } from '../play/fight-pick.ts';
 import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
@@ -12,15 +13,16 @@ import { Toggle } from './kit/toggle.tsx';
 
 // The GM's Start combat: a list of the creatures on the scene to tick (the
 // selected ones, else those on screen, to begin with), then roll initiative.
+// Turn-based mode and adding creatures to a fight under way use the same list.
 
 const SHARED_KEY = 'vtt.sharedTurns';
 
-/** The GM's choice of shared party turns, kept in this browser (on unless turned off). */
+/** The GM's choice of shared party turns, kept in this browser (off unless turned on: turns go by initiative). */
 function loadShared(): boolean {
   try {
-    return localStorage.getItem(SHARED_KEY) !== 'off';
+    return localStorage.getItem(SHARED_KEY) === 'on';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -73,25 +75,127 @@ function selectedTokens(session: Session): string[] {
 
 type PickerProps = Readonly<{ session: Session; shared: boolean; onDone: () => void }>;
 
+/** The picker for a fight: initiative for those ticked. */
 function FightPicker({ session, shared, onDone }: PickerProps) {
   const [candidates] = useState(() => fightCandidates(session.tokens.values(), isParty));
-  const onScreen = () => session.editor.fightersInView();
-  const [picked, setPicked] = useState<ReadonlySet<string>>(
-    () => new Set(firstPicks(candidates, selectedTokens(session), onScreen())),
+  return (
+    <Picker
+      session={session}
+      candidates={candidates}
+      title={t('fight.who')}
+      first={() => firstPicks(candidates, selectedTokens(session), session.editor.fightersInView())}
+      action={(n) => (
+        <>
+          <SwordsIcon /> {t('fight.roll', { n })}
+        </>
+      )}
+      onPick={(ids) => {
+        session.requests.startCombat(ids, shared);
+        onDone();
+      }}
+    />
   );
+}
+
+/** Turn-based mode outside a fight: the party and the selected creatures to begin with. */
+export function StartTurns({ session }: Readonly<{ session: Session }>) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" title={t('fight.turnBasedHint')}>
+          <HourglassIcon /> {t('fight.turnBased')}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="flex w-[300px] flex-col gap-2" data-slot="turns-picker">
+        {open && <TurnsPicker session={session} onDone={() => setOpen(false)} />}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function TurnsPicker({ session, onDone }: Readonly<{ session: Session; onDone: () => void }>) {
+  const [candidates] = useState(() => fightCandidates(session.tokens.values(), isParty));
+  return (
+    <Picker
+      session={session}
+      candidates={candidates}
+      title={t('fight.whoTurns')}
+      first={() => turnPicks(candidates, selectedTokens(session))}
+      action={(n) => (
+        <>
+          <HourglassIcon /> {t('fight.takeTurns', { n })}
+        </>
+      )}
+      onPick={(ids) => {
+        session.requests.setTurnBased(true, ids, loadShared());
+        onDone();
+      }}
+    />
+  );
+}
+
+/** GM, in a fight or turn-based mode: more creatures join, each rolling initiative. */
+export function AddFighters({ session }: Readonly<{ session: Session }>) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" title={t('fight.addHint')}>
+          <PlusIcon /> {t('fight.add')}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="flex w-[300px] flex-col gap-2" data-slot="add-fighters">
+        {open && <AddPicker session={session} onDone={() => setOpen(false)} />}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function AddPicker({ session, onDone }: Readonly<{ session: Session; onDone: () => void }>) {
+  const combat = session.combat;
+  const [candidates] = useState(() =>
+    combat ? notFighting(fightCandidates(session.tokens.values(), isParty), combat) : [],
+  );
+  return (
+    <Picker
+      session={session}
+      candidates={candidates}
+      title={t('fight.whoJoins')}
+      first={() => candidates.filter((c) => selectedTokens(session).includes(c.id)).map((c) => c.id)}
+      action={(n) => (
+        <>
+          <PlusIcon /> {t('fight.join', { n })}
+        </>
+      )}
+      onPick={(ids) => {
+        for (const id of ids) session.hud.setCombatant(id, true);
+        onDone();
+      }}
+    />
+  );
+}
+
+type ListProps = Readonly<{
+  session: Session;
+  candidates: readonly FightCandidate[];
+  title: string;
+  /** Who is ticked when it opens. */
+  first: () => string[];
+  action: (n: number) => ReactNode;
+  onPick: (ids: string[]) => void;
+}>;
+
+/** A tick box per creature on the scene, the party and the others apart, and the button that acts on those ticked. */
+function Picker({ session, candidates, title, first, action, onPick }: ListProps) {
+  const onScreen = () => session.editor.fightersInView();
+  const [picked, setPicked] = useState<ReadonlySet<string>>(() => new Set(first()));
   const toggle = (id: string, on: boolean) =>
     setPicked((was) => (on ? new Set([...was, id]) : new Set([...was].filter((x) => x !== id))));
-  const start = () => {
-    session.requests.startCombat(
-      candidates.filter((c) => picked.has(c.id)).map((c) => c.id),
-      shared,
-    );
-    onDone();
-  };
   if (!candidates.length) return <p className="text-xs text-muted-foreground">{t('fight.noFighters')}</p>;
   return (
     <>
-      <span className="font-display text-sm text-gold">{t('fight.who')}</span>
+      <span className="font-display text-sm text-gold">{title}</span>
       <div className="flex gap-1">
         <Button variant="outline" size="sm" onClick={() => setPicked(new Set(candidates.map((c) => c.id)))}>
           {t('fight.all')}
@@ -107,8 +211,11 @@ function FightPicker({ session, shared, onDone }: PickerProps) {
         <Side title={t('fight.party')} list={candidates.filter((c) => c.party)} picked={picked} onToggle={toggle} />
         <Side title={t('fight.foes')} list={candidates.filter((c) => !c.party)} picked={picked} onToggle={toggle} />
       </div>
-      <Button disabled={!picked.size} onClick={start}>
-        <SwordsIcon /> {t('fight.roll', { n: picked.size })}
+      <Button
+        disabled={!picked.size}
+        onClick={() => onPick(candidates.filter((c) => picked.has(c.id)).map((c) => c.id))}
+      >
+        {action(picked.size)}
       </Button>
     </>
   );

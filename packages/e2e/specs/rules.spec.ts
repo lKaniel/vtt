@@ -93,9 +93,7 @@ test('an area spell clicked on a creature goes at it, not a walk there', async (
 
 test('a fight rolls initiative and the turn moves on', async ({ page }) => {
   await atTable(page, GM);
-  // One creature at a time: with shared party turns, party members next to
-  // each other in the order would all be up together.
-  await page.getByRole('button', { name: 'Party acts together' }).click();
+  // One creature at a time, by initiative: shared party turns are off unless the GM turns them on.
   await page.getByRole('button', { name: 'Start combat' }).click();
   await page.getByRole('button', { name: /^Roll initiative/ }).click();
   await expect(chatLog(page).getByText(/Roll for initiative!/)).toBeVisible();
@@ -123,6 +121,27 @@ test('the GM chooses who fights before rolling initiative', async ({ page }) => 
   await page.getByRole('button', { name: 'Roll initiative (3)' }).click();
   await expect(page.getByRole('button', { name: /: initiative \d+$/ })).toHaveCount(3);
   await expect(page.getByRole('button', { name: /^Goblin.*: initiative/ })).toHaveCount(0);
+});
+
+test('turn-based mode takes the creatures the GM ticks, and more join later', async ({ page }) => {
+  await atTable(page, GM);
+  await page.getByRole('button', { name: 'Turn-based' }).click();
+  const goblins = page.getByRole('checkbox', { name: /Goblin/ });
+  await expect(goblins.first()).not.toBeChecked();
+  await goblins.first().click();
+  await page.getByRole('button', { name: /^Take turns/ }).click();
+  const order = page.getByRole('button', { name: /: initiative \d+$/ });
+  await expect(page.getByRole('button', { name: /^Goblin.*: initiative/ })).toHaveCount(1);
+  const before = await order.count();
+
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page
+    .getByRole('checkbox', { name: /Goblin/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: /^Add to the order/ }).click();
+  await expect(order).toHaveCount(before + 1);
+  await expect(page.getByRole('button', { name: /^Goblin.*: initiative/ })).toHaveCount(2);
 });
 
 test('a slip of the mouse over empty ground keeps your creature; Deselect lets it go', async ({ page }) => {
