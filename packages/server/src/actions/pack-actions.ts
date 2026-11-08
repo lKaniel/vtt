@@ -8,6 +8,7 @@ import { gamePackIssues, packInfos } from '../library/game-packs.ts';
 import { gamePluginIssues, pluginInfos } from '../library/game-plugins.ts';
 import type { GameStore } from '../store/game-store.ts';
 import { filesUnder } from '../library/pack-store.ts';
+import { fetchPicture } from '../library/url-media.ts';
 import { Refusal } from '../play/table.ts';
 
 // The GM's asset browser: the packs a game may use, the media of the game
@@ -15,8 +16,8 @@ import { Refusal } from '../play/table.ts';
 // game's assets/uploads/. Turning a pack on or off is an op on game.json
 // (`packs`), so it undoes like any edit.
 
-type PackMessage = Extract<ClientMessage, { t: 'packs' | 'plugins' | 'media' | 'compendium' | 'upload' }>;
-const KINDS = new Set(['packs', 'plugins', 'media', 'compendium', 'upload']);
+type PackMessage = Extract<ClientMessage, { t: 'packs' | 'plugins' | 'media' | 'compendium' | 'upload' | 'uploadUrl' }>;
+const KINDS = new Set(['packs', 'plugins', 'media', 'compendium', 'upload', 'uploadUrl']);
 
 export const isPackMessage = (msg: ClientMessage): msg is PackMessage => KINDS.has(msg.t);
 
@@ -30,7 +31,9 @@ export class PackActions {
   handle(player: Player, msg: PackMessage, reply: (msg: ServerMessage) => void): void {
     this.answer(player, msg).then(reply, (e: unknown) => {
       if (!(e instanceof Refusal)) console.error('[game] pack request failed:', e);
-      reply({ t: 'error', message: e instanceof Refusal ? e.message : 'Could not read the packs' });
+      const ref = 'ref' in msg ? msg.ref : undefined;
+      const message = e instanceof Refusal ? e.message : failure(msg.t);
+      reply({ t: 'error', message, ...(ref && { ref }) });
     });
   }
 
@@ -44,13 +47,19 @@ export class PackActions {
         return { t: 'media', entries: await this.media() };
       case 'compendium':
         return { t: 'compendium', pack: msg.pack, compendium: msg.compendium, docs: this.docs(msg) };
-      case 'upload': {
-        const done = this.uploads.catch(() => undefined).then(() => this.upload(msg.name, msg.data));
-        this.uploads = done;
-        await done;
-        return { t: 'media', entries: await this.media() };
-      }
+      case 'upload':
+        return this.uploaded(msg.ref, () => Promise.resolve({ name: msg.name, data: Buffer.from(msg.data, 'base64') }));
+      case 'uploadUrl':
+        return this.uploaded(msg.ref, () => fetchPicture(msg.url));
     }
+  }
+
+  /** Saves a file, one upload at a time, and answers with the media list and where it went. */
+  private async uploaded(ref: string | undefined, file: () => Promise<{ name: string; data: Buffer }>) {
+    const done = this.uploads.catch(() => undefined).then(async () => this.upload(await file()));
+    this.uploads = done;
+    const src = await done;
+    return { t: 'media' as const, entries: await this.media(), uploaded: { src, ...(ref && { ref }) } };
   }
 
   /** The plugins the game may use, read again so ones copied in show up. */
@@ -84,8 +93,8 @@ export class PackActions {
     return found.docs;
   }
 
-  /** Saves an uploaded file as assets/uploads/<name>, numbered if the name is taken. */
-  private async upload(name: string, data: string): Promise<void> {
+  /** Saves an uploaded file as assets/uploads/<name>, numbered if the name is taken; its path in the game. */
+  private async upload({ name, data }: { name: string; data: Buffer }): Promise<string> {
     const dot = name.lastIndexOf('.');
     const ext = dot < 0 ? '' : name.slice(dot + 1).toLowerCase();
     if (!mediaKind(`x.${ext}`)) throw new Refusal('Upload a picture, sound or video');
@@ -93,11 +102,19 @@ export class PackActions {
     await mkdir(dir, { recursive: true });
     const taken = new Set(await readdir(dir));
     const base = freeId(slugify(name.slice(0, dot)) || 'upload', (id) => taken.has(`${id}.${ext}`), { bare: true });
-    await writeFile(join(dir, `${base}.${ext}`), Buffer.from(data, 'base64'));
+    await writeFile(join(dir, `${base}.${ext}`), data);
+    return `/assets/uploads/${base}.${ext}`;
   }
 }
 
 /** The game's own assets, then the media of each pack it uses; video thumbnails become the videos' previews. */
+/** What to tell the GM when a request fails for no reason of theirs. */
+const FAILURES: Partial<Record<PackMessage['t'], string>> = {
+  uploadUrl: 'Could not download that picture',
+  upload: 'Could not save the file',
+};
+const failure = (kind: PackMessage['t']) => FAILURES[kind] ?? 'Could not read the packs';
+
 export async function gameMedia(store: GameStore): Promise<MediaEntry[]> {
   const own = await filesUnder(join(store.dir, 'assets'));
   const entries = own.flatMap((rel) => mediaEntry(`/assets/${rel}`, rel) ?? []);

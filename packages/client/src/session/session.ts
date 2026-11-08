@@ -385,6 +385,7 @@ export class Session {
         if (this.world) this.world = { ...this.world, weather: msg.weather };
         return true;
       case 'error':
+        if (msg.ref) this.packs.failed(msg.ref, msg.message);
         this.showError(msg.message);
         return false;
       case 'reactionOffer':

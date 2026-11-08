@@ -10,6 +10,7 @@ interface E2eToken {
   maxHp?: number;
   hidden?: boolean;
   elevation?: number;
+  img?: string;
 }
 
 interface E2eVtt {

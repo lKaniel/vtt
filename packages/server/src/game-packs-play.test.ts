@@ -197,4 +197,25 @@ describe('uploads', () => {
     expect(gm.take('error')[0]!.message).toMatch(/picture, sound or video/);
     expect(ana.take('error')).toHaveLength(1);
   });
+
+  it('answers an upload with where it was saved, for the one who asked', async () => {
+    await start();
+    const gm = seat('gm');
+    gm.receive({ t: 'upload', name: 'elf.png', data: png, ref: 'u1' });
+    await settle();
+    expect(gm.take('media').at(-1)!.uploaded).toEqual({ ref: 'u1', src: '/assets/uploads/elf.png' });
+  });
+
+  it('refuses web addresses on the private network, naming the request', async () => {
+    await start();
+    const gm = seat('gm');
+    gm.receive({ t: 'uploadUrl', url: 'http://127.0.0.1:1/elf.png', ref: 'u2' });
+    const ana = seat('ana');
+    ana.receive({ t: 'uploadUrl', url: 'https://example.com/elf.png' });
+    await settle();
+    const error = gm.take('error')[0]!;
+    expect(error.message).toMatch(/private/);
+    expect(error.ref).toBe('u2');
+    expect(ana.take('error')).toHaveLength(1);
+  });
 });

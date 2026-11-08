@@ -60,6 +60,9 @@ export class Packs implements SessionPart {
   /** GM: pictures, sounds and videos of the game and its packs, once asked for. */
   media: MediaEntry[] = [];
   private compendia = new Map<string, unknown[]>();
+  /** Uploads waiting for the server to say where it saved them, by their ref. */
+  private pending = new Map<string, { resolve(src: string): void; reject(e: Error): void }>();
+  private uploads = 0;
 
   constructor(
     private readonly s: PackHost,
@@ -110,9 +113,33 @@ export class Packs implements SessionPart {
     this.on.updates(label, [{ ref: { coll: 'game', id: game.id }, patch: { [key]: list } }]);
   }
 
-  /** Sends a file (base64) to the game's assets/uploads/. */
-  upload(name: string, data: string): void {
-    this.s.send({ t: 'upload', name, data });
+  /** Sends a file (base64) to the game's assets/uploads/; resolves with its path in the game ("/assets/uploads/..."). */
+  upload(name: string, data: string): Promise<string> {
+    return this.awaitSaved((ref) => this.s.send({ t: 'upload', name, data, ref }));
+  }
+
+  /** Has the server download the picture at a web address into the game's uploads; resolves with its path in the game. */
+  uploadUrl(url: string): Promise<string> {
+    return this.awaitSaved((ref) => this.s.send({ t: 'uploadUrl', url, ref }));
+  }
+
+  /** The server could not save an upload: its promise fails with the reason. */
+  failed(ref: string, message: string): void {
+    this.pending.get(ref)?.reject(new Error(message));
+    this.pending.delete(ref);
+  }
+
+  private awaitSaved(send: (ref: string) => void): Promise<string> {
+    const ref = `up-${++this.uploads}`;
+    const saved = new Promise<string>((resolve, reject) => this.pending.set(ref, { resolve, reject }));
+    send(ref);
+    return saved;
+  }
+
+  private saved({ ref, src }: { ref?: string; src: string }): void {
+    if (!ref) return;
+    this.pending.get(ref)?.resolve(src);
+    this.pending.delete(ref);
   }
 
   /** A picture placed as a tile, centred on `at`; `size` defaults to two squares. */
@@ -193,6 +220,7 @@ export class Packs implements SessionPart {
         return true;
       case 'media':
         this.media = msg.entries;
+        if (msg.uploaded) this.saved(msg.uploaded);
         return true;
       case 'compendium':
         this.compendia.set(key(msg.pack, msg.compendium), msg.docs);

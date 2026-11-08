@@ -118,7 +118,10 @@ export type EngineClientMessage =
   /** GM: one compendium's documents, to copy into the game (answered with `compendium`). */
   | { t: 'compendium'; pack: string; compendium: string }
   /** GM: a file for the game's assets/uploads/, base64 (answered with `media`). */
-  | { t: 'upload'; name: string; data: string }
+  /** `ref` comes back with the answer, so the asker learns where the file went. */
+  | { t: 'upload'; name: string; data: string; ref?: string }
+  /** GM: the server downloads a picture from the web into the game's uploads. */
+  | { t: 'uploadUrl'; url: string; ref?: string }
   /** Roll on a roll table into chat (players: tables shared with them); `gmOnly` whispers the result to the GM. */
   | { t: 'rollTable'; table: string; gmOnly?: boolean }
   /** Run a macro you may see: its chat lines are posted as if you typed them, said by `token` when you control it. */
@@ -174,7 +177,8 @@ export type EngineServerMessage =
   | { t: 'sound'; src: string; volume?: number }
   /** Your creature stepped into an elevator: pick one of these levels (answer with `changeLevel`). */
   | { t: 'levelChoice'; token: string; levels: string[] }
-  | { t: 'error'; message: string }
+  /** `ref` names the request that failed, when it named itself (an upload). */
+  | { t: 'error'; message: string; ref?: string }
   /** GM only: documents changed, by `by` (a player id; none for a hand edit of the files). */
   | { t: 'docs'; changes: DocChange[]; by?: string; txn?: string }
   /** Your `ops` transaction was refused; nothing in it was applied. */
@@ -193,7 +197,8 @@ export type EngineServerMessage =
   | { t: 'packs'; packs: PackInfo[]; problems: string[] }
   /** GM: the plugins the game may use; `problems` are plugins the server couldn't read or this game can't load. */
   | { t: 'plugins'; plugins: PluginInfo[]; problems: string[] }
-  | { t: 'media'; entries: MediaEntry[] }
+  /** The media list; after an upload, where the file was saved (`ref` from the upload). */
+  | { t: 'media'; entries: MediaEntry[]; uploaded?: { ref?: string; src: string } }
   | { t: 'compendium'; pack: string; compendium: string; docs: unknown[] }
   /** The GM shows you a journal entry: open it (at `page`). */
   | { t: 'showJournal'; entry: string; page?: string }

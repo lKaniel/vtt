@@ -7,6 +7,7 @@ import type { Session } from '../session/session.ts';
 import { startDrag } from '../play/drops.ts';
 import { BaileywikiView } from './BaileywikiView.tsx';
 import { PluginsView } from './PluginsView.tsx';
+import { readBase64 } from './read-file.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Toggle } from './kit/toggle.tsx';
@@ -59,24 +60,11 @@ export function AssetsTab({ session }: Readonly<{ session: Session }>) {
   );
 }
 
-/** Reads a file the GM picked as base64 for the upload message. */
-function readBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const url = typeof reader.result === 'string' ? reader.result : '';
-      resolve(url.slice(url.indexOf(',') + 1));
-    };
-    reader.onerror = () => reject(reader.error ?? new Error('unreadable'));
-    reader.readAsDataURL(file);
-  });
-}
-
 function UploadButton({ session }: Readonly<{ session: Session }>) {
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     for (const file of e.target.files ?? []) {
       void readBase64(file).then(
-        (data) => session.packs.upload(file.name, data),
+        (data) => void session.packs.upload(file.name, data).catch(() => undefined),
         () => session.showError(`Could not read ${file.name}`),
       );
     }

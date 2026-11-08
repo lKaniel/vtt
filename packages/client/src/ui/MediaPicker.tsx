@@ -1,5 +1,5 @@
 import { type MediaKind, searchMedia } from '@vtt/core';
-import { BoxIcon, FolderOpenIcon, Music2Icon } from 'lucide-react';
+import { BoxIcon, FolderOpenIcon, LoaderIcon, Music2Icon, UploadIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { assetUrl } from '../assets.ts';
 import { t } from '../i18n/index.ts';
@@ -7,10 +7,15 @@ import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
+import { readBase64 } from './read-file.ts';
 
 // A file of the game's or its packs' media, picked instead of typed: the
 // tile's picture, a 3D model, a sound's file, a scene's thumbnail. The box
 // still takes a typed path; the button beside it opens a searchable list.
+// For a picture the GM can also upload a file from their computer, and a
+// web address typed in is downloaded by the server into the game's uploads
+// (other sites often won't hand their pictures to the map), so the box ends
+// up holding the game's own copy.
 
 /** Files shown at once in the list; typing narrows the rest. */
 const SHOWN = 60;
@@ -25,13 +30,30 @@ interface MediaInputProps {
   label: string;
 }
 
-/** A path box with a button that picks the file from the media list. */
+const isWebAddress = (src: string) => /^https?:\/\//i.test(src);
+
+/** A path box with a button that picks the file from the media list; for the GM's pictures, upload too. */
 export function MediaInput({ session, kind, value, onChange, placeholder, label }: Readonly<MediaInputProps>) {
   // Callers key it by the value, so it starts over when the value changes.
   const [text, setText] = useState(value);
+  const [busy, setBusy] = useState(false);
+  const uploads = kind === 'image' && session.isGm();
+  const save = (saving: Promise<string>) => {
+    setBusy(true);
+    saving.then(
+      (src) => {
+        setBusy(false);
+        setText(src);
+        onChange(src);
+      },
+      () => setBusy(false),
+    );
+  };
   const commit = (next: string) => {
     setText(next);
-    if (next !== value) onChange(next);
+    if (next === value) return;
+    if (uploads && isWebAddress(next)) save(session.packs.uploadUrl(next));
+    else onChange(next);
   };
   return (
     <span className="flex min-w-0 items-center gap-1">
@@ -40,14 +62,46 @@ export function MediaInput({ session, kind, value, onChange, placeholder, label 
         value={text}
         aria-label={label}
         placeholder={placeholder}
+        disabled={busy}
         onChange={(e) => setText(e.target.value)}
         onBlur={() => commit(text.trim())}
         onKeyDown={(e) => {
           if (e.key === 'Enter') commit(text.trim());
         }}
       />
-      <MediaPicker session={session} kind={kind} label={label} onPick={commit} />
+      {session.isGm() && <MediaPicker session={session} kind={kind} label={label} onPick={commit} />}
+      {uploads && <UploadPicture session={session} busy={busy} onFile={save} />}
     </span>
+  );
+}
+
+/** The GM's button that uploads a picture from their computer into the game's assets. */
+function UploadPicture({
+  session,
+  busy,
+  onFile,
+}: Readonly<{ session: Session; busy: boolean; onFile: (saving: Promise<string>) => void }>) {
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const saving = readBase64(file).then((data) => session.packs.upload(file.name, data));
+    saving.catch(() => session.showError(t('media.unreadable', { name: file.name })));
+    onFile(saving);
+  };
+  return (
+    <Button
+      asChild
+      variant="outline"
+      size="icon-sm"
+      title={busy ? t('media.uploading') : t('media.uploadHint')}
+      aria-disabled={busy}
+    >
+      <label>
+        {busy ? <LoaderIcon className="animate-spin" /> : <UploadIcon />}
+        <input type="file" accept="image/*" hidden disabled={busy} aria-label={t('media.upload')} onChange={onPick} />
+      </label>
+    </Button>
   );
 }
 
