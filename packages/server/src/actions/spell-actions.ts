@@ -22,11 +22,12 @@ import {
 import { gridKind, isGridless, placeToken, type Player, type Point, roll } from '@vtt/shared';
 import { castBreaksSanctuary, passSanctuaries } from '../play/spell-wards.ts';
 import { shaped } from '../play/spell-forms.ts';
-import { summon } from '../play/spell-summons.ts';
+import { summon, summonNotes } from '../play/spell-summons.ts';
 import { itemCasting, scrollReader, spentFrom } from '../play/spell-items.ts';
 import { type DoorPick, doorAt, setDoor } from '../play/spell-doors.ts';
 import { breakTimeStop } from '../play/time-stop.ts';
 import { SpellTargets } from '../play/spell-targets.ts';
+import { stepAside } from '../play/pool-guards.ts';
 import { Refusal, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 export interface CastRequest {
@@ -85,6 +86,23 @@ const COST: Record<CastingTime, Cost> = {
   minute: 'free',
   hour: 'free',
 };
+
+/** What a strike rolls with: the spell and slot, and numbers of its own (a scroll's, a pool feature's). */
+interface Strike {
+  spell: Spell;
+  slot: number;
+  point?: Point;
+  reader?: CasterSheet;
+  dc?: number;
+  attackBonus?: number;
+  mod?: number;
+}
+
+/** The effects a result leaves after its healing: its own (unless it raised the maximum first) and any more. */
+const laterEffects = (r: CastResult, first: boolean): Effect[] => [
+  ...(r.effect && !first ? [r.effect] : []),
+  ...(r.effects ?? []),
+];
 
 /** Casting spells: checks, slots, targets, concentration, and applying what the spell did. */
 export class SpellActions {
@@ -254,22 +272,17 @@ export class SpellActions {
   }
 
   /** Rolls a spell from `casterId` against `targets`, applies it and logs it: casts, features and zones. `reader`: read from a scroll. */
-  strike(
-    casterId: string,
-    {
-      spell,
-      slot,
-      point,
-      reader,
-      dc,
-    }: { spell: Spell; slot: number; point?: Point; reader?: CasterSheet; dc?: number },
-    targets: Fighter[],
-    notes: string[] = [],
-  ): void {
+  strike(casterId: string, opts: Strike, targets: Fighter[], notes: string[] = []): void {
+    const { spell, slot, point, reader } = opts;
     const fighter = this.table.fighter(casterId);
     const caster = reader ? { ...fighter, sheet: { ...fighter.sheet, caster: reader } } : fighter;
     const grid = gridKind(this.store.world);
-    const outcome = resolveCast({ spell, slot, caster, targets, gridSize: this.grid, grid, dc }, this.table.rng);
+    const { dc, attackBonus, mod } = opts;
+    const rolled = resolveCast(
+      { spell, slot, caster, targets, gridSize: this.grid, grid, dc, attackBonus, mod },
+      this.table.rng,
+    );
+    const outcome = stepAside(this.table, caster, rolled);
     this.apply(outcome);
     breakTimeStop(
       this.table,
@@ -315,7 +328,7 @@ export class SpellActions {
     const first = r.healed !== undefined;
     if (r.effect && first) this.addEffect(r.target, r.effect);
     this.applyHp(r);
-    if (r.effect && !first) this.addEffect(r.target, r.effect);
+    for (const e of laterEffects(r, first)) this.addEffect(r.target, e);
     if (r.stabilized) this.stabilize(r.target);
     if (r.cured) this.cure(r.target, r.cured);
     if (r.revived) this.revive(r.target, r.hp);
@@ -458,8 +471,4 @@ function chosen(caster: Fighter, spell: Spell, choice: string | undefined, again
   } catch (e) {
     throw new Refusal((e as Error).message);
   }
-}
-
-function summonNotes(summoned: readonly Token[]): string[] {
-  return summoned.length ? [`${summoned.map((t) => t.name).join(', ')} appear`] : [];
 }

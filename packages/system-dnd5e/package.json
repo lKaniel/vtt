@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./fixtures/pool-class": "./src/pool-class.fixtures.ts"
   },
   "scripts": {
     "typecheck": "tsc -p .",

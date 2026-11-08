@@ -993,6 +993,45 @@ starting kit). A player's character keeps a copy of each one it takes
 and its token carries the copy as `own.classes`, so it works in any game; a
 game's own class of that id wins over the copy.
 
+**Point pools (homebrew classes).** A class may spend points from one pool
+instead of slots or uses (`pool`, see `system-dnd5e/src/power-schema.ts`):
+`{ "id", "name", "ability", "max": [[1, 12], ...], "recharge": "short" | "long",
+"concurrent": 0.5, "weight": {...}, "reserveTimes": [[9, 0.5]] }`. `ability`
+gives its features DC 8 + proficiency + modifier and attack proficiency +
+modifier; `concurrent` is the share of the pool lasting uses may hold at once;
+`weight` is how heavy a creature is for costs: the tier of its challenge
+rating or level (`tiers`, `[from, tier]`) times `base` + `per` × its `ability`
+modifier, at least `min`. A feature with `cost` (a formula: numbers, names,
+`+ - * /`, brackets) spends the pool: the formula is worked out for each target
+and added up, with `weight` (the target's), `first` (1 for the first target),
+`linked`, `level`, the `inputs` (numbers the user enters, `{ "id", "name",
+"min", "default" }`) and each of its `options` groups (`{ "id", "name",
+"pick": "any" | "one", "required", "list": [...] }`: the sum of the picked
+options' `cost`). An option has a `level` (learned earlier when the character
+has `"<class>/<option>"` in `stats.features`), sets spell fields over the
+feature's `spell` (`set`; an `effect` adds to the feature's), may multiply
+damage (`times`) and changes from a level (`upgrades`). Other fields:
+`hold` (the cost stays held against the concurrent share while its effects
+last), `reserve` (it comes off both maximums until let go: the sheet's Let go
+button), `group` (features sharing one concentration), `linkedTimes` (targets
+linked to the user cost this times as much), `times` (damage multiplier by
+level), `modFrom` (`{mod}` in its spell counts from this level), `upgrades`
+(`[{ "level", "set" }]`, fields set over the feature from a level), `quick`
+(a bonus action when it costs this share of the pool or less), `quickAny`
+(once a turn a bonus action whatever it costs), `followUp` (after using it
+with an action, that feature may be a bonus action this turn), `ritual` (only
+outside fights), `consumes` (ends the user's newest held use of that
+feature) and `costWhenSpent` (the cost once its `uses` are gone). Spells gain
+`damageTimes`, `minInt` (mindless creatures are immune), `linkedOnly` (only
+creatures under one of the caster's `linked` effects, at any distance),
+`maxWeight`, `split` (one attack, its damage shared out among the targets)
+and `crowd` (a save for every creature when it damages `atLeast` of them);
+effects gain `linked`, `noReactions`, `bonusFeature` (Mind's Eye uses `saveAdvantageVs`),
+and auras `maxWeight`. Features gain `reaction` (Misdirection, Redirect,
+Unreal Self, Phantom Step: offered as an attack is about to hit or a
+Dexterity save is rolled) and a feature spell may `summon` a creature built
+for the class level and the pool's numbers (Shadow Substance).
+
 **Homebrew items and spells.** A homebrew file with `"kind": "spell"` has
 the fields of an SRD spell; one with `"kind": "item"` keeps the item's own
 fields in `item` (a weapon has a `kind` of its own):

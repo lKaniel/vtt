@@ -81,6 +81,12 @@ export class Requests {
     this.s.send({ t: 'feature', token, feature });
   }
 
+  /** Lets go of a held pool use (a Glamour, a Weave): it ends and frees what it held. */
+  // fallow-ignore-next-line unused-class-member -- PoolPanel.tsx calls it through SheetProps.session (fallow --type-aware finds it)
+  release(token: string, hold: string): void {
+    this.s.send({ t: 'release', token, hold });
+  }
+
   /** Takes a reaction with one of the offered choices, or declines it without one. */
   takeReaction(offer: string, choice?: string): void {
     this.s.send({ t: 'react', offer, ...(choice && { choice }) });

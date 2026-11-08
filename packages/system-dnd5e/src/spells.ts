@@ -6,73 +6,19 @@ import { isDead, makesDeathSaves } from './deaths.ts';
 import { markDamage } from './riders.ts';
 import { type GridKind, type Rng, roll, type Roll } from '@vtt/shared';
 import { attackModifiers, d20Formula, type SaveRoll, type UsedEffect } from './effects.ts';
+import { powerImmune, withCrowd } from './power-casts.ts';
 import { castSave, withEvasion } from './spell-saves.ts';
 import type { Token } from './token-schema.ts';
 import type { Effect, Spell } from './spell-schema.ts';
 import { dispelled, rolledRays, tierFor, tierSpell } from './spell-options.ts';
 
 export { withAgain, withChoice } from './spell-options.ts';
+export { scaledSpell } from './spell-scaling.ts';
+import { CANTRIP_TIERS, scaledSpell } from './spell-scaling.ts';
 import type { Damage, DamageType } from './stats-schema.ts';
 
 // Casting a spell: what it does at the slot it's cast with, whether the
 // caster may cast it, and rolling its attacks, saves, damage and healing.
-
-const CANTRIP_TIERS = [5, 11, 17];
-
-/** The number of dice in "2d6" (2) or "d6" (1). */
-const diceCount = (count: string | undefined) => (count ? Number(count) : 1);
-
-/** "8d6" plus "1d6" twice is "10d6"; dice of another size are added on, e.g. "1d6+2d8". */
-function addDice(base: string, per: string | undefined, times: number): string {
-  const p = per ? /^(\d*)d(\d+)$/.exec(per) : null;
-  if (!p || times <= 0) return base;
-  const extra = times * diceCount(p[1]);
-  const m = /^(\d*)d(\d+)/.exec(base);
-  if (!m || m[2] !== p[2]) return `${base}+${extra}d${p[2]}`;
-  return `${diceCount(m[1]) + extra}d${m[2]}${base.slice(m[0].length)}`;
-}
-
-/** Multiplies the dice of a formula: cantrip damage at higher levels. */
-function timesDice(formula: string, n: number): string {
-  return formula.replace(/^(\d*)d/, (_, c: string) => `${diceCount(c) * n}d`);
-}
-
-/** Healing, temporary hit points and hit point pools at a higher slot. */
-function upcastPools(spell: Spell, extra: number): Pick<Spell, 'heal' | 'tempHp' | 'hpPool' | 'effect'> {
-  const tempBonus = extra * (spell.upcast?.tempHp ?? 0);
-  return {
-    ...raisedMaximum(spell, extra),
-    tempHp: spell.tempHp && (tempBonus ? `${spell.tempHp}+${tempBonus}` : spell.tempHp),
-    hpPool: spell.hpPool && addDice(spell.hpPool, spell.upcast?.hpPool, extra),
-  };
-}
-
-/** Healing, and for aid a raised maximum healed with it, at a higher slot. */
-function raisedMaximum(spell: Spell, extra: number): Pick<Spell, 'heal' | 'effect'> {
-  const heal = spell.heal && addDice(spell.heal, spell.upcast?.heal, extra);
-  const bonus = extra * (spell.upcast?.maxHp ?? 0);
-  if (!bonus || !spell.effect) return { heal, effect: spell.effect };
-  return { heal: heal && `${heal}+${bonus}`, effect: { ...spell.effect, maxHp: (spell.effect.maxHp ?? 0) + bonus } };
-}
-
-/** The spell as it works when cast with `slot` by a caster of `casterLevel`. */
-export function scaledSpell(spell: Spell, slot: number, casterLevel: number): Spell & { beams: number } {
-  const extra = Math.max(0, slot - spell.level);
-  const tier = 1 + CANTRIP_TIERS.filter((l) => casterLevel >= l).length;
-  const cantrip = spell.level === 0 ? spell.cantrip : undefined;
-  const damage = spell.damage.map((d) => ({
-    ...d,
-    dice: cantrip === 'dice' ? timesDice(d.dice, tier) : addDice(d.dice, spell.upcast?.damage, extra),
-  }));
-  const baseBeams = spell.beams ?? 1;
-  return {
-    ...spell,
-    damage,
-    ...upcastPools(spell, extra),
-    targets: spell.targets + extra * (spell.upcast?.targets ?? 0),
-    beams: cantrip === 'beams' ? baseBeams + tier - 1 : baseBeams + extra * (spell.upcast?.beams ?? 0),
-  };
-}
 
 /** What the log and tooltips say about a spell the GM runs by hand, or undefined when it's automated. */
 export function manualNote(spell: Pick<Spell, 'automated' | 'manual'>): string | undefined {
@@ -142,6 +88,9 @@ export interface CastInput {
   grid?: GridKind;
   /** A save DC of its own: the original caster's, for a spell another creature uses again (dragon's breath). */
   dc?: number;
+  /** An attack bonus and modifier of their own: a pool feature's (pools.ts). */
+  attackBonus?: number;
+  mod?: number;
 }
 
 export interface DamageDealt {
@@ -180,6 +129,10 @@ export interface CastResult {
   push?: number;
   /** The target's ward (2024 resistance) took some of the damage and is used for this turn. */
   warded?: string;
+  /** More effects it gets, besides `effect` (a crowd's fear). */
+  effects?: Effect[];
+  /** Its save against the crowd effect (power-casts.ts). */
+  crowdSave?: SaveRoll;
 }
 
 export interface CastOutcome {
@@ -208,8 +161,12 @@ export interface Cast {
   rng: Rng;
 }
 
-function rollDamage(parts: readonly Damage[], crit: boolean, rng: Rng): { roll: Roll; type: DamageType }[] {
-  return parts.map((d) => ({ roll: roll(crit ? critDice(d.dice) : d.dice, rng), type: d.type }));
+function rollDamage(parts: readonly Damage[], crit: boolean, rng: Rng, times = 1): { roll: Roll; type: DamageType }[] {
+  return parts.map((d) => {
+    const rolled = roll(crit ? critDice(d.dice) : d.dice, rng);
+    const by = times * (d.times ?? 1);
+    return { roll: by === 1 ? rolled : { ...rolled, total: Math.floor(rolled.total * by) }, type: d.type };
+  });
 }
 
 function dealt(
@@ -264,6 +221,12 @@ function handedOn({ spell, slot, dc }: Cast): Partial<Effect> {
   return { repeat: { spell: spell.id, slot, ...(spell.chosen && { choice: spell.chosen }), dc } };
 }
 
+/** Damage an effect deals each turn, multiplied like the spell's own (a lingering bolt). */
+function timedTurnDamage(parts: Effect['turnDamage'], times: number | undefined): Partial<Effect> {
+  if (!parts || !times || times === 1) return {};
+  return { turnDamage: parts.map((d) => ({ ...d, times: (d.times ?? 1) * times })) };
+}
+
 function effectFor(cast: Cast): Effect | undefined {
   const { spell, caster, dc } = cast;
   if (!spell.effect && !spell.rider) return undefined;
@@ -276,8 +239,9 @@ function effectFor(cast: Cast): Effect | undefined {
     spell: spell.id,
     slot: cast.slot,
     ...casterNumbers(cast, turnTempHp, template.sanctuary),
-    id: `${spell.id}-${caster.token.id}`,
+    id: template.hold ? `${spell.id}-${template.hold}` : `${spell.id}-${caster.token.id}`,
     name: template.name ?? spell.name,
+    ...timedTurnDamage(template.turnDamage, spell.damageTimes),
     source: caster.token.id,
     concentration: spell.concentration || undefined,
     rounds: template.rounds ?? spell.rounds,
@@ -314,7 +278,7 @@ function landing(cast: Cast, target: CastSide, used: UsedEffect[]) {
 function unrolled(cast: Cast, target: CastSide, base: Base): CastResult | undefined {
   const { spell } = cast;
   if (warded(cast, target)) return { ...base, immune: true };
-  if (spell.creatureTypes && !spell.creatureTypes.includes(target.sheet.type)) return { ...base, immune: true };
+  if (powerImmune(spell, cast.caster.sheet, target.sheet)) return { ...base, immune: true };
   if (spell.heal) return heal(cast, target, base);
   if (spell.tempHp) return shield(cast, target, base);
   if (spell.rider) return { ...base, effect: effectFor(cast) };
@@ -350,7 +314,8 @@ function oneTarget(cast: Cast, target: CastSide, used: UsedEffect[]): CastResult
 function rolled(cast: Cast, target: CastSide, base: Base, { attack, save, landed, half }: Landing): CastResult {
   const { spell } = cast;
   const marks = attack ? markDamage(target.sheet, cast.caster.token.id, spell.damage[0]?.type ?? 'force') : [];
-  const rolls = cast.shared ?? rollDamage([...spell.damage, ...marks], attack?.crit === true, cast.rng);
+  const rolls =
+    cast.shared ?? rollDamage([...spell.damage, ...marks], attack?.crit === true, cast.rng, spell.damageTimes);
   const damaged = landed || half ? dealt(target.sheet, rolls, { half, rng: cast.rng }) : undefined;
   return {
     ...base,
@@ -448,8 +413,8 @@ function castOf(input: CastInput, rng: Rng): Cast {
     caster,
     dc: input.dc ?? book?.dc ?? 10,
     tier: 1 + CANTRIP_TIERS.filter((l) => level >= l).length,
-    attackBonus: book?.attack ?? 0,
-    mod: book ? abilityMod(caster.sheet.abilities[book.ability]) : 0,
+    attackBonus: input.attackBonus ?? book?.attack ?? 0,
+    mod: input.mod ?? (book ? abilityMod(caster.sheet.abilities[book.ability]) : 0),
     gridSize,
     grid,
     rng,
@@ -470,10 +435,24 @@ function raysOf(cast: Cast): Cast[] {
   }));
 }
 
+/** One attack at the first target; on a hit the damage, rolled once, is shared out among all of them (Fractured Bolt). */
+function splitCast(cast: Cast, targets: readonly CastSide[], used: UsedEffect[]): CastResult[] {
+  cast.shared = rollDamage(cast.spell.damage, false, cast.rng, (cast.spell.damageTimes ?? 1) / targets.length);
+  const first = oneTarget(cast, targets[0]!, used);
+  if (first.hit === false) return [first];
+  const rest = { ...cast, spell: { ...cast.spell, autoHit: true } };
+  return [first, ...targets.slice(1).map((t) => oneTarget(rest, t, used))];
+}
+
 export function resolveCast(input: CastInput, rng: Rng = Math.random): CastOutcome {
   const cast = castOf(input, rng);
+  if (cast.spell.split && input.targets.length > 1) {
+    const used: UsedEffect[] = [];
+    const split = splitCast(cast, input.targets, used);
+    return { results: withCrowd(split, { ...input, dc: cast.dc, rng }), used };
+  }
   if (!cast.spell.attack && cast.spell.beams === 1 && !cast.spell.rider)
-    cast.shared = rollDamage(cast.spell.damage, false, rng);
+    cast.shared = rollDamage(cast.spell.damage, false, rng, cast.spell.damageTimes);
   const reached = pooled(cast, input.targets);
   const hp = new Map<string, Pick<Creature, 'hp' | 'tempHp'>>();
   const used: UsedEffect[] = [];
@@ -486,5 +465,6 @@ export function resolveCast(input: CastInput, rng: Rng = Math.random): CastOutco
       return result;
     });
   });
-  return { results, used, drained: drainOf(cast, results) };
+  const crowded = withCrowd(results, { ...input, dc: cast.dc, rng });
+  return { results: crowded, used, drained: drainOf(cast, crowded) };
 }

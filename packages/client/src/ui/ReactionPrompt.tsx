@@ -40,7 +40,7 @@ export function ReactionPrompt({ session }: Readonly<{ session: Session }>) {
             size="sm"
             onClick={() => session.requests.takeReaction(offer.id, choice)}
           >
-            {CHOICE_LABELS[choice] ?? artLabel(session, offer.reactor, choice)}
+            {offer.labels?.[choice] ?? CHOICE_LABELS[choice] ?? artLabel(session, offer.reactor, choice)}
           </Button>
         ))}
         <Button variant="outline" size="sm" onClick={() => session.requests.takeReaction(offer.id)}>

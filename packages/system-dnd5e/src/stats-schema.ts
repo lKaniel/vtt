@@ -40,7 +40,12 @@ export const DamageTypeSchema = z.enum([
 export type DamageType = z.infer<typeof DamageTypeSchema>;
 
 /** One damage roll of an attack, e.g. { "dice": "1d8+3", "type": "piercing" }. */
-export const DamageSchema = z.object({ dice: z.string().min(1), type: DamageTypeSchema });
+export const DamageSchema = z.object({
+  dice: z.string().min(1),
+  type: DamageTypeSchema,
+  /** The roll is multiplied by this, rounded down (half a bolt: 0.5). */
+  times: z.number().positive().optional(),
+});
 export type Damage = z.infer<typeof DamageSchema>;
 
 /** Normal and long range in feet. */

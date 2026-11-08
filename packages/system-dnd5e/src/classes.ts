@@ -2,6 +2,7 @@ import type { Content } from './content.ts';
 import { knownSpellIds } from './own-content.ts';
 import { featureSpellIds, levelFeatures } from './class-options.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
+import { type PowerLevel, powerAt } from './powers.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Feature, LevelTable, Spell, Spellcasting } from './spell-schema.ts';
 import type { Abilities, Ability, Edition } from './stats-schema.ts';
@@ -210,7 +211,15 @@ function passiveAt(f: Feature, level: number): Feature['passive'] {
 const effectAt = (f: Feature, level: number): Feature['effect'] =>
   (f.effectAt ?? []).filter(([from]) => level >= from).at(-1)?.[1] ?? f.effect;
 
-function sheetOf(f: Feature, level: number, abilities: Abilities, spent: Record<string, number>): FeatureSheet {
+interface SheetContext {
+  level: number;
+  abilities: Abilities;
+  spent: Record<string, number>;
+  power: PowerLevel;
+}
+
+function sheetOf(raw: Feature, { level, abilities, spent, power }: SheetContext): FeatureSheet {
+  const f = powerAt(raw, power);
   const short = f.shortRestFrom !== undefined && level >= f.shortRestFrom;
   const passive = passiveAt(f, level);
   const base: FeatureSheet = {
@@ -226,6 +235,17 @@ function sheetOf(f: Feature, level: number, abilities: Abilities, spent: Record<
   return { ...base, max, left: Math.max(0, max - (spent[f.id] ?? 0)) };
 }
 
+/** What "{mod}" and learned options read for a class's features: its pool's ability. */
+function powerLevel(token: Token, l: Pick<ClassLevel, 'id' | 'cls' | 'level'>, abilities: Abilities): PowerLevel {
+  const ability = l.cls?.pool?.ability;
+  return {
+    level: l.level,
+    mod: ability ? abilityMod(abilities[ability]) : 0,
+    known: new Set(token.stats?.features ?? []),
+    cls: l.id,
+  };
+}
+
 /** The features each class gives at its level and those granted by hand, with uses left; `usesFrom` features share another's. */
 export function featureSheets(
   token: Token,
@@ -235,11 +255,16 @@ export function featureSheets(
 ): FeatureSheet[] {
   const total = characterLevel(token.stats) ?? 1;
   const spent = token.spent?.uses ?? {};
-  const own = levels.flatMap((l) => levelFeatures(l).map((f) => ({ f, level: l.level })));
+  const own = levels.flatMap((l) => levelFeatures(l).map((f) => ({ f, level: l.level, l })));
   const fresh = own.filter((o, i) => own.findIndex((p) => p.f.id === o.f.id) === i);
-  const extra = granted.filter((g) => !fresh.some((o) => o.f.id === g.id)).map((f) => ({ f, level: total }));
+  const first = levels[0] ?? { id: '', level: total };
+  const extra = granted
+    .filter((g) => !fresh.some((o) => o.f.id === g.id))
+    .map((f) => ({ f, level: total, l: { ...first, level: total } }));
   const sheets = withPools(
-    [...fresh, ...extra].map(({ f, level }) => sheetOf(f, level, abilities, spent)),
+    [...fresh, ...extra].map(({ f, level, l }) =>
+      sheetOf(f, { level, abilities, spent, power: powerLevel(token, l, abilities) }),
+    ),
     token,
     abilities,
   );

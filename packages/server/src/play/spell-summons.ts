@@ -20,12 +20,12 @@ export function summon(
   table: Table,
   caster: Fighter,
   spell: Spell,
-  req: Pick<CastRequest, 'summon' | 'point'> & { slot: number },
+  req: Pick<CastRequest, 'summon' | 'point'> & { slot: number; cast?: SummonCast },
 ): Token[] {
   const options = spell.summon!.options;
   const choice = options.find((o) => o.monster === req.summon) ?? (options.length === 1 ? options[0] : undefined);
   if (!choice) throw new Refusal(`Pick what ${spell.name} summons: ${options.map((o) => o.monster).join(', ')}`);
-  const cast = castOf(table, caster, spell, req.slot);
+  const cast = req.cast ?? castOf(table, caster, spell, req.slot);
   const built = spellCreature(choice, cast);
   const monster = built ?? table.content(caster.token).monsters.get(choice.monster);
   if (!monster) throw new Refusal(`There is no ${choice.monster} in the bestiary`);
@@ -116,4 +116,9 @@ function ringAround(c: Point, ring: number, step: number): Point[] {
     }
   }
   return out;
+}
+
+/** "Wolf 1, Wolf 2 appear". */
+export function summonNotes(summoned: readonly Token[]): string[] {
+  return summoned.length ? [`${summoned.map((t) => t.name).join(', ')} appear`] : [];
 }

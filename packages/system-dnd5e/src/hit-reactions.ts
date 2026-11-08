@@ -1,6 +1,6 @@
 import type { AttackRoll } from './attack.ts';
 import type { Creature } from './creature.ts';
-import { canAct } from './effects.ts';
+import { canReact } from './effects.ts';
 import { hitArts } from './focus-arts.ts';
 import type { CastSide } from './spells.ts';
 import type { WeaponAttackOutcome } from './weapon-attack.ts';
@@ -20,7 +20,7 @@ export function shieldSlot(sheet: Pick<Creature, 'caster'>): number | undefined 
 /** The reactions `target` could take against this hit: shield (only when it would make it miss), uncanny dodge, focus arts (by feature id). */
 export function hitReactions(target: CastSide, roll: AttackRoll): string[] {
   const { sheet } = target;
-  if (!roll.hit || sheet.hp <= 0 || !canAct(sheet)) return [];
+  if (!roll.hit || sheet.hp <= 0 || !canReact(sheet)) return [];
   const out: string[] = [];
   if (!roll.crit && roll.total < sheet.ac + 5 && shieldSlot(sheet)) out.push('shield');
   if (sheet.features.some((f) => f.id === 'uncanny-dodge') && roll.damage.length) out.push('uncanny-dodge');

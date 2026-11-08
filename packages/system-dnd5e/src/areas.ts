@@ -1,5 +1,5 @@
 import { feetToPx, type Point, pointInPolygon } from '@vtt/shared';
-import type { Area } from './spell-schema.ts';
+import type { Area } from './area-schema.ts';
 
 // Where a spell's area lands. Spheres and ranged cubes sit on the aimed
 // point; cones, lines and self cubes start at the caster and point at it;

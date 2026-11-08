@@ -1,4 +1,4 @@
-import { canControl, isGm, gridKind, type Player, type Point } from '@vtt/shared';
+import { canControl, gridKind, type Player, type Point } from '@vtt/shared';
 import {
   automationOf,
   type Effect,
@@ -16,6 +16,8 @@ import type { CombatActions, PendingHit } from '../actions/combat-actions.ts';
 import type { PendingCast } from '../actions/spell-actions.ts';
 import { counter, spellAnswerers } from './counter-casts.ts';
 import { focusArt } from './focus-art-reactions.ts';
+import { guard, hitGuards } from './pool-guards.ts';
+import { asksReactions, deciderOf } from './reaction-deciders.ts';
 import { Refusal, type Table } from './table.ts';
 
 export type ReactionMessage = { t: 'reactionOffer'; offer: ReactionOffer } | { t: 'reactionGone'; id: string };
@@ -65,10 +67,8 @@ export class Reactions {
     this.offer({ id: randomUUID(), reactor: reactor.id, target: mover.id, kind: 'opportunity', choices });
   }
 
-  /** Whose settings say how a creature reacts: a player who controls it, else the GM. */
   private decider(reactor: Token): Player | undefined {
-    const seats = this.table.store.world.players.filter((p) => canControl(reactor, p));
-    return seats.find((p) => !isGm(p)) ?? seats[0];
+    return deciderOf(this.table, reactor);
   }
 
   /** An attack is about to hit: offer its target shield or uncanny dodge. True when the hit waits. */
@@ -77,7 +77,8 @@ export class Reactions {
     const target = hit.target.token.id;
     if (!combat || combat.reacted.includes(target)) return false;
     if (!this.asks(hit.target.token)) return false;
-    const choices = hitReactions(hit.target, hit.outcome.roll);
+    const guards = hitGuards(hit);
+    const choices = [...hitReactions(hit.target, hit.outcome.roll), ...guards.reactions.map((r) => r.feature.id)];
     if (!choices.length) return false;
     const id = randomUUID();
     this.hits.set(id, hit);
@@ -87,6 +88,7 @@ export class Reactions {
       target: hit.attacker.token.id,
       kind: 'hit',
       choices,
+      ...(guards.reactions.length && { labels: guards.labels }),
       total: hit.outcome.roll.total,
     });
     return true;
@@ -106,9 +108,8 @@ export class Reactions {
     return asked.length > 0;
   }
 
-  /** Whether a creature's player wants to be asked about reactions (hits and spells). */
   private asks(reactor: Token): boolean {
-    return automationOf(this.decider(reactor)?.settings).hitReactions !== 'never';
+    return asksReactions(this.table, reactor);
   }
 
   /** Takes or declines an offer. */
@@ -158,6 +159,8 @@ export class Reactions {
       this.table.note(`${hit.target.token.name} uses Uncanny Dodge`);
       return this.combat.land({ ...hit, outcome: halved(hit.outcome) });
     }
+    const pool = choice && hitGuards(hit).reactions.find((r) => r.feature.id === choice);
+    if (pool) return this.combat.land(guard(this.table, hit, pool));
     this.combat.land(choice ? focusArt(this.table, hit, choice) : hit);
   }
 

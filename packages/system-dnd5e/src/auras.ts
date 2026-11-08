@@ -2,6 +2,7 @@ import { type GridKind, isParty } from '@vtt/shared';
 import { tokenDistance } from './attack.ts';
 import type { Creature } from './creature.ts';
 import { ownEffects } from './creature.ts';
+import { weightFor } from './power-casts.ts';
 import { abilityMod } from './creature-math.ts';
 import { ABILITY_VALUE } from './effect-changes.ts';
 import type { Aura, Effect } from './spell-schema.ts';
@@ -69,9 +70,14 @@ function reached(
   ground: Ground,
 ): Token[] {
   return all
+    .filter((b) => light(effect.aura, bearer, b))
     .map((b) => b.token)
     .filter((t) => within(effect.aura, bearer.token, t, ground) && touches(effect.aura, bearer.token, t));
 }
+
+/** Whether a creature is light enough for the aura (`maxWeight`, by the bearer's pool weight). */
+const light = (aura: Aura, bearer: AuraBearer, other: AuraBearer) =>
+  aura.maxWeight === undefined || weightFor(bearer.sheet, other.sheet) <= aura.maxWeight;
 
 interface Ground {
   gridSize: number;

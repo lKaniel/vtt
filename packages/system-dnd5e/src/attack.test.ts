@@ -63,6 +63,12 @@ describe('rollAttack', () => {
     expect(r.damage[0]!.roll.formula).toBe('1d8+3');
   });
 
+  it('multiplies a damage part by its `times`, rounded down', () => {
+    const half = { ...sword, damage: [{ dice: '1d8+3', type: 'psychic' as const, times: 0.5 }] };
+    // d8 of 1 + 3 = 4, halved
+    expect(rollAttack(half, target(), {}, d20s(10)).damage[0]!.roll.total).toBe(2);
+  });
+
   it('misses below the AC and rolls no damage', () => {
     expect(rollAttack(sword, target(), {}, d20s(9))).toMatchObject({ hit: false, damage: [] });
   });
