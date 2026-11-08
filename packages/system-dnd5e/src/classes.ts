@@ -1,7 +1,8 @@
 import type { Content } from './content.ts';
 import { knownSpellIds } from './own-content.ts';
 import { featureSpellIds, levelFeatures } from './class-options.ts';
-import { abilityMod } from './creature-math.ts';
+import { abilityMod, proficiencyForLevel } from './creature-math.ts';
+import { type PowerLevel, powerAt } from './powers.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Feature, LevelTable, Spell, Spellcasting } from './spell-schema.ts';
 import type { Abilities, Ability, Edition } from './stats-schema.ts';
@@ -67,8 +68,13 @@ function nineLevels(slots: readonly number[]): number[] {
 }
 
 /** Slots per spell level, index 0 for 1st level. */
-export function spellSlots(casting: Pick<Spellcasting, 'progression' | 'from'>, level: number): number[] {
+export function spellSlots(casting: Pick<Spellcasting, 'progression' | 'from' | 'slots'>, level: number): number[] {
   if (level < casting.from) return nineLevels([]);
+  if (casting.slots) {
+    const slots = nineLevels([]);
+    slots[levelValue(casting.slots.level, level) - 1] = levelValue(casting.slots.count, level);
+    return slots;
+  }
   if (casting.progression === 'pact') {
     const slots = nineLevels([]);
     slots[levelValue(PACT_LEVEL, level) - 1] = levelValue(PACT_SLOTS, level);
@@ -193,7 +199,9 @@ function maxUses(f: Feature, level: number, abilities: Abilities): number | unde
 function featureSpell(f: Feature, level: number): Partial<Spell> | undefined {
   if (!f.spell) return undefined;
   const die = String(levelValue(f.die ?? [], level));
-  return JSON.parse(JSON.stringify(f.spell).replace(/\{die\}/g, die)) as Partial<Spell>;
+  const later = (f.spellAt ?? []).filter(([from]) => level >= from).map(([, set]) => set);
+  const spell = Object.assign({}, f.spell, ...later) as Record<string, unknown>;
+  return JSON.parse(JSON.stringify(spell).replace(/\{die\}/g, die)) as Partial<Spell>;
 }
 
 /** A feature's always-on effect at this class level: its speed bonus and aura radius filled in. */
@@ -206,11 +214,24 @@ function passiveAt(f: Feature, level: number): Feature['passive'] {
   return { ...p, ...speed, ...aura, ...hp };
 }
 
-function sheetOf(f: Feature, level: number, abilities: Abilities, spent: Record<string, number>): FeatureSheet {
+/** The effect a feature gives at this class level: the highest `effectAt` reached, else its `effect`. */
+const effectAt = (f: Feature, level: number): Feature['effect'] =>
+  (f.effectAt ?? []).filter(([from]) => level >= from).at(-1)?.[1] ?? f.effect;
+
+interface SheetContext {
+  level: number;
+  abilities: Abilities;
+  spent: Record<string, number>;
+  power: PowerLevel;
+}
+
+function sheetOf(raw: Feature, { level, abilities, spent, power }: SheetContext): FeatureSheet {
+  const f = powerAt(raw, power);
   const short = f.shortRestFrom !== undefined && level >= f.shortRestFrom;
   const passive = passiveAt(f, level);
   const base: FeatureSheet = {
     ...f,
+    effect: effectAt(f, level),
     passive,
     spell: featureSpell(f, level),
     classLevel: level,
@@ -219,6 +240,17 @@ function sheetOf(f: Feature, level: number, abilities: Abilities, spent: Record<
   const max = maxUses(f, level, abilities);
   if (max === undefined) return base;
   return { ...base, max, left: Math.max(0, max - (spent[f.id] ?? 0)) };
+}
+
+/** What "{mod}" and learned options read for a class's features: its pool's ability. */
+function powerLevel(token: Token, l: Pick<ClassLevel, 'id' | 'cls' | 'level'>, abilities: Abilities): PowerLevel {
+  const ability = l.cls?.pool?.ability;
+  return {
+    level: l.level,
+    mod: ability ? abilityMod(abilities[ability]) : 0,
+    known: new Set(token.stats?.features ?? []),
+    cls: l.id,
+  };
 }
 
 /** The features each class gives at its level and those granted by hand, with uses left; `usesFrom` features share another's. */
@@ -230,13 +262,37 @@ export function featureSheets(
 ): FeatureSheet[] {
   const total = characterLevel(token.stats) ?? 1;
   const spent = token.spent?.uses ?? {};
-  const own = levels.flatMap((l) => levelFeatures(l).map((f) => ({ f, level: l.level })));
+  const own = levels.flatMap((l) => levelFeatures(l).map((f) => ({ f, level: l.level, l })));
   const fresh = own.filter((o, i) => own.findIndex((p) => p.f.id === o.f.id) === i);
-  const extra = granted.filter((g) => !fresh.some((o) => o.f.id === g.id)).map((f) => ({ f, level: total }));
-  const sheets = [...fresh, ...extra].map(({ f, level }) => sheetOf(f, level, abilities, spent));
+  const first = levels[0] ?? { id: '', level: total };
+  const extra = granted
+    .filter((g) => !fresh.some((o) => o.f.id === g.id))
+    .map((f) => ({ f, level: total, l: { ...first, level: total } }));
+  const sheets = withPools(
+    [...fresh, ...extra].map(({ f, level, l }) =>
+      sheetOf(f, { level, abilities, spent, power: powerLevel(token, l, abilities) }),
+    ),
+    token,
+    abilities,
+  );
   return sheets.map((f) => {
     const from = f.usesFrom ? sheets.find((s) => s.id === f.usesFrom) : undefined;
     return from ? { ...f, max: from.max, left: from.left } : f;
+  });
+}
+
+/** More uses another feature gives (focused fighting), and a momentum pool's size and dice held. */
+function withPools(sheets: FeatureSheet[], token: Token, abilities: Abilities): FeatureSheet[] {
+  const more = (id: string) => sheets.reduce((n, s) => n + (s.moreUses?.of === id ? s.moreUses.by : 0), 0);
+  return sheets.map((s) => {
+    if (s.momentum) {
+      const prof = proficiencyForLevel(characterLevel(token.stats) ?? 1);
+      const max = prof + Math.max(abilityMod(abilities.str), abilityMod(abilities.dex));
+      // Titanic Strength can double the dice to one past the most.
+      return { ...s, max, left: Math.min(max + 1, token.momentum?.dice ?? 0) };
+    }
+    const by = s.max === undefined ? 0 : more(s.id);
+    return by ? { ...s, max: s.max! + by, left: s.left! + by } : s;
   });
 }
 

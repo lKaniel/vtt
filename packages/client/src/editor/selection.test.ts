@@ -30,6 +30,7 @@ describe('clickSelect', () => {
 describe('marqueeSelect', () => {
   it('replaces, adds with shift, takes away with ctrl', () => {
     expect(marqueeSelect(['a'], ['b', 'c'], none)).toEqual(['b', 'c']);
+    expect(marqueeSelect(['a'], [], none)).toEqual(['a']);
     expect(marqueeSelect(['a', 'b'], ['b', 'c'], shift)).toEqual(['a', 'b', 'c']);
     expect(marqueeSelect(['a', 'b'], ['b', 'c'], ctrl)).toEqual(['a']);
   });

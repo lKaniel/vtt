@@ -1,5 +1,5 @@
 import { ExternalLinkIcon, PanelRightCloseIcon, PanelRightOpenIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { t } from '../i18n/index.ts';
 import { readPref, writePref } from '../prefs.ts';
 import type { Session } from '../session/session.ts';
@@ -50,6 +50,8 @@ export function SidePanel({ session }: Readonly<{ session: Session }>) {
     setTab(id);
     setOpen(true);
   };
+  // Every render: `pick` and `tabs` are new each time, and a listener costs nothing to swap.
+  useEffect(() => session.on('panel', (id) => tabs.includes(id as Tab) && pick(id as Tab)));
   const popOut = () => !popped.includes(shown) && setPopped([...popped, shown]);
   return (
     <>

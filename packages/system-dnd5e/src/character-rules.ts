@@ -1,6 +1,6 @@
 import { levelValue, spellSlots } from './classes.ts';
 import { srdFor } from './content.ts';
-import type { LevelTable } from './spell-schema.ts';
+import type { LevelTable, Spellcasting } from './spell-schema.ts';
 import type { Abilities, Ability, Edition } from './stats-schema.ts';
 
 // The numbers a character is built from: point buy, ability score
@@ -119,6 +119,8 @@ interface LimitQuery {
   edition: Edition;
   /** The spellcasting ability modifier. */
   mod: number;
+  /** The class's spellcasting as the game has it (a pack class, a subclass's); missing: the SRD class's. */
+  casting?: Spellcasting;
 }
 
 /** Spells a 2014 character of this class picks at this level. */
@@ -131,10 +133,13 @@ function spells2014({ classId, level, mod }: LimitQuery): number {
 }
 
 export function spellLimits(q: LimitQuery): SpellLimits {
-  const casting = srdFor(q.edition).classes.get(q.classId)?.spellcasting;
+  const casting = q.casting ?? srdFor(q.edition).classes.get(q.classId)?.spellcasting;
   const slots = casting ? spellSlots(casting, q.level) : [];
   const maxLevel = slots.findLastIndex((n) => n > 0) + 1;
   if (!maxLevel) return { cantrips: 0, spells: 0, maxLevel: 0 };
+  const known = casting?.known;
+  if (known)
+    return { cantrips: levelValue(known.cantrips, q.level), spells: levelValue(known.spells, q.level), maxLevel };
   const cantrips = levelValue(CANTRIPS[q.classId] ?? [], q.level);
   const spells = q.edition === '2024' ? levelValue(PREPARED_2024[q.classId] ?? [], q.level) : spells2014(q);
   return { cantrips, spells, maxLevel };

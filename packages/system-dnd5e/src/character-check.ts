@@ -7,7 +7,7 @@ import {
   partsOf,
   totalLevel,
 } from './character.ts';
-import { multiclassProblem } from './multiclass.ts';
+import { classCasting, multiclassProblem } from './multiclass.ts';
 import { choicesDue, classFeature } from './class-options.ts';
 import {
   isImprovementLevel,
@@ -198,9 +198,10 @@ function multiclassIssues(c: Character, p: Parts): string[] {
 function classSpellLimits(c: Character, p: Parts): { classId: string; limits: SpellLimits }[] {
   const scores = abilityScores(c, p);
   return characterClasses(c).map((k) => {
-    const ability = p.book.content.classes.get(k.class)?.spellcasting?.ability;
-    const mod = ability ? abilityMod(scores[ability]) : 0;
-    return { classId: k.class, limits: spellLimits({ classId: k.class, level: k.level, edition: c.rules, mod }) };
+    const casting = classCasting(p.book.content.classes.get(k.class), k.subclass);
+    const mod = casting ? abilityMod(scores[casting.ability]) : 0;
+    const limits = spellLimits({ classId: k.class, level: k.level, edition: c.rules, mod, casting });
+    return { classId: casting?.list ?? k.class, limits };
   });
 }
 

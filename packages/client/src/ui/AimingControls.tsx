@@ -9,6 +9,7 @@ import type { Aiming } from '../play/targeting.ts';
 import { Button } from './kit/button.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Toggle } from './kit/toggle.tsx';
+import { PowerControls } from './PowerControls.tsx';
 
 // The bar shown while a spell is aimed: its slot, what it summons, its option.
 
@@ -26,13 +27,23 @@ export function AimingControls({ session, token }: Readonly<{ session: Session; 
         <SlotChoices session={session} aiming={aiming} caster={token.sheet.caster} />
       )}
       <SpellOptions session={session} aiming={aiming} />
-      {spell.transform && <FormChoice session={session} aiming={aiming} token={token} />}
-      {aiming.mode === 'creatures' && aiming.picks.length > 0 && (
-        <Button size="sm" onClick={() => session.actions.confirmCast()}>
-          Cast at {aiming.picks.length}
-        </Button>
+      {aiming.power ? (
+        <PowerControls session={session} aiming={aiming} />
+      ) : (
+        <CastAt session={session} aiming={aiming} />
       )}
+      {spell.transform && <FormChoice session={session} aiming={aiming} token={token} />}
     </div>
+  );
+}
+
+/** Casts a spell aimed at creatures with the ones picked so far. */
+function CastAt({ session, aiming }: Readonly<{ session: Session; aiming: Aiming }>) {
+  if (aiming.mode !== 'creatures' || !aiming.picks.length) return null;
+  return (
+    <Button size="sm" onClick={() => session.actions.confirmCast()}>
+      Cast at {aiming.picks.length}
+    </Button>
   );
 }
 

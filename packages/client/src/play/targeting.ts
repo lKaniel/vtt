@@ -10,6 +10,7 @@ import {
 } from '@vtt/system-dnd5e';
 import { contentFor, gameContent } from '../content/content.ts';
 import type { Point } from '@vtt/shared';
+import { type PowerAim, powerFields } from './power-aiming.ts';
 
 // Picking what a spell is aimed at: nothing (self), a point (areas,
 // teleports, summons) or some creatures, one per target or beam.
@@ -38,6 +39,8 @@ export interface Aiming {
   item?: number;
   /** Set when a feature is aimed like a spell (bardic inspiration): it's used instead of cast. */
   feature?: string;
+  /** A pool feature's picks and inputs (power-aiming.ts): it waits for Use instead of going off. */
+  power?: PowerAim;
 }
 
 export function aimSpell(spell: Spell, slot: number, casterLevel: number): Aiming {
@@ -114,7 +117,16 @@ export function aimAtTargets(aiming: Aiming, targets: readonly string[]): { aimi
 
 export function castMessage(caster: string, aiming: Aiming, point?: Point): ClientMessage {
   if (aiming.feature) {
-    return { t: 'feature', token: caster, feature: aiming.feature, targets: aiming.picks, ...(point && { point }) };
+    const choice = aiming.choice && { choice: aiming.choice };
+    return {
+      t: 'feature',
+      token: caster,
+      feature: aiming.feature,
+      targets: aiming.picks,
+      ...(point && { point }),
+      ...powerFields(aiming.power),
+      ...choice,
+    };
   }
   return {
     t: 'cast',

@@ -57,8 +57,8 @@ function merge(entry: Entry, part: Record<string, unknown>): Entry {
   // null in the overlay takes a generated field away (false life's healing).
   const kept = Object.entries({ ...entry, ...rest } as Record<string, unknown>).filter(([, value]) => value !== null);
   const out: Entry = Object.fromEntries(kept) as Entry;
-  if (features && Array.isArray(entry.features)) {
-    const known = entry.features as Entry[];
+  if (features) {
+    const known = (Array.isArray(entry.features) ? entry.features : []) as Entry[];
     // Features the generated text folds into another (flurry of blows under ki) are added whole.
     const added = Object.entries(features)
       .filter(([id]) => !known.some((f) => f.id === id))
@@ -73,6 +73,12 @@ function merge(entry: Entry, part: Record<string, unknown>): Entry {
     });
   }
   return out;
+}
+
+/** A class from a pack or homebrew with the automation written for its id (its rules text stays in the pack). */
+export function withClassAutomation(doc: unknown, edition: Edition): unknown {
+  const entry = doc as Entry | null;
+  return entry && typeof entry.id === 'string' ? withOverlay(entry, classAutomation, edition) : doc;
 }
 
 function load<T extends { id: string }>(

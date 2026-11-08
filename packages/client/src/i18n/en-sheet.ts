@@ -1,9 +1,11 @@
 // The character sheet's English words (see en.ts).
 
 import { EN_CREATOR } from './en-creator.ts';
+import { EN_POWERS } from './en-powers.ts';
 
 export const EN_SHEET = {
   ...EN_CREATOR,
+  ...EN_POWERS,
   'sheet.label': "{name}'s character sheet",
   'sheet.level': 'Level {level}',
   'sheet.actor': '(actor)',

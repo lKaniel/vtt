@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { areaShape, inArea } from './areas.ts';
-import type { Area } from './spell-schema.ts';
+import type { Area } from './area-schema.ts';
 
 const G = 100;
 const area = (shape: Area['shape'], size: number, width = 5): Area => ({ shape, size, width });

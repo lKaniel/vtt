@@ -7,7 +7,7 @@ import type { Attack, Damage, DamageType } from './stats-schema.ts';
 import type { GridKind, Rng } from '@vtt/shared';
 import { divineSmite, hitRiders, markDamage, withWeaponBonus } from './riders.ts';
 import { mirrorImage, weakenedDamage } from './wards.ts';
-import { critRangeOf, duelingDamage } from './class-styles.ts';
+import { critRangeOf, styleDamage } from './class-styles.ts';
 
 // One attack with a weapon or natural weapon, with everything that changes
 // it: conditions, bless, sneak attack, rage, and 2024 weapon masteries.
@@ -26,6 +26,8 @@ export interface WeaponAttackInput {
   smite?: number;
   /** Sneak attack was already used this turn. */
   sneakUsed: boolean;
+  /** Extra damage a finisher adds if the attack hits (finishers.ts); the server spends the dice. */
+  finisher?: Damage;
 }
 
 export interface WeaponAttackOutcome {
@@ -63,7 +65,7 @@ function extraDamage(input: WeaponAttackInput, sneak: boolean): Damage[] {
   extra.push(...weaponRiders(attack, target.sheet.type));
   extra.push(...hitRiders({ id: attacker.token.id, sheet: attacker.sheet }, type).damage);
   extra.push(...markDamage(target.sheet, attacker.token.id, type));
-  return [...extra, ...smiting(input)];
+  return [...extra, ...smiting(input), ...(input.finisher ? [input.finisher] : [])];
 }
 
 /** A magic weapon's own extra damage: always, or against the creature types it slays. */
@@ -134,7 +136,7 @@ export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.ra
       ...mods,
       disadvantage,
       critRange: critRangeOf(attacker.sheet),
-      extraDamage: [...extraDamage({ ...input, attack }, sneak), ...duelingDamage(attacker.sheet, attack)],
+      extraDamage: [...extraDamage({ ...input, attack }, sneak), ...styleDamage(attacker.sheet, attack)],
     },
     rng,
   );

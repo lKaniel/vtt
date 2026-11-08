@@ -81,6 +81,30 @@ describe('shared party turns', () => {
     expect(store.combat?.group).toBeUndefined();
   });
 
+  it('ends only the named creature’s turn when one seat controls several', () => {
+    const { gm } = fight(true);
+    gm.receive({ t: 'endTurn', token: 'mage' });
+    expect(gm.take('error')).toEqual([]);
+    expect(turn()).toBe('hero');
+    expect(store.combat?.done).toEqual(['mage']);
+    gm.receive({ t: 'endTurn', token: 'hero' });
+    expect(turn()).toBe('goblin');
+  });
+
+  it('ends one creature’s turn, the one whose turn it is first, when none is named', () => {
+    const { gm } = fight(true);
+    gm.receive({ t: 'endTurn' });
+    expect(turn()).toBe('hero');
+    expect(store.combat?.done).toEqual(['hero']);
+  });
+
+  it('refuses to end the turn of a creature you don’t control', () => {
+    const { ana } = fight(true);
+    ana.receive({ t: 'endTurn', token: 'mage' });
+    expect(ana.take('error')[0]?.message).toMatch(/not your turn/i);
+    expect(store.combat?.done).toBeUndefined();
+  });
+
   it('is how turn-based mode plays', () => {
     const gm = seat('gm');
     dice = [d20(20), d20(18)];

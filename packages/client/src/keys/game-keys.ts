@@ -202,7 +202,12 @@ export function listenToKeys(session: Session): () => void {
 /** Space let go: a tap of it (no panning) ends your turn when Space is the end-turn key. */
 export function spaceReleased(session: Session, e: Key): void {
   if (e.key !== ' ' || !spaceKey.release() || isTyping(e.target)) return;
-  if (actionOf(e, currentKeys()) === 'endTurn' && session.turns.mine()) session.requests.endTurn();
+  if (actionOf(e, currentKeys()) === 'endTurn' && session.turns.mine()) endTurn(session);
+}
+
+/** Ends the selected creature's turn (or the first of yours taking it): the rest of a shared turn keep theirs. */
+function endTurn(session: Session): void {
+  session.requests.endTurn(session.turns.ending(session.selected));
 }
 
 /** Space held makes a left drag pan the map (see space-pan.ts); returns the cleanup. */
@@ -230,7 +235,7 @@ function handleGameKey(session: Session, e: Key): void {
   }
   if (id === 'endTurn' && session.turns.mine()) {
     e.preventDefault();
-    session.requests.endTurn();
+    endTurn(session);
     return;
   }
   if (id?.startsWith('hotbar-')) return pressSlot(session, id.slice(7));

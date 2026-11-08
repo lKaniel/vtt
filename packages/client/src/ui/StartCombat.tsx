@@ -1,0 +1,143 @@
+import { isParty } from '@vtt/shared';
+import { EyeOffIcon, SwordsIcon, UsersIcon } from 'lucide-react';
+import { useState } from 'react';
+import { refOf } from '../editor/selection.ts';
+import { t } from '../i18n/index.ts';
+import { fightCandidates, firstPicks, type FightCandidate } from '../play/fight-pick.ts';
+import type { Session } from '../session/session.ts';
+import { Button } from './kit/button.tsx';
+import { Checkbox } from './kit/checkbox.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
+import { Toggle } from './kit/toggle.tsx';
+
+// The GM's Start combat: a list of the creatures on the scene to tick (the
+// selected ones, else those on screen, to begin with), then roll initiative.
+
+const SHARED_KEY = 'vtt.sharedTurns';
+
+/** The GM's choice of shared party turns, kept in this browser (on unless turned off). */
+function loadShared(): boolean {
+  try {
+    return localStorage.getItem(SHARED_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+function saveShared(on: boolean): void {
+  try {
+    localStorage.setItem(SHARED_KEY, on ? 'on' : 'off');
+  } catch {
+    // Private windows may refuse storage; the choice lasts until reload.
+  }
+}
+
+/** Start combat (opens the picker) and the shared party turns switch beside it. */
+export function StartCombat({ session }: Readonly<{ session: Session }>) {
+  const [shared, setShared] = useState(loadShared);
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="flex">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button title={t('fight.startHint')}>
+            <SwordsIcon /> {t('fight.start')}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="flex w-[300px] flex-col gap-2" data-slot="fight-picker">
+          {open && <FightPicker session={session} shared={shared} onDone={() => setOpen(false)} />}
+        </PopoverContent>
+      </Popover>
+      <Toggle
+        variant="plate"
+        className="-ml-px w-8 px-0"
+        pressed={shared}
+        onPressedChange={(on) => {
+          setShared(on);
+          saveShared(on);
+        }}
+        title={t('fight.sharedHint')}
+        aria-label={t('fight.shared')}
+      >
+        <UsersIcon />
+      </Toggle>
+    </span>
+  );
+}
+
+/** The token ids in the GM's selection. */
+function selectedTokens(session: Session): string[] {
+  const coll = session.editor.modeColl('tokens');
+  return session.editor.selection.map(refOf).flatMap((r) => (r.coll === coll ? [r.id] : []));
+}
+
+type PickerProps = Readonly<{ session: Session; shared: boolean; onDone: () => void }>;
+
+function FightPicker({ session, shared, onDone }: PickerProps) {
+  const [candidates] = useState(() => fightCandidates(session.tokens.values(), isParty));
+  const onScreen = () => session.editor.fightersInView();
+  const [picked, setPicked] = useState<ReadonlySet<string>>(
+    () => new Set(firstPicks(candidates, selectedTokens(session), onScreen())),
+  );
+  const toggle = (id: string, on: boolean) =>
+    setPicked((was) => (on ? new Set([...was, id]) : new Set([...was].filter((x) => x !== id))));
+  const start = () => {
+    session.requests.startCombat(
+      candidates.filter((c) => picked.has(c.id)).map((c) => c.id),
+      shared,
+    );
+    onDone();
+  };
+  if (!candidates.length) return <p className="text-xs text-muted-foreground">{t('fight.noFighters')}</p>;
+  return (
+    <>
+      <span className="font-display text-sm text-gold">{t('fight.who')}</span>
+      <div className="flex gap-1">
+        <Button variant="outline" size="sm" onClick={() => setPicked(new Set(candidates.map((c) => c.id)))}>
+          {t('fight.all')}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setPicked(new Set())}>
+          {t('fight.none')}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setPicked(new Set(firstPicks(candidates, [], onScreen())))}>
+          {t('fight.inView')}
+        </Button>
+      </div>
+      <div className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto">
+        <Side title={t('fight.party')} list={candidates.filter((c) => c.party)} picked={picked} onToggle={toggle} />
+        <Side title={t('fight.foes')} list={candidates.filter((c) => !c.party)} picked={picked} onToggle={toggle} />
+      </div>
+      <Button disabled={!picked.size} onClick={start}>
+        <SwordsIcon /> {t('fight.roll', { n: picked.size })}
+      </Button>
+    </>
+  );
+}
+
+type SideProps = Readonly<{
+  title: string;
+  list: readonly FightCandidate[];
+  picked: ReadonlySet<string>;
+  onToggle: (id: string, on: boolean) => void;
+}>;
+
+/** One side of the fight: a tick box per creature. */
+function Side({ title, list, picked, onToggle }: SideProps) {
+  if (!list.length) return null;
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">{title}</span>
+      {list.map((c) => (
+        <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm">
+          <Checkbox checked={picked.has(c.id)} onCheckedChange={(on) => onToggle(c.id, on === true)} />
+          <span className="truncate">{c.name}</span>
+          {c.hidden && (
+            <span className="ml-auto text-muted-foreground" title={t('fight.hidden')}>
+              <EyeOffIcon className="size-3.5" aria-label={t('fight.hidden')} />
+            </span>
+          )}
+        </label>
+      ))}
+    </div>
+  );
+}

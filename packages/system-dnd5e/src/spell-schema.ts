@@ -3,6 +3,10 @@ import { LightSchema, WallRulesSchema } from '@vtt/shared';
 import { ABILITIES, AbilitiesSchema, DamageSchema, DamageTypeSchema, OtherSpeedsSchema } from './stats-schema.ts';
 import { EffectChangeSchema } from './effect-changes.ts';
 import { WeaponSpellSchema } from './weapon-spell-schema.ts';
+import { AreaSchema } from './area-schema.ts';
+import { classFields, LevelTableSchema, momentumEffectFields } from './class-fields.ts';
+import { ConditionSchema } from './condition-schema.ts';
+import { PoolSchema, powerEffectFields, powerFeatureFields, powerSpellFields } from './power-schema.ts';
 
 // Spells, class features and the effects they leave on creatures. Spells and
 // classes are data in packages/system-dnd5e/content; the engine in spells.ts,
@@ -13,23 +17,7 @@ const dice = z.string().min(1);
 
 export const AbilitySchema = z.enum(ABILITIES);
 
-export const ConditionSchema = z.enum([
-  'blinded',
-  'charmed',
-  'deafened',
-  'frightened',
-  'grappled',
-  'incapacitated',
-  'invisible',
-  'paralyzed',
-  'petrified',
-  'poisoned',
-  'prone',
-  'restrained',
-  'stunned',
-  'unconscious',
-]);
-export type Condition = z.infer<typeof ConditionSchema>;
+export { ConditionSchema, type Condition } from './condition-schema.ts';
 
 /** Extra damage an effect adds to hits; "weapon" takes the type of the attack it rides on. */
 export const RiderDamageSchema = z.object({ dice, type: z.union([DamageTypeSchema, z.literal('weapon')]) });
@@ -37,6 +25,7 @@ export type RiderDamage = z.infer<typeof RiderDamageSchema>;
 
 /** What an effect changes about the creature that has it. */
 const modifiers = {
+  ...powerEffectFields,
   /** Changes to any statistic by key, Foundry style: `{ key: "abilities.str", mode: "override", value: 19 }` (see effect-changes.ts). */
   changes: z.array(EffectChangeSchema).optional(),
   conditions: z.array(ConditionSchema).optional(),
@@ -188,18 +177,7 @@ const modifiers = {
   disengaged: z.boolean().optional(),
   /** The bearer's speed is 0 (hypnotic pattern). */
   immobile: z.boolean().optional(),
-  /** Senses the effect grants, in feet (darkvision spell), or the power to see invisible things. */
-  senses: z
-    .object({
-      darkvision: z.number().nonnegative(),
-      blindsight: z.number().nonnegative(),
-      tremorsense: z.number().nonnegative(),
-      truesight: z.number().nonnegative(),
-      devilsSight: z.number().nonnegative(),
-      seeInvisible: z.boolean(),
-    })
-    .partial()
-    .optional(),
+  ...momentumEffectFields,
 };
 
 /**
@@ -216,6 +194,8 @@ export const AuraSchema = z.object({
   conscious: z.boolean().optional(),
   /** Anchored at this point on the map instead of around the bearer (a lasting area cast at a point: silence). */
   at: z.tuple([z.number(), z.number()]).optional(),
+  /** Only creatures of at most this weight (the source's pool `weight`) get it (a Haunting Zone). */
+  maxWeight: z.number().positive().optional(),
 });
 export type Aura = z.infer<typeof AuraSchema>;
 
@@ -278,16 +258,6 @@ export const EffectSchema = EffectTemplateSchema.extend({
   slot: z.number().int().min(0).max(9).optional(),
 });
 export type Effect = z.infer<typeof EffectSchema>;
-
-export const AreaSchema = z.object({
-  /** sphere: radius around a point; emanation: radius around the caster; cone, line and cube start at the caster. */
-  shape: z.enum(['sphere', 'emanation', 'cone', 'cube', 'line']),
-  /** Feet: radius, cone length, cube side or line length. */
-  size: z.number().positive(),
-  /** Width of a line in feet. */
-  width: z.number().positive().default(5),
-});
-export type Area = z.infer<typeof AreaSchema>;
 
 /**
  * A stat block that comes with a spell (2024 giant insect, summon dragon):
@@ -430,6 +400,8 @@ export const SpellSchema = z.object({
   healMod: z.boolean().default(false),
   /** Temporary hit points given to each target (false life); they don't stack with others. */
   tempHp: dice.optional(),
+  /** Each target healed gets as many temporary hit points too (prayer of salvation). */
+  healTemp: z.boolean().optional(),
   /** Hit points of creatures affected, weakest first, rolled on each cast (2014 sleep). */
   hpPool: dice.optional(),
   /** Ends the target's effects that impose any of these conditions (lesser restoration). */
@@ -555,12 +527,12 @@ export const SpellSchema = z.object({
    */
   manual: z.object({ kind: z.enum(['social', 'utility', 'gm']), why: z.string().min(1) }).optional(),
   description: z.string().default(''),
+  ...powerSpellFields,
 });
 export type Spell = z.infer<typeof SpellSchema>;
 
 /** A number that grows with class level: [[1, 2], [3, 3]] means 2 from level 1, 3 from level 3. */
-export const LevelTableSchema = z.array(z.tuple([z.number().int().min(1).max(20), z.number().int()]));
-export type LevelTable = z.infer<typeof LevelTableSchema>;
+export { LevelTableSchema, type LevelTable } from './class-fields.ts';
 
 export const FeatureSchema = z.object({
   id,
@@ -621,6 +593,8 @@ export const FeatureSchema = z.object({
   grantsSpells: z.array(z.tuple([z.number().int().min(1).max(20), id])).optional(),
   /** Why the GM runs it by hand: what it does that the engine doesn't (yet). */
   manual: z.string().optional(),
+  ...classFields(EffectTemplateSchema),
+  ...powerFeatureFields,
 });
 export type Feature = z.infer<typeof FeatureSchema>;
 
@@ -630,6 +604,21 @@ export const ScaleSchema = z.object({ id, name: z.string().min(1), values: Level
 /** Options to pick from as the class levels up: its features with this `choice`, `count` of them by level. */
 export const ChoiceSchema = z.object({ id, name: z.string().min(1), count: LevelTableSchema });
 
+export const SpellcastingSchema = z.object({
+  ability: AbilitySchema,
+  /** Slot progression: full casters, half casters (paladin, ranger), third casters or a warlock's pact magic. */
+  progression: z.enum(['full', 'half', 'third', 'pact']),
+  /** Class level spellcasting starts at (2 for 2014 paladins and rangers). */
+  from: z.number().int().min(1).default(1),
+  /** The class whose spell list it picks from, when not its own (a heretic jaeger: warlock). */
+  list: id.optional(),
+  /** Its own slot table instead of the progression's: how many slots, and of what level, by class level. */
+  slots: z.object({ count: LevelTableSchema, level: LevelTableSchema }).optional(),
+  /** Cantrips and spells known by class level, for a class the rules tables don't list. */
+  known: z.object({ cantrips: LevelTableSchema, spells: LevelTableSchema }).optional(),
+});
+export type Spellcasting = z.infer<typeof SpellcastingSchema>;
+
 export const SubclassSchema = z.object({
   id,
   name: z.string().min(1),
@@ -637,17 +626,10 @@ export const SubclassSchema = z.object({
   features: z.array(FeatureSchema).default([]),
   /** Picks among the subclass's optional features (a hunter's prey, a dragon ancestor). */
   choices: z.array(ChoiceSchema).optional(),
+  /** Spellcasting the subclass gives a class without its own (an eldritch knight, a heretic jaeger). */
+  spellcasting: SpellcastingSchema.optional(),
 });
 export type Subclass = z.infer<typeof SubclassSchema>;
-
-export const SpellcastingSchema = z.object({
-  ability: AbilitySchema,
-  /** Slot progression: full casters, half casters (paladin, ranger), third casters or a warlock's pact magic. */
-  progression: z.enum(['full', 'half', 'third', 'pact']),
-  /** Class level spellcasting starts at (2 for 2014 paladins and rangers). */
-  from: z.number().int().min(1).default(1),
-});
-export type Spellcasting = z.infer<typeof SpellcastingSchema>;
 
 export const ClassSchema = z.object({
   id,
@@ -673,5 +655,7 @@ export const ClassSchema = z.object({
   subclasses: z.array(SubclassSchema).optional(),
   /** Scores of 13 needed to multiclass into or out of it: every one of `all`, and one of `any`. */
   multiclass: z.object({ all: z.array(AbilitySchema).optional(), any: z.array(AbilitySchema).optional() }).optional(),
+  /** A point pool its features spend instead of uses (see power-schema.ts). */
+  pool: PoolSchema.optional(),
 });
 export type Class = z.infer<typeof ClassSchema>;

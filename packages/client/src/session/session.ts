@@ -16,7 +16,6 @@ import {
   type ChatMessage,
   type ClientMessage,
   type Combat,
-  currentTurn,
   type ReactionOffer,
   type ServerMessage,
   type Token,
@@ -304,6 +303,10 @@ export class Session {
     return !!this.you && !!token && canEdit(token, this.you);
   }
 
+  /** Opens the side panel on `tab` (one of its tabs, ui/panel-tabs.ts). */
+  // fallow-ignore-next-line unused-class-member -- ui/TableReady.tsx calls it; fallow misses that use
+  showPanel = (tab: string): void => this.emit('panel', tab);
+
   focus = (point: Point, gently?: boolean): void => this.emit('focus', point, ...(gently ? [true] : []));
 
   canControl(token: Token): boolean {
@@ -416,16 +419,15 @@ export class Session {
     return false;
   }
 
-  /** When one of your creatures' turns starts, select it and bring it into view. */
+  /** When one of your creatures' turns starts (or the next of yours on a shared turn), select it and bring it into view. */
   private onCombat(combat: Combat | null): void {
-    const before = this.combat ? `${this.combat.round}:${currentTurn(this.combat)}` : '';
+    const before = this.combat;
     this.combat = combat;
     this.emit('combat');
-    const token = this.turns.current();
-    if (!combat || !token || !this.canControl(token)) return;
-    if (before === `${combat.round}:${token.id}`) return;
-    this.select(token.id);
-    this.focus([token.x, token.y]);
+    const next = this.tokens.get(this.turns.handOff(before, this.selected) ?? '');
+    if (!next) return;
+    this.select(next.id);
+    this.focus([next.x, next.y]);
   }
 
   private onWelcome(msg: Extract<ServerMessage, { t: 'welcome' }>): void {

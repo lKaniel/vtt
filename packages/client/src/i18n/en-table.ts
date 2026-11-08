@@ -1,5 +1,5 @@
-// The table's frame in English (see en.ts): the top bar and the GM's fight
-// controls.
+// The table's frame in English (see en.ts): the top bar, the GM's fight
+// controls and the action bar's own buttons.
 
 export const EN_TABLE = {
   'table.leave': 'Leave the table',
@@ -7,8 +7,19 @@ export const EN_TABLE = {
   'mapTools.sceneToolsHint': 'Fog of war brushes and the time of day on this scene',
   'hud.filter': 'Colour filter',
   'hud.filterNone': 'none',
+  'select.deselect': 'Deselect',
+  'select.deselectHint': 'Let go of the selected creatures (Esc)',
   'fight.start': 'Start combat',
-  'fight.startHint': 'Roll initiative for every creature with stats on screen',
+  'fight.startHint': 'Choose who fights, then roll initiative',
+  'fight.who': 'Who fights?',
+  'fight.party': 'Party',
+  'fight.foes': 'Others',
+  'fight.hidden': 'hidden',
+  'fight.all': 'All',
+  'fight.none': 'None',
+  'fight.inView': 'On screen',
+  'fight.noFighters': 'There are no creatures with stats on this scene.',
+  'fight.roll': 'Roll initiative ({n})',
   'fight.shared': 'Party acts together',
   'fight.sharedHint':
     'Shared party turns (BG3): party members next to each other in the order act together, in any order',
@@ -20,4 +31,15 @@ export const EN_TABLE = {
   'fight.shortRestHint': 'One hour: spend hit dice, short-rest features come back',
   'fight.longRest': 'Long rest',
   'fight.longRestHint': 'Eight hours: hit points, spell slots and features come back',
+  'bar.compact': 'Smaller action bar: one row at a time',
+  'bar.full': 'Full action bar: three rows',
+  'bar.rowUp': 'Previous row',
+  'bar.rowDown': 'Next row',
+  'bar.row': 'Row {n} of {of}',
+  'bar.help': 'How to play',
+  'turns.initiative': '{name}: initiative {n}',
+  'finisher.label': 'Finisher',
+  'finisher.dice': '{dice} momentum dice (d{die})',
+  'finisher.hint': 'On a hit, spend every momentum die on {name}',
+  'reaction.art': '{name} (focus point)',
 };

@@ -43,6 +43,13 @@ function doubleTerm(term: string): string {
   return `${m[1]}${2 * count}d${m[3]}`;
 }
 
+/** A damage roll multiplied by its part's `times`, rounded down (an illusion striking with half a bolt). */
+const scaled = (r: Roll, times: number | undefined): Roll =>
+  times === undefined || times === 1 ? r : { ...r, total: Math.floor(r.total * times) };
+
+const rollParts = (parts: readonly Damage[], crit: boolean, rng: Rng) =>
+  parts.map((d) => ({ roll: scaled(roll(crit ? critDice(d.dice) : d.dice, rng), d.times), type: d.type }));
+
 /** Adamantine armor turns critical hits into normal hits. */
 const critProof = (target: Creature) => target.effects.some((e) => e.noCrits);
 
@@ -54,7 +61,7 @@ export function rollAttack(attack: Attack, target: Creature, opts: AttackOptions
   const hit = critical || (natural !== 1 && d20.total >= target.ac);
   const crit = (critical || (hit && !!opts.autoCrit)) && !critProof(target);
   const parts = [...attack.damage, ...(opts.extraDamage ?? [])];
-  const damage = hit ? parts.map((d) => ({ roll: roll(crit ? critDice(d.dice) : d.dice, rng), type: d.type })) : [];
+  const damage = hit ? rollParts(parts, crit, rng) : [];
   return { d20, natural, total: d20.total, hit, crit, damage };
 }
 
