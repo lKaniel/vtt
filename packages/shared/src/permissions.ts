@@ -68,12 +68,15 @@ export function levelOf(doc: Owned, player: Player): Level {
   return atLeast(level, 'observer') || isParty(doc) ? 'observer' : level;
 }
 
-/** Know it is there: at least limited, not hidden, and for illusions only those they were woven for. */
-export function canSee(doc: Owned & { hidden?: boolean; visibleTo?: string[] }, player: Player): boolean {
+/** Shown on the map, as Foundry does whatever the ownership: not hidden, and for illusions only those they were woven for. */
+export function isShownTo(doc: { hidden?: boolean; visibleTo?: string[] }, player: Player): boolean {
   if (isGm(player)) return true;
-  if (doc.hidden) return false;
-  if (doc.visibleTo && !doc.visibleTo.includes(player.id)) return false;
-  return atLeast(levelOf(doc, player), 'limited');
+  return !doc.hidden && (!doc.visibleTo || doc.visibleTo.includes(player.id));
+}
+
+/** Know it is there: shown (see isShownTo) and at least limited. */
+export function canSee(doc: Owned & { hidden?: boolean; visibleTo?: string[] }, player: Player): boolean {
+  return isShownTo(doc, player) && atLeast(levelOf(doc, player), 'limited');
 }
 
 /** Read all of it: a creature's sheet, and see through its eyes. */
@@ -154,7 +157,8 @@ function looksAt(e: LevelEyes, level: string | undefined): boolean {
 
 /**
  * Ids of the tokens a player may know about right now. The GM knows all.
- * Players always see the party (tokens any player controls); anything else
+ * A token's ownership doesn't hide it (it only keeps its sheet, as in
+ * Foundry); hiding does. Players always see the party (tokens any player controls); anything else
  * must be perceived by a token they own or observe on its own level: seen in
  * light or with darkvision, or felt with blindsight or tremorsense (see senses.ts).
  */
@@ -171,7 +175,7 @@ export function tokensVisibleTo<T extends PlacedToken>(
     return eyes.some((e) => looksAt(e, level) && perceives(e.eyes, target, e.light(level)));
   };
   const ids = tokens
-    .filter((t) => canSee(t, player))
+    .filter((t) => isShownTo(t, player))
     .filter((t) => seesAll || isParty(t) || spotted(t))
     .map((t) => t.id);
   return new Set(ids);

@@ -134,6 +134,18 @@ describe('spawning', () => {
     expect(store.tokens.get('bandit-2')).toMatchObject({ name: 'Bandit 2', x: 1050, actor: 'bandit', linked: false });
   });
 
+  it('shows players a creature whose sheet nobody may read, once they see it', () => {
+    const gm = seat('gm');
+    const ana = seat('ana');
+    gm.receive({ t: 'darkness', darkness: 0 });
+    gm.receive({ t: 'saveActor', actor: { id: 'trader', name: 'Trader', ownership: { default: 'none' } } });
+    ana.take('token');
+    gm.receive({ t: 'spawn', from: { kind: 'actor', id: 'trader' }, at: [250, 250] });
+    const seen = ana.take('token').map((m) => m.token);
+    expect(seen).toMatchObject([{ id: 'trader', name: 'Trader' }]);
+    expect(seen[0]).not.toHaveProperty('hp');
+  });
+
   it('places a character’s actor as linked tokens that keep its name', () => {
     const gm = seat('gm');
     gm.receive({ t: 'spawn', from: { kind: 'actor', id: 'hero' }, at: [950, 950] });
