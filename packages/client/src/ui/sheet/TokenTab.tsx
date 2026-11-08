@@ -125,7 +125,7 @@ const LEVELS: readonly [Level, string][] = [
 ];
 
 /**
- * Foundry-style ownership levels: none (doesn't know it is there), limited
+ * Foundry-style ownership levels: none (sees the token only), limited
  * (sees it, not its sheet), observer (reads the sheet, sees through its
  * eyes), owner (acts with it, and edits it if trusted). "Everyone" is the
  * level of players not listed.

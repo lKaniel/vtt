@@ -121,6 +121,27 @@ describe('editing a document', () => {
   });
 });
 
+describe('tokens on the map', () => {
+  // As in Foundry: ownership decides who reads a creature's sheet, not
+  // whether its token shows. Only hiding, illusions and sight keep it away.
+  const lit = { world: { darkness: 0, vision: true, gridSize: 100 }, lights: [], wallsBetween: () => [], perceiver };
+  const eye = token('eye', { ownership: { default: 'limited', bo: 'owner' } });
+  const trader = token('trader', { x: 200, ownership: { default: 'none' } });
+
+  it('show a creature nobody may read to players who see it', () => {
+    expect(tokensVisibleTo(bo, [eye, trader], lit)).toEqual(new Set(['eye', 'trader']));
+    expect(tokensVisibleTo(ana, [eye, trader], { ...lit, world: { ...lit.world, vision: false } })).toEqual(
+      new Set(['eye', 'trader']),
+    );
+  });
+
+  it('still keep hidden ones and illusions woven for others away', () => {
+    const lurker = token('lurker', { x: 200, hidden: true, ownership: { default: 'none' } });
+    const ghost = token('ghost', { x: 300, visibleTo: ['ana'] });
+    expect(tokensVisibleTo(bo, [eye, lurker, ghost], lit)).toEqual(new Set(['eye']));
+  });
+});
+
 describe('what observers see', () => {
   it('lets a token observer see through its eyes', () => {
     const dark = { world: { darkness: 1, vision: true, gridSize: 100 }, lights: [], wallsBetween: () => [], perceiver };

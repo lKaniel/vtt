@@ -816,14 +816,16 @@ without one):
 `ownership` gives each player a level, like Foundry's, and `default` is the
 level of everyone not named:
 
-| Level      | The player                                                    |
-| ---------- | ------------------------------------------------------------- |
-| `none`     | doesn't know it is there: not sent to them at all.            |
-| `limited`  | sees it on the map but not its sheet, only how hurt it looks. |
-| `observer` | reads its sheet and sees through its eyes.                    |
-| `owner`    | moves and acts with it, and edits its sheet.                  |
+| Level      | The player                                                                              |
+| ---------- | --------------------------------------------------------------------------------------- |
+| `none`     | sees its token on the map, nothing more; any other document is not sent to them at all. |
+| `limited`  | sees it on the map but not its sheet, only how hurt it looks.                           |
+| `observer` | reads its sheet and sees through its eyes.                                              |
+| `owner`    | moves and acts with it, and edits its sheet.                                            |
 
-A creature without `ownership` is `limited` for everyone. The GM is owner of
+As in Foundry, ownership never hides a token: whether players see one is up
+to `hidden`, `visibleTo` and their sight. A creature without `ownership` is
+`limited` for everyone. The GM is owner of
 everything and an observer seat is never more than observer (and observes
 every creature a player owns). A linked token's ownership is its actor's; an
 unlinked copy can have its own in `delta`. Players may change by hand only
