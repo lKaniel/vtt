@@ -51,6 +51,14 @@ describe('checks', () => {
     expect(card?.check).toMatchObject({ save: true, entries: [{ token: 'hero', total: 17 }] });
   });
 
+  it('roll with the advantage or disadvantage the roller picked', () => {
+    const ana = join_('ana');
+    ana.receive({ t: 'rollCheck', token: 'hero', ability: 'dex', skill: 'stealth', edge: 'advantage' });
+    expect(cards(ana).at(-1)?.check?.entries[0]?.roll?.formula).toMatch(/^2d20kh1/);
+    ana.receive({ t: 'rollCheck', token: 'hero', ability: 'wis', save: true, edge: 'disadvantage' });
+    expect(cards(ana).at(-1)?.check?.entries[0]?.roll?.formula).toMatch(/^2d20kl1/);
+  });
+
   it('add proficiency with a tool the creature is trained with', () => {
     const ana = join_('ana');
     // Rogue 5: thieves' tools from the class, 1d20 (11) + 3 + 3.

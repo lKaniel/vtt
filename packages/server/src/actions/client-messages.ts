@@ -8,7 +8,7 @@ import {
   RoleSchema,
   ROLL_MODES,
 } from '@vtt/shared';
-import { ABILITIES, ConditionSchema, CurrencySchema, EditionSchema } from '@vtt/system-dnd5e';
+import { ABILITIES, ConditionSchema, CurrencySchema, EditionSchema, RollChoiceSchema } from '@vtt/system-dnd5e';
 import type { RawData } from 'ws';
 import { z } from 'zod';
 
@@ -123,6 +123,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     attack: z.string(),
     smite: z.number().int().min(1).max(9).optional(),
     finisher: z.string().max(80).optional(),
+    ...RollChoiceSchema.shape,
   }),
   z.object({ t: z.literal('equip'), token: z.string(), item: z.number().int().nonnegative(), equipped: z.boolean() }),
   z.object({ t: z.literal('hitDie'), token: z.string() }),
@@ -152,7 +153,13 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     kind: z.enum(['each', 'group', 'contest']),
     versus: z.object(checkKind).optional(),
   }),
-  z.object({ t: z.literal('rollCheck'), token: z.string(), ...checkKind, card: z.string().optional() }),
+  z.object({
+    t: z.literal('rollCheck'),
+    token: z.string(),
+    ...checkKind,
+    card: z.string().optional(),
+    edge: RollChoiceSchema.shape.edge,
+  }),
   z.object({
     t: z.literal('carry'),
     token: z.string(),
@@ -176,6 +183,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     summon: z.string().optional(),
     choice: z.string().optional(),
     form: z.string().optional(),
+    ...RollChoiceSchema.shape,
   }),
   z.object({
     t: z.literal('feature'),

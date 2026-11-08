@@ -1,4 +1,5 @@
 import type { Actor, CarryChange, CheckKind, ClientMessage } from '@vtt/system-dnd5e';
+import type { RollPick } from './session-pick.ts';
 import type { Climb } from './session-view3d.ts';
 import type { ClockAction, DoorState, MapEdit, Point, Role } from '@vtt/shared';
 
@@ -13,6 +14,7 @@ export class Requests {
       send(msg: ClientMessage): void;
       readonly throughWalls?: { readonly on: boolean };
       readonly view3d?: { readonly on: boolean; readonly climb?: Climb };
+      readonly actions?: { readonly pick: RollPick };
     },
   ) {}
 
@@ -149,7 +151,7 @@ export class Requests {
 
   /** Rolls a creature's ability or skill check, on the GM's request card `card` when there is one. */
   rollCheck(token: string, check: CheckKind, card?: string): void {
-    this.s.send({ t: 'rollCheck', token, ...check, ...(card && { card }) });
+    this.s.send({ t: 'rollCheck', token, ...check, ...(card && { card }), ...this.s.actions?.pick.takeEdge() });
   }
 
   /** GM: gives each of these characters `xp` experience points. */

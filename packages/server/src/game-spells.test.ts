@@ -112,6 +112,15 @@ describe('casting spells', () => {
     expect(errors(ana)[0]).toMatch(/already used/);
   });
 
+  it('casts a spell attack with the disadvantage the caster picked', () => {
+    const { ana } = fight(['hero', 'goblin', 'goblin2', 'bo']);
+    // Two d20s, 15 and 3: disadvantage keeps 3 + 7, a miss.
+    dice = [face(15), face(3)];
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'fire-bolt', slot: 0, targets: ['goblin'], edge: 'disadvantage' });
+    expect(spellLogs(ana)[0]).toMatchObject({ results: [{ target: 'Goblin', hit: false }] });
+    expect(tok('goblin').hp).toBeUndefined();
+  });
+
   it('tells the map which animation the caster chose for the spell', () => {
     const { ana } = fight(['hero', 'goblin', 'goblin2', 'bo']);
     ana.receive({ t: 'animation', token: 'hero', ref: 'spell:fire-bolt', animation: 'frost-orb' });

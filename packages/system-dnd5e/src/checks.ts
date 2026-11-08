@@ -2,6 +2,7 @@ import { type Rng, roll, type Roll } from '@vtt/shared';
 import { abilityMod } from './creature-math.ts';
 import type { Creature } from './creature.ts';
 import { d20Formula, type SaveRoll, saveModifiers } from './effects.ts';
+import { type RollEdge, withEdge } from './roll-choice.ts';
 import type { Effect } from './spell-schema.ts';
 import type { Ability } from './stats-schema.ts';
 import type { Token } from './token-schema.ts';
@@ -19,6 +20,9 @@ export interface CheckKind {
   /** A check with a tool (thieves' tools): proficiency is added when the creature is trained with it. */
   tool?: string;
 }
+
+/** A check as it is rolled: against `dc` when there is one, with the roller's own advantage or disadvantage. */
+type CheckRolled = CheckKind & { dc?: number; edge?: RollEdge };
 
 type CheckSheet = Pick<Creature, 'abilities' | 'proficiency' | 'saves'> &
   Partial<Pick<Creature, 'features' | 'proficiencies'>>;
@@ -66,12 +70,12 @@ export interface CheckRoll {
 export function rollCheck(
   token: Pick<Token, 'stats'>,
   sheet: Creature,
-  check: CheckKind & { dc?: number },
+  check: CheckRolled,
   rng: Rng = Math.random,
 ): CheckRoll {
   const { dc } = check;
   if (check.save) return rolledSave(token, sheet, check, rng);
-  const mods = checkModifiers(sheet, check);
+  const mods = withEdge(checkModifiers(sheet, check), check.edge);
   const result = roll(d20Formula(checkBonus(token, sheet, check), mods.bonus, mods), rng);
   return {
     roll: result,
@@ -101,13 +105,8 @@ function hasCheckAdvantage(sheet: Creature, check: CheckKind): boolean {
 }
 
 /** A saving throw rolled from the sheet or a request card, with the effects' advantage, disadvantage and dice. */
-function rolledSave(
-  token: Pick<Token, 'stats'>,
-  sheet: Creature,
-  check: CheckKind & { dc?: number },
-  rng: Rng,
-): CheckRoll {
-  const mods = saveModifiers(sheet, check.ability);
+function rolledSave(token: Pick<Token, 'stats'>, sheet: Creature, check: CheckRolled, rng: Rng): CheckRoll {
+  const mods = withEdge(saveModifiers(sheet, check.ability), check.edge);
   const result = roll(d20Formula(checkBonus(token, sheet, check), mods.bonus, mods), rng);
   const success = mods.autoFail ? false : result.total >= (check.dc ?? 0);
   return { roll: result, total: result.total, ...(check.dc !== undefined && { success }) };

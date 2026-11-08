@@ -12,6 +12,7 @@ import type {
 import type { CheckEntry, CheckKind, CheckRequestKind } from './checks.ts';
 import type { Combat } from './combat.ts';
 import type { Area } from './area-schema.ts';
+import type { CritChoice, RollChoice, RollEdge } from './roll-choice.ts';
 import type { Condition } from './spell-schema.ts';
 import type { CompendiumDrop, SheetArea } from './sheet-drops.ts';
 import type { Ability, Currency, DamageType, Edition } from './stats-schema.ts';
@@ -136,7 +137,7 @@ export type ClientMessage =
    * `smite`: spend a slot of this level on Divine Smite if the attack hits (2014 paladin).
    * Without `target` the attack goes at `point`, empty ground, and hits nothing.
    */
-  | { t: 'attack'; attacker: string; target?: string; point?: Point; attack: string; smite?: number }
+  | ({ t: 'attack'; attacker: string; target?: string; point?: Point; attack: string; smite?: number } & RollChoice)
   /** `item` is the index in the token's inventory. */
   | { t: 'equip'; token: string; item: number; equipped: boolean }
   /** An owner's own gear: coins, packing it into containers (`into` null takes it out), attunement. */
@@ -178,8 +179,8 @@ export type ClientMessage =
       kind: CheckRequestKind;
       versus?: CheckKind;
     }
-  /** Rolls a creature's check: on the request card `card`, or on its own. */
-  | { t: 'rollCheck'; token: string; ability: Ability; skill?: string; card?: string }
+  /** Rolls a creature's check: on the request card `card`, or on its own; `edge`: the roller's own advantage or disadvantage. */
+  | { t: 'rollCheck'; token: string; ability: Ability; skill?: string; card?: string; edge?: RollEdge }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
   | {
       t: 'cast';
@@ -201,6 +202,9 @@ export type ClientMessage =
       choice?: string;
       /** The monster a shape-shifting spell turns its targets into (polymorph). */
       form?: string;
+      /** The caster's own advantage or disadvantage on the spell attack, and a critical forced or held back. */
+      edge?: RollEdge;
+      crit?: CritChoice;
     }
   /** `targets` and `point` aim features used like spells (bardic inspiration, turn undead). */
   | {

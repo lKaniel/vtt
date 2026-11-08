@@ -10,6 +10,7 @@ import { itemAiming } from '../play/item-spells.ts';
 import type { Targets } from './targets.ts';
 import { loadRollMode, saveRollMode } from '../play/roll-mode.ts';
 import { tokenAt } from '../play/drops.ts';
+import { RollPick } from './session-pick.ts';
 
 // What the selected creature is about to do: an armed attack or an aimed
 // spell or feature, which go straight at your targets when you have them,
@@ -48,11 +49,15 @@ export class Actions {
   aiming?: Aiming;
   /** Who sees your rolls and the cards of your actions (see roll-modes.ts). */
   rollMode: RollMode = loadRollMode();
+  /** Advantage, disadvantage or a critical picked for your next roll (session-pick.ts). */
+  readonly pick: RollPick;
 
   constructor(
     private readonly s: ActionHost,
     private readonly on: ActionEvents,
-  ) {}
+  ) {
+    this.pick = new RollPick(on);
+  }
 
   /** Applies the roll on a chat card to your targets, else the creatures selected (see damage-actions.ts on the server). */
   applyRoll(card: string, how: ApplyHow): void {
@@ -194,7 +199,7 @@ export class Actions {
 
   /** Casts the aimed spell now, with the targets picked so far. */
   confirmCast(point?: Point): void {
-    if (this.s.selected && this.aiming) this.s.send(castMessage(this.s.selected, this.aiming, point));
+    if (this.s.selected && this.aiming) this.s.send(this.picked(castMessage(this.s.selected, this.aiming, point)));
     this.aim(undefined);
   }
 
@@ -210,10 +215,16 @@ export class Actions {
     this.on.changed();
   }
 
+  /** A cast with your roll pick when the spell rolls to hit; other spells leave the pick for a later roll. */
+  private picked(msg: ClientMessage): ClientMessage {
+    if (msg.t !== 'cast' || !this.aiming?.spell.attack || this.aiming.spell.autoHit) return msg;
+    return { ...msg, ...this.pick.take() };
+  }
+
   /** Spends the readied attack on empty ground at `point`: it hits nothing. */
   attackAt(point: Point): void {
     if (!this.s.selected || !this.armed) return;
-    this.s.send({ t: 'attack', attacker: this.s.selected, attack: this.armed, point });
+    this.s.send({ t: 'attack', attacker: this.s.selected, attack: this.armed, point, ...this.pick.take() });
     this.arm(undefined);
   }
 
@@ -221,7 +232,8 @@ export class Actions {
     if (!this.s.selected || !this.armed) return;
     const smite = this.smite ? { smite: this.smite } : {};
     const finisher = this.finisher ? { finisher: this.finisher } : {};
-    this.s.send({ t: 'attack', attacker: this.s.selected, target, attack: this.armed, ...smite, ...finisher });
+    const pick = this.pick.take();
+    this.s.send({ t: 'attack', attacker: this.s.selected, target, attack: this.armed, ...smite, ...finisher, ...pick });
     this.arm(undefined);
   }
 }

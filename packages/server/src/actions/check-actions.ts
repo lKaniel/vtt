@@ -17,6 +17,7 @@ import { type Fighter, Refusal, requireGm, type Table } from '../play/table.ts';
 // how a group check or a contest came out.
 
 export type CheckMessage = Extract<ClientMessage, { t: 'requestCheck' | 'rollCheck' }>;
+type RollMessage = Extract<ClientMessage, { t: 'rollCheck' }>;
 
 export interface CheckCards {
   readonly all: readonly ChatMessage[];
@@ -47,7 +48,7 @@ export function checkAction(table: Table, cards: CheckCards, player: Player, msg
   if (msg.t === 'requestCheck') return request(table, cards, player, msg);
   const fighter = table.fighter(msg.token);
   if (!canControl(fighter.token, player)) throw new Refusal('No such token');
-  if (msg.card) return rollOnCard(table, cards, fighter, msg.card);
+  if (msg.card) return rollOnCard(table, cards, fighter, msg);
   const { token, sheet } = fighter;
   const { used, ...rolled } = rollCheck(token, sheet, msg, table.rng);
   useUp(table, token.id, used);
@@ -59,14 +60,19 @@ export function checkAction(table: Table, cards: CheckCards, player: Player, msg
 }
 
 /** The creature's roll on the GM's request card, which then tells how a group check or contest went. */
-function rollOnCard(table: Table, cards: CheckCards, { token, sheet }: Fighter, id: string): void {
+function rollOnCard(
+  table: Table,
+  cards: CheckCards,
+  { token, sheet }: Fighter,
+  { card: id, edge }: Pick<RollMessage, 'card' | 'edge'>,
+): void {
   const before = cards.all.find((m) => m.id === id);
   const asked = before?.check;
   const at = asked?.entries.findIndex((e) => e.token === token.id) ?? -1;
   if (!before || !asked || at < 0) throw new Refusal(`${token.name} wasn't asked for that check`);
   if (asked.entries[at]!.total !== undefined) throw new Refusal(`${token.name} has already rolled`);
   const kind = asked.kind === 'contest' && at === 1 && asked.versus ? asked.versus : asked;
-  const { used, ...rolled } = rollCheck(token, sheet, { ...kind, dc: asked.dc }, table.rng);
+  const { used, ...rolled } = rollCheck(token, sheet, { ...kind, dc: asked.dc, edge }, table.rng);
   useUp(table, token.id, used);
   const entries = asked.entries.map((e, i) => (i === at ? { ...e, ...rolled } : e));
   const outcome = checkOutcome(asked.kind, entries);

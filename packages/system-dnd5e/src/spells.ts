@@ -1,4 +1,5 @@
 import { applyDamage, critDice, tokenDistance } from './attack.ts';
+import { chosenCrit, type RollChoice, withEdge } from './roll-choice.ts';
 import { spellHealBonus } from './class-styles.ts';
 import type { Creature } from './creature.ts';
 import { abilityMod } from './creature-math.ts';
@@ -93,6 +94,8 @@ export interface CastInput {
   /** An attack bonus and modifier of their own: a pool feature's (pools.ts). */
   attackBonus?: number;
   mod?: number;
+  /** The caster's own advantage or disadvantage on the spell attack, and a critical forced or held back. */
+  pick?: RollChoice;
 }
 
 export interface DamageDealt {
@@ -161,6 +164,7 @@ export interface Cast {
   gridSize: number;
   grid?: GridKind;
   rng: Rng;
+  pick?: RollChoice;
 }
 
 function rollDamage(parts: readonly Damage[], crit: boolean, rng: Rng, times = 1): { roll: Roll; type: DamageType }[] {
@@ -257,12 +261,12 @@ function effectFor(cast: Cast): Effect | undefined {
 /** Attack roll against the target: hit or miss, and one-shot effects it used. */
 function spellAttack(cast: Cast, target: CastSide, used: UsedEffect[]) {
   const within5 = tokenDistance(cast.caster.token, target.token, cast.gridSize, cast.grid) <= 5;
-  const mods = attackModifiers(cast.caster, target, { within5 });
+  const mods = withEdge(attackModifiers(cast.caster, target, { within5 }), cast.pick?.edge);
   used.push(...mods.used);
   const attack = roll(d20Formula(cast.attackBonus, mods.bonus, mods), cast.rng);
   const natural = attack.terms[0]!.value;
-  const crit = natural === 20 || (mods.autoCrit && natural !== 1 && attack.total >= target.sheet.ac);
-  const hit = crit || (natural !== 1 && attack.total >= target.sheet.ac);
+  const hit = natural === 20 || (natural !== 1 && attack.total >= target.sheet.ac);
+  const crit = chosenCrit({ hit, crit: natural === 20 || mods.autoCrit }, cast.pick?.crit);
   return { attack, hit, crit };
 }
 
@@ -421,6 +425,7 @@ function castOf(input: CastInput, rng: Rng): Cast {
     gridSize,
     grid,
     rng,
+    pick: input.pick,
   };
 }
 

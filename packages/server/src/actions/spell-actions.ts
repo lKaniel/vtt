@@ -1,4 +1,6 @@
 import {
+  pickNotes,
+  type RollChoice,
   animationRef,
   type CasterSheet,
   type CastingTime,
@@ -30,7 +32,8 @@ import { SpellTargets } from '../play/spell-targets.ts';
 import { stepAside } from '../play/pool-guards.ts';
 import { Refusal, type Cost, type Fighter, type Table } from '../play/table.ts';
 
-export interface CastRequest {
+/** `edge` and `crit`: the caster's own pick for the spell attack. */
+export interface CastRequest extends RollChoice {
   caster: string;
   repeat?: boolean;
   spell: string;
@@ -88,7 +91,8 @@ const COST: Record<CastingTime, Cost> = {
 };
 
 /** What a strike rolls with: the spell and slot, and numbers of its own (a scroll's, a pool feature's). */
-interface Strike {
+/** `edge` and `crit`: the caster's pick for the spell attack. */
+interface Strike extends RollChoice {
   spell: Spell;
   slot: number;
   point?: Point;
@@ -156,10 +160,7 @@ export class SpellActions {
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
     const notes = this.conjure(caster, spell, { ...req, slot: plan.slot }, door);
     const free = req.free && plan.slot > 0 && !plan.again ? ['cast without a spell slot'] : [];
-    this.strike(caster.token.id, { spell, slot: plan.slot, point: req.point, reader, dc: plan.dc }, targets, [
-      ...free,
-      ...notes,
-    ]);
+    this.strike(caster.token.id, { ...req, spell, slot: plan.slot, reader, dc: plan.dc }, targets, [...free, ...notes]);
   }
 
   /** Compulsion used again: the creatures it holds are made to walk toward `point` as their turns start. */
@@ -279,7 +280,7 @@ export class SpellActions {
     const grid = gridKind(this.store.world);
     const { dc, attackBonus, mod } = opts;
     const rolled = resolveCast(
-      { spell, slot, caster, targets, gridSize: this.grid, grid, dc, attackBonus, mod },
+      { spell, slot, caster, targets, gridSize: this.grid, grid, dc, attackBonus, mod, pick: opts },
       this.table.rng,
     );
     const outcome = stepAside(this.table, caster, rolled);
@@ -291,7 +292,7 @@ export class SpellActions {
     );
     const pushed = this.push(caster.token, outcome);
     const drained = this.drain(casterId, outcome.drained);
-    this.log(caster, { spell, slot, point }, outcome, [...notes, ...pushed, ...drained]);
+    this.log(caster, { spell, slot, point }, outcome, [...notes, ...pushed, ...drained, ...pickNotes(opts)]);
   }
 
   private addLasting(id: string, effects: Effect[]): void {

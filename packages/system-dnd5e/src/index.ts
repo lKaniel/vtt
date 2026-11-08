@@ -14,6 +14,7 @@ export * from './multiclass.ts';
 export * from './encounter.ts';
 export * from './checks.ts';
 export * from './attack.ts';
+export * from './roll-choice.ts';
 export * from './combat.ts';
 export * from './token-view.ts';
 export * from './in-the-way.ts';
