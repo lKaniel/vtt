@@ -34,6 +34,8 @@ export interface SessionEvents {
   presence: () => void;
   /** Your targets or someone else's changed. */
   targets: () => void;
+  /** Something asked the side panel to show one of its tabs (`showPanel`). */
+  panel: (tab: string) => void;
   /** A trigger played a sound for the scene (volume 0 to 1). */
   sound: (src: string, volume: number) => void;
 }

@@ -3,6 +3,7 @@ import { isGm, type Player, type Role, RoleSchema } from '@vtt/shared';
 import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
 import { AddPlayerForm } from './GameAccess.tsx';
+import { CopyInvite, InviteBox } from './InviteLinks.tsx';
 import { ROLE_NAMES } from './role-names.ts';
 import { SelectField } from './kit/select.tsx';
 
@@ -12,8 +13,10 @@ import { SelectField } from './kit/select.tsx';
  */
 export function PlayersTab({ session }: Readonly<{ session: Session }>) {
   const gms = session.players.filter(isGm).length;
+  const invite = session.isGm() ? session.gameId : undefined;
   return (
     <div className="players-tab">
+      {invite && <InviteBox game={invite} />}
       <ul className="rows">
         {session.players.map((p) => {
           const lastGm = isGm(p) && gms === 1;
@@ -24,6 +27,7 @@ export function PlayersTab({ session }: Readonly<{ session: Session }>) {
                 {p.name}
                 {p.id === session.you?.id && <span className="muted"> (you)</span>}
               </span>
+              {invite && p.id !== session.you?.id && <CopyInvite game={invite} player={p} />}
               <SelectField
                 value={p.role}
                 aria-label={`${p.name}'s role`}
@@ -42,10 +46,10 @@ export function PlayersTab({ session }: Readonly<{ session: Session }>) {
           );
         })}
       </ul>
-      {session.gameId && session.isGm() && (
+      {invite && (
         <div className="flex flex-col gap-1" data-slot="players-add">
           <span className="muted">{t('players.addHint')}</span>
-          <AddPlayerForm game={session.gameId} players={session.players} onAdded={() => undefined} />
+          <AddPlayerForm game={invite} players={session.players} onAdded={() => undefined} />
         </div>
       )}
       <dl className="role-help muted">

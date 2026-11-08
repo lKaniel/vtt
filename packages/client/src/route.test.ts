@@ -7,6 +7,7 @@ describe('routes', () => {
       { name: 'menu' },
       { name: 'setup' },
       { name: 'join', game: 'lost-mine' },
+      { name: 'join', game: 'lost-mine', player: 'alice' },
       { name: 'game', game: 'lost-mine' },
       { name: 'play', game: 'lost-mine' },
       { name: 'play' },
