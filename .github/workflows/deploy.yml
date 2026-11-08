@@ -9,6 +9,10 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      admin_password:
+        description: Also try this admin password on the live site (shown in the log)
+        required: false
 
 concurrency:
   group: deploy
@@ -90,3 +94,8 @@ jobs:
           done
           curl -fsS -o /dev/null "https://$domain/"
           echo "https://$domain/ answers; session: $(curl -fsS "https://$domain/api/session")"
+          if [ -n "${{ inputs.admin_password }}" ]; then
+            curl -fsS -X POST -H 'content-type: application/json' \
+              -d '{"password":"${{ inputs.admin_password }}"}' "https://$domain/api/admin"
+            echo " <- admin password accepted"
+          fi
