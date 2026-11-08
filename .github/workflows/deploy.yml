@@ -9,6 +9,10 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      admin_password:
+        description: Also try this admin password on the live site (shown in the log)
+        required: false
 
 concurrency:
   group: deploy
@@ -27,7 +31,7 @@ jobs:
       contents: read
       packages: write
     env:
-      IMAGE: ghcr.io/${{ github.repository }}
+      IMAGE: ghcr.io/lkaniel/vtt # lowercase, as Docker needs; deploy/compose.yml pulls it
       SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
@@ -55,6 +59,8 @@ jobs:
           install -m 700 -d ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+          # Shows which key this is (public), and fails clearly on a passphrase or a bad format.
+          ssh-keygen -y -P "" -f ~/.ssh/id_ed25519 | ssh-keygen -lf -
           # VPS_KNOWN_HOSTS pins the server's host key; without it, trust what it shows now.
           if [ -n "${{ secrets.VPS_KNOWN_HOSTS }}" ]; then
             echo "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
@@ -63,7 +69,7 @@ jobs:
           fi
 
       - name: Copy compose files
-        run: scp deploy/compose.yml deploy/Caddyfile "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/vtt/"
+        run: scp -o BatchMode=yes deploy/compose.yml deploy/Caddyfile "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/vtt/"
 
       - name: Restart the game
         env:
@@ -75,3 +81,21 @@ jobs:
             VTT_TAG='$SHA' docker compose pull &&
             VTT_TAG='$SHA' docker compose up -d --remove-orphans;
             status=\$?; docker logout ghcr.io; docker image prune -f; exit \$status"
+
+      - name: Check the live site
+        env:
+          TARGET: ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
+        run: |
+          domain=$(ssh "$TARGET" "sed -n 's/^VTT_DOMAIN=//p' /opt/vtt/.env")
+          # Caddy may still be fetching its certificate on a first start.
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null "https://$domain/"; then break; fi
+            sleep 5
+          done
+          curl -fsS -o /dev/null "https://$domain/"
+          echo "https://$domain/ answers; session: $(curl -fsS "https://$domain/api/session")"
+          if [ -n "${{ inputs.admin_password }}" ]; then
+            curl -fsS -X POST -H 'content-type: application/json' \
+              -d '{"password":"${{ inputs.admin_password }}"}' "https://$domain/api/admin"
+            echo " <- admin password accepted"
+          fi
