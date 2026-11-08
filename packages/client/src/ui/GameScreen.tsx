@@ -10,6 +10,7 @@ import { listenToClipboard, listenToKeys, listenToSpace, toggleSheet } from '../
 import { Sheets } from './sheet/PoppedSheets.tsx';
 import { ClockBar } from './clock/ClockBar.tsx';
 import { SidePanel } from './SidePanel.tsx';
+import { TableReady } from './TableReady.tsx';
 import { ContextMenu } from './ContextMenu.tsx';
 import { blockNativeMenu } from '../keys/native-menu.ts';
 import { ImageViewer } from './ImageViewer.tsx';
@@ -58,10 +59,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       {/* The top bar and the fight controls share one row, so neither can lie over the other. */}
       <div className="top-strip">
         <TopBar session={session} onLeave={onLeave} />
-        <TurnOrder
-          session={session}
-          onStart={(shared) => session.requests.startCombat(session.editor.fightersInView(), shared)}
-        />
+        <TurnOrder session={session} />
       </div>
       <SceneNav session={session} />
       <PartyBar session={session} />
@@ -84,6 +82,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <TokenHud session={session} />
       <PauseBanner session={session} />
       <ObserveBanner session={session} />
+      <TableReady key={session.scene} session={session} />
     </div>
   );
 }

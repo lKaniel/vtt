@@ -1,6 +1,6 @@
 import { actsNow, currentTurn, isLairTurn } from '@vtt/system-dnd5e';
 import { isParty } from '@vtt/shared';
-import { HourglassIcon, MoonIcon, SwordsIcon, UsersIcon } from 'lucide-react';
+import { HourglassIcon, MoonIcon } from 'lucide-react';
 import { useState } from 'react';
 import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
@@ -8,35 +8,14 @@ import { Face, HpBar } from './Portrait.tsx';
 import { Button } from './kit/button.tsx';
 import { EncounterButton } from './EncounterPanel.tsx';
 import { RequestCheckButton } from './RequestCheck.tsx';
-import { Toggle } from './kit/toggle.tsx';
+import { StartCombat } from './StartCombat.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 
-const SHARED_KEY = 'vtt.sharedTurns';
-
-/** The GM's choice of shared party turns, kept in this browser (on unless turned off). */
-function loadShared(): boolean {
-  try {
-    return localStorage.getItem(SHARED_KEY) !== 'off';
-  } catch {
-    return true;
-  }
-}
-
-function saveShared(on: boolean): void {
-  try {
-    localStorage.setItem(SHARED_KEY, on ? 'on' : 'off');
-  } catch {
-    // Private windows may refuse storage; the choice lasts until reload.
-  }
-}
-
 /** Initiative order across the top of the screen, plus the GM's fight controls. */
-type StartProps = Readonly<{ session: Session; onStart: (shared: boolean) => void }>;
-
-export function TurnOrder({ session, onStart }: StartProps) {
+export function TurnOrder({ session }: Readonly<{ session: Session }>) {
   const combat = session.combat;
   const gm = session.isGm();
-  if (!combat) return gm ? <IdleBar session={session} onStart={onStart} /> : null;
+  if (!combat) return gm ? <IdleBar session={session} /> : null;
   const current = currentTurn(combat);
   const peaceful = combat.peaceful === true;
   return (
@@ -131,28 +110,10 @@ function RestButton({ session }: Readonly<{ session: Session }>) {
 }
 
 /** The GM's controls between fights: start one (shared party turns or not), turn-based mode, rests, encounters, checks. */
-function IdleBar({ session, onStart }: StartProps) {
-  const [shared, setShared] = useState(loadShared);
+function IdleBar({ session }: Readonly<{ session: Session }>) {
   return (
     <div className="turn-order idle flex-wrap justify-center">
-      <span className="flex">
-        <Button onClick={() => onStart(shared)} title={t('fight.startHint')}>
-          <SwordsIcon /> {t('fight.start')}
-        </Button>
-        <Toggle
-          variant="plate"
-          className="-ml-px w-8 px-0"
-          pressed={shared}
-          onPressedChange={(on) => {
-            setShared(on);
-            saveShared(on);
-          }}
-          title={t('fight.sharedHint')}
-          aria-label={t('fight.shared')}
-        >
-          <UsersIcon />
-        </Toggle>
-      </span>
+      <StartCombat session={session} />
       <Button
         variant="outline"
         size="sm"

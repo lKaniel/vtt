@@ -27,6 +27,7 @@ import {
   type UsedEffect,
   isLairTurn,
   lairOwner,
+  slotMomentum,
 } from '@vtt/system-dnd5e';
 import {
   canControl,
@@ -41,6 +42,7 @@ import {
 } from '@vtt/shared';
 import type { GameStore } from '../store/game-store.ts';
 import { contentFor } from '../library/game-packs.ts';
+import { hurtTriggers } from './class-triggers.ts';
 
 /** A request the rules don't allow; its message goes back to the player. */
 export class Refusal extends Error {}
@@ -171,6 +173,8 @@ export class Table {
     if (this.store.combat?.reacted.includes(token.id)) {
       throw new Refusal(`${token.name} has already used their reaction`);
     }
+    if (this.sheetOf(token)?.effects.some((e) => e.noReactions))
+      throw new Refusal(`${token.name} can't take reactions`);
   }
 
   private payReaction(token: Token): void {
@@ -185,7 +189,9 @@ export class Table {
     const slots = [...(token.spent?.slots ?? [])];
     while (slots.length < slot) slots.push(0);
     slots[slot - 1]! += 1;
-    this.store.setToken({ ...token, spent: { ...token.spent, slots } });
+    const spent = { ...token, spent: { ...token.spent, slots } };
+    const sheet = this.sheetOf(token);
+    this.store.setToken(sheet ? slotMomentum(spent, sheet, slot) : spent);
   }
 
   // ---- Consequences ------------------------------------------------------
@@ -218,6 +224,7 @@ export class Table {
     this.store.setToken(shaken.token);
     for (const n of shaken.notes) this.note(n);
     this.checkConcentration(shaken.token, damage);
+    hurtTriggers(this, token.id, before.hp);
   }
 
   /** A 2014 shape dropped to 0: the creature changes back, and damage beyond the shape's hit points carries over. */

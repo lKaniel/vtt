@@ -1,7 +1,8 @@
 import type { Character } from '@vtt/system-dnd5e';
-import type { GameDetail, Role } from '@vtt/shared';
+import { type GameDetail, isGm, type Role } from '@vtt/shared';
 import { useCallback, useState } from 'react';
 import { characterSummary } from '../content/creator.ts';
+import { bringFirst } from '../lobby.ts';
 import { t } from '../i18n/index.ts';
 import type { Route } from '../route.ts';
 import { api } from '../server-api.ts';
@@ -9,6 +10,7 @@ import { CharactersPanel } from './CharactersPanel.tsx';
 import { ClaudeKey } from './ClaudeKey.tsx';
 import { AddPlayerForm, PlayerPassword } from './GameAccess.tsx';
 import { BackupsPanel } from './GameArchive.tsx';
+import { CopyInvite, InviteBox } from './InviteLinks.tsx';
 import { LobbyHead, systemLine, useLoad } from './LobbyScreens.tsx';
 import { ROLE_NAMES } from './role-names.ts';
 import { Button } from './kit/button.tsx';
@@ -58,13 +60,13 @@ function GameBody({
   const list = characters.data ?? [];
   return (
     <div className="lobby-body">
-      <div className="flex min-w-0 flex-1 flex-col gap-4">
+      <div className={`flex min-w-0 flex-1 gap-4 ${game.manage ? 'flex-col-reverse justify-end' : 'flex-col'}`}>
         {me && <CharactersPanel game={id} characters={list} go={go} refresh={characters.reload} />}
         <Players game={game} onChanged={onChanged} />
       </div>
       <aside className="lobby-side">
         {me ? (
-          <EnterGame game={game} characters={list} go={go} />
+          <EnterGame key={list.map((c) => c.id).join()} game={game} characters={list} go={go} />
         ) : (
           <Button size="xl" onClick={() => go({ name: 'join', game: id })}>
             {t('game.join')}
@@ -102,6 +104,7 @@ function Players({ game, onChanged }: Readonly<{ game: GameDetail; onChanged: ()
   return (
     <section className="frame lobby-members" data-slot="players">
       <h2 className="lobby-heading">{t('players.title')}</h2>
+      {game.manage && <InviteBox game={game.id} />}
       <ul className="lobby-member-list">
         {game.players.map((p) => (
           <PlayerRow
@@ -152,6 +155,7 @@ function PlayerRow({
         {self && ` ${t('players.you')}`}
       </span>
       <RoleField p={p} manage={game.manage} lastGm={lastGm} onChange={onRole} />
+      {game.manage && !self && <CopyInvite game={game.id} player={p} />}
       {(game.manage || self) && <PlayerPassword game={game.id} player={p} onChanged={onChanged} />}
       {game.manage && !lastGm && (
         <Button variant="outline" size="sm" onClick={remove}>
@@ -184,7 +188,7 @@ function RoleField({
 
 /** The door to the table, bringing one of your characters onto the map if you pick one. */
 function EnterGame({ game, characters, go }: Readonly<{ game: GameDetail; characters: Character[]; go: Go }>) {
-  const [picked, setPicked] = useState('');
+  const [picked, setPicked] = useState(() => bringFirst(game.you, characters));
   const [error, setError] = useState<string>();
   const me = game.players.find((p) => p.id === game.me);
   const enter = async () => {
@@ -210,6 +214,9 @@ function EnterGame({ game, characters, go }: Readonly<{ game: GameDetail; charac
           ]}
         />
       </label>
+      {!characters.length && game.you !== null && !isGm({ role: game.you }) && (
+        <p className="menu-note">{t('game.noCharacterYet')}</p>
+      )}
       {error && <p className="menu-error">{error}</p>}
       <Button size="xl" onClick={() => void enter()}>
         {t('game.enter')}

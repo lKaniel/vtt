@@ -6,6 +6,7 @@ import { CONTENT_TYPES, contentWith, packContentIssues, SRD_PACKS } from './pack
 import { inventoryIssues } from './carrying.ts';
 import { withOwn } from './own-content.ts';
 import { perceiverOf } from './perception.ts';
+import { classPassives } from './class-options.ts';
 import { foundrySheets } from './foundry-actor.ts';
 import { dnd5ePackArt } from './pack-art.ts';
 import { type Actor, ActorSchema, type Token, TokenSchema } from './token-schema.ts';
@@ -57,9 +58,8 @@ export const dnd5e: Dnd5eSystem = {
   // What it is (a stat block, a shape it was turned into, a pile of loot), not for a player to swap.
   gmOnlyFields: ['monster', 'trueForm', 'pile', 'banished', 'summon'],
   perceiver: (token, rules, packs) => {
-    const monster = token.monster
-      ? contentWith(editionOf(token, { rules: toEdition(rules) }), packs).monsters.get(token.monster)
-      : undefined;
-    return perceiverOf(token, monster);
+    const content = contentWith(editionOf(token, { rules: toEdition(rules) }), packs);
+    const monster = token.monster ? content.monsters.get(token.monster) : undefined;
+    return perceiverOf(token, monster, token.stats ? classPassives(token, withOwn(content, token)) : []);
   },
 };

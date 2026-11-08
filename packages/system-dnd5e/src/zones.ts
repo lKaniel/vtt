@@ -1,7 +1,8 @@
 import { type AreaShape, areaShape, inArea } from './areas.ts';
 import { isParty, type Light, type Point, ringAround, wallAcross, type WallRules } from '@vtt/shared';
 import type { Token } from './token-schema.ts';
-import type { Area, Effect, Spell } from './spell-schema.ts';
+import type { Area } from './area-schema.ts';
+import type { Effect, Spell } from './spell-schema.ts';
 
 // Spells that last: areas that keep hurting creatures in them (spirit
 // guardians, moonbeam) and spells the caster can use again on later turns

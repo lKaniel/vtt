@@ -63,13 +63,19 @@ export interface ChoiceDue {
   options: { id: string; name: string }[];
 }
 
+/** Picks of choice `id` the picked options add (focused fighting: one more focus art). */
+function morePicks(cls: Class, id: string, features: readonly string[]): number {
+  const picked = cls.features.filter((f) => f.morePicks?.of === id && features.includes(`${cls.id}/${f.id}`));
+  return picked.reduce((n, f) => n + f.morePicks!.by, 0);
+}
+
 /** The class's choices at `level`, its subclass's too, with what `features` ("class/feature") picked of each. */
 export function choicesDue(cls: Class, level: number, features: readonly string[], subclass?: string): ChoiceDue[] {
   const sub = subclassOf(cls, subclass);
   const parts = [cls, ...(sub ? [sub] : [])];
   return parts.flatMap((part) =>
     (part.choices ?? []).flatMap((c) => {
-      const count = valueAt(c.count, level);
+      const count = valueAt(c.count, level) + morePicks(cls, c.id, features);
       if (!count) return [];
       const all = part.features.filter((f) => f.choice === c.id);
       const picked = all.filter((f) => features.includes(`${cls.id}/${f.id}`)).map((f) => f.id);
@@ -77,4 +83,10 @@ export function choicesDue(cls: Class, level: number, features: readonly string[
       return [{ id: c.id, name: c.name, count, picked, options }];
     }),
   );
+}
+
+/** The always-on effects of a token's class features (eternal watch's senses), for what it sees. */
+export function classPassives(token: Token, content: Content): NonNullable<Feature['passive']>[] {
+  const features = [...classLevels(token, content).flatMap(levelFeatures), ...grantedFeatures(token, content)];
+  return features.flatMap((f) => (f.passive ? [f.passive] : []));
 }

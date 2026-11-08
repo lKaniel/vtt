@@ -5,6 +5,7 @@ import { encumbrance } from './carrying.ts';
 import { ammunitionPlus, otherSpeeds, wearing, withItemBonuses, withWeaponMagic } from './worn-items.ts';
 import { offHandAttacks } from './two-weapon.ts';
 import { makesDeathSaves } from './deaths.ts';
+import { poolParts, type PoolSheet } from './pools.ts';
 import {
   casterSheet,
   classScales,
@@ -15,7 +16,8 @@ import {
   type ScaleValue,
 } from './classes.ts';
 import { grantedFeatures } from './class-options.ts';
-import { withFightingStyles } from './class-styles.ts';
+import { type ArmorWeight, withFightingStyles } from './class-styles.ts';
+import { bloodiedPassives } from './chapters.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
 import { changed, changedBase, changedList } from './effect-changes.ts';
@@ -76,6 +78,10 @@ export interface Creature extends Affected, LegendaryParts {
   senses?: Senses;
   /** Numbers by class level a homebrew class shows (a pool's size). */
   scales?: ScaleValue[];
+  /** A homebrew class's point pool (Lucidity), see pools.ts. */
+  pool?: PoolSheet;
+  /** Its challenge rating, or a character's level: what weights go by. */
+  rank?: number;
   /** The saving throws it adds its proficiency to (the class's, or the stat block's). */
   proficientSaves?: Ability[];
 }
@@ -106,7 +112,7 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
   const gear = equippedItems(token, content);
   const { maxHp, ac } = fixedNumbers(stats, monster, classHp(levels, abilities));
   const features = withBasicActions(
-    featureSheets(token, levels, abilities, grantedFeatures(token, content)),
+    bloodiedPassives(featureSheets(token, levels, abilities, grantedFeatures(token, content)), token.hp, maxHp),
     token.effects,
   );
   const base: Creature = {
@@ -135,11 +141,16 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
     ...effectParts(token, features, content.edition, monster?.conditionImmunities),
     ...classParts(levels, monster),
     caster: withHandedSpells(casterSheet(token, { abilities, proficiency }, content), token, content),
+    ...poolParts(token, levels, { abilities, proficiency }, monster),
     ...legendaryParts(token, monster),
     features,
-    senses: sensesOf(token, monster),
+    senses: sensesOf(
+      token,
+      monster,
+      features.flatMap((f) => (f.passive ? [f.passive] : [])),
+    ),
   };
-  const styled = withFightingStyles(applyEffects(withItemBonuses(base, token, content)), !!bodyArmor(gear.armor));
+  const styled = withFightingStyles(applyEffects(withItemBonuses(base, token, content)), armorWeight(gear.armor));
   return withCarrying(styled, token, { monster, content });
 }
 
@@ -402,6 +413,7 @@ function equippedItems(token: Token, content: Content): { weapons: Weapon[]; arm
 }
 
 const bodyArmor = (armor: readonly Armor[]) => armor.find((a) => a.category !== 'shield');
+const armorWeight = (armor: readonly Armor[]) => bodyArmor(armor)?.category as ArmorWeight | undefined;
 
 /** AC from worn armor and shield, or 10 + dex without armor (plus another ability with unarmored defense). */
 export function armorClass(

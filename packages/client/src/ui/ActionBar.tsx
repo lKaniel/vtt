@@ -1,5 +1,8 @@
 import { actsNow, type TokenView, type TurnBudget } from '@vtt/system-dnd5e';
+import { XIcon } from 'lucide-react';
 import { useState } from 'react';
+import { t } from '../i18n/index.ts';
+import { Button } from './kit/button.tsx';
 import { barRow, barRows, type BarSize, loadBarSize, ROW_TILES, saveBarSize, wrapRow } from '../play/bar-size.ts';
 import { BarButtons, RowPager, tabSlots } from './BarControls.tsx';
 import { affordable, costOf, TABS, type ActionTile, type Tab } from '../play/actions.ts';
@@ -21,6 +24,7 @@ import { ORDINAL } from '../text/spell-text.ts';
 import { activateTile, canActivate } from '../play/tile-use.ts';
 import { AimingControls } from './AimingControls.tsx';
 import { SmiteControls } from './SmiteControls.tsx';
+import { FinisherControls } from './FinisherControls.tsx';
 import { currentKeys, keyLabel, keyOf } from '../keys/keybinds.ts';
 import { attackTip, featureTip, itemTip, macroTip, spellTip } from '../text/tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
@@ -61,6 +65,7 @@ export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onS
       {(!token || tip !== IDLE_HINT) && <div className="hint">{tip}</div>}
       {token && <AimingControls session={session} token={token} />}
       {token && <SmiteControls session={session} token={token} />}
+      {token && <FinisherControls session={session} token={token} />}
       {token && <Bar session={session} token={token} onSheet={onSheet} size={size} onSize={resize} />}
     </footer>
   );
@@ -134,7 +139,24 @@ function Who({ session, token }: Readonly<{ session: Session; token: TokenView }
       )}
       <HpBar token={token} />
       <EffectBadges token={token} at={{ now: session.time.now(), fighting: !!session.combat }} />
+      <Deselect session={session} />
     </div>
+  );
+}
+
+/** Lets go of the selection on purpose (Esc does the same); a drag over empty ground no longer does. */
+function Deselect({ session }: Readonly<{ session: Session }>) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      className="ml-auto"
+      onClick={() => session.select(undefined)}
+      title={t('select.deselectHint')}
+      aria-label={t('select.deselect')}
+    >
+      <XIcon />
+    </Button>
   );
 }
 
@@ -355,7 +377,7 @@ function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenVi
       <button
         className="end-turn"
         disabled={!mine}
-        onClick={() => session.requests.endTurn()}
+        onClick={() => session.requests.endTurn(session.turns.ending(token.id))}
         title={mine ? 'End turn (Space)' : 'Waiting for your turn'}
         aria-label={mine ? 'End turn' : 'Waiting for your turn'}
       />

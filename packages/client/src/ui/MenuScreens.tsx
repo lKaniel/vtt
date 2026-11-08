@@ -55,13 +55,13 @@ export function MainMenu({ info, error, go }: Readonly<{ info?: SessionInfo; err
 }
 
 /** A game's join screen: pick your player, give its password if it has one, and in you go. */
-export function JoinScreen({ game: id, go }: Readonly<{ game: string; go: Go }>) {
+export function JoinScreen({ game: id, player, go }: Readonly<{ game: string; player?: string; go: Go }>) {
   const load = useCallback(() => api.game(id), [id]);
   const { data: game, error } = useLoad(load);
   return (
     <MenuShell title={game?.name ?? t('menu.connecting')} kicker={t('join.kicker')}>
       {error && <p className="menu-error">{error}</p>}
-      {game && <JoinForm game={game} onJoined={() => go({ name: 'game', game: game.id })} />}
+      {game && <JoinForm game={game} invited={player} onJoined={() => go({ name: 'game', game: game.id })} />}
       <Button variant="outline" className="menu-back mx-auto mt-[18px] flex" onClick={() => go({ name: 'menu' })}>
         {t('join.back')}
       </Button>
@@ -69,8 +69,14 @@ export function JoinScreen({ game: id, go }: Readonly<{ game: string; go: Go }>)
   );
 }
 
-function JoinForm({ game, onJoined }: Readonly<{ game: GameDetail; onJoined: () => void }>) {
-  const [player, setPlayer] = useState(game.me ?? '');
+/** The player picked at first: the one an invite link names, else the one this browser joined as. */
+function firstPick(game: GameDetail, invited?: string): string {
+  if (invited && game.players.some((p) => p.id === invited)) return invited;
+  return game.me ?? '';
+}
+
+function JoinForm({ game, invited, onJoined }: Readonly<{ game: GameDetail; invited?: string; onJoined: () => void }>) {
+  const [player, setPlayer] = useState(() => firstPick(game, invited));
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);

@@ -4,6 +4,7 @@ import { LightSchema, TokenLookSchema } from '@vtt/shared';
 import { ClassSchema, EffectSchema, FeatureSchema, SpellSchema } from './spell-schema.ts';
 import { CurrencySchema, InventorySchema, MonsterSchema, StatsSchema } from './stats-schema.ts';
 import { ItemSchema } from './item-schema.ts';
+import { HoldSchema } from './power-schema.ts';
 import { z } from 'zod';
 
 // A D&D creature as it is stored: a token in a scene's tokens.json (where it
@@ -128,8 +129,14 @@ export const TokenSchema = z.object({
       uses: z.record(z.string(), z.number().int().nonnegative()).optional(),
       /** Hit dice spent on short rests. */
       hitDice: z.number().int().nonnegative().optional(),
+      /** Points spent from the class's pool (see power-schema.ts). */
+      pool: z.number().nonnegative().optional(),
     })
     .optional(),
+  /** Pool uses that last (a Weave, a Glamour): held against the pool while their effects do. */
+  holds: z.array(HoldSchema).optional(),
+  /** Momentum dice held (momentum.ts); `fresh`: they last through the end of its next turn. */
+  momentum: z.object({ dice: z.number().int().positive(), fresh: z.boolean().optional() }).optional(),
   /** Set on creatures a spell or feature brought in; they vanish when it ends. */
   summon: z
     .object({ by: id, spell: id, concentration: z.boolean().default(false), endsAt: z.number().optional() })

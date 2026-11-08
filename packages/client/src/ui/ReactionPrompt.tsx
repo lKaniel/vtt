@@ -1,12 +1,19 @@
 import type { ReactionOffer } from '@vtt/system-dnd5e';
 import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
+import { t } from '../i18n/index.ts';
 
 const CHOICE_LABELS: Record<string, string> = {
   shield: 'Shield (+5 AC)',
   'uncanny-dodge': 'Uncanny Dodge (half damage)',
   counterspell: 'Counterspell',
 };
+
+/** A focus art (weapon parry, dodge step) by its feature's name on the reactor's sheet. */
+function artLabel(session: Session, reactor: string, choice: string): string {
+  const name = session.tokens.get(reactor)?.sheet?.features.find((f) => f.id === choice)?.name;
+  return name ? t('reaction.art', { name }) : choice;
+}
 
 /** What the offer asks, e.g. "Goblin: opportunity attack on Bo?". */
 function question(offer: ReactionOffer, name: (id: string) => string): string {
@@ -33,7 +40,7 @@ export function ReactionPrompt({ session }: Readonly<{ session: Session }>) {
             size="sm"
             onClick={() => session.requests.takeReaction(offer.id, choice)}
           >
-            {CHOICE_LABELS[choice] ?? choice}
+            {offer.labels?.[choice] ?? CHOICE_LABELS[choice] ?? artLabel(session, offer.reactor, choice)}
           </Button>
         ))}
         <Button variant="outline" size="sm" onClick={() => session.requests.takeReaction(offer.id)}>

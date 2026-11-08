@@ -15,6 +15,7 @@ import { RemoveButton } from '../RemoveButton.tsx';
 import { EditButton, isOwn, NewButton, useOwnEditor } from '../own/OwnEditor.tsx';
 import { withKey } from '../sheet-model.ts';
 import { LegendaryPanel } from './LegendaryPanel.tsx';
+import { PoolPanel } from './PoolPanel.tsx';
 import { type Column, Empty, ListRow, ListSection, Pips, RowButton, SheetSearch } from './SheetList.tsx';
 import { actFromSheet, canAct, type SheetProps } from './sheet-props.ts';
 
@@ -37,6 +38,7 @@ export function FeaturesTab(props: Readonly<SheetProps>) {
   return (
     <>
       <SheetSearch value={query} onChange={setQuery} />
+      <PoolPanel {...props} />
       {sheet.scales?.length ? (
         <div className="mb-3 flex flex-wrap gap-1" data-slot="scales">
           {sheet.scales.map((s) => (

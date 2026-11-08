@@ -1,4 +1,5 @@
-import { characterLevel, type ClientMessage, featureSpell } from '@vtt/system-dnd5e';
+import { characterLevel, type ClientMessage, type FeatureSheet, featureSpell } from '@vtt/system-dnd5e';
+import { isPowerFeature, type PowerAim, powerAim } from '../play/power-aiming.ts';
 
 /** How a chat roll is applied: in full, half, double, or as healing. */
 export type ApplyHow = Extract<ClientMessage, { t: 'applyDamage' }>['how'];
@@ -41,6 +42,8 @@ export class Actions {
   armed?: string;
   /** Slot level to Divine Smite with on the armed attack. */
   smite?: number;
+  /** The hit finisher (a feature id) to spend momentum dice on if the armed attack hits. */
+  finisher?: string;
   /** The spell the selected token is aiming, and what it has picked so far. */
   aiming?: Aiming;
   /** Who sees your rolls and the cards of your actions (see roll-modes.ts). */
@@ -71,6 +74,7 @@ export class Actions {
   arm(attack: string | undefined): void {
     this.armed = attack;
     this.smite = undefined;
+    this.finisher = undefined;
     this.aiming = undefined;
     const target = attack && this.s.targets.only();
     if (target && target !== this.s.selected) return this.attack(target);
@@ -102,8 +106,25 @@ export class Actions {
       feature && {
         ...aimSpell(featureSpell(feature), 0, feature.classLevel ?? characterLevel(token?.stats) ?? 1),
         feature: feature.id,
+        ...(isPowerFeature(feature) && { power: powerAim(feature) }),
       },
     );
+  }
+
+  /** The aimed pool feature, as the selected token has it. */
+  get aimedPower(): FeatureSheet | undefined {
+    if (!this.aiming?.power) return undefined;
+    const token = this.s.selected ? this.s.tokens.get(this.s.selected) : undefined;
+    return token?.sheet?.features.find((f) => f.id === this.aiming?.feature);
+  }
+
+  /** Changes the aimed pool feature's picks, inputs or action. */
+  // fallow-ignore-next-line unused-class-member -- PowerControls.tsx calls it (fallow --type-aware finds it)
+  changePower(change: (aim: PowerAim, feature: FeatureSheet) => PowerAim): void {
+    const feature = this.aimedPower;
+    if (!this.aiming?.power || !feature) return;
+    this.aiming = { ...this.aiming, power: change(this.aiming.power, feature) };
+    this.on.changed();
   }
 
   /** Readies the spell on a scroll the selected token carries. */
@@ -122,7 +143,7 @@ export class Actions {
   private aimed(aiming: Aiming | undefined): void {
     const at = aiming && aimAtTargets(aiming, [...this.s.targets.mine]);
     this.aiming = at?.aiming;
-    if (aiming?.mode === 'self' || at?.done) return this.confirmCast();
+    if (!aiming?.power && (aiming?.mode === 'self' || at?.done)) return this.confirmCast();
     this.on.armed();
     this.on.changed();
   }
@@ -162,7 +183,7 @@ export class Actions {
     if (!this.aiming) return;
     const { aiming, done } = pick(this.aiming, id);
     this.aiming = aiming;
-    if (done) this.confirmCast();
+    if (done && !aiming.power) this.confirmCast();
     else this.on.changed();
   }
 
@@ -183,6 +204,12 @@ export class Actions {
     this.on.changed();
   }
 
+  /** Spends every momentum die on this finisher if the armed attack hits; undefined for none. */
+  setFinisher(finisher: string | undefined): void {
+    this.finisher = finisher;
+    this.on.changed();
+  }
+
   /** Spends the readied attack on empty ground at `point`: it hits nothing. */
   attackAt(point: Point): void {
     if (!this.s.selected || !this.armed) return;
@@ -193,7 +220,8 @@ export class Actions {
   attack(target: string): void {
     if (!this.s.selected || !this.armed) return;
     const smite = this.smite ? { smite: this.smite } : {};
-    this.s.send({ t: 'attack', attacker: this.s.selected, target, attack: this.armed, ...smite });
+    const finisher = this.finisher ? { finisher: this.finisher } : {};
+    this.s.send({ t: 'attack', attacker: this.s.selected, target, attack: this.armed, ...smite, ...finisher });
     this.arm(undefined);
   }
 }

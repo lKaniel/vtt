@@ -74,7 +74,15 @@ export interface CastingLevel {
 
 /** The classes that cast spells (some maybe not yet at their level), with their spellcasting. */
 export function castingLevels(levels: readonly ClassLevel[]): CastingLevel[] {
-  return levels.flatMap((l) => (l.cls?.spellcasting ? [{ casting: l.cls.spellcasting, level: l.level }] : []));
+  return levels.flatMap((l) => {
+    const casting = classCasting(l.cls, l.subclass);
+    return casting ? [{ casting, level: l.level }] : [];
+  });
+}
+
+/** A class's spellcasting, or its subclass's when the class has none (a heretic jaeger). */
+export function classCasting(cls: Class | undefined, subclass: string | undefined): Spellcasting | undefined {
+  return cls?.spellcasting ?? cls?.subclasses?.find((s) => s.id === subclass)?.spellcasting;
 }
 
 const has13 = (abilities: Abilities, a: Ability) => abilities[a] >= 13;

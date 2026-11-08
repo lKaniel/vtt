@@ -30,8 +30,14 @@ export function clickSelect(selection: readonly string[], hit: string | undefine
   return selection.includes(hit) ? selection.filter((k) => k !== hit) : [...selection, hit];
 }
 
-/** A marquee that caught `hits`: they become the selection; shift adds them, ctrl takes them away. */
+/**
+ * A marquee that caught `hits`: they become the selection; shift adds them,
+ * ctrl takes them away. One that caught nothing keeps the selection: a held
+ * button slipping over empty ground must not let go of your creature (Esc
+ * and the Deselect button do that).
+ */
 export function marqueeSelect(selection: readonly string[], hits: readonly string[], mods: Mods): string[] {
+  if (!hits.length) return [...selection];
   if (mods.ctrl) return selection.filter((k) => !hits.includes(k));
   if (mods.shift) return [...selection, ...hits.filter((k) => !selection.includes(k))];
   return [...hits];

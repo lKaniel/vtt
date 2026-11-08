@@ -36,7 +36,7 @@ export function viewToken(token: Token, player: Player, content: Content): Token
   const art = token.monster ? content.monsters.get(token.monster)?.img : undefined;
   const look = art ? { art } : {};
   if (canObserve(token, player)) {
-    const senses = sensesOf(token, token.monster ? content.monsters.get(token.monster) : undefined);
+    const senses = sheet.senses ?? sensesOf(token, token.monster ? content.monsters.get(token.monster) : undefined);
     return { ...token, ...look, sheet, senses };
   }
   const {

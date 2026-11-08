@@ -11,7 +11,8 @@ import type {
 } from '@vtt/shared';
 import type { CheckEntry, CheckKind, CheckRequestKind } from './checks.ts';
 import type { Combat } from './combat.ts';
-import type { Area, Condition } from './spell-schema.ts';
+import type { Area } from './area-schema.ts';
+import type { Condition } from './spell-schema.ts';
 import type { CompendiumDrop, SheetArea } from './sheet-drops.ts';
 import type { Ability, Currency, DamageType, Edition } from './stats-schema.ts';
 import type { Actor } from './token-schema.ts';
@@ -108,6 +109,8 @@ export interface ReactionOffer {
   kind: 'opportunity' | 'hit' | 'spell';
   /** What the reactor may do: melee attack names, or reactions to a hit ("shield", "uncanny-dodge"). */
   choices: string[];
+  /** Names to show for choices that need one (a pool reaction and its cost). */
+  labels?: Record<string, string>;
   /** For a hit: the attack roll's total. */
   total?: number;
   /** For a spell: its name. */
@@ -127,7 +130,8 @@ export type ClientMessage =
   | { t: 'combatEnd' }
   /** GM: turn-based mode outside a fight: the party takes turns, 6 seconds a round (fights are always turn-based). */
   | { t: 'turnBased'; on: boolean }
-  | { t: 'endTurn' }
+  /** Ends one creature's turn: `token`, else yours whose turn it is (on a shared turn the others keep theirs). */
+  | { t: 'endTurn'; token?: string }
   /**
    * `smite`: spend a slot of this level on Divine Smite if the attack hits (2014 paladin).
    * Without `target` the attack goes at `point`, empty ground, and hits nothing.
@@ -199,7 +203,19 @@ export type ClientMessage =
       form?: string;
     }
   /** `targets` and `point` aim features used like spells (bardic inspiration, turn undead). */
-  | { t: 'feature'; token: string; feature: string; targets?: string[]; point?: Point }
+  | {
+      t: 'feature';
+      token: string;
+      feature: string;
+      targets?: string[];
+      point?: Point;
+      /** A pool feature's options picked, numbers entered, and using it as a bonus action instead. */
+      picks?: string[];
+      inputs?: Record<string, number>;
+      bonus?: boolean;
+    }
+  /** Let go of a held pool use (a Glamour, a Weave). */
+  | { t: 'release'; token: string; hold: string }
   /** Use one of an item the token carries, by item id (drink a potion). */
   | { t: 'useItem'; token: string; item: string }
   /** Take a reaction that was offered, with this attack; no attack declines it. */

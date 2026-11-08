@@ -66,6 +66,7 @@ for (const { viewport, parts } of [
     expect(await overlaps(page, parts)).toEqual([]);
 
     await page.getByRole('button', { name: 'Start combat' }).click();
+    await page.getByRole('button', { name: /^Roll initiative/ }).click();
     await expect(page.getByRole('button', { name: 'End combat' })).toBeVisible();
     expect(await overlaps(page, parts)).toEqual([]);
     // Portraits that share art are told apart by their names.
