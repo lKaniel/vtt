@@ -157,9 +157,20 @@ export function rollSave(sheet: Affected, ability: Ability, dc: number, rng: Rng
   return rolled(sheet, { ability, dc, mods: saveModifiers(sheet, ability) }, rng);
 }
 
-/** A save against a spell, which some effects resist (a mantle of spell resistance). */
-export function rollSpellSave(sheet: Affected, ability: Ability, dc: number, rng: Rng = Math.random): SaveRoll {
-  return rolled(sheet, { ability, dc, mods: saveModifiers(sheet, ability, true) }, rng);
+/**
+ * A save against a spell, which some effects resist (a mantle of spell
+ * resistance); `vs`: the conditions it would leave, which some resist too
+ * (inured to madness).
+ */
+export function rollSpellSave(
+  sheet: Affected,
+  save: { ability: Ability; dc: number; vs?: readonly string[] },
+  rng: Rng = Math.random,
+): SaveRoll {
+  const { ability, dc, vs = [] } = save;
+  const mods = saveModifiers(sheet, ability, true);
+  const resists = sheet.effects.some((e) => e.saveAdvantageVs?.some((c) => vs.includes(c)));
+  return rolled(sheet, { ability, dc, mods: resists ? { ...mods, advantage: true } : mods }, rng);
 }
 
 /** What effects do to their bearer as its turn starts: damage to roll (searing smite) and hit points regained (regenerate). */

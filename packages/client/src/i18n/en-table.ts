@@ -20,4 +20,8 @@ export const EN_TABLE = {
   'fight.shortRestHint': 'One hour: spend hit dice, short-rest features come back',
   'fight.longRest': 'Long rest',
   'fight.longRestHint': 'Eight hours: hit points, spell slots and features come back',
+  'finisher.label': 'Finisher',
+  'finisher.dice': '{dice} momentum dice (d{die})',
+  'finisher.hint': 'On a hit, spend every momentum die on {name}',
+  'reaction.art': '{name} (focus point)',
 };

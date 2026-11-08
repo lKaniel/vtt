@@ -1,6 +1,6 @@
 import { type PackCompendium, PackManifestSchema, type SystemPackSource } from '@vtt/core';
 import type { z } from 'zod';
-import { type Content, srdFor } from './content.ts';
+import { type Content, srdFor, withClassAutomation } from './content.ts';
 import { ClassSchema, SpellSchema } from './spell-schema.ts';
 import { type Edition, MonsterSchema } from './stats-schema.ts';
 import { ItemSchema } from './item-schema.ts';
@@ -58,10 +58,10 @@ const forEdition = (c: PackCompendium, edition: Edition) =>
   isContentType(c.type) && (c.rules === undefined || c.rules === edition);
 
 /** The documents of a compendium its schema accepts, parsed. */
-function parsedDocs(c: PackCompendium): { id: string }[] {
+function parsedDocs(c: PackCompendium, edition: Edition): { id: string }[] {
   const schema: z.ZodType<{ id: string }> = CONTENT_SCHEMAS[c.type as ContentType];
   return c.docs.flatMap((doc) => {
-    const parsed = schema.safeParse(doc);
+    const parsed = schema.safeParse(c.type === 'class' ? withClassAutomation(doc, edition) : doc);
     return parsed.success ? [parsed.data] : [];
   });
 }
@@ -78,7 +78,7 @@ export function contentWith(edition: Edition, compendia: readonly PackCompendium
   const add = (type: ContentType, base: ReadonlyMap<string, unknown>) =>
     new Map([
       ...base,
-      ...mine.filter((c) => c.type === type).flatMap((c) => parsedDocs(c).map((d) => [d.id, d] as const)),
+      ...mine.filter((c) => c.type === type).flatMap((c) => parsedDocs(c, edition).map((d) => [d.id, d] as const)),
     ]);
   const content = {
     ...srd,
@@ -96,7 +96,9 @@ export function packContentIssues(c: PackCompendium): string[] {
   if (!isContentType(c.type)) return [];
   const schema = CONTENT_SCHEMAS[c.type] as z.ZodType;
   return c.docs.flatMap((doc, i) => {
-    const parsed = schema.safeParse(doc);
+    const parsed = schema.safeParse(
+      c.type === 'class' ? withClassAutomation(doc, (c.rules as Edition | undefined) ?? '2014') : doc,
+    );
     if (parsed.success) return [];
     const id = (doc as { id?: unknown } | null)?.id;
     const issue = parsed.error.issues[0]!;

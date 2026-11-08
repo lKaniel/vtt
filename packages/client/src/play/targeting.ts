@@ -114,7 +114,15 @@ export function aimAtTargets(aiming: Aiming, targets: readonly string[]): { aimi
 
 export function castMessage(caster: string, aiming: Aiming, point?: Point): ClientMessage {
   if (aiming.feature) {
-    return { t: 'feature', token: caster, feature: aiming.feature, targets: aiming.picks, ...(point && { point }) };
+    const choice = aiming.choice && { choice: aiming.choice };
+    return {
+      t: 'feature',
+      token: caster,
+      feature: aiming.feature,
+      targets: aiming.picks,
+      ...(point && { point }),
+      ...choice,
+    };
   }
   return {
     t: 'cast',

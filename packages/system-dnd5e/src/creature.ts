@@ -137,7 +137,11 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
     caster: withHandedSpells(casterSheet(token, { abilities, proficiency }, content), token, content),
     ...legendaryParts(token, monster),
     features,
-    senses: sensesOf(token, monster),
+    senses: sensesOf(
+      token,
+      monster,
+      features.flatMap((f) => (f.passive ? [f.passive] : [])),
+    ),
   };
   const styled = withFightingStyles(applyEffects(withItemBonuses(base, token, content)), !!bodyArmor(gear.armor));
   return withCarrying(styled, token, { monster, content });

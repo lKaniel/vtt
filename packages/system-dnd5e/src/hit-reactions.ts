@@ -1,13 +1,13 @@
 import type { AttackRoll } from './attack.ts';
 import type { Creature } from './creature.ts';
 import { canAct } from './effects.ts';
+import { hitArts } from './focus-arts.ts';
 import type { CastSide } from './spells.ts';
 import type { WeaponAttackOutcome } from './weapon-attack.ts';
 
 // Reactions a creature can take as an attack hits it: the shield spell
-// (+5 AC, which may turn the hit into a miss) and uncanny dodge (half damage).
-
-export type HitReaction = 'shield' | 'uncanny-dodge';
+// (+5 AC, which may turn the hit into a miss), uncanny dodge (half damage)
+// and focus arts (focus-arts.ts).
 
 /** The lowest spell slot the creature could cast shield with, or undefined. */
 export function shieldSlot(sheet: Pick<Creature, 'caster'>): number | undefined {
@@ -17,13 +17,14 @@ export function shieldSlot(sheet: Pick<Creature, 'caster'>): number | undefined 
   return index < 0 ? undefined : index + 1;
 }
 
-/** The reactions `target` could take against this hit; shield only when it would make it miss. */
-export function hitReactions(target: CastSide, roll: AttackRoll): HitReaction[] {
+/** The reactions `target` could take against this hit: shield (only when it would make it miss), uncanny dodge, focus arts (by feature id). */
+export function hitReactions(target: CastSide, roll: AttackRoll): string[] {
   const { sheet } = target;
   if (!roll.hit || sheet.hp <= 0 || !canAct(sheet)) return [];
-  const out: HitReaction[] = [];
+  const out: string[] = [];
   if (!roll.crit && roll.total < sheet.ac + 5 && shieldSlot(sheet)) out.push('shield');
   if (sheet.features.some((f) => f.id === 'uncanny-dodge') && roll.damage.length) out.push('uncanny-dodge');
+  if (roll.damage.length) out.push(...hitArts(sheet));
   return out;
 }
 
