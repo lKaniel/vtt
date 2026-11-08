@@ -19,7 +19,10 @@ beforeEach(async () => {
   dice = [];
   game = new Game(store, { rng: () => dice.shift() ?? 0.5 });
   const gm = join_('gm');
-  const subclasses = ['absolute', 'marauder', 'salvation', 'sanguine'].map((c) => ({ id: `${c}-chapter`, name: c }));
+  const subclasses = ['absolute', 'heretic', 'marauder', 'salvation', 'sanguine'].map((c) => ({
+    id: `${c}-chapter`,
+    name: c,
+  }));
   const doc = { id: 'jaeger', type: 'homebrew', rev: 0, kind: 'class', name: 'Jaeger', subclasses } as unknown as Doc;
   gm.receive({ t: 'ops', txn: 't', ops: [{ op: 'create', coll: 'homebrew', doc }] });
   expect(gm.take('reject')).toEqual([]);
@@ -210,5 +213,15 @@ describe("a jaeger's Chapter arts and finishers", () => {
     expect(tok('goblin').hp).toBe(7 - 6);
     expect(tok('hero')).toMatchObject({ hp: 23, spent: { uses: { focus: 0 } } });
     expect(tok('hero').momentum).toBeUndefined();
+  });
+
+  it('heretic: a spell cast from a 3rd-level pact slot gives three momentum dice', () => {
+    chapter('heretic', 14);
+    store.setToken({ ...tok('hero'), stats: { ...tok('hero').stats!, spells: ['invisibility'] } });
+    const ana = join_('ana');
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'invisibility', slot: 3, targets: ['hero'] });
+    expect(ana.take('error').map((e) => e.message)).toEqual([]);
+    expect(tok('hero').spent?.slots).toEqual([0, 0, 1]);
+    expect(tok('hero').momentum).toEqual({ dice: 3, fresh: true });
   });
 });

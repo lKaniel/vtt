@@ -1679,6 +1679,93 @@
             }
           }
         },
+        "heretic-chapter": {
+          "spellcasting": {
+            "ability": "int",
+            "progression": "pact",
+            "from": 3,
+            "list": "warlock",
+            "slots": {
+              "count": [
+                [3, 1],
+                [5, 2]
+              ],
+              "level": [
+                [3, 1],
+                [7, 2],
+                [13, 3],
+                [19, 4]
+              ]
+            },
+            "known": {
+              "cantrips": [
+                [3, 2],
+                [10, 3]
+              ],
+              "spells": [
+                [3, 2],
+                [6, 3],
+                [9, 4],
+                [12, 5],
+                [15, 6],
+                [18, 7]
+              ]
+            }
+          },
+          "features": {
+            "heretic-magic": {
+              "name": "Heretic Magic",
+              "level": 3,
+              "manual": "After a long rest you may swap one warlock spell you know for another (edit the sheet’s spells)."
+            },
+            "arcane-arts": {
+              "name": "Spell Flurry",
+              "level": 3,
+              "art": true,
+              "usesFrom": "focus",
+              "action": "bonus",
+              "grantAttacks": 1,
+              "manual": "Use it right after you cast a spell: one weapon attack as a bonus action."
+            },
+            "shrouded-steps": {
+              "name": "Shrouded Steps",
+              "level": 7,
+              "artBoost": {
+                "sureDodge": true
+              },
+              "manual": "Movement from jaeger features (Jaeger’s Rush, Chasing Finisher, Dodge Step) can be a teleport: move the token by hand through what’s in the way. Dodge Step always succeeds."
+            },
+            "mystical-momentum": {
+              "name": "Mystical Momentum",
+              "level": 14,
+              "momentumOn": {
+                "slot": true
+              }
+            },
+            "darkness-within": {
+              "name": "Darkness Within",
+              "level": 17,
+              "action": "bonus",
+              "uses": [[17, 1]],
+              "recharge": "long",
+              "effect": {
+                "name": "Darkness Within",
+                "rounds": 10,
+                "speeds": {
+                  "fly": 30
+                },
+                "resistances": ["bludgeoning", "piercing", "slashing"],
+                "disadvantageAgainst": true,
+                "light": {
+                  "bright": 0,
+                  "dim": 10,
+                  "darkness": true
+                }
+              },
+              "manual": "The resistance is only against nonmagical, unsilvered attacks, and attacks against you are at disadvantage while you’re heavily obscured; take them off by hand where they don’t apply. It ends if you’re incapacitated, or as a bonus action."
+            }
+          }
+        },
         "marauder-chapter": {
           "features": {
             "path-of-gore": {

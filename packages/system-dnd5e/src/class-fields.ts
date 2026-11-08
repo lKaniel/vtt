@@ -78,8 +78,11 @@ export const classFields = <E extends z.ZodType>(effect: E) => ({
   morePicks: z.object({ of: id, by: count }).optional(),
   /** Momentum dice it gives on use, on top of the one its spent point gives (flourish). */
   grantsMomentum: count.optional(),
-  /** Momentum dice for the first hit on your turn and for each creature you drop (lethal tempo). */
-  momentumOn: z.object({ firstHit: count, kill: count }).partial().optional(),
+  /**
+   * Momentum dice for the first hit on your turn and for each creature you
+   * drop (lethal tempo); `slot`: as many as the level of each spell slot spent (mystical momentum).
+   */
+  momentumOn: z.object({ firstHit: count, kill: count, slot: z.boolean() }).partial().optional(),
   /** The `spell` save DC: 8 + proficiency + the best modifier of these abilities. */
   dcFrom: z.array(z.enum(ABILITIES)).optional(),
   /** Its effect at a class level, the highest reached winning over `effect` (piercing gaze). */

@@ -604,6 +604,21 @@ export const ScaleSchema = z.object({ id, name: z.string().min(1), values: Level
 /** Options to pick from as the class levels up: its features with this `choice`, `count` of them by level. */
 export const ChoiceSchema = z.object({ id, name: z.string().min(1), count: LevelTableSchema });
 
+export const SpellcastingSchema = z.object({
+  ability: AbilitySchema,
+  /** Slot progression: full casters, half casters (paladin, ranger), third casters or a warlock's pact magic. */
+  progression: z.enum(['full', 'half', 'third', 'pact']),
+  /** Class level spellcasting starts at (2 for 2014 paladins and rangers). */
+  from: z.number().int().min(1).default(1),
+  /** The class whose spell list it picks from, when not its own (a heretic jaeger: warlock). */
+  list: id.optional(),
+  /** Its own slot table instead of the progression's: how many slots, and of what level, by class level. */
+  slots: z.object({ count: LevelTableSchema, level: LevelTableSchema }).optional(),
+  /** Cantrips and spells known by class level, for a class the rules tables don't list. */
+  known: z.object({ cantrips: LevelTableSchema, spells: LevelTableSchema }).optional(),
+});
+export type Spellcasting = z.infer<typeof SpellcastingSchema>;
+
 export const SubclassSchema = z.object({
   id,
   name: z.string().min(1),
@@ -611,17 +626,10 @@ export const SubclassSchema = z.object({
   features: z.array(FeatureSchema).default([]),
   /** Picks among the subclass's optional features (a hunter's prey, a dragon ancestor). */
   choices: z.array(ChoiceSchema).optional(),
+  /** Spellcasting the subclass gives a class without its own (an eldritch knight, a heretic jaeger). */
+  spellcasting: SpellcastingSchema.optional(),
 });
 export type Subclass = z.infer<typeof SubclassSchema>;
-
-export const SpellcastingSchema = z.object({
-  ability: AbilitySchema,
-  /** Slot progression: full casters, half casters (paladin, ranger), third casters or a warlock's pact magic. */
-  progression: z.enum(['full', 'half', 'third', 'pact']),
-  /** Class level spellcasting starts at (2 for 2014 paladins and rangers). */
-  from: z.number().int().min(1).default(1),
-});
-export type Spellcasting = z.infer<typeof SpellcastingSchema>;
 
 export const ClassSchema = z.object({
   id,

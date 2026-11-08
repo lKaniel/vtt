@@ -36,7 +36,17 @@ const hit = (amount: number): WeaponAttackOutcome => ({
 
 describe('every Chapter feature', () => {
   it('runs, or says how the GM runs it', () => {
-    const run = ['action', 'passive', 'effect', 'spell', 'finisher', 'artBoost', 'trigger', 'finisherProne'];
+    const run = [
+      'action',
+      'passive',
+      'effect',
+      'spell',
+      'finisher',
+      'artBoost',
+      'trigger',
+      'finisherProne',
+      'momentumOn',
+    ];
     const subclasses = huntContent.classes.get('jaeger')!.subclasses!;
     const silent = subclasses
       .flatMap((s) => s.features)

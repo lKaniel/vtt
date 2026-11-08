@@ -110,3 +110,8 @@ export function triggered(
   }
   return { token: out, notes };
 }
+
+/** Mystical Momentum: a spell slot spent gives as many momentum dice as its level. */
+export function slotMomentum(token: Token, sheet: Pick<Creature, 'features'>, slot: number): Token {
+  return sheet.features.some((f) => f.momentumOn?.slot) ? gainMomentum(token, sheet, slot) : token;
+}

@@ -62,6 +62,7 @@ test('a new game, from Setup through an invite link to the first fight', async (
   await expect(page.getByRole('tab', { name: 'Compendium' })).toHaveAttribute('aria-selected', 'true');
 
   await page.getByRole('button', { name: 'Start combat' }).click();
+  await page.getByRole('button', { name: /^Roll initiative/ }).click();
   await expect(ready).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'End combat' })).toBeVisible();
   await player.context().close();
