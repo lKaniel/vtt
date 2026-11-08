@@ -22,11 +22,12 @@ import {
 import { gridKind, isGridless, placeToken, type Player, type Point, roll } from '@vtt/shared';
 import { castBreaksSanctuary, passSanctuaries } from '../play/spell-wards.ts';
 import { shaped } from '../play/spell-forms.ts';
-import { summon } from '../play/spell-summons.ts';
+import { summon, summonNotes } from '../play/spell-summons.ts';
 import { itemCasting, scrollReader, spentFrom } from '../play/spell-items.ts';
 import { type DoorPick, doorAt, setDoor } from '../play/spell-doors.ts';
 import { breakTimeStop } from '../play/time-stop.ts';
 import { SpellTargets } from '../play/spell-targets.ts';
+import { stepAside } from '../play/pool-guards.ts';
 import { Refusal, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 export interface CastRequest {
@@ -277,10 +278,11 @@ export class SpellActions {
     const caster = reader ? { ...fighter, sheet: { ...fighter.sheet, caster: reader } } : fighter;
     const grid = gridKind(this.store.world);
     const { dc, attackBonus, mod } = opts;
-    const outcome = resolveCast(
+    const rolled = resolveCast(
       { spell, slot, caster, targets, gridSize: this.grid, grid, dc, attackBonus, mod },
       this.table.rng,
     );
+    const outcome = stepAside(this.table, caster, rolled);
     this.apply(outcome);
     breakTimeStop(
       this.table,
@@ -469,8 +471,4 @@ function chosen(caster: Fighter, spell: Spell, choice: string | undefined, again
   } catch (e) {
     throw new Refusal((e as Error).message);
   }
-}
-
-function summonNotes(summoned: readonly Token[]): string[] {
-  return summoned.length ? [`${summoned.map((t) => t.name).join(', ')} appear`] : [];
 }

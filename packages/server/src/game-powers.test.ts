@@ -229,4 +229,20 @@ describe('action rules for pool features', () => {
     expect(tok('nyx').holds).toBeUndefined();
     expect(tok('goblin').hp ?? 7).toBeLessThan(7);
   });
+
+  it('lets one illusory creature fight: its numbers come from the class level and the pool (Shadow Substance)', () => {
+    level(14);
+    const ana = join_('ana');
+    ana.receive({ t: 'feature', token: 'nyx', feature: 'shadow-substance', point: [150, 150] });
+    expect(errors(ana)).toEqual([]);
+    const shadow = [...store.tokens.values()].find((t) => t.summon?.by === 'nyx')!;
+    expect(shadow).toMatchObject({ name: 'Shadow Substance', summon: { concentration: true } });
+    const sheet = game.table.sheetOf(shadow)!;
+    // 5 × level hp, attacks with proficiency + Wis, half the ×3.5 bolt
+    expect(sheet).toMatchObject({ maxHp: 70, ac: 18 });
+    expect(sheet.attacks[0]).toMatchObject({ toHit: 8, damage: [{ dice: '1d10+3', type: 'psychic', times: 1.75 }] });
+    expect(tok('nyx').concentration).toMatchObject({ spell: 'weave' });
+    ana.receive({ t: 'dropConcentration', token: 'nyx' });
+    expect(store.tokens.has(shadow.id)).toBe(false);
+  });
 });

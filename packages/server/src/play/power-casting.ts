@@ -23,6 +23,7 @@ import type { Player } from '@vtt/shared';
 import { randomUUID } from 'node:crypto';
 import type { SpellActions } from '../actions/spell-actions.ts';
 import type { FeatureRequest } from './feature-casting.ts';
+import { summon, summonNotes } from './spell-summons.ts';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
 
 // Pool features at the table (power-schema.ts in system-dnd5e): a use costs
@@ -141,10 +142,7 @@ function prepare(parts: Parts, player: Player, canSee: (id: string) => boolean, 
   const feature = caster.sheet.features.find((f) => f.id === req.feature);
   const pool = caster.sheet.pool;
   if (!feature || !pool) throw new Refusal(`${caster.token.name} doesn't have that feature`);
-  if (feature.ritual && table.inFight(caster.token.id)) throw new Refusal(`${feature.name} takes too long in a fight`);
-  if (feature.consumes && !newestHold(caster.token, feature.consumes)) {
-    throw new Refusal(`${caster.token.name} has nothing for ${feature.name} to end`);
-  }
+  refuseUse(table, caster, feature);
   const hold = feature.hold || feature.reserve ? `${feature.id}-${randomUUID().slice(0, 8)}` : undefined;
   const spell = useSpell(feature, req.picks ?? [], hold);
   const aim = { ...req, caster: req.token, spell: spell.id, slot: 0, targets: req.targets ?? [] };
@@ -153,6 +151,15 @@ function prepare(parts: Parts, player: Player, canSee: (id: string) => boolean, 
   const { action, by } = actionOf({ caster, feature, pool, cost, hold }, !!req.bonus);
   checkPool({ caster, feature, pool, cost });
   return { caster, feature, pool, spell, targets, cost, action, by, hold };
+}
+
+/** Refuses a feature that can't be used by hand now: a reaction, a ritual in a fight, nothing for it to end. */
+function refuseUse(table: Table, caster: Fighter, feature: FeatureSheet): void {
+  if (feature.reaction) throw new Refusal(`${feature.name} is a reaction: it's offered when it can be used`);
+  if (feature.ritual && table.inFight(caster.token.id)) throw new Refusal(`${feature.name} takes too long in a fight`);
+  if (feature.consumes && !newestHold(caster.token, feature.consumes)) {
+    throw new Refusal(`${caster.token.name} has nothing for ${feature.name} to end`);
+  }
 }
 
 const newestHold = (token: Token, feature: string) => token.holds?.filter((h) => h.feature === feature).at(-1);
@@ -168,12 +175,21 @@ export function castPower(parts: Parts, player: Player, canSee: (id: string) => 
   table.store.setToken(paid(table.store.tokens.get(use.caster.token.id)!, use));
   const { dc, attack, mod } = use.pool;
   const notes = [`${round(use.cost)} ${use.pool.name}`, ...pickedNotes(use.feature, req.picks ?? [])];
+  if (use.spell.summon) notes.push(...conjure(table, use, req));
   spells.strike(
     use.caster.token.id,
     { spell: use.spell, slot: 0, point: req.point, dc, attackBonus: attack, mod },
     use.targets,
     notes,
   );
+}
+
+/** What a feature's spell summons (Shadow Substance), built for the class level and the pool's numbers. */
+function conjure(table: Table, { caster, feature, pool, spell }: Use, req: PowerRequest): string[] {
+  if (!req.point) throw new Refusal(`Pick where ${feature.name} appears`);
+  const cast = { slot: feature.classLevel ?? 1, level: 0, attack: pool.attack, mod: pool.mod };
+  const fighter = table.fighter(caster.token.id);
+  return summonNotes(summon(table, fighter, spell, { point: req.point, slot: 0, cast }));
 }
 
 /** Starts concentrating on the feature's group, unless the caster already holds it (another Weave). */

@@ -109,6 +109,8 @@ export interface ReactionOffer {
   kind: 'opportunity' | 'hit' | 'spell';
   /** What the reactor may do: melee attack names, or reactions to a hit ("shield", "uncanny-dodge"). */
   choices: string[];
+  /** Names to show for choices that need one (a pool reaction and its cost). */
+  labels?: Record<string, string>;
   /** For a hit: the attack roll's total. */
   total?: number;
   /** For a spell: its name. */

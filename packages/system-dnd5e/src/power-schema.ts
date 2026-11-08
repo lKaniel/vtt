@@ -123,6 +123,25 @@ export const powerFeatureFields = {
   ritual: z.boolean().optional(),
   /** Using it lets go of the user's newest held use of this feature (Glamour Bomb ends a Glamour). */
   consumes: id.optional(),
+  /**
+   * A reaction it offers, paid from the pool with `cost` (weight = the
+   * attacker's or the caster's). "hit", as an attack is about to hit: "veil"
+   * rolls the attack again and keeps the lower roll (disadvantage); "redirect"
+   * veils, and a miss lands on another creature within 5 ft; "negate" veils,
+   * and a hit that still lands does nothing and leaves its spell's effect on
+   * the attacker (Unreal Self: Mirrorstep). Those two cost `with`'s cost when
+   * used plus their own when they work. "save", as a Dexterity save against a
+   * spell is rolled: "evade" takes nothing on a success and half on a failure.
+   * Mindless attackers (Int 2 or less) and ones with blindsight or truesight
+   * aren't fooled.
+   */
+  reaction: z
+    .object({
+      when: z.enum(['hit', 'save']),
+      does: z.enum(['veil', 'redirect', 'negate', 'evade']),
+      with: id.optional(),
+    })
+    .optional(),
 };
 
 /** Fields spells gain for pool features. */

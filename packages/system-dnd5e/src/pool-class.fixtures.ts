@@ -165,6 +165,63 @@ export const POOL_CLASS = ClassSchema.parse({
         [5, 2],
       ],
     },
+    { id: 'misdirection', name: 'Misdirection', level: 2, cost: '2 * weight', reaction: { when: 'hit', does: 'veil' } },
+    {
+      id: 'redirect',
+      name: 'Redirect',
+      level: 7,
+      cost: 'weight',
+      reaction: { when: 'hit', does: 'redirect', with: 'misdirection' },
+    },
+    {
+      id: 'phantom-step',
+      name: 'Phantom Step',
+      level: 11,
+      cost: '2 * weight',
+      reaction: { when: 'save', does: 'evade' },
+    },
+    {
+      id: 'unreal-self',
+      name: 'Unreal Self',
+      level: 18,
+      cost: '3 * weight',
+      reaction: { when: 'hit', does: 'negate', with: 'misdirection' },
+      spell: { effect: { name: 'Lost track', forCaster: true, disadvantage: true, advantageAgainst: true, rounds: 1 } },
+    },
+    {
+      id: 'shadow-substance',
+      name: 'Shadow Substance',
+      level: 14,
+      action: 'bonus',
+      cost: '0',
+      group: 'weave',
+      spell: {
+        range: 60,
+        concentration: true,
+        summon: {
+          options: [
+            {
+              monster: 'shadow-substance',
+              creature: {
+                name: 'Shadow Substance',
+                type: 'construct',
+                abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+                ac: { base: 18 },
+                hp: { base: 5, perLevel: 5, from: 1 },
+                attacks: [
+                  {
+                    name: 'Shadow strike',
+                    kind: 'melee',
+                    damage: [{ dice: '1d10', type: 'psychic', times: 1.75 }],
+                    plusMod: true,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    },
     {
       id: 'mind-fortress',
       name: 'Mind Fortress',
