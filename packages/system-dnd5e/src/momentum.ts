@@ -10,11 +10,18 @@ import type { Token } from './token-schema.ts';
 
 /** The dice a creature holds, how many it may hold and their size; undefined without momentum. */
 export function momentumDice(
-  sheet: Pick<Creature, 'features'>,
+  sheet: Pick<Creature, 'features'> & Partial<Pick<Creature, 'attacks'>>,
 ): { dice: number; max: number; die: number } | undefined {
   const f = sheet.features.find((s) => s.momentum);
   if (!f) return undefined;
-  return { dice: f.left ?? 0, max: f.max ?? 0, die: levelValue(f.die ?? [], f.classLevel ?? 1) };
+  const die = levelValue(f.die ?? [], f.classLevel ?? 1) + (greatWeapon(sheet) ? 2 : 0);
+  return { dice: f.left ?? 0, max: f.max ?? 0, die };
+}
+
+/** Marauder Momentum: a two-handed melee weapon in hand makes the die a size larger. */
+function greatWeapon(sheet: Pick<Creature, 'features'> & Partial<Pick<Creature, 'attacks'>>): boolean {
+  if (!sheet.features.some((f) => f.dieStep === 'two-handed')) return false;
+  return (sheet.attacks ?? []).some((a) => a.kind === 'melee' && a.weapon?.properties.includes('two-handed'));
 }
 
 /** `n` more dice on top of the token's (to the most the sheet allows); gaining dice keeps them all fresh. */

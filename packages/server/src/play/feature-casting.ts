@@ -9,6 +9,7 @@ import {
 } from '@vtt/system-dnd5e';
 import type { Player, Point } from '@vtt/shared';
 import type { SpellActions } from '../actions/spell-actions.ts';
+import { afterSpellFinisher } from './momentum-keeper.ts';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
 
 export interface FeatureRequest {
@@ -57,5 +58,10 @@ export function castFeature(
   if (feature.healPool) spell = { ...spell, heal: String(spend) };
   table.pay(caster.token, cost);
   table.store.setToken(spendUse(table.store.tokens.get(caster.token.id)!, feature, spend, caster.sheet));
+  const before = hpOf(table, targets);
   spells.strike(caster.token.id, { spell, slot: 0, point: req.point }, targets);
+  if (feature.finisher) afterSpellFinisher(table, { caster, feature, targets, before });
 }
+
+const hpOf = (table: Table, targets: readonly Fighter[]) =>
+  new Map(targets.map((t) => [t.token.id, table.fighter(t.token.id).sheet.hp]));

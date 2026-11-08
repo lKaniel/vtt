@@ -31,6 +31,7 @@ export * from './hit-reactions.ts';
 export * from './momentum.ts';
 export * from './finishers.ts';
 export * from './focus-arts.ts';
+export * from './chapters.ts';
 export * from './counterspell.ts';
 export * from './gravity.ts';
 export * from './two-weapon.ts';

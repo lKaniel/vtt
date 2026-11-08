@@ -3,6 +3,7 @@ import type { Creature } from './creature.ts';
 import { abilityMod } from './creature-math.ts';
 import { rollSave } from './effects.ts';
 import { momentumDice } from './momentum.ts';
+import { finisherWeaponProblem } from './chapters.ts';
 import type { CastSide } from './spells.ts';
 import type { Condition, Effect, Spell } from './spell-schema.ts';
 import type { Ability, Attack, Damage } from './stats-schema.ts';
@@ -22,9 +23,11 @@ export function hitFinishers(sheet: Pick<Creature, 'features'>): FeatureSheet[] 
 }
 
 /** Why the creature can't use hit finisher `id` now, or undefined if it can. */
-export function finisherProblem(sheet: Pick<Creature, 'features'>, id: string): string | undefined {
-  if (!hitFinisher(sheet, id)) return "doesn't know that finisher";
-  return momentumDice(sheet)?.dice ? undefined : 'has no momentum dice';
+export function finisherProblem(sheet: Pick<Creature, 'features'>, id: string, attack?: Attack): string | undefined {
+  const feature = hitFinisher(sheet, id);
+  if (!feature) return "doesn't know that finisher";
+  if (!momentumDice(sheet)?.dice) return 'has no momentum dice';
+  return attack && finisherWeaponProblem(feature, attack);
 }
 
 /** The held dice as a formula, e.g. "3d6". */
@@ -34,9 +37,17 @@ export function momentumFormula(sheet: Pick<Creature, 'features'>): string {
 }
 
 /** The extra damage a damage finisher adds to the hit it rides on. */
-export function finisherDamage(sheet: Pick<Creature, 'features'>, attack: Attack, id: string): Damage | undefined {
-  if (hitFinisher(sheet, id)?.finisher?.does !== 'damage') return undefined;
-  return { dice: momentumFormula(sheet), type: attack.damage[0]!.type };
+export function finisherDamage(
+  sheet: Pick<Creature, 'features' | 'attacks'>,
+  attack: Attack,
+  id: string,
+): Damage | undefined {
+  const does = hitFinisher(sheet, id)?.finisher?.does;
+  const type = attack.damage[0]!.type;
+  if (does === 'damage') return { dice: momentumFormula(sheet), type };
+  // Great Cleave: one die on the hit; the rest go into cleaving more foes.
+  if (does === 'cleave') return { dice: `1d${momentumDice(sheet)!.die}`, type };
+  return undefined;
 }
 
 /** 8 + proficiency + the best modifier of `from` (a finisher's save DC). */
@@ -59,6 +70,8 @@ export interface FinisherHit {
   /** Focus points it gives back. */
   regain: number;
   notes: string[];
+  /** Attacks it gives against other foes in reach (great cleave). */
+  attacks?: number;
 }
 
 interface HitInput {
@@ -74,7 +87,13 @@ export function finisherOnHit(input: HitInput, rng: Rng): FinisherHit {
   const does = input.feature.finisher?.does;
   if (does === 'condition') return breakingBlow(input, rng);
   if (does === 'bleed') return bleeding(input);
-  return { effects: [], regain: input.downed ? 1 : 0, notes: [] };
+  const regain = input.downed ? 1 : 0;
+  if (does !== 'cleave') return { effects: [], regain, notes: [] };
+  const dice = momentumDice(input.attacker.sheet)?.dice ?? 0;
+  const notes = [
+    `${input.attacker.token.name} cleaves on: ${dice} more attack${dice === 1 ? '' : 's'} at foes in reach`,
+  ];
+  return { effects: [], regain, notes, attacks: dice };
 }
 
 function breakingBlow({ attacker, target, feature }: HitInput, rng: Rng): FinisherHit {

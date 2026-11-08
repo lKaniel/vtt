@@ -194,7 +194,9 @@ function maxUses(f: Feature, level: number, abilities: Abilities): number | unde
 function featureSpell(f: Feature, level: number): Partial<Spell> | undefined {
   if (!f.spell) return undefined;
   const die = String(levelValue(f.die ?? [], level));
-  return JSON.parse(JSON.stringify(f.spell).replace(/\{die\}/g, die)) as Partial<Spell>;
+  const later = (f.spellAt ?? []).filter(([from]) => level >= from).map(([, set]) => set);
+  const spell = Object.assign({}, f.spell, ...later) as Record<string, unknown>;
+  return JSON.parse(JSON.stringify(spell).replace(/\{die\}/g, die)) as Partial<Spell>;
 }
 
 /** A feature's always-on effect at this class level: its speed bonus and aura radius filled in. */
@@ -281,7 +283,8 @@ function withPools(sheets: FeatureSheet[], token: Token, abilities: Abilities): 
     if (s.momentum) {
       const prof = proficiencyForLevel(characterLevel(token.stats) ?? 1);
       const max = prof + Math.max(abilityMod(abilities.str), abilityMod(abilities.dex));
-      return { ...s, max, left: Math.min(max, token.momentum?.dice ?? 0) };
+      // Titanic Strength can double the dice to one past the most.
+      return { ...s, max, left: Math.min(max + 1, token.momentum?.dice ?? 0) };
     }
     const by = s.max === undefined ? 0 : more(s.id);
     return by ? { ...s, max: s.max! + by, left: s.left! + by } : s;
