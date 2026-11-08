@@ -1,6 +1,7 @@
 import { type AttackRoll, rollAttack, tokenDistance } from './attack.ts';
 import { abilityMod } from './creature-math.ts';
 import { attackModifiers, rollSave, type UsedEffect } from './effects.ts';
+import { type RollChoice, withEdge } from './roll-choice.ts';
 import type { CastSide } from './spells.ts';
 import type { Effect } from './spell-schema.ts';
 import type { Attack, Damage, DamageType } from './stats-schema.ts';
@@ -28,6 +29,8 @@ export interface WeaponAttackInput {
   sneakUsed: boolean;
   /** Extra damage a finisher adds if the attack hits (finishers.ts); the server spends the dice. */
   finisher?: Damage;
+  /** The roller's own advantage or disadvantage, and a critical forced or held back. */
+  pick?: RollChoice;
 }
 
 export interface WeaponAttackOutcome {
@@ -122,19 +125,24 @@ function grazeDamage(input: WeaponAttackInput): WeaponAttackOutcome['graze'] {
   return amount > 0 ? { amount, type: attack.damage[0]!.type } : undefined;
 }
 
+/** What the attack rolls with: the effects', long range's disadvantage, and the attacker's own pick. */
+function rolledModifiers(input: WeaponAttackInput, within5: boolean) {
+  const mods = withEdge(attackModifiers(input.attacker, input.target, { within5 }), input.pick?.edge);
+  return { ...mods, disadvantage: mods.disadvantage || input.range === 'long', crit: input.pick?.crit };
+}
+
 export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.random): WeaponAttackOutcome {
   const { attacker, target, gridSize, grid } = input;
   const attack = withWeaponBonus(input.attack, attacker.sheet);
   const within5 = tokenDistance(attacker.token, target.token, gridSize, grid) <= 5;
-  const mods = attackModifiers(attacker, target, { within5 });
-  const disadvantage = mods.disadvantage || input.range === 'long';
+  const mods = rolledModifiers(input, within5);
+  const { disadvantage } = mods;
   const sneak = canSneak(input, mods.advantage, disadvantage);
   const rolled = rollAttack(
     attack,
     target.sheet,
     {
       ...mods,
-      disadvantage,
       critRange: critRangeOf(attacker.sheet),
       extraDamage: [...extraDamage({ ...input, attack }, sneak), ...styleDamage(attacker.sheet, attack)],
     },

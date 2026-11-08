@@ -25,6 +25,7 @@ import { activateTile, canActivate } from '../play/tile-use.ts';
 import { AimingControls } from './AimingControls.tsx';
 import { SmiteControls } from './SmiteControls.tsx';
 import { FinisherControls } from './FinisherControls.tsx';
+import { RollPickButton } from './RollPickControls.tsx';
 import { currentKeys, keyLabel, keyOf } from '../keys/keybinds.ts';
 import { attackTip, featureTip, itemTip, macroTip, spellTip } from '../text/tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
@@ -97,6 +98,7 @@ function Bar({ session, token, onSheet, size, onSize }: BarProps) {
         <div className="ab-top">
           <Who session={session} token={token} />
           <Resources token={token} budget={budget} />
+          <RollPickButton session={session} />
           <BarButtons size={size} onSize={onSize} help={IDLE_HINT} />
         </div>
         <div className="ab-body">

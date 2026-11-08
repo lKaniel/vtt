@@ -142,6 +142,31 @@ describe('attacking', () => {
     expect(ana.take('error')[0]!.message).toMatch(/already used/);
   });
 
+  it('rolls with the advantage the attacker picked, and forces a critical hit', () => {
+    const { ana } = fight();
+    // Two d20s, 2 and 11: advantage keeps 11 + 5, a hit; the forced critical rolls 2d8 (1s), +3.
+    dice = [d20(2), d20(11), 0, 0];
+    ana.receive({
+      t: 'attack',
+      attacker: 'hero',
+      target: 'goblin',
+      attack: 'Longsword',
+      edge: 'advantage',
+      crit: 'crit',
+    });
+    const log = ana.take('chat')[0]!.message.attack!;
+    expect(log).toMatchObject({ hit: true, crit: true, damage: 5 });
+    expect(log.d20.formula).toMatch(/^2d20kh1/);
+    expect(log.notes).toEqual(expect.arrayContaining(['advantage picked', 'critical hit picked']));
+  });
+
+  it('rolls normal damage on a natural 20 when the attacker holds the critical back', () => {
+    const { ana } = fight();
+    dice = [d20(20), 0];
+    ana.receive({ t: 'attack', attacker: 'hero', target: 'goblin', attack: 'Longsword', crit: 'normal' });
+    expect(ana.take('chat')[0]!.message.attack).toMatchObject({ hit: true, crit: false, damage: 4 });
+  });
+
   it('swings at empty ground: the attack is spent and the log says it hit nothing', () => {
     const { ana } = fight();
     const hero = store.tokens.get('hero')!;

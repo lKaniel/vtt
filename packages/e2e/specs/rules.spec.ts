@@ -50,6 +50,29 @@ test.describe('a weapon attack', () => {
     await expect(card).not.toContainText('Miss');
     await expect.poll(() => healthSeen(page, 'goblin-1')).not.toBe('unhurt');
   });
+
+  test('rolls with the advantage and critical picked for it, then back to normal', async ({ page }) => {
+    await atTable(page, PLAYER_2);
+    await clickOnMap(page, BRAM);
+    await page.getByRole('button', { name: 'Next roll: Roll' }).click();
+    await page
+      .getByRole('radiogroup', { name: 'Advantage or disadvantage' })
+      .getByRole('radio', { name: 'Advantage', exact: true })
+      .click();
+    await page
+      .getByRole('radiogroup', { name: 'Critical hit' })
+      .getByRole('radio', { name: 'Critical', exact: true })
+      .click();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('button', { name: 'Next roll: Adv · Crit' })).toBeVisible();
+    await page.getByRole('button', { name: 'Longsword' }).click();
+    await clickOnMap(page, GOBLIN);
+    const card = chatLog(page)
+      .getByText(/Bram → Goblin, Longsword/)
+      .locator('..');
+    await expect(card).toContainText('advantage picked');
+    await expect(page.getByRole('button', { name: 'Next roll: Roll' })).toBeVisible();
+  });
 });
 
 test('an attack at empty ground is spent and hits nothing', async ({ page }) => {

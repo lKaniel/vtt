@@ -22,6 +22,10 @@ import {
   offHandCost,
   offHandProblem,
   resolveWeaponAttack,
+  type CritChoice,
+  pickNotes,
+  type RollChoice,
+  type RollEdge,
   smiteProblem,
   startCombat,
   tickEffects,
@@ -59,6 +63,9 @@ export interface AttackRequest {
   attack: string;
   smite?: number;
   finisher?: string;
+  /** The attacker's own advantage or disadvantage, and a critical forced or held back. */
+  edge?: RollEdge;
+  crit?: CritChoice;
 }
 
 /** An attack as a player asks for it: at a creature, or at empty ground (`point`). */
@@ -67,6 +74,14 @@ export interface TurnBasedAsk {
   on: boolean;
   tokens?: readonly string[];
   shared?: boolean;
+}
+
+/** How an attack is resolved: its smite and finisher, out of turn as a reaction, and the attacker's pick. */
+interface Resolving {
+  smite: number | undefined;
+  finisher?: string;
+  reaction: boolean;
+  pick?: RollChoice;
 }
 
 export type AttackAsked = Omit<AttackRequest, 'target'> & { target?: string; point?: Point };
@@ -293,7 +308,11 @@ export class CombatActions {
     this.table.pay(attacker.token, cost, attacker.sheet.attacksPerAction);
     if (lightAttack(attack)) this.markUsed(attacker.token, 'light-attack');
     if (attack.offHand && cost === 'free') this.markUsed(attacker.token, 'nick');
-    this.resolve({ attacker, target, attack, range }, { smite: req.smite, finisher: req.finisher, reaction: false });
+    const pick = { edge: req.edge, crit: req.crit };
+    this.resolve(
+      { attacker, target, attack, range },
+      { smite: req.smite, finisher: req.finisher, reaction: false, pick },
+    );
   }
 
   /** An attack at empty ground: it costs what an attack costs and hits nothing. */
@@ -350,7 +369,7 @@ export class CombatActions {
 
   private resolve(
     { attacker, target, attack, range }: Pick<PendingHit, 'attacker' | 'target' | 'attack' | 'range'>,
-    { smite, finisher, reaction }: { smite: number | undefined; finisher?: string; reaction: boolean },
+    { smite, finisher, reaction, pick }: Resolving,
   ): void {
     // Out of its turn a creature has no budget; its sneak attack is still unused.
     const sneakUsed = !reaction && !!this.table.budget(attacker.token)?.used.includes('sneak-attack');
@@ -366,9 +385,11 @@ export class CombatActions {
         sneakUsed,
         smite,
         finisher: readiedFinisher(attacker, attack, finisher),
+        pick,
       },
       this.table.rng,
     );
+    outcome.notes.push(...pickNotes(pick));
     if (outcome.sneak && !reaction) this.markUsed(attacker.token, 'sneak-attack');
     breakSanctuary(this.table, attacker.token.id);
     const hit = { attacker, target, attack, range, smite, finisher, outcome };

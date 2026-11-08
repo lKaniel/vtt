@@ -1,6 +1,7 @@
 import type { Creature } from './creature.ts';
 import { type GridKind, type Lattice, latticeOf, type Rng, roll, type Roll } from '@vtt/shared';
 import { d20Formula } from './effects.ts';
+import { chosenCrit, type CritChoice, type RollEdge, withEdge } from './roll-choice.ts';
 import type { Effect } from './spell-schema.ts';
 import type { Attack, Damage, DamageType } from './stats-schema.ts';
 
@@ -15,6 +16,10 @@ export interface AttackOptions {
   critRange?: number;
   /** Damage added on a hit: sneak attack, rage. */
   extraDamage?: readonly Damage[];
+  /** The roller's own advantage or disadvantage, on top of the effects'. */
+  edge?: RollEdge;
+  /** The roller's pick: a hit is a critical hit, or never one. */
+  crit?: CritChoice;
 }
 
 export interface AttackRoll {
@@ -55,11 +60,12 @@ const critProof = (target: Creature) => target.effects.some((e) => e.noCrits);
 
 /** Rolls an attack against a target: a 20 always hits and crits, a 1 always misses. */
 export function rollAttack(attack: Attack, target: Creature, opts: AttackOptions, rng: Rng = Math.random): AttackRoll {
-  const d20 = roll(d20Formula(attack.toHit, opts.bonus ?? [], opts), rng);
+  const edged = withEdge({ advantage: !!opts.advantage, disadvantage: !!opts.disadvantage }, opts.edge);
+  const d20 = roll(d20Formula(attack.toHit, opts.bonus ?? [], edged), rng);
   const natural = d20.terms[0]!.value;
   const critical = natural >= (opts.critRange ?? 20);
   const hit = critical || (natural !== 1 && d20.total >= target.ac);
-  const crit = (critical || (hit && !!opts.autoCrit)) && !critProof(target);
+  const crit = chosenCrit({ hit, crit: (critical || !!opts.autoCrit) && !critProof(target) }, opts.crit);
   const parts = [...attack.damage, ...(opts.extraDamage ?? [])];
   const damage = hit ? rollParts(parts, crit, rng) : [];
   return { d20, natural, total: d20.total, hit, crit, damage };
