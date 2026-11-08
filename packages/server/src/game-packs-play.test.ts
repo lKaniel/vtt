@@ -187,15 +187,26 @@ describe('uploads', () => {
     expect(media.entries.map((m) => m.src)).toContain('/assets/uploads/old-map-v2-2.png');
   });
 
-  it('refuses files that are not media, and players', async () => {
+  it('refuses files that are not media, and players anything but pictures', async () => {
     await start();
     const gm = seat('gm');
     gm.receive({ t: 'upload', name: 'evil.html', data: png });
     const ana = seat('ana');
-    ana.receive({ t: 'upload', name: 'map.png', data: png });
+    ana.receive({ t: 'upload', name: 'theme.mp3', data: png });
     await settle();
     expect(gm.take('error')[0]!.message).toMatch(/picture, sound or video/);
-    expect(ana.take('error')).toHaveLength(1);
+    expect(ana.take('error')[0]!.message).toMatch(/picture/);
+  });
+
+  it('lets a player upload a picture for their token, without showing them the game’s files', async () => {
+    await start();
+    const ana = seat('ana');
+    ana.receive({ t: 'upload', name: 'ana.png', data: png, ref: 'a1' });
+    await settle();
+    expect(await readFile(join(dir, 'assets/uploads/ana.png'), 'utf8')).toBe('fake png');
+    const media = ana.take('media').at(-1)!;
+    expect(media.uploaded).toEqual({ ref: 'a1', src: '/assets/uploads/ana.png' });
+    expect(media.entries).toEqual([]);
   });
 
   it('answers an upload with where it was saved, for the one who asked', async () => {
@@ -210,12 +221,9 @@ describe('uploads', () => {
     await start();
     const gm = seat('gm');
     gm.receive({ t: 'uploadUrl', url: 'http://127.0.0.1:1/elf.png', ref: 'u2' });
-    const ana = seat('ana');
-    ana.receive({ t: 'uploadUrl', url: 'https://example.com/elf.png' });
     await settle();
     const error = gm.take('error')[0]!;
     expect(error.message).toMatch(/private/);
     expect(error.ref).toBe('u2');
-    expect(ana.take('error')).toHaveLength(1);
   });
 });

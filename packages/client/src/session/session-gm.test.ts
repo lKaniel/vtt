@@ -39,12 +39,11 @@ describe('the GM tools', () => {
     expect(session.sheets.current).toBeUndefined();
   });
 
-  it('only lets the GM, or a trusted owner, edit a sheet', () => {
-    ws.receive(welcome());
+  it('only lets the GM, or an owner, edit a sheet', () => {
+    ws.receive({ ...welcome(), you: { id: 'ana', name: 'Ana', role: 'observer', color: '#f00' } } as ServerMessage);
     session.sheets.open({ kind: 'token', id: 'hero' }, true);
     expect(session.sheets.current?.edit).toBe(false);
-    const trusted = welcome([token('hero'), { ...token('goblin'), ownership: undefined }]);
-    ws.receive({ ...trusted, you: { id: 'ana', name: 'Ana', role: 'trusted', color: '#f00' } } as ServerMessage);
+    ws.receive(welcome([token('hero'), { ...token('goblin'), ownership: undefined }]));
     expect(session.canEdit('hero')).toBe(true);
     expect(session.canEdit('goblin')).toBe(false);
     session.sheets.open({ kind: 'token', id: 'hero' }, true);
@@ -53,11 +52,19 @@ describe('the GM tools', () => {
     expect(session.sheets.current?.edit).toBe(false);
   });
 
+  it('lets a player edit the sheet of the actor they own, from the Actors tab', () => {
+    const mine = { ...token('mira'), ownership: { default: 'none' as const, ana: 'owner' as const } };
+    ws.receive({ ...welcome(), actors: [mine, { ...token('bandit'), ownership: undefined }] } as ServerMessage);
+    session.sheets.open({ kind: 'actor', id: 'mira' }, true);
+    expect(session.sheets.current?.edit).toBe(true);
+    session.sheets.open({ kind: 'actor', id: 'bandit' }, true);
+    expect(session.sheets.current?.edit).toBe(false);
+  });
+
   it('leaves edit mode when a new role no longer allows it', () => {
-    const trusted = { ...welcome(), you: { id: 'ana', name: 'Ana', role: 'trusted', color: '#f00' } } as ServerMessage;
-    ws.receive(trusted);
-    session.sheets.open({ kind: 'token', id: 'hero' }, true);
     ws.receive(welcome());
+    session.sheets.open({ kind: 'token', id: 'hero' }, true);
+    ws.receive({ ...welcome(), you: { id: 'ana', name: 'Ana', role: 'observer', color: '#f00' } } as ServerMessage);
     expect(session.sheets.current).toEqual({ kind: 'token', id: 'hero', edit: false });
   });
 

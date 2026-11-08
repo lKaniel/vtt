@@ -49,7 +49,7 @@ test.describe('on a 3D scene', () => {
     // Only the GM can lay it flat.
     await expect(page.getByRole('button', { name: /flat/ })).toHaveCount(0);
 
-    await page.getByRole('button', { name: /^Bram/ }).click();
+    await page.getByRole('button', { name: /^Bram \d/ }).click();
     await expect.poll(() => page.evaluate(() => vtt.selected()?.id)).toBe('bram');
     // The camera stands south of Bram looking north: above the middle of the view is the ground north of him.
     const last = await watchPreviews(page);

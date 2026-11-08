@@ -145,9 +145,21 @@ export class GmActions {
     this.store.relinkToken(id, how);
   }
 
+  /** The GM saves any actor; a player one they own, leaving the GM's fields as they were. */
   saveActor(player: Player, actor: unknown): void {
-    requireGm(player);
-    this.store.setActor(valid(ActorSchema, actor));
+    const next = valid(ActorSchema, actor);
+    if (!isGm(player)) this.checkOwnActor(player, next);
+    this.store.setActor(next);
+  }
+
+  private checkOwnActor(player: Player, next: Actor): void {
+    const now = this.store.actors.get(next.id);
+    if (!now) throw new Refusal('Only the GM can do that');
+    if (!canEdit(now, player)) throw new Refusal(`You can't edit ${now.name}`);
+    // Both with their defaults filled in, so a default the file leaves out isn't a change.
+    const changed = changedKeys(valid(ActorSchema, now), next);
+    const locked = lockedPatchKeys(changed, player, this.store.system.gmOnlyFields);
+    if (locked.length) throw new Refusal(`Only the GM can change ${locked.join(', ')}`);
   }
 
   deleteActor(player: Player, id: string): void {
@@ -266,4 +278,13 @@ function valid<T>(schema: z.ZodType<T>, data: unknown): T {
   if (r.success) return r.data;
   const issue = r.error.issues[0]!;
   throw new Refusal(issue.path.length ? `${issue.path.join('.')}: ${issue.message}` : issue.message);
+}
+
+/** The fields that differ between two versions of a document, as a patch-shaped record. */
+function changedKeys(before: object, after: object): Record<string, true> {
+  const a = before as Record<string, unknown>;
+  const b = after as Record<string, unknown>;
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  const changed = [...keys].filter((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]));
+  return Object.fromEntries(changed.map((k) => [k, true as const]));
 }

@@ -12,7 +12,7 @@ export interface SheetHost {
   readonly tokens: ReadonlyMap<string, TokenView>;
   readonly actors: ReadonlyMap<string, Actor>;
   isGm(): boolean;
-  canEdit(id: string): boolean;
+  canEdit(id: string, kind?: 'token' | 'actor'): boolean;
 }
 
 export type OpenSheet = SheetTarget & { edit: boolean };
@@ -22,7 +22,7 @@ const same = (a: SheetTarget, b: SheetTarget) => a.kind === b.kind && a.id === b
 /**
  * The open character sheets, several at once as in Foundry; the last
  * opened is in front (`current`). `edit` is edit mode (the GM's, or a
- * trusted owner's).
+ * owner's).
  */
 export class Sheets implements SessionPart {
   list: readonly OpenSheet[] = [];
@@ -47,9 +47,13 @@ export class Sheets implements SessionPart {
    */
   open(target: SheetTarget | undefined, edit = false): void {
     if (!target) return this.set(this.list.slice(0, -1));
-    const editable = target.kind === 'actor' ? this.s.isGm() : this.s.canEdit(target.id);
+    const editable = this.editable(target);
     const sheet = { kind: target.kind, id: target.id, edit: edit && editable };
     this.set([...this.list.filter((o) => !same(o, target)), sheet]);
+  }
+
+  private editable(target: SheetTarget): boolean {
+    return this.s.canEdit(target.id, target.kind);
   }
 
   /** Closes one sheet; the others stay. */
@@ -60,7 +64,7 @@ export class Sheets implements SessionPart {
   /** Edit mode on or off for `target` (the front sheet when unset), in place. */
   setEdit(edit: boolean, target: SheetTarget | undefined = this.current): void {
     if (!target) return;
-    const editable = target.kind === 'actor' ? this.s.isGm() : this.s.canEdit(target.id);
+    const editable = this.editable(target);
     this.set(this.list.map((o) => (same(o, target) ? { ...o, edit: edit && editable } : o)));
   }
 

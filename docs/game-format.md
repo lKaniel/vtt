@@ -115,9 +115,10 @@ tab, which also makes the actor theirs). Without one it is the character
 token is selected for them when they arrive on a scene, and heads their
 Actors tab, where they place it on the map if it isn't there (a player may
 place a creature they own: shown, a linked one once per scene).
-How a token looks and sees (`img`, `size`, its look, `light` and senses) and
-what creature it is (`monster`, `pile`) are the GM's to change; a trusted
-player edits the rest of their sheet, and levels up from its Level up button.
+How big a token is and what it sees (`size`, `light`, senses, `filter`,
+`model`) and what creature it is (`monster`, `pile`) are the GM's to change;
+a player who owns it edits the rest of their sheet (its picture and look too,
+uploading a picture of their own), and levels up from its Level up button.
 
 `format` is the folder's format; the server sets it when it moves an older
 folder up (see the end of this page). Leave it as it is.
@@ -127,8 +128,8 @@ Roles, like Foundry's user roles (the GM changes them in the Players tab):
 | Role       | What the seat may do                                                                   |
 | ---------- | -------------------------------------------------------------------------------------- |
 | `gm`       | Everything.                                                                            |
-| `trusted`  | Play the tokens they own, and edit their sheets (not ownership, position or `hidden`). |
-| `player`   | Play the tokens they own.                                                              |
+| `trusted`  | Same as `player` for now (kept for Foundry imports).                                   |
+| `player`   | Play the tokens they own, and edit their sheets (not ownership, position or `hidden`). |
 | `observer` | Watch through the party's eyes and read their sheets; act on nothing.                  |
 
 ## scene.json
@@ -815,12 +816,12 @@ without one):
 `ownership` gives each player a level, like Foundry's, and `default` is the
 level of everyone not named:
 
-| Level      | The player                                                        |
-| ---------- | ----------------------------------------------------------------- |
-| `none`     | doesn't know it is there: not sent to them at all.                |
-| `limited`  | sees it on the map but not its sheet, only how hurt it looks.     |
-| `observer` | reads its sheet and sees through its eyes.                        |
-| `owner`    | moves and acts with it; a `trusted` seat may also edit its sheet. |
+| Level      | The player                                                    |
+| ---------- | ------------------------------------------------------------- |
+| `none`     | doesn't know it is there: not sent to them at all.            |
+| `limited`  | sees it on the map but not its sheet, only how hurt it looks. |
+| `observer` | reads its sheet and sees through its eyes.                    |
+| `owner`    | moves and acts with it, and edits its sheet.                  |
 
 A creature without `ownership` is `limited` for everyone. The GM is owner of
 everything and an observer seat is never more than observer (and observes

@@ -197,8 +197,8 @@ function sheetOf(
   return target.kind === 'token' && !live.sheet && !session.isGm() ? undefined : preview;
 }
 
-/** Which tabs the creature has: spells for a caster, animations for something to animate, the token in the GM's edit mode. */
-function tabsOf({ session, sheet, edit, value }: Readonly<SheetProps>): Tab[] {
+/** Which tabs the creature has: spells for a caster, animations for something to animate, the token in edit mode. */
+function tabsOf({ sheet, edit, value }: Readonly<SheetProps>): Tab[] {
   const shown: Record<Tab, boolean> = {
     details: true,
     inventory: true,
@@ -207,8 +207,8 @@ function tabsOf({ session, sheet, edit, value }: Readonly<SheetProps>): Tab[] {
     effects: true,
     biography: true,
     animations: sheet.attacks.length > 0 || !!sheet.caster?.spells.length,
-    // How it stands on the map and what it sees are the GM's (permissions.ts): a player can't break their token.
-    token: edit && session.isGm(),
+    // An owner sets its picture and look there; its size, light and senses are the GM's (permissions.ts).
+    token: edit,
   };
   return TABS.filter((tab) => shown[tab]);
 }
