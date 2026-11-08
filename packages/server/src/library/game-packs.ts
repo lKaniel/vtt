@@ -19,8 +19,9 @@ import { fromDoc } from '../store/doc-sync.ts';
 import type { GameStore } from '../store/game-store.ts';
 import type { PackStore } from './pack-store.ts';
 
-// Which packs a game uses: its system's own (always on) and the installed
-// packs game.json `packs` turns on, if they fit its system. Their monster,
+// Which packs a game uses: its system's own (always on), the installed
+// packs game.json `packs` turns on and those on in every game (`everyGame`),
+// if they fit its system. Their monster,
 // item and spell compendia (whatever the system calls rules content) add to
 // what the game's tokens can refer to.
 
@@ -32,9 +33,16 @@ interface GamePacks {
 
 type System = Pick<SystemDefinition, 'id' | 'packs' | 'contentTypes'>;
 
+/** The packs a game uses: those game.json names, then those on in every game. */
+function packIds(store: PackStore | undefined, game: GamePacks): string[] {
+  const named = game.packs ?? [];
+  const always = (store?.list() ?? []).filter((p) => p.everyGame && !named.includes(p.id)).map((p) => p.id);
+  return [...named, ...always];
+}
+
 /** The system's packs, then every installed pack for its system or for none, with whether the game uses it. */
 export function packInfos(store: PackStore | undefined, game: GamePacks, system: System): PackInfo[] {
-  const on = new Set(game.packs ?? []);
+  const on = new Set(packIds(store, game));
   const builtin = (system.packs ?? []).map((p): PackInfo => ({ ...p.manifest, builtin: true, enabled: true }));
   const installed = (store?.list() ?? [])
     .filter((p) => p.system === null || p.system === system.id)
@@ -65,13 +73,14 @@ function cachedOf(store: PackStore): Cached {
  * system can cache what it builds from it.
  */
 export function contentCompendia(store: PackStore | undefined, game: GamePacks, system: System): PackCompendium[] {
-  if (!store || !game.packs?.length || !system.contentTypes?.length) return [];
-  const key = `${system.id}|${game.packs.join(',')}`;
+  const ids = packIds(store, game);
+  if (!store || !ids.length || !system.contentTypes?.length) return [];
+  const key = `${system.id}|${ids.join(',')}`;
   const known = cachedOf(store).lists;
   const hit = known.get(key);
   if (hit) return hit;
   const types = new Set(system.contentTypes);
-  const list = enabledPacks(store.list(), game.packs, system.id).flatMap((p) =>
+  const list = enabledPacks(store.list(), ids, system.id).flatMap((p) =>
     store.compendia(p.id).filter((c) => types.has(c.type)),
   );
   known.set(key, list);
@@ -89,14 +98,15 @@ export function gameArt(
   game: GamePacks,
   system: Pick<SystemDefinition, 'id' | 'packArt'>,
 ): ArtIndex {
-  if (!store || !game.packs?.length) return {};
-  const key = `${system.id}|${game.packs.join(',')}`;
+  const ids = packIds(store, game);
+  if (!store || !ids.length) return {};
+  const key = `${system.id}|${ids.join(',')}`;
   const known = cachedOf(store).art;
   const hit = known.get(key);
   if (hit) return hit;
   const matched = (id: string) => system.packArt?.(store.listedMedia(id)) ?? {};
-  const packs = enabledPacks(store.list(), game.packs, system.id);
-  const ordered = game.packs.flatMap((id) => packs.filter((p) => p.id === id));
+  const packs = enabledPacks(store.list(), ids, system.id);
+  const ordered = ids.flatMap((id) => packs.filter((p) => p.id === id));
   const art = mergeArt(ordered.flatMap((p) => [store.art(p.id), matched(p.id)]));
   known.set(key, art);
   return art;

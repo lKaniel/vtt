@@ -1,4 +1,6 @@
 import type { Doc } from '@vtt/core';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { GameStore } from '../store/game-store.ts';
 import { startApi, type ApiServer } from '../test/api-server.ts';
@@ -81,5 +83,36 @@ describe('homebrew classes for the roster', () => {
     const res = await ana('POST', '/api/games/test/characters', { ...nyx, homebrew: [illusionist] });
     expect(res.status).toBe(400);
     expect(res.json.error).toMatch(/Illusionist/);
+  });
+});
+
+describe('classes from the server’s packs', () => {
+  async function housePack(everyGame: boolean) {
+    const dir = join(api.dataDir, 'packs', 'house');
+    await mkdir(dir, { recursive: true });
+    const compendia = [{ id: 'classes', type: 'class', path: 'classes.json' }];
+    await writeFile(
+      join(dir, 'pack.json'),
+      JSON.stringify({ id: 'house', name: 'House', system: 'dnd5e', everyGame, compendia }),
+    );
+    const { type: _t, rev: _r, kind: _k, ...cls } = illusionist;
+    await writeFile(join(dir, 'classes.json'), JSON.stringify([cls]));
+    await api.hub.packs.load();
+  }
+  const names = async (call: Awaited<ReturnType<typeof seated>>['ana']) =>
+    ((await call('GET', '/api/games/test/homebrew')).json.classes as Json[]).map((c) => c.name);
+
+  it('offers the classes of a pack that is on in every game', async () => {
+    await housePack(true);
+    const ana = await api.joined('test', 'ana');
+    expect(await names(ana)).toEqual(['Illusionist']);
+    const res = await ana('POST', '/api/games/test/characters', { ...nyx, homebrew: [illusionist] });
+    expect(res.status).toBe(200);
+  });
+
+  it('offers nothing from a pack the game doesn’t use', async () => {
+    await housePack(false);
+    const ana = await api.joined('test', 'ana');
+    expect(await names(ana)).toEqual([]);
   });
 });

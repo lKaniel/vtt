@@ -86,3 +86,22 @@ describe('the art of a game’s packs', () => {
     expect(gameArt(packs, game(['icons']), dnd5e)).toBe(gameArt(packs, game(['icons']), dnd5e));
   });
 });
+
+describe('a pack on in every game', () => {
+  it('is on without game.json naming it, rules content and all', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'vtt-packs-'));
+    await put(dir, 'house/pack.json', {
+      id: 'house',
+      name: 'House rules',
+      system: 'dnd5e',
+      everyGame: true,
+      compendia: [{ id: 'classes', type: 'class', path: 'classes.json' }],
+    });
+    await put(dir, 'house/classes.json', [{ id: 'illusionist' }]);
+    const store = new PackStore(dir);
+    await store.load();
+    expect(packInfos(store, game(), dnd5e).find((p) => p.id === 'house')?.enabled).toBe(true);
+    expect(contentCompendia(store, game(), dnd5e).map((c) => `${c.pack}/${c.id}`)).toEqual(['house/classes']);
+    expect(contentCompendia(store, game(['house']), dnd5e)).toHaveLength(1);
+  });
+});

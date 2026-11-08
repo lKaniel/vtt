@@ -1,10 +1,19 @@
 import { canObserve, type Owned, type Player } from '@vtt/shared';
-import { type Character, characterClasses, type Class, ClassSchema } from '@vtt/system-dnd5e';
+import {
+  type Character,
+  characterClasses,
+  type Class,
+  ClassSchema,
+  contentWith,
+  srdFor,
+  toEdition,
+} from '@vtt/system-dnd5e';
+import { contentCompendia } from './game-packs.ts';
 import type { GameStore } from '../store/game-store.ts';
 import { HttpError } from '../http/http-json.ts';
 
-// The GM's homebrew classes for the character creator: those of the game
-// that the player may read. A character keeps a copy of each one it takes,
+// The classes beyond the SRD for the character creator: those of the packs
+// the game uses, and the GM's homebrew that the player may read. A character keeps a copy of each one it takes,
 // refreshed from the game whenever it is saved.
 
 function readable(docs: readonly Record<string, unknown>[], seat: Player): Class[] {
@@ -16,9 +25,18 @@ function readable(docs: readonly Record<string, unknown>[], seat: Player): Class
     });
 }
 
-/** The homebrew classes `seat` may build a character with at the game, by id. */
+/** The classes of the packs the game uses (a pack's homebrew), with their automation. */
+function packClasses(store: GameStore): Class[] {
+  const edition = toEdition(store.world.rules);
+  const content = contentWith(edition, contentCompendia(store.packs, store.campaign, store.system));
+  const srd = srdFor(edition).classes;
+  return [...content.classes.values()].filter((cls) => !srd.has(cls.id));
+}
+
+/** The classes `seat` may build a character with at the game beyond the SRD: its packs', then its homebrew, by id. */
 export function homebrewFor(store: GameStore, seat: Player): Map<string, Class> {
-  return new Map(readable(store.docs.all('homebrew'), seat).map((cls) => [cls.id, cls]));
+  const classes = [...packClasses(store), ...readable(store.docs.all('homebrew'), seat)];
+  return new Map(classes.map((cls) => [cls.id, cls]));
 }
 
 /** `c` with the current copy of each homebrew class it takes, and none it doesn't; refuses one it may not use. */
