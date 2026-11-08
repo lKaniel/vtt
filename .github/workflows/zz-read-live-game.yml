@@ -1,0 +1,44 @@
+name: Read live game (temporary)
+# Throwaway, approved by Kaniel 2026-11-08: copies the live games' JSON (no
+# pictures, packs, fog, accounts or sessions), encrypted to a one-off key held
+# only by the debugging session. Read only. Deleted after use.
+on:
+  push:
+    branches: [claude/project-thread-e19ofw]
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - name: Read and encrypt
+        env:
+          PUB: |
+            -----BEGIN PUBLIC KEY-----
+            MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAxzCN0U7bna/I6YhdQbNN
+            feFcQRiTWfSaGebf5Whgk25P977UUeeb47+ejbnHUi+Pvyjuq6n8x3iVTLCrSqgv
+            dvVaQCNqm4jHS3W0pnmU+9VaXOh0hhr0Q0GyHDex+17VKWE9kfQMHftcx1FUEDbQ
+            YXajfvtKCNvuEQHjpqljGtGkBNKjuWtExMkka8TQS+WbG4G0gqoQn9YQ+cC7MzxI
+            f+uv6c51BxSjKR9vkX0vgmoUqi+xnNPytyCrxyxlJXXLTJrx93cN2KGD/NIjEM58
+            Mc4f19S9WrA/XB7xBfxS4Z//xLYp783SdwtI3F9eANXU4XEbTmmDWNgGYKm3iMv2
+            zopy5wnZIyn99tT7mhYFLDDsq7hxyIB1KJYu336M3gjPzRKW+0+mV3y8lyeoBr7i
+            3d1iFsUy4VCtdLpJzpMm8c1/6mFdbu78+Ty/78j7KjX5/FKvuPIAiKcnpMu5KnDx
+            2Vpzs9/VI1SRGclpk3l5gEOSa0DrAPtY7Giyuqv+0KCFAgMBAAE=
+            -----END PUBLIC KEY-----
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          if [ -n "${{ secrets.VPS_KNOWN_HOSTS }}" ]; then echo "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          else ssh-keyscan "${{ secrets.VPS_HOST }}" > ~/.ssh/known_hosts; fi
+          ssh -o BatchMode=yes "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "cd /opt/vtt/data && find . -path ./packs -prune -o -path '*/fog' -prune -o -name '*.json' -size -2M -print | grep -v -e sessions.json -e admin.json -e accounts | tar czf - -T -" > g.tgz
+          ls -la g.tgz
+          echo "$PUB" > pub.pem
+          openssl rand -hex 32 > k
+          openssl pkeyutl -encrypt -pubin -inkey pub.pem -in k | base64 -w0 > k.enc
+          openssl enc -aes-256-cbc -pbkdf2 -pass file:k -in g.tgz | base64 -w0 > g.enc
+          echo "KEY:$(cat k.enc)"
+          wc -c g.enc
+          fold -w 8000 g.enc | sed 's/^/DATA:/'
