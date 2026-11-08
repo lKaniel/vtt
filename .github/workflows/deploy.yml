@@ -77,3 +77,16 @@ jobs:
             VTT_TAG='$SHA' docker compose pull &&
             VTT_TAG='$SHA' docker compose up -d --remove-orphans;
             status=\$?; docker logout ghcr.io; docker image prune -f; exit \$status"
+
+      - name: Check the live site
+        env:
+          TARGET: ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
+        run: |
+          domain=$(ssh "$TARGET" "sed -n 's/^VTT_DOMAIN=//p' /opt/vtt/.env")
+          # Caddy may still be fetching its certificate on a first start.
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null "https://$domain/"; then break; fi
+            sleep 5
+          done
+          curl -fsS -o /dev/null "https://$domain/"
+          echo "https://$domain/ answers; session: $(curl -fsS "https://$domain/api/session")"
