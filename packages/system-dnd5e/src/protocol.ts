@@ -224,6 +224,7 @@ export type ClientMessage =
   | { t: 'condition'; token: string; condition: Condition; on: boolean }
   /** GM: add a creature to the fight (starting one) or take it out. */
   | { t: 'combatant'; token: string; on: boolean }
+  | { t: 'initiative'; token: string; value: number }
   /** Apply the roll on a chat card to these creatures: in full, half, double, or as healing. */
   | { t: 'applyDamage'; card: string; tokens: string[]; how: 'full' | 'half' | 'double' | 'heal' }
   | { t: 'dropConcentration'; token: string }

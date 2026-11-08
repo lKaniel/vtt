@@ -70,6 +70,11 @@ export class Hud implements SessionPart {
     this.s.send({ t: 'combatant', token, on });
   }
 
+  /** GM: sets a creature's initiative by hand; it moves to its new place in the order. */
+  setInitiative(token: string, value: number): void {
+    this.s.send({ t: 'initiative', token, value });
+  }
+
   /** A token is gone: close its HUD and stop seeing through its eyes. */
   gone(id: string): void {
     if (this.current?.token === id) this.current = undefined;

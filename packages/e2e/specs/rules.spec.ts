@@ -144,6 +144,20 @@ test('turn-based mode takes the creatures the GM ticks, and more join later', as
   await expect(page.getByRole('button', { name: /^Goblin.*: initiative/ })).toHaveCount(2);
 });
 
+test('the GM changes a creature’s initiative and the order follows', async ({ page }) => {
+  await atTable(page, GM);
+  await page.getByRole('button', { name: 'Start combat' }).click();
+  await page.getByRole('button', { name: /^Roll initiative/ }).click();
+  const order = page.getByRole('button', { name: /: initiative -?\d+$/ });
+  await expect(order.first()).toBeVisible();
+  const last = (await order.last().getAttribute('aria-label'))!.split(':')[0]!.trim();
+  await page.getByRole('button', { name: `Change ${last}’s initiative` }).click();
+  const field = page.getByRole('textbox', { name: 'Initiative' });
+  await field.fill('40');
+  await page.getByRole('button', { name: 'Set', exact: true }).click();
+  await expect(order.first()).toHaveAttribute('aria-label', `${last}: initiative 40`);
+});
+
 test('a slip of the mouse over empty ground keeps your creature; Deselect lets it go', async ({ page }) => {
   await atTable(page, PLAYER_2);
   await clickOnMap(page, BRAM);

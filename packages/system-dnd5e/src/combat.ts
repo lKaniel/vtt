@@ -150,6 +150,18 @@ export function addToCombat(combat: Combat, f: Combatant, rng: Rng = Math.random
   return { ...combat, order, turn: index <= combat.turn ? combat.turn + 1 : combat.turn };
 }
 
+/** A creature's initiative set by hand: it moves to its new place, and the turn stays with whoever has it. */
+export function setInitiative(combat: Combat, token: string, initiative: number): Combat {
+  if (!combat.order.some((e) => e.token === token)) return combat;
+  const current = currentTurn(combat);
+  const rest = combat.order.filter((e) => e.token !== token);
+  const at = rest.findIndex((e) => e.initiative < initiative);
+  const order = [...rest];
+  order.splice(at < 0 ? rest.length : at, 0, { token, initiative });
+  const turn = order.findIndex((e) => e.token === current);
+  return { ...combat, order, turn: turn < 0 ? combat.turn : turn };
+}
+
 /** Adds creatures to the order right after `after`, sharing its initiative (summons). */
 export function joinCombat(combat: Combat, after: string, tokens: readonly string[]): Combat {
   const index = combat.order.findIndex((e) => e.token === after);
