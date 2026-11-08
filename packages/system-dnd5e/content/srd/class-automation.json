@@ -1628,7 +1628,7 @@
               }
             ]
           },
-          "manual": "Needs a firearm in hand; if it damages two or more creatures, add a focus point back on the sheet.",
+          "manual": "Needs a firearm in hand.",
           "choice": "finisher"
         }
       },
