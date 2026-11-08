@@ -1,9 +1,9 @@
-import { characterOf, isCharacter } from '@vtt/system-dnd5e';
-import { isGm, type Player, type Role, RoleSchema } from '@vtt/shared';
+import { isGm, type Role, RoleSchema } from '@vtt/shared';
 import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
 import { AddPlayerForm } from './GameAccess.tsx';
 import { CopyInvite, InviteBox } from './InviteLinks.tsx';
+import { PlaysPick } from './PlaysPick.tsx';
 import { ROLE_NAMES } from './role-names.ts';
 import { SelectField } from './kit/select.tsx';
 
@@ -39,7 +39,7 @@ export function PlayersTab({ session }: Readonly<{ session: Session }>) {
               {!isGm(p) && (
                 <div className="flex basis-full items-center gap-2 pl-5 text-xs text-muted-foreground">
                   {t('players.character')}
-                  <CharacterPick session={session} player={p} />
+                  <PlaysPick session={session} player={p} />
                 </div>
               )}
             </li>
@@ -62,21 +62,5 @@ export function PlayersTab({ session }: Readonly<{ session: Session }>) {
       </dl>
       <p className="muted">Set who owns or observes a creature on its sheet: Edit, then Details.</p>
     </div>
-  );
-}
-
-/** The actor a seat plays: picking one makes it theirs; "their own" is the character they own. */
-function CharacterPick({ session, player }: Readonly<{ session: Session; player: Player }>) {
-  const characters = [...session.actors.values()].filter(isCharacter).sort((a, b) => a.name.localeCompare(b.name));
-  const own = characterOf({ ...player, character: undefined }, session.actors.values());
-  const none = own ? t('players.ownCharacter', { name: own.name }) : t('players.noCharacter');
-  return (
-    <SelectField
-      value={player.character ?? ''}
-      aria-label={t('players.characterOf', { name: player.name })}
-      title={t('players.characterHint')}
-      onValueChange={(id) => session.requests.setCharacter(player.id, id || undefined)}
-      options={[{ value: '', label: none }, ...characters.map((a) => ({ value: a.id, label: a.name }))]}
-    />
   );
 }

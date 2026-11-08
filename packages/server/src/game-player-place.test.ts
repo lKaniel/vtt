@@ -61,27 +61,54 @@ describe('a player placing their own character', () => {
   });
 });
 
-describe("the GM choosing a player's character", () => {
-  it("names the seat's character and gives them the actor", () => {
+describe('the GM choosing what a player plays', () => {
+  const plays = (ws: FakeSocket, player: string, actor: string, on = true) =>
+    ws.receive({ t: 'setPlays', player, actor, plays: on });
+  const seatOf = (id: string) => store.world.players.find((p) => p.id === id);
+
+  it('gives a seat several creatures, the first one its character', () => {
     const gm = seat('gm');
     gm.receive({ t: 'saveActor', actor: { id: 'mira', name: 'Mira', stats: { level: 2, class: 'cleric' } } });
-    gm.receive({ t: 'setCharacter', player: 'bo', actor: 'mira' });
+    plays(gm, 'bo', 'mira');
+    plays(gm, 'bo', 'goblin');
     expect(errors(gm)).toEqual([]);
-    expect(store.world.players.find((p) => p.id === 'bo')?.character).toBe('mira');
+    expect(seatOf('bo')?.character).toBe('mira');
     expect(store.actors.get('mira')?.ownership).toMatchObject({ bo: 'owner' });
+    expect(store.actors.get('goblin')?.ownership).toMatchObject({ bo: 'owner' });
     const bo = seat('bo');
     place(bo, 'mira', [950, 950]);
     expect(errors(bo)).toEqual([]);
-    gm.receive({ t: 'setCharacter', player: 'bo' });
-    expect(store.world.players.find((p) => p.id === 'bo')?.character).toBeUndefined();
+  });
+
+  it('takes a creature away for good: the player can no longer move it', () => {
+    const gm = seat('gm');
+    plays(gm, 'bo', 'hero');
+    plays(gm, 'bo', 'hero', false);
+    expect(errors(gm)).toEqual([]);
+    expect(seatOf('bo')?.character).toBeUndefined();
+    const bo = seat('bo');
+    const hero = store.tokens.get('hero')!;
+    bo.receive({ t: 'move', token: 'hero', to: [hero.x + 50, hero.y] });
+    expect(store.tokens.get('hero')!.x).toBe(hero.x);
+  });
+
+  it('moves the character on to another of theirs when it is taken away', () => {
+    const gm = seat('gm');
+    gm.receive({ t: 'saveActor', actor: { id: 'mira', name: 'Mira', stats: { level: 2, class: 'cleric' } } });
+    plays(gm, 'ana', 'hero');
+    plays(gm, 'ana', 'mira');
+    expect(seatOf('ana')?.character).toBe('hero');
+    plays(gm, 'ana', 'hero', false);
+    expect(store.actors.get('hero')?.ownership?.ana).toBeUndefined();
+    expect(seatOf('ana')?.character).toBe('mira');
   });
 
   it('is for the GM only, and needs a real seat and actor', () => {
     const gm = seat('gm');
     const ana = seat('ana');
-    ana.receive({ t: 'setCharacter', player: 'ana', actor: 'goblin' });
-    gm.receive({ t: 'setCharacter', player: 'zed', actor: 'hero' });
-    gm.receive({ t: 'setCharacter', player: 'bo', actor: 'nobody' });
+    plays(ana, 'ana', 'goblin');
+    plays(gm, 'zed', 'hero');
+    plays(gm, 'bo', 'nobody');
     expect(errors(ana)).toEqual(['Only the GM can do that']);
     expect(errors(gm)).toEqual(['No such player', 'No such actor']);
   });

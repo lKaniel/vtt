@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { socketSeat } from '../socket-join.ts';
 import { startApi, type ApiServer } from '../test/api-server.ts';
+import { FakeSocket } from '../test/fixtures.ts';
 
 // Games Foundry style: everyone sees the games and their players, joins one
 // by picking a player (with its password, if it has one), and the admin
@@ -82,6 +83,38 @@ describe('joining a game', () => {
     const players = ((await call('GET', '/api/games/test')).json.game as { players: Json[] }).players;
     expect(players.find((p) => p.id === 'ana')).toMatchObject({ locked: true });
     expect((await call('POST', '/api/games/test/join', { player: 'zed' })).status).toBe(404);
+  });
+
+  it('keeps a player to one browser: another is turned away while they play, and takes over after', async () => {
+    const first = api.client();
+    await first('POST', '/api/games/test/join', { player: 'ana' });
+    const [firstToken] = [...(await sessionsOf())];
+    const socket = new FakeSocket();
+    const seat = (await socketSeat(ws('/ws?game=test', `vtt_session=${firstToken}`), api))!;
+    expect(seat.taken).toBe(false);
+    api.hub.connect('test', socket.asWebSocket, seat.player, firstToken);
+    const second = api.client();
+    const refused = await second('POST', '/api/games/test/join', { player: 'ana' });
+    expect(refused.status).toBe(409);
+    expect(refused.json.error).toMatch(/Ana is already playing/);
+    expect((await first('POST', '/api/games/test/join', { player: 'ana' })).status).toBe(200);
+    socket.close();
+    expect((await second('POST', '/api/games/test/join', { player: 'ana' })).status).toBe(200);
+    expect(await socketSeat(ws('/ws?game=test', `vtt_session=${firstToken}`), api)).toBeUndefined();
+  });
+
+  it('turns a second browser away from a seat in play, but not the GM', async () => {
+    const tokens = [await api.sessions.start(), await api.sessions.start()];
+    for (const token of tokens) await api.sessions.sit(token, 'test', 'ana');
+    const cookie = (i: number) => `vtt_session=${tokens[i]}`;
+    const one = (await socketSeat(ws('/ws?game=test', cookie(0)), api))!;
+    api.hub.connect('test', new FakeSocket().asWebSocket, one.player, tokens[0]);
+    expect((await socketSeat(ws('/ws?game=test', cookie(1)), api))?.taken).toBe(true);
+    expect((await socketSeat(ws('/ws?game=test', cookie(0)), api))?.taken).toBe(false);
+    for (const token of tokens) await api.sessions.sit(token, 'test', 'gm');
+    const gm = (await socketSeat(ws('/ws?game=test', cookie(0)), api))!;
+    api.hub.connect('test', new FakeSocket().asWebSocket, gm.player, tokens[0]);
+    expect((await socketSeat(ws('/ws?game=test', cookie(1)), api))?.taken).toBe(false);
   });
 
   it('lets a player change their own password, but no one else’s', async () => {

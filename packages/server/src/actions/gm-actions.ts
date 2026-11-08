@@ -4,6 +4,8 @@ import {
   ActorSchema,
   applyTokenPatch,
   type Edition,
+  characterOf,
+  isCharacter,
   type Monster,
   type Placement,
   sameJson,
@@ -20,6 +22,7 @@ import {
   FOLDERS,
   type FolderKind,
   isGm,
+  type Level,
   newFolderOps,
   lockedPatchKeys,
   placeToken,
@@ -162,18 +165,31 @@ export class GmActions {
     this.store.setWorld({ ...world, players });
   }
 
-  /** Names the actor a seat plays, and makes it theirs; none clears it. */
-  setCharacter(player: Player, id: string, actorId?: string): void {
+  /**
+   * Gives a seat a creature to play (it owns it) or takes it away. The seat's
+   * character is the first it was given; taking that one away moves it on to
+   * another creature the seat still owns, or clears it.
+   */
+  setPlays(player: Player, id: string, actorId: string, plays: boolean): void {
     requireGm(player);
     const world = this.store.world;
     const seat = world.players.find((p) => p.id === id);
     if (!seat) throw new Refusal('No such player');
-    const actor = actorId === undefined ? undefined : this.store.actors.get(actorId);
-    if (actorId !== undefined && !actor) throw new Refusal('No such actor');
-    if (actor) this.store.setActor({ ...actor, ownership: withLevel(actor.ownership, id, 'owner') });
-    const { character: _old, ...rest } = seat;
-    const next = actor ? { ...rest, character: actor.id } : rest;
-    this.store.setWorld({ ...world, players: world.players.map((p) => (p.id === id ? next : p)) });
+    const actor = this.store.actors.get(actorId);
+    if (!actor) throw new Refusal('No such actor');
+    const before = characterOf(seat, this.store.actors.values())?.id;
+    this.store.setActor({ ...actor, ownership: withLevel(actor.ownership, id, plays ? 'owner' : notOwner(actor)) });
+    const next = { ...seat, character: this.characterAfter(seat, before, actorId, plays) };
+    if (!next.character) delete next.character;
+    this.store.setWorld({ ...this.store.world, players: world.players.map((p) => (p.id === id ? next : p)) });
+  }
+
+  /** The seat's character once `actorId` is given or taken away. */
+  private characterAfter(seat: Player, now: string | undefined, actorId: string, plays: boolean): string | undefined {
+    if (plays) return now ?? actorId;
+    if (now !== actorId) return now;
+    const left = [...this.store.actors.values()].filter((a) => isCharacter(a) && canControl(a, seat));
+    return left.toSorted((a, b) => a.name.localeCompare(b.name))[0]?.id;
   }
 
   /** An unlinked copy of the monster's stock actor. */
@@ -237,6 +253,11 @@ export class GmActions {
       hidden,
     };
   }
+}
+
+/** The level a seat drops to when a creature is taken from it: everyone's, unless everyone owns it. */
+function notOwner(actor: Actor): Level {
+  return actor.ownership?.default === 'owner' ? 'limited' : (actor.ownership?.default ?? 'limited');
 }
 
 /** Parses GM input, turning schema problems into a refusal the GM can read. */

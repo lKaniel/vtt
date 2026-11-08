@@ -137,7 +137,7 @@ function gmRoutes(p: GameParts) {
     saveActor: (s, m) => p.gm.saveActor(s.player, m.actor),
     deleteActor: (s, m) => p.gm.deleteActor(s.player, m.actor),
     setRole: (s, m) => p.gm.setRole(s.player, m.player, m.role),
-    setCharacter: (s, m) => p.gm.setCharacter(s.player, m.player, m.actor),
+    setPlays: (s, m) => p.gm.setPlays(s.player, m.player, m.actor, m.plays),
     mapEdit: (s, m) => p.map.edit(s.player, m.edit),
     darkness: (s, m) => p.map.darkness(s.player, m.darkness),
     fog: (s, m) => p.fog.edit(s.player, m.edit),

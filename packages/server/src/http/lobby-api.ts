@@ -218,7 +218,12 @@ export class LobbyRoutes implements Routes {
     if (!(await this.deps.hub.access.opens(info.id, id, password))) {
       throw new HttpError(403, password ? 'Wrong password.' : `${player.name} has a password.`);
     }
+    const shared = isGm(player);
+    if (!shared && this.deps.hub.heldElsewhere(info.id, id, call.token)) {
+      throw new HttpError(409, `${player.name} is already playing from another browser.`);
+    }
     const token = await ensureSession(this.deps.sessions, call);
+    if (!shared) await this.deps.sessions.forget(info.id, id, token);
     await this.deps.sessions.sit(token, info.id, id);
     send(call.res, 200, { player });
   }

@@ -23,6 +23,7 @@ export function openSocket(
 const REFUSALS: Record<number, string> = {
   4000: 'Your player at this game is gone: the GM removed it.',
   4001: 'You have not joined this game. Pick your player on its join screen.',
+  4003: 'Someone else is playing this player from another browser. Pick your own player on the join screen.',
   4004: 'This game was deleted.',
 };
 

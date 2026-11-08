@@ -182,9 +182,9 @@ export class Requests {
     this.s.send({ t: 'setRole', player, role });
   }
 
-  /** GM: the actor a seat plays (it becomes theirs); none for the one they own. */
-  setCharacter(player: string, actor: string | undefined): void {
-    this.s.send({ t: 'setCharacter', player, ...(actor && { actor }) });
+  /** GM: gives a seat a creature to play (it becomes theirs) or takes it away. */
+  setPlays(player: string, actor: string, plays: boolean): void {
+    this.s.send({ t: 'setPlays', player, actor, plays });
   }
 
   /** Saves how the creature's action bar is arranged. */

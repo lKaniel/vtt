@@ -47,12 +47,13 @@ export interface Running {
   store: GameStore;
   game: Game;
   /** Who is connected. */
-  sockets: Map<WebSocket, Player>;
+  /** Each connection's player, and the browser session it came from. */
+  sockets: Map<WebSocket, { player: Player; session?: string }>;
 }
 
 /** Seats connected to a game, each once. */
 const onlineIn = (running: Running | undefined) => [
-  ...new Set([...(running?.sockets.values() ?? [])].map((p) => p.id)),
+  ...new Set([...(running?.sockets.values() ?? [])].map((s) => s.player.id)),
 ];
 
 /** A game as the lobby lists it. */
@@ -249,18 +250,27 @@ export class GameHub {
     return id;
   }
 
-  /** Puts a connection into a loaded game for `player`, and keeps the game loaded while it lasts. */
-  connect(id: string, ws: WebSocket, player: Player): void {
+  /**
+   * Puts a connection into a loaded game for `player`, from browser
+   * `session`, and keeps the game loaded while it lasts.
+   */
+  connect(id: string, ws: WebSocket, player: Player, session?: string): void {
     const running = this.live.get(id);
     if (!running) throw new HubError('That game is not loaded.');
     running.game.connect(ws, player);
-    running.sockets.set(ws, player);
+    running.sockets.set(ws, { player, ...(session && { session }) });
     clearTimeout(this.timers.get(id));
     void this.index.set(id, { lastPlayed: Date.now() });
     ws.on('close', () => {
       running.sockets.delete(ws);
       this.idle(id);
     });
+  }
+
+  /** Someone plays `player` at the game from a browser other than `session`. */
+  heldElsewhere(id: string, player: string, session: string | undefined): boolean {
+    const sockets = [...(this.live.get(id)?.sockets.values() ?? [])];
+    return sockets.some((s) => s.player.id === player && s.session !== session);
   }
 
   async info(id: string): Promise<GameInfo> {
