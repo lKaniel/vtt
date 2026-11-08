@@ -68,6 +68,8 @@ for (const { viewport, parts } of [
     await page.getByRole('button', { name: 'Start combat' }).click();
     await expect(page.getByRole('button', { name: 'End combat' })).toBeVisible();
     expect(await overlaps(page, parts)).toEqual([]);
+    // Portraits that share art are told apart by their names.
+    await expect(page.locator('.turn-order .turn-name', { hasText: 'Bram' })).toBeVisible();
   });
 }
 
@@ -144,4 +146,35 @@ test("on a laptop screen a player's action bar leaves room for the map, the side
   expect(await overlaps(page)).toEqual([]);
   const bar = (await page.locator('.actionbar-wrap').boundingBox())!;
   expect(bar.height).toBeLessThan(768 * 0.4);
+});
+
+test.describe('the compact action bar', () => {
+  test.use({ barSize: 'compact' });
+
+  test('on a small screen it shows one row of tiles, pages through the rest and grows back to the full bar', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1024, height: 640 });
+    await atTable(page, PLAYER_2);
+    await expect.poll(() => page.evaluate(() => vtt.selected()?.id)).toBe('bram');
+    const bar = page.locator('.actionbar-wrap');
+    await expect(bar).toBeVisible();
+    // Clear of the side panel and the map tools, and no taller than a fifth of the screen.
+    expect(await overlaps(page)).toEqual([]);
+    expect((await bar.boundingBox())!.height).toBeLessThan(640 * 0.2);
+    await expect(page.locator('.ab-grid > *')).toHaveCount(10);
+    // The how-to line no longer floats over the map once a character is selected.
+    await expect(page.locator('.hint')).toHaveCount(0);
+
+    await expect(page.getByLabel('Row 1 of 3')).toBeVisible();
+    await page.getByRole('button', { name: 'Next row' }).click();
+    await expect(page.getByLabel('Row 2 of 3')).toBeVisible();
+    await page.getByRole('button', { name: 'Previous row' }).click();
+    await page.getByRole('button', { name: 'Previous row' }).click();
+    await expect(page.getByLabel('Row 3 of 3')).toBeVisible();
+
+    await page.getByRole('button', { name: /^Full action bar/ }).click();
+    await expect(page.locator('.ab-grid > *')).toHaveCount(30);
+    expect(await page.evaluate(() => localStorage.getItem('vtt.actionBar'))).toBe('full');
+  });
 });

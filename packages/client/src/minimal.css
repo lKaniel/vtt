@@ -340,3 +340,138 @@
     zoom: 0.8;
   }
 }
+
+/* ---------- Compact action bar ----------
+   One row of tiles under the name line, paged with the arrows beside it, in
+   the slim rim of the other panels; the tiles, portrait and end turn keep
+   their painted look. A short screen starts with it; the corner button on
+   the bar switches size. */
+/* Centred in the room between the map tools rail and the side panel. */
+.actionbar-wrap.compact {
+  left: calc(60px + (100% - var(--side-w) - 60px) / 2);
+}
+.actionbar.compact {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  height: auto;
+  padding: 4px;
+  background: var(--slim-fill);
+  border: 0;
+  border-image: var(--slim-rim);
+  border-style: solid;
+  border-width: 6px;
+  box-shadow: var(--slim-shadow);
+}
+.actionbar.compact .ab-portrait {
+  position: relative;
+  top: auto;
+  left: auto;
+}
+.actionbar.compact .ab-ac {
+  right: -10px;
+  bottom: -6px;
+  width: 26px;
+  height: 34px;
+  padding-bottom: 4px;
+  font-size: 12px;
+}
+.actionbar.compact .ab-portrait {
+  margin-right: 8px;
+}
+.actionbar.compact .ab-end {
+  position: static;
+}
+.actionbar.compact .ab-portrait .face {
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
+}
+.actionbar.compact .end-turn {
+  width: 48px;
+  height: 48px;
+  font-size: 11px;
+}
+.actionbar.compact .ab-tray {
+  gap: 4px;
+  height: auto;
+  padding: 0;
+}
+.actionbar.compact .ab-top {
+  justify-content: flex-start;
+  gap: 12px;
+}
+.actionbar.compact .ab-name {
+  max-width: 130px;
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.actionbar.compact .ab-who .hpbar {
+  width: 100px;
+  height: 12px;
+}
+.actionbar.compact .ab-tabs {
+  grid-template-columns: repeat(2, 19px);
+  grid-auto-rows: 19px;
+  gap: 2px;
+}
+.actionbar.compact .ab-tab {
+  width: 19px;
+  height: 19px;
+}
+.actionbar.compact .ab-tab svg {
+  width: 11px;
+  height: 11px;
+}
+.actionbar.compact .ab-body {
+  align-items: center;
+  gap: 4px;
+}
+.actionbar.compact .ab-grid {
+  grid-template-columns: repeat(10, 38px);
+  grid-auto-rows: 38px;
+  gap: 3px;
+}
+.ab-buttons {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  margin-left: auto;
+}
+.ab-help {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--muted);
+  cursor: help;
+}
+.ab-help svg {
+  width: 14px;
+  height: 14px;
+}
+.ab-pager {
+  display: flex;
+  width: 20px;
+  flex-direction: column;
+  align-items: center;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--muted);
+}
+
+/* ---------- Initiative names ----------
+   Portraits that share art are told apart by the name under each. */
+.turn-name {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 10px;
+  line-height: 1.1;
+  color: var(--text);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px #000;
+}

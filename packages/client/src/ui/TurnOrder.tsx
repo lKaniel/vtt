@@ -64,6 +64,7 @@ export function TurnOrder({ session, onStart }: StartProps) {
             >
               <Face token={t} />
               <HpBar token={t} showLabel={false} />
+              <span className="turn-name">{t.name}</span>
             </button>
           );
         })}
