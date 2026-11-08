@@ -76,7 +76,11 @@ A game turns installed packs on in `game.json`:
 { "id": "example", "name": "The crossroads", "packs": ["forest-tiles", "goblin-lairs"] }
 ```
 
-or with the checkboxes in the GM's Assets tab (Packs). Turning a pack on or
+or with the checkboxes in the GM's Assets tab (Packs). A pack whose
+`pack.json` says `"everyGame": true` is on in every game on the server,
+named or not: the place for a server's own homebrew (a private class pack
+copied into `data/packs/`). The character creator offers the classes of the
+packs a game uses, as well as its shared homebrew. Turning a pack on or
 off is an edit like any other: Ctrl+Z undoes it. Packs for another system
 are left out. A system's own packs are always on: D&D ships the SRD as
 `dnd5e-srd-2014` (SRD 5.1) and `dnd5e-srd-2024` (SRD 5.2).

@@ -55,6 +55,8 @@ export const PackManifestSchema = z.object({
   source: z.string().optional(),
   /** A JSON file naming its pictures and animations for a system's content (see pack-art.ts). */
   art: innerPath.optional(),
+  /** On in every game on the server, without game.json naming it (a server's own homebrew). */
+  everyGame: z.boolean().optional(),
 });
 export type PackManifest = z.infer<typeof PackManifestSchema>;
 
