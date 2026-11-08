@@ -306,9 +306,7 @@ export class Session {
 
   /** Opens the side panel on `tab` (one of its tabs, ui/panel-tabs.ts). */
   // fallow-ignore-next-line unused-class-member -- ui/TableReady.tsx calls it; fallow misses that use
-  showPanel(tab: string): void {
-    this.emit('panel', tab);
-  }
+  showPanel = (tab: string): void => this.emit('panel', tab);
 
   focus = (point: Point, gently?: boolean): void => this.emit('focus', point, ...(gently ? [true] : []));
 
