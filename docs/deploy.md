@@ -41,12 +41,12 @@ connection for a few seconds.
    (for example `95-217-234-49.sslip.io`) gets a real certificate too.
 4. **GitHub secrets** (Settings → Secrets and variables → Actions):
 
-   | Secret            | Value                                 |
-   | ----------------- | ------------------------------------- |
-   | `VPS_HOST`        | the VPS's IP                          |
-   | `VPS_USER`        | `deploy`                              |
-   | `VPS_SSH_KEY`     | the whole of `~/vtt-deploy` (private) |
-   | `VPS_KNOWN_HOSTS` | the output of `ssh-keyscan <ip>`      |
+   | Secret            | Value                                      |
+   | ----------------- | ------------------------------------------ |
+   | `VPS_HOST`        | the VPS's IP                               |
+   | `VPS_USER`        | `deploy`                                   |
+   | `VPS_SSH_KEY`     | the whole of `~/vtt-deploy` (private)      |
+   | `VPS_KNOWN_HOSTS` | optional: the output of `ssh-keyscan <ip>` |
 
    With the GitHub CLI: `gh secret set VPS_SSH_KEY < ~/vtt-deploy` and
    `ssh-keyscan <ip> | gh secret set VPS_KNOWN_HOSTS`.
