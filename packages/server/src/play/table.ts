@@ -27,6 +27,7 @@ import {
   type UsedEffect,
   isLairTurn,
   lairOwner,
+  slotMomentum,
 } from '@vtt/system-dnd5e';
 import {
   canControl,
@@ -188,7 +189,9 @@ export class Table {
     const slots = [...(token.spent?.slots ?? [])];
     while (slots.length < slot) slots.push(0);
     slots[slot - 1]! += 1;
-    this.store.setToken({ ...token, spent: { ...token.spent, slots } });
+    const spent = { ...token, spent: { ...token.spent, slots } };
+    const sheet = this.sheetOf(token);
+    this.store.setToken(sheet ? slotMomentum(spent, sheet, slot) : spent);
   }
 
   // ---- Consequences ------------------------------------------------------

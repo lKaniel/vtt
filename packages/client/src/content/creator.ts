@@ -7,6 +7,7 @@ import {
   type Character,
   type Class,
   characterClasses,
+  classCasting,
   choicesDue,
   type CreatorStep,
   CUSTOM,
@@ -151,11 +152,13 @@ export interface SpellChoices {
 /** The spells `c` may pick from `classId`'s list (its first class by default) at that class's `level`, cantrips apart. */
 export function spellChoices(c: Character, level = c.level, classId = c.class): SpellChoices {
   const parts = partsOf(c);
-  const ability = parts.book.content.classes.get(classId)?.spellcasting?.ability;
-  const mod = ability ? abilityMod(abilityScores(c, parts)[ability]) : 0;
-  const limits = spellLimits({ classId, level, edition: c.rules, mod });
+  const subclass = characterClasses(c).find((k) => k.class === classId)?.subclass;
+  const casting = classCasting(parts.book.content.classes.get(classId), subclass);
+  const mod = casting ? abilityMod(abilityScores(c, parts)[casting.ability]) : 0;
+  const limits = spellLimits({ classId, level, edition: c.rules, mod, casting });
+  const from = casting?.list ?? classId;
   const list = [...parts.book.content.spells.values()]
-    .filter((s) => s.classes.includes(classId) && s.level <= limits.maxLevel)
+    .filter((s) => s.classes.includes(from) && s.level <= limits.maxLevel)
     .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
   return { limits, cantrips: list.filter((s) => s.level === 0), spells: list.filter((s) => s.level > 0) };
 }

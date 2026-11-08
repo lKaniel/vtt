@@ -68,8 +68,13 @@ function nineLevels(slots: readonly number[]): number[] {
 }
 
 /** Slots per spell level, index 0 for 1st level. */
-export function spellSlots(casting: Pick<Spellcasting, 'progression' | 'from'>, level: number): number[] {
+export function spellSlots(casting: Pick<Spellcasting, 'progression' | 'from' | 'slots'>, level: number): number[] {
   if (level < casting.from) return nineLevels([]);
+  if (casting.slots) {
+    const slots = nineLevels([]);
+    slots[levelValue(casting.slots.level, level) - 1] = levelValue(casting.slots.count, level);
+    return slots;
+  }
   if (casting.progression === 'pact') {
     const slots = nineLevels([]);
     slots[levelValue(PACT_LEVEL, level) - 1] = levelValue(PACT_SLOTS, level);
