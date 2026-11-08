@@ -1,0 +1,77 @@
+name: Deploy
+
+# After Check passes on main, build the server image, push it to GHCR and
+# restart the game on the VPS. Set the repository variable DEPLOY_HOLD to
+# "true" to stop automatic deploys (game night); "Run workflow" still deploys.
+on:
+  workflow_run:
+    workflows: [Check]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       vars.DEPLOY_HOLD != 'true')
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ env.SHA }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # VPS_KNOWN_HOSTS pins the server's host key; without it, trust what it shows now.
+          if [ -n "${{ secrets.VPS_KNOWN_HOSTS }}" ]; then
+            echo "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan "${{ secrets.VPS_HOST }}" > ~/.ssh/known_hosts
+          fi
+
+      - name: Copy compose files
+        run: scp deploy/compose.yml deploy/Caddyfile "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/vtt/"
+
+      - name: Restart the game
+        env:
+          TARGET: ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" |
+            ssh "$TARGET" "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+          ssh "$TARGET" "cd /opt/vtt &&
+            VTT_TAG='$SHA' docker compose pull &&
+            VTT_TAG='$SHA' docker compose up -d --remove-orphans;
+            status=\$?; docker logout ghcr.io; docker image prune -f; exit \$status"

@@ -140,6 +140,11 @@ game as a zip from its page, and Setup can make a new game from such a zip.
 A server from before (with accounts) carries them over on its first start:
 see [docs/lobby.md](docs/lobby.md).
 
+### Hosting
+
+To run it on a VPS with HTTPS and deploys from GitHub (Docker, Caddy, a
+GitHub Action), see [docs/deploy.md](docs/deploy.md).
+
 The character creator follows the BG3 order: race or species, class,
 background, abilities (point buy, standard array, 4d6 or manual), skills,
 spells, starting equipment, then name and look. Each character picks its

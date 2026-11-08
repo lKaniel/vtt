@@ -1,0 +1,6 @@
+# HTTPS for the game: Caddy gets the certificate for VTT_DOMAIN by itself
+# and passes websockets (/ws) straight through.
+{$VTT_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy vtt:3001
+}

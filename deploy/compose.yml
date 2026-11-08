@@ -1,0 +1,31 @@
+# The VTT on a VPS: the game server and Caddy in front of it for HTTPS.
+# Lives in /opt/vtt next to Caddyfile and .env (see docs/deploy.md).
+name: vtt
+
+services:
+  vtt:
+    image: ghcr.io/lkaniel/vtt:${VTT_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # Games, packs, plugins, accounts and sessions; never in the image.
+      - ./data:/data
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - vtt
+
+volumes:
+  caddy-data:
+  caddy-config:
