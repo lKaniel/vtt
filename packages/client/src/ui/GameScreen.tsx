@@ -32,6 +32,7 @@ import { TokenHud } from './TokenHud.tsx';
 import { TurnOrder } from './TurnOrder.tsx';
 import { useSession } from './useSession.ts';
 import { SettingsMenu } from './SettingsMenu.tsx';
+import { ClaudeKey } from './ClaudeKey.tsx';
 import { Button } from './kit/button.tsx';
 import { exposeApi } from '../scripting/script-api.ts';
 
@@ -87,7 +88,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
   );
 }
 
-/** The bar across the top: connection, game and scene, clock, you, pause, undo, settings, leave. */
+/** The bar across the top: connection, game and scene, clock, you, pause, undo, Claude, settings, leave. */
 function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () => void }>) {
   return (
     <header className="topbar frame">
@@ -108,6 +109,7 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
       <UndoButtons session={session} />
       <ThroughWallsButton session={session} />
       <View3DButton session={session} />
+      {session.gameId && <ClaudeKey game={session.gameId} />}
       <SettingsMenu session={session} />
       <Button variant="ghost" size="icon-sm" onClick={onLeave} title={t('table.leave')} aria-label={t('table.leave')}>
         <LogOutIcon />

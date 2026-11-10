@@ -3,6 +3,14 @@
 
 export const EN_TABLE = {
   'table.leave': 'Leave the table',
+  'claude.connect': 'Connect Claude',
+  'claude.about': 'Claude can look at this game and act as your player, with its rights, over MCP.',
+  'claude.paste': 'Paste this in a terminal. The key is shown only now.',
+  'claude.hasKey': 'You have a key. A new one stops the old one working.',
+  'claude.noKey': 'You have no key yet.',
+  'claude.newKey': 'New key',
+  'claude.makeKey': 'Make a key',
+  'claude.removeKey': 'Remove key',
   'mapTools.sceneTools': 'Fog and daylight',
   'mapTools.sceneToolsHint': 'Fog of war brushes and the time of day on this scene',
   'hud.filter': 'Colour filter',

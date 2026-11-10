@@ -7,7 +7,6 @@ import { t } from '../i18n/index.ts';
 import type { Route } from '../route.ts';
 import { api } from '../server-api.ts';
 import { CharactersPanel } from './CharactersPanel.tsx';
-import { ClaudeKey } from './ClaudeKey.tsx';
 import { AddPlayerForm, PlayerPassword } from './GameAccess.tsx';
 import { BackupsPanel } from './GameArchive.tsx';
 import { CopyInvite, InviteBox } from './InviteLinks.tsx';
@@ -73,7 +72,6 @@ function GameBody({
             {t('game.join')}
           </Button>
         )}
-        {me && <ClaudeKey game={id} />}
         {game.manage && (
           <BackupsPanel
             game={game}
