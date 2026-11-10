@@ -1,5 +1,5 @@
-import { type Token, TokenSchema } from '@vtt/system-dnd5e';
-import { poolCaster } from '@vtt/system-dnd5e/fixtures/pool-class';
+import { ClassSchema, type Token, TokenSchema } from '@vtt/system-dnd5e';
+import { POOL_CLASS, poolCaster } from '@vtt/system-dnd5e/fixtures/pool-class';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { FakeSocket, makeWorld } from './test/fixtures.ts';
@@ -182,6 +182,16 @@ describe('action rules for pool features', () => {
     expect(store.combat!.left).toMatchObject({ action: false, bonus: false });
   });
 
+  it("rolls a feature's attack with the roll pick sent", () => {
+    level(6);
+    const ana = join_('ana');
+    // An 18 would hit the goblin; disadvantage keeps the 1.
+    dice = [face(18), face(1), face(5, 10)];
+    ana.receive({ t: 'feature', token: 'nyx', feature: 'bolt', targets: ['goblin'], edge: 'disadvantage' });
+    expect(errors(ana)).toEqual([]);
+    expect(tok('goblin').hp).toBeUndefined();
+  });
+
   it('weaves anything as a bonus action once a turn (Fluid Weaving)', () => {
     level(11);
     const { ana } = fight(['nyx', 'goblin', 'goblin2']);
@@ -244,5 +254,41 @@ describe('action rules for pool features', () => {
     expect(tok('nyx').concentration).toMatchObject({ spell: 'weave' });
     ana.receive({ t: 'dropConcentration', token: 'nyx' });
     expect(store.tokens.has(shadow.id)).toBe(false);
+  });
+});
+
+describe('the pool paying for spells', () => {
+  it("casts a feature's spell with points instead of a slot", () => {
+    const borrowed = {
+      id: 'borrowed-spells',
+      name: 'Borrowed Spells',
+      level: 1,
+      freeCasts: [{ spell: 'silent-image', cost: '2 * level' }],
+    };
+    const cls = ClassSchema.parse({ ...POOL_CLASS, features: [...POOL_CLASS.features, borrowed] });
+    set('nyx', { own: { classes: [cls] } });
+    const ana = join_('ana');
+    ana.receive({
+      t: 'cast',
+      caster: 'nyx',
+      spell: 'silent-image',
+      slot: 1,
+      paidBy: 'borrowed-spells',
+      targets: [],
+      point: [150, 150],
+    });
+    expect(errors(ana)).toEqual([]);
+    expect(tok('nyx').spent).toEqual({ pool: 2 });
+    set('nyx', { spent: { pool: 11 } });
+    ana.receive({
+      t: 'cast',
+      caster: 'nyx',
+      spell: 'silent-image',
+      slot: 1,
+      paidBy: 'borrowed-spells',
+      targets: [],
+      point: [150, 150],
+    });
+    expect(errors(ana)[0]).toMatch(/only 1 Lucidity left/);
   });
 });

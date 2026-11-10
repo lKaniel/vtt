@@ -7,6 +7,7 @@ import {
   opportunityAttackers,
   COUNTERSPELL,
   type ReactionOffer,
+  type RollChoice,
   shielded,
   shieldSlot,
   type Token,
@@ -112,8 +113,8 @@ export class Reactions {
     return asksReactions(this.table, reactor);
   }
 
-  /** Takes or declines an offer. */
-  react(player: Player, id: string, choice: string | undefined): void {
+  /** Takes or declines an offer; `pick` is the reactor's roll pick for an opportunity attack. */
+  react(player: Player, id: string, choice: string | undefined, pick: RollChoice = {}): void {
     const offer = this.offers.get(id);
     const reactor = offer && this.table.store.tokens.get(offer.reactor);
     if (!offer || !reactor) throw new Refusal('That moment has passed');
@@ -124,7 +125,8 @@ export class Reactions {
     this.drop(id);
     if (hit) return this.answer(hit, choice);
     if (cast) return this.answerCast(cast, offer.reactor, choice);
-    if (choice) this.combat.reactionAttack(player, { attacker: offer.reactor, target: offer.target, attack: choice });
+    if (choice)
+      this.combat.reactionAttack(player, { attacker: offer.reactor, target: offer.target, attack: choice }, pick);
   }
 
   /** The turn passed: offers not taken are gone, and waiting hits land. */

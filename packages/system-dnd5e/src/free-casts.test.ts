@@ -5,6 +5,8 @@ import { castProblem } from './spells.ts';
 import { featureCastProblem, featureCasts, payWithFeature } from './free-casts.ts';
 import { type Token, TokenSchema } from './token-schema.ts';
 import type { Edition } from './stats-schema.ts';
+import { POOL_CLASS, poolCaster, poolSheetOf } from './pool-class.fixtures.ts';
+import { ClassSchema } from './spell-schema.ts';
 
 // Features that let a character cast a spell without a slot: a ranger's
 // favored enemy (hunter's mark, a few times a day), a warlock's invocations
@@ -28,7 +30,7 @@ describe('casting with a feature instead of a slot', () => {
     expect(featureCasts(sheet(ranger), spell(ranger, 'hunters-mark'))).toEqual([
       { feature: 'favored-enemy', name: 'Favored Enemy', level: 1, self: false, left: 2, max: 2 },
     ]);
-    const after = payWithFeature(ranger, sheet(ranger), 'favored-enemy');
+    const after = payWithFeature(ranger, sheet(ranger), { feature: 'favored-enemy' });
     expect(featureCasts(sheet(after), spell(after, 'hunters-mark'))[0]).toMatchObject({ left: 1, max: 2 });
   });
 
@@ -49,7 +51,7 @@ describe('casting with a feature instead of a slot', () => {
       { feature: 'armor-of-shadows', name: 'Armor of Shadows', level: 1, self: true },
     ]);
     expect(featureCastProblem(sheet(warlock), armor, 'armor-of-shadows')).toBeUndefined();
-    expect(payWithFeature(warlock, sheet(warlock), 'armor-of-shadows')).toEqual(warlock);
+    expect(payWithFeature(warlock, sheet(warlock), { feature: 'armor-of-shadows' })).toEqual(warlock);
   });
 
   it('knows the spells its features cast, so they can be cast with no slots left', () => {
@@ -69,7 +71,37 @@ describe('casting with a feature instead of a slot', () => {
     const druid = character('druid', '2024', { level: 2 });
     const familiar = spell(druid, 'find-familiar');
     expect(featureCasts(sheet(druid), familiar)[0]).toMatchObject({ feature: 'wild-companion', left: 2 });
-    const after = payWithFeature(druid, sheet(druid), 'wild-companion');
+    const after = payWithFeature(druid, sheet(druid), { feature: 'wild-companion' });
     expect(after.spent?.uses).toEqual({ 'wild-shape': 1 });
+  });
+});
+
+describe("a class pool paying for a feature's spells", () => {
+  const borrowed = {
+    id: 'borrowed-spells',
+    name: 'Borrowed Spells',
+    level: 1,
+    freeCasts: [{ spell: 'silent-image', cost: '2 * level' }],
+  };
+  const pooled = (spent?: number) => {
+    const cls = ClassSchema.parse({ ...POOL_CLASS, features: [...POOL_CLASS.features, borrowed] });
+    return poolCaster(1, { own: { classes: [cls] }, ...(spent !== undefined && { spent: { pool: spent } }) });
+  };
+  const image = srdFor('2014').spells.get('silent-image')!;
+
+  it('costs points from the pool, by the level it is cast at, instead of a use', () => {
+    const nyx = pooled();
+    expect(featureCasts(poolSheetOf(nyx), image)).toEqual([
+      { feature: 'borrowed-spells', name: 'Borrowed Spells', level: 1, self: false, cost: 2, pool: 'Lucidity' },
+    ]);
+    expect(featureCastProblem(poolSheetOf(nyx), image, 'borrowed-spells')).toBeUndefined();
+    expect(payWithFeature(nyx, poolSheetOf(nyx), featureCasts(poolSheetOf(nyx), image)[0]!).spent).toEqual({ pool: 2 });
+  });
+
+  it('refuses a cast the pool can no longer pay', () => {
+    const nyx = pooled(11);
+    expect(featureCastProblem(poolSheetOf(nyx), image, 'borrowed-spells')).toBe(
+      'has only 1 Lucidity left; Silent Image costs 2',
+    );
   });
 });

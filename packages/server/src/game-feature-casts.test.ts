@@ -132,3 +132,55 @@ describe('a stat block spell "cast before combat"', () => {
     expect(errors(gm)[0]).toMatch(/before the fight/);
   });
 });
+
+describe('species spells', () => {
+  it('lets a 2014 tiefling fighter cast darkness once a day from 5th level, without a slot', () => {
+    const stats = { class: 'fighter', level: 5, species: 'tiefling', maxHp: 40, abilities: { cha: 14 } };
+    put({ ...tok('hero'), stats, spent: undefined });
+    const ana = join('ana');
+    const darkness = { t: 'cast', caster: 'hero', spell: 'darkness', slot: 2, targets: [], point: [150, 150] } as const;
+    ana.receive({ ...darkness, paidBy: 'infernal-legacy-5' });
+    expect(errors(ana)).toEqual([]);
+    expect(tok('hero').spent).toEqual({ uses: { 'infernal-legacy-5': 1 } });
+    ana.receive({ ...darkness, paidBy: 'infernal-legacy-5' });
+    expect(errors(ana)[0]).toMatch(/no uses left/);
+  });
+});
+
+describe('spells picked for a feature', () => {
+  it('lets a 2024 cleric cast a cleric spell they have not prepared with Divine Intervention, once', () => {
+    const stats = { rules: '2024', class: 'cleric', level: 10, maxHp: 60, abilities: { wis: 18 }, spells: [] };
+    put({ ...tok('hero'), stats, spent: undefined });
+    const ana = join('ana');
+    const strike = {
+      t: 'cast',
+      caster: 'hero',
+      spell: 'flame-strike',
+      slot: 5,
+      targets: [],
+      point: [250, 50],
+    } as const;
+    ana.receive({ ...strike, paidBy: 'divine-intervention' });
+    expect(errors(ana)).toEqual([]);
+    expect(tok('hero').spent).toEqual({ uses: { 'divine-intervention': 1 } });
+    ana.receive(strike);
+    expect(errors(ana)[0]).toMatch(/doesn't know Flame Strike/);
+  });
+
+  it('casts the picked Mystic Arcanum without a pact slot', () => {
+    const picks = { 'mystic-arcanum': ['eyebite'] };
+    const stats = { class: 'warlock', level: 11, maxHp: 60, abilities: { cha: 18 }, spellPicks: picks };
+    put({ ...tok('hero'), stats, spent: undefined });
+    const ana = join('ana');
+    ana.receive({
+      t: 'cast',
+      caster: 'hero',
+      spell: 'eyebite',
+      slot: 6,
+      targets: ['goblin'],
+      paidBy: 'mystic-arcanum',
+    });
+    expect(errors(ana)).toEqual([]);
+    expect(tok('hero').spent).toEqual({ uses: { 'mystic-arcanum': 1 } });
+  });
+});

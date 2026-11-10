@@ -1,6 +1,8 @@
 import type { Content } from './content.ts';
 import { characterLevel, type ClassLevel, classLevels } from './multiclass.ts';
 import { ownFeatures } from './own-content.ts';
+import { speciesFeatures } from './species-spells.ts';
+import { countedPicks } from './spell-picks.ts';
 import type { Class, Feature, LevelTable } from './spell-schema.ts';
 import type { Token } from './token-schema.ts';
 
@@ -33,25 +35,34 @@ export function grantedFeatures(token: Token, content: Content): Feature[] {
     const found = classFeature(ref, content);
     return found ? [found] : [];
   });
-  return [...fromClasses, ...ownFeatures(token)];
+  return [...fromClasses, ...ownFeatures(token), ...speciesFeatures(token, content.edition)];
 }
 
-const spellsAt = (f: Feature, level: number) => [
+const spellsAt = (f: Feature, level: number, picks: Picks = {}) => [
   ...(f.grantsSpells ?? []).filter(([at]) => at <= level).map(([, id]) => id),
   ...(f.freeCasts ?? []).map((c) => c.spell),
+  ...(f.spellPicks ? countedPicks(f.spellPicks, level, picks.picked?.[f.id] ?? [], (id) => picks.spells?.get(id)) : []),
 ];
+
+/** The spells picked for features (`stats.spellPicks`) and where to look them up. */
+interface Picks {
+  picked?: Readonly<Record<string, readonly string[]>>;
+  spells?: Content['spells'];
+}
 
 /** Spells the token's features always have prepared at its class levels (domain spells, a picked land's), or cast free. */
 export function featureSpellIds(token: Token, content: Content): string[] {
   const levels = classLevels(token, content);
-  const fromClasses = levels.flatMap((l) => levelFeatures(l).flatMap((f) => spellsAt(f, l.level)));
+  const picks = { picked: token.stats?.spellPicks, spells: content.spells };
+  const fromClasses = levels.flatMap((l) => levelFeatures(l).flatMap((f) => spellsAt(f, l.level, picks)));
   const total = characterLevel(token.stats) ?? 1;
   const picked = (token.stats?.features ?? []).flatMap((ref) => {
     const f = classFeature(ref, content);
     const level = levels.find((l) => l.id === ref.split('/')[0])?.level ?? total;
-    return f ? spellsAt(f, level) : [];
+    return f ? spellsAt(f, level, picks) : [];
   });
-  return [...new Set([...fromClasses, ...picked])];
+  const species = speciesFeatures(token, content.edition).flatMap((f) => spellsAt(f, total));
+  return [...new Set([...fromClasses, ...picked, ...species])];
 }
 
 export interface ChoiceDue {

@@ -18,6 +18,7 @@ import { withKey } from '../sheet-model.ts';
 import { LegendaryPanel } from './LegendaryPanel.tsx';
 import { MonsterTraits } from './StatBlock.tsx';
 import { PoolPanel } from './PoolPanel.tsx';
+import { SpellPicksButton } from './SpellPicksButton.tsx';
 import { type Column, Empty, ListRow, ListSection, Pips, RowButton, SheetSearch } from './SheetList.tsx';
 import { actFromSheet, canAct, type SheetProps } from './sheet-props.ts';
 
@@ -126,6 +127,7 @@ function FeatureControls(props: Readonly<RowProps>) {
           <ZapIcon />
         </RowButton>
       )}
+      <SpellPicksButton {...props} />
       {edit && mine && <EditButton name={f.name} onClick={() => onOpen(f.id)} />}
       {edit && (ref !== undefined || mine) && <RemoveButton onClick={remove} />}
     </>

@@ -1,4 +1,4 @@
-import { characterLevel, type ClientMessage, type FeatureSheet, featureSpell } from '@vtt/system-dnd5e';
+import { characterLevel, type ClientMessage, type FeatureSheet, featureSpell, type Spell } from '@vtt/system-dnd5e';
 import { isPowerFeature, type PowerAim, powerAim } from '../play/power-aiming.ts';
 
 /** How a chat roll is applied: in full, half, double, or as healing. */
@@ -58,7 +58,7 @@ export class Actions {
     private readonly s: ActionHost,
     private readonly on: ActionEvents,
   ) {
-    this.pick = new RollPick(on);
+    this.pick = new RollPick(on, s);
   }
 
   /** Applies the roll on a chat card to your targets, else the creatures selected (see damage-actions.ts on the server). */
@@ -101,7 +101,7 @@ export class Actions {
    * Readies a spell of the selected token with a slot, for free, or paid by a feature (`paidBy`). A self spell
    * goes off at once, unless there is more than one way to pay for it: then it waits for Cast.
    */
-  aim(spellId: string | undefined, slot = 0, pay: { free?: boolean; paidBy?: string } = {}): void {
+  aim(spellId: string | undefined, slot = 0, pay: { free?: boolean; paidBy?: string; spell?: Spell } = {}): void {
     const token = this.s.selected ? this.s.tokens.get(this.s.selected) : undefined;
     this.armed = undefined;
     const aiming = aimFor(token?.sheet, spellId, { slot, ...pay });
@@ -243,9 +243,9 @@ export class Actions {
     this.on.changed();
   }
 
-  /** A cast with your roll pick when the spell rolls to hit; other spells leave the pick for a later roll. */
+  /** A cast (or a feature aimed like one) with your roll pick when it rolls to hit; others leave the pick for a later roll. */
   private picked(msg: ClientMessage): ClientMessage {
-    if (msg.t !== 'cast' || !this.aiming?.spell.attack || this.aiming.spell.autoHit) return msg;
+    if (!['cast', 'feature'].includes(msg.t) || !this.aiming?.spell.attack || this.aiming.spell.autoHit) return msg;
     return { ...msg, ...this.pick.take() };
   }
 

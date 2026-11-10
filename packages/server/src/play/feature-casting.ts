@@ -5,14 +5,17 @@ import {
   featureSpell,
   poolSpell,
   spendUse,
+  type RollChoice,
   withChoice,
 } from '@vtt/system-dnd5e';
 import type { Player, Point } from '@vtt/shared';
 import type { SpellActions } from '../actions/spell-actions.ts';
 import { afterSpellFinisher } from './momentum-keeper.ts';
+import { rollPickOf } from './roll-picks.ts';
 import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
 
-export interface FeatureRequest {
+/** `edge` and `crit`: the user's roll pick for the feature's attack. */
+export interface FeatureRequest extends RollChoice {
   token: string;
   feature: string;
   targets?: string[];
@@ -66,7 +69,7 @@ export function castFeature(
   table.pay(caster.token, cost, caster.sheet.attacksPerAction);
   table.store.setToken(spendUse(table.store.tokens.get(caster.token.id)!, feature, spend, caster.sheet));
   const before = hpOf(table, targets);
-  spells.strike(caster.token.id, { spell, slot: 0, point: req.point }, targets);
+  spells.strike(caster.token.id, { spell, slot: 0, point: req.point, ...rollPickOf(req) }, targets);
   if (feature.finisher) afterSpellFinisher(table, { caster, feature, targets, before });
 }
 

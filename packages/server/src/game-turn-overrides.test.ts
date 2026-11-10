@@ -109,3 +109,33 @@ describe('initiative set by hand', () => {
     expect(ana.take('error')).toHaveLength(1);
   });
 });
+
+describe('an extra action', () => {
+  it('is spent after the action, and the log says so', () => {
+    const gm = seat('gm');
+    gm.receive({ t: 'combatStart', tokens: ['hero'] });
+    gm.receive({ t: 'turnOverride', token: 'hero', extra: 1 });
+    expect(store.combat!.left.extra).toBe(1);
+    gm.receive({ t: 'feature', token: 'hero', feature: 'dodge' });
+    gm.receive({ t: 'feature', token: 'hero', feature: 'dash' });
+    expect(gm.take('error')).toEqual([]);
+    expect(store.combat!.left).toMatchObject({ action: false, extra: 0 });
+    gm.receive({ t: 'feature', token: 'hero', feature: 'disengage' });
+    expect(gm.take('error')[0]?.message).toMatch(/already used their action/);
+  });
+});
+
+describe('rests', () => {
+  it('a trusted player may rest the creatures they control, a plain player may not', () => {
+    const ana = seat('ana');
+    ana.receive({ t: 'rest', tokens: ['hero'], kind: 'short' });
+    expect(ana.take('error')).toEqual([]);
+    ana.receive({ t: 'rest', tokens: ['goblin'], kind: 'short' });
+    expect(ana.take('error')).toHaveLength(1);
+    const world = store.world;
+    store.setWorld({ ...world, players: world.players.map((p) => (p.id === 'ana' ? { ...p, role: 'player' } : p)) });
+    const plain = seat('ana');
+    plain.receive({ t: 'rest', tokens: ['hero'], kind: 'short' });
+    expect(plain.take('error')).toHaveLength(1);
+  });
+});

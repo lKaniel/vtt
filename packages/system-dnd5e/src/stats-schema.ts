@@ -178,6 +178,11 @@ export const StatsSchema = z.object({
   proficiency: z.number().int().optional(),
   /** Extra attacks besides the equipped weapons. */
   attacks: z.array(AttackSchema).optional(),
+  /** The character's species and lineage (subrace), by id: the spells they give (species-spells.ts). */
+  species: id.optional(),
+  lineage: id.optional(),
+  /** Spells picked for a feature to cast without a slot (Mystic Arcanum), by feature id. */
+  spellPicks: z.record(id, z.array(id).max(10)).optional(),
   /** Spells the character knows or has prepared, by id. */
   spells: z.array(id).optional(),
   /** Class features granted on top of the class's own, as "<class>/<feature>" (e.g. "barbarian/rage"). */

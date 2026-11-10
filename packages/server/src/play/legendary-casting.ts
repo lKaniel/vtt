@@ -1,4 +1,5 @@
 import type { Player, Point } from '@vtt/shared';
+import { rollPickOf } from './roll-picks.ts';
 import { legendaryProblem, spendLegendary, type Spell, SpellSchema } from '@vtt/system-dnd5e';
 import type { LegendaryMessage } from '../actions/legendary-actions.ts';
 import type { SpellActions } from '../actions/spell-actions.ts';
@@ -50,5 +51,5 @@ export function castLegendary(
   const targets = spells.targets(caster, spell, aim, canSee);
   table.store.setToken(spendLegendary(caster.token, option.cost));
   table.note(`${caster.token.name} takes a legendary action, ${option.name}`);
-  spells.strike(caster.token.id, { spell, slot: 0, point }, targets);
+  spells.strike(caster.token.id, { spell, slot: 0, point, ...rollPickOf(msg) }, targets);
 }

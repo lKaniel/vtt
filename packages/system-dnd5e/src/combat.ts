@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { type Rng, roll } from '@vtt/shared';
+import { d20Formula } from './effects.ts';
 
 // Initiative order and whose turn it is. Stored as combat.json in the world
 // folder while a fight is on, so it survives restarts and can be edited.
@@ -8,6 +9,8 @@ export const TurnBudgetSchema = z.object({
   /** Feet of movement left this turn. */
   move: z.number().nonnegative(),
   action: z.boolean(),
+  /** Actions on top of the one, spent once it is gone (a GM's override). */
+  extra: z.number().int().nonnegative().optional(),
   bonus: z.boolean(),
   /** Attacks left from an Attack action already begun (extra attack). */
   attacks: z.number().int().nonnegative().default(0),
@@ -44,7 +47,9 @@ export interface Combatant {
   /** Initiative bonus. */
   bonus: number;
   speed: number;
-  /** Rolls with disadvantage (surprised, 2024). */
+  /** Rolls with advantage (picked by its player). */
+  advantage?: boolean;
+  /** Rolls with disadvantage (surprised, 2024, or picked). */
   disadvantage?: boolean;
 }
 
@@ -59,7 +64,7 @@ export function freshTurn(speed: number): TurnBudget {
 export function startCombat(fighters: readonly Combatant[], rng: Rng = Math.random): Combat {
   const rolled = fighters.map((f) => ({
     ...f,
-    initiative: roll(f.disadvantage ? '2d20kl1' : '1d20', rng).total + f.bonus,
+    initiative: roll(d20Formula(f.bonus, [], f), rng).total,
   }));
   rolled.sort((a, b) => b.initiative - a.initiative || b.bonus - a.bonus);
   const order = rolled.map(({ token, initiative }) => ({ token, initiative }));
@@ -156,7 +161,7 @@ export function endTurns(combat: Combat, tokens: readonly string[], info: TurnIn
 /** Rolls initiative for a creature joining a fight under way: it takes its place, and the turn stays with whoever has it. */
 export function addToCombat(combat: Combat, f: Combatant, rng: Rng = Math.random): Combat {
   if (combat.order.some((e) => e.token === f.token)) return combat;
-  const initiative = roll('1d20', rng).total + f.bonus;
+  const initiative = roll(d20Formula(f.bonus, [], f), rng).total;
   const at = combat.order.findIndex((e) => e.initiative < initiative);
   const index = at < 0 ? combat.order.length : at;
   const order = [...combat.order];

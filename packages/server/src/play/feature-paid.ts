@@ -41,10 +41,21 @@ export function payment(
   const paid = req.paidBy ? featurePayment(caster, spell, req.paidBy, fighting) : undefined;
   const free = castsFree(caster, spell, req) || !!paid;
   const asked = paid?.level ?? req.slot;
-  const problem = castProblem({ spell, slot: asked, sheet: caster.sheet, free });
+  const problem = castProblem({
+    spell,
+    slot: asked,
+    sheet: paid?.atCast ? knowing(caster, spell) : caster.sheet,
+    free,
+  });
   if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
   const slot = spell.level === 0 ? 0 : asked;
   return { slot, spend: free ? 0 : slot, ...(paid && { paid }) };
+}
+
+/** The caster's sheet knowing `spell` too: one a feature lets it pick as it casts (Divine Intervention). */
+function knowing({ sheet }: Fighter, spell: Spell): Fighter['sheet'] {
+  const caster = sheet.caster;
+  return caster ? { ...sheet, caster: { ...caster, spells: [...caster.spells, spell] } } : sheet;
 }
 
 /** A self-only free cast lands on its caster, whoever was aimed at. */
@@ -57,11 +68,12 @@ export function spendPayment(table: Table, casterId: string, { spend, paid }: Om
   table.spendSlot(casterId, spend);
   if (!paid) return;
   const token = table.store.tokens.get(casterId)!;
-  table.store.setToken(payWithFeature(token, table.fighter(casterId).sheet, paid.feature));
+  table.store.setToken(payWithFeature(token, table.fighter(casterId).sheet, paid));
 }
 
 /** What the log says about a cast that spent no slot. */
 export function paymentNotes(paid: FeatureCast | undefined, free: boolean): string[] {
+  if (paid?.cost !== undefined) return [`cast with ${paid.name} (${paid.cost} ${paid.pool})`];
   if (paid) return [`cast with ${paid.name}`];
   return free ? ['cast without a spell slot'] : [];
 }

@@ -43,6 +43,7 @@ import {
 import type { GameStore } from '../store/game-store.ts';
 import { contentFor } from '../library/game-packs.ts';
 import { hurtTriggers } from './class-triggers.ts';
+import { RollPicks } from './roll-picks.ts';
 
 /** A request the rules don't allow; its message goes back to the player. */
 export class Refusal extends Error {}
@@ -61,6 +62,9 @@ export type Cost = 'action' | 'bonus' | 'attack' | 'reaction' | 'free';
  * consequences of getting hurt.
  */
 export class Table {
+  /** Players' roll picks for the rolls the server makes for their creatures. */
+  readonly picks = new RollPicks();
+
   constructor(
     readonly store: GameStore,
     readonly rng: Rng,
@@ -154,8 +158,9 @@ export class Table {
     const left = this.budget(token);
     if (!left) return;
     if (cost === 'bonus' && !left.bonus) throw new Refusal(`${token.name} has already used their bonus action`);
-    if (cost === 'action' && !left.action) throw new Refusal(`${token.name} has already used their action`);
-    if (cost === 'attack' && !left.action && left.attacks === 0) {
+    const action = left.action || !!left.extra;
+    if (cost === 'action' && !action) throw new Refusal(`${token.name} has already used their action`);
+    if (cost === 'attack' && !action && left.attacks === 0) {
       throw new Refusal(`${token.name} has already used their action`);
     }
   }
@@ -167,9 +172,9 @@ export class Table {
     const left = this.budget(token);
     if (!left) return;
     if (cost === 'bonus') return this.setBudget(token, { ...left, bonus: false });
-    if (cost === 'action') return this.setBudget(token, { ...left, action: false, attacks: 0 });
+    if (cost === 'action') return this.setBudget(token, { ...useAction(left), attacks: 0 });
     const next =
-      left.attacks > 0 ? { ...left, attacks: left.attacks - 1 } : { ...left, action: false, attacks: attacks - 1 };
+      left.attacks > 0 ? { ...left, attacks: left.attacks - 1 } : { ...useAction(left), attacks: attacks - 1 };
     this.setBudget(token, next);
   }
 
@@ -339,4 +344,9 @@ function withHp(token: Token, after: { hp: number; tempHp?: number }, maxHp: num
 
 export function requireGm(player: Player): void {
   if (!isGm(player)) throw new Refusal('Only the GM can do that');
+}
+
+/** The turn with its action spent: the one it has, else one of its extra actions. */
+function useAction(left: TurnBudget): TurnBudget {
+  return left.action ? { ...left, action: false } : { ...left, extra: Math.max(0, (left.extra ?? 0) - 1) };
 }

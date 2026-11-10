@@ -10,6 +10,7 @@ import type { DamageActions } from './damage-actions.ts';
 import type { EntryActions } from './entry-actions.ts';
 import { castFeature } from '../play/feature-casting.ts';
 import { castLegendary, isLegendarySpell } from '../play/legendary-casting.ts';
+import { pickRoll } from './pick-actions.ts';
 import { castPower, isPower, release } from '../play/power-casting.ts';
 import type { FeatureActions } from './feature-actions.ts';
 import type { FogKeeper } from '../play/fog-keeper.ts';
@@ -110,7 +111,8 @@ function magicRoutes(p: GameParts) {
       else p.features.use(s.player, m.token, m.feature);
     },
     useItem: (s, m) => p.features.useItem(s.player, m.token, m.item),
-    react: (s, m) => p.reactions.react(s.player, m.offer, m.choice),
+    react: (s, m) => p.reactions.react(s.player, m.offer, m.choice, { edge: m.edge, crit: m.crit }),
+    rollPick: (s, m) => pickRoll(p.table, s.player, m.token, m.edge),
     release: (s, m) => release(p.table, s.player, m.token, m.hold),
     dropConcentration: (s, m) => p.features.dropConcentration(s.player, m.token),
     removeEffect: (s, m) => p.features.removeEffect(s.player, m.token, m.effect),

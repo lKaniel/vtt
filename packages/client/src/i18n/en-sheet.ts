@@ -6,6 +6,13 @@ import { EN_POWERS } from './en-powers.ts';
 export const EN_SHEET = {
   ...EN_CREATOR,
   ...EN_POWERS,
+  'sheet.picks.choose': 'Pick the spells for {name}',
+  'sheet.picks.cast': 'Cast a spell with {name}',
+  'sheet.picks.choice': 'Spell {n}',
+  'sheet.picks.none': 'Not picked',
+  'sheet.picks.hint': 'Each picked spell is cast at its own level without a slot, as the feature allows.',
+  'sheet.picks.castLabel': 'Pick a spell to cast',
+  'sheet.picks.castHint': 'The spell is aimed at once and the feature pays for it instead of a slot.',
   'sheet.label': "{name}'s character sheet",
   'sheet.level': 'Level {level}',
   'sheet.actor': '(actor)',

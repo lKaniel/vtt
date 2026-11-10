@@ -46,7 +46,7 @@ import { Requests } from './session-requests.ts';
 import { type EditEvents, Edits } from './session-edits.ts';
 import { WorldTime } from './session-time.ts';
 import { Tiles } from './session-tiles.ts';
-import { isTableNews, type TableNews, withChat } from './session-news.ts';
+import { isTableNews, movedTo, type TableNews, withChat } from './session-news.ts';
 import type { SessionPart } from './session-part.ts';
 import { type SceneEvents, Scenes } from './session-scenes.ts';
 import { Targets } from './targets.ts';
@@ -176,6 +176,7 @@ export class Session {
     this.sheets,
     this.levels,
     this.asks,
+    this.actions.pick,
   ];
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
@@ -481,8 +482,7 @@ export class Session {
     const t = this.tokens.get(id);
     const end = path.at(-1);
     if (!t || !end) return false;
-    const { elevation: _, ...rest } = t;
-    this.tokens.set(id, { ...rest, x: end[0], y: end[1], ...(elevation !== undefined && { elevation }) });
+    this.tokens.set(id, movedTo(t, end, elevation));
     this.emit('moved', id, path);
     return true;
   }

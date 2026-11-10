@@ -153,7 +153,7 @@ export type ClientMessage =
    */
   | { t: 'trade'; from: string; to?: string; item?: number; qty?: number; coins?: Currency }
   /** GM: a legendary action, between other creatures' turns; `target` for one that attacks. */
-  | { t: 'legendary'; token: string; option: string; target?: string }
+  | ({ t: 'legendary'; token: string; option: string; target?: string } & RollChoice)
   /** GM: the lair action of `token`'s lair, on its turn at initiative 20. */
   | { t: 'lair'; token: string; action: string }
   /** Spends one hit die to heal (outside fights). */
@@ -214,7 +214,7 @@ export type ClientMessage =
       crit?: CritChoice;
     }
   /** `targets` and `point` aim features used like spells (bardic inspiration, turn undead). */
-  | {
+  | ({
       t: 'feature';
       token: string;
       feature: string;
@@ -224,20 +224,31 @@ export type ClientMessage =
       picks?: string[];
       inputs?: Record<string, number>;
       bonus?: boolean;
-    }
+    } & RollChoice)
   /** Let go of a held pool use (a Glamour, a Weave). */
   | { t: 'release'; token: string; hold: string }
   /** Use one of an item the token carries, by item id (drink a potion). */
   | { t: 'useItem'; token: string; item: string }
   /** Take a reaction that was offered, with this attack; no attack declines it. */
-  | { t: 'react'; offer: string; choice?: string }
+  | ({ t: 'react'; offer: string; choice?: string } & RollChoice)
+  /** Your advantage or disadvantage for a creature's next roll that the server makes (initiative, a death save); none: normal. */
+  | { t: 'rollPick'; token: string; edge?: RollEdge }
   /** Put a condition on a creature you control, or take it off (the token HUD). */
   | { t: 'condition'; token: string; condition: Condition; on: boolean }
   /** GM: add a creature to the fight (starting one) or take it out. */
   | { t: 'combatant'; token: string; on: boolean }
   | { t: 'initiative'; token: string; value: number }
   /** GM or trusted player: what a creature has left of its turn, set by hand (true: has it). */
-  | { t: 'turnOverride'; token: string; action?: boolean; bonus?: boolean; reaction?: boolean; move?: number }
+  | {
+      t: 'turnOverride';
+      token: string;
+      action?: boolean;
+      bonus?: boolean;
+      reaction?: boolean;
+      move?: number;
+      /** Actions on top of the one. */
+      extra?: number;
+    }
   /** Apply the roll on a chat card to these creatures: in full, half, double, or as healing. */
   | { t: 'applyDamage'; card: string; tokens: string[]; how: 'full' | 'half' | 'double' | 'heal' }
   | { t: 'dropConcentration'; token: string }
@@ -294,4 +305,6 @@ export type ServerMessage =
   | { t: 'actorGone'; id: string }
   /** A reaction you may take now; `reactionGone` once it's taken, declined or too late. */
   | { t: 'reactionOffer'; offer: ReactionOffer }
-  | { t: 'reactionGone'; id: string };
+  | { t: 'reactionGone'; id: string }
+  /** The roll pick you sent with `rollPick` was used: it is back to normal. */
+  | { t: 'pickSpent' };
