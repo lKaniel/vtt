@@ -44,6 +44,7 @@ import { anotherTurn, breakTimeStop } from '../play/time-stop.ts';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
 import { breakSanctuary, loseImage, passSanctuary } from '../play/spell-wards.ts';
 import { recharge } from '../play/recharge.ts';
+import { flanked } from '../play/flanking.ts';
 import { type Surprise, surprisedTurn, surpriseOf, withSurprise } from '../play/surprise.ts';
 import { Refusal, requireGm, type Cost, type Fighter, type Table } from '../play/table.ts';
 
@@ -395,6 +396,7 @@ export class CombatActions {
         gridSize: this.store.world.gridSize,
         grid: gridKind(this.store.world),
         allyNearTarget: this.allyNear(attacker.token, target.token),
+        flanked: flanked(this.table, attacker.token, target.token),
         sneakUsed,
         smite,
         finisher: readiedFinisher(attacker, attack, finisher),
