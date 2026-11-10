@@ -5,6 +5,7 @@ import {
   fogCell,
   type FogEdit,
   type FogEye,
+  fogFloor,
   isGm,
   type LightSource,
   onLevel,
@@ -17,6 +18,7 @@ import {
   wallsAt,
 } from '@vtt/shared';
 import type { Token } from '@vtt/system-dnd5e';
+import { fogPlace, placeOf } from '../store/fog-store.ts';
 import type { GameStore } from '../store/game-store.ts';
 import { requireGm } from './table.ts';
 import { packContent } from '../library/game-packs.ts';
@@ -70,8 +72,15 @@ export class FogKeeper {
     const signature = JSON.stringify([eyes, store.world.darkness, lights, this.mapRev.get(scene) ?? 0]);
     if (this.seen.get(key) === signature) return;
     this.seen.set(key, signature);
-    const rasters = [...byLevel(eyes)].flatMap(([level, group]) => exploredRasters(group, this.sightOn(level, lights)));
-    this.store.fog.explore(scene, player.id, this.cell(), rasters);
+    for (const [level, group] of byLevel(eyes)) {
+      const rasters = exploredRasters(group, this.sightOn(level, lights));
+      this.store.fog.explore(this.placeOn(level), player.id, this.cell(), rasters);
+    }
+  }
+
+  /** Where fog seen from `level` of the current scene is kept: each floor has its own. */
+  placeOn(level: string | undefined): string {
+    return fogPlace(this.store.currentScene, fogFloor(this.store.world.levels, level));
   }
 
   /** How far and past what eyes on `level` see: its walls and lights, and those on every level. */
@@ -93,24 +102,36 @@ export class FogKeeper {
     };
   }
 
-  /** GM: reveal, hide or reset fog on the current scene. */
+  /** GM: reveal, hide or reset fog on the current scene: on the floor named, else (a reset) every floor. */
   edit(player: Player, edit: FogEdit): void {
     requireGm(player);
-    const scene = this.store.currentScene;
+    const fog = this.store.fog;
     const players = edit.players ?? this.store.world.players.filter((p) => !isGm(p)).map((p) => p.id);
-    if (edit.op === 'reset') return this.store.fog.reset(scene, players, this.cell());
+    if (edit.op === 'reset') {
+      const places = edit.level ? [this.placeOn(edit.level)] : fog.placesOf(this.store.currentScene);
+      for (const place of places) fog.reset(place, players, this.cell());
+      return;
+    }
     const raster = rasterStroke(edit.path, edit.radius, this.cell());
-    this.store.fog.paint(scene, players, this.cell(), { raster, reveal: edit.op === 'reveal' });
+    fog.paint(this.placeOn(edit.level), players, this.cell(), { raster, reveal: edit.op === 'reveal' });
     // A hidden patch a token still sees is seen again on its next look, not now.
   }
 
-  /** Everything `viewer` is told about fog on the current scene: their own, or (the GM) every player's. */
-  snapshot(viewer: Player): { player: string; cell: number; blocks: Record<string, string> }[] {
+  /** Everything `viewer` is told about fog on the current scene, floor by floor: their own, or (the GM) every player's. */
+  snapshot(viewer: Player): { player: string; level?: string; cell: number; blocks: Record<string, string> }[] {
     if (!this.keeps()) return [];
-    const scene = this.store.currentScene;
+    const fog = this.store.fog;
     const cell = this.cell();
     const players = isGm(viewer) ? this.store.world.players.filter((p) => !isGm(p)) : [viewer];
-    return players.map((p) => ({ player: p.id, cell, blocks: this.store.fog.map(scene, p.id, cell).encode().blocks }));
+    return fog.placesOf(this.store.currentScene).flatMap((place) => {
+      const { level } = placeOf(place);
+      return players.map((p) => ({
+        player: p.id,
+        ...(level && { level }),
+        cell,
+        blocks: fog.map(place, p.id, cell).encode().blocks,
+      }));
+    });
   }
 
   private eyeOf(token: Token): LevelEye {

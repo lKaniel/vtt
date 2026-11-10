@@ -81,15 +81,53 @@ export interface Grid {
   /** Foundry grid units per square (feet by default, 5). */
   distance: number;
   gridless: boolean;
+  /** Foundry's hex grids: 2 and 3 rows (odd, even), 4 and 5 columns. */
+  hex?: 'hex-rows' | 'hex-cols';
+  /** Even rows or columns sit half a hex over, which our hexes don't. */
+  even?: boolean;
 }
+
+const HEX_TYPES: Record<number, Pick<Grid, 'hex' | 'even'>> = {
+  2: { hex: 'hex-rows' },
+  3: { hex: 'hex-rows', even: true },
+  4: { hex: 'hex-cols' },
+  5: { hex: 'hex-cols', even: true },
+};
 
 function gridOf(s: FoundryScene): Grid {
   const g = typeof s.grid === 'object' ? s.grid : { size: s.grid, type: s.gridType, distance: s.gridDistance };
+  const type = g.type ?? s.gridType ?? 1;
   return {
     size: Math.max(10, Math.round(g.size ?? 100)),
     distance: g.distance && g.distance > 0 ? g.distance : 5,
-    gridless: (g.type ?? s.gridType) === 0,
+    gridless: type === 0,
+    ...HEX_TYPES[type],
   };
+}
+
+/**
+ * The size of one grid space across and down, as Foundry pads a scene by
+ * whole ones: a pointy hex in rows is `size` wide and 2/sqrt(3) of that
+ * tall, a flat one in columns the other way round.
+ */
+function spaceOf(grid: Grid): [number, number] {
+  const tall = (grid.size * 2) / Math.sqrt(3);
+  if (grid.hex === 'hex-rows') return [grid.size, tall];
+  if (grid.hex === 'hex-cols') return [tall, grid.size];
+  return [grid.size, grid.size];
+}
+
+/** Even rows or columns shifted: our hexes start the other way, so the grid sits half a hex off. */
+function gridLosses(grid: Grid): ImportLoss[] {
+  if (!grid.even) return [];
+  const what = grid.hex === 'hex-rows' ? 'rows' : 'columns';
+  return [lost(`Hex grid offset (even ${what} shifted): the grid sits half a hex off`)];
+}
+
+/** Where Foundry puts the scene's picture: padding rounded up to whole grid spaces. */
+function paddingOf(s: FoundryScene, grid: Grid): [number, number] {
+  const [w, h] = spaceOf(grid);
+  return [Math.round(Math.ceil((s.width * s.padding) / w) * w), Math.round(Math.ceil((s.height * s.padding) / h) * h)];
 }
 
 const decoded = (path: string) => {
@@ -116,9 +154,8 @@ export interface SceneLookups {
 export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLookups = {}): ConvertedScene {
   const s = FoundrySceneSchema.parse(data);
   const grid = gridOf(s);
-  const pad = (side: number) => Math.ceil((side * s.padding) / grid.size) * grid.size;
-  const [x, y] = [pad(s.width), pad(s.height)];
-  const skipped: ImportLoss[] = [];
+  const [x, y] = paddingOf(s, grid);
+  const skipped: ImportLoss[] = gridLosses(grid);
   const floors = foundryFloors(data, feetIn(grid));
   const on = (item: object) => floors?.on(sourceOf(item)) ?? {};
   const background = backgroundTile(s, { x, y }, lookupIn(media), skipped);
@@ -138,6 +175,7 @@ export function foundryScene(data: unknown, media: MediaLookup, lookups: SceneLo
     ...darknessOf(s),
     vision: true,
     ...(grid.gridless ? { grid: 'none' as const } : {}),
+    ...(grid.hex && { grid: grid.hex }),
     ...(s.backgroundColor ? { background: s.backgroundColor } : {}),
     ...navOf(s, lookupIn(media)),
     ...(floors ? { levels: floors.levels } : {}),

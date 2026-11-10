@@ -9,6 +9,7 @@ import {
   type Point,
   type Rect,
   snapDelta,
+  snapOn,
 } from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
 import { keyOf, refOf } from '../editor/selection.ts';
@@ -51,6 +52,8 @@ export interface EditorEvents {
   /** The selection changed. */
   selectionChanged(): void;
   gridSize(): number;
+  /** The scene's grid, for snapping (see `snapOn`). */
+  moveGrid(): MoveGrid;
   /** Where the camera starts on this scene. */
   startPoint(): Point;
   /** Sends field patches as one undo step. */
@@ -183,7 +186,7 @@ export class Editor {
   /** Drags one handle of a document (a wall end, a light ring, a tile edge) to `to`. */
   reshape(key: string, handle: string, to: Point, free: boolean): void {
     if (this.mode === 'tiles' && this.s.tiles.reshape(key, handle, to, free)) return;
-    this.patchEach('reshape', [key], (doc) => dragHandle(doc, handle, to, { gridSize: this.on.gridSize(), free }));
+    this.patchEach('reshape', [key], (doc) => dragHandle(doc, handle, to, snapOn(this.on.moveGrid(), free)));
   }
 
   /** Sets fields on each selected document, worked out from it (the inspector). */

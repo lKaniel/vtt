@@ -86,11 +86,16 @@ function cellStep(d: Point, lattice: Lattice): Point {
   return [to[0] - o[0], to[1] - o[1]];
 }
 
-/** What a move snaps to: the square size, or the scene's cells (on hexes, tokens then move hex to hex). */
+/** What a move snaps to: the square size, or the scene's cells (on hexes everything then moves hex to hex). */
 export type MoveGrid = number | Lattice;
 
+/** How points snap on a scene: to square corners, or on hexes to a hex's corners and centre. */
+export function snapOn(grid: MoveGrid, free: boolean): Snap {
+  return typeof grid === 'number' ? { gridSize: grid, free } : { gridSize: grid.size, free, lattice: grid };
+}
+
 export function snapDelta(d: Point, mode: EditorMode, grid: MoveGrid, free: boolean): Point {
-  if (typeof grid !== 'number' && grid.kind !== 'square' && mode === 'tokens' && !free) return cellStep(d, grid);
+  if (typeof grid !== 'number' && grid.kind !== 'square' && !free) return cellStep(d, grid);
   const gridSize = typeof grid === 'number' ? grid : grid.size;
   const step = free ? 1 : moveStep(mode, gridSize);
   return [roundTo(d[0], step), roundTo(d[1], step)];

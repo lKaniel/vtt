@@ -1,4 +1,5 @@
-import { distanceTo, type Shape } from './hit-test.ts';
+import { cellsInside, type Lattice } from './grid.ts';
+import { distanceTo, type Shape, shapeBounds } from './hit-test.ts';
 import type { Point } from './schema.ts';
 import type { Template } from './scene-items.ts';
 import { feetToPx } from './vision.ts';
@@ -47,8 +48,11 @@ function square(o: Point, dir: number, side: number): Point[] {
   return corners.map(([x, y]) => round([o[0] + x * c - y * s, o[1] + x * s + y * c]));
 }
 
+/** What a template's outline is worked out from. */
+export type TemplateGeometry = Pick<Template, 'shape' | 'x' | 'y' | 'distance' | 'direction' | 'width' | 'angle'>;
+
 /** The template's outline in map pixels: a circle, or a polygon. */
-export function templateShape(t: Template, gridSize: number): Shape {
+export function templateShape(t: TemplateGeometry, gridSize: number): Shape {
   const o: Point = [t.x, t.y];
   const len = feetToPx(t.distance, gridSize);
   const dir = t.direction ?? 0;
@@ -65,8 +69,17 @@ export function templateShape(t: Template, gridSize: number): Shape {
 }
 
 /** Whether `p` is inside the template, or within `slack` pixels of its edge. */
-export function inTemplate(t: Template, p: Point, gridSize: number, slack = 0): boolean {
+export function inTemplate(t: TemplateGeometry, p: Point, gridSize: number, slack = 0): boolean {
   return distanceTo(templateShape(t, gridSize), p) <= slack;
+}
+
+/** Half a pixel of give, so a hex whose centre sits right on the edge counts. */
+const EDGE = 0.5;
+
+/** The cells a template covers on a gridded scene: those whose centre it takes in. */
+export function templateCells(t: TemplateGeometry, lattice: Lattice): Point[] {
+  const shape = templateShape(t, lattice.size);
+  return cellsInside(lattice, shapeBounds(shape), (p) => distanceTo(shape, p) <= EDGE);
 }
 
 /** Where its aim handle sits: along its direction, as far as it reaches (a square's: its edge). */

@@ -1,5 +1,5 @@
 import { inZone, type Spell, type Token, withChoice, type ZoneHit, zonesOf } from '@vtt/system-dnd5e';
-import { inTemplate, isParty, type Point } from '@vtt/shared';
+import { caughtAt, inTemplate, isParty, type Point, sceneLattice } from '@vtt/shared';
 import type { SpellActions } from '../actions/spell-actions.ts';
 import type { Table } from './table.ts';
 import type { ZoneTemplates } from './zone-templates.ts';
@@ -54,9 +54,11 @@ export class Zones {
     const spell = this.table.content(z.bearer).spells.get(z.effect.zone.spell);
     if (!spell?.area) return false;
     const gridSize = this.store.world.gridSize;
+    const lattice = sceneLattice(this.store.world);
     const template = this.templates.of(z);
-    if (!template) return inZone(z, spell, { token, at, gridSize });
-    return !spared(z, token) && inTemplate(template, at, gridSize, (token.size * gridSize) / 4);
+    if (!template) return inZone(z, spell, { token, at, gridSize, lattice });
+    const caught = caughtAt({ ...token, x: at[0], y: at[1] }, gridSize, lattice);
+    return !spared(z, token) && inTemplate(template, caught.at, gridSize, caught.slack);
   }
 
   private trigger(z: ZoneHit, victim: Token): void {

@@ -1,4 +1,5 @@
 import type { Rect } from './chunks.ts';
+import { type Lattice, snapToHexPoint } from './grid.ts';
 import type { Point } from './schema.ts';
 
 // The 8 handles of a box (a tile, a box drawing, the box round a freehand
@@ -8,6 +9,8 @@ export interface Snap {
   gridSize: number;
   /** Shift: no snapping. */
   free: boolean;
+  /** The scene's cells: on hexes points land on a hex's corners and centre. */
+  lattice?: Lattice;
 }
 
 export interface Handle {
@@ -17,11 +20,12 @@ export interface Handle {
 
 const roundTo = (v: number, step: number): number => Math.round(v / step) * step;
 
-/** A point on the grid's corners (Shift: on whole pixels). */
-export const snapPt = (p: Point, s: Snap): Point => [
-  roundTo(p[0], s.free ? 1 : s.gridSize),
-  roundTo(p[1], s.free ? 1 : s.gridSize),
-];
+/** A point on the grid's corners, or a hex's corners and centre (Shift: on whole pixels). */
+export function snapPt(p: Point, s: Snap): Point {
+  if (!s.free && s.lattice && s.lattice.kind !== 'square') return snapToHexPoint(p, s.lattice);
+  const step = s.free ? 1 : s.gridSize;
+  return [roundTo(p[0], step), roundTo(p[1], step)];
+}
 
 /** Box handles, with the share of the width and height each sits at. */
 const BOX_HANDLES: Record<string, Point> = {

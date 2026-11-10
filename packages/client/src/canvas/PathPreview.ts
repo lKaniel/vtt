@@ -1,9 +1,18 @@
-import { areaShape, type Attack, attackRange, type Token, tokenDistance, type TokenView } from '@vtt/system-dnd5e';
+import {
+  areaCells,
+  areaShape,
+  type Attack,
+  attackRange,
+  type Token,
+  tokenDistance,
+  type TokenView,
+} from '@vtt/system-dnd5e';
 import {
   bodyOf,
   hasLineOfSight,
   gridKind,
   type GridKind,
+  latticeOf,
   type Point,
   type Region,
   regionCost,
@@ -13,6 +22,7 @@ import {
   wallsOnFloor,
 } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
+import { fillCells } from './item-draw.ts';
 import { Sketch } from './sketch.ts';
 import { previewLabel } from '../text/spell-text.ts';
 import type { Session } from '../session/session.ts';
@@ -189,6 +199,7 @@ export class PathPreview {
     if (spell.area) {
       this.drawArea(
         areaShape({ area: spell.area, range: spell.range }, { caster: token, aim: hover, gridSize: ctx.gridSize }),
+        ctx,
       );
     } else {
       this.line
@@ -208,10 +219,13 @@ export class PathPreview {
     return ' · ' + t('walk.first', { feet: ctx.closeIn.feet });
   }
 
-  private drawArea(shape: ReturnType<typeof areaShape>): void {
+  /** The area, and on hexes the hexes it covers. */
+  private drawArea(shape: ReturnType<typeof areaShape>, ctx: PreviewContext): void {
+    const hex = ctx.grid === 'hex-rows' || ctx.grid === 'hex-cols' ? latticeOf(ctx.grid, ctx.gridSize) : undefined;
+    if (hex) fillCells(this.line, areaCells(shape, hex), hex, { color: AREA_COLOR, alpha: 0.3 });
     if (shape.kind === 'circle') this.line.circle(shape.center[0], shape.center[1], shape.radius);
     else this.line.poly(shape.points.flat());
-    this.line.fill({ color: AREA_COLOR, alpha: 0.25 }).stroke({ width: 4, color: AREA_COLOR, alpha: 0.9 });
+    this.line.fill({ color: AREA_COLOR, alpha: hex ? 0.05 : 0.25 }).stroke({ width: 4, color: AREA_COLOR, alpha: 0.9 });
   }
 
   /** The hovered point, whole pixels without a grid, its square's centre on one. */

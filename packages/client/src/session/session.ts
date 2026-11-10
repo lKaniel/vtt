@@ -115,6 +115,7 @@ export class Session {
     editorChanged: () => this.editorChanged(),
     fogChanged: () => this.emit('fog'),
     gridSize: () => this.gridSize(),
+    moveGrid: () => this.moveGrid(),
     updates: (label, updates) => this.edits.sendUpdates(label, updates),
     runScript: (doc, token) => this.scripts.run(doc, token),
     heard: (src, volume) => this.emit('sound', src, volume),
@@ -327,15 +328,13 @@ export class Session {
 
   moveGrid = (): MoveGrid => (this.world && sceneLattice(this.world)) ?? this.gridSize();
 
-  showError(message: string): void {
-    this.error = { message, at: Date.now() };
+  /** Shows an error, or (`info`) a notice. */
+  showError(message: string, info = false): void {
+    this.error = { message, at: Date.now(), ...(info && { info }) };
     this.changed();
   }
 
-  showNotice(message: string): void {
-    this.error = { message, at: Date.now(), info: true };
-    this.changed();
-  }
+  showNotice = (message: string): void => this.showError(message, true);
 
   private receive(msg: ServerMessage): void {
     if (this.apply(msg)) this.changed();
