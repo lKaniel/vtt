@@ -168,6 +168,8 @@ export const EN_SHEET = {
   'sheet.spellLevel': '{level} level',
   'sheet.slots': '{level} level slots: {left} of {total} left',
   'sheet.concentration': 'Concentration',
+  'sheet.light': 'Light',
+  'sheet.lightReach': '{bright} ft bright, {dim} ft dim',
   'sheet.ritual': 'Ritual',
   'sheet.notInRules': 'Not in the {rules} rules: {ids}',
   'sheet.cast': 'Cast {name}',

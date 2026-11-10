@@ -49,6 +49,15 @@ test('the inventory lists gear by kind, opens a description in place and filters
   await expect(sheet.getByRole('listitem', { name: 'Chain Mail' })).toHaveCount(0);
 });
 
+test('a lit torch shows on the Effects tab with the game time it has left', async ({ page }) => {
+  await atTable(page, PLAYER_2);
+  await page.evaluate(() => vtt.send({ t: 'useItem', token: 'bram', item: 'torch' }));
+  const sheet = await openBram(page);
+  await sheet.getByRole('tab', { name: 'Effects' }).click();
+  const torch = sheet.getByRole('listitem', { name: 'Torch' });
+  await expect(torch).toContainText(/(1 h|59 min) left/);
+});
+
 test('the GM makes a skill proficient in edit mode', async ({ page }) => {
   await atTable(page, GM);
   const sheet = await openBram(page);

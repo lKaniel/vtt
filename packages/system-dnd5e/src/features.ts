@@ -141,6 +141,15 @@ function withResistance(uses: Record<string, number> | undefined, token: Token):
 }
 
 /** A short rest gives back short-rest features and pact slots; a long rest gives back everything. */
+/** A long rest takes 8 hours, and only one in 24 hours does a creature any good. */
+export const LONG_REST_SECONDS = 8 * 3600;
+const LONG_REST_EVERY = 24 * 3600;
+
+/** Whether a long rest starting at game time `now` does `token` any good: its last ended a day before this one ends. */
+export function longRestReady(token: Pick<Token, 'longRestAt'>, now: number): boolean {
+  return token.longRestAt === undefined || now + LONG_REST_SECONDS - token.longRestAt >= LONG_REST_EVERY;
+}
+
 export function rest(token: Token, sheet: Creature, kind: 'short' | 'long'): Token {
   if (kind === 'long') return longRest(token, sheet);
   const uses = withResistance(restUses(token, sheet), token);

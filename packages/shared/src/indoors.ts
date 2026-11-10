@@ -9,8 +9,9 @@ import { restriction, wallsAt } from './walls.ts';
 // Indoors: ground under a roof and closed in by walls, where the light of
 // the sky (the scene's darkness, the time of day) never reaches, so only
 // lamps and senses show anything. The map is cut into half squares; those
-// under a roof that no gap (a missing wall, an open door, a window) joins
-// to open ground are indoors.
+// under a roof are indoors, but for those within a couple of squares of a
+// gap (a missing wall, an open door, a window) that joins them to open
+// ground: daylight comes in only that far.
 
 /** Half squares under roofs, marked 1 where they are indoors. */
 export interface Indoors {
@@ -140,25 +141,45 @@ class Cells {
   }
 }
 
-/** The roofed cells joined to `start` with nothing between them, and whether the sky gets in. */
-function room(cells: Cells, start: number, seen: Uint8Array): { members: number[]; open: boolean } {
+/** The roofed cells joined to `start` with nothing between them, and those of them the sky looks into. */
+function room(cells: Cells, start: number, seen: Uint8Array): { members: number[]; lit: number[] } {
   const members = [start];
+  const lit = new Set<number>();
   seen[start] = 1;
-  let open = false;
   // The list grows as the room is walked; for-of goes on to the cells added.
   for (const i of members) {
-    if (cells.edge(i)) open = true;
+    if (cells.edge(i)) lit.add(i);
     for (const j of cells.neighbours(i)) {
       if (seen[j] || !cells.open(i, j)) continue;
       if (!cells.roofed[j]) {
-        open = true;
+        lit.add(i);
         continue;
       }
       seen[j] = 1;
       members.push(j);
     }
   }
-  return { members, open };
+  return { members, lit: [...lit] };
+}
+
+/** Daylight reaches this many squares into a room from its window, open door or open side. */
+const DAYLIGHT_REACH = 2;
+
+/** The cells of a room within `reach` steps of where the sky looks in. */
+function daylit(cells: Cells, members: readonly number[], lit: readonly number[], reach: number): Set<number> {
+  const inRoom = new Set(members);
+  const steps = new Map(lit.map((i) => [i, 0]));
+  const queue = [...lit];
+  for (const i of queue) {
+    const d = steps.get(i)!;
+    if (d >= reach) continue;
+    for (const j of cells.neighbours(i)) {
+      if (steps.has(j) || !inRoom.has(j) || !cells.open(i, j)) continue;
+      steps.set(j, d + 1);
+      queue.push(j);
+    }
+  }
+  return new Set(steps.keys());
 }
 
 /** The ground under `roofs` that `walls` close in, on a grid of half squares; undefined with no roofs. */
@@ -170,13 +191,16 @@ export function indoorArea(walls: readonly Wall[], roofs: readonly RoofRect[], g
   return cells.area;
 }
 
-/** Marks the cells of every room the sky can't get into as inside. */
+/** Marks the cells of every room as inside, but for those near where the sky looks in. */
 function markRooms(cells: Cells): void {
   const seen = new Uint8Array(cells.roofed.length);
+  // Cells are half squares.
+  const reach = DAYLIGHT_REACH * 2;
   for (let i = 0; i < seen.length; i++) {
     if (seen[i] || !cells.roofed[i]) continue;
-    const { members, open } = room(cells, i, seen);
-    if (!open) for (const m of members) cells.area.inside[m] = 1;
+    const { members, lit } = room(cells, i, seen);
+    const day = daylit(cells, members, lit, reach);
+    for (const m of members) if (!day.has(m)) cells.area.inside[m] = 1;
   }
 }
 

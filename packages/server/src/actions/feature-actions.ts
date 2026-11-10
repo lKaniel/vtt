@@ -8,6 +8,8 @@ import {
   itemCost,
   itemProblem,
   removeEffects,
+  LONG_REST_SECONDS,
+  longRestReady,
   rechargeItems,
   rest,
   type Token,
@@ -91,18 +93,28 @@ export class FeatureActions {
     return !!sheet?.features.find((f) => f.id === featureId)?.spell;
   }
 
-  rest(player: Player, ids: readonly string[], kind: 'short' | 'long'): void {
+  /** Rests the creatures; a long rest skips those that had one less than a day ago, and refuses when that is all of them. */
+  rest(player: Player, ids: readonly string[], kind: 'short' | 'long', now: number): void {
     requireGm(player);
-    for (const id of ids) {
-      const { token, sheet } = this.table.fighter(id);
-      if (kind === 'long' && token.concentration) this.table.endConcentration(id);
-      const rested = rest(this.store.tokens.get(id)!, sheet, kind);
-      // A long rest stands in for dawn, when wands and staffs regain their charges.
-      const now = kind === 'long' ? rechargeItems(rested, this.table.content(rested), this.table.rng) : rested;
-      this.store.setToken(now);
-    }
-    const who = ids.length === 1 ? 'A creature takes' : String(ids.length) + ' creatures take';
-    this.table.note(`${who} a ${kind} rest`);
+    const tired = kind === 'long' ? ids.filter((id) => !longRestReady(this.table.fighter(id).token, now)) : [];
+    const already = tired.map(
+      (id) => `${this.table.fighter(id).token.name} already had a long rest in the last 24 hours`,
+    );
+    if (tired.length === ids.length) throw new Refusal(already.join('; '));
+    const resting = ids.filter((id) => !tired.includes(id));
+    for (const id of resting) this.restOne(id, kind, now);
+    const who = resting.length === 1 ? 'A creature takes' : String(resting.length) + ' creatures take';
+    this.table.note([`${who} a ${kind} rest`, ...already].join('. '));
+  }
+
+  private restOne(id: string, kind: 'short' | 'long', now: number): void {
+    const { token, sheet } = this.table.fighter(id);
+    if (kind === 'long' && token.concentration) this.table.endConcentration(id);
+    const rested = rest(this.store.tokens.get(id)!, sheet, kind);
+    if (kind === 'short') return this.store.setToken(rested);
+    // A long rest stands in for dawn, when wands and staffs regain their charges.
+    const recharged = rechargeItems(rested, this.table.content(rested), this.table.rng);
+    this.store.setToken({ ...recharged, longRestAt: now + LONG_REST_SECONDS });
   }
 
   dropConcentration(player: Player, id: string): void {

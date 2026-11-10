@@ -31,10 +31,25 @@ function mix(a: number, b: number, t: number): number {
   return ch(16) | ch(8) | ch(0);
 }
 
-/** The light everything gets without a lamp: daylight, dusk, or a faint blue night. */
-export function ambientColor(darkness: number): number {
+/** The warm light of a low sun at dawn and dusk. */
+const SUNSET = 0xff9a5a;
+
+/**
+ * How strongly the sky glows at dawn or dusk, 0 to 1, on a scene whose
+ * darkness follows the clock: none by day or at full night (`night`, the
+ * calendar's darkest), most halfway between, when the sun is on the horizon.
+ */
+export function twilightGlow(darkness: number, night: number): number {
+  if (night <= 0) return 0;
+  const f = darkness / night;
+  return f <= 0 || f >= 1 ? 0 : Math.round(4 * f * (1 - f) * 100) / 100;
+}
+
+/** The light everything gets without a lamp: daylight, the orange of dawn and dusk (`glow`), or a faint blue night. */
+export function ambientColor(darkness: number, glow = 0): number {
   const d = Math.min(1, Math.max(0, darkness));
-  return scale(mix(0xffffff, MOONLIGHT, Math.min(1, d * 1.3)), 1 - d * 0.88);
+  const sky = mix(mix(0xffffff, MOONLIGHT, Math.min(1, d * 1.3)), SUNSET, Math.min(1, glow) * 0.7);
+  return scale(sky, 1 - d * 0.88);
 }
 
 function smoothstep(a: number, b: number, x: number): number {

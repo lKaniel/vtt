@@ -1,3 +1,4 @@
+import { twilightGlow } from '../canvas/lighting/light-style.ts';
 import type { Doc } from '@vtt/core';
 import {
   type Calendar,
@@ -98,6 +99,11 @@ export class WorldTime implements SessionPart {
   /** Game seconds now. */
   now(): number {
     return timeNow(this.clock(), Date.now() + this.serverOffset);
+  }
+
+  /** The orange of dawn and dusk on a scene whose darkness follows the clock, 0 to 1. */
+  glow(world: { darkness: number; darknessFollowsClock?: boolean }): number {
+    return world.darknessFollowsClock ? twilightGlow(world.darkness, this.clock().calendar.night) : 0;
   }
 
   /** "Monday, 3 March 1492 DR, 14:05" */
