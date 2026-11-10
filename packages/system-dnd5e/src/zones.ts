@@ -1,5 +1,5 @@
 import { type AreaShape, areaShape, inArea } from './areas.ts';
-import { isParty, type Light, type Point, ringAround, wallAcross, type WallRules } from '@vtt/shared';
+import { isParty, type Lattice, type Light, type Point, ringAround, wallAcross, type WallRules } from '@vtt/shared';
 import type { Token } from './token-schema.ts';
 import type { Area } from './area-schema.ts';
 import type { Effect, Spell } from './spell-schema.ts';
@@ -82,14 +82,14 @@ const onSide = (t: Pick<Token, 'ownership'>) => isParty(t);
 export function inZone(
   { bearer, effect }: ZoneHit,
   spell: Spell,
-  { token, at, gridSize }: { token: Token; at: Point; gridSize: number },
+  { token, at, gridSize, lattice }: { token: Token; at: Point; gridSize: number; lattice?: Lattice },
 ): boolean {
   if (token.id === bearer.id) return false;
   if (effect.zone.spares === 'allies' && onSide(token) === onSide(bearer)) return false;
   const aim = effect.zone.at ?? [bearer.x, bearer.y];
   return inArea(
     { area: spell.area!, range: spell.range },
-    { caster: bearer, aim, gridSize, token: { ...token, x: at[0], y: at[1] } },
+    { caster: bearer, aim, gridSize, lattice, token: { ...token, x: at[0], y: at[1] } },
   );
 }
 

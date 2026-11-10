@@ -1,4 +1,5 @@
 import type { Doc } from '@vtt/core';
+import { latticeOf } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Session } from './session.ts';
@@ -147,6 +148,15 @@ describe('edits from the editor', () => {
     ws.receive({ t: 'docs', txn, changes: [{ coll: 'main/lights', id: 'torch', doc: confirmed }] });
     ws.receive({ t: 'reject', txn, reason: 'late' });
     expect(session.docs.get('main/lights', 'torch')).toMatchObject({ rev: 3 });
+  });
+
+  it('puts a wall end on a hex corner on a hex scene', () => {
+    const base = gmWelcome() as Extract<ServerMessage, { t: 'welcome' }>;
+    ws.receive({ ...base, world: { ...base.world, grid: 'hex-rows' } });
+    session.editor.setMode('walls');
+    const corner = latticeOf('hex-rows', 100).corners([1, 1])[2]!;
+    session.editor.reshape('main/walls#w1', 'b', [corner[0] + 4, corner[1] - 3], false);
+    expect(lastOps()?.ops?.[0]?.patch).toEqual({ b: [Math.round(corner[0]), Math.round(corner[1])] });
   });
 
   it('nudges by a pixel, or a square with shift', () => {

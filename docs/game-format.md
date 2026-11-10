@@ -64,6 +64,11 @@ right, `y` grows down, negative values are fine.
   `x = gridSize * (q + r / 2 + 0.5)`, `y = gridSize * (0.866 * r + 0.577)`,
   so hex `[0, 0]` fits in the map's top left corner; columns are the same
   with x and y swapped. `grid.ts` in shared has the maths (`latticeOf`).
+  On hexes a template or spell area covers whole hexes, those whose centre
+  it takes in (drawn filled, as Foundry highlights them), and a creature is
+  caught when its hex is. The editor snaps wall ends, tile corners, lights
+  and drawing points to a hex's corners and centre, templates start on a
+  hex's centre, and moves go hex to hex (Shift: free).
 - Walls usually run along square edges, so their ends are multiples of
   `gridSize`; the editor snaps to them even when no grid is drawn.
 

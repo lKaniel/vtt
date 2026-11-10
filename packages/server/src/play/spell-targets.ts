@@ -1,5 +1,5 @@
 import { inArea, isLinked, scaledSpell, type Spell, tokenDistance } from '@vtt/system-dnd5e';
-import { gridKind, type Point } from '@vtt/shared';
+import { gridKind, type Point, sceneLattice } from '@vtt/shared';
 import { Refusal, type Fighter, type Table } from './table.ts';
 
 // Who and where a spell is aimed at: the creatures picked (in range, in
@@ -91,8 +91,9 @@ export class SpellTargets {
         : (point ?? [caster.token.x + 1, caster.token.y]);
     const origin: Point = spell.area!.shape === 'sphere' || spell.range > 0 ? aim : [caster.token.x, caster.token.y];
     const area = { area: spell.area!, range: spell.range };
+    const lattice = sceneLattice(this.store.world);
     return [...this.store.tokens.values()]
-      .filter((t) => inArea(area, { caster: caster.token, aim, token: t, gridSize: this.grid }))
+      .filter((t) => inArea(area, { caster: caster.token, aim, token: t, gridSize: this.grid, lattice }))
       .filter((t) => this.table.clearShot(origin, [t.x, t.y]))
       .flatMap((t) => {
         const sheet = this.table.sheetOf(t);

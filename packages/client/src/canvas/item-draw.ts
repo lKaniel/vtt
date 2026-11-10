@@ -1,5 +1,15 @@
 import type { Doc } from '@vtt/core';
-import { feetToPx, isFloorWay, type Point, type Region, type Shape, shapeOf } from '@vtt/shared';
+import {
+  feetToPx,
+  isFloorWay,
+  type Lattice,
+  type Point,
+  type Region,
+  type Shape,
+  shapeOf,
+  type Template,
+  templateCells,
+} from '@vtt/shared';
 import type { Graphics } from 'pixi.js';
 import type { ItemTool } from '../editor/shape-tools.ts';
 
@@ -11,7 +21,26 @@ import type { ItemTool } from '../editor/shape-tools.ts';
 interface Ctx {
   px: number;
   gridSize: number;
+  /** The scene's cells: on hexes a template shows as the hexes it covers. */
+  lattice?: Lattice;
 }
+
+/** Fills the cells (hexes) an area covers, the way Foundry highlights them. */
+export function fillCells(g: CellPainter, cells: readonly Point[], lattice: Lattice, fill: CellFill): void {
+  for (const cell of cells) g.poly(lattice.corners(cell).flat()).fill(fill);
+}
+
+interface CellFill {
+  color: number;
+  alpha: number;
+}
+
+/** What `fillCells` paints on: Pixi Graphics, or a Sketch. */
+interface CellPainter {
+  poly(points: number[]): { fill(style: CellFill): unknown };
+}
+
+const onHexes = (ctx: Ctx) => (ctx.lattice && ctx.lattice.kind !== 'square' ? ctx.lattice : undefined);
 
 const color = (c: unknown, fallback: number): number =>
   typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c) ? Number.parseInt(c.slice(1), 16) : fallback;
@@ -52,8 +81,10 @@ function drawDrawing(g: Graphics, d: Doc, { px }: Ctx): void {
 
 function drawTemplate(g: Graphics, t: Doc, ctx: Ctx): void {
   const c = color(t.color, 0xffcc00);
+  const hex = onHexes(ctx);
+  if (hex) fillCells(g, templateCells(t as unknown as Template, hex), hex, { color: c, alpha: 0.22 });
   traceShape(g, shapeOf(t, ctx))
-    .fill({ color: c, alpha: 0.18 })
+    .fill({ color: c, alpha: hex ? 0.04 : 0.18 })
     .stroke({ width: 2 * ctx.px, color: c, alpha: 0.85 });
 }
 

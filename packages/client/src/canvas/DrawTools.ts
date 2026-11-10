@@ -1,4 +1,4 @@
-import { type Point, rectBetween } from '@vtt/shared';
+import { type Point, rectBetween, snapOn, snapPt } from '@vtt/shared';
 import type { Graphics } from 'pixi.js';
 import { isItemTool, ShapeDraft } from '../editor/shape-tools.ts';
 import { LIGHT_PRESETS, snapPoint, wallEdit } from '../play/map-tools.ts';
@@ -53,7 +53,13 @@ export class DrawTools {
   }
 
   private snap(free: boolean) {
-    return { gridSize: this.grid, free };
+    return snapOn(this.session.moveGrid(), free);
+  }
+
+  /** Where a wall end or a tile corner lands: square corners, or a hex's corners and centre. */
+  private point(at: Point, free: boolean): Point {
+    const s = this.snap(free);
+    return s.lattice && s.lattice.kind !== 'square' && !free ? snapPt(at, s) : snapPoint(at, this.grid, !free);
   }
 
   /** The pointer moved with the button down. */
@@ -70,7 +76,7 @@ export class DrawTools {
     }
     const tool = this.session.editor.tool;
     if (tool === 'tile') {
-      this.box = snapPoint(at, this.grid, !free);
+      this.box = this.point(at, free);
       return;
     }
     if (tool === 'place') return this.placeLight(at, free);
@@ -88,7 +94,7 @@ export class DrawTools {
     const start = this.box;
     this.box = undefined;
     if (!start) return;
-    const r = rectBetween(start, snapPoint(at, this.grid, !free));
+    const r = rectBetween(start, this.point(at, free));
     if (r.w > 0 && r.h > 0) this.session.tiles.create(r);
   }
 
@@ -99,7 +105,7 @@ export class DrawTools {
     if (shapes) return drawDraft(g, { data: shapes.preview(hover, this.snap(free)), tool: shapes.tool, hover }, ctx);
     const { px } = ctx;
     if (tool === 'tile') {
-      const at = snapPoint(hover, this.grid, !free);
+      const at = this.point(hover, free);
       g.circle(at[0], at[1], 5 * px).fill({ color: 0xffffff, alpha: 0.9 });
       if (this.box) {
         const r = rectBetween(this.box, at);
@@ -112,7 +118,7 @@ export class DrawTools {
       g.circle(at[0], at[1], 7 * px).stroke({ width: 2 * px, color: 0xffffff, alpha: 0.8 });
       return;
     }
-    const at = snapPoint(hover, this.grid, !free);
+    const at = this.point(hover, free);
     g.circle(at[0], at[1], 6 * px).fill({ color: 0xffffff, alpha: 0.9 });
     if (this.chain)
       g.moveTo(...this.chain)
@@ -124,8 +130,10 @@ export class DrawTools {
     return this.session.world?.gridSize ?? 100;
   }
 
-  /** Lights snap to square corners and centres. */
+  /** Lights snap to square corners and centres (a hex's corners and centre). */
   private lightSpot(at: Point, free: boolean): Point {
+    const s = this.snap(free);
+    if (s.lattice && s.lattice.kind !== 'square' && !free) return snapPt(at, s);
     return snapPoint(at, free ? 1 : this.grid / 2, true);
   }
 
@@ -136,7 +144,7 @@ export class DrawTools {
   }
 
   private pressWall(tool: 'wall' | 'door' | 'window', p: Point, free: boolean): void {
-    const at = snapPoint(p, this.grid, !free);
+    const at = this.point(p, free);
     const from = this.chain;
     if (!from) {
       this.chain = at;

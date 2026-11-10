@@ -1,5 +1,6 @@
+import { latticeOf } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
-import { areaShape, inArea } from './areas.ts';
+import { areaCells, areaShape, inArea } from './areas.ts';
 import type { Area } from './area-schema.ts';
 
 const G = 100;
@@ -56,5 +57,26 @@ describe('spell areas', () => {
         [350, 200],
       ],
     });
+  });
+});
+
+describe('spell areas on hexes', () => {
+  it('catch a creature whose hex has its centre inside, wherever in the hex it stands', () => {
+    const hex = latticeOf('hex-rows', G);
+    const [cx, cy] = hex.centre([4, 4]);
+    const [nx, ny] = hex.centre([5, 4]);
+    const burst = { area: area('sphere', 5), range: 60 };
+    // 40 px past its hex's centre: 140 px from the burst, but its hex is in it.
+    const token = { x: nx + 40, y: ny, size: 1 };
+    const aim: [number, number] = [cx, cy];
+    expect(inArea(burst, { caster, aim, token, gridSize: G })).toBe(false);
+    expect(inArea(burst, { caster, aim, token, gridSize: G, lattice: hex })).toBe(true);
+  });
+
+  it('cover the hexes whose centre is inside, for drawing', () => {
+    const hex = latticeOf('hex-rows', G);
+    const aim = hex.centre([4, 4]);
+    const shape = areaShape({ area: area('sphere', 5), range: 60 }, { caster, aim, gridSize: G });
+    expect(areaCells(shape, hex)).toHaveLength(7);
   });
 });

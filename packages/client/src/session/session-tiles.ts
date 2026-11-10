@@ -27,6 +27,8 @@ import {
   reorderEdit,
   scaleGroupEdit,
   snapDelta,
+  snapOn,
+  type MoveGrid,
   tileBounds,
   type TileEdit,
   type TileTexture,
@@ -74,6 +76,8 @@ export interface TileEvents {
   /** A tool setting changed: the editor's tools redraw. */
   editorChanged(): void;
   gridSize(): number;
+  /** The scene's grid, for snapping (see `snapOn`). */
+  moveGrid(): MoveGrid;
 }
 
 /** The tile tree and its commands, as `session.tiles`. */
@@ -108,7 +112,7 @@ export class Tiles {
 
   /** Moves tiles (the tiles mode's drag) and what is in them, snapped. */
   moveSelection(keys: readonly string[], delta: Point, free: boolean): void {
-    const d = snapDelta(delta, 'tiles', this.on.gridSize(), free);
+    const d = snapDelta(delta, 'tiles', this.on.moveGrid(), free);
     if (d[0] || d[1]) this.shiftTiles(this.tileIds(keys), d);
   }
 
@@ -127,7 +131,7 @@ export class Tiles {
     const bounds = tileBounds(tiles, id);
     if (!bounds) return true;
     const shown = { ...group, ...bounds };
-    const next = applyPatch(shown, dragHandle(shown, handle, to, { gridSize: this.on.gridSize(), free }));
+    const next = applyPatch(shown, dragHandle(shown, handle, to, snapOn(this.on.moveGrid(), free)));
     this.sendTileEdit('resize', scaleGroupEdit(tiles, id, next as unknown as Rect));
     return true;
   }

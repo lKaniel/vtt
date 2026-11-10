@@ -1,4 +1,4 @@
-import { aimTemplate, type ItemMode, type Point, rectBetween, type Template } from '@vtt/shared';
+import { aimTemplate, type ItemMode, type Lattice, type Point, rectBetween, snapPt, type Template } from '@vtt/shared';
 
 // The tools that make drawings, notes, templates, regions and sounds, as a
 // small state machine with no canvas in it: boxes are dragged, polygons and
@@ -30,6 +30,8 @@ export interface Draft {
 interface Snap {
   gridSize: number;
   free: boolean;
+  /** The scene's cells: on hexes, points land on a hex's corners and centre. */
+  lattice?: Lattice;
 }
 
 type Kind = 'box' | 'points' | 'freehand' | 'pin' | 'template';
@@ -95,10 +97,13 @@ export class ShapeDraft {
     this.points = [];
   }
 
-  /** Where a press lands: pins and template origins on half squares, the rest on corners. */
+  /** Where a press lands: pins and template origins on half squares (a hex's centre), the rest on corners. */
   private spot(at: Point, s: Snap): Point {
     if (s.free) return [Math.round(at[0]), Math.round(at[1])];
     const half = this.kind === 'pin' || this.kind === 'template';
+    const hex = s.lattice && s.lattice.kind !== 'square' ? s.lattice : undefined;
+    if (hex && half) return snapPt(hex.centre(hex.cellOf(at)), { ...s, lattice: undefined, free: true });
+    if (hex) return snapPt(at, s);
     return snapTo(at, half ? s.gridSize / 2 : s.gridSize);
   }
 
