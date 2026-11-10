@@ -170,8 +170,6 @@ export const StatsSchema = z.object({
   /** Experience points earned. */
   xp: z.number().int().min(0).optional(),
   class: z.string().optional(),
-  /** Its species from the rules (origins.ts), dropped on its sheet; a creator character's is in its build. */
-  species: z.string().optional(),
   /** A multiclassed character's classes, the first one taken at 1st level; instead of `class` and `level`. */
   classes: z.array(ClassLevelSchema).min(1).optional(),
   abilities: AbilitiesSchema.partial().optional(),
@@ -180,7 +178,10 @@ export const StatsSchema = z.object({
   proficiency: z.number().int().optional(),
   /** Extra attacks besides the equipped weapons. */
   attacks: z.array(AttackSchema).optional(),
-  /** The character's species and lineage (subrace), by id: the spells they give (species-spells.ts). */
+  /**
+   * The character's species and lineage (subrace), by id: the spells they give (species-spells.ts). A species
+   * dropped on the sheet sets it (sheet-drops.ts); a creator character's is also in its build.
+   */
   species: id.optional(),
   lineage: id.optional(),
   /** Spells picked for a feature to cast without a slot (Mystic Arcanum), by feature id. */
