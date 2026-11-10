@@ -32,6 +32,16 @@ export interface FoundryImportReport {
   media: number;
   /** What could not come along, grouped by kind, the most first. */
   left: LeftOut[];
+  /** On a re-import into the game the world made: the GM's own work that stayed. */
+  kept?: KeptWork;
+}
+
+/** What a re-import kept of the game it replaced (made in the VTT, not in Foundry). */
+export interface KeptWork {
+  /** Names of the scenes made in the VTT. */
+  scenes: string[];
+  /** Files kept in all: those scenes, actors, entries, pictures, explored fog. */
+  files: number;
 }
 
 /** One kind of thing a Foundry import left out, over the whole world. */
@@ -53,6 +63,12 @@ export interface FoundryImportInput {
   /** The game's name; the world's title if missing. */
   name?: string;
   /** Foundry's Data folder, for files outside the world; found from the world's place if missing. */
+  dataDir?: string;
+}
+
+/** Importing a Foundry world again into the game it made (the admin only); the folders default to the last import's. */
+export interface FoundryReimportInput {
+  folder?: string;
   dataDir?: string;
 }
 
@@ -125,7 +141,7 @@ export interface GameSummary {
 export interface BackupInfo {
   id: string;
   at: number;
-  reason: 'load' | 'timer' | 'manual' | 'restore';
+  reason: 'load' | 'timer' | 'manual' | 'restore' | 'reimport';
 }
 
 /** A game's join screen and page: its players, and which one you joined as. */

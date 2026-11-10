@@ -12,6 +12,7 @@ const REASONS: Record<BackupInfo['reason'], string> = {
   timer: 'during play',
   manual: 'by hand',
   restore: 'before a restore',
+  reimport: 'before a Foundry re-import',
 };
 
 const when = (at: number) => new Date(at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
