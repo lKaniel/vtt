@@ -182,6 +182,16 @@ describe('action rules for pool features', () => {
     expect(store.combat!.left).toMatchObject({ action: false, bonus: false });
   });
 
+  it("rolls a feature's attack with the roll pick sent", () => {
+    level(6);
+    const ana = join_('ana');
+    // An 18 would hit the goblin; disadvantage keeps the 1.
+    dice = [face(18), face(1), face(5, 10)];
+    ana.receive({ t: 'feature', token: 'nyx', feature: 'bolt', targets: ['goblin'], edge: 'disadvantage' });
+    expect(errors(ana)).toEqual([]);
+    expect(tok('goblin').hp).toBeUndefined();
+  });
+
   it('weaves anything as a bonus action once a turn (Fluid Weaving)', () => {
     level(11);
     const { ana } = fight(['nyx', 'goblin', 'goblin2']);

@@ -58,7 +58,7 @@ export class Actions {
     private readonly s: ActionHost,
     private readonly on: ActionEvents,
   ) {
-    this.pick = new RollPick(on);
+    this.pick = new RollPick(on, s);
   }
 
   /** Applies the roll on a chat card to your targets, else the creatures selected (see damage-actions.ts on the server). */
@@ -243,9 +243,9 @@ export class Actions {
     this.on.changed();
   }
 
-  /** A cast with your roll pick when the spell rolls to hit; other spells leave the pick for a later roll. */
+  /** A cast (or a feature aimed like one) with your roll pick when it rolls to hit; others leave the pick for a later roll. */
   private picked(msg: ClientMessage): ClientMessage {
-    if (msg.t !== 'cast' || !this.aiming?.spell.attack || this.aiming.spell.autoHit) return msg;
+    if (!['cast', 'feature'].includes(msg.t) || !this.aiming?.spell.attack || this.aiming.spell.autoHit) return msg;
     return { ...msg, ...this.pick.take() };
   }
 

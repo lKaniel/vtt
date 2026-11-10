@@ -88,6 +88,7 @@ export class Game {
   ) {
     const table = new Table(store, rng, (text) => this.narrate({ text }));
     this.table = table;
+    table.picks.spent = (who) => this.clients.forEach((c) => c.player.id === who && this.send(c, { t: 'pickSpent' }));
     this.spells = new SpellActions(
       table,
       (spell) => this.narrate({ spell }),

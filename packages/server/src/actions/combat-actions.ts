@@ -42,6 +42,7 @@ import { afterAttack, readiedFinisher, rollInitiative, turnEnds } from '../play/
 import { compelled, riseInAura } from '../play/turn-start.ts';
 import { anotherTurn, breakTimeStop } from '../play/time-stop.ts';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
+import { pickedEdge } from '../play/roll-picks.ts';
 import { breakSanctuary, loseImage, passSanctuary } from '../play/spell-wards.ts';
 import { recharge } from '../play/recharge.ts';
 import { flanked } from '../play/flanking.ts';
@@ -131,7 +132,7 @@ export class CombatActions {
         token: f.token.id,
         bonus: f.sheet.initiative,
         speed: f.sheet.speed,
-        disadvantage: surprise?.slow.has(f.token.id),
+        ...pickedEdge(this.table.picks.take(f.token.id), surprise?.slow.has(f.token.id)),
       })),
       this.table.rng,
     );
@@ -218,7 +219,7 @@ export class CombatActions {
     const token = this.store.tokens.get(id);
     if (token?.deathSaves && (token.hp ?? 1) > 0) this.store.setToken({ ...token, deathSaves: undefined });
     if (!token || !isDying(token)) return false;
-    const { token: after, note } = deathSave(token, this.table.rng);
+    const { token: after, note } = deathSave(token, this.table.rng, this.table.picks.take(id));
     this.store.setToken(after);
     this.table.note(note);
     return isDying(after) || (after.hp ?? 1) <= 0;
@@ -342,25 +343,25 @@ export class CombatActions {
   /** Turn-based mode on or off, or the GM's legendary action (its attack made out of turn) or lair action. */
   turnAction(player: Player, canSee: (id: string) => boolean, msg: TurnMessage): void {
     if (msg.t === 'turnBased') return this.turnBased(player, msg);
-    legendaryAction(this.table, player, msg, (attacker, targetId, name) => {
+    legendaryAction(this.table, player, msg, (attacker, targetId, name, pick) => {
       if (!canSee(targetId)) throw new Refusal('No such target');
       const target = this.table.fighter(targetId);
       const attack = this.attackOf(attacker, { attacker: attacker.token.id, target: targetId, attack: name });
       const range = attackRange(attack, this.distance(attacker.token, target.token));
       if (range === 'out') throw new Refusal(`${target.token.name} is out of range`);
-      this.resolve({ attacker, target, attack, range }, { smite: undefined, reaction: true });
+      this.resolve({ attacker, target, attack, range }, { smite: undefined, reaction: true, pick });
     });
   }
 
   /** An opportunity attack: the reaction the creature had, not its action, and the target was in reach as it left. */
-  reactionAttack(player: Player, req: AttackRequest): void {
+  reactionAttack(player: Player, req: AttackRequest, pick?: RollChoice): void {
     const attacker = this.table.actor(player, req.attacker);
     const target = this.table.fighter(req.target);
     const attack = this.attackOf(attacker, req);
     this.table.check(attacker.token, 'reaction');
     passSanctuary(this.table, attacker, target);
     this.table.pay(attacker.token, 'reaction');
-    this.resolve({ attacker, target, attack, range: 'normal' }, { smite: req.smite, reaction: true });
+    this.resolve({ attacker, target, attack, range: 'normal' }, { smite: req.smite, reaction: true, pick });
   }
 
   /** An Attack action attack, or two-weapon fighting's off-hand attack: a bonus action, free with nick. */

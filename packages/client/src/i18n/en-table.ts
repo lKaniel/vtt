@@ -89,7 +89,8 @@ export const EN_TABLE = {
   'pick.critShort': 'Crit',
   'pick.normalShort': 'No crit',
   'pick.hint':
-    'Goes with your next attack, spell attack, check or save, then it is back to normal. It adds to what effects give, so advantage and disadvantage together still cancel out. A critical only counts on a hit.',
+    'Goes with your next attack, spell attack, check, save, initiative or death save, then it is back to normal. It adds to what effects give, so advantage and disadvantage together still cancel out. A critical only counts on a hit.',
+  'pick.keys': 'Or hold Shift as you click for advantage, Ctrl (Cmd on a Mac) for disadvantage.',
   'turns.initiative': '{name}: initiative {n}',
   'finisher.label': 'Finisher',
   'finisher.dice': '{dice} momentum dice (d{die})',

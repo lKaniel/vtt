@@ -19,6 +19,7 @@ import {
   weightFor,
   withoutHeld,
 } from '@vtt/system-dnd5e';
+import { rollPickOf } from './roll-picks.ts';
 import type { Player } from '@vtt/shared';
 import { randomUUID } from 'node:crypto';
 import type { SpellActions } from '../actions/spell-actions.ts';
@@ -178,7 +179,7 @@ export function castPower(parts: Parts, player: Player, canSee: (id: string) => 
   if (use.spell.summon) notes.push(...conjure(table, use, req));
   spells.strike(
     use.caster.token.id,
-    { spell: use.spell, slot: 0, point: req.point, dc, attackBonus: attack, mod },
+    { spell: use.spell, slot: 0, point: req.point, dc, attackBonus: attack, mod, ...rollPickOf(req) },
     use.targets,
     notes,
   );

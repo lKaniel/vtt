@@ -77,6 +77,7 @@ function RollPickPanel({ session }: Readonly<{ session: Session }>) {
         <ToggleGroupItem value="normal">{t('pick.noCrit')}</ToggleGroupItem>
       </ToggleGroup>
       <p className="text-xs text-muted-foreground">{t('pick.hint')}</p>
+      <p className="text-xs text-muted-foreground">{t('pick.keys')}</p>
     </>
   );
 }

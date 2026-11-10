@@ -43,6 +43,7 @@ import {
 import type { GameStore } from '../store/game-store.ts';
 import { contentFor } from '../library/game-packs.ts';
 import { hurtTriggers } from './class-triggers.ts';
+import { RollPicks } from './roll-picks.ts';
 
 /** A request the rules don't allow; its message goes back to the player. */
 export class Refusal extends Error {}
@@ -61,6 +62,9 @@ export type Cost = 'action' | 'bonus' | 'attack' | 'reaction' | 'free';
  * consequences of getting hurt.
  */
 export class Table {
+  /** Players' roll picks for the rolls the server makes for their creatures. */
+  readonly picks = new RollPicks();
+
   constructor(
     readonly store: GameStore,
     readonly rng: Rng,

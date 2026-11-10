@@ -192,11 +192,19 @@ function windowKey(session: Session, e: Key): boolean {
   return key !== undefined;
 }
 
-/** Listens for the game's keys on the page; returns the cleanup. */
+/** Listens for the game's keys on the page, and Shift or Ctrl held for the next roll; returns the cleanup. */
 export function listenToKeys(session: Session): () => void {
   const onKey = (e: Key) => gameKey(session, e);
+  const held = (e: KeyboardEvent | PointerEvent) => session.actions.pick.hold(e);
+  const lost = () => session.actions.pick.hold({ shiftKey: false, ctrlKey: false, metaKey: false });
   addEventListener('keydown', onKey);
-  return () => removeEventListener('keydown', onKey);
+  for (const kind of ['keydown', 'keyup', 'pointerdown'] as const) addEventListener(kind, held, true);
+  addEventListener('blur', lost);
+  return () => {
+    removeEventListener('keydown', onKey);
+    for (const kind of ['keydown', 'keyup', 'pointerdown'] as const) removeEventListener(kind, held, true);
+    removeEventListener('blur', lost);
+  };
 }
 
 /** Space let go: a tap of it (no panning) ends your turn when Space is the end-turn key. */
