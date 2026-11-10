@@ -1,10 +1,11 @@
 import { type PackCompendium, PackManifestSchema, type SystemPackSource } from '@vtt/core';
 import type { z } from 'zod';
 import { type Content, srdFor, withClassAutomation } from './content.ts';
-import { ClassSchema, SpellSchema } from './spell-schema.ts';
+import { type Class, ClassSchema, SpellSchema } from './spell-schema.ts';
 import { MonsterSchema } from './monster-schema.ts';
 import type { Edition } from './stats-schema.ts';
 import { ItemSchema } from './item-schema.ts';
+import { PackClassFeatureSchema, PackSubclassSchema, withClassParts } from './pack-class-parts.ts';
 
 // D&D content in asset packs. The bundled SRD is two packs the system ships
 // (always on), and an installed pack's monster, item and spell compendia add
@@ -15,7 +16,14 @@ import { ItemSchema } from './item-schema.ts';
 type SystemPack = SystemPackSource;
 
 /** Compendium types that are rules content, and the schema of their documents. */
-const CONTENT_SCHEMAS = { monster: MonsterSchema, item: ItemSchema, spell: SpellSchema, class: ClassSchema } as const;
+const CONTENT_SCHEMAS = {
+  monster: MonsterSchema,
+  item: ItemSchema,
+  spell: SpellSchema,
+  class: ClassSchema,
+  subclass: PackSubclassSchema,
+  classFeature: PackClassFeatureSchema,
+} as const;
 type ContentType = keyof typeof CONTENT_SCHEMAS;
 export const CONTENT_TYPES = Object.keys(CONTENT_SCHEMAS) as ContentType[];
 
@@ -69,7 +77,7 @@ function parsedDocs(c: PackCompendium, edition: Edition): { id: string }[] {
 
 const cache = new WeakMap<readonly PackCompendium[], Partial<Record<Edition, Content>>>();
 
-/** The SRD of `edition` plus the monsters, items, spells and classes of a game's pack compendia. */
+/** The SRD of `edition` plus the monsters, items, spells and classes of a game's pack compendia (and their subclasses and class features, pack-class-parts.ts). */
 export function contentWith(edition: Edition, compendia: readonly PackCompendium[] = []): Content {
   const srd = srdFor(edition);
   const mine = compendia.filter((c) => forEdition(c, edition));
@@ -86,7 +94,7 @@ export function contentWith(edition: Edition, compendia: readonly PackCompendium
     monsters: add('monster', srd.monsters),
     items: add('item', srd.items),
     spells: add('spell', srd.spells),
-    classes: add('class', srd.classes),
+    classes: withClassParts(add('class', srd.classes) as Map<string, Class>, mine, edition),
   } as Content;
   cache.set(compendia, { ...known, [edition]: content });
   return content;

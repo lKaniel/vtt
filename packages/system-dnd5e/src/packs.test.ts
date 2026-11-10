@@ -70,4 +70,29 @@ describe('content from packs', () => {
     expect(dnd5e.tokenIssues(token, '2014', [compendium()])).toEqual([]);
     expect(dnd5e.perceiver(token, '2014', [compendium()]).senses.darkvision).toBe(60);
   });
+
+  it('adds a pack’s subclasses and class features to the classes they name, with their automation', () => {
+    const earthbreaker = {
+      class: 'barbarian',
+      id: 'path-of-the-earthbreaker',
+      name: 'Path of the Earthbreaker',
+      features: [{ id: 'overwhelming-power', name: 'Overwhelming Power', level: 3 }],
+    };
+    const trigger = { class: 'warlock', id: 'pact-of-the-trigger', name: 'Pact of the Trigger', level: 3 };
+    const content = contentWith('2014', [
+      compendium({ id: 'subclasses', type: 'subclass', docs: [earthbreaker, { class: 'nope', id: 'x', name: 'X' }] }),
+      compendium({ id: 'features', type: 'classFeature', docs: [trigger] }),
+    ]);
+    const barbarian = content.classes.get('barbarian')!;
+    expect(barbarian.subclasses?.map((s) => s.id)).toEqual(['path-of-the-berserker', 'path-of-the-earthbreaker']);
+    // Its automation joins the features the pack has, and leaves out those it hasn't.
+    expect(barbarian.subclasses?.at(-1)?.features).toEqual([
+      expect.objectContaining({ id: 'overwhelming-power', action: 'bonus', grantAttacks: 1 }),
+    ]);
+    expect(content.classes.get('warlock')!.features.at(-1)).toMatchObject({ id: 'pact-of-the-trigger', level: 3 });
+    expect(srdFor('2014').classes.get('barbarian')!.subclasses).toHaveLength(1);
+    expect(packContentIssues(compendium({ type: 'subclass', docs: [{ id: 'y', name: 'Y' }] }))).toEqual([
+      expect.stringMatching(/^monsters #1 \(y\): class /),
+    ]);
+  });
 });

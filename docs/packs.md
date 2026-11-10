@@ -58,13 +58,15 @@ install. A game's own files stay `/assets/<path>` (uploads go in
 
 ## Compendium types
 
-| Type                               | What happens with it                                                                                                                                                 |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scene`                            | Copied into the game as a new scene (Assets tab, Packs, Import): a `scene.json` with `tiles`, `walls`, `lights` in it (`SceneEntrySchema`, `shared/scene-entry.ts`). |
-| `actor`                            | Added to the Actors list (the system's actor schema).                                                                                                                |
-| `journal`, `rolltable`, `playlist` | Added to the Journal, Tables or Music tab, under a free id (`ENTRY_TYPES`, `shared/journals.ts`).                                                                    |
-| `prefab`                           | Tiles placed together, their middle in the middle of the screen: `{ "id", "name", "tiles": [...] }` (`PrefabSchema`).                                                |
-| `monster`, `item`, `spell`         | D&D rules content: while the pack is on, tokens can use them like SRD ones (`"monster": "<id>"`), and they appear in the Compendium tab.                             |
+| Type                               | What happens with it                                                                                                                                                                                                                                                                                                           |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `scene`                            | Copied into the game as a new scene (Assets tab, Packs, Import): a `scene.json` with `tiles`, `walls`, `lights` in it (`SceneEntrySchema`, `shared/scene-entry.ts`).                                                                                                                                                           |
+| `actor`                            | Added to the Actors list (the system's actor schema).                                                                                                                                                                                                                                                                          |
+| `journal`, `rolltable`, `playlist` | Added to the Journal, Tables or Music tab, under a free id (`ENTRY_TYPES`, `shared/journals.ts`).                                                                                                                                                                                                                              |
+| `prefab`                           | Tiles placed together, their middle in the middle of the screen: `{ "id", "name", "tiles": [...] }` (`PrefabSchema`).                                                                                                                                                                                                          |
+| `monster`, `item`, `spell`         | D&D rules content: while the pack is on, tokens can use them like SRD ones (`"monster": "<id>"`), and they appear in the Compendium tab.                                                                                                                                                                                       |
+| `class`                            | A whole class (the Jaeger): the character creator offers it. Its automation can live in `class-automation.json` under its id, so the pack keeps only text.                                                                                                                                                                     |
+| `subclass`, `classFeature`         | A subclass or a feature (a pact boon, an invocation) for a class the game already has: each doc names its `"class"` and joins that class, replacing any of the same id. Their automation is in `class-automation.json`: a subclass's under the class's `subclasses`, a feature's under `packFeatures` (`pack-class-parts.ts`). |
 
 Other types are listed but not used yet.
 
@@ -86,8 +88,8 @@ are left out. A system's own packs are always on: D&D ships the SRD as
 `dnd5e-srd-2014` (SRD 5.1) and `dnd5e-srd-2024` (SRD 5.2).
 
 The rules read a game's content as the SRD of an edition plus the
-`monster`, `item` and `spell` compendia of the packs it uses
-(`contentWith(edition, compendia)` in `system-dnd5e/src/packs.ts`). The
+`monster`, `item`, `spell`, `class`, `subclass` and `classFeature` compendia
+of the packs it uses (`contentWith(edition, compendia)` in `system-dnd5e/src/packs.ts`). The
 server sends that content to every client when it joins (`packContent`),
 so sheets, tooltips and the Compendium know pack monsters too.
 
