@@ -18,7 +18,7 @@ test('the admin uploads a pack folder and deletes it again', async ({ page }) =>
   await page.goto('/#/setup');
   const box = page.locator('[data-slot="packs"]');
   await expect(box.getByText('No packs installed.')).toBeVisible();
-  await box.locator('input[type="file"]').setInputFiles(await packOnDisk());
+  await box.getByLabel('Upload a pack folder').setInputFiles(await packOnDisk());
   await expect(box.getByText('Installed Forest.')).toBeVisible();
   await expect(box.getByText('Forest', { exact: true })).toBeVisible();
 
