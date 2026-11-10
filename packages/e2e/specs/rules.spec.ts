@@ -75,6 +75,30 @@ test.describe('a weapon attack', () => {
   });
 });
 
+test.describe('a foe out of reach', () => {
+  // In the tavern's far corner from Bram: too far for his longsword.
+  const FAR: [number, number] = [450, 500];
+  test.use({
+    serverOptions: {
+      seed: 20,
+      prepare: async (dir) => {
+        await placeToken(dir, 'goblin-1', ...FAR);
+        await editActor(dir, 'goblin', (goblin) => ({ ...goblin, stats: { ac: 1 } }));
+      },
+    },
+  });
+
+  test('walks the attacker up to it, then attacks', async ({ page }) => {
+    await atTable(page, PLAYER_2);
+    await clickOnMap(page, BRAM);
+    await page.getByRole('button', { name: 'Longsword' }).click();
+    await clickOnMap(page, FAR);
+    await expect(chatLog(page).getByText(/Bram → Goblin, Longsword/)).toBeVisible();
+    const bram = await page.evaluate(() => vtt.tokens().find((t) => t.name === 'Bram'));
+    expect(bram?.y).toBeLessThan(640);
+  });
+});
+
 test('an attack at empty ground is spent and hits nothing', async ({ page }) => {
   await atTable(page, PLAYER_2);
   await clickOnMap(page, BRAM);
