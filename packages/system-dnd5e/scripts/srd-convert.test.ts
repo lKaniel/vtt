@@ -215,7 +215,7 @@ describe('convertMonster', () => {
       attacks: [
         { name: 'Javelin', kind: 'melee', reach: 5, damage: [{ dice: '2d6+4', type: 'piercing' }] },
         { name: 'Javelin (thrown)', kind: 'ranged', range: [30, 120] },
-        { name: 'bite', reach: 5, damage: [{ dice: '1d6' }, { dice: '2d8', type: 'poison' }] },
+        { name: 'bite', reach: 5, damage: [{ dice: '1d6' }], onHit: { damage: [{ dice: '2d8', type: 'poison' }] } },
       ],
     });
   });

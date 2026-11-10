@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ConditionSchema } from './condition-schema.ts';
 
 // Creature statistics and the SRD content they're built from. Monsters and
 // items live as JSON in packages/system-dnd5e/content; tokens refer to them by id.
@@ -72,6 +73,23 @@ export const WeaponRiderSchema = z.object({
 });
 export type WeaponRider = z.infer<typeof WeaponRiderSchema>;
 
+/** What rides on a monster's hit (hit-saves.ts): a ghoul's paralysis, a spider's poison, a wolf knocking prone. */
+export const OnHitSchema = z.object({
+  /** The target saves against it; without one it simply happens. */
+  save: z.object({ ability: z.enum(ABILITIES), dc: z.number().int().positive() }).optional(),
+  /** Damage a failed save takes on top; `half`: half of it on a success. */
+  damage: z.array(DamageSchema).optional(),
+  half: z.boolean().optional(),
+  conditions: z.array(ConditionSchema).optional(),
+  /** Rounds the conditions last; missing: until something ends them. */
+  rounds: z.number().int().positive().optional(),
+  /** The target repeats the save at the end of each of its turns. */
+  repeatSave: z.boolean().optional(),
+  /** The largest creature (squares across) the conditions work on. */
+  maxSize: z.number().positive().optional(),
+});
+export type OnHit = z.infer<typeof OnHitSchema>;
+
 /** A ready-to-roll attack, as printed in a stat block. */
 export const AttackSchema = z.object({
   name: z.string().min(1),
@@ -93,6 +111,7 @@ export const AttackSchema = z.object({
     .optional(),
   /** The bonus attack of two-weapon fighting: no ability modifier to damage. */
   offHand: z.boolean().optional(),
+  onHit: OnHitSchema.optional(),
 });
 export type Attack = z.infer<typeof AttackSchema>;
 

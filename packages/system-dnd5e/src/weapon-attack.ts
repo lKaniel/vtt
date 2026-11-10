@@ -9,6 +9,7 @@ import type { GridKind, Rng } from '@vtt/shared';
 import { divineSmite, hitRiders, markDamage, withWeaponBonus } from './riders.ts';
 import { mirrorImage, weakenedDamage } from './wards.ts';
 import { critRangeOf, styleDamage } from './class-styles.ts';
+import { type HitSave, hitSave } from './hit-saves.ts';
 
 // One attack with a weapon or natural weapon, with everything that changes
 // it: conditions, bless, sneak attack, rage, and 2024 weapon masteries.
@@ -148,7 +149,7 @@ export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.ra
     },
     rng,
   );
-  const { result, decoy } = landing(input, attack, rolled, rng);
+  const { result, decoy, rider } = landing(input, attack, rolled, rng);
   const mastery = result.hit ? masteryOnHit(input, rng) : { effects: [], notes: [] };
   const riders = result.hit ? hitRiders({ id: attacker.token.id, sheet: attacker.sheet }, 'force').used : [];
   return {
@@ -158,9 +159,9 @@ export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.ra
     graze: result.hit || decoy ? undefined : grazeDamage(input),
     push: result.hit ? pushOnHit(input) : undefined,
     decoy,
-    targetEffects: mastery.effects,
+    targetEffects: [...mastery.effects, ...rider.effects],
     used: [...mods.used, ...riders],
-    notes: outcomeNotes(sneak && result.hit, mastery.notes, decoy),
+    notes: outcomeNotes(sneak && result.hit, [...mastery.notes, ...rider.notes], decoy),
   };
 }
 
@@ -173,14 +174,19 @@ const DECOY_NOTES = {
   missed: 'it goes at a duplicate and misses',
 };
 
-/** The rolled attack as it lands: on a mirror image instead of the target, or with weakened damage. */
+const NO_RIDER: HitSave = { damage: [], effects: [], notes: [] };
+
+/** The rolled attack as it lands: on a mirror image instead of the target, or with weakened damage and what rides on the hit. */
 function landing(
   { attacker, target }: WeaponAttackInput,
   attack: Attack,
   rolled: AttackRoll,
   rng: Rng,
-): { result: AttackRoll; decoy?: 'hit' | 'missed' } {
+): { result: AttackRoll; decoy?: 'hit' | 'missed'; rider: HitSave } {
   const decoy = mirrorImage(attacker.sheet, target.sheet, rolled, rng);
-  if (decoy) return { result: { ...rolled, hit: false, crit: false, damage: [] }, decoy };
-  return { result: { ...rolled, damage: weakenedDamage(attacker.sheet, attack, rolled.damage, rng) } };
+  if (decoy) return { result: { ...rolled, hit: false, crit: false, damage: [] }, decoy, rider: NO_RIDER };
+  const damage = weakenedDamage(attacker.sheet, attack, rolled.damage, rng);
+  if (!rolled.hit) return { result: { ...rolled, damage }, rider: NO_RIDER };
+  const rider = hitSave({ attacker, target, attack, crit: rolled.crit }, rng);
+  return { result: { ...rolled, damage: [...damage, ...rider.damage] }, rider };
 }

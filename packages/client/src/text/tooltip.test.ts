@@ -37,6 +37,18 @@ describe('tooltips', () => {
     });
   });
 
+  it('says what rides on a monster attack: the save, the extra damage and the condition', () => {
+    const claws: Attack = { name: 'Claws', kind: 'melee', toHit: 4, damage: [{ dice: '2d4+2', type: 'slashing' }] };
+    const facts = (onHit: Attack['onHit']) => attackTip({ ...claws, onHit }).facts.at(-1);
+    expect(facts({ save: { ability: 'con', dc: 10 }, conditions: ['paralyzed'] })).toBe(
+      'On a hit: DC 10 CON save or paralyzed',
+    );
+    expect(facts({ save: { ability: 'con', dc: 11 }, damage: [{ dice: '2d8', type: 'poison' }], half: true })).toBe(
+      'On a hit: DC 11 CON save or 2d8 poison (half on a success)',
+    );
+    expect(facts({ conditions: ['prone'] })).toBe('On a hit: prone');
+  });
+
   it('shows how many uses a feature has left', () => {
     const tip = featureTip({
       id: 'second-wind',

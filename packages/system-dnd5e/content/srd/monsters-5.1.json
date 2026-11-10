@@ -3723,6 +3723,9 @@
             "type": "acid"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       }
     ],
@@ -3908,12 +3911,21 @@
           {
             "dice": "1d6+3",
             "type": "piercing"
-          },
-          {
-            "dice": "7d6",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 15
+          },
+          "damage": [
+            {
+              "dice": "7d6",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 5
       },
       {
@@ -3924,12 +3936,21 @@
           {
             "dice": "1d8+3",
             "type": "piercing"
-          },
-          {
-            "dice": "7d6",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 15
+          },
+          "damage": [
+            {
+              "dice": "7d6",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "range": [80, 320]
       }
     ],
@@ -4664,6 +4685,15 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 12
+          },
+          "conditions": ["poisoned"],
+          "rounds": 10,
+          "repeatSave": true
+        },
         "reach": 5
       },
       {
@@ -4747,6 +4777,9 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       }
     ],
@@ -5336,6 +5369,15 @@
             "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 14
+          },
+          "conditions": ["poisoned"],
+          "rounds": 10,
+          "repeatSave": true
+        },
         "reach": 10
       }
     ],
@@ -5945,6 +5987,9 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 10
       }
     ],
@@ -6105,6 +6150,9 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 10
       }
     ],
@@ -6508,6 +6556,9 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       }
     ],
@@ -6640,6 +6691,14 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 13
+          },
+          "conditions": ["poisoned"],
+          "rounds": 14400
+        },
         "reach": 5
       },
       {
@@ -6652,6 +6711,9 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 10
       }
     ],
@@ -6764,6 +6826,9 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       }
     ],
@@ -7041,6 +7106,15 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 12
+          },
+          "conditions": ["poisoned"],
+          "rounds": 10,
+          "repeatSave": true
+        },
         "range": [30, 120]
       }
     ],
@@ -7208,6 +7282,13 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "str",
+            "dc": 13
+          },
+          "conditions": ["prone"]
+        },
         "reach": 5
       }
     ],
@@ -7733,6 +7814,14 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 13
+          },
+          "conditions": ["poisoned"],
+          "rounds": 600
+        },
         "range": [30, 120]
       }
     ],
@@ -8376,6 +8465,13 @@
             "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 14
+          },
+          "conditions": ["poisoned"]
+        },
         "range": [150, 600]
       }
     ],
@@ -8439,6 +8535,15 @@
             "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 11
+          },
+          "conditions": ["poisoned"],
+          "rounds": 10,
+          "repeatSave": true
+        },
         "reach": 5
       },
       {
@@ -9076,6 +9181,15 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 10
+          },
+          "conditions": ["paralyzed"],
+          "rounds": 10,
+          "repeatSave": true
+        },
         "reach": 5
       }
     ],
@@ -9234,6 +9348,15 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 10
+          },
+          "conditions": ["paralyzed"],
+          "rounds": 10,
+          "repeatSave": true
+        },
         "reach": 5
       }
     ],
@@ -9492,12 +9615,20 @@
           {
             "dice": "1d4+2",
             "type": "piercing"
-          },
-          {
-            "dice": "3d6",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 11
+          },
+          "damage": [
+            {
+              "dice": "3d6",
+              "type": "poison"
+            }
+          ]
+        },
         "reach": 5
       }
     ],
@@ -9553,6 +9684,9 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       }
     ],
@@ -9597,6 +9731,9 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       }
     ],
@@ -9646,6 +9783,9 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       },
       {
@@ -9658,6 +9798,13 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "str",
+            "dc": 16
+          },
+          "conditions": ["prone"]
+        },
         "reach": 10
       }
     ],
@@ -9877,6 +10024,9 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       }
     ],
@@ -10072,6 +10222,9 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 15
       }
     ],
@@ -10189,12 +10342,21 @@
           {
             "dice": "1d4+4",
             "type": "piercing"
-          },
-          {
-            "dice": "3d6",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 11
+          },
+          "damage": [
+            {
+              "dice": "3d6",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 10
       }
     ],
@@ -10337,6 +10499,9 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       },
       {
@@ -10347,12 +10512,21 @@
           {
             "dice": "1d10+2",
             "type": "piercing"
-          },
-          {
-            "dice": "4d10",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 12
+          },
+          "damage": [
+            {
+              "dice": "4d10",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 5
       }
     ],
@@ -10498,12 +10672,21 @@
           {
             "dice": "1d8+3",
             "type": "piercing"
-          },
-          {
-            "dice": "2d8",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 11
+          },
+          "damage": [
+            {
+              "dice": "2d8",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 5
       }
     ],
@@ -10566,6 +10749,9 @@
             "type": "poison"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       }
     ],
@@ -10687,12 +10873,21 @@
           {
             "dice": "1d6+2",
             "type": "piercing"
-          },
-          {
-            "dice": "3d6",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 11
+          },
+          "damage": [
+            {
+              "dice": "3d6",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 5
       }
     ],
@@ -10780,12 +10975,21 @@
           {
             "dice": "1d6+1",
             "type": "piercing"
-          },
-          {
-            "dice": "2d6",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 11
+          },
+          "damage": [
+            {
+              "dice": "2d6",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 5
       }
     ],
@@ -10923,6 +11127,9 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 10
       },
       {
@@ -11010,6 +11217,13 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "str",
+            "dc": 15
+          },
+          "conditions": ["prone"]
+        },
         "reach": 5
       }
     ],
@@ -11864,12 +12078,21 @@
           {
             "dice": "1d8+4",
             "type": "piercing"
-          },
-          {
-            "dice": "10d8",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 15
+          },
+          "damage": [
+            {
+              "dice": "10d8",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 10
       }
     ],
@@ -12554,6 +12777,14 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 10
+          },
+          "conditions": ["poisoned"],
+          "rounds": 10
+        },
         "reach": 5
       }
     ],
@@ -13021,12 +13252,21 @@
           {
             "dice": "1d4+3",
             "type": "piercing"
-          },
-          {
-            "dice": "3d6",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 11
+          },
+          "damage": [
+            {
+              "dice": "3d6",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 5
       }
     ],
@@ -13498,6 +13738,9 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 30
       }
     ],
@@ -13720,6 +13963,15 @@
             "type": "cold"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 18
+          },
+          "conditions": ["paralyzed"],
+          "rounds": 10,
+          "repeatSave": true
+        },
         "reach": 5
       }
     ],
@@ -14428,6 +14680,13 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "str",
+            "dc": 11
+          },
+          "conditions": ["prone"]
+        },
         "reach": 5
       }
     ],
@@ -15466,6 +15725,9 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       }
     ],
@@ -16096,12 +16358,21 @@
           {
             "dice": "1d10+2",
             "type": "piercing"
-          },
-          {
-            "dice": "4d8",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 11
+          },
+          "damage": [
+            {
+              "dice": "4d8",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 5
       }
     ],
@@ -16161,6 +16432,15 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 21
+          },
+          "conditions": ["poisoned"],
+          "rounds": 10,
+          "repeatSave": true
+        },
         "reach": 5
       },
       {
@@ -16384,12 +16664,21 @@
           {
             "dice": "1",
             "type": "piercing"
-          },
-          {
-            "dice": "2d4",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 10
+          },
+          "damage": [
+            {
+              "dice": "2d4",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 5
       }
     ],
@@ -16597,6 +16886,14 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 11
+          },
+          "conditions": ["poisoned"],
+          "rounds": 600
+        },
         "reach": 5
       }
     ],
@@ -16666,12 +16963,21 @@
           {
             "dice": "3d6+9",
             "type": "piercing"
-          },
-          {
-            "dice": "12d6",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 19
+          },
+          "damage": [
+            {
+              "dice": "12d6",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 10
       }
     ],
@@ -16719,12 +17025,20 @@
           {
             "dice": "1d4+3",
             "type": "piercing"
-          },
-          {
-            "dice": "2d4",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 10
+          },
+          "damage": [
+            {
+              "dice": "2d4",
+              "type": "poison"
+            }
+          ]
+        },
         "reach": 5
       }
     ],
@@ -17144,6 +17458,9 @@
             "type": "fire"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 10
       }
     ],
@@ -17293,6 +17610,9 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 5
       }
     ],
@@ -17697,6 +18017,9 @@
             "type": "fire"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 10
       }
     ],
@@ -17819,12 +18142,21 @@
           {
             "dice": "1",
             "type": "piercing"
-          },
-          {
-            "dice": "1d8",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 9
+          },
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 5
       }
     ],
@@ -18565,12 +18897,20 @@
           {
             "dice": "1",
             "type": "piercing"
-          },
-          {
-            "dice": "1d4",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 9
+          },
+          "damage": [
+            {
+              "dice": "1d4",
+              "type": "poison"
+            }
+          ]
+        },
         "reach": 5
       }
     ],
@@ -18626,12 +18966,21 @@
           {
             "dice": "1d6+4",
             "type": "piercing"
-          },
-          {
-            "dice": "7d8",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 13
+          },
+          "damage": [
+            {
+              "dice": "7d8",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 10
       }
     ],
@@ -18694,6 +19043,14 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 10
+          },
+          "conditions": ["poisoned"],
+          "rounds": 10
+        },
         "range": [40, 160]
       }
     ],
@@ -18952,6 +19309,13 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "str",
+            "dc": 17
+          },
+          "conditions": ["prone"]
+        },
         "range": [60, 240]
       }
     ],
@@ -19874,6 +20238,9 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 10
       },
       {
@@ -19910,6 +20277,13 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "str",
+            "dc": 20
+          },
+          "conditions": ["prone"]
+        },
         "reach": 20
       }
     ],
@@ -20387,6 +20761,9 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"]
+        },
         "reach": 10
       },
       {
@@ -21616,6 +21993,13 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "str",
+            "dc": 14
+          },
+          "conditions": ["prone"]
+        },
         "reach": 5
       }
     ],
@@ -21702,6 +22086,13 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "str",
+            "dc": 11
+          },
+          "conditions": ["prone"]
+        },
         "reach": 5
       }
     ],
@@ -21752,6 +22143,13 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "str",
+            "dc": 13
+          },
+          "conditions": ["prone"]
+        },
         "reach": 5
       }
     ],
@@ -21880,12 +22278,21 @@
           {
             "dice": "2d6+4",
             "type": "piercing"
-          },
-          {
-            "dice": "7d6",
-            "type": "poison"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 15
+          },
+          "damage": [
+            {
+              "dice": "7d6",
+              "type": "poison"
+            }
+          ],
+          "half": true
+        },
         "reach": 10
       }
     ],

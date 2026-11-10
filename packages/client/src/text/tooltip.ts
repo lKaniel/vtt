@@ -64,12 +64,22 @@ export function spellTip(s: Spell): Tip {
   return warning ? { ...tip, warning } : tip;
 }
 
+/** "On a hit: DC 10 CON save or paralyzed": what a monster's attack leaves behind a save, or simply leaves. */
+function onHitText(on: Attack['onHit']): string[] {
+  if (!on) return [];
+  const half = on.half ? ' (half on a success)' : '';
+  const extra = on.damage?.length ? `${damageText(on.damage)}${half}` : '';
+  const what = [extra, ...(on.conditions ?? [])].filter(Boolean).join(', ');
+  const save = on.save ? `DC ${on.save.dc} ${on.save.ability.toUpperCase()} save or ` : '';
+  return [`On a hit: ${save}${what}`];
+}
+
 export function attackTip(a: Attack): Tip {
   const reach = a.kind === 'melee' ? `Reach ${a.reach ?? 5} ft` : `Range ${a.range?.join('/')} ft`;
   return {
     title: a.name,
     subtitle: `${capital(a.kind)} weapon attack`,
-    facts: ['Action', `${signed(a.toHit)} to hit`, reach, damageText(a.damage)],
+    facts: ['Action', `${signed(a.toHit)} to hit`, reach, damageText(a.damage), ...onHitText(a.onHit)],
     body: '',
   };
 }
