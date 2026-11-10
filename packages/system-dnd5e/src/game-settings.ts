@@ -11,6 +11,8 @@ export const GameSettingsSchema = z
      * variant, slower over Strength × 5 and × 10. off: weight isn't counted.
      */
     encumbrance: z.enum(['capacity', 'variant', 'off']).default('capacity'),
+    /** The DMG's optional flanking (flanking.ts): an ally opposite gives melee attacks advantage. */
+    flanking: z.enum(['off', 'on']).default('off'),
   })
   .strict();
 export type GameSettings = z.infer<typeof GameSettingsSchema>;

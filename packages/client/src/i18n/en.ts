@@ -40,6 +40,12 @@ export const EN = {
   'settings.game': 'Game',
   'settings.gameHint': 'For everyone at the table. Seats start over with the change.',
   'settings.rules': 'Rules',
+  'settings.flanking': 'Flanking',
+  'settings.flanking.off': 'Off',
+  'settings.flanking.offHint': 'No advantage for flanking (the standard rules).',
+  'settings.flanking.on': 'On',
+  'settings.flanking.onHint':
+    'Optional rule: a melee attacker has advantage when an ally that can act stands right across the target.',
   'settings.encumbrance': 'Encumbrance',
   'settings.encumbrance.capacity': 'Capacity',
   'settings.encumbrance.capacityHint': 'Over Strength × 15 lb, speed drops to 5 ft.',

@@ -24,6 +24,8 @@ export interface WeaponAttackInput {
   grid?: GridKind;
   /** An ally of the attacker is within 5 ft of the target (for sneak attack). */
   allyNearTarget: boolean;
+  /** An ally that can act stands opposite the attacker beside the target, and the game plays flanking. */
+  flanked?: boolean;
   /** Spell slot spent on Divine Smite if the attack hits (2014 paladin); the server checks it's allowed. */
   smite?: number;
   /** Sneak attack was already used this turn. */
@@ -131,7 +133,9 @@ function grazeDamage(input: WeaponAttackInput): WeaponAttackOutcome['graze'] {
 
 /** What the attack rolls with: the effects', long range's disadvantage, and the attacker's own pick. */
 function rolledModifiers(input: WeaponAttackInput, within5: boolean) {
-  const mods = withEdge(attackModifiers(input.attacker, input.target, { within5 }), input.pick?.edge);
+  const base = attackModifiers(input.attacker, input.target, { within5 });
+  const flanking = !!input.flanked && input.attack.kind === 'melee';
+  const mods = withEdge({ ...base, advantage: base.advantage || flanking }, input.pick?.edge);
   return { ...mods, disadvantage: mods.disadvantage || input.range === 'long', crit: input.pick?.crit };
 }
 

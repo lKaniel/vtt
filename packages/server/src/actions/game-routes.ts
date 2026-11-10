@@ -85,7 +85,7 @@ function tableRoutes(p: GameParts) {
     triggerChoice: (s, m) => p.moves.answer(s.player, m.id, m.option),
     changeLevel: (s, m) => p.moves.changeLevel(s.player, s.canSee, m.token, m.level),
     chat: (s, m) => p.onChat(s.client, m.text.trim()),
-    combatStart: (s, m) => p.combat.start(s.player, m.tokens, m.shared),
+    combatStart: (s, m) => p.combat.start(s.player, m.tokens, { shared: m.shared, surprised: m.surprised }),
     combatEnd: (s) => p.combat.end(s.player),
     endTurn: (s, m) => p.combat.endTurn(s.player, m.token),
     attack: (s, m) => p.combat.attack(s.player, s.canSee, m),
