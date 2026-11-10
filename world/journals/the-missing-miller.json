@@ -2,9 +2,6 @@
   "id": "the-missing-miller",
   "name": "The Missing Miller",
   "folder": "mill-road",
-  "ownership": {
-    "default": "observer"
-  },
   "quest": {
     "status": "active",
     "objectives": [

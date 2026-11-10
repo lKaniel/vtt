@@ -5,7 +5,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, test } from '../support/fixtures.ts';
-import { PLAYER_2, atTable, chatLog, idsSeen } from '../support/table.ts';
+import { GM, PLAYER_2, atTable, chatLog, idsSeen } from '../support/table.ts';
 
 const FOES = ['bandit-1', 'bandit-2', 'scout-1', 'scout-2'];
 
@@ -32,10 +32,11 @@ test('walking into the ambush brings the bandits out of the trees', async ({ pag
     .toEqual(FOES);
 });
 
-test('the missing miller is an open quest in the adventure book', async ({ page }) => {
-  await atTable(page, PLAYER_2);
+test('the missing miller is a quest the GM shares from the adventure book', async ({ page }) => {
+  await atTable(page, GM);
   await page.keyboard.press('j');
   const book = page.getByRole('dialog', { name: /Adventure book/i });
-  await expect(book.getByRole('button', { name: 'The Missing Miller' })).toBeVisible();
-  await expect(book.getByRole('button', { name: 'The Mill Road (GM)' })).toHaveCount(0);
+  await expect(book.getByRole('button', { name: /The Missing Miller/ })).toBeVisible();
+  // The players get it when the innkeeper asks (the GM shares it); the GM's notes stay the GM's.
+  expect(await page.evaluate(() => vtt.docs('journals').map((j) => j.name))).toContain('The Mill Road (GM)');
 });
