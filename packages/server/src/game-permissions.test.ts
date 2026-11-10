@@ -55,20 +55,14 @@ describe('a trusted player editing their own token', () => {
     expect(store.tokens.get('hero')).toMatchObject({ ownership: { default: 'limited', ana: 'owner' }, x: 150 });
   });
 
-  it("can't change how big its token is and what it sees, or what creature it is", () => {
+  it('changes how big its token is and what it sees, never what creature it is', () => {
     const ana = seat('ana');
-    ana.receive({ t: 'ops', txn: 't1', ops: [{ op: 'update', coll: 'actors', id: 'hero', patch: { size: 4 } }] });
-    expect(ana.take('reject').map((r) => r.reason)).toEqual(['Only the GM can change size']);
-    ana.receive({ t: 'editToken', token: 'hero', patch: { img: '/x.webp', size: 4, darkvision: 600 } });
-    ana.receive({ t: 'editToken', token: 'hero', patch: { light: { bright: 999, dim: 0 }, scale: 3 } });
+    ana.receive({ t: 'ops', txn: 't1', ops: [{ op: 'update', coll: 'actors', id: 'hero', patch: { size: 2 } }] });
+    expect(ana.take('reject')).toEqual([]);
+    ana.receive({ t: 'editToken', token: 'hero', patch: { darkvision: 60, light: { bright: 20, dim: 20 } } });
     ana.receive({ t: 'editToken', token: 'hero', patch: { monster: 'ancient-red-dragon' } });
-    expect(ana.take('error').map((e) => e.message)).toEqual([
-      'Only the GM can change size, darkvision',
-      'Only the GM can change light',
-      'Only the GM can change monster',
-    ]);
-    expect(store.tokens.get('hero')).toMatchObject({ size: 1, darkvision: 0 });
-    expect(store.tokens.get('hero')!.img).toBeUndefined();
+    expect(ana.take('error').map((e) => e.message)).toEqual(['Only the GM can change monster']);
+    expect(store.tokens.get('hero')).toMatchObject({ size: 2, darkvision: 60, light: { bright: 20, dim: 20 } });
   });
 
   it('changes its picture and how it looks', () => {
@@ -90,6 +84,23 @@ describe('a trusted player editing their own token', () => {
 });
 
 describe('a plain player', () => {
+  it("can't change how big its token is and what it sees, or what creature it is", () => {
+    store.setToken({ ...store.tokens.get('hero')!, ownership: { default: 'limited', bo: 'owner' } });
+    const bo = seat('bo');
+    bo.receive({ t: 'ops', txn: 't1', ops: [{ op: 'update', coll: 'actors', id: 'hero', patch: { size: 4 } }] });
+    expect(bo.take('reject').map((r) => r.reason)).toEqual(['Only the GM can change size']);
+    bo.receive({ t: 'editToken', token: 'hero', patch: { img: '/x.webp', size: 4, darkvision: 600 } });
+    bo.receive({ t: 'editToken', token: 'hero', patch: { light: { bright: 999, dim: 0 }, scale: 3 } });
+    bo.receive({ t: 'editToken', token: 'hero', patch: { monster: 'ancient-red-dragon' } });
+    expect(bo.take('error').map((e) => e.message)).toEqual([
+      'Only the GM can change size, darkvision',
+      'Only the GM can change light',
+      'Only the GM can change monster',
+    ]);
+    expect(store.tokens.get('hero')).toMatchObject({ size: 1, darkvision: 0 });
+    expect(store.tokens.get('hero')!.img).toBeUndefined();
+  });
+
   it('edits their own token like a trusted one', () => {
     store.setToken({ ...store.tokens.get('hero')!, ownership: { default: 'limited', bo: 'owner' } });
     const bo = seat('bo');

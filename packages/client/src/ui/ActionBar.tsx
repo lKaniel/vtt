@@ -1,4 +1,4 @@
-import { actsNow, type TokenView, type TurnBudget } from '@vtt/system-dnd5e';
+import { actsNow, type TokenView, type TurnBudget, turnLeft } from '@vtt/system-dnd5e';
 import { XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { t } from '../i18n/index.ts';
@@ -26,6 +26,7 @@ import { AimingControls } from './AimingControls.tsx';
 import { SmiteControls } from './SmiteControls.tsx';
 import { FinisherControls } from './FinisherControls.tsx';
 import { RollPickButton } from './RollPickControls.tsx';
+import { TurnOverrideButton } from './TurnOverrideControls.tsx';
 import { currentKeys, keyLabel, keyOf } from '../keys/keybinds.ts';
 import { attackTip, featureTip, itemTip, macroTip, spellTip } from '../text/tooltip.ts';
 import { Glyph, IconFace } from './Icon.tsx';
@@ -39,14 +40,6 @@ const TAB_LABEL: Record<Tab, string> = {
   spells: 'Spells',
   features: 'Features',
 };
-
-/** The selected creature's turn budget: its own, or the one it shares with its leader. */
-function budgetOf(session: Session, token: TokenView): TurnBudget | undefined {
-  const combat = session.combat;
-  if (!combat) return undefined;
-  if (session.turns.current()?.id === token.id) return combat.left;
-  return combat.side[token.id];
-}
 
 /** BG3-style bar along the bottom: portrait, resources, action tiles and end turn. */
 export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onSheet: () => void }>) {
@@ -85,7 +78,8 @@ type BarProps = Readonly<{
 function Bar({ session, token, onSheet, size, onSize }: BarProps) {
   const [tab, setTab] = useState<Tab>('all');
   const [row, setRow] = useState(0);
-  const budget = budgetOf(session, token);
+  const turn = session.combat ? turnLeft(session.combat, token.id) : undefined;
+  const budget = turn?.budget;
   const compact = size === 'compact';
   const pickTab = (next: Tab) => {
     setTab(next);
@@ -97,7 +91,8 @@ function Bar({ session, token, onSheet, size, onSize }: BarProps) {
       <div className="ab-tray">
         <div className="ab-top">
           <Who session={session} token={token} />
-          <Resources token={token} budget={budget} />
+          <Resources token={token} budget={budget} reaction={turn ? turn.reaction : true} />
+          <TurnOverrideButton session={session} token={token} />
           <RollPickButton session={session} />
           <BarButtons size={size} onSize={onSize} help={IDLE_HINT} />
         </div>
@@ -341,13 +336,23 @@ function TileCorner({ tile }: Readonly<{ tile: ActionTile }>) {
 }
 
 /** Action, bonus action and movement on your turn, then spell slots. */
-function Resources({ token, budget }: Readonly<{ token: TokenView; budget: TurnBudget | undefined }>) {
+type ResourcesProps = Readonly<{ token: TokenView; budget: TurnBudget | undefined; reaction: boolean }>;
+
+function Resources({ token, budget, reaction }: ResourcesProps) {
   const caster = token.sheet?.caster;
   const speed = token.sheet?.speed ?? token.speed;
   return (
     <div className="ab-resources">
       <span className={budget && !budget.action ? 'res res-action used' : 'res res-action'} title="Action" />
       <span className={budget && !budget.bonus ? 'res res-bonus used' : 'res res-bonus'} title="Bonus action" />
+      <span
+        className={
+          reaction
+            ? "res bg-[url('/art/icons/resources/reaction.webp')]"
+            : "res used bg-[url('/art/icons/resources/reaction-spent.webp')]"
+        }
+        title={t('res.reaction')}
+      />
       <span className="res-move-icon" title="Movement left" />
       <span className="res-move" title="Movement left">
         <span

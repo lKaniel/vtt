@@ -1,6 +1,6 @@
 import type { SessionPart } from './session-part.ts';
-import { isGm, type Player, type Point } from '@vtt/shared';
-import type { ClientMessage, Condition, TokenView } from '@vtt/system-dnd5e';
+import { canOverride, isGm, type Player, type Point } from '@vtt/shared';
+import { type ClientMessage, type Combat, type Condition, type TokenView, turnLeft } from '@vtt/system-dnd5e';
 
 // The token HUD: a panel beside one creature you control, with its
 // conditions, hit points, elevation and (GM) visibility and place in the
@@ -13,10 +13,19 @@ export interface OpenHud {
   screen: Point;
 }
 
+/** A turn set by hand: an action, bonus action or reaction to have (true) or not, and feet of movement left. */
+export interface TurnOverride {
+  action?: boolean;
+  bonus?: boolean;
+  reaction?: boolean;
+  move?: number;
+}
+
 /** What the HUD needs of the session: the tokens, your seat, and a way to the server. */
 export interface HudHost {
   readonly tokens: ReadonlyMap<string, TokenView>;
   readonly you?: Player;
+  readonly combat: Combat | null;
   canControl(token: TokenView): boolean;
   send(msg: ClientMessage): void;
 }
@@ -73,6 +82,22 @@ export class Hud implements SessionPart {
   /** GM: sets a creature's initiative by hand; it moves to its new place in the order. */
   setInitiative(token: string, value: number): void {
     this.s.send({ t: 'initiative', token, value });
+  }
+
+  /** May you override this creature's turns (the GM, or a trusted seat that controls it)? */
+  canOverride(token: string): boolean {
+    const t = this.s.tokens.get(token);
+    return !!t && !!this.s.you && canOverride(t, this.s.you);
+  }
+
+  /** What the creature has left of its turn and round (see `turnLeft`); undefined outside the fight. */
+  turnOf(token: string): ReturnType<typeof turnLeft> {
+    return this.s.combat ? turnLeft(this.s.combat, token) : undefined;
+  }
+
+  /** GM or trusted: sets what the creature has left (true: has it); the server says so in the chat. */
+  overrideTurn(token: string, set: TurnOverride): void {
+    this.s.send({ t: 'turnOverride', token, ...set });
   }
 
   /** A token is gone: close its HUD and stop seeing through its eyes. */

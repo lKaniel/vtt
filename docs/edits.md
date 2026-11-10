@@ -44,6 +44,9 @@ Server to client:
 - never changes `ownership`, `x`/`y`, `hidden`, `visibleTo`, `summon`,
   `leader`, `actor` or `linked` (moves go through the `move` intent, which
   runs the rules);
+- changes `size`, `light`, the senses, `filter`, `model` and `elevation` only
+  from a `trusted` seat (`isTrusted`), which may also override a turn in a
+  fight (`canOverride`: the `turnOverride` and `initiative` intents);
 - may change `hotbar` on what they own (`canControl`), and anything else on
   what they own from any seat but an observer's (`canEdit`);
 - has an unlinked token's `delta` checked field by field, as if it were the

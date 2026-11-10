@@ -48,7 +48,7 @@ export function TurnOrder({ session }: Readonly<{ session: Session }>) {
               <span className="turn-name">{t.name}</span>
             </button>
           );
-          if (!gm) return turn;
+          if (!session.hud.canOverride(e.token)) return turn;
           return (
             <span key={e.token} className="relative flex">
               {turn}

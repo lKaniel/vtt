@@ -229,6 +229,8 @@ export type ClientMessage =
   /** GM: add a creature to the fight (starting one) or take it out. */
   | { t: 'combatant'; token: string; on: boolean }
   | { t: 'initiative'; token: string; value: number }
+  /** GM or trusted player: what a creature has left of its turn, set by hand (true: has it). */
+  | { t: 'turnOverride'; token: string; action?: boolean; bonus?: boolean; reaction?: boolean; move?: number }
   /** Apply the roll on a chat card to these creatures: in full, half, double, or as healing. */
   | { t: 'applyDamage'; card: string; tokens: string[]; how: 'full' | 'half' | 'double' | 'heal' }
   | { t: 'dropConcentration'; token: string }

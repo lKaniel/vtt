@@ -38,11 +38,30 @@ const GM_ONLY_FIELDS = [
   'devilsSight',
 ];
 
+/** GM-only fields a trusted player may change on what they own: how their creature is built and sees, and how high it is. */
+const TRUSTED_FIELDS = new Set([
+  'elevation',
+  'size',
+  'filter',
+  'model',
+  'light',
+  'darkvision',
+  'blindsight',
+  'tremorsense',
+  'truesight',
+  'devilsSight',
+]);
+
 const RANK: Record<Level, number> = { none: 0, limited: 1, observer: 2, owner: 3 };
 const atLeast = (level: Level, min: Level) => RANK[level] >= RANK[min];
 
 export function isGm(player: Pick<Player, 'role'>): boolean {
   return player.role === 'gm';
+}
+
+/** A trusted seat (or the GM): edits all of what it owns, and bends the rules of its turns. */
+export function isTrusted(player: Pick<Player, 'role'>): boolean {
+  return isGm(player) || player.role === 'trusted';
 }
 
 /** Ids of the players who own it. */
@@ -94,13 +113,23 @@ export function canEdit(doc: Owned, player: Player): boolean {
   return isGm(player) || (player.role !== 'observer' && canControl(doc, player));
 }
 
-/** The keys of an edit that only the GM may make, in the order given; `system` adds its own (SystemDefinition `gmOnlyFields`). */
+/** Override the rules of its turn (give back an action, a reaction, movement; set its initiative): the GM, or a trusted seat that controls it. */
+export function canOverride(doc: Owned, player: Player): boolean {
+  return isGm(player) || (isTrusted(player) && canControl(doc, player));
+}
+
+/**
+ * The keys of an edit that only the GM may make, in the order given; `system` adds its own (SystemDefinition `gmOnlyFields`).
+ * A trusted seat may also change how its creature is built and sees (`TRUSTED_FIELDS`).
+ */
 export function lockedPatchKeys(
   patch: Record<string, unknown>,
   player: Player,
   system: readonly string[] = [],
 ): string[] {
-  return isGm(player) ? [] : Object.keys(patch).filter((k) => GM_ONLY_FIELDS.includes(k) || system.includes(k));
+  if (isGm(player)) return [];
+  const gmOnly = (k: string) => GM_ONLY_FIELDS.includes(k) && !(isTrusted(player) && TRUSTED_FIELDS.has(k));
+  return Object.keys(patch).filter((k) => gmOnly(k) || system.includes(k));
 }
 
 /** `ownership` with `player` set to `level`; a level equal to the default is left out. */

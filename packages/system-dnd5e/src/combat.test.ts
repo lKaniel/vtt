@@ -8,6 +8,7 @@ import {
   nextTurn,
   setInitiative,
   startCombat,
+  turnLeft,
 } from './index.ts';
 import type { Rng } from '@vtt/shared';
 
@@ -146,5 +147,27 @@ describe('setInitiative', () => {
 
   it('leaves a fight without the creature as it is', () => {
     expect(setInitiative(base, 'zz', 3)).toBe(base);
+  });
+});
+
+describe('turnLeft', () => {
+  it('gives the budget of whoever acts, and everyone’s reaction', () => {
+    const left = { move: 10, action: false, bonus: true, attacks: 0, used: [] };
+    const side = { ...left, move: 30 };
+    const fight = {
+      round: 1,
+      turn: 0,
+      order: [
+        { token: 'a', initiative: 2 },
+        { token: 'b', initiative: 1 },
+      ],
+      left,
+      side: { wolf: side },
+      reacted: ['b'],
+    };
+    expect(turnLeft(fight, 'a')).toEqual({ budget: left, reaction: true });
+    expect(turnLeft(fight, 'b')).toEqual({ budget: undefined, reaction: false });
+    expect(turnLeft(fight, 'wolf')).toEqual({ budget: side, reaction: true });
+    expect(turnLeft(fight, 'nobody')).toBeUndefined();
   });
 });

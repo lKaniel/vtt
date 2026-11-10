@@ -116,7 +116,8 @@ token is selected for them when they arrive on a scene, and heads their
 Actors tab, where they place it on the map if it isn't there (a player may
 place a creature they own: shown, a linked one once per scene).
 How big a token is and what it sees (`size`, `light`, senses, `filter`,
-`model`) and what creature it is (`monster`, `pile`) are the GM's to change;
+`model`) and what creature it is (`monster`, `pile`) are the GM's to change
+(a `trusted` seat changes the first group on what it owns too);
 a player who owns it edits the rest of their sheet (its picture and look too,
 uploading a picture of their own), and levels up from its Level up button.
 
@@ -125,12 +126,12 @@ folder up (see the end of this page). Leave it as it is.
 
 Roles, like Foundry's user roles (the GM changes them in the Players tab):
 
-| Role       | What the seat may do                                                                   |
-| ---------- | -------------------------------------------------------------------------------------- |
-| `gm`       | Everything.                                                                            |
-| `trusted`  | Same as `player` for now (kept for Foundry imports).                                   |
-| `player`   | Play the tokens they own, and edit their sheets (not ownership, position or `hidden`). |
-| `observer` | Watch through the party's eyes and read their sheets; act on nothing.                  |
+| Role       | What the seat may do                                                                                                                                          |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gm`       | Everything.                                                                                                                                                   |
+| `trusted`  | A player who also changes their creature's size, senses, light and elevation, and overrides its turns (action, bonus action, reaction, movement, initiative). |
+| `player`   | Play the tokens they own, and edit their sheets (not ownership, position or `hidden`).                                                                        |
+| `observer` | Watch through the party's eyes and read their sheets; act on nothing.                                                                                         |
 
 ## scene.json
 
