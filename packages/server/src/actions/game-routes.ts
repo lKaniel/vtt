@@ -109,7 +109,7 @@ function magicRoutes(p: GameParts) {
     dropConcentration: (s, m) => p.features.dropConcentration(s.player, m.token),
     removeEffect: (s, m) => p.features.removeEffect(s.player, m.token, m.effect),
     rest: (s, m) => {
-      p.features.rest(s.player, m.tokens, m.kind);
+      p.features.rest(s.player, m.tokens, m.kind, p.clock.now());
       p.clock.skip(m.kind === 'long' ? 8 * HOUR : HOUR);
     },
   } satisfies Partial<Routes>;

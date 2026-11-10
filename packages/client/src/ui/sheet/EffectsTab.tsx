@@ -51,6 +51,7 @@ export function EffectsTab(props: Readonly<SheetProps>) {
   return (
     <>
       {value.concentration && <Concentration {...props} />}
+      {value.light?.endsAt !== undefined && <CarriedLight {...props} />}
       {sections.map((s) => (
         <ListSection key={s.id} title={t(`sheet.effects.${s.id}` as MessageKey)} columns={columns()}>
           {s.list.map((e) => (
@@ -58,7 +59,9 @@ export function EffectsTab(props: Readonly<SheetProps>) {
           ))}
         </ListSection>
       ))}
-      {!effects.length && !value.concentration && <Empty>{t('sheet.noEffects', { name: value.name })}</Empty>}
+      {!effects.length && !value.concentration && !value.light?.endsAt && (
+        <Empty>{t('sheet.noEffects', { name: value.name })}</Empty>
+      )}
       {edit && (
         <Button variant="outline" size="sm" className="mt-2" onClick={create}>
           <PlusIcon /> {t('sheet.newEffect')}
@@ -108,6 +111,22 @@ function Concentration({ session, value, kind }: Readonly<SheetProps>) {
             </Button>
           )
         }
+      />
+    </ListSection>
+  );
+}
+
+/** A light it carries that burns down (a torch, a lantern's oil), with the game time it has left. */
+function CarriedLight({ session, value }: Readonly<SheetProps>) {
+  const light = value.light!;
+  const at = { now: session.time.now(), fighting: false };
+  return (
+    <ListSection title={t('sheet.light')} columns={columns()}>
+      <ListRow
+        icon={{ glyph: 'flame', tint: 'fire' }}
+        name={light.name ?? t('sheet.light')}
+        columns={columns()}
+        cells={[t('sheet.lightReach', { bright: light.bright, dim: light.dim }), effectLeft(light, at) ?? '']}
       />
     </ListSection>
   );

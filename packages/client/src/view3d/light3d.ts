@@ -1,6 +1,7 @@
 import type { WorldInfo } from '@vtt/shared';
 import * as THREE from 'three';
 import { Backdrop, hazeOf } from './scene3d.ts';
+import { ambientColor } from '../canvas/lighting/light-style.ts';
 
 // The 3D view's light and surroundings: a sky light and a sun dimmed by the
 // scene's darkness, the sky picture lighting the scene as 3D Canvas lets it,
@@ -40,6 +41,8 @@ export class Lighting {
   constructor(
     renderer: THREE.WebGLRenderer,
     private readonly scene: THREE.Scene,
+    /** The orange of dawn and dusk, 0 to 1 (session-time.ts). */
+    private readonly glowOf: (world: WorldInfo) => number = () => 0,
   ) {
     this.pmrem = new THREE.PMREMGenerator(renderer);
     scene.add(this.hemi, this.sun, this.sun.target, this.backdrop.table);
@@ -51,6 +54,7 @@ export class Lighting {
     const light = this.ease(skyShare(world.darkness, !!seen.indoors));
     this.hemi.intensity = 1.2 * light;
     this.sun.intensity = 1.4 * light;
+    this.sun.color.set(ambientColor(0, seen.indoors ? 0 : this.glowOf(world)));
     this.scene.environmentIntensity = light;
     this.sun.position.set(x - 2000, y + 4000, z - 1500);
     this.sun.target.position.set(x, y, z);

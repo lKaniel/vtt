@@ -47,12 +47,24 @@ describe('indoorArea', () => {
     expect(isIndoors(indoorArea(window, [HUT_ROOF], G), [400, 350])).toBe(false);
   });
 
+  it('lets daylight in only near a window or open door: the far end of a long hall stays dark', () => {
+    // A hall 10 squares long, its one window in the west wall.
+    const hall = box([0, 0, 1000, 200]);
+    const west = hall[3]!;
+    const walls: Wall[] = [...hall.slice(0, 3), { ...west, sight: 'none', light: 'none' }];
+    const area = indoorArea(walls, [roof([0, 0, 1000, 200])], G);
+    expect(isIndoors(area, [50, 100])).toBe(false);
+    expect(isIndoors(area, [150, 100])).toBe(false);
+    expect(isIndoors(area, [450, 100])).toBe(true);
+    expect(isIndoors(area, [950, 100])).toBe(true);
+  });
+
   it('keeps a walled yard with no roof outside, and a canopy over open ground', () => {
     expect(isIndoors(indoorArea(HUT, [], G), [400, 350])).toBe(false);
     expect(isIndoors(indoorArea([], [HUT_ROOF], G), [400, 350])).toBe(false);
   });
 
-  it('keeps the part of a room the roof leaves open outside, all of that room', () => {
+  it('keeps the part of a room next to where the roof leaves it open outside', () => {
     const half = roof([200, 200, 200, 300]);
     expect(isIndoors(indoorArea(HUT, [half], G), [250, 350])).toBe(false);
   });

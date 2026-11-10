@@ -147,7 +147,8 @@ Indoors (ground under a roof, an overhead tile or the floor above, that
 walls close in on every side) the sky's light never reaches: it is dark
 there at any hour, lit only by lamps and seen with darkvision. A missing
 wall, an open door or a window (a wall that lets light through) lets the
-daylight in again.
+daylight in, two squares deep: the far end of a long hall stays dark. On a
+scene whose darkness follows the clock, dawn and dusk tint the light orange.
 `vision` (default `true`) is fog of war: players see only what their tokens
 can. The GM can check what a creature sees with "See through its eyes" in
 its right-click menu (light, sight and fog as its players get them). `chunkSize` (default 2000, a multiple of `gridSize`) is how big the
@@ -1393,7 +1394,10 @@ time at that moment; `speed` is game seconds per real second.
 In a fight, and in turn-based mode outside one (the GM's "Turn-based" button:
 the party takes turns), the clock holds still and each round adds 6 seconds;
 `round` is the fight round it last counted. A short rest lets 1 hour pass, a
-long rest 8. Everything that lasts has its end on the clock: effects
+long rest 8. Only one long rest in 24 hours does a creature good: it keeps
+`longRestAt`, the clock second its last one ended, and the GM's long rest
+leaves out anyone whose last one ended less than a day before this one would
+(and refuses, letting no time pass, when that is everyone). Everything that lasts has its end on the clock: effects
 (`endsAt`), concentration and summons (`concentration.endsAt`,
 `summon.endsAt`), templates, and lights with `lasts` (placed ones and the
 light a token carries: a lit torch burns for an hour, a lantern for 6). Gear

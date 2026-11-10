@@ -149,6 +149,7 @@ export class Vision {
     const scene: LightScene = {
       view,
       darkness: world.darkness * (gm ? GM_DARKNESS : 1),
+      glow: this.session.time.glow(world),
       gridSize: world.gridSize,
       lights,
       polygon,
@@ -168,7 +169,7 @@ export class Vision {
     this.sight.render({ view, gridSize: world.gridSize, viewers: eyes, darkness, sightRadius, polygon }, transform);
     this.mapFilter.fog = this.roofFilter.fog = fogStrength(gm, brushing, world.vision);
     this.mapFilter.voidColor = world.background;
-    this.roofFilter.sky = ambientColor(scene.darkness);
+    this.roofFilter.sky = ambientColor(scene.darkness, scene.glow);
     return this.light.animated(scene);
   }
 
