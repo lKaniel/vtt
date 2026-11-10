@@ -1,8 +1,11 @@
+import type { z } from 'zod';
 import type { Creature } from './creature.ts';
+import type { FreeCastSchema } from './free-cast-schema.ts';
 import type { FeatureSheet } from './classes.ts';
 import { spendUse } from './features.ts';
 import { evaluate } from './formula.ts';
 import { spendPool } from './pools.ts';
+import { castsPicked } from './spell-picks.ts';
 import type { Spell } from './spell-schema.ts';
 import type { Token } from './token-schema.ts';
 
@@ -25,17 +28,27 @@ export interface FeatureCast {
   max?: number;
   cost?: number;
   pool?: string;
+  /** Any spell that fits, picked as it is cast (Divine Intervention): the caster needn't know it. */
+  atCast?: boolean;
 }
 
 type Payer = Pick<Creature, 'features'> & Partial<Pick<Creature, 'pool'>>;
 
-const castOf = (f: Pick<FeatureSheet, 'freeCasts'>, spell: string) => f.freeCasts?.find((c) => c.spell === spell);
+/** How `f` casts `spell` without a slot: one of its free casts, or a spell picked for it (spell-picks.ts). */
+function castOf(f: FeatureSheet, spell: Pick<Spell, 'id' | 'level'> & Partial<Spell>): HowCast | undefined {
+  const free = f.freeCasts?.find((c) => c.spell === spell.id);
+  if (free || !spell.classes || !spell.castingTime) return free;
+  if (!castsPicked(f, { ...spell, classes: spell.classes, castingTime: spell.castingTime })) return undefined;
+  return { spell: spell.id, ...(f.spellPicks?.atCast && { atCast: true }) };
+}
+
+type HowCast = z.infer<typeof FreeCastSchema> & { atCast?: boolean };
 
 function featureCast(sheet: Payer, f: FeatureSheet, spell: Pick<Spell, 'id' | 'level'>): FeatureCast | undefined {
-  const cast = castOf(f, spell.id);
+  const cast = castOf(f, spell);
   if (!cast) return undefined;
   const level = Math.max(spell.level, cast.level ?? spell.level);
-  const paid = { feature: f.id, name: f.name, level, self: !!cast.self };
+  const paid = { feature: f.id, name: f.name, level, self: !!cast.self, ...(cast.atCast && { atCast: true }) };
   if (cast.cost !== undefined) return { ...paid, cost: evaluate(cast.cost, { level }), pool: sheet.pool?.name ?? '' };
   return { ...paid, ...(f.max !== undefined && { left: f.left ?? 0, max: f.max }) };
 }
@@ -68,7 +81,7 @@ export function featureCastProblem(
 ): string | undefined {
   const feature = sheet.features.find((f) => f.id === id);
   if (!feature) return "doesn't have that feature";
-  const cast = castOf(feature, spell.id);
+  const cast = castOf(feature, spell);
   if (!cast) return `can't cast ${spell.name} with ${feature.name}`;
   if (cast.beforeCombat && fighting) return `casts ${spell.name} before the fight, not during it`;
   const cost = featureCast(sheet, feature, spell)?.cost;

@@ -367,14 +367,7 @@
           }
         }
       },
-      "features": {
-        "divine-intervention": {
-          "action": "action",
-          "uses": [[10, 1]],
-          "recharge": "long",
-          "manual": "2014: roll percentile dice; at or under your cleric level your deity steps in (the GM decides how), and then it can't be used for 7 days. 2024: cast any cleric spell of 5th level or lower with no slot and no costly materials: cast it with no slot."
-        }
-      }
+      "features": {}
     },
     "2014": {
       "features": {
@@ -408,6 +401,12 @@
         },
         "destroy-undead": {
           "manual": "Undead of CR 1/2 or lower that fail the Turn Undead save are destroyed. The GM removes them."
+        },
+        "divine-intervention": {
+          "action": "action",
+          "uses": [[10, 1]],
+          "recharge": "long",
+          "manual": "Roll percentile dice; at or under your cleric level your deity steps in (the GM decides how), and then it can't be used for 7 days."
         }
       },
       "subclasses": {
@@ -473,6 +472,22 @@
         },
         "epic-boon": {
           "manual": "Pick an Epic Boon feat (or another feat you qualify for) with the GM and add what it gives on the sheet."
+        },
+        "divine-intervention": {
+          "action": "action",
+          "uses": [[10, 1]],
+          "recharge": "long",
+          "spellPicks": {
+            "from": "class",
+            "class": "cleric",
+            "atCast": true,
+            "noReactions": true,
+            "choices": [
+              {
+                "maxLevel": 5
+              }
+            ]
+          }
         }
       },
       "proficiencies": {
@@ -650,7 +665,16 @@
               "action": "free",
               "uses": [[6, 1]],
               "recharge": "long",
-              "manual": "Once per long rest cast one prepared Circle spell with no slot. On a short rest, recover spell slots totaling up to half your druid level (rounded up), none 6th or higher: the GM restores them."
+              "manual": "Casts a prepared spell of 5th level or lower (meant: a Circle spell) once per long rest with no slot. On a short rest, recover spell slots totaling up to half your druid level (rounded up), none 6th or higher: the GM restores them.",
+              "spellPicks": {
+                "from": "known",
+                "atCast": true,
+                "choices": [
+                  {
+                    "maxLevel": 5
+                  }
+                ]
+              }
             },
             "natures-ward": {
               "passive": {
@@ -2037,7 +2061,36 @@
           "manual": "The GM applies the effects of invocations the sheet doesn’t run on its own."
         },
         "mystic-arcanum": {
-          "manual": "Pick one warlock spell of 6th level (7th at 13th level, 8th at 15th, 9th at 17th) and cast each once per long rest with no slot: add them on the Spells tab and cast with no slot."
+          "uses": [
+            [11, 1],
+            [13, 2],
+            [15, 3],
+            [17, 4]
+          ],
+          "recharge": "long",
+          "spellPicks": {
+            "from": "class",
+            "class": "warlock",
+            "choices": [
+              {
+                "at": 11,
+                "level": 6
+              },
+              {
+                "at": 13,
+                "level": 7
+              },
+              {
+                "at": 15,
+                "level": 8
+              },
+              {
+                "at": 17,
+                "level": 9
+              }
+            ]
+          },
+          "manual": "Each picked spell once per long rest; the engine shares one use per picked level among them."
         }
       }
     },
@@ -2404,10 +2457,32 @@
           "manual": "On a short rest, recover spell slots totaling up to half your wizard level (rounded up), none 6th or higher. The GM restores them."
         },
         "spell-mastery": {
-          "manual": "Pick a 1st-level and a 2nd-level spell from your spellbook: you cast them at their lowest level with no slot. Cast them with no slot."
+          "spellPicks": {
+            "from": "known",
+            "choices": [
+              {
+                "level": 1
+              },
+              {
+                "level": 2
+              }
+            ]
+          }
         },
         "signature-spells": {
-          "manual": "Two 3rd-level spellbook spells are always prepared, and you cast each once at 3rd level with no slot before a short or long rest. Cast them with no slot."
+          "uses": [[20, 2]],
+          "recharge": "short",
+          "spellPicks": {
+            "from": "known",
+            "choices": [
+              {
+                "level": 3
+              },
+              {
+                "level": 3
+              }
+            ]
+          }
         }
       }
     },

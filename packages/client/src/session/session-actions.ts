@@ -1,4 +1,4 @@
-import { characterLevel, type ClientMessage, type FeatureSheet, featureSpell } from '@vtt/system-dnd5e';
+import { characterLevel, type ClientMessage, type FeatureSheet, featureSpell, type Spell } from '@vtt/system-dnd5e';
 import { isPowerFeature, type PowerAim, powerAim } from '../play/power-aiming.ts';
 
 /** How a chat roll is applied: in full, half, double, or as healing. */
@@ -101,7 +101,7 @@ export class Actions {
    * Readies a spell of the selected token with a slot, for free, or paid by a feature (`paidBy`). A self spell
    * goes off at once, unless there is more than one way to pay for it: then it waits for Cast.
    */
-  aim(spellId: string | undefined, slot = 0, pay: { free?: boolean; paidBy?: string } = {}): void {
+  aim(spellId: string | undefined, slot = 0, pay: { free?: boolean; paidBy?: string; spell?: Spell } = {}): void {
     const token = this.s.selected ? this.s.tokens.get(this.s.selected) : undefined;
     this.armed = undefined;
     const aiming = aimFor(token?.sheet, spellId, { slot, ...pay });

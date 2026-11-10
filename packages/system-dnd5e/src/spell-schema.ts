@@ -4,7 +4,7 @@ import { ABILITIES, AbilitiesSchema, DamageSchema, DamageTypeSchema, OtherSpeeds
 import { EffectChangeSchema } from './effect-changes.ts';
 import { WeaponSpellSchema } from './weapon-spell-schema.ts';
 import { AreaSchema } from './area-schema.ts';
-import { FreeCastSchema } from './free-cast-schema.ts';
+import { FreeCastSchema, SpellPicksSchema } from './free-cast-schema.ts';
 import { classFields, LevelTableSchema, momentumEffectFields } from './class-fields.ts';
 import { ConditionSchema } from './condition-schema.ts';
 import { PoolSchema, powerEffectFields, powerFeatureFields, powerSpellFields } from './power-schema.ts';
@@ -615,6 +615,8 @@ export const FeatureSchema = z.object({
    * yourself only with `self`.
    */
   freeCasts: z.array(FreeCastSchema).optional(),
+  /** Spells the player picks for it to cast without a slot (spell-picks.ts). */
+  spellPicks: SpellPicksSchema.optional(),
   /** Saving throws it makes the creature proficient in (diamond soul: all six). */
   saveProficiencies: z.array(AbilitySchema).optional(),
   /** Why the GM runs it by hand: what it does that the engine doesn't (yet). */

@@ -103,3 +103,21 @@ describe('a class pool paying', () => {
     expect(firstPayment(pooled(1), mark)).toEqual({ slot: undefined });
   });
 });
+
+describe('a spell picked as it is cast', () => {
+  it('aims a spell the caster does not know when a feature lets them pick it (Divine Intervention)', () => {
+    const intervention = {
+      id: 'divine-intervention',
+      name: 'Divine Intervention',
+      classLevel: 10,
+      max: 1,
+      left: 1,
+      spellPicks: { from: 'class', class: 'cleric', atCast: true, choices: [{ at: 1, maxLevel: 5 }] },
+    };
+    const strike = spell('flame-strike');
+    const token = caster([0], [intervention]);
+    expect(aimFor(token.sheet, 'flame-strike', { slot: 5 })).toBeUndefined();
+    const aiming = aimFor(token.sheet, 'flame-strike', { slot: 5, paidBy: 'divine-intervention', spell: strike });
+    expect(aiming).toMatchObject({ paidBy: 'divine-intervention', slot: 5 });
+  });
+});

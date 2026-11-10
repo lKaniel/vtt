@@ -1061,6 +1061,17 @@ pays for that spell with the pool's points instead of a use, so the points
 cast spells like slots: `{ "spell": "silent-image", "cost": "2 * level" }`.
 A class with no spellcasting casts them with the pool's ability.
 
+**Spells picked for a feature.** A feature's `spellPicks` lets the player
+pick spells it casts without a slot, each at its own level: `from` the
+`class`'s list or the spells the character `known`s, one per `choices`
+entry (`at` the class level it opens, of exactly `level` or up to
+`maxLevel`). The picks are kept in `stats.spellPicks` by feature id
+(`{ "mystic-arcanum": ["eyebite"] }`), chosen from the book button on the
+feature's sheet row. With `atCast` any spell that fits is picked as it is
+cast (a 2024 cleric's Divine Intervention); `noReactions` leaves out
+reaction spells. Mystic Arcanum, Spell Mastery, Signature Spells, 2024
+Natural Recovery and 2024 Divine Intervention use it.
+
 **Homebrew items and spells.** A homebrew file with `"kind": "spell"` has
 the fields of an SRD spell; one with `"kind": "item"` keeps the item's own
 fields in `item` (a weapon has a `kind` of its own):

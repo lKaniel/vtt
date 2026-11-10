@@ -210,6 +210,8 @@ export interface FeatureSheet extends Omit<Feature, 'spell'> {
   spell?: Partial<Spell>;
   /** Levels in the class it comes from (the character's level for granted features): its tables read this. */
   classLevel?: number;
+  /** The spells picked for its `spellPicks` (`stats.spellPicks`). */
+  picked?: string[];
 }
 
 /** Most uses at `level`: a fixed table, an ability modifier (at least 1), or hit points per level. */
@@ -299,9 +301,11 @@ export function featureSheets(
     token,
     abilities,
   );
+  const picks = token.stats?.spellPicks ?? {};
   return sheets.map((f) => {
     const from = f.usesFrom ? sheets.find((s) => s.id === f.usesFrom) : undefined;
-    return from ? { ...f, max: from.max, left: from.left } : f;
+    const shared = from ? { ...f, max: from.max, left: from.left } : f;
+    return picks[f.id] && f.spellPicks ? { ...shared, picked: picks[f.id] } : shared;
   });
 }
 
