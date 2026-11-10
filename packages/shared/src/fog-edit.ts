@@ -7,10 +7,12 @@ import { PointSchema } from './schema.ts';
 
 const players = z.array(z.string()).max(50).optional();
 const path = z.array(PointSchema).min(1).max(1000);
+/** The floor edited (a scene level id); a reset without one forgets every floor. */
+const level = z.string().max(100).optional();
 
 export const FogEditSchema = z.discriminatedUnion('op', [
-  z.object({ op: z.literal('reveal'), path, radius: z.number().positive().max(10000), players }),
-  z.object({ op: z.literal('hide'), path, radius: z.number().positive().max(10000), players }),
-  z.object({ op: z.literal('reset'), players }),
+  z.object({ op: z.literal('reveal'), path, radius: z.number().positive().max(10000), players, level }),
+  z.object({ op: z.literal('hide'), path, radius: z.number().positive().max(10000), players, level }),
+  z.object({ op: z.literal('reset'), players, level }),
 ]);
 export type FogEdit = z.infer<typeof FogEditSchema>;

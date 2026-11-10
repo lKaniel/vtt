@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cellsIn, gridKind, latticeOf } from './grid.ts';
+import { caughtAt, cellsIn, cellsInside, gridKind, latticeOf, snapToHexPoint } from './grid.ts';
 import type { Point } from './schema.ts';
 
 // The cells a gridded scene is cut into: 5 ft squares, or 5 ft hexes in
@@ -88,5 +88,29 @@ describe('the cells over part of the map', () => {
       for (let y = rect.y; y <= rect.y + rect.h; y += 41) expect(cells.has(hex.cellOf([x, y]).join())).toBe(true);
     }
     expect(cells.size).toBeLessThan(80);
+  });
+});
+
+describe('snapping on hexes', () => {
+  const hex = latticeOf('hex-rows', 100);
+  const round = (p: Point): Point => [Math.round(p[0]), Math.round(p[1])];
+
+  it('takes the nearest corner or centre of a hex, in whole pixels', () => {
+    const c = hex.centre([2, 1]);
+    const k = hex.corners([2, 1])[0]!;
+    expect(snapToHexPoint([c[0] + 10, c[1] - 8], hex)).toEqual(round(c));
+    expect(snapToHexPoint([k[0] + 3, k[1] + 2], hex)).toEqual(round(k));
+  });
+
+  it('lists the hexes whose centre is inside a shape', () => {
+    const c = hex.centre([3, 3]);
+    const within = (p: Point) => Math.hypot(p[0] - c[0], p[1] - c[1]) <= 101;
+    expect(cellsInside(hex, { x: c[0] - 120, y: c[1] - 120, w: 240, h: 240 }, within)).toHaveLength(7);
+  });
+
+  it('judges a creature by the hex it stands in', () => {
+    const c = hex.centre([3, 3]);
+    expect(caughtAt({ x: c[0] + 20, y: c[1], size: 1 }, 100, hex)).toEqual({ at: c, slack: 0 });
+    expect(caughtAt({ x: 120, y: 80, size: 1 }, 100)).toEqual({ at: [120, 80], slack: 25 });
   });
 });

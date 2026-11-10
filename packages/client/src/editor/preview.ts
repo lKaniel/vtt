@@ -10,6 +10,7 @@ import {
   type Rect,
   scaleGroupEdit,
   snapDelta,
+  snapOn,
   tileBounds,
   withDescendants,
   withGroupBounds,
@@ -27,7 +28,7 @@ export function previewDoc(
   if (preview?.kind === 'move' && preview.keys.includes(key))
     return applyPatch(doc, moveBy(doc, snapDelta(preview.delta, ctx.mode, ctx.grid ?? ctx.gridSize, preview.free)));
   if (preview?.kind === 'handle' && preview.key === key)
-    return applyPatch(doc, dragHandle(doc, preview.handle, preview.to, { gridSize: ctx.gridSize, free: preview.free }));
+    return applyPatch(doc, dragHandle(doc, preview.handle, preview.to, snapOn(ctx.grid ?? ctx.gridSize, preview.free)));
   return doc;
 }
 
@@ -36,7 +37,7 @@ export function previewTiles(
   tiles: readonly Doc[],
   coll: string,
   preview: Preview | undefined,
-  ctx: { mode: EditorMode; gridSize: number },
+  ctx: { mode: EditorMode; gridSize: number; grid?: MoveGrid },
 ): Doc[] {
   if (preview?.kind === 'move') {
     const ids = withDescendants(
@@ -52,7 +53,7 @@ export function previewTiles(
     const shown = { ...group, ...tileBounds(tiles, group.id) };
     const to = applyPatch(
       shown,
-      dragHandle(shown, preview.handle, preview.to, { gridSize: ctx.gridSize, free: preview.free }),
+      dragHandle(shown, preview.handle, preview.to, snapOn(ctx.grid ?? ctx.gridSize, preview.free)),
     );
     return withGroupBounds(applyTileEdit(tiles, scaleGroupEdit(tiles, group.id, to as unknown as Rect)));
   }

@@ -1,3 +1,4 @@
+import { latticeOf } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
 import { ShapeDraft } from './shape-tools.ts';
 
@@ -105,6 +106,19 @@ describe('the shape tools', () => {
       mode: 'sounds',
       data: { x: 150, y: 50, radius: 30 },
     });
+  });
+
+  it('start templates on a hex centre and put polygon points on hex corners, on hexes', () => {
+    const lattice = latticeOf('hex-rows', 100);
+    const hex = { gridSize: 100, free: false, lattice };
+    const [cx, cy] = lattice.centre([2, 2]);
+    const c = new ShapeDraft('circle');
+    c.press([cx + 20, cy - 10], hex);
+    expect(c.release([cx + 120, cy - 10], hex)?.data).toMatchObject({ x: Math.round(cx), y: Math.round(cy) });
+    const k = lattice.corners([2, 2])[1]!;
+    const p = new ShapeDraft('polygon');
+    p.press([k[0] + 3, k[1] - 2], hex);
+    expect((p.preview(k, hex) as { points: unknown[] }).points[0]).toEqual([Math.round(k[0]), Math.round(k[1])]);
   });
 
   it('drag templates out from their origin, in 5 ft steps', () => {

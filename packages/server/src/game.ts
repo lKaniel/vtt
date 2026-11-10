@@ -23,6 +23,7 @@ import { SpellActions } from './actions/spell-actions.ts';
 import { Reactions } from './play/reactions.ts';
 import { Zones } from './play/zones.ts';
 import { AfterStep } from './play/aura-keeper.ts';
+import { placeOf } from './store/fog-store.ts';
 import { DocFeed } from './store/doc-feed.ts';
 import { checkOps } from './store/op-permissions.ts';
 import { Refusal, Table } from './play/table.ts';
@@ -147,7 +148,7 @@ export class Game {
 
   /** Passes changes in the game on to the clients that may see them. */
   private listen(store: GameStore): void {
-    store.fog.on('fog', (scene, player, keys, full) => this.onFog(scene, player, keys, full));
+    store.fog.on('fog', (place, player, keys, full) => this.onFog(place, player, keys, full));
     store.on('chunk', (key, chunk, scene) => {
       this.fog.mapChanged(scene);
       for (const c of this.on(scene)) if (c.chunks.has(key)) this.send(c, chunkMessage(c, key, chunk));
@@ -290,10 +291,17 @@ export class Game {
     });
   }
 
-  /** Sends changed fog blocks to the player whose fog it is and to the GMs, on that scene. */
-  private onFog(scene: string, player: string, keys: string[], full: boolean): void {
-    const map = this.store.inScene(scene, () => this.store.fog.map(scene, player, this.fog.cell()));
-    const msg: ServerMessage = { t: 'fog', player, ...map.encode(keys), ...(full ? { full } : {}) };
+  /** Sends changed fog blocks (of a scene, or one of its floors) to the player whose fog it is and to the GMs on that scene. */
+  private onFog(place: string, player: string, keys: string[], full: boolean): void {
+    const { scene, level } = placeOf(place);
+    const map = this.store.inScene(scene, () => this.store.fog.map(place, player, this.fog.cell()));
+    const msg: ServerMessage = {
+      t: 'fog',
+      player,
+      ...(level && { level }),
+      ...map.encode(keys),
+      ...(full && { full }),
+    };
     for (const c of this.on(scene)) if (c.player.id === player || isGm(c.player)) this.send(c, msg);
   }
 

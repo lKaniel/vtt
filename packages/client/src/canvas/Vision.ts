@@ -57,7 +57,7 @@ export class Vision {
   private sight: SightMap;
   private explored = new FogLayer();
   /** The session's fog version last drawn. */
-  private fogVersion = -1;
+  private fogVersion = '';
   private polyCache = new Map<string, number[]>();
   private wallsVersion = 0;
   /** The indoors of the floor shown, drawn without the sky's light, for the walls and floor it was worked out for. */
@@ -205,8 +205,10 @@ export class Vision {
 
   /** Draws explored ground as the server last sent it. */
   private showExplored(): void {
-    if (this.fogVersion === this.session.fog.version) return;
-    this.fogVersion = this.session.fog.version;
+    const fog = this.session.fog;
+    const version = `${fog.version}:${fog.floor() ?? ''}`;
+    if (this.fogVersion === version) return;
+    this.fogVersion = version;
     this.explored.show(this.session.fog.shown());
   }
 }

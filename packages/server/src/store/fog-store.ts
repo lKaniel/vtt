@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import type { Dirent } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { FOG_BYTES, FogMap, type Raster, undoFogBlock } from '@vtt/shared';
@@ -6,12 +7,15 @@ import { FileWriter } from './file-writer.ts';
 
 // Explored fog of war, per player per scene, kept by the server so it
 // follows a player to another device and the GM can reset or paint it. It is
-// saved beside the scene as scenes/<scene>/fog/<player>.json. Fog isn't a
+// saved beside the scene as scenes/<scene>/fog/<player>.json, and a floor's
+// own as scenes/<scene>/fog/<level>/<player>.json. The store keys it by
+// place: the scene, or `fogPlace(scene, level)` for a floor. Fog isn't a
 // document: exploring happens on every step and isn't undone with the move,
 // but the GM's own fog edits are, through `record` and `revert`.
 
 /** One block a GM edit changed, for undo. */
 export interface FogChange {
+  /** The scene, or one of its floors (see `fogPlace`). */
   scene: string;
   player: string;
   key: string;
@@ -26,7 +30,26 @@ interface FogEvents {
 
 const SAVE_DELAY_MS = 1000;
 const slot = (scene: string, player: string) => `${scene}\u0000${player}`;
-const fileOf = (scene: string, player: string) => `scenes/${scene}/fog/${player}.json`;
+
+/** Where a floor's fog is kept: the scene's own place, or `<scene>:<level>`. */
+export function fogPlace(scene: string, level: string | undefined): string {
+  return level ? `${scene}:${level}` : scene;
+}
+
+/** The scene and floor of a place. */
+export function placeOf(place: string): { scene: string; level?: string } {
+  const [scene, level] = place.split(':') as [string, string | undefined];
+  return level ? { scene, level } : { scene };
+}
+
+function fileOf(place: string, player: string): string {
+  const { scene, level } = placeOf(place);
+  const folder = level ? `scenes/${scene}/fog/${level}` : `scenes/${scene}/fog`;
+  return `${folder}/${player}.json`;
+}
+
+const jsonNames = (entries: readonly Dirent[]) =>
+  entries.filter((e) => e.isFile() && e.name.endsWith('.json')).map((e) => e.name.slice(0, -5));
 
 export class FogStore extends EventEmitter<FogEvents> {
   private maps = new Map<string, FogMap>();
@@ -41,12 +64,21 @@ export class FogStore extends EventEmitter<FogEvents> {
     this.files = new FileWriter(dir);
   }
 
-  /** Reads every saved fog file. A broken one is reported and starts over. */
+  /** Reads every saved fog file, the floors' too. A broken one is reported and starts over. */
   async load(scenes: readonly string[]): Promise<void> {
     for (const scene of scenes) {
-      const names = await readdir(join(this.files.dir, `scenes/${scene}/fog`)).catch(() => [] as string[]);
-      for (const name of names.filter((n) => n.endsWith('.json'))) await this.loadOne(scene, name.slice(0, -5));
+      const entries = await this.entries(`scenes/${scene}/fog`);
+      for (const player of jsonNames(entries)) await this.loadOne(scene, player);
+      for (const floor of entries.filter((e) => e.isDirectory())) {
+        const place = fogPlace(scene, floor.name);
+        for (const player of jsonNames(await this.entries(`scenes/${scene}/fog/${floor.name}`)))
+          await this.loadOne(place, player);
+      }
     }
+  }
+
+  private entries(rel: string): Promise<Dirent[]> {
+    return readdir(join(this.files.dir, rel), { withFileTypes: true }).catch(() => []);
   }
 
   private async loadOne(scene: string, player: string): Promise<void> {
@@ -99,6 +131,12 @@ export class FogStore extends EventEmitter<FogEvents> {
       this.note(scene, player, keys, (k) => before.get(k) ?? new Uint8Array(FOG_BYTES));
       if (keys.length) this.changed(scene, player, keys, false);
     }
+  }
+
+  /** The places of `scene` that hold fog: the scene's own and its floors'. */
+  placesOf(scene: string): string[] {
+    const places = [...this.maps.keys()].map((k) => k.split('\u0000')[0]!);
+    return [...new Set([scene, ...places.filter((p) => placeOf(p).scene === scene)])];
   }
 
   /** GM: forgets everything `players` explored on a scene, as an undoable edit. */

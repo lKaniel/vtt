@@ -1,4 +1,4 @@
-import { feetToPx, type Point, pointInPolygon } from '@vtt/shared';
+import { caughtAt, cellsInside, feetToPx, type Lattice, type Point, pointInPolygon, pointsBounds } from '@vtt/shared';
 import type { Area } from './area-schema.ts';
 
 // Where a spell's area lands. Spheres and ranged cubes sit on the aimed
@@ -16,6 +16,8 @@ export interface Aim {
   caster: Placed;
   aim: Point;
   gridSize: number;
+  /** The scene's cells: on hexes a creature is caught by the hex it stands in. */
+  lattice?: Lattice;
 }
 
 export type AreaShape = { kind: 'circle'; center: Point; radius: number } | { kind: 'polygon'; points: Point[] };
@@ -104,14 +106,27 @@ function nearPolygon(p: Point, points: readonly Point[], slack: number): boolean
   return points.some((a, i) => distToSegment(p, a, points[(i + 1) % points.length]!) <= slack);
 }
 
-/** Whether a token is caught: its centre inside the area, give or take a quarter square per size. */
-export function inArea(spell: AreaSpell, { caster, aim, gridSize, token }: Aim & { token: Placed }): boolean {
+/** Whether a token is caught: its centre inside the area, give or take a quarter square per size (on hexes: its hex's centre). */
+export function inArea(spell: AreaSpell, { caster, aim, gridSize, token, lattice }: Aim & { token: Placed }): boolean {
   const fromCaster = spell.area.shape !== 'sphere' && !(spell.area.shape === 'cube' && spell.range > 0);
   if (fromCaster && token.x === caster.x && token.y === caster.y) return false;
   const shape = areaShape(spell, { caster, aim, gridSize });
-  const p: Point = [token.x, token.y];
-  const slack = (token.size * gridSize) / 4;
+  const { at: p, slack } = caughtAt(token, gridSize, lattice);
   if (shape.kind === 'circle')
     return Math.hypot(p[0] - shape.center[0], p[1] - shape.center[1]) <= shape.radius + slack;
   return nearPolygon(p, shape.points, slack);
+}
+
+/** Half a pixel of give, so a hex whose centre sits right on the edge counts. */
+const EDGE = 0.5;
+
+/** The cells of a gridded scene an area covers (those whose centre it takes in), for drawing it on hexes. */
+export function areaCells(shape: AreaShape, lattice: Lattice): Point[] {
+  if (shape.kind === 'circle') {
+    const [cx, cy] = shape.center;
+    const r = shape.radius;
+    const box = { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r };
+    return cellsInside(lattice, box, ([x, y]) => Math.hypot(x - cx, y - cy) <= r + EDGE);
+  }
+  return cellsInside(lattice, pointsBounds(shape.points), (p) => nearPolygon(p, shape.points, EDGE));
 }

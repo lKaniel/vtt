@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { hitTest, onLevel, type Point, shapeOf } from '@vtt/shared';
+import { hitTest, onLevel, type Point, sceneLattice, shapeOf } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
 import type { Session } from '../session/session.ts';
 import { drawItem } from './item-draw.ts';
@@ -56,7 +56,9 @@ export class ItemLayer {
   redraw(): void {
     const g = this.g.clear();
     for (const t of this.texts.removeChildren()) t.destroy();
-    const ctx = { px: 1 / this.zoom, gridSize: this.session.world?.gridSize ?? 100 };
+    const world = this.session.world;
+    const lattice = world && sceneLattice(world);
+    const ctx = { px: 1 / this.zoom, gridSize: world?.gridSize ?? 100, ...(lattice && { lattice }) };
     const shown = this.shown();
     this.looks.sync(
       shown.filter((d) => d.type === 'template'),

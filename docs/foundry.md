@@ -65,6 +65,11 @@ What comes along:
   for how each is read), and the scene's playlist. The foreground picture
   becomes a roof tile that never fades; whether a scene is in the
   navigation bar, its name there and its thumbnail come along too.
+  Square-gridded scenes come in gridless (free movement, as this VTT plays
+  by default); hex scenes keep their hexes (`hex-rows`, `hex-cols`), with the
+  picture padded the way Foundry pads a hex scene. Foundry's "even" hex
+  layouts shift every other row or column the other way from ours, so
+  their grid sits half a hex off (the import report says so).
 - **Foundry v14** scenes: the background comes from the lowest floor that
   has one (v14 keeps it in the scene's `levels`), templates that v14 stores
   as regions become templates again.
