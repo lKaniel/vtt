@@ -95,3 +95,30 @@ describe("a monster's Multiattack", () => {
     expect(gm.take('error')[0]?.message).toBeTruthy();
   });
 });
+
+describe("a ghoul's claws", () => {
+  beforeEach(() => {
+    store.setToken(TokenSchema.parse({ ...dragon(), x: 750, name: 'Ghoul', monster: 'ghoul' }));
+  });
+  const paralysed = () => (hero().effects ?? []).some((e) => e.conditions?.includes('paralyzed'));
+
+  it('paralyse a creature that fails its save, which it repeats as its turns end', () => {
+    const { gm, ana } = fight();
+    // To hit, 2d4 damage, then the hero's Constitution save.
+    dice = [d20(15), 0.5, 0.5, d20(1)];
+    gm.receive({ t: 'attack', attacker: 'goblin', target: 'hero', attack: 'Claws' });
+    expect(chat(gm).some((m) => m.includes('CON save') && m.includes('failed: Paralyzed'))).toBe(true);
+    expect(paralysed()).toBe(true);
+    gm.receive({ t: 'endTurn' });
+    dice = [d20(20)];
+    ana.receive({ t: 'endTurn' });
+    expect(paralysed()).toBe(false);
+  });
+
+  it('leave a creature that saves alone', () => {
+    const { gm } = fight();
+    dice = [d20(15), 0.5, 0.5, d20(20)];
+    gm.receive({ t: 'attack', attacker: 'goblin', target: 'hero', attack: 'Claws' });
+    expect(paralysed()).toBe(false);
+  });
+});

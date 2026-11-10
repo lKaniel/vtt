@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { monsterExtras } from './monster-convert.ts';
+import { convertMonster, monsterExtras } from './monster-convert.ts';
 import type { Entry, Pack } from './srd-convert.ts';
 
 const pack = (entries: Entry[], text: Record<string, string> = {}): Pack => ({
@@ -200,5 +200,55 @@ describe('monsterExtras', () => {
 
   it('adds nothing to a plain monster', () => {
     expect(monsterExtras(pack([]), { ac: 12 }, [])).toEqual({});
+  });
+});
+
+describe('what rides on a monster attack', () => {
+  const hit = { attack: 'melee', toHit: 4, reach: 5, damage: '2d4 + 2', damageType: 'slashing' };
+  const attackOf = (fields: Record<string, unknown>, description = '') => {
+    const claws = action('claws', { ...hit, ...fields });
+    const monster: Entry = { id: 'monsters.dragon', type: 'monster', fields: { entries: [claws.id] } };
+    const p = pack([monster, claws], { 'monsters.dragon.claws.description': description });
+    return (convertMonster(p, monster) as { attacks: Record<string, unknown>[] }).attacks[0]!;
+  };
+
+  it('keeps a condition behind a save, lasting as the words say', () => {
+    const claws = attackOf(
+      { save: 'con', saveDc: 10, condition: 'conditions.paralyzed' },
+      'It must succeed on a DC 10 Constitution saving throw or be paralyzed for 1 minute. The target can repeat the saving throw at the end of each of its turns.',
+    );
+    expect(claws.onHit).toEqual({
+      save: { ability: 'con', dc: 10 },
+      conditions: ['paralyzed'],
+      rounds: 10,
+      repeatSave: true,
+    });
+  });
+
+  it('gives no length to a condition that lasts until something ends it', () => {
+    const bite = attackOf({ save: 'str', saveDc: 11, condition: 'conditions.prone' }, 'or be knocked prone.');
+    expect(bite.onHit).toEqual({ save: { ability: 'str', dc: 11 }, conditions: ['prone'] });
+    const sting = attackOf({ conditions: ['conditions.poisoned'] }, "until the start of the centipede's next turn.");
+    expect(sting.onHit).toEqual({ conditions: ['poisoned'], rounds: 1 });
+  });
+
+  it('keeps damage behind a save out of the hit itself', () => {
+    const bite = attackOf({ save: 'con', saveDc: 11, saveDamage: '2d8', saveDamageType: 'poison', saveEffect: 'half' });
+    expect(bite.damage).toEqual([{ dice: '2d4+2', type: 'slashing' }]);
+    expect(bite.onHit).toEqual({
+      save: { ability: 'con', dc: 11 },
+      damage: [{ dice: '2d8', type: 'poison' }],
+      half: true,
+    });
+  });
+
+  it('puts a 2024 condition with no save on creatures up to a size', () => {
+    const bite = attackOf({ kind: 'action', conditions: ['conditions.prone'], maxSize: 'medium' });
+    expect(bite.onHit).toEqual({ conditions: ['prone'], maxSize: 1 });
+    expect(attackOf({ conditions: ['conditions.grappled'], maxSize: 'large' }).onHit).toMatchObject({ maxSize: 2 });
+  });
+
+  it('adds nothing to a plain attack', () => {
+    expect(attackOf({})).not.toHaveProperty('onHit');
   });
 });

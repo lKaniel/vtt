@@ -214,3 +214,30 @@ describe('smiteProblem', () => {
     ).toMatch(/melee/);
   });
 });
+
+describe('a monster attack with a rider behind a save', () => {
+  const ghoul = TokenSchema.parse({ id: 'ghoul', name: 'Ghoul', x: 150, y: 50, monster: 'ghoul' });
+  const victim = pc('wizard', '2014');
+
+  it('paralyses on a hit when the target fails its save, and says so', () => {
+    // d20 to hit, 2d4 damage, then the Constitution save.
+    const out = attack(ghoul, victim, { name: 'Claws', rng: [face(15, 20), 0.5, 0.5, face(2, 20)] });
+    expect(out.roll.hit).toBe(true);
+    expect(out.targetEffects).toEqual([expect.objectContaining({ conditions: ['paralyzed'], repeatSave: true })]);
+    expect(out.notes.join(' ')).toMatch(/CON save \d+ vs DC 10, failed: Paralyzed/);
+  });
+
+  it('rolls no save on a miss', () => {
+    const out = attack(ghoul, victim, { name: 'Claws', rng: [face(1, 20)] });
+    expect(out.targetEffects).toEqual([]);
+    expect(out.notes).toEqual([]);
+  });
+
+  it('adds poison to a hit: all of it on a failed save', () => {
+    const spider = TokenSchema.parse({ id: 'spider', name: 'Spider', x: 150, y: 50, monster: 'giant-spider' });
+    const out = attack(spider, victim, { name: 'Bite', rng: [face(15, 20), 0.5, face(2, 20)] });
+    expect(out.roll.damage.map((d) => d.type)).toEqual(['piercing', 'poison']);
+    const saved = attack(spider, victim, { name: 'Bite', rng: [face(15, 20), 0.5, face(20, 20), 0.99, 0.99] });
+    expect(saved.roll.damage[1]!.roll.total).toBe(8);
+  });
+});

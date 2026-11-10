@@ -29,6 +29,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 2
+        },
         "reach": 15
       }
     ],
@@ -2916,6 +2920,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled", "blinded", "restrained"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -2960,6 +2968,10 @@
             "type": "acid"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 2
+        },
         "reach": 5
       }
     ],
@@ -3039,6 +3051,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 3
+        },
         "reach": 10
       }
     ],
@@ -3255,6 +3271,10 @@
             "type": "poison"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "reach": 5
       },
       {
@@ -3594,6 +3614,10 @@
             "type": "fire"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 3
+        },
         "reach": 30
       },
       {
@@ -3788,6 +3812,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 2
+        },
         "reach": 5
       },
       {
@@ -3988,6 +4016,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "reach": 5
       },
       {
@@ -4659,6 +4691,10 @@
             "type": "poison"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "reach": 10
       }
     ],
@@ -4940,6 +4976,10 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 2
+        },
         "reach": 5
       }
     ],
@@ -5080,6 +5120,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 1
+        },
         "reach": 10
       },
       {
@@ -5405,6 +5449,10 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled", "restrained"],
+          "maxSize": 2
+        },
         "reach": 10
       }
     ],
@@ -5513,6 +5561,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -5588,6 +5640,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 2
+        },
         "reach": 10
       }
     ],
@@ -5735,6 +5791,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["blinded"],
+          "maxSize": 2
+        },
         "reach": 5
       },
       {
@@ -5841,6 +5901,10 @@
             "type": "thunder"
           }
         ],
+        "onHit": {
+          "conditions": ["incapacitated"],
+          "rounds": 1
+        },
         "range": [240, 240]
       }
     ],
@@ -5895,6 +5959,15 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 11
+          },
+          "conditions": ["restrained"],
+          "rounds": 14400,
+          "repeatSave": true
+        },
         "reach": 5
       }
     ],
@@ -6155,6 +6228,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "reach": 5
       }
     ],
@@ -6287,6 +6364,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled", "restrained"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -6484,6 +6565,15 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 12
+          },
+          "conditions": ["poisoned"],
+          "rounds": 10,
+          "repeatSave": true
+        },
         "reach": 5
       }
     ],
@@ -6637,6 +6727,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 2
+        },
         "reach": 5
       }
     ],
@@ -6700,6 +6794,10 @@
             "type": "thunder"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 2
+        },
         "range": [120, 120]
       }
     ],
@@ -6927,6 +7025,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 3
+        },
         "reach": 15
       }
     ],
@@ -7423,6 +7525,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 2
+        },
         "range": [60, 60]
       }
     ],
@@ -7762,6 +7868,10 @@
             "type": "poison"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "reach": 5
       },
       {
@@ -7858,6 +7968,10 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 2
+        },
         "reach": 5
       },
       {
@@ -8422,6 +8536,14 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 10
+          },
+          "conditions": ["paralyzed"],
+          "rounds": 1
+        },
         "reach": 5
       }
     ],
@@ -8603,6 +8725,14 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 10
+          },
+          "conditions": ["paralyzed"],
+          "rounds": 1
+        },
         "reach": 5
       }
     ],
@@ -8861,6 +8991,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "reach": 5
       }
     ],
@@ -8977,6 +9111,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -9026,6 +9164,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled", "restrained"],
+          "maxSize": 2
+        },
         "reach": 5
       },
       {
@@ -9038,6 +9180,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 2
+        },
         "reach": 10
       }
     ],
@@ -9233,6 +9379,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -9429,6 +9579,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled", "restrained"],
+          "maxSize": 1
+        },
         "reach": 10
       }
     ],
@@ -9590,6 +9744,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 2
+        },
         "reach": 5
       },
       {
@@ -9837,6 +9995,10 @@
             "type": "poison"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -9942,6 +10104,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "reach": 5
       }
     ],
@@ -10141,6 +10307,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -10228,6 +10398,10 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 1
+        },
         "reach": 10
       }
     ],
@@ -11111,6 +11285,10 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -11155,6 +11333,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -11778,6 +11960,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 2
+        },
         "reach": 10
       },
       {
@@ -11790,6 +11976,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "range": [60, 240]
       }
     ],
@@ -12062,6 +12252,14 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 12
+          },
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "reach": 5
       }
     ],
@@ -13060,6 +13258,9 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled", "restrained"]
+        },
         "reach": 30
       }
     ],
@@ -13366,6 +13567,10 @@
             "type": "cold"
           }
         ],
+        "onHit": {
+          "conditions": ["paralyzed"],
+          "rounds": 1
+        },
         "reach": 5
       }
     ],
@@ -13983,6 +14188,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -14193,6 +14402,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "reach": 5
       },
       {
@@ -14299,6 +14512,10 @@
             "type": "acid"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 2
+        },
         "reach": 5
       }
     ],
@@ -15225,6 +15442,10 @@
             "type": "psychic"
           }
         ],
+        "onHit": {
+          "conditions": ["frightened"],
+          "rounds": 1
+        },
         "range": [60, 60]
       }
     ],
@@ -15288,6 +15509,9 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"]
+        },
         "reach": 5
       },
       {
@@ -15300,6 +15524,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 1
+        },
         "reach": 10
       }
     ],
@@ -15840,6 +16068,15 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "save": {
+            "ability": "con",
+            "dc": 21
+          },
+          "conditions": ["poisoned"],
+          "rounds": 10,
+          "repeatSave": true
+        },
         "reach": 10
       },
       {
@@ -16426,6 +16663,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled", "restrained"],
+          "maxSize": 2
+        },
         "reach": 10
       },
       {
@@ -16514,6 +16755,10 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "reach": 5
       }
     ],
@@ -16926,6 +17171,10 @@
             "type": "fire"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled", "restrained"],
+          "maxSize": 2
+        },
         "reach": 10
       }
     ],
@@ -17087,6 +17336,10 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled", "restrained"],
+          "maxSize": 3
+        },
         "reach": 5
       }
     ],
@@ -18824,6 +19077,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["charmed"],
+          "rounds": 1
+        },
         "range": [40, 160]
       }
     ],
@@ -19102,6 +19359,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 2
+        },
         "range": [60, 240]
       }
     ],
@@ -19235,6 +19496,10 @@
             "type": "lightning"
           }
         ],
+        "onHit": {
+          "conditions": ["blinded", "deafened"],
+          "rounds": 1
+        },
         "range": [500, 500]
       }
     ],
@@ -19463,6 +19728,10 @@
             "type": "necrotic"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -19849,6 +20118,9 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled", "restrained"]
+        },
         "reach": 15
       },
       {
@@ -19873,6 +20145,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 3
+        },
         "reach": 30
       }
     ],
@@ -20005,6 +20281,10 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 2
+        },
         "reach": 5
       }
     ],
@@ -20381,6 +20661,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled", "restrained"],
+          "maxSize": 2
+        },
         "reach": 10
       },
       {
@@ -20393,6 +20677,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 3
+        },
         "reach": 15
       }
     ],
@@ -20520,6 +20808,10 @@
             "type": "necrotic"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 2
+        },
         "reach": 5
       }
     ],
@@ -20723,6 +21015,10 @@
             "type": "slashing"
           }
         ],
+        "onHit": {
+          "conditions": ["grappled"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -21277,6 +21573,10 @@
             "type": "bludgeoning"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -22075,6 +22375,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 2
+        },
         "reach": 5
       }
     ],
@@ -22153,6 +22457,10 @@
             "type": "piercing"
           }
         ],
+        "onHit": {
+          "conditions": ["prone"],
+          "maxSize": 1
+        },
         "reach": 5
       }
     ],
@@ -22326,6 +22634,10 @@
             "type": "poison"
           }
         ],
+        "onHit": {
+          "conditions": ["poisoned"],
+          "rounds": 1
+        },
         "reach": 10
       }
     ],

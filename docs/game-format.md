@@ -1177,6 +1177,28 @@ start of the monster's turn:
 }
 ```
 
+An attack can carry what rides on its hit in `onHit`: a `save` (`ability`,
+`dc`) against extra `damage` (`half`: half of it on a success) or
+`conditions` (for `rounds`, with `repeatSave` for a save as each of the
+target's turns ends), or conditions with no save that a hit simply leaves, on
+creatures up to `maxSize` squares across. A ghoul's claws:
+
+```json
+{
+  "name": "Claws",
+  "kind": "melee",
+  "toHit": 4,
+  "reach": 5,
+  "damage": [{ "dice": "2d4+2", "type": "slashing" }],
+  "onHit": {
+    "save": { "ability": "con", "dc": 10 },
+    "conditions": ["paralyzed"],
+    "rounds": 10,
+    "repeatSave": true
+  }
+}
+```
+
 Leave `rechargeOn` out and set `uses` to `[[1, 3]]` for "3/Day". SRD monsters
 come with all of this.
 

@@ -212,13 +212,36 @@ function riderDamage(f: Fields): object[] {
   return f.saveDamage && f.saveDamageType ? [{ dice: formula(f.saveDamage), type: f.saveDamageType }] : [];
 }
 
+/** How long a condition from a hit lasts: as the words say, else until something ends it (prone, grappled). */
+function riderRounds(text: string): number | undefined {
+  if (/until the (?:end|start) of/i.test(text)) return 1;
+  return /for 1 (?:minute|hour)|for 24 hours|repeat/i.test(text) ? rounds(text) : undefined;
+}
+
+/** What rides on a hit: extra damage or conditions behind a saving throw, or conditions a hit simply leaves. */
+function onHit(f: Fields, text: string): object | undefined {
+  const held = conditions(f);
+  const extra = riderDamage(f);
+  if (!held.length && !extra.length) return undefined;
+  const save = f.save && f.saveDc ? { ability: f.save, dc: f.saveDc } : undefined;
+  return compact({
+    save,
+    damage: some(extra),
+    half: f.saveEffect === 'half' || undefined,
+    conditions: some(held),
+    rounds: held.length ? riderRounds(text) : undefined,
+    repeatSave: (!!save && held.length > 0 && /repeat/i.test(text)) || undefined,
+    maxSize: SIZE[str(f.maxSize) ?? ''],
+  });
+}
+
 /** A monster's attack actions. Thrown weapons give a melee and a ranged attack. */
 function monsterAttacks(pack: Pack, ref: string): object[] {
   const f = pack.entries.get(ref)?.fields;
   if (!f?.attack || !f.damage) return [];
   const name = pack.text[`${ref}.name`] ?? ref.split('.').at(-1)!;
-  // Rider damage behind a save (a spider's poison) is counted as part of the hit.
-  const base = { toHit: f.toHit, damage: [...damage(f), ...riderDamage(f)] };
+  const rider = onHit(f, textOf(pack, ref));
+  const base = { toHit: f.toHit, damage: damage(f), ...(rider && { onHit: rider }) };
   const melee = f.attack === 'melee' ? [{ name, kind: 'melee', ...base, reach: Math.max(5, num(f.reach) ?? 5) }] : [];
   const normal = num(f.normalRange);
   if (!normal) return melee;
