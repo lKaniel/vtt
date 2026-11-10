@@ -57,11 +57,12 @@ export function spendPayment(table: Table, casterId: string, { spend, paid }: Om
   table.spendSlot(casterId, spend);
   if (!paid) return;
   const token = table.store.tokens.get(casterId)!;
-  table.store.setToken(payWithFeature(token, table.fighter(casterId).sheet, paid.feature));
+  table.store.setToken(payWithFeature(token, table.fighter(casterId).sheet, paid));
 }
 
 /** What the log says about a cast that spent no slot. */
 export function paymentNotes(paid: FeatureCast | undefined, free: boolean): string[] {
+  if (paid?.cost !== undefined) return [`cast with ${paid.name} (${paid.cost} ${paid.pool})`];
   if (paid) return [`cast with ${paid.name}`];
   return free ? ['cast without a spell slot'] : [];
 }

@@ -1,4 +1,4 @@
-import { type FeatureCast, featureCasts, formChoices, type Spell, type TokenView } from '@vtt/system-dnd5e';
+import { canPay, type FeatureCast, featureCasts, formChoices, type Spell, type TokenView } from '@vtt/system-dnd5e';
 import { contentFor } from '../content/content.ts';
 import { slotChoices } from '../play/charges.ts';
 import { itemSlots } from '../play/item-spells.ts';
@@ -124,7 +124,7 @@ function SlotChoices({ session, aiming, token }: Readonly<{ session: Session; ai
         </Toggle>
       ))}
       {featureCasts(token.sheet!, spell).map((f) => (
-        <FeatureChoice key={f.feature} session={session} aiming={aiming} cast={f} />
+        <FeatureChoice key={f.feature} session={session} aiming={aiming} cast={f} payable={canPay(token.sheet, f)} />
       ))}
       <Toggle pressed={!!free} onPressedChange={toggleFree} title={t('cast.freeHint')}>
         {t('cast.free')}
@@ -133,18 +133,32 @@ function SlotChoices({ session, aiming, token }: Readonly<{ session: Session; ai
   );
 }
 
-/** A feature that can pay for the aimed spell instead of a slot: its name and the uses it has left. */
-function FeatureChoice({ session, aiming, cast }: Readonly<{ session: Session; aiming: Aiming; cast: FeatureCast }>) {
+interface ChoiceProps {
+  session: Session;
+  aiming: Aiming;
+  cast: FeatureCast;
+  payable: boolean;
+}
+
+/** What a paying feature's chip says: the uses it has left, or the points it costs. */
+function featureLeft(cast: FeatureCast): string | undefined {
+  if (cast.cost !== undefined) return t('cast.poolCost', { cost: cast.cost, pool: cast.pool ?? '' });
+  return cast.max === undefined ? undefined : `${cast.left ?? 0}/${cast.max}`;
+}
+
+/** A feature that can pay for the aimed spell instead of a slot: its name and the uses it has left, or its cost. */
+function FeatureChoice({ session, aiming, cast, payable }: Readonly<ChoiceProps>) {
   const hint = cast.self ? 'cast.withFeatureSelf' : 'cast.withFeature';
+  const left = featureLeft(cast);
   return (
     <Toggle
       pressed={aiming.paidBy === cast.feature}
-      disabled={cast.left === 0}
+      disabled={!payable}
       onPressedChange={() => session.actions.aim(aiming.spell.id, cast.level, { paidBy: cast.feature })}
       title={t(hint, { feature: cast.name, level: ORDINAL[cast.level]! })}
     >
       {cast.name}
-      {cast.max !== undefined && <span className="slot-chip-left">{`${cast.left ?? 0}/${cast.max}`}</span>}
+      {left && <span className="slot-chip-left">{left}</span>}
     </Toggle>
   );
 }

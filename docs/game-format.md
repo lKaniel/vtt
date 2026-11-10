@@ -1046,7 +1046,11 @@ effects gain `linked`, `noReactions`, `bonusFeature` (Mind's Eye uses `saveAdvan
 and auras `maxWeight`. Features gain `reaction` (Misdirection, Redirect,
 Unreal Self, Phantom Step: offered as an attack is about to hit or a
 Dexterity save is rolled) and a feature spell may `summon` a creature built
-for the class level and the pool's numbers (Shadow Substance).
+for the class level and the pool's numbers (Shadow Substance). A feature's
+`freeCasts` entry with a `cost` formula (in `level`, the level it is cast at)
+pays for that spell with the pool's points instead of a use, so the points
+cast spells like slots: `{ "spell": "silent-image", "cost": "2 * level" }`.
+A class with no spellcasting casts them with the pool's ability.
 
 **Homebrew items and spells.** A homebrew file with `"kind": "spell"` has
 the fields of an SRD spell; one with `"kind": "item"` keeps the item's own

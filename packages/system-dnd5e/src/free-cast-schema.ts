@@ -10,4 +10,6 @@ export const FreeCastSchema = z.object({
   self: z.boolean().optional(),
   /** Cast before a fight, never in one: its effect is already in the stat block (mage armor in its AC). */
   beforeCombat: z.boolean().optional(),
+  /** Points from the class's pool it costs instead of a use of the feature: a formula in `level`, the level it is cast at. */
+  cost: z.string().max(200).optional(),
 });

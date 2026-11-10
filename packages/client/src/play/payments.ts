@@ -1,15 +1,16 @@
-import { type Creature, type FeatureCast, featureCasts, type Spell, type TokenView } from '@vtt/system-dnd5e';
+import { canPay, type Creature, type FeatureCast, featureCasts, type Spell, type TokenView } from '@vtt/system-dnd5e';
 import { lowestSlot } from '../text/spell-text.ts';
 import { slotChoices } from './charges.ts';
 
 // What pays for a cast: a slot of some level, or a feature that casts the
-// spell without one (Feature `freeCasts`: favored enemy, an invocation).
+// spell without one (Feature `freeCasts`: favored enemy, an invocation, a
+// class pool's points).
 
-type Sheet = Partial<Pick<Creature, 'features'>> | undefined;
+type Sheet = Partial<Pick<Creature, 'features' | 'pool'>> | undefined;
 
-/** The features that can pay for `spell` now: those that cast it and have a use left (or need none). */
+/** The features that can pay for `spell` now: those that cast it and have a use left (or need none) or the points. */
 function payingFeatures(sheet: Sheet, spell: Spell): FeatureCast[] {
-  return featureCasts({ features: sheet?.features ?? [] }, spell).filter((c) => c.left !== 0);
+  return featureCasts({ features: sheet?.features ?? [], pool: sheet?.pool }, spell).filter((c) => canPay(sheet, c));
 }
 
 /** The feature `id` paying for `spell`, when it can. */

@@ -22,6 +22,7 @@ export const EN_TABLE = {
   'cast.free': 'Free',
   'cast.freeHint': 'Cast without spending a spell slot',
   'cast.withFeature': 'Cast at {level} level with {feature} instead of a slot',
+  'cast.poolCost': '{cost} {pool}',
   'cast.withFeatureSelf': 'Cast on yourself at {level} level with {feature} instead of a slot',
   'cast.now': 'Cast',
   'select.deselect': 'Deselect',

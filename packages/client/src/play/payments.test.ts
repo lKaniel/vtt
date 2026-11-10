@@ -86,3 +86,20 @@ describe('aiming a spell a feature pays for', () => {
     expect(aiming).not.toHaveProperty('paidBy');
   });
 });
+
+describe('a class pool paying', () => {
+  const borrowed = {
+    id: 'borrowed',
+    name: 'Borrowed Spells',
+    freeCasts: [{ spell: 'hunters-mark', cost: '2 * level' }],
+  };
+  const pooled = (left: number): TokenView => {
+    const token = caster([0], [borrowed]);
+    return { ...token, sheet: { ...token.sheet!, pool: { name: 'Lucidity', left } } } as unknown as TokenView;
+  };
+
+  it('pays with points while the pool has enough, else not at all', () => {
+    expect(firstPayment(pooled(5), mark)).toEqual({ slot: 1, paidBy: 'borrowed' });
+    expect(firstPayment(pooled(1), mark)).toEqual({ slot: undefined });
+  });
+});
