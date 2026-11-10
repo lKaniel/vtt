@@ -36,10 +36,12 @@ export function grantedFeatures(token: Token, content: Content): Feature[] {
   return [...fromClasses, ...ownFeatures(token)];
 }
 
-const spellsAt = (f: Feature, level: number) =>
-  (f.grantsSpells ?? []).filter(([at]) => at <= level).map(([, id]) => id);
+const spellsAt = (f: Feature, level: number) => [
+  ...(f.grantsSpells ?? []).filter(([at]) => at <= level).map(([, id]) => id),
+  ...(f.freeCasts ?? []).map((c) => c.spell),
+];
 
-/** Spells the token's features always have prepared at its class levels: domain spells, a picked land's. */
+/** Spells the token's features always have prepared at its class levels (domain spells, a picked land's), or cast free. */
 export function featureSpellIds(token: Token, content: Content): string[] {
   const levels = classLevels(token, content);
   const fromClasses = levels.flatMap((l) => levelFeatures(l).flatMap((f) => spellsAt(f, l.level)));

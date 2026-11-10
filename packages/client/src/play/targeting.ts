@@ -10,6 +10,7 @@ import {
 } from '@vtt/system-dnd5e';
 import { contentFor, gameContent } from '../content/content.ts';
 import type { Point } from '@vtt/shared';
+import { payingFeature } from './payments.ts';
 import { type PowerAim, powerFields } from './power-aiming.ts';
 
 // Picking what a spell is aimed at: nothing (self), a point (areas,
@@ -31,6 +32,8 @@ export interface Aiming {
   form?: string;
   /** Cast without spending a slot. */
   free?: boolean;
+  /** The feature that pays instead of a slot (favored enemy, an invocation). */
+  paidBy?: string;
   /** Uses a lasting spell again (spiritual weapon): no new slot. */
   repeat?: boolean;
   /** Read from a spell scroll the caster carries. */
@@ -55,23 +58,43 @@ export function aimSpell(spell: Spell, slot: number, casterLevel: number): Aimin
 
 /** Aims one of a creature's spells; a lasting spell that's going is used again with its slot (spiritual weapon). */
 export function aimFor(
-  sheet: (Pick<Creature, 'caster' | 'effects'> & Partial<Pick<Creature, 'edition'>>) | undefined,
+  sheet: (Pick<Creature, 'caster' | 'effects'> & Partial<Pick<Creature, 'edition' | 'features'>>) | undefined,
   spellId: string | undefined,
-  { slot, free }: { slot: number; free: boolean },
+  { slot, free, paidBy }: { slot: number; free?: boolean; paidBy?: string },
 ): Aiming | undefined {
   if (!sheet?.caster) return undefined;
-  const { caster, effects } = sheet;
+  const { caster } = sheet;
   const spell = caster.spells.find((s) => s.id === spellId);
   if (!spell) return undefined;
-  const going = effects.find((e) => e.repeat?.spell === spellId)?.repeat;
-  if (going)
-    return {
-      ...aimSpell(withAgain(spell), going.slot, caster.level),
-      repeat: true,
-      ...(going.choice && { choice: going.choice }),
-    };
-  const conjure = spell.attackOnCast ? {} : { mode: 'self' as const, need: 0 };
-  return { ...aimSpell(spell, slot, caster.level), ...conjure, ...(free && { free }), ...firstForm(spell, sheet) };
+  const again = aimAgain(spell, sheet);
+  if (again) return again;
+  const paid = payingFeature(sheet, spell, paidBy);
+  const onSelf = !spell.attackOnCast || paid?.self ? { mode: 'self' as const, need: 0 } : {};
+  const aiming = { ...aimSpell(spell, paid?.level ?? slot, caster.level), ...onSelf, ...firstForm(spell, sheet) };
+  return paidWith(aiming, paid?.feature, free);
+}
+
+/** A lasting spell that's going, used again with the slot and option it was cast with. */
+function aimAgain(spell: Spell, { caster, effects }: Pick<Creature, 'caster' | 'effects'>): Aiming | undefined {
+  const going = effects.find((e) => e.repeat?.spell === spell.id)?.repeat;
+  if (!going || !caster) return undefined;
+  return {
+    ...aimSpell(withAgain(spell), going.slot, caster.level),
+    repeat: true,
+    ...(going.choice && { choice: going.choice }),
+  };
+}
+
+/** `aiming` paid by a feature, for free, or with its slot. */
+function paidWith(aiming: Aiming, paidBy: string | undefined, free: boolean | undefined): Aiming {
+  if (paidBy) return { ...aiming, paidBy };
+  return free ? { ...aiming, free } : aiming;
+}
+
+/** What pays for the aimed cast, as the server is told. */
+function payFields({ paidBy, free }: Aiming): { paidBy?: string; free?: true } {
+  if (paidBy) return { paidBy };
+  return free ? { free: true } : {};
 }
 
 /** The form a shape-shifting spell (polymorph) starts on: the first it allows. */
@@ -138,7 +161,7 @@ export function castMessage(caster: string, aiming: Aiming, point?: Point): Clie
     ...(aiming.summon && { summon: aiming.summon }),
     ...(aiming.choice && { choice: aiming.choice }),
     ...(aiming.form && { form: aiming.form }),
-    ...(aiming.free && { free: true }),
+    ...payFields(aiming),
     ...(aiming.repeat && { repeat: true }),
     ...(aiming.scroll && { scroll: true }),
     ...(aiming.item !== undefined && { item: aiming.item }),

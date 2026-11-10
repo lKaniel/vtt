@@ -403,6 +403,7 @@
     },
     "2024": {
       "features": {
+        "wild-companion": { "usesFrom": "wild-shape", "freeCasts": [{ "spell": "find-familiar" }] },
         "wild-shape": {
           "action": "bonus",
           "uses": [
@@ -879,6 +880,8 @@
     "2024": {
       "weaponMastery": true,
       "features": {
+        "paladins-smite": { "uses": [[2, 1]], "recharge": "long", "freeCasts": [{ "spell": "divine-smite" }] },
+        "faithful-steed": { "uses": [[5, 1]], "recharge": "long", "freeCasts": [{ "spell": "find-steed" }] },
         "lay-on-hands": {
           "action": "bonus"
         },
@@ -1030,6 +1033,17 @@
     "2024": {
       "weaponMastery": true,
       "features": {
+        "favored-enemy": {
+          "uses": [
+            [1, 2],
+            [5, 3],
+            [9, 4],
+            [13, 5],
+            [17, 6]
+          ],
+          "recharge": "long",
+          "freeCasts": [{ "spell": "hunters-mark" }]
+        },
         "great-weapon-fighting": {
           "manual": "Reroll 1s and 2s on the damage dice of two-handed or versatile melee weapons (2024: count them as 3s); roll that by hand."
         },
@@ -1239,6 +1253,7 @@
       "subclasses": {
         "draconic-sorcery": {
           "features": {
+            "dragon-companion": { "uses": [[18, 1]], "recharge": "long", "freeCasts": [{ "spell": "summon-dragon" }] },
             "draconic-resilience": {
               "passive": {
                 "name": "Draconic Resilience",
@@ -1298,6 +1313,17 @@
     },
     "2014": {
       "features": {
+        "armor-of-shadows": { "freeCasts": [{ "spell": "mage-armor", "self": true }] },
+        "fiendish-vigor": { "freeCasts": [{ "spell": "false-life", "self": true }] },
+        "mask-of-many-faces": { "freeCasts": [{ "spell": "disguise-self" }] },
+        "misty-visions": { "freeCasts": [{ "spell": "silent-image" }] },
+        "otherworldly-leap": { "freeCasts": [{ "spell": "jump", "self": true }] },
+        "ascendant-step": { "freeCasts": [{ "spell": "levitate", "self": true }] },
+        "master-of-myriad-forms": { "freeCasts": [{ "spell": "alter-self" }] },
+        "whispers-of-the-grave": { "freeCasts": [{ "spell": "speak-with-dead" }] },
+        "visions-of-distant-realms": { "freeCasts": [{ "spell": "arcane-eye" }] },
+        "beast-speech": { "freeCasts": [{ "spell": "speak-with-animals" }] },
+        "eldritch-sight": { "freeCasts": [{ "spell": "detect-magic" }] },
         "pact-boon": {
           "manual": "Blade: create your pact weapon as an action. Chain: Find Familiar with special forms. Tome: three cantrips from any class list."
         }
@@ -1320,6 +1346,19 @@
     },
     "2024": {
       "features": {
+        "armor-of-shadows": { "freeCasts": [{ "spell": "mage-armor", "self": true }] },
+        "fiendish-vigor": { "freeCasts": [{ "spell": "false-life", "self": true }] },
+        "mask-of-many-faces": { "freeCasts": [{ "spell": "disguise-self" }] },
+        "misty-visions": { "freeCasts": [{ "spell": "silent-image" }] },
+        "otherworldly-leap": { "freeCasts": [{ "spell": "jump", "self": true }] },
+        "ascendant-step": { "freeCasts": [{ "spell": "levitate", "self": true }] },
+        "master-of-myriad-forms": { "freeCasts": [{ "spell": "alter-self" }] },
+        "whispers-of-the-grave": { "freeCasts": [{ "spell": "speak-with-dead" }] },
+        "visions-of-distant-realms": { "freeCasts": [{ "spell": "arcane-eye" }] },
+        "one-with-shadows": { "freeCasts": [{ "spell": "invisibility", "self": true }] },
+        "pact-of-the-chain": { "freeCasts": [{ "spell": "find-familiar" }] },
+        "gift-of-the-depths": { "uses": [[5, 1]], "recharge": "long", "freeCasts": [{ "spell": "water-breathing" }] },
+        "contact-patron": { "uses": [[9, 1]], "recharge": "long", "freeCasts": [{ "spell": "contact-other-plane" }] },
         "magical-cunning": {
           "action": "action",
           "uses": [[2, 1]],

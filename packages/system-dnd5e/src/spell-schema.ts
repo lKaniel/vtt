@@ -594,6 +594,14 @@ export const FeatureSchema = z.object({
   choice: id.optional(),
   /** Spells the character always has prepared from these class levels (a domain's spells, a 2024 paladin's smite). */
   grantsSpells: z.array(z.tuple([z.number().int().min(1).max(20), id])).optional(),
+  /**
+   * Spells it lets the character cast without a slot (favored enemy, an invocation), known while it's had: each
+   * cast spends a use (of `usesFrom` when set), at will without `uses`; at the spell's level or `level`, on
+   * yourself only with `self`.
+   */
+  freeCasts: z
+    .array(z.object({ spell: id, level: z.number().int().min(1).max(9).optional(), self: z.boolean().optional() }))
+    .optional(),
   /** Why the GM runs it by hand: what it does that the engine doesn't (yet). */
   manual: z.string().optional(),
   ...classFields(EffectTemplateSchema),

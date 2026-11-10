@@ -379,7 +379,7 @@ describe('Session', () => {
       it('casts for free when asked, keeping the choice when the slot changes', () => {
         session.actions.aim('fireball', 3);
         session.actions.setFreeCast(true);
-        session.actions.aim('fireball', 4, session.actions.aiming?.free);
+        session.actions.aim('fireball', 4, { free: session.actions.aiming?.free });
         session.actions.castAt([250, 150]);
         expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'fireball', slot: 4, free: true });
       });
