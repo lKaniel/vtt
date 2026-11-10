@@ -55,3 +55,17 @@ test.describe('a wolf', () => {
     await expect(traits).toContainText('advantage on attack rolls');
   });
 });
+
+test.describe('a mage', () => {
+  test.use({ serverOptions: { prepare: disguised('Vessa', 'mage') } });
+
+  test('casts with its stat block: the save DC and spells on its sheet and action bar', async ({ page }) => {
+    await atTable(page, GM);
+    const sheet = await openSheet(page, 'Vessa');
+    await sheet.getByRole('tab', { name: 'Spells' }).click();
+    await expect(sheet.getByLabel('Spellcasting')).toContainText('Intelligence');
+    await expect(sheet.getByLabel('Spellcasting')).toContainText('14');
+    await expect(sheet.getByText('Fireball')).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Cast Fireball' }).first()).toBeVisible();
+  });
+});

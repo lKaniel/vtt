@@ -6,8 +6,8 @@ import { ammunitionPlus, otherSpeeds, wearing, withItemBonuses, withWeaponMagic 
 import { offHandAttacks } from './two-weapon.ts';
 import { makesDeathSaves } from './deaths.ts';
 import { poolParts, type PoolSheet } from './pools.ts';
+import { casterOf } from './monster-casting.ts';
 import {
-  casterSheet,
   classScales,
   type CasterSheet,
   type FeatureSheet,
@@ -154,7 +154,7 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
     ...kindAndSaves(monster, cls, { abilities, proficiency }),
     ...effectParts(token, features, content.edition, monster?.conditionImmunities),
     ...classParts(levels, monster),
-    caster: withHandedSpells(casterSheet(token, { abilities, proficiency }, content), token, content),
+    caster: withHandedSpells(casterOf(token, monster, { abilities, proficiency }, content), token, content),
     ...poolParts(token, levels, { abilities, proficiency }, monster),
     ...legendaryParts(token, monster),
     features,
