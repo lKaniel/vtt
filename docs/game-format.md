@@ -978,6 +978,10 @@ token's edition). A `class` named after an SRD class (Wizard, Fighter, ...)
 gives that class's spell slots, spellcasting ability and features by `level`,
 from `classes-5.x.json`. A homebrew class or a monster that casts uses
 `"spellcasting": { "ability": "int", "progression": "full" | "half" | "third" | "pact", "level": 5 }`.
+A creature with no spellcasting but homemade spells (`own.spells`, made on
+its sheet) casts them at their own level without a slot, with its best of
+Int, Wis and Cha, or the ability `"spellcasting": { "ability": "cha",
+"progression": "none" }` names (picked on the sheet's Spells tab).
 
 **Homebrew classes.** The GM makes classes in the Compendium tab
 (Homebrew), and each is a file in `homebrew/<id>.json` with `"kind": "class"`

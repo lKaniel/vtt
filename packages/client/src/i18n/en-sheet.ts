@@ -164,6 +164,8 @@ export const EN_SHEET = {
   'sheet.spellDc': 'Save DC',
   'sheet.noCasting': 'No spellcasting.',
   'sheet.noCastingEdit': 'Give the creature a caster class to cast spells.',
+  'sheet.homemadeCasting': 'No spellcasting: its homemade spells are cast at their own level, without a slot.',
+  'sheet.homemadeAbility': 'Ability its homemade spells are cast with',
   'sheet.cantrips': 'Cantrips',
   'sheet.spellLevel': '{level} level',
   'sheet.slots': '{level} level slots: {left} of {total} left',

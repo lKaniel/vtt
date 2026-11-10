@@ -26,6 +26,7 @@ export function firstPayment(token: TokenView, spell: Spell): { slot: number | u
 /** How many ways the token can pay for `spell`: slot levels with a slot left, and features with a use. */
 export function paymentCount(token: TokenView, spell: Spell): number {
   const caster = token.sheet?.caster;
+  if (caster?.atWill?.includes(spell.id)) return 1;
   const slots = caster && spell.level > 0 ? slotChoices(spell, caster).filter((c) => c.left > 0).length : 0;
   return slots + payingFeatures(token.sheet, spell).length;
 }

@@ -26,6 +26,11 @@ export interface Payment {
   paid?: FeatureCast;
 }
 
+/** Cast without a slot: the GM's free cast, or a non-caster's homemade spell (CasterSheet `atWill`). */
+export function castsFree(caster: Fighter, spell: Spell, req: { free?: boolean }): boolean {
+  return !!req.free || !!caster.sheet.caster?.atWill?.includes(spell.id);
+}
+
 /** How the cast `req` asks for is paid; refuses one the caster can't make that way. */
 export function payment(
   caster: Fighter,
@@ -33,7 +38,7 @@ export function payment(
   req: { slot: number; free?: boolean; paidBy?: string },
 ): Payment {
   const paid = req.paidBy ? featurePayment(caster, spell, req.paidBy) : undefined;
-  const free = !!req.free || !!paid;
+  const free = castsFree(caster, spell, req) || !!paid;
   const asked = paid?.level ?? req.slot;
   const problem = castProblem({ spell, slot: asked, sheet: caster.sheet, free });
   if (problem) throw new Refusal(`${caster.token.name} ${problem}`);

@@ -146,6 +146,24 @@ describe('casting spells', () => {
     expect(errors(ana)[0]).toMatch(/no 1st-level slots left/);
   });
 
+  it("casts a fighter's homemade spell at its own level without a slot", () => {
+    const glare = { id: 'glare', name: 'Glare', level: 2, school: 'evocation', castingTime: 'action', range: 60 };
+    store.setToken(
+      TokenSchema.parse({
+        ...tok('bo'),
+        own: {
+          spells: [{ ...glare, damage: [{ dice: '2d6', type: 'radiant' }], save: { ability: 'dex', onSave: 'half' } }],
+        },
+      }),
+    );
+    const bo = join_('bo');
+    bo.receive({ t: 'cast', caster: 'bo', spell: 'glare', slot: 2, targets: ['goblin'] });
+    expect(spellLogs(bo)).toHaveLength(1);
+    expect(tok('bo').spent?.slots).toBeUndefined();
+    bo.receive({ t: 'cast', caster: 'bo', spell: 'glare', slot: 3, targets: ['goblin'] });
+    expect(errors(bo)[0]).toMatch(/only at its own level/);
+  });
+
   it('casts at empty ground: the slot is spent and no one is hit', () => {
     const ana = join_('ana');
     ana.receive({ t: 'cast', caster: 'hero', spell: 'magic-missile', slot: 1, targets: [], point: [150, 150] });

@@ -186,11 +186,15 @@ export const StatsSchema = z.object({
   expertise: z.array(id).optional(),
   /** Armor, weapons, tools and languages by id (proficiency-catalog.ts); older ones may be words. */
   proficiencies: z.array(z.string().trim().min(1).max(60)).max(80).optional(),
-  /** Spellcasting for creatures without a caster class (a homebrew class, a monster). */
+  /**
+   * Spellcasting for creatures without a caster class (a homebrew class, a
+   * monster). Progression "none": no slots, only its homemade spells, each
+   * cast at its own level without one.
+   */
   spellcasting: z
     .object({
       ability: z.enum(ABILITIES),
-      progression: z.enum(['full', 'half', 'third', 'pact']).default('full'),
+      progression: z.enum(['full', 'half', 'third', 'pact', 'none']).default('full'),
       /** Caster level for slots and cantrips; defaults to `level`. */
       level: z.number().int().min(1).max(20).optional(),
     })
