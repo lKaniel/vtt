@@ -85,3 +85,4 @@ export * from './power-casts.ts';
 export * from './pool-reactions.ts';
 export * from './proficiencies.ts';
 export * from './gear-attacks.ts';
+export * from './effect-loops.ts';

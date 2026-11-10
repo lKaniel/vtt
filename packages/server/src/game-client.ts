@@ -1,5 +1,5 @@
 import { canControl, type Chunk, chunkFor, isGm, type Player, type Point, type RollMode } from '@vtt/shared';
-import { type ServerMessage, type Token, viewToken } from '@vtt/system-dnd5e';
+import { effectLoops, type ServerMessage, type Token, viewToken } from '@vtt/system-dnd5e';
 import type { WebSocket } from 'ws';
 import type { DocFeed } from './store/doc-feed.ts';
 import type { GameStore } from './store/game-store.ts';
@@ -53,8 +53,10 @@ export function chunkMessage(to: { player: Player }, key: string, chunk: Chunk |
 /** A token as `player` may see it; a monster wears its token from the game's packs, if they have one. */
 export function viewFor(store: GameStore, token: Token, player: Player) {
   const view = viewToken(token, player, contentFor(store, token));
-  const art = token.monster ? artOf(packArtOf(store), 'monster', token.monster)?.[0] : undefined;
-  return art ? { ...view, art } : view;
+  const packs = packArtOf(store);
+  const art = token.monster ? artOf(packs, 'monster', token.monster)?.[0] : undefined;
+  const loops = effectLoops(token, (key) => artOf(packs, 'animation', key));
+  return { ...view, ...(art && { art }), ...(loops.length && { loops }) };
 }
 
 /** What a client is told after what it may see changed: tokens gone, new, or `changed` (walked along `path`). */

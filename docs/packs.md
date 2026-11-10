@@ -151,7 +151,13 @@ winning for each thing:
     areas and touches;
   - videos under `Weapon_Attacks`, `Unarmed_Attacks` or `Creature` folders
     whose name holds a weapon animate it (`melee:<weapon>`,
-    `ranged:<weapon>`); a `Healing` folder animates healing without its own.
+    `ranged:<weapon>`); a `Healing` folder animates healing without its own;
+  - a creature under a spell wears that spell's loop (its `zone:<id>`
+    look, when it is a loop: JB2A's Bless), and one with a condition the
+    loop of a `Marker` folder named for it (`condition:<id>`:
+    `MarkerPoison` poisoned, `MarkerFear` frightened, `MarkerCharm`,
+    `MarkerStun`, `MarkerSleep`...), drawn under its face
+    (`effect-loops.ts`).
 
   That is how JB2A's library lays itself out, so a JB2A pack needs no art
   file. A creature's own animation choice (its sheet's Animations page)
@@ -243,5 +249,4 @@ another content server (the tests' stand-in).
   them, see [foundry.md](foundry.md)).
 - Baileywiki prefabs (Mass Edit presets) and their tile sets.
 - Installing a pack from the browser (zip upload) and per-pack permissions.
-- Art: picking a template's texture by hand in the inspector; JB2A's
-  on-token loops for conditions and auras.
+- Art: picking a template's texture by hand in the inspector.

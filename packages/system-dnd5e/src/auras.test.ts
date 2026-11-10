@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { auraEffects, resolveValue, withAuras } from './auras.ts';
+import { auraEffects, auraRings, resolveValue, withAuras } from './auras.ts';
 import { srdFor } from './content.ts';
 import { resolveCreature } from './creature.ts';
 import { EffectChangeSchema } from './effect-changes.ts';
@@ -94,5 +94,14 @@ describe('an aura made by hand', () => {
     expect(withAuras(marked, [])!.effects).toEqual([]);
     // The bearer's own effect only gives off the aura.
     expect(resolveCreature(kara, srdFor('2014'))!.effects.some((e) => e.name === 'Dread')).toBe(false);
+  });
+});
+
+describe('aura rings on the map', () => {
+  it('name the auras a creature gives off and how far they reach', () => {
+    const [kara] = bearers([paladin(6)]);
+    expect(auraRings(kara!)).toEqual([{ name: 'Aura of Protection', radius: 10, who: 'allies' }]);
+    const [young] = bearers([paladin(5)]);
+    expect(auraRings(young!)).toEqual([]);
   });
 });

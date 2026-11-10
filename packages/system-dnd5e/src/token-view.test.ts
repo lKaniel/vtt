@@ -87,3 +87,19 @@ describe('viewToken', () => {
     );
   });
 });
+
+describe('auras in view', () => {
+  it('show everyone who sees a paladin the aura around them', () => {
+    const kara = TokenSchema.parse({
+      id: 'k',
+      name: 'Kara',
+      x: 0,
+      y: 0,
+      stats: { class: 'paladin', level: 6, abilities: { cha: 16 } },
+    });
+    expect(viewToken(kara, ana, srdFor('2014')).auras).toEqual([
+      { name: 'Aura of Protection', radius: 10, who: 'allies' },
+    ]);
+    expect(viewToken(hero, ana, srdFor('2014')).auras).toBeUndefined();
+  });
+});
