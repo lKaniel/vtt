@@ -1,4 +1,4 @@
-import { type Actor, classesText, type TokenView } from '@vtt/system-dnd5e';
+import { type Actor, classesText, editionOf, type Monster, type TokenView } from '@vtt/system-dnd5e';
 import { uniqueId } from '@vtt/shared';
 import {
   CopyIcon,
@@ -11,7 +11,9 @@ import {
   Trash2Icon,
 } from 'lucide-react';
 import { useState } from 'react';
+import { gameContent } from '../content/content.ts';
 import { startDrag } from '../play/drops.ts';
+import { monsterLine } from '../text/monster-text.ts';
 import { t } from '../i18n/index.ts';
 import { readPref, writePref } from '../prefs.ts';
 import type { Session } from '../session/session.ts';
@@ -27,9 +29,10 @@ import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
 // folders (drag one onto the map to place a copy), and every creature on
 // the map. Right-click one for what it can do.
 
-function subtitle(t: Pick<TokenView, 'monster' | 'stats'>): string {
+function subtitle(t: Pick<TokenView, 'monster' | 'stats'>, monster?: Monster): string {
   const level = t.stats?.classes ? undefined : t.stats?.level;
-  const cls = t.stats?.class || t.stats?.classes ? [classesText(t.stats), level].filter(Boolean).join(' ') : t.monster;
+  const block = monsterLine(monster) || t.monster;
+  const cls = t.stats?.class || t.stats?.classes ? [classesText(t.stats), level].filter(Boolean).join(' ') : block;
   return [cls, t.stats?.rules && `${t.stats.rules} rules`].filter(Boolean).join(' · ');
 }
 
@@ -94,9 +97,14 @@ function duplicate(session: Session, actor: Actor): void {
   session.requests.saveActor({ ...actor, id: uniqueId(name, (x) => session.actors.has(x)), name });
 }
 
+/** The stat block a creature is built on, by the game's rules or its own. */
+function blockOf(session: Session, c: Pick<TokenView, 'monster' | 'stats'>): Monster | undefined {
+  return c.monster ? gameContent(editionOf(c, session.world ?? {})).monsters.get(c.monster) : undefined;
+}
+
 function actorItem(session: Session, actor: Actor): DirItem {
   const edit = () => session.sheets.open({ kind: 'actor', id: actor.id }, true);
-  const sub = subtitle(actor);
+  const sub = subtitle(actor, blockOf(session, actor));
   return {
     key: actor.id,
     ref: { coll: 'actors', id: actor.id },
@@ -159,7 +167,7 @@ function tokenItem(session: Session, token: TokenView): DirItem {
     session.select(token.id);
     session.focus([token.x, token.y]);
   };
-  const sub = subtitle(token);
+  const sub = subtitle(token, blockOf(session, token));
   return {
     key: token.id,
     name: token.name,

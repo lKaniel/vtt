@@ -8,6 +8,7 @@ import { featureIcon } from '../../icons.ts';
 import { withUsesLeft } from '../../play/charges.ts';
 import { dragTile } from '../../play/hotbar.ts';
 import { setStat } from '../../play/token-edit.ts';
+import { rechargeText } from '../../text/monster-text.ts';
 import { featureSections, matches } from '../../text/sheet-text.ts';
 import { featureTip } from '../../text/tooltip.ts';
 import { Badge } from '../kit/badge.tsx';
@@ -15,6 +16,7 @@ import { RemoveButton } from '../RemoveButton.tsx';
 import { EditButton, isOwn, NewButton, useOwnEditor } from '../own/OwnEditor.tsx';
 import { withKey } from '../sheet-model.ts';
 import { LegendaryPanel } from './LegendaryPanel.tsx';
+import { MonsterTraits } from './StatBlock.tsx';
 import { PoolPanel } from './PoolPanel.tsx';
 import { type Column, Empty, ListRow, ListSection, Pips, RowButton, SheetSearch } from './SheetList.tsx';
 import { actFromSheet, canAct, type SheetProps } from './sheet-props.ts';
@@ -64,6 +66,7 @@ export function FeaturesTab(props: Readonly<SheetProps>) {
       {edit && <NewButton label="New feature" onClick={() => own.create('feature')} />}
       {own.dialog}
       <LegendaryPanel {...props} />
+      <MonsterTraits {...props} />
     </>
   );
 }
@@ -72,6 +75,10 @@ export function FeaturesTab(props: Readonly<SheetProps>) {
 const grantedRef = (granted: readonly string[] | undefined, id: string) => granted?.find((r) => r.endsWith(`/${id}`));
 
 type RowProps = SheetProps & { feature: FeatureSheet; onOpen: (id: string) => void };
+
+/** When a feature's uses come back: after a rest, or on a d6 at the start of a monster's turn. */
+const recovery = (f: FeatureSheet) =>
+  f.rechargeOn ? rechargeText(f.rechargeOn) : t(`sheet.recharge.${f.recharge}` as MessageKey);
 
 function FeatureRow(props: Readonly<RowProps>) {
   const { edit, update, feature: f } = props;
@@ -87,7 +94,7 @@ function FeatureRow(props: Readonly<RowProps>) {
       name={f.name}
       tip={featureTip(f)}
       columns={columns()}
-      cells={[uses, limited && t(`sheet.recharge.${f.recharge}` as MessageKey)]}
+      cells={[uses, limited && recovery(f)]}
       faded={limited && f.left === 0}
       onDragStart={f.action ? (e) => dragTile(e, { ref: `feature:${f.id}` }) : undefined}
       controls={<FeatureControls {...props} />}

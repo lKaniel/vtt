@@ -546,6 +546,8 @@ export const FeatureSchema = z.object({
   uses: LevelTableSchema.optional(),
   /** "short-one": a short rest gives one use back, a long rest all of them. */
   recharge: z.enum(['short', 'short-one', 'long']).default('long'),
+  /** A monster's "Recharge 5-6": a spent use comes back at the start of its turn on a d6 roll of this or more. */
+  rechargeOn: z.number().int().min(2).max(6).optional(),
   /** What using it costs on your turn. Passive features have none. */
   action: z.enum(['action', 'bonus', 'free']).optional(),
   /** Hit points regained on use; "level" stands for the class level, e.g. "1d10+level". */

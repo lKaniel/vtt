@@ -46,8 +46,8 @@ export function skillRows(token: Pick<Token, 'stats'>, sheet: Creature): SkillRo
     ability: SKILLS[skill],
     bonus: checkBonus(token, sheet, { ability: SKILLS[skill], skill }),
     passive: passiveScore(token, sheet, skill),
-    proficient: token.stats?.skills?.includes(skill) === true,
-    expert: token.stats?.expertise?.includes(skill) === true,
+    proficient: [...(token.stats?.skills ?? []), ...(sheet.skills ?? [])].includes(skill),
+    expert: [...(token.stats?.expertise ?? []), ...(sheet.expertise ?? [])].includes(skill),
   }));
 }
 

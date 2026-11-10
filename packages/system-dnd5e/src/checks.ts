@@ -25,14 +25,16 @@ export interface CheckKind {
 type CheckRolled = CheckKind & { dc?: number; edge?: RollEdge };
 
 type CheckSheet = Pick<Creature, 'abilities' | 'proficiency' | 'saves'> &
-  Partial<Pick<Creature, 'features' | 'proficiencies'>>;
+  Partial<Pick<Creature, 'features' | 'proficiencies' | 'skills' | 'expertise'>>;
 
 /** Proficiency in the skill (twice with expertise) or the tool, if the creature has it. */
 function trainedBonus(token: Pick<Token, 'stats'>, sheet: CheckSheet, { skill, tool }: CheckKind): number | undefined {
   if (tool) return sheet.proficiencies?.includes(tool) ? sheet.proficiency : undefined;
   if (!skill) return undefined;
-  if (token.stats?.expertise?.includes(skill)) return 2 * sheet.proficiency;
-  return token.stats?.skills?.includes(skill) ? sheet.proficiency : undefined;
+  const has = (own: string[] | undefined, block: string[] | undefined) =>
+    !!own?.includes(skill) || !!block?.includes(skill);
+  if (has(token.stats?.expertise, sheet.expertise)) return 2 * sheet.proficiency;
+  return has(token.stats?.skills, sheet.skills) ? sheet.proficiency : undefined;
 }
 
 /** Proficiency the check adds: twice with expertise, half (Jack of All Trades) without proficiency. */

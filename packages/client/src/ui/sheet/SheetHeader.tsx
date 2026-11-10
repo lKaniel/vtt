@@ -1,12 +1,14 @@
 import { characterLevel, classesText } from '@vtt/system-dnd5e';
 import { ExternalLinkIcon, MoonIcon, TentIcon } from 'lucide-react';
 import { t } from '../../i18n/index.ts';
+import { monsterLine } from '../../text/monster-text.ts';
 import { xpProgress } from '../../text/sheet-text.ts';
 import { Button } from '../kit/button.tsx';
 import { Input } from '../kit/input.tsx';
 import { Switch } from '../kit/switch.tsx';
 import type { SheetProps } from './sheet-props.ts';
 import { LevelUpButton } from './LevelUpButton.tsx';
+import { monsterOf } from './StatBlock.tsx';
 
 /** What the sheet's header buttons do: the sheet over the map, or one in its own window (no pop-out). */
 export interface SheetControls {
@@ -61,11 +63,12 @@ export function SheetButtons(props: Readonly<SheetProps & { controls: SheetContr
   );
 }
 
-function SheetTitle({ kind, value, update, edit }: Readonly<SheetProps>) {
+function SheetTitle(props: Readonly<SheetProps>) {
+  const { kind, value, update, edit } = props;
   const level = characterLevel(value.stats);
   const line = [
     level && t('sheet.level', { level }),
-    classesText(value.stats) ?? value.monster,
+    classesText(value.stats) ?? (monsterLine(monsterOf(props)) || value.monster),
     kind === 'actor' && t('sheet.actor'),
   ]
     .filter(Boolean)

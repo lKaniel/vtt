@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { convertMonster, convertSpell, ofType, type Entry, type Pack } from './srd-convert.ts';
+import { convertMonster } from './monster-convert.ts';
+import { convertSpell, ofType, type Entry, type Pack } from './srd-convert.ts';
 
 function pack(entries: Entry[], text: Record<string, string> = {}): Pack {
   return { entries: new Map(entries.map((e) => [e.id, e])), text };

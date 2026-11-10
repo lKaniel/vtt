@@ -1,5 +1,5 @@
 import type { Perceiver, Senses } from '@vtt/shared';
-import type { Monster } from './stats-schema.ts';
+import type { Monster } from './monster-schema.ts';
 import type { Token } from './token-schema.ts';
 import type { EffectTemplate } from './spell-schema.ts';
 

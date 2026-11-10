@@ -1149,6 +1149,36 @@ edit it too:
 | `animations`    | The animation its controller picked per attack or spell, by `"attack:<name>"` or `"spell:<id>"`: a library name (`"flame-blade"`, `"frost-orb"`, `"lightning"`, `"holy-light"`, `"none"`, see `system-dnd5e/src/animations.ts`) or a video of the assets or a pack (`"pack://jb2a/media/…_30ft_….webm"`). Videos named by range (`_30ft_`) or under a `Ranged` folder fly from the attacker to the target; others play on the target. |
 | `leader`        | Token id it acts with: it moves and attacks on its leader's turn instead of having its own (pets, summons).                                                                                                                                                                                                                                                                                                                           |
 
+**Stat blocks.** Besides its numbers and `attacks`, a monster (the SRD's, a
+pack's or a token's own) can carry `multiattack` (attacks per action),
+`skills` and `expertise` (skill ids it adds its proficiency to, once or
+twice), `speeds` (`fly`, `swim`, `climb`, `burrow` in feet, `hover`),
+`languages`, `alignment`, `traits` (`{ "name", "description", "kind" }`: text
+the GM runs, `kind` `action`, `bonus` or `reaction` when it is not a passive
+trait) and `features`: actions the engine runs, written like class features.
+A breath weapon is a feature aimed like a spell that recharges on a d6 at the
+start of the monster's turn:
+
+```json
+{
+  "id": "fire-breath",
+  "name": "Fire Breath",
+  "level": 1,
+  "action": "action",
+  "uses": [[1, 1]],
+  "rechargeOn": 5,
+  "spell": {
+    "range": 0,
+    "area": { "shape": "cone", "size": 60 },
+    "save": { "ability": "dex", "dc": 21, "onSave": "half" },
+    "damage": [{ "dice": "18d6", "type": "fire" }]
+  }
+}
+```
+
+Leave `rechargeOn` out and set `uses` to `[[1, 3]]` for "3/Day". SRD monsters
+come with all of this.
+
 **Legendary creatures.** A monster's stat block can carry `legendary`
 (`{ "actions": 3, "options": [{ "id", "name", "cost"?, "attack"?, "description"? }] }`),
 `legendaryResistance` (uses per day) and `lair`

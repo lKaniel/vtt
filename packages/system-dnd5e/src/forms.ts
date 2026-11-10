@@ -1,7 +1,7 @@
 import type { Content } from './content.ts';
 import { characterLevel } from './multiclass.ts';
 import type { Effect, Spell } from './spell-schema.ts';
-import type { Monster } from './stats-schema.ts';
+import type { Monster } from './monster-schema.ts';
 import type { Token } from './token-schema.ts';
 
 // Shape-shifting (polymorph, true polymorph, shapechange, animal shapes): the

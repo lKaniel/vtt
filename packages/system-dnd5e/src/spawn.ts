@@ -1,7 +1,8 @@
 import type { Point } from '@vtt/shared';
 import { type Actor, ActorSchema, type Token, TokenSchema } from './token-schema.ts';
 import { toEdition } from './content.ts';
-import type { Edition, Monster } from './stats-schema.ts';
+import type { Monster } from './monster-schema.ts';
+import type { Edition } from './stats-schema.ts';
 
 // Putting new creatures on the map and editing them: the GM's tools. Pure
 // functions, so the server applies them and the client can preview them.
