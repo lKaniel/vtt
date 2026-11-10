@@ -43,6 +43,7 @@ import { compelled, riseInAura } from '../play/turn-start.ts';
 import { anotherTurn, breakTimeStop } from '../play/time-stop.ts';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
 import { breakSanctuary, loseImage, passSanctuary } from '../play/spell-wards.ts';
+import { recharge } from '../play/recharge.ts';
 import { Refusal, requireGm, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 /** An attack that has been rolled but not yet landed: its target may still react (shield). */
@@ -236,6 +237,7 @@ export class CombatActions {
       if (after !== t) this.store.setToken(after);
     }
     this.hearten(id);
+    recharge(this.table, id);
     this.smoulder(id);
     this.turnStarted(id);
   }

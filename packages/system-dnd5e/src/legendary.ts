@@ -1,7 +1,8 @@
 import type { Combat } from './combat.ts';
 import { currentTurn } from './combat.ts';
 import type { SaveRoll } from './effects.ts';
-import type { Lair, Legendary, Monster } from './stats-schema.ts';
+import type { Monster } from './monster-schema.ts';
+import type { Lair, Legendary } from './stats-schema.ts';
 import type { Token } from './token-schema.ts';
 
 // Legendary creatures: a pool of legendary actions spent at the end of other

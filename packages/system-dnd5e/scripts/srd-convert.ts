@@ -1,7 +1,7 @@
 // Turns entries of the Open Character Format SRD packs into our content
 // format. Pure functions, so they can be tested; scripts/import-srd.ts runs them.
 
-type Fields = Record<string, unknown>;
+export type Fields = Record<string, unknown>;
 export interface Entry {
   id: string;
   type: string;
@@ -27,9 +27,9 @@ export interface Pack {
 
 export const bare = (ref: string) => ref.slice(ref.indexOf('.') + 1);
 export const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
-const num = (v: unknown) => (typeof v === 'number' ? v : undefined);
-const list = (v: unknown) => (Array.isArray(v) ? (v as string[]) : []);
-const formula = (v: unknown) =>
+export const num = (v: unknown) => (typeof v === 'number' ? v : undefined);
+export const list = (v: unknown) => (Array.isArray(v) ? (v as string[]) : []);
+export const formula = (v: unknown) =>
   typeof v === 'string' || typeof v === 'number' ? String(v).replace(/\s+/g, '') : undefined;
 
 export function ofType(pack: Pack, type: string): Entry[] {
@@ -71,7 +71,7 @@ function area(f: Fields, reach: number): object | undefined {
   return { shape: mapped, size };
 }
 
-function damage(f: Fields): object[] {
+export function damage(f: Fields): object[] {
   const out: object[] = [];
   if (f.damage && f.damageType) out.push({ dice: formula(f.damage), type: f.damageType });
   if (f.damage2 && f.damage2Type) out.push({ dice: formula(f.damage2), type: f.damage2Type });
@@ -158,114 +158,5 @@ export function convertSpell(pack: Pack, spell: Entry): object {
     effect,
     automated: [f.attack, save, parts.length, f.heal, effect].some(Boolean),
     description: pack.text[`spells.${key}.description`] ?? '',
-  };
-}
-
-// ---- Monsters -----------------------------------------------------------
-
-const SIZE: Record<string, number> = { tiny: 1, small: 1, medium: 1, large: 2, huge: 3, gargantuan: 4 };
-
-function riderDamage(f: Fields): object[] {
-  return f.saveDamage && f.saveDamageType ? [{ dice: formula(f.saveDamage), type: f.saveDamageType }] : [];
-}
-
-/** A monster's attack actions. Thrown weapons give a melee and a ranged attack. */
-function monsterAttacks(pack: Pack, ref: string): object[] {
-  const f = pack.entries.get(ref)?.fields;
-  if (!f?.attack || !f.damage) return [];
-  const name = pack.text[`${ref}.name`] ?? ref.split('.').at(-1)!;
-  // Rider damage behind a save (a spider's poison) is counted as part of the hit.
-  const base = { toHit: f.toHit, damage: [...damage(f), ...riderDamage(f)] };
-  const melee = f.attack === 'melee' ? [{ name, kind: 'melee', ...base, reach: Math.max(5, num(f.reach) ?? 5) }] : [];
-  const normal = num(f.normalRange);
-  if (!normal) return melee;
-  const thrown = melee.length ? `${name} (thrown)` : name;
-  return [...melee, { name: thrown, kind: 'ranged', ...base, range: [normal, num(f.longRange) ?? normal] }];
-}
-
-const WEAPON_DAMAGE = ['bludgeoning', 'piercing', 'slashing'];
-/** Damage defenses we can't tell apart yet: every weapon is nonmagical, and spell damage isn't a type. */
-const DEFENSE: Record<string, string[]> = {
-  nonmagical: WEAPON_DAMAGE,
-  'nonmagical-not-adamantine': WEAPON_DAMAGE,
-  'nonmagical-unsilvered': WEAPON_DAMAGE,
-  'piercing-slashing-not-adamantine': ['piercing', 'slashing'],
-  'piercing-magic-weapon-by-good': [],
-  spell: [],
-};
-
-function damageDefense(f: Fields, key: string): string[] {
-  const types = list(f[key]).flatMap((t) => DEFENSE[bare(t)] ?? [bare(t)]);
-  return [...new Set(types)];
-}
-
-/** Blindsight, tremorsense and truesight, only when the monster has them, to keep the files small. */
-function otherSenses(f: Fields): Record<string, number> {
-  const out: Record<string, number> = {};
-  for (const sense of ['blindsight', 'tremorsense', 'truesight']) {
-    const range = num(f[sense]);
-    if (range) out[sense] = range;
-  }
-  return out;
-}
-
-/** The attack a legendary action makes (a dragon's tail attack), by the attack's name. */
-function legendaryAttack(pack: Pack, action: Entry): string | undefined {
-  const scripted = action as Entry & { actions?: { steps?: { use?: string; source?: string }[] }[] };
-  const steps = (scripted.actions ?? []).flatMap((a) => a.steps ?? []);
-  const source = steps.find((s) => s.use === 'monster-attack')?.source?.replace(/'/g, '');
-  return source ? (pack.text[`${source}.name`] ?? source.split('.').at(-1)) : undefined;
-}
-
-function legendaryOption(pack: Pack, ref: string): object | undefined {
-  const action = pack.entries.get(ref);
-  if (action?.fields?.kind !== 'legendary') return undefined;
-  const name = (pack.text[`${ref}.name`] ?? bare(ref)).replace(/ ?\(Costs? \d+ Actions?\)/i, '');
-  const description = pack.text[`${ref}.description`];
-  const attack = legendaryAttack(pack, action);
-  return {
-    id: ref.split('.').at(-1),
-    name,
-    cost: num(action.fields.legendaryCost) ?? 1,
-    ...(attack && { attack }),
-    ...(description && { description }),
-  };
-}
-
-/** Legendary actions per round and their options, and legendary resistance per day. */
-function legendaryParts(pack: Pack, f: Fields, refs: readonly string[]): object {
-  const actions = num(f.legendaryActions);
-  const options = refs.flatMap((r) => legendaryOption(pack, r) ?? []);
-  const resist = refs.map((r) => pack.entries.get(r)).find((e) => e?.id.endsWith('.legendary-resistance'));
-  const perDay = num(resist?.fields?.perDay);
-  return {
-    ...(actions && options.length && { legendary: { actions, options } }),
-    ...(perDay && { legendaryResistance: perDay }),
-  };
-}
-
-export function convertMonster(pack: Pack, m: Entry): object {
-  const f = m.fields ?? {};
-  const refs = [...(m.grants ?? []).map((g) => g.item), ...list(f.entries)];
-  const defense = (k: string) => list(f[k]).map(bare);
-  return {
-    id: bare(m.id),
-    name: pack.text[`${m.id}.name`] ?? bare(m.id),
-    size: SIZE[str(f.size) ?? 'medium'] ?? 1,
-    type: f.creatureType,
-    ac: f.ac,
-    hp: f.hp,
-    speed: num(f.speed) ?? 30,
-    darkvision: num(f.darkvision) ?? 0,
-    ...otherSenses(f),
-    abilities: { str: f.str, dex: f.dex, con: f.con, int: f.int, wis: f.wis, cha: f.cha },
-    cr: f.cr,
-    saves: defense('saves'),
-    attacks: refs.flatMap((r) => monsterAttacks(pack, r)),
-    resistances: damageDefense(f, 'damageResistances'),
-    immunities: damageDefense(f, 'damageImmunities'),
-    vulnerabilities: damageDefense(f, 'damageVulnerabilities'),
-    conditionImmunities: defense('conditionImmunities'),
-    ...legendaryParts(pack, f, [...refs, ...list(f.ownCopies)]),
   };
 }

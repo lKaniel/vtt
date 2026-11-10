@@ -14,6 +14,7 @@ import { withKey } from '../sheet-model.ts';
 import { ClassesEdit } from './ClassesEdit.tsx';
 import { ProficiencyAdder, ProficiencyList } from '../creator/ProficiencyParts.tsx';
 import { canAct, type SheetProps } from './sheet-props.ts';
+import { StatBlockLines } from './StatBlock.tsx';
 
 // The Details tab: the 18 skills (click one to roll it), senses,
 // proficiencies (click a tool to roll with it) and damage defences; in edit mode also which rules build the creature: its stat
@@ -25,6 +26,7 @@ export function DetailsTab(props: Readonly<SheetProps>) {
       <Skills {...props} />
       <div className="flex flex-col gap-4">
         <Senses {...props} />
+        <StatBlockLines {...props} />
         <Proficiencies {...props} />
         <Defenses {...props} />
         {props.edit && <RulesFields {...props} />}

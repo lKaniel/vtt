@@ -40,9 +40,10 @@ import {
   type Attack,
   type DamageType,
   type Edition,
-  type Monster,
   type Stats,
 } from './stats-schema.ts';
+import type { Monster } from './monster-schema.ts';
+import { monsterFeatures, monsterSkills, withMonsterSpeeds } from './monster-parts.ts';
 import type { Armor, Item, Weapon } from './item-schema.ts';
 
 /** A token's game statistics, with everything derived from its gear, class and effects worked out. */
@@ -86,6 +87,9 @@ export interface Creature extends Affected, LegendaryParts {
   rank?: number;
   /** The saving throws it adds its proficiency to (the class's, or the stat block's). */
   proficientSaves?: Ability[];
+  /** Skills its stat block is proficient in, and those it has expertise in (a character's are in its stats). */
+  skills?: string[];
+  expertise?: string[];
   /** Armor, weapons, tools and languages it is proficient with (training.ts). */
   proficiencies?: string[];
 }
@@ -117,7 +121,11 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
   const training = trainingOf(token, levels, content);
   const { maxHp, ac } = fixedNumbers(stats, monster, classHp(levels, abilities));
   const features = withBasicActions(
-    bloodiedPassives(featureSheets(token, levels, abilities, grantedFeatures(token, content)), token.hp, maxHp),
+    bloodiedPassives(
+      featureSheets(token, levels, abilities, [...grantedFeatures(token, content), ...monsterFeatures(monster)]),
+      token.hp,
+      maxHp,
+    ),
     token.effects,
   );
   const base: Creature = {
@@ -150,6 +158,7 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
     ...poolParts(token, levels, { abilities, proficiency }, monster),
     ...legendaryParts(token, monster),
     features,
+    ...monsterSkills(monster),
     proficiencies: training.list,
     senses: sensesOf(
       token,
@@ -159,7 +168,8 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
   };
   const trained = { ...base, effects: [...base.effects, ...armorEffects(training, gear.armor)] };
   const styled = withFightingStyles(applyEffects(withItemBonuses(trained, token, content)), armorWeight(gear.armor));
-  return withCarrying(styled, token, { monster, content });
+  const carrying = withCarrying(styled, token, { monster, content });
+  return { ...carrying, speeds: withMonsterSpeeds(carrying.speeds, monster) };
 }
 
 /**

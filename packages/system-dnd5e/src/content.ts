@@ -18,7 +18,8 @@ import tokenArt from '../content/token-art.json' with { type: 'json' };
 import type { World } from '@vtt/shared';
 import type { Token } from './token-schema.ts';
 import { type Class, ClassSchema, type Spell, SpellSchema } from './spell-schema.ts';
-import { type Edition, EditionSchema, type Monster, MonsterSchema } from './stats-schema.ts';
+import { type Monster, MonsterSchema } from './monster-schema.ts';
+import { type Edition, EditionSchema } from './stats-schema.ts';
 import { type Item, ItemSchema } from './item-schema.ts';
 
 /** Everything a token can refer to by id, for one rules edition. */

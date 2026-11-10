@@ -1,5 +1,6 @@
 import type { Spell, SpellCreature } from './spell-schema.ts';
-import type { Attack, Monster } from './stats-schema.ts';
+import type { Monster } from './monster-schema.ts';
+import type { Attack } from './stats-schema.ts';
 
 // Creatures whose stat block comes with the spell (2024 giant insect, summon
 // dragon, find steed, animate objects): built for the slot it was cast with

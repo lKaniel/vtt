@@ -5,7 +5,13 @@
 - `monsters-5.2.json`: monsters for the 2024 rules, from the System Reference
   Document 5.2 by Wizards of the Coast. Legendary monsters carry their
   `legendary` actions (5.1 options link their attack) and
-  `legendaryResistance`.
+  `legendaryResistance`. Every monster also carries what its stat block has
+  beyond attacks: `multiattack` (attacks per action, counted from the words
+  of Multiattack), `features` (actions behind a saving throw, such as breath
+  weapons: class-style features aimed like a spell, with `uses` a day or
+  `rechargeOn` for "Recharge 5-6"), `traits` (everything else, as text the GM
+  runs), `skills`, `expertise`, `languages`, `alignment` and `speeds`
+  (`scripts/monster-convert.ts`).
 - `spells-5.1.json`, `spells-5.2.json`: every SRD spell for each edition.
 - `classes-5.1.json`, `classes-5.2.json`: the SRD classes, their features by
   level and spellcasting tables.

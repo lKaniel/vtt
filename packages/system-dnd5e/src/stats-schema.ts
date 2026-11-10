@@ -96,7 +96,7 @@ export const AttackSchema = z.object({
 });
 export type Attack = z.infer<typeof AttackSchema>;
 
-const defenses = {
+export const defenseFields = {
   resistances: z.array(DamageTypeSchema).default([]),
   immunities: z.array(DamageTypeSchema).default([]),
   vulnerabilities: z.array(DamageTypeSchema).default([]),
@@ -124,42 +124,12 @@ export const LairSchema = z.object({
 });
 export type Lair = z.infer<typeof LairSchema>;
 
-const legendaryParts = {
+export const legendaryFields = {
   legendary: LegendarySchema.optional(),
   /** Failed saves it may turn into successes, per day. */
   legendaryResistance: z.number().int().positive().optional(),
   lair: LairSchema.optional(),
 };
-
-export const MonsterSchema = z.object({
-  id,
-  name: z.string().min(1),
-  /** Squares per side: 1 for small and medium, 2 for large. */
-  size: z.number().positive().default(1),
-  ac: z.number().int(),
-  hp: z.number().int().positive(),
-  speed: z.number().nonnegative().default(30),
-  darkvision: z.number().nonnegative().default(0),
-  blindsight: z.number().nonnegative().default(0),
-  tremorsense: z.number().nonnegative().default(0),
-  truesight: z.number().nonnegative().default(0),
-  abilities: AbilitiesSchema,
-  /** Creature type, e.g. "humanoid" or "beast". */
-  type: z.string().optional(),
-  /** Challenge rating, e.g. 0.25 for CR 1/4. */
-  cr: z.number().nonnegative(),
-  /** Saving throws the monster is proficient in. */
-  saves: z.array(z.enum(ABILITIES)).default([]),
-  attacks: z.array(AttackSchema).default([]),
-  /** Attacks it makes with the Attack action (a spell's creature: half the spell's level). */
-  multiattack: z.number().int().positive().optional(),
-  ...defenses,
-  conditionImmunities: z.array(z.string()).default([]),
-  ...legendaryParts,
-  /** Painted top-down token with a transparent background, set from content/token-art.json. */
-  img: z.string().optional(),
-});
-export type Monster = z.infer<typeof MonsterSchema>;
 
 /** Levels in one class of a multiclassed character. */
 export const ClassLevelSchema = z.object({
@@ -208,7 +178,7 @@ export const StatsSchema = z.object({
   immunities: z.array(DamageTypeSchema).optional(),
   vulnerabilities: z.array(DamageTypeSchema).optional(),
   /** Legendary actions, resistance and a lair for any creature (a boss NPC), or overriding the monster's. */
-  ...legendaryParts,
+  ...legendaryFields,
 });
 export type Stats = z.infer<typeof StatsSchema>;
 

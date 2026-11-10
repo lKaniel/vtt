@@ -14,7 +14,8 @@ import { join } from 'node:path';
 import { convertOrigins } from './origins-convert.ts';
 import { convertClass } from './class-convert.ts';
 import { convertItems } from './item-convert.ts';
-import { convertMonster, convertSpell, ofType, type Entry, type Pack } from './srd-convert.ts';
+import { convertMonster } from './monster-convert.ts';
+import { convertSpell, ofType, type Entry, type Pack } from './srd-convert.ts';
 
 const OUT = join(import.meta.dirname, '../content/srd');
 
