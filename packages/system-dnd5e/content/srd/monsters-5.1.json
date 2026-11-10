@@ -3724,7 +3724,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 13
         },
         "reach": 5
       }
@@ -4778,7 +4779,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 16
         },
         "reach": 5
       }
@@ -5988,7 +5990,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 14
         },
         "reach": 10
       }
@@ -6151,7 +6154,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 14
         },
         "reach": 10
       }
@@ -6557,7 +6561,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 14
         },
         "reach": 5
       }
@@ -6712,7 +6717,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 15
         },
         "reach": 10
       }
@@ -6827,7 +6833,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 12
         },
         "reach": 5
       }
@@ -9685,7 +9692,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 16
         },
         "reach": 5
       }
@@ -9732,7 +9740,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 11
         },
         "reach": 5
       }
@@ -9784,7 +9793,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 16
         },
         "reach": 5
       },
@@ -10025,7 +10035,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 11
         },
         "reach": 5
       }
@@ -10223,7 +10234,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 16
         },
         "reach": 15
       }
@@ -10500,7 +10512,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 12
         },
         "reach": 5
       },
@@ -10750,7 +10763,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 13
         },
         "reach": 5
       }
@@ -11128,7 +11142,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 15
         },
         "reach": 10
       },
@@ -13739,7 +13754,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 18
         },
         "reach": 30
       }
@@ -15726,7 +15742,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 10
         },
         "reach": 5
       }
@@ -17459,7 +17476,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 17
         },
         "reach": 10
       }
@@ -17611,7 +17629,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 19
         },
         "reach": 5
       }
@@ -18018,7 +18037,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 14
         },
         "reach": 10
       }
@@ -20239,7 +20259,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 20
         },
         "reach": 10
       },
@@ -20762,7 +20783,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled"]
+          "conditions": ["grappled"],
+          "escape": 17
         },
         "reach": 10
       },

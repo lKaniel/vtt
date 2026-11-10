@@ -31,7 +31,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 14
         },
         "reach": 15
       }
@@ -2922,7 +2923,8 @@
         ],
         "onHit": {
           "conditions": ["grappled", "blinded", "restrained"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 13
         },
         "reach": 5
       }
@@ -2970,7 +2972,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 13
         },
         "reach": 5
       }
@@ -3814,7 +3817,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 13
         },
         "reach": 5
       },
@@ -5122,7 +5126,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 12
         },
         "reach": 10
       },
@@ -5451,7 +5456,8 @@
         ],
         "onHit": {
           "conditions": ["grappled", "restrained"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 14
         },
         "reach": 10
       }
@@ -5642,7 +5648,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 14
         },
         "reach": 10
       }
@@ -6366,7 +6373,8 @@
         ],
         "onHit": {
           "conditions": ["grappled", "restrained"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 12
         },
         "reach": 5
       }
@@ -9113,7 +9121,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 11
         },
         "reach": 5
       }
@@ -9166,7 +9175,8 @@
         ],
         "onHit": {
           "conditions": ["grappled", "restrained"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 15
         },
         "reach": 5
       },
@@ -9381,7 +9391,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 11
         },
         "reach": 5
       }
@@ -9581,7 +9592,8 @@
         ],
         "onHit": {
           "conditions": ["grappled", "restrained"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 13
         },
         "reach": 10
       }
@@ -9746,7 +9758,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 13
         },
         "reach": 5
       },
@@ -9997,7 +10010,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 12
         },
         "reach": 5
       }
@@ -10400,7 +10414,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 15
         },
         "reach": 10
       }
@@ -11287,7 +11302,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 12
         },
         "reach": 5
       }
@@ -11335,7 +11351,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 14
         },
         "reach": 5
       }
@@ -13259,7 +13276,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled", "restrained"]
+          "conditions": ["grappled", "restrained"],
+          "escape": 20
         },
         "reach": 30
       }
@@ -14514,7 +14532,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 13
         },
         "reach": 5
       }
@@ -15526,7 +15545,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 13
         },
         "reach": 10
       }
@@ -16665,7 +16685,8 @@
         ],
         "onHit": {
           "conditions": ["grappled", "restrained"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 19
         },
         "reach": 10
       },
@@ -17173,7 +17194,8 @@
         ],
         "onHit": {
           "conditions": ["grappled", "restrained"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 17
         },
         "reach": 10
       }
@@ -17338,7 +17360,8 @@
         ],
         "onHit": {
           "conditions": ["grappled", "restrained"],
-          "maxSize": 3
+          "maxSize": 3,
+          "escape": 19
         },
         "reach": 5
       }
@@ -20119,7 +20142,8 @@
           }
         ],
         "onHit": {
-          "conditions": ["grappled", "restrained"]
+          "conditions": ["grappled", "restrained"],
+          "escape": 20
         },
         "reach": 15
       },
@@ -20663,7 +20687,8 @@
         ],
         "onHit": {
           "conditions": ["grappled", "restrained"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 17
         },
         "reach": 10
       },
@@ -20810,7 +20835,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 2
+          "maxSize": 2,
+          "escape": 14
         },
         "reach": 5
       }
@@ -21017,7 +21043,8 @@
         ],
         "onHit": {
           "conditions": ["grappled"],
-          "maxSize": 1
+          "maxSize": 1,
+          "escape": 13
         },
         "reach": 5
       }

@@ -218,6 +218,12 @@ function riderRounds(text: string): number | undefined {
   return /for 1 (?:minute|hour)|for 24 hours|repeat/i.test(text) ? rounds(text) : undefined;
 }
 
+/** "escape DC 14" in the words, for packs that leave the field out (5.1). */
+function escapeDc(text: string): number | undefined {
+  const dc = /escape DC (\d+)/i.exec(text)?.[1];
+  return dc ? Number(dc) : undefined;
+}
+
 /** What rides on a hit: extra damage or conditions behind a saving throw, or conditions a hit simply leaves. */
 function onHit(f: Fields, text: string): object | undefined {
   const held = conditions(f);
@@ -232,6 +238,7 @@ function onHit(f: Fields, text: string): object | undefined {
     rounds: held.length ? riderRounds(text) : undefined,
     repeatSave: (!!save && held.length > 0 && /repeat/i.test(text)) || undefined,
     maxSize: SIZE[str(f.maxSize) ?? ''],
+    escape: num(f.escapeDc) ?? escapeDc(text),
   });
 }
 

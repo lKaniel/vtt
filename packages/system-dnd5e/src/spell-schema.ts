@@ -259,6 +259,8 @@ export const EffectSchema = EffectTemplateSchema.extend({
   /** The spell that made it, and the slot it was cast with: what dispel magic checks. */
   spell: id.optional(),
   slot: z.number().int().min(0).max(9).optional(),
+  /** A grapple's escape DC from the stat block (a monster's "escape DC 14"). */
+  escape: z.number().int().positive().optional(),
 });
 export type Effect = z.infer<typeof EffectSchema>;
 
@@ -558,6 +560,8 @@ export const FeatureSchema = z.object({
   heal: z.string().optional(),
   /** Gives back your action (action surge). */
   grantAction: z.boolean().optional(),
+  /** Tries to break free of every grapple on the creature (grapples.ts `escapeRoll`). */
+  escape: z.boolean().optional(),
   /** An effect put on yourself on use (rage). */
   effect: EffectTemplateSchema.optional(),
   /** For an effect's `meleeDamage`: the bonus by class level. */

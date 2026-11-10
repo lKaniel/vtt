@@ -87,6 +87,8 @@ export const OnHitSchema = z.object({
   repeatSave: z.boolean().optional(),
   /** The largest creature (squares across) the conditions work on. */
   maxSize: z.number().positive().optional(),
+  /** A grapple's escape DC. */
+  escape: z.number().int().positive().optional(),
 });
 export type OnHit = z.infer<typeof OnHitSchema>;
 

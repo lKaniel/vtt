@@ -98,6 +98,19 @@ export function densify(points: readonly Point[], step: number): Point[] {
   return out;
 }
 
+/** The walk cut short `gap` from its end, following its turns: where a creature dragged behind ends up. */
+export function trailBehind(points: readonly Point[], gap: number): Point[] {
+  let left = gap;
+  for (let i = points.length - 1; i > 0; i--) {
+    const [a, b] = [points[i - 1]!, points[i]!];
+    const d = dist(a, b);
+    if (d > 0 && d >= left)
+      return [...points.slice(0, i), [b[0] + ((a[0] - b[0]) * left) / d, b[1] + ((a[1] - b[1]) * left) / d]];
+    left -= d;
+  }
+  return points.slice(0, 1);
+}
+
 function dist(a: Point, b: Point): number {
   return Math.hypot(a[0] - b[0], a[1] - b[1]);
 }

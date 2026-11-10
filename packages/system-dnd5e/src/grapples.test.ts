@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { srdFor } from './content.ts';
 import { resolveCreature } from './creature.ts';
 import { useFeature } from './features.ts';
-import { grappleSave } from './grapples.ts';
+import { dragCost, escapeRoll, grappleSave } from './grapples.ts';
 import { TokenSchema } from './token-schema.ts';
 import type { Edition } from './stats-schema.ts';
+import type { Effect } from './spell-schema.ts';
 
 const side = (rules: Edition, data: object) => {
   const token = TokenSchema.parse({ id: 'c', name: 'C', x: 50, y: 50, ...data });
@@ -87,5 +88,37 @@ describe('grappleSave', () => {
     // DC 8 + 4 + 3; Dexterity +3.
     expect(save).toMatchObject({ ability: 'dex', dc: 15, total: 14, success: false });
     expect(grappleSave(grappler, nimble, rolling(12)).success).toBe(true);
+  });
+});
+
+describe('escaping a grapple', () => {
+  const goblin = (rules: Edition) => side(rules, { monster: 'goblin', effects: [held] });
+  const held: Effect = { id: 'g', name: 'Grappled', conditions: ['grappled'], source: 'c' };
+
+  it('only a grappled creature is offered Escape Grapple', () => {
+    expect(feature('2014', 'escape')).toBeUndefined();
+    expect(goblin('2014').sheet.features.find((f) => f.id === 'escape')?.action).toBe('action');
+  });
+
+  it("2024: against 8 + the grappler's Strength modifier + proficiency", () => {
+    // The grappler's edition sets the rule; the goblin's Acrobatics (+2) beats its Athletics (-1).
+    const out = escapeRoll(goblin('2014'), held, fighter('2024'), rolling(13));
+    expect(out).toMatchObject({ ability: 'dex', dc: 8 + 4 + 3, total: 15, success: true, check: true });
+  });
+
+  it("2014: a contest with the grappler's Athletics", () => {
+    const out = escapeRoll(goblin('2014'), held, fighter('2014'), rolling(20, 1));
+    expect(out.success).toBe(true);
+    expect(out.dc).toBe(1 + 4);
+  });
+
+  it("a monster's grapple has its own escape DC", () => {
+    expect(escapeRoll(goblin('2014'), { ...held, escape: 14 }, fighter('2014'), rolling(1)).dc).toBe(14);
+  });
+
+  it('dragging costs double unless the creature is two or more sizes smaller', () => {
+    expect(dragCost({ size: 1 }, [])).toBe(1);
+    expect(dragCost({ size: 1 }, [{ size: 1 }])).toBe(2);
+    expect(dragCost({ size: 3 }, [{ size: 1 }])).toBe(1);
   });
 });

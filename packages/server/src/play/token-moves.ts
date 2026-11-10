@@ -10,10 +10,19 @@ import {
   type Player,
   type Point,
   sameFloor,
+  trailBehind,
   walkPath,
   wallsOnFloor,
 } from '@vtt/shared';
-import { AnimationChoiceSchema, barrierStops, type ClientMessage, inTheWay, type Token } from '@vtt/system-dnd5e';
+import {
+  AnimationChoiceSchema,
+  barrierStops,
+  type ClientMessage,
+  dragCost,
+  grapplesOn,
+  inTheWay,
+  type Token,
+} from '@vtt/system-dnd5e';
 import type { CombatActions } from '../actions/combat-actions.ts';
 import type { GameStore } from '../store/game-store.ts';
 import type { Reactions } from './reactions.ts';
@@ -96,13 +105,35 @@ export class TokenMoves {
     const [x, y] = path.points.at(-1)!;
     if (path.points.length < 2) return;
     this.rules.barriers(token, path.points);
-    const walker = combat.move(token, path.feet);
+    const dragged = this.dragged(token);
+    const walker = combat.move(token, path.feet * dragCost(token, dragged));
     this.store.setToken({ ...walker, x, y, ...climb }, path.points);
     // Zones, reactions and regions look at every step of the way.
     const steps = densify(path.points, g / 4);
     zones.moved(token.id, steps);
     reactions.moved(token, steps);
     regions.entered(token.id, steps);
+    for (const d of dragged) this.drag(d, token, path.points);
+  }
+
+  /** The creatures `token` holds in a grapple, on its floor: they come along when it walks. */
+  private dragged(token: Token): Token[] {
+    const levels = this.store.world.levels;
+    return [...this.store.tokens.values()].filter(
+      (t) => sameFloor(levels, token, t) && grapplesOn(t).some((e) => e.source === token.id),
+    );
+  }
+
+  /** Pulls a grappled creature along the grappler's walk, keeping the gap between them. */
+  private drag(dragged: Token, grappler: Token, walk: readonly Point[]): void {
+    const gap = Math.hypot(dragged.x - grappler.x, dragged.y - grappler.y);
+    const trail = trailBehind(walk, gap);
+    const [x, y] = trail.at(-1)!;
+    const points: Point[] = [[dragged.x, dragged.y], ...trail];
+    this.store.setToken({ ...this.store.tokens.get(dragged.id)!, x, y }, points);
+    const steps = densify(points, this.store.world.gridSize / 4);
+    this.rules.zones.moved(dragged.id, steps);
+    this.rules.regions.entered(dragged.id, steps);
   }
 
   /** The height a walk ends at: what the 3D view says it climbed onto, on a 3D scene only. */

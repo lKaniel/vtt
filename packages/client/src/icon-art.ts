@@ -38,6 +38,7 @@ const BORROWED: Record<string, [Kind, string]> = {
   'flurry-of-blows': ['actions', 'melee-attack'],
   'martial-arts': ['actions', 'melee-attack'],
   grapple: ['actions', 'shove'],
+  escape: ['actions', 'disengage'],
   'turn-undead': ['features', 'channel-divinity'],
   'paladins-smite': ['features', 'divine-smite'],
 };
