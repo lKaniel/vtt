@@ -16,6 +16,9 @@ describe('trigger steps', () => {
       'elevation',
       'shift',
       'journal',
+      'rotate',
+      'view',
+      'choice',
     ]);
     expect(stepTypes('region')).toEqual(
       expect.arrayContaining(['difficult', 'trap', 'level', 'stairs', 'elevator', 'fall', 'reveal', 'door']),
@@ -65,6 +68,15 @@ describe('trigger steps', () => {
   it('has fields for every step type', () => {
     for (const type of stepTypes('region')) expect(Array.isArray(stepFields(type))).toBe(true);
     expect(stepFields('door').map((f) => f.key)).toEqual(['wall', 'to']);
+  });
+
+  it('turns a tile, shows a scene and asks a question', () => {
+    const turn = setStep(setStep(blankStep('rotate'), 'target.id', 'wheel'), 'by', '90');
+    expect(turn).toEqual({ type: 'rotate', target: { coll: 'tiles', id: 'wheel' }, by: 90 });
+    expect(problemOf([turn, setStep(blankStep('view'), 'scene', 'cellar')], 'tile')).toBeUndefined();
+    const ask = setStep(blankStep('choice'), 'text', 'Pull the lever?');
+    expect(problemOf([ask], 'tile')).toBeUndefined();
+    expect(stepFields('choice').map((f) => f.key)).toEqual(['title', 'text']);
   });
 
   it('says what is missing before saving', () => {

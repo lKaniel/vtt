@@ -17,6 +17,7 @@ import { fromDoc } from '../store/doc-sync.ts';
 import { shareEntry } from './entry-actions.ts';
 import { moveSeats, sceneOf } from './scene-actions.ts';
 import { Refusal, type Table } from '../play/table.ts';
+import { askedOf, TriggerChoices, userNear } from './trigger-asks.ts';
 
 // Tile triggers at work, like Monk's Active Tiles (triggers.ts in shared):
 // clicking a tile, or walking onto one, runs its actions in order. Regions
@@ -30,17 +31,23 @@ export interface TriggerOut {
   show(entry: string, page?: string): void;
   /** Asks whoever moves `token` (its players, else the GM) to choose. */
   ask(token: Token, msg: Extract<EngineServerMessage, { t: 'levelChoice' }>): void;
+  /** Asks player `player` a tile's question. */
+  tell(player: string, msg: Extract<EngineServerMessage, { t: 'triggerChoice' }>): void;
 }
 
 /** What set the actions off: the tile, and the creature that walked onto it or clicked with. */
 export interface TriggerContext {
   tile?: string;
   token?: Token;
+  /** The player who clicked it. */
+  player?: string;
 }
 
 type Act<T extends TriggerAction['type']> = (a: Extract<TriggerAction, { type: T }>, ctx: TriggerContext) => boolean;
 
 export class TriggerActions {
+  private choices = new TriggerChoices<TriggerContext>();
+
   constructor(
     private table: Table,
     readonly out: TriggerOut,
@@ -69,8 +76,17 @@ export class TriggerActions {
     if (player.role === 'observer') throw new Refusal('Observers only watch');
     if (tile.trigger?.on !== 'click') throw new Refusal('That tile is not clicked');
     if (tile.trigger.gmOnly && !isGm(player)) throw new Refusal('Only the GM may use that');
-    const token = msg.token ? this.controlled(player, seen, msg.token) : undefined;
-    if (tileWorks(tile)) this.fire(tile, token);
+    const clickedWith = msg.token ? this.controlled(player, seen, msg.token) : undefined;
+    const theirs = () => [...this.store.tokens.values()].filter((t) => seen(t.id) && canControl(t, player));
+    const token = userNear(tile, player, clickedWith, theirs);
+    if (tileWorks(tile)) this.fire(tile, token, player.id);
+  }
+
+  /** A player answers a tile's question: the actions of the option they picked run. */
+  answer(player: Player, id: string, option: number): void {
+    const { scene, options, ctx } = this.choices.take(player.id, id);
+    const actions = options[option]?.actions ?? [];
+    this.store.inScene(scene, () => actions.some((a) => this.run(a, ctx)));
   }
 
   private controlled(player: Player, seen: (id: string) => boolean, id: string): Token {
@@ -89,13 +105,13 @@ export class TriggerActions {
     return false;
   }
 
-  private fire(tile: DrawnTile, token: Token | undefined): boolean {
+  private fire(tile: DrawnTile, token: Token | undefined, player?: string): boolean {
     const trigger = tile.trigger!;
     if (trigger.once) {
       const patch = { trigger: { ...trigger, disabled: true } };
       this.store.applyOps([{ op: 'update', coll: this.coll('tiles'), id: tile.id, patch }]);
     }
-    return trigger.actions.some((a) => this.run(a, { tile: tile.id, token }));
+    return trigger.actions.some((a) => this.run(a, { tile: tile.id, token, ...(player && { player }) }));
   }
 
   /** Runs one action; true when the token was taken away (a teleport). */
@@ -113,6 +129,9 @@ export class TriggerActions {
       activate: (a) => this.activate(a.target, a.to),
       elevation: (a, c) => this.raise(a, c.token),
       shift: (a) => this.shift(a.target, a.by),
+      rotate: (a) => this.rotate(a),
+      view: (a, c) => this.view(a, c),
+      choice: (a, c) => this.ask(a, c),
     };
     return (acts[action.type] as Act<TriggerAction['type']>)(action, ctx);
   }
@@ -227,6 +246,32 @@ export class TriggerActions {
     const doc = this.store.docs.get(this.coll('tiles'), target.id);
     if (doc) this.update('tiles', target.id, { x: Number(doc.x) + dx, y: Number(doc.y) + dy });
     return false;
+  }
+
+  /** Turns a tile, or a light's beam. */
+  private rotate(a: Extract<TriggerAction, { type: 'rotate' }>): false {
+    const doc = this.store.docs.get(this.coll(a.target.coll), a.target.id);
+    const turned = a.to ?? Number(doc?.rotation ?? 0) + (a.by ?? 0);
+    if (doc) this.update(a.target.coll, doc.id, { rotation: ((turned % 360) + 360) % 360 });
+    return false;
+  }
+
+  /** Shows another scene to the player who set it off (and the players of its creature), or to everyone. */
+  private view(a: Extract<TriggerAction, { type: 'view' }>, ctx: TriggerContext): false {
+    const players = this.store.world.players;
+    const movers = ctx.token ? players.filter((p) => !isGm(p) && canControl(ctx.token!, p)).map((p) => p.id) : [];
+    const who = a.everyone ? players.map((p) => p.id) : [...new Set([...(ctx.player ? [ctx.player] : []), ...movers])];
+    if (this.store.hasScene(a.scene)) moveSeats(this.store, who, a.scene);
+    return false;
+  }
+
+  /** Asks a tile's question; the actions after it wait for the answer (they never run). */
+  private ask(a: Extract<TriggerAction, { type: 'choice' }>, ctx: TriggerContext): true {
+    const who = askedOf(this.store.world.players, ctx.player, ctx.token);
+    const id = this.choices.add({ scene: this.store.currentScene, who, options: a.options, ctx });
+    const msg = { t: 'triggerChoice' as const, id, text: a.text, options: a.options.map((o) => o.label) };
+    for (const player of who) this.out.tell(player, a.title ? { ...msg, title: a.title } : msg);
+    return true;
   }
 
   private door(wall: string, to: Extract<TriggerAction, { type: 'door' }>['to']): false {

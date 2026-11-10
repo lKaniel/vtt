@@ -9,7 +9,17 @@ const tagged = (tags: string[], id?: string) => ({ _id: id, flags: { tagger: { t
 const index = new SceneIndex()
   .add('tiles', [
     madeFrom({ id: 'tile-1' }, { _id: 'T1', flags: { 'monks-active-tiles': { files: [{ name: 'lever-*.webp' }] } } }),
-    madeFrom({ id: 'tile-2' }, { _id: 'T2', flags: { 'monks-active-tiles': { files: [{ name: 'chest.webp' }] } } }),
+    madeFrom(
+      { id: 'tile-2' },
+      {
+        _id: 'T2',
+        x: 400,
+        y: 600,
+        width: 200,
+        height: 100,
+        flags: { 'monks-active-tiles': { files: [{ name: 'chest.webp' }] } },
+      },
+    ),
     madeFrom({ id: 'lift' }, tagged(['Lift'], 'T3')),
     madeFrom({ id: 'cell-1' }, tagged(['DoorLeft'], 'T4')),
     madeFrom(
@@ -32,6 +42,9 @@ const lookups: TriggerLookups = {
   media: (p) => `/assets/foundry/${p}`,
   glob: (p) => (p === 'lever-*.webp' ? ['/assets/foundry/lever-up.webp', '/assets/foundry/lever-down.webp'] : []),
   scene: (id) => (id === 'S2' ? 'cellar' : undefined),
+  entry: (id) => (id === 'J1' ? 'letter' : undefined),
+  page: (id) => (id === 'P1' ? 'letter-1' : undefined),
+  gridSize: 100,
   floorAt: (feet) => [...FLOORS].reverse().find(([bottom]) => feet >= bottom)?.[1] ?? 'cellar',
   imagesOf: (tile) => {
     const flags = index.rawOf({ coll: 'tiles', id: tile })?.flags as Record<string, { files: { name: string }[] }>;
@@ -244,5 +257,119 @@ describe("Monk's Active Tiles as tile triggers", () => {
       },
       lost: [],
     });
+  });
+
+  it('asks a confirm dialog of whoever clicks, each answer running what its landing holds', () => {
+    const raw = monk({
+      trigger: 'click',
+      actions: [
+        {
+          action: 'dialog',
+          data: { dialogtype: 'confirm', title: 'The well', content: '<p>Climb down?</p>', yes: 'down', no: 'stay' },
+        },
+        { action: 'chatmessage', data: { text: 'never reached' } },
+        { action: 'anchor', data: { tag: 'down', stop: true } },
+        { action: 'teleport', data: { location: { x: 100, y: 200 } } },
+        { action: 'anchor', data: { tag: 'stay', stop: true } },
+        { action: 'chatmessage', data: { text: 'You stay up.' } },
+      ],
+    });
+    expect(foundryTrigger(raw, 'tile-1', lookups)).toEqual({
+      trigger: {
+        on: 'click',
+        actions: [
+          {
+            type: 'choice',
+            title: 'The well',
+            text: 'Climb down?',
+            options: [
+              { label: 'Yes', actions: [{ type: 'teleport', to: [100, 200] }] },
+              { label: 'No', actions: [{ type: 'message', text: 'You stay up.' }] },
+            ],
+          },
+        ],
+      },
+      lost: [],
+    });
+  });
+
+  it("asks a custom dialog's buttons, following a goto to its landing", () => {
+    const raw = monk({
+      trigger: 'click',
+      actions: [
+        {
+          action: 'dialog',
+          data: {
+            dialogtype: 'custom',
+            content: 'Which lever?',
+            buttons: [
+              { name: 'Left', goto: 'left' },
+              { name: 'Leave', goto: '' },
+            ],
+          },
+        },
+        { action: 'anchor', data: { tag: 'left', stop: true } },
+        { action: 'goto', data: { tag: 'open' } },
+        { action: 'anchor', data: { tag: 'open', stop: true } },
+        { action: 'changedoor', data: { entity: { id: 'tagger:villa-gate-1' }, state: 'toggle' } },
+      ],
+    });
+    expect(foundryTrigger(raw, 'tile-1', lookups).trigger?.actions).toEqual([
+      {
+        type: 'choice',
+        text: 'Which lever?',
+        options: [
+          { label: 'Left', actions: [{ type: 'door', wall: 'wall-3', to: 'toggle' }] },
+          { label: 'Leave', actions: [] },
+        ],
+      },
+    ]);
+  });
+
+  it('opens a journal page, turns tagged tiles, shows a scene and moves the creature to a tile', () => {
+    const raw = monk({
+      trigger: 'click',
+      actions: [
+        { action: 'openjournal', data: { entity: { id: 'JournalEntry.J1' }, page: 'P1' } },
+        { action: 'rotation', data: { entity: { id: 'tagger:Lift' }, rotation: '+ 90' } },
+        { action: 'rotation', data: { entity: { id: 'tile' }, rotation: '45' } },
+        { action: 'scene', data: { sceneid: { id: 'Scene.S2' }, activate: true } },
+        { action: 'movetoken', data: { entity: { id: 'token' }, location: { id: 'Scene.S1.Tile.T2' } } },
+        { action: 'movetoken', data: { entity: { id: 'token' }, location: { x: 30, y: 40 } } },
+      ],
+    });
+    expect(foundryTrigger(raw, 'tile-1', lookups)).toEqual({
+      trigger: {
+        on: 'click',
+        actions: [
+          { type: 'journal', entry: 'letter', page: 'letter-1' },
+          { type: 'rotate', target: { coll: 'tiles', id: 'lift' }, by: 90 },
+          { type: 'rotate', target: { coll: 'tiles', id: 'tile-1' }, to: 45 },
+          { type: 'view', scene: 'cellar', everyone: true },
+          { type: 'teleport', to: [500, 650] },
+          { type: 'teleport', to: [30, 40] },
+        ],
+      },
+      lost: [],
+    });
+  });
+
+  it("makes a tile with Monk's distance filter one only a creature close by can use", () => {
+    const near = (data: Record<string, unknown>) =>
+      foundryTrigger(
+        monk({
+          trigger: 'click',
+          actions: [
+            { action: 'distance', data },
+            { action: 'chatmessage', data: { text: 'Hi' } },
+          ],
+        }),
+        'tile-1',
+        lookups,
+      ).trigger?.near;
+    expect(near({ entity: { id: 'token' }, measure: 'lte', distance: { value: 2 }, unit: 'sq' })).toBe(200);
+    expect(near({ measure: 'lte', distance: 150, unit: 'px' })).toBe(150);
+    expect(near({ measure: 'lt' })).toBe(0);
+    expect(near({ measure: 'lte', distance: 2, continue: 'always' })).toBeUndefined();
   });
 });

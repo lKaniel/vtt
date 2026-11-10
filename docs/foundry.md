@@ -110,10 +110,17 @@ What comes along:
   tiles are clicked here, right-click and manual ones are the GM's, and
   "on enter" ones fire when a creature walks on. Picture swaps (and the
   tile's picture list, patterns spelled out), sounds, show and hide,
-  switching lights and other tiles' triggers on and off, teleports, doors
-  and chat notes come along; things are found by Tagger tag or Foundry id.
-  A trigger with Monk's jumps (a dialog, anchors) keeps the path a click
-  most likely takes. Macros, "alter" (except of elevation) and the rest are reported.
+  switching lights and other tiles' triggers on and off, teleports, doors,
+  chat notes, opened journal pages, turning tiles and light beams, "change
+  scene" (for whoever set it off, or everyone when it activates the scene)
+  and moving the creature to a spot or a tile come along; things are found
+  by Tagger tag or Foundry id. A dialog with buttons (confirm or custom)
+  becomes a question whose answers each run the actions from the landing
+  their button jumps to (following gotos); otherwise a trigger with Monk's
+  jumps keeps the path a click most likely takes. The distance filter
+  ("within 2 squares") lets only a creature that close use the tile
+  (`near`). Macros, "alter" (except of elevation and place), creatures
+  turned and the rest are reported.
 - **Lights** put out in Foundry stay out until a trigger or the GM lights them.
 - **Tokens** on their actors: a linked token stays linked; an unlinked one
   becomes a copy whose own name, picture, size and hit points go in its

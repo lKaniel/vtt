@@ -37,6 +37,7 @@ import { Actions, type ActionEvents } from './session-actions.ts';
 import { Fog, type FogEvents } from './session-fog.ts';
 import { Draw } from './session-items.ts';
 import { Levels } from './session-levels.ts';
+import { TileAsks } from './session-asks.ts';
 import { View3DSwitch } from './session-view3d.ts';
 import { ThroughWalls } from './session-through-walls.ts';
 import { Editor, type EditorEvents } from './session-editor.ts';
@@ -144,6 +145,8 @@ export class Session {
   readonly fog = new Fog(this, this.ev);
   readonly draw = new Draw(this, this.ev);
   readonly levels = new Levels(this, this.ev);
+  /** A tile's question for you (Monk's dialog buttons). */
+  readonly asks = new TileAsks(this);
   /** Whether this browser shows the map in 3D. */
   readonly view3d = new View3DSwitch(this.ev, this);
   /** GM: moves go straight through walls (session-through-walls.ts). */
@@ -171,6 +174,7 @@ export class Session {
     this.piles,
     this.sheets,
     this.levels,
+    this.asks,
   ];
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
@@ -199,8 +203,7 @@ export class Session {
 
   on<K extends keyof SessionEvents>(event: K, fn: SessionEvents[K]): () => void {
     const set = this.listeners.get(event) ?? new Set();
-    this.listeners.set(event, set);
-    set.add(fn);
+    this.listeners.set(event, set.add(fn));
     return () => set.delete(fn);
   }
 
@@ -255,9 +258,8 @@ export class Session {
     // The scene-wide chunk (tiles bigger than a chunk) is always in view.
     const keys = chunks.includes(WIDE_CHUNK) ? chunks : [...chunks, WIDE_CHUNK];
     this.view = keys;
-    const wanted = new Set(keys);
     for (const key of [...this.chunks.keys()])
-      if (!wanted.has(key) && this.chunks.delete(key)) this.emit('chunkGone', key);
+      if (!keys.includes(key) && this.chunks.delete(key)) this.emit('chunkGone', key);
     this.send({ t: 'view', chunks: keys });
   }
 
