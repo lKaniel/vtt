@@ -231,6 +231,29 @@ export class GameHub {
     await this.backups.restore(id, backup, dir);
   }
 
+  /** Writes what the loaded game has changed to its folder. */
+  async flush(id: string): Promise<void> {
+    await this.live.get(id)?.store.flush();
+  }
+
+  /**
+   * Puts a game back from somewhere else (an off-server backup): as
+   * `restore`, but `write` fills the emptied folder, pictures and all. A
+   * game deleted since comes back in games/<id>/.
+   */
+  async restoreFolder(id: string, write: (dir: string) => Promise<void>): Promise<void> {
+    const dir = this.dirs.get(id) ?? join(this.gamesDir, id);
+    if (this.dirs.has(id)) {
+      await this.backup(id, 'restore');
+      for (const ws of this.live.get(id)?.sockets.keys() ?? []) ws.close(1012, 'the game was restored from a backup');
+      await this.unload(id);
+      await emptyFolder(dir);
+    }
+    await write(dir);
+    if (!(await readGameFile(dir))) throw new HubError('That backup has no game in it.');
+    this.dirs.set(id, dir);
+  }
+
   /** The game folder as a zip. */
   async exportZip(id: string): Promise<Buffer> {
     const dir = this.dirs.get(id);
@@ -380,4 +403,9 @@ async function writeNewGame(dir: string, game: NewGame & { id: string }, gm: Pla
   const file: GameFile = { ...game, format: FORMAT, scene: 'main', players: [gm] };
   await writeJson(join(dir, 'game.json'), file);
   await writeJson(join(dir, 'scenes/main/scene.json'), { name: 'Main', darkness: 0, darknessFollowsClock: true });
+}
+
+/** Deletes everything inside `dir`, keeping the folder. */
+async function emptyFolder(dir: string): Promise<void> {
+  for (const name of await readdir(dir)) await rm(join(dir, name), { recursive: true, force: true });
 }

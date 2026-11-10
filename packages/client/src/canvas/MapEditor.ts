@@ -84,6 +84,12 @@ export class MapEditor {
     return had;
   }
 
+  /** Drops a press or drag in progress (a second finger came down), leaving what is being drawn. */
+  dropPress(): void {
+    this.controller.cancel();
+    this.redraw();
+  }
+
   /** Ends a line, polygon or region being drawn, or takes back the ruler's last waypoint; true if there was one. */
   finish(): boolean {
     if (this.measuring) return this.session.rulers.back();

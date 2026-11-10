@@ -93,6 +93,11 @@ sends each seat only what `chatFor` lets it read, live and on joining.
   does nothing, except a foe in a fight (in the turn order, not the
   party's): it opens a menu with each attack of the creature you act with
   and "Interact", which walks up next to it.
+- Touch screens (`map-touch.ts`, `touch-gestures.ts`): a tap is a click;
+  one finger on open ground in the tokens mode drags the map (lifted where
+  it landed, it is the click); two fingers pinch to zoom and move together
+  to pan; a finger held still half a second opens the menu a right click
+  would. In the other modes one finger draws and edits as the mouse does.
 
 ## Scenes
 

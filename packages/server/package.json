@@ -18,6 +18,7 @@
     "@vtt/core": "workspace:*",
     "@vtt/shared": "workspace:*",
     "@vtt/system-dnd5e": "workspace:*",
+    "aws4fetch": "1.0.20",
     "tsx": "^4.23.15",
     "ws": "^8.22.0",
     "zod": "^4.6.7"

@@ -5,6 +5,8 @@ import { apiHandler } from './http/api.ts';
 import { CharacterStore } from './library/characters.ts';
 import { GameHub } from './library/game-hub.ts';
 import { httpHandler } from './http/http.ts';
+import { OffsiteBackups } from './library/offsite-backups.ts';
+import { offsiteFromEnv } from './library/offsite-config.ts';
 import { migrateAccounts } from './migrate/migrate-accounts.ts';
 import { dataDirFor, repoRoot, gameDirFromArgs } from './paths.ts';
 import { SessionStore } from './http/sessions.ts';
@@ -29,6 +31,24 @@ if (await migrateAccounts({ dataDir, hub, characters })) console.log('[server] a
 const sessions = new SessionStore(dataDir, adminPassword(process.env.VTT_ADMIN_PASSWORD));
 await sessions.load();
 
+/** The backup storage .env names; a mistake there is logged rather than stopping the server. */
+function offsiteSettings() {
+  try {
+    return offsiteFromEnv(process.env);
+  } catch (e) {
+    console.error(`[offsite] no nightly backups: ${(e as Error).message}`);
+    return undefined;
+  }
+}
+
+const offsiteConfig = offsiteSettings();
+const offsite = offsiteConfig && new OffsiteBackups({ ...offsiteConfig, hub, dataDir });
+if (offsite) {
+  await offsite.load();
+  offsite.start();
+  console.log(`[offsite] nightly backups to ${offsiteConfig.store.describe()}`);
+}
+
 const assetsDir = (game?: string) => {
   const dir = hub.dirOf(game ?? hub.homeId ?? '');
   return dir && join(dir, 'assets');
@@ -45,6 +65,7 @@ const handleRequest = httpHandler({
     hub,
     mcpKey: process.env.VTT_MCP_KEY,
     baileywiki: process.env.VTT_BAILEYWIKI_URL,
+    offsite,
   }),
 });
 
@@ -85,6 +106,7 @@ server.listen(PORT, () =>
 
 for (const sig of ['SIGINT', 'SIGTERM'] as const) {
   process.on(sig, () => {
+    offsite?.stop();
     void hub.close().then(() => process.exit(0));
   });
 }

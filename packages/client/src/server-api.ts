@@ -9,6 +9,8 @@ import type {
   GameDetail,
   GameSummary,
   NewGame,
+  OffsiteNight,
+  OffsiteStatus,
   Player,
   Role,
 } from '@vtt/shared';
@@ -145,4 +147,12 @@ export const api = {
     call<object>('POST', game(id, `/backups/${encodeURIComponent(backup)}/restore`)),
   /** GM: where the game downloads as a zip. */
   exportUrl: (id: string) => game(id, '/export'),
+
+  /** Admin: the nightly backups off the server, and where they go. */
+  offsite: () => call<{ status: OffsiteStatus; nights: OffsiteNight[] }>('GET', '/api/offsite'),
+  /** Admin: makes tonight's off-server backup now. */
+  offsiteNow: async () => (await call<{ night: OffsiteNight }>('POST', '/api/offsite')).night,
+  /** Admin: puts a game back as it was on `night`. */
+  offsiteRestore: (night: string, id: string) =>
+    call<object>('POST', `/api/offsite/${encodeURIComponent(night)}/${encodeURIComponent(id)}/restore`),
 };

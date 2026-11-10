@@ -6,7 +6,8 @@ import { CharacterCreator } from './CharacterCreator.tsx';
 import { GamePage } from './GamePage.tsx';
 import { GameScreen } from './GameScreen.tsx';
 import { LevelUpScreen } from './LevelUpScreen.tsx';
-import { SetupScreen, useLoad } from './LobbyScreens.tsx';
+import { SetupScreen } from './LobbyScreens.tsx';
+import { useLoad } from './useLoad.ts';
 import { JoinScreen, MainMenu } from './MenuScreens.tsx';
 
 /** The route in the address bar, and a way to go somewhere else. */
