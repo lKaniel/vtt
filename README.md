@@ -169,14 +169,14 @@ still works). A folder in the old world layout (`world.json`, `chunks/`,
 
 ## Layout
 
-| Path                    | What it is                                                                                               |
-| ----------------------- | -------------------------------------------------------------------------------------------------------- |
-| `packages/core`         | Documents, ops and undo, and `SystemDefinition`: what a game system gives the engine.                    |
-| `packages/shared`       | The engine: scenes, walls, lights, vision, fog, tiles, editor shapes, permissions, lobby, base protocol. |
-| `packages/system-dnd5e` | D&D 5e: creature schemas, rules, SRD content and its messages. See [docs/systems.md](docs/systems.md).   |
-| `packages/server`       | Node server: loads and watches the world folder, runs the game, streams per-player views over WebSocket. |
-| `packages/client`       | Vite + React UI with a PixiJS map.                                                                       |
-| `world/`                | The example game. See [docs/game-format.md](docs/game-format.md).                                        |
+| Path                    | What it is                                                                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/core`         | Documents, ops and undo, and `SystemDefinition`: what a game system gives the engine.                                                                                                                               |
+| `packages/shared`       | The engine: scenes, walls, lights, vision, fog, tiles, editor shapes, permissions, lobby, base protocol.                                                                                                            |
+| `packages/system-dnd5e` | D&D 5e: creature schemas, rules, SRD content and its messages. See [docs/systems.md](docs/systems.md).                                                                                                              |
+| `packages/server`       | Node server: loads and watches the world folder, runs the game, streams per-player views over WebSocket.                                                                                                            |
+| `packages/client`       | Vite + React UI with a PixiJS map.                                                                                                                                                                                  |
+| `world/`                | The example game, with a starter adventure, The Mill Road (quest in the adventure book, GM notes in the journal). See [docs/game-format.md](docs/game-format.md). Its pictures are drawn by `scripts/world-art.py`. |
 
 ## Checks
 

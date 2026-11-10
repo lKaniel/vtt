@@ -1,6 +1,7 @@
 {
   "id": "bandit-captain",
   "name": "Bandit Captain",
+  "img": "/assets/tokens/bandit-captain.svg",
   "folder": "road-ambush",
   "monster": "bandit-captain",
   "inventory": [

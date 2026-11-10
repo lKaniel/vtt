@@ -1,6 +1,7 @@
 {
   "id": "bandit",
   "name": "Bandit",
+  "img": "/assets/tokens/bandit.svg",
   "folder": "road-ambush",
   "monster": "bandit"
 }

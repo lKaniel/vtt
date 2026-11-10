@@ -1,0 +1,27 @@
+{
+  "id": "mill-road-gm",
+  "name": "The Mill Road (GM)",
+  "folder": "mill-road",
+  "pages": [
+    {
+      "id": "overview",
+      "name": "Overview",
+      "text": "A short adventure for three 3rd-level characters, an evening's play.\n\nA bandit gang under a captain called **Red Ilse** has taken Hesk's mill to hide stolen goods, and keeps the miller locked in his own storeroom to grind for them. Two bandits and two archers watch the road from the woods.\n\n1. **The crossroads.** The innkeeper asks the party to look for Hesk (share @journal[the-missing-miller]). Move them to @scene[mill-road].\n2. **The ambush.** When a character walks into the marked stretch of road, the hidden bandits appear and the chat says so. A character who looks at the trees first may spot them: [[/check perception 13]]. Start the fight from the Combat tab.\n3. **The camp.** A deer path leads south to the bandits' fire: roll @journal[mill-road-gm#camp]{what's there}.\n4. **The mill.** @actor[bandit-captain] waits inside the door (hidden). The storeroom is locked; she has the key. Hesk is inside, frightened but unhurt."
+    },
+    {
+      "id": "foes",
+      "name": "The bandits",
+      "text": "- Bandits ×2: @monster[bandit]. They fight on the road and flee when one falls.\n- Bandit archers ×2: @monster[scout]. They stay in the trees, 60 to 80 feet off, and shoot.\n- Red Ilse: @monster[bandit-captain]. She parleys first: for 50 gp she'll leave the valley ([[/check persuasion 15]] talks her down to 20 gp, [[/check intimidation 17]] makes her leave with nothing). Below half hit points she surrenders and gives up the storeroom key."
+    },
+    {
+      "id": "camp",
+      "name": "The camp",
+      "text": "A smoky fire, four bedrolls and a strongbox (lock DC 12, [[/check sleight-of-hand 12]]). Inside: 38 gp, a silver locket engraved *H & M* (Hesk's, he'll weep to see it), and a ledger of the gang's robberies. Each bandit's pockets: roll on the **Bandit pockets** table (the 🎲 note by the fire)."
+    },
+    {
+      "id": "ending",
+      "name": "Ending",
+      "text": "Back at the crossroads the innkeeper keeps their word: a month of suppers and 25 gp from the market folk. Mark the quest done in the quest log. If Red Ilse got away, she remembers the party."
+    }
+  ]
+}

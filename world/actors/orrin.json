@@ -1,6 +1,7 @@
 {
   "id": "orrin",
   "name": "Orrin",
+  "img": "/assets/tokens/orrin.svg",
   "color": "#3a7ad0",
   "light": {
     "bright": 10,

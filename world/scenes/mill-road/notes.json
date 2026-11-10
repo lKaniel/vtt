@@ -1,0 +1,27 @@
+[
+  {
+    "id": "mill-note",
+    "x": 2550,
+    "y": 1150,
+    "label": "Hesk's mill",
+    "icon": "🏚",
+    "entry": "the-missing-miller"
+  },
+  {
+    "id": "camp-note",
+    "x": 1100,
+    "y": 1600,
+    "label": "Bandit camp",
+    "icon": "⛺",
+    "entry": "mill-road-gm",
+    "page": "camp"
+  },
+  {
+    "id": "pockets-note",
+    "x": 1400,
+    "y": 1750,
+    "label": "Bandit pockets",
+    "icon": "🎲",
+    "table": "bandit-pockets"
+  }
+]
