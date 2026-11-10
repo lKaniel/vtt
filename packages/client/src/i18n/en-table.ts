@@ -29,6 +29,10 @@ export const EN_TABLE = {
   'fight.inView': 'On screen',
   'fight.noFighters': 'There are no creatures with stats on this scene.',
   'fight.roll': 'Roll initiative ({n})',
+  'fight.surprised': 'Surprised',
+  'fight.surprisedHint':
+    'Who is caught off guard. Creatures that notice no hidden foe are surprised anyway. 2014: they lose their first turn; 2024: initiative with disadvantage',
+  'fight.surpriseNone': 'No one',
   'fight.shared': 'Party acts together',
   'fight.sharedHint':
     'Shared party turns (BG3): party members next to each other in the order act together, in any order',

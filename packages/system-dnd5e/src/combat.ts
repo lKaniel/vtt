@@ -34,6 +34,8 @@ export const CombatSchema = z.object({
   group: z.array(z.string()).optional(),
   /** On a shared turn, those who have ended theirs. */
   done: z.array(z.string()).optional(),
+  /** Surprised (2014): these lose their first turn, then are taken off. */
+  surprised: z.array(z.string()).optional(),
 });
 export type Combat = z.infer<typeof CombatSchema>;
 
@@ -42,6 +44,8 @@ export interface Combatant {
   /** Initiative bonus. */
   bonus: number;
   speed: number;
+  /** Rolls with disadvantage (surprised, 2024). */
+  disadvantage?: boolean;
 }
 
 /** What the turn order needs to know about a token when its turn comes up. */
@@ -53,7 +57,10 @@ export function freshTurn(speed: number): TurnBudget {
 
 /** Rolls initiative for everyone and starts round 1. */
 export function startCombat(fighters: readonly Combatant[], rng: Rng = Math.random): Combat {
-  const rolled = fighters.map((f) => ({ ...f, initiative: roll('1d20', rng).total + f.bonus }));
+  const rolled = fighters.map((f) => ({
+    ...f,
+    initiative: roll(f.disadvantage ? '2d20kl1' : '1d20', rng).total + f.bonus,
+  }));
   rolled.sort((a, b) => b.initiative - a.initiative || b.bonus - a.bonus);
   const order = rolled.map(({ token, initiative }) => ({ token, initiative }));
   return { round: 1, turn: 0, order, left: freshTurn(rolled[0]?.speed ?? 0), side: {}, reacted: [] };

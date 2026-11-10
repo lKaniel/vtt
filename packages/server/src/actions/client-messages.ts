@@ -102,6 +102,8 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     t: z.literal('combatStart'),
     tokens: z.array(z.string()).min(1).max(100),
     shared: z.boolean().optional(),
+    /** Creatures the GM says are surprised, besides those that notice no foe. */
+    surprised: z.array(z.string()).max(100).optional(),
   }),
   z.object({ t: z.literal('combatEnd') }),
   z.object({

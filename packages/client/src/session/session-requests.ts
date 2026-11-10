@@ -121,9 +121,9 @@ export class Requests {
     this.s.send({ t: 'endTurn', ...(token && { token }) });
   }
 
-  /** GM: a fight; `shared`: party members next to each other share a turn (BG3). */
-  startCombat(tokens: string[], shared = false): void {
-    this.s.send({ t: 'combatStart', tokens, ...(shared && { shared }) });
+  /** GM: a fight; `shared`: party members next to each other share a turn (BG3); `surprised`: caught off guard. */
+  startCombat(tokens: string[], shared = false, surprised: string[] = []): void {
+    this.s.send({ t: 'combatStart', tokens, ...(shared && { shared }), ...(surprised.length && { surprised }) });
   }
 
   endCombat(): void {

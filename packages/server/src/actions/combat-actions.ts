@@ -44,6 +44,7 @@ import { anotherTurn, breakTimeStop } from '../play/time-stop.ts';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
 import { breakSanctuary, loseImage, passSanctuary } from '../play/spell-wards.ts';
 import { recharge } from '../play/recharge.ts';
+import { type Surprise, surprisedTurn, surpriseOf, withSurprise } from '../play/surprise.ts';
 import { Refusal, requireGm, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 /** An attack that has been rolled but not yet landed: its target may still react (shield). */
@@ -78,6 +79,12 @@ export interface TurnBasedAsk {
 }
 
 /** How an attack is resolved: its smite and finisher, out of turn as a reaction, and the attacker's pick. */
+/** How the GM starts a fight: BG3-style shared turns, and who is surprised. */
+interface StartAsk {
+  shared?: boolean;
+  surprised?: readonly string[];
+}
+
 interface Resolving {
   smite: number | undefined;
   finisher?: string;
@@ -106,28 +113,31 @@ export class CombatActions {
   }
 
   /** GM: a fight; `shared`: party members next to each other share a turn (BG3). */
-  start(player: Player, ids: readonly string[], shared = false): void {
+  start(player: Player, ids: readonly string[], { shared = false, surprised }: StartAsk = {}): void {
     requireGm(player);
-    this.open(
-      ids.map((id) => this.table.fighter(id)),
-      'Roll for initiative!',
-      { peaceful: false, shared },
-    );
+    const fighters = ids.map((id) => this.table.fighter(id));
+    this.open(fighters, 'Roll for initiative!', { peaceful: false, shared, surprise: surpriseOf(fighters, surprised) });
   }
 
   /** Rolls initiative for `fighters` and starts the first turn. */
   private open(
     fighters: Fighter[],
     heading: string,
-    { peaceful, shared }: { peaceful: boolean; shared: boolean },
+    { peaceful, shared, surprise }: { peaceful: boolean; shared: boolean; surprise?: Surprise },
   ): void {
     const rolled = startCombat(
-      fighters.map((f) => ({ token: f.token.id, bonus: f.sheet.initiative, speed: f.sheet.speed })),
+      fighters.map((f) => ({
+        token: f.token.id,
+        bonus: f.sheet.initiative,
+        speed: f.sheet.speed,
+        disadvantage: surprise?.slow.has(f.token.id),
+      })),
       this.table.rng,
     );
     rollInitiative(this.table, fighters);
     const lairs = peaceful ? [] : fighters.filter((f) => f.sheet.lair).map((f) => f.token.id);
-    const fight = peaceful ? { ...rolled, peaceful } : withLair(rolled, lairs);
+    const opened = surprise ? withSurprise(rolled, surprise) : rolled;
+    const fight = peaceful ? { ...opened, peaceful } : withLair(opened, lairs);
     const combat = shared ? firstTurn({ ...fight, shared }, this.table.turnInfo) : fight;
     this.store.setCombat(combat);
     const names = new Map(fighters.map((f) => [f.token.id, f.token.name]));
@@ -239,6 +249,7 @@ export class CombatActions {
     this.hearten(id);
     recharge(this.table, id);
     this.smoulder(id);
+    surprisedTurn(this.table, id);
     this.turnStarted(id);
   }
 
