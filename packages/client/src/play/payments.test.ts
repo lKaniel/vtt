@@ -42,6 +42,21 @@ describe('what a spell is paid with at first', () => {
     expect(paymentCount(caster([0, 0], [shadows]), armor)).toBe(1);
   });
 
+  it("pays nothing for a non-caster's homemade spell: one way, at its own level", () => {
+    const fighter = {
+      id: 'f',
+      name: 'F',
+      sheet: {
+        attacks: [],
+        features: [],
+        effects: [],
+        caster: { spells: [mark], left: [], slots: [], atWill: [mark.id] },
+      },
+    } as unknown as TokenView;
+    expect(paymentCount(fighter, mark)).toBe(1);
+    expect(firstPayment(fighter, mark)).toEqual({ slot: 1 });
+  });
+
   it('keeps a spell’s tile usable while a feature can still cast it', () => {
     const tile = (t: TokenView) => actionTiles(t).find((x) => x.name === mark.name);
     expect(tile(caster([0, 0], [favored(1)]))).toMatchObject({ spent: false, slot: 1, paidBy: 'favored-enemy' });

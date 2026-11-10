@@ -44,7 +44,10 @@ nothing is saved or undone.
 Everyone on a scene also sees where the others point: each player's cursor,
 with their name, in their colour. Hold a left press still for half a second,
 in any mode, to ping that spot: rings spread from it on everyone's map. The
-GM's Shift+long press also pulls everyone's view there. Cursors and pings go
+GM's Shift+long press also pulls everyone's view there. A ping off your
+screen shows as an arrow on its edge pointing the way, with who pinged
+(`ping-arrow.ts`). Settings has "Others' cursors": Hide keeps them off this
+browser's map (pings still show). Cursors and pings go
 through `server/presence.ts` like rulers (live, per scene, never saved, a
 cursor goes when its player leaves the map or the scene); the client keeps
 them in `presence.ts` (cursors sent at most every 50 ms, `throttle.ts`) and
