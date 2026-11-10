@@ -8,6 +8,7 @@ import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 import { readBase64 } from './read-file.ts';
+import { FileInput } from './kit/file-input.tsx';
 
 // A file of the game's or its packs' media, picked instead of typed: the
 // tile's picture, a 3D model, a sound's file, a scene's thumbnail. The box
@@ -100,7 +101,7 @@ function UploadPicture({
     >
       <label>
         {busy ? <LoaderIcon className="animate-spin" /> : <UploadIcon />}
-        <input type="file" accept="image/*" hidden disabled={busy} aria-label={t('media.upload')} onChange={onPick} />
+        <FileInput accept="image/*" disabled={busy} aria-label={t('media.upload')} onChange={onPick} />
       </label>
     </Button>
   );

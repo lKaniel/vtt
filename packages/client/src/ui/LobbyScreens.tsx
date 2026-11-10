@@ -13,6 +13,7 @@ import { ROLE_NAMES } from './role-names.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { SelectField } from './kit/select.tsx';
+import { Pressable } from './kit/pressable.tsx';
 
 // Setup, Foundry style: behind the server's admin password, the games on
 // this server with making, importing and deleting them, and the admin
@@ -128,7 +129,7 @@ function standing(g: GameSummary): string {
 
 export function GameCard({ g, now, onOpen }: Readonly<{ g: GameSummary; now: number; onOpen: () => void }>) {
   return (
-    <button className="roster-card lobby-card" onClick={onOpen}>
+    <Pressable className="roster-card lobby-card" onClick={onOpen}>
       <span className="roster-name">{g.name}</span>
       <span className="roster-line">{systemLine(g)}</span>
       <span className="roster-stats">
@@ -138,7 +139,7 @@ export function GameCard({ g, now, onOpen }: Readonly<{ g: GameSummary; now: num
       </span>
       <span className="menu-note">{lastPlayedText(g.lastPlayed, now)}</span>
       {g.home && <span className="roster-rules">{t('lobby.home')}</span>}
-    </button>
+    </Pressable>
   );
 }
 

@@ -32,6 +32,7 @@ import { attackTip, featureTip, itemTip, macroTip, spellTip } from '../text/tool
 import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 import { TipCard } from './Tip.tsx';
+import { Pressable } from './kit/pressable.tsx';
 
 const TAB_GLYPH: Record<Tab, GlyphName> = { all: 'star', attacks: 'sword', spells: 'flame', features: 'fist' };
 const TAB_LABEL: Record<Tab, string> = {
@@ -109,14 +110,14 @@ function Bar({ session, token, onSheet, size, onSize }: BarProps) {
 
 function Portrait({ token, onSheet }: Readonly<{ token: TokenView; onSheet: () => void }>) {
   return (
-    <button className="ab-portrait" onClick={onSheet} title="Character sheet (C)" disabled={!token.sheet}>
+    <Pressable className="ab-portrait" onClick={onSheet} title="Character sheet (C)" disabled={!token.sheet}>
       <Face token={token} />
       {token.sheet && (
         <span className="ab-ac" title="Armor class">
           {token.sheet.ac}
         </span>
       )}
-    </button>
+    </Pressable>
   );
 }
 
@@ -124,13 +125,13 @@ function Who({ session, token }: Readonly<{ session: Session; token: TokenView }
   return (
     <div className="ab-who">
       {session.canEdit(token.id) ? (
-        <button
+        <Pressable
           className="ab-name ab-edit"
           title="Edit sheet (E)"
           onClick={() => session.sheets.open({ kind: 'token', id: token.id }, true)}
         >
           {token.name} ✎
-        </button>
+        </Pressable>
       ) : (
         <div className="ab-name">{token.name}</div>
       )}
@@ -161,7 +162,7 @@ function Tabs({ tab, onTab }: Readonly<{ tab: Tab; onTab: (tab: Tab) => void }>)
   return (
     <div className="ab-tabs" role="tablist">
       {TABS.map((t) => (
-        <button
+        <Pressable
           key={t}
           role="tab"
           aria-selected={t === tab}
@@ -170,7 +171,7 @@ function Tabs({ tab, onTab }: Readonly<{ tab: Tab; onTab: (tab: Tab) => void }>)
           onClick={() => onTab(t)}
         >
           <Glyph glyph={TAB_GLYPH[t]} size={14} />
-        </button>
+        </Pressable>
       ))}
     </div>
   );
@@ -315,7 +316,7 @@ function Tile({
     !usable && 'unusable',
   ];
   return (
-    <button
+    <Pressable
       className={cls.filter(Boolean).join(' ')}
       disabled={!canActivate(tile)}
       aria-label={tile.name}
@@ -329,7 +330,7 @@ function Tile({
       {tile.hotkey && <span className="tile-key">{keyLabel(keyOf(`hotbar-${tile.hotkey}`, currentKeys()) ?? '')}</span>}
       <TileCorner tile={tile} />
       <TipCard tip={tipFor(tile)} />
-    </button>
+    </Pressable>
   );
 }
 
@@ -391,7 +392,7 @@ function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenVi
   const mine = session.turns.mine() && (actsNow(combat, token.id) || !!combat.side[token.id]);
   return (
     <div className="ab-end">
-      <button
+      <Pressable
         className="end-turn"
         disabled={!mine}
         onClick={() => session.requests.endTurn(session.turns.ending(token.id))}
