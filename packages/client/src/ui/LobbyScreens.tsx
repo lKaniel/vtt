@@ -1,6 +1,6 @@
 import { type GameSummary, newGameIssues } from '@vtt/shared';
 import type { SystemInfo } from '@vtt/core';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { t } from '../i18n/index.ts';
 import { lastPlayedText } from '../lobby.ts';
 import type { Route } from '../route.ts';
@@ -8,8 +8,10 @@ import { api, type SessionInfo } from '../server-api.ts';
 import { BaileywikiPanel } from './BaileywikiPanel.tsx';
 import { FoundryImportForm } from './FoundryImport.tsx';
 import { ImportZip } from './GameArchive.tsx';
+import { OffsitePanel } from './OffsiteBackups.tsx';
 import { AdminPasswordForm, AdminUnlock } from './GameAccess.tsx';
 import { ROLE_NAMES } from './role-names.ts';
+import { useLoad } from './useLoad.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { SelectField } from './kit/select.tsx';
@@ -19,23 +21,6 @@ import { SelectField } from './kit/select.tsx';
 // password itself. Also the pieces the games screens share.
 
 type Go = (to: Route) => void;
-
-/** Loads something for a screen, with the error to show and a way to load it again. */
-export function useLoad<T>(load: () => Promise<T>): { data?: T; error?: string; reload: () => void } {
-  const [data, setData] = useState<T>();
-  const [error, setError] = useState<string>();
-  const reload = useCallback(() => {
-    load().then(
-      (d) => {
-        setData(d);
-        setError(undefined);
-      },
-      (e: unknown) => setError((e as Error).message),
-    );
-  }, [load]);
-  useEffect(reload, [reload]);
-  return { data, error, reload };
-}
 
 export function LobbyHead({
   kicker,
@@ -114,6 +99,7 @@ function SetupBody({ info, refresh, go }: Readonly<{ info: SessionInfo; refresh:
           <ImportZip onMade={open} />
           <FoundryImportForm onMade={open} />
           <BaileywikiPanel />
+          {data && <OffsitePanel games={data.games} />}
           {!info.adminFixed && <AdminPasswordForm has={info.adminPassword} onSaved={refresh} />}
         </aside>
       </div>

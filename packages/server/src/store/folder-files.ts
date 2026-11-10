@@ -7,20 +7,26 @@ import type { ZipEntry } from '../library/zip.ts';
 /** Never part of a game: version control and tooling folders. */
 const NEVER = new Set(['.git', 'node_modules', '.DS_Store']);
 
-/** Every file under `dir`, paths relative with forward slashes, sorted; `skip` top-level names are left out. */
-export async function readFolder(dir: string, skip: readonly string[] = []): Promise<ZipEntry[]> {
-  const out: ZipEntry[] = [];
+/** The path of every file under `dir`, relative with forward slashes, sorted; `skip` top-level names are left out. */
+export async function listFolder(dir: string, skip: readonly string[] = []): Promise<string[]> {
   const names = await readdir(dir, { recursive: true, withFileTypes: true });
+  const out: string[] = [];
   for (const d of names) {
     if (!d.isFile()) continue;
     const path = join(d.parentPath, d.name)
       .slice(dir.length + 1)
       .replaceAll('\\', '/');
     const parts = path.split('/');
-    if (skip.includes(parts[0]!) || parts.some((p) => NEVER.has(p))) continue;
-    out.push({ path, data: await readFile(join(dir, path)) });
+    if (!skip.includes(parts[0]!) && !parts.some((p) => NEVER.has(p))) out.push(path);
   }
-  return out.sort((a, b) => a.path.localeCompare(b.path));
+  return out.sort((a, b) => a.localeCompare(b));
+}
+
+/** Every file under `dir` with its contents, as listFolder lists them. */
+export async function readFolder(dir: string, skip: readonly string[] = []): Promise<ZipEntry[]> {
+  const out: ZipEntry[] = [];
+  for (const path of await listFolder(dir, skip)) out.push({ path, data: await readFile(join(dir, path)) });
+  return out;
 }
 
 /** Writes `files` under `dir`. */

@@ -128,6 +128,23 @@ export interface BackupInfo {
   reason: 'load' | 'timer' | 'manual' | 'restore';
 }
 
+/** One night's copy of the server off its own disk (offsite-backups.ts): the date (UTC) and the games in it. */
+export interface OffsiteNight {
+  night: string;
+  games: string[];
+}
+
+/** Setup's view of the nightly off-server backups. */
+export interface OffsiteStatus {
+  /** Where the copies go; null when the server has no backup storage set up. */
+  target: string | null;
+  /** The hour (UTC) after which each night's copy is made. */
+  hour: number;
+  running: boolean;
+  lastRun?: { at: number; night: string; games: number };
+  lastError?: { at: number; message: string };
+}
+
 /** A game's join screen and page: its players, and which one you joined as. */
 export interface GameDetail extends GameSummary {
   /** `locked`: the player has a password. */

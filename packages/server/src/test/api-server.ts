@@ -6,6 +6,8 @@ import { join } from 'node:path';
 import { apiHandler } from '../http/api.ts';
 import { CharacterStore } from '../library/characters.ts';
 import { GameHub } from '../library/game-hub.ts';
+import { FolderStore } from '../library/object-store.ts';
+import { OffsiteBackups } from '../library/offsite-backups.ts';
 import { SessionStore } from '../http/sessions.ts';
 import { makeWorld } from './fixtures.ts';
 
@@ -32,7 +34,7 @@ export interface ApiServer {
 
 /** The session and lobby API on a random port, over the test game as its home game. */
 export async function startApi(
-  opts: { adminPassword?: string | null; mcpKey?: string; baileywiki?: string } = {},
+  opts: { adminPassword?: string | null; mcpKey?: string; baileywiki?: string; offsite?: boolean } = {},
 ): Promise<ApiServer> {
   const dataDir = await mkdtemp(join(tmpdir(), 'vtt-data-'));
   const home = await makeWorld();
@@ -45,7 +47,10 @@ export async function startApi(
   await sessions.load();
   const characters = new CharacterStore(dataDir);
   await characters.load();
-  const api = apiHandler({ sessions, characters, hub, mcpKey: opts.mcpKey, baileywiki: opts.baileywiki });
+  const offsite = opts.offsite
+    ? new OffsiteBackups({ store: new FolderStore(await mkdtemp(join(tmpdir(), 'vtt-offsite-'))), hub, dataDir })
+    : undefined;
+  const api = apiHandler({ sessions, characters, hub, mcpKey: opts.mcpKey, baileywiki: opts.baileywiki, offsite });
   const server: Server = createServer((req, res) => {
     void api(req, res).then((handled) => {
       if (!handled) res.writeHead(404).end();
