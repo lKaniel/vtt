@@ -1,6 +1,7 @@
 import type { Content } from './content.ts';
 import { characterLevel, type ClassLevel, classLevels } from './multiclass.ts';
 import { ownFeatures } from './own-content.ts';
+import { speciesFeatures } from './species-spells.ts';
 import type { Class, Feature, LevelTable } from './spell-schema.ts';
 import type { Token } from './token-schema.ts';
 
@@ -33,7 +34,7 @@ export function grantedFeatures(token: Token, content: Content): Feature[] {
     const found = classFeature(ref, content);
     return found ? [found] : [];
   });
-  return [...fromClasses, ...ownFeatures(token)];
+  return [...fromClasses, ...ownFeatures(token), ...speciesFeatures(token, content.edition)];
 }
 
 const spellsAt = (f: Feature, level: number) => [
@@ -51,7 +52,8 @@ export function featureSpellIds(token: Token, content: Content): string[] {
     const level = levels.find((l) => l.id === ref.split('/')[0])?.level ?? total;
     return f ? spellsAt(f, level) : [];
   });
-  return [...new Set([...fromClasses, ...picked])];
+  const species = speciesFeatures(token, content.edition).flatMap((f) => spellsAt(f, total));
+  return [...new Set([...fromClasses, ...picked, ...species])];
 }
 
 export interface ChoiceDue {

@@ -132,3 +132,17 @@ describe('a stat block spell "cast before combat"', () => {
     expect(errors(gm)[0]).toMatch(/before the fight/);
   });
 });
+
+describe('species spells', () => {
+  it('lets a 2014 tiefling fighter cast darkness once a day from 5th level, without a slot', () => {
+    const stats = { class: 'fighter', level: 5, species: 'tiefling', maxHp: 40, abilities: { cha: 14 } };
+    put({ ...tok('hero'), stats, spent: undefined });
+    const ana = join('ana');
+    const darkness = { t: 'cast', caster: 'hero', spell: 'darkness', slot: 2, targets: [], point: [150, 150] } as const;
+    ana.receive({ ...darkness, paidBy: 'infernal-legacy-5' });
+    expect(errors(ana)).toEqual([]);
+    expect(tok('hero').spent).toEqual({ uses: { 'infernal-legacy-5': 1 } });
+    ana.receive({ ...darkness, paidBy: 'infernal-legacy-5' });
+    expect(errors(ana)[0]).toMatch(/no uses left/);
+  });
+});

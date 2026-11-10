@@ -208,6 +208,8 @@ function characterStats(c: Character, parts: Parts): Stats {
     rules: c.rules,
     ...classStats(c),
     ...(c.features.length && { features: c.features }),
+    ...(c.species !== CUSTOM && { species: c.species }),
+    ...(c.subspecies && { lineage: c.subspecies }),
     abilities: abilityScores(c, parts),
     maxHp: characterMaxHp(c, parts),
     skills: characterSkills(c, parts),

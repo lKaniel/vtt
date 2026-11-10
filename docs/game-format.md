@@ -1127,7 +1127,12 @@ class's `multiclass: { all, any }` in `class-automation.json`).
 
 `stats.features` grants class features on top of the class's own, as
 `"<class>/<feature>"` (dragging a feature from the Compendium onto a sheet
-adds one). A spell scroll is an inventory entry with the spell on it:
+adds one). `stats.species` and `stats.lineage` (set by the character
+creator) give the species' spells (`content/srd/species-automation.json`):
+a tiefling's infernal legacy, a 2024 elf's, gnome's or tiefling's lineage.
+Cantrips come at 1st level; the others are features cast once a long rest
+without a slot from their character level on. A character with no
+spellcasting casts them with its best mental ability. A spell scroll is an inventory entry with the spell on it:
 `{ "item": "spell-scroll", "spell": "fireball", "qty": 1 }`. Reading it casts
 the spell at its own level without a slot, with the scroll's save DC and
 attack bonus (13/+5 up to 2nd level, 15/+7, 17/+9, 18/+10, 19/+11 for 9th),
