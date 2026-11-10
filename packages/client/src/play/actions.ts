@@ -1,7 +1,7 @@
 import type { Attack, FeatureSheet, Item, Spell, TokenView, TurnBudget } from '@vtt/system-dnd5e';
 import { attackArt, featureArt, spellArt } from '../icon-art.ts';
 import { attackIcon, featureIcon, spellIcon, type Icon } from '../icons.ts';
-import { lowestSlot } from '../text/spell-text.ts';
+import { firstPayment } from './payments.ts';
 import { itemSpellTiles } from './item-spells.ts';
 
 // The tiles on the action bar: what the selected creature can do, in hotkey order.
@@ -22,6 +22,8 @@ export type ActionTile =
       kind: 'spell';
       spell: Spell;
       slot: number | undefined;
+      /** The feature that pays for it at first instead of a slot (favored enemy). */
+      paidBy?: string;
       scroll?: boolean;
       item?: number;
       uses?: string;
@@ -65,7 +67,7 @@ function spellTiles(token: TokenView): ActionTile[] {
     (a, b) => a.level - b.level || a.name.localeCompare(b.name),
   );
   return spells.map((spell) => {
-    const slot = lowestSlot(token, spell);
+    const { slot, paidBy } = firstPayment(token, spell);
     return {
       kind: 'spell',
       name: spell.name,
@@ -73,6 +75,7 @@ function spellTiles(token: TokenView): ActionTile[] {
       spent: slot === undefined,
       spell,
       slot,
+      ...(paidBy && { paidBy }),
     };
   });
 }

@@ -6,6 +6,7 @@ export type ApplyHow = Extract<ClientMessage, { t: 'applyDamage' }>['how'];
 import type { Player, Point, RollMode } from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
 import { aimAtTargets, aimFor, aimSpell, castMessage, pick, scrollAiming, type Aiming } from '../play/targeting.ts';
+import { paymentCount } from '../play/payments.ts';
 import { itemAiming } from '../play/item-spells.ts';
 import type { Targets } from './targets.ts';
 import { loadRollMode, saveRollMode } from '../play/roll-mode.ts';
@@ -95,11 +96,16 @@ export class Actions {
     this.on.changed();
   }
 
-  /** Readies a spell of the selected token with a slot, or for free; self spells go off at once. */
-  aim(spellId: string | undefined, slot = 0, free = false): void {
-    const sheet = this.s.selected ? this.s.tokens.get(this.s.selected)?.sheet : undefined;
+  /**
+   * Readies a spell of the selected token with a slot, for free, or paid by a feature (`paidBy`). A self spell
+   * goes off at once, unless there is more than one way to pay for it: then it waits for Cast.
+   */
+  aim(spellId: string | undefined, slot = 0, pay: { free?: boolean; paidBy?: string } = {}): void {
+    const token = this.s.selected ? this.s.tokens.get(this.s.selected) : undefined;
     this.armed = undefined;
-    this.aimed(aimFor(sheet, spellId, { slot, free }));
+    const aiming = aimFor(token?.sheet, spellId, { slot, ...pay });
+    const choose = !!token && aiming?.mode === 'self' && !aiming.repeat && paymentCount(token, aiming.spell) > 1;
+    this.aimed(aiming, choose);
   }
 
   /** Readies a feature of the selected token that's aimed like a spell; one without targets goes off at once. */
@@ -144,11 +150,11 @@ export class Actions {
     this.aimed(itemAiming(this.s.selected ? this.s.tokens.get(this.s.selected) : undefined, index, spellId, slot));
   }
 
-  /** Aims `aiming`: a self spell goes off at once, and one aimed at creatures picks your targets first. */
-  private aimed(aiming: Aiming | undefined): void {
+  /** Aims `aiming`: a self spell goes off at once unless told to `wait`, and one aimed at creatures picks your targets first. */
+  private aimed(aiming: Aiming | undefined, wait = false): void {
     const at = aiming && aimAtTargets(aiming, [...this.s.targets.mine]);
     this.aiming = at?.aiming;
-    if (!aiming?.power && (aiming?.mode === 'self' || at?.done)) return this.confirmCast();
+    if (!aiming?.power && !wait && (aiming?.mode === 'self' || at?.done)) return this.confirmCast();
     this.on.armed();
     this.on.changed();
   }

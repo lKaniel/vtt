@@ -28,7 +28,8 @@ function aimTile(session: Session, tile: Extract<ActionTile, { kind: 'spell' }>)
   if (session.actions.aiming?.spell.id === tile.spell.id) return session.actions.aim(undefined);
   if (tile.scroll) return session.actions.aimScroll(tile.spell.id);
   if (tile.item !== undefined) return session.actions.aimItem(tile.item, tile.spell.id);
-  session.actions.aim(tile.spell.id, tile.slot ?? tile.spell.level, tile.slot === undefined && tile.spell.level > 0);
+  const free = tile.slot === undefined && tile.spell.level > 0;
+  session.actions.aim(tile.spell.id, tile.slot ?? tile.spell.level, { free, paidBy: tile.paidBy });
 }
 
 /** A weapon readies its attack; a potion or other usable item is used at once. */

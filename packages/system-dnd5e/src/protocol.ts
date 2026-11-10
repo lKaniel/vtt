@@ -189,6 +189,8 @@ export type ClientMessage =
       slot: number;
       /** Cast without spending a slot. */
       free?: boolean;
+      /** The feature that pays instead of a slot (Feature `freeCasts`: favored enemy, an invocation), at its level. */
+      paidBy?: string;
       /** Use a lasting spell again, e.g. attack with the spiritual weapon. */
       repeat?: boolean;
       /** Read it from a spell scroll the caster carries: no slot, the scroll's DC, and the scroll is used up. */

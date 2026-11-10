@@ -175,6 +175,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     spell: z.string(),
     slot: z.number().int().min(0).max(9),
     free: z.boolean().optional(),
+    paidBy: z.string().optional(),
     repeat: z.boolean().optional(),
     scroll: z.boolean().optional(),
     item: z.number().int().nonnegative().optional(),

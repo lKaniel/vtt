@@ -5,7 +5,6 @@ import {
   type CasterSheet,
   type CastingTime,
   type CastOutcome,
-  castProblem,
   type CastResult,
   type Effect,
   isDying,
@@ -30,6 +29,7 @@ import { type DoorPick, doorAt, setDoor } from '../play/spell-doors.ts';
 import { breakTimeStop } from '../play/time-stop.ts';
 import { SpellTargets } from '../play/spell-targets.ts';
 import { stepAside } from '../play/pool-guards.ts';
+import { paidTargets, type Payment, payment, paymentNotes, spendPayment } from '../play/feature-paid.ts';
 import { Refusal, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 /** `edge` and `crit`: the caster's own pick for the spell attack. */
@@ -39,6 +39,8 @@ export interface CastRequest extends RollChoice {
   spell: string;
   slot: number;
   free?: boolean;
+  /** The feature paying instead of a slot (Feature `freeCasts`). */
+  paidBy?: string;
   targets: string[];
   point?: Point;
   summon?: string;
@@ -72,11 +74,9 @@ interface Casting {
   door?: DoorPick;
 }
 
-/** What casting costs: the action, slot and slot spent; using a lasting spell again needs no slot. */
-interface Plan {
+/** What casting costs: the action and what pays (slot, slot spent, a feature); using a lasting spell again needs no slot. */
+interface Plan extends Payment {
   cost: Cost;
-  slot: number;
-  spend: number;
   again: boolean;
   /** The DC it was handed on with (dragon's breath): the original caster's. */
   dc?: number;
@@ -129,11 +129,12 @@ export class SpellActions {
     return this.store.world.gridSize;
   }
 
-  cast(player: Player, canSee: (id: string) => boolean, req: CastRequest): void {
-    const actor = this.table.actor(player, req.caster);
-    const known = this.table.content(actor.token).spells.get(req.spell);
-    if (!known) throw new Refusal(`There is no spell called ${req.spell}`);
-    const { caster, plan, reader } = this.prepare(actor, known, req);
+  cast(player: Player, canSee: (id: string) => boolean, asked: CastRequest): void {
+    const actor = this.table.actor(player, asked.caster);
+    const known = this.table.content(actor.token).spells.get(asked.spell);
+    if (!known) throw new Refusal(`There is no spell called ${asked.spell}`);
+    const { caster, plan, reader } = this.prepare(actor, known, asked);
+    const req = { ...asked, targets: paidTargets(caster, plan.paid, asked.targets) };
     const picked = chosen(caster, known, req.choice, plan.again);
     this.table.check(caster.token, plan.cost);
     const targets = this.aim(caster, picked, { ...req, slot: plan.slot }, { canSee, again: plan.again });
@@ -159,7 +160,7 @@ export class SpellActions {
     if (!plan.again) this.begin(caster, spell, plan, req.item ?? !!reader);
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
     const notes = this.conjure(caster, spell, { ...req, slot: plan.slot }, door);
-    const free = req.free && plan.slot > 0 && !plan.again ? ['cast without a spell slot'] : [];
+    const free = plan.again ? [] : paymentNotes(plan.paid, !!req.free && plan.slot > 0);
     this.strike(caster.token.id, { ...req, spell, slot: plan.slot, reader, dc: plan.dc }, targets, [...free, ...notes]);
   }
 
@@ -176,7 +177,7 @@ export class SpellActions {
 
   /** The cast was countered: it does nothing, and its slot (or scroll) is gone unless `keepsSlot`. */
   private fail({ caster, spell, plan, reader, req }: Casting, keepsSlot: boolean): void {
-    if (!keepsSlot) this.table.spendSlot(caster.token.id, plan.spend);
+    if (!keepsSlot) spendPayment(this.table, caster.token.id, plan);
     const now = this.store.tokens.get(caster.token.id)!;
     if (!keepsSlot && reader)
       this.store.setToken(spentFrom(now, this.table.content(now), { spell, slot: plan.slot }, req.item ?? true));
@@ -228,13 +229,11 @@ export class SpellActions {
       if (stopped) throw new Refusal(`${caster.token.name} ${stopped}`);
       return { cost: spell.repeat, slot: going.repeat!.slot, spend: 0, again: true, dc: going.repeat!.dc };
     }
-    const problem = castProblem({ spell, slot: req.slot, sheet: caster.sheet, free: req.free });
-    if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
+    const pay = payment(caster, spell, req);
     if ((spell.castingTime === 'minute' || spell.castingTime === 'hour') && this.table.inFight(caster.token.id)) {
       throw new Refusal(`${spell.name} takes too long to cast in a fight`);
     }
-    const slot = spell.level === 0 ? 0 : req.slot;
-    return { cost: COST[spell.castingTime], slot, spend: req.free ? 0 : slot, again: false };
+    return { cost: COST[spell.castingTime], again: false, ...pay };
   }
 
   /** Who casts and how: with their own spellcasting, or reading a scroll with its numbers. */
@@ -302,7 +301,7 @@ export class SpellActions {
   /** Spends the slot (the scroll, or the item's charges at `from`), ends invisibility and starts concentrating. */
   private begin(caster: Fighter, spell: Spell, plan: Plan, from: boolean | number): void {
     if (spell.concentration && caster.token.concentration) this.table.endConcentration(caster.token.id);
-    this.table.spendSlot(caster.token.id, plan.spend);
+    spendPayment(this.table, caster.token.id, plan);
     const now = this.store.tokens.get(caster.token.id)!;
     const token = spentFrom(now, this.table.content(now), { spell, slot: plan.slot }, from);
     const effects = token.effects?.filter((e) => !e.endsOnAttack);
