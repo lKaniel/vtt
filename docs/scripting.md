@@ -37,23 +37,24 @@ in the browser console.
 
 ## The `vtt` API
 
-| Call                                  | Does                                                                           |
-| ------------------------------------- | ------------------------------------------------------------------------------ |
-| `vtt.user()`                          | your seat: `{ id, name, role }`                                                |
-| `vtt.isGm()`                          | whether you are the GM                                                         |
-| `vtt.tokens()`                        | the creatures on your scene that you can see                                   |
-| `vtt.token(idOrName)`                 | one creature, by id or else by name                                            |
-| `vtt.selected()`                      | the creature you have selected                                                 |
-| `vtt.targets()`                       | your targets' ids                                                              |
-| `vtt.chat(text)`                      | says it in chat as if typed: words, or `/r 2d6+3`                              |
-| `vtt.move(id, x, y)`                  | walks a creature to a point (pixels), as a drag would                          |
-| `vtt.docs(coll)`, `vtt.doc(coll, id)` | documents you were sent: `macros`, `journals`, `actors`, `scenes/<id>/tiles` … |
-| `vtt.edit(ops, label?)`               | creates, updates and deletes documents in one undo step (`docs/edits.md`)      |
-| `vtt.update(coll, id, patch, label?)` | changes some fields of one document                                            |
-| `vtt.notify(text)`                    | shows a notice                                                                 |
-| `vtt.runMacro(idOrName, token?)`      | runs another macro                                                             |
-| `vtt.send(message)`                   | sends any client message (`client-messages.ts`): `{ t: 'endTurn' }` …          |
-| `vtt.hooks.on/once/off(hook, fn)`     | listens for a hook; `on` and `once` return the function that stops it          |
+| Call                                  | Does                                                                              |
+| ------------------------------------- | --------------------------------------------------------------------------------- |
+| `vtt.user()`                          | your seat: `{ id, name, role }`                                                   |
+| `vtt.isGm()`                          | whether you are the GM                                                            |
+| `vtt.tokens()`                        | the creatures on your scene that you can see                                      |
+| `vtt.token(idOrName)`                 | one creature, by id or else by name                                               |
+| `vtt.selected()`                      | the creature you have selected                                                    |
+| `vtt.targets()`                       | your targets' ids                                                                 |
+| `vtt.chat(text)`                      | says it in chat as if typed: words, or `/r 2d6+3`                                 |
+| `vtt.move(id, x, y)`                  | walks a creature to a point (pixels), as a drag would                             |
+| `vtt.explored(x, y)`                  | whether your fog of war shows that point as explored (the GM: the players picked) |
+| `vtt.docs(coll)`, `vtt.doc(coll, id)` | documents you were sent: `macros`, `journals`, `actors`, `scenes/<id>/tiles` …    |
+| `vtt.edit(ops, label?)`               | creates, updates and deletes documents in one undo step (`docs/edits.md`)         |
+| `vtt.update(coll, id, patch, label?)` | changes some fields of one document                                               |
+| `vtt.notify(text)`                    | shows a notice                                                                    |
+| `vtt.runMacro(idOrName, token?)`      | runs another macro                                                                |
+| `vtt.send(message)`                   | sends any client message (`client-messages.ts`): `{ t: 'endTurn' }` …             |
+| `vtt.hooks.on/once/off(hook, fn)`     | listens for a hook; `on` and `once` return the function that stops it             |
 
 ## Hooks
 

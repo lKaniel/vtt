@@ -1,4 +1,5 @@
 import type { Doc } from '@vtt/core';
+import { FogMap, rasterCircle } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Session } from '../session/session.ts';
@@ -37,6 +38,16 @@ describe('the scripting API', () => {
     session.select('hero');
     expect(vtt.selected()?.id).toBe('hero');
     expect(vtt.targets()).toEqual([]);
+  });
+
+  it('tells which ground you have explored', () => {
+    ws.receive(welcome());
+    const { vtt } = session.scripts;
+    expect(vtt.explored(100, 100)).toBe(false);
+    const map = new FogMap(25);
+    ws.receive({ t: 'fog', player: 'ana', ...map.encode(map.add(rasterCircle([100, 100], 60, 25))), full: true });
+    expect(vtt.explored(100, 100)).toBe(true);
+    expect(vtt.explored(5000, 100)).toBe(false);
   });
 
   it('acts through the session: chat, moves, document edits and raw messages', () => {
