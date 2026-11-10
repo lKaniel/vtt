@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { srdFor } from './content.ts';
 import { resolveCreature } from './creature.ts';
-import { featureCasts } from './free-casts.ts';
+import { featureCastProblem, featureCasts } from './free-casts.ts';
 import { castProblem } from './spells.ts';
 import type { Edition } from './stats-schema.ts';
 import { TokenSchema } from './token-schema.ts';
@@ -46,6 +46,21 @@ describe('a monster that casts spells', () => {
 
   it('casts a spell at the level its block names', () => {
     expect(featureCasts(sheetOf('mage', '2024'), spell('fireball', '2024'))[0]).toMatchObject({ level: 4, left: 2 });
+  });
+
+  it('without a caster level in its block, its cantrips scale with its challenge rating', () => {
+    expect(sheetOf('adult-black-dragon', '2024').caster!.level).toBe(14);
+    expect(sheetOf('green-hag').caster!.level).toBe(3);
+    expect(sheetOf('drow').caster!.level).toBe(1);
+  });
+
+  it('casts a "cast before combat" spell only outside a fight', () => {
+    const sheet = {
+      features: [{ id: 'at-will', name: 'Spells at will', freeCasts: [{ spell: 'mage-armor', beforeCombat: true }] }],
+    };
+    const armor = spell('mage-armor');
+    expect(featureCastProblem(sheet as never, armor, 'at-will')).toBeUndefined();
+    expect(featureCastProblem(sheet as never, armor, 'at-will', { fighting: true })).toMatch(/before the fight/);
   });
 
   it('leaves a monster with no spellcasting without a caster', () => {

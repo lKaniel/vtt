@@ -12,8 +12,8 @@ import { Refusal, type Fighter, type Table } from './table.ts';
 // feature, the level it casts at, who it may land on, and spending its use.
 
 /** The feature `id` paying for `spell`; refuses one that can't. */
-function featurePayment(caster: Fighter, spell: Spell, id: string): FeatureCast {
-  const problem = featureCastProblem(caster.sheet, spell, id);
+function featurePayment(caster: Fighter, spell: Spell, id: string, fighting: boolean): FeatureCast {
+  const problem = featureCastProblem(caster.sheet, spell, id, { fighting });
   if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
   return featureCasts(caster.sheet, spell).find((c) => c.feature === id)!;
 }
@@ -26,13 +26,14 @@ export interface Payment {
   paid?: FeatureCast;
 }
 
-/** How the cast `req` asks for is paid; refuses one the caster can't make that way. */
+/** How the cast `req` asks for is paid; refuses one the caster can't make that way (`fighting`: in a fight now). */
 export function payment(
   caster: Fighter,
   spell: Spell,
   req: { slot: number; free?: boolean; paidBy?: string },
+  fighting = false,
 ): Payment {
-  const paid = req.paidBy ? featurePayment(caster, spell, req.paidBy) : undefined;
+  const paid = req.paidBy ? featurePayment(caster, spell, req.paidBy, fighting) : undefined;
   const free = !!req.free || !!paid;
   const asked = paid?.level ?? req.slot;
   const problem = castProblem({ spell, slot: asked, sheet: caster.sheet, free });

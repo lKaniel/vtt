@@ -103,6 +103,11 @@ export class Table {
     return !!this.store.combat?.order.some((e) => e.token === id);
   }
 
+  /** In a fight that is on (not turn-based mode outside one). */
+  fighting(id: string): boolean {
+    return this.inFight(id) && !this.store.combat?.peaceful;
+  }
+
   readonly turnInfo: TurnInfo = (id) => {
     if (isLairTurn(id)) return this.store.tokens.has(lairOwner(id)) ? { speed: 0, active: true } : undefined;
     const token = this.store.tokens.get(id);

@@ -4554,7 +4554,8 @@
             "spell": "light"
           },
           {
-            "spell": "mage-armor"
+            "spell": "mage-armor",
+            "beforeCombat": true
           },
           {
             "spell": "mage-hand"
@@ -4610,7 +4611,8 @@
         "uses": [[1, 1]],
         "freeCasts": [
           {
-            "spell": "mind-blank"
+            "spell": "mind-blank",
+            "beforeCombat": true
           }
         ]
       },
@@ -13358,7 +13360,8 @@
             "spell": "disguise-self"
           },
           {
-            "spell": "invisibility"
+            "spell": "invisibility",
+            "self": true
           },
           {
             "spell": "minor-illusion"
@@ -16311,7 +16314,8 @@
             "spell": "light"
           },
           {
-            "spell": "mage-armor"
+            "spell": "mage-armor",
+            "beforeCombat": true
           },
           {
             "spell": "mage-hand"
@@ -17742,7 +17746,8 @@
         "uses": [[1, 2]],
         "freeCasts": [
           {
-            "spell": "plane-shift"
+            "spell": "plane-shift",
+            "self": true
           }
         ]
       }
