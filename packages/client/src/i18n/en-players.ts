@@ -40,6 +40,7 @@ export const EN_PLAYERS = {
   'players.showCreatures': 'Show other creatures',
   'players.main': 'main',
   'levelUp.button': 'Level up',
+  'levelUp.notYours': 'Only {name}’s player or the GM can level them up',
   'levelUp.buttonHint': 'Take the next level',
   'levelUp.title': '{name}: level up',
   'levelUp.reaches': 'From level {from} to level {to}. The server rolls any dice and tells the table.',

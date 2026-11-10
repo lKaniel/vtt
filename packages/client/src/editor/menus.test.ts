@@ -21,7 +21,7 @@ function api(gm = true) {
     editor: { canEditSelection: () => gm, editSelection: vi.fn(), selectAll: vi.fn(), lightPreset: 'torch' as const },
     targets: { mine: new Set<string>(), toggle: vi.fn() },
     hud: { open: vi.fn(), observing: undefined as string | undefined, observe: vi.fn() },
-    journal: { open: vi.fn(), show: vi.fn(), showImage: vi.fn() },
+    journal: { open: vi.fn(), show: vi.fn(), showImage: vi.fn(), rollTable: vi.fn() },
     piles: { open: vi.fn() },
     scenes: { fitGrid: vi.fn() },
   } satisfies MenuApi;
@@ -278,6 +278,16 @@ describe('context menus', () => {
     pick({ ...on(note), mode: 'notes' }, a, 'Show to players').run();
     expect(a.journal.show).toHaveBeenCalledWith('lore', 'p1');
     expect(labels({ ...on(note), mode: 'notes' }, api(false))).toEqual(['Open journal entry']);
+  });
+
+  it("rolls a note's roll table, into chat or (the GM's) to the GM alone", () => {
+    const a = api();
+    const note: Doc = { id: 'n', type: 'note', rev: 1, x: 0, y: 0, table: 'encounters' };
+    pick({ ...on(note), mode: 'notes' }, a, 'Roll on the table').run();
+    expect(a.journal.rollTable).toHaveBeenCalledWith('encounters');
+    pick({ ...on(note), mode: 'notes' }, a, 'Roll for the GM alone').run();
+    expect(a.journal.rollTable).toHaveBeenCalledWith('encounters', true);
+    expect(labels({ ...on(note), mode: 'notes' }, api(false))).toEqual(['Roll on the table']);
   });
 
   it('turns regions on and off, and hides map things from players', () => {

@@ -38,8 +38,16 @@ const SCENE_RULES: Partial<Record<string, (v: Viewer, access: DocAccess, doc: Do
   sounds: (_v, _a, d) => !d.hidden,
   regions: (_v, _a, d) =>
     !d.hidden && (d.visible === true || (Array.isArray(d.behaviors) && isFloorWay(d as unknown as Region))),
-  notes: (v, access, d) => !d.hidden && (typeof d.entry !== 'string' || entrySeen(v, access, d.entry)),
+  notes: (v, access, d) =>
+    !d.hidden &&
+    (typeof d.entry !== 'string' || entrySeen(v, access, d.entry)) &&
+    (typeof d.table !== 'string' || tableSeen(v, access, d.table)),
 };
+
+function tableSeen(v: Viewer, access: DocAccess, id: string): boolean {
+  const table = access.get('tables', id);
+  return !!table && observed(v, access.owned('tables', table));
+}
 
 function entrySeen(v: Viewer, access: DocAccess, id: string): boolean {
   const entry = access.get('journals', id);
@@ -100,17 +108,21 @@ export function viewOf(v: Viewer, access: DocAccess, coll: string, doc: Doc): Do
 
 const LIMITED_VIEW = new Set(['journals', 'cards']);
 
-/** Documents whose visibility hangs on another: notes on a journal entry, the folders a document or folder is in. */
+/** Documents whose visibility hangs on another: notes on a journal entry or roll table, the folders a document or folder is in. */
 export function dependents(access: DocAccess, coll: string, id: string): { coll: string; doc: Doc }[] {
   return [...notesOn(access, coll, id), ...foldersHolding(access, coll, id)];
 }
 
+/** The note field that points at a document of each collection. */
+const NOTE_LINKS: Partial<Record<string, 'entry' | 'table'>> = { journals: 'entry', tables: 'table' };
+
 function notesOn(access: DocAccess, coll: string, id: string): { coll: string; doc: Doc }[] {
-  if (coll !== 'journals') return [];
+  const link = NOTE_LINKS[coll];
+  if (!link) return [];
   const all = access.all();
   return Object.entries(all)
     .filter(([c]) => c.endsWith('/notes'))
-    .flatMap(([c, docs]) => docs.filter((d) => d.entry === id).map((doc) => ({ coll: c, doc })));
+    .flatMap(([c, docs]) => docs.filter((d) => d[link] === id).map((doc) => ({ coll: c, doc })));
 }
 
 /** The folders above a document (or a folder) as it is now. */

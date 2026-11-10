@@ -1,11 +1,22 @@
 import type { PackCompendium } from '@vtt/core';
-import type { Class, Content, Edition, GearUse, Item, Monster, Spell } from '@vtt/system-dnd5e';
+import {
+  type Class,
+  type Content,
+  type Edition,
+  type GearUse,
+  type Item,
+  type Monster,
+  originsFor,
+  type Species,
+  type Spell,
+} from '@vtt/system-dnd5e';
 import type { DragPayload } from '../play/drops.ts';
 import { featureArt, itemArt, monsterArt, spellArt } from '../icon-art.ts';
 import { featureIcon, type Icon, itemIcon, spellIcon } from '../icons.ts';
 import { spellTip } from '../text/tooltip.ts';
 
-// One Compendium entry per monster, item, spell and class feature of a game's
+// One Compendium entry per monster, item, spell, class feature, class and
+// species of a game's
 // content, with its picture, where it comes from, and the values the
 // Compendium's filters sort it by (compendium.ts).
 
@@ -187,7 +198,45 @@ function featureEntries(c: Class, rules: Edition, sources: Sources): Entry[] {
   }));
 }
 
-export const BOOKS = ['monsters', 'weapons', 'armor', 'gear', 'spells', 'features'] as const;
+const CLASS_GLYPH: Icon = { glyph: 'star', tint: 'steel' };
+const SPECIES_GLYPH: Icon = { glyph: 'mask', tint: 'arcane' };
+
+/** A class: dropped on a sheet it opens the level up in it. */
+function classEntry(c: Class, rules: Edition, sources: Sources): Entry {
+  const source = sources.get(`class:${c.id}`) ?? 'SRD';
+  const drag: DragPayload = { kind: 'class', id: c.id, rules };
+  const facets = { kind: ['Class'] };
+  return {
+    id: c.id,
+    key: c.id,
+    name: c.name,
+    sub: `d${c.hitDie} hit die`,
+    drag,
+    icon: CLASS_GLYPH,
+    source,
+    order: 0,
+    facets,
+  };
+}
+
+/** A species: dropped on a sheet the creature becomes one. */
+function speciesEntry(s: Species, rules: Edition): Entry {
+  const sub = [`${s.speed} ft`, s.darkvision && `darkvision ${s.darkvision} ft`].filter(Boolean).join(', ');
+  const drag: DragPayload = { kind: 'species', id: s.id, rules };
+  return {
+    id: s.id,
+    key: s.id,
+    name: s.name,
+    sub,
+    drag,
+    icon: SPECIES_GLYPH,
+    source: 'SRD',
+    order: 0,
+    facets: { kind: ['Species'] },
+  };
+}
+
+export const BOOKS = ['monsters', 'weapons', 'armor', 'gear', 'spells', 'features', 'classes', 'species'] as const;
 export type Book = (typeof BOOKS)[number];
 
 const ITEM_TYPE = { weapons: 'weapon', armor: 'armor', gear: 'gear' } as const;
@@ -198,5 +247,7 @@ export function bookEntries(book: Book, content: Content, sources: Sources): Ent
   if (book === 'monsters') return [...content.monsters.values()].map((m) => monsterEntry(m, rules, sources));
   if (book === 'spells') return [...content.spells.values()].map((s) => spellEntry(s, content, sources));
   if (book === 'features') return [...content.classes.values()].flatMap((c) => featureEntries(c, rules, sources));
+  if (book === 'classes') return [...content.classes.values()].map((c) => classEntry(c, rules, sources));
+  if (book === 'species') return originsFor(rules).species.map((s) => speciesEntry(s, rules));
   return [...content.items.values()].filter((i) => i.type === ITEM_TYPE[book]).map((i) => itemEntry(i, sources));
 }

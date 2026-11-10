@@ -170,6 +170,8 @@ export const StatsSchema = z.object({
   /** Experience points earned. */
   xp: z.number().int().min(0).optional(),
   class: z.string().optional(),
+  /** Its species from the rules (origins.ts), dropped on its sheet; a creator character's is in its build. */
+  species: z.string().optional(),
   /** A multiclassed character's classes, the first one taken at 1st level; instead of `class` and `level`. */
   classes: z.array(ClassLevelSchema).min(1).optional(),
   abilities: AbilitiesSchema.partial().optional(),

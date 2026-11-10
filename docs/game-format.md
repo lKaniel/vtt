@@ -14,7 +14,7 @@ world/                      the example game (another folder: VTT_GAME); lobby g
     lights.json             placed lights
     tokens.json             tokens on the scene: where each actor stands
     drawings.json           shapes, lines, freehand and text drawn on the map
-    notes.json              map pins that open journal entries
+    notes.json              map pins that open journal entries or roll tables
     templates.json          measured areas: spell circles, cones, lines and squares
     regions.json            areas that do something when a token walks in
     sounds.json             ambient sounds
@@ -596,8 +596,11 @@ change and delete only their own.
 ```
 
 **Notes** (`notes.json`): `x, y`, `label`, `icon`, `color`, and the
-journal `entry` (and `page`) it opens. Players see a note only when they may
-see its entry.
+journal `entry` (and `page`) it opens, or the roll `table` it rolls into chat
+when clicked (a table dragged from the Tables tab onto the map makes one).
+Players see a note only when they may see its entry, or its table is shared
+with them. A playlist dragged onto the map becomes a sound of its first
+track (every track, when it plays them together).
 
 **Templates** (`templates.json`): `shape` `"circle"`, `"cone"`, `"line"` or
 `"square"`, origin `x, y`, `distance` in feet (a circle's radius, a cone's or
@@ -1136,7 +1139,14 @@ adds one). A spell scroll is an inventory entry with the spell on it:
 `{ "item": "spell-scroll", "spell": "fireball", "qty": 1 }`. Reading it casts
 the spell at its own level without a slot, with the scroll's save DC and
 attack bonus (13/+5 up to 2nd level, 15/+7, 17/+9, 18/+10, 19/+11 for 9th),
-and uses the scroll up.
+and uses the scroll up. Only a class with the spell on its list can read it
+(SRD Spell Scroll); a creature without a class, a homebrew caster class no
+spell names, or one that knows the spell may read any.
+
+`stats.species` names the species dropped on the sheet from the Compendium:
+the drop sets its walking speed and darkvision and adds its fixed
+proficiencies (ability bonuses are the player's to add). A class dropped on a
+sheet opens the Level up in that class.
 
 **Made on the sheet.** Items, spells and features that exist only on one
 creature (the sheet's New item, New spell and New feature buttons) live in

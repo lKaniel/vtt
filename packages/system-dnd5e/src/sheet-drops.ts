@@ -1,7 +1,8 @@
-import { classLevels } from './multiclass.ts';
+import { classCasting, classLevels } from './multiclass.ts';
 import type { CasterSheet } from './classes.ts';
 import { classFeature } from './class-options.ts';
 import type { Content } from './content.ts';
+import { originsFor } from './origins.ts';
 import type { Creature } from './creature.ts';
 import type { Spell } from './spell-schema.ts';
 import type { Edition, InventoryEntry, Stats } from './stats-schema.ts';
@@ -18,7 +19,9 @@ export type SheetArea = 'inventory' | 'spells' | 'features';
 export type CompendiumDrop =
   | { kind: 'item'; id: string }
   | { kind: 'spell'; id: string; rules: Edition }
-  | { kind: 'feature'; id: string; class: string; rules: Edition };
+  | { kind: 'feature'; id: string; class: string; rules: Edition }
+  /** A species: its speed, darkvision and fixed proficiencies (ability bonuses are the player's to add). */
+  | { kind: 'species'; id: string; rules: Edition };
 
 /** The id of the gear a spell scroll is. */
 export const SPELL_SCROLL = 'spell-scroll';
@@ -28,6 +31,8 @@ interface Sheet {
   name: string;
   stats?: Stats;
   inventory?: InventoryEntry[];
+  speed?: number;
+  darkvision?: number;
 }
 
 export type DropOutcome<T> = { sheet: T } | { problem: string };
@@ -44,6 +49,7 @@ export function dropOnSheet<T extends Sheet>(
     return { sheet: { ...sheet, inventory: stacked(sheet.inventory, { item: what.id, qty: 1, equipped: false }) } };
   }
   if (what.kind === 'feature') return grant(sheet, `${what.class}/${what.id}`, content);
+  if (what.kind === 'species') return becomeSpecies(sheet, what.id, content.edition);
   const spell = content.spells.get(what.id);
   if (!spell)
     return { problem: `${sheet.name} plays by the ${content.edition} rules, which have no spell "${what.id}"` };
@@ -62,6 +68,18 @@ function stacked(list: readonly InventoryEntry[] = [], entry: InventoryEntry): I
   const at = list.findIndex((e) => sameKind(e, entry));
   if (at < 0) return [...list, entry];
   return list.map((e, i) => (i === at ? { ...e, qty: e.qty + entry.qty } : e));
+}
+
+/** `sheet` as one of species `id`: one it had is replaced, a first one only adds darkvision. */
+function becomeSpecies<T extends Sheet>(sheet: T, id: string, edition: Edition): DropOutcome<T> {
+  const species = originsFor(edition).species.find((s) => s.id === id);
+  if (!species) return { problem: `The ${edition} rules have no species "${id}"` };
+  const had = !!sheet.stats?.species;
+  const darkvision = had ? species.darkvision : Math.max(sheet.darkvision ?? 0, species.darkvision);
+  const fixed = species.proficiencies?.fixed ?? [];
+  const proficiencies = [...new Set([...(sheet.stats?.proficiencies ?? []), ...fixed])];
+  const stats = { ...sheet.stats, species: id, ...(proficiencies.length && { proficiencies }) };
+  return { sheet: { ...sheet, speed: species.speed, darkvision, stats } };
 }
 
 function learn<T extends Sheet>(sheet: T, spell: Spell): DropOutcome<T> {
@@ -127,4 +145,26 @@ export function scrollCaster(sheet: Pick<Creature, 'caster'>, spell: Spell, leve
     spells: [],
   };
   return { ...base, dc, attack, spells: [spell] };
+}
+
+type Level = ReturnType<typeof classLevels>[number];
+
+/**
+ * Why `sheet` can't read a scroll of `spell` (SRD Spell Scroll): only a class
+ * with the spell on its list can. Creatures without a class read any, and so
+ * does a caster class no spell names (a homebrew one with its own picks),
+ * or one the rules don't know.
+ */
+export function scrollProblem(sheet: Pick<Sheet, 'stats'>, spell: Spell, content: Content): string | undefined {
+  const levels = classLevels(sheet, content);
+  if (!levels.length || sheet.stats?.spells?.includes(spell.id)) return undefined;
+  const named = new Set([...content.spells.values()].flatMap((s) => s.classes));
+  const reads = (l: Level) => {
+    if (!l.cls) return true;
+    const casting = classCasting(l.cls, l.subclass);
+    const list = casting?.list ?? l.id;
+    return spell.classes.includes(list) || (!!casting && !named.has(list));
+  };
+  if (levels.some(reads)) return undefined;
+  return `can’t read ${spell.name}: it isn’t on the ${levels.map((l) => l.id).join(' or ')} spell list`;
 }

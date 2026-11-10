@@ -261,6 +261,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
       z.object({ kind: z.literal('item'), id: z.string() }),
       z.object({ kind: z.literal('spell'), id: z.string(), rules: EditionSchema }),
       z.object({ kind: z.literal('feature'), id: z.string(), class: z.string(), rules: EditionSchema }),
+      z.object({ kind: z.literal('species'), id: z.string(), rules: EditionSchema }),
     ]),
     onto: z.object({ kind: z.enum(['token', 'actor']), id: z.string() }),
     area: z.enum(['inventory', 'spells', 'features']).optional(),

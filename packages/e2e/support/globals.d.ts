@@ -13,6 +13,7 @@ interface E2eToken {
   img?: string;
   inventory?: { item: string; qty: number; spell?: string }[];
   hotbar?: (string | null)[];
+  stats?: { species?: string };
 }
 
 interface E2eVtt {
