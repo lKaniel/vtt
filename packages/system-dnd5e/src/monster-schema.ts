@@ -17,6 +17,21 @@ export const MonsterSpeedsSchema = z
   .object({ fly: feet, swim: feet, climb: feet, burrow: feet, hover: z.boolean() })
   .partial();
 
+/** How a monster casts: its stat block's numbers, the slots it has and every spell it can cast. */
+export const MonsterCastingSchema = z.object({
+  ability: z.enum(ABILITIES),
+  /** Spell save DC and attack bonus; missing: worked out from the ability. */
+  dc: z.number().int().positive().optional(),
+  attack: z.number().int().optional(),
+  /** Caster level, which cantrips grow with. */
+  level: z.number().int().positive().optional(),
+  /** Slots per spell level (index 0 = 1st). */
+  slots: z.array(z.number().int().nonnegative()).optional(),
+  /** Spell ids: prepared ones cast with slots, and those its features cast at will or so many times a day. */
+  spells: z.array(id),
+});
+export type MonsterCasting = z.infer<typeof MonsterCastingSchema>;
+
 export const MonsterSchema = z.object({
   id,
   name: z.string().min(1),
@@ -46,6 +61,7 @@ export const MonsterSchema = z.object({
   traits: z.array(MonsterTraitSchema).optional(),
   /** Actions the engine runs like class features: breath weapons and other actions behind a saving throw. */
   features: z.array(FeatureSchema).optional(),
+  spellcasting: MonsterCastingSchema.optional(),
   alignment: z.string().optional(),
   /** Skills it is proficient in, and those it adds its proficiency to twice. */
   skills: z.array(id).optional(),
