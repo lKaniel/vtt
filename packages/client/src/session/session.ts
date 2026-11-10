@@ -99,7 +99,7 @@ export class Session {
   /** GM only: the Actors list. */
   readonly actors = new Map<string, Actor>();
   /** The plain requests to the server: move, end turn, rest, save an actor... */
-  readonly requests = new Requests(this);
+  readonly requests: Requests = new Requests(this);
   /** The decks, hands and piles you were sent (session-cards.ts). */
   readonly cards = new Cards(this);
   /** The sidebar lists' folders (session-folders.ts). */
@@ -132,7 +132,7 @@ export class Session {
   /** The game clock and calendar. */
   readonly time = new WorldTime(this);
   /** The selected creature's readied attack or aimed spell, and your roll mode. */
-  readonly actions = new Actions(this, this.ev);
+  readonly actions: Actions = new Actions(this, this.ev);
   readonly piles = new Piles(this, this.ev);
   readonly inspect = new Inspecting(this.ev);
   readonly hud = new Hud(this, this.ev);

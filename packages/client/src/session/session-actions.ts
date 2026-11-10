@@ -4,7 +4,7 @@ import { isPowerFeature, type PowerAim, powerAim } from '../play/power-aiming.ts
 /** How a chat roll is applied: in full, half, double, or as healing. */
 export type ApplyHow = Extract<ClientMessage, { t: 'applyDamage' }>['how'];
 import type { Player, Point, RollMode } from '@vtt/shared';
-import type { TokenView } from '@vtt/system-dnd5e';
+import type { Attack, TokenView } from '@vtt/system-dnd5e';
 import { aimAtTargets, aimFor, aimSpell, castMessage, pick, scrollAiming, type Aiming } from '../play/targeting.ts';
 import { paymentCount } from '../play/payments.ts';
 import { itemAiming } from '../play/item-spells.ts';
@@ -12,6 +12,7 @@ import type { Targets } from './targets.ts';
 import { loadRollMode, saveRollMode } from '../play/roll-mode.ts';
 import { tokenAt } from '../play/drops.ts';
 import { RollPick } from './session-pick.ts';
+import { type RangeAim, type RangeHost, walkInRange } from '../play/walk-in-range.ts';
 
 // What the selected creature is about to do: an armed attack or an aimed
 // spell or feature, which go straight at your targets when you have them,
@@ -19,7 +20,7 @@ import { RollPick } from './session-pick.ts';
 // `session.actions`.
 
 /** What the actions need of the session: the tokens, your selection and targets, and a way to the server. */
-export interface ActionHost {
+export interface ActionHost extends RangeHost {
   readonly tokens: ReadonlyMap<string, TokenView>;
   readonly selected?: string;
   readonly pointer?: Point;
@@ -205,8 +206,29 @@ export class Actions {
 
   /** Casts the aimed spell now, with the targets picked so far. */
   confirmCast(point?: Point): void {
-    if (this.s.selected && this.aiming) this.s.send(this.picked(castMessage(this.s.selected, this.aiming, point)));
+    const { selected } = this.s;
+    const aiming = this.aiming;
+    const inRange = selected && aiming && this.closeIn(selected, { spell: aiming.spell, targets: aiming.picks, point });
+    if (inRange) this.s.send(this.picked(castMessage(selected, aiming, point)));
     this.aim(undefined);
+  }
+
+  /** Walks into range of `aim` first: not for a spell on yourself, nor for one used again where it is (spiritual weapon). */
+  private closeIn(mover: string, aim: RangeAim): boolean {
+    if ('spell' in aim && (this.aiming?.mode === 'self' || this.aiming?.repeat)) return true;
+    return walkInRange(this.s, mover, aim);
+  }
+
+  /** The readied attack as the selected token has it. */
+  private armedAttack(): Attack | undefined {
+    const token = this.s.selected ? this.s.tokens.get(this.s.selected) : undefined;
+    return token?.sheet?.attacks.find((a) => a.name === this.armed);
+  }
+
+  /** Walks into range of the readied attack's target or point; true when there's nothing to check. */
+  private attackInRange(aim: { target?: string; point?: Point }): boolean {
+    const attack = this.armedAttack();
+    return !attack || !this.s.selected || this.closeIn(this.s.selected, { attack, ...aim });
   }
 
   /** Spends a slot of this level on Divine Smite if the armed attack hits; undefined for no smite. */
@@ -230,12 +252,14 @@ export class Actions {
   /** Spends the readied attack on empty ground at `point`: it hits nothing. */
   attackAt(point: Point): void {
     if (!this.s.selected || !this.armed) return;
+    if (!this.attackInRange({ point })) return this.arm(undefined);
     this.s.send({ t: 'attack', attacker: this.s.selected, attack: this.armed, point, ...this.pick.take() });
     this.arm(undefined);
   }
 
   attack(target: string): void {
     if (!this.s.selected || !this.armed) return;
+    if (!this.attackInRange({ target })) return this.arm(undefined);
     const smite = this.smite ? { smite: this.smite } : {};
     const finisher = this.finisher ? { finisher: this.finisher } : {};
     const pick = this.pick.take();

@@ -17,6 +17,8 @@ export const EN_MAP = {
   'walk.difficult': 'Difficult terrain',
   'walk.trap': 'Trap: {name}',
   'walk.trapUnnamed': 'Trap',
+  'walk.first': 'walks {feet} ft first',
+  'walk.cantCloseIn': '{name} needs {feet} ft of movement to get in range and has {left} ft left',
   'walk.blocked': "Can't get there",
   'levels.question': '{name}: which floor?',
   'scene.kind': 'Scene',
