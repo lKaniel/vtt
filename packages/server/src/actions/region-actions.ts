@@ -6,6 +6,7 @@ import {
   type Player,
   tokenLevel,
   fogCell,
+  fogFloor,
   inRegion,
   isGm,
   type Point,
@@ -17,6 +18,7 @@ import {
   regionWorks,
 } from '@vtt/shared';
 import { fallRules, springTrap, type Token, TrapRulesSchema } from '@vtt/system-dnd5e';
+import { fogPlace } from '../store/fog-store.ts';
 import { fromDoc } from '../store/doc-sync.ts';
 import { Refusal, type Table } from '../play/table.ts';
 import type { TriggerActions } from './trigger-actions.ts';
@@ -176,8 +178,9 @@ export class RegionActions {
     if (!world.vision) return;
     const cell = fogCell(world.gridSize);
     const raster = rasterize(region.points.flat(), cell);
+    const place = fogPlace(this.store.currentScene, fogFloor(world.levels, this.levelOf(token)));
     for (const p of world.players.filter((pl) => !isGm(pl) && canObserve(token, pl))) {
-      this.store.fog.explore(this.store.currentScene, p.id, cell, [raster]);
+      this.store.fog.explore(place, p.id, cell, [raster]);
     }
   }
 }

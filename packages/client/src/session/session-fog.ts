@@ -1,4 +1,14 @@
-import { FOG_BYTES, type FogEdit, FogMap, isGm, type Player, type Point, unionFog } from '@vtt/shared';
+import {
+  FOG_BYTES,
+  type FogEdit,
+  fogFloor,
+  FogMap,
+  isGm,
+  type Player,
+  type Point,
+  unionFog,
+  type WorldInfo,
+} from '@vtt/shared';
 import type { ClientMessage, ServerMessage } from '@vtt/system-dnd5e';
 import type { SessionPart, Welcome } from './session-part.ts';
 
@@ -11,11 +21,17 @@ export type FogBrush = 'reveal' | 'hide';
 /** Default brush radius, in squares. */
 const BRUSH_SQUARES = 2;
 
-/** What the fog needs of the session: your seat and a way to the server. */
+/** What the fog needs of the session: your seat, the floor shown and a way to the server. */
 export interface FogHost {
   readonly you?: Player;
+  readonly world?: WorldInfo;
+  /** The scene level the map shows (see session-levels.ts). */
+  readonly levels: { readonly current: string | undefined };
   send(msg: ClientMessage): void;
 }
+
+/** Fog is kept per player and floor. */
+const slot = (player: string, floor: string | undefined) => (floor ? `${player}\u0000${floor}` : player);
 
 /** What the fog tells the session. */
 export interface FogEvents {
@@ -36,7 +52,7 @@ export class Fog implements SessionPart {
   players?: string[];
   /** Bumped when fog changes, for the map to redraw. */
   version = 0;
-  /** Explored fog on this scene, by player: your own, or (the GM) every player's. */
+  /** Explored fog on this scene, by player and floor: your own, or (the GM) every player's. */
   private maps = new Map<string, FogMap>();
 
   constructor(
@@ -44,18 +60,23 @@ export class Fog implements SessionPart {
     private readonly on: FogEvents,
   ) {}
 
-  /** A player's explored fog on this scene, as this client knows it. */
+  /** A player's explored fog on this scene's floor shown, as this client knows it. */
   of(player: string): FogMap | undefined {
-    return this.maps.get(player);
+    return this.maps.get(slot(player, this.floor()));
   }
 
-  /** The fog the map shows: yours, or for the GM the players picked (all: what any of them explored). */
+  /** The fog the map shows, of the floor shown: yours, or for the GM the players picked (all: what any of them explored). */
   shown(): FogMap | undefined {
     const you = this.s.you;
     if (!you) return undefined;
-    if (!isGm(you)) return this.maps.get(you.id);
-    const picked = this.players;
-    return unionFog([...this.maps].filter(([id]) => !picked || picked.includes(id)).map(([, map]) => map));
+    if (!isGm(you)) return this.of(you.id);
+    const ids = this.players ?? [...new Set([...this.maps.keys()].map((k) => k.split('\u0000')[0]!))];
+    return unionFog(ids.flatMap((id) => this.of(id) ?? []));
+  }
+
+  /** Which floor's fog the map shows: none for the street, or a scene without floors. */
+  floor(): string | undefined {
+    return fogFloor(this.s.world?.levels, this.s.levels.current);
   }
 
   setBrush(brush: FogBrush | undefined): void {
@@ -91,15 +112,18 @@ export class Fog implements SessionPart {
   }
 
   private send(edit: FogEdit): void {
-    this.s.send({ t: 'fog', edit: this.players ? { ...edit, players: this.players } : edit });
+    const level = edit.op === 'reset' ? undefined : this.s.levels.current;
+    const players = this.players;
+    this.s.send({ t: 'fog', edit: { ...edit, ...(players && { players }), ...(level && { level }) } });
   }
 
   receive(msg: ServerMessage): boolean | undefined {
     if (msg.t !== 'fog') return undefined;
-    let map = this.maps.get(msg.player);
+    const key = slot(msg.player, msg.level);
+    let map = this.maps.get(key);
     if (!map || msg.full || map.cell !== msg.cell) {
       map = new FogMap(msg.cell);
-      this.maps.set(msg.player, map);
+      this.maps.set(key, map);
     }
     const blocks = Object.fromEntries(Object.entries(msg.blocks).filter(([, data]) => data));
     const got = FogMap.decode({ cell: msg.cell, blocks });

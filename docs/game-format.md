@@ -18,7 +18,7 @@ world/                      the example game (another folder: VTT_GAME); lobby g
     templates.json          measured areas: spell circles, cones, lines and squares
     regions.json            areas that do something when a token walks in
     sounds.json             ambient sounds
-    fog/<player>.json       explored fog of war, kept by the server (don't edit)
+    fog/<player>.json       explored fog of war, kept by the server (don't edit; floors in fog/<level>/)
   actors/<id>.json          creatures' sheets: the Actors list
   journals/<id>.json        journal entries: handouts and the GM's notes
   tables/<id>.json          roll tables
@@ -244,8 +244,12 @@ With `vision` and `exploration` on, the server works out what each player's
 tokens have seen and keeps it per player per scene in
 `scenes/<scene>/fog/<player>.json` (cells a quarter of a square wide, in
 blocks; see `shared/src/fog.ts`). It follows the player to another device.
-The GM's fog tools (Reveal and Hide brushes, Reset) change it, and Ctrl+Z
-undoes them. Delete the file to make a player forget a scene; changing
+On a scene with `levels` each floor keeps its own: the street (the floor
+at 0 ft) uses that file, every other floor `scenes/<scene>/fog/<level>/<player>.json`,
+so looking around downstairs explores nothing upstairs. A player sees the
+fog of the floor their creature stands on. The GM's fog tools (Reveal and
+Hide brushes, Reset) change it, the brushes on the floor the GM shows and
+Reset on every floor, and Ctrl+Z undoes them. Delete the file to make a player forget a scene; changing
 `gridSize` starts the fog over. `check-game` ignores the `fog/` folder.
 
 ## Tiles and walls

@@ -157,7 +157,8 @@ export type EngineServerMessage =
    * player's. `blocks` maps a block key to its bits (base64, "" for an empty
    * block, see fog.ts); `full` means forget the blocks not listed.
    */
-  | { t: 'fog'; player: string; cell: number; blocks: Record<string, string>; full?: boolean }
+  /** Explored fog of `player`, on the scene's floor `level` (none: the street, or a scene without floors). */
+  | { t: 'fog'; player: string; level?: string; cell: number; blocks: Record<string, string>; full?: boolean }
   | { t: 'tokenGone'; id: string }
   /** A creature walked `path`, ending `elevation` feet up (none: on the ground). */
   | { t: 'moved'; id: string; path: Point[]; elevation?: number }
