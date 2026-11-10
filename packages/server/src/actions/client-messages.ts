@@ -96,6 +96,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('rollMode'), mode: z.enum(ROLL_MODES) }),
   z.object({ t: z.literal('door'), chunk: z.string(), wall: z.string(), state: DoorStateSchema }),
   z.object({ t: z.literal('trigger'), tile: z.string(), token: z.string().optional() }),
+  z.object({ t: z.literal('triggerChoice'), id: z.string().max(64), option: z.number().int().min(0).max(7) }),
   z.object({ t: z.literal('changeLevel'), token: z.string(), level: z.string() }),
   z.object({ t: z.literal('chat'), text: z.string().min(1).max(2000) }),
   z.object({

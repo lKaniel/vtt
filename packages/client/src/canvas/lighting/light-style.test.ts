@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ambientColor, falloff, lightColor, lightPulse, parseColor } from './light-style.ts';
+import { ambientColor, falloff, lightColor, lightPulse, parseColor, twilightGlow } from './light-style.ts';
 
 describe('parseColor', () => {
   it('reads #rgb and #rrggbb, and falls back for anything else', () => {
@@ -24,6 +24,27 @@ describe('ambientColor', () => {
     const [r, g, b] = [(night >> 16) & 255, (night >> 8) & 255, night & 255];
     expect(b).toBeGreaterThan(r);
     expect(Math.max(r, g, b)).toBeLessThan(0x50);
+  });
+});
+
+describe('dawn and dusk', () => {
+  const channels = (c: number) => [(c >> 16) & 255, (c >> 8) & 255, c & 255] as const;
+
+  it('glows most halfway into the dark, and not at all by day or full night', () => {
+    expect(twilightGlow(0, 1)).toBe(0);
+    expect(twilightGlow(1, 1)).toBe(0);
+    expect(twilightGlow(0.5, 1)).toBe(1);
+    expect(twilightGlow(0.4, 0.8)).toBe(1);
+    expect(twilightGlow(0.2, 1)).toBeGreaterThan(0);
+    expect(twilightGlow(0.5, 0)).toBe(0);
+  });
+
+  it('warms the light toward orange as it glows', () => {
+    const [r, g, b] = channels(ambientColor(0.5, 1));
+    expect(r).toBeGreaterThan(b + 40);
+    expect(r).toBeGreaterThan(g);
+    const plain = channels(ambientColor(0.5));
+    expect(plain[2]).toBeGreaterThan(b);
   });
 });
 

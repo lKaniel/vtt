@@ -1,4 +1,4 @@
-import type { FoundryImportReport, LeftOut } from '@vtt/shared';
+import type { FoundryImportReport, KeptWork, LeftOut } from '@vtt/shared';
 import { t } from './i18n/index.ts';
 
 // The lobby's words for what a Foundry world import brought (ui/FoundryImport.tsx).
@@ -28,4 +28,11 @@ export function leftOutDetail(l: LeftOut): string {
   const more = l.count > l.examples.length ? ', …' : '';
   const examples = l.examples.length ? l.examples.join(', ') + more : '';
   return [where, examples].filter(Boolean).join(' · ');
+}
+
+/** What a re-import kept of the game: "Kept from this game: 40 files, with the scenes Grotto, Glade." */
+export function keptSummary(k: KeptWork): string {
+  return k.scenes.length
+    ? t('foundry.kept', { files: k.files, scenes: k.scenes.join(', ') })
+    : t('foundry.keptNoScenes', { files: k.files });
 }

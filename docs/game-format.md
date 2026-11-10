@@ -147,7 +147,8 @@ Indoors (ground under a roof, an overhead tile or the floor above, that
 walls close in on every side) the sky's light never reaches: it is dark
 there at any hour, lit only by lamps and seen with darkvision. A missing
 wall, an open door or a window (a wall that lets light through) lets the
-daylight in again.
+daylight in, two squares deep: the far end of a long hall stays dark. On a
+scene whose darkness follows the clock, dawn and dusk tint the light orange.
 `vision` (default `true`) is fog of war: players see only what their tokens
 can. The GM can check what a creature sees with "See through its eyes" in
 its right-click menu (light, sight and fog as its players get them). `chunkSize` (default 2000, a multiple of `gridSize`) is how big the
@@ -300,21 +301,27 @@ pixels.
   `on` is `"click"` (the default: a player clicks it in the tokens mode, with
   the creature they have selected) or `"enter"` (a creature walks onto it; a
   hidden plate still works). `once` turns it off after it runs, `gmOnly` lets
-  only the GM click it. Players are told only that a tile can be clicked. The
-  actions, in order (regions take them as behaviours too):
+  only the GM click it. `"near": 150` lets only a creature within that many
+  pixels of the tile use it (0: standing on it; the one clicked with, else
+  the player's nearest; the GM's click needs none). Players are told only
+  that a tile can be clicked. The actions, in order (regions take them as
+  behaviours too):
 
-  | Action                                                                                  | What it does                                                                                                                                                                  |
-  | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                 | Shows the next picture, round and round; `tile` names another tile.                                                                                                           |
-  | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }`  | Shows, hides or toggles a tile, token, region, drawing, note, sound or light (a hidden light is out).                                                                         |
-  | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                        | Plays once for everyone on the scene.                                                                                                                                         |
-  | `{ "type": "teleport", "to": [x, y], "scene": "cellar", "level": "loft" }`              | Moves the creature that set it off (the actions after it wait), onto `level` when named.                                                                                      |
-  | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                    | Opens, closes, locks or toggles a door.                                                                                                                                       |
-  | `{ "type": "message", "text": "…", "gmOnly": true }`                                    | Says it in chat.                                                                                                                                                              |
-  | `{ "type": "journal", "entry": "letter", "page": "p1" }`                                | Shares the entry with the players and opens it on their screens.                                                                                                              |
-  | `{ "type": "activate", "target": { "coll": "tiles", "id": "trap" }, "to": "off" }`      | Turns another tile's trigger (or a region) `on`, `off` or `toggle`.                                                                                                           |
-  | `{ "type": "elevation", "target": { "coll": "tiles", "id": "lift" }, "by": 20 }`        | Raises or lowers a tile (its model) or a creature `by` feet, or `to` a height; no `target`: the creature that set it off. Creatures standing on a tile ride with it (a lift). |
-  | `{ "type": "shift", "target": { "coll": "tiles", "id": "cell-door" }, "by": [0, 130] }` | Slides a tile or a creature that many pixels (a sliding door).                                                                                                                |
+  | Action                                                                                                                | What it does                                                                                                                                                                  |
+  | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                                               | Shows the next picture, round and round; `tile` names another tile.                                                                                                           |
+  | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }`                                | Shows, hides or toggles a tile, token, region, drawing, note, sound or light (a hidden light is out).                                                                         |
+  | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                                                      | Plays once for everyone on the scene.                                                                                                                                         |
+  | `{ "type": "teleport", "to": [x, y], "scene": "cellar", "level": "loft" }`                                            | Moves the creature that set it off (the actions after it wait), onto `level` when named.                                                                                      |
+  | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                                                  | Opens, closes, locks or toggles a door.                                                                                                                                       |
+  | `{ "type": "message", "text": "…", "gmOnly": true }`                                                                  | Says it in chat.                                                                                                                                                              |
+  | `{ "type": "journal", "entry": "letter", "page": "p1" }`                                                              | Shares the entry with the players and opens it on their screens.                                                                                                              |
+  | `{ "type": "activate", "target": { "coll": "tiles", "id": "trap" }, "to": "off" }`                                    | Turns another tile's trigger (or a region) `on`, `off` or `toggle`.                                                                                                           |
+  | `{ "type": "elevation", "target": { "coll": "tiles", "id": "lift" }, "by": 20 }`                                      | Raises or lowers a tile (its model) or a creature `by` feet, or `to` a height; no `target`: the creature that set it off. Creatures standing on a tile ride with it (a lift). |
+  | `{ "type": "shift", "target": { "coll": "tiles", "id": "cell-door" }, "by": [0, 130] }`                               | Slides a tile or a creature that many pixels (a sliding door).                                                                                                                |
+  | `{ "type": "rotate", "target": { "coll": "tiles", "id": "wheel" }, "by": 90 }`                                        | Turns a tile, or a light's beam (`"coll": "lights"`), `by` degrees clockwise, or `to` an angle.                                                                               |
+  | `{ "type": "view", "scene": "cellar", "everyone": true }`                                                             | Shows another scene to the player who set it off (and the players of its creature), or to everyone; no creature moves.                                                        |
+  | `{ "type": "choice", "title": "The well", "text": "Climb down?", "options": [{ "label": "Yes", "actions": [ … ] }] }` | Asks the player who set it off (or the players of its creature) to pick a button; that button's actions run (any action but a choice). The actions after it don't run.        |
 
   The GM edits a trigger (or a region's behaviours) with the inspector's
   **Add trigger…** button.
@@ -1393,7 +1400,10 @@ time at that moment; `speed` is game seconds per real second.
 In a fight, and in turn-based mode outside one (the GM's "Turn-based" button:
 the party takes turns), the clock holds still and each round adds 6 seconds;
 `round` is the fight round it last counted. A short rest lets 1 hour pass, a
-long rest 8. Everything that lasts has its end on the clock: effects
+long rest 8. Only one long rest in 24 hours does a creature good: it keeps
+`longRestAt`, the clock second its last one ended, and the GM's long rest
+leaves out anyone whose last one ended less than a day before this one would
+(and refuses, letting no time pass, when that is everyone). Everything that lasts has its end on the clock: effects
 (`endsAt`), concentration and summons (`concentration.endsAt`,
 `summon.endsAt`), templates, and lights with `lasts` (placed ones and the
 light a token carries: a lit torch burns for an hour, a lantern for 6). Gear

@@ -124,6 +124,7 @@ export class Game {
       scene,
       show,
       ask: (token, msg) => askMovers(this.on(store.currentScene), token, msg, (c, m) => this.send(c, m)),
+      tell: (who, msg) => [...this.clients].filter((c) => c.player.id === who).forEach((c) => this.send(c, msg)),
     });
     this.history = new History(store, (ids, undone) => this.chat.undone(ids, undone));
     this.clock = new WorldClock(table, { now, step: (fn) => this.timePasses(fn), say });

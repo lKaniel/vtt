@@ -51,6 +51,10 @@ const NewPlayerInput = z.object({
 });
 const RoleInput = z.object({ role: RoleSchema });
 const PasswordInput = z.object({ password: z.string().max(200).nullable() });
+const FoundryAgainInput = z.object({
+  folder: z.string().max(1000).optional(),
+  dataDir: z.string().max(1000).optional(),
+});
 const FoundryInput = z.object({
   folder: z.string().min(1).max(1000),
   name: z.string().max(80).optional(),
@@ -132,6 +136,7 @@ export class LobbyRoutes implements Routes {
   private byPath(g: GameCall, sub: string): Promise<void> {
     if (sub === 'players') return this.players(g);
     if (sub === 'backups' || sub === 'export') return this.archive(g);
+    if (sub === 'reimport-foundry' && g.call.method === 'POST') return this.reimportFoundry(g);
     if (this.characterRoutes.handles(sub)) return this.characterRoutes.serve(g);
     throw new HttpError(405, 'Method not allowed.');
   }
@@ -185,6 +190,14 @@ export class LobbyRoutes implements Routes {
     const input = await parseBody(call.req, FoundryInput);
     const { id, report } = await this.deps.hub.importFoundry(input.folder.trim(), FIRST_GM, input);
     await this.made(call, id, { report });
+  }
+
+  /** Admin: the Foundry world a game was made from, imported again into it; everyone reconnects. */
+  private async reimportFoundry({ call, info }: GameCall): Promise<void> {
+    this.requireAdmin(call);
+    const input = await parseBody(call.req, FoundryAgainInput);
+    const report = await this.deps.hub.reimportFoundry(info.id, FIRST_GM, input);
+    send(call.res, 200, { report });
   }
 
   /** Admin: a new game from a zip a GM exported. */

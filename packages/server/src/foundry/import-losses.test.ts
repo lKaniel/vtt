@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { leftOutLine, LossLog, lost, placed } from './import-losses.ts';
+import { leftOutLine, LossLog, lost, placed, reportLines } from './import-losses.ts';
 
 describe('LossLog', () => {
   it('groups one kind of loss over the whole world, the most first', () => {
@@ -32,5 +32,38 @@ describe('LossLog', () => {
     expect(leftOutLine(tiles!)).toMatch(
       /^30 Tiles whose picture could not be found \(in 30: Scene 0, .*, \.\.\.\): p0\.webp, .*, \.\.\.$/,
     );
+  });
+});
+
+describe('reportLines', () => {
+  const report = {
+    name: 'Cursed Lands',
+    scenes: 2,
+    actors: 3,
+    tokens: 4,
+    journals: 1,
+    tables: 0,
+    playlists: 1,
+    media: 9,
+    left: [{ what: 'Cards', count: 2, examples: [], places: [], placeCount: 0 }],
+  };
+
+  it('says what a new game got and what stayed behind', () => {
+    expect(reportLines('cursed-lands', report)).toEqual([
+      'Made "Cursed Lands" (data/games/cursed-lands): 2 scenes, 3 actors, 4 tokens, 1 journal entries, 0 tables, 1 playlists, 9 files.',
+      '  left out: 2 Cards',
+    ]);
+  });
+
+  it('says what a re-import kept of the game', () => {
+    const lines = reportLines('cursed-lands', {
+      ...report,
+      left: [],
+      kept: { files: 12, scenes: ['Grotto', 'Glade'] },
+    });
+    expect(lines).toEqual([
+      expect.stringMatching(/^Imported again "Cursed Lands"/),
+      '  kept from the VTT: 12 files, scenes: Grotto, Glade',
+    ]);
   });
 });

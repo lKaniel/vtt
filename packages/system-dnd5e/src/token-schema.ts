@@ -119,6 +119,8 @@ export const TokenSchema = z.object({
   biography: z.string().max(100_000).optional(),
   /** Spells, conditions and features currently affecting the token. */
   effects: z.array(EffectSchema).optional(),
+  /** Game time (seconds) its last long rest ended: one long rest in 24 hours does it good. */
+  longRestAt: z.number().optional(),
   /** The spell this creature is concentrating on. */
   concentration: z.object({ spell: id, name: z.string(), endsAt: z.number().optional() }).optional(),
   /** Spell slots and feature uses spent since the last rest. */

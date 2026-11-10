@@ -18,7 +18,7 @@ export type BackupReason = BackupInfo['reason'];
 
 const MetaSchema = z.object({
   at: z.number(),
-  reason: z.enum(['load', 'timer', 'manual', 'restore']),
+  reason: z.enum(['load', 'timer', 'manual', 'restore', 'reimport']),
   hash: z.string(),
 });
 
