@@ -22,3 +22,24 @@ export const EN_BAILEYWIKI = {
   'baileywiki.leftOut': 'Left out',
   'baileywiki.private': 'Paid content: the pack stays on this server, never share it.',
 } as const;
+
+// Setup's nightly backups off the server.
+export const EN_OFFSITE = {
+  'offsite.title': 'Backups off the server',
+  'offsite.none':
+    'This server keeps no copy of its games anywhere else. Set up backup storage in its .env (VTT_BACKUP_S3_* or VTT_BACKUP_DIR) to copy every game there each night.',
+  'offsite.target': 'Each night after {hour}:00 UTC, every game is copied to {target}.',
+  'offsite.lastRun': 'Last copy: {when}, {n} games.',
+  'offsite.never': 'No copy made yet.',
+  'offsite.failed': 'The copy of {when} failed: {message}',
+  'offsite.now': 'Back up now',
+  'offsite.running': 'Backing up…',
+  'offsite.done': 'Copied {n} games.',
+  'offsite.night': 'Night',
+  'offsite.noNights': 'No nights to restore from yet.',
+  'offsite.restore': 'Restore',
+  'offsite.restoreHint':
+    'Puts the game back as it was that night, pictures and all (the game as it is now is backed up here first)',
+  'offsite.restored': 'Restored {game} to {night}.',
+  'offsite.gone': 'deleted since',
+} as const;

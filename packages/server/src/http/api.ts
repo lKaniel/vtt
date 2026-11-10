@@ -17,6 +17,8 @@ import { LobbyRoutes } from './lobby-api.ts';
 import { BaileywikiError } from '../foundry/baileywiki-client.ts';
 import { mcpHandler } from '../mcp/mcp-http.ts';
 import { BackupError } from '../library/backups.ts';
+import { OffsiteError, type OffsiteBackups } from '../library/offsite-backups.ts';
+import { OffsiteRoutes } from './offsite-api.ts';
 import { ArchiveError } from '../library/game-archive.ts';
 import { SessionError, type SessionStore } from './sessions.ts';
 
@@ -33,6 +35,8 @@ export interface ApiDeps {
   mcpKey?: string;
   /** Baileywiki's content server; content.baileywiki.com unless a test runs its own. */
   baileywiki?: string;
+  /** Nightly backups off the server, when it has backup storage. */
+  offsite?: OffsiteBackups;
 }
 
 const AdminInput = z.object({ password: z.string().max(200) });
@@ -44,11 +48,17 @@ const isRefusal = (e: unknown): e is Error =>
   e instanceof BaileywikiError ||
   e instanceof HubError ||
   e instanceof BackupError ||
+  e instanceof OffsiteError ||
   e instanceof ArchiveError;
 
 /** Handles /api/ requests about the session and games; returns false for anything else. */
 export function apiHandler(deps: ApiDeps): (req: IncomingMessage, res: ServerResponse) => Promise<boolean> {
-  const all: Routes[] = [new SessionRoutes(deps), new LobbyRoutes(deps), new BaileywikiRoutes(deps)];
+  const all: Routes[] = [
+    new SessionRoutes(deps),
+    new LobbyRoutes(deps),
+    new BaileywikiRoutes(deps),
+    new OffsiteRoutes(deps),
+  ];
   const mcp = mcpHandler(deps);
   return async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');

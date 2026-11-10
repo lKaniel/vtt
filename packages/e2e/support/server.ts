@@ -21,6 +21,8 @@ export interface ServerOptions {
   seed?: number;
   /** VTT_BAILEYWIKI_URL: a stand-in for Baileywiki's content server. */
   baileywiki?: string;
+  /** VTT_BACKUP_DIR: nightly backups off the server go to a folder next to the game. */
+  offsite?: boolean;
 }
 
 export interface RunningServer {
@@ -71,6 +73,22 @@ function stopper(child: ChildProcess, root: string) {
   };
 }
 
+/** The server's environment: only what the spec asks for, never the developer's own settings. */
+function serverEnv(options: ServerOptions, root: string, port: number): NodeJS.ProcessEnv {
+  const own = /^VTT_(ADMIN_PASSWORD|MCP_KEY|BAILEYWIKI_URL|BACKUP_)/;
+  const env: NodeJS.ProcessEnv = {
+    ...Object.fromEntries(Object.entries(process.env).filter(([name]) => !own.test(name))),
+    PORT: String(port),
+    VTT_GAME: join(root, 'world'),
+    VTT_DATA: join(root, 'data'),
+  };
+  if (options.adminPassword) env.VTT_ADMIN_PASSWORD = options.adminPassword;
+  if (options.mcpKey) env.VTT_MCP_KEY = options.mcpKey;
+  if (options.baileywiki) env.VTT_BAILEYWIKI_URL = options.baileywiki;
+  if (options.offsite) env.VTT_BACKUP_DIR = join(root, 'offsite');
+  return env;
+}
+
 export async function startServer(options: ServerOptions = {}): Promise<RunningServer> {
   const root = await mkdtemp(join(tmpdir(), 'vtt-e2e-'));
   const gameDir = join(root, 'world');
@@ -78,13 +96,7 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
   await cp(join(repoRoot, 'world'), gameDir, { recursive: true });
   await options.prepare?.(gameDir);
   const port = await freePort();
-  const env: NodeJS.ProcessEnv = { ...process.env, PORT: String(port), VTT_GAME: gameDir, VTT_DATA: dataDir };
-  delete env.VTT_ADMIN_PASSWORD;
-  delete env.VTT_MCP_KEY;
-  delete env.VTT_BAILEYWIKI_URL;
-  if (options.adminPassword) env.VTT_ADMIN_PASSWORD = options.adminPassword;
-  if (options.mcpKey) env.VTT_MCP_KEY = options.mcpKey;
-  if (options.baileywiki) env.VTT_BAILEYWIKI_URL = options.baileywiki;
+  const env = serverEnv(options, root, port);
   const seeded =
     options.seed === undefined ? [] : ['--import', join(repoRoot, 'packages/e2e/support/seeded-random.ts')];
   if (options.seed !== undefined) env.E2E_RANDOM_SEED = String(options.seed);
