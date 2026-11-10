@@ -128,9 +128,14 @@ export interface SaveRoll {
   roll?: Roll;
   total: number;
   success: boolean;
+  /** An ability check against the other side's check, not a saving throw. */
+  check?: boolean;
   /** A failed save turned into a success with legendary resistance. */
   legendary?: boolean;
 }
+
+/** A save or contest as the chat card shows it. */
+export const saveLog = ({ ability, dc, total, success, check }: SaveRoll) => ({ ability, dc, total, success, check });
 
 /** "1d20+3+1d4", or "2d20kh1-1" with advantage. */
 export function d20Formula(

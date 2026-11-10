@@ -35,6 +35,7 @@ export function FeatureForm({ feature, onSave }: Readonly<{ feature: Feature; on
             { value: '', label: 'Nothing (passive)' },
             { value: 'action', label: 'An action' },
             { value: 'bonus', label: 'A bonus action' },
+            { value: 'attack', label: 'One attack of the Attack action' },
             { value: 'free', label: 'No action' },
           ]}
         />

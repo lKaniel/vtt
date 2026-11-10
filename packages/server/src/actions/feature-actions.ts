@@ -30,11 +30,12 @@ export class FeatureActions {
     const cost: Cost = feature.action ?? 'free';
     this.table.check(token, cost);
     const out = useFeature(token, sheet, featureId, this.table.rng);
-    this.table.pay(token, cost);
+    this.table.pay(token, cost, sheet.attacksPerAction);
     this.store.setToken({ ...out.token, x: token.x, y: token.y });
     this.grant(token, out);
-    const detail = out.healed !== undefined ? ` and regains ${out.healed} HP` : '';
-    this.table.note(`${token.name} uses ${feature.name}${detail}`);
+    const healed = out.healed !== undefined ? ` and regains ${out.healed} HP` : '';
+    const rolled = out.check ? `: ${out.check.name} ${out.check.total}` : '';
+    this.table.note(`${token.name} uses ${feature.name}${rolled}${healed}`);
   }
 
   /** What a feature gives back this turn: the action, movement or attacks. */

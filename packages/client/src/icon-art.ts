@@ -37,18 +37,19 @@ const BORROWED: Record<string, [Kind, string]> = {
   'step-of-the-wind': ['actions', 'dash'],
   'flurry-of-blows': ['actions', 'melee-attack'],
   'martial-arts': ['actions', 'melee-attack'],
+  grapple: ['actions', 'shove'],
   'turn-undead': ['features', 'channel-divinity'],
   'paladins-smite': ['features', 'divine-smite'],
 };
 
-/** A class feature's picture; Dash, Dodge and Disengage (and cunning-dash and the like) use the action icons. */
+/** A class feature's picture; Dash, Dodge, Hide and the other basic actions (and cunning-dash and the like) use the action icons. */
 export function featureArt(feature: Pick<FeatureSheet, 'id'> & { name?: string }): string | undefined {
   const own =
     packPicture('feature', feature.id, feature.name) ?? art('features', feature.id) ?? art('actions', feature.id);
   if (own) return own;
   const borrowed = BORROWED[feature.id];
   if (borrowed) return art(...borrowed);
-  const basic = /-(dash|dodge|disengage)$/.exec(feature.id);
+  const basic = /-(dash|dodge|disengage|hide)$/.exec(feature.id);
   return basic ? art('actions', basic[1]!) : undefined;
 }
 /** A weapon attack shows its weapon's picture from the packs, else the painted melee or ranged attack. */

@@ -33,6 +33,60 @@ const BASIC: Feature[] = [
     effect: { name: 'Disengaged', disengaged: true, rounds: 1 },
     description: "Your movement doesn't provoke opportunity attacks for the rest of the turn.",
   },
+  {
+    id: 'hide',
+    name: 'Hide',
+    level: 1,
+    action: 'action',
+    recharge: 'long',
+    check: { ability: 'dex', skill: 'stealth' },
+    effect: { name: 'Hidden', advantage: true, disadvantageAgainst: true, endsOnAttack: true },
+    description:
+      "Make a Dexterity (Stealth) check out of sight. Until you attack, cast a spell or are found, creatures whose passive Perception is lower than the check don't know where you are: you attack them with advantage and they attack you with disadvantage.",
+  },
+  {
+    id: 'help',
+    name: 'Help',
+    level: 1,
+    action: 'action',
+    recharge: 'long',
+    spell: { targets: 1, range: 5, rounds: 1, effect: { name: 'Helped', advantage: true, once: true, rounds: 1 } },
+    description:
+      'Aid a creature within 5 feet: it has advantage on its next attack roll before the start of your next turn. For help with an ability check, the GM gives the advantage when asking for the roll.',
+  },
+  {
+    id: 'grapple',
+    name: 'Grapple',
+    level: 1,
+    action: 'attack',
+    recharge: 'long',
+    spell: {
+      targets: 1,
+      range: 5,
+      save: { ability: 'str', grapple: true },
+      effect: { name: 'Grappled', conditions: ['grappled'] },
+    },
+    description:
+      'In place of one attack, seize a creature within 5 feet that is no more than one size larger than you. 2014: your Strength (Athletics) check against its Athletics or Acrobatics. 2024: it makes a Strength or Dexterity save against 8 + your Strength modifier + your proficiency bonus. If it fails it is grappled: its speed is 0 until it escapes or you let go (the GM ends the effect).',
+  },
+  {
+    id: 'shove',
+    name: 'Shove',
+    level: 1,
+    action: 'attack',
+    recharge: 'long',
+    spell: {
+      targets: 1,
+      range: 5,
+      save: { ability: 'str', grapple: true },
+      choices: [
+        { id: 'prone', name: 'Knock prone', set: { effect: { name: 'Prone', conditions: ['prone'], rounds: 1 } } },
+        { id: 'push', name: 'Push 5 feet', set: { push: 5 } },
+      ],
+    },
+    description:
+      'In place of one attack, shove a creature within 5 feet that is no more than one size larger than you, resisted like a grapple. If it fails, knock it prone or push it 5 feet away.',
+  },
 ];
 
 /** Bonus action versions of basic actions a feature allows (cunning action). */

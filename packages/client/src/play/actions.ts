@@ -45,7 +45,7 @@ export interface MacroCard {
 /** Finds a macro the seat may run, by id. */
 export type MacroLookup = (id: string) => MacroCard | undefined;
 
-export type Cost = 'action' | 'bonus' | 'reaction' | 'free' | 'long';
+export type Cost = 'action' | 'bonus' | 'attack' | 'reaction' | 'free' | 'long';
 
 export const TABS = ['all', 'attacks', 'spells', 'features'] as const;
 export type Tab = (typeof TABS)[number];
@@ -122,6 +122,7 @@ export function affordable(tile: ActionTile, left: TurnBudget | undefined): bool
   if (!left) return true;
   const cost = costOf(tile);
   if (cost === 'bonus') return left.bonus;
+  if (cost === 'attack') return left.action || left.attacks > 0;
   if (cost !== 'action') return true;
   return left.action || (tile.kind === 'attack' && left.attacks > 0);
 }

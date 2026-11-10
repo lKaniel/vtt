@@ -1,4 +1,5 @@
 import { contest } from './checks.ts';
+import { grappleSave } from './grapples.ts';
 import { rollSpellSave, type Affected, type SaveRoll } from './effects.ts';
 import { resistSave } from './legendary.ts';
 import type { Cast, CastSide } from './spells.ts';
@@ -12,6 +13,7 @@ export function castSave(cast: Cast, target: CastSide): SaveRoll | undefined {
   const { spell, dc, rng } = cast;
   if (!spell.save?.onCast) return undefined;
   if (spell.save.contest) return contest(spell.save.ability, cast.caster, target, rng);
+  if (spell.save.grapple) return grappleSave(cast.caster, target, rng);
   const save = { ability: spell.save.ability, dc: spell.save.dc ?? dc, vs: spell.effect?.conditions ?? [] };
   return resistSave(target.sheet, rollSpellSave(target.sheet, save, rng));
 }

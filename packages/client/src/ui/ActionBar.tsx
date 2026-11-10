@@ -306,7 +306,14 @@ function Tile({
   onDragEnd?: (e: React.DragEvent) => void;
 }>) {
   const usable = !tile.spent && affordable(tile, budget);
-  const cls = ['tile', `cost-${costOf(tile)}`, isActive(session, tile) && 'active', !usable && 'unusable'];
+  const cost = costOf(tile);
+  // One attack of the Attack action wears the action's colour.
+  const cls = [
+    'tile',
+    `cost-${cost === 'attack' ? 'action' : cost}`,
+    isActive(session, tile) && 'active',
+    !usable && 'unusable',
+  ];
   return (
     <button
       className={cls.filter(Boolean).join(' ')}

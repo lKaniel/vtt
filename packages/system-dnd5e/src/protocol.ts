@@ -51,7 +51,8 @@ export interface SpellTargetLog {
   attack?: Roll;
   hit?: boolean;
   crit?: boolean;
-  save?: { ability: Ability; dc: number; total: number; success: boolean };
+  /** `check`: an ability check against the other side's check (a contest, a 2014 grapple), not a saving throw. */
+  save?: { ability: Ability; dc: number; total: number; success: boolean; check?: boolean };
   damage: number;
   healed?: number;
   /** Name of the effect it left, e.g. "Hold Person". */
@@ -75,6 +76,8 @@ export interface SpellLog {
   area?: Area;
   /** Slot level; 0 for a cantrip. */
   slot: number;
+  /** A feature or basic action aimed like a spell (a breath weapon, Grapple): it is used, not cast. */
+  feature?: boolean;
   results: SpellTargetLog[];
   notes: string[];
   /** The animation the caster picked for this spell; missing plays the default. */

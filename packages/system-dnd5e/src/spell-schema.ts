@@ -395,6 +395,8 @@ export const SpellSchema = z.object({
       dc: z.number().int().positive().optional(),
       /** An ability check in `ability` against the caster's spellcasting check instead of a save (2014 telekinesis). */
       contest: z.boolean().optional(),
+      /** A grapple or shove (grapples.ts): Athletics against Athletics or Acrobatics in 2014, a Strength or Dexterity save in 2024. */
+      grapple: z.boolean().optional(),
     })
     .optional(),
   damage: z.array(DamageSchema).default([]),
@@ -548,8 +550,10 @@ export const FeatureSchema = z.object({
   recharge: z.enum(['short', 'short-one', 'long']).default('long'),
   /** A monster's "Recharge 5-6": a spent use comes back at the start of its turn on a d6 roll of this or more. */
   rechargeOn: z.number().int().min(2).max(6).optional(),
-  /** What using it costs on your turn. Passive features have none. */
-  action: z.enum(['action', 'bonus', 'free']).optional(),
+  /** What using it costs on your turn: "attack" is one attack of the Attack action. Passive features have none. */
+  action: z.enum(['action', 'bonus', 'free', 'attack']).optional(),
+  /** Using it rolls this check and says the total (Hide: Dexterity (Stealth)). */
+  check: z.object({ ability: AbilitySchema, skill: id.optional() }).optional(),
   /** Hit points regained on use; "level" stands for the class level, e.g. "1d10+level". */
   heal: z.string().optional(),
   /** Gives back your action (action surge). */

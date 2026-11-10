@@ -38,6 +38,12 @@ function chosen(spell: Spell, choice: string | undefined): Spell {
   }
 }
 
+/** A grapple or shove takes a creature no more than one size larger. */
+function fitsInHands(caster: Fighter, targets: readonly Fighter[]): void {
+  const big = targets.find((t) => t.token.size > caster.token.size + 1);
+  if (big) throw new Refusal(`${big.token.name} is too big for ${caster.token.name} to move`);
+}
+
 /** Uses a feature aimed like a spell (bardic inspiration, lay on hands, turn undead): one use, no slot. */
 export function castFeature(
   { table, spells }: { table: Table; spells: SpellActions },
@@ -54,9 +60,10 @@ export function castFeature(
   let spell = chosen(poolSpell(featureSpell(feature), feature, caster.sheet), req.choice);
   const aim = { ...req, caster: req.token, spell: spell.id, slot: 0, targets: req.targets ?? [] };
   const targets = spells.targets(caster, spell, aim, canSee);
+  if (spell.save?.grapple) fitsInHands(caster, targets);
   const spend = feature.healPool ? poolHealing(feature, targets) : 1;
   if (feature.healPool) spell = { ...spell, heal: String(spend) };
-  table.pay(caster.token, cost);
+  table.pay(caster.token, cost, caster.sheet.attacksPerAction);
   table.store.setToken(spendUse(table.store.tokens.get(caster.token.id)!, feature, spend, caster.sheet));
   const before = hpOf(table, targets);
   spells.strike(caster.token.id, { spell, slot: 0, point: req.point }, targets);

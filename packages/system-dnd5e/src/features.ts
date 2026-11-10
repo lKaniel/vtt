@@ -2,6 +2,8 @@ import { type FeatureSheet, levelValue } from './classes.ts';
 import { keptResistance } from './legendary.ts';
 import { characterLevel } from './multiclass.ts';
 import type { Creature } from './creature.ts';
+import { rollCheck } from './checks.ts';
+import { skillName } from './origins.ts';
 import { hitDiceOf, restedExhaustion, restedHitDice } from './vigour.ts';
 import { type Rng, roll } from '@vtt/shared';
 import { gainMomentum, momentumForSpend, spendMomentum } from './momentum.ts';
@@ -47,6 +49,8 @@ export interface FeatureUse {
   dash?: number;
   /** Extra attacks this turn (flurry of blows). */
   grantAttacks?: number;
+  /** The check it rolled (Hide's Stealth). */
+  check?: { name: string; total: number };
 }
 
 /** Spends uses; with the sheet, points of a momentum pool's source build momentum dice. A finisher spends every die. */
@@ -96,7 +100,15 @@ export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng =
     grantAction: feature.grantAction,
     dash: finish.dash ?? dashOf(feature, sheet.speed),
     grantAttacks: finish.grantAttacks ?? feature.grantAttacks,
+    ...featureCheck(token, sheet, feature, rng),
   };
+}
+
+/** The check a feature rolls when used, named by its skill or ability. */
+function featureCheck(token: Token, sheet: Creature, feature: FeatureSheet, rng: Rng): Pick<FeatureUse, 'check'> {
+  if (!feature.check) return {};
+  const name = feature.check.skill ? skillName(feature.check.skill) : feature.check.ability.toUpperCase();
+  return { check: { name, total: rollCheck(token, sheet, feature.check, rng).total } };
 }
 
 /** The hit points a healing feature gives back (second wind). */

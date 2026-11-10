@@ -50,7 +50,8 @@ const illusionist = {
 };
 
 const content = contentWith('2014', homebrewCompendia([illusionist]));
-const own = (ids: string[]) => ids.filter((id) => !['dash', 'dodge', 'disengage', 'hide', 'help'].includes(id));
+const own = (ids: string[]) =>
+  ids.filter((id) => !['dash', 'dodge', 'disengage', 'hide', 'help', 'grapple', 'shove'].includes(id));
 const hero = (stats: object) => TokenSchema.parse({ id: 'h', name: 'Hero', x: 0, y: 0, stats });
 
 describe('homebrew classes', () => {

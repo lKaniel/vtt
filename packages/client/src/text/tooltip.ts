@@ -18,6 +18,7 @@ export interface Tip {
 const COST: Record<string, string> = {
   action: 'Action',
   bonus: 'Bonus action',
+  attack: 'One attack',
   reaction: 'Reaction',
   minute: '1 minute',
   hour: '1 hour',
