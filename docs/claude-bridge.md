@@ -7,7 +7,8 @@ editing documents while everyone watches.
 
 ## Connecting
 
-1. Join the game, open its page and press **Connect Claude**, then
+1. Join the game, sit at the table and press **Connect Claude** (the robot
+   in the top bar), then
    **Make a key**. The key is shown once; a new one replaces it. Claude plays
    as the player you joined as, at that game.
 2. Paste the command it shows into a terminal:

@@ -63,6 +63,19 @@ describe('exhaustion', () => {
   });
 });
 
+describe('heroic inspiration', () => {
+  it('is given by the GM, and spent by the one playing the character', () => {
+    const ana = join_('ana');
+    ana.receive({ t: 'inspiration', token: 'hero', on: true });
+    expect(hero().inspiration).toBeUndefined();
+    expect(ana.take('error').map((e) => e.message)).toEqual(['Only the GM gives inspiration']);
+    join_('gm').receive({ t: 'inspiration', token: 'hero', on: true });
+    expect(hero().inspiration).toBe(true);
+    ana.receive({ t: 'inspiration', token: 'hero', on: false });
+    expect(hero().inspiration).toBeUndefined();
+  });
+});
+
 describe('experience', () => {
   it('is awarded by the GM to each character named, and says who can level up', () => {
     store.setToken(TokenSchema.parse({ ...hero(), stats: { ...hero().stats, xp: 2600 } }));

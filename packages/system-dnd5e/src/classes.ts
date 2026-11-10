@@ -119,6 +119,8 @@ export interface CasterSheet {
   /** The pact slots among `slots` of a multiclassed warlock (index 0 = 1st), back on a short rest. */
   pactSlots?: number[];
   spells: Spell[];
+  /** Spells cast at their own level without a slot: a non-caster's homemade ones. */
+  atWill?: string[];
 }
 
 interface Basics {
@@ -133,22 +135,33 @@ interface Casting {
   slots: number[];
   pact?: number[];
   allPact: boolean;
+  /** No slots: its homemade spells are cast at will. */
+  atWill?: boolean;
 }
 
 function spellcastingOf(token: Token, content: Content): Casting | undefined {
   const own = token.stats?.spellcasting;
   const level = characterLevel(token.stats) ?? 1;
+  if (own?.progression === 'none') return { ability: own.ability, level, slots: [], allPact: false, atWill: true };
   if (own) {
     const at = own.level ?? level;
     const slots = spellSlots({ progression: own.progression, from: 1 }, at);
     return { ability: own.ability, level: at, slots, allPact: own.progression === 'pact' };
   }
   const casters = castingLevels(classLevels(token, content));
-  if (!casters.length) return undefined;
+  if (!casters.length) return homemadeCasting(token, level);
   const { slots, pact } = combinedSlots(casters, content.edition);
   const allPact = casters.every((c) => c.casting.progression === 'pact');
   const mixed = !allPact && pact.some((n) => n > 0);
   return { ability: casters[0]!.casting.ability, level, slots, allPact, ...(mixed && { pact }) };
+}
+
+/** A creature with no spellcasting but homemade spells casts them at will, with its best mental ability. */
+function homemadeCasting(token: Token, level: number): Casting | undefined {
+  if (!token.own?.spells?.length) return undefined;
+  const a = token.stats?.abilities ?? {};
+  const ability = (['int', 'wis', 'cha'] as const).reduce((best, k) => ((a[k] ?? 10) > (a[best] ?? 10) ? k : best));
+  return { ability, level, slots: [], allPact: false, atWill: true };
 }
 
 /** Spellcasting numbers for a token, or undefined if it casts nothing. */
@@ -174,6 +187,7 @@ export function casterSheet(
     spells: [...new Set([...knownSpellIds(token), ...featureSpellIds(token, content)])]
       .map((id) => content.spells.get(id))
       .filter((s): s is Spell => !!s),
+    ...(casting.atWill && { atWill: token.own?.spells?.map((s) => s.id) ?? [] }),
   };
 }
 

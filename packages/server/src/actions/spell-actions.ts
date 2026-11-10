@@ -30,7 +30,7 @@ import { type DoorPick, doorAt, setDoor } from '../play/spell-doors.ts';
 import { breakTimeStop } from '../play/time-stop.ts';
 import { SpellTargets } from '../play/spell-targets.ts';
 import { stepAside } from '../play/pool-guards.ts';
-import { paidTargets, type Payment, payment, paymentNotes, spendPayment } from '../play/feature-paid.ts';
+import { castsFree, paidTargets, type Payment, payment, paymentNotes, spendPayment } from '../play/feature-paid.ts';
 import { Refusal, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 /** `edge` and `crit`: the caster's own pick for the spell attack. */
@@ -161,7 +161,7 @@ export class SpellActions {
     if (!plan.again) this.begin(caster, spell, plan, req.item ?? !!reader);
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
     const notes = this.conjure(caster, spell, { ...req, slot: plan.slot }, door);
-    const free = plan.again ? [] : paymentNotes(plan.paid, !!req.free && plan.slot > 0);
+    const free = plan.again ? [] : paymentNotes(plan.paid, castsFree(caster, spell, req) && plan.slot > 0);
     this.strike(caster.token.id, { ...req, spell, slot: plan.slot, reader, dc: plan.dc }, targets, [...free, ...notes]);
   }
 

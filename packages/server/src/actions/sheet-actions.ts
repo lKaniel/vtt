@@ -1,4 +1,4 @@
-import { canControl, type Player } from '@vtt/shared';
+import { canControl, isGm, type Player } from '@vtt/shared';
 import {
   attuneProblem,
   characterLevel,
@@ -20,10 +20,14 @@ export { checkAction } from './check-actions.ts';
 // gear, count coins, pack things into containers, attune to magic items,
 // spend hit dice; and the GM's exhaustion and experience awards.
 
-type SheetMessage = Extract<ClientMessage, { t: 'equip' | 'carry' | 'hitDie' | 'exhaustion' | 'awardXp' }>;
+type SheetMessage = Extract<
+  ClientMessage,
+  { t: 'equip' | 'carry' | 'hitDie' | 'exhaustion' | 'inspiration' | 'awardXp' }
+>;
 
 export function sheetAction(table: Table, player: Player, msg: SheetMessage): void {
   if (msg.t === 'hitDie' || msg.t === 'exhaustion') return vigour(table, player, msg);
+  if (msg.t === 'inspiration') return inspire(table, player, msg);
   if (msg.t === 'awardXp') return awardXp(table, player, msg);
   const token = table.store.tokens.get(msg.token);
   if (!token || !canControl(token, player)) throw new Refusal('No such token');
@@ -86,6 +90,14 @@ function vigour(table: Table, player: Player, msg: Extract<SheetMessage, { t: 'h
   const out = spendHitDie(token, sheet, table.rng);
   table.store.setToken(out.token);
   table.note(`${token.name} spends a hit die and regains ${out.healed} HP`);
+}
+
+/** Heroic inspiration: the GM gives it, the one playing the character spends it. */
+function inspire(table: Table, player: Player, msg: Extract<SheetMessage, { t: 'inspiration' }>): void {
+  const { token } = table.fighter(msg.token);
+  if (msg.on && !isGm(player)) throw new Refusal('Only the GM gives inspiration');
+  else if (!canControl(token, player)) throw new Refusal('No such token');
+  table.store.setToken({ ...token, inspiration: msg.on || undefined });
 }
 
 /** The GM gives each named character `xp`, and says who has enough for a new level. */

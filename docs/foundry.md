@@ -176,8 +176,11 @@ v1 to v5 field names):
   save and the damage they roll (with its upcasting). One that does nothing
   we can read comes as its text, for the GM to apply.
 - Where the creature stands: its coins, spent spell slots and hit dice,
-  exhaustion, death saves, what is packed in which bag, and the magic items
-  it is attuned to.
+  exhaustion, death saves, heroic inspiration, what is packed in which bag,
+  and the magic items it is attuned to.
+- What it was trained in: armor, weapons, tools and languages (Foundry's
+  codes and its custom entries) become `stats.proficiencies`, by our ids
+  where we know the thing and by name where we don't.
 - Active effects: the actor's own (with their conditions) and those its
   items give their bearer while worn (a race's resistance, a ring's +1 AC)
   become effects whose `changes` are ours (ability scores, AC, hit points,

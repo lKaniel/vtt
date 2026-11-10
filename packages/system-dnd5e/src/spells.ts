@@ -49,8 +49,15 @@ export function castProblem({
   const stopped = stoppedBy(sheet, spell);
   if (stopped) return stopped;
   if (spell.level === 0) return undefined;
+  if (caster.atWill?.includes(spell.id))
+    return slot === spell.level ? undefined : `casts ${spell.name} only at its own level`;
+  return slotProblem(spell, slot, free ? undefined : caster.left);
+}
+
+/** Why `slot` can't pay for `spell`: too low, or none left (`left` missing: no slot is spent). */
+function slotProblem(spell: Spell, slot: number, left: readonly number[] | undefined): string | undefined {
   if (slot < spell.level || slot > 9) return `needs a slot of ${ORDINAL[spell.level]} level or higher`;
-  if (!free && !caster.left[slot - 1]) return `has no ${ORDINAL[slot]}-level slots left`;
+  if (left && !left[slot - 1]) return `has no ${ORDINAL[slot]}-level slots left`;
   return undefined;
 }
 

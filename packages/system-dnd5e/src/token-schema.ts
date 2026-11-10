@@ -108,6 +108,8 @@ export const TokenSchema = z.object({
     .optional(),
   /** Levels of exhaustion, 1 to 6 (6 is death); a long rest takes one away. */
   exhaustion: z.number().int().min(1).max(6).optional(),
+  /** Holds heroic inspiration: the GM gives it, the player spends it on a roll. */
+  inspiration: z.boolean().optional(),
   /** Temporary hit points: lost first, and don't stack. */
   tempHp: z.number().int().positive().optional(),
   inventory: InventorySchema.optional(),

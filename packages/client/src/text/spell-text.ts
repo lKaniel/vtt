@@ -7,6 +7,7 @@ export const ORDINAL = ['Cantrip', '1st', '2nd', '3rd', '4th', '5th', '6th', '7t
 /** The lowest slot level with a slot left that can cast `spell`; 0 for cantrips, undefined when none is left. */
 export function lowestSlot(token: TokenView, spell: Spell): number | undefined {
   if (spell.level === 0) return 0;
+  if (token.sheet?.caster?.atWill?.includes(spell.id)) return spell.level;
   const left = token.sheet?.caster?.left ?? [];
   const i = left.findIndex((n, idx) => idx + 1 >= spell.level && n > 0);
   return i < 0 ? undefined : i + 1;

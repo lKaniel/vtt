@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { type CasterSheet, dropOwn, type Edition, knownSpellIds, type Spell } from '@vtt/system-dnd5e';
+import { ABILITIES, type CasterSheet, dropOwn, type Edition, knownSpellIds, type Spell } from '@vtt/system-dnd5e';
 import { WandSparklesIcon } from 'lucide-react';
 import { contentFor } from '../../content/content.ts';
 import { t } from '../../i18n/index.ts';
@@ -12,6 +12,7 @@ import { ORDINAL } from '../../text/spell-text.ts';
 import { matches, signed, spellColumns } from '../../text/sheet-text.ts';
 import { spellTip } from '../../text/tooltip.ts';
 import { Badge } from '../kit/badge.tsx';
+import { SelectField } from '../kit/select.tsx';
 import { RemoveButton } from '../RemoveButton.tsx';
 import { EditButton, isOwn, NewButton, useOwnEditor } from '../own/OwnEditor.tsx';
 import { withKey } from '../sheet-model.ts';
@@ -50,7 +51,7 @@ export function SpellsTab(props: Readonly<Props>) {
   const levels = [...new Set(known.map((s) => s.level))].sort((a, b) => a - b);
   return (
     <>
-      <Casting caster={caster} edit={edit} />
+      <Casting caster={caster} edit={edit} update={props.update} />
       <SheetSearch value={query} onChange={setQuery} />
       {levels.map((level) => (
         <ListSection
@@ -77,9 +78,18 @@ export function SpellsTab(props: Readonly<Props>) {
   );
 }
 
-/** The spellcasting ability, attack bonus and save DC, as three boxes; or why there are none. */
-function Casting({ caster, edit }: Readonly<{ caster: CasterSheet | undefined; edit: boolean }>) {
+/**
+ * The spellcasting ability, attack bonus and save DC, as three boxes; or why
+ * there are none. A creature with no spellcasting casts its homemade spells
+ * without slots, with the ability picked here in edit mode.
+ */
+function Casting({
+  caster,
+  edit,
+  update,
+}: Readonly<{ caster: CasterSheet | undefined; edit: boolean; update: Props['update'] }>) {
   if (!caster) return <Empty>{edit ? t('sheet.noCastingEdit') : t('sheet.noCasting')}</Empty>;
+  const homemade = !!caster.atWill;
   const boxes = [
     [t('sheet.spellAbility'), abilityName(caster.ability)],
     [t('sheet.spellAttack'), signed(caster.attack)],
@@ -93,6 +103,31 @@ function Casting({ caster, edit }: Readonly<{ caster: CasterSheet | undefined; e
           <span className="text-[10px] tracking-wide text-muted-foreground uppercase">{label}</span>
         </div>
       ))}
+      {homemade && <HomemadeCasting ability={caster.ability} edit={edit} update={update} />}
+    </div>
+  );
+}
+
+/** How a non-caster casts its homemade spells: at their own level, no slot, with this ability. */
+function HomemadeCasting({
+  ability,
+  edit,
+  update,
+}: Readonly<{ ability: CasterSheet['ability']; edit: boolean; update: Props['update'] }>) {
+  const pick = (v: string) =>
+    update((d) => setStat(d, 'spellcasting', { ability: v as CasterSheet['ability'], progression: 'none' }), true);
+  return (
+    <div className="col-span-3 flex items-center gap-2 text-xs text-muted-foreground">
+      <span className="flex-1">{t('sheet.homemadeCasting')}</span>
+      {edit && (
+        <SelectField
+          aria-label={t('sheet.homemadeAbility')}
+          className="w-32"
+          value={ability}
+          onValueChange={pick}
+          options={ABILITIES.map((a) => ({ value: a, label: abilityName(a) }))}
+        />
+      )}
     </div>
   );
 }

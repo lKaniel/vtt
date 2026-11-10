@@ -12,6 +12,11 @@ describe('spell text', () => {
     expect(lowestSlot(caster([]), spell('fire-bolt'))).toBe(0);
   });
 
+  it("casts a non-caster's homemade spell at its own level, with no slots at all", () => {
+    const fighter = { sheet: { caster: { left: [], atWill: ['magic-missile'] } } } as unknown as TokenView;
+    expect(lowestSlot(fighter, spell('magic-missile'))).toBe(1);
+  });
+
   it('sums up what a spell did to one target', () => {
     expect(targetText({ target: 'Goblin', targetId: 'x', hit: true, damage: 7, attack: { total: 18 } as never })).toBe(
       'Goblin: 18 hit · 7 damage',
