@@ -3,6 +3,7 @@ import {
   canControl,
   canEdit,
   canObserve,
+  canOverride,
   canSee,
   isParty,
   levelOf,
@@ -108,9 +109,23 @@ describe('editing a document', () => {
 
   it('keeps how big a token is and what it sees for the GM, and the fields its system names; its picture is the owner’s', () => {
     const patch = { name: 'X', img: 'a.webp', size: 3, darkvision: 60, light: {}, monster: 'lich' };
-    expect(lockedPatchKeys(patch, tess)).toEqual(['size', 'darkvision', 'light']);
-    expect(lockedPatchKeys(patch, tess, ['monster'])).toEqual(['size', 'darkvision', 'light', 'monster']);
+    expect(lockedPatchKeys(patch, ana)).toEqual(['size', 'darkvision', 'light']);
+    expect(lockedPatchKeys(patch, ana, ['monster'])).toEqual(['size', 'darkvision', 'light', 'monster']);
     expect(lockedPatchKeys(patch, gm, ['monster'])).toEqual([]);
+  });
+
+  it('lets a trusted player change how their creature is built and sees, never where it stands or who owns it', () => {
+    const patch = { size: 3, darkvision: 60, light: {}, elevation: 30, filter: 'ghost', monster: 'lich', x: 5 };
+    expect(lockedPatchKeys(patch, tess, ['monster'])).toEqual(['monster', 'x']);
+  });
+
+  it('lets the GM, and a trusted player on what they control, override the rules of a turn', () => {
+    expect(canOverride(hero, gm)).toBe(true);
+    expect(canOverride(goblin, gm)).toBe(true);
+    expect(canOverride(hero, tess)).toBe(true);
+    expect(canOverride(scout, tess)).toBe(false);
+    expect(canOverride(hero, ana)).toBe(false);
+    expect(canOverride(hero, otto)).toBe(false);
   });
 
   it('sets one player’s level, keeping the default', () => {

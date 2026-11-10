@@ -131,6 +131,13 @@ export function actsNow(combat: Combat, token: string): boolean {
   return currentTurn(combat) === token || !!combat.group?.includes(token);
 }
 
+/** What a creature has left: its turn budget while it acts (its own turn, or alongside one), and whether its reaction is unused; undefined outside the fight. */
+export function turnLeft(combat: Combat, token: string): { budget?: TurnBudget; reaction: boolean } | undefined {
+  const budget = currentTurn(combat) === token ? combat.left : combat.side[token];
+  if (!budget && !combat.order.some((e) => e.token === token)) return undefined;
+  return { budget, reaction: !combat.reacted.includes(token) };
+}
+
 /** `tokens` end their turns; a shared turn passes on once every member has ended theirs. */
 export function endTurns(combat: Combat, tokens: readonly string[], info: TurnInfo): Combat {
   if (!combat.group) return nextTurn(combat, info);

@@ -90,7 +90,7 @@ function tableRoutes(p: GameParts) {
     attack: (s, m) => p.combat.attack(s.player, s.canSee, m),
     ...each(['turnBased', 'legendary', 'lair'], (s, m) => p.combat.turnAction(s.player, s.canSee, m)),
     applyDamage: (s, m) => p.damage.apply(s.player, s.canSee, m),
-    ...each(['condition', 'combatant', 'initiative'], (s, m) => p.hud.handle(s.player, s.canSee, m)),
+    ...each(['condition', 'combatant', 'initiative', 'turnOverride'], (s, m) => p.hud.handle(s.player, s.canSee, m)),
   } satisfies Partial<Routes>;
 }
 

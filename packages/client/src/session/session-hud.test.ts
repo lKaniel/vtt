@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Session } from './session.ts';
-import { closeSession, openSession, token, welcome, type FakeWebSocket } from './session.fixtures.ts';
+import { closeSession, fight, openSession, token, welcome, type FakeWebSocket } from './session.fixtures.ts';
 
 // The token HUD (session-hud.ts, `session.hud`) and the GM's pause.
 
@@ -37,6 +37,27 @@ describe('Token HUD', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'initiative', token: 'hero', value: 17 });
     session.requests.editToken('hero', { elevation: 10 });
     expect(ws.sent.at(-1)).toEqual({ t: 'editToken', token: 'hero', patch: { elevation: 10 } });
+  });
+
+  it('lets a trusted seat, not a plain player, override the turns of what it controls', () => {
+    const trusted = welcome([token('hero'), { ...token('goblin'), ownership: { default: 'limited' } }]);
+    ws.receive(welcome());
+    expect(session.hud.canOverride('hero')).toBe(false);
+    ws.receive({ ...trusted, you: { id: 'ana', name: 'Ana', role: 'trusted', color: '#f00' } } as never);
+    expect(session.hud.canOverride('hero')).toBe(true);
+    expect(session.hud.canOverride('goblin')).toBe(false);
+    session.hud.overrideTurn('hero', { action: true, move: 60 });
+    expect(ws.sent.at(-1)).toEqual({ t: 'turnOverride', token: 'hero', action: true, move: 60 });
+  });
+
+  it('reads what a creature has left of its turn: budget on its turn, its reaction all round', () => {
+    ws.receive({
+      ...welcome([token('hero'), token('goblin')]),
+      combat: { ...fight(1, 25), reacted: ['goblin'] },
+    } as never);
+    expect(session.hud.turnOf('hero')).toEqual({ budget: fight(1, 25).left, reaction: true });
+    expect(session.hud.turnOf('goblin')).toEqual({ budget: undefined, reaction: false });
+    expect(session.hud.turnOf('nobody')).toBeUndefined();
   });
 
   it('knows when the GM paused the game', () => {

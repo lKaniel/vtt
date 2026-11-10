@@ -1,4 +1,5 @@
-import { isGm, type Level, levelOf } from '@vtt/shared';
+import { isGm, isTrusted, type Level, levelOf } from '@vtt/shared';
+import type { Session } from '../../session/session.ts';
 import { setOwnership } from '../../play/token-edit.ts';
 import { Check, Field, NumberInput } from '../EditorFields.tsx';
 import { MediaInput } from '../MediaPicker.tsx';
@@ -9,8 +10,8 @@ import { LookFields } from './SheetLook.tsx';
 import type { SheetProps } from './sheet-props.ts';
 
 // The Token tab, in edit mode: how the creature stands on the map (picture,
-// colour, its look) and, for the GM, its size, vision and light, whether it
-// hides and who owns it.
+// colour, its look); for the GM and trusted players its size, vision and
+// light; for the GM whether it hides and who owns it.
 
 const SIZES = [
   [0.5, 'Tiny'],
@@ -60,7 +61,7 @@ function Identity({ session, value, update }: Readonly<SheetProps>) {
         <Field label="Colour">
           <ColorInput value={value.color} onChange={(e) => set('color')(e.target.value)} />
         </Field>
-        {session.isGm() && <GmFields value={value} update={update} />}
+        {trusted(session) && <BuildFields value={value} update={update} />}
       </div>
       {session.isGm() && (
         <>
@@ -72,8 +73,11 @@ function Identity({ session, value, update }: Readonly<SheetProps>) {
   );
 }
 
-/** How big it is, what it sees and the light it gives: the GM's, so a player can't break their token. */
-function GmFields({ value, update }: Readonly<{ value: Draft; update: Update }>) {
+/** The GM, or a trusted seat: they change how big their creature is and what it sees (permissions.ts). */
+const trusted = (session: Session) => !!session.you && isTrusted(session.you);
+
+/** How big it is, what it sees and the light it gives: the GM's and trusted players', so a player can't break their token. */
+function BuildFields({ value, update }: Readonly<{ value: Draft; update: Update }>) {
   const set = setter(update);
   return (
     <>
