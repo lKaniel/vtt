@@ -55,7 +55,7 @@ export class Drops {
     if (payload.kind === 'journal') {
       return s.draw.create({ mode: 'notes', data: { x: p[0], y: p[1], entry: payload.id, label: payload.name } });
     }
-    const ctx = { tokens: s.tokens.values(), gridSize: s.world.gridSize, hidden: this.hidden };
+    const ctx = { tokens: [...s.tokens.values()], gridSize: s.world.gridSize, hidden: this.hidden };
     this.send(dropMessage(payload, p, ctx));
   }
 

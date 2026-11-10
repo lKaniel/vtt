@@ -194,9 +194,11 @@ function lift(e: React.DragEvent): void {
 
 export function dragTile(e: React.DragEvent, payload: TileDrag): void {
   e.dataTransfer.setData(TILE_DRAG, JSON.stringify(payload));
-  e.dataTransfer.effectAllowed = 'move';
+  // Gear from a sheet is a tile and a stack at once: the map and other sheets
+  // take it as a copy, the bar and the bags as a move, so both are allowed.
+  e.dataTransfer.effectAllowed = 'copyMove';
   lift(e);
-  // While a tile is in the air the sheet fades and lets drops through to the bar under it.
+  // While a tile is in the air the bar rises above the windows, so a sheet over it doesn't hide it.
   // Changing the page during dragstart cancels the drag, so wait a moment.
   setTimeout(() => document.body.classList.add('dragging-tile'));
   const done = () => {
