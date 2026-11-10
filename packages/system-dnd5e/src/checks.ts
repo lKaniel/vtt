@@ -145,5 +145,6 @@ interface Side {
 export function contest(ability: Ability, caster: Side, target: Side, rng: Rng = Math.random): SaveRoll {
   const theirs = rollCheck(caster.token, caster.sheet, { ability: caster.sheet.caster?.ability ?? 'int' }, rng);
   const mine = rollCheck(target.token, target.sheet, { ability }, rng);
-  return { ability, dc: theirs.total, roll: mine.roll, total: mine.total, success: mine.total >= theirs.total };
+  const success = mine.total >= theirs.total;
+  return { ability, dc: theirs.total, roll: mine.roll, total: mine.total, success, check: true };
 }

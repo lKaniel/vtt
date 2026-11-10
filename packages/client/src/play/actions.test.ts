@@ -108,6 +108,17 @@ describe('what an action costs', () => {
     expect(affordable(offHand, budget({ action: false, attacks: 0 }))).toBe(true);
   });
 
+  it('lets a feature that takes one attack (Grapple) use the action or an attack left over', () => {
+    const grip: FeatureSheet = { ...rage, id: 'grapple', name: 'Grapple', action: 'attack' };
+    const base = wizard();
+    const tiles = actionTiles({ ...base, sheet: { ...base.sheet!, features: [grip] } });
+    const grapple = tiles.find((t) => t.kind === 'feature')!;
+    expect(costOf(grapple)).toBe('attack');
+    expect(affordable(grapple, budget({ action: true }))).toBe(true);
+    expect(affordable(grapple, budget({ action: false, attacks: 1 }))).toBe(true);
+    expect(affordable(grapple, budget({ action: false, attacks: 0 }))).toBe(false);
+  });
+
   it('is always affordable outside your turn', () => {
     const [attack] = actionTiles(wizard());
     expect(affordable(attack!, undefined)).toBe(true);

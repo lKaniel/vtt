@@ -91,4 +91,6 @@ export const EN_TABLE = {
   'override.notTurn': 'The action and movement can only be changed on its turn.',
   'override.hint': 'Lit means it still has it. Everyone sees the change in the log.',
   'res.reaction': 'Reaction',
+  'chat.casts': 'casts',
+  'chat.uses': 'uses',
 };

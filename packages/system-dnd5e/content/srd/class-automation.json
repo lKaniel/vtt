@@ -1118,7 +1118,7 @@
       "sneakAttack": true,
       "features": {
         "cunning-action": {
-          "bonusActions": ["dash", "disengage"]
+          "bonusActions": ["dash", "disengage", "hide"]
         },
         "expertise": {
           "manual": "Double the proficiency bonus of two chosen skills (or thieves’ tools): pick them under Expertise in the creator or on the sheet."

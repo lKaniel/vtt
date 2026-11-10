@@ -115,6 +115,7 @@ const ACTIONS = [
   { value: '', label: 'Passive' },
   { value: 'action', label: 'Action' },
   { value: 'bonus', label: 'Bonus action' },
+  { value: 'attack', label: 'One attack' },
   { value: 'free', label: 'Free' },
 ];
 

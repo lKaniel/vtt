@@ -56,6 +56,33 @@ describe('actions anyone can take', () => {
   });
 });
 
+describe('Help, Hide, Grapple and Shove', () => {
+  it('gives them to every creature: Grapple and Shove take the place of one attack', () => {
+    const t = character('fighter', '2014');
+    expect(['hide', 'help', 'grapple', 'shove'].map((id) => feature(t, id)?.action)).toEqual([
+      'action',
+      'action',
+      'attack',
+      'attack',
+    ]);
+  });
+
+  it('hides: rolls Dexterity (Stealth) and is hidden until it attacks', () => {
+    const t = character('rogue', '2014');
+    const out = useFeature(t, sheet(t), 'hide', () => 0.5);
+    expect(out.check?.name).toBe('Stealth');
+    expect(out.check?.total).toBeGreaterThanOrEqual(11 + 2);
+    expect(out.effect).toMatchObject({ name: 'Hidden', advantage: true, endsOnAttack: true });
+  });
+
+  it('lets a rogue hide as a bonus action with Cunning Action', () => {
+    expect(feature(character('rogue', '2014'), 'cunning-hide')).toMatchObject({
+      action: 'bonus',
+      name: 'Hide (Cunning Action)',
+    });
+  });
+});
+
 describe('passive class features', () => {
   it('gives an unarmored barbarian 10 + Dex + Con AC and a monk 10 + Dex + Wis', () => {
     expect(sheet(character('barbarian', '2014')).ac).toBe(10 + 2 + 3);

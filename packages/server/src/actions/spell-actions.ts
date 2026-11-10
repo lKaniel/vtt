@@ -14,6 +14,7 @@ import {
   withAgain,
   withChoice,
   resolveCast,
+  saveLog,
   type Spell,
   type SpellLog,
   type Token,
@@ -273,11 +274,10 @@ export class SpellActions {
 
   /** Rolls a spell from `casterId` against `targets`, applies it and logs it: casts, features and zones. `reader`: read from a scroll. */
   strike(casterId: string, opts: Strike, targets: Fighter[], notes: string[] = []): void {
-    const { spell, slot, point, reader } = opts;
+    const { spell, slot, point, reader, dc, attackBonus, mod } = opts;
     const fighter = this.table.fighter(casterId);
     const caster = reader ? { ...fighter, sheet: { ...fighter.sheet, caster: reader } } : fighter;
     const grid = gridKind(this.store.world);
-    const { dc, attackBonus, mod } = opts;
     const rolled = resolveCast(
       { spell, slot, caster, targets, gridSize: this.grid, grid, dc, attackBonus, mod, pick: opts },
       this.table.rng,
@@ -446,13 +446,14 @@ export class SpellActions {
       point,
       area: spell.area,
       slot,
+      ...(spell.school === 'feature' && { feature: true }),
       results: outcome.results.map((r) => ({
         target: name(r.target),
         targetId: r.target,
         attack: r.attack,
         hit: r.hit,
         crit: r.crit,
-        save: r.save && { ability: r.save.ability, dc: r.save.dc, total: r.save.total, success: r.save.success },
+        save: r.save && saveLog(r.save),
         damage: r.damage,
         healed: r.healed,
         effect: r.effect?.name,

@@ -16,6 +16,7 @@ import { MacrosTab } from './MacrosTab.tsx';
 import { PlayersTab } from './PlayersTab.tsx';
 import { ScenesTab } from './ScenesTab.tsx';
 import { diceArt } from '../icon-art.ts';
+import { t } from '../i18n/index.ts';
 import { attackLogIcon, spellLogIcon } from '../play/log-icons.ts';
 import type { Icon } from '../icons.ts';
 import { IconFace } from './Icon.tsx';
@@ -262,7 +263,7 @@ function SpellLine({ s }: Readonly<{ s: SpellLog }>) {
     <span className="attack-log spell-log">
       <span className="msg-text">
         <CardIcon icon={spellLogIcon(s)} />
-        <b>{s.caster}</b> casts <b className="spell-name">{s.spell}</b>
+        <b>{s.caster}</b> {t(s.feature ? 'chat.uses' : 'chat.casts')} <b className="spell-name">{s.spell}</b>
         {s.slot > 0 && <span className="muted"> (level {s.slot} slot)</span>}
       </span>
       {s.results.map((r, i) => (

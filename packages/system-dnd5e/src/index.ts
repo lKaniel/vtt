@@ -4,6 +4,7 @@ export * from './protocol.ts';
 export * from './stats-schema.ts';
 export * from './monster-schema.ts';
 export * from './monster-parts.ts';
+export * from './grapples.ts';
 export * from './item-schema.ts';
 export * from './spell-schema.ts';
 export * from './area-schema.ts';

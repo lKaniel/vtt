@@ -23,6 +23,7 @@ function saveText(r: SpellTargetLog): string {
   const s = r.save;
   if (!s) return '';
   const result = s.success ? 'saved' : 'failed';
+  if (s.check) return `${s.ability.toUpperCase()} check ${s.total} vs ${s.dc}, ${s.success ? 'resisted' : 'failed'}`;
   return `${s.ability.toUpperCase()} save ${s.total} vs DC ${s.dc}, ${result}`;
 }
 
