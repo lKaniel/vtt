@@ -160,6 +160,8 @@ export type ClientMessage =
   | { t: 'hitDie'; token: string }
   /** GM: sets a creature's exhaustion, 0 for none. */
   | { t: 'exhaustion'; token: string; level: number }
+  /** The GM gives heroic inspiration (`on`); the character's player spends it. */
+  | { t: 'inspiration'; token: string; on: boolean }
   /** GM: gives each of these characters `xp` experience points. */
   | { t: 'awardXp'; tokens: string[]; xp: number }
   /** The next level for a character that is only an actor: a token's, or one in the Actors list. */

@@ -174,6 +174,11 @@ export class Requests {
     this.s.send({ t: 'exhaustion', token, level });
   }
 
+  /** The GM gives heroic inspiration (`on`); the character's player spends it. */
+  setInspiration(token: string, on: boolean): void {
+    this.s.send({ t: 'inspiration', token, on });
+  }
+
   /** Coins, packing and attunement on a creature the player controls. */
   carry(token: string, change: CarryChange): void {
     this.s.send({ t: 'carry', token, change });

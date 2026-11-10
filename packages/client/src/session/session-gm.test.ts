@@ -107,6 +107,8 @@ describe('the GM tools', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'hitDie', token: 'hero' });
     session.requests.setExhaustion('hero', 2);
     expect(ws.sent.at(-1)).toEqual({ t: 'exhaustion', token: 'hero', level: 2 });
+    session.requests.setInspiration('hero', true);
+    expect(ws.sent.at(-1)).toEqual({ t: 'inspiration', token: 'hero', on: true });
   });
 
   it('asks for checks and rolls them', () => {

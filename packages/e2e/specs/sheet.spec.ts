@@ -99,3 +99,14 @@ test('a player sets their own token’s picture, but not its size', async ({ pag
     .toBe('/assets/uploads/mine.png');
   expect(existsSync(join(server.gameDir, 'assets/uploads/mine.png'))).toBe(true);
 });
+
+test('the GM gives heroic inspiration and takes it back', async ({ page }) => {
+  await atTable(page, GM);
+  const sheet = await openBram(page);
+  const inspiration = sheet.getByRole('button', { name: 'Heroic inspiration' });
+  await expect(inspiration).toHaveAttribute('aria-pressed', 'false');
+  await inspiration.click();
+  await expect(inspiration).toHaveAttribute('aria-pressed', 'true');
+  await inspiration.click();
+  await expect(inspiration).toHaveAttribute('aria-pressed', 'false');
+});

@@ -5,6 +5,7 @@ import { foundryEffects } from './foundry-effects.ts';
 import { attackOf, byName, GEAR_TYPES, gearOf, ownItem } from './foundry-gear.ts';
 import { ownSpell } from './foundry-spells.ts';
 import { stateOf } from './foundry-state.ts';
+import { foundryProficiencies } from './foundry-proficiencies.ts';
 import { ABILITIES, type Abilities, DamageTypeSchema, type Stats } from './stats-schema.ts';
 import type { Feature, Spell } from './spell-schema.ts';
 import type { Actor } from './token-schema.ts';
@@ -212,6 +213,7 @@ function statsOf({ sys, items, npc, srd }: Read, classes: Classes, spells: strin
   const prof = crProficiency(num(at(sys, 'details.cr')) ?? 0);
   const maxHp = num(at(sys, 'attributes.hp.max'));
   const skills = skillsOf(sys);
+  const trained = foundryProficiencies(sys, srd).slice(0, 80);
   return {
     abilities,
     ...opt('maxHp', maxHp !== undefined && maxHp > 0 && Math.round(maxHp)),
@@ -220,6 +222,7 @@ function statsOf({ sys, items, npc, srd }: Read, classes: Classes, spells: strin
     ...(npc && !classes.stats.level && !classes.stats.classes ? { proficiency: prof } : {}),
     ...defensesOf(sys),
     ...opt('skills', skills.length > 0 && skills),
+    ...opt('proficiencies', trained.length > 0 && trained),
     ...opt('spells', spells.length > 0 && spells),
     ...(npc ? npcAttacks(items, srd, abilities, prof) : {}),
   };

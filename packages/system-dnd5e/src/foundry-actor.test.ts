@@ -212,6 +212,24 @@ describe('foundrySheet', () => {
     expect(ActorSchema.safeParse({ id: 'tamsin', name: 'Tamsin', ...s }).success).toBe(true);
   });
 
+  it('knows what a character was trained in, and keeps its heroic inspiration', () => {
+    const trained = {
+      name: 'Pell',
+      type: 'character',
+      system: {
+        abilities: abilities(10, 14, 10, 10, 10, 10),
+        attributes: { inspiration: true },
+        traits: { armorProf: { value: ['lgt'] }, languages: { value: ['common', 'elvish'] } },
+        tools: { thief: { value: 1 } },
+      },
+      items: [{ name: 'Rogue', type: 'class', system: { levels: 3 } }],
+    };
+    const { sheet: s } = sheet(trained);
+    expect(s.stats?.proficiencies).toEqual(['light-armor', 'thieves-tools', 'common', 'elvish']);
+    expect(s.inspiration).toBe(true);
+    expect(ActorSchema.safeParse({ id: 'pell', name: 'Pell', ...s }).success).toBe(true);
+  });
+
   it('keeps one class as class and level, and names homebrew classes by their slug', () => {
     const hunter = {
       name: 'Vex',

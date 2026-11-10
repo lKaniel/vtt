@@ -133,6 +133,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('legendary'), token: z.string(), option: z.string(), target: z.string().optional() }),
   z.object({ t: z.literal('lair'), token: z.string(), action: z.string() }),
   z.object({ t: z.literal('exhaustion'), token: z.string(), level: z.number().int().min(0).max(6) }),
+  z.object({ t: z.literal('inspiration'), token: z.string(), on: z.boolean() }),
   /** The next level for a character that is only an actor (a token's, or one in the Actors list). */
   z.object({
     t: z.literal('levelUp'),

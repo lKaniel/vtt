@@ -1,5 +1,5 @@
 import { hitDiceOf, isDying, MAX_EXHAUSTION, type TokenView } from '@vtt/system-dnd5e';
-import { ShieldIcon } from 'lucide-react';
+import { ShieldIcon, SparklesIcon } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '../../i18n/index.ts';
@@ -13,7 +13,7 @@ import { withKey } from '../sheet-model.ts';
 import type { SheetProps } from './sheet-props.ts';
 
 // The left of the sheet: the portrait with its armour class, hit points, hit
-// dice, death saves and exhaustion, and initiative, speed and proficiency.
+// dice, death saves, exhaustion and heroic inspiration, and initiative, speed and proficiency.
 
 export function SheetSidebar(props: Readonly<SheetProps>) {
   const { value, sheet } = props;
@@ -28,6 +28,7 @@ export function SheetSidebar(props: Readonly<SheetProps>) {
       <HitDice {...props} />
       {isDying(value) && <DeathSaves {...props} />}
       {!value.monster && <Exhaustion {...props} />}
+      {!value.monster && <Inspiration {...props} />}
       <div className="grid grid-cols-3 gap-1.5">
         <Pill label={t('sheet.initiative')}>{signed(sheet.initiative)}</Pill>
         <Speed {...props} />
@@ -205,6 +206,29 @@ function Exhaustion({ session, value, kind, update, edit, sheet }: Readonly<Shee
         ))}
       </div>
     </section>
+  );
+}
+
+/** Heroic inspiration: the GM gives it, the character's player spends it. */
+function Inspiration({ session, value, kind, update, edit }: Readonly<SheetProps>) {
+  const on = value.inspiration === true;
+  const canSet = session.isGm() || edit || (on && kind === 'token');
+  const set = () => {
+    if (kind === 'token' && !edit) session.requests.setInspiration(value.id, !on);
+    else update((d) => ({ ...d, inspiration: !on || undefined }), true);
+  };
+  return (
+    <Button
+      variant="ghost"
+      className={cn('justify-start gap-2 disabled:opacity-100', on ? 'text-gold-bright' : 'text-muted-foreground')}
+      disabled={!canSet}
+      aria-pressed={on}
+      title={t(on ? 'sheet.inspirationSpend' : 'sheet.inspirationNone')}
+      onClick={set}
+    >
+      <SparklesIcon className="size-4" aria-hidden />
+      {t('sheet.inspiration')}
+    </Button>
   );
 }
 
