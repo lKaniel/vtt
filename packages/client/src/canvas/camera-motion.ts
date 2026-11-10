@@ -48,6 +48,21 @@ export class CameraMotion {
     return this.targetZoom;
   }
 
+  /**
+   * Two fingers moved (touch-gestures.ts): the zoom follows their spread at
+   * once, and the map point that was between them stays between them.
+   */
+  pinch(p: { scale: number; centre: Point; pan: Point }, size: Screen): void {
+    const world = this.screenToWorld([p.centre[0] - p.pan[0], p.centre[1] - p.pan[1]], size);
+    this.zoom = this.targetZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, this.zoom * p.scale));
+    this.center = [
+      world[0] - (p.centre[0] - size.width / 2) / this.zoom,
+      world[1] - (p.centre[1] - size.height / 2) / this.zoom,
+    ];
+    this.goal = this.anchor = undefined;
+    this.hold();
+  }
+
   /** The map was dragged by `delta` screen pixels over `dt` seconds. */
   drag(delta: Point, dt: number): void {
     this.goal = undefined;

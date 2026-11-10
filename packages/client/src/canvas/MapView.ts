@@ -32,25 +32,13 @@ import { Vision } from './Vision.ts';
 import { spaceKey } from '../play/space-pan.ts';
 import { previewToken } from '../play/walking.ts';
 import { listenToWheel } from './wheel-zoom.ts';
+import { MapTouch } from './map-touch.ts';
+import { type Drag, dragTo, letGo, pressAt } from './map-drag.ts';
 
 extensions.add(CullerPlugin);
 
 /** Below these zoom levels the matching detail is skipped, so a zoomed-out map stays cheap. */
 const LOD = { labels: 0.45, doors: 0.25 };
-const DRAG_THRESHOLD = 5;
-
-interface Drag {
-  start: Point;
-  last: Point;
-  /** When the pointer was last at `last`, for the speed of a fling. */
-  at: number;
-  panning: boolean;
-  button: number;
-  /** Set when the drag started on a token you control: dropping it walks the token there. */
-  token?: string;
-  moved?: boolean;
-}
-
 /**
  * The PixiJS map: an unbounded world split into chunks, streamed in around
  * the camera. Only what's on screen is drawn, and fine detail (grid, labels,
@@ -99,6 +87,9 @@ export class MapView {
   private mode: EditorMode = 'tokens';
   private tool: EditorTool = 'select';
   private drag?: Drag;
+  private touch?: MapTouch;
+  /** Under the 3D view, which steers its own camera from two fingers (view3d/pixi-bridge.ts). */
+  bridged = false;
   private hoverPoint?: Point;
   private unsubscribe: (() => void)[] = [];
   private destroyed = false;
@@ -107,7 +98,7 @@ export class MapView {
     this.chunks = new ChunkLayer(session, (id) => this.tokens.placeOf(id));
     this.tokens = new TokenLayer(session);
     this.tokens.onGrab = (token, at) => {
-      this.drag = { start: at, last: at, at: performance.now(), panning: false, button: 0, token };
+      this.drag = pressAt(at, 0, { token });
     };
     this.editor = new MapEditor(session, (id) => this.tokens.placeOf(id));
     this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
@@ -173,12 +164,21 @@ export class MapView {
     const stage = this.app.stage;
     stage.eventMode = 'static';
     stage.hitArea = this.app.screen;
+    this.touch = new MapTouch(this.app, this.cam, {
+      steers: () => !this.bridged,
+      dropPress: () => {
+        this.drag = undefined;
+        this.editor.dropPress();
+      },
+      menu: (client, p) => this.rightClick(client, this.screenToWorld(p[0], p[1])),
+      moved: () => (this.dirty = true),
+    });
     stage.on('pointerdown', (e) => this.onPointerDown(e));
     stage.on('globalpointermove', (e) => this.onPointerMove(e));
     stage.on('pointerup', (e) => this.onPointerUp(e));
     stage.on('pointerupoutside', (e) => {
       // Let go over a panel or off the window: a drag in the editor still lands where the pointer is.
-      if (this.presence.up() || this.fogBrush.up()) return;
+      if (this.touch?.up(e) || this.presence.up() || this.fogBrush.up()) return;
       this.editor.pointerUp({ at: this.screenToWorld(e.global.x, e.global.y), button: e.button, mods: modsOf(e) });
       this.drag = undefined;
     });
@@ -372,6 +372,14 @@ export class MapView {
   // Input -------------------------------------------------------------------
 
   private onPointerDown(e: FederatedPointerEvent): void {
+    // A finger on open ground drags the map, and is the press it stands for if it lifts where it landed.
+    if (!this.touch?.pansFrom(e) || this.editor.active || this.fogBrush.active) return this.press(e);
+    this.session.editor.closeMenu();
+    this.drag = pressAt([e.global.x, e.global.y], 0, { tap: true });
+    this.cam.hold();
+  }
+
+  private press(e: FederatedPointerEvent): void {
     const p: Point = [e.global.x, e.global.y];
     const at = this.screenToWorld(p[0], p[1]);
     if (e.button !== 2) this.session.editor.closeMenu();
@@ -382,7 +390,7 @@ export class MapView {
     if (!acting && this.fogBrush.down(at, e.button)) return;
     if (!acting && e.button === 0 && openNote(this.session, this.items, at)) return;
     if (!acting && this.editor.pointerDown({ at, button: e.button, mods: modsOf(e) })) return;
-    this.drag = { start: p, last: p, at: performance.now(), panning: e.button === 1, button: e.button };
+    this.drag = pressAt(p, e.button);
     this.cam.hold();
   }
 
@@ -390,14 +398,15 @@ export class MapView {
   private grabMap(e: FederatedPointerEvent, p: Point): boolean {
     if (e.button !== 0 || !spaceKey.held) return false;
     spaceKey.panned();
-    this.drag = { start: p, last: p, at: performance.now(), panning: true, button: 0 };
+    this.drag = pressAt(p, 0, { panning: true });
     this.cam.hold();
     return true;
   }
 
   private onPointerMove(e: FederatedPointerEvent): void {
+    if (this.touch?.move(e)) return;
     const p: Point = [e.global.x, e.global.y];
-    if (this.drag) this.dragTo(this.drag, p);
+    if (this.drag && dragTo(this.drag, p, this.cam)) this.dirty = true;
     this.hoverPoint = this.screenToWorld(p[0], p[1]);
     this.session.pointer = this.hoverPoint;
     this.presence.move(p, this.hoverPoint);
@@ -406,30 +415,22 @@ export class MapView {
     this.updatePreview(false);
   }
 
-  /** Right and middle drags pan; a token drag waits for the drop. */
-  private dragTo(drag: Drag, p: Point): void {
-    const far = Math.hypot(p[0] - drag.start[0], p[1] - drag.start[1]) > DRAG_THRESHOLD;
-    if (far) drag.moved = true;
-    if (drag.token) return;
-    if (far && drag.button !== 0) drag.panning = true;
-    const now = performance.now();
-    if (drag.panning) {
-      this.cam.drag([p[0] - drag.last[0], p[1] - drag.last[1]], (now - drag.at) / 1000);
-      this.dirty = true;
-    }
-    drag.last = p;
-    drag.at = now;
-  }
-
   private onPointerUp(e: FederatedPointerEvent): void {
+    if (this.touch?.up(e)) return;
+    if (this.drag?.tap && !this.drag.moved) this.press(e);
     const at = this.screenToWorld(e.global.x, e.global.y);
     if (this.fogBrush.up()) return;
     this.editor.pointerUp({ at, button: e.button, mods: modsOf(e) });
     const drag = this.drag;
     this.drag = undefined;
     if (this.presence.up() || !drag) return;
+    this.endDrag(drag, e, at);
+  }
+
+  /** A press let go: a token drop, the end of a pan, or a click. */
+  private endDrag(drag: Drag, e: FederatedPointerEvent, at: Point): void {
     if (drag.token) return dropToken(this.session, drag.token, drag.moved ? at : undefined);
-    if (drag.panning) return this.letGo(drag);
+    if (drag.panning) return letGo(drag, this.cam);
     if (drag.button === 2 && !drag.moved) return this.rightClick([e.client.x, e.client.y], at);
     if (drag.button === 0 && !drag.moved) clickGround(this.session, at);
   }
@@ -443,11 +444,6 @@ export class MapView {
     if (this.editor.finish() || this.editor.cancel() || this.session.actions.cancelAction()) return;
     const target = { ...this.editor.menuTarget(at), screen: onScreen };
     this.session.editor.openMenu(onScreen, menuFor(target, this.session));
-  }
-
-  /** A fling glides on; a drag that stopped before letting go stays put. */
-  private letGo(drag: Drag): void {
-    if (performance.now() - drag.at < 80) this.cam.release();
   }
 
   private updatePreview(force: boolean): void {

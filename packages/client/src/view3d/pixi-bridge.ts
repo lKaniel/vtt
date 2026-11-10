@@ -17,6 +17,8 @@ export interface FlatMap {
   dirty: boolean;
   /** The map whose pieces stay loaded (the 3D view's reach), instead of what the 2D camera frames. */
   chunkArea?: Rect;
+  /** Under the 3D view: two fingers steer the 3D camera, not the 2D one. */
+  bridged: boolean;
   /** Empty ground stays see-through (on) or gets the void colour. */
   seeThrough(on: boolean): void;
 }
@@ -57,6 +59,7 @@ export class PixiBridge {
     app.renderer.resize(this.side, this.side, 1);
     app.canvas.style.display = 'none';
     this.map.seeThrough(true);
+    this.map.bridged = true;
     const events = app.renderer.events;
     events.mapPositionToPoint = (point, x, y) => {
       const [sx, sy] = this.toScreen(this.pick(x, y));
@@ -95,6 +98,7 @@ export class PixiBridge {
     app.renderer.events.setTargetElement(app.canvas);
     app.canvas.style.display = saved.display;
     this.map.seeThrough(false);
+    this.map.bridged = false;
     this.map.chunkArea = undefined;
     (app as unknown as { resizeTo: unknown }).resizeTo = saved.resizeTo ?? host;
     app.resize();

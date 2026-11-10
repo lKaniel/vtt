@@ -17,6 +17,24 @@ describe('CameraMotion', () => {
     expect(cam.screenToWorld([900, 400], screen)[0]).toBeCloseTo(before[0]);
   });
 
+  it('follows a pinch at once: the map point between the fingers stays between them', () => {
+    const cam = new CameraMotion([0, 0], 1);
+    const before = cam.screenToWorld([700, 300], screen);
+    // The fingers spread to twice their gap and their midpoint moves 50 px right.
+    cam.pinch({ scale: 2, centre: [750, 300], pan: [50, 0] }, screen);
+    expect(cam.zoom).toBe(2);
+    expect(cam.zoomGoal).toBe(2);
+    expect(cam.screenToWorld([750, 300], screen)[0]).toBeCloseTo(before[0]);
+    expect(cam.screenToWorld([750, 300], screen)[1]).toBeCloseTo(before[1]);
+    expect(cam.step(0.016)).toBe(false);
+  });
+
+  it('keeps a pinch inside the zoom limits', () => {
+    const cam = new CameraMotion([0, 0], 2);
+    cam.pinch({ scale: 10, centre: [500, 400], pan: [0, 0] }, screen);
+    expect(cam.zoom).toBe(3);
+  });
+
   it('sees a point well inside the screen, not one near or past its edge', () => {
     const cam = new CameraMotion([0, 0], 2);
     expect(cam.sees([100, 100], screen)).toBe(true);
