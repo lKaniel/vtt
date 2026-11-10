@@ -608,6 +608,8 @@ export const FeatureSchema = z.object({
   freeCasts: z
     .array(z.object({ spell: id, level: z.number().int().min(1).max(9).optional(), self: z.boolean().optional() }))
     .optional(),
+  /** Saving throws it makes the creature proficient in (diamond soul: all six). */
+  saveProficiencies: z.array(AbilitySchema).optional(),
   /** Why the GM runs it by hand: what it does that the engine doesn't (yet). */
   manual: z.string().optional(),
   ...classFields(EffectTemplateSchema),
