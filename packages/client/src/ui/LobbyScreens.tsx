@@ -9,6 +9,7 @@ import { BaileywikiPanel } from './BaileywikiPanel.tsx';
 import { FoundryImportForm } from './FoundryImport.tsx';
 import { ImportZip } from './GameArchive.tsx';
 import { OffsitePanel } from './OffsiteBackups.tsx';
+import { PacksPanel } from './PacksPanel.tsx';
 import { AdminPasswordForm, AdminUnlock } from './GameAccess.tsx';
 import { ROLE_NAMES } from './role-names.ts';
 import { useLoad } from './useLoad.ts';
@@ -100,6 +101,7 @@ function SetupBody({ info, refresh, go }: Readonly<{ info: SessionInfo; refresh:
           <ImportZip onMade={open} />
           <FoundryImportForm onMade={open} />
           <BaileywikiPanel />
+          <PacksPanel />
           {data && <OffsitePanel games={data.games} />}
           {!info.adminFixed && <AdminPasswordForm has={info.adminPassword} onSaved={refresh} />}
         </aside>

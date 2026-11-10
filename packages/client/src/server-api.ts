@@ -14,7 +14,7 @@ import type {
   Player,
   Role,
 } from '@vtt/shared';
-import type { SystemInfo } from '@vtt/core';
+import type { PackManifest, SystemInfo } from '@vtt/core';
 
 // The server's HTTP side: the admin password (Setup), the games and their
 // players (joining one as a player, Foundry style), and each player's
@@ -61,6 +61,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   if (!res.ok) throw new ApiError(data.error ?? res.statusText, res.status, data.issues);
   return data;
 }
+
+const packPath = (id: string) => `/api/packs/${encodeURIComponent(id)}`;
 
 const game = (id: string, rest = '') => `/api/games/${encodeURIComponent(id)}${rest}`;
 
@@ -155,4 +157,18 @@ export const api = {
   /** Admin: puts a game back as it was on `night`. */
   offsiteRestore: (night: string, id: string) =>
     call<object>('POST', `/api/offsite/${encodeURIComponent(night)}/${encodeURIComponent(id)}/restore`),
+  /** Admin: the installed packs, and uploads not finished. */
+  packs: () => call<{ packs: PackManifest[]; pending: string[] }>('GET', '/api/packs'),
+  /** Admin: starts (or goes on with) uploading a pack; the files already up. */
+  beginPack: (manifest: unknown) =>
+    call<{ id: string; have: Record<string, number> }>('POST', '/api/packs/upload', manifest),
+  /** Admin: one file of a pack being uploaded. */
+  putPackFile: (id: string, path: string, file: File) =>
+    call<object>('PUT', `${packPath(id)}/files/${path.split('/').map(encodeURIComponent).join('/')}`, file),
+  /** Admin: installs the uploaded pack. */
+  finishPack: (id: string) => call<{ pack: PackManifest }>('POST', `${packPath(id)}/finish`),
+  /** Admin: calls an upload off. */
+  cancelPack: (id: string) => call<object>('DELETE', `${packPath(id)}/upload`),
+  /** Admin: deletes an installed pack. */
+  deletePack: (id: string) => call<object>('DELETE', packPath(id)),
 };

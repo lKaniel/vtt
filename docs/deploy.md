@@ -66,9 +66,29 @@ scp -r world/. deploy@<ip>:/opt/vtt/data/world/
 ssh deploy@<ip> "cd /opt/vtt && docker compose start vtt"
 ```
 
-From then on the VPS holds the real copy of the games. New packs go up the
-same way (`scp -r data/packs/<pack> ...`); `rsync -av` copies only what
-changed where it is installed.
+From then on the VPS holds the real copy of the games. New packs go up
+from Setup's **Packs** box (pick the pack's folder; see docs/packs.md), so
+`scp` is only needed for games.
+
+### A volume for big packs
+
+The VPS disk is 40 GB; JB2A alone is about 10 GB. Give packs their own
+Hetzner Volume (Cloud console → Volumes → Create, same location as the
+server, ext4, "automatic" mounting off) and mount it over the packs folder:
+
+```sh
+ssh root@<ip>
+cd /opt/vtt && docker compose stop vtt
+mkdir -p /mnt/new && mount /dev/disk/by-id/scsi-0HC_Volume_<id> /mnt/new
+rsync -a data/packs/ /mnt/new/ && umount /mnt/new
+rm -rf data/packs/* && echo '/dev/disk/by-id/scsi-0HC_Volume_<id> /opt/vtt/data/packs ext4 discard,nofail,defaults 0 0' >> /etc/fstab
+mount -a && chown -R 1000:1000 /opt/vtt/data/packs
+docker compose start vtt
+```
+
+The volume sits at `/opt/vtt/data/packs` itself (a symlink inside `data/`
+would point outside the container). `df -h /opt/vtt/data/packs` shows its
+room.
 
 ## Backups
 
