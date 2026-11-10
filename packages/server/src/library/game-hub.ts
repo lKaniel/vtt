@@ -13,6 +13,7 @@ import {
 import type { WebSocket } from 'ws';
 import { type BackupInfo, type BackupReason, Backups } from './backups.ts';
 import { foundryWorldTitle, importFoundryWorld, type WorldReport } from '../foundry/foundry-world.ts';
+import { readManifest, reimportFoundryWorld } from '../foundry/foundry-reimport.ts';
 import { Game } from '../game.ts';
 import { GameAccess } from './game-access.ts';
 import { unzipGame, writeGame, zipGame } from './game-archive.ts';
@@ -73,6 +74,16 @@ export interface GameInfo {
 
 /** Something the lobby can't do, with the reason to show. */
 export class HubError extends Error {}
+
+const given = (s?: string) => (s?.trim() ? s.trim() : undefined);
+
+/** The world folder and Data folder a re-import reads: those given, else the last import's. */
+async function reimportSource(dir: string, opts: { folder?: string; dataDir?: string }) {
+  const manifest = await readManifest(dir);
+  const from = given(opts.folder) ?? manifest?.world;
+  if (!from) throw new HubError('This game was not imported from Foundry here: give the world folder.');
+  return { from, dataDir: given(opts.dataDir) ?? manifest?.dataDir };
+}
 
 const IDLE_MS = 5 * 60_000;
 const BACKUP_MS = 15 * 60_000;
@@ -353,6 +364,29 @@ export class GameHub {
       return { id, report };
     } catch (e) {
       await rm(dir, { recursive: true, force: true });
+      throw new HubError((e as Error).message);
+    }
+  }
+
+  /**
+   * Imports the Foundry world game `id` was made from again (or the world
+   * folder given), keeping what was made in the VTT since. The game is
+   * backed up first and everyone reconnects to the new one.
+   */
+  async reimportFoundry(
+    id: string,
+    gm: Player,
+    opts: { folder?: string; dataDir?: string } = {},
+  ): Promise<WorldReport> {
+    const dir = this.dirs.get(id);
+    if (!dir) throw new HubError('No such game.');
+    const { from, dataDir } = await reimportSource(dir, opts);
+    await this.backup(id, 'reimport');
+    for (const ws of this.live.get(id)?.sockets.keys() ?? []) ws.close(1012, 'the game was imported again');
+    await this.unload(id);
+    try {
+      return await reimportFoundryWorld(from, dir, { gm, dataDir });
+    } catch (e) {
       throw new HubError((e as Error).message);
     }
   }

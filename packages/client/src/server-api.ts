@@ -6,6 +6,7 @@ import type {
   BaileywikiStatus,
   FoundryImportInput,
   FoundryImportReport,
+  FoundryReimportInput,
   GameDetail,
   GameSummary,
   NewGame,
@@ -88,6 +89,9 @@ export const api = {
   /** Admin: makes a game from a Foundry world folder on the server's disk. */
   importFoundry: (input: FoundryImportInput) =>
     call<{ game: GameSummary; report: FoundryImportReport }>('POST', '/api/games/import-foundry', input),
+  /** Admin: imports the Foundry world a game came from again into it, keeping what was made in the VTT. */
+  reimportFoundry: (id: string, input: FoundryReimportInput) =>
+    call<{ report: FoundryImportReport }>('POST', `/api/games/${encodeURIComponent(id)}/reimport-foundry`, input),
   /** Admin (or, with `game`, that game's GM): the server's Baileywiki sign-in. */
   baileywiki: (game?: string) => call<BaileywikiStatus>('GET', bw('', game)),
   /** Signs the server in to Baileywiki with the code their site shows. */
