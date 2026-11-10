@@ -41,6 +41,9 @@ const BLANK: Record<string, Omit<Step, 'type'>> = {
   activate: { target: { coll: 'tiles', id: '' }, to: 'toggle' },
   elevation: { by: 10 },
   shift: { target: { coll: 'tiles', id: '' }, by: [0, 0] },
+  rotate: { target: { coll: 'tiles', id: '' } },
+  view: { scene: '' },
+  choice: { text: '', options: [{ label: 'OK', actions: [] }] },
   difficult: {},
   trap: {},
   level: { to: '' },
@@ -100,6 +103,21 @@ const FIELDS: Record<string, StepField[]> = {
     { key: 'target.id', label: 'Which', kind: 'select', choices: 'target' },
     { key: 'by.0', label: 'Across by (pixels)', kind: 'number' },
     { key: 'by.1', label: 'Down by (pixels)', kind: 'number' },
+  ],
+  rotate: [
+    { key: 'target.coll', label: 'What', kind: 'select', options: ['tiles', 'lights'] },
+    { key: 'target.id', label: 'Which', kind: 'select', choices: 'target' },
+    { key: 'by', label: 'Turn by (degrees)', kind: 'number' },
+    { key: 'to', label: 'Or to (degrees)', kind: 'number' },
+  ],
+  view: [
+    { key: 'scene', label: 'Scene', kind: 'select', choices: 'scenes' },
+    { key: 'everyone', label: 'Show everyone', kind: 'check' },
+  ],
+  // Its answers come from an import (Monk's dialog buttons); the editor changes the words.
+  choice: [
+    { key: 'title', label: 'Title', kind: 'text' },
+    { key: 'text', label: 'Asks', kind: 'text' },
   ],
   difficult: [{ key: 'multiplier', label: 'Cost ×', kind: 'number' }],
   trap: [

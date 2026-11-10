@@ -1,124 +1,30 @@
 import type { TileTrigger, TriggerAction, TriggerTarget } from '@vtt/shared';
 import type { FoundryDoc } from './foundry-db.ts';
 import { doorWallFor } from './foundry-doors3d.ts';
-import { originOf } from './foundry-origin.ts';
-import type { MediaLookup } from './foundry-scene.ts';
+import {
+  type ActionContext,
+  type Entity,
+  entityOf,
+  type Target,
+  targets,
+  type TriggerLookups,
+} from './foundry-monks-index.ts';
+
+export { SceneIndex, type TriggerLookups } from './foundry-monks-index.ts';
+import { choiceOf, type MonkAction, pathOf, plain, segmentsOf, upToChoice } from './foundry-monks-flow.ts';
+import { journalOf, moveOf, nearOf, rotationOf, sceneViewOf } from './foundry-monks-more.ts';
 
 // Monk's Active Tiles as our tile triggers (trigger-schema.ts in shared):
 // what a tile does when it is clicked or walked onto. Its actions point at
 // things by Tagger tag, Foundry id or "this tile"; the scene's index finds
-// ours. Monk's jumps (anchors, goto, dialogs) become the one path a click
-// most likely takes: the actions before the first anchor, else the "next"
-// branch. A change of the creature's elevation becomes a ladder between
-// floors. What has no match (macros, other alters, animations) is reported.
-
-/** Where a converted thing came from, to find it again by Foundry id or tag. */
-interface Indexed {
-  target: Target;
-  raw: FoundryDoc;
-  id?: string;
-  tags: string[];
-}
-
-interface Target {
-  coll: TriggerTarget['coll'] | 'walls';
-  id: string;
-}
-
-/** Our scene's things, found by what Monk's actions call them. */
-export class SceneIndex {
-  private readonly items: Indexed[] = [];
-
-  /** Adds a list of converted things (made by the import, so their Foundry documents are known). */
-  add(coll: Target['coll'], list: readonly { id: string }[]): this {
-    for (const item of list) {
-      const raw = originOf(item);
-      if (!raw) continue;
-      const tags = (raw.flags as { tagger?: { tags?: unknown } } | undefined)?.tagger?.tags;
-      const id = typeof raw._id === 'string' ? raw._id : undefined;
-      this.items.push({ target: { coll, id: item.id }, raw, id, tags: Array.isArray(tags) ? tags.map(String) : [] });
-    }
-    return this;
-  }
-
-  /** Our things for a Monk's entity: "tagger:<tag>[, tag]" ({#} any number), a Foundry uuid or id. */
-  // fallow-ignore-next-line unused-class-member -- targets() calls it through TriggerLookups.index
-  find(entity: string, colls?: readonly Target['coll'][]): Target[] {
-    const ok = (x: Indexed) => !colls || colls.includes(x.target.coll);
-    if (entity.startsWith('tagger:')) {
-      const patterns = entity.slice(7).split(',').map(tagPattern);
-      return this.items
-        .filter((x) => ok(x) && x.tags.some((t) => patterns.some((p) => p.test(t))))
-        .map((x) => x.target);
-    }
-    const id = entity.split('.').pop();
-    return this.items.filter((x) => ok(x) && x.id === id).map((x) => x.target);
-  }
-
-  /** The Foundry document a converted thing came from. */
-  rawOf(target: Target): FoundryDoc | undefined {
-    return this.items.find((x) => x.target.coll === target.coll && x.target.id === target.id)?.raw;
-  }
-}
-
-const tagPattern = (tag: string) =>
-  new RegExp(
-    `^${tag
-      .trim()
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      .replace(/\\\{#\\\}/g, '\\d+')}$`,
-  );
-
-export interface TriggerLookups {
-  index: SceneIndex;
-  media: MediaLookup;
-  /** Every file a Foundry pattern with `*` names (in the Data folder). */
-  glob: (pattern: string) => string[];
-  /** Our scene id for a Foundry scene id. */
-  scene: (foundryId: string) => string | undefined;
-  /** The pictures Monk's cycles a tile through, by our tile id. */
-  imagesOf: (tile: string) => string[];
-  /** The scene's floor at an elevation (feet); none on a scene without floors. */
-  floorAt?: (feet: number) => string | undefined;
-}
-
-interface MonkAction {
-  action?: string;
-  data?: Record<string, unknown>;
-}
-
-/** The tile itself, the creature that set it off, or what the entity names. */
-type Entity = string | undefined;
-
-const entityOf = (d: Record<string, unknown> | undefined): Entity => {
-  const e = d?.entity;
-  if (typeof e === 'string') return e;
-  const id = (e as { id?: unknown } | undefined)?.id;
-  return typeof id === 'string' ? id : undefined;
-};
-
-interface ActionContext extends TriggerLookups {
-  /** Our id of the tile the trigger is on. */
-  self: string;
-}
-
-function targets(entity: Entity, c: ActionContext, colls?: readonly Target['coll'][]): Target[] {
-  if (!entity || entity === 'tile') return !colls || colls.includes('tiles') ? [{ coll: 'tiles', id: c.self }] : [];
-  if (entity === 'token' || entity === 'players' || entity === 'within') return [];
-  return c.index.find(entity, colls);
-}
+// ours. Monk's jumps (anchors, goto) become the one path a click most
+// likely takes, and a dialog with buttons a choice whose answers run their
+// own paths (foundry-monks-flow.ts). A change of the creature's elevation
+// becomes a ladder between floors. What has no match (macros, other alters,
+// animations) is reported.
 
 const SEEN = ['tiles', 'tokens', 'regions', 'drawings', 'notes', 'sounds', 'lights'] as const;
 const seen = (t: Target): t is TriggerTarget => (SEEN as readonly string[]).includes(t.coll);
-
-const plain = (html: unknown) =>
-  typeof html === 'string'
-    ? html
-        .replace(/<[^<>]*>/g, ' ')
-        .split(/\s+/)
-        .filter(Boolean)
-        .join(' ')
-    : '';
 
 /** Monk's "activate" on a light or sound: lit (shown) or put out (hidden). */
 const LIT: Record<string, 'show' | 'hide'> = { activate: 'show', deactivate: 'hide' };
@@ -275,11 +181,15 @@ function modelDoor(a: MonkAction, c: ActionContext): TriggerAction[] {
 const DOOR_STATES = ['closed', 'open', 'locked'] as const;
 
 /** Monk's actions with no match here: unknown ones, and alters of anything but elevation and place. */
-const unmatched = (a: MonkAction) => {
+const unmatched = (a: MonkAction, c: ActionContext) => {
   if (a.action === 'alter') return !ALTERED.has(String(a.data?.attribute));
-  if (a.action === 'dialog') return !gmNote(a).length;
+  if (a.action === 'distance') return nearOf([a], c.gridSize) === null;
+  if (a.action && MAYBE.has(a.action)) return !ACTIONS[a.action]!(a, c).length;
   return !ACTIONS[a.action ?? ''] && !QUIET.has(a.action ?? '');
 };
+
+/** Monk's actions that have a match only for some of their settings. */
+const MAYBE = new Set(['dialog', 'rotation', 'movetoken', 'scene', 'openjournal']);
 
 const DOOR: Record<string, 'open' | 'closed' | 'locked' | 'toggle'> = {
   open: 'open',
@@ -323,29 +233,18 @@ const ACTIONS: Record<string, (a: MonkAction, c: ActionContext) => TriggerAction
   elevation,
   notification: message,
   chatmessage: message,
-  dialog: gmNote,
+  dialog: (a, c) => [...gmNote(a), ...choiceOf(a, c.segments, (b) => convert(b, c))],
+  rotation: rotationOf,
+  movetoken: moveOf,
+  scene: sceneViewOf,
+  openjournal: journalOf,
 };
+
+/** Our actions for one Monk's action (none: no match). */
+const convert = (a: MonkAction, c: ActionContext): TriggerAction[] => ACTIONS[a.action ?? '']?.(a, c) ?? [];
 
 /** Monk's actions that change nothing on their own (timing, labels). */
 const QUIET = new Set(['delay', 'anchor', 'stop', 'goto']);
-
-/** The actions a click most likely runs: before the first anchor; else the "next" branch, else the first that does something. */
-function path(actions: MonkAction[]): MonkAction[] {
-  const segments: { tag?: string; actions: MonkAction[] }[] = [{ actions: [] }];
-  for (const a of actions) {
-    if (a.action === 'anchor') segments.push({ tag: typeof a.data?.tag === 'string' ? a.data.tag : '', actions: [] });
-    else segments.at(-1)!.actions.push(a);
-  }
-  const upToJump = (s: MonkAction[]) => {
-    const end = s.findIndex((a) => a.action === 'goto' || a.action === 'stop');
-    return end < 0 ? s : s.slice(0, end);
-  };
-  const acting = (s: { actions: MonkAction[] }) =>
-    s.actions.some((a) => a.action && ACTIONS[a.action] && !unmatched(a));
-  const first = acting(segments[0]!) ? segments[0] : undefined;
-  const chosen = first ?? segments.find((s) => s.tag === 'next' && acting(s)) ?? segments.find(acting);
-  return upToJump(chosen?.actions ?? []);
-}
 
 /** When Monk's runs it: walked onto, else clicked (right-click and "manual" ones: by the GM). */
 function onOf(trigger: unknown): { on: 'click' | 'enter'; gmOnly?: true } | undefined {
@@ -368,7 +267,12 @@ interface MonksFlags {
 const monksFlags = (raw: FoundryDoc) =>
   (raw.flags as Record<string, unknown> | undefined)?.['monks-active-tiles'] as MonksFlags | undefined;
 
-function triggerOf(when: { on: 'click' | 'enter'; gmOnly?: true }, actions: TriggerAction[], flags: MonksFlags) {
+function triggerOf(
+  when: { on: 'click' | 'enter'; gmOnly?: true },
+  actions: TriggerAction[],
+  flags: MonksFlags,
+  near: number | undefined,
+) {
   // A tile that only has words for the GM is the GM's to click.
   const noteOnly = actions.every((a) => a.type === 'message' && a.gmOnly);
   const gmOnly = when.gmOnly ?? (flags.controlled === 'gm' || (when.on === 'click' && noteOnly));
@@ -377,6 +281,7 @@ function triggerOf(when: { on: 'click' | 'enter'; gmOnly?: true }, actions: Trig
     actions,
     ...(gmOnly ? { gmOnly: true } : {}),
     ...(flags.active === false ? { disabled: true } : {}),
+    ...(near === undefined ? {} : { near }),
   };
   return trigger;
 }
@@ -392,11 +297,12 @@ export function foundryTrigger(raw: FoundryDoc, self: string, lookups: TriggerLo
   const flags = monksFlags(raw);
   const all = flags?.actions ?? [];
   if (!flags || !all.length) return { lost: [] };
-  const c: ActionContext = { ...lookups, self };
-  const actions = floorsFirst(path(all).flatMap((a) => ACTIONS[a.action ?? '']?.(a, c) ?? []));
-  const lost = all.filter(unmatched).map((a) => a.action ?? '?');
+  const c: ActionContext = { ...lookups, self, segments: segmentsOf(all) };
+  const acts = (a: MonkAction) => !!a.action && !!ACTIONS[a.action] && !unmatched(a, c);
+  const actions = upToChoice(floorsFirst(pathOf(c.segments, acts).flatMap((a) => convert(a, c))));
+  const lost = all.filter((a) => unmatched(a, c)).map((a) => a.action ?? '?');
   const when = onOf(flags.trigger);
   if (!when) return { lost: [...lost, `when: ${JSON.stringify(flags.trigger)}`] };
   if (!actions.length) return { lost };
-  return { trigger: triggerOf(when, actions, flags), lost };
+  return { trigger: triggerOf(when, actions, flags, nearOf(all, c.gridSize) ?? undefined), lost };
 }
