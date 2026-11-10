@@ -90,7 +90,9 @@ export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng =
   if (feature.doublesMomentum) next = doubleMomentum(next, sheet);
   const { token: healedToken, healed } = healFrom(next, sheet, feature, rng);
   next = healedToken;
-  const effect = featureEffect(token, feature) ?? finish.effect;
+  const rolled = featureCheck(token, sheet, feature, rng);
+  const made = featureEffect(token, feature) ?? finish.effect;
+  const effect = made?.hides && rolled.check ? { ...made, hidden: rolled.check.total } : made;
   if (effect) next = { ...next, effects: [...(next.effects ?? []).filter((e) => e.id !== effect.id), effect] };
   return {
     token: next,
@@ -100,7 +102,7 @@ export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng =
     grantAction: feature.grantAction,
     dash: finish.dash ?? dashOf(feature, sheet.speed),
     grantAttacks: finish.grantAttacks ?? feature.grantAttacks,
-    ...featureCheck(token, sheet, feature, rng),
+    ...rolled,
   };
 }
 

@@ -41,5 +41,12 @@ export function perceiverOf(token: Token, monster?: Partial<MonsterSenses>, alwa
     senses: sensesOf(token, monster, always),
     blinded: hasCondition(token, 'blinded'),
     invisible: hasCondition(token, 'invisible'),
+    ...concealment(token),
   };
+}
+
+/** How well a hiding creature hides: its best Stealth total, when it hides at all. */
+function concealment(token: Token): Pick<Perceiver, 'concealed'> {
+  const totals = (token.effects ?? []).flatMap((e) => (e.hidden === undefined ? [] : [e.hidden]));
+  return totals.length ? { concealed: Math.max(...totals) } : {};
 }
