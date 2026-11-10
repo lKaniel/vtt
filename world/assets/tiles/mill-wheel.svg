@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <circle cx="128" cy="128" r="118" fill="#5a3a1e" stroke="#2a1a08" stroke-width="8"/>
+  <circle cx="128" cy="128" r="88" fill="none" stroke="#2a1a08" stroke-width="6"/>
+  <circle cx="128" cy="128" r="22" fill="#3a2a18" stroke="#1a1208" stroke-width="6"/>
+  <path d="M128 128 L240 128" stroke="#2a1a08" stroke-width="10"/>
+  <path d="M128 128 L240 128" stroke="#8a5a2e" stroke-width="5"/>
+  <path d="M128 128 L207 207" stroke="#2a1a08" stroke-width="10"/>
+  <path d="M128 128 L207 207" stroke="#8a5a2e" stroke-width="5"/>
+  <path d="M128 128 L128 240" stroke="#2a1a08" stroke-width="10"/>
+  <path d="M128 128 L128 240" stroke="#8a5a2e" stroke-width="5"/>
+  <path d="M128 128 L49 207" stroke="#2a1a08" stroke-width="10"/>
+  <path d="M128 128 L49 207" stroke="#8a5a2e" stroke-width="5"/>
+  <path d="M128 128 L16 128" stroke="#2a1a08" stroke-width="10"/>
+  <path d="M128 128 L16 128" stroke="#8a5a2e" stroke-width="5"/>
+  <path d="M128 128 L49 49" stroke="#2a1a08" stroke-width="10"/>
+  <path d="M128 128 L49 49" stroke="#8a5a2e" stroke-width="5"/>
+  <path d="M128 128 L128 16" stroke="#2a1a08" stroke-width="10"/>
+  <path d="M128 128 L128 16" stroke="#8a5a2e" stroke-width="5"/>
+  <path d="M128 128 L207 49" stroke="#2a1a08" stroke-width="10"/>
+  <path d="M128 128 L207 49" stroke="#8a5a2e" stroke-width="5"/>
+</svg>

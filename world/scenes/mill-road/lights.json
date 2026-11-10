@@ -1,0 +1,20 @@
+[
+  {
+    "id": "mill-lantern",
+    "x": 2450,
+    "y": 1050,
+    "bright": 15,
+    "dim": 15,
+    "color": "#ffc870",
+    "animation": "flicker"
+  },
+  {
+    "id": "campfire",
+    "x": 1250,
+    "y": 1650,
+    "bright": 20,
+    "dim": 20,
+    "color": "#ff8a3a",
+    "animation": "flicker"
+  }
+]

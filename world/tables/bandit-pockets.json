@@ -1,0 +1,26 @@
+{
+  "id": "bandit-pockets",
+  "name": "Bandit pockets",
+  "results": [
+    {
+      "text": "2d6 copper pieces and a heel of stale bread"
+    },
+    {
+      "text": "A whetstone and 1d6 silver pieces"
+    },
+    {
+      "text": "A pair of loaded dice (advantage on one game of chance)"
+    },
+    {
+      "text": "A crumpled note: “Ilse says the mill by sunset. Bring flour sacks.”",
+      "weight": 2
+    },
+    {
+      "text": "A potion of healing",
+      "weight": 1
+    },
+    {
+      "text": "Nothing but lint and a grudge"
+    }
+  ]
+}

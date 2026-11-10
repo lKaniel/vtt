@@ -1,0 +1,29 @@
+{
+  "id": "the-missing-miller",
+  "name": "The Missing Miller",
+  "folder": "mill-road",
+  "quest": {
+    "status": "active",
+    "objectives": [
+      {
+        "text": "Hear the innkeeper out at the crossroads"
+      },
+      {
+        "text": "Follow the mill road east"
+      },
+      {
+        "text": "Find Hesk the miller"
+      },
+      {
+        "text": "Drive the bandits off the road"
+      }
+    ]
+  },
+  "pages": [
+    {
+      "id": "hook",
+      "name": "The innkeeper's worry",
+      "text": "“Hesk hasn't brought a sack of flour in a week, and Hesk never misses market day. The mill's an hour east along the old road, past the woods. I'll stand you all a month of suppers if you bring him back.”\n\nTake the mill road: @scene[mill-road]{The Mill Road}."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="field" cx="50%" cy="40%" r="65%">
+      <stop offset="0" stop-color="#7aaa4a"/>
+      <stop offset="1" stop-color="#1e3a10"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0cf8a"/>
+      <stop offset="0.45" stop-color="#a8742e"/>
+      <stop offset="1" stop-color="#4a2e10"/>
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="124" fill="url(#ring)"/>
+  <circle cx="128" cy="128" r="110" fill="url(#field)" stroke="#2a1a08" stroke-width="4"/>
+  <g fill="none" stroke="#1a1208" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M86 112 L30 84 L84 140 Z" fill="#6a9a3a"/>
+    <path d="M170 112 L226 84 L172 140 Z" fill="#6a9a3a"/>
+    <path d="M84 120 C84 82 106 66 128 66 C150 66 172 82 172 120 C172 166 152 194 128 194 C104 194 84 166 84 120 Z" fill="#88b850"/>
+    <ellipse cx="108" cy="118" rx="10" ry="8" fill="#f0d040"/>
+    <ellipse cx="148" cy="118" rx="10" ry="8" fill="#f0d040"/>
+    <path d="M100 154 C116 170 140 170 156 154 L150 160 L144 152 L136 162 L128 152 L120 162 L112 152 L106 160 Z" fill="#efe3c8" stroke-width="4"/>
+  </g>
+</svg>
