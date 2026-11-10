@@ -5,6 +5,7 @@ import { t } from '../i18n/index.ts';
 import type { Route } from '../route.ts';
 import { api } from '../server-api.ts';
 import { Button } from './kit/button.tsx';
+import { Pressable } from './kit/pressable.tsx';
 
 /** Your characters at a game, on its page: made with the creator, levelled up, deleted. */
 export function CharactersPanel({
@@ -29,10 +30,10 @@ export function CharactersPanel({
         {characters.map((c) => (
           <RosterCard key={c.id} c={c} on={c.id === chosen?.id} onPick={() => setPicked(c.id)} />
         ))}
-        <button className="roster-card roster-new" onClick={() => go({ name: 'create', game })}>
+        <Pressable className="roster-card roster-new" onClick={() => go({ name: 'create', game })}>
           <span className="roster-plus">+</span>
           <span>{t('characters.create')}</span>
-        </button>
+        </Pressable>
       </div>
       {chosen && <ChosenBar game={game} c={chosen} go={go} onDelete={() => void remove(chosen)} />}
     </section>
@@ -42,7 +43,7 @@ export function CharactersPanel({
 function RosterCard({ c, on, onPick }: Readonly<{ c: Character; on: boolean; onPick: () => void }>) {
   const scores = abilityScores(c);
   return (
-    <button className={on ? 'roster-card on' : 'roster-card'} onClick={onPick} onDoubleClick={onPick}>
+    <Pressable className={on ? 'roster-card on' : 'roster-card'} onClick={onPick} onDoubleClick={onPick}>
       <span
         className="roster-face"
         style={{ backgroundImage: `url(${c.img ?? '/art/ui/portrait-default.webp'})`, borderColor: c.color }}
@@ -56,7 +57,7 @@ function RosterCard({ c, on, onPick }: Readonly<{ c: Character; on: boolean; onP
         <span>CON {scores.con}</span>
       </span>
       <span className="roster-rules">{c.rules}</span>
-    </button>
+    </Pressable>
   );
 }
 

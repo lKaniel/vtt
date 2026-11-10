@@ -5,6 +5,7 @@ import { t } from '../../i18n/index.ts';
 import { Input } from '../kit/input.tsx';
 import { Toggle } from '../kit/toggle.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../kit/toggle-group.tsx';
+import { Pressable } from '../kit/pressable.tsx';
 
 // The pieces every sidebar list is made of, the Compendium's too: the search
 // field, the filter switch, the view modes, and an entry drawn as a row
@@ -125,7 +126,7 @@ export function EntryRow({
       draggable={draggable}
       onDragStart={onDragStart}
     >
-      <button className={cn('lib-main', compact && 'gap-1.5 py-0.5')} {...clicks}>
+      <Pressable className={cn('lib-main', compact && 'gap-1.5 py-0.5')} {...clicks}>
         <span className={cn(FRAME, compact ? 'size-5' : 'size-8')}>{look.picture}</span>
         <span className="lib-text flex-1">
           <span className={cn('lib-name', compact && 'text-[13px]')}>{look.name}</span>
@@ -133,7 +134,7 @@ export function EntryRow({
           {!compact && look.meter}
         </span>
         {look.badge}
-      </button>
+      </Pressable>
       {children}
     </li>
   );
@@ -154,7 +155,7 @@ export function EntryTile({
       onDragStart={onDragStart}
       className={cn(draggable && 'cursor-grab', li.className)}
     >
-      <button
+      <Pressable
         className={cn(
           'flex w-full cursor-inherit flex-col items-center gap-1 rounded-[4px] border bg-transparent p-1 text-center hover:border-gold hover:bg-gold/10',
           look.on ? 'border-gold bg-gold/15' : 'border-transparent',
@@ -165,7 +166,7 @@ export function EntryTile({
       >
         <span className={cn(FRAME, 'aspect-square w-full')}>{look.picture}</span>
         <span className="line-clamp-2 w-full text-[11px] leading-tight text-foreground">{look.name}</span>
-      </button>
+      </Pressable>
     </li>
   );
 }

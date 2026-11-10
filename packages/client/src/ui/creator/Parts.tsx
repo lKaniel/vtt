@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { parseRich } from '../../text/rich-text.ts';
 import { Toggle } from '../kit/toggle.tsx';
+import { Pressable } from '../kit/pressable.tsx';
 
 // Building blocks shared by the creator's steps.
 
@@ -34,11 +35,11 @@ export function OptionCard({
   children,
 }: Readonly<{ title: string; sub?: string; on: boolean; onClick: () => void; children?: ReactNode }>) {
   return (
-    <button className={on ? 'cc-card on' : 'cc-card'} onClick={onClick} aria-pressed={on}>
+    <Pressable className={on ? 'cc-card on' : 'cc-card'} onClick={onClick} aria-pressed={on}>
       <span className="cc-card-title">{title}</span>
       {sub && <span className="cc-card-sub">{sub}</span>}
       {children}
-    </button>
+    </Pressable>
   );
 }
 
