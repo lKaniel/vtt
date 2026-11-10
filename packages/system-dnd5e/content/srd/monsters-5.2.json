@@ -182,6 +182,21 @@
           "id": "cloud-of-insects",
           "name": "Cloud of Insects",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "save": {
+              "ability": "dex",
+              "dc": 17,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "4d10",
+                "type": "poison"
+              }
+            ]
+          },
           "description": "*Dexterity Saving Throw:* DC 17, one creature the dragon can see within 120 feet. *Failure:* 22 (4d10) Poison damage, and the target has Disadvantage on saving throws to maintain Concentration until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -523,6 +538,21 @@
           "id": "scorching-sands",
           "name": "Scorching Sands",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "save": {
+              "ability": "dex",
+              "dc": 16,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "6d8",
+                "type": "fire"
+              }
+            ]
+          },
           "description": "*Dexterity Saving Throw:* DC 16, one creature the dragon can see within 120 feet. *Failure:* 27 (6d8) Fire damage, and the target's Speed is halved until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         }
       ]
@@ -723,6 +753,29 @@
           "id": "thunderclap",
           "name": "Thunderclap",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 90,
+            "area": {
+              "shape": "sphere",
+              "size": 20
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "con",
+              "dc": 17,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "3d6",
+                "type": "thunder"
+              }
+            ],
+            "effect": {
+              "conditions": ["deafened"]
+            }
+          },
           "description": "*Constitution Saving Throw:* DC 17, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 90 feet. *Failure:* 10 (3d6) Thunder damage, and the target has the Deafened condition until the end of its next turn."
         }
       ]
@@ -916,6 +969,21 @@
           "id": "giggling-magic",
           "name": "Giggling Magic",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 90,
+            "save": {
+              "ability": "cha",
+              "dc": 17,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "7d6",
+                "type": "psychic"
+              }
+            ]
+          },
           "description": "*Charisma Saving Throw:* DC 17, one creature the dragon can see within 90 feet. *Failure:* 24 (7d6) Psychic damage. Until the end of its next turn, the target rolls 1d6 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -1101,6 +1169,25 @@
           "id": "banish",
           "name": "Banish",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "rounds": 1,
+            "save": {
+              "ability": "cha",
+              "dc": 21,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "3d6",
+                "type": "force"
+              }
+            ],
+            "effect": {
+              "conditions": ["incapacitated"]
+            }
+          },
           "description": "*Charisma Saving Throw:* DC 21, one creature the dragon can see within 120 feet. *Failure:* 10 (3d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it reappears in an unoccupied space of the dragon's choice within 120 feet of the dragon. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -1293,6 +1380,25 @@
           "id": "noxious-miasma",
           "name": "Noxious Miasma",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 90,
+            "area": {
+              "shape": "sphere",
+              "size": 20
+            },
+            "save": {
+              "ability": "con",
+              "dc": 17,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6",
+                "type": "poison"
+              }
+            ]
+          },
           "description": "*Constitution Saving Throw:* DC 17, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 90 feet. *Failure:* 7 (2d6) Poison damage, and the target takes a -2 penalty to AC until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -1591,6 +1697,26 @@
           "id": "cold-gale",
           "name": "Cold Gale",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "line",
+              "size": 60,
+              "width": 10
+            },
+            "save": {
+              "ability": "dex",
+              "dc": 19,
+              "onSave": "half"
+            },
+            "damage": [
+              {
+                "dice": "4d6",
+                "type": "cold"
+              }
+            ]
+          },
           "description": "*Dexterity Saving Throw:* DC 19, each creature in a 60-foot-long, 10-foot-wide Line. *Failure:* 14 (4d6) Cold damage, and the target is pushed up to 30 feet straight away from the dragon. *Success:* Half damage only. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -1774,6 +1900,25 @@
           "id": "freezing-burst",
           "name": "Freezing Burst",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "area": {
+              "shape": "sphere",
+              "size": 30
+            },
+            "save": {
+              "ability": "con",
+              "dc": 14,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6",
+                "type": "cold"
+              }
+            ]
+          },
           "description": "*Constitution Saving Throw:* DC 14, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 120 feet. *Failure:* 7 (2d6) Cold damage, and the target's Speed is 0 until the end of the target's next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -2021,6 +2166,21 @@
           "id": "cloud-of-insects",
           "name": "Cloud of Insects",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "save": {
+              "ability": "dex",
+              "dc": 21,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "6d10",
+                "type": "poison"
+              }
+            ]
+          },
           "description": "*Dexterity Saving Throw:* DC 21, one creature the dragon can see within 120 feet. *Failure:* 33 (6d10) Poison damage, and the target has Disadvantage on saving throws to maintain Concentration until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -2376,6 +2536,21 @@
           "id": "scorching-sands",
           "name": "Scorching Sands",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "save": {
+              "ability": "dex",
+              "dc": 20,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "8d8",
+                "type": "fire"
+              }
+            ]
+          },
           "description": "*Dexterity Saving Throw:* DC 20, one creature the dragon can see within 120 feet. *Failure:* 36 (8d8) Fire damage, and the target's Speed is halved until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         }
       ]
@@ -2577,6 +2752,29 @@
           "id": "thunderclap",
           "name": "Thunderclap",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "area": {
+              "shape": "sphere",
+              "size": 20
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "con",
+              "dc": 22,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "3d8",
+                "type": "thunder"
+              }
+            ],
+            "effect": {
+              "conditions": ["deafened"]
+            }
+          },
           "description": "*Constitution Saving Throw:* DC 22, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 120 feet. *Failure:* 13 (3d8) Thunder damage, and the target has the Deafened condition until the end of its next turn."
         }
       ]
@@ -2796,6 +2994,21 @@
           "id": "giggling-magic",
           "name": "Giggling Magic",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "save": {
+              "ability": "cha",
+              "dc": 21,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "9d6",
+                "type": "psychic"
+              }
+            ]
+          },
           "description": "*Charisma Saving Throw:* DC 21, one creature the dragon can see within 120 feet. *Failure:* 31 (9d6) Psychic damage. Until the end of its next turn, the target rolls 1d8 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -3001,6 +3214,25 @@
           "id": "banish",
           "name": "Banish",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "rounds": 1,
+            "save": {
+              "ability": "cha",
+              "dc": 24,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "7d6",
+                "type": "force"
+              }
+            ],
+            "effect": {
+              "conditions": ["incapacitated"]
+            }
+          },
           "description": "*Charisma Saving Throw:* DC 24, one creature the dragon can see within 120 feet. *Failure:* 24 (7d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it reappears in an unoccupied space of the dragon's choice within 120 feet of the dragon. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -3206,6 +3438,25 @@
           "id": "noxious-miasma",
           "name": "Noxious Miasma",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 90,
+            "area": {
+              "shape": "sphere",
+              "size": 30
+            },
+            "save": {
+              "ability": "con",
+              "dc": 21,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "5d6",
+                "type": "poison"
+              }
+            ]
+          },
           "description": "*Constitution Saving Throw:* DC 21, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 90 feet. *Failure:* 17 (5d6) Poison damage, and the target takes a -2 penalty to AC until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -3530,6 +3781,26 @@
           "id": "cold-gale",
           "name": "Cold Gale",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "line",
+              "size": 60,
+              "width": 10
+            },
+            "save": {
+              "ability": "dex",
+              "dc": 23,
+              "onSave": "half"
+            },
+            "damage": [
+              {
+                "dice": "4d6",
+                "type": "cold"
+              }
+            ]
+          },
           "description": "*Dexterity Saving Throw:* DC 23, each creature in a 60-foot-long, 10-foot-wide Line. *Failure:* 14 (4d6) Cold damage, and the target is pushed up to 30 feet straight away from the dragon. *Success:* Half damage only. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -3747,6 +4018,25 @@
           "id": "freezing-burst",
           "name": "Freezing Burst",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "area": {
+              "shape": "sphere",
+              "size": 30
+            },
+            "save": {
+              "ability": "con",
+              "dc": 20,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "4d6",
+                "type": "cold"
+              }
+            ]
+          },
           "description": "*Constitution Saving Throw:* DC 20, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 120 feet. *Failure:* 14 (4d6) Cold damage, and the target's Speed is 0 until the end of the target's next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -15258,6 +15548,24 @@
           "id": "toxic-ink",
           "name": "Toxic Ink",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 15
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "con",
+              "dc": 23,
+              "onSave": "none"
+            },
+            "damage": [],
+            "effect": {
+              "conditions": ["blinded", "poisoned"]
+            }
+          },
           "description": "*Constitution Saving Throw:* DC 23, each creature in a 15-foot Emanation originating from the kraken while it is underwater. *Failure:* The target has the Blinded and Poisoned conditions until the end of the kraken's next turn. The kraken then moves up to its Speed. *Failure or Success:* The kraken can't take this action again until the start of its next turn."
         }
       ]
@@ -15623,6 +15931,25 @@
           "id": "disrupt-life",
           "name": "Disrupt Life",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 20
+            },
+            "save": {
+              "ability": "con",
+              "dc": 20,
+              "onSave": "half"
+            },
+            "damage": [
+              {
+                "dice": "9d6",
+                "type": "necrotic"
+              }
+            ]
+          },
           "description": "*Constitution Saving Throw:* DC 20, each creature that isn't an Undead in a 20-foot Emanation originating from the lich. *Failure:* 31 (9d6) Necrotic damage. *Success:* Half damage. *Failure or Success:* The lich can't take this action again until the start of its next turn."
         },
         {
@@ -21086,12 +21413,45 @@
           "id": "blinding-gaze",
           "name": "Blinding Gaze",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "rounds": 10,
+            "save": {
+              "ability": "con",
+              "dc": 25,
+              "onSave": "none"
+            },
+            "damage": [],
+            "effect": {
+              "conditions": ["blinded"]
+            }
+          },
           "description": "*Constitution Saving Throw:* DC 25, one creature the solar can see within 120 feet. *Failure:* The target has the Blinded condition for 1 minute. *Failure or Success:* The solar can't take this action again until the start of its next turn."
         },
         {
           "id": "radiant-teleport",
           "name": "Radiant Teleport",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "save": {
+              "ability": "dex",
+              "dc": 25,
+              "onSave": "half"
+            },
+            "damage": [
+              {
+                "dice": "2d10",
+                "type": "radiant"
+              }
+            ]
+          },
           "description": "The solar teleports up to 60 feet to an unoccupied space it can see. *Dexterity Saving Throw:* DC 25, each creature in a 10-foot Emanation originating from the solar at its destination space. *Failure:* 11 (2d10) Radiant damage. *Success:* Half damage."
         }
       ]

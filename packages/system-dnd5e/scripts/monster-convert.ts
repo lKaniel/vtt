@@ -295,17 +295,60 @@ function legendaryAttack(pack: Pack, action: Entry): string | undefined {
   return source ? (pack.text[`${source}.name`] ?? source.split('.').at(-1)) : undefined;
 }
 
+const ABILITY: Record<string, string> = {
+  strength: 'str',
+  dexterity: 'dex',
+  constitution: 'con',
+  intelligence: 'int',
+  wisdom: 'wis',
+  charisma: 'cha',
+};
+const WORD_CONDITIONS =
+  /(?:or (?:be|become) |knocked )(blinded|charmed|deafened|frightened|paralyzed|poisoned|prone|restrained|stunned)/i;
+
+/** Where the words aim: everyone around the monster (an emanation), or what the words say. */
+function wordsArea(text: string): Fields {
+  const around = /\beach\b[^.]*within (\d+) feet of (?:the|it)\b/i.exec(text) ?? /in a (\d+)-foot radius/i.exec(text);
+  return around ? { areaShape: 'emanation', areaSize: Number(around[1]) } : {};
+}
+
+/** A 2014 legendary action behind a save, read from its words (the 5.1 pack gives it no fields). */
+function wordsFields(text: string): Fields | undefined {
+  const save = /DC (\d+) (\w+) saving throw/i.exec(text);
+  const ability = save && ABILITY[save[2]!.toLowerCase()];
+  if (!ability || /ends its turn/i.test(text)) return undefined;
+  const hurt = /\(([\dd +]+)\) (\w+) damage/i.exec(text);
+  const held = WORD_CONDITIONS.exec(text)?.[1]?.toLowerCase();
+  return {
+    save: ability,
+    saveDc: Number(save[1]),
+    ...(hurt && { damage: hurt[1], damageType: hurt[2]!.toLowerCase() }),
+    ...(/half as much damage/i.test(text) && { saveEffect: 'half' }),
+    ...(held && { conditions: [`conditions.${held}`] }),
+    ...wordsArea(text),
+  };
+}
+
+/** A legendary action that is a save action, run like a breath weapon: from the fields, else the words. */
+function legendarySpell(f: Fields, text: string): object | undefined {
+  if (f.spell) return undefined;
+  const fields = f.save && f.saveDc ? f : wordsFields(text);
+  return fields && (fields.damage || conditions(fields).length) ? saveSpell(fields, text) : undefined;
+}
+
 function legendaryOption(pack: Pack, ref: string): object | undefined {
   const action = pack.entries.get(ref);
   if (action?.fields?.kind !== 'legendary') return undefined;
   const name = (pack.text[`${ref}.name`] ?? bare(ref)).replace(/ ?\(Costs? \d+ Actions?\)/i, '');
   const description = pack.text[`${ref}.description`];
   const attack = legendaryAttack(pack, action);
+  const spell = attack ? undefined : legendarySpell(action.fields, description ?? '');
   return {
     id: ref.split('.').at(-1),
     name,
     cost: num(action.fields.legendaryCost) ?? 1,
     ...(attack && { attack }),
+    ...(spell && { spell }),
     ...(description && { description }),
   };
 }

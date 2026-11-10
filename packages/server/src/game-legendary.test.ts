@@ -73,6 +73,18 @@ describe('legendary actions', () => {
     expect(gm.take('error')[0]?.message).toMatch(/left/);
   });
 
+  it('run a save action like a breath weapon: Wing Attack hurts and fells those around', () => {
+    const { gm } = fight();
+    // The hero's Dexterity save fails, then the 2d6 + 6.
+    dice = [d20(2), 0.5, 0.5];
+    gm.receive({ t: 'legendary', token: 'goblin', option: 'wing-attack' });
+    expect(gm.take('error')).toEqual([]);
+    const hero = store.tokens.get('hero')!;
+    expect(hero.hp).toBeLessThan(38);
+    expect((hero.effects ?? []).some((e) => e.conditions?.includes('prone'))).toBe(true);
+    expect(dragon().spent?.uses?.legendary).toBe(2);
+  });
+
   it('come back when its turn starts, and players cannot use them', () => {
     const { gm, ana } = fight();
     ana.receive({ t: 'legendary', token: 'goblin', option: 'detect' });

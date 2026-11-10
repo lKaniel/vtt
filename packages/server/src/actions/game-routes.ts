@@ -9,6 +9,7 @@ import type { CombatActions } from './combat-actions.ts';
 import type { DamageActions } from './damage-actions.ts';
 import type { EntryActions } from './entry-actions.ts';
 import { castFeature } from '../play/feature-casting.ts';
+import { castLegendary, isLegendarySpell } from '../play/legendary-casting.ts';
 import { castPower, isPower, release } from '../play/power-casting.ts';
 import type { FeatureActions } from './feature-actions.ts';
 import type { FogKeeper } from '../play/fog-keeper.ts';
@@ -89,7 +90,11 @@ function tableRoutes(p: GameParts) {
     combatEnd: (s) => p.combat.end(s.player),
     endTurn: (s, m) => p.combat.endTurn(s.player, m.token),
     attack: (s, m) => p.combat.attack(s.player, s.canSee, m),
-    ...each(['turnBased', 'legendary', 'lair'], (s, m) => p.combat.turnAction(s.player, s.canSee, m)),
+    ...each(['turnBased', 'legendary', 'lair'], (s, m) =>
+      m.t !== 'turnBased' && isLegendarySpell(p.table, m)
+        ? castLegendary(p, s.player, s.canSee, m)
+        : p.combat.turnAction(s.player, s.canSee, m),
+    ),
     applyDamage: (s, m) => p.damage.apply(s.player, s.canSee, m),
     ...each(['condition', 'combatant', 'initiative', 'turnOverride'], (s, m) => p.hud.handle(s.player, s.canSee, m)),
   } satisfies Partial<Routes>;
