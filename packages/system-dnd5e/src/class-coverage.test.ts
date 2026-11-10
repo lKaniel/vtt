@@ -3,10 +3,10 @@ import { srdFor } from './content.ts';
 import type { Class, Feature } from './spell-schema.ts';
 import type { Edition } from './stats-schema.ts';
 
-// Every class and subclass feature up to 5th level, and every option to pick
+// Every class and subclass feature up to 20th level, and every option to pick
 // there, either does something in the engine or says how the GM runs it.
 
-const MAX_LEVEL = 5;
+const MAX_LEVEL = 20;
 
 const MECHANICS: (keyof Feature)[] = [
   'action',
@@ -28,6 +28,7 @@ const MECHANICS: (keyof Feature)[] = [
   'meleeDamage',
   'healPool',
   'auraRadius',
+  'saveProficiencies',
   'manual',
 ];
 
@@ -36,6 +37,12 @@ const RUN_BY_CLASS: Record<string, (c: Class) => boolean> = {
   spellcasting: (c) => !!c.spellcasting,
   'pact-magic': (c) => !!c.spellcasting,
   'extra-attack': (c) => !!c.attacks,
+  'extra-attack-2': (c) => !!c.attacks,
+  'extra-attack-3': (c) => !!c.attacks,
+  'two-extra-attacks': (c) => !!c.attacks,
+  'three-extra-attacks': (c) => !!c.attacks,
+  'improved-divine-smite': () => true, // weapon-attack.ts
+  'radiant-strikes': () => true, // weapon-attack.ts
   'sneak-attack': (c) => !!c.sneakAttack,
   'weapon-mastery': (c) => !!c.weaponMastery,
   'divine-smite': () => true, // riders.ts
@@ -61,7 +68,7 @@ function unexplained(cls: Class): string[] {
   });
 }
 
-describe.each(['2014', '2024'] as Edition[])('%s class features to 5th level', (edition) => {
+describe.each(['2014', '2024'] as Edition[])('%s class features to 20th level', (edition) => {
   it('are run by the engine or say why the GM runs them', () => {
     expect([...srdFor(edition).classes.values()].flatMap(unexplained)).toEqual([]);
   });
