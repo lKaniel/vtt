@@ -1,6 +1,7 @@
 import type { Point } from '@vtt/shared';
 import { Container, type FederatedPointerEvent, Graphics } from 'pixi.js';
-import { LongPress, PING_MS, type ShownPing } from '../session/presence.ts';
+import { cursorsShown, LongPress, PING_MS, type ShownPing } from '../session/presence.ts';
+import { edgeArrow } from './ping-arrow.ts';
 import type { Session } from '../session/session.ts';
 import type { Targeter } from '../session/targets.ts';
 import { LabelPool } from './label-pool.ts';
@@ -11,6 +12,8 @@ const OUTLINE = 0x000000;
 const FOLLOW = 18;
 /** The rings of a ping, in screen pixels. */
 const RING = { from: 12, to: 70, count: 3 };
+/** The arrow at the screen's edge toward a ping off it: its length and how far in from the edge, screen pixels. */
+const ARROW = { size: 22, margin: 36 };
 
 /**
  * Where everyone else is pointing, drawn over the map: each player's cursor
@@ -94,7 +97,8 @@ export class PresenceLayer {
     this.labels.begin(1 / this.zoom);
     drawTargets(this.g, this.targetMarks(), this.placeOf, 1 / this.zoom);
     for (const p of pings) this.drawPing(p, (now - p.since) / PING_MS);
-    for (const c of this.session.presence.cursors.values()) this.drawCursor(this.drawn.get(c.player)!, c.color, c.name);
+    const cursors = cursorsShown() ? this.session.presence.cursors.values() : [];
+    for (const c of cursors) this.drawCursor(this.drawn.get(c.player)!, c.color, c.name);
     this.labels.end();
   }
 
@@ -135,6 +139,27 @@ export class PresenceLayer {
       .fill({ color: p.color, alpha: 1 - t })
       .stroke({ width: 2 * px, color: OUTLINE, alpha: 1 - t });
     this.label([x, y - RING.from * 1.6 * px], p.name, [0.5, 1]);
+    this.drawArrow(p, t);
+  }
+
+  /** A ping off screen: an arrow on the edge pointing the way to it, with who pinged. */
+  private drawArrow(p: ShownPing, t: number): void {
+    const view = this.session.editor.viewRect;
+    const px = 1 / this.zoom;
+    const arrow = view && edgeArrow(view, p.at, ARROW.margin * px);
+    if (!arrow) return;
+    const [x, y] = arrow.at;
+    const [c, s] = [Math.cos(arrow.angle), Math.sin(arrow.angle)];
+    const point = (along: number, across: number) => [
+      x + (c * along - s * across) * px,
+      y + (s * along + c * across) * px,
+    ];
+    const half = ARROW.size / 2;
+    this.g
+      .poly([...point(half, 0), ...point(-half, half * 0.8), ...point(-half * 0.4, 0), ...point(-half, -half * 0.8)])
+      .fill({ color: p.color, alpha: 1 - t * 0.5 })
+      .stroke({ width: 2 * px, color: OUTLINE, alpha: 1 - t * 0.5 });
+    this.label(point(-ARROW.size, 0) as Point, p.name, [0.5 + c * 0.5, 0.5 + s * 0.5]);
   }
 
   /** An arrow pointing at `at`, and its player's name. */

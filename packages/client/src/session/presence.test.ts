@@ -1,6 +1,6 @@
 import type { Point } from '@vtt/shared';
 import { describe, expect, it, vi } from 'vitest';
-import { LongPress, PING_MS, Presence } from './presence.ts';
+import { cursorsShown, LongPress, PING_MS, Presence, showCursors } from './presence.ts';
 
 function table() {
   let now = 0;
@@ -149,5 +149,15 @@ describe('a long press', () => {
     expect(lp.up()).toBe(false);
     fire();
     expect(fired).not.toHaveBeenCalled();
+  });
+});
+
+describe('cursors shown', () => {
+  it('shows the others’ cursors until this browser hides them', () => {
+    expect(cursorsShown()).toBe(true);
+    showCursors(false);
+    expect(cursorsShown()).toBe(false);
+    showCursors(true);
+    expect(cursorsShown()).toBe(true);
   });
 });

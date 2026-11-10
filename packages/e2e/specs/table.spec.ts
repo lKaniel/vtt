@@ -85,3 +85,16 @@ test('a paused game stops the players', async ({ page, seat }) => {
   await expect(chatLog(page).getByText('still here')).toBeVisible();
   expect(await placeSeen(page, 'bram')).toEqual(BRAM);
 });
+
+test("a player hides the others' cursors, and this browser keeps it", async ({ page }) => {
+  await atTable(page, PLAYER_2);
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const cursors = page.getByRole('radiogroup', { name: "Others' cursors" });
+  await cursors.getByRole('radio', { name: 'Hide' }).click();
+  await page.reload();
+  await page.waitForFunction(() => typeof vtt !== 'undefined' && Boolean(vtt.user()));
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(
+    page.getByRole('radiogroup', { name: "Others' cursors" }).getByRole('radio', { name: 'Hide' }),
+  ).toBeChecked();
+});
