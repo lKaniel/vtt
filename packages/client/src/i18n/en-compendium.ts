@@ -44,6 +44,8 @@ export const EN_COMPENDIUM = {
   'compendium.hint.items': 'Drag onto a creature or a character sheet to give it.',
   'compendium.hint.spells': 'Drag onto a sheet’s spells to teach it, or its inventory for a scroll.',
   'compendium.hint.features': 'Drag onto a creature or a character sheet to grant it.',
+  'compendium.hint.classes': 'Drag onto a character sheet to level up in that class.',
+  'compendium.hint.species': 'Drag onto a character sheet to make the creature one.',
   'compendium.hint.all': 'Drag monsters onto the map, everything else onto a creature or a sheet.',
   'compendium.place': 'Place',
   'compendium.addToActors': 'Add to Actors',
