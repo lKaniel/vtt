@@ -11,6 +11,7 @@ import { Button } from './kit/button.tsx';
 import { Toggle } from './kit/toggle.tsx';
 import { useHomebrewClasses } from './creator/use-homebrew.ts';
 import { useSaveCharacter } from './creator/use-save.ts';
+import { Pressable } from './kit/pressable.tsx';
 
 /** A placeholder id until the server gives the character its own. */
 const NEW = 'new';
@@ -122,13 +123,13 @@ function StepNav({
   return (
     <nav className="cc-steps">
       {steps.map((s, i) => (
-        <button key={s.id} className={s.id === current ? 'cc-step on' : 'cc-step'} onClick={() => onPick(s.id)}>
+        <Pressable key={s.id} className={s.id === current ? 'cc-step on' : 'cc-step'} onClick={() => onPick(s.id)}>
           <span className="cc-step-num">{i + 1}</span>
           <span className="cc-step-label">{s.label}</span>
           <span className={s.issues.length ? 'cc-step-mark todo' : 'cc-step-mark done'} title={s.issues.join(' ')}>
             {s.issues.length ? '!' : '✓'}
           </span>
-        </button>
+        </Pressable>
       ))}
     </nav>
   );

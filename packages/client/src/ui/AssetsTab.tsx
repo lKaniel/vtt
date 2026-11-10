@@ -13,6 +13,8 @@ import { Input } from './kit/input.tsx';
 import { Toggle } from './kit/toggle.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
+import { Pressable } from './kit/pressable.tsx';
+import { FileInput } from './kit/file-input.tsx';
 
 // The GM's Assets tab: the pictures, sounds and videos of the game and the
 // packs it uses (search, tags, upload; drag a picture onto the map to make
@@ -74,7 +76,7 @@ function UploadButton({ session }: Readonly<{ session: Session }>) {
     <Button asChild variant="outline" size="sm" className="asset-upload">
       <label>
         Upload
-        <input type="file" accept="image/*,audio/*,video/*" multiple hidden onChange={onPick} />
+        <FileInput accept="image/*,audio/*,video/*" multiple onChange={onPick} />
       </label>
     </Button>
   );
@@ -311,10 +313,10 @@ function PackRow({ session, pack }: Readonly<{ session: Session; pack: PackInfo 
           onCheckedChange={(on) => session.packs.setPackEnabled(pack.id, on === true)}
           aria-label={`Use ${pack.name}`}
         />
-        <button className="lib-text" onClick={() => setOpen(!open)}>
+        <Pressable className="lib-text" onClick={() => setOpen(!open)}>
           <span className="lib-name">{pack.name}</span>
           <span className="lib-sub">{sub}</span>
-        </button>
+        </Pressable>
       </div>
       {open && <PackDetail session={session} pack={pack} />}
     </li>

@@ -22,6 +22,7 @@ import { type WalkPlan, type WalkWarning, walkWarnings } from '../play/walk-warn
 import { t } from '../i18n/index.ts';
 import { snapFor } from '../play/interact.ts';
 import { interactSpot, type Snap } from '../play/snapping.ts';
+import { hoverAim, rangePlan } from '../play/walk-in-range.ts';
 
 /** What the walk preview needs besides the scene: who and what the player knows of, and the movement left. */
 type WalkContext = Omit<WalkPlan, 'mover' | 'path' | 'gridSize' | 'grid'>;
@@ -51,6 +52,8 @@ interface PreviewContext {
   cost?: (p: Point) => number;
   /** What the pointer snapped to: aims go at a creature's centre. */
   snap?: Snap;
+  /** The walk into range the action takes first (play/walk-in-range.ts): it is aimed from the end of it. */
+  closeIn?: { points: readonly Point[]; feet: number };
 }
 
 /** The path a selected token would walk to the hovered square, with its length in feet. */
@@ -165,7 +168,7 @@ export class PathPreview {
     this.line.circle(target[0], target[1], ctx.gridSize * 0.4).stroke({ width: 6, color });
     const note = { normal: '', long: ' · disadvantage', out: blocked ? ' · no clear shot' : ' · out of range' }[range];
     const at = foe ? ' → ' + foe.name : '';
-    this.setLabel(`${attack.name}${at} · ${feet} ft${note}`, color);
+    this.setLabel(`${attack.name}${at} · ${feet} ft${note}${this.walkFirst(ctx)}`, color);
     this.placeLabel(target, ctx, 'attack');
   }
 
@@ -194,8 +197,15 @@ export class PathPreview {
         .stroke({ width: 4, color, alpha: 0.8 });
       this.line.circle(target[0], target[1], ctx.gridSize * 0.4).stroke({ width: 6, color });
     }
-    this.setLabel(previewLabel({ name: spell.name, count, feet, reach, blocked }), color);
+    this.setLabel(previewLabel({ name: spell.name, count, feet, reach, blocked }) + this.walkFirst(ctx), color);
     this.placeLabel(target, ctx, 'spell');
+  }
+
+  /** Draws the walk into range the action takes first, and says how long it is. */
+  private walkFirst(ctx: PreviewContext): string {
+    if (!ctx.closeIn) return '';
+    this.drawRoute([...ctx.closeIn.points], OK_COLOR, ctx.gridSize);
+    return ' · ' + t('walk.first', { feet: ctx.closeIn.feet });
   }
 
   private drawArea(shape: ReturnType<typeof areaShape>): void {
@@ -274,23 +284,42 @@ export function showPreview(
     cost: regionCost(regions, world.darkness),
   };
   const attack = token.sheet?.attacks.find((a) => a.name === session.actions.armed);
-  if (session.actions.aiming || attack) {
-    const snap = snapFor(session, hover);
-    const aim = snap?.kind === 'token' ? snap.at : hover;
-    if (session.actions.aiming) preview.showSpell(token, aim, session.actions.aiming, { ...ctx, snap });
-    else preview.showAttack(token, aim, attack!, { ...ctx, snap });
-  } else {
-    const walk = walkOptions(world, token, session.tokens.values());
-    const plan = {
-      tokens: session.tokens.values(),
-      regions,
-      darkness: world.darkness,
-      combat: session.combat,
-      budget: session.turns.movementLeft(token.id),
-    };
-    const shown = preview.show(token, walkTarget(session, token, hover), { ...ctx, walk, plan });
-    if (shown) session.scripts.hooks.call('walkPreview', shown);
-  }
+  if (session.actions.aiming || attack) return showAction(preview, session, { token, hover, attack }, ctx);
+  const walk = walkOptions(world, token, session.tokens.values());
+  const plan = {
+    tokens: session.tokens.values(),
+    regions,
+    darkness: world.darkness,
+    combat: session.combat,
+    budget: session.turns.movementLeft(token.id),
+  };
+  const shown = preview.show(token, walkTarget(session, token, hover), { ...ctx, walk, plan });
+  if (shown) session.scripts.hooks.call('walkPreview', shown);
+}
+
+/** The aimed spell or readied attack at `hover`, from the end of the walk into range it takes first. */
+function showAction(
+  preview: PathPreview,
+  session: Session,
+  { token, hover, attack }: { token: TokenView; hover: Point; attack?: Attack },
+  ctx: PreviewContext,
+): void {
+  const snap = snapFor(session, hover);
+  const aim = snap?.kind === 'token' ? snap.at : hover;
+  const go = walkFirst(session, token, aim, snap);
+  const end = go?.points.at(-1);
+  const from = end ? { ...token, x: end[0], y: end[1] } : token;
+  const acting = { ...ctx, snap, closeIn: go };
+  if (session.actions.aiming) preview.showSpell(from, aim, session.actions.aiming, acting);
+  else if (attack) preview.showAttack(from, aim, attack, acting);
+}
+
+/** The walk into range the action ready at `aim` takes first, if it takes one. */
+function walkFirst(s: Session, token: TokenView, aim: Point, snap: Snap | undefined) {
+  const snapId = snap?.kind === 'token' && snap.id !== token.id ? snap.id : undefined;
+  const at = hoverAim(s, token, aim, snapId);
+  const plan = at && rangePlan(s, token.id, at);
+  return plan?.kind === 'walk' ? plan : undefined;
 }
 
 /** Where a click at `hover` walks `token`: up to the creature, door or tile the pointer snaps to, else the point. */

@@ -34,7 +34,8 @@ export function startDrag(e: React.DragEvent, payload: DragPayload): void {
 export type MapDrop = Exclude<DragPayload, { kind: 'media' } | { kind: 'journal' }>;
 
 export interface DropContext {
-  tokens: Iterable<TokenView>;
+  /** An array, not a one-pass iterator: a drop looks through it more than once. */
+  tokens: readonly TokenView[];
   gridSize: number;
   /** Place new creatures hidden from the players. */
   hidden: boolean;
@@ -93,10 +94,10 @@ export function sheetDropMessage(payload: DragPayload, onto: SheetRef, area?: Sh
 /** A carried item dropped on the ground (a new pile there) or into a pile (see system-dnd5e piles.ts). */
 function trade(
   { from, item, spell }: Extract<DragPayload, { kind: 'carried' }>,
-  tokens: Iterable<TokenView>,
+  tokens: readonly TokenView[],
   to?: string,
 ): Outcome {
-  const owner = [...tokens].find((t) => t.id === from);
+  const owner = tokens.find((t) => t.id === from);
   const index = owner?.inventory?.findIndex((e) => e.item === item && e.spell === spell) ?? -1;
   if (index < 0) return { error: `${owner?.name ?? 'It'} doesn’t carry that` };
   return { t: 'trade', from, ...(to && { to }), item: index };

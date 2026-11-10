@@ -163,6 +163,14 @@
         "description": "The acolyte is a 1st-level spellcaster. Its spellcasting ability is Wisdom (spell save DC 12, +4 to hit with spell attacks). The acolyte has following cleric spells prepared:\n\n- Cantrips (at will): *light*, *sacred flame*, *thaumaturgy*\n- 1st level (3 slots): *bless*, *cure wounds*, *sanctuary*"
       }
     ],
+    "spellcasting": {
+      "ability": "wis",
+      "dc": 12,
+      "attack": 4,
+      "level": 1,
+      "slots": [3],
+      "spells": ["light", "sacred-flame", "thaumaturgy", "bless", "cure-wounds", "sanctuary"]
+    },
     "alignment": "any",
     "skills": ["medicine", "religion"]
   },
@@ -3629,6 +3637,30 @@
         "kind": "action"
       }
     ],
+    "spellcasting": {
+      "ability": "wis",
+      "dc": 18,
+      "attack": 10,
+      "level": 12,
+      "slots": [4, 3, 3, 3, 2, 1],
+      "spells": [
+        "sacred-flame",
+        "spare-the-dying",
+        "thaumaturgy",
+        "command",
+        "detect-evil-and-good",
+        "detect-magic",
+        "lesser-restoration",
+        "zone-of-truth",
+        "dispel-magic",
+        "tongues",
+        "banishment",
+        "freedom-of-movement",
+        "flame-strike",
+        "greater-restoration",
+        "heroes-feast"
+      ]
+    },
     "alignment": "lawful neutral",
     "skills": ["arcana", "perception", "religion"],
     "expertise": ["religion"],
@@ -3880,6 +3912,41 @@
         "description": "The archmage is an 18th-level spellcaster. Its spellcasting ability is Intelligence (spell save DC 17, +9 to hit with spell attacks). The archmage can cast *disguise self* and *invisibility* at will and has the following wizard spells prepared:\n\n- Cantrips (at will): *fire bolt*, *light*, *mage hand*, *prestidigitation*, *shocking grasp*\n- 1st level (4 slots): *detect magic*, *identify*, *mage armor*\\*, *magic missile*\n- 2nd level (3 slots): *detect thoughts*, *mirror image*, *misty step*\n- 3rd level (3 slots): *counterspell*, *fly*, *lightning bolt*\n- 4th level (3 slots): *banishment*, *fire shield*, *stoneskin*\\*\n- 5th level (3 slots): *cone of cold*, *scrying*, *wall of force*\n- 6th level (1 slot): *globe of invulnerability*\n- 7th level (1 slot): *teleport*\n- 8th level (1 slot): *mind blank*\\*\n- 9th level (1 slot): *time stop*\n\n\\* The archmage casts these spells on itself before combat."
       }
     ],
+    "spellcasting": {
+      "ability": "int",
+      "dc": 17,
+      "attack": 9,
+      "level": 18,
+      "slots": [4, 3, 3, 3, 3, 1, 1, 1, 1],
+      "spells": [
+        "fire-bolt",
+        "light",
+        "mage-hand",
+        "prestidigitation",
+        "shocking-grasp",
+        "detect-magic",
+        "identify",
+        "mage-armor",
+        "detect-thoughts",
+        "mirror-image",
+        "misty-step",
+        "counterspell",
+        "fly",
+        "lightning-bolt",
+        "banishment",
+        "fire-shield",
+        "stoneskin",
+        "cone-of-cold",
+        "scrying",
+        "wall-of-force",
+        "globe-of-invulnerability",
+        "teleport",
+        "mind-blank",
+        "time-stop",
+        "disguise-self",
+        "invisibility"
+      ]
+    },
     "alignment": "any",
     "skills": ["arcana", "history"],
     "expertise": ["arcana", "history"]
@@ -6432,6 +6499,111 @@
         "description": "The giant's innate spellcasting ability is Charisma. It can innately cast the following spells, requiring no material components:\n\n- At will: *detect magic*, *fog cloud*, *light*\n- 3/day each: *feather fall*, *fly*, *misty step*, *telekinesis*\n- 1/day each: *control weather*, *gaseous form*"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Magic, Fog Cloud, Light.",
+        "freeCasts": [
+          {
+            "spell": "detect-magic"
+          },
+          {
+            "spell": "fog-cloud"
+          },
+          {
+            "spell": "light"
+          }
+        ]
+      },
+      {
+        "id": "daily-feather-fall",
+        "name": "Feather Fall (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "feather-fall"
+          }
+        ]
+      },
+      {
+        "id": "daily-fly",
+        "name": "Fly (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "fly"
+          }
+        ]
+      },
+      {
+        "id": "daily-misty-step",
+        "name": "Misty Step (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "misty-step"
+          }
+        ]
+      },
+      {
+        "id": "daily-telekinesis",
+        "name": "Telekinesis (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "telekinesis"
+          }
+        ]
+      },
+      {
+        "id": "daily-control-weather",
+        "name": "Control Weather (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "control-weather"
+          }
+        ]
+      },
+      {
+        "id": "daily-gaseous-form",
+        "name": "Gaseous Form (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "gaseous-form"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "spells": [
+        "detect-magic",
+        "fog-cloud",
+        "light",
+        "feather-fall",
+        "fly",
+        "misty-step",
+        "telekinesis",
+        "control-weather",
+        "gaseous-form"
+      ]
+    },
     "alignment": "neutral good or evil",
     "skills": ["insight", "perception"],
     "languages": ["Common", "Giant"]
@@ -6746,6 +6918,164 @@
         "kind": "action"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Evil and Good, Detect Magic, Detect Thoughts.",
+        "freeCasts": [
+          {
+            "spell": "detect-evil-and-good"
+          },
+          {
+            "spell": "detect-magic"
+          },
+          {
+            "spell": "detect-thoughts"
+          }
+        ]
+      },
+      {
+        "id": "daily-bless",
+        "name": "Bless (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "bless"
+          }
+        ]
+      },
+      {
+        "id": "daily-create-food-and-water",
+        "name": "Create Food and Water (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "create-food-and-water"
+          }
+        ]
+      },
+      {
+        "id": "daily-cure-wounds",
+        "name": "Cure Wounds (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "cure-wounds"
+          }
+        ]
+      },
+      {
+        "id": "daily-lesser-restoration",
+        "name": "Lesser Restoration (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "lesser-restoration"
+          }
+        ]
+      },
+      {
+        "id": "daily-protection-from-poison",
+        "name": "Protection from Poison (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "protection-from-poison"
+          }
+        ]
+      },
+      {
+        "id": "daily-sanctuary",
+        "name": "Sanctuary (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "sanctuary"
+          }
+        ]
+      },
+      {
+        "id": "daily-shield",
+        "name": "Shield (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "shield"
+          }
+        ]
+      },
+      {
+        "id": "daily-dream",
+        "name": "Dream (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "dream"
+          }
+        ]
+      },
+      {
+        "id": "daily-greater-restoration",
+        "name": "Greater Restoration (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "greater-restoration"
+          }
+        ]
+      },
+      {
+        "id": "daily-scrying",
+        "name": "Scrying (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "scrying"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 14,
+      "spells": [
+        "detect-evil-and-good",
+        "detect-magic",
+        "detect-thoughts",
+        "bless",
+        "create-food-and-water",
+        "cure-wounds",
+        "lesser-restoration",
+        "protection-from-poison",
+        "sanctuary",
+        "shield",
+        "dream",
+        "greater-restoration",
+        "scrying"
+      ]
+    },
     "alignment": "lawful good",
     "languages": ["telepathy 120 ft."],
     "speeds": {
@@ -6915,6 +7245,23 @@
         "description": "The fanatic is a 4th-level spellcaster. Its spellcasting ability is Wisdom (spell save DC 11, +3 to hit with spell attacks). The fanatic has the following cleric spells prepared:\n\n- Cantrips (at will): *light*, *sacred flame*, *thaumaturgy*\n- 1st level (4 slots): *command*, *inflict wounds*, *shield of faith*\n- 2nd level (3 slots): *hold person*, *spiritual weapon*"
       }
     ],
+    "spellcasting": {
+      "ability": "wis",
+      "dc": 11,
+      "attack": 3,
+      "level": 4,
+      "slots": [4, 3],
+      "spells": [
+        "light",
+        "sacred-flame",
+        "thaumaturgy",
+        "command",
+        "inflict-wounds",
+        "shield-of-faith",
+        "hold-person",
+        "spiritual-weapon"
+      ]
+    },
     "alignment": "any non good",
     "skills": ["deception", "persuasion", "religion"]
   },
@@ -7143,6 +7490,60 @@
         "description": "The gnome's innate spellcasting ability is Intelligence (spell save DC 11). It can innately cast the following spells, requiring no material components:\nAt will: *nondetection* (self only)\n1/day each: *blindness/deafness*, *blur*, *disguise self*"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Nondetection.",
+        "freeCasts": [
+          {
+            "spell": "nondetection"
+          }
+        ]
+      },
+      {
+        "id": "daily-blindness-deafness",
+        "name": "Blindness/Deafness (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "blindness-deafness"
+          }
+        ]
+      },
+      {
+        "id": "daily-blur",
+        "name": "Blur (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "blur"
+          }
+        ]
+      },
+      {
+        "id": "daily-disguise-self",
+        "name": "Disguise Self (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "disguise-self"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "int",
+      "dc": 11,
+      "spells": ["nondetection", "blindness-deafness", "blur", "disguise-self"]
+    },
     "alignment": "neutral good",
     "skills": ["investigation", "perception", "stealth"],
     "languages": ["Gnomish", "Primordial", "Undercommon"]
@@ -7252,6 +7653,48 @@
         "kind": "action"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Evil and Good.",
+        "freeCasts": [
+          {
+            "spell": "detect-evil-and-good"
+          }
+        ]
+      },
+      {
+        "id": "daily-commune",
+        "name": "Commune (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "commune"
+          }
+        ]
+      },
+      {
+        "id": "daily-raise-dead",
+        "name": "Raise Dead (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "raise-dead"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 17,
+      "spells": ["detect-evil-and-good", "commune", "raise-dead"]
+    },
     "alignment": "lawful good",
     "skills": ["insight", "perception"],
     "languages": ["telepathy 120 ft."],
@@ -7385,8 +7828,152 @@
             "conditions": ["restrained"]
           }
         }
+      },
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Evil and Good, Detect Magic, Thunderwave.",
+        "freeCasts": [
+          {
+            "spell": "detect-evil-and-good"
+          },
+          {
+            "spell": "detect-magic"
+          },
+          {
+            "spell": "thunderwave"
+          }
+        ]
+      },
+      {
+        "id": "daily-create-food-and-water",
+        "name": "Create Food and Water (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "create-food-and-water"
+          }
+        ]
+      },
+      {
+        "id": "daily-tongues",
+        "name": "Tongues (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "tongues"
+          }
+        ]
+      },
+      {
+        "id": "daily-wind-walk",
+        "name": "Wind Walk (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "wind-walk"
+          }
+        ]
+      },
+      {
+        "id": "daily-conjure-elemental",
+        "name": "Conjure Elemental (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "conjure-elemental"
+          }
+        ]
+      },
+      {
+        "id": "daily-creation",
+        "name": "Creation (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "creation"
+          }
+        ]
+      },
+      {
+        "id": "daily-gaseous-form",
+        "name": "Gaseous Form (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "gaseous-form"
+          }
+        ]
+      },
+      {
+        "id": "daily-invisibility",
+        "name": "Invisibility (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "invisibility"
+          }
+        ]
+      },
+      {
+        "id": "daily-major-image",
+        "name": "Major Image (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "major-image"
+          }
+        ]
+      },
+      {
+        "id": "daily-plane-shift",
+        "name": "Plane Shift (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "plane-shift"
+          }
+        ]
       }
     ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 17,
+      "attack": 9,
+      "spells": [
+        "detect-evil-and-good",
+        "detect-magic",
+        "thunderwave",
+        "create-food-and-water",
+        "tongues",
+        "wind-walk",
+        "conjure-elemental",
+        "creation",
+        "gaseous-form",
+        "invisibility",
+        "major-image",
+        "plane-shift"
+      ]
+    },
     "alignment": "chaotic good",
     "languages": ["Primordial"],
     "speeds": {
@@ -7771,6 +8358,48 @@
         "description": "The drider ignores movement restrictions caused by webbing."
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Dancing Lights.",
+        "freeCasts": [
+          {
+            "spell": "dancing-lights"
+          }
+        ]
+      },
+      {
+        "id": "daily-darkness",
+        "name": "Darkness (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "darkness"
+          }
+        ]
+      },
+      {
+        "id": "daily-faerie-fire",
+        "name": "Faerie Fire (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "faerie-fire"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "wis",
+      "dc": 13,
+      "spells": ["dancing-lights", "darkness", "faerie-fire"]
+    },
     "alignment": "chaotic evil",
     "skills": ["perception", "stealth"],
     "expertise": ["stealth"],
@@ -7850,6 +8479,48 @@
         "description": "While in sunlight, the drow has disadvantage on attack rolls, as well as on Wisdom (Perception) checks that rely on sight."
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Dancing Lights.",
+        "freeCasts": [
+          {
+            "spell": "dancing-lights"
+          }
+        ]
+      },
+      {
+        "id": "daily-darkness",
+        "name": "Darkness (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "darkness"
+          }
+        ]
+      },
+      {
+        "id": "daily-faerie-fire",
+        "name": "Faerie Fire (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "faerie-fire"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 11,
+      "spells": ["dancing-lights", "darkness", "faerie-fire"]
+    },
     "alignment": "neutral evil",
     "skills": ["perception", "stealth"],
     "languages": ["Elvish", "Undercommon"]
@@ -7889,6 +8560,24 @@
         "kind": "action"
       }
     ],
+    "spellcasting": {
+      "ability": "wis",
+      "dc": 12,
+      "attack": 4,
+      "level": 4,
+      "slots": [4, 3],
+      "spells": [
+        "druidcraft",
+        "produce-flame",
+        "shillelagh",
+        "entangle",
+        "longstrider",
+        "speak-with-animals",
+        "thunderwave",
+        "animal-messenger",
+        "barkskin"
+      ]
+    },
     "alignment": "any",
     "skills": ["medicine", "nature", "perception"],
     "languages": ["Druidic"]
@@ -7962,8 +8651,84 @@
             "repeatSave": true
           }
         }
+      },
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Druidcraft.",
+        "freeCasts": [
+          {
+            "spell": "druidcraft"
+          }
+        ]
+      },
+      {
+        "id": "daily-entangle",
+        "name": "Entangle (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "entangle"
+          }
+        ]
+      },
+      {
+        "id": "daily-goodberry",
+        "name": "Goodberry (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "goodberry"
+          }
+        ]
+      },
+      {
+        "id": "daily-barkskin",
+        "name": "Barkskin (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "barkskin"
+          }
+        ]
+      },
+      {
+        "id": "daily-pass-without-trace",
+        "name": "Pass Without Trace (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "pass-without-trace"
+          }
+        ]
+      },
+      {
+        "id": "daily-shillelagh",
+        "name": "Shillelagh (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "shillelagh"
+          }
+        ]
       }
     ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 14,
+      "spells": ["druidcraft", "entangle", "goodberry", "barkskin", "pass-without-trace", "shillelagh"]
+    },
     "alignment": "neutral",
     "skills": ["perception", "stealth"],
     "expertise": ["stealth"],
@@ -8301,6 +9066,105 @@
         "description": "The efreeti's innate spellcasting ability is Charisma (spell save DC 15, +7 to hit with spell attacks). It can innately cast the following spells, requiring no material components:\n\n- At will: *detect magic*\n- 3/day: *enlarge/reduce*, *tongues*\n- 1/day each: *conjure elemental* (fire elemental only), *gaseous form, invisibility*, *major image*, *plane shift*, *wall of fire*"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Magic.",
+        "freeCasts": [
+          {
+            "spell": "detect-magic"
+          }
+        ]
+      },
+      {
+        "id": "daily-enlarge-reduce",
+        "name": "Enlarge/Reduce (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "enlarge-reduce"
+          }
+        ]
+      },
+      {
+        "id": "daily-tongues",
+        "name": "Tongues (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "tongues"
+          }
+        ]
+      },
+      {
+        "id": "daily-conjure-elemental",
+        "name": "Conjure Elemental (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "conjure-elemental"
+          }
+        ]
+      },
+      {
+        "id": "daily-major-image",
+        "name": "Major Image (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "major-image"
+          }
+        ]
+      },
+      {
+        "id": "daily-plane-shift",
+        "name": "Plane Shift (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "plane-shift"
+          }
+        ]
+      },
+      {
+        "id": "daily-wall-of-fire",
+        "name": "Wall of Fire (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "wall-of-fire"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 15,
+      "attack": 7,
+      "spells": [
+        "detect-magic",
+        "enlarge-reduce",
+        "tongues",
+        "conjure-elemental",
+        "major-image",
+        "plane-shift",
+        "wall-of-fire"
+      ]
+    },
     "alignment": "lawful evil",
     "languages": ["Primordial"],
     "speeds": {
@@ -11175,6 +12039,66 @@
         "description": "The glabrezu has advantage on saving throws against spells and other magical effects."
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Darkness, Detect Magic, Dispel Magic.",
+        "freeCasts": [
+          {
+            "spell": "darkness"
+          },
+          {
+            "spell": "detect-magic"
+          },
+          {
+            "spell": "dispel-magic"
+          }
+        ]
+      },
+      {
+        "id": "daily-confusion",
+        "name": "Confusion (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "confusion"
+          }
+        ]
+      },
+      {
+        "id": "daily-fly",
+        "name": "Fly (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "fly"
+          }
+        ]
+      },
+      {
+        "id": "daily-power-word-stun",
+        "name": "Power Word Stun (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "power-word-stun"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "int",
+      "dc": 16,
+      "spells": ["darkness", "detect-magic", "dispel-magic", "confusion", "fly", "power-word-stun"]
+    },
     "alignment": "chaotic evil",
     "languages": ["Abyssal", "telepathy 120 ft."]
   },
@@ -11824,6 +12748,30 @@
         "kind": "action"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Dancing Lights, Minor Illusion, Vicious Mockery.",
+        "freeCasts": [
+          {
+            "spell": "dancing-lights"
+          },
+          {
+            "spell": "minor-illusion"
+          },
+          {
+            "spell": "vicious-mockery"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 12,
+      "spells": ["dancing-lights", "minor-illusion", "vicious-mockery"]
+    },
     "alignment": "neutral evil",
     "skills": ["arcana", "deception", "perception", "stealth"],
     "languages": ["Common", "Draconic", "Sylvan"]
@@ -12125,6 +13073,30 @@
         "description": "The naga is an 11th-level spellcaster. Its spellcasting ability is Wisdom (spell save DC 16, +8 to hit with spell attacks), and it needs only verbal components to cast its spells. It has the following cleric spells prepared:\n\n- Cantrips (at will): *mending*, *sacred flame*, *thaumaturgy*\n- 1st level (4 slots): *command*, *cure wounds*, *shield of faith*\n- 2nd level (3 slots): *calm emotions*, *hold person*\n- 3rd level (3 slots): *bestow curse*, *clairvoyance*\n- 4th level (3 slots): *banishment*, *freedom of movement*\n- 5th level (2 slots): *flame strike*, *geas*\n- 6th level (1 slot): *true seeing*"
       }
     ],
+    "spellcasting": {
+      "ability": "wis",
+      "dc": 16,
+      "attack": 8,
+      "level": 11,
+      "slots": [4, 3, 3, 3, 2, 1],
+      "spells": [
+        "mending",
+        "sacred-flame",
+        "thaumaturgy",
+        "command",
+        "cure-wounds",
+        "shield-of-faith",
+        "calm-emotions",
+        "hold-person",
+        "bestow-curse",
+        "clairvoyance",
+        "banishment",
+        "freedom-of-movement",
+        "flame-strike",
+        "geas",
+        "true-seeing"
+      ]
+    },
     "alignment": "lawful good",
     "languages": ["Celestial", "Common"]
   },
@@ -12205,6 +13177,30 @@
         "description": "The sphinx is a 9th-level spellcaster. Its spellcasting ability is Intelligence (spell save DC 16, +8 to hit with spell attacks). It requires no material components to cast its spells. The sphinx has the following wizard spells prepared:\n\n- Cantrips (at will): *mage hand*, *minor illusion*, *prestidigitation*\n- 1st level (4 slots): *detect magic*, *identify*, *shield*\n- 2nd level (3 slots): *darkness*, *locate object*, *suggestion*\n- 3rd level (3 slots): *dispel magic*, *remove curse*, *tongues*\n- 4th level (3 slots): *banishment*, *greater invisibility*\n- 5th level (1 slot): *legend lore*"
       }
     ],
+    "spellcasting": {
+      "ability": "int",
+      "dc": 16,
+      "attack": 8,
+      "level": 9,
+      "slots": [4, 3, 3, 3, 1],
+      "spells": [
+        "mage-hand",
+        "minor-illusion",
+        "prestidigitation",
+        "detect-magic",
+        "identify",
+        "shield",
+        "darkness",
+        "locate-object",
+        "suggestion",
+        "dispel-magic",
+        "remove-curse",
+        "tongues",
+        "banishment",
+        "greater-invisibility",
+        "legend-lore"
+      ]
+    },
     "alignment": "lawful neutral",
     "skills": ["arcana", "history", "perception", "religion"],
     "expertise": ["arcana", "history"],
@@ -13894,6 +14890,87 @@
         "description": "The lamia's innate spellcasting ability is Charisma (spell save DC 13). It can innately cast the following spells, requiring no material components.\n\n- At will: *disguise self* (any humanoid form), *major image*\n- 3/day each: *charm person*, *mirror image*, *scrying*, *suggestion*\n- 1/day: *geas*"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Disguise Self, Major Image.",
+        "freeCasts": [
+          {
+            "spell": "disguise-self"
+          },
+          {
+            "spell": "major-image"
+          }
+        ]
+      },
+      {
+        "id": "daily-charm-person",
+        "name": "Charm Person (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "charm-person"
+          }
+        ]
+      },
+      {
+        "id": "daily-mirror-image",
+        "name": "Mirror Image (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "mirror-image"
+          }
+        ]
+      },
+      {
+        "id": "daily-scrying",
+        "name": "Scrying (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "scrying"
+          }
+        ]
+      },
+      {
+        "id": "daily-suggestion",
+        "name": "Suggestion (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "suggestion"
+          }
+        ]
+      },
+      {
+        "id": "daily-geas",
+        "name": "Geas (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "geas"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 13,
+      "spells": ["disguise-self", "major-image", "charm-person", "mirror-image", "scrying", "suggestion", "geas"]
+    },
     "alignment": "chaotic evil",
     "skills": ["deception", "insight", "stealth"],
     "expertise": ["deception"],
@@ -14040,6 +15117,41 @@
         "description": "The lich has advantage on saving throws against any effect that turns undead."
       }
     ],
+    "spellcasting": {
+      "ability": "int",
+      "dc": 20,
+      "attack": 12,
+      "level": 18,
+      "slots": [4, 3, 3, 3, 3, 1, 1, 1, 1],
+      "spells": [
+        "mage-hand",
+        "prestidigitation",
+        "ray-of-frost",
+        "detect-magic",
+        "magic-missile",
+        "shield",
+        "thunderwave",
+        "acid-arrow",
+        "detect-thoughts",
+        "invisibility",
+        "mirror-image",
+        "animate-dead",
+        "counterspell",
+        "dispel-magic",
+        "fireball",
+        "blight",
+        "dimension-door",
+        "cloudkill",
+        "scrying",
+        "disintegrate",
+        "globe-of-invulnerability",
+        "finger-of-death",
+        "plane-shift",
+        "dominate-monster",
+        "power-word-stun",
+        "power-word-kill"
+      ]
+    },
     "alignment": "any evil",
     "skills": ["arcana", "history", "insight", "perception"],
     "languages": ["Common"]
@@ -14312,6 +15424,31 @@
         "description": "The mage is a 9th-level spellcaster. Its spellcasting ability is Intelligence (spell save DC 14, +6 to hit with spell attacks). The mage has the following wizard spells prepared:\n\n- Cantrips (at will): *fire bolt*, *light*, *mage hand*, *prestidigitation*\n- 1st level (4 slots): *detect magic*, *mage armor*, *magic missile*, *shield*\n- 2nd level (3 slots): *misty step*, *suggestion*\n- 3rd level (3 slots): *counterspell*, *fireball*, *fly*\n- 4th level (3 slots): *greater invisibility*, *ice storm*\n- 5th level (1 slot): *cone of cold*"
       }
     ],
+    "spellcasting": {
+      "ability": "int",
+      "dc": 14,
+      "attack": 6,
+      "level": 9,
+      "slots": [4, 3, 3, 3, 1],
+      "spells": [
+        "fire-bolt",
+        "light",
+        "mage-hand",
+        "prestidigitation",
+        "detect-magic",
+        "mage-armor",
+        "magic-missile",
+        "shield",
+        "misty-step",
+        "suggestion",
+        "counterspell",
+        "fireball",
+        "fly",
+        "greater-invisibility",
+        "ice-storm",
+        "cone-of-cold"
+      ]
+    },
     "alignment": "any",
     "skills": ["arcana", "history"]
   },
@@ -15378,6 +16515,30 @@
         }
       }
     ],
+    "spellcasting": {
+      "ability": "wis",
+      "dc": 17,
+      "attack": 9,
+      "level": 10,
+      "slots": [4, 3, 3, 3, 2, 1],
+      "spells": [
+        "sacred-flame",
+        "thaumaturgy",
+        "command",
+        "guiding-bolt",
+        "shield-of-faith",
+        "hold-person",
+        "silence",
+        "spiritual-weapon",
+        "animate-dead",
+        "dispel-magic",
+        "divination",
+        "guardian-of-faith",
+        "contagion",
+        "insect-plague",
+        "harm"
+      ]
+    },
     "alignment": "lawful evil",
     "skills": ["history", "religion"]
   },
@@ -15537,6 +16698,64 @@
         "kind": "action"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Magic, Magic Missile.",
+        "freeCasts": [
+          {
+            "spell": "detect-magic"
+          },
+          {
+            "spell": "magic-missile"
+          }
+        ]
+      },
+      {
+        "id": "daily-plane-shift",
+        "name": "Plane Shift (2/Day)",
+        "level": 1,
+        "description": "Cast 2 times a day with no spell slot.",
+        "uses": [[1, 2]],
+        "freeCasts": [
+          {
+            "spell": "plane-shift"
+          }
+        ]
+      },
+      {
+        "id": "daily-ray-of-enfeeblement",
+        "name": "Ray of Enfeeblement (2/Day)",
+        "level": 1,
+        "description": "Cast 2 times a day with no spell slot.",
+        "uses": [[1, 2]],
+        "freeCasts": [
+          {
+            "spell": "ray-of-enfeeblement"
+          }
+        ]
+      },
+      {
+        "id": "daily-sleep",
+        "name": "Sleep (2/Day)",
+        "level": 1,
+        "description": "Cast 2 times a day with no spell slot.",
+        "uses": [[1, 2]],
+        "freeCasts": [
+          {
+            "spell": "sleep"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 14,
+      "attack": 6,
+      "spells": ["detect-magic", "magic-missile", "plane-shift", "ray-of-enfeeblement", "sleep"]
+    },
     "alignment": "neutral evil",
     "skills": ["deception", "insight", "perception", "stealth"],
     "languages": ["Abyssal", "Common", "Infernal", "Primordial"]
@@ -15955,6 +17174,75 @@
         "kind": "action"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Darkness, Invisibility.",
+        "freeCasts": [
+          {
+            "spell": "darkness"
+          },
+          {
+            "spell": "invisibility"
+          }
+        ]
+      },
+      {
+        "id": "daily-charm-person",
+        "name": "Charm Person (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "charm-person"
+          }
+        ]
+      },
+      {
+        "id": "daily-cone-of-cold",
+        "name": "Cone of Cold (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "cone-of-cold"
+          }
+        ]
+      },
+      {
+        "id": "daily-gaseous-form",
+        "name": "Gaseous Form (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "gaseous-form"
+          }
+        ]
+      },
+      {
+        "id": "daily-sleep",
+        "name": "Sleep (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "sleep"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 13,
+      "spells": ["darkness", "invisibility", "charm-person", "cone-of-cold", "gaseous-form", "sleep"]
+    },
     "alignment": "lawful evil",
     "skills": ["arcana", "deception", "perception"],
     "expertise": ["deception"],
@@ -16524,6 +17812,51 @@
         "description": "The pit fiend's spellcasting ability is Charisma (spell save DC 21). The pit fiend can innately cast the following spells, requiring no material components:\n\n- At will: *detect magic*, *fireball*\n- 3/day each: *hold monster*, *wall of fire*"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Magic, Fireball.",
+        "freeCasts": [
+          {
+            "spell": "detect-magic"
+          },
+          {
+            "spell": "fireball"
+          }
+        ]
+      },
+      {
+        "id": "daily-hold-monster",
+        "name": "Hold Monster (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "hold-monster"
+          }
+        ]
+      },
+      {
+        "id": "daily-wall-of-fire",
+        "name": "Wall of Fire (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "wall-of-fire"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 21,
+      "spells": ["detect-magic", "fireball", "hold-monster", "wall-of-fire"]
+    },
     "alignment": "lawful evil",
     "languages": ["Infernal", "telepathy 120 ft."],
     "speeds": {
@@ -16596,6 +17929,121 @@
         "kind": "action"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Evil and Good, Invisibility.",
+        "freeCasts": [
+          {
+            "spell": "detect-evil-and-good"
+          },
+          {
+            "spell": "invisibility"
+          }
+        ]
+      },
+      {
+        "id": "daily-blade-barrier",
+        "name": "Blade Barrier (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "blade-barrier"
+          }
+        ]
+      },
+      {
+        "id": "daily-dispel-evil-and-good",
+        "name": "Dispel Evil and Good (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "dispel-evil-and-good"
+          }
+        ]
+      },
+      {
+        "id": "daily-flame-strike",
+        "name": "Flame Strike (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "flame-strike"
+          }
+        ]
+      },
+      {
+        "id": "daily-raise-dead",
+        "name": "Raise Dead (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "raise-dead"
+          }
+        ]
+      },
+      {
+        "id": "daily-commune",
+        "name": "Commune (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "commune"
+          }
+        ]
+      },
+      {
+        "id": "daily-control-weather",
+        "name": "Control Weather (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "control-weather"
+          }
+        ]
+      },
+      {
+        "id": "daily-insect-plague",
+        "name": "Insect Plague (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "insect-plague"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 20,
+      "spells": [
+        "detect-evil-and-good",
+        "invisibility",
+        "blade-barrier",
+        "dispel-evil-and-good",
+        "flame-strike",
+        "raise-dead",
+        "commune",
+        "control-weather",
+        "insect-plague"
+      ]
+    },
     "alignment": "lawful good",
     "skills": ["perception"],
     "languages": ["telepathy 120 ft."],
@@ -16856,6 +18304,25 @@
         "description": "The priest is a 5th-level spellcaster. Its spellcasting ability is Wisdom (spell save DC 13, +5 to hit with spell attacks). The priest has the following cleric spells prepared:\n\n- Cantrips (at will): *light*, *sacred flame*, *thaumaturgy*\n- 1st level (4 slots): *cure wounds*, *guiding bolt*, *sanctuary*\n- 2nd level (3 slots): *lesser restoration*, *spiritual weapon*\n- 3rd level (2 slots): *dispel magic*, *spirit guardians*"
       }
     ],
+    "spellcasting": {
+      "ability": "wis",
+      "dc": 13,
+      "attack": 5,
+      "level": 5,
+      "slots": [4, 3, 2],
+      "spells": [
+        "light",
+        "sacred-flame",
+        "thaumaturgy",
+        "cure-wounds",
+        "guiding-bolt",
+        "sanctuary",
+        "lesser-restoration",
+        "spiritual-weapon",
+        "dispel-magic",
+        "spirit-guardians"
+      ]
+    },
     "alignment": "any",
     "skills": ["medicine", "persuasion", "religion"],
     "expertise": ["medicine"]
@@ -17207,6 +18674,156 @@
         "description": "The rakshasa's innate spellcasting ability is Charisma (spell save DC 18, +10 to hit with spell attacks). The rakshasa can innately cast the following spells, requiring no material components:\n\n- At will: *detect thoughts*, *disguise self*, *mage hand*, *minor illusion*\n- 3/day each: *charm person*, *detect magic*, *invisibility*, *major image*, *suggestion*\n- 1/day each: *dominate person*, *fly*, *plane shift*, *true seeing*"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Thoughts, Disguise Self, Mage Hand, Minor Illusion.",
+        "freeCasts": [
+          {
+            "spell": "detect-thoughts"
+          },
+          {
+            "spell": "disguise-self"
+          },
+          {
+            "spell": "mage-hand"
+          },
+          {
+            "spell": "minor-illusion"
+          }
+        ]
+      },
+      {
+        "id": "daily-charm-person",
+        "name": "Charm Person (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "charm-person"
+          }
+        ]
+      },
+      {
+        "id": "daily-detect-magic",
+        "name": "Detect Magic (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "detect-magic"
+          }
+        ]
+      },
+      {
+        "id": "daily-invisibility",
+        "name": "Invisibility (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "invisibility"
+          }
+        ]
+      },
+      {
+        "id": "daily-major-image",
+        "name": "Major Image (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "major-image"
+          }
+        ]
+      },
+      {
+        "id": "daily-suggestion",
+        "name": "Suggestion (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "suggestion"
+          }
+        ]
+      },
+      {
+        "id": "daily-dominate-person",
+        "name": "Dominate Person (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "dominate-person"
+          }
+        ]
+      },
+      {
+        "id": "daily-fly",
+        "name": "Fly (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "fly"
+          }
+        ]
+      },
+      {
+        "id": "daily-plane-shift",
+        "name": "Plane Shift (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "plane-shift"
+          }
+        ]
+      },
+      {
+        "id": "daily-true-seeing",
+        "name": "True Seeing (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "true-seeing"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 18,
+      "attack": 10,
+      "spells": [
+        "detect-thoughts",
+        "disguise-self",
+        "mage-hand",
+        "minor-illusion",
+        "charm-person",
+        "detect-magic",
+        "invisibility",
+        "major-image",
+        "suggestion",
+        "dominate-person",
+        "fly",
+        "plane-shift",
+        "true-seeing"
+      ]
+    },
     "alignment": "lawful evil",
     "skills": ["deception", "insight"],
     "languages": ["Common", "Infernal"]
@@ -18820,6 +20437,95 @@
         "kind": "action"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Evil and Good, Invisibility.",
+        "freeCasts": [
+          {
+            "spell": "detect-evil-and-good"
+          },
+          {
+            "spell": "invisibility"
+          }
+        ]
+      },
+      {
+        "id": "daily-blade-barrier",
+        "name": "Blade Barrier (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "blade-barrier"
+          }
+        ]
+      },
+      {
+        "id": "daily-dispel-evil-and-good",
+        "name": "Dispel Evil and Good (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "dispel-evil-and-good"
+          }
+        ]
+      },
+      {
+        "id": "daily-resurrection",
+        "name": "Resurrection (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "resurrection"
+          }
+        ]
+      },
+      {
+        "id": "daily-commune",
+        "name": "Commune (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "commune"
+          }
+        ]
+      },
+      {
+        "id": "daily-control-weather",
+        "name": "Control Weather (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "control-weather"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 25,
+      "spells": [
+        "detect-evil-and-good",
+        "invisibility",
+        "blade-barrier",
+        "dispel-evil-and-good",
+        "resurrection",
+        "commune",
+        "control-weather"
+      ]
+    },
     "alignment": "lawful good",
     "skills": ["perception"],
     "languages": ["telepathy 120 ft."],
@@ -19018,6 +20724,28 @@
         "description": "The naga is a 10th-level spellcaster. Its spellcasting ability is Intelligence (spell save DC 14, +6 to hit with spell attacks), and it needs only verbal components to cast its spells. It has the following wizard spells prepared:\n\n- Cantrips (at will): *mage hand*, *minor illusion*, *ray of frost*\n- 1st level (4 slots): *charm person*, *detect magic*, *sleep*\n- 2nd level (3 slots): *detect thoughts*, *hold person*\n- 3rd level (3 slots): *lightning bolt*, *water breathing*\n- 4th level (3 slots): *blight*, *dimension door*\n- 5th level (2 slots): *dominate person*"
       }
     ],
+    "spellcasting": {
+      "ability": "int",
+      "dc": 14,
+      "attack": 6,
+      "level": 10,
+      "slots": [4, 3, 3, 3, 2],
+      "spells": [
+        "mage-hand",
+        "minor-illusion",
+        "ray-of-frost",
+        "charm-person",
+        "detect-magic",
+        "sleep",
+        "detect-thoughts",
+        "hold-person",
+        "lightning-bolt",
+        "water-breathing",
+        "blight",
+        "dimension-door",
+        "dominate-person"
+      ]
+    },
     "alignment": "chaotic evil",
     "languages": ["Abyssal", "Common"]
   },
@@ -19503,8 +21231,57 @@
             }
           ]
         }
+      },
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Magic, Feather Fall, Levitate, Light.",
+        "freeCasts": [
+          {
+            "spell": "detect-magic"
+          },
+          {
+            "spell": "feather-fall"
+          },
+          {
+            "spell": "levitate"
+          },
+          {
+            "spell": "light"
+          }
+        ]
+      },
+      {
+        "id": "daily-control-weather",
+        "name": "Control Weather (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "control-weather"
+          }
+        ]
+      },
+      {
+        "id": "daily-water-breathing",
+        "name": "Water Breathing (3/Day)",
+        "level": 1,
+        "description": "Cast 3 times a day with no spell slot.",
+        "uses": [[1, 3]],
+        "freeCasts": [
+          {
+            "spell": "water-breathing"
+          }
+        ]
       }
     ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 17,
+      "spells": ["detect-magic", "feather-fall", "levitate", "light", "control-weather", "water-breathing"]
+    },
     "alignment": "chaotic good",
     "skills": ["arcana", "athletics", "history", "perception"],
     "languages": ["Common", "Giant"],
@@ -20911,6 +22688,73 @@
         "kind": "action"
       }
     ],
+    "features": [
+      {
+        "id": "at-will",
+        "name": "Spells at will",
+        "level": 1,
+        "description": "Cast at will, with no spell slot: Detect Evil and Good, Druidcraft, Pass Without Trace.",
+        "freeCasts": [
+          {
+            "spell": "detect-evil-and-good"
+          },
+          {
+            "spell": "druidcraft"
+          },
+          {
+            "spell": "pass-without-trace"
+          }
+        ]
+      },
+      {
+        "id": "daily-calm-emotions",
+        "name": "Calm Emotions (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "calm-emotions"
+          }
+        ]
+      },
+      {
+        "id": "daily-dispel-evil-and-good",
+        "name": "Dispel Evil and Good (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "dispel-evil-and-good"
+          }
+        ]
+      },
+      {
+        "id": "daily-entangle",
+        "name": "Entangle (1/Day)",
+        "level": 1,
+        "description": "Cast 1 times a day with no spell slot.",
+        "uses": [[1, 1]],
+        "freeCasts": [
+          {
+            "spell": "entangle"
+          }
+        ]
+      }
+    ],
+    "spellcasting": {
+      "ability": "cha",
+      "dc": 14,
+      "spells": [
+        "detect-evil-and-good",
+        "druidcraft",
+        "pass-without-trace",
+        "calm-emotions",
+        "dispel-evil-and-good",
+        "entangle"
+      ]
+    },
     "alignment": "lawful good",
     "languages": ["Celestial", "Elvish", "Sylvan", "telepathy 60 ft."]
   },

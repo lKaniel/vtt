@@ -80,10 +80,13 @@ function weaponRiders(attack: Attack, targetType: string): Damage[] {
     .map((r) => ({ dice: r.dice, type: r.type === 'weapon' ? type : r.type }));
 }
 
-/** Divine Smite on a melee hit, and Improved Divine Smite's 1d8 on every melee hit (2014 paladin). */
+/** A paladin's 1d8 radiant on every melee hit from 11th level: Improved Divine Smite (2014), Radiant Strikes (2024). */
+const RADIANT_STRIKES = new Set(['improved-divine-smite', 'radiant-strikes']);
+
+/** Divine Smite on a melee hit, and the paladin's 1d8 on every melee hit. */
 function smiting({ attacker, attack, target, smite }: WeaponAttackInput): Damage[] {
   if (attack.kind !== 'melee') return [];
-  const improved = attacker.sheet.features.some((f) => f.id === 'improved-divine-smite');
+  const improved = attacker.sheet.features.some((f) => RADIANT_STRIKES.has(f.id));
   const out: Damage[] = smite ? [divineSmite(smite, target.sheet.type)] : [];
   return improved ? [...out, { dice: '1d8', type: 'radiant' }] : out;
 }

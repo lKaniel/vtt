@@ -122,3 +122,34 @@ describe("a ghoul's claws", () => {
     expect(paralysed()).toBe(false);
   });
 });
+
+describe('a monster that casts spells', () => {
+  const become = (monster: string) =>
+    store.setToken(TokenSchema.parse({ ...dragon(), name: 'Caster', monster, spent: undefined }));
+
+  it('casts with a slot of its stat block, against its own save DC', () => {
+    become('mage');
+    const { gm } = fight();
+    dice = [d20(1)];
+    gm.receive({ t: 'cast', caster: 'goblin', spell: 'fireball', slot: 3, targets: [], point: [850, 550] });
+    const said = chat(gm);
+    expect(said.some((m) => m.includes('Fireball') && m.includes('"dc":14'))).toBe(true);
+    expect(hero().hp).toBeLessThan(200);
+    expect(dragon().spent?.slots?.[2]).toBe(1);
+  });
+
+  it('casts an innate spell once a day through its feature, with no slot', () => {
+    become('drow');
+    const { gm } = fight();
+    const cast = { t: 'cast', caster: 'goblin', spell: 'faerie-fire', slot: 1, targets: [], point: [850, 550] };
+    gm.receive({ ...cast, paidBy: 'daily-faerie-fire' });
+    expect(gm.take('error')).toEqual([]);
+    expect(dragon().spent?.uses?.['daily-faerie-fire']).toBe(1);
+    gm.receive({ t: 'endTurn' });
+    gm.receive({ t: 'endTurn' });
+    gm.receive({ ...cast, paidBy: 'daily-faerie-fire' });
+    expect(gm.take('error')[0]?.message).toMatch(/no uses left of Faerie Fire/);
+    gm.receive(cast);
+    expect(gm.take('error')[0]?.message).toMatch(/no 1st-level slots left/);
+  });
+});

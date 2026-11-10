@@ -2,6 +2,7 @@ import type { BackupInfo, GameDetail } from '@vtt/shared';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../server-api.ts';
 import { Button } from './kit/button.tsx';
+import { FileInput } from './kit/file-input.tsx';
 
 // Keeping a game safe, in the lobby: the GM's backups (made when the game
 // loads, every 15 minutes of play if it changed, and by hand) with restore,
@@ -102,7 +103,7 @@ export function ImportZip({ onMade }: Readonly<{ onMade: (id: string) => void }>
       <Button asChild variant="outline" disabled={busy}>
         <label>
           {busy ? 'Importing…' : 'Pick a zip'}
-          <input type="file" accept=".zip,application/zip" hidden disabled={busy} onChange={(e) => void onPick(e)} />
+          <FileInput accept=".zip,application/zip" disabled={busy} onChange={(e) => void onPick(e)} />
         </label>
       </Button>
       {error && <p className="menu-error">{error}</p>}

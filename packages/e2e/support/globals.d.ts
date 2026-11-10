@@ -11,6 +11,8 @@ interface E2eToken {
   hidden?: boolean;
   elevation?: number;
   img?: string;
+  inventory?: { item: string; qty: number; spell?: string }[];
+  hotbar?: (string | null)[];
 }
 
 interface E2eVtt {

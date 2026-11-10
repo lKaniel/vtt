@@ -1929,13 +1929,9 @@ h4 {
 .tile[draggable='true'] {
   cursor: grab;
 }
-.dragging-tile .sheet {
-  pointer-events: none;
-  opacity: 0.3;
-  transition: opacity 0.15s;
-}
 .dragging-tile .actionbar-wrap {
-  z-index: 10;
+  /* Above every window (kit/window-stack.ts MAX_Z), so a tile dropped on the bar never lands on a sheet. */
+  z-index: 995;
 }
 
 /* ---- Spell slot choice while aiming ------------------------------------ */

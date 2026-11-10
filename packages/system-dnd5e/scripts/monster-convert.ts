@@ -1,6 +1,7 @@
 // What a monster's stat block holds besides its attacks: Multiattack, traits,
 // actions behind a saving throw (breath weapons), skills, languages and speeds.
 
+import { monsterSpells } from './monster-spells.ts';
 import { bare, damage, formula, list, num, str, type Entry, type Fields, type Pack } from './srd-convert.ts';
 
 interface Trait {
@@ -13,6 +14,7 @@ interface Extras {
   multiattack?: number;
   traits?: Trait[];
   features?: Record<string, unknown>[];
+  spellcasting?: Record<string, unknown>;
   alignment?: string;
   skills?: string[];
   expertise?: string[];
@@ -192,10 +194,13 @@ export function monsterExtras(pack: Pack, f: Fields, refs: readonly string[]): E
       return fields ? [{ ref, fields }] : [];
     })
     .sort((a, b) => (num(a.fields.order) ?? 0) - (num(b.fields.order) ?? 0));
+  const magic = monsterSpells(pack, refs);
+  const run = entries.filter((e) => runs(e.fields)).map((e) => feature(pack, e.ref, e.fields));
   return compact({
     multiattack: multiattack(pack, refs),
     traits: some(entries.filter((e) => isText(e.ref, e.fields)).map((e) => trait(pack, e.ref, e.fields))),
-    features: some(entries.filter((e) => runs(e.fields)).map((e) => feature(pack, e.ref, e.fields))),
+    features: some([...run, ...(magic.features ?? [])]),
+    spellcasting: magic.spellcasting,
     alignment: str(f.alignment)?.replace(/-/g, ' '),
     skills: some(list(f.skills).map(bare)),
     expertise: some(list(f.expertise).map(bare)),

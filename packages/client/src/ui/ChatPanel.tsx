@@ -27,6 +27,7 @@ import type { Tab } from './panel-tabs.ts';
 import { SelectField } from './kit/select.tsx';
 import { HIDDEN_ROLL, modeNote, ROLL_MODE_OPTIONS } from '../play/roll-mode.ts';
 import type { RollMode } from '@vtt/shared';
+import { Pressable } from './kit/pressable.tsx';
 
 const QUICK_DICE = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
@@ -89,10 +90,10 @@ function Log({ session }: Readonly<{ session: Session }>) {
       </div>
       <div className="dice">
         {QUICK_DICE.map((d) => (
-          <button key={d} onClick={() => session.requests.say(`/r 1${d}`)} title={`Roll 1${d}`}>
+          <Pressable key={d} onClick={() => session.requests.say(`/r 1${d}`)} title={`Roll 1${d}`}>
             <img src={diceArt(d)} alt="" draggable={false} />
             <span>{d}</span>
-          </button>
+          </Pressable>
         ))}
       </div>
       <form onSubmit={submit} className="flex gap-1.5">

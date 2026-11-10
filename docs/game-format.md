@@ -1199,6 +1199,29 @@ creatures up to `maxSize` squares across. A ghoul's claws:
 }
 ```
 
+A monster that casts spells has `spellcasting`: its `ability`, save `dc` and
+spell `attack` bonus (worked out from the ability when missing), caster
+`level`, `slots` per spell level and the ids of every spell it can cast in
+`spells`. Spells it casts at will or so many times a day are paid by
+features with `freeCasts` instead of slots (`uses` for so many a day, none
+for at will):
+
+```json
+{
+  "spellcasting": { "ability": "cha", "dc": 11, "spells": ["dancing-lights", "darkness"] },
+  "features": [
+    { "id": "at-will", "name": "Spells at will", "level": 1, "freeCasts": [{ "spell": "dancing-lights" }] },
+    {
+      "id": "daily-darkness",
+      "name": "Darkness (1/Day)",
+      "level": 1,
+      "uses": [[1, 1]],
+      "freeCasts": [{ "spell": "darkness" }]
+    }
+  ]
+}
+```
+
 Leave `rechargeOn` out and set `uses` to `[[1, 3]]` for "3/Day". SRD monsters
 come with all of this.
 

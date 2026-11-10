@@ -6,8 +6,8 @@ import { ammunitionPlus, otherSpeeds, wearing, withItemBonuses, withWeaponMagic 
 import { offHandAttacks } from './two-weapon.ts';
 import { makesDeathSaves } from './deaths.ts';
 import { poolParts, type PoolSheet } from './pools.ts';
+import { casterOf } from './monster-casting.ts';
 import {
-  casterSheet,
   classScales,
   type CasterSheet,
   type FeatureSheet,
@@ -151,10 +151,10 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
       training,
     }),
     ...defenses(stats, monster),
-    ...kindAndSaves(monster, cls, { abilities, proficiency }),
+    ...kindAndSaves(monster, cls, { abilities, proficiency }, features),
     ...effectParts(token, features, content.edition, monster?.conditionImmunities),
     ...classParts(levels, monster),
-    caster: withHandedSpells(casterSheet(token, { abilities, proficiency }, content), token, content),
+    caster: withHandedSpells(casterOf(token, monster, { abilities, proficiency }, content), token, content),
     ...poolParts(token, levels, { abilities, proficiency }, monster),
     ...legendaryParts(token, monster),
     features,
@@ -251,8 +251,10 @@ function kindAndSaves(
   monster: Monster | undefined,
   cls: Class | undefined,
   { abilities, proficiency }: { abilities: Abilities; proficiency: number },
+  features: readonly Pick<FeatureSheet, 'saveProficiencies'>[] = [],
 ): Pick<Creature, 'type' | 'saves' | 'proficientSaves'> {
-  const proficient = cls?.saves ?? monster?.saves ?? [];
+  const learned = features.flatMap((f) => f.saveProficiencies ?? []);
+  const proficient = [...new Set([...(cls?.saves ?? monster?.saves ?? []), ...learned])];
   return {
     type: monster?.type ?? 'humanoid',
     saves: saveBonuses(abilities, proficiency, proficient),
