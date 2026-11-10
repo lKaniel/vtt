@@ -7958,7 +7958,8 @@
         "description": "Cast at will, with no spell slot: Nondetection.",
         "freeCasts": [
           {
-            "spell": "nondetection"
+            "spell": "nondetection",
+            "self": true
           }
         ]
       },
@@ -17251,7 +17252,8 @@
         "uses": [[1, 2]],
         "freeCasts": [
           {
-            "spell": "plane-shift"
+            "spell": "plane-shift",
+            "self": true
           }
         ]
       },
@@ -18470,7 +18472,8 @@
             "spell": "detect-evil-and-good"
           },
           {
-            "spell": "invisibility"
+            "spell": "invisibility",
+            "self": true
           }
         ]
       },
@@ -21011,7 +21014,8 @@
             "spell": "detect-evil-and-good"
           },
           {
-            "spell": "invisibility"
+            "spell": "invisibility",
+            "self": true
           }
         ]
       },

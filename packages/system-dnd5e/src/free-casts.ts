@@ -38,10 +38,13 @@ export function featureCastProblem(
   sheet: Pick<Creature, 'features'>,
   spell: Pick<Spell, 'id' | 'level' | 'name'>,
   id: string,
+  { fighting = false }: { fighting?: boolean } = {},
 ): string | undefined {
   const feature = sheet.features.find((f) => f.id === id);
   if (!feature) return "doesn't have that feature";
-  if (!castOf(feature, spell.id)) return `can't cast ${spell.name} with ${feature.name}`;
+  const cast = castOf(feature, spell.id);
+  if (!cast) return `can't cast ${spell.name} with ${feature.name}`;
+  if (cast.beforeCombat && fighting) return `casts ${spell.name} before the fight, not during it`;
   if (feature.left === 0) return `has no uses left of ${feature.name}`;
   return undefined;
 }

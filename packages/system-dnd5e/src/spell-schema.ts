@@ -4,6 +4,7 @@ import { ABILITIES, AbilitiesSchema, DamageSchema, DamageTypeSchema, OtherSpeeds
 import { EffectChangeSchema } from './effect-changes.ts';
 import { WeaponSpellSchema } from './weapon-spell-schema.ts';
 import { AreaSchema } from './area-schema.ts';
+import { FreeCastSchema } from './free-cast-schema.ts';
 import { classFields, LevelTableSchema, momentumEffectFields } from './class-fields.ts';
 import { ConditionSchema } from './condition-schema.ts';
 import { PoolSchema, powerEffectFields, powerFeatureFields, powerSpellFields } from './power-schema.ts';
@@ -613,9 +614,7 @@ export const FeatureSchema = z.object({
    * cast spends a use (of `usesFrom` when set), at will without `uses`; at the spell's level or `level`, on
    * yourself only with `self`.
    */
-  freeCasts: z
-    .array(z.object({ spell: id, level: z.number().int().min(1).max(9).optional(), self: z.boolean().optional() }))
-    .optional(),
+  freeCasts: z.array(FreeCastSchema).optional(),
   /** Saving throws it makes the creature proficient in (diamond soul: all six). */
   saveProficiencies: z.array(AbilitySchema).optional(),
   /** Why the GM runs it by hand: what it does that the engine doesn't (yet). */

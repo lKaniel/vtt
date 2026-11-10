@@ -107,3 +107,23 @@ describe('monsterSpells', () => {
     expect(of([casting('bite', { attack: 'melee' })])).toEqual({});
   });
 });
+
+describe('the notes after a spell', () => {
+  const entry = casting('spellcasting', { kind: 'action', spellAbility: 'int', spellDc: 14 });
+  const cast = (line: string) =>
+    of([entry], { 'monsters.mage.spellcasting.description': `The mage casts:\n${line}` }).features ?? [];
+
+  it('"self only" keeps the cast on the caster', () => {
+    const [feature] = cast('At Will: *Darkness* (self only)');
+    expect(feature).toMatchObject({ freeCasts: [{ spell: 'darkness', self: true }] });
+  });
+
+  it('"cast before combat" and "included in AC" are cast before a fight, never in one', () => {
+    expect(cast('1/Day Each: *Faerie Fire* (cast before combat)')[0]).toMatchObject({
+      freeCasts: [{ spell: 'faerie-fire', beforeCombat: true }],
+    });
+    expect(cast('At Will: *Fire Bolt*, *Darkness* (included in AC)')[0]).toMatchObject({
+      freeCasts: [{ spell: 'fire-bolt' }, { spell: 'darkness', beforeCombat: true }],
+    });
+  });
+});

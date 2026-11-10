@@ -10,6 +10,20 @@ interface Listed {
   level?: number;
   /** Casts a day; missing: at will. */
   uses?: number;
+  /** "self only": it lands on the caster. */
+  self?: boolean;
+  /** "cast before combat", "included in AC": already on when a fight starts, never cast in one. */
+  beforeCombat?: boolean;
+}
+
+/** What the note in brackets after a spell says the engine keeps to. */
+function noted(note: string): Pick<Listed, 'level' | 'self' | 'beforeCombat'> {
+  const level = /level (\d)/i.exec(note)?.[1];
+  return {
+    ...(level && { level: Number(level) }),
+    ...(/\bself only\b/i.test(note) && { self: true }),
+    ...(/cast before combat|included in AC/i.test(note) && { beforeCombat: true }),
+  };
 }
 
 interface Casting {
@@ -40,8 +54,7 @@ function lineSpells(pack: Pack, line: string): Listed[] {
   return [...rest.matchAll(NAMED)].flatMap((m) => {
     const spell = idOf(m[1]!);
     if (!pack.entries.has(`spells.${spell}`)) return [];
-    const level = /level (\d)/i.exec(m[2] ?? '')?.[1];
-    return [{ spell, ...(level && { level: Number(level) }), ...(uses && { uses }) }];
+    return [{ spell, ...noted(m[2] ?? ''), ...(uses && { uses }) }];
   });
 }
 
@@ -52,7 +65,12 @@ function slotsOf(entry: Entry): number[] {
 
 const nameOf = (pack: Pack, spell: string) => pack.text[`spells.${spell}.name`] ?? spell;
 const atLevel = (l: Listed) => (l.level ? `, at level ${l.level}` : '');
-const freeCast = ({ spell, level }: Listed) => ({ spell, ...(level && { level }) });
+const freeCast = ({ spell, level, self, beforeCombat }: Listed) => ({
+  spell,
+  ...(level && { level }),
+  ...(self && { self }),
+  ...(beforeCombat && { beforeCombat }),
+});
 
 function features(pack: Pack, listed: readonly Listed[]): Record<string, unknown>[] {
   const atWill = listed.filter((l) => !l.uses);

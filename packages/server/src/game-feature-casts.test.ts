@@ -112,3 +112,23 @@ describe('casting with a feature instead of a slot', () => {
     expect(tok('hero').spent).toEqual({ slots: [2] });
   });
 });
+
+describe('a stat block spell "cast before combat"', () => {
+  it('is cast before the fight, never in it', () => {
+    const gm = join('gm');
+    put({ ...store.tokens.get('goblin'), x: 250, y: 50, monster: 'mage', stats: { rules: '2024' } });
+    const armor = {
+      t: 'cast',
+      caster: 'goblin',
+      spell: 'mage-armor',
+      slot: 1,
+      targets: ['goblin'],
+      paidBy: 'at-will',
+    } as const;
+    gm.receive(armor);
+    expect(errors(gm)).toEqual([]);
+    gm.receive({ t: 'combatStart', tokens: ['hero', 'goblin'] });
+    gm.receive(armor);
+    expect(errors(gm)[0]).toMatch(/before the fight/);
+  });
+});

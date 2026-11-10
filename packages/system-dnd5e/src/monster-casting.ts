@@ -32,7 +32,8 @@ export function casterOf(
     ability: casting.ability,
     attack: casting.attack ?? dc - 8,
     dc,
-    level: casting.level ?? 1,
+    // Cantrips scale with the caster level; a block without one (every 2024 one) goes by its challenge rating.
+    level: casting.level ?? Math.max(1, Math.floor(monster.cr)),
     slots,
     left: slots.map((n, i) => Math.max(0, n - (spent[i] ?? 0))),
     pact: false,

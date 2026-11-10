@@ -230,7 +230,7 @@ export class SpellActions {
       if (stopped) throw new Refusal(`${caster.token.name} ${stopped}`);
       return { cost: spell.repeat, slot: going.repeat!.slot, spend: 0, again: true, dc: going.repeat!.dc };
     }
-    const pay = payment(caster, spell, req);
+    const pay = payment(caster, spell, req, this.table.fighting(caster.token.id));
     if ((spell.castingTime === 'minute' || spell.castingTime === 'hour') && this.table.inFight(caster.token.id)) {
       throw new Refusal(`${spell.name} takes too long to cast in a fight`);
     }
