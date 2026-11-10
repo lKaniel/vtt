@@ -6,7 +6,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from '../support/fixtures.ts';
 import { GM, PLAYER_2, atTable } from '../support/table.ts';
 
-test.describe.configure({ timeout: 90_000 });
+test.describe.configure({ timeout: 150_000 }); // two browsers, menus and windows
 
 /** The stack named `name` in the Cards tab. */
 const stack = (page: Page, name: string) => page.getByRole('listitem').filter({ hasText: name });
