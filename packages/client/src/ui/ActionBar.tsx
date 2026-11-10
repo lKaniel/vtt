@@ -346,16 +346,7 @@ function Resources({ token, budget, reaction }: ResourcesProps) {
     <div className="ab-resources">
       <span className={budget && !budget.action ? 'res res-action used' : 'res res-action'} title="Action" />
       <span className={budget && !budget.bonus ? 'res res-bonus used' : 'res res-bonus'} title="Bonus action" />
-      {reaction !== undefined && (
-        <span
-          className={
-            reaction
-              ? "res bg-[url('/art/icons/resources/reaction.webp')]"
-              : "res used bg-[url('/art/icons/resources/reaction-spent.webp')]"
-          }
-          title={t('res.reaction')}
-        />
-      )}
+      <ReactionPip unused={reaction} />
       <span className="res-move-icon" title="Movement left" />
       <span className="res-move" title="Movement left">
         <span
@@ -376,6 +367,15 @@ function Resources({ token, budget, reaction }: ResourcesProps) {
       )}
     </div>
   );
+}
+
+/** The reaction's pip: lit while unused; nothing outside a fight. */
+function ReactionPip({ unused }: Readonly<{ unused: boolean | undefined }>) {
+  if (unused === undefined) return null;
+  const art = unused
+    ? "res bg-[url('/art/icons/resources/reaction.webp')]"
+    : "res used bg-[url('/art/icons/resources/reaction-spent.webp')]";
+  return <span className={art} title={t('res.reaction')} />;
 }
 
 function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
