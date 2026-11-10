@@ -124,7 +124,9 @@ function magicRoutes(p: GameParts) {
 /** Character sheets: gear, hit dice, awards, checks, and drops onto sheets. */
 function sheetRoutes(p: GameParts) {
   return {
-    ...each(['equip', 'carry', 'hitDie', 'exhaustion', 'awardXp'], (s, m) => sheetAction(p.table, s.player, m)),
+    ...each(['equip', 'carry', 'hitDie', 'exhaustion', 'inspiration', 'awardXp'], (s, m) =>
+      sheetAction(p.table, s.player, m),
+    ),
     levelUp: (s, m) => levelUp(p.table, s.player, m),
     ...each(['requestCheck', 'rollCheck'], (s, m) => checkAction(p.table, p.chat, s.player, m)),
     ...each(['drop', 'give', 'trade'], (s, m) => p.gm.drops.handle(s.player, s.canSee, m)),
