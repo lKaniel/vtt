@@ -22,9 +22,14 @@ export function TurnOverrideButton({ session, token }: Props) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" title={t('override.title')}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="size-6"
+          title={t('override.title')}
+          aria-label={t('override.button')}
+        >
           <SlidersHorizontalIcon />
-          {t('override.button')}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="flex w-[260px] flex-col gap-2" data-slot="turn-override">

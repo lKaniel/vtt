@@ -91,7 +91,7 @@ function Bar({ session, token, onSheet, size, onSize }: BarProps) {
       <div className="ab-tray">
         <div className="ab-top">
           <Who session={session} token={token} />
-          <Resources token={token} budget={budget} reaction={turn ? turn.reaction : true} />
+          <Resources token={token} budget={budget} reaction={turn?.reaction} />
           <TurnOverrideButton session={session} token={token} />
           <RollPickButton session={session} />
           <BarButtons size={size} onSize={onSize} help={IDLE_HINT} />
@@ -336,7 +336,8 @@ function TileCorner({ tile }: Readonly<{ tile: ActionTile }>) {
 }
 
 /** Action, bonus action and movement on your turn, then spell slots. */
-type ResourcesProps = Readonly<{ token: TokenView; budget: TurnBudget | undefined; reaction: boolean }>;
+/** `reaction`: whether it is unused; left out outside a fight, where the bar has no pip for it. */
+type ResourcesProps = Readonly<{ token: TokenView; budget: TurnBudget | undefined; reaction?: boolean }>;
 
 function Resources({ token, budget, reaction }: ResourcesProps) {
   const caster = token.sheet?.caster;
@@ -345,14 +346,16 @@ function Resources({ token, budget, reaction }: ResourcesProps) {
     <div className="ab-resources">
       <span className={budget && !budget.action ? 'res res-action used' : 'res res-action'} title="Action" />
       <span className={budget && !budget.bonus ? 'res res-bonus used' : 'res res-bonus'} title="Bonus action" />
-      <span
-        className={
-          reaction
-            ? "res bg-[url('/art/icons/resources/reaction.webp')]"
-            : "res used bg-[url('/art/icons/resources/reaction-spent.webp')]"
-        }
-        title={t('res.reaction')}
-      />
+      {reaction !== undefined && (
+        <span
+          className={
+            reaction
+              ? "res bg-[url('/art/icons/resources/reaction.webp')]"
+              : "res used bg-[url('/art/icons/resources/reaction-spent.webp')]"
+          }
+          title={t('res.reaction')}
+        />
+      )}
       <span className="res-move-icon" title="Movement left" />
       <span className="res-move" title="Movement left">
         <span
