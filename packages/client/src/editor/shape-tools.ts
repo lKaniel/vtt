@@ -68,7 +68,7 @@ const FREEHAND_GAP = 8;
 /** A click this close (in squares) to a polygon's first point closes it. */
 const CLOSE_SQUARES = 0.25;
 /** A new sound's reach, in feet. */
-const SOUND_FT = 30;
+export const SOUND_FT = 30;
 
 const roundTo = (v: number, step: number) => Math.round(v / step) * step;
 const snapTo = (p: Point, step: number): Point => [roundTo(p[0], step), roundTo(p[1], step)];

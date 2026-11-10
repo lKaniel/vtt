@@ -23,6 +23,7 @@ function api(gm = true) {
     hud: { open: vi.fn(), observing: undefined as string | undefined, observe: vi.fn() },
     journal: { open: vi.fn(), show: vi.fn(), showImage: vi.fn() },
     piles: { open: vi.fn() },
+    scenes: { fitGrid: vi.fn() },
   } satisfies MenuApi;
 }
 
@@ -247,6 +248,16 @@ describe('context menus', () => {
       ]);
     });
 
+    it('a map picture named with its size in squares sets the grid to fit it', () => {
+      const a = api();
+      const map = tile('m', { kind: 'image', src: '/assets/maps/Tavern_30x20.webp', w: 4200, h: 2800 });
+      pick(onTiles(map), a, 'Match the grid to this map').run();
+      expect(a.scenes.fitGrid).toHaveBeenCalledWith(140);
+      expect(labels(onTiles(tile('p', { kind: 'image', src: '/assets/barrel.png', w: 100, h: 100 })), a)).not.toContain(
+        'Match the grid to this map',
+      );
+    });
+
     it('a group ungroups; locked ground unlocks and becomes an object', () => {
       const a = api();
       expect(labels(onTiles({ id: 'g', type: 'tile', rev: 1, kind: 'group' }), a)).toContain('Ungroup');
@@ -293,5 +304,17 @@ describe('context menus', () => {
     const mine: Doc = { id: 'd', type: 'drawing', rev: 1, author: 'ana' };
     expect(labels({ ...on(mine), mode: 'drawings' }, a)).toEqual(['Copy', 'Cut', 'Duplicate', 'Delete']);
     expect(labels({ mode: 'drawings', at: [0, 0], docs: [] }, a)).toContain('Paste here');
+  });
+});
+
+describe('a map picture’s grid', () => {
+  it('is read from the squares in its name', async () => {
+    const { gridOfPicture } = await import('./menus.ts');
+    expect(gridOfPicture('/a/Tavern_30x20.webp', 4200, 2800)).toBe(140);
+    expect(gridOfPicture('/a/cave [24x18] night.jpg', 2400, 1800)).toBe(100);
+    // The squares must fit both ways, else it's not a size in squares (a 1920x1080 picture).
+    expect(gridOfPicture('/a/forest_1920x1080.jpg', 1920, 1080)).toBeUndefined();
+    expect(gridOfPicture('/a/forest_30x20.jpg', 3000, 1000)).toBeUndefined();
+    expect(gridOfPicture('/a/barrel.png', 100, 100)).toBeUndefined();
   });
 });

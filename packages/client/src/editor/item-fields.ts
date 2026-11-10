@@ -39,6 +39,7 @@ const TEMPLATE_FIELDS: Field[] = [
   plain('angle', 'Angle (°)', 'number', { when: shapeIs('cone') }),
   plain('width', 'Width (ft)', 'number', { when: shapeIs('line') }),
   plain('color', 'Colour', 'color'),
+  media('texture', 'Texture (a loop or picture)', 'video'),
   ...PLACED,
 ];
 
