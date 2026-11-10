@@ -133,6 +133,8 @@ export const LegendarySchema = z.object({
       cost: z.number().int().min(1).max(3).default(1),
       /** The name of the attack it makes (a dragon's tail attack); without one it is described in chat. */
       attack: z.string().optional(),
+      /** A save action run like a breath weapon (Wing Attack): spell fields such as targets, range, area, save, damage, effect. */
+      spell: z.record(z.string(), z.unknown()).optional(),
       description: z.string().optional(),
     }),
   ),

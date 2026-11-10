@@ -258,3 +258,53 @@ describe('what rides on a monster attack', () => {
     expect(attackOf({})).not.toHaveProperty('onHit');
   });
 });
+
+describe('legendary actions behind a save', () => {
+  const legendaryOf = (fields: Record<string, unknown>, description: string) => {
+    const wing = action('wing-attack', { kind: 'legendary', legendaryCost: 2, ...fields });
+    const monster: Entry = {
+      id: 'monsters.dragon',
+      type: 'monster',
+      fields: { entries: [wing.id], legendaryActions: 3 },
+    };
+    const p = pack([monster, wing], {
+      'monsters.dragon.wing-attack.name': 'Wing Attack (Costs 2 Actions)',
+      'monsters.dragon.wing-attack.description': description,
+    });
+    return (convertMonster(p, monster) as { legendary: { options: Record<string, unknown>[] } }).legendary.options[0]!;
+  };
+
+  it('reads a 2014 one from its words: save, damage, prone, everyone around', () => {
+    const wing = legendaryOf(
+      {},
+      'The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed.',
+    );
+    expect(wing).toMatchObject({ name: 'Wing Attack', cost: 2 });
+    expect(wing.spell).toMatchObject({
+      area: { shape: 'emanation', size: 10 },
+      save: { ability: 'dex', dc: 19, onSave: 'none' },
+      damage: [{ dice: '2d6+6', type: 'bludgeoning' }],
+      effect: { conditions: ['prone'] },
+    });
+  });
+
+  it('a 2014 one with half damage on a save', () => {
+    const drain = legendaryOf(
+      {},
+      'Each non-undead creature within 20 feet of the lich must make a DC 18 Constitution saving throw against this magic, taking 21 (6d6) necrotic damage on a failed save, or half as much damage on a successful one.',
+    );
+    expect(drain.spell).toMatchObject({ save: { ability: 'con', dc: 18, onSave: 'half' }, area: { size: 20 } });
+  });
+
+  it('takes a 2024 one from its fields', () => {
+    const clap = legendaryOf(
+      { save: 'con', saveDc: 17, damage: '3d6', damageType: 'thunder', areaShape: 'sphere', areaSize: 20 },
+      '*Constitution Saving Throw:* DC 17, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 90 feet.',
+    );
+    expect(clap.spell).toMatchObject({ range: 90, area: { shape: 'sphere', size: 20 }, save: { dc: 17 } });
+  });
+
+  it('leaves one it cannot run as words', () => {
+    expect(legendaryOf({}, 'The dragon makes a Wisdom (Perception) check.')).not.toHaveProperty('spell');
+  });
+});
