@@ -1,4 +1,4 @@
-import { canControl, type Player } from '@vtt/shared';
+import { canControl, canOverride, type Player } from '@vtt/shared';
 import {
   editionOf,
   escapeRoll,
@@ -94,8 +94,13 @@ export class FeatureActions {
   }
 
   /** Rests the creatures; a long rest skips those that had one less than a day ago, and refuses when that is all of them. */
+  /** The GM rests anyone; a trusted player the creatures they control (canOverride). */
   rest(player: Player, ids: readonly string[], kind: 'short' | 'long', now: number): void {
-    requireGm(player);
+    const mine = ids.every((id) => {
+      const token = this.store.tokens.get(id);
+      return !!token && canOverride(token, player);
+    });
+    if (!mine) requireGm(player);
     const tired = kind === 'long' ? ids.filter((id) => !longRestReady(this.table.fighter(id).token, now)) : [];
     const already = tired.map(
       (id) => `${this.table.fighter(id).token.name} already had a long rest in the last 24 hours`,

@@ -225,6 +225,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     bonus: z.boolean().optional(),
     reaction: z.boolean().optional(),
     move: z.number().int().min(0).max(9999).optional(),
+    extra: z.number().int().min(0).max(9).optional(),
   }),
   z.object({ t: z.literal('pause'), on: z.boolean() }),
   z.object({

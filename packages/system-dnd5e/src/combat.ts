@@ -9,6 +9,8 @@ export const TurnBudgetSchema = z.object({
   /** Feet of movement left this turn. */
   move: z.number().nonnegative(),
   action: z.boolean(),
+  /** Actions on top of the one, spent once it is gone (a GM's override). */
+  extra: z.number().int().nonnegative().optional(),
   bonus: z.boolean(),
   /** Attacks left from an Attack action already begun (extra attack). */
   attacks: z.number().int().nonnegative().default(0),

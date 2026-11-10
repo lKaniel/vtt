@@ -51,6 +51,15 @@ describe('the Claude bridge tools', () => {
     expect(tokens[0]).toHaveProperty('x');
   });
 
+  it("override a creature's turn: an action back, an extra one, movement", async () => {
+    const call = toolsFor('gm');
+    store.setToken({ ...store.tokens.get('hero')!, monster: 'goblin' });
+    await call('send', { message: { t: 'combatStart', tokens: ['hero'] } });
+    const said = await call('override_turn', { token: 'hero', action: false, extra: 1, move: 10 });
+    expect(said).toContain('Done');
+    expect(store.combat!.left).toMatchObject({ action: false, extra: 1, move: 10 });
+  });
+
   it('say things and roll in chat, then read the chat back', async () => {
     const call = toolsFor('gm');
     expect(await call('say', { text: '/r 1d20+2' })).toContain('Done');

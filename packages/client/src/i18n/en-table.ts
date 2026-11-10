@@ -104,6 +104,8 @@ export const EN_TABLE = {
   'override.reaction': 'Reaction',
   'override.move': 'Movement left (ft)',
   'override.dash': '+{feet} ft',
+  'override.extra': 'Extra action ({n})',
+  'override.extraTitle': 'Give one more action on top of the one, spent once that is gone',
   'override.dashTitle': 'Add another speed’s worth of movement, as a Dash',
   'override.notTurn': 'The action and movement can only be changed on its turn.',
   'override.hint': 'Lit means it still has it. Everyone sees the change in the log.',
