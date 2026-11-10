@@ -11,7 +11,10 @@ import type { Spell } from './spell-schema.ts';
 //     (MeleeAttack02_Mace01_..., Ranged/Arrow01_...); ranged when under a
 //     Ranged folder or made in lengths ("_30ft_");
 //   - "zone:<id>": the same folder's look for a lasting area, a loop if it has one;
-//   - "heal": the videos of a Healing folder, for healing without its own.
+//   - "heal": the videos of a Healing folder, for healing without its own;
+//   - "condition:<id>": a loop under a Marker folder whose name holds the
+//     condition's word (MarkerPoison_..., MarkerFear_...), worn by a creature
+//     with that condition (effect-loops.ts).
 // A spell or weapon gets one look: the same video in its sizes and lengths
 // (the map picks the length nearest the shot), chosen in the colour of its
 // damage, never a loop, a projectile for spells that fly and a burst for
@@ -81,6 +84,25 @@ const WEAPONS: Record<string, string[]> = {
 
 const ATTACK_FOLDERS = new Set(['weapon attacks', 'unarmed attacks', 'creature']);
 
+/** A marker video's word, and the condition it shows. */
+const MARKERS: Record<string, string> = {
+  poison: 'poisoned',
+  fear: 'frightened',
+  charm: 'charmed',
+  stun: 'stunned',
+  sleep: 'unconscious',
+  paralysis: 'paralyzed',
+  restrain: 'restrained',
+  blind: 'blinded',
+};
+
+/** The condition a marker loop shows, by the word after "Marker" in its name. */
+function markerOf(m: MediaEntry): string | undefined {
+  if (!m.tags.includes('marker') || !/loop/i.test(m.name)) return undefined;
+  const word = /^marker([a-z]+)/i.exec(m.name)?.[1]?.toLowerCase();
+  return word && Object.hasOwn(MARKERS, word) ? MARKERS[word] : undefined;
+}
+
 /** The weapons a video's name names: its parts ("MeleeAttack02", "Mace01"), then their words. */
 function weaponsIn(name: string): string[] {
   if (/laser/i.test(name)) return [];
@@ -96,6 +118,8 @@ const SPELLS = new Map<string, Spell>([...srdFor('2024').spells, ...srdFor('2014
 function keysOf(m: MediaEntry): string[] {
   const folder = nameKey(m.tags.at(-1) ?? '');
   if (SPELLS.has(folder)) return [`spell:${folder}`, `zone:${folder}`];
+  const marker = markerOf(m);
+  if (marker) return [`condition:${marker}`];
   if (/nohit/i.test(m.name)) return [];
   if (m.tags.some((t) => ATTACK_FOLDERS.has(t))) {
     const ranged = m.tags.includes('ranged') || /_\d+ft(_|$)/i.test(m.name);
@@ -141,6 +165,7 @@ function wantOf(key: string): Want {
   if (spell && kind === 'zone') return { ...spellWant(spell), ranged: false, loop: true };
   if (spell) return spellWant(spell);
   if (key === 'heal') return { colours: COLOURS.heal! };
+  if (kind === 'condition') return { colours: [], loop: true };
   return { colours: ['white', 'grey', 'blue'], plain: true, ranged: key.startsWith('ranged:') };
 }
 

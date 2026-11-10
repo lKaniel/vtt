@@ -3,6 +3,7 @@ import { type Creature, resolveCreature } from './creature.ts';
 import { canObserve, type Player, type Senses } from '@vtt/shared';
 import type { Token } from './token-schema.ts';
 import { sensesOf } from './perception.ts';
+import { type AuraRing, auraRings } from './auras.ts';
 
 /** How hurt a creature looks to someone who can't see its hit points. */
 export type Health = 'unhurt' | 'hurt' | 'bloodied' | 'down';
@@ -17,6 +18,10 @@ export interface TokenView extends Token {
   art?: string;
   /** What it perceives, for its controllers: the map draws their darkvision and blindsight. */
   senses?: Senses;
+  /** The auras it gives off, drawn round it for everyone who sees it. */
+  auras?: AuraRing[];
+  /** Looping videos it wears for the spells and conditions on it (effect-loops.ts), from the game's packs. */
+  loops?: string[];
 }
 
 export function healthOf(hp: number, maxHp: number): Health {
@@ -34,7 +39,8 @@ export function viewToken(token: Token, player: Player, content: Content): Token
   }
   if (!sheet) return token;
   const art = token.monster ? content.monsters.get(token.monster)?.img : undefined;
-  const look = art ? { art } : {};
+  const auras = auraRings({ token, sheet });
+  const look = { ...(art && { art }), ...(auras.length && { auras }) };
   if (canObserve(token, player)) {
     const senses = sheet.senses ?? sensesOf(token, token.monster ? content.monsters.get(token.monster) : undefined);
     return { ...token, ...look, sheet, senses };

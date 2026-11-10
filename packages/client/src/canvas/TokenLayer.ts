@@ -16,6 +16,7 @@ import { clickToken } from '../play/map-clicks.ts';
 import type { Session } from '../session/session.ts';
 import { applyTokenFilter, drawTokenRing, faceScale, onlookerOf } from './token-face.ts';
 import type { Viewer } from './Vision.ts';
+import { TokenDress } from './token-dress.ts';
 import { spaceKey } from '../play/space-pan.ts';
 
 /** Token walking speed when animating a move, pixels per second. */
@@ -74,6 +75,8 @@ export class TokenLayer {
   private labelsVisible = true;
   private facesShown = true;
   private lastClick = { id: '', at: 0 };
+  /** Aura rings and looping videos under the tokens. */
+  private dresses = new TokenDress();
   /** Called when a token you control is pressed, so the map can let you drag it somewhere. */
   onGrab?: (id: string, at: Point) => void;
 
@@ -82,10 +85,12 @@ export class TokenLayer {
   draw(token: TokenView): void {
     const view = this.views.get(token.id) ?? this.create(token);
     if (view.route.length === 0) view.root.position.set(token.x, token.y);
-    const box = token.size * (this.session.world?.gridSize ?? 100);
+    const grid = this.session.world?.gridSize ?? 100;
+    const box = token.size * grid;
     const r = box * DISC;
     view.token = token;
     view.r = r;
+    this.dresses.dress(view.root, token, grid);
     trackHp(view, token);
     this.redrawGround(view);
     const cutout = cutoutOf(token) && !token.ring;
@@ -176,8 +181,7 @@ export class TokenLayer {
   /** The blow landed: flash and shake, and let the hit point bar move. */
   flinch(id: string, color: number, now: number): void {
     const v = this.views.get(id);
-    if (!v) return;
-    v.flinch = { at: now, color };
+    if (v) v.flinch = { at: now, color };
     this.release(id, now);
   }
 
@@ -191,8 +195,7 @@ export class TokenLayer {
     const v = this.views.get(id);
     const t = this.views.get(toward);
     if (!v || !t) return;
-    const dx = t.root.x - v.root.x;
-    const dy = t.root.y - v.root.y;
+    const [dx, dy] = [t.root.x - v.root.x, t.root.y - v.root.y];
     const d = Math.hypot(dx, dy) || 1;
     v.lunge = { at: now, dir: [dx / d, dy / d] };
   }

@@ -29,6 +29,9 @@ const jb2a = entries('jb2a', [
   'Library/Generic/Unarmed_Attacks/Unarmed_Strike/UnarmedStrike_01_Regular_Blue_Physical01_800x600.webm',
   'Library/Generic/Unarmed_Attacks/Unarmed_Strike/UnarmedStrikeNoHit_01_Regular_Blue_800x600.webm',
   'Library/2nd_Level/Spiritual_Weapon/SpiritualWeapon_Mace01_01_Spectral_Blue_400x400.webm',
+  'Library/Generic/Marker/MarkerPoison_01_Regular_Green_Loop_400x400.webm',
+  'Library/Generic/Marker/MarkerFear_02_Dark_Purple_Loop_400x400.webm',
+  'Library/Generic/Marker/MarkerLight_01_Regular_White_Loop_400x400.webm',
 ]);
 
 describe('pack art matched by name', () => {
@@ -46,6 +49,16 @@ describe('pack art matched by name', () => {
     expect(anim['spell:fireball']).toEqual([
       'pack://jb2a/media/Library/3rd_Level/Fireball/FireballExplosion_01_Orange_1000x1000.webm',
     ]);
+  });
+
+  it('gives a condition the loop of a marker named after it', () => {
+    expect(anim['condition:poisoned']).toEqual([
+      'pack://jb2a/media/Library/Generic/Marker/MarkerPoison_01_Regular_Green_Loop_400x400.webm',
+    ]);
+    expect(anim['condition:frightened']).toEqual([
+      'pack://jb2a/media/Library/Generic/Marker/MarkerFear_02_Dark_Purple_Loop_400x400.webm',
+    ]);
+    expect(Object.keys(anim).filter((k) => k.startsWith('condition:'))).toHaveLength(2);
   });
 
   it('dresses a lasting area in the spell’s loop', () => {

@@ -1311,7 +1311,10 @@ copies alone. A paladin's Aura of Protection (+Charisma to saves) and Aura of
 Courage (`conditionImmunities: ["frightened"]`, which keeps a condition off the
 bearer while it lasts) work this way, reaching 30 ft at 18th level (`auraRadius`
 on the feature). In the sheet's Effects page, the effect form sets an aura's
-radius and whom it reaches.
+radius and whom it reaches. The map rings each aura round its bearer for
+everyone who sees it, out from the bearer's edge: gold for an aura on its
+allies, red on its foes (a lasting area like Spirit Guardians shows as its
+template instead).
 
 Players only receive the stats of tokens they control. For everyone else
 they're told how hurt the creature looks (unhurt, hurt, bloodied, down).
