@@ -34,6 +34,10 @@ export interface Perceiver {
   senses: Senses;
   blinded: boolean;
   invisible: boolean;
+  /** Hiding: only eyes whose `notices` reaches this see it (a Stealth total). */
+  concealed?: number;
+  /** How well it notices what hides (passive Perception); asked only when something hides. */
+  notices?: () => number;
 }
 
 // Light ------------------------------------------------------------------

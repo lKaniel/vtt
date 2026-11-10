@@ -6,6 +6,9 @@ import { CONTENT_TYPES, contentWith, packContentIssues, SRD_PACKS } from './pack
 import { inventoryIssues } from './carrying.ts';
 import { withOwn } from './own-content.ts';
 import { perceiverOf } from './perception.ts';
+import { passiveScore } from './checks.ts';
+import { resolveCreature } from './creature.ts';
+import type { Content } from './content.ts';
 import { classPassives } from './class-options.ts';
 import { foundrySheets } from './foundry-actor.ts';
 import { dnd5ePackArt } from './pack-art.ts';
@@ -15,6 +18,12 @@ import { type Actor, ActorSchema, type Token, TokenSchema } from './token-schema
 // how they perceive, and what check-game reports about them. The rules
 // themselves (creature.ts, attack.ts, spells.ts...) are used directly by the
 // server's action handlers and the client's sheets.
+
+/** Its passive Perception, for noticing what hides (10 for scenery without a sheet). */
+function passivePerception(token: Token, content: Content): number {
+  const sheet = resolveCreature(token, content);
+  return sheet ? passiveScore(token, sheet, 'perception') : 10;
+}
 
 /** What a creature sheet refers to by id: a monster, items and spells. */
 type Sheet = Pick<Token, 'monster' | 'inventory' | 'stats' | 'own'>;
@@ -60,6 +69,8 @@ export const dnd5e: Dnd5eSystem = {
   perceiver: (token, rules, packs) => {
     const content = contentWith(editionOf(token, { rules: toEdition(rules) }), packs);
     const monster = token.monster ? content.monsters.get(token.monster) : undefined;
-    return perceiverOf(token, monster, token.stats ? classPassives(token, withOwn(content, token)) : []);
+    const seer = perceiverOf(token, monster, token.stats ? classPassives(token, withOwn(content, token)) : []);
+    let notices: number | undefined;
+    return { ...seer, notices: () => (notices ??= passivePerception(token, content)) };
   },
 };

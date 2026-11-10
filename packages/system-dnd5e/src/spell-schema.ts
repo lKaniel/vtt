@@ -219,6 +219,8 @@ export const EffectTemplateSchema = z.object({
   repeatSave: z.boolean().optional(),
   /** Ends when the bearer attacks or casts a spell (invisibility). */
   endsOnAttack: z.boolean().optional(),
+  /** Hiding: the feature's check total becomes the effect's `hidden` (Hide's Stealth). */
+  hides: z.boolean().optional(),
   /** With `repeatSave`: saved with this ability instead of the spell's (prismatic spray's indigo ray: Constitution). */
   saveWith: AbilitySchema.optional(),
   /** With `repeatSave`: the saves are tallied, three successes end it and three failures make it `worsens` (flesh to stone). */
@@ -259,6 +261,8 @@ export const EffectSchema = EffectTemplateSchema.extend({
   /** The spell that made it, and the slot it was cast with: what dispel magic checks. */
   spell: id.optional(),
   slot: z.number().int().min(0).max(9).optional(),
+  /** The Stealth total of a hiding creature: only those whose passive Perception reaches it see it. */
+  hidden: z.number().int().optional(),
   /** A grapple's escape DC from the stat block (a monster's "escape DC 14"). */
   escape: z.number().int().positive().optional(),
 });
