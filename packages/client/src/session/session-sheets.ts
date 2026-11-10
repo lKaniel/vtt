@@ -15,7 +15,8 @@ export interface SheetHost {
   canEdit(id: string, kind?: 'token' | 'actor'): boolean;
 }
 
-export type OpenSheet = SheetTarget & { edit: boolean };
+/** `levelUp`: a class dropped on it, whose level up the sheet opens. */
+export type OpenSheet = SheetTarget & { edit: boolean; levelUp?: string };
 
 const same = (a: SheetTarget, b: SheetTarget) => a.kind === b.kind && a.id === b.id;
 
@@ -54,6 +55,15 @@ export class Sheets implements SessionPart {
 
   private editable(target: SheetTarget): boolean {
     return this.s.canEdit(target.id, target.kind);
+  }
+
+  /** A class dropped on `target`'s sheet: it leaves edit mode and opens the level up in `cls` (undefined: done). */
+  askLevelUp(target: SheetTarget, cls: string | undefined): void {
+    const asked = (o: OpenSheet): OpenSheet => {
+      const { levelUp: _, ...rest } = o;
+      return cls ? { ...rest, edit: false, levelUp: cls } : rest;
+    };
+    this.set(this.list.map((o) => (same(o, target) ? asked(o) : o)));
   }
 
   /** Closes one sheet; the others stay. */

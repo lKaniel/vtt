@@ -57,6 +57,7 @@ export interface MenuApi {
     open(entry: string, page?: string): void;
     show(entry: string, page?: string): void;
     showImage(src: string, title?: string): void;
+    rollTable(table: string, gmOnly?: boolean): void;
   };
   /** The pile window (see session-piles.ts). */
   /** The scenes (see session-scenes.ts). */
@@ -311,6 +312,13 @@ for (const type of ITEM_TYPES)
 registerMenu('note', (t, api) => {
   const note = t.docs.length === 1 ? t.docs[0]!.doc : undefined;
   const entry = typeof note?.entry === 'string' ? note.entry : undefined;
+  const table = typeof note?.table === 'string' ? note.table : undefined;
+  if (table) {
+    return [
+      { label: 'Roll on the table', run: () => api.journal.rollTable(table) },
+      api.isGm() && { label: 'Roll for the GM alone', run: () => api.journal.rollTable(table, true) },
+    ];
+  }
   if (!entry) return [];
   const page = typeof note?.page === 'string' ? note.page : undefined;
   return [

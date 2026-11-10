@@ -29,11 +29,13 @@ export class ItemLayer {
     this.redraw();
   }
 
-  /** The note pinned at `at` that opens an entry, if any. */
-  noteAt(at: Point): { entry: string; page?: string } | undefined {
+  /** The note pinned at `at` that opens an entry or rolls a table, if any. */
+  noteAt(at: Point): { entry?: string; page?: string; table?: string } | undefined {
     const s = this.session;
     const ctx = { px: 1 / this.zoom, gridSize: s.world?.gridSize ?? 100 };
-    const notes = s.docs.all(`${s.scene}/notes`).filter((n) => typeof n.entry === 'string');
+    const notes = s.docs
+      .all(`${s.scene}/notes`)
+      .filter((n) => typeof n.entry === 'string' || typeof n.table === 'string');
     const id = hitTest(
       notes.map((n) => ({ key: n.id, shape: shapeOf(n, ctx) })),
       at,
@@ -41,7 +43,8 @@ export class ItemLayer {
     );
     const note = notes.find((n) => n.id === id);
     if (!note) return undefined;
-    return { entry: note.entry as string, ...(typeof note.page === 'string' ? { page: note.page } : {}) };
+    const str = (k: 'entry' | 'page' | 'table') => (typeof note[k] === 'string' ? { [k]: note[k] } : {});
+    return { ...str('entry'), ...str('page'), ...str('table') };
   }
 
   /** The items to draw, bottom up: regions, templates, drawings, notes, then sounds (GM, in their mode). */

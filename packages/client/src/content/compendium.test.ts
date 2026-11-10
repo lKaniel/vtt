@@ -42,6 +42,22 @@ describe('the Compendium', () => {
     expect(compendium('features', '2014', 'unarmored defense').map((e) => e.sub)).toEqual(['Barbarian 1', 'Monk 1']);
   });
 
+  it('lists classes and species, to drop on a sheet', () => {
+    expect(compendium('classes', '2014', 'wizard')[0]).toMatchObject({
+      name: 'Wizard',
+      sub: 'd6 hit die',
+      drag: { kind: 'class', id: 'wizard', rules: '2014' },
+      facets: { kind: ['Class'] },
+    });
+    expect(compendium('species', '2014', 'dwarf')[0]).toMatchObject({
+      name: 'Dwarf',
+      sub: '25 ft, darkvision 60 ft',
+      drag: { kind: 'species', id: 'dwarf', rules: '2014' },
+      facets: { kind: ['Species'] },
+    });
+    expect(compendium('species', '2014', 'human')[0]?.sub).toBe('30 ft');
+  });
+
   it('writes fractional challenge ratings the usual way', () => {
     expect([0, 0.125, 0.25, 0.5, 3].map(crText)).toEqual(['0', '1/8', '1/4', '1/2', '3']);
   });

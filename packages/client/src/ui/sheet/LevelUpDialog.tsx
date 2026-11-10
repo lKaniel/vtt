@@ -37,6 +37,10 @@ function classOptions(stats: Stats | undefined, content: Content): { value: stri
   }));
 }
 
+/** The class the dialog opens in: the one dropped on the sheet when it is offered, else the first. */
+const startingClass = (options: readonly { value: string }[], initial?: string) =>
+  (options.find((o) => o.value === initial) ?? options[0])?.value ?? '';
+
 const spent = (b: Bonus) => Object.values(b).reduce((n, v) => n + v, 0);
 
 export function LevelUpDialog({
@@ -44,11 +48,12 @@ export function LevelUpDialog({
   kind,
   value,
   sheet,
+  initial,
   onClose,
-}: Readonly<Pick<SheetProps, 'session' | 'kind' | 'value' | 'sheet'> & { onClose: () => void }>) {
+}: Readonly<Pick<SheetProps, 'session' | 'kind' | 'value' | 'sheet'> & { initial?: string; onClose: () => void }>) {
   const content = gameContent(sheet.edition);
   const options = classOptions(value.stats, content);
-  const [classId, setClassId] = useState(options[0]?.value ?? '');
+  const [classId, setClassId] = useState(() => startingClass(options, initial));
   const [hp, setHp] = useState<Hp>('average');
   const [subclass, setSubclass] = useState('');
   const [bonus, setBonus] = useState<Bonus>({});

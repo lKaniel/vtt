@@ -21,6 +21,8 @@ export const FACETS: Record<Category, readonly Facet[]> = {
   gear: ['category', 'use', 'rarity', 'source'],
   spells: ['level', 'school', 'class', 'damage', 'casting', 'tag', 'source'],
   features: ['class', 'level', 'source'],
+  classes: ['source'],
+  species: ['source'],
 };
 
 /** A value picked for some of the filters. */

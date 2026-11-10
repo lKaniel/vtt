@@ -2,6 +2,7 @@ import {
   type CasterSheet,
   characterLevel,
   scrollCaster,
+  scrollProblem,
   type Content,
   itemCaster,
   itemCastProblem,
@@ -52,10 +53,12 @@ function useScroll(token: Token, spell: string): Token {
   return { ...token, inventory: inventory.length ? inventory : undefined };
 }
 
-/** The spellcasting `caster` reads a scroll of `spell` with; refused without such a scroll. */
-export function scrollReader({ token, sheet }: Fighter, spell: Spell): CasterSheet {
+/** The spellcasting `caster` reads a scroll of `spell` with; refused without such a scroll, or one it can't read. */
+export function scrollReader({ token, sheet }: Fighter, spell: Spell, content: Content): CasterSheet {
   if (!token.inventory?.some((e) => e.item === SPELL_SCROLL && e.spell === spell.id)) {
     throw new Refusal(`${token.name} has no scroll of ${spell.name}`);
   }
+  const problem = scrollProblem(token, spell, content);
+  if (problem) throw new Refusal(`${token.name} ${problem}`);
   return scrollCaster(sheet, spell, characterLevel(token.stats) ?? 1);
 }

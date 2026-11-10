@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { Session } from '../session/session.ts';
 import { DicesIcon, EyeOffIcon, PencilIcon, PlusIcon, RotateCcwIcon, Trash2Icon } from 'lucide-react';
 import { t } from '../i18n/index.ts';
+import { startDrag } from '../play/drops.ts';
 import { Directory, type DirItem } from './directory/Directory.tsx';
 import { Button } from './kit/button.tsx';
 import { Dialog, DialogContent, DialogTitle } from './kit/dialog.tsx';
@@ -57,6 +58,7 @@ function tableItem(session: Session, doc: Doc, edit: (id: string) => void): DirI
     },
     open: () => edit(doc.id),
     openTwice: () => session.journal.rollTable(doc.id),
+    drag: (e: React.DragEvent) => startDrag(e, { kind: 'table', id: doc.id, name: nameOf(doc) }),
     title: t('tables.clickHint'),
     menu: [
       { label: t('tables.roll'), icon: DicesIcon, run: () => session.journal.rollTable(doc.id) },

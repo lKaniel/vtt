@@ -18,7 +18,8 @@ import { FilterToggle, SearchField, type ViewMode, ViewModes } from './directory
 // the SRD books and the game's packs and homebrew, searched by name or by
 // anything they are filed under, narrowed by filters, shown as rows or as a
 // grid of pictures. Drag a monster onto the map to place it; an item, spell
-// or feature onto a creature or a character sheet to give it.
+// or feature onto a creature or a character sheet to give it; a class or
+// species onto a sheet.
 
 const HINT: Record<Category, MessageKey> = {
   all: 'compendium.hint.all',
@@ -28,6 +29,8 @@ const HINT: Record<Category, MessageKey> = {
   gear: 'compendium.hint.items',
   spells: 'compendium.hint.spells',
   features: 'compendium.hint.features',
+  classes: 'compendium.hint.classes',
+  species: 'compendium.hint.species',
 };
 const VIEWS = ['list', 'grid'] as const satisfies readonly ViewMode[];
 type View = (typeof VIEWS)[number];

@@ -245,7 +245,7 @@ export class SpellActions {
   ): { caster: Fighter; plan: Plan; reader?: CasterSheet } {
     if (req.item !== undefined) return this.fromItem(actor, spell, req);
     if (!req.scroll) return { caster: actor, plan: this.plan(actor, spell, req) };
-    const reader = scrollReader(actor, spell);
+    const reader = scrollReader(actor, spell, this.table.content(actor.token));
     const caster = { ...actor, sheet: { ...actor.sheet, caster: reader } };
     return { caster, plan: this.scrollPlan(caster, spell), reader };
   }

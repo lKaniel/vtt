@@ -1,4 +1,4 @@
-import { characterLevel, classesText } from '@vtt/system-dnd5e';
+import { characterLevel, classesText, originsFor } from '@vtt/system-dnd5e';
 import { ExternalLinkIcon, MoonIcon, TentIcon } from 'lucide-react';
 import { t } from '../../i18n/index.ts';
 import { monsterLine } from '../../text/monster-text.ts';
@@ -64,10 +64,12 @@ export function SheetButtons(props: Readonly<SheetProps & { controls: SheetContr
 }
 
 function SheetTitle(props: Readonly<SheetProps>) {
-  const { kind, value, update, edit } = props;
+  const { kind, value, update, edit, sheet } = props;
   const level = characterLevel(value.stats);
+  const species = value.stats?.species;
   const line = [
     level && t('sheet.level', { level }),
+    species && (originsFor(sheet.edition).species.find((s) => s.id === species)?.name ?? species),
     classesText(value.stats) ?? (monsterLine(monsterOf(props)) || value.monster),
     kind === 'actor' && t('sheet.actor'),
   ]
