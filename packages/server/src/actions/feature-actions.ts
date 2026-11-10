@@ -1,6 +1,8 @@
 import { canControl, type Player } from '@vtt/shared';
 import {
   editionOf,
+  escapeRoll,
+  grapplesOn,
   featureProblem,
   type FeatureUse,
   itemCost,
@@ -35,7 +37,22 @@ export class FeatureActions {
     this.grant(token, out);
     const healed = out.healed !== undefined ? ` and regains ${out.healed} HP` : '';
     const rolled = out.check ? `: ${out.check.name} ${out.check.total}` : '';
+    if (feature.escape) return this.escape(token.id);
     this.table.note(`${token.name} uses ${feature.name}${rolled}${healed}`);
+  }
+
+  /** A grappled creature tries to break each grapple on it. */
+  private escape(id: string): void {
+    const self = this.table.fighter(id);
+    for (const grapple of grapplesOn(self.token)) {
+      const holder = grapple.source ? this.store.tokens.get(grapple.source) : undefined;
+      const grappler = holder && this.table.sheetOf(holder) && this.table.fighter(holder.id);
+      const out = escapeRoll(self, grapple, grappler, this.table.rng);
+      const from = holder ? ` from ${holder.name}` : '';
+      const result = out.success ? 'escapes' : 'fails to escape';
+      this.table.note(`${self.token.name} ${result}${from}: ${out.total} vs ${out.dc}`);
+      if (out.success) this.store.setToken(removeEffects(this.store.tokens.get(id)!, new Set([grapple.id])));
+    }
   }
 
   /** What a feature gives back this turn: the action, movement or attacks. */

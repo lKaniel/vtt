@@ -47,6 +47,7 @@ function conditionEffect({ attacker, target }: HitSaveInput, on: OnHit): Effect[
       conditions,
       source: attacker.token.id,
       ...(on.rounds && { rounds: on.rounds }),
+      ...(on.escape && { escape: on.escape }),
       ...(repeats && { repeatSave: true, save: on.save }),
     },
   ];

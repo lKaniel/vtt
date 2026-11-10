@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { tangent, wallCorners } from './any-angle.ts';
-import { densify, isGridless, latticeOf, segmentsIntersect, type Wall, walkPath } from './index.ts';
+import { densify, trailBehind, isGridless, latticeOf, segmentsIntersect, type Wall, walkPath } from './index.ts';
 
 const G = 100;
 const free = { gridSize: G, gridless: true, radius: 50, bodies: [] };
@@ -216,5 +216,36 @@ describe('tangent', () => {
 
   it('is null from inside a disc', () => {
     expect(tangent({ c: [150, 0], r: 0 }, 1, { c: [200, 0], r: 100 }, 1)).toBeNull();
+  });
+});
+
+describe('trailBehind', () => {
+  it('cuts the walk short by the gap, following its turns', () => {
+    const walk: [number, number][] = [
+      [0, 0],
+      [300, 0],
+      [300, 200],
+    ];
+    expect(trailBehind(walk, 100)).toEqual([
+      [0, 0],
+      [300, 0],
+      [300, 100],
+    ]);
+    expect(trailBehind(walk, 250)).toEqual([
+      [0, 0],
+      [250, 0],
+    ]);
+  });
+
+  it('stays at the start when the walk is shorter than the gap', () => {
+    expect(
+      trailBehind(
+        [
+          [0, 0],
+          [50, 0],
+        ],
+        100,
+      ),
+    ).toEqual([[0, 0]]);
   });
 });

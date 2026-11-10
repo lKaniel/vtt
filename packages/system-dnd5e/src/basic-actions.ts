@@ -67,7 +67,7 @@ const BASIC: Feature[] = [
       effect: { name: 'Grappled', conditions: ['grappled'] },
     },
     description:
-      'In place of one attack, seize a creature within 5 feet that is no more than one size larger than you. 2014: your Strength (Athletics) check against its Athletics or Acrobatics. 2024: it makes a Strength or Dexterity save against 8 + your Strength modifier + your proficiency bonus. If it fails it is grappled: its speed is 0 until it escapes or you let go (the GM ends the effect).',
+      'In place of one attack, seize a creature within 5 feet that is no more than one size larger than you. 2014: your Strength (Athletics) check against its Athletics or Acrobatics. 2024: it makes a Strength or Dexterity save against 8 + your Strength modifier + your proficiency bonus. If it fails it is grappled: its speed is 0 until it escapes (its Escape Grapple action) or the GM ends the effect, and when you walk you drag it along, each foot costing two unless it is two or more sizes smaller.',
   },
   {
     id: 'shove',
@@ -88,6 +88,18 @@ const BASIC: Feature[] = [
       'In place of one attack, shove a creature within 5 feet that is no more than one size larger than you, resisted like a grapple. If it fails, knock it prone or push it 5 feet away.',
   },
 ];
+
+/** Offered only while the creature is grappled. */
+const ESCAPE: Feature = {
+  id: 'escape',
+  name: 'Escape Grapple',
+  level: 1,
+  action: 'action',
+  recharge: 'long',
+  escape: true,
+  description:
+    "Try to break free of a grapple: your Strength (Athletics) or Dexterity (Acrobatics) check against the grapple's escape DC (2014: against the grappler's Athletics check).",
+};
 
 /** Bonus action versions of basic actions a feature allows (cunning action). */
 function bonusVersions(features: readonly Pick<FeatureSheet, 'name' | 'bonusActions'>[]): FeatureSheet[] {
@@ -111,7 +123,8 @@ function bonusVersions(features: readonly Pick<FeatureSheet, 'name' | 'bonusActi
 /** A creature's features with the basic actions everyone has added after them. */
 export function withBasicActions(
   features: readonly FeatureSheet[],
-  effects: readonly Pick<Effect, 'name' | 'bonusActions'>[] = [],
+  effects: readonly Pick<Effect, 'name' | 'bonusActions' | 'conditions'>[] = [],
 ): FeatureSheet[] {
-  return [...features, ...BASIC, ...bonusVersions([...features, ...effects])];
+  const held = effects.some((e) => e.conditions?.includes('grappled'));
+  return [...features, ...BASIC, ...(held ? [ESCAPE] : []), ...bonusVersions([...features, ...effects])];
 }

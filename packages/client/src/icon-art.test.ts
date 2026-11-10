@@ -43,6 +43,7 @@ describe('painted icon art', () => {
     expect(featureArt(feature('dodge'))).toBe('/art/icons/actions/dodge.webp');
     expect(featureArt(feature('cunning-hide'))).toBe('/art/icons/actions/hide.webp');
     expect(featureArt(feature('grapple'))).toBe('/art/icons/actions/shove.webp');
+    expect(featureArt({ id: 'escape' })).toBe('/art/icons/actions/disengage.webp');
     expect(featureArt(feature('dash'))).toBe('/art/icons/actions/dash.webp');
     expect(featureArt(feature('cunning-disengage'))).toBe('/art/icons/actions/disengage.webp');
   });

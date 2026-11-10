@@ -248,6 +248,12 @@ describe('what rides on a monster attack', () => {
     expect(attackOf({ conditions: ['conditions.grappled'], maxSize: 'large' }).onHit).toMatchObject({ maxSize: 2 });
   });
 
+  it("keeps a grapple's escape DC, from the field or the words", () => {
+    expect(attackOf({ conditions: ['conditions.grappled'], escapeDc: 14 }).onHit).toMatchObject({ escape: 14 });
+    const words = 'the target is grappled (escape DC 13).';
+    expect(attackOf({ conditions: ['conditions.grappled'] }, words).onHit).toMatchObject({ escape: 13 });
+  });
+
   it('adds nothing to a plain attack', () => {
     expect(attackOf({})).not.toHaveProperty('onHit');
   });
