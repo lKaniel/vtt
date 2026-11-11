@@ -3,9 +3,10 @@ import type { Session } from '../session/session.ts';
 import { ORDINAL } from '../text/spell-text.ts';
 import { Toggle } from './kit/toggle.tsx';
 
-/** While a melee attack is readied by a 2014 paladin: which slot, if any, to Divine Smite with on a hit. */
+/** While a melee attack is readied by a 2014 paladin: which slot, if any, to Divine Smite with on a hit (the roll dialog asks instead when it is on). */
 export function SmiteControls({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
   const sheet = token.sheet;
+  if (session.actions.rolls.enabled) return null;
   const attack = sheet?.attacks.find((a) => a.name === session.actions.armed);
   const caster = sheet?.caster;
   if (attack?.kind !== 'melee' || !caster || !sheet.features.some((f) => f.id === 'divine-smite')) return null;

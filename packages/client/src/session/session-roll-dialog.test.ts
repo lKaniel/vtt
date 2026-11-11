@@ -1,3 +1,4 @@
+import { FeatureSchema, srdFor } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { asksByDefault } from './session-roll-dialog.ts';
 import type { Session } from './session.ts';
@@ -94,5 +95,64 @@ describe('the roll dialog', () => {
   it('is on for players and off for the GM until they choose', () => {
     expect(asksByDefault({ id: 'ana', name: 'Ana', role: 'player', color: '#f00' })).toBe(true);
     expect(asksByDefault({ id: 'gm', name: 'GM', role: 'gm', color: '#f00' })).toBe(false);
+  });
+});
+
+// With the dialog on, what the bars over the action bar ask (a pool
+// feature's options, how to pay for a cast) is asked in the dialog, so an
+// action never waits in the bar first.
+describe('one step, not a bar and then the dialog', () => {
+  const weave = FeatureSchema.parse({
+    id: 'weave',
+    name: 'Weave',
+    level: 1,
+    action: 'action',
+    cost: 'base',
+    inputs: [{ id: 'base', name: 'Base cost', min: 1, default: 1 }],
+    spell: { range: 60, targets: 1 },
+  });
+  const shield = srdFor('2014').spells.get('mage-armor')!;
+  const mage = {
+    ...token('hero'),
+    sheet: {
+      edition: '2014',
+      attacks: [],
+      features: [weave],
+      effects: [],
+      caster: { level: 5, spells: [{ ...shield, targets: 0 }], slots: [4, 3], left: [2, 1] },
+    } as never,
+  };
+  const sentKinds = () => ws.sent.map((m) => (m as { t: string }).t);
+
+  beforeEach(() => ws.receive(welcome([mage, token('goblin', 150, 50)])));
+
+  it('a pool feature goes to the dialog once its target is picked', () => {
+    session.actions.aimFeature('weave');
+    session.actions.pickTarget('goblin');
+    expect(session.actions.aiming).toBeUndefined();
+    expect(session.actions.rolls.plan?.extras.map((e) => e.id)).toEqual(['input-base']);
+    session.actions.rolls.confirm({ extras: { 'input-base': 2 } });
+    expect(ws.sent.at(-1)).toMatchObject({ t: 'feature', feature: 'weave', targets: ['goblin'], inputs: { base: 2 } });
+  });
+
+  it('a pool feature waits in the bar for Use when the dialog is off', () => {
+    session.actions.rolls.setEnabled(false);
+    session.actions.aimFeature('weave');
+    session.actions.pickTarget('goblin');
+    expect(session.actions.aiming?.picks).toEqual(['goblin']);
+    expect(sentKinds()).not.toContain('feature');
+  });
+
+  it('a spell on yourself with several ways to pay goes to the dialog, which asks how', () => {
+    session.actions.aim('mage-armor', 1);
+    expect(session.actions.aiming).toBeUndefined();
+    expect(session.actions.rolls.plan?.payments?.map((p) => p.key)).toEqual(['slot-1', 'slot-2', 'free']);
+  });
+
+  it('a spell on yourself waits for Cast when the dialog is off', () => {
+    session.actions.rolls.setEnabled(false);
+    session.actions.aim('mage-armor', 1);
+    expect(session.actions.aiming?.mode).toBe('self');
+    expect(sentKinds()).not.toContain('cast');
   });
 });

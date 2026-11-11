@@ -96,6 +96,8 @@ test('a spell in a fight asks what it spends and what pays for it', async ({ pag
   await clickOnMap(page, ORRIN);
   await page.getByRole('tab', { name: 'Spells' }).click();
   await page.getByRole('button', { name: 'Magic Missile' }).click();
+  // The slot is asked in the dialog, not in the bar first.
+  await expect(page.getByRole('group', { name: 'Spell slot' })).toHaveCount(0);
   for (const left of [2, 1]) {
     await clickOnMap(page, GOBLIN);
     await expect(page.getByText(`Click ${left} more target(s) for Magic Missile`)).toBeVisible();
@@ -113,4 +115,20 @@ test('a spell in a fight asks what it spends and what pays for it', async ({ pag
 
   await expect(chatLog(page).getByText(/no action spent \(picked\)/)).toBeVisible();
   await expect(chatLog(page).getByText(/extra damage \+1d4/)).toBeVisible();
+});
+
+test('the slot is picked in the dialog, not in a bar before it', async ({ page }) => {
+  await atTable(page, PLAYER_1);
+  await clickOnMap(page, ORRIN);
+  await page.getByRole('tab', { name: 'Spells' }).click();
+  await page.getByRole('button', { name: 'Magic Missile' }).click();
+  await expect(page.getByRole('group', { name: 'Spell slot' })).toHaveCount(0);
+  for (let dart = 0; dart < 3; dart++) await clickOnMap(page, GOBLIN);
+
+  const dialog = page.getByRole('dialog', { name: 'Cast Magic Missile' });
+  await dialog.getByRole('combobox', { name: 'Pay with' }).click();
+  await page.getByRole('option', { name: /2nd level slot/ }).click();
+  await dialog.getByRole('button', { name: 'Go', exact: true }).click();
+  // A 2nd-level slot throws a fourth dart, at the creature picked first.
+  await expect(chatLog(page)).toContainText('Magic Missile (level 2');
 });
