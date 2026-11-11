@@ -30,8 +30,11 @@ async function gesture(cdp: CDPSession, from: Finger[], to: Finger[], { steps = 
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 }
 
+/** A quick tap: down and up are sent together, so a slow machine can't stretch it into a long press. */
 async function tap(cdp: CDPSession, at: { x: number; y: number }): Promise<void> {
-  await gesture(cdp, [[at.x, at.y]], [[at.x, at.y]], { steps: 0 });
+  const down = cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...at, id: 0 }] });
+  const up = cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await Promise.all([down, up]);
 }
 
 async function canvasCentre(page: Page): Promise<{ x: number; y: number }> {
