@@ -12,11 +12,12 @@ import {
   longRestReady,
   rechargeItems,
   rest,
+  type Spend,
   type Token,
   useFeature,
   useItem,
 } from '@vtt/system-dnd5e';
-import { Refusal, requireGm, type Cost, type Table } from '../play/table.ts';
+import { Refusal, requireGm, spendAs, type Table } from '../play/table.ts';
 
 /** Class features, rests, and ending effects by hand. */
 export class FeatureActions {
@@ -26,12 +27,13 @@ export class FeatureActions {
     return this.table.store;
   }
 
-  use(player: Player, id: string, featureId: string): void {
+  /** `spend`: what it costs of the turn instead, as the roll dialog picked. */
+  use(player: Player, id: string, featureId: string, spend?: Spend): void {
     const { token, sheet } = this.table.actor(player, id);
     const problem = featureProblem(sheet, featureId);
     if (problem) throw new Refusal(`${token.name} ${problem}`);
     const feature = sheet.features.find((f) => f.id === featureId)!;
-    const cost: Cost = feature.action ?? 'free';
+    const cost = spendAs(feature.action ?? 'free', spend);
     this.table.check(token, cost);
     const out = useFeature(token, sheet, featureId, this.table.rng);
     this.table.pay(token, cost, sheet.attacksPerAction);

@@ -2,7 +2,7 @@ import { type Rng, roll, type Roll } from '@vtt/shared';
 import { abilityMod } from './creature-math.ts';
 import type { Creature } from './creature.ts';
 import { d20Formula, type SaveRoll, saveModifiers } from './effects.ts';
-import { type RollEdge, withEdge } from './roll-choice.ts';
+import { type RollChoice, withPick } from './roll-choice.ts';
 import type { Effect } from './spell-schema.ts';
 import type { Ability } from './stats-schema.ts';
 import type { Token } from './token-schema.ts';
@@ -21,8 +21,8 @@ export interface CheckKind {
   tool?: string;
 }
 
-/** A check as it is rolled: against `dc` when there is one, with the roller's own advantage or disadvantage. */
-type CheckRolled = CheckKind & { dc?: number; edge?: RollEdge };
+/** A check as it is rolled: against `dc` when there is one, with the roller's own pick for the d20 and a situational modifier. */
+type CheckRolled = CheckKind & { dc?: number } & Pick<RollChoice, 'edge' | 'd20' | 'situational'>;
 
 type CheckSheet = Pick<Creature, 'abilities' | 'proficiency' | 'saves'> &
   Partial<Pick<Creature, 'features' | 'proficiencies' | 'skills' | 'expertise'>>;
@@ -77,7 +77,7 @@ export function rollCheck(
 ): CheckRoll {
   const { dc } = check;
   if (check.save) return rolledSave(token, sheet, check, rng);
-  const mods = withEdge(checkModifiers(sheet, check), check.edge);
+  const mods = withPick(checkModifiers(sheet, check), check);
   const result = roll(d20Formula(checkBonus(token, sheet, check), mods.bonus, mods), rng);
   return {
     roll: result,
@@ -85,6 +85,11 @@ export function rollCheck(
     ...(dc !== undefined && { success: result.total >= dc }),
     ...(mods.used.length && { used: mods.used }),
   };
+}
+
+/** How a check's or save's d20 would be rolled as things stand, before any pick: what the roll dialog shows first. */
+export function checkEdge(sheet: Creature, check: CheckKind): { advantage: boolean; disadvantage: boolean } {
+  return check.save ? saveModifiers(sheet, check.ability) : checkModifiers(sheet, check);
 }
 
 /** Advantage, disadvantage and bonus dice effects give a check, and the one-check effects it uses up (2014 guidance). */
@@ -108,7 +113,7 @@ function hasCheckAdvantage(sheet: Creature, check: CheckKind): boolean {
 
 /** A saving throw rolled from the sheet or a request card, with the effects' advantage, disadvantage and dice. */
 function rolledSave(token: Pick<Token, 'stats'>, sheet: Creature, check: CheckRolled, rng: Rng): CheckRoll {
-  const mods = withEdge(saveModifiers(sheet, check.ability), check.edge);
+  const mods = withPick(saveModifiers(sheet, check.ability), check);
   const result = roll(d20Formula(checkBonus(token, sheet, check), mods.bonus, mods), rng);
   const success = mods.autoFail ? false : result.total >= (check.dc ?? 0);
   return { roll: result, total: result.total, ...(check.dc !== undefined && { success }) };

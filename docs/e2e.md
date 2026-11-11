@@ -32,6 +32,9 @@ time per machine, split over three machines (`--shard`).
   person uses: `joinGame` (join screen), `enterTable` (_Enter the game_), or
   both in `atTable`. The `seat` fixture brings another person in a browser of
   their own, so a spec can have a GM and players at one table.
+- **The roll dialog is off** in every page the fixtures open, so an action
+  goes at once; `test.use({ rollDialog: 'on' })` plays with it, as players do
+  (`specs/roll-dialog.spec.ts`).
 - **Reading the table** uses `vtt`, the scripting API every open table puts on
   the page (`docs/scripting.md`): `page.evaluate(() => vtt.tokens())`. The
   canvas is never pixel-matched. Act through the screens (buttons, chat,

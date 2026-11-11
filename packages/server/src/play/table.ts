@@ -28,6 +28,7 @@ import {
   isLairTurn,
   lairOwner,
   slotMomentum,
+  type Spend,
 } from '@vtt/system-dnd5e';
 import {
   canControl,
@@ -55,6 +56,17 @@ export interface Fighter {
 
 /** What one turn costs: an action, a bonus action, or one attack of an Attack action. */
 export type Cost = 'action' | 'bonus' | 'attack' | 'reaction' | 'free';
+
+/** What an action costs once the roller's pick is counted (the roll dialog); an attack picked as an action stays one attack of it. */
+export function spendAs(cost: Cost, spend: Spend | undefined): Cost {
+  if (!spend || (spend === 'action' && cost === 'attack')) return cost;
+  return spend;
+}
+
+/** A plan (a cast's) with its cost as the roller picked it. */
+export function spent<T extends { plan: { cost: Cost } }>(planned: T, spend: Spend | undefined): T {
+  return { ...planned, plan: { ...planned.plan, cost: spendAs(planned.plan.cost, spend) } };
+}
 
 /**
  * The world as the rules see it, shared by combat, spells and features:

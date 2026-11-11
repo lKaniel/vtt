@@ -21,7 +21,7 @@ import {
   type Token,
   type TokenView,
 } from '@vtt/system-dnd5e';
-import { openSocket, refusalOf } from './session-socket.ts';
+import { openSocket, refusalOf, sendOn } from './session-socket.ts';
 import { Turns } from './turns.ts';
 
 import { type DropEvents, Drops } from './session-drops.ts';
@@ -110,6 +110,7 @@ export class Session {
   /** What the parts may ask of the session beyond its public face. */
   private readonly ev: PartEvents = {
     changed: () => this.changed(),
+    post: (msg) => sendOn(this.ws, msg),
     armed: () => this.emit('armed'),
     lit: () => this.emit('lighting'),
     editorChanged: () => this.editorChanged(),
@@ -177,6 +178,7 @@ export class Session {
     this.levels,
     this.asks,
     this.actions.pick,
+    this.actions.rolls,
   ];
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
@@ -251,8 +253,9 @@ export class Session {
     this.ws?.close();
   }
 
+  /** Sends `msg`, unless it is an action that waits for the roll dialog first. */
   send(msg: ClientMessage): void {
-    if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(msg));
+    if (!this.actions.rolls.holds(msg)) sendOn(this.ws, msg);
   }
 
   /** Chunks the camera currently needs. Chunks outside it are forgotten. */
