@@ -35,6 +35,15 @@ describe('open sheets', () => {
     expect(part.current).toEqual({ kind: 'token', id: 'bram', edit: true });
   });
 
+  it('asks a sheet for a level up in a class dropped on it, out of edit mode, until it is done', () => {
+    const { part } = sheets();
+    part.open({ kind: 'token', id: 'bram' }, true);
+    part.askLevelUp({ kind: 'token', id: 'bram' }, 'wizard');
+    expect(part.current).toEqual({ kind: 'token', id: 'bram', edit: false, levelUp: 'wizard' });
+    part.askLevelUp({ kind: 'token', id: 'bram' }, undefined);
+    expect(part.current).toEqual({ kind: 'token', id: 'bram', edit: false });
+  });
+
   it('closes one sheet and leaves the others', () => {
     const { part, changes } = sheets();
     part.open({ kind: 'token', id: 'bram' });

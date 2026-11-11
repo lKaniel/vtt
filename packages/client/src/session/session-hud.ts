@@ -19,6 +19,8 @@ export interface TurnOverride {
   bonus?: boolean;
   reaction?: boolean;
   move?: number;
+  /** Actions on top of the one. */
+  extra?: number;
 }
 
 /** What the HUD needs of the session: the tokens, your seat, and a way to the server. */

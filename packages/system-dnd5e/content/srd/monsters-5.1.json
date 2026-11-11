@@ -260,6 +260,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 19,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+6",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -419,6 +442,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 20,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+7",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 20 Dexterity saving throw or take 14 (2d6 + 7) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -568,6 +614,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 19,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+6",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -751,6 +820,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 20,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+7",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 20 Dexterity saving throw or take 14 (2d6 + 7) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -917,6 +1009,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 19,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+6",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -1078,6 +1193,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 22,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+8",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 22 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -1252,6 +1390,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 19,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+6",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -1411,6 +1572,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 22,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+8",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 22 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -1560,6 +1744,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 21,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+8",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 21 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -1748,6 +1955,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 19,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+6",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 10 feet of the dragon must succeed on a DC 19 Dexterity saving throw or take 13 (2d6 + 6) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -1964,6 +2194,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 15
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 23,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+8",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 23 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -2123,6 +2376,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 15
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 24,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+9",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 24 Dexterity saving throw or take 16 (2d6 + 9) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -2272,6 +2548,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 15
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 22,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+8",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 22 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -2460,6 +2759,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 15
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 24,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+9",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 24 Dexterity saving throw or take 16 (2d6 + 9) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -2630,6 +2952,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 15
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 23,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+8",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 23 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -2796,6 +3141,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 15
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 25,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+10",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 25 Dexterity saving throw or take 17 (2d6 + 10) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -2970,6 +3338,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 15
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 23,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+8",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 23 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -3129,6 +3520,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 15
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 25,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+10",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 25 Dexterity saving throw or take 17 (2d6 + 10) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -3278,6 +3692,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 15
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 25,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+10",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 25 Dexterity saving throw or take 17 (2d6 + 10) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -3466,6 +3903,29 @@
           "id": "wing-attack",
           "name": "Wing Attack",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 15
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "dex",
+              "dc": 22,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "2d6+8",
+                "type": "bludgeoning"
+              }
+            ],
+            "effect": {
+              "conditions": ["prone"]
+            }
+          },
           "description": "The dragon beats its wings. Each creature within 15 feet of the dragon must succeed on a DC 22 Dexterity saving throw or take 15 (2d6 + 8) bludgeoning damage and be knocked prone. The dragon can then fly up to half its flying speed."
         }
       ]
@@ -7498,7 +7958,8 @@
         "description": "Cast at will, with no spell slot: Nondetection.",
         "freeCasts": [
           {
-            "spell": "nondetection"
+            "spell": "nondetection",
+            "self": true
           }
         ]
       },
@@ -15092,12 +15553,46 @@
           "id": "frightening-gaze",
           "name": "Frightening Gaze",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 10,
+            "rounds": 10,
+            "save": {
+              "ability": "wis",
+              "dc": 18,
+              "onSave": "none"
+            },
+            "damage": [],
+            "effect": {
+              "conditions": ["frightened"],
+              "repeatSave": true
+            }
+          },
           "description": "The lich fixes its gaze on one creature it can see within 10 feet of it. The target must succeed on a DC 18 Wisdom saving throw against this magic or become frightened for 1 minute. The frightened target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a target's saving throw is successful or the effect ends for it, the target is immune to the lich's gaze for the next 24 hours."
         },
         {
           "id": "disrupt-life",
           "name": "Disrupt Life",
           "cost": 3,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 20
+            },
+            "save": {
+              "ability": "con",
+              "dc": 18,
+              "onSave": "half"
+            },
+            "damage": [
+              {
+                "dice": "6d6",
+                "type": "necrotic"
+              }
+            ]
+          },
           "description": "Each non-undead creature within 20 feet of the lich must make a DC 18 Constitution saving throw against this magic, taking 21 (6d6) necrotic damage on a failed save, or half as much damage on a successful one."
         }
       ]
@@ -16455,12 +16950,48 @@
           "id": "blinding-dust",
           "name": "Blinding Dust",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 5
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "con",
+              "dc": 16,
+              "onSave": "none"
+            },
+            "damage": [],
+            "effect": {
+              "conditions": ["blinded"]
+            }
+          },
           "description": "Blinding dust and sand swirls magically around the mummy lord. Each creature within 5 feet of the mummy lord must succeed on a DC 16 Constitution saving throw or be blinded until the end of the creature's next turn."
         },
         {
           "id": "blasphemous-word",
           "name": "Blasphemous Word",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "rounds": 1,
+            "save": {
+              "ability": "con",
+              "dc": 16,
+              "onSave": "none"
+            },
+            "damage": [],
+            "effect": {
+              "conditions": ["stunned"]
+            }
+          },
           "description": "The mummy lord utters a blasphemous word. Each non-undead creature within 10 feet of the mummy lord that can hear the magical utterance must succeed on a DC 16 Constitution saving throw or be stunned until the end of the mummy lord's next turn."
         },
         {
@@ -16721,7 +17252,8 @@
         "uses": [[1, 2]],
         "freeCasts": [
           {
-            "spell": "plane-shift"
+            "spell": "plane-shift",
+            "self": true
           }
         ]
       },
@@ -17940,7 +18472,8 @@
             "spell": "detect-evil-and-good"
           },
           {
-            "spell": "invisibility"
+            "spell": "invisibility",
+            "self": true
           }
         ]
       },
@@ -20398,12 +20931,45 @@
           "id": "searing-burst",
           "name": "Searing Burst",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 0,
+            "area": {
+              "shape": "emanation",
+              "size": 10
+            },
+            "save": {
+              "ability": "dex",
+              "dc": 23,
+              "onSave": "half"
+            },
+            "damage": [
+              {
+                "dice": "4d6",
+                "type": "fire"
+              }
+            ]
+          },
           "description": "The solar emits magical, divine energy. Each creature of its choice in a 10-foot radius must make a DC 23 Dexterity saving throw, taking 14 (4d6) fire damage plus 14 (4d6) radiant damage on a failed save, or half as much damage on a successful one."
         },
         {
           "id": "blinding-gaze",
           "name": "Blinding Gaze",
           "cost": 3,
+          "spell": {
+            "targets": 1,
+            "range": 30,
+            "rounds": 1,
+            "save": {
+              "ability": "con",
+              "dc": 15,
+              "onSave": "none"
+            },
+            "damage": [],
+            "effect": {
+              "conditions": ["blinded"]
+            }
+          },
           "description": "The solar targets one creature it can see within 30 feet of it. If the target can see it, the target must succeed on a DC 15 Constitution saving throw or be blinded until magic such as the *lesser restoration* spell removes the blindness."
         }
       ]
@@ -20448,7 +21014,8 @@
             "spell": "detect-evil-and-good"
           },
           {
-            "spell": "invisibility"
+            "spell": "invisibility",
+            "self": true
           }
         ]
       },

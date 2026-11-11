@@ -1,5 +1,5 @@
 import type { ImportLoss } from '@vtt/core';
-import type { LeftOut } from '@vtt/shared';
+import type { FoundryImportReport, LeftOut } from '@vtt/shared';
 
 // What a Foundry import could not bring along. Converters say it as
 // ImportLoss values (a kind, a count, a few names); the log groups them over
@@ -67,6 +67,17 @@ export function leftOutLine(l: LeftOut): string {
   const where = l.placeCount ? ` (in ${placesOf(l)})` : '';
   const examples = l.examples.length ? `: ${l.examples.join(', ')}${more(l.examples.length, l.count)}` : '';
   return `${l.count} ${l.what}${where}${examples}`;
+}
+
+/** A world import's report for a terminal: what game `id` got, what it kept (a re-import) and what stayed behind. */
+export function reportLines(id: string, r: FoundryImportReport): string[] {
+  const done = r.kept ? 'Imported again' : 'Made';
+  const head =
+    `${done} "${r.name}" (data/games/${id}): ${r.scenes} scenes, ${r.actors} actors, ${r.tokens} tokens, ` +
+    `${r.journals} journal entries, ${r.tables} tables, ${r.playlists} playlists, ${r.media} files.`;
+  const scenes = r.kept?.scenes.length ? r.kept.scenes.join(', ') : 'none';
+  const kept = r.kept ? [`  kept from the VTT: ${r.kept.files} files, scenes: ${scenes}`] : [];
+  return [head, ...kept, ...r.left.map((l) => `  left out: ${leftOutLine(l)}`)];
 }
 
 /** An ImportLoss as one line of its own, for the asset-pack import's list. */

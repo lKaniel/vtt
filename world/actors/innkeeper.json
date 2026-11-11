@@ -1,6 +1,7 @@
 {
   "id": "innkeeper",
   "name": "Innkeeper",
+  "img": "/assets/tokens/innkeeper.svg",
   "color": "#a08060",
   "stats": {
     "maxHp": 9,

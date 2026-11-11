@@ -1,0 +1,83 @@
+[
+  {
+    "id": "ambush",
+    "name": "The ambush",
+    "color": "#c04030",
+    "points": [
+      [1100, 850],
+      [1500, 850],
+      [1500, 1150],
+      [1100, 1150]
+    ],
+    "behaviors": [
+      {
+        "type": "message",
+        "text": "A branch cracks. Arrows hiss out of the trees, and two masked figures step onto the road: “Your purses, or your lives!”"
+      },
+      {
+        "type": "visibility",
+        "target": {
+          "coll": "tokens",
+          "id": "bandit-1"
+        },
+        "to": "show"
+      },
+      {
+        "type": "visibility",
+        "target": {
+          "coll": "tokens",
+          "id": "bandit-2"
+        },
+        "to": "show"
+      },
+      {
+        "type": "visibility",
+        "target": {
+          "coll": "tokens",
+          "id": "scout-1"
+        },
+        "to": "show"
+      },
+      {
+        "type": "visibility",
+        "target": {
+          "coll": "tokens",
+          "id": "scout-2"
+        },
+        "to": "show"
+      },
+      {
+        "type": "activate",
+        "target": {
+          "coll": "regions",
+          "id": "ambush"
+        },
+        "to": "off"
+      }
+    ]
+  },
+  {
+    "id": "mill-steps",
+    "name": "Mill door",
+    "points": [
+      [2150, 900],
+      [2300, 900],
+      [2300, 1100],
+      [2150, 1100]
+    ],
+    "behaviors": [
+      {
+        "type": "message",
+        "text": "Flour dust and boot prints on the step. Someone inside is talking low, and someone else is crying."
+      },
+      {
+        "type": "activate",
+        "target": {
+          "coll": "regions",
+          "id": "mill-steps"
+        },
+        "to": "off"
+      }
+    ]
+  }
+]

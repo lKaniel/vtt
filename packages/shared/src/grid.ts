@@ -173,3 +173,34 @@ export function cellsIn(lattice: Lattice, r: Rect): Point[] {
   for (let a = a0!; a <= a1!; a++) for (let b = b0!; b <= b1!; b++) if (near(lattice.centre([a, b]))) out.push([a, b]);
   return out;
 }
+
+const isHex = (lattice: Lattice | undefined): lattice is Lattice => !!lattice && lattice.kind !== 'square';
+
+/** Where a wall end or a corner lands on hexes: the nearest corner or centre of the hex, in whole pixels. */
+export function snapToHexPoint(p: Point, lattice: Lattice): Point {
+  const cell = lattice.cellOf(p);
+  const spots = [lattice.centre(cell), ...lattice.corners(cell)];
+  const d = (q: Point) => Math.hypot(q[0] - p[0], q[1] - p[1]);
+  const best = spots.reduce((a, b) => (d(b) < d(a) ? b : a), spots[0]!);
+  return [Math.round(best[0]), Math.round(best[1])];
+}
+
+/** The cells over `r` whose centre is `inside` (how a template covers hexes). */
+export function cellsInside(lattice: Lattice, r: Rect, inside: (p: Point) => boolean): Point[] {
+  return cellsIn(lattice, r).filter((c) => inside(lattice.centre(c)));
+}
+
+/**
+ * Where a creature is judged to stand for an area or template, and the give
+ * it has: on hexes the centre of its hex (a larger one reaches the hexes
+ * around it), elsewhere its own centre, give or take a quarter square per size.
+ */
+export function caughtAt(
+  token: { x: number; y: number; size: number },
+  gridSize: number,
+  lattice?: Lattice,
+): { at: Point; slack: number } {
+  const at: Point = [token.x, token.y];
+  if (!isHex(lattice)) return { at, slack: (token.size * gridSize) / 4 };
+  return { at: snapToCell(at, lattice), slack: ((token.size - 1) * gridSize) / 2 };
+}

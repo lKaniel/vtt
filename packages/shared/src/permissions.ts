@@ -158,6 +158,8 @@ interface LevelEyes {
   seen: readonly string[] | undefined;
   /** The light on `level`, past the walls of the viewer's own level. */
   light: (level: string | undefined) => LightContext;
+  /** How well they notice what hides. */
+  notices?: () => number;
 }
 
 /** A viewer's eyes, with the walls of their own level and the light of whichever level they look at. */
@@ -176,7 +178,12 @@ function eyesOf<T extends PlacedToken>(v: T, ctx: SightContext<T>): LevelEyes {
     indoors: ctx.indoors?.(on),
   });
   const eyes = { at: [v.x, v.y] as Point, senses: p.senses, blinded: p.blinded };
-  return { eyes, level, seen: levelsSeen(ctx.levels, level), light };
+  return { eyes, level, seen: levelsSeen(ctx.levels, level), light, notices: p.notices };
+}
+
+/** Whether eyes find a creature that hides this well (not hiding: always). */
+function notices(e: LevelEyes, concealed: number | undefined): boolean {
+  return concealed === undefined || (e.notices?.() ?? 0) >= concealed;
 }
 
 /** Whether eyes see a target on `level`: on their own floor, or one they look down on. */
@@ -199,9 +206,10 @@ export function tokensVisibleTo<T extends PlacedToken>(
   const seesAll = isGm(player) || !ctx.world.vision;
   const eyes = seesAll ? [] : tokens.filter((t) => canObserve(t, player)).map((v) => eyesOf(v, ctx));
   const spotted = (t: T) => {
-    const target = { at: [t.x, t.y] as Point, invisible: ctx.perceiver(t).invisible };
+    const { invisible, concealed } = ctx.perceiver(t);
+    const target = { at: [t.x, t.y] as Point, invisible };
     const level = tokenLevel(ctx.levels, t);
-    return eyes.some((e) => looksAt(e, level) && perceives(e.eyes, target, e.light(level)));
+    return eyes.some((e) => looksAt(e, level) && notices(e, concealed) && perceives(e.eyes, target, e.light(level)));
   };
   const ids = tokens
     .filter((t) => isShownTo(t, player))

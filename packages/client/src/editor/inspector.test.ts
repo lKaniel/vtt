@@ -295,11 +295,40 @@ describe('the inspector', () => {
       'direction',
       'angle',
       'color',
+      'texture',
       'level',
       'hidden',
       'locked',
     ]);
     const sound: Doc = { id: 's', type: 'sound', rev: 1, x: 0, y: 0, radius: 30, src: 'a.ogg' };
     expect(field([sound], 'src')).toMatchObject({ kind: 'media', media: 'audio' });
+  });
+});
+
+describe('fields that show only where they do something', () => {
+  const tile = (extra: Record<string, unknown> = {}): Doc => ({
+    id: 't',
+    type: 'tile',
+    rev: 1,
+    kind: 'image',
+    x: 0,
+    y: 0,
+    w: 100,
+    h: 100,
+    src: '/a.png',
+    ...extra,
+  });
+  const keys = (d: Doc) => fieldsFor([d]).map((f) => f.key);
+
+  it('leave out a picture’s flat-only looks on a tile with a 3D model', () => {
+    expect(keys(tile())).toEqual(expect.arrayContaining(['tint', 'flipX', 'scroll.x', 'shadow']));
+    const model = keys(tile({ model: { src: '/m.glb' } }));
+    for (const flat of ['tint', 'flipX', 'flipY', 'scroll.x', 'scroll.y', 'shadow']) expect(model).not.toContain(flat);
+    expect(model).toContain('model.height');
+  });
+
+  it('give a template a texture: a looping video (or a picture, typed in)', () => {
+    const template: Doc = { id: 'z', type: 'template', rev: 1, shape: 'circle', x: 0, y: 0, distance: 20 };
+    expect(field([template], 'texture')).toMatchObject({ kind: 'media', media: 'video' });
   });
 });

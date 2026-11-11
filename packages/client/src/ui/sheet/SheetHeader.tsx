@@ -1,4 +1,4 @@
-import { characterLevel, classesText } from '@vtt/system-dnd5e';
+import { characterLevel, classesText, originsFor } from '@vtt/system-dnd5e';
 import { ExternalLinkIcon, MoonIcon, TentIcon } from 'lucide-react';
 import { t } from '../../i18n/index.ts';
 import { monsterLine } from '../../text/monster-text.ts';
@@ -19,13 +19,13 @@ export interface SheetControls {
 
 /** Name and classes on the left; level, experience and rests on the right, and (in its own browser window) edit mode and close. */
 export function SheetHeader(props: Readonly<SheetProps & { controls: SheetControls }>) {
-  const { session, kind, edit, controls } = props;
+  const { session, kind, value, edit, controls } = props;
   return (
     <header className="flex items-center gap-4 border-b border-gold-dim/50 px-5 pt-3 pb-2">
       <SheetTitle {...props} />
       <LevelUpButton {...props} />
       <LevelBadge {...props} />
-      {kind === 'token' && session.isGm() && !edit && <RestButtons {...props} />}
+      {kind === 'token' && session.hud.canOverride(value.id) && !edit && <RestButtons {...props} />}
       {!controls.popOut && <SheetButtons {...props} />}
     </header>
   );
@@ -64,10 +64,12 @@ export function SheetButtons(props: Readonly<SheetProps & { controls: SheetContr
 }
 
 function SheetTitle(props: Readonly<SheetProps>) {
-  const { kind, value, update, edit } = props;
+  const { kind, value, update, edit, sheet } = props;
   const level = characterLevel(value.stats);
+  const species = value.stats?.species;
   const line = [
     level && t('sheet.level', { level }),
+    species && (originsFor(sheet.edition).species.find((s) => s.id === species)?.name ?? species),
     classesText(value.stats) ?? (monsterLine(monsterOf(props)) || value.monster),
     kind === 'actor' && t('sheet.actor'),
   ]
@@ -124,7 +126,7 @@ function LevelBadge({ value }: Readonly<SheetProps>) {
   );
 }
 
-/** The GM rests this creature, as the party rest buttons do for everyone. */
+/** The GM (or a trusted player, on their own creature) rests it, as the party rest buttons do for everyone. */
 function RestButtons({ session, value }: Readonly<SheetProps>) {
   return (
     <div className="flex gap-1">

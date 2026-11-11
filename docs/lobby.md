@@ -107,33 +107,34 @@ or in one folder inside it.
 
 All under `/api/`, signed in:
 
-| Call                                                    | Who                | Does                                                                              |
-| ------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------- |
-| `GET session`                                           | anyone             | whether this browser may use Setup, whether there is an admin password, home game |
-| `POST admin` `{password}`                               | anyone             | opens Setup with the admin password                                               |
-| `PUT admin` `{password}`                                | admin              | a new admin password, or (null) none                                              |
-| `DELETE admin`                                          | anyone             | closes Setup on this browser                                                      |
-| `POST logout`                                           | anyone             | forgets every game this browser joined                                            |
-| `GET games`                                             | anyone             | every game, and the systems                                                       |
-| `POST games` `{name, system, rules}`                    | admin              | makes a game, joined as its Gamemaster                                            |
-| `POST games/import-foundry` `{folder, name?, dataDir?}` | admin              | makes a game from a Foundry world on the server's disk ([foundry.md](foundry.md)) |
-| `POST games/import-zip` (zip body)                      | admin              | makes a game from an exported zip                                                 |
-| `GET games/<id>`                                        | anyone             | its players (who is online, who has a password), the one you joined as            |
-| `DELETE games/<id>`                                     | admin              | deletes a game, files and all                                                     |
-| `POST games/<id>/join` `{player, password}`             | anyone             | joins as that player                                                              |
-| `POST games/<id>/leave`                                 | anyone             | forgets the player this browser joined as                                         |
-| `POST games/<id>/players` `{name, role, password?}`     | GM, admin          | adds a player                                                                     |
-| `PUT games/<id>/players/<player>` `{role}`              | GM, admin          | changes a role                                                                    |
-| `DELETE games/<id>/players/<player>`                    | GM, admin          | removes a player                                                                  |
-| `PUT games/<id>/players/<player>/password` `{password}` | GM, admin, oneself | a password on a player, or (null) none                                            |
-| `GET/POST games/<id>/characters`, `PUT/DELETE …/<c>`    | a joined player    | your characters at the game                                                       |
-| `POST games/<id>/bring` `{character}`                   | a joined player    | brings your character onto the map                                                |
-| `GET games/<id>/homebrew`                               | a joined player    | the GM's homebrew classes you may build with                                      |
-| `GET/POST/DELETE games/<id>/mcp-key`                    | a joined player    | your key for Claude at the game                                                   |
-| `GET games/<id>/backups`                                | GM, admin          | the backups, newest first                                                         |
-| `POST games/<id>/backups`                               | GM, admin          | backs up now                                                                      |
-| `POST games/<id>/backups/<backup>/restore`              | GM, admin          | puts a backup back (backing up the game as it is first)                           |
-| `GET games/<id>/export`                                 | GM, admin          | the game folder as a zip                                                          |
+| Call                                                     | Who                | Does                                                                              |
+| -------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------- |
+| `GET session`                                            | anyone             | whether this browser may use Setup, whether there is an admin password, home game |
+| `POST admin` `{password}`                                | anyone             | opens Setup with the admin password                                               |
+| `PUT admin` `{password}`                                 | admin              | a new admin password, or (null) none                                              |
+| `DELETE admin`                                           | anyone             | closes Setup on this browser                                                      |
+| `POST logout`                                            | anyone             | forgets every game this browser joined                                            |
+| `GET games`                                              | anyone             | every game, and the systems                                                       |
+| `POST games` `{name, system, rules}`                     | admin              | makes a game, joined as its Gamemaster                                            |
+| `POST games/import-foundry` `{folder, name?, dataDir?}`  | admin              | makes a game from a Foundry world on the server's disk ([foundry.md](foundry.md)) |
+| `POST games/<id>/reimport-foundry` `{folder?, dataDir?}` | admin              | imports the world again into the game it made, keeping the VTT's own work         |
+| `POST games/import-zip` (zip body)                       | admin              | makes a game from an exported zip                                                 |
+| `GET games/<id>`                                         | anyone             | its players (who is online, who has a password), the one you joined as            |
+| `DELETE games/<id>`                                      | admin              | deletes a game, files and all                                                     |
+| `POST games/<id>/join` `{player, password}`              | anyone             | joins as that player                                                              |
+| `POST games/<id>/leave`                                  | anyone             | forgets the player this browser joined as                                         |
+| `POST games/<id>/players` `{name, role, password?}`      | GM, admin          | adds a player                                                                     |
+| `PUT games/<id>/players/<player>` `{role}`               | GM, admin          | changes a role                                                                    |
+| `DELETE games/<id>/players/<player>`                     | GM, admin          | removes a player                                                                  |
+| `PUT games/<id>/players/<player>/password` `{password}`  | GM, admin, oneself | a password on a player, or (null) none                                            |
+| `GET/POST games/<id>/characters`, `PUT/DELETE …/<c>`     | a joined player    | your characters at the game                                                       |
+| `POST games/<id>/bring` `{character}`                    | a joined player    | brings your character onto the map                                                |
+| `GET games/<id>/homebrew`                                | a joined player    | the GM's homebrew classes you may build with                                      |
+| `GET/POST/DELETE games/<id>/mcp-key`                     | a joined player    | your key for Claude at the game                                                   |
+| `GET games/<id>/backups`                                 | GM, admin          | the backups, newest first                                                         |
+| `POST games/<id>/backups`                                | GM, admin          | backs up now                                                                      |
+| `POST games/<id>/backups/<backup>/restore`               | GM, admin          | puts a backup back (backing up the game as it is first)                           |
+| `GET games/<id>/export`                                  | GM, admin          | the game folder as a zip                                                          |
 
 Code: `server/src/http/sessions.ts` (sessions, admin password), `lobby-api.ts`
 (games, joining, players), `character-api.ts` (characters, Claude keys),

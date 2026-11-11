@@ -57,7 +57,7 @@ export class Vision {
   private sight: SightMap;
   private explored = new FogLayer();
   /** The session's fog version last drawn. */
-  private fogVersion = -1;
+  private fogVersion = '';
   private polyCache = new Map<string, number[]>();
   private wallsVersion = 0;
   /** The indoors of the floor shown, drawn without the sky's light, for the walls and floor it was worked out for. */
@@ -149,6 +149,7 @@ export class Vision {
     const scene: LightScene = {
       view,
       darkness: world.darkness * (gm ? GM_DARKNESS : 1),
+      glow: this.session.time.glow(world),
       gridSize: world.gridSize,
       lights,
       polygon,
@@ -168,7 +169,7 @@ export class Vision {
     this.sight.render({ view, gridSize: world.gridSize, viewers: eyes, darkness, sightRadius, polygon }, transform);
     this.mapFilter.fog = this.roofFilter.fog = fogStrength(gm, brushing, world.vision);
     this.mapFilter.voidColor = world.background;
-    this.roofFilter.sky = ambientColor(scene.darkness);
+    this.roofFilter.sky = ambientColor(scene.darkness, scene.glow);
     return this.light.animated(scene);
   }
 
@@ -204,8 +205,10 @@ export class Vision {
 
   /** Draws explored ground as the server last sent it. */
   private showExplored(): void {
-    if (this.fogVersion === this.session.fog.version) return;
-    this.fogVersion = this.session.fog.version;
+    const fog = this.session.fog;
+    const version = `${fog.version}:${fog.floor() ?? ''}`;
+    if (this.fogVersion === version) return;
+    this.fogVersion = version;
     this.explored.show(this.session.fog.shown());
   }
 }

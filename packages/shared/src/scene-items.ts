@@ -57,7 +57,7 @@ const PathDrawing = z.object({
 export const DrawingSchema = z.discriminatedUnion('shape', [BoxDrawing, PathDrawing]);
 export type Drawing = z.infer<typeof DrawingSchema>;
 
-/** A map pin: a label, and the journal entry (and page) it opens. */
+/** A map pin: a label, and the journal entry (and page) it opens, or the roll table it rolls. */
 export const NoteSchema = z.object({
   ...placed,
   x: z.number(),
@@ -69,6 +69,8 @@ export const NoteSchema = z.object({
   /** The journal entry it opens; players see the pin only when they may see the entry. */
   entry: id.optional(),
   page: id.optional(),
+  /** Or the roll table it rolls; players see the pin only when the table is shared with them. */
+  table: id.optional(),
 });
 export type Note = z.infer<typeof NoteSchema>;
 

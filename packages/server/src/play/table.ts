@@ -28,6 +28,7 @@ import {
   isLairTurn,
   lairOwner,
   slotMomentum,
+  type Spend,
 } from '@vtt/system-dnd5e';
 import {
   canControl,
@@ -43,6 +44,7 @@ import {
 import type { GameStore } from '../store/game-store.ts';
 import { contentFor } from '../library/game-packs.ts';
 import { hurtTriggers } from './class-triggers.ts';
+import { RollPicks } from './roll-picks.ts';
 
 /** A request the rules don't allow; its message goes back to the player. */
 export class Refusal extends Error {}
@@ -55,12 +57,26 @@ export interface Fighter {
 /** What one turn costs: an action, a bonus action, or one attack of an Attack action. */
 export type Cost = 'action' | 'bonus' | 'attack' | 'reaction' | 'free';
 
+/** What an action costs once the roller's pick is counted (the roll dialog); an attack picked as an action stays one attack of it. */
+export function spendAs(cost: Cost, spend: Spend | undefined): Cost {
+  if (!spend || (spend === 'action' && cost === 'attack')) return cost;
+  return spend;
+}
+
+/** A plan (a cast's) with its cost as the roller picked it. */
+export function spent<T extends { plan: { cost: Cost } }>(planned: T, spend: Spend | undefined): T {
+  return { ...planned, plan: { ...planned.plan, cost: spendAs(planned.plan.cost, spend) } };
+}
+
 /**
  * The world as the rules see it, shared by combat, spells and features:
  * creature sheets, whose turn it is and what's left of it, and the
  * consequences of getting hurt.
  */
 export class Table {
+  /** Players' roll picks for the rolls the server makes for their creatures. */
+  readonly picks = new RollPicks();
+
   constructor(
     readonly store: GameStore,
     readonly rng: Rng,
@@ -101,6 +117,11 @@ export class Table {
 
   inFight(id: string): boolean {
     return !!this.store.combat?.order.some((e) => e.token === id);
+  }
+
+  /** In a fight that is on (not turn-based mode outside one). */
+  fighting(id: string): boolean {
+    return this.inFight(id) && !this.store.combat?.peaceful;
   }
 
   readonly turnInfo: TurnInfo = (id) => {
@@ -149,8 +170,9 @@ export class Table {
     const left = this.budget(token);
     if (!left) return;
     if (cost === 'bonus' && !left.bonus) throw new Refusal(`${token.name} has already used their bonus action`);
-    if (cost === 'action' && !left.action) throw new Refusal(`${token.name} has already used their action`);
-    if (cost === 'attack' && !left.action && left.attacks === 0) {
+    const action = left.action || !!left.extra;
+    if (cost === 'action' && !action) throw new Refusal(`${token.name} has already used their action`);
+    if (cost === 'attack' && !action && left.attacks === 0) {
       throw new Refusal(`${token.name} has already used their action`);
     }
   }
@@ -162,9 +184,9 @@ export class Table {
     const left = this.budget(token);
     if (!left) return;
     if (cost === 'bonus') return this.setBudget(token, { ...left, bonus: false });
-    if (cost === 'action') return this.setBudget(token, { ...left, action: false, attacks: 0 });
+    if (cost === 'action') return this.setBudget(token, { ...useAction(left), attacks: 0 });
     const next =
-      left.attacks > 0 ? { ...left, attacks: left.attacks - 1 } : { ...left, action: false, attacks: attacks - 1 };
+      left.attacks > 0 ? { ...left, attacks: left.attacks - 1 } : { ...useAction(left), attacks: attacks - 1 };
     this.setBudget(token, next);
   }
 
@@ -334,4 +356,9 @@ function withHp(token: Token, after: { hp: number; tempHp?: number }, maxHp: num
 
 export function requireGm(player: Player): void {
   if (!isGm(player)) throw new Refusal('Only the GM can do that');
+}
+
+/** The turn with its action spent: the one it has, else one of its extra actions. */
+function useAction(left: TurnBudget): TurnBudget {
+  return left.action ? { ...left, action: false } : { ...left, extra: Math.max(0, (left.extra ?? 0) - 1) };
 }

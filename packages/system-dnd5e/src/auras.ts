@@ -36,6 +36,20 @@ function emitters({ token, sheet }: AuraBearer): (Effect & { aura: Aura })[] {
   );
 }
 
+/** An aura drawn round its bearer on the map: its name, its reach in feet past the bearer's edge, and whom it touches. */
+export interface AuraRing {
+  name: string;
+  radius: number;
+  who: Aura['who'];
+}
+
+/** The auras a creature gives off around itself now (those anchored at a point show as templates). */
+export function auraRings(bearer: AuraBearer): AuraRing[] {
+  return emitters(bearer)
+    .filter((e) => !e.aura.at)
+    .map((e) => ({ name: e.name, radius: e.aura.radius, who: e.aura.who }));
+}
+
 function touches(aura: Aura, bearer: Token, other: Token): boolean {
   if (other.id === bearer.id) return aura.at ? aura.who !== 'enemies' : (aura.self ?? aura.who !== 'enemies');
   if (aura.who === 'all') return true;

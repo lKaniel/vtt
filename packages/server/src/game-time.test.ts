@@ -209,6 +209,37 @@ describe('rests and rounds move the clock', () => {
     expect(game.clock.now()).toBe(9 * HOUR);
   });
 
+  it('gives one long rest in 24 hours: a second the same day does no good and lets no time pass', () => {
+    const gm = seat('gm');
+    gm.receive({ t: 'rest', tokens: ['hero'], kind: 'long' });
+    store.setToken({ ...tok('hero'), hp: 3 });
+    gm.receive({ t: 'rest', tokens: ['hero'], kind: 'long' });
+    expect(errors(gm)[0]).toMatch(/Hero already had a long rest in the last 24 hours/);
+    expect(tok('hero').hp).toBe(3);
+    expect(game.clock.now()).toBe(8 * HOUR);
+    // It counts once it would end a whole day after the last one ended.
+    gm.receive({ t: 'clock', action: { do: 'skip', seconds: 8 * HOUR } });
+    gm.receive({ t: 'rest', tokens: ['hero'], kind: 'long' });
+    expect(tok('hero').hp).toBe(3);
+    gm.receive({ t: 'clock', action: { do: 'skip', seconds: 8 * HOUR } });
+    gm.receive({ t: 'rest', tokens: ['hero'], kind: 'long' });
+    expect(tok('hero').hp).toBeUndefined();
+    expect(game.clock.now()).toBe(32 * HOUR);
+  });
+
+  it('rests the rest of a party when one of them already had their long rest today', () => {
+    const gm = seat('gm');
+    gm.receive({ t: 'rest', tokens: ['hero'], kind: 'long' });
+    store.setToken({ ...tok('hero'), hp: 3 });
+    store.setToken({ ...tok('goblin'), hp: 1 });
+    said(gm);
+    gm.receive({ t: 'rest', tokens: ['hero', 'goblin'], kind: 'long' });
+    expect(tok('goblin').hp).toBeUndefined();
+    expect(tok('hero').hp).toBe(3);
+    expect(said(gm).join(' ')).toMatch(/Hero already had a long rest in the last 24 hours/);
+    expect(game.clock.now()).toBe(16 * HOUR);
+  });
+
   it('holds still in a fight, moves 6 seconds a round and finishes the last one at the end', () => {
     const ana = seat('ana');
     const gm = seat('gm');

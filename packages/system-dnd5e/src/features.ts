@@ -90,7 +90,9 @@ export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng =
   if (feature.doublesMomentum) next = doubleMomentum(next, sheet);
   const { token: healedToken, healed } = healFrom(next, sheet, feature, rng);
   next = healedToken;
-  const effect = featureEffect(token, feature) ?? finish.effect;
+  const rolled = featureCheck(token, sheet, feature, rng);
+  const made = featureEffect(token, feature) ?? finish.effect;
+  const effect = made?.hides && rolled.check ? { ...made, hidden: rolled.check.total } : made;
   if (effect) next = { ...next, effects: [...(next.effects ?? []).filter((e) => e.id !== effect.id), effect] };
   return {
     token: next,
@@ -100,7 +102,7 @@ export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng =
     grantAction: feature.grantAction,
     dash: finish.dash ?? dashOf(feature, sheet.speed),
     grantAttacks: finish.grantAttacks ?? feature.grantAttacks,
-    ...featureCheck(token, sheet, feature, rng),
+    ...rolled,
   };
 }
 
@@ -141,6 +143,15 @@ function withResistance(uses: Record<string, number> | undefined, token: Token):
 }
 
 /** A short rest gives back short-rest features and pact slots; a long rest gives back everything. */
+/** A long rest takes 8 hours, and only one in 24 hours does a creature any good. */
+export const LONG_REST_SECONDS = 8 * 3600;
+const LONG_REST_EVERY = 24 * 3600;
+
+/** Whether a long rest starting at game time `now` does `token` any good: its last ended a day before this one ends. */
+export function longRestReady(token: Pick<Token, 'longRestAt'>, now: number): boolean {
+  return token.longRestAt === undefined || now + LONG_REST_SECONDS - token.longRestAt >= LONG_REST_EVERY;
+}
+
 export function rest(token: Token, sheet: Creature, kind: 'short' | 'long'): Token {
   if (kind === 'long') return longRest(token, sheet);
   const uses = withResistance(restUses(token, sheet), token);

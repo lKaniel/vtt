@@ -2,7 +2,7 @@ import { FogMap, rasterCircle } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Session } from './session.ts';
-import { closeSession, openSession, welcome, type FakeWebSocket } from './session.fixtures.ts';
+import { closeSession, openSession, token, welcome, type FakeWebSocket } from './session.fixtures.ts';
 
 let session: Session;
 let ws: FakeWebSocket;
@@ -137,5 +137,24 @@ describe('fog of war in the client', () => {
     session.fog.setPlayers(undefined);
     session.fog.reset();
     expect(sent()).toEqual({ t: 'fog', edit: { op: 'reset' } });
+  });
+
+  it('shows the fog of the floor you are on, and paints on the floor the GM shows', () => {
+    const levels = [
+      { id: 'ground', name: 'Ground', bottom: 0 },
+      { id: 'loft', name: 'Loft', bottom: 10 },
+    ];
+    const base = welcome([{ ...token('hero'), elevation: 10 }]) as Extract<ServerMessage, { t: 'welcome' }>;
+    ws.receive({ ...base, world: { ...base.world, levels } });
+    ws.receive(fogMessage('ana', [100, 100], true));
+    ws.receive({ ...fogMessage('ana', [5000, 100], true), level: 'loft' } as ServerMessage);
+    expect(session.fog.shown()!.explored([5000, 100])).toBe(true);
+    expect(session.fog.shown()!.explored([100, 100])).toBe(false);
+
+    ws.receive({ ...gmWelcome(), world: { ...base.world, levels } } as ServerMessage);
+    session.levels.setView('loft');
+    session.fog.setBrush('hide');
+    session.fog.paint([[300, 300]]);
+    expect(sent()).toMatchObject({ t: 'fog', edit: { op: 'hide', level: 'loft' } });
   });
 });

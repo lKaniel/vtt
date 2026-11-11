@@ -82,6 +82,8 @@ export function openSession(): { session: Session; ws: FakeWebSocket } {
   vi.stubGlobal('WebSocket', FakeWebSocket);
   vi.stubGlobal('location', { protocol: 'http:', host: 'table:3000' });
   const session = new Session();
+  // The roll dialog would hold every action the tests send; its own tests turn it on.
+  session.actions.rolls.setEnabled(false);
   session.connect();
   return { session, ws: lastSocket! };
 }

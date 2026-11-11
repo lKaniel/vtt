@@ -14,6 +14,8 @@ export interface TurnOverride {
   bonus?: boolean;
   reaction?: boolean;
   move?: number;
+  /** Actions on top of the one (granted past the rules). */
+  extra?: number;
 }
 
 export type HudMessage =
@@ -87,13 +89,13 @@ export class HudActions {
   private override(player: Player, id: string, set: TurnOverride): void {
     const token = this.overridable(player, id);
     if (!this.table.inFight(id) && !this.table.budget(token)) throw new Refusal(`${token.name} is not in the fight`);
-    const turn = set.action !== undefined || set.bonus !== undefined || set.move !== undefined;
+    const turn = (['action', 'bonus', 'move', 'extra'] as const).some((k) => set[k] !== undefined);
     if (turn) this.setTurn(token, set);
     if (set.reaction !== undefined) this.setReaction(id, set.reaction);
     this.table.note(`Override: ${token.name} ${overrideText(set)} (${player.name})`);
   }
 
-  private setTurn(token: Token, { action, bonus, move }: TurnOverride): void {
+  private setTurn(token: Token, { action, bonus, move, extra }: TurnOverride): void {
     const left = this.table.budget(token);
     if (!left) throw new Refusal(`${token.name} is not in the fight`);
     const attacks = action === undefined ? left.attacks : 0;
@@ -102,6 +104,7 @@ export class HudActions {
       action: action ?? left.action,
       bonus: bonus ?? left.bonus,
       move: move ?? left.move,
+      ...((extra ?? left.extra) && { extra: extra ?? left.extra }),
       attacks,
     });
   }
@@ -125,5 +128,6 @@ function overrideText(set: TurnOverride): string {
     .filter((k) => set[k] !== undefined)
     .map((k) => `${set[k] ? 'a' : 'no'} ${NAMES[k]}`.replace(/^a a/, 'an a'));
   if (set.move !== undefined) parts.push(`${set.move} ft of movement`);
+  if (set.extra) parts.push(`${set.extra} extra action${set.extra === 1 ? '' : 's'}`);
   return `has ${parts.join(', ') || 'nothing changed'} left`;
 }

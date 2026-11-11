@@ -44,7 +44,10 @@ nothing is saved or undone.
 Everyone on a scene also sees where the others point: each player's cursor,
 with their name, in their colour. Hold a left press still for half a second,
 in any mode, to ping that spot: rings spread from it on everyone's map. The
-GM's Shift+long press also pulls everyone's view there. Cursors and pings go
+GM's Shift+long press also pulls everyone's view there. A ping off your
+screen shows as an arrow on its edge pointing the way, with who pinged
+(`ping-arrow.ts`). Settings has "Others' cursors": Hide keeps them off this
+browser's map (pings still show). Cursors and pings go
 through `server/presence.ts` like rulers (live, per scene, never saved, a
 cursor goes when its player leaves the map or the scene); the client keeps
 them in `presence.ts` (cursors sent at most every 50 ms, `throttle.ts`) and
@@ -93,6 +96,11 @@ sends each seat only what `chatFor` lets it read, live and on joining.
   does nothing, except a foe in a fight (in the turn order, not the
   party's): it opens a menu with each attack of the creature you act with
   and "Interact", which walks up next to it.
+- Touch screens (`map-touch.ts`, `touch-gestures.ts`): a tap is a click;
+  one finger on open ground in the tokens mode drags the map (lifted where
+  it landed, it is the click); two fingers pinch to zoom and move together
+  to pan; a finger held still half a second opens the menu a right click
+  would. In the other modes one finger draws and edits as the mouse does.
 
 ## Scenes
 
@@ -149,7 +157,12 @@ Tiles work like Figma's layers (rules in `shared/tiles.ts`, format in
   image tile at its own size; a 3D model becomes a model tile (a blank picture
   with `model`), two squares across, drawn in the tiles mode as a teal box
   with a cross so it can be found on the flat map. A picture's map button
-  makes it the scene's map (on the floor shown).
+  makes it the scene's map (on the floor shown). An audio file becomes a
+  sound where it is let go (30 ft reach, on the floor shown).
+- A map picture named with its size in squares the way map makers name
+  them (`Tavern_30x20.webp`, `cave [24x18].jpg`) has "Match the grid to this
+  map" in its menu: the scene's squares become the picture's (4200 px across
+  30 squares: 140 px), when the squares fit both ways.
 - The layers panel (under the tools) lists the topmost first. Click selects
   (Shift adds, Ctrl removes), a double click renames, the lock button locks.
   Drag a row onto the top or bottom edge of another to put it above or below,
@@ -178,7 +191,9 @@ file) are typed or picked from the game's and its packs' media with the
 folder button beside them (`ui/MediaPicker.tsx`). On a scene with floors,
 everything has a Level. A picture tile's 3D model fields
 (`editor/model-fields.ts`) set its height, elevation, turn and how it fills
-the tile.
+the tile; on a model tile the flat-only looks (tint, mirroring, scrolling,
+drop shadow) are left out. A template's Texture lays a looping video (or a
+picture) over its area, as a lasting spell's loop from the packs does.
 
 A wall's Kind picks one of the usual kinds (wall, door, window, terrain,
 invisible, ethereal); below it, Movement, Sight, Light and Sound set what it

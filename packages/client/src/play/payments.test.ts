@@ -42,6 +42,21 @@ describe('what a spell is paid with at first', () => {
     expect(paymentCount(caster([0, 0], [shadows]), armor)).toBe(1);
   });
 
+  it("pays nothing for a non-caster's homemade spell: one way, at its own level", () => {
+    const fighter = {
+      id: 'f',
+      name: 'F',
+      sheet: {
+        attacks: [],
+        features: [],
+        effects: [],
+        caster: { spells: [mark], left: [], slots: [], atWill: [mark.id] },
+      },
+    } as unknown as TokenView;
+    expect(paymentCount(fighter, mark)).toBe(1);
+    expect(firstPayment(fighter, mark)).toEqual({ slot: 1 });
+  });
+
   it('keeps a spell’s tile usable while a feature can still cast it', () => {
     const tile = (t: TokenView) => actionTiles(t).find((x) => x.name === mark.name);
     expect(tile(caster([0, 0], [favored(1)]))).toMatchObject({ spent: false, slot: 1, paidBy: 'favored-enemy' });
@@ -69,5 +84,40 @@ describe('aiming a spell a feature pays for', () => {
   it('falls back to the slot when the feature can’t pay', () => {
     const aiming = aimFor(caster([2], [favored(0)]).sheet, 'hunters-mark', { slot: 1, paidBy: 'favored-enemy' })!;
     expect(aiming).not.toHaveProperty('paidBy');
+  });
+});
+
+describe('a class pool paying', () => {
+  const borrowed = {
+    id: 'borrowed',
+    name: 'Borrowed Spells',
+    freeCasts: [{ spell: 'hunters-mark', cost: '2 * level' }],
+  };
+  const pooled = (left: number): TokenView => {
+    const token = caster([0], [borrowed]);
+    return { ...token, sheet: { ...token.sheet!, pool: { name: 'Lucidity', left } } } as unknown as TokenView;
+  };
+
+  it('pays with points while the pool has enough, else not at all', () => {
+    expect(firstPayment(pooled(5), mark)).toEqual({ slot: 1, paidBy: 'borrowed' });
+    expect(firstPayment(pooled(1), mark)).toEqual({ slot: undefined });
+  });
+});
+
+describe('a spell picked as it is cast', () => {
+  it('aims a spell the caster does not know when a feature lets them pick it (Divine Intervention)', () => {
+    const intervention = {
+      id: 'divine-intervention',
+      name: 'Divine Intervention',
+      classLevel: 10,
+      max: 1,
+      left: 1,
+      spellPicks: { from: 'class', class: 'cleric', atCast: true, choices: [{ at: 1, maxLevel: 5 }] },
+    };
+    const strike = spell('flame-strike');
+    const token = caster([0], [intervention]);
+    expect(aimFor(token.sheet, 'flame-strike', { slot: 5 })).toBeUndefined();
+    const aiming = aimFor(token.sheet, 'flame-strike', { slot: 5, paidBy: 'divine-intervention', spell: strike });
+    expect(aiming).toMatchObject({ paidBy: 'divine-intervention', slot: 5 });
   });
 });

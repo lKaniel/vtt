@@ -11,6 +11,8 @@ import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
 
 const ENCUMBRANCE = ['capacity', 'variant', 'off'] as const;
 const encumbranceOptions = () => ENCUMBRANCE.map((value) => ({ value, label: t(`settings.encumbrance.${value}`) }));
+const FLANKING = ['off', 'on'] as const;
+const flankingOptions = () => FLANKING.map((value) => ({ value, label: t(`settings.flanking.${value}`) }));
 
 function Choice({
   label,
@@ -67,6 +69,13 @@ export function GameSettingsSection({ session }: Readonly<{ session: Session }>)
         options={encumbranceOptions()}
         hint={t(`settings.encumbrance.${settings.encumbrance}Hint`)}
         onChange={(e) => set({ settings: { encumbrance: e as GameSettings['encumbrance'] } })}
+      />
+      <Choice
+        label={t('settings.flanking')}
+        value={settings.flanking}
+        options={flankingOptions()}
+        hint={t(`settings.flanking.${settings.flanking}Hint`)}
+        onChange={(f) => set({ settings: { flanking: f as GameSettings['flanking'] } })}
       />
     </section>
   );

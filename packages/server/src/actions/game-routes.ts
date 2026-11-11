@@ -9,6 +9,10 @@ import type { CombatActions } from './combat-actions.ts';
 import type { DamageActions } from './damage-actions.ts';
 import type { EntryActions } from './entry-actions.ts';
 import { castFeature } from '../play/feature-casting.ts';
+import { castLegendary, isLegendarySpell } from '../play/legendary-casting.ts';
+import { pickRoll } from './pick-actions.ts';
+import { rollDefaults } from './roll-defaults.ts';
+import { rollPickOf } from '../play/roll-picks.ts';
 import { castPower, isPower, release } from '../play/power-casting.ts';
 import type { FeatureActions } from './feature-actions.ts';
 import type { FogKeeper } from '../play/fog-keeper.ts';
@@ -82,13 +86,18 @@ function tableRoutes(p: GameParts) {
     view: (s, m) => streamChunks(s.client, m.chunks, p.store, s.reply),
     move: (s, m) => p.moves.move(s.player, s.canSee, m),
     ...each(['door', 'trigger'], (s, m) => p.moves.use(s.player, s.canSee, m)),
+    triggerChoice: (s, m) => p.moves.answer(s.player, m.id, m.option),
     changeLevel: (s, m) => p.moves.changeLevel(s.player, s.canSee, m.token, m.level),
     chat: (s, m) => p.onChat(s.client, m.text.trim()),
-    combatStart: (s, m) => p.combat.start(s.player, m.tokens, m.shared),
+    combatStart: (s, m) => p.combat.start(s.player, m.tokens, { shared: m.shared, surprised: m.surprised }),
     combatEnd: (s) => p.combat.end(s.player),
     endTurn: (s, m) => p.combat.endTurn(s.player, m.token),
     attack: (s, m) => p.combat.attack(s.player, s.canSee, m),
-    ...each(['turnBased', 'legendary', 'lair'], (s, m) => p.combat.turnAction(s.player, s.canSee, m)),
+    ...each(['turnBased', 'legendary', 'lair'], (s, m) =>
+      m.t !== 'turnBased' && isLegendarySpell(p.table, m)
+        ? castLegendary(p, s.player, s.canSee, m)
+        : p.combat.turnAction(s.player, s.canSee, m),
+    ),
     applyDamage: (s, m) => p.damage.apply(s.player, s.canSee, m),
     ...each(['condition', 'combatant', 'initiative', 'turnOverride'], (s, m) => p.hud.handle(s.player, s.canSee, m)),
   } satisfies Partial<Routes>;
@@ -101,15 +110,17 @@ function magicRoutes(p: GameParts) {
     feature: (s, m) => {
       if (isPower(p.table, m.token, m.feature)) castPower(p, s.player, s.canSee, m);
       else if (p.features.aimed(m.token, m.feature)) castFeature(p, s.player, s.canSee, m);
-      else p.features.use(s.player, m.token, m.feature);
+      else p.features.use(s.player, m.token, m.feature, m.spend);
     },
     useItem: (s, m) => p.features.useItem(s.player, m.token, m.item),
-    react: (s, m) => p.reactions.react(s.player, m.offer, m.choice),
+    react: (s, m) => p.reactions.react(s.player, m.offer, m.choice, rollPickOf(m)),
+    rollDefaults: (s, m) => rollDefaults(p.table, s, m),
+    rollPick: (s, m) => pickRoll(p.table, s.player, m.token, m.edge),
     release: (s, m) => release(p.table, s.player, m.token, m.hold),
     dropConcentration: (s, m) => p.features.dropConcentration(s.player, m.token),
     removeEffect: (s, m) => p.features.removeEffect(s.player, m.token, m.effect),
     rest: (s, m) => {
-      p.features.rest(s.player, m.tokens, m.kind);
+      p.features.rest(s.player, m.tokens, m.kind, p.clock.now());
       p.clock.skip(m.kind === 'long' ? 8 * HOUR : HOUR);
     },
   } satisfies Partial<Routes>;
@@ -118,7 +129,9 @@ function magicRoutes(p: GameParts) {
 /** Character sheets: gear, hit dice, awards, checks, and drops onto sheets. */
 function sheetRoutes(p: GameParts) {
   return {
-    ...each(['equip', 'carry', 'hitDie', 'exhaustion', 'awardXp'], (s, m) => sheetAction(p.table, s.player, m)),
+    ...each(['equip', 'carry', 'hitDie', 'exhaustion', 'inspiration', 'awardXp'], (s, m) =>
+      sheetAction(p.table, s.player, m),
+    ),
     levelUp: (s, m) => levelUp(p.table, s.player, m),
     ...each(['requestCheck', 'rollCheck'], (s, m) => checkAction(p.table, p.chat, s.player, m)),
     ...each(['drop', 'give', 'trade'], (s, m) => p.gm.drops.handle(s.player, s.canSee, m)),

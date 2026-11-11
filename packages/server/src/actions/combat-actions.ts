@@ -22,10 +22,8 @@ import {
   offHandCost,
   offHandProblem,
   resolveWeaponAttack,
-  type CritChoice,
   pickNotes,
   type RollChoice,
-  type RollEdge,
   smiteProblem,
   startCombat,
   tickEffects,
@@ -42,9 +40,12 @@ import { afterAttack, readiedFinisher, rollInitiative, turnEnds } from '../play/
 import { compelled, riseInAura } from '../play/turn-start.ts';
 import { anotherTurn, breakTimeStop } from '../play/time-stop.ts';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
+import { pickedEdge, rollPickOf } from '../play/roll-picks.ts';
 import { breakSanctuary, loseImage, passSanctuary } from '../play/spell-wards.ts';
 import { recharge } from '../play/recharge.ts';
-import { Refusal, requireGm, type Cost, type Fighter, type Table } from '../play/table.ts';
+import { flanked } from '../play/flanking.ts';
+import { type Surprise, surprisedTurn, surpriseOf, withSurprise } from '../play/surprise.ts';
+import { Refusal, requireGm, spendAs, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 /** An attack that has been rolled but not yet landed: its target may still react (shield). */
 export interface PendingHit {
@@ -58,15 +59,13 @@ export interface PendingHit {
   outcome: WeaponAttackOutcome;
 }
 
-export interface AttackRequest {
+/** With the attacker's own roll pick: the d20, a critical, a modifier, the damage, what it spends. */
+export interface AttackRequest extends RollChoice {
   attacker: string;
   target: string;
   attack: string;
   smite?: number;
   finisher?: string;
-  /** The attacker's own advantage or disadvantage, and a critical forced or held back. */
-  edge?: RollEdge;
-  crit?: CritChoice;
 }
 
 /** An attack as a player asks for it: at a creature, or at empty ground (`point`). */
@@ -78,6 +77,12 @@ export interface TurnBasedAsk {
 }
 
 /** How an attack is resolved: its smite and finisher, out of turn as a reaction, and the attacker's pick. */
+/** How the GM starts a fight: BG3-style shared turns, and who is surprised. */
+interface StartAsk {
+  shared?: boolean;
+  surprised?: readonly string[];
+}
+
 interface Resolving {
   smite: number | undefined;
   finisher?: string;
@@ -106,28 +111,31 @@ export class CombatActions {
   }
 
   /** GM: a fight; `shared`: party members next to each other share a turn (BG3). */
-  start(player: Player, ids: readonly string[], shared = false): void {
+  start(player: Player, ids: readonly string[], { shared = false, surprised }: StartAsk = {}): void {
     requireGm(player);
-    this.open(
-      ids.map((id) => this.table.fighter(id)),
-      'Roll for initiative!',
-      { peaceful: false, shared },
-    );
+    const fighters = ids.map((id) => this.table.fighter(id));
+    this.open(fighters, 'Roll for initiative!', { peaceful: false, shared, surprise: surpriseOf(fighters, surprised) });
   }
 
   /** Rolls initiative for `fighters` and starts the first turn. */
   private open(
     fighters: Fighter[],
     heading: string,
-    { peaceful, shared }: { peaceful: boolean; shared: boolean },
+    { peaceful, shared, surprise }: { peaceful: boolean; shared: boolean; surprise?: Surprise },
   ): void {
     const rolled = startCombat(
-      fighters.map((f) => ({ token: f.token.id, bonus: f.sheet.initiative, speed: f.sheet.speed })),
+      fighters.map((f) => ({
+        token: f.token.id,
+        bonus: f.sheet.initiative,
+        speed: f.sheet.speed,
+        ...pickedEdge(this.table.picks.take(f.token.id), surprise?.slow.has(f.token.id)),
+      })),
       this.table.rng,
     );
     rollInitiative(this.table, fighters);
     const lairs = peaceful ? [] : fighters.filter((f) => f.sheet.lair).map((f) => f.token.id);
-    const fight = peaceful ? { ...rolled, peaceful } : withLair(rolled, lairs);
+    const opened = surprise ? withSurprise(rolled, surprise) : rolled;
+    const fight = peaceful ? { ...opened, peaceful } : withLair(opened, lairs);
     const combat = shared ? firstTurn({ ...fight, shared }, this.table.turnInfo) : fight;
     this.store.setCombat(combat);
     const names = new Map(fighters.map((f) => [f.token.id, f.token.name]));
@@ -207,7 +215,7 @@ export class CombatActions {
     const token = this.store.tokens.get(id);
     if (token?.deathSaves && (token.hp ?? 1) > 0) this.store.setToken({ ...token, deathSaves: undefined });
     if (!token || !isDying(token)) return false;
-    const { token: after, note } = deathSave(token, this.table.rng);
+    const { token: after, note } = deathSave(token, this.table.rng, this.table.picks.take(id));
     this.store.setToken(after);
     this.table.note(note);
     return isDying(after) || (after.hp ?? 1) <= 0;
@@ -239,6 +247,7 @@ export class CombatActions {
     this.hearten(id);
     recharge(this.table, id);
     this.smoulder(id);
+    surprisedTurn(this.table, id);
     this.turnStarted(id);
   }
 
@@ -298,7 +307,7 @@ export class CombatActions {
     if (!canSee(req.target)) throw new Refusal('No such target');
     const target = this.table.fighter(req.target);
     const attack = this.attackOf(attacker, req);
-    const cost = this.attackCost(attacker, attack);
+    const cost = spendAs(this.attackCost(attacker, attack), req.spend);
     this.table.check(attacker.token, cost);
     const feet = this.distance(attacker.token, target.token);
     const range = attackRange(attack, feet);
@@ -310,11 +319,8 @@ export class CombatActions {
     this.table.pay(attacker.token, cost, attacker.sheet.attacksPerAction);
     if (lightAttack(attack)) this.markUsed(attacker.token, 'light-attack');
     if (attack.offHand && cost === 'free') this.markUsed(attacker.token, 'nick');
-    const pick = { edge: req.edge, crit: req.crit };
-    this.resolve(
-      { attacker, target, attack, range },
-      { smite: req.smite, finisher: req.finisher, reaction: false, pick },
-    );
+    const how = { smite: req.smite, finisher: req.finisher, reaction: false, pick: rollPickOf(req) };
+    this.resolve({ attacker, target, attack, range }, how);
   }
 
   /** An attack at empty ground: it costs what an attack costs and hits nothing. */
@@ -330,25 +336,25 @@ export class CombatActions {
   /** Turn-based mode on or off, or the GM's legendary action (its attack made out of turn) or lair action. */
   turnAction(player: Player, canSee: (id: string) => boolean, msg: TurnMessage): void {
     if (msg.t === 'turnBased') return this.turnBased(player, msg);
-    legendaryAction(this.table, player, msg, (attacker, targetId, name) => {
+    legendaryAction(this.table, player, msg, (attacker, targetId, name, pick) => {
       if (!canSee(targetId)) throw new Refusal('No such target');
       const target = this.table.fighter(targetId);
       const attack = this.attackOf(attacker, { attacker: attacker.token.id, target: targetId, attack: name });
       const range = attackRange(attack, this.distance(attacker.token, target.token));
       if (range === 'out') throw new Refusal(`${target.token.name} is out of range`);
-      this.resolve({ attacker, target, attack, range }, { smite: undefined, reaction: true });
+      this.resolve({ attacker, target, attack, range }, { smite: undefined, reaction: true, pick });
     });
   }
 
   /** An opportunity attack: the reaction the creature had, not its action, and the target was in reach as it left. */
-  reactionAttack(player: Player, req: AttackRequest): void {
+  reactionAttack(player: Player, req: AttackRequest, pick?: RollChoice): void {
     const attacker = this.table.actor(player, req.attacker);
     const target = this.table.fighter(req.target);
     const attack = this.attackOf(attacker, req);
     this.table.check(attacker.token, 'reaction');
     passSanctuary(this.table, attacker, target);
     this.table.pay(attacker.token, 'reaction');
-    this.resolve({ attacker, target, attack, range: 'normal' }, { smite: req.smite, reaction: true });
+    this.resolve({ attacker, target, attack, range: 'normal' }, { smite: req.smite, reaction: true, pick });
   }
 
   /** An Attack action attack, or two-weapon fighting's off-hand attack: a bonus action, free with nick. */
@@ -384,6 +390,7 @@ export class CombatActions {
         gridSize: this.store.world.gridSize,
         grid: gridKind(this.store.world),
         allyNearTarget: this.allyNear(attacker.token, target.token),
+        flanked: flanked(this.table, attacker.token, target.token),
         sneakUsed,
         smite,
         finisher: readiedFinisher(attacker, attack, finisher),

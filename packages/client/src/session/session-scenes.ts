@@ -3,6 +3,7 @@ import {
   addLevel,
   duplicateSceneOps,
   editLevel,
+  gridSizePatch,
   newSceneOps,
   offLevelUpdates,
   type Player,
@@ -23,6 +24,8 @@ export interface SceneHost {
   readonly players: Player[];
   send(msg: ClientMessage): void;
   readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
+  /** The scene you are on. */
+  readonly scene: string;
 }
 
 /** What the scenes hand back to the session. */
@@ -113,6 +116,12 @@ export class Scenes implements SessionPart {
   /** Changes a scene's settings (name, grid, lighting, fog). */
   edit(scene: string, patch: Patch): void {
     this.on.updates('scene settings', [{ ref: { coll: 'scenes', id: scene }, patch }]);
+  }
+
+  /** Sets the scene you are on to squares of `size` pixels (a map picture's own grid). */
+  // fallow-ignore-next-line unused-class-member -- editor/menus.ts calls it through MenuApi.scenes
+  fitGrid(size: number): void {
+    this.edit(this.s.scene, gridSizePatch(size));
   }
 
   /** Deletes a scene and everything on it; undo brings it all back. */

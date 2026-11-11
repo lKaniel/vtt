@@ -10,6 +10,7 @@ import { Button } from './kit/button.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 import { Toggle } from './kit/toggle.tsx';
+import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
 
 // The GM's Start combat: a list of the creatures on the scene to tick (the
 // selected ones, else those on screen, to begin with), then roll initiative.
@@ -75,11 +76,36 @@ function selectedTokens(session: Session): string[] {
 
 type PickerProps = Readonly<{ session: Session; shared: boolean; onDone: () => void }>;
 
+type Caught = 'none' | 'party' | 'foes';
+
+/** Which side is caught off guard. */
+function SurprisePick({ value, onChange }: Readonly<{ value: Caught; onChange: (v: Caught) => void }>) {
+  return (
+    <div className="flex items-center gap-2" title={t('fight.surprisedHint')}>
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">{t('fight.surprised')}</span>
+      <ToggleGroup type="single" value={value} onValueChange={(v) => v && onChange(v as Caught)}>
+        <ToggleGroupItem value="none">{t('fight.surpriseNone')}</ToggleGroupItem>
+        <ToggleGroupItem value="party">{t('fight.party')}</ToggleGroupItem>
+        <ToggleGroupItem value="foes">{t('fight.foes')}</ToggleGroupItem>
+      </ToggleGroup>
+    </div>
+  );
+}
+
+/** The ids on the side caught off guard. */
+function caughtIds(candidates: readonly FightCandidate[], ids: readonly string[], caught: Caught): string[] {
+  if (caught === 'none') return [];
+  const party = caught === 'party';
+  return candidates.filter((c) => ids.includes(c.id) && c.party === party).map((c) => c.id);
+}
+
 /** The picker for a fight: initiative for those ticked. */
 function FightPicker({ session, shared, onDone }: PickerProps) {
   const [candidates] = useState(() => fightCandidates(session.tokens.values(), isParty));
+  const [caught, setCaught] = useState<Caught>('none');
   return (
     <Picker
+      extra={<SurprisePick value={caught} onChange={setCaught} />}
       session={session}
       candidates={candidates}
       title={t('fight.who')}
@@ -90,7 +116,7 @@ function FightPicker({ session, shared, onDone }: PickerProps) {
         </>
       )}
       onPick={(ids) => {
-        session.requests.startCombat(ids, shared);
+        session.requests.startCombat(ids, shared, caughtIds(candidates, ids, caught));
         onDone();
       }}
     />
@@ -184,10 +210,12 @@ type ListProps = Readonly<{
   first: () => string[];
   action: (n: number) => ReactNode;
   onPick: (ids: string[]) => void;
+  /** More choices above the button. */
+  extra?: ReactNode;
 }>;
 
 /** A tick box per creature on the scene, the party and the others apart, and the button that acts on those ticked. */
-function Picker({ session, candidates, title, first, action, onPick }: ListProps) {
+function Picker({ session, candidates, title, first, action, onPick, extra }: ListProps) {
   const onScreen = () => session.editor.fightersInView();
   const [picked, setPicked] = useState<ReadonlySet<string>>(() => new Set(first()));
   const toggle = (id: string, on: boolean) =>
@@ -211,6 +239,7 @@ function Picker({ session, candidates, title, first, action, onPick }: ListProps
         <Side title={t('fight.party')} list={candidates.filter((c) => c.party)} picked={picked} onToggle={toggle} />
         <Side title={t('fight.foes')} list={candidates.filter((c) => !c.party)} picked={picked} onToggle={toggle} />
       </div>
+      {extra}
       <Button
         disabled={!picked.size}
         onClick={() => onPick(candidates.filter((c) => picked.has(c.id)).map((c) => c.id))}

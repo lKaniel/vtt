@@ -80,7 +80,7 @@ export class View3D {
   private tileSolids: SolidShown[] = [];
   private terrains = new Terrains();
   private tileTerrains: TerrainShown[] = [];
-  private lighting = new Lighting(this.renderer, this.scene);
+  private lighting = new Lighting(this.renderer, this.scene, (w) => this.session.time.glow(w));
   /** The model tiles to stand, worked out with the walls. */
   private tileModels: ModelShown[] = [];
   private floorShown?: number;

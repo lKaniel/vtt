@@ -99,7 +99,7 @@ function SetupBody({ info, refresh, go }: Readonly<{ info: SessionInfo; refresh:
         <aside className="lobby-side">
           {data && <NewGameForm systems={data.systems} onMade={open} />}
           <ImportZip onMade={open} />
-          <FoundryImportForm onMade={open} />
+          <FoundryImportForm games={data?.games} onMade={open} />
           <BaileywikiPanel />
           <PacksPanel />
           {data && <OffsitePanel games={data.games} />}

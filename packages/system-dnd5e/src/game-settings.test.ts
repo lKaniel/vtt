@@ -26,9 +26,9 @@ const carrying = (qty: number) =>
 
 describe('game settings', () => {
   it('fill in the defaults and drop what the system does not know', () => {
-    expect(gameSettingsOf(undefined)).toEqual({ encumbrance: 'capacity' });
-    expect(gameSettingsOf({ encumbrance: 'variant' })).toEqual({ encumbrance: 'variant' });
-    expect(gameSettingsOf({ encumbrance: 'heavy' })).toEqual({ encumbrance: 'capacity' });
+    expect(gameSettingsOf(undefined)).toEqual({ encumbrance: 'capacity', flanking: 'off' });
+    expect(gameSettingsOf({ encumbrance: 'variant' })).toEqual({ encumbrance: 'variant', flanking: 'off' });
+    expect(gameSettingsOf({ encumbrance: 'heavy' })).toEqual({ encumbrance: 'capacity', flanking: 'off' });
   });
 });
 

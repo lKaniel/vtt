@@ -1,4 +1,5 @@
-import type { ChatMessage, ServerMessage } from '@vtt/system-dnd5e';
+import type { Point } from '@vtt/shared';
+import type { ChatMessage, ServerMessage, TokenView } from '@vtt/system-dnd5e';
 
 // Small helpers for the session's own messages (session.ts).
 
@@ -15,4 +16,10 @@ export function withChat(chat: readonly ChatMessage[], message: ChatMessage): Ch
   return chat.some((m) => m.id === message.id)
     ? chat.map((m) => (m.id === message.id ? message : m))
     : [...chat, message].slice(-CHAT_HISTORY);
+}
+
+/** A token after it walked to `end`, at `elevation` when the move set one. */
+export function movedTo(t: TokenView, end: Point, elevation: number | undefined): TokenView {
+  const { elevation: _, ...rest } = t;
+  return { ...rest, x: end[0], y: end[1], ...(elevation !== undefined && { elevation }) };
 }

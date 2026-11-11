@@ -279,3 +279,16 @@ describe('the GM’s asset browser', () => {
     });
   });
 });
+
+describe('media dropped on the map', () => {
+  it('makes a sound of an audio file, where it was let go, on the floor shown', () => {
+    ws.receive(gmWelcome());
+    session.packs.placeMedia('pack://forest/media/rain.ogg', [300, 400]);
+    expect(sent()).toMatchObject({
+      t: 'ops',
+      ops: [
+        { op: 'create', coll: 'main/sounds', doc: { x: 300, y: 400, src: 'pack://forest/media/rain.ogg', radius: 30 } },
+      ],
+    });
+  });
+});

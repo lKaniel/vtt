@@ -3,7 +3,9 @@ import { Dice5Icon } from 'lucide-react';
 import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
+import { Label } from './kit/label.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
+import { Switch } from './kit/switch.tsx';
 import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
 
 // The action bar's roll button: advantage or disadvantage for your next
@@ -76,7 +78,15 @@ function RollPickPanel({ session }: Readonly<{ session: Session }>) {
         <ToggleGroupItem value="crit">{t('pick.crit')}</ToggleGroupItem>
         <ToggleGroupItem value="normal">{t('pick.noCrit')}</ToggleGroupItem>
       </ToggleGroup>
+      <Label className="font-body tracking-normal text-foreground" title={t('pick.askHint')}>
+        <Switch
+          checked={session.actions.rolls.enabled}
+          onCheckedChange={(on) => session.actions.rolls.setEnabled(on)}
+        />
+        {t('pick.ask')}
+      </Label>
       <p className="text-xs text-muted-foreground">{t('pick.hint')}</p>
+      <p className="text-xs text-muted-foreground">{t('pick.keys')}</p>
     </>
   );
 }

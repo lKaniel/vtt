@@ -16,6 +16,8 @@ import { Button } from './kit/button.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dialog.tsx';
 import { Input } from './kit/input.tsx';
+import { NumberField } from './kit/number-field.tsx';
+import { t } from '../i18n/index.ts';
 import { SelectField } from './kit/select.tsx';
 import { RemoveButton } from './RemoveButton.tsx';
 
@@ -32,6 +34,8 @@ interface Trigger {
   once?: boolean;
   gmOnly?: boolean;
   disabled?: boolean;
+  /** Only a creature within this many pixels may click it. */
+  near?: number;
   actions?: Step[];
 }
 
@@ -191,7 +195,30 @@ function TriggerOptions({ trigger, onChange }: Readonly<{ trigger: Trigger; onCh
           {label}
         </label>
       ))}
+      <NearOption trigger={trigger} onChange={onChange} />
     </div>
+  );
+}
+
+/** Whether only a creature close by may click it, and how close (pixels). */
+function NearOption({ trigger, onChange }: Readonly<{ trigger: Trigger; onChange: (t: Trigger) => void }>) {
+  const on = trigger.near !== undefined;
+  return (
+    <span className="flex items-center gap-1">
+      <label className="flex items-center gap-1">
+        <Checkbox checked={on} onCheckedChange={(v) => onChange({ ...trigger, near: v === true ? 100 : undefined })} />
+        {t('trigger.near')}
+      </label>
+      {on && (
+        <NumberField
+          aria-label={t('trigger.nearPixels')}
+          value={trigger.near!}
+          min={0}
+          step={10}
+          onValueChange={(near) => onChange({ ...trigger, near })}
+        />
+      )}
+    </span>
   );
 }
 

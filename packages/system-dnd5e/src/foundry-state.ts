@@ -3,9 +3,9 @@ import { COINS } from './stats-schema.ts';
 import type { Actor } from './token-schema.ts';
 
 // Where a Foundry dnd5e creature stands between sessions: its coins, the
-// slots and hit dice it has spent, exhaustion and death saves.
+// slots and hit dice it has spent, exhaustion, death saves and heroic inspiration.
 
-type State = Partial<Pick<Actor, 'currency' | 'exhaustion' | 'deathSaves' | 'spent'>>;
+type State = Partial<Pick<Actor, 'currency' | 'exhaustion' | 'deathSaves' | 'spent' | 'inspiration'>>;
 
 const count = (x: unknown, max = Infinity) => Math.min(max, Math.max(0, Math.round(num(x) ?? 0)));
 
@@ -53,6 +53,7 @@ export function stateOf(sys: Loose, items: unknown): State {
   return {
     ...currencyOf(sys),
     ...opt('exhaustion', exhaustion > 0 && exhaustion),
+    ...opt('inspiration', at(sys, 'attributes.inspiration') === true),
     ...deathOf(sys),
     ...spentOf(sys, list(items).map(obj)),
   };

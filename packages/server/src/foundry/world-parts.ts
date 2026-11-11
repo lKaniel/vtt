@@ -252,6 +252,9 @@ function monksTiles(s: SceneOut, ctx: WorldContext): void {
     scene: (id: string) => ctx.made.scenes.get(id),
     imagesOf: monksImages(index, media),
     floorAt: (feet: number) => (s.entry.levels?.length ? levelAt(s.entry.levels, feet)?.id : undefined),
+    entry: ctx.made.entries?.entries,
+    page: ctx.made.entries?.pages,
+    gridSize: s.entry.gridSize,
   };
   const missing: string[] = [];
   let idle = 0;

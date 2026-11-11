@@ -63,6 +63,14 @@ function Budget({ session, token, budget }: Props & Readonly<{ budget: TurnBudge
           {t('override.bonus')}
         </Toggle>
       </div>
+      <Button
+        variant="outline"
+        size="sm"
+        title={t('override.extraTitle')}
+        onClick={() => set({ extra: (budget.extra ?? 0) + 1 })}
+      >
+        {t('override.extra', { n: budget.extra ?? 0 })}
+      </Button>
       <div className="flex items-end gap-2">
         <label className="flex flex-1 flex-col gap-1 text-xs text-muted-foreground">
           {t('override.move')}

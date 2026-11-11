@@ -13,6 +13,7 @@ interface E2eToken {
   img?: string;
   inventory?: { item: string; qty: number; spell?: string }[];
   hotbar?: (string | null)[];
+  stats?: { species?: string };
 }
 
 interface E2eVtt {
@@ -23,6 +24,7 @@ interface E2eVtt {
   selected(): E2eToken | undefined;
   chat(text: string): void;
   move(token: string, x: number, y: number): void;
+  explored(x: number, y: number): boolean;
   docs(coll: string): ({ id: string } & Record<string, unknown>)[];
   doc(coll: string, id: string): ({ id: string } & Record<string, unknown>) | undefined;
   update(coll: string, id: string, patch: Record<string, unknown>, label?: string): void;

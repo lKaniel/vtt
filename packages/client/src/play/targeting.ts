@@ -60,11 +60,11 @@ export function aimSpell(spell: Spell, slot: number, casterLevel: number): Aimin
 export function aimFor(
   sheet: (Pick<Creature, 'caster' | 'effects'> & Partial<Pick<Creature, 'edition' | 'features'>>) | undefined,
   spellId: string | undefined,
-  { slot, free, paidBy }: { slot: number; free?: boolean; paidBy?: string },
+  { slot, free, paidBy, spell: picked }: { slot: number; free?: boolean; paidBy?: string; spell?: Spell },
 ): Aiming | undefined {
   if (!sheet?.caster) return undefined;
   const { caster } = sheet;
-  const spell = caster.spells.find((s) => s.id === spellId);
+  const spell = knownOrPicked(caster.spells, spellId, paidBy ? picked : undefined);
   if (!spell) return undefined;
   const again = aimAgain(spell, sheet);
   if (again) return again;
@@ -73,6 +73,10 @@ export function aimFor(
   const aiming = { ...aimSpell(spell, paid?.level ?? slot, caster.level), ...onSelf, ...firstForm(spell, sheet) };
   return paidWith(aiming, paid?.feature, free);
 }
+
+/** The known spell, or one a feature lets the caster pick as it casts (Divine Intervention), which needn't be known. */
+const knownOrPicked = (spells: readonly Spell[], id: string | undefined, picked: Spell | undefined) =>
+  spells.find((s) => s.id === id) ?? picked;
 
 /** A lasting spell that's going, used again with the slot and option it was cast with. */
 function aimAgain(spell: Spell, { caster, effects }: Pick<Creature, 'caster' | 'effects'>): Aiming | undefined {

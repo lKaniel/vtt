@@ -86,6 +86,18 @@ describe('dropping compendium entries on a sheet', () => {
     expect(tok('goblin').inventory).toHaveLength(2);
   });
 
+  it('makes a character of a species dropped on its sheet', () => {
+    const gm = seat('gm');
+    gm.receive({
+      t: 'drop',
+      what: { kind: 'species', id: 'dwarf', rules: '2014' },
+      onto: { kind: 'token', id: 'hero' },
+    });
+    expect(errors(gm)).toEqual([]);
+    expect(tok('hero')).toMatchObject({ speed: 25, darkvision: 60, stats: { species: 'dwarf' } });
+    expect(store.actors.get('hero')!.stats?.species).toBe('dwarf');
+  });
+
   it('changes an actor in the Actors list, for the GM only', () => {
     const gm = seat('gm');
     gm.receive({ t: 'drop', what: { kind: 'item', id: 'dagger' }, onto: { kind: 'actor', id: 'hero' } });
@@ -180,5 +192,17 @@ describe('reading a spell scroll', () => {
     expect(tok('goblin').effects?.map((e) => e.name)).toEqual(['Hold Person']);
     expect(tok('hero').inventory).toEqual([{ item: 'spell-scroll', spell: 'hold-person', qty: 1, equipped: false }]);
     expect(tok('hero').concentration?.spell).toBe('hold-person');
+  });
+
+  it('is refused to a class without the spell on its list', () => {
+    put({
+      ...tok('hero'),
+      stats: { class: 'fighter', level: 3, maxHp: 20 },
+      inventory: [{ item: 'spell-scroll', spell: 'magic-missile', qty: 1 }],
+    });
+    const ana = seat('ana');
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'magic-missile', slot: 1, scroll: true, targets: ['goblin'] });
+    expect(errors(ana)).toEqual(['Hero can’t read Magic Missile: it isn’t on the fighter spell list']);
+    expect(tok('hero').inventory).toHaveLength(1);
   });
 });

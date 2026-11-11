@@ -8,7 +8,14 @@ import {
   RoleSchema,
   ROLL_MODES,
 } from '@vtt/shared';
-import { ABILITIES, ConditionSchema, CurrencySchema, EditionSchema, RollChoiceSchema } from '@vtt/system-dnd5e';
+import {
+  ABILITIES,
+  ConditionSchema,
+  CurrencySchema,
+  EditionSchema,
+  RollAskSchema,
+  RollChoiceSchema,
+} from '@vtt/system-dnd5e';
 import type { RawData } from 'ws';
 import { z } from 'zod';
 
@@ -96,12 +103,15 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('rollMode'), mode: z.enum(ROLL_MODES) }),
   z.object({ t: z.literal('door'), chunk: z.string(), wall: z.string(), state: DoorStateSchema }),
   z.object({ t: z.literal('trigger'), tile: z.string(), token: z.string().optional() }),
+  z.object({ t: z.literal('triggerChoice'), id: z.string().max(64), option: z.number().int().min(0).max(7) }),
   z.object({ t: z.literal('changeLevel'), token: z.string(), level: z.string() }),
   z.object({ t: z.literal('chat'), text: z.string().min(1).max(2000) }),
   z.object({
     t: z.literal('combatStart'),
     tokens: z.array(z.string()).min(1).max(100),
     shared: z.boolean().optional(),
+    /** Creatures the GM says are surprised, besides those that notice no foe. */
+    surprised: z.array(z.string()).max(100).optional(),
   }),
   z.object({ t: z.literal('combatEnd') }),
   z.object({
@@ -127,9 +137,16 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   }),
   z.object({ t: z.literal('equip'), token: z.string(), item: z.number().int().nonnegative(), equipped: z.boolean() }),
   z.object({ t: z.literal('hitDie'), token: z.string() }),
-  z.object({ t: z.literal('legendary'), token: z.string(), option: z.string(), target: z.string().optional() }),
+  z.object({
+    t: z.literal('legendary'),
+    token: z.string(),
+    option: z.string(),
+    target: z.string().optional(),
+    ...RollChoiceSchema.shape,
+  }),
   z.object({ t: z.literal('lair'), token: z.string(), action: z.string() }),
   z.object({ t: z.literal('exhaustion'), token: z.string(), level: z.number().int().min(0).max(6) }),
+  z.object({ t: z.literal('inspiration'), token: z.string(), on: z.boolean() }),
   /** The next level for a character that is only an actor (a token's, or one in the Actors list). */
   z.object({
     t: z.literal('levelUp'),
@@ -158,8 +175,10 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     token: z.string(),
     ...checkKind,
     card: z.string().optional(),
-    edge: RollChoiceSchema.shape.edge,
+    ...RollChoiceSchema.pick({ edge: true, d20: true, situational: true }).shape,
   }),
+  /** The roll dialog asks how a roll's d20 would be rolled as things stand. */
+  z.object({ t: z.literal('rollDefaults'), ref: z.string().max(40), roll: RollAskSchema }),
   z.object({
     t: z.literal('carry'),
     token: z.string(),
@@ -197,10 +216,13 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     picks: z.array(z.string()).max(30).optional(),
     inputs: z.record(z.string(), z.number()).optional(),
     bonus: z.boolean().optional(),
+    ...RollChoiceSchema.shape,
   }),
   z.object({ t: z.literal('release'), token: z.string(), hold: z.string() }),
   z.object({ t: z.literal('useItem'), token: z.string(), item: z.string() }),
-  z.object({ t: z.literal('react'), offer: z.string(), choice: z.string().optional() }),
+  z.object({ t: z.literal('react'), offer: z.string(), choice: z.string().optional(), ...RollChoiceSchema.shape }),
+  /** Your roll pick for a creature's next roll that the server makes (initiative, a death save); none: normal. */
+  z.object({ t: z.literal('rollPick'), token: z.string(), edge: RollChoiceSchema.shape.edge }),
   z.object({ t: z.literal('condition'), token: z.string(), condition: ConditionSchema, on: z.boolean() }),
   z.object({ t: z.literal('combatant'), token: z.string(), on: z.boolean() }),
   z.object({ t: z.literal('initiative'), token: z.string(), value: z.number().int().min(-99).max(99) }),
@@ -212,6 +234,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     bonus: z.boolean().optional(),
     reaction: z.boolean().optional(),
     move: z.number().int().min(0).max(9999).optional(),
+    extra: z.number().int().min(0).max(9).optional(),
   }),
   z.object({ t: z.literal('pause'), on: z.boolean() }),
   z.object({
@@ -257,6 +280,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
       z.object({ kind: z.literal('item'), id: z.string() }),
       z.object({ kind: z.literal('spell'), id: z.string(), rules: EditionSchema }),
       z.object({ kind: z.literal('feature'), id: z.string(), class: z.string(), rules: EditionSchema }),
+      z.object({ kind: z.literal('species'), id: z.string(), rules: EditionSchema }),
     ]),
     onto: z.object({ kind: z.enum(['token', 'actor']), id: z.string() }),
     area: z.enum(['inventory', 'spells', 'features']).optional(),

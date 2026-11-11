@@ -1,6 +1,7 @@
 import type { Player, Point } from '@vtt/shared';
 import { whole } from './rulers.ts';
 import { BROWSER, Throttle, type Timing } from '../throttle.ts';
+import { readPref, writePref } from '../prefs.ts';
 
 // Where everyone else at the table is pointing: their cursors, live, and
 // pings, a spot someone points out with a long press (the GM's Shift+long
@@ -22,6 +23,19 @@ interface Who {
 
 type ShownCursor = Who & { at: Point };
 export type ShownPing = Who & { at: Point; since: number };
+
+let shown: boolean | undefined;
+
+/** Whether this browser shows the other players' cursors (an option kept in this browser). */
+export function cursorsShown(): boolean {
+  shown ??= readPref('cursors', ['show', 'hide'], 'show') === 'show';
+  return shown;
+}
+
+export function showCursors(on: boolean): void {
+  shown = on;
+  writePref('cursors', on ? 'show' : 'hide');
+}
 
 /** What the server says about the others. */
 export type PresenceNews = (Who & { t: 'cursor'; at: Point | null }) | (Who & { t: 'ping'; at: Point; pull?: boolean });

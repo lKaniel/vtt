@@ -14,11 +14,11 @@ world/                      the example game (another folder: VTT_GAME); lobby g
     lights.json             placed lights
     tokens.json             tokens on the scene: where each actor stands
     drawings.json           shapes, lines, freehand and text drawn on the map
-    notes.json              map pins that open journal entries
+    notes.json              map pins that open journal entries or roll tables
     templates.json          measured areas: spell circles, cones, lines and squares
     regions.json            areas that do something when a token walks in
     sounds.json             ambient sounds
-    fog/<player>.json       explored fog of war, kept by the server (don't edit)
+    fog/<player>.json       explored fog of war, kept by the server (don't edit; floors in fog/<level>/)
   actors/<id>.json          creatures' sheets: the Actors list
   journals/<id>.json        journal entries: handouts and the GM's notes
   tables/<id>.json          roll tables
@@ -64,6 +64,11 @@ right, `y` grows down, negative values are fine.
   `x = gridSize * (q + r / 2 + 0.5)`, `y = gridSize * (0.866 * r + 0.577)`,
   so hex `[0, 0]` fits in the map's top left corner; columns are the same
   with x and y swapped. `grid.ts` in shared has the maths (`latticeOf`).
+  On hexes a template or spell area covers whole hexes, those whose centre
+  it takes in (drawn filled, as Foundry highlights them), and a creature is
+  caught when its hex is. The editor snaps wall ends, tile corners, lights
+  and drawing points to a hex's corners and centre, templates start on a
+  hex's centre, and moves go hex to hex (Shift: free).
 - Walls usually run along square edges, so their ends are multiples of
   `gridSize`; the editor snaps to them even when no grid is drawn.
 
@@ -147,7 +152,8 @@ Indoors (ground under a roof, an overhead tile or the floor above, that
 walls close in on every side) the sky's light never reaches: it is dark
 there at any hour, lit only by lamps and seen with darkvision. A missing
 wall, an open door or a window (a wall that lets light through) lets the
-daylight in again.
+daylight in, two squares deep: the far end of a long hall stays dark. On a
+scene whose darkness follows the clock, dawn and dusk tint the light orange.
 `vision` (default `true`) is fog of war: players see only what their tokens
 can. The GM can check what a creature sees with "See through its eyes" in
 its right-click menu (light, sight and fog as its players get them). `chunkSize` (default 2000, a multiple of `gridSize`) is how big the
@@ -243,8 +249,12 @@ With `vision` and `exploration` on, the server works out what each player's
 tokens have seen and keeps it per player per scene in
 `scenes/<scene>/fog/<player>.json` (cells a quarter of a square wide, in
 blocks; see `shared/src/fog.ts`). It follows the player to another device.
-The GM's fog tools (Reveal and Hide brushes, Reset) change it, and Ctrl+Z
-undoes them. Delete the file to make a player forget a scene; changing
+On a scene with `levels` each floor keeps its own: the street (the floor
+at 0 ft) uses that file, every other floor `scenes/<scene>/fog/<level>/<player>.json`,
+so looking around downstairs explores nothing upstairs. A player sees the
+fog of the floor their creature stands on. The GM's fog tools (Reveal and
+Hide brushes, Reset) change it, the brushes on the floor the GM shows and
+Reset on every floor, and Ctrl+Z undoes them. Delete the file to make a player forget a scene; changing
 `gridSize` starts the fog over. `check-game` ignores the `fog/` folder.
 
 ## Tiles and walls
@@ -300,21 +310,27 @@ pixels.
   `on` is `"click"` (the default: a player clicks it in the tokens mode, with
   the creature they have selected) or `"enter"` (a creature walks onto it; a
   hidden plate still works). `once` turns it off after it runs, `gmOnly` lets
-  only the GM click it. Players are told only that a tile can be clicked. The
-  actions, in order (regions take them as behaviours too):
+  only the GM click it. `"near": 150` lets only a creature within that many
+  pixels of the tile use it (0: standing on it; the one clicked with, else
+  the player's nearest; the GM's click needs none). Players are told only
+  that a tile can be clicked. The actions, in order (regions take them as
+  behaviours too):
 
-  | Action                                                                                  | What it does                                                                                                                                                                  |
-  | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                 | Shows the next picture, round and round; `tile` names another tile.                                                                                                           |
-  | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }`  | Shows, hides or toggles a tile, token, region, drawing, note, sound or light (a hidden light is out).                                                                         |
-  | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                        | Plays once for everyone on the scene.                                                                                                                                         |
-  | `{ "type": "teleport", "to": [x, y], "scene": "cellar", "level": "loft" }`              | Moves the creature that set it off (the actions after it wait), onto `level` when named.                                                                                      |
-  | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                    | Opens, closes, locks or toggles a door.                                                                                                                                       |
-  | `{ "type": "message", "text": "…", "gmOnly": true }`                                    | Says it in chat.                                                                                                                                                              |
-  | `{ "type": "journal", "entry": "letter", "page": "p1" }`                                | Shares the entry with the players and opens it on their screens.                                                                                                              |
-  | `{ "type": "activate", "target": { "coll": "tiles", "id": "trap" }, "to": "off" }`      | Turns another tile's trigger (or a region) `on`, `off` or `toggle`.                                                                                                           |
-  | `{ "type": "elevation", "target": { "coll": "tiles", "id": "lift" }, "by": 20 }`        | Raises or lowers a tile (its model) or a creature `by` feet, or `to` a height; no `target`: the creature that set it off. Creatures standing on a tile ride with it (a lift). |
-  | `{ "type": "shift", "target": { "coll": "tiles", "id": "cell-door" }, "by": [0, 130] }` | Slides a tile or a creature that many pixels (a sliding door).                                                                                                                |
+  | Action                                                                                                                | What it does                                                                                                                                                                  |
+  | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `{ "type": "image", "images": ["/assets/up.png", "/assets/down.png"] }`                                               | Shows the next picture, round and round; `tile` names another tile.                                                                                                           |
+  | `{ "type": "visibility", "target": { "coll": "tiles", "id": "chest" }, "to": "show" }`                                | Shows, hides or toggles a tile, token, region, drawing, note, sound or light (a hidden light is out).                                                                         |
+  | `{ "type": "sound", "src": "/assets/clunk.ogg", "volume": 0.8 }`                                                      | Plays once for everyone on the scene.                                                                                                                                         |
+  | `{ "type": "teleport", "to": [x, y], "scene": "cellar", "level": "loft" }`                                            | Moves the creature that set it off (the actions after it wait), onto `level` when named.                                                                                      |
+  | `{ "type": "door", "wall": "gate", "to": "toggle" }`                                                                  | Opens, closes, locks or toggles a door.                                                                                                                                       |
+  | `{ "type": "message", "text": "…", "gmOnly": true }`                                                                  | Says it in chat.                                                                                                                                                              |
+  | `{ "type": "journal", "entry": "letter", "page": "p1" }`                                                              | Shares the entry with the players and opens it on their screens.                                                                                                              |
+  | `{ "type": "activate", "target": { "coll": "tiles", "id": "trap" }, "to": "off" }`                                    | Turns another tile's trigger (or a region) `on`, `off` or `toggle`.                                                                                                           |
+  | `{ "type": "elevation", "target": { "coll": "tiles", "id": "lift" }, "by": 20 }`                                      | Raises or lowers a tile (its model) or a creature `by` feet, or `to` a height; no `target`: the creature that set it off. Creatures standing on a tile ride with it (a lift). |
+  | `{ "type": "shift", "target": { "coll": "tiles", "id": "cell-door" }, "by": [0, 130] }`                               | Slides a tile or a creature that many pixels (a sliding door).                                                                                                                |
+  | `{ "type": "rotate", "target": { "coll": "tiles", "id": "wheel" }, "by": 90 }`                                        | Turns a tile, or a light's beam (`"coll": "lights"`), `by` degrees clockwise, or `to` an angle.                                                                               |
+  | `{ "type": "view", "scene": "cellar", "everyone": true }`                                                             | Shows another scene to the player who set it off (and the players of its creature), or to everyone; no creature moves.                                                        |
+  | `{ "type": "choice", "title": "The well", "text": "Climb down?", "options": [{ "label": "Yes", "actions": [ … ] }] }` | Asks the player who set it off (or the players of its creature) to pick a button; that button's actions run (any action but a choice). The actions after it don't run.        |
 
   The GM edits a trigger (or a region's behaviours) with the inspector's
   **Add trigger…** button.
@@ -580,8 +596,11 @@ change and delete only their own.
 ```
 
 **Notes** (`notes.json`): `x, y`, `label`, `icon`, `color`, and the
-journal `entry` (and `page`) it opens. Players see a note only when they may
-see its entry.
+journal `entry` (and `page`) it opens, or the roll `table` it rolls into chat
+when clicked (a table dragged from the Tables tab onto the map makes one).
+Players see a note only when they may see its entry, or its table is shared
+with them. A playlist dragged onto the map becomes a sound of its first
+track (every track, when it plays them together).
 
 **Templates** (`templates.json`): `shape` `"circle"`, `"cone"`, `"line"` or
 `"square"`, origin `x, y`, `distance` in feet (a circle's radius, a cone's or
@@ -977,6 +996,10 @@ token's edition). A `class` named after an SRD class (Wizard, Fighter, ...)
 gives that class's spell slots, spellcasting ability and features by `level`,
 from `classes-5.x.json`. A homebrew class or a monster that casts uses
 `"spellcasting": { "ability": "int", "progression": "full" | "half" | "third" | "pact", "level": 5 }`.
+A creature with no spellcasting but homemade spells (`own.spells`, made on
+its sheet) casts them at their own level without a slot, with its best of
+Int, Wis and Cha, or the ability `"spellcasting": { "ability": "cha",
+"progression": "none" }` names (picked on the sheet's Spells tab).
 
 **Homebrew classes.** The GM makes classes in the Compendium tab
 (Homebrew), and each is a file in `homebrew/<id>.json` with `"kind": "class"`
@@ -1035,7 +1058,22 @@ effects gain `linked`, `noReactions`, `bonusFeature` (Mind's Eye uses `saveAdvan
 and auras `maxWeight`. Features gain `reaction` (Misdirection, Redirect,
 Unreal Self, Phantom Step: offered as an attack is about to hit or a
 Dexterity save is rolled) and a feature spell may `summon` a creature built
-for the class level and the pool's numbers (Shadow Substance).
+for the class level and the pool's numbers (Shadow Substance). A feature's
+`freeCasts` entry with a `cost` formula (in `level`, the level it is cast at)
+pays for that spell with the pool's points instead of a use, so the points
+cast spells like slots: `{ "spell": "silent-image", "cost": "2 * level" }`.
+A class with no spellcasting casts them with the pool's ability.
+
+**Spells picked for a feature.** A feature's `spellPicks` lets the player
+pick spells it casts without a slot, each at its own level: `from` the
+`class`'s list or the spells the character `known`s, one per `choices`
+entry (`at` the class level it opens, of exactly `level` or up to
+`maxLevel`). The picks are kept in `stats.spellPicks` by feature id
+(`{ "mystic-arcanum": ["eyebite"] }`), chosen from the book button on the
+feature's sheet row. With `atCast` any spell that fits is picked as it is
+cast (a 2024 cleric's Divine Intervention); `noReactions` leaves out
+reaction spells. Mystic Arcanum, Spell Mastery, Signature Spells, 2024
+Natural Recovery and 2024 Divine Intervention use it.
 
 **Homebrew items and spells.** A homebrew file with `"kind": "spell"` has
 the fields of an SRD spell; one with `"kind": "item"` keeps the item's own
@@ -1112,11 +1150,23 @@ class's `multiclass: { all, any }` in `class-automation.json`).
 
 `stats.features` grants class features on top of the class's own, as
 `"<class>/<feature>"` (dragging a feature from the Compendium onto a sheet
-adds one). A spell scroll is an inventory entry with the spell on it:
+adds one). `stats.species` and `stats.lineage` (set by the character
+creator) give the species' spells (`content/srd/species-automation.json`):
+a tiefling's infernal legacy, a 2024 elf's, gnome's or tiefling's lineage.
+Cantrips come at 1st level; the others are features cast once a long rest
+without a slot from their character level on. A character with no
+spellcasting casts them with its best mental ability. A spell scroll is an inventory entry with the spell on it:
 `{ "item": "spell-scroll", "spell": "fireball", "qty": 1 }`. Reading it casts
 the spell at its own level without a slot, with the scroll's save DC and
 attack bonus (13/+5 up to 2nd level, 15/+7, 17/+9, 18/+10, 19/+11 for 9th),
-and uses the scroll up.
+and uses the scroll up. Only a class with the spell on its list can read it
+(SRD Spell Scroll); a creature without a class, a homebrew caster class no
+spell names, or one that knows the spell may read any.
+
+`stats.species` names the species dropped on the sheet from the Compendium:
+the drop sets its walking speed and darkvision and adds its fixed
+proficiencies (ability bonuses are the player's to add). A class dropped on a
+sheet opens the Level up in that class.
 
 **Made on the sheet.** Items, spells and features that exist only on one
 creature (the sheet's New item, New spell and New feature buttons) live in
@@ -1145,6 +1195,7 @@ edit it too:
 | `concentration` | `{ "spell", "name" }`: the spell it concentrates on. Ending it ends that spell's effects and summons.                                                                                                                                                                                                                                                                                                                                 |
 | `spent`         | `{ "slots": [1, 0], "uses": { "second-wind": 1 } }`: slots per level (index 0 = 1st), feature uses, and `hitDice` spent (one per level, of the class die; an owner spends one from the sheet's sidebar to heal die + Con; a long rest gives back half in 2014, all in 2024).                                                                                                                                                          |
 | `exhaustion`    | 1 to 6. 2014: disadvantage on checks, speed halved, disadvantage on attacks and saves, HP max halved, speed 0, dead (cumulative). 2024: −2 per level to d20 tests, −5 ft speed per level, dead at 6. A long rest takes one level away.                                                                                                                                                                                                |
+| `inspiration`   | `true` while it holds heroic inspiration: the GM gives it from the sheet, and the one playing it clicks it away when spent.                                                                                                                                                                                                                                                                                                           |
 | `summon`        | `{ "by", "spell", "concentration" }`: brought in by a spell; it vanishes when the spell ends.                                                                                                                                                                                                                                                                                                                                         |
 | `hotbar`        | How its player arranged the action bar: one entry per slot, `"spell:fire-bolt"`, `"attack:Longsword"`, `"feature:second-wind"`, `"item:potion-of-healing"`, `"scroll:fireball"` or `null`.                                                                                                                                                                                                                                            |
 | `animations`    | The animation its controller picked per attack or spell, by `"attack:<name>"` or `"spell:<id>"`: a library name (`"flame-blade"`, `"frost-orb"`, `"lightning"`, `"holy-light"`, `"none"`, see `system-dnd5e/src/animations.ts`) or a video of the assets or a pack (`"pack://jb2a/media/…_30ft_….webm"`). Videos named by range (`_30ft_`) or under a `Ranged` folder fly from the attacker to the target; others play on the target. |
@@ -1290,7 +1341,10 @@ copies alone. A paladin's Aura of Protection (+Charisma to saves) and Aura of
 Courage (`conditionImmunities: ["frightened"]`, which keeps a condition off the
 bearer while it lasts) work this way, reaching 30 ft at 18th level (`auraRadius`
 on the feature). In the sheet's Effects page, the effect form sets an aura's
-radius and whom it reaches.
+radius and whom it reaches. The map rings each aura round its bearer for
+everyone who sees it, out from the bearer's edge: gold for an aura on its
+allies, red on its foes (a lasting area like Spirit Guardians shows as its
+template instead).
 
 Players only receive the stats of tokens they control. For everyone else
 they're told how hurt the creature looks (unhurt, hurt, bloodied, down).
@@ -1393,7 +1447,10 @@ time at that moment; `speed` is game seconds per real second.
 In a fight, and in turn-based mode outside one (the GM's "Turn-based" button:
 the party takes turns), the clock holds still and each round adds 6 seconds;
 `round` is the fight round it last counted. A short rest lets 1 hour pass, a
-long rest 8. Everything that lasts has its end on the clock: effects
+long rest 8. Only one long rest in 24 hours does a creature good: it keeps
+`longRestAt`, the clock second its last one ended, and the GM's long rest
+leaves out anyone whose last one ended less than a day before this one would
+(and refuses, letting no time pass, when that is everyone). Everything that lasts has its end on the clock: effects
 (`endsAt`), concentration and summons (`concentration.endsAt`,
 `summon.endsAt`), templates, and lights with `lasts` (placed ones and the
 light a token carries: a lit torch burns for an hour, a lantern for 6). Gear

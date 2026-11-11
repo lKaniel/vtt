@@ -12,6 +12,7 @@ import {
   Volume2Icon,
 } from 'lucide-react';
 import { t } from '../i18n/index.ts';
+import { startDrag } from '../play/drops.ts';
 import { Directory, type DirItem } from './directory/Directory.tsx';
 import { Button } from './kit/button.tsx';
 import { Dialog, DialogContent, DialogTitle } from './kit/dialog.tsx';
@@ -62,6 +63,7 @@ function playlistItem(session: Session, doc: Doc, edit: (id: string) => void): D
     },
     open: () => edit(doc.id),
     openTwice: toggle,
+    drag: (e: React.DragEvent) => startDrag(e, { kind: 'playlist', id: doc.id }),
     title: t('music.clickHint'),
     menu: [
       {

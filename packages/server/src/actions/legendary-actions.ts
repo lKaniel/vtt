@@ -1,5 +1,6 @@
 import { type Player } from '@vtt/shared';
-import { currentTurn, legendaryProblem, spendLegendary } from '@vtt/system-dnd5e';
+import { currentTurn, legendaryProblem, type RollChoice, spendLegendary } from '@vtt/system-dnd5e';
+import { rollPickOf } from '../play/roll-picks.ts';
 import type { ClientMessage } from './client-messages.ts';
 import { Refusal, requireGm, type Fighter, type Table } from '../play/table.ts';
 
@@ -14,7 +15,7 @@ export type LegendaryMessage = Extract<ClientMessage, { t: 'legendary' | 'lair' 
 export type TurnMessage = LegendaryMessage | Extract<ClientMessage, { t: 'turnBased' }>;
 
 /** Makes a legendary action's attack outside the creature's turn. */
-export type LegendaryAttack = (attacker: Fighter, target: string, attack: string) => void;
+export type LegendaryAttack = (attacker: Fighter, target: string, attack: string, pick: RollChoice) => void;
 
 export function legendaryAction(table: Table, player: Player, msg: LegendaryMessage, attack: LegendaryAttack): void {
   requireGm(player);
@@ -26,7 +27,8 @@ export function legendaryAction(table: Table, player: Player, msg: LegendaryMess
   if (option.attack && !msg.target) throw new Refusal(`Target a creature for ${option.name} first`);
   table.store.setToken(spendLegendary(token, option.cost));
   table.note(`${token.name} takes a legendary action, ${option.name}${option.attack ? '' : said(option.description)}`);
-  if (option.attack) attack({ token: table.store.tokens.get(token.id)!, sheet }, msg.target!, option.attack);
+  if (option.attack)
+    attack({ token: table.store.tokens.get(token.id)!, sheet }, msg.target!, option.attack, rollPickOf(msg));
 }
 
 function lairAction(table: Table, msg: Extract<LegendaryMessage, { t: 'lair' }>): void {

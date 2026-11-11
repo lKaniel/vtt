@@ -157,6 +157,39 @@ describe('tokens on the map', () => {
   });
 });
 
+describe('creatures that hide', () => {
+  type Hider = Tok & { concealed?: number; notices?: number };
+  const sneaky = (t: Hider) => ({ ...perceiver(t), concealed: t.concealed, notices: () => t.notices ?? 10 });
+  const lit = {
+    world: { darkness: 0, vision: true, gridSize: 100 },
+    lights: [],
+    wallsBetween: () => [],
+    perceiver: sneaky,
+  };
+  const lookout = (notices: number): Hider => ({
+    ...token('lookout', { ownership: { default: 'limited', bo: 'owner' } }),
+    notices,
+  });
+  const lurker: Hider = { ...token('lurker', { x: 200 }), concealed: 15 };
+
+  it('drop out of the view of players whose creatures do not notice them', () => {
+    expect(tokensVisibleTo(bo, [lookout(12), lurker], lit)).toEqual(new Set(['lookout']));
+  });
+
+  it('show to a player one of whose creatures notices them', () => {
+    expect(tokensVisibleTo(bo, [lookout(15), lurker], lit)).toEqual(new Set(['lookout', 'lurker']));
+  });
+
+  it('stay in view of the party they belong to, and of the GM', () => {
+    const rogue: Hider = {
+      ...token('rogue', { x: 200, ownership: { default: 'limited', ana: 'owner' } }),
+      concealed: 25,
+    };
+    expect(tokensVisibleTo(bo, [lookout(10), rogue], lit)).toEqual(new Set(['lookout', 'rogue']));
+    expect(tokensVisibleTo(gm, [lookout(10), lurker], lit)).toEqual(new Set(['lookout', 'lurker']));
+  });
+});
+
 describe('what observers see', () => {
   it('lets a token observer see through its eyes', () => {
     const dark = { world: { darkness: 1, vision: true, gridSize: 100 }, lights: [], wallsBetween: () => [], perceiver };

@@ -51,13 +51,17 @@ describe('the new editor modes', () => {
     expect(snapDelta([140, 60], 'regions', 100, false)).toEqual([100, 100]);
   });
 
-  it('move tokens hex to hex on hexes, and the rest as on squares', () => {
+  it('move everything hex to hex on hexes, and wall ends to a hex corner', () => {
     const hex = latticeOf('hex-rows', 100);
     const [d0, d1] = [hex.centre([0, 0]), hex.centre([1, 1])];
     const moved = snapDelta([d1[0] - d0[0] + 12, d1[1] - d0[1] - 9], 'tokens', hex, false);
     expect(moved[0]).toBeCloseTo(d1[0] - d0[0]);
     expect(moved[1]).toBeCloseTo(d1[1] - d0[1]);
-    expect(snapDelta([140, 60], 'walls', hex, false)).toEqual([100, 100]);
+    expect(snapDelta([140, 60], 'walls', hex, false)).toEqual(snapDelta([140, 60], 'tokens', hex, false));
+    const corner = hex.corners([1, 1])[2]!;
+    const wall = { id: 'w', type: 'wall', rev: 0, a: [0, 0], b: [500, 0] };
+    const moved2 = dragHandle(wall, 'b', [corner[0] + 4, corner[1] - 3], { gridSize: 100, free: false, lattice: hex });
+    expect(moved2).toEqual({ b: [Math.round(corner[0]), Math.round(corner[1])] });
     expect(snapDelta([140, 60], 'tokens', hex, true)).toEqual([140, 60]);
   });
 });

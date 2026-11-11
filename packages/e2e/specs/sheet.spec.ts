@@ -49,6 +49,15 @@ test('the inventory lists gear by kind, opens a description in place and filters
   await expect(sheet.getByRole('listitem', { name: 'Chain Mail' })).toHaveCount(0);
 });
 
+test('a lit torch shows on the Effects tab with the game time it has left', async ({ page }) => {
+  await atTable(page, PLAYER_2);
+  await page.evaluate(() => vtt.send({ t: 'useItem', token: 'bram', item: 'torch' }));
+  const sheet = await openBram(page);
+  await sheet.getByRole('tab', { name: 'Effects' }).click();
+  const torch = sheet.getByRole('listitem', { name: 'Torch' });
+  await expect(torch).toContainText(/(1 h|59 min) left/);
+});
+
 test('the GM makes a skill proficient in edit mode', async ({ page }) => {
   await atTable(page, GM);
   const sheet = await openBram(page);
@@ -89,4 +98,15 @@ test('a player sets their own token’s picture, but not its size', async ({ pag
     .poll(() => page.evaluate(() => vtt.tokens().find((t) => t.name === 'Bram')?.img))
     .toBe('/assets/uploads/mine.png');
   expect(existsSync(join(server.gameDir, 'assets/uploads/mine.png'))).toBe(true);
+});
+
+test('the GM gives heroic inspiration and takes it back', async ({ page }) => {
+  await atTable(page, GM);
+  const sheet = await openBram(page);
+  const inspiration = sheet.getByRole('button', { name: 'Heroic inspiration' });
+  await expect(inspiration).toHaveAttribute('aria-pressed', 'false');
+  await inspiration.click();
+  await expect(inspiration).toHaveAttribute('aria-pressed', 'true');
+  await inspiration.click();
+  await expect(inspiration).toHaveAttribute('aria-pressed', 'false');
 });

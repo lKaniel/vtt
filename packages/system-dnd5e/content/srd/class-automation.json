@@ -70,6 +70,147 @@
               "manual": "Reaction when a creature within 5 ft damages you: make one melee weapon attack against it."
             }
           }
+        },
+        "path-of-the-earthbreaker": {
+          "features": {
+            "overwhelming-power": {
+              "action": "bonus",
+              "grantAttacks": 1,
+              "manual": "Your unarmed strikes deal 1d6 + Strength bludgeoning (1d8 at 6th, 1d10 at 10th, 1d12 at 14th): roll that die by hand. Use this as a bonus action after an unarmed strike for one more against the same creature. Nonmagical melee weapons you hit with break; thrown weapons reach twice as far."
+            },
+            "gravitational-rage": {
+              "action": "free",
+              "dcFrom": ["str"],
+              "spell": {
+                "targets": 1,
+                "range": 5,
+                "save": {
+                  "ability": "str"
+                },
+                "rounds": 1,
+                "effect": {
+                  "name": "Buried",
+                  "immobile": true
+                }
+              },
+              "manual": "Once per turn after an unarmed hit. Burying Hands is the Strength save here (prone too if it fails by 5 or more). Bulldozing Punch pushes it 10 ft away or up instead: move it by hand."
+            },
+            "ruination": {
+              "manual": "Unarmed strikes count as magical. Hitting a spell's wall or cage: a Strength check against 10 + its level ends the spell."
+            },
+            "imperious-gravity": {
+              "action": "bonus",
+              "dcFrom": ["str"],
+              "spell": {
+                "area": {
+                  "shape": "line",
+                  "size": 10,
+                  "width": 5
+                },
+                "save": {
+                  "ability": "dex"
+                },
+                "damage": [
+                  {
+                    "dice": "1d4",
+                    "type": "bludgeoning"
+                  }
+                ],
+                "rounds": 1,
+                "effect": {
+                  "name": "Off balance",
+                  "saveDisadvantageFor": ["str"]
+                }
+              },
+              "spellAt": [
+                [
+                  14,
+                  {
+                    "area": {
+                      "shape": "line",
+                      "size": 20,
+                      "width": 5
+                    }
+                  }
+                ]
+              ],
+              "manual": "While raging. This is Stomp. Attractive Field (a 15 ft cone, Strength save or pulled 10 ft to you) and Repulsive Field (the next melee hit bursts it: Strength saves within 10 ft or pushed 10 ft) are moved by hand. Ranges and distances double at 14th level."
+            },
+            "unyielding": {
+              "manual": "Unarmed strikes deal double damage to structures; you ignore difficult terrain; add your Constitution modifier to Strength and Intimidation checks."
+            },
+            "world-breaker": {
+              "action": "free",
+              "usesAbility": "str",
+              "recharge": "short",
+              "effect": {
+                "name": "World Breaker",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "3d12",
+                    "type": "bludgeoning"
+                  }
+                ]
+              },
+              "manual": "Use it before a melee attack while raging: the hit deals 3d12 more. Push the target 30 ft and break a 90 ft cone as earthquake until your next turn by hand."
+            }
+          }
+        },
+        "path-of-the-lightning-vessel": {
+          "features": {
+            "galvanic-heart": {
+              "passive": {
+                "name": "Galvanic Heart",
+                "resistances": ["lightning"]
+              },
+              "manual": "While raging, a bonus action: Electrified Chains (next hit +2× Con lightning and ensnared), Fulgurant Strike (after a melee hit, 2× Con lightning to it, Dex save within 5 ft) or Lightning Step (half your speed, 2× Con lightning to a creature you end beside). Roll the damage by hand."
+            },
+            "roaring-crash": {
+              "action": "free",
+              "dcFrom": ["con"],
+              "spell": {
+                "range": 30,
+                "area": {
+                  "shape": "sphere",
+                  "size": 10
+                },
+                "save": {
+                  "ability": "dex",
+                  "onSave": "half"
+                },
+                "damage": [
+                  {
+                    "dice": "{die}d8",
+                    "type": "lightning"
+                  }
+                ]
+              },
+              "manual": "As you enter your rage. The damage is as many d8s as your Constitution modifier: set it on the sheet if it isn't 2. Move your token to the landing point.",
+              "die": [[6, 2]],
+              "spellAt": [
+                [
+                  10,
+                  {
+                    "range": 60
+                  }
+                ],
+                [
+                  14,
+                  {
+                    "range": 90
+                  }
+                ]
+              ]
+            },
+            "lightning-reflexes": {
+              "manual": "Add your Constitution modifier (at least 1) to Dexterity checks. While raging, Lightning Step once a turn costs no bonus action."
+            },
+            "electric-beast": {
+              "manual": "Galvanic Heart damage becomes 3× Constitution modifier; chains hold at 5 ft and stop reactions, Fulgurant Strike reaches 10 ft and spares Con-mod creatures, Lightning Step moves your full speed or teleports."
+            }
+          }
         }
       }
     },
@@ -259,6 +400,292 @@
               "manual": "Spend a Bardic Inspiration die on your own ability check (2024: or attack roll, after it fails; the die isn't lost if it still fails). Add the die by hand."
             }
           }
+        },
+        "college-of-the-apocalypse": {
+          "features": {
+            "endless-symphony": {
+              "manual": "Bardic Inspiration has one more use (two at 6th, three at 14th) and its die stays a d6 until 10th (d8), then d10 at 15th: set the uses and die by hand."
+            },
+            "eldritch-choir": {
+              "manual": "Each melody spends a Bardic Inspiration use and then can't be used again until a short or long rest: mark it by hand. Swapping melodies after a long rest takes a DC 17 Charisma save each (failure: short-term madness)."
+            },
+            "ballad-of-the-nameless-city": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "spell": {
+                "area": {
+                  "shape": "emanation",
+                  "size": 30
+                },
+                "save": {
+                  "ability": "str"
+                },
+                "rounds": 1,
+                "effect": {
+                  "name": "Ballad of the Nameless City",
+                  "conditions": ["prone"]
+                }
+              },
+              "manual": "Push each creature that fails 10 ft (20 at 6th, 30 at 14th) by hand."
+            },
+            "concord-of-the-depths": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "spell": {
+                "targets": 1,
+                "range": 60,
+                "save": {
+                  "ability": "wis"
+                },
+                "rounds": 10,
+                "effect": {
+                  "name": "Concord of the Depths",
+                  "conditions": ["incapacitated"],
+                  "immobile": true,
+                  "endsOnDamage": true
+                }
+              },
+              "spellAt": [
+                [
+                  6,
+                  {
+                    "targets": 2
+                  }
+                ],
+                [
+                  14,
+                  {
+                    "targets": 3
+                  }
+                ]
+              ]
+            },
+            "epode-for-whom-the-bell-tolls": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "spell": {
+                "targets": 5,
+                "range": 30,
+                "rounds": 2,
+                "effect": {
+                  "name": "For Whom the Bell Tolls",
+                  "attackBonus": "2",
+                  "weaponBonus": 2
+                }
+              },
+              "manual": "The bonus is half your Charisma modifier (rounded up) to attacks and damage, your modifier to damage from 6th, to both from 14th: the effect gives +2, change it on the creatures if yours differs."
+            },
+            "transcendence-of-flesh": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "spell": {
+                "targets": 6,
+                "range": 30,
+                "rounds": 1,
+                "effect": {
+                  "name": "Transcendence of Flesh",
+                  "saveAdvantage": ["str"],
+                  "checkAdvantageFor": ["str"]
+                }
+              },
+              "manual": "Give each of them half your bard level + Charisma modifier temporary hit points by hand."
+            },
+            "aria-of-the-reviled-stalker": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "spell": {
+                "targets": 1,
+                "range": 30,
+                "rounds": 600,
+                "effect": {
+                  "name": "Reviled Stalker",
+                  "skillBonus": {
+                    "stealth": "10"
+                  }
+                }
+              },
+              "manual": "Its once-only incorporeal move is run by hand."
+            },
+            "ode-to-subjugation": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "spell": {
+                "targets": 8,
+                "range": 30,
+                "save": {
+                  "ability": "dex"
+                },
+                "rounds": 10,
+                "effect": {
+                  "name": "Ode to Subjugation",
+                  "conditions": ["restrained"],
+                  "repeatSave": true
+                }
+              },
+              "manual": "From 14th level a restrained creature takes 3d6 necrotic at the start of its turns: roll it by hand."
+            },
+            "euphony-of-self-destruction": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "spell": {
+                "targets": 1,
+                "range": 60,
+                "save": {
+                  "ability": "cha"
+                },
+                "rounds": 1,
+                "effect": {
+                  "name": "Drawn through the portal",
+                  "conditions": ["incapacitated"]
+                }
+              },
+              "manual": "While gone it is out of play: hide the token. When it returns, a non-aberration takes 5d12 psychic and saves on Wisdom against a long-term madness."
+            },
+            "requiem-of-chaos": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "spell": {
+                "targets": 2,
+                "range": 60,
+                "rounds": 1,
+                "effect": {
+                  "name": "Requiem of Chaos",
+                  "saveDisadvantageFor": ["wis"],
+                  "checkDisadvantageFor": ["wis"]
+                }
+              },
+              "spellAt": [
+                [
+                  14,
+                  {
+                    "targets": 3
+                  }
+                ]
+              ]
+            },
+            "song-of-abject-birth": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "die": [
+                [1, 1],
+                [2, 2],
+                [3, 3],
+                [4, 4],
+                [5, 5],
+                [6, 6],
+                [7, 7],
+                [8, 8],
+                [9, 9],
+                [10, 10],
+                [11, 11],
+                [12, 12],
+                [13, 13],
+                [14, 14],
+                [15, 15],
+                [16, 16],
+                [17, 17],
+                [18, 18],
+                [19, 19],
+                [20, 20]
+              ],
+              "spell": {
+                "area": {
+                  "shape": "cone",
+                  "size": 30
+                },
+                "save": {
+                  "ability": "dex",
+                  "onSave": "half"
+                },
+                "damage": [
+                  {
+                    "dice": "{die}d4",
+                    "type": "necrotic"
+                  }
+                ]
+              },
+              "spellAt": [
+                [
+                  14,
+                  {
+                    "area": {
+                      "shape": "cone",
+                      "size": 60
+                    }
+                  }
+                ]
+              ]
+            },
+            "assonance-of-dreams": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "manual": "A portal to a place you know well within a mile, for 1 minute: move the tokens by hand."
+            },
+            "nightmare-of-the-abyss": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "spell": {
+                "targets": 8,
+                "range": 60,
+                "save": {
+                  "ability": "wis"
+                },
+                "rounds": 1,
+                "effect": {
+                  "name": "Nightmare of the Abyss",
+                  "conditions": ["stunned"]
+                }
+              }
+            },
+            "whispers-of-the-flesh-defiler": {
+              "usesFrom": "bardic-inspiration",
+              "action": "action",
+              "spell": {
+                "range": 60,
+                "area": {
+                  "shape": "sphere",
+                  "size": 30
+                },
+                "save": {
+                  "ability": "con",
+                  "onSave": "half"
+                },
+                "damage": [
+                  {
+                    "dice": "5d6",
+                    "type": "necrotic"
+                  }
+                ],
+                "rounds": 10,
+                "effect": {
+                  "name": "Poisoned",
+                  "conditions": ["poisoned"],
+                  "repeatSave": true
+                }
+              },
+              "manual": "This is the first bite. For the minute it lasts, creatures entering or starting there save again: run it by hand, and move it 30 ft as a bonus action."
+            },
+            "knowledge-from-beyond-the-stars": {
+              "manual": "You know Deep Speech. Add a roll of your Bardic Inspiration die to Intelligence checks about the cosmos or the eldritch."
+            },
+            "devouring-maw": {
+              "manual": "A creature holding your inspiration can spend it as a reaction when attacked: + the roll to AC until its next turn; if the attack misses it may teleport 30 ft instead of keeping the bonus."
+            },
+            "song-of-the-apocalypse": {
+              "manual": "Divine order: transcend isn't in the SRD: add it as your own spell. Once per long rest without a slot; damage doesn't break concentration on it."
+            }
+          },
+          "choices": [
+            {
+              "id": "eldritch-melody",
+              "name": "Eldritch Melodies",
+              "count": [
+                [3, 2],
+                [6, 3],
+                [14, 4]
+              ]
+            }
+          ]
         }
       }
     },
@@ -365,16 +792,50 @@
               "manual": "Healing dice of your spells count as their highest number: set the hit points by hand instead of using the roll."
             }
           }
+        },
+        "guardian-domain": {
+          "features": {
+            "guardian-domain-spells": {
+              "grantsSpells": [
+                [1, "protection-from-evil-and-good"],
+                [1, "sanctuary"],
+                [3, "aid"],
+                [3, "warding-bond"],
+                [5, "protection-from-energy"],
+                [5, "slow"],
+                [7, "guardian-of-faith"],
+                [7, "resilient-sphere"],
+                [9, "antilife-shell"],
+                [9, "wall-of-force"]
+              ]
+            },
+            "bonus-proficiencies": {
+              "manual": "You can wear heavy armor."
+            },
+            "protective-magic": {
+              "manual": "Your healing spells also give one creature they heal half as many temporary hit points: add them by hand."
+            },
+            "channel-divinity-guardian-angel": {
+              "usesFrom": "channel-divinity",
+              "action": "action",
+              "manual": "Place the Guardian Angel by hand as a summon (an actor with its stat block, your proficiency bonus and level filled in)."
+            },
+            "angelic-protection": {
+              "manual": "The angel casts warding bond on arrival: cast it from the angel or apply it by hand."
+            },
+            "divine-strike": {
+              "manual": "Once on each of your turns a weapon hit deals 1d8 more radiant damage (2d8 at 14th level); your angel's too. Roll it by hand."
+            },
+            "aura-of-defense": {
+              "uses": [[17, 1]],
+              "recharge": "long",
+              "action": "free",
+              "manual": "The angel's warding bond holds Wisdom-modifier allies, and it gets 5 temporary hit points for each."
+            }
+          }
         }
       },
-      "features": {
-        "divine-intervention": {
-          "action": "action",
-          "uses": [[10, 1]],
-          "recharge": "long",
-          "manual": "2014: roll percentile dice; at or under your cleric level your deity steps in (the GM decides how), and then it can't be used for 7 days. 2024: cast any cleric spell of 5th level or lower with no slot and no costly materials: cast it with no slot."
-        }
-      }
+      "features": {}
     },
     "2014": {
       "features": {
@@ -408,6 +869,12 @@
         },
         "destroy-undead": {
           "manual": "Undead of CR 1/2 or lower that fail the Turn Undead save are destroyed. The GM removes them."
+        },
+        "divine-intervention": {
+          "action": "action",
+          "uses": [[10, 1]],
+          "recharge": "long",
+          "manual": "Roll percentile dice; at or under your cleric level your deity steps in (the GM decides how), and then it can't be used for 7 days."
         }
       },
       "subclasses": {
@@ -473,6 +940,22 @@
         },
         "epic-boon": {
           "manual": "Pick an Epic Boon feat (or another feat you qualify for) with the GM and add what it gives on the sheet."
+        },
+        "divine-intervention": {
+          "action": "action",
+          "uses": [[10, 1]],
+          "recharge": "long",
+          "spellPicks": {
+            "from": "class",
+            "class": "cleric",
+            "atCast": true,
+            "noReactions": true,
+            "choices": [
+              {
+                "maxLevel": 5
+              }
+            ]
+          }
         }
       },
       "proficiencies": {
@@ -510,6 +993,71 @@
               "manual": "2014: a beast or plant that attacks you makes a Wisdom save against your spell DC or must pick another target. 2024: a Magic action and a use of Wild Shape raise a 15-ft cube of spectral trees for 1 minute: you and allies in it have half cover and your Nature's Ward resistance."
             }
           }
+        },
+        "circle-of-symbiosis": {
+          "features": {
+            "circle-of-symbiosis-spells": {
+              "grantsSpells": [
+                [2, "shillelagh"],
+                [3, "barkskin"],
+                [5, "plant-growth"],
+                [7, "stoneskin"],
+                [9, "tree-stride"]
+              ],
+              "manual": "Skeletal tail, osseous cage, maiden of bones and forest of dread are the book's own spells: add them as your own spells."
+            },
+            "wickerbone-behemoth": {
+              "usesFrom": "wild-shape",
+              "action": "action",
+              "effect": {
+                "name": "Wickerbone Behemoth",
+                "rounds": 100,
+                "minAc": 16
+              },
+              "manual": "Your arms are shillelagh clubs. Splinters (1d4 piercing, 2d4 at 10th, to creatures beside you when you are hit) and the regeneration at the start of your turns are rolled by hand."
+            },
+            "grafted-powers": {
+              "manual": "Pick one of Bear Back, Deer Head or Goat Hooves."
+            },
+            "bear-back": {
+              "manual": "One size larger for carrying and grappling; add your Wisdom modifier to Strength checks."
+            },
+            "deer-head": {
+              "passive": {
+                "name": "Deer Head",
+                "checkAdvantageFor": ["perception"]
+              }
+            },
+            "goat-hooves": {
+              "passive": {
+                "name": "Goat Hooves",
+                "speeds": {
+                  "climb": "walk"
+                }
+              },
+              "manual": "Advantage on Strength and Dexterity saves against being knocked prone."
+            },
+            "extra-attack": {
+              "manual": "Two attacks per Attack action (the GM gives the second back); one can be a cantrip."
+            },
+            "natures-wrath": {
+              "passive": {
+                "name": "Nature's Wrath",
+                "minAc": 16
+              },
+              "manual": "As a behemoth you are Large, and your bludgeoning, piercing or slashing damage gives you 1d8 + Wisdom temporary hit points."
+            },
+            "briarheart": {
+              "manual": "Add your Wisdom modifier to melee weapon damage. Once per long rest, dropping to 0 hit points makes two willing allies within 30 ft behemoths for a minute."
+            }
+          },
+          "choices": [
+            {
+              "id": "grafted-power",
+              "name": "Grafted Powers",
+              "count": [[2, 1]]
+            }
+          ]
         }
       }
     },
@@ -650,7 +1198,16 @@
               "action": "free",
               "uses": [[6, 1]],
               "recharge": "long",
-              "manual": "Once per long rest cast one prepared Circle spell with no slot. On a short rest, recover spell slots totaling up to half your druid level (rounded up), none 6th or higher: the GM restores them."
+              "manual": "Casts a prepared spell of 5th level or lower (meant: a Circle spell) once per long rest with no slot. On a short rest, recover spell slots totaling up to half your druid level (rounded up), none 6th or higher: the GM restores them.",
+              "spellPicks": {
+                "from": "known",
+                "atCast": true,
+                "choices": [
+                  {
+                    "maxLevel": 5
+                  }
+                ]
+              }
             },
             "natures-ward": {
               "passive": {
@@ -766,6 +1323,319 @@
               "manual": "At the start of each of your turns with half your hit points or fewer, but at least 1, you regain 5 + your Constitution modifier hit points (2024: you also have advantage on death saves, and an 18 to 20 on one counts as a 20). Heal from the sheet."
             }
           }
+        },
+        "blood-archer": {
+          "features": {
+            "blood-shot": {
+              "usesAbility": "con",
+              "usesBonus": 1,
+              "recharge": "short",
+              "manual": "Use an option before the arrow's damage: it adds to your next hit. Its save, if it has one, is rolled by hand against 8 + proficiency + Constitution."
+            },
+            "bewitching-arrow": {
+              "usesFrom": "blood-shot",
+              "action": "free",
+              "effect": {
+                "name": "Bewitching Arrow",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "2d6",
+                    "type": "psychic"
+                  }
+                ]
+              },
+              "effectAt": [
+                [
+                  18,
+                  {
+                    "name": "Bewitching Arrow",
+                    "rounds": 1,
+                    "once": true,
+                    "hitDamage": [
+                      {
+                        "dice": "4d6",
+                        "type": "psychic"
+                      }
+                    ]
+                  }
+                ]
+              ],
+              "manual": "On a failed Wisdom save it treats an ally of yours choosing as its enemy until your next turn."
+            },
+            "bloodboil-arrow": {
+              "usesFrom": "blood-shot",
+              "action": "free",
+              "effect": {
+                "name": "Bloodboil Arrow",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "2d6",
+                    "type": "fire"
+                  }
+                ]
+              },
+              "effectAt": [
+                [
+                  18,
+                  {
+                    "name": "Bloodboil Arrow",
+                    "rounds": 1,
+                    "once": true,
+                    "hitDamage": [
+                      {
+                        "dice": "4d6",
+                        "type": "fire"
+                      }
+                    ]
+                  }
+                ]
+              ],
+              "manual": "Creatures within 10 ft of the target take the same fire damage, ignoring resistance: roll it by hand."
+            },
+            "bloodshard-arrow": {
+              "usesFrom": "blood-shot",
+              "action": "free",
+              "manual": "A 30 ft line, Dexterity save: the arrow's damage + 1d6 piercing (2d6 at 18th), half on a save. Roll it by hand."
+            },
+            "constraining-arrow": {
+              "usesFrom": "blood-shot",
+              "action": "free",
+              "effect": {
+                "name": "Constraining Arrow",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "2d6",
+                    "type": "acid"
+                  }
+                ]
+              },
+              "effectAt": [
+                [
+                  18,
+                  {
+                    "name": "Constraining Arrow",
+                    "rounds": 1,
+                    "once": true,
+                    "hitDamage": [
+                      {
+                        "dice": "4d6",
+                        "type": "acid"
+                      }
+                    ]
+                  }
+                ]
+              ],
+              "manual": "Its speed drops 10 ft and moving hurts it again (2d6 acid, 4d6 at 18th) for a minute: by hand."
+            },
+            "exiling-arrow": {
+              "usesFrom": "blood-shot",
+              "action": "free",
+              "manual": "Charisma save or banished (incapacitated, speed 0) until the end of its next turn; +2d6 radiant from 18th. Apply it by hand."
+            },
+            "hunting-arrow": {
+              "usesFrom": "blood-shot",
+              "action": "free",
+              "manual": "Dexterity save instead of an attack roll: the arrow's damage + 1d6 piercing (2d6 at 18th). Roll it by hand."
+            },
+            "shadowblood-arrow": {
+              "usesFrom": "blood-shot",
+              "action": "free",
+              "effect": {
+                "name": "Shadowblood Arrow",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "2d6",
+                    "type": "necrotic"
+                  }
+                ]
+              },
+              "effectAt": [
+                [
+                  18,
+                  {
+                    "name": "Shadowblood Arrow",
+                    "rounds": 1,
+                    "once": true,
+                    "hitDamage": [
+                      {
+                        "dice": "4d6",
+                        "type": "necrotic"
+                      }
+                    ]
+                  }
+                ]
+              ],
+              "manual": "Magical darkness 10 ft round the target until your next turn: draw it by hand."
+            },
+            "thunderblood-arrow": {
+              "usesFrom": "blood-shot",
+              "action": "free",
+              "effect": {
+                "name": "Thunderblood Arrow",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "2d6",
+                    "type": "thunder"
+                  }
+                ]
+              },
+              "effectAt": [
+                [
+                  18,
+                  {
+                    "name": "Thunderblood Arrow",
+                    "rounds": 1,
+                    "once": true,
+                    "hitDamage": [
+                      {
+                        "dice": "4d6",
+                        "type": "thunder"
+                      }
+                    ]
+                  }
+                ]
+              ],
+              "manual": "Push it 15 ft; Strength save or prone."
+            },
+            "withering-arrow": {
+              "usesFrom": "blood-shot",
+              "action": "free",
+              "effect": {
+                "name": "Withering Arrow",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "2d6",
+                    "type": "necrotic"
+                  }
+                ]
+              },
+              "effectAt": [
+                [
+                  18,
+                  {
+                    "name": "Withering Arrow",
+                    "rounds": 1,
+                    "once": true,
+                    "hitDamage": [
+                      {
+                        "dice": "4d6",
+                        "type": "necrotic"
+                      }
+                    ]
+                  }
+                ]
+              ],
+              "manual": "Constitution save or its weapon damage is halved until your next turn."
+            },
+            "blood-archer-anatomy": {
+              "passive": {
+                "name": "Blood Archer Anatomy",
+                "resistances": ["poison"],
+                "saveAdvantageVs": ["poisoned"]
+              },
+              "manual": "Immune to disease; advantage to track a creature you have wounded."
+            },
+            "blood-arrows": {
+              "manual": "Your arrows count as magical; add your Constitution modifier to a Blood Shot's damage."
+            },
+            "blood-recall": {
+              "manual": "Bonus action after a miss with a blood arrow: attack the same target again."
+            },
+            "blood-of-creation": {
+              "action": "action",
+              "manual": "Take 1d10 + Constitution necrotic damage and get 1d4 Blood Shot uses back: change both on the sheet."
+            }
+          },
+          "choices": [
+            {
+              "id": "blood-shot",
+              "name": "Blood Shot Options",
+              "count": [
+                [3, 3],
+                [7, 4],
+                [10, 5],
+                [15, 6],
+                [18, 7]
+              ]
+            }
+          ]
+        },
+        "living-nightmare": {
+          "features": {
+            "awakened-mutation": {
+              "unarmoredAc": "con",
+              "manual": "You can no longer use shields or heavy armor. Unarmored AC is 11 + Dexterity + Constitution: the sheet shows 10 + both, add 1 by hand."
+            },
+            "eldritch-weaponry": {
+              "action": "bonus",
+              "manual": "Add the forms as attacks on the sheet (Stinger 1d8 piercing, Hammer Arm 2d6 bludgeoning, Tendinous Lash 1d4 slashing reach 15 ft). Lash prone saves and Sinister Aegis (+2 AC reaction) by hand."
+            },
+            "macabre-appetite": {
+              "action": "action",
+              "manual": "Regain hit points equal to the corpse's CR, and you may wear its look for a day."
+            },
+            "ascended-being": {
+              "action": "bonus",
+              "usesAbility": "con",
+              "recharge": "long",
+              "effect": {
+                "name": "Eldritch Wings",
+                "rounds": 10,
+                "speeds": {
+                  "fly": 30
+                }
+              }
+            },
+            "nightmarish-weaponry": {
+              "action": "attack",
+              "usesAbility": "con",
+              "recharge": "long",
+              "dcFrom": ["con"],
+              "spell": {
+                "area": {
+                  "shape": "emanation",
+                  "size": 20
+                },
+                "save": {
+                  "ability": "dex"
+                },
+                "damage": [
+                  {
+                    "dice": "4d6+{mod}",
+                    "type": "bludgeoning"
+                  }
+                ],
+                "rounds": 1,
+                "effect": {
+                  "name": "Quake",
+                  "conditions": ["prone"]
+                }
+              },
+              "manual": "This is the Hammer Arm quake (2 hits: 4d6 + twice your Strength; the sheet adds it once). The Lash sweep (15 ft, Strength save, 1 hit, pulled 10 ft and restrained) and Stinger cone (30 ft, Dexterity save, 3 hits: 3d8 + three times Strength) are run by hand."
+            },
+            "eldritch-contamination": {
+              "uses": [[18, 2]],
+              "recharge": "long",
+              "freeCasts": [
+                {
+                  "spell": "dominate-monster"
+                }
+              ],
+              "manual": "The save DC is 8 + proficiency + Constitution."
+            }
+          }
         }
       }
     },
@@ -877,6 +1747,76 @@
           "passive": {
             "name": "Evasion",
             "evasion": true
+          }
+        }
+      },
+      "subclasses": {
+        "way-of-the-fire-dancer": {
+          "features": {
+            "blazing-performer": {
+              "passive": {
+                "name": "Blazing Performer",
+                "resistances": ["fire"]
+              },
+              "manual": "Pick Performance or Acrobatics: proficient, with expertise."
+            },
+            "dance-of-fire": {
+              "action": "free",
+              "effect": {
+                "name": "Dance of Fire",
+                "rounds": 1,
+                "hitDamage": [
+                  {
+                    "dice": "2",
+                    "type": "fire"
+                  }
+                ],
+                "ac": 1
+              },
+              "manual": "Turn it on when you spend ki: +2 fire on your hits and +1 AC here; with another Wisdom modifier than +4, change the numbers on the effect. A melee miss against you lets you strike back as a reaction."
+            },
+            "scorching-vortex": {
+              "action": "free",
+              "usesAbility": "wis",
+              "usesBonus": 1,
+              "recharge": "long",
+              "spell": {
+                "targets": 1,
+                "range": 5,
+                "save": {
+                  "ability": "dex",
+                  "onSave": "half"
+                },
+                "damage": [
+                  {
+                    "dice": "2d6",
+                    "type": "fire"
+                  }
+                ],
+                "rounds": 1,
+                "effect": {
+                  "name": "Fire vortex",
+                  "immobile": true
+                }
+              },
+              "manual": "After circling it with Step of the Wind. Leaving the vortex takes a Wisdom save (failure: 1d6 fire and charmed): by hand."
+            },
+            "flames-of-redemption": {
+              "manual": "Your fire ignores fire resistance; you may make it radiant instead."
+            },
+            "purifying-flames": {
+              "action": "action",
+              "usesFrom": "ki",
+              "spell": {
+                "targets": 1,
+                "range": 5,
+                "cures": ["poisoned", "charmed"]
+              },
+              "manual": "It costs 2 ki: spend the second point on the sheet. Short-term madness is ended by hand."
+            },
+            "one-with-the-fire": {
+              "manual": "Fire from your monk weapons sets targets alight (Wisdom-modifier fire each turn until doused). During Dance of Fire add fire immunity and bludgeoning, piercing and slashing resistance to its effect."
+            }
           }
         }
       }
@@ -1295,6 +2235,66 @@
               }
             }
           }
+        },
+        "oath-of-the-eldritch-hunt": {
+          "features": {
+            "oath-spells": {
+              "grantsSpells": [
+                [3, "faerie-fire"],
+                [5, "moonbeam"],
+                [5, "hold-person"],
+                [13, "black-tentacles"],
+                [17, "contact-other-plane"],
+                [17, "hold-monster"]
+              ],
+              "manual": "Spectral slash, displacing maw, spectral fury and maiden of bones are the book's own spells: add them as your own spells."
+            },
+            "hunt-the-prey": {
+              "usesFrom": "channel-divinity",
+              "action": "bonus",
+              "spell": {
+                "targets": 1,
+                "range": 60,
+                "rounds": 10,
+                "effect": {
+                  "name": "Hunted"
+                }
+              },
+              "manual": "Teleport beside it (30 ft) now and as a bonus action on later turns: move your token by hand."
+            },
+            "stolen-eldritch-gift": {
+              "usesFrom": "channel-divinity",
+              "action": "bonus",
+              "effect": {
+                "name": "Stolen Eldritch Gift",
+                "rounds": 100
+              },
+              "manual": "Add your Charisma modifier to Athletics, Acrobatics and Perception checks while it lasts."
+            },
+            "sharpened-senses": {
+              "manual": "Blindsight 10 ft (30 ft at 18th): set it on the token's senses."
+            },
+            "find-weakness": {
+              "manual": "The GM tells you its resistances, immunities and vulnerabilities when you hurt it. Hunt the Prey's teleport ends in one weapon attack."
+            },
+            "perfect-hunter": {
+              "action": "bonus",
+              "uses": [[20, 1]],
+              "recharge": "long",
+              "effect": {
+                "name": "Perfect Hunter",
+                "rounds": 10,
+                "conditions": ["invisible"],
+                "conditionImmunities": ["grappled", "restrained", "paralyzed"],
+                "hitDamage": [
+                  {
+                    "dice": "1d8",
+                    "type": "necrotic"
+                  }
+                ]
+              }
+            }
+          }
         }
       }
     },
@@ -1546,6 +2546,347 @@
               "manual": "When a creature hits you, you have +4 AC against its other attacks this turn (2024: its other attacks have disadvantage). The GM counts it."
             }
           }
+        },
+        "lunar-warden": {
+          "features": {
+            "astral-affinity": {
+              "grantsSpells": [[3, "light"]],
+              "manual": "Darkvision 60 ft (or 30 ft more): set it on the token. Advantage on saves against an Eldritch Moon's own effects."
+            },
+            "moon-conduit": {
+              "usesAbility": "wis",
+              "recharge": "long",
+              "shortRestFrom": 7,
+              "manual": "When the looming moon is the Conduit's own, apply its Lunar Alignment by hand."
+            },
+            "blood-moon-of-rebirth": {
+              "usesFrom": "moon-conduit",
+              "action": "action",
+              "spell": {
+                "targets": 4,
+                "range": 30,
+                "heal": "{die}"
+              },
+              "die": [
+                [1, 1],
+                [2, 2],
+                [3, 3],
+                [4, 4],
+                [5, 5],
+                [6, 6],
+                [7, 7],
+                [8, 8],
+                [9, 9],
+                [10, 10],
+                [11, 11],
+                [12, 12],
+                [13, 13],
+                [14, 14],
+                [15, 15],
+                [16, 16],
+                [17, 17],
+                [18, 18],
+                [19, 19],
+                [20, 20]
+              ],
+              "manual": "You and up to your Wisdom modifier creatures heal your ranger level."
+            },
+            "howling-moon": {
+              "usesFrom": "moon-conduit",
+              "action": "bonus",
+              "effect": {
+                "name": "Howling Moon",
+                "rounds": 10
+              },
+              "manual": "Claws for a minute: 1d6 + Wisdom slashing unarmed strikes; add the attack on the sheet."
+            },
+            "glowering-moon": {
+              "usesFrom": "moon-conduit",
+              "freeCasts": [
+                {
+                  "spell": "bane",
+                  "level": 2
+                }
+              ]
+            },
+            "shattered-moon": {
+              "usesFrom": "moon-conduit",
+              "action": "free",
+              "manual": "Reaction: advantage on a save against magic for you or a creature within 30 ft."
+            },
+            "scorching-moon": {
+              "usesFrom": "moon-conduit",
+              "action": "free",
+              "spell": {
+                "targets": 1,
+                "range": 5,
+                "save": {
+                  "ability": "str"
+                },
+                "damage": [
+                  {
+                    "dice": "{die}d4",
+                    "type": "fire"
+                  }
+                ],
+                "rounds": 1,
+                "effect": {
+                  "name": "Knocked down",
+                  "conditions": ["prone"]
+                }
+              },
+              "die": [[3, 3]],
+              "manual": "After a 20 ft charge and a melee hit. The dice are as many as your Wisdom modifier (3 here)."
+            },
+            "vacuous-moon": {
+              "usesFrom": "moon-conduit",
+              "action": "free",
+              "manual": "Reaction after a ranged hit: teleport within 10 ft of the attacker (60 ft at most away). Move your token by hand."
+            },
+            "lunar-guidance": {
+              "passive": {
+                "name": "Lunar Guidance",
+                "resistances": ["radiant"]
+              },
+              "manual": "After a Conduit, pick Advantage for one roll within the minute."
+            },
+            "glacial-moon": {
+              "usesFrom": "moon-conduit",
+              "action": "action",
+              "spell": {
+                "targets": 0,
+                "tempHp": "9"
+              },
+              "manual": "1 + twice your Wisdom modifier temporary hit points (9 here); melee attackers who hit you take that much cold damage: by hand."
+            },
+            "slumbering-moon": {
+              "usesFrom": "moon-conduit",
+              "freeCasts": [
+                {
+                  "spell": "misty-step",
+                  "self": true
+                },
+                {
+                  "spell": "dimension-door",
+                  "self": true
+                }
+              ],
+              "manual": "Dimension door only under its Lunar Alignment."
+            },
+            "sanguine-eclipse": {
+              "usesFrom": "moon-conduit",
+              "action": "action",
+              "spell": {
+                "targets": 1,
+                "range": 30,
+                "save": {
+                  "ability": "int"
+                },
+                "rounds": 1,
+                "effect": {
+                  "name": "Mortal enemy"
+                }
+              },
+              "manual": "It attacks the creature you name until your next turn: the GM runs it."
+            },
+            "krakenlight": {
+              "usesFrom": "moon-conduit",
+              "action": "action",
+              "spell": {
+                "area": {
+                  "shape": "emanation",
+                  "size": 30
+                },
+                "save": {
+                  "ability": "wis"
+                },
+                "rounds": 10,
+                "effect": {
+                  "name": "Lured",
+                  "conditions": ["charmed", "incapacitated"],
+                  "endsOnDamage": true
+                }
+              }
+            },
+            "creeping-tarlight": {
+              "usesFrom": "moon-conduit",
+              "action": "action",
+              "spell": {
+                "targets": 3,
+                "range": 30,
+                "save": {
+                  "ability": "dex"
+                },
+                "rounds": 10,
+                "concentration": true,
+                "effect": {
+                  "name": "Tarred",
+                  "speedTimes": 0.5,
+                  "ac": -2,
+                  "repeatSave": true
+                }
+              },
+              "manual": "The -2 to Dexterity saves and disadvantage in darkness are by hand."
+            },
+            "celestial-tide": {
+              "uses": [[15, 1]],
+              "recharge": "long",
+              "freeCasts": [
+                {
+                  "spell": "reverse-gravity"
+                }
+              ],
+              "manual": "When the spell ends, reset your Moon Conduit uses."
+            }
+          }
+        },
+        "torturer-conclave": {
+          "features": {
+            "tools-of-the-trade": {
+              "manual": "Torture tools and Insight with expertise."
+            },
+            "torturer-techniques": {
+              "manual": "Each technique below has two uses; a spell slot pays for another (and empowers it: + Wisdom × slot damage, − slot d4s on its save). Its save, two-rounds-in-a-row upgrades and conditions are by hand."
+            },
+            "combing": {
+              "uses": [[3, 2]],
+              "recharge": "long",
+              "action": "free",
+              "dcFrom": ["wis"],
+              "effect": {
+                "name": "Combing",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "1d12",
+                    "type": "slashing"
+                  }
+                ]
+              },
+              "manual": "From 7th level, two rounds in a row: Constitution save or bleed 1d8 necrotic a turn."
+            },
+            "enucleation": {
+              "uses": [[3, 2]],
+              "recharge": "long",
+              "action": "free",
+              "dcFrom": ["wis"],
+              "effect": {
+                "name": "Enucleation",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "1d6",
+                    "type": "weapon"
+                  }
+                ]
+              },
+              "manual": "Constitution save or blinded beyond 60 ft and disadvantage on Perception for a minute."
+            },
+            "hamstringing": {
+              "uses": [[3, 2]],
+              "recharge": "long",
+              "action": "free",
+              "dcFrom": ["wis"],
+              "effect": {
+                "name": "Hamstringing",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "1d8",
+                    "type": "slashing"
+                  }
+                ]
+              },
+              "manual": "Constitution save or speed 0 until your next turn."
+            },
+            "nerve-scraping": {
+              "uses": [[3, 2]],
+              "recharge": "long",
+              "action": "free",
+              "dcFrom": ["wis"],
+              "effect": {
+                "name": "Nerve Scraping",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "1d8",
+                    "type": "psychic"
+                  }
+                ]
+              },
+              "manual": "Constitution save or it attacks a random creature in reach before it moves."
+            },
+            "throat-chop": {
+              "uses": [[3, 2]],
+              "recharge": "long",
+              "action": "free",
+              "dcFrom": ["wis"],
+              "effect": {
+                "name": "Throat Chop",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "1d8",
+                    "type": "bludgeoning"
+                  }
+                ]
+              },
+              "manual": "It can't speak or cast verbal spells until your next turn."
+            },
+            "tympanic-rupture": {
+              "uses": [[3, 2]],
+              "recharge": "long",
+              "action": "free",
+              "dcFrom": ["wis"],
+              "effect": {
+                "name": "Tympanic Rupture",
+                "rounds": 1,
+                "once": true,
+                "hitDamage": [
+                  {
+                    "dice": "1d10",
+                    "type": "bludgeoning"
+                  }
+                ]
+              },
+              "manual": "Constitution save or deafened for a minute."
+            },
+            "depraved-mind": {
+              "passive": {
+                "name": "Depraved Mind",
+                "resistances": ["psychic"],
+                "conditionImmunities": ["frightened"]
+              }
+            },
+            "veil-of-pain": {
+              "action": "free",
+              "usesAbility": "wis",
+              "recharge": "long",
+              "dcFrom": ["wis"],
+              "spell": {
+                "targets": 1,
+                "range": 5,
+                "save": {
+                  "ability": "wis"
+                },
+                "rounds": 10,
+                "effect": {
+                  "name": "Veil of Pain",
+                  "disadvantage": true,
+                  "repeatSave": true
+                }
+              },
+              "manual": "You are heavily obscured to it: it attacks you with disadvantage (and you it with advantage, by hand)."
+            },
+            "mental-agony": {
+              "manual": "Reaction: −1d10 on its mental save. Take it off the roll by hand."
+            }
+          }
         }
       }
     },
@@ -1778,6 +3119,188 @@
               "manual": "In the first round of a fight you take two turns: your own and another at your initiative minus 10. The GM adds the second turn."
             }
           }
+        },
+        "blade-of-radiance": {
+          "features": {
+            "sanctified-champion": {
+              "manual": "Martial weapons and medium armor. Your sanctified blade is finesse and silvered: mark it on the sheet."
+            },
+            "divine-blessings": {
+              "usesAbility": "wis",
+              "usesBonus": 1,
+              "recharge": "short",
+              "manual": "Each point spent gives you Wisdom-modifier temporary hit points: add them by hand."
+            },
+            "armor-of-the-faithful": {
+              "usesFrom": "divine-blessings",
+              "action": "free",
+              "manual": "Reaction when targeted: Wisdom save or it picks another target."
+            },
+            "divine-inspiration": {
+              "usesFrom": "divine-blessings",
+              "action": "free",
+              "manual": "Reroll a Religion, History or Insight check and add your Wisdom modifier."
+            },
+            "rend-the-blasphemous": {
+              "usesFrom": "divine-blessings",
+              "action": "bonus",
+              "grantAttacks": 1,
+              "manual": "Add your Wisdom modifier to that attack roll."
+            },
+            "chains-of-judgement": {
+              "usesFrom": "divine-blessings",
+              "action": "free",
+              "dcFrom": ["wis"],
+              "spell": {
+                "targets": 1,
+                "range": 5,
+                "save": {
+                  "ability": "str"
+                },
+                "damage": [
+                  {
+                    "dice": "3",
+                    "type": "radiant"
+                  }
+                ],
+                "rounds": 1,
+                "effect": {
+                  "name": "Chains of Judgement",
+                  "conditions": ["restrained"]
+                }
+              },
+              "manual": "After a hit with your blade. The radiant damage is your Wisdom modifier (3 here)."
+            },
+            "divine-retaliation": {
+              "usesFrom": "divine-blessings",
+              "action": "free",
+              "manual": "Reaction when hit in melee: attack back with your blade, + Wisdom damage."
+            },
+            "erupting-blades": {
+              "usesFrom": "divine-blessings",
+              "action": "free",
+              "manual": "Instead of Sneak Attack: a 20 ft cone from the target, Dexterity save, Wisdom + half your Sneak Attack radiant. Roll it by hand."
+            },
+            "righteous-armament": {
+              "freeCasts": [
+                {
+                  "spell": "protection-from-evil-and-good",
+                  "self": true
+                },
+                {
+                  "spell": "heroism",
+                  "self": true
+                },
+                {
+                  "spell": "shield-of-faith",
+                  "self": true
+                }
+              ],
+              "manual": "Add two cleric cantrips as your own spells."
+            },
+            "final-judgement": {
+              "action": "free",
+              "effect": {
+                "name": "Final Judgement",
+                "rounds": 6000,
+                "hitDamage": [
+                  {
+                    "dice": "2d4",
+                    "type": "radiant"
+                  }
+                ],
+                "light": {
+                  "bright": 30,
+                  "dim": 60
+                }
+              },
+              "manual": "Spirit guardians once per long rest (or for 3 Divine points): cast it as your own spell or by hand."
+            }
+          }
+        },
+        "shadow": {
+          "features": {
+            "umbral-weapon": {
+              "manual": "Firearms proficiency. Your bonded rifle needs no ammunition and is silent: mark it on the sheet."
+            },
+            "shadow-movement": {
+              "action": "bonus",
+              "effect": {
+                "name": "Shadow form",
+                "rounds": 10,
+                "conditions": ["incapacitated"],
+                "speeds": {
+                  "climb": "walk"
+                },
+                "endsOnDamage": true
+              },
+              "manual": "Only in darkness. Roll Stealth with advantage to hide. Leaving the form in darkness: one umbral attack with a 1d4 die."
+            },
+            "tenebrous-body": {
+              "manual": "See in darkness, magical too, to 120 ft: set darkvision 120 on the token. Shadow form lasts an hour."
+            },
+            "grim-curse": {
+              "action": "free",
+              "dcFrom": ["dex"],
+              "spell": {
+                "targets": 1,
+                "range": 600,
+                "save": {
+                  "ability": "str"
+                },
+                "rounds": 1,
+                "effect": {
+                  "name": "Grim Curse",
+                  "conditions": ["restrained"]
+                },
+                "choices": [
+                  {
+                    "id": "prone",
+                    "name": "One die: prone",
+                    "set": {
+                      "save": {
+                        "ability": "dex"
+                      },
+                      "effect": {
+                        "name": "Grim Curse",
+                        "conditions": ["prone"]
+                      }
+                    }
+                  },
+                  {
+                    "id": "restrained",
+                    "name": "Two dice: restrained",
+                    "set": {
+                      "save": {
+                        "ability": "str"
+                      },
+                      "effect": {
+                        "name": "Grim Curse",
+                        "conditions": ["restrained"]
+                      }
+                    }
+                  },
+                  {
+                    "id": "blinded",
+                    "name": "Three dice: blinded",
+                    "set": {
+                      "save": {
+                        "ability": "con"
+                      },
+                      "effect": {
+                        "name": "Grim Curse",
+                        "conditions": ["blinded"]
+                      }
+                    }
+                  }
+                ]
+              },
+              "manual": "After a Sneak Attack hit with your umbral weapon: take the sacrificed dice off its damage by hand. In darkness it saves with −1d6."
+            },
+            "veil-of-shadows": {
+              "manual": "With Uncanny Dodge: teleport into darkness within 30 ft and attack the attacker."
+            }
+          }
         }
       }
     },
@@ -1889,6 +3412,30 @@
         },
         "metamagic": {
           "manual": "Spend sorcery points on a known Metamagic option as you cast; the GM applies it."
+        }
+      },
+      "subclasses": {
+        "scion-of-madness": {
+          "features": {
+            "mind-of-madness": {
+              "manual": "Reroll a madness you gain. Mind readers and scryers take your level in psychic damage and fail (Wisdom save or short-term madness)."
+            },
+            "spread-of-chaos": {
+              "uses": [[1, 1]],
+              "recharge": "long",
+              "action": "free",
+              "manual": "The madness saves (and your own Charisma save for several targets) are rolled by hand."
+            },
+            "depths-of-depravity": {
+              "manual": "Reaction while mad: disadvantage on a save within 120 ft; if it fails, a sorcery point per madness (once per short rest)."
+            },
+            "powers-of-insanity": {
+              "manual": "Roll madness d10s twice and keep the lower; madness doesn't stun you."
+            },
+            "maddening-hunger": {
+              "manual": "Gaining a madness gives back 1d4, 2d4 or 4d4 sorcery points (short, long, indefinite)."
+            }
+          }
         }
       }
     },
@@ -2037,7 +3584,259 @@
           "manual": "The GM applies the effects of invocations the sheet doesn’t run on its own."
         },
         "mystic-arcanum": {
-          "manual": "Pick one warlock spell of 6th level (7th at 13th level, 8th at 15th, 9th at 17th) and cast each once per long rest with no slot: add them on the Spells tab and cast with no slot."
+          "uses": [
+            [11, 1],
+            [13, 2],
+            [15, 3],
+            [17, 4]
+          ],
+          "recharge": "long",
+          "spellPicks": {
+            "from": "class",
+            "class": "warlock",
+            "choices": [
+              {
+                "at": 11,
+                "level": 6
+              },
+              {
+                "at": 13,
+                "level": 7
+              },
+              {
+                "at": 15,
+                "level": 8
+              },
+              {
+                "at": 17,
+                "level": 9
+              }
+            ]
+          },
+          "manual": "Each picked spell once per long rest; the engine shares one use per picked level among them."
+        }
+      },
+      "subclasses": {
+        "the-void": {
+          "features": {
+            "expanded-spell-list": {
+              "manual": "Pick these as warlock spells: feather fall, levitate, blink, black tentacles, resilient sphere, telekinesis (and the book's gravity leap, otherworldly gaze, astral barrage, starfall as your own spells)."
+            },
+            "fugite-omnis": {
+              "manual": "You hover an inch off the ground; being knocked prone only sets you down."
+            },
+            "voracious-void": {
+              "action": "bonus",
+              "uses": [[1, 1]],
+              "recharge": "long",
+              "spell": {
+                "range": 60,
+                "area": {
+                  "shape": "sphere",
+                  "size": 5
+                },
+                "save": {
+                  "ability": "str"
+                },
+                "concentration": true,
+                "rounds": 10,
+                "damage": [
+                  {
+                    "dice": "1d6",
+                    "type": "bludgeoning"
+                  }
+                ],
+                "effect": {
+                  "name": "Black hole",
+                  "speedTimes": 0.5
+                }
+              },
+              "spellAt": [
+                [
+                  3,
+                  {
+                    "effect": {
+                      "name": "Black hole",
+                      "conditions": ["restrained"]
+                    }
+                  }
+                ],
+                [
+                  7,
+                  {
+                    "area": {
+                      "shape": "sphere",
+                      "size": 10
+                    }
+                  }
+                ],
+                [
+                  9,
+                  {
+                    "damage": [
+                      {
+                        "dice": "2d6",
+                        "type": "bludgeoning"
+                      }
+                    ]
+                  }
+                ]
+              ],
+              "manual": "A spent warlock slot gives the use back. Draw the domain and pull creatures to the centre by hand; creatures entering or starting in it on later turns are hit by hand."
+            },
+            "gravitational-pull": {
+              "manual": "Reaction against a ranged attack through your black hole: your spell attack against its roll."
+            },
+            "warp-gravity": {
+              "passive": {
+                "name": "Warp Gravity",
+                "speeds": {
+                  "fly": "walk",
+                  "hover": true
+                }
+              }
+            },
+            "oblivion": {
+              "uses": [[14, 1]],
+              "recharge": "long",
+              "action": "free",
+              "manual": "Each creature starting its turn in the domain saves on Strength or is pulled in: by hand."
+            }
+          }
+        }
+      },
+      "packFeatures": {
+        "pact-of-the-trigger": {
+          "action": "action",
+          "manual": "Cantrips through the gun are cast once more per damage tier instead of rolling more dice: cast them again by hand. Add shocking grasp (revolver) or ray of frost (sniper) while you hold it."
+        },
+        "agonizing-shots": {
+          "action": "bonus",
+          "usesAbility": "cha",
+          "manual": "Its uses are twice your Charisma modifier: set the extra ones on the sheet.",
+          "recharge": "long",
+          "spell": {
+            "area": {
+              "shape": "cone",
+              "size": 15
+            },
+            "save": {
+              "ability": "dex"
+            },
+            "damage": [
+              {
+                "dice": "2d10",
+                "type": "force"
+              }
+            ]
+          },
+          "spellAt": [
+            [
+              11,
+              {
+                "damage": [
+                  {
+                    "dice": "3d10",
+                    "type": "force"
+                  }
+                ]
+              }
+            ],
+            [
+              17,
+              {
+                "damage": [
+                  {
+                    "dice": "4d10",
+                    "type": "force"
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "bullet-hell": {
+          "manual": "Add your Charisma modifier to the damage of cantrips through your hex gun."
+        },
+        "crippling-shot": {
+          "action": "free",
+          "usesAbility": "cha",
+          "recharge": "long",
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "save": {
+              "ability": "str"
+            },
+            "rounds": 1,
+            "effect": {
+              "name": "Crippled",
+              "conditions": ["prone"],
+              "immobile": true
+            }
+          },
+          "manual": "After you hurt it with your hex gun."
+        },
+        "dead-eye": {
+          "action": "bonus",
+          "effect": {
+            "name": "Dead Eye",
+            "rounds": 1,
+            "advantage": true,
+            "immobile": true
+          },
+          "manual": "Only if you haven't moved this turn."
+        },
+        "headshots": {
+          "action": "bonus",
+          "uses": [[9, 1]],
+          "recharge": "short",
+          "effect": {
+            "name": "Headshots",
+            "rounds": 10,
+            "critRange": 19
+          },
+          "manual": "The engine widens weapon crits; spell attacks through the gun crit on 19 by hand."
+        },
+        "quickstep": {
+          "manual": "Reaction to a melee attack: step 5 ft away first."
+        },
+        "reckless-fire": {
+          "usesAbility": "cha",
+          "recharge": "short",
+          "action": "free",
+          "manual": "Reroll 1s and 2s on a hex gun cantrip's damage dice by hand."
+        },
+        "repeating-cantrips": {
+          "manual": "A cantrip's side effects apply to each creature its repeated casts hit."
+        },
+        "ricochet": {
+          "usesAbility": "cha",
+          "recharge": "long",
+          "action": "free",
+          "manual": "A second creature within 15 ft takes your Charisma modifier in the cantrip's damage type."
+        },
+        "riposte": {
+          "uses": [[7, 1]],
+          "recharge": "short",
+          "action": "free",
+          "spell": {
+            "targets": 1,
+            "range": 30,
+            "attack": "ranged",
+            "damage": [
+              {
+                "dice": "1d10",
+                "type": "force"
+              }
+            ],
+            "rounds": 1,
+            "effect": {
+              "name": "Riposted",
+              "conditions": ["stunned"]
+            }
+          },
+          "manual": "As a reaction to a melee attack: on a hit its attack fails."
         }
       }
     },
@@ -2384,6 +4183,42 @@
         "multiclass": {
           "fixed": ["light-armor"]
         }
+      },
+      "packFeatures": {
+        "pact-of-the-trigger": {
+          "level": 1,
+          "choice": "eldritch-invocations"
+        },
+        "agonizing-shots": {
+          "level": 5
+        },
+        "bullet-hell": {
+          "level": 3
+        },
+        "crippling-shot": {
+          "level": 3
+        },
+        "dead-eye": {
+          "level": 15
+        },
+        "headshots": {
+          "level": 9
+        },
+        "quickstep": {
+          "level": 3
+        },
+        "reckless-fire": {
+          "level": 7
+        },
+        "repeating-cantrips": {
+          "level": 5
+        },
+        "ricochet": {
+          "level": 7
+        },
+        "riposte": {
+          "level": 7
+        }
       }
     }
   },
@@ -2404,10 +4239,82 @@
           "manual": "On a short rest, recover spell slots totaling up to half your wizard level (rounded up), none 6th or higher. The GM restores them."
         },
         "spell-mastery": {
-          "manual": "Pick a 1st-level and a 2nd-level spell from your spellbook: you cast them at their lowest level with no slot. Cast them with no slot."
+          "spellPicks": {
+            "from": "known",
+            "choices": [
+              {
+                "level": 1
+              },
+              {
+                "level": 2
+              }
+            ]
+          }
         },
         "signature-spells": {
-          "manual": "Two 3rd-level spellbook spells are always prepared, and you cast each once at 3rd level with no slot before a short or long rest. Cast them with no slot."
+          "uses": [[20, 2]],
+          "recharge": "short",
+          "spellPicks": {
+            "from": "known",
+            "choices": [
+              {
+                "level": 3
+              },
+              {
+                "level": 3
+              }
+            ]
+          }
+        }
+      },
+      "subclasses": {
+        "osteomancer": {
+          "features": {
+            "brittle-bone-armor": {
+              "action": "bonus",
+              "uses": [[2, 1]],
+              "recharge": "short",
+              "effect": {
+                "name": "Brittle Bone Armor",
+                "rounds": 10,
+                "resistances": ["slashing", "piercing"],
+                "ac": 1
+              },
+              "manual": "Give yourself twice your wizard level in temporary hit points; the armor ends with them. The AC bonus is a third of your level (1 here: raise it on the effect from 6th)."
+            },
+            "anatomical-expert": {
+              "manual": "Medicine proficiency, + Intelligence; doubled proficiency about creatures with skeletons."
+            },
+            "bone-puppetry": {
+              "action": "action",
+              "usesAbility": "int",
+              "recharge": "long",
+              "spell": {
+                "targets": 1,
+                "range": 60,
+                "save": {
+                  "ability": "str"
+                },
+                "rounds": 1,
+                "effect": {
+                  "name": "Bone Puppet"
+                }
+              },
+              "manual": "You choose what it does on its next turn: the GM runs it your way."
+            },
+            "skeletal-mastery": {
+              "freeCasts": [
+                {
+                  "spell": "alter-self",
+                  "self": true
+                }
+              ],
+              "manual": "Boneless form (speed 10 ft, prone, no attacks or spells) by hand."
+            },
+            "improved-bone-puppetry": {
+              "manual": "Bone Puppetry lasts a minute (save each turn, concentration): lengthen the effect by hand."
+            }
+          }
         }
       }
     },

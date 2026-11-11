@@ -1,6 +1,7 @@
 {
   "id": "wolf",
   "name": "Wolf",
+  "img": "/assets/tokens/wolf.svg",
   "color": "#6a6a6a",
   "speed": 40,
   "darkvision": 60,

@@ -1,15 +1,11 @@
 // A tiny Foundry VTT world on disk (v11+ LevelDB databases), for the
 // importer. It uses the server tests' LevelDB writer.
 
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { writeLevelDb } from '../../server/src/test/leveldb-writer.ts';
-
-async function put(path: string, content: unknown): Promise<void> {
-  await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, typeof content === 'string' ? content : JSON.stringify(content));
-}
+import { put } from '../../server/src/test/lost-keep.ts';
 
 const goblin = {
   _id: 'A1',

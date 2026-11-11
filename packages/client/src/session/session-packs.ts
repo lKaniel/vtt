@@ -1,5 +1,16 @@
 import type { SessionPart } from './session-part.ts';
-import type { Doc, DocRef, DocStore, MediaEntry, Op, PackInfo, Patch, PluginInfo } from '@vtt/core';
+import {
+  type Doc,
+  type DocRef,
+  type DocStore,
+  type MediaEntry,
+  mediaKind,
+  type Op,
+  type PackInfo,
+  type Patch,
+  type PluginInfo,
+} from '@vtt/core';
+import { SOUND_FT } from '../editor/shape-tools.ts';
 import {
   ENTRY_TYPES,
   type EntryType,
@@ -34,6 +45,7 @@ export interface PackHost {
   readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
   readonly editor: { viewCentre(): Point };
   readonly requests: { saveActor(actor: Actor): void };
+  readonly draw: { create(draft: { mode: 'sounds'; data: Record<string, unknown> }): void };
   showError(message: string): void;
   showNotice(message: string): void;
 }
@@ -142,8 +154,15 @@ export class Packs implements SessionPart {
     this.pending.delete(ref);
   }
 
-  /** A picture placed as a tile, centred on `at`; `size` defaults to two squares. */
+  /** A picture placed as a tile, centred on `at` (`size` defaults to two squares); an audio file as a sound there. */
   placeMedia(src: string, at: [number, number], size?: { w: number; h: number }): void {
+    if (mediaKind(src) === 'audio') {
+      this.s.draw.create({
+        mode: 'sounds',
+        data: { x: Math.round(at[0]), y: Math.round(at[1]), src, radius: SOUND_FT },
+      });
+      return;
+    }
     const side = this.on.gridSize() * 2;
     const { w, h } = size ?? { w: side, h: side };
     const rect: Rect = { x: Math.round(at[0] - w / 2), y: Math.round(at[1] - h / 2), w, h };

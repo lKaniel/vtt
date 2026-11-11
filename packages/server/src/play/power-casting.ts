@@ -19,12 +19,13 @@ import {
   weightFor,
   withoutHeld,
 } from '@vtt/system-dnd5e';
+import { rollPickOf } from './roll-picks.ts';
 import type { Player } from '@vtt/shared';
 import { randomUUID } from 'node:crypto';
 import type { SpellActions } from '../actions/spell-actions.ts';
 import type { FeatureRequest } from './feature-casting.ts';
 import { summon, summonNotes } from './spell-summons.ts';
-import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
+import { Refusal, spendAs, type Cost, type Fighter, type Table } from './table.ts';
 
 // Pool features at the table (power-schema.ts in system-dnd5e): a use costs
 // points from the class's pool by its targets' weight and the options
@@ -150,7 +151,7 @@ function prepare(parts: Parts, player: Player, canSee: (id: string) => boolean, 
   const cost = costOf(table, { caster, feature, targets }, req);
   const { action, by } = actionOf({ caster, feature, pool, cost, hold }, !!req.bonus);
   checkPool({ caster, feature, pool, cost });
-  return { caster, feature, pool, spell, targets, cost, action, by, hold };
+  return { caster, feature, pool, spell, targets, cost, action: spendAs(action, req.spend), by, hold };
 }
 
 /** Refuses a feature that can't be used by hand now: a reaction, a ritual in a fight, nothing for it to end. */
@@ -178,7 +179,7 @@ export function castPower(parts: Parts, player: Player, canSee: (id: string) => 
   if (use.spell.summon) notes.push(...conjure(table, use, req));
   spells.strike(
     use.caster.token.id,
-    { spell: use.spell, slot: 0, point: req.point, dc, attackBonus: attack, mod },
+    { spell: use.spell, slot: 0, point: req.point, dc, attackBonus: attack, mod, ...rollPickOf(req) },
     use.targets,
     notes,
   );

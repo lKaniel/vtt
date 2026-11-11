@@ -1,7 +1,14 @@
 import type { Creature } from './creature.ts';
 import { type GridKind, type Lattice, latticeOf, type Rng, roll, type Roll } from '@vtt/shared';
 import { d20Formula } from './effects.ts';
-import { chosenCrit, type CritChoice, type RollEdge, withEdge } from './roll-choice.ts';
+import {
+  chosenCrit,
+  type CritChoice,
+  type RollChoice,
+  type RollEdge,
+  withDamageExtra,
+  withPick,
+} from './roll-choice.ts';
 import type { Effect } from './spell-schema.ts';
 import type { Attack, Damage, DamageType } from './stats-schema.ts';
 
@@ -20,6 +27,8 @@ export interface AttackOptions {
   edge?: RollEdge;
   /** The roller's pick: a hit is a critical hit, or never one. */
   crit?: CritChoice;
+  /** The rest of the roller's pick (the roll dialog): the d20 as picked, a situational modifier, extra damage. */
+  pick?: RollChoice;
 }
 
 export interface AttackRoll {
@@ -60,13 +69,14 @@ const critProof = (target: Creature) => target.effects.some((e) => e.noCrits);
 
 /** Rolls an attack against a target: a 20 always hits and crits, a 1 always misses. */
 export function rollAttack(attack: Attack, target: Creature, opts: AttackOptions, rng: Rng = Math.random): AttackRoll {
-  const edged = withEdge({ advantage: !!opts.advantage, disadvantage: !!opts.disadvantage }, opts.edge);
-  const d20 = roll(d20Formula(attack.toHit, opts.bonus ?? [], edged), rng);
+  const pick: RollChoice = { edge: opts.edge, crit: opts.crit, ...opts.pick };
+  const edged = withPick({ advantage: !!opts.advantage, disadvantage: !!opts.disadvantage, bonus: opts.bonus }, pick);
+  const d20 = roll(d20Formula(attack.toHit, edged.bonus ?? [], edged), rng);
   const natural = d20.terms[0]!.value;
   const critical = natural >= (opts.critRange ?? 20);
   const hit = critical || (natural !== 1 && d20.total >= target.ac);
-  const crit = chosenCrit({ hit, crit: (critical || !!opts.autoCrit) && !critProof(target) }, opts.crit);
-  const parts = [...attack.damage, ...(opts.extraDamage ?? [])];
+  const crit = chosenCrit({ hit, crit: (critical || !!opts.autoCrit) && !critProof(target) }, pick.crit);
+  const parts = withDamageExtra([...attack.damage, ...(opts.extraDamage ?? [])], pick);
   const damage = hit ? rollParts(parts, crit, rng) : [];
   return { d20, natural, total: d20.total, hit, crit, damage };
 }

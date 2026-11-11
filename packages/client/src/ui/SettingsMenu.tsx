@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { currentMotion, type Motion, setMotion } from '../play/animations.ts';
 import { currentDice, type DiceChoice, setDice } from '../dice/dice-throw.ts';
 import { currentQuality, type QualityChoice, setQuality } from '../view3d/quality3d.ts';
+import { cursorsShown, showCursors } from '../session/presence.ts';
 import { type Automation, automationOf } from '@vtt/system-dnd5e';
 import type { Session } from '../session/session.ts';
 import { i18n, type MessageKey, t, useLanguage } from '../i18n/index.ts';
@@ -76,7 +77,11 @@ export function SettingsMenu({ session }: Readonly<{ session: Session }>) {
           <SettingsIcon />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="flex w-[340px] flex-col gap-3" data-slot="settings-menu">
+      <PopoverContent
+        align="end"
+        className="flex max-h-(--radix-popover-content-available-height) w-[340px] flex-col gap-3 overflow-y-auto"
+        data-slot="settings-menu"
+      >
         <ProfileRow session={session} />
         <Separator />
         <strong className="font-display">{t('settings.automation')}</strong>
@@ -96,6 +101,7 @@ export function SettingsMenu({ session }: Readonly<{ session: Session }>) {
         <Separator />
         <MotionRow />
         <DiceRow />
+        <CursorsRow />
         <GraphicsRow />
         <LanguageRow />
         <KeysDialog />
@@ -160,6 +166,30 @@ function DiceRow() {
         <ToggleGroupItem value="on">{t('settings.dice.on')}</ToggleGroupItem>
         <ToggleGroupItem value="off">{t('settings.dice.off')}</ToggleGroupItem>
       </ToggleGroup>
+    </Label>
+  );
+}
+
+/** Whether the other players' cursors show on this browser's map. */
+function CursorsRow() {
+  const [shown, choose] = useState(cursorsShown);
+  const set = (on: boolean) => {
+    showCursors(on);
+    choose(on);
+  };
+  return (
+    <Label className="flex-col items-stretch gap-1">
+      {t('settings.cursors')}
+      <ToggleGroup
+        type="single"
+        aria-label={t('settings.cursors')}
+        value={shown ? 'show' : 'hide'}
+        onValueChange={(v) => v && set(v === 'show')}
+      >
+        <ToggleGroupItem value="show">{t('settings.cursors.show')}</ToggleGroupItem>
+        <ToggleGroupItem value="hide">{t('settings.cursors.hide')}</ToggleGroupItem>
+      </ToggleGroup>
+      <span className="muted text-xs font-normal">{t('settings.cursorsHint')}</span>
     </Label>
   );
 }

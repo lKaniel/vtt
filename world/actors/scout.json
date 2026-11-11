@@ -1,0 +1,7 @@
+{
+  "id": "scout",
+  "name": "Bandit archer",
+  "img": "/assets/tokens/scout.svg",
+  "folder": "road-ambush",
+  "monster": "scout"
+}

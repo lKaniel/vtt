@@ -117,6 +117,15 @@ const OpSchema = z.union([
   z.object({ op: z.literal('delete'), coll: z.string(), id: z.string() }),
 ]);
 
+/** What a turn override may set (turnOverride in client-messages.ts). */
+const TURN_OVERRIDE = {
+  action: z.boolean().optional(),
+  bonus: z.boolean().optional(),
+  reaction: z.boolean().optional(),
+  move: z.number().int().min(0).max(9999).optional(),
+  extra: z.number().int().min(0).max(9).optional(),
+};
+
 function actTools(table: BridgeTable): McpTool[] {
   const send = async (id: string | undefined, msgs: unknown[]) => {
     const { game, player } = await table.seat(id);
@@ -136,6 +145,15 @@ function actTools(table: BridgeTable): McpTool[] {
       input: z.object({ ...ON_GAME, token: z.string(), x: z.number(), y: z.number() }),
       run: (a: { game?: string; token: string; x: number; y: number }) =>
         send(a.game, [{ t: 'move', token: a.token, to: [a.x, a.y] }]),
+    },
+    {
+      name: 'override_turn',
+      description:
+        'GM or trusted player: sets what a creature in the fight has left this turn, past the rules: its action, ' +
+        'bonus action and reaction (true: has it), feet of movement, and extra actions on top of the one.',
+      input: z.object({ ...ON_GAME, token: z.string(), ...TURN_OVERRIDE }),
+      run: ({ game, ...set }: { game?: string; token: string } & Record<string, unknown>) =>
+        send(game, [{ t: 'turnOverride', ...set }]),
     },
     {
       name: 'edit_documents',

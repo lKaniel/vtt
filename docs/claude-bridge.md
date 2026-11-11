@@ -7,7 +7,8 @@ editing documents while everyone watches.
 
 ## Connecting
 
-1. Join the game, open its page and press **Connect Claude**, then
+1. Join the game, sit at the table and press **Connect Claude** (the robot
+   in the top bar), then
    **Make a key**. The key is shown once; a new one replaces it. Claude plays
    as the player you joined as, at that game.
 2. Paste the command it shows into a terminal:
@@ -30,25 +31,26 @@ name.
 
 ## Tools
 
-| Tool                             | What it does                                                                       |
-| -------------------------------- | ---------------------------------------------------------------------------------- |
-| `guide`                          | The game format (docs/game-format.md), to read first                               |
-| `list_games`                     | Your games and your role in each                                                   |
-| `look`                           | Scene, tokens (pixels, HP for those you may see), combat, players, document counts |
-| `read_chat`                      | The last chat messages and roll cards                                              |
-| `list_documents`, `get_document` | Read any document you may read (`actors`, `journals`, `<scene>/walls`...)          |
-| `edit_documents`                 | Create, update or delete documents, all or nothing, as one undo step               |
-| `say`                            | Chat as you, including `/r` rolls                                                  |
-| `move_token`                     | Walk a token to a point                                                            |
-| `undo`                           | Undo your last step                                                                |
-| `send`                           | Any other message a browser sends (start combat, run a macro...)                   |
-| `create_scene`                   | A new scene, with a ground tile of a given size                                    |
-| `build_scene`                    | Rooms, walls, doors, lights, floors, creatures, regions... from a blueprint        |
-| `describe_scene`                 | A scene's settings and every item on it, by collection                             |
-| `render_scene`                   | A top-down picture of a scene (or part of it), with a legend                       |
-| `clear_area`                     | Deletes what lies inside a box                                                     |
-| `go_to_scene`                    | Takes your view, or the whole game, to a scene                                     |
-| `list_assets`                    | The pictures, sounds, videos and 3D models the game may use                        |
+| Tool                             | What it does                                                                        |
+| -------------------------------- | ----------------------------------------------------------------------------------- |
+| `guide`                          | The game format (docs/game-format.md), to read first                                |
+| `list_games`                     | Your games and your role in each                                                    |
+| `look`                           | Scene, tokens (pixels, HP for those you may see), combat, players, document counts  |
+| `read_chat`                      | The last chat messages and roll cards                                               |
+| `list_documents`, `get_document` | Read any document you may read (`actors`, `journals`, `<scene>/walls`...)           |
+| `edit_documents`                 | Create, update or delete documents, all or nothing, as one undo step                |
+| `say`                            | Chat as you, including `/r` rolls                                                   |
+| `move_token`                     | Walk a token to a point                                                             |
+| `override_turn`                  | GM or trusted: set a turn's action, bonus action, reaction, movement, extra actions |
+| `undo`                           | Undo your last step                                                                 |
+| `send`                           | Any other message a browser sends (start combat, run a macro...)                    |
+| `create_scene`                   | A new scene, with a ground tile of a given size                                     |
+| `build_scene`                    | Rooms, walls, doors, lights, floors, creatures, regions... from a blueprint         |
+| `describe_scene`                 | A scene's settings and every item on it, by collection                              |
+| `render_scene`                   | A top-down picture of a scene (or part of it), with a legend                        |
+| `clear_area`                     | Deletes what lies inside a box                                                      |
+| `go_to_scene`                    | Takes your view, or the whole game, to a scene                                      |
+| `list_assets`                    | The pictures, sounds, videos and 3D models the game may use                         |
 
 ## Building scenes
 

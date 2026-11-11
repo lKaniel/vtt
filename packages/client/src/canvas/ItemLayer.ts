@@ -1,5 +1,5 @@
 import type { Doc } from '@vtt/core';
-import { hitTest, onLevel, type Point, shapeOf } from '@vtt/shared';
+import { hitTest, onLevel, type Point, sceneLattice, shapeOf } from '@vtt/shared';
 import { Container, Graphics, Text } from 'pixi.js';
 import type { Session } from '../session/session.ts';
 import { drawItem } from './item-draw.ts';
@@ -29,11 +29,13 @@ export class ItemLayer {
     this.redraw();
   }
 
-  /** The note pinned at `at` that opens an entry, if any. */
-  noteAt(at: Point): { entry: string; page?: string } | undefined {
+  /** The note pinned at `at` that opens an entry or rolls a table, if any. */
+  noteAt(at: Point): { entry?: string; page?: string; table?: string } | undefined {
     const s = this.session;
     const ctx = { px: 1 / this.zoom, gridSize: s.world?.gridSize ?? 100 };
-    const notes = s.docs.all(`${s.scene}/notes`).filter((n) => typeof n.entry === 'string');
+    const notes = s.docs
+      .all(`${s.scene}/notes`)
+      .filter((n) => typeof n.entry === 'string' || typeof n.table === 'string');
     const id = hitTest(
       notes.map((n) => ({ key: n.id, shape: shapeOf(n, ctx) })),
       at,
@@ -41,7 +43,8 @@ export class ItemLayer {
     );
     const note = notes.find((n) => n.id === id);
     if (!note) return undefined;
-    return { entry: note.entry as string, ...(typeof note.page === 'string' ? { page: note.page } : {}) };
+    const str = (k: 'entry' | 'page' | 'table') => (typeof note[k] === 'string' ? { [k]: note[k] } : {});
+    return { ...str('entry'), ...str('page'), ...str('table') };
   }
 
   /** The items to draw, bottom up: regions, templates, drawings, notes, then sounds (GM, in their mode). */
@@ -56,7 +59,9 @@ export class ItemLayer {
   redraw(): void {
     const g = this.g.clear();
     for (const t of this.texts.removeChildren()) t.destroy();
-    const ctx = { px: 1 / this.zoom, gridSize: this.session.world?.gridSize ?? 100 };
+    const world = this.session.world;
+    const lattice = world && sceneLattice(world);
+    const ctx = { px: 1 / this.zoom, gridSize: world?.gridSize ?? 100, ...(lattice && { lattice }) };
     const shown = this.shown();
     this.looks.sync(
       shown.filter((d) => d.type === 'template'),

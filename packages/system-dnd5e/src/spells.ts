@@ -1,5 +1,5 @@
 import { applyDamage, critDice, tokenDistance } from './attack.ts';
-import { chosenCrit, type RollChoice, withEdge } from './roll-choice.ts';
+import { chosenCrit, type RollChoice, setDamage, withDamageExtra, withPick } from './roll-choice.ts';
 import { spellHealBonus } from './class-styles.ts';
 import type { Creature } from './creature.ts';
 import { abilityMod } from './creature-math.ts';
@@ -49,8 +49,15 @@ export function castProblem({
   const stopped = stoppedBy(sheet, spell);
   if (stopped) return stopped;
   if (spell.level === 0) return undefined;
+  if (caster.atWill?.includes(spell.id))
+    return slot === spell.level ? undefined : `casts ${spell.name} only at its own level`;
+  return slotProblem(spell, slot, free ? undefined : caster.left);
+}
+
+/** Why `slot` can't pay for `spell`: too low, or none left (`left` missing: no slot is spent). */
+function slotProblem(spell: Spell, slot: number, left: readonly number[] | undefined): string | undefined {
   if (slot < spell.level || slot > 9) return `needs a slot of ${ORDINAL[spell.level]} level or higher`;
-  if (!free && !caster.left[slot - 1]) return `has no ${ORDINAL[slot]}-level slots left`;
+  if (left && !left[slot - 1]) return `has no ${ORDINAL[slot]}-level slots left`;
   return undefined;
 }
 
@@ -175,6 +182,11 @@ function rollDamage(parts: readonly Damage[], crit: boolean, rng: Rng, times = 1
   });
 }
 
+/** The cast's damage rolled, with the extra damage the caster picked, or the number they set for it. */
+function castDamage(cast: Cast, parts: readonly Damage[], crit = false, times = cast.spell.damageTimes) {
+  return setDamage(rollDamage(withDamageExtra(parts, cast.pick), crit, cast.rng, times), cast.pick);
+}
+
 function dealt(
   target: Creature,
   rolls: { roll: Roll; type: DamageType }[],
@@ -261,7 +273,7 @@ function effectFor(cast: Cast): Effect | undefined {
 /** Attack roll against the target: hit or miss, and one-shot effects it used. */
 function spellAttack(cast: Cast, target: CastSide, used: UsedEffect[]) {
   const within5 = tokenDistance(cast.caster.token, target.token, cast.gridSize, cast.grid) <= 5;
-  const mods = withEdge(attackModifiers(cast.caster, target, { within5 }), cast.pick?.edge);
+  const mods = withPick(attackModifiers(cast.caster, target, { within5 }), cast.pick);
   used.push(...mods.used);
   const attack = roll(d20Formula(cast.attackBonus, mods.bonus, mods), cast.rng);
   const natural = attack.terms[0]!.value;
@@ -320,8 +332,7 @@ function oneTarget(cast: Cast, target: CastSide, used: UsedEffect[]): CastResult
 function rolled(cast: Cast, target: CastSide, base: Base, { attack, save, landed, half }: Landing): CastResult {
   const { spell } = cast;
   const marks = attack ? markDamage(target.sheet, cast.caster.token.id, spell.damage[0]?.type ?? 'force') : [];
-  const rolls =
-    cast.shared ?? rollDamage([...spell.damage, ...marks], attack?.crit === true, cast.rng, spell.damageTimes);
+  const rolls = cast.shared ?? castDamage(cast, [...spell.damage, ...marks], attack?.crit === true);
   const damaged = landed || half ? dealt(target.sheet, rolls, { half, rng: cast.rng }) : undefined;
   return {
     ...base,
@@ -445,7 +456,7 @@ function raysOf(cast: Cast): Cast[] {
 
 /** One attack at the first target; on a hit the damage, rolled once, is shared out among all of them (Fractured Bolt). */
 function splitCast(cast: Cast, targets: readonly CastSide[], used: UsedEffect[]): CastResult[] {
-  cast.shared = rollDamage(cast.spell.damage, false, cast.rng, (cast.spell.damageTimes ?? 1) / targets.length);
+  cast.shared = castDamage(cast, cast.spell.damage, false, (cast.spell.damageTimes ?? 1) / targets.length);
   const first = oneTarget(cast, targets[0]!, used);
   if (first.hit === false) return [first];
   const rest = { ...cast, spell: { ...cast.spell, autoHit: true } };
@@ -460,7 +471,7 @@ export function resolveCast(input: CastInput, rng: Rng = Math.random): CastOutco
     return { results: withCrowd(split, { ...input, dc: cast.dc, rng }), used };
   }
   if (!cast.spell.attack && cast.spell.beams === 1 && !cast.spell.rider)
-    cast.shared = rollDamage(cast.spell.damage, false, rng, cast.spell.damageTimes);
+    cast.shared = castDamage(cast, cast.spell.damage);
   const reached = pooled(cast, input.targets);
   const hp = new Map<string, Pick<Creature, 'hp' | 'tempHp'>>();
   const used: UsedEffect[] = [];

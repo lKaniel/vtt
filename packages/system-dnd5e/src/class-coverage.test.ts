@@ -17,6 +17,7 @@ const MECHANICS: (keyof Feature)[] = [
   'unarmoredAc',
   'grantsSpells',
   'freeCasts',
+  'spellPicks',
   'spell',
   'bonusActions',
   'poolPerLevel',

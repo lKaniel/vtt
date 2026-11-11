@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { srdFor } from './content.ts';
 import { resolveCreature } from './creature.ts';
-import { dropOnSheet, handOver, scrollCaster } from './sheet-drops.ts';
+import { dropOnSheet, handOver, scrollCaster, scrollProblem } from './sheet-drops.ts';
 import { type Token, TokenSchema } from './token-schema.ts';
 
 const book = srdFor('2014');
@@ -72,6 +72,36 @@ describe('dropping compendium entries on a character sheet', () => {
   });
 });
 
+describe('dropping a species on a character sheet', () => {
+  it('sets its species, walking speed, darkvision and fixed proficiencies', () => {
+    const out = dropOnSheet(
+      { ...hero, speed: 30, darkvision: 0 },
+      { kind: 'species', id: 'dwarf', rules: '2014' },
+      undefined,
+      book,
+    );
+    expect(out).toMatchObject({ sheet: { speed: 25, darkvision: 60, stats: { species: 'dwarf' } } });
+    const sheet = 'sheet' in out ? out.sheet : undefined;
+    expect(sheet?.stats?.proficiencies).toEqual(expect.arrayContaining(['battleaxe', 'dwarvish']));
+  });
+
+  it('replaces the species it had, and keeps a first species from lowering darkvision', () => {
+    const elf = { ...hero, speed: 30, darkvision: 60, stats: { ...hero.stats, species: 'elf' } };
+    const out = dropOnSheet(elf, { kind: 'species', id: 'human', rules: '2014' }, undefined, book);
+    expect(out).toMatchObject({ sheet: { speed: 30, darkvision: 0, stats: { species: 'human' } } });
+    const seer = dropOnSheet(
+      { ...hero, darkvision: 120 },
+      { kind: 'species', id: 'elf', rules: '2014' },
+      undefined,
+      book,
+    );
+    expect(seer).toMatchObject({ sheet: { darkvision: 120 } });
+    expect(dropOnSheet(hero, { kind: 'species', id: 'nope', rules: '2014' }, undefined, book)).toEqual({
+      problem: 'The 2014 rules have no species "nope"',
+    });
+  });
+});
+
 describe('handing an item to another creature', () => {
   const ally = TokenSchema.parse({ id: 'ally', name: 'Ally', x: 0, y: 0, inventory: [{ item: 'dagger', qty: 2 }] });
 
@@ -106,5 +136,34 @@ describe('reading a spell scroll', () => {
     expect(scrollCaster(sheet, wish, 3)).toMatchObject({ dc: 19, attack: 11 });
     const fighter = resolveCreature({ ...hero, stats: { class: 'fighter', level: 5 } }, book)!;
     expect(scrollCaster(fighter, book.spells.get('fire-bolt')!, 5)).toMatchObject({ dc: 13, attack: 5, level: 5 });
+  });
+
+  it('can be read only by a class with the spell on its list (SRD Spell Scroll)', () => {
+    const fireball = book.spells.get('fireball')!;
+    expect(scrollProblem(hero, fireball, book)).toBeUndefined();
+    const fighter = { ...hero, stats: { class: 'fighter', level: 5 } };
+    expect(scrollProblem(fighter, fireball, book)).toBe('can’t read Fireball: it isn’t on the fighter spell list');
+    const cleric = { ...hero, stats: { class: 'cleric', level: 5 } };
+    expect(scrollProblem(cleric, book.spells.get('cure-wounds')!, book)).toBeUndefined();
+    // Multiclassed: any of its classes' lists will do.
+    const both = {
+      ...hero,
+      stats: {
+        classes: [
+          { class: 'fighter', level: 3 },
+          { class: 'wizard', level: 1 },
+        ],
+      },
+    };
+    expect(scrollProblem(both, fireball, book)).toBeUndefined();
+  });
+
+  it('is read by creatures without a class, and by a class no spell lists (homebrew)', () => {
+    const goblin = TokenSchema.parse({ id: 'g', name: 'Goblin', x: 0, y: 0, monster: 'goblin' });
+    expect(scrollProblem(goblin, book.spells.get('fireball')!, book)).toBeUndefined();
+    const illusionist = { ...book.classes.get('wizard')!, id: 'illusionist', name: 'Illusionist' };
+    const homebrew = { ...book, classes: new Map([...book.classes, ['illusionist', illusionist]]) };
+    const odd = { ...hero, stats: { class: 'illusionist', level: 3 } };
+    expect(scrollProblem(odd, book.spells.get('fireball')!, homebrew)).toBeUndefined();
   });
 });

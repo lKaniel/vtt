@@ -61,11 +61,14 @@ const drawn = (d: Doc) => d.kind !== 'group';
 
 const isImage = (d: Doc) => d.kind === 'image';
 
+/** A picture tile with no 3D model: its flat-only looks (tint, mirroring, scrolling, shadow) count. */
+const isFlat = (d: Doc) => isImage(d) && !d.model;
+
 /** How fast a picture slides one way; both still removes the scroll. */
 function scrollField(axis: 'x' | 'y', label: string): Field {
   const of = (d: Doc) => (d.scroll ?? { x: 0, y: 0 }) as { x: number; y: number };
   return {
-    ...plain(`scroll.${axis}`, label, 'number', { when: isImage }),
+    ...plain(`scroll.${axis}`, label, 'number', { when: isFlat }),
     get: (d) => of(d)[axis],
     patch: (value, doc) => {
       const next = { ...(doc ? of(doc) : { x: 0, y: 0 }), [axis]: Number(value) || 0 };
@@ -76,7 +79,7 @@ function scrollField(axis: 'x' | 'y', label: string): Field {
 
 const SHADOW = { offset: 12, blur: 8, alpha: 0.5 };
 const shadowOf = (d: Doc) => d.shadow as typeof SHADOW | undefined;
-const hasShadow = (d: Doc) => isImage(d) && !!shadowOf(d);
+const hasShadow = (d: Doc) => isFlat(d) && !!shadowOf(d);
 
 /** One number of a picture's drop shadow. */
 function shadowField(part: keyof typeof SHADOW, label: string): Field {
@@ -89,7 +92,7 @@ function shadowField(part: keyof typeof SHADOW, label: string): Field {
 
 const SHADOW_FIELDS: Field[] = [
   {
-    ...plain('shadow', 'Drop shadow', 'check', { when: isImage }),
+    ...plain('shadow', 'Drop shadow', 'check', { when: isFlat }),
     get: (d) => !!shadowOf(d),
     patch: (value) => ({ shadow: value === true ? SHADOW : null }),
   },
@@ -115,10 +118,10 @@ const TILE_FIELDS: Field[] = [
   plain('occludedAlpha', 'Opacity under it (0-1)', 'number', { when: (d) => isImage(d) && d.overhead === true }),
   scrollField('x', 'Scrolls across (px/s)'),
   scrollField('y', 'Scrolls down (px/s)'),
-  plain('tint', 'Tint', 'color', { when: isImage }),
+  plain('tint', 'Tint', 'color', { when: isFlat }),
   plain('rotation', 'Rotation (degrees)', 'number', { when: isImage }),
-  flag('flipX', 'Mirrored left to right', { when: isImage }),
-  flag('flipY', 'Mirrored top to bottom', { when: isImage }),
+  flag('flipX', 'Mirrored left to right', { when: isFlat }),
+  flag('flipY', 'Mirrored top to bottom', { when: isFlat }),
   plain('alpha', 'Opacity (0-1)', 'number', { when: isImage }),
   ...SHADOW_FIELDS,
   ...MODEL_FIELDS,

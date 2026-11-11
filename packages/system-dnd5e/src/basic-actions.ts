@@ -40,7 +40,7 @@ const BASIC: Feature[] = [
     action: 'action',
     recharge: 'long',
     check: { ability: 'dex', skill: 'stealth' },
-    effect: { name: 'Hidden', advantage: true, disadvantageAgainst: true, endsOnAttack: true },
+    effect: { name: 'Hidden', advantage: true, disadvantageAgainst: true, endsOnAttack: true, hides: true },
     description:
       "Make a Dexterity (Stealth) check out of sight. Until you attack, cast a spell or are found, creatures whose passive Perception is lower than the check don't know where you are: you attack them with advantage and they attack you with disadvantage.",
   },

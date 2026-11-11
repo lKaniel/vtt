@@ -30,6 +30,33 @@ pnpm import-foundry-world <world folder> [--name <game name>] [--data <Foundry D
 (its GM is a `Gamemaster` player without a password; a running server lists
 the game after a restart).
 
+### Importing it again
+
+Foundry stays the place a campaign is prepared in, so a world can be
+imported again into the game it made: in Setup's **Import a Foundry world**,
+pick the game under **Into** (the world folder defaults to the one it came
+from last time), or from a terminal, with the server stopped:
+
+```
+pnpm import-foundry-world [<world folder>] --into <game id> [--data <Foundry Data folder>]
+```
+
+Foundry's scenes, actors, entries and the rest come in fresh, and what
+was made in the VTT since stays: scenes the GM or Claude built (with their
+tokens, pictures, folders and the actors on them), other actors, entries
+and homebrew, and the players' explored fog. The game keeps its name,
+players (seats, passwords, characters), packs, plugins and the scene
+everyone is on. What Foundry deleted since the last import goes. The game
+is backed up first ("before a Foundry re-import" in its backups), and
+everyone playing reconnects to the new one.
+
+Each import writes `foundry-import.json` in the game folder: the world it
+came from and every file it wrote, which is how a re-import tells Foundry's
+files from the GM's (`server/src/foundry/foundry-reimport.ts`). A game
+imported before that file existed counts every file the new import also
+makes as Foundry's; a scene of its own whose id a Foundry scene now takes
+moves to a free id (`grotto-2`).
+
 What comes along:
 
 - **Scenes**, all of them, the active one as the game's scene: background,
@@ -38,6 +65,11 @@ What comes along:
   for how each is read), and the scene's playlist. The foreground picture
   becomes a roof tile that never fades; whether a scene is in the
   navigation bar, its name there and its thumbnail come along too.
+  Square-gridded scenes come in gridless (free movement, as this VTT plays
+  by default); hex scenes keep their hexes (`hex-rows`, `hex-cols`), with the
+  picture padded the way Foundry pads a hex scene. Foundry's "even" hex
+  layouts shift every other row or column the other way from ours, so
+  their grid sits half a hex off (the import report says so).
 - **Foundry v14** scenes: the background comes from the lowest floor that
   has one (v14 keeps it in the scene's `levels`), templates that v14 stores
   as regions become templates again.
@@ -83,10 +115,17 @@ What comes along:
   tiles are clicked here, right-click and manual ones are the GM's, and
   "on enter" ones fire when a creature walks on. Picture swaps (and the
   tile's picture list, patterns spelled out), sounds, show and hide,
-  switching lights and other tiles' triggers on and off, teleports, doors
-  and chat notes come along; things are found by Tagger tag or Foundry id.
-  A trigger with Monk's jumps (a dialog, anchors) keeps the path a click
-  most likely takes. Macros, "alter" (except of elevation) and the rest are reported.
+  switching lights and other tiles' triggers on and off, teleports, doors,
+  chat notes, opened journal pages, turning tiles and light beams, "change
+  scene" (for whoever set it off, or everyone when it activates the scene)
+  and moving the creature to a spot or a tile come along; things are found
+  by Tagger tag or Foundry id. A dialog with buttons (confirm or custom)
+  becomes a question whose answers each run the actions from the landing
+  their button jumps to (following gotos); otherwise a trigger with Monk's
+  jumps keeps the path a click most likely takes. The distance filter
+  ("within 2 squares") lets only a creature that close use the tile
+  (`near`). Macros, "alter" (except of elevation and place), creatures
+  turned and the rest are reported.
 - **Lights** put out in Foundry stay out until a trigger or the GM lights them.
 - **Tokens** on their actors: a linked token stays linked; an unlinked one
   becomes a copy whose own name, picture, size and hit points go in its
@@ -142,8 +181,11 @@ v1 to v5 field names):
   save and the damage they roll (with its upcasting). One that does nothing
   we can read comes as its text, for the GM to apply.
 - Where the creature stands: its coins, spent spell slots and hit dice,
-  exhaustion, death saves, what is packed in which bag, and the magic items
-  it is attuned to.
+  exhaustion, death saves, heroic inspiration, what is packed in which bag,
+  and the magic items it is attuned to.
+- What it was trained in: armor, weapons, tools and languages (Foundry's
+  codes and its custom entries) become `stats.proficiencies`, by our ids
+  where we know the thing and by name where we don't.
 - Active effects: the actor's own (with their conditions) and those its
   items give their bearer while worn (a race's resistance, a ring's +1 AC)
   become effects whose `changes` are ours (ability scores, AC, hit points,

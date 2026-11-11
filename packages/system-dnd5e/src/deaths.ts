@@ -1,4 +1,6 @@
 import { type Rng, roll } from '@vtt/shared';
+import { d20Formula } from './effects.ts';
+import { type RollEdge, withEdge } from './roll-choice.ts';
 import type { Token } from './token-schema.ts';
 
 // Characters at 0 hit points don't die at once: they make death saving
@@ -28,8 +30,8 @@ function tally(saves: DeathSaves): DeathSaves {
 }
 
 /** Rolls a death save: 10 or more succeeds, a 1 counts twice, a 20 wakes the character with 1 hp. */
-export function deathSave(token: Token, rng: Rng = Math.random): { token: Token; note: string } {
-  const d20 = roll('1d20', rng).total;
+export function deathSave(token: Token, rng: Rng = Math.random, edge?: RollEdge): { token: Token; note: string } {
+  const d20 = roll(d20Formula(0, [], withEdge({ advantage: false, disadvantage: false }, edge)), rng).total;
   const now = token.deathSaves ?? { successes: 0, failures: 0 };
   if (d20 === 20)
     return {

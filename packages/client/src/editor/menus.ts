@@ -57,8 +57,11 @@ export interface MenuApi {
     open(entry: string, page?: string): void;
     show(entry: string, page?: string): void;
     showImage(src: string, title?: string): void;
+    rollTable(table: string, gmOnly?: boolean): void;
   };
   /** The pile window (see session-piles.ts). */
+  /** The scenes (see session-scenes.ts). */
+  readonly scenes: { fitGrid(size: number): void };
   readonly piles: { open(token: string): void };
 }
 
@@ -256,8 +259,34 @@ registerMenu('tile', (t, api) => {
       run: () => api.editor.editSelection({ background: ground ? null : true }),
     },
     showTileEntry(t, api),
+    fitGridEntry(t, api),
   ];
 });
+
+/** Squares of 20 px or more, the two ways within 2% of each other. */
+const MIN_SQUARE = 20;
+const SAME_SQUARE = 0.02;
+
+/**
+ * The square size a map picture was drawn at, when its file name gives its
+ * size in squares the way map makers name them ("Tavern_30x20.webp",
+ * "cave [24x18].jpg") and `w` by `h` pixels fits that many squares both ways.
+ */
+export function gridOfPicture(src: string, w: number, h: number): number | undefined {
+  const name = src.split('/').at(-1) ?? '';
+  for (const m of name.matchAll(/(?<!\d)(\d{1,3})x(\d{1,3})(?!\d)/gi)) {
+    const [across, down] = [w / Number(m[1]), h / Number(m[2])];
+    if (across >= MIN_SQUARE && Math.abs(across - down) <= across * SAME_SQUARE) return Math.round(across);
+  }
+  return undefined;
+}
+
+/** GM: a map picture whose name gives its size in squares sets the scene's grid to fit it. */
+function fitGridEntry(t: MenuTarget, api: MenuApi): Entry {
+  const d = t.docs.length === 1 ? t.docs[0]!.doc : undefined;
+  const size = d && typeof d.src === 'string' ? gridOfPicture(d.src, Number(d.w), Number(d.h)) : undefined;
+  return api.isGm() && !!size && { label: 'Match the grid to this map', run: () => api.scenes.fitGrid(size) };
+}
 
 /** GM: show one picture tile to the players. */
 function showTileEntry(t: MenuTarget, api: MenuApi): Entry {
@@ -283,6 +312,13 @@ for (const type of ITEM_TYPES)
 registerMenu('note', (t, api) => {
   const note = t.docs.length === 1 ? t.docs[0]!.doc : undefined;
   const entry = typeof note?.entry === 'string' ? note.entry : undefined;
+  const table = typeof note?.table === 'string' ? note.table : undefined;
+  if (table) {
+    return [
+      { label: 'Roll on the table', run: () => api.journal.rollTable(table) },
+      api.isGm() && { label: 'Roll for the GM alone', run: () => api.journal.rollTable(table, true) },
+    ];
+  }
   if (!entry) return [];
   const page = typeof note?.page === 'string' ? note.page : undefined;
   return [

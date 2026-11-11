@@ -133,6 +133,8 @@ export const LegendarySchema = z.object({
       cost: z.number().int().min(1).max(3).default(1),
       /** The name of the attack it makes (a dragon's tail attack); without one it is described in chat. */
       attack: z.string().optional(),
+      /** A save action run like a breath weapon (Wing Attack): spell fields such as targets, range, area, save, damage, effect. */
+      spell: z.record(z.string(), z.unknown()).optional(),
       description: z.string().optional(),
     }),
   ),
@@ -176,6 +178,14 @@ export const StatsSchema = z.object({
   proficiency: z.number().int().optional(),
   /** Extra attacks besides the equipped weapons. */
   attacks: z.array(AttackSchema).optional(),
+  /**
+   * The character's species and lineage (subrace), by id: the spells they give (species-spells.ts). A species
+   * dropped on the sheet sets it (sheet-drops.ts); a creator character's is also in its build.
+   */
+  species: id.optional(),
+  lineage: id.optional(),
+  /** Spells picked for a feature to cast without a slot (Mystic Arcanum), by feature id. */
+  spellPicks: z.record(id, z.array(id).max(10)).optional(),
   /** Spells the character knows or has prepared, by id. */
   spells: z.array(id).optional(),
   /** Class features granted on top of the class's own, as "<class>/<feature>" (e.g. "barbarian/rage"). */
@@ -186,11 +196,15 @@ export const StatsSchema = z.object({
   expertise: z.array(id).optional(),
   /** Armor, weapons, tools and languages by id (proficiency-catalog.ts); older ones may be words. */
   proficiencies: z.array(z.string().trim().min(1).max(60)).max(80).optional(),
-  /** Spellcasting for creatures without a caster class (a homebrew class, a monster). */
+  /**
+   * Spellcasting for creatures without a caster class (a homebrew class, a
+   * monster). Progression "none": no slots, only its homemade spells, each
+   * cast at its own level without one.
+   */
   spellcasting: z
     .object({
       ability: z.enum(ABILITIES),
-      progression: z.enum(['full', 'half', 'third', 'pact']).default('full'),
+      progression: z.enum(['full', 'half', 'third', 'pact', 'none']).default('full'),
       /** Caster level for slots and cantrips; defaults to `level`. */
       level: z.number().int().min(1).max(20).optional(),
     })

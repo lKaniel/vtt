@@ -1,4 +1,4 @@
-import { characterLevel, type ClientMessage, type FeatureSheet, featureSpell } from '@vtt/system-dnd5e';
+import { characterLevel, type ClientMessage, type FeatureSheet, featureSpell, type Spell } from '@vtt/system-dnd5e';
 import { isPowerFeature, type PowerAim, powerAim } from '../play/power-aiming.ts';
 
 /** How a chat roll is applied: in full, half, double, or as healing. */
@@ -12,6 +12,7 @@ import type { Targets } from './targets.ts';
 import { loadRollMode, saveRollMode } from '../play/roll-mode.ts';
 import { tokenAt } from '../play/drops.ts';
 import { RollPick } from './session-pick.ts';
+import { RollDialog } from './session-roll-dialog.ts';
 import { type RangeAim, type RangeHost, walkInRange } from '../play/walk-in-range.ts';
 
 // What the selected creature is about to do: an armed attack or an aimed
@@ -37,6 +38,8 @@ export interface ActionEvents {
   /** An attack was readied or a spell aimed, or put away. */
   armed(): void;
   gridSize(): number;
+  /** Sends a message as it is, past the roll dialog. */
+  post(msg: ClientMessage): void;
 }
 
 /** The selected creature's readied attack or aimed spell, and your roll mode, as `session.actions`. */
@@ -53,12 +56,15 @@ export class Actions {
   rollMode: RollMode = loadRollMode();
   /** Advantage, disadvantage or a critical picked for your next roll (session-pick.ts). */
   readonly pick: RollPick;
+  /** The dialog an action that rolls or spends waits in for your picks (session-roll-dialog.ts). */
+  readonly rolls: RollDialog;
 
   constructor(
     private readonly s: ActionHost,
     private readonly on: ActionEvents,
   ) {
-    this.pick = new RollPick(on);
+    this.pick = new RollPick(on, s);
+    this.rolls = new RollDialog(s, on, (msg) => on.post(msg));
   }
 
   /** Applies the roll on a chat card to your targets, else the creatures selected (see damage-actions.ts on the server). */
@@ -101,7 +107,7 @@ export class Actions {
    * Readies a spell of the selected token with a slot, for free, or paid by a feature (`paidBy`). A self spell
    * goes off at once, unless there is more than one way to pay for it: then it waits for Cast.
    */
-  aim(spellId: string | undefined, slot = 0, pay: { free?: boolean; paidBy?: string } = {}): void {
+  aim(spellId: string | undefined, slot = 0, pay: { free?: boolean; paidBy?: string; spell?: Spell } = {}): void {
     const token = this.s.selected ? this.s.tokens.get(this.s.selected) : undefined;
     this.armed = undefined;
     const aiming = aimFor(token?.sheet, spellId, { slot, ...pay });
@@ -243,9 +249,9 @@ export class Actions {
     this.on.changed();
   }
 
-  /** A cast with your roll pick when the spell rolls to hit; other spells leave the pick for a later roll. */
+  /** A cast (or a feature aimed like one) with your roll pick when it rolls to hit; others leave the pick for a later roll. */
   private picked(msg: ClientMessage): ClientMessage {
-    if (msg.t !== 'cast' || !this.aiming?.spell.attack || this.aiming.spell.autoHit) return msg;
+    if (!['cast', 'feature'].includes(msg.t) || !this.aiming?.spell.attack || this.aiming.spell.autoHit) return msg;
     return { ...msg, ...this.pick.take() };
   }
 

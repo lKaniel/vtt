@@ -207,6 +207,26 @@ describe('scene placeables and sidebar documents', () => {
     expect(ana.take('docs').flatMap((m) => m.changes)).toEqual([{ coll: 'main/notes', id: 'pin' }]);
   });
 
+  it('send players a roll table’s note once the table is shared with them', () => {
+    const gm = seat('gm');
+    const results = [{ text: 'A rat' }];
+    ops(
+      gm,
+      make('tables', { id: 'encounters', type: 'rolltable', name: 'Encounters', results }),
+      make('main/notes', { id: 'dice', type: 'note', x: 0, y: 0, table: 'encounters' }),
+    );
+    expect(reasons(gm)).toEqual([]);
+    const ana = seat('ana');
+    expect(welcomed(ana)['main/notes']).toBeUndefined();
+    ana.sent = [];
+    ops(gm, { op: 'update', coll: 'tables', id: 'encounters', patch: { ownership: { default: 'observer' } } });
+    const sent = ana.take('docs').flatMap((m) => m.changes);
+    expect(sent.map((c) => `${c.coll}#${c.id}`).sort((a, b) => a.localeCompare(b))).toEqual([
+      'main/notes#dice',
+      'tables#encounters',
+    ]);
+  });
+
   it('send players the playlists that are playing', () => {
     const gm = seat('gm');
     const tracks = [{ id: 'lute', name: 'Lute', src: 'lute.ogg' }];

@@ -179,6 +179,11 @@ export class TokenMoves {
     this.door(player, msg);
   }
 
+  /** Answers a tile's question (Monk's dialog) with option `option`. */
+  answer(player: Player, id: string, option: number): void {
+    this.rules.triggers.answer(player, id, option);
+  }
+
   /** Takes a token you control to another level: one the elevator it stands in serves (the GM: any). */
   changeLevel(player: Player, seen: (id: string) => boolean, id: string, level: string): void {
     const token = this.controlled(player, seen, id);

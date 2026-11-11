@@ -1,0 +1,8 @@
+{
+  "name": "The Mill Road",
+  "gridSize": 100,
+  "chunkSize": 2000,
+  "start": [400, 1000],
+  "darkness": 0.15,
+  "wallArt": true
+}

@@ -1,0 +1,308 @@
+{
+  "$comment": "Spells a species or lineage gives (species-spells.ts), by edition: cantrips from 1st level, the rest once a long rest without a slot from the character level on (2024: also always prepared). Characters cast them with their best mental ability, or their class's.",
+  "species": {
+    "tiefling": {
+      "2014": [
+        {
+          "id": "infernal-legacy",
+          "name": "Infernal Legacy: Thaumaturgy",
+          "level": 1,
+          "grantsSpells": [[1, "thaumaturgy"]]
+        },
+        {
+          "id": "infernal-legacy-3",
+          "name": "Infernal Legacy: Hellish Rebuke",
+          "level": 3,
+          "uses": [[3, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "hellish-rebuke",
+              "level": 2
+            }
+          ]
+        },
+        {
+          "id": "infernal-legacy-5",
+          "name": "Infernal Legacy: Darkness",
+          "level": 5,
+          "uses": [[5, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "darkness"
+            }
+          ]
+        }
+      ],
+      "2024": [
+        {
+          "id": "otherworldly-presence",
+          "name": "Otherworldly Presence",
+          "level": 1,
+          "grantsSpells": [[1, "thaumaturgy"]]
+        }
+      ]
+    }
+  },
+  "lineages": {
+    "drow": {
+      "2024": [
+        {
+          "id": "drow-lineage-cantrip",
+          "name": "Drow Lineage: Dancing Lights",
+          "level": 1,
+          "grantsSpells": [[1, "dancing-lights"]]
+        },
+        {
+          "id": "drow-lineage-3",
+          "name": "Drow Lineage: Faerie Fire",
+          "level": 3,
+          "uses": [[3, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "faerie-fire"
+            }
+          ],
+          "grantsSpells": [[3, "faerie-fire"]]
+        },
+        {
+          "id": "drow-lineage-5",
+          "name": "Drow Lineage: Darkness",
+          "level": 5,
+          "uses": [[5, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "darkness"
+            }
+          ],
+          "grantsSpells": [[5, "darkness"]]
+        }
+      ]
+    },
+    "high-elf": {
+      "2024": [
+        {
+          "id": "high-elf-lineage-cantrip",
+          "name": "High Elf Lineage: Prestidigitation",
+          "level": 1,
+          "grantsSpells": [[1, "prestidigitation"]]
+        },
+        {
+          "id": "high-elf-lineage-3",
+          "name": "High Elf Lineage: Detect Magic",
+          "level": 3,
+          "uses": [[3, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "detect-magic"
+            }
+          ],
+          "grantsSpells": [[3, "detect-magic"]]
+        },
+        {
+          "id": "high-elf-lineage-5",
+          "name": "High Elf Lineage: Misty Step",
+          "level": 5,
+          "uses": [[5, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "misty-step"
+            }
+          ],
+          "grantsSpells": [[5, "misty-step"]]
+        }
+      ]
+    },
+    "wood-elf": {
+      "2024": [
+        {
+          "id": "wood-elf-lineage-cantrip",
+          "name": "Wood Elf Lineage: Druidcraft",
+          "level": 1,
+          "grantsSpells": [[1, "druidcraft"]]
+        },
+        {
+          "id": "wood-elf-lineage-3",
+          "name": "Wood Elf Lineage: Longstrider",
+          "level": 3,
+          "uses": [[3, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "longstrider"
+            }
+          ],
+          "grantsSpells": [[3, "longstrider"]]
+        },
+        {
+          "id": "wood-elf-lineage-5",
+          "name": "Wood Elf Lineage: Pass Without Trace",
+          "level": 5,
+          "uses": [[5, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "pass-without-trace"
+            }
+          ],
+          "grantsSpells": [[5, "pass-without-trace"]]
+        }
+      ]
+    },
+    "forest-gnome": {
+      "2024": [
+        {
+          "id": "forest-gnome-lineage",
+          "name": "Forest Gnome: Minor Illusion",
+          "level": 1,
+          "grantsSpells": [[1, "minor-illusion"]]
+        },
+        {
+          "id": "forest-gnome-animals",
+          "name": "Forest Gnome: Speak with Animals",
+          "level": 1,
+          "uses": [
+            [1, 2],
+            [5, 3],
+            [9, 4],
+            [13, 5],
+            [17, 6]
+          ],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "speak-with-animals"
+            }
+          ],
+          "grantsSpells": [[1, "speak-with-animals"]]
+        }
+      ]
+    },
+    "rock-gnome": {
+      "2024": [
+        {
+          "id": "rock-gnome-lineage",
+          "name": "Rock Gnome: Mending and Prestidigitation",
+          "level": 1,
+          "grantsSpells": [
+            [1, "mending"],
+            [1, "prestidigitation"]
+          ]
+        }
+      ]
+    },
+    "abyssal": {
+      "2024": [
+        {
+          "id": "abyssal-legacy-cantrip",
+          "name": "Abyssal Legacy: Poison Spray",
+          "level": 1,
+          "grantsSpells": [[1, "poison-spray"]]
+        },
+        {
+          "id": "abyssal-legacy-3",
+          "name": "Abyssal Legacy: Ray Of Sickness",
+          "level": 3,
+          "uses": [[3, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "ray-of-sickness"
+            }
+          ],
+          "grantsSpells": [[3, "ray-of-sickness"]]
+        },
+        {
+          "id": "abyssal-legacy-5",
+          "name": "Abyssal Legacy: Hold Person",
+          "level": 5,
+          "uses": [[5, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "hold-person"
+            }
+          ],
+          "grantsSpells": [[5, "hold-person"]]
+        }
+      ]
+    },
+    "chthonic": {
+      "2024": [
+        {
+          "id": "chthonic-legacy-cantrip",
+          "name": "Chthonic Legacy: Chill Touch",
+          "level": 1,
+          "grantsSpells": [[1, "chill-touch"]]
+        },
+        {
+          "id": "chthonic-legacy-3",
+          "name": "Chthonic Legacy: False Life",
+          "level": 3,
+          "uses": [[3, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "false-life"
+            }
+          ],
+          "grantsSpells": [[3, "false-life"]]
+        },
+        {
+          "id": "chthonic-legacy-5",
+          "name": "Chthonic Legacy: Ray Of Enfeeblement",
+          "level": 5,
+          "uses": [[5, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "ray-of-enfeeblement"
+            }
+          ],
+          "grantsSpells": [[5, "ray-of-enfeeblement"]]
+        }
+      ]
+    },
+    "infernal": {
+      "2024": [
+        {
+          "id": "infernal-legacy-cantrip",
+          "name": "Infernal Legacy: Fire Bolt",
+          "level": 1,
+          "grantsSpells": [[1, "fire-bolt"]]
+        },
+        {
+          "id": "infernal-legacy-3",
+          "name": "Infernal Legacy: Hellish Rebuke",
+          "level": 3,
+          "uses": [[3, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "hellish-rebuke"
+            }
+          ],
+          "grantsSpells": [[3, "hellish-rebuke"]]
+        },
+        {
+          "id": "infernal-legacy-5",
+          "name": "Infernal Legacy: Darkness",
+          "level": 5,
+          "uses": [[5, 1]],
+          "recharge": "long",
+          "freeCasts": [
+            {
+              "spell": "darkness"
+            }
+          ],
+          "grantsSpells": [[5, "darkness"]]
+        }
+      ]
+    }
+  }
+}

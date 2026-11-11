@@ -1,6 +1,7 @@
 {
   "id": "vesper",
   "name": "Vesper",
+  "img": "/assets/tokens/vesper.svg",
   "color": "#7a5ad0",
   "darkvision": 60,
   "stats": {

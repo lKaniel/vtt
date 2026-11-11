@@ -1,7 +1,7 @@
 import { type AttackRoll, rollAttack, tokenDistance } from './attack.ts';
 import { abilityMod } from './creature-math.ts';
 import { attackModifiers, rollSave, type UsedEffect } from './effects.ts';
-import { type RollChoice, withEdge } from './roll-choice.ts';
+import { type RollChoice, setDamage, withPick } from './roll-choice.ts';
 import type { CastSide } from './spells.ts';
 import type { Effect } from './spell-schema.ts';
 import type { Attack, Damage, DamageType } from './stats-schema.ts';
@@ -24,6 +24,8 @@ export interface WeaponAttackInput {
   grid?: GridKind;
   /** An ally of the attacker is within 5 ft of the target (for sneak attack). */
   allyNearTarget: boolean;
+  /** An ally that can act stands opposite the attacker beside the target, and the game plays flanking. */
+  flanked?: boolean;
   /** Spell slot spent on Divine Smite if the attack hits (2014 paladin); the server checks it's allowed. */
   smite?: number;
   /** Sneak attack was already used this turn. */
@@ -129,10 +131,28 @@ function grazeDamage(input: WeaponAttackInput): WeaponAttackOutcome['graze'] {
   return amount > 0 ? { amount, type: attack.damage[0]!.type } : undefined;
 }
 
+type EdgeInput = Pick<
+  WeaponAttackInput,
+  'attacker' | 'target' | 'attack' | 'range' | 'flanked' | 'gridSize' | 'grid' | 'pick'
+>;
+
+/** How a weapon attack's d20 would be rolled as things stand, before any pick: what the roll dialog shows first. */
+export function weaponAttackEdge(input: Omit<EdgeInput, 'pick'>): { advantage: boolean; disadvantage: boolean } {
+  const { attacker, target, gridSize, grid } = input;
+  return rolledModifiers(input, tokenDistance(attacker.token, target.token, gridSize, grid) <= 5);
+}
+
 /** What the attack rolls with: the effects', long range's disadvantage, and the attacker's own pick. */
-function rolledModifiers(input: WeaponAttackInput, within5: boolean) {
-  const mods = withEdge(attackModifiers(input.attacker, input.target, { within5 }), input.pick?.edge);
-  return { ...mods, disadvantage: mods.disadvantage || input.range === 'long', crit: input.pick?.crit };
+function rolledModifiers(input: EdgeInput, within5: boolean) {
+  const base = attackModifiers(input.attacker, input.target, { within5 });
+  const flanking = !!input.flanked && input.attack.kind === 'melee';
+  const given = {
+    ...base,
+    advantage: base.advantage || flanking,
+    disadvantage: base.disadvantage || input.range === 'long',
+  };
+  const { crit, damageExtra } = input.pick ?? {};
+  return { ...withPick(given, input.pick), pick: { crit, damageExtra } };
 }
 
 export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.random): WeaponAttackOutcome {
@@ -156,7 +176,7 @@ export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.ra
   const mastery = result.hit ? masteryOnHit(input, rng) : { effects: [], notes: [] };
   const riders = result.hit ? hitRiders({ id: attacker.token.id, sheet: attacker.sheet }, 'force').used : [];
   return {
-    roll: result,
+    roll: { ...result, damage: setDamage(result.damage, input.pick) },
     sneak: sneak && result.hit,
     smote: !!input.smite && result.hit && attack.kind === 'melee',
     graze: result.hit || decoy ? undefined : grazeDamage(input),

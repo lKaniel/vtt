@@ -76,6 +76,8 @@ export type EngineClientMessage =
   | { t: 'door'; chunk: string; wall: string; state: DoorState }
   /** Click a tile that has a trigger, with one of your creatures for the actions that move one (see triggers.ts). */
   | { t: 'trigger'; tile: string; token?: string }
+  /** Answers a tile's question (`triggerChoice` from the server) with the option at `option`. */
+  | { t: 'triggerChoice'; id: string; option: number }
   /** Take a token to another level of its scene: one an elevator it stands in serves (the GM: any). */
   | { t: 'changeLevel'; token: string; level: string }
   | { t: 'chat'; text: string }
@@ -155,7 +157,8 @@ export type EngineServerMessage =
    * player's. `blocks` maps a block key to its bits (base64, "" for an empty
    * block, see fog.ts); `full` means forget the blocks not listed.
    */
-  | { t: 'fog'; player: string; cell: number; blocks: Record<string, string>; full?: boolean }
+  /** Explored fog of `player`, on the scene's floor `level` (none: the street, or a scene without floors). */
+  | { t: 'fog'; player: string; level?: string; cell: number; blocks: Record<string, string>; full?: boolean }
   | { t: 'tokenGone'; id: string }
   /** A creature walked `path`, ending `elevation` feet up (none: on the ground). */
   | { t: 'moved'; id: string; path: Point[]; elevation?: number }
@@ -177,6 +180,8 @@ export type EngineServerMessage =
   | { t: 'sound'; src: string; volume?: number }
   /** Your creature stepped into an elevator: pick one of these levels (answer with `changeLevel`). */
   | { t: 'levelChoice'; token: string; levels: string[] }
+  /** A tile asks you to pick (Monk's dialog): answer with `triggerChoice` and the option's index. */
+  | { t: 'triggerChoice'; id: string; title?: string; text: string; options: string[] }
   /** `ref` names the request that failed, when it named itself (an upload). */
   | { t: 'error'; message: string; ref?: string }
   /** GM only: documents changed, by `by` (a player id; none for a hand edit of the files). */

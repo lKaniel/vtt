@@ -1,6 +1,7 @@
 {
   "id": "phantom-wolf",
   "name": "Phantom wolf",
+  "img": "/assets/tokens/phantom-wolf.svg",
   "color": "#9090c0",
   "size": 1
 }

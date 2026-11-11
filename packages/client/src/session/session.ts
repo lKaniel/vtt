@@ -21,7 +21,7 @@ import {
   type Token,
   type TokenView,
 } from '@vtt/system-dnd5e';
-import { openSocket, refusalOf } from './session-socket.ts';
+import { openSocket, refusalOf, sendOn } from './session-socket.ts';
 import { Turns } from './turns.ts';
 
 import { type DropEvents, Drops } from './session-drops.ts';
@@ -37,6 +37,7 @@ import { Actions, type ActionEvents } from './session-actions.ts';
 import { Fog, type FogEvents } from './session-fog.ts';
 import { Draw } from './session-items.ts';
 import { Levels } from './session-levels.ts';
+import { TileAsks } from './session-asks.ts';
 import { View3DSwitch } from './session-view3d.ts';
 import { ThroughWalls } from './session-through-walls.ts';
 import { Editor, type EditorEvents } from './session-editor.ts';
@@ -45,7 +46,7 @@ import { Requests } from './session-requests.ts';
 import { type EditEvents, Edits } from './session-edits.ts';
 import { WorldTime } from './session-time.ts';
 import { Tiles } from './session-tiles.ts';
-import { isTableNews, type TableNews, withChat } from './session-news.ts';
+import { isTableNews, movedTo, type TableNews, withChat } from './session-news.ts';
 import type { SessionPart } from './session-part.ts';
 import { type SceneEvents, Scenes } from './session-scenes.ts';
 import { Targets } from './targets.ts';
@@ -109,11 +110,13 @@ export class Session {
   /** What the parts may ask of the session beyond its public face. */
   private readonly ev: PartEvents = {
     changed: () => this.changed(),
+    post: (msg) => sendOn(this.ws, msg),
     armed: () => this.emit('armed'),
     lit: () => this.emit('lighting'),
     editorChanged: () => this.editorChanged(),
     fogChanged: () => this.emit('fog'),
     gridSize: () => this.gridSize(),
+    moveGrid: () => this.moveGrid(),
     updates: (label, updates) => this.edits.sendUpdates(label, updates),
     runScript: (doc, token) => this.scripts.run(doc, token),
     heard: (src, volume) => this.emit('sound', src, volume),
@@ -144,6 +147,8 @@ export class Session {
   readonly fog = new Fog(this, this.ev);
   readonly draw = new Draw(this, this.ev);
   readonly levels = new Levels(this, this.ev);
+  /** A tile's question for you (Monk's dialog buttons). */
+  readonly asks = new TileAsks(this);
   /** Whether this browser shows the map in 3D. */
   readonly view3d = new View3DSwitch(this.ev, this);
   /** GM: moves go straight through walls (session-through-walls.ts). */
@@ -171,6 +176,9 @@ export class Session {
     this.piles,
     this.sheets,
     this.levels,
+    this.asks,
+    this.actions.pick,
+    this.actions.rolls,
   ];
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
@@ -199,8 +207,7 @@ export class Session {
 
   on<K extends keyof SessionEvents>(event: K, fn: SessionEvents[K]): () => void {
     const set = this.listeners.get(event) ?? new Set();
-    this.listeners.set(event, set);
-    set.add(fn);
+    this.listeners.set(event, set.add(fn));
     return () => set.delete(fn);
   }
 
@@ -246,8 +253,9 @@ export class Session {
     this.ws?.close();
   }
 
+  /** Sends `msg`, unless it is an action that waits for the roll dialog first. */
   send(msg: ClientMessage): void {
-    if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(msg));
+    if (!this.actions.rolls.holds(msg)) sendOn(this.ws, msg);
   }
 
   /** Chunks the camera currently needs. Chunks outside it are forgotten. */
@@ -255,9 +263,8 @@ export class Session {
     // The scene-wide chunk (tiles bigger than a chunk) is always in view.
     const keys = chunks.includes(WIDE_CHUNK) ? chunks : [...chunks, WIDE_CHUNK];
     this.view = keys;
-    const wanted = new Set(keys);
     for (const key of [...this.chunks.keys()])
-      if (!wanted.has(key) && this.chunks.delete(key)) this.emit('chunkGone', key);
+      if (!keys.includes(key) && this.chunks.delete(key)) this.emit('chunkGone', key);
     this.send({ t: 'view', chunks: keys });
   }
 
@@ -325,15 +332,13 @@ export class Session {
 
   moveGrid = (): MoveGrid => (this.world && sceneLattice(this.world)) ?? this.gridSize();
 
-  showError(message: string): void {
-    this.error = { message, at: Date.now() };
+  /** Shows an error, or (`info`) a notice. */
+  showError(message: string, info = false): void {
+    this.error = { message, at: Date.now(), ...(info && { info }) };
     this.changed();
   }
 
-  showNotice(message: string): void {
-    this.error = { message, at: Date.now(), info: true };
-    this.changed();
-  }
+  showNotice = (message: string): void => this.showError(message, true);
 
   private receive(msg: ServerMessage): void {
     if (this.apply(msg)) this.changed();
@@ -480,8 +485,7 @@ export class Session {
     const t = this.tokens.get(id);
     const end = path.at(-1);
     if (!t || !end) return false;
-    const { elevation: _, ...rest } = t;
-    this.tokens.set(id, { ...rest, x: end[0], y: end[1], ...(elevation !== undefined && { elevation }) });
+    this.tokens.set(id, movedTo(t, end, elevation));
     this.emit('moved', id, path);
     return true;
   }

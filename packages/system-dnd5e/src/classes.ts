@@ -119,6 +119,8 @@ export interface CasterSheet {
   /** The pact slots among `slots` of a multiclassed warlock (index 0 = 1st), back on a short rest. */
   pactSlots?: number[];
   spells: Spell[];
+  /** Spells cast at their own level without a slot: a non-caster's homemade ones. */
+  atWill?: string[];
 }
 
 interface Basics {
@@ -133,22 +135,43 @@ interface Casting {
   slots: number[];
   pact?: number[];
   allPact: boolean;
+  /** No slots: its homemade spells are cast at will. */
+  atWill?: boolean;
 }
 
 function spellcastingOf(token: Token, content: Content): Casting | undefined {
   const own = token.stats?.spellcasting;
   const level = characterLevel(token.stats) ?? 1;
+  if (own?.progression === 'none') return { ability: own.ability, level, slots: [], allPact: false, atWill: true };
   if (own) {
     const at = own.level ?? level;
     const slots = spellSlots({ progression: own.progression, from: 1 }, at);
     return { ability: own.ability, level: at, slots, allPact: own.progression === 'pact' };
   }
-  const casters = castingLevels(classLevels(token, content));
-  if (!casters.length) return undefined;
+  const levels = classLevels(token, content);
+  const casters = castingLevels(levels);
+  if (!casters.length) return slotlessCasting(token, level, { levels, content });
   const { slots, pact } = combinedSlots(casters, content.edition);
   const allPact = casters.every((c) => c.casting.progression === 'pact');
   const mixed = !allPact && pact.some((n) => n > 0);
   return { ability: casters[0]!.casting.ability, level, slots, allPact, ...(mixed && { pact }) };
+}
+
+/**
+ * A creature with no spellcasting casts its homemade spells at will, and the
+ * spells its features pay for (a pool's points, a feature's uses): with its
+ * class pool's ability, else its best mental one.
+ */
+function slotlessCasting(
+  token: Token,
+  level: number,
+  { levels, content }: { levels: readonly ClassLevel[]; content: Content },
+): Casting | undefined {
+  if (!token.own?.spells?.length && !featureSpellIds(token, content).length) return undefined;
+  const a = token.stats?.abilities ?? {};
+  const best = (['int', 'wis', 'cha'] as const).reduce((top, k) => ((a[k] ?? 10) > (a[top] ?? 10) ? k : top));
+  const ability = levels.find((l) => l.cls?.pool)?.cls?.pool?.ability ?? best;
+  return { ability, level, slots: [], allPact: false, atWill: true };
 }
 
 /** Spellcasting numbers for a token, or undefined if it casts nothing. */
@@ -174,6 +197,7 @@ export function casterSheet(
     spells: [...new Set([...knownSpellIds(token), ...featureSpellIds(token, content)])]
       .map((id) => content.spells.get(id))
       .filter((s): s is Spell => !!s),
+    ...(casting.atWill && { atWill: token.own?.spells?.map((s) => s.id) ?? [] }),
   };
 }
 
@@ -186,6 +210,8 @@ export interface FeatureSheet extends Omit<Feature, 'spell'> {
   spell?: Partial<Spell>;
   /** Levels in the class it comes from (the character's level for granted features): its tables read this. */
   classLevel?: number;
+  /** The spells picked for its `spellPicks` (`stats.spellPicks`). */
+  picked?: string[];
 }
 
 /** Most uses at `level`: a fixed table, an ability modifier (at least 1), or hit points per level. */
@@ -275,9 +301,11 @@ export function featureSheets(
     token,
     abilities,
   );
+  const picks = token.stats?.spellPicks ?? {};
   return sheets.map((f) => {
     const from = f.usesFrom ? sheets.find((s) => s.id === f.usesFrom) : undefined;
-    return from ? { ...f, max: from.max, left: from.left } : f;
+    const shared = from ? { ...f, max: from.max, left: from.left } : f;
+    return picks[f.id] && f.spellPicks ? { ...shared, picked: picks[f.id] } : shared;
   });
 }
 

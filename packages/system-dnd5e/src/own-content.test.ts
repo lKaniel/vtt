@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { srdFor } from './content.ts';
 import { resolveCreature } from './creature.ts';
 import { blankOwn, changeOwn, dropOwn, makeOwn, withOwn } from './own-content.ts';
+import { castProblem } from './spells.ts';
 import { FeatureSchema, SpellSchema } from './spell-schema.ts';
 import { ItemSchema } from './item-schema.ts';
 import { TokenSchema } from './token-schema.ts';
@@ -59,6 +60,36 @@ describe("a sheet's own items, spells and features", () => {
     expect(blankOwn('spell', hero)).toEqual(SpellSchema.parse(blankOwn('spell', hero)));
     expect(blankOwn('item', hero)).toEqual(ItemSchema.parse(blankOwn('item', hero)));
     expect(blankOwn('feature', hero)).toEqual(FeatureSchema.parse(blankOwn('feature', hero)));
+  });
+});
+
+describe('homemade spells on a creature with no spellcasting', () => {
+  const fighter = (extra: object = {}) =>
+    TokenSchema.parse({
+      ...hero,
+      stats: { class: 'fighter', level: 3, abilities: { int: 8, wis: 14, cha: 12 }, ...extra },
+    });
+
+  it('casts them with its best mental ability, without a slot, at their own level', () => {
+    const sheet = resolveCreature(fighter(), book)!;
+    expect(sheet.caster).toMatchObject({
+      ability: 'wis',
+      dc: 8 + 2 + 2,
+      attack: 4,
+      slots: [],
+      atWill: ['amars-glare'],
+    });
+    const glare = sheet.caster!.spells.find((s) => s.id === 'amars-glare')!;
+    expect(castProblem({ spell: glare, slot: 1, sheet })).toBeUndefined();
+  });
+
+  it('casts them with the ability picked for them', () => {
+    const sheet = resolveCreature(fighter({ spellcasting: { ability: 'cha', progression: 'none' } }), book)!;
+    expect(sheet.caster).toMatchObject({ ability: 'cha', dc: 11, slots: [], atWill: ['amars-glare'] });
+  });
+
+  it('gives a real caster no spells without slots', () => {
+    expect(resolveCreature(hero, book)!.caster?.atWill).toBeUndefined();
   });
 });
 

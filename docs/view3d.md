@@ -17,6 +17,8 @@ and the cube button stands it up again.
 | Right drag      | Moves the camera over the ground (a right click still opens the menu)       |
 | `O`             | Tactical view: straight down, as BG3's                                      |
 | `Home`          | Back to your creature                                                       |
+| Two fingers     | Pinch zooms, moving them together pans, twisting them turns the camera      |
+| Long press      | The menu a right click opens                                                |
 
 The camera keeps with the creature you act with and turns round its feet.
 Moved away (W A S D, a right drag), it stays until that creature moves,

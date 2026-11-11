@@ -28,6 +28,7 @@ export interface ScriptSession {
   showNotice(message: string): void;
   showError(message: string): void;
   readonly journal: { runMacro(macro: string, token?: string): Promise<void> };
+  readonly fog: { shown(): { explored(p: Point): boolean } | undefined };
 }
 
 export interface VttApi {
@@ -44,6 +45,8 @@ export interface VttApi {
   /** Says it in chat as if typed: words, or a command such as "/r 1d20+5". */
   chat(text: string): void;
   move(token: string, x: number, y: number): void;
+  /** Whether the fog of war on your scene shows (x, y) as explored: yours, or for the GM the players picked. */
+  explored(x: number, y: number): boolean;
   docs(coll: string): Doc[];
   doc(coll: string, id: string): Doc | undefined;
   /** Creates, updates and deletes documents in one undo step. */
@@ -124,6 +127,7 @@ function makeApi(s: ScriptSession, hooks: Hooks): VttApi {
     targets: () => [...s.targets.mine],
     chat: (text: string) => s.requests.say(text),
     move: (token: string, x: number, y: number) => s.requests.move(token, [x, y]),
+    explored: (x: number, y: number) => s.fog.shown()?.explored([x, y]) ?? false,
     docs: (coll: string) => s.docs.all(coll),
     doc: (coll: string, id: string) => s.docs.get(coll, id),
     edit: (ops: readonly Op[], label?: string) => s.edits.sendChanges(label ?? 'script', ops),

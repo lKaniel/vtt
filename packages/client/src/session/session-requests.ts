@@ -1,4 +1,4 @@
-import type { Actor, CarryChange, CheckKind, ClientMessage } from '@vtt/system-dnd5e';
+import type { Actor, CarryChange, CheckKind, ClientMessage, ReactionOffer } from '@vtt/system-dnd5e';
 import type { RollPick } from './session-pick.ts';
 import type { Climb } from './session-view3d.ts';
 import type { ClockAction, DoorState, MapEdit, Point, Role } from '@vtt/shared';
@@ -15,6 +15,7 @@ export class Requests {
       readonly throughWalls?: { readonly on: boolean };
       readonly view3d?: { readonly on: boolean; readonly climb?: Climb };
       readonly actions?: { readonly pick: RollPick };
+      readonly reactions?: readonly ReactionOffer[];
     },
   ) {}
 
@@ -89,9 +90,10 @@ export class Requests {
     this.s.send({ t: 'release', token, hold });
   }
 
-  /** Takes a reaction with one of the offered choices, or declines it without one. */
+  /** Takes a reaction with one of the offered choices, or declines it without one; an opportunity attack rolls with your pick. */
   takeReaction(offer: string, choice?: string): void {
-    this.s.send({ t: 'react', offer, ...(choice && { choice }) });
+    const attacks = choice && this.s.reactions?.find((o) => o.id === offer)?.kind === 'opportunity';
+    this.s.send({ t: 'react', offer, ...(choice && { choice }), ...(attacks && this.s.actions?.pick.take()) });
   }
 
   /** Uses one of an item the token carries (drinks a potion). */
@@ -121,9 +123,9 @@ export class Requests {
     this.s.send({ t: 'endTurn', ...(token && { token }) });
   }
 
-  /** GM: a fight; `shared`: party members next to each other share a turn (BG3). */
-  startCombat(tokens: string[], shared = false): void {
-    this.s.send({ t: 'combatStart', tokens, ...(shared && { shared }) });
+  /** GM: a fight; `shared`: party members next to each other share a turn (BG3); `surprised`: caught off guard. */
+  startCombat(tokens: string[], shared = false, surprised: string[] = []): void {
+    this.s.send({ t: 'combatStart', tokens, ...(shared && { shared }), ...(surprised.length && { surprised }) });
   }
 
   endCombat(): void {
@@ -134,9 +136,9 @@ export class Requests {
     this.s.send({ t: 'equip', token, item, equipped });
   }
 
-  /** GM: a legendary action, at `target` when it attacks. */
+  /** GM: a legendary action, at `target` when it attacks (with your roll pick). */
   legendary(token: string, option: string, target?: string): void {
-    this.s.send({ t: 'legendary', token, option, ...(target && { target }) });
+    this.s.send({ t: 'legendary', token, option, ...(target && { target, ...this.s.actions?.pick.take() }) });
   }
 
   /** GM: a lair action on the lair's turn. */
@@ -172,6 +174,11 @@ export class Requests {
   /** GM: sets a creature's exhaustion (0 for none). */
   setExhaustion(token: string, level: number): void {
     this.s.send({ t: 'exhaustion', token, level });
+  }
+
+  /** The GM gives heroic inspiration (`on`); the character's player spends it. */
+  setInspiration(token: string, on: boolean): void {
+    this.s.send({ t: 'inspiration', token, on });
   }
 
   /** Coins, packing and attunement on a creature the player controls. */

@@ -1,4 +1,4 @@
-import { srdFor } from '@vtt/system-dnd5e';
+import { type ReactionOffer, srdFor } from '@vtt/system-dnd5e';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Session } from './session.ts';
 import { closeSession, openSession, token, welcome, type FakeWebSocket } from './session.fixtures.ts';
@@ -56,5 +56,64 @@ describe('the roll pick', () => {
     session.actions.aim('fire-bolt', 0);
     session.actions.pickTarget('goblin');
     expect(ws.sent.at(-1)).toMatchObject({ t: 'cast', spell: 'fire-bolt', edge: 'advantage' });
+  });
+
+  it('tells the server your pick for the rolls it makes (initiative, death saves), and back to normal', () => {
+    session.actions.pick.set({ edge: 'advantage' });
+    expect(ws.sent.at(-1)).toEqual({ t: 'rollPick', token: 'hero', edge: 'advantage' });
+    session.select('goblin');
+    session.actions.pick.set({ edge: 'advantage' });
+    expect(ws.sent.at(-1)).toEqual({ t: 'rollPick', token: 'hero' });
+  });
+
+  it('is back to normal once the server used it, keeping a picked critical', () => {
+    session.actions.pick.set({ edge: 'disadvantage', crit: 'crit' });
+    ws.receive({ t: 'pickSpent' });
+    expect(session.actions.pick).toMatchObject({ edge: undefined, crit: 'crit' });
+  });
+
+  it('Shift held gives the roll advantage and Ctrl disadvantage, without picking it', () => {
+    session.actions.pick.hold({ shiftKey: true, ctrlKey: false, metaKey: false });
+    session.requests.rollCheck('hero', { ability: 'dex' });
+    expect(ws.sent.at(-1)).toMatchObject({ t: 'rollCheck', edge: 'advantage' });
+    session.actions.pick.hold({ shiftKey: false, ctrlKey: true, metaKey: false });
+    session.actions.arm('Longsword');
+    session.actions.attack('goblin');
+    expect(ws.sent.at(-1)).toMatchObject({ t: 'attack', edge: 'disadvantage' });
+    session.actions.pick.hold({ shiftKey: false, ctrlKey: false, metaKey: false });
+    session.requests.rollCheck('hero', { ability: 'dex' });
+    expect(ws.sent.at(-1)).not.toHaveProperty('edge');
+  });
+
+  it('goes with a legendary action at a target and an opportunity attack', () => {
+    session.actions.pick.set({ edge: 'advantage' });
+    session.requests.legendary('goblin', 'tail-attack', 'hero');
+    expect(ws.sent.at(-1)).toMatchObject({ t: 'legendary', edge: 'advantage' });
+    const offer: ReactionOffer = {
+      id: 'o1',
+      reactor: 'hero',
+      target: 'goblin',
+      kind: 'opportunity',
+      choices: ['Longsword'],
+    };
+    ws.receive({ t: 'reactionOffer', offer });
+    session.actions.pick.set({ edge: 'disadvantage' });
+    session.requests.takeReaction('o1', 'Longsword');
+    expect(ws.sent.at(-1)).toMatchObject({ t: 'react', choice: 'Longsword', edge: 'disadvantage' });
+  });
+
+  it("goes with a feature's attack aimed like a spell", () => {
+    const bolt = {
+      id: 'bolt',
+      name: 'Bolt',
+      level: 1,
+      action: 'action',
+      spell: { targets: 1, range: 60, attack: 'ranged' },
+    };
+    ws.receive({ t: 'token', token: { ...token('hero'), sheet: { effects: [], features: [bolt] } as never } });
+    session.actions.pick.set({ edge: 'advantage' });
+    session.actions.aimFeature('bolt');
+    session.actions.pickTarget('goblin');
+    expect(ws.sent.at(-1)).toMatchObject({ t: 'feature', feature: 'bolt', edge: 'advantage' });
   });
 });

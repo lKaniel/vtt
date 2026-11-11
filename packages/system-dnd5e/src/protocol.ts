@@ -12,7 +12,7 @@ import type {
 import type { CheckEntry, CheckKind, CheckRequestKind } from './checks.ts';
 import type { Combat } from './combat.ts';
 import type { Area } from './area-schema.ts';
-import type { CritChoice, RollChoice, RollEdge } from './roll-choice.ts';
+import type { D20Mode, RollAsk, RollChoice, RollEdge } from './roll-choice.ts';
 import type { Condition } from './spell-schema.ts';
 import type { CompendiumDrop, SheetArea } from './sheet-drops.ts';
 import type { Ability, Currency, DamageType, Edition } from './stats-schema.ts';
@@ -153,13 +153,15 @@ export type ClientMessage =
    */
   | { t: 'trade'; from: string; to?: string; item?: number; qty?: number; coins?: Currency }
   /** GM: a legendary action, between other creatures' turns; `target` for one that attacks. */
-  | { t: 'legendary'; token: string; option: string; target?: string }
+  | ({ t: 'legendary'; token: string; option: string; target?: string } & RollChoice)
   /** GM: the lair action of `token`'s lair, on its turn at initiative 20. */
   | { t: 'lair'; token: string; action: string }
   /** Spends one hit die to heal (outside fights). */
   | { t: 'hitDie'; token: string }
   /** GM: sets a creature's exhaustion, 0 for none. */
   | { t: 'exhaustion'; token: string; level: number }
+  /** The GM gives heroic inspiration (`on`); the character's player spends it. */
+  | { t: 'inspiration'; token: string; on: boolean }
   /** GM: gives each of these characters `xp` experience points. */
   | { t: 'awardXp'; tokens: string[]; xp: number }
   /** The next level for a character that is only an actor: a token's, or one in the Actors list. */
@@ -183,9 +185,14 @@ export type ClientMessage =
       versus?: CheckKind;
     }
   /** Rolls a creature's check: on the request card `card`, or on its own; `edge`: the roller's own advantage or disadvantage. */
-  | { t: 'rollCheck'; token: string; ability: Ability; skill?: string; card?: string; edge?: RollEdge }
+  | ({ t: 'rollCheck'; token: string; ability: Ability; skill?: string; card?: string } & Pick<
+      RollChoice,
+      'edge' | 'd20' | 'situational'
+    >)
+  /** Asks how the d20 of a roll would be rolled as things stand, for the roll dialog; answered with `rollDefaults`. */
+  | { t: 'rollDefaults'; ref: string; roll: RollAsk }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
-  | {
+  | ({
       t: 'cast';
       caster: string;
       spell: string;
@@ -207,12 +214,10 @@ export type ClientMessage =
       choice?: string;
       /** The monster a shape-shifting spell turns its targets into (polymorph). */
       form?: string;
-      /** The caster's own advantage or disadvantage on the spell attack, and a critical forced or held back. */
-      edge?: RollEdge;
-      crit?: CritChoice;
-    }
+      /** The caster's own pick for the spell attack, its damage and what the cast spends (`RollChoice`). */
+    } & RollChoice)
   /** `targets` and `point` aim features used like spells (bardic inspiration, turn undead). */
-  | {
+  | ({
       t: 'feature';
       token: string;
       feature: string;
@@ -222,20 +227,31 @@ export type ClientMessage =
       picks?: string[];
       inputs?: Record<string, number>;
       bonus?: boolean;
-    }
+    } & RollChoice)
   /** Let go of a held pool use (a Glamour, a Weave). */
   | { t: 'release'; token: string; hold: string }
   /** Use one of an item the token carries, by item id (drink a potion). */
   | { t: 'useItem'; token: string; item: string }
   /** Take a reaction that was offered, with this attack; no attack declines it. */
-  | { t: 'react'; offer: string; choice?: string }
+  | ({ t: 'react'; offer: string; choice?: string } & RollChoice)
+  /** Your advantage or disadvantage for a creature's next roll that the server makes (initiative, a death save); none: normal. */
+  | { t: 'rollPick'; token: string; edge?: RollEdge }
   /** Put a condition on a creature you control, or take it off (the token HUD). */
   | { t: 'condition'; token: string; condition: Condition; on: boolean }
   /** GM: add a creature to the fight (starting one) or take it out. */
   | { t: 'combatant'; token: string; on: boolean }
   | { t: 'initiative'; token: string; value: number }
   /** GM or trusted player: what a creature has left of its turn, set by hand (true: has it). */
-  | { t: 'turnOverride'; token: string; action?: boolean; bonus?: boolean; reaction?: boolean; move?: number }
+  | {
+      t: 'turnOverride';
+      token: string;
+      action?: boolean;
+      bonus?: boolean;
+      reaction?: boolean;
+      move?: number;
+      /** Actions on top of the one. */
+      extra?: number;
+    }
   /** Apply the roll on a chat card to these creatures: in full, half, double, or as healing. */
   | { t: 'applyDamage'; card: string; tokens: string[]; how: 'full' | 'half' | 'double' | 'heal' }
   | { t: 'dropConcentration'; token: string }
@@ -292,4 +308,8 @@ export type ServerMessage =
   | { t: 'actorGone'; id: string }
   /** A reaction you may take now; `reactionGone` once it's taken, declined or too late. */
   | { t: 'reactionOffer'; offer: ReactionOffer }
-  | { t: 'reactionGone'; id: string };
+  | { t: 'reactionGone'; id: string }
+  /** The roll pick you sent with `rollPick` was used: it is back to normal. */
+  | { t: 'pickSpent' }
+  /** The answer to your `rollDefaults`: how the d20 would be rolled as things stand. */
+  | { t: 'rollDefaults'; ref: string; d20: D20Mode };

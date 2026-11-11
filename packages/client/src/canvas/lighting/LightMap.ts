@@ -21,6 +21,8 @@ const GRADIENT_SIZE = 256;
 export interface LightScene {
   view: Rect;
   darkness: number;
+  /** The orange of dawn and dusk, 0 to 1 (twilightGlow). */
+  glow?: number;
   gridSize: number;
   lights: readonly LightSource[];
   /** The area a light reaches from a point, stopped by walls. */
@@ -70,7 +72,7 @@ export class LightMap {
   render(scene: LightScene, transform: ViewTransform): void {
     placeScene(this.scene, transform);
     const { view } = scene;
-    this.ambient.clear().rect(view.x, view.y, view.w, view.h).fill(ambientColor(scene.darkness));
+    this.ambient.clear().rect(view.x, view.y, view.w, view.h).fill(ambientColor(scene.darkness, scene.glow));
     this.drawIndoors(scene);
     for (const lamp of this.cache.values()) lamp.used = false;
     this.darkness.clear();

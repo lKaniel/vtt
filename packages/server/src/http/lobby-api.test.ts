@@ -253,6 +253,17 @@ describe('importing a Foundry world', () => {
     expect(res.status).toBe(403);
   });
 
+  it('imports the world again into the game it made, from where it came last time (the admin only)', async () => {
+    const kaniel = await api.admin();
+    await kaniel('POST', '/api/games/import-foundry', { folder: await foundryWorld() });
+    const res = await kaniel('POST', '/api/games/the-lost-keep/reimport-foundry', {});
+    expect(res).toMatchObject({ status: 200, json: { report: { scenes: 1, kept: { scenes: [] } } } });
+    const ana = await api.joined('test', 'ana');
+    expect((await ana('POST', '/api/games/the-lost-keep/reimport-foundry', {})).status).toBe(403);
+    const plain = await kaniel('POST', '/api/games/test/reimport-foundry', {});
+    expect(plain).toMatchObject({ status: 400, json: { error: expect.stringMatching(/world folder/) as unknown } });
+  });
+
   it('says what is wrong with a folder that is no world', async () => {
     const kaniel = await api.admin();
     const res = await kaniel('POST', '/api/games/import-foundry', { folder: tmpdir() });

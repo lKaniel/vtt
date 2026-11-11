@@ -1,4 +1,4 @@
-import { canControl, type Player } from '@vtt/shared';
+import { canControl, canOverride, type Player } from '@vtt/shared';
 import {
   editionOf,
   escapeRoll,
@@ -8,13 +8,16 @@ import {
   itemCost,
   itemProblem,
   removeEffects,
+  LONG_REST_SECONDS,
+  longRestReady,
   rechargeItems,
   rest,
+  type Spend,
   type Token,
   useFeature,
   useItem,
 } from '@vtt/system-dnd5e';
-import { Refusal, requireGm, type Cost, type Table } from '../play/table.ts';
+import { Refusal, requireGm, spendAs, type Table } from '../play/table.ts';
 
 /** Class features, rests, and ending effects by hand. */
 export class FeatureActions {
@@ -24,12 +27,13 @@ export class FeatureActions {
     return this.table.store;
   }
 
-  use(player: Player, id: string, featureId: string): void {
+  /** `spend`: what it costs of the turn instead, as the roll dialog picked. */
+  use(player: Player, id: string, featureId: string, spend?: Spend): void {
     const { token, sheet } = this.table.actor(player, id);
     const problem = featureProblem(sheet, featureId);
     if (problem) throw new Refusal(`${token.name} ${problem}`);
     const feature = sheet.features.find((f) => f.id === featureId)!;
-    const cost: Cost = feature.action ?? 'free';
+    const cost = spendAs(feature.action ?? 'free', spend);
     this.table.check(token, cost);
     const out = useFeature(token, sheet, featureId, this.table.rng);
     this.table.pay(token, cost, sheet.attacksPerAction);
@@ -91,18 +95,33 @@ export class FeatureActions {
     return !!sheet?.features.find((f) => f.id === featureId)?.spell;
   }
 
-  rest(player: Player, ids: readonly string[], kind: 'short' | 'long'): void {
-    requireGm(player);
-    for (const id of ids) {
-      const { token, sheet } = this.table.fighter(id);
-      if (kind === 'long' && token.concentration) this.table.endConcentration(id);
-      const rested = rest(this.store.tokens.get(id)!, sheet, kind);
-      // A long rest stands in for dawn, when wands and staffs regain their charges.
-      const now = kind === 'long' ? rechargeItems(rested, this.table.content(rested), this.table.rng) : rested;
-      this.store.setToken(now);
-    }
-    const who = ids.length === 1 ? 'A creature takes' : String(ids.length) + ' creatures take';
-    this.table.note(`${who} a ${kind} rest`);
+  /** Rests the creatures; a long rest skips those that had one less than a day ago, and refuses when that is all of them. */
+  /** The GM rests anyone; a trusted player the creatures they control (canOverride). */
+  rest(player: Player, ids: readonly string[], kind: 'short' | 'long', now: number): void {
+    const mine = ids.every((id) => {
+      const token = this.store.tokens.get(id);
+      return !!token && canOverride(token, player);
+    });
+    if (!mine) requireGm(player);
+    const tired = kind === 'long' ? ids.filter((id) => !longRestReady(this.table.fighter(id).token, now)) : [];
+    const already = tired.map(
+      (id) => `${this.table.fighter(id).token.name} already had a long rest in the last 24 hours`,
+    );
+    if (tired.length === ids.length) throw new Refusal(already.join('; '));
+    const resting = ids.filter((id) => !tired.includes(id));
+    for (const id of resting) this.restOne(id, kind, now);
+    const who = resting.length === 1 ? 'A creature takes' : String(resting.length) + ' creatures take';
+    this.table.note([`${who} a ${kind} rest`, ...already].join('. '));
+  }
+
+  private restOne(id: string, kind: 'short' | 'long', now: number): void {
+    const { token, sheet } = this.table.fighter(id);
+    if (kind === 'long' && token.concentration) this.table.endConcentration(id);
+    const rested = rest(this.store.tokens.get(id)!, sheet, kind);
+    if (kind === 'short') return this.store.setToken(rested);
+    // A long rest stands in for dawn, when wands and staffs regain their charges.
+    const recharged = rechargeItems(rested, this.table.content(rested), this.table.rng);
+    this.store.setToken({ ...recharged, longRestAt: now + LONG_REST_SECONDS });
   }
 
   dropConcentration(player: Player, id: string): void {

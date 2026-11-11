@@ -30,9 +30,10 @@ export function dropToken(s: Session, id: string, at: Point | undefined): void {
   moveSelectionTo(s, at, id);
 }
 
-/** In the tokens mode, a click on a map note opens its journal entry. */
+/** In the tokens mode, a click on a map note opens its journal entry, or rolls its roll table. */
 export function openNote(s: Session, items: ItemLayer, at: Point): boolean {
   const note = s.editor.mode === 'tokens' ? items.noteAt(at) : undefined;
-  if (note) s.journal.open(note.entry, note.page);
+  if (note?.table) s.journal.rollTable(note.table);
+  else if (note?.entry) s.journal.open(note.entry, note.page);
   return !!note;
 }

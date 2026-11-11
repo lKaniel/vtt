@@ -30,8 +30,8 @@ import { type DoorPick, doorAt, setDoor } from '../play/spell-doors.ts';
 import { breakTimeStop } from '../play/time-stop.ts';
 import { SpellTargets } from '../play/spell-targets.ts';
 import { stepAside } from '../play/pool-guards.ts';
-import { paidTargets, type Payment, payment, paymentNotes, spendPayment } from '../play/feature-paid.ts';
-import { Refusal, type Cost, type Fighter, type Table } from '../play/table.ts';
+import { castsFree, paidTargets, type Payment, payment, paymentNotes, spendPayment } from '../play/feature-paid.ts';
+import { Refusal, spent, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 /** `edge` and `crit`: the caster's own pick for the spell attack. */
 export interface CastRequest extends RollChoice {
@@ -134,7 +134,7 @@ export class SpellActions {
     const actor = this.table.actor(player, asked.caster);
     const known = this.table.content(actor.token).spells.get(asked.spell);
     if (!known) throw new Refusal(`There is no spell called ${asked.spell}`);
-    const { caster, plan, reader } = this.prepare(actor, known, asked);
+    const { caster, plan, reader } = spent(this.prepare(actor, known, asked), asked.spend);
     const req = { ...asked, targets: paidTargets(caster, plan.paid, asked.targets) };
     const picked = chosen(caster, known, req.choice, plan.again);
     this.table.check(caster.token, plan.cost);
@@ -161,7 +161,7 @@ export class SpellActions {
     if (!plan.again) this.begin(caster, spell, plan, req.item ?? !!reader);
     if (!plan.again) this.addLasting(caster.token.id, lastingEffects(caster.token, spell, plan.slot, req.point));
     const notes = this.conjure(caster, spell, { ...req, slot: plan.slot }, door);
-    const free = plan.again ? [] : paymentNotes(plan.paid, !!req.free && plan.slot > 0);
+    const free = plan.again ? [] : paymentNotes(plan.paid, castsFree(caster, spell, req) && plan.slot > 0);
     this.strike(caster.token.id, { ...req, spell, slot: plan.slot, reader, dc: plan.dc }, targets, [...free, ...notes]);
   }
 
@@ -230,7 +230,7 @@ export class SpellActions {
       if (stopped) throw new Refusal(`${caster.token.name} ${stopped}`);
       return { cost: spell.repeat, slot: going.repeat!.slot, spend: 0, again: true, dc: going.repeat!.dc };
     }
-    const pay = payment(caster, spell, req);
+    const pay = payment(caster, spell, req, this.table.fighting(caster.token.id));
     if ((spell.castingTime === 'minute' || spell.castingTime === 'hour') && this.table.inFight(caster.token.id)) {
       throw new Refusal(`${spell.name} takes too long to cast in a fight`);
     }
@@ -245,7 +245,7 @@ export class SpellActions {
   ): { caster: Fighter; plan: Plan; reader?: CasterSheet } {
     if (req.item !== undefined) return this.fromItem(actor, spell, req);
     if (!req.scroll) return { caster: actor, plan: this.plan(actor, spell, req) };
-    const reader = scrollReader(actor, spell);
+    const reader = scrollReader(actor, spell, this.table.content(actor.token));
     const caster = { ...actor, sheet: { ...actor.sheet, caster: reader } };
     return { caster, plan: this.scrollPlan(caster, spell), reader };
   }

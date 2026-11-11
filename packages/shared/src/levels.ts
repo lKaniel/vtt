@@ -21,6 +21,16 @@ export function tokenLevel(
   return levelAt(levels, token.elevation ?? 0)?.id;
 }
 
+/**
+ * The floor whose explored fog a viewer on `level` adds to: each floor keeps
+ * its own, and the street (the floor at 0 ft) the scene's plain one, so a
+ * scene keeps its fog when floors are added. Undefined: the plain fog.
+ */
+export function fogFloor(levels: readonly SceneLevel[] | undefined, level: string | undefined): string | undefined {
+  if (!level || !levels?.length) return undefined;
+  return level === levelAt(levels, 0)?.id ? undefined : level;
+}
+
 /** The lights creatures carry, each on the floor its bearer stands on (on every floor when the scene has none). */
 export function floorLights(
   tokens: Iterable<Pick<PlacedToken, 'x' | 'y' | 'light' | 'hidden' | 'elevation'>>,

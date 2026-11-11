@@ -12,8 +12,8 @@ import { Refusal, type Fighter, type Table } from './table.ts';
 // feature, the level it casts at, who it may land on, and spending its use.
 
 /** The feature `id` paying for `spell`; refuses one that can't. */
-function featurePayment(caster: Fighter, spell: Spell, id: string): FeatureCast {
-  const problem = featureCastProblem(caster.sheet, spell, id);
+function featurePayment(caster: Fighter, spell: Spell, id: string, fighting: boolean): FeatureCast {
+  const problem = featureCastProblem(caster.sheet, spell, id, { fighting });
   if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
   return featureCasts(caster.sheet, spell).find((c) => c.feature === id)!;
 }
@@ -26,19 +26,36 @@ export interface Payment {
   paid?: FeatureCast;
 }
 
-/** How the cast `req` asks for is paid; refuses one the caster can't make that way. */
+/** Cast without a slot: the GM's free cast, or a non-caster's homemade spell (CasterSheet `atWill`). */
+export function castsFree(caster: Fighter, spell: Spell, req: { free?: boolean }): boolean {
+  return !!req.free || !!caster.sheet.caster?.atWill?.includes(spell.id);
+}
+
+/** How the cast `req` asks for is paid; refuses one the caster can't make that way (`fighting`: in a fight now). */
 export function payment(
   caster: Fighter,
   spell: Spell,
   req: { slot: number; free?: boolean; paidBy?: string },
+  fighting = false,
 ): Payment {
-  const paid = req.paidBy ? featurePayment(caster, spell, req.paidBy) : undefined;
-  const free = !!req.free || !!paid;
+  const paid = req.paidBy ? featurePayment(caster, spell, req.paidBy, fighting) : undefined;
+  const free = castsFree(caster, spell, req) || !!paid;
   const asked = paid?.level ?? req.slot;
-  const problem = castProblem({ spell, slot: asked, sheet: caster.sheet, free });
+  const problem = castProblem({
+    spell,
+    slot: asked,
+    sheet: paid?.atCast ? knowing(caster, spell) : caster.sheet,
+    free,
+  });
   if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
   const slot = spell.level === 0 ? 0 : asked;
   return { slot, spend: free ? 0 : slot, ...(paid && { paid }) };
+}
+
+/** The caster's sheet knowing `spell` too: one a feature lets it pick as it casts (Divine Intervention). */
+function knowing({ sheet }: Fighter, spell: Spell): Fighter['sheet'] {
+  const caster = sheet.caster;
+  return caster ? { ...sheet, caster: { ...caster, spells: [...caster.spells, spell] } } : sheet;
 }
 
 /** A self-only free cast lands on its caster, whoever was aimed at. */
@@ -51,11 +68,12 @@ export function spendPayment(table: Table, casterId: string, { spend, paid }: Om
   table.spendSlot(casterId, spend);
   if (!paid) return;
   const token = table.store.tokens.get(casterId)!;
-  table.store.setToken(payWithFeature(token, table.fighter(casterId).sheet, paid.feature));
+  table.store.setToken(payWithFeature(token, table.fighter(casterId).sheet, paid));
 }
 
 /** What the log says about a cast that spent no slot. */
 export function paymentNotes(paid: FeatureCast | undefined, free: boolean): string[] {
+  if (paid?.cost !== undefined) return [`cast with ${paid.name} (${paid.cost} ${paid.pool})`];
   if (paid) return [`cast with ${paid.name}`];
   return free ? ['cast without a spell slot'] : [];
 }

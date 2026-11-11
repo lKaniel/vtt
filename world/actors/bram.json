@@ -1,6 +1,7 @@
 {
   "id": "bram",
   "name": "Bram",
+  "img": "/assets/tokens/bram.svg",
   "color": "#c0603a",
   "light": {
     "bright": 20,
