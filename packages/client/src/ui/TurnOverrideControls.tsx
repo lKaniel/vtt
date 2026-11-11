@@ -34,17 +34,28 @@ export function TurnOverrideButton({ session, token }: Props) {
       </PopoverTrigger>
       <PopoverContent align="end" className="flex w-[260px] flex-col gap-2" data-slot="turn-override">
         <span className="font-display text-sm text-gold">{t('override.heading', { name: token.name })}</span>
-        <Budget session={session} token={token} budget={turn.budget} />
-        <Toggle
-          variant="plate"
-          pressed={turn.reaction}
-          onPressedChange={(reaction) => session.hud.overrideTurn(token.id, { reaction })}
-        >
-          {t('override.reaction')}
-        </Toggle>
-        <p className="text-xs text-muted-foreground">{t('override.hint')}</p>
+        <TurnOverrideFields session={session} token={token} />
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** What the creature has left, to switch by hand: its action, bonus action and movement on its turn, its reaction any time. */
+export function TurnOverrideFields({ session, token }: Props) {
+  const turn = session.hud.turnOf(token.id);
+  if (!turn) return null;
+  return (
+    <>
+      <Budget session={session} token={token} budget={turn.budget} />
+      <Toggle
+        variant="plate"
+        pressed={turn.reaction}
+        onPressedChange={(reaction) => session.hud.overrideTurn(token.id, { reaction })}
+      >
+        {t('override.reaction')}
+      </Toggle>
+      <p className="text-xs text-muted-foreground">{t('override.hint')}</p>
+    </>
   );
 }
 

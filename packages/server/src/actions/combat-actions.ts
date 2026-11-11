@@ -200,6 +200,11 @@ export class CombatActions {
     }
   }
 
+  /** The turn the store now holds starts (one the GM set by hand); a turn that is only death saves passes on. */
+  begin(): void {
+    if (this.beginTurn(this.store.combat!)) this.advance();
+  }
+
   /** Starts the turn of everyone taking it; true when it is over already (all of them dying). */
   private beginTurn(combat: Combat): boolean {
     const all = takers(combat);

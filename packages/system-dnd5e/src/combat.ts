@@ -201,3 +201,49 @@ export function leaveCombat(combat: Combat, token: string, info: TurnInfo): Comb
   // `index` now points at the creature after the one that left.
   return advance({ ...combat, order }, index, info);
 }
+
+// ---- The GM running the order by hand --------------------------------------
+
+/** The turn at `index` started afresh, in round `round`: a new budget, its reaction back, and the party members sharing it. */
+function turnAt(combat: Combat, index: number, round: number, info: TurnInfo): Combat {
+  const token = combat.order[index]!.token;
+  const reacted = combat.reacted.filter((id) => id !== token);
+  const { group: _g, done: _d, ...rest } = combat;
+  const left = freshTurn(info(token)?.speed ?? 0);
+  return withGroup({ ...rest, round, turn: index, left, side: {}, reacted }, info);
+}
+
+/** The GM's call: it is `token`'s turn now, started afresh in the same round (even for a creature that is down). */
+export function turnTo(combat: Combat, token: string, info: TurnInfo): Combat {
+  const index = combat.order.findIndex((e) => e.token === token);
+  return index < 0 ? combat : turnAt(combat, index, combat.round, info);
+}
+
+/** Steps back to the creature that acted before this one, a round earlier past the top of the order (never before round 1). */
+export function previousTurn(combat: Combat, info: TurnInfo): Combat {
+  const n = combat.order.length;
+  for (let step = 1; step <= n; step++) {
+    const index = combat.turn - step;
+    const at = ((index % n) + n) % n;
+    if (!info(combat.order[at]!.token)?.active) continue;
+    return turnAt(combat, at, Math.max(1, combat.round + Math.floor(index / n)), info);
+  }
+  return combat;
+}
+
+/** The round set by hand; the turn stays where it is. */
+export function setRound(combat: Combat, round: number): Combat {
+  return { ...combat, round };
+}
+
+/** Moves a creature one place earlier (-1) or later (1), taking the initiative of the one it passes; the turn stays with whoever has it. */
+export function moveInOrder(combat: Combat, token: string, by: -1 | 1): Combat {
+  const from = combat.order.findIndex((e) => e.token === token);
+  const passed = combat.order[from + by];
+  if (from < 0 || !passed) return combat;
+  const current = currentTurn(combat);
+  const order = [...combat.order];
+  order[from] = passed;
+  order[from + by] = { token, initiative: passed.initiative };
+  return { ...combat, order, turn: order.findIndex((e) => e.token === current) };
+}

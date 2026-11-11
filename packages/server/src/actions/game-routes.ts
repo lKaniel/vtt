@@ -17,6 +17,7 @@ import { castPower, isPower, release } from '../play/power-casting.ts';
 import type { FeatureActions } from './feature-actions.ts';
 import type { FogKeeper } from '../play/fog-keeper.ts';
 import type { GmActions } from './gm-actions.ts';
+import type { FightControl } from './fight-control.ts';
 import type { HudActions } from './hud-actions.ts';
 import type { MapActions } from './map-actions.ts';
 import type { Reactions } from '../play/reactions.ts';
@@ -71,6 +72,7 @@ export interface GameParts {
   entries: EntryActions;
   damage: DamageActions;
   hud: HudActions;
+  fight: FightControl;
   /** Chat a client typed: a refused command goes back to that client only. */
   onChat: (c: Client, text: string) => void;
 }
@@ -100,6 +102,7 @@ function tableRoutes(p: GameParts) {
     ),
     applyDamage: (s, m) => p.damage.apply(s.player, s.canSee, m),
     ...each(['condition', 'combatant', 'initiative', 'turnOverride'], (s, m) => p.hud.handle(s.player, s.canSee, m)),
+    ...each(['turnTo', 'turnBack', 'round', 'orderMove'], (s, m) => p.fight.handle(s.player, m)),
   } satisfies Partial<Routes>;
 }
 

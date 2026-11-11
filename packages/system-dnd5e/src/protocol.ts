@@ -241,6 +241,14 @@ export type ClientMessage =
   /** GM: add a creature to the fight (starting one) or take it out. */
   | { t: 'combatant'; token: string; on: boolean }
   | { t: 'initiative'; token: string; value: number }
+  /** GM: it is this creature's turn now, started afresh. */
+  | { t: 'turnTo'; token: string }
+  /** GM: back to the turn before this one. */
+  | { t: 'turnBack' }
+  /** GM: the fight's round, set by hand. */
+  | { t: 'round'; value: number }
+  /** GM: a creature one place earlier (-1) or later (1) in the order. */
+  | { t: 'orderMove'; token: string; by: -1 | 1 }
   /** GM or trusted player: what a creature has left of its turn, set by hand (true: has it). */
   | {
       t: 'turnOverride';

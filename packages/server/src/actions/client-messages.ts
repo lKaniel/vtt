@@ -236,6 +236,14 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     move: z.number().int().min(0).max(9999).optional(),
     extra: z.number().int().min(0).max(9).optional(),
   }),
+  /** GM: it is this creature's turn now, started afresh. */
+  z.object({ t: z.literal('turnTo'), token: z.string() }),
+  /** GM: back to the turn before this one. */
+  z.object({ t: z.literal('turnBack') }),
+  /** GM: the fight's round, set by hand. */
+  z.object({ t: z.literal('round'), value: z.number().int().min(1).max(9999) }),
+  /** GM: a creature one place earlier (-1) or later (1) in the order. */
+  z.object({ t: z.literal('orderMove'), token: z.string(), by: z.union([z.literal(-1), z.literal(1)]) }),
   z.object({ t: z.literal('pause'), on: z.boolean() }),
   z.object({
     t: z.literal('applyDamage'),
