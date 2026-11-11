@@ -134,6 +134,14 @@ export function pick(aiming: Aiming, id: string): { aiming: Aiming; done: boolea
   return { aiming: next, done: picks.length >= aiming.need };
 }
 
+/** Whether a higher slot lets the spell go at more creatures (hold person): then the slot is picked before aiming. */
+export function slotAimsMore(spell: Spell, caster: { level: number; slots: number[] }): boolean {
+  if (hasBeams(spell)) return false;
+  const top = caster.slots.findLastIndex((n) => n > 0) + 1;
+  const need = (slot: number) => aimSpell(spell, slot, caster.level).need;
+  return top > spell.level && need(top) > need(spell.level);
+}
+
 /** Picks your targets for a spell aimed at creatures (every beam in turn); `done` once it has all it needs. */
 export function aimAtTargets(aiming: Aiming, targets: readonly string[]): { aiming: Aiming; done: boolean } {
   if (aiming.mode !== 'creatures' || targets.length === 0) return { aiming, done: false };

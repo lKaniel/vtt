@@ -1,33 +1,15 @@
-import { type FeatureSheet, powerCost } from '@vtt/system-dnd5e';
 import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
 import type { Aiming } from '../play/targeting.ts';
-import { togglePick } from '../play/power-aiming.ts';
+import { costHint, togglePick } from '../play/power-aiming.ts';
 import { Button } from './kit/button.tsx';
 import { NumberField } from './kit/number-field.tsx';
 import { Toggle } from './kit/toggle.tsx';
 
 // While a pool feature is aimed (an illusionist's Weave or bolt): its options
 // to pick (senses, shapes), the numbers to enter, what it costs, using it as
-// a bonus action, and the button that uses it.
-
-/** The cost with no target weights known: exact when the formula needs none, else per unit of weight. */
-function costHint(feature: FeatureSheet, aiming: Aiming): string {
-  const power = aiming.power!;
-  const at = (weight: number) => {
-    try {
-      return powerCost(feature, { ...power, targets: [{ weight }] }, feature.classLevel ?? 1);
-    } catch {
-      return Number.NaN;
-    }
-  };
-  const flat = at(0);
-  const per = at(1) - flat;
-  const shown = (n: number) => String(Math.round(n * 100) / 100);
-  if (Number.isNaN(flat)) return '';
-  if (per === 0) return t('power.cost', { cost: shown(flat) });
-  return t('power.costWeight', { cost: shown(per) }) + (flat ? ` + ${shown(flat)}` : '');
-}
+// a bonus action, and the button that uses it. With the roll dialog on
+// only the button is here: the dialog asks the rest.
 
 export function PowerControls({ session, aiming }: Readonly<{ session: Session; aiming: Aiming }>) {
   const feature = session.actions.aimedPower;
@@ -35,6 +17,12 @@ export function PowerControls({ session, aiming }: Readonly<{ session: Session; 
   if (!feature || !power) return null;
   const change = (fn: Parameters<typeof session.actions.changePower>[0]) => session.actions.changePower(fn);
   const ready = aiming.mode !== 'creatures' || aiming.picks.length > 0;
+  const use = ready && aiming.mode !== 'point' && (
+    <Button size="sm" onClick={() => session.actions.confirmCast()}>
+      {aiming.mode === 'creatures' ? t('power.useAt', { n: aiming.picks.length }) : t('power.use')}
+    </Button>
+  );
+  if (session.actions.rolls.enabled) return use || null;
   return (
     <>
       {(feature.options ?? []).map((g) => (
@@ -63,7 +51,7 @@ export function PowerControls({ session, aiming }: Readonly<{ session: Session; 
           />
         </label>
       ))}
-      <span className="muted">{costHint(feature, aiming)}</span>
+      <span className="muted">{costHint(feature, power)}</span>
       {feature.action === 'action' && (
         <Toggle
           pressed={power.bonus}
@@ -73,11 +61,7 @@ export function PowerControls({ session, aiming }: Readonly<{ session: Session; 
           {t('power.bonus')}
         </Toggle>
       )}
-      {ready && aiming.mode !== 'point' && (
-        <Button size="sm" onClick={() => session.actions.confirmCast()}>
-          {aiming.mode === 'creatures' ? t('power.useAt', { n: aiming.picks.length }) : t('power.use')}
-        </Button>
-      )}
+      {use}
     </>
   );
 }

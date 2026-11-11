@@ -138,9 +138,18 @@ export type ClientMessage =
   | { t: 'endTurn'; token?: string }
   /**
    * `smite`: spend a slot of this level on Divine Smite if the attack hits (2014 paladin).
+   * `finisher`: the feature to spend every momentum die on if it hits.
    * Without `target` the attack goes at `point`, empty ground, and hits nothing.
    */
-  | ({ t: 'attack'; attacker: string; target?: string; point?: Point; attack: string; smite?: number } & RollChoice)
+  | ({
+      t: 'attack';
+      attacker: string;
+      target?: string;
+      point?: Point;
+      attack: string;
+      smite?: number;
+      finisher?: string;
+    } & RollChoice)
   /** `item` is the index in the token's inventory. */
   | { t: 'equip'; token: string; item: number; equipped: boolean }
   /** An owner's own gear: coins, packing it into containers (`into` null takes it out), attunement. */
@@ -223,6 +232,8 @@ export type ClientMessage =
       feature: string;
       targets?: string[];
       point?: Point;
+      /** Its option when it has one, like a spell's. */
+      choice?: string;
       /** A pool feature's options picked, numbers entered, and using it as a bonus action instead. */
       picks?: string[];
       inputs?: Record<string, number>;

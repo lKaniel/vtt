@@ -105,14 +105,15 @@ export class Actions {
 
   /**
    * Readies a spell of the selected token with a slot, for free, or paid by a feature (`paidBy`). A self spell
-   * goes off at once, unless there is more than one way to pay for it: then it waits for Cast.
+   * goes off at once, unless there is more than one way to pay for it: then it waits for Cast (the roll
+   * dialog asks how to pay instead, when it is on).
    */
   aim(spellId: string | undefined, slot = 0, pay: { free?: boolean; paidBy?: string; spell?: Spell } = {}): void {
     const token = this.s.selected ? this.s.tokens.get(this.s.selected) : undefined;
     this.armed = undefined;
     const aiming = aimFor(token?.sheet, spellId, { slot, ...pay });
-    const choose = !!token && aiming?.mode === 'self' && !aiming.repeat && paymentCount(token, aiming.spell) > 1;
-    this.aimed(aiming, choose);
+    const many = !!token && aiming?.mode === 'self' && !aiming.repeat && paymentCount(token, aiming.spell) > 1;
+    this.aimed(aiming, many && !this.rolls.enabled);
   }
 
   /** Readies a feature of the selected token that's aimed like a spell; one without targets goes off at once. */
@@ -157,11 +158,17 @@ export class Actions {
     this.aimed(itemAiming(this.s.selected ? this.s.tokens.get(this.s.selected) : undefined, index, spellId, slot));
   }
 
+  /** Whether an aimed pool feature waits in the bar for its options and Use: not when the roll dialog asks them. */
+  private inBar(aiming: Aiming | undefined): boolean {
+    return !!aiming?.power && !this.rolls.enabled;
+  }
+
   /** Aims `aiming`: a self spell goes off at once unless told to `wait`, and one aimed at creatures picks your targets first. */
   private aimed(aiming: Aiming | undefined, wait = false): void {
     const at = aiming && aimAtTargets(aiming, [...this.s.targets.mine]);
     this.aiming = at?.aiming;
-    if (!aiming?.power && !wait && (aiming?.mode === 'self' || at?.done)) return this.confirmCast();
+    const ready = aiming?.mode === 'self' || at?.done;
+    if (ready && !wait && !this.inBar(aiming)) return this.confirmCast();
     this.on.armed();
     this.on.changed();
   }
@@ -201,7 +208,7 @@ export class Actions {
     if (!this.aiming) return;
     const { aiming, done } = pick(this.aiming, id);
     this.aiming = aiming;
-    if (done && !aiming.power) this.confirmCast();
+    if (done && !this.inBar(aiming)) this.confirmCast();
     else this.on.changed();
   }
 

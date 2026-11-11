@@ -116,6 +116,10 @@ with `pnpm check-game data/games/<id>`.
   fields of `RollChoice` (`roll-choice.ts`); the server's `rollDefaults`
   answers how the d20 stands. On for players, off for the GM (pref
   `roll-dialog`); a new action that rolls adds a plan in `roll-plan.ts`.
+  One step, never a bar and then the dialog: what the bars over the action
+  bar ask (a pool feature's options, a spell's slot, summon or option, a
+  smite) is an `Extra` in `play/roll-extras.ts`, asked in the dialog when it
+  is on and in the bar only when it is off.
 - World time: `clock.ts` in shared (clock, calendar, darkness by time of day),
   `durations.ts` (what lasts: `endsAt` on effects, concentration, summons), the
   server's `world-clock.ts` and `time-out.ts`. Fights and turn-based mode

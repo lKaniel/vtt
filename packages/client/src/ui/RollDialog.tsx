@@ -2,6 +2,7 @@ import { type CritChoice, type D20Mode, MODIFIER, type Spend, SPENDS } from '@vt
 import { type SyntheticEvent, useState } from 'react';
 import { t } from '../i18n/index.ts';
 import { paymentKey, type PaymentOption } from '../play/payments.ts';
+import type { ExtraValue } from '../play/roll-extras.ts';
 import { type RollPicked, type RollPlan, startingD20 } from '../play/roll-plan.ts';
 import type { Session } from '../session/session.ts';
 import { ORDINAL } from '../text/spell-text.ts';
@@ -11,12 +12,14 @@ import { Input } from './kit/input.tsx';
 import { Label } from './kit/label.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Switch } from './kit/switch.tsx';
+import { ExtraPicks } from './RollExtras.tsx';
 import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
 
 // The roll dialog (session-roll-dialog.ts): before an attack, a spell, a
 // feature, a check or a save goes to the table, you pick what it spends of
 // your turn, what pays for it, how the d20 is rolled (starting on how it
-// would be rolled as things stand), a situational modifier, and the damage.
+// would be rolled as things stand), a situational modifier, and the damage,
+// and the action's own options (RollExtras.tsx), so nothing is asked before it.
 
 /** What you have picked so far; the text fields as typed. */
 interface Draft {
@@ -27,6 +30,8 @@ interface Draft {
   situational: string;
   damageExtra: string;
   damageSet: string;
+  /** The action's own picks that were changed, by id. */
+  extras: Record<string, ExtraValue>;
 }
 
 const D20S: readonly D20Mode[] = ['advantage', 'normal', 'disadvantage'];
@@ -47,6 +52,7 @@ function pickedOf(plan: RollPlan, draft: Draft, standing: D20Mode | undefined): 
     situational: squeezed(draft.situational),
     damageExtra: squeezed(draft.damageExtra),
     ...(draft.damageSet.trim() && { damageSet: Number(draft.damageSet) }),
+    extras: draft.extras,
   };
 }
 
@@ -58,7 +64,7 @@ export function RollDialog({ session }: Readonly<{ session: Session }>) {
 type Props = Readonly<{ plan: RollPlan; draft: Draft; change: (next: Partial<Draft>) => void }>;
 
 function RollDialogWindow({ session, plan }: Readonly<{ session: Session; plan: RollPlan }>) {
-  const [draft, setDraft] = useState<Draft>({ situational: '', damageExtra: '', damageSet: '' });
+  const [draft, setDraft] = useState<Draft>({ situational: '', damageExtra: '', damageSet: '', extras: {} });
   const change = (next: Partial<Draft>) => setDraft((d) => ({ ...d, ...next }));
   const standing = session.actions.rolls.d20;
   const ok = modifierOk(draft.situational) && modifierOk(draft.damageExtra) && setOk(draft.damageSet);
@@ -73,6 +79,7 @@ function RollDialogWindow({ session, plan }: Readonly<{ session: Session; plan: 
         <DialogTitle>{t(`rolls.title.${kind}`, { name })}</DialogTitle>
         {target && <DialogDescription>{t('rolls.at', { target })}</DialogDescription>}
         <form className="flex flex-col gap-3" onSubmit={confirm}>
+          <ExtraPicks plan={plan} values={draft.extras} change={(extras) => change({ extras })} />
           {plan.spend && <SpendPick plan={plan} draft={draft} change={change} />}
           {plan.payments && <PaymentPick plan={plan} draft={draft} change={change} />}
           {plan.ask && <D20Pick plan={plan} draft={draft} change={change} standing={standing} />}

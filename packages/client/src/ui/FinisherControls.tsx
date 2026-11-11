@@ -3,12 +3,12 @@ import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
 import { Toggle } from './kit/toggle.tsx';
 
-/** While an attack is readied by a creature holding momentum dice: the finisher, if any, to spend them on a hit. */
+/** While an attack is readied by a creature holding momentum dice: the finisher, if any, to spend them on a hit (the roll dialog asks instead when it is on). */
 export function FinisherControls({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
   const sheet = token.sheet;
   const pool = sheet && momentumDice(sheet);
   const finishers = sheet ? hitFinishers(sheet) : [];
-  if (!session.actions.armed || !pool?.dice || !finishers.length) return null;
+  if (session.actions.rolls.enabled || !session.actions.armed || !pool?.dice || !finishers.length) return null;
   return (
     <div className="aiming frame" data-slot="finisher-controls">
       <span className="aiming-name">{t('finisher.label')}</span>

@@ -15,6 +15,8 @@ import {
 } from '@vtt/system-dnd5e';
 import { contentFor } from '../content/content.ts';
 import { type PaymentOption, paymentOptions } from './payments.ts';
+import { type Extra, extras, type ExtraValue, withExtras } from './roll-extras.ts';
+import { aimSpell } from './targeting.ts';
 
 // What the roll dialog offers for an action about to be sent (an attack, a
 // spell, a feature, a check or save), and the message the action becomes
@@ -45,6 +47,12 @@ export interface RollPlan {
   spend?: Spend;
   /** The ways to pay for a cast, when there is more than one. */
   payments?: PaymentOption[];
+  /** The action's own picks, which the bars ask for when the dialog is off (roll-extras.ts). */
+  extras: Extra[];
+  /** A pool feature being used, for what it costs as picked. */
+  power?: FeatureSheet;
+  /** The spell cast and the caster's level, to pick its beams again when the slot changes. */
+  beams?: { spell: Spell; level: number };
 }
 
 /** What the plan is made from: the creatures on the table, and whether turns are being counted. */
@@ -62,6 +70,8 @@ export interface RollPicked {
   damageSet?: number;
   spend?: Spend;
   payment?: PaymentOption;
+  /** The action's own picks, by the id of each (roll-extras.ts). */
+  extras?: Record<string, ExtraValue>;
 }
 
 type Message<K extends Asked['t']> = Extract<Asked, { t: K }>;
@@ -81,7 +91,8 @@ function oneTarget(ctx: PlanContext, ids: readonly string[] | undefined): string
 
 function attackPlan(msg: Message<'attack'>, ctx: PlanContext): RollPlan | undefined {
   const attack: Attack | undefined = ctx.tokens.get(msg.attacker)?.sheet?.attacks.find((a) => a.name === msg.attack);
-  if (!attack) return undefined;
+  const token = ctx.tokens.get(msg.attacker);
+  if (!attack || !token) return undefined;
   const { target } = msg;
   const offHand = attack.offHand ? 'bonus' : 'action';
   return {
@@ -91,6 +102,7 @@ function attackPlan(msg: Message<'attack'>, ctx: PlanContext): RollPlan | undefi
     crit: !!target,
     damage: !!target && attack.damage.length > 0,
     spend: ctx.fighting ? offHand : undefined,
+    extras: extras.attack(msg, token),
   };
 }
 
@@ -101,6 +113,11 @@ function spellOf(token: TokenView, id: string): Spell | undefined {
 
 /** Whether the caster rolls to hit with the spell: it attacks, can miss, and has someone to go at. */
 const rollsToHit = (spell: Spell, targets: readonly string[]) => !!spell.attack && !spell.autoHit && targets.length > 0;
+
+/** What picks a spell's beams again when its slot changes; nothing for a spell without them. */
+function beamsOf(token: TokenView, spell: Spell): Pick<RollPlan, 'beams'> {
+  return (spell.beams ?? 1) > 1 ? { beams: { spell, level: token.sheet?.caster?.level ?? 1 } } : {};
+}
 
 function castPlan(msg: Message<'cast'>, ctx: PlanContext): RollPlan | undefined {
   const token = ctx.tokens.get(msg.caster);
@@ -118,6 +135,8 @@ function castPlan(msg: Message<'cast'>, ctx: PlanContext): RollPlan | undefined 
     damage: spell.damage.length > 0,
     spend: ctx.fighting ? cost : undefined,
     ...(payments.length > 1 && { payments }),
+    extras: extras.cast(msg, token, spell),
+    ...beamsOf(token, spell),
   };
 }
 
@@ -141,6 +160,8 @@ function featurePlan(msg: Message<'feature'>, ctx: PlanContext): RollPlan | unde
     crit: attacks,
     damage: !!spell && spell.damage.length > 0,
     spend: ctx.fighting ? featureSpend(msg, feature) : undefined,
+    extras: extras.feature(msg, feature, spell),
+    ...(feature.cost !== undefined && { power: feature }),
   };
 }
 
@@ -161,6 +182,7 @@ function checkPlan(msg: Message<'rollCheck'>): RollPlan {
     },
     crit: false,
     damage: false,
+    extras: [],
   };
 }
 
@@ -174,7 +196,7 @@ function planOf(msg: ClientMessage, ctx: PlanContext): RollPlan | undefined {
 /** What the dialog offers for `msg`; undefined when it is not an action it asks about, or there is nothing to pick. */
 export function planFor(msg: ClientMessage, ctx: PlanContext): RollPlan | undefined {
   const plan = planOf(msg, ctx);
-  const any = plan && [plan.ask, plan.damage, plan.spend, plan.payments].some(Boolean);
+  const any = plan && [plan.ask, plan.damage, plan.spend, plan.payments, plan.extras.length].some(Boolean);
   return any ? plan : undefined;
 }
 
@@ -215,16 +237,27 @@ function pickedChoice(plan: RollPlan, picked: RollPicked, standing: D20Mode | un
   });
 }
 
-/** A cast paid as picked: a slot of that level, a feature, or nothing. */
-function paid(msg: Asked, payment: PaymentOption | undefined): Asked {
+/** The picks of a spell with beams, as many as it has at `slot`: the creatures picked, round again. */
+function beamsAt({ spell, level }: NonNullable<RollPlan['beams']>, slot: number, picks: string[]): string[] {
+  const { need } = aimSpell(spell, slot, level);
+  return picks.length ? Array.from({ length: need }, (_, i) => picks[i % picks.length]!) : picks;
+}
+
+/** A cast paid as picked: a slot of that level, a feature, or nothing; a spell with beams has as many as that slot gives. */
+function paid(plan: RollPlan, msg: Asked, payment: PaymentOption | undefined): Asked {
   if (msg.t !== 'cast' || !payment) return msg;
   const { paidBy: _paidBy, free: _free, ...cast } = msg;
   const { slot, paidBy, free } = payment;
-  return { ...cast, slot, ...(paidBy && { paidBy }), ...(free && { free }) };
+  const targets = plan.beams ? beamsAt(plan.beams, slot, cast.targets) : cast.targets;
+  return { ...cast, slot, targets, ...(paidBy && { paidBy }), ...(free && { free }) };
 }
 
 /** The action as it is sent once the player has picked; `standing`: how the d20 would be rolled anyway. */
 export function pickedMessage(plan: RollPlan, picked: RollPicked, standing: D20Mode | undefined): Asked {
-  const { edge: _edge, crit: _crit, ...action } = paid(plan.msg, picked.payment) as Asked & RollChoice;
+  const {
+    edge: _edge,
+    crit: _crit,
+    ...action
+  } = paid(plan, withExtras(plan.msg, plan.extras, picked.extras ?? {}), picked.payment) as Asked & RollChoice;
   return { ...action, ...pickedChoice(plan, picked, standing) };
 }

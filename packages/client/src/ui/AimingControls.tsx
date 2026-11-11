@@ -5,36 +5,47 @@ import { itemSlots } from '../play/item-spells.ts';
 import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
 import { ORDINAL } from '../text/spell-text.ts';
-import type { Aiming } from '../play/targeting.ts';
+import { type Aiming, slotAimsMore } from '../play/targeting.ts';
 import { Button } from './kit/button.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Toggle } from './kit/toggle.tsx';
 import { PowerControls } from './PowerControls.tsx';
 
 // The bar shown while a spell is aimed: its slot, what it summons, its option.
+// With the roll dialog on those are asked in the dialog, once, and the bar
+// only names the spell and casts it at the creatures picked so far.
 
 /** While a spell is aimed: which slot to cast it with, what to summon, its option, and casting with fewer targets. */
 export function AimingControls({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
   const aiming = session.actions.aiming;
   if (!aiming) return null;
   const { spell } = aiming;
+  const asked = session.actions.rolls.enabled;
+  const slots = slotted(aiming, token) && (!asked || slotAimsMore(spell, token.sheet!.caster!));
   return (
     <div className="aiming frame">
       <span className="aiming-name">{spell.name}</span>
       {aiming.scroll && <span className="muted">from a scroll</span>}
       {aiming.item !== undefined && <ItemSlots session={session} aiming={aiming} token={token} />}
-      {spell.level > 0 && !aiming.scroll && aiming.item === undefined && token.sheet?.caster && (
-        <SlotChoices session={session} aiming={aiming} token={token} />
-      )}
-      <SpellOptions session={session} aiming={aiming} />
+      {slots && <SlotChoices session={session} aiming={aiming} token={token} />}
+      {!asked && <SpellOptions session={session} aiming={aiming} />}
       {aiming.power ? (
         <PowerControls session={session} aiming={aiming} />
       ) : (
         <CastAt session={session} aiming={aiming} />
       )}
-      {spell.transform && <FormChoice session={session} aiming={aiming} token={token} />}
+      {spell.transform && !asked && <FormChoice session={session} aiming={aiming} token={token} />}
     </div>
   );
+}
+
+/**
+ * Whether the bar offers slots for the aimed spell: one of the caster's own, above a cantrip. With the roll
+ * dialog on it asks what pays, so they show only for a spell that takes more creatures with a higher slot.
+ */
+function slotted(aiming: Aiming, token: TokenView): boolean {
+  const own = !aiming.scroll && aiming.item === undefined;
+  return own && aiming.spell.level > 0 && !!token.sheet?.caster;
 }
 
 /** Casts a spell aimed at creatures with the ones picked so far, or a self spell that waited for how to pay. */

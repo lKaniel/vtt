@@ -1,6 +1,7 @@
 import { srdFor, type TokenView } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
 import {
+  slotAimsMore,
   aimAtTargets,
   aimFor,
   aimScroll,
@@ -158,5 +159,17 @@ describe('using a lasting spell again', () => {
     expect(aimFor({ ...(sheet as object), effects: [] }, 'spiritual-weapon', { slot: 2, free: false })).toMatchObject({
       slot: 2,
     });
+  });
+});
+
+describe('a slot that takes more creatures', () => {
+  const book = srdFor('2014');
+  const caster = { level: 5, slots: [4, 3, 2] };
+
+  it('is picked before aiming: hold person, not a spell with beams or an area', () => {
+    expect(slotAimsMore(book.spells.get('hold-person')!, caster)).toBe(true);
+    expect(slotAimsMore(book.spells.get('magic-missile')!, caster)).toBe(false);
+    expect(slotAimsMore(book.spells.get('burning-hands')!, caster)).toBe(false);
+    expect(slotAimsMore(book.spells.get('hold-person')!, { level: 3, slots: [4, 2] })).toBe(false);
   });
 });
