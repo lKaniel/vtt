@@ -25,6 +25,8 @@ test('the GM files actors in a new coloured folder by dragging them', async ({ p
   const wolves = page.getByRole('region', { name: 'Wolves' });
   await expect(wolves).toBeVisible();
 
+  // Short rows, so the wolf and the folder are on screen together: a list that scrolls mid-drag picks up another row.
+  await page.getByRole('radio', { name: 'Compact' }).click();
   const wolf = page.getByRole('listitem').filter({ hasText: /^Wolf/ });
   await wolf.dragTo(wolves.getByRole('button', { name: /Wolves/ }));
   await expect(wolves.getByRole('listitem').filter({ hasText: 'Wolf' })).toBeVisible();

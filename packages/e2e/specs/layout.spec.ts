@@ -179,3 +179,24 @@ test.describe('the compact action bar', () => {
     expect(await page.evaluate(() => localStorage.getItem('vtt.actionBar'))).toBe('full');
   });
 });
+
+test('a filled action bar slot wears the same frame as an empty one', async ({ page }) => {
+  await atTable(page, GM);
+  const bram = await screenOf(page, 650, 650);
+  await page.mouse.click(bram.x, bram.y);
+  await expect.poll(() => page.evaluate(() => vtt.selected()?.id)).toBe('bram');
+
+  // The frame is the tile's painted background, with the icon set inside it.
+  const look = (selector: string) =>
+    page
+      .locator(selector)
+      .first()
+      .evaluate((el) => {
+        const style = getComputedStyle(el);
+        return { frame: style.backgroundImage, inset: style.paddingTop };
+      });
+  const filled = await look('.ab-grid button.tile');
+  expect(filled.frame).toContain('slot-frame');
+  expect(filled.inset).toBe('6px');
+  expect((await look('.ab-grid .tile.empty')).frame).toContain('slot-frame');
+});

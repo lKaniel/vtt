@@ -4,7 +4,7 @@
  * (shadcn/ui, restyled in the game's look). The older hand-written styles in
  * style.css sit in their own layer, so Tailwind utilities always win over them.
  */
-@layer theme, legacy, base, components, utilities;
+@layer theme, pressable, legacy, base, components, utilities;
 
 @import 'tailwindcss/theme.css' layer(theme);
 @import './style.css' layer(legacy);
@@ -76,15 +76,32 @@
  * place of Tailwind's preflight: the browser's own button and field looks
  * go, and nothing outside the kit changes.
  */
+/*
+ * A Pressable brings its own look, often an older class from style.css
+ * (an action bar tile's slot frame), so its reset sits under that layer:
+ * the class's background, padding and border win over it.
+ */
+@layer pressable {
+  [data-slot='pressable'] {
+    box-sizing: border-box;
+    border: 0 solid;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    appearance: none;
+  }
+}
 @layer base {
-  [data-slot] {
+  [data-slot]:not([data-slot='pressable']) {
     box-sizing: border-box;
     border: 0 solid;
     margin: 0;
     font: inherit;
     color: inherit;
   }
-  button[data-slot],
+  button[data-slot]:not([data-slot='pressable']),
   input[data-slot],
   textarea[data-slot] {
     background: transparent;
