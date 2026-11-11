@@ -1,7 +1,8 @@
 import type { DrawnTile, Wall } from '@vtt/shared';
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Play3D, type Play3DHost } from './play3d.ts';
+import { setQuality } from './quality3d.ts';
 
 // Play under the 3D view: the doors on the floor shown hang leaves, the door
 // models move with their walls, and pointing at a door lights its model.
@@ -47,8 +48,16 @@ describe('play in 3D', () => {
       play.group.traverse((o) => (n += o instanceof THREE.PointLight ? 1 : 0));
       return n;
     };
-    expect(lightsIn(new Play3D(host([]), 2))).toBe(2);
-    expect(lightsIn(new Play3D(host([]), 12))).toBe(12);
+    const kept = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => kept.get(k) ?? null,
+      setItem: (k: string, v: string) => kept.set(k, v),
+    });
+    setQuality('low');
+    expect(lightsIn(new Play3D(host([])))).toBe(2);
+    setQuality('high');
+    expect(lightsIn(new Play3D(host([])))).toBe(12);
+    vi.unstubAllGlobals();
   });
 
   it('hangs leaves on plain doors only, leaving the doors a model moves to the model', () => {

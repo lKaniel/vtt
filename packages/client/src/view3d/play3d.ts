@@ -10,6 +10,7 @@ import { type Body, Effects3D } from './effects3d.ts';
 import { FlightMarks } from './flight3d.ts';
 import { TriggerMarks, triggerMarks } from './triggers3d.ts';
 import { type Carried, Lamps, lampsOf } from './lamps3d.ts';
+import { quality3d } from './quality3d.ts';
 import type { Standing } from './scene3d.ts';
 import { doorBoxes, type DoorBox, type FloorSpan } from './walls3d.ts';
 
@@ -18,9 +19,6 @@ import { doorBoxes, type DoorBox, type FloorSpan } from './walls3d.ts';
 // creatures' lunges and flinches that go with them, and the shadows and
 // heights of those flying (flight3d.ts), and the scene's lights lighting
 // the models round them (lamps3d.ts).
-
-/** How many lights shine in 3D at once, unless the graphics setting says (quality3d.ts `lights`). */
-const LAMPS = 8;
 
 /** What play in 3D needs of the 3D view. */
 export interface Play3DHost {
@@ -70,7 +68,8 @@ export class Play3D {
 
   constructor(
     private readonly host: Play3DHost,
-    lamps = LAMPS,
+    /** How many scene lights shine at once: what the graphics setting allows. */
+    lamps = quality3d().lights,
   ) {
     this.lamps = new Lamps(lamps);
     this.fx = new Effects3D({
