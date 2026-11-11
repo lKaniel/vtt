@@ -109,6 +109,11 @@ export const EN_TABLE = {
   'override.dashTitle': 'Add another speed’s worth of movement, as a Dash',
   'override.notTurn': 'The action and movement can only be changed on its turn.',
   'override.hint': 'Lit means it still has it. Everyone sees the change in the log.',
+  'helper.suggest': '{attack} at {target}',
+  'helper.walk': 'Walk up, {attack} at {target}',
+  'helper.hint': '{name}’s best move: {chance}% to hit, about {damage} damage this turn. Click to do it.',
+  'helper.hintDrops':
+    '{name}’s best move: {chance}% to hit, about {damage} damage this turn, enough to drop {target}. Click to do it.',
   'res.reaction': 'Reaction',
   'chat.casts': 'casts',
   'chat.uses': 'uses',
