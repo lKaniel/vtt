@@ -32,7 +32,7 @@ test('a game downloaded as a zip comes back as a new game, players and all', asy
   const zip = await (await download).path();
 
   await page.goto('/#/setup');
-  await page.locator('input[type=file]').setInputFiles(zip);
+  await page.getByLabel('Pick a zip').setInputFiles(zip);
   await expect(page).toHaveURL(/#\/games\/example-the-crossroads$/);
   for (const player of ['GM', 'Player 1', 'Player 2']) {
     await expect(page.getByRole('listitem').filter({ hasText: player }).first()).toBeVisible();

@@ -77,6 +77,9 @@ const server = createServer((req, res) => {
   });
 });
 
+// A pack file uploaded from Setup over a slow line may take longer than Node's 5 minutes.
+server.requestTimeout = 30 * 60_000;
+
 const wss = new WebSocketServer({ noServer: true });
 startHeartbeat(() => wss.clients);
 server.on('upgrade', (req, socket, head) => {

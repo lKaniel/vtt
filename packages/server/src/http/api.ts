@@ -14,6 +14,8 @@ import {
 } from './http-json.ts';
 import { BaileywikiRoutes } from './baileywiki-api.ts';
 import { LobbyRoutes } from './lobby-api.ts';
+import { PackRoutes } from './pack-api.ts';
+import { PackUploadError } from '../library/pack-uploads.ts';
 import { BaileywikiError } from '../foundry/baileywiki-client.ts';
 import { mcpHandler } from '../mcp/mcp-http.ts';
 import { BackupError } from '../library/backups.ts';
@@ -49,6 +51,7 @@ const isRefusal = (e: unknown): e is Error =>
   e instanceof HubError ||
   e instanceof BackupError ||
   e instanceof OffsiteError ||
+  e instanceof PackUploadError ||
   e instanceof ArchiveError;
 
 /** Handles /api/ requests about the session and games; returns false for anything else. */
@@ -58,6 +61,7 @@ export function apiHandler(deps: ApiDeps): (req: IncomingMessage, res: ServerRes
     new LobbyRoutes(deps),
     new BaileywikiRoutes(deps),
     new OffsiteRoutes(deps),
+    new PackRoutes(deps),
   ];
   const mcp = mcpHandler(deps);
   return async (req, res) => {

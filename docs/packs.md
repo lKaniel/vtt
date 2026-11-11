@@ -20,6 +20,18 @@ the `media/` folder is served (at `/packs/<id>/...`); compendia go out only
 to a GM who asks for them. Imported packs stay on your server: only SRD
 content (CC-BY-4.0) ships in the repo.
 
+## Uploading a pack from Setup
+
+Setup's **Packs** box lists the installed packs and takes a new one: pick
+the pack's folder (the one holding its `pack.json`) and the browser sends
+`pack.json` first, then each file on its own, four at a time, then installs
+the pack in one go (replacing one with the same id). Files wait in
+`data/packs/.uploads/<id>/` until then, so an upload that broke off goes on
+where it stopped when the same folder is picked again: files already there
+with the same size are skipped. No zip is made, so a pack of many gigabytes
+(JB2A) goes up the same way; one file may be up to 2 GB. Only the server's
+admin can upload or delete packs (`/api/packs`, `server/src/http/pack-api.ts`).
+
 ## pack.json
 
 ```json

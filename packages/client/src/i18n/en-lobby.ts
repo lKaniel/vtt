@@ -43,3 +43,21 @@ export const EN_OFFSITE = {
   'offsite.restored': 'Restored {game} to {night}.',
   'offsite.gone': 'deleted since',
 } as const;
+
+// Setup's packs: installed ones and uploading a pack folder.
+export const EN_PACKS = {
+  'packs.title': 'Packs',
+  'packs.intro':
+    'Asset packs every game on this server can turn on. Upload a pack’s folder (the one with its pack.json); a broken upload goes on where it stopped when you pick the folder again.',
+  'packs.none': 'No packs installed.',
+  'packs.upload': 'Upload a pack folder',
+  'packs.uploading': 'Uploading {name}: {done} of {total} MB',
+  'packs.reading': 'Reading the folder…',
+  'packs.done': 'Installed {name}.',
+  'packs.pending': 'Not finished: {id}',
+  'packs.cancel': 'Call off',
+  'packs.delete': 'Delete',
+  'packs.deleteSure': 'Delete for good',
+  'packs.deleteHint': 'Deletes the pack from the server; games that use it lose its pictures and content',
+  'packs.deleted': 'Deleted {name}.',
+} as const;
