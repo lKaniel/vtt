@@ -1,5 +1,5 @@
 import { type CritChoice, type D20Mode, MODIFIER, type Spend, SPENDS } from '@vtt/system-dnd5e';
-import { type FormEvent, useState } from 'react';
+import { type SyntheticEvent, useState } from 'react';
 import { t } from '../i18n/index.ts';
 import { paymentKey, type PaymentOption } from '../play/payments.ts';
 import { type RollPicked, type RollPlan, startingD20 } from '../play/roll-plan.ts';
@@ -51,7 +51,7 @@ function pickedOf(plan: RollPlan, draft: Draft, standing: D20Mode | undefined): 
 }
 
 export function RollDialog({ session }: Readonly<{ session: Session }>) {
-  const { plan, shown } = session.rolls;
+  const { plan, shown } = session.actions.rolls;
   return plan ? <RollDialogWindow key={shown} session={session} plan={plan} /> : null;
 }
 
@@ -60,15 +60,15 @@ type Props = Readonly<{ plan: RollPlan; draft: Draft; change: (next: Partial<Dra
 function RollDialogWindow({ session, plan }: Readonly<{ session: Session; plan: RollPlan }>) {
   const [draft, setDraft] = useState<Draft>({ situational: '', damageExtra: '', damageSet: '' });
   const change = (next: Partial<Draft>) => setDraft((d) => ({ ...d, ...next }));
-  const standing = session.rolls.d20;
+  const standing = session.actions.rolls.d20;
   const ok = modifierOk(draft.situational) && modifierOk(draft.damageExtra) && setOk(draft.damageSet);
-  const confirm = (e: FormEvent) => {
+  const confirm = (e: SyntheticEvent) => {
     e.preventDefault();
-    if (ok) session.rolls.confirm(pickedOf(plan, draft, standing));
+    if (ok) session.actions.rolls.confirm(pickedOf(plan, draft, standing));
   };
   const { kind, name, target } = plan.what;
   return (
-    <Dialog open modal onOpenChange={(open) => !open && session.rolls.cancel()}>
+    <Dialog open modal onOpenChange={(open) => !open && session.actions.rolls.cancel()}>
       <DialogContent data-slot="roll-dialog" aria-describedby={undefined}>
         <DialogTitle>{t(`rolls.title.${kind}`, { name })}</DialogTitle>
         {target && <DialogDescription>{t('rolls.at', { target })}</DialogDescription>}
@@ -79,10 +79,13 @@ function RollDialogWindow({ session, plan }: Readonly<{ session: Session; plan: 
           {plan.damage && <DamagePick plan={plan} draft={draft} change={change} />}
           <div className="flex items-center gap-2 pt-1">
             <Label className="mr-auto font-body tracking-normal" title={t('rolls.askHint')}>
-              <Switch checked={session.rolls.enabled} onCheckedChange={(on) => session.rolls.setEnabled(on)} />
+              <Switch
+                checked={session.actions.rolls.enabled}
+                onCheckedChange={(on) => session.actions.rolls.setEnabled(on)}
+              />
               {t('rolls.ask')}
             </Label>
-            <Button type="button" variant="ghost" size="sm" onClick={() => session.rolls.cancel()}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => session.actions.rolls.cancel()}>
               {t('rolls.cancel')}
             </Button>
             <Button type="submit" size="sm" disabled={!ok} autoFocus>

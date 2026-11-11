@@ -19,6 +19,11 @@ export function openSocket(
   return new Socket(socketUrl(page, game));
 }
 
+/** Sends `msg` on the socket when it is open; it is dropped otherwise. */
+export function sendOn(ws: WebSocket | undefined, msg: unknown): void {
+  if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+}
+
 /** Close codes that mean "don't come back", with what to tell the player. */
 const REFUSALS: Record<number, string> = {
   4000: 'Your player at this game is gone: the GM removed it.',

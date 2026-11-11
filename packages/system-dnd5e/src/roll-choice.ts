@@ -20,7 +20,8 @@ export const D20_MODES = ['advantage', 'normal', 'disadvantage'] as const;
 export type D20Mode = (typeof D20_MODES)[number];
 
 /** A modifier typed into the roll dialog: numbers and plain dice, "+2", "1d4", "-1d4+1". */
-export const MODIFIER = /^[+-]?(\d{0,2}d\d{1,3}|\d{1,3})([+-](\d{0,2}d\d{1,3}|\d{1,3})){0,5}$/;
+const TERM = String.raw`(\d{0,2}d\d{1,3}|\d{1,3})`;
+export const MODIFIER = new RegExp(`^[+-]?${TERM}([+-]${TERM}){0,5}$`);
 const modifier = z.string().max(40).regex(MODIFIER);
 
 /** What an action spends of the turn when the roller says so: an action, a bonus action, the reaction, or nothing. */

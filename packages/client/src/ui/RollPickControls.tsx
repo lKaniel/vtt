@@ -79,7 +79,10 @@ function RollPickPanel({ session }: Readonly<{ session: Session }>) {
         <ToggleGroupItem value="normal">{t('pick.noCrit')}</ToggleGroupItem>
       </ToggleGroup>
       <Label className="font-body tracking-normal text-foreground" title={t('pick.askHint')}>
-        <Switch checked={session.rolls.enabled} onCheckedChange={(on) => session.rolls.setEnabled(on)} />
+        <Switch
+          checked={session.actions.rolls.enabled}
+          onCheckedChange={(on) => session.actions.rolls.setEnabled(on)}
+        />
         {t('pick.ask')}
       </Label>
       <p className="text-xs text-muted-foreground">{t('pick.hint')}</p>

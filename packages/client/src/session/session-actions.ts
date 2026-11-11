@@ -12,6 +12,7 @@ import type { Targets } from './targets.ts';
 import { loadRollMode, saveRollMode } from '../play/roll-mode.ts';
 import { tokenAt } from '../play/drops.ts';
 import { RollPick } from './session-pick.ts';
+import { RollDialog } from './session-roll-dialog.ts';
 import { type RangeAim, type RangeHost, walkInRange } from '../play/walk-in-range.ts';
 
 // What the selected creature is about to do: an armed attack or an aimed
@@ -37,6 +38,8 @@ export interface ActionEvents {
   /** An attack was readied or a spell aimed, or put away. */
   armed(): void;
   gridSize(): number;
+  /** Sends a message as it is, past the roll dialog. */
+  post(msg: ClientMessage): void;
 }
 
 /** The selected creature's readied attack or aimed spell, and your roll mode, as `session.actions`. */
@@ -53,12 +56,15 @@ export class Actions {
   rollMode: RollMode = loadRollMode();
   /** Advantage, disadvantage or a critical picked for your next roll (session-pick.ts). */
   readonly pick: RollPick;
+  /** The dialog an action that rolls or spends waits in for your picks (session-roll-dialog.ts). */
+  readonly rolls: RollDialog;
 
   constructor(
     private readonly s: ActionHost,
     private readonly on: ActionEvents,
   ) {
     this.pick = new RollPick(on, s);
+    this.rolls = new RollDialog(s, on, (msg) => on.post(msg));
   }
 
   /** Applies the roll on a chat card to your targets, else the creatures selected (see damage-actions.ts on the server). */

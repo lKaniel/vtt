@@ -10,7 +10,7 @@ import type { SessionPart } from './session-part.ts';
 // things stand (asked of the server), and takes a situational modifier and
 // the damage; confirming sends the action with what you changed. It is on
 // for players until they turn it off, and off for the GM, who rolls for a
-// whole table of monsters, until they turn it on. Reached as `session.rolls`.
+// whole table of monsters, until they turn it on. Reached as `session.actions.rolls`.
 
 /** What the dialog needs of the session. */
 export interface RollDialogHost {

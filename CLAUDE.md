@@ -109,6 +109,13 @@ with `pnpm check-game data/games/<id>`.
   `spell-actions.ts` and `feature-actions.ts`, sharing turn budgets and
   damage through `table.ts`. Summons are tokens with `summon` (vanish when
   the spell ends) and either their own initiative or a `leader`.
+- The roll dialog (`session-roll-dialog.ts`, `play/roll-plan.ts`, `ui/RollDialog.tsx`):
+  `Session.send` holds an attack, cast, feature or check until the player has
+  picked what it spends (`spend`), how the d20 rolls (`d20`, final), a
+  `situational` modifier and the damage (`damageExtra`, `damageSet`), all
+  fields of `RollChoice` (`roll-choice.ts`); the server's `rollDefaults`
+  answers how the d20 stands. On for players, off for the GM (pref
+  `roll-dialog`); a new action that rolls adds a plan in `roll-plan.ts`.
 - World time: `clock.ts` in shared (clock, calendar, darkness by time of day),
   `durations.ts` (what lasts: `endsAt` on effects, concentration, summons), the
   server's `world-clock.ts` and `time-out.ts`. Fights and turn-based mode

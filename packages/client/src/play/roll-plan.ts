@@ -174,7 +174,7 @@ function planOf(msg: ClientMessage, ctx: PlanContext): RollPlan | undefined {
 /** What the dialog offers for `msg`; undefined when it is not an action it asks about, or there is nothing to pick. */
 export function planFor(msg: ClientMessage, ctx: PlanContext): RollPlan | undefined {
   const plan = planOf(msg, ctx);
-  const any = plan && (plan.ask || plan.damage || plan.spend || plan.payments);
+  const any = plan && [plan.ask, plan.damage, plan.spend, plan.payments].some(Boolean);
   return any ? plan : undefined;
 }
 
@@ -183,19 +183,36 @@ export function startingD20(plan: RollPlan, standing: D20Mode | undefined): D20M
   return (plan.msg as RollChoice).edge ?? standing ?? 'normal';
 }
 
+/** A typed modifier without its spaces; undefined when nothing was typed. */
+function tidy(text: string | undefined): string | undefined {
+  const squeezed = text?.replace(/\s+/g, '');
+  return squeezed === '' ? undefined : squeezed;
+}
+
+/** `choice` without the fields left unset, as it goes on the wire. */
+const said = (choice: RollChoice): RollChoice => JSON.parse(JSON.stringify(choice)) as RollChoice;
+
+/** What the player picked for the d20: how it rolls when that differs from how it stands, and the modifier. */
+function d20Choice(plan: RollPlan, picked: RollPicked, standing: D20Mode | undefined): RollChoice {
+  if (!plan.ask) return {};
+  const changed = picked.d20 !== undefined && picked.d20 !== (standing ?? 'normal');
+  return { d20: changed ? picked.d20 : undefined, situational: tidy(picked.situational) };
+}
+
+/** What the player picked for the damage. */
+function damageChoice(plan: RollPlan, picked: RollPicked): RollChoice {
+  if (!plan.damage) return {};
+  return { damageExtra: tidy(picked.damageExtra), damageSet: picked.damageSet };
+}
+
 /** The roll picks that differ from how the action would go anyway. */
 function pickedChoice(plan: RollPlan, picked: RollPicked, standing: D20Mode | undefined): RollChoice {
-  const d20 = plan.ask && picked.d20 && picked.d20 !== (standing ?? 'normal') ? picked.d20 : undefined;
-  const situational = plan.ask ? picked.situational?.replace(/\s+/g, '') : undefined;
-  const damageExtra = plan.damage ? picked.damageExtra?.replace(/\s+/g, '') : undefined;
-  return {
-    ...(d20 && { d20 }),
-    ...(plan.crit && picked.crit && { crit: picked.crit }),
-    ...(situational && { situational }),
-    ...(damageExtra && { damageExtra }),
-    ...(plan.damage && picked.damageSet !== undefined && { damageSet: picked.damageSet }),
-    ...(picked.spend && picked.spend !== plan.spend && { spend: picked.spend }),
-  };
+  return said({
+    ...d20Choice(plan, picked, standing),
+    crit: plan.crit ? picked.crit : undefined,
+    ...damageChoice(plan, picked),
+    spend: picked.spend === plan.spend ? undefined : picked.spend,
+  });
 }
 
 /** A cast paid as picked: a slot of that level, a feature, or nothing. */
@@ -209,5 +226,5 @@ function paid(msg: Asked, payment: PaymentOption | undefined): Asked {
 /** The action as it is sent once the player has picked; `standing`: how the d20 would be rolled anyway. */
 export function pickedMessage(plan: RollPlan, picked: RollPicked, standing: D20Mode | undefined): Asked {
   const { edge: _edge, crit: _crit, ...action } = paid(plan.msg, picked.payment) as Asked & RollChoice;
-  return { ...action, ...pickedChoice(plan, picked, standing) } as Asked;
+  return { ...action, ...pickedChoice(plan, picked, standing) };
 }

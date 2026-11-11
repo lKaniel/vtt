@@ -115,7 +115,7 @@ describe('the message once picked', () => {
   });
 
   it('turns a quick pick sent with the action into the d20 picked, or drops it', () => {
-    const edged = planFor({ ...swing, edge: 'advantage' } as ClientMessage, ctx())!;
+    const edged = planFor({ ...swing, edge: 'advantage' }, ctx())!;
     expect(pickedMessage(edged, { d20: 'advantage' }, 'normal')).toEqual({ ...swing, d20: 'advantage' });
     expect(pickedMessage(edged, { d20: 'normal' }, 'normal')).toEqual(swing);
   });
