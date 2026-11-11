@@ -1,6 +1,6 @@
 import type { SessionPart } from './session-part.ts';
 import { canOverride, isGm, type Player, type Point } from '@vtt/shared';
-import { type ClientMessage, type Combat, type Condition, type TokenView, turnLeft } from '@vtt/system-dnd5e';
+import { type ClientMessage, type Combat, type Condition, type TokenView, takers, turnLeft } from '@vtt/system-dnd5e';
 
 // The token HUD: a panel beside one creature you control, with its
 // conditions, hit points, elevation and (GM) visibility and place in the
@@ -100,6 +100,35 @@ export class Hud implements SessionPart {
   /** GM or trusted: sets what the creature has left (true: has it); the server says so in the chat. */
   overrideTurn(token: string, set: TurnOverride): void {
     this.s.send({ t: 'turnOverride', token, ...set });
+  }
+
+  /** GM: it is this creature's turn now, started afresh (the one whose turn it is: its turn starts over). */
+  giveTurn(token: string): void {
+    this.s.send({ t: 'turnTo', token });
+  }
+
+  /** GM: back to the turn before this one. */
+  turnBack(): void {
+    this.s.send({ t: 'turnBack' });
+  }
+
+  /** GM: the turn passes on: everyone taking it ends theirs. */
+  passTurn(): void {
+    const combat = this.s.combat;
+    if (!combat) return;
+    const acting = takers(combat).filter((id) => this.s.tokens.has(id) && !combat.done?.includes(id));
+    if (!acting.length) return this.s.send({ t: 'endTurn' });
+    for (const token of acting) this.s.send({ t: 'endTurn', token });
+  }
+
+  /** GM: the fight's round, set by hand. */
+  setRound(value: number): void {
+    this.s.send({ t: 'round', value });
+  }
+
+  /** GM: a creature one place earlier (-1) or later (1) in the order. */
+  moveInOrder(token: string, by: -1 | 1): void {
+    this.s.send({ t: 'orderMove', token, by });
   }
 
   /** A token is gone: close its HUD and stop seeing through its eyes. */

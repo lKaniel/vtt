@@ -39,6 +39,20 @@ describe('Token HUD', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'editToken', token: 'hero', patch: { elevation: 10 } });
   });
 
+  it('sends the GM’s fight controls: whose turn, a step back, the round, the order, the turn passed on', () => {
+    ws.receive({ ...welcome([token('hero'), token('goblin')]), combat: fight(1, 25) } as never);
+    session.hud.giveTurn('goblin');
+    expect(ws.sent.at(-1)).toEqual({ t: 'turnTo', token: 'goblin' });
+    session.hud.turnBack();
+    expect(ws.sent.at(-1)).toEqual({ t: 'turnBack' });
+    session.hud.setRound(4);
+    expect(ws.sent.at(-1)).toEqual({ t: 'round', value: 4 });
+    session.hud.moveInOrder('goblin', -1);
+    expect(ws.sent.at(-1)).toEqual({ t: 'orderMove', token: 'goblin', by: -1 });
+    session.hud.passTurn();
+    expect(ws.sent.at(-1)).toEqual({ t: 'endTurn', token: session.combat!.order[session.combat!.turn]!.token });
+  });
+
   it('lets a trusted seat, not a plain player, override the turns of what it controls', () => {
     const trusted = welcome([token('hero'), { ...token('goblin'), ownership: { default: 'limited' } }]);
     ws.receive(welcome());

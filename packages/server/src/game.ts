@@ -16,6 +16,7 @@ import { CombatActions } from './actions/combat-actions.ts';
 import { FeatureActions } from './actions/feature-actions.ts';
 import { GmActions } from './actions/gm-actions.ts';
 import { DamageActions } from './actions/damage-actions.ts';
+import { FightControl } from './actions/fight-control.ts';
 import { HudActions } from './actions/hud-actions.ts';
 import { Pause } from './actions/pause.ts';
 import { MapActions } from './actions/map-actions.ts';
@@ -140,7 +141,14 @@ export class Game {
     this.routes = gameRoutes({
       ...{ store, table, chat: this.chat, moves: this.moves, combat: this.combat, spells: this.spells },
       ...{ features: this.features, reactions: this.reactions, clock: this.clock, gm: this.gm, map: this.map },
-      ...{ fog: this.fog, scenes: this.scenes, entries: this.entries, damage: this.damage, hud: this.hud },
+      ...{
+        fog: this.fog,
+        scenes: this.scenes,
+        entries: this.entries,
+        damage: this.damage,
+        hud: this.hud,
+        fight: new FightControl(table, this.combat),
+      },
       onChat: (c, text) => this.onChat(c, text),
     });
     this.listen(store);

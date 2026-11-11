@@ -6,7 +6,11 @@ import {
   joinCombat,
   leaveCombat,
   nextTurn,
+  moveInOrder,
+  previousTurn,
   setInitiative,
+  setRound,
+  turnTo,
   startCombat,
   turnLeft,
 } from './index.ts';
@@ -169,5 +173,82 @@ describe('turnLeft', () => {
     expect(turnLeft(fight, 'b')).toEqual({ budget: undefined, reaction: false });
     expect(turnLeft(fight, 'wolf')).toEqual({ budget: side, reaction: true });
     expect(turnLeft(fight, 'nobody')).toBeUndefined();
+  });
+});
+
+describe('the GM running the order by hand', () => {
+  const base: Combat = {
+    round: 2,
+    turn: 1,
+    order: [
+      { token: 'a', initiative: 18 },
+      { token: 'b', initiative: 12 },
+      { token: 'c', initiative: 5 },
+    ],
+    left: { move: 5, action: false, bonus: false, attacks: 0, used: ['sneak-attack'] },
+    reacted: ['c'],
+    side: { pet: { move: 0, action: false, bonus: true, attacks: 0, used: [] } },
+  };
+  const info = (id: string) => ({ speed: id === 'c' ? 40 : 30, active: id !== 'a' });
+
+  it('turnTo gives a creature a fresh turn in the same round, even one that is down', () => {
+    const after = turnTo(base, 'c', info);
+    expect(currentTurn(after)).toBe('c');
+    expect(after.round).toBe(2);
+    expect(after.left).toEqual({ move: 40, action: true, bonus: true, attacks: 0, used: [] });
+    expect(after.reacted).toEqual([]);
+    expect(after.side).toEqual({});
+    expect(currentTurn(turnTo(base, 'a', info))).toBe('a');
+  });
+
+  it('turnTo starts the turn over for the creature that has it', () => {
+    expect(turnTo(base, 'b', info).left.action).toBe(true);
+  });
+
+  it('turnTo takes in the party members sharing the turn', () => {
+    const party = (id: string) => ({ speed: 30, active: true, party: id !== 'a' });
+    const after = turnTo({ ...base, shared: true, group: ['x'], done: ['x'] }, 'b', party);
+    expect(after.group).toEqual(['c']);
+    expect(after.done).toBeUndefined();
+  });
+
+  it('turnTo leaves a fight without the creature as it is', () => {
+    expect(turnTo(base, 'zz', info)).toBe(base);
+  });
+
+  it('previousTurn steps back to the creature before, skipping those that are down', () => {
+    const back = previousTurn({ ...base, turn: 2 }, info);
+    expect(currentTurn(back)).toBe('b');
+    expect(back.round).toBe(2);
+  });
+
+  it('previousTurn goes back a round past the top of the order, but never before round 1', () => {
+    const back = previousTurn(base, info);
+    expect(currentTurn(back)).toBe('c');
+    expect(back.round).toBe(1);
+    expect(previousTurn({ ...base, round: 1 }, info).round).toBe(1);
+  });
+
+  it('setRound changes only the round', () => {
+    expect(setRound(base, 7)).toEqual({ ...base, round: 7 });
+  });
+
+  it('moveInOrder swaps a creature with its neighbour, taking its initiative, and the turn stays', () => {
+    const up = moveInOrder(base, 'c', -1);
+    expect(up.order).toEqual([
+      { token: 'a', initiative: 18 },
+      { token: 'c', initiative: 12 },
+      { token: 'b', initiative: 12 },
+    ]);
+    expect(currentTurn(up)).toBe('b');
+    const down = moveInOrder(base, 'b', 1);
+    expect(down.order.map((e) => e.token)).toEqual(['a', 'c', 'b']);
+    expect(down.order[2]!.initiative).toBe(5);
+    expect(currentTurn(down)).toBe('b');
+  });
+
+  it('moveInOrder stops at the ends', () => {
+    expect(moveInOrder(base, 'a', -1)).toBe(base);
+    expect(moveInOrder(base, 'c', 1)).toBe(base);
   });
 });
