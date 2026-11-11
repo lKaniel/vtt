@@ -31,3 +31,40 @@ export function paymentCount(token: TokenView, spell: Spell): number {
   const slots = caster && spell.level > 0 ? slotChoices(spell, caster).filter((c) => c.left > 0).length : 0;
   return slots + payingFeatures(token.sheet, spell).length;
 }
+
+/** One way to pay for a cast, as the roll dialog lists it. */
+export interface PaymentOption {
+  key: string;
+  slot: number;
+  /** The feature paying instead of a slot, and its name. */
+  paidBy?: string;
+  name?: string;
+  /** Cast without spending anything. */
+  free?: true;
+  /** Slots of this level, or uses of the feature, left. */
+  left?: number;
+}
+
+/** Every way the token can pay for `spell`: slot levels with a slot left, features with a use, and nothing at all (at `slot`). */
+export function paymentOptions(token: TokenView, spell: Spell, slot: number): PaymentOption[] {
+  const caster = token.sheet?.caster;
+  if (spell.level === 0 || !caster || caster.atWill?.includes(spell.id)) return [];
+  const slots = slotChoices(spell, caster).filter((c) => c.left > 0);
+  return [
+    ...slots.map((c) => ({ key: `slot-${c.level}`, slot: c.level, left: c.left })),
+    ...payingFeatures(token.sheet, spell).map((c) => ({
+      key: `feature-${c.feature}`,
+      slot: c.level,
+      paidBy: c.feature,
+      name: c.name,
+      left: c.left,
+    })),
+    { key: 'free', slot, free: true as const },
+  ];
+}
+
+/** The option a cast is paid with as it stands. */
+export function paymentKey(cast: { slot: number; paidBy?: string; free?: boolean }): string {
+  if (cast.paidBy) return `feature-${cast.paidBy}`;
+  return cast.free ? 'free' : `slot-${cast.slot}`;
+}

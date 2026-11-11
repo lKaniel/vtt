@@ -1,4 +1,4 @@
-import type { RollChoice, RollEdge } from '@vtt/system-dnd5e';
+import { type RollChoice, RollChoiceSchema, type RollEdge } from '@vtt/system-dnd5e';
 
 // The roll pick a player has out for their creature (session-pick.ts on the
 // client), kept here for the rolls the server makes on its own: initiative
@@ -39,8 +39,5 @@ export function pickedEdge(
   return { advantage: edge === 'advantage', disadvantage: surprised || edge === 'disadvantage' };
 }
 
-/** The roll pick sent with a message. */
-export const rollPickOf = (msg: RollChoice): RollChoice => ({
-  ...(msg.edge && { edge: msg.edge }),
-  ...(msg.crit && { crit: msg.crit }),
-});
+/** The roll pick sent with a message: the quick pick's, and all the roll dialog adds. */
+export const rollPickOf = (msg: RollChoice): RollChoice => RollChoiceSchema.parse(msg);

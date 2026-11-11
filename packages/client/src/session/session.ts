@@ -51,6 +51,7 @@ import type { SessionPart } from './session-part.ts';
 import { type SceneEvents, Scenes } from './session-scenes.ts';
 import { Targets } from './targets.ts';
 import { Hud, type HudEvents } from './session-hud.ts';
+import { RollDialog } from './session-roll-dialog.ts';
 import { Journal, type JournalEvents } from './session-journal.ts';
 import { Book } from './session-book.ts';
 import { type PackEvents, Packs } from './session-packs.ts';
@@ -138,6 +139,8 @@ export class Session {
   readonly piles = new Piles(this, this.ev);
   readonly inspect = new Inspecting(this.ev);
   readonly hud = new Hud(this, this.ev);
+  /** The dialog an action that rolls or spends waits in for your picks (session-roll-dialog.ts). */
+  readonly rolls = new RollDialog(this, this.ev, (m) => this.post(m));
   readonly journal = new Journal(this, this.ev);
   /** The adventure book (J): quests, maps, lore, the party log, the timeline. */
   readonly book = new Book(this, this.ev);
@@ -177,6 +180,7 @@ export class Session {
     this.levels,
     this.asks,
     this.actions.pick,
+    this.rolls,
   ];
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
@@ -251,7 +255,12 @@ export class Session {
     this.ws?.close();
   }
 
+  /** Sends `msg`, unless it is an action that waits for the roll dialog first. */
   send(msg: ClientMessage): void {
+    if (!this.rolls.holds(msg)) this.post(msg);
+  }
+
+  private post(msg: ClientMessage): void {
     if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(msg));
   }
 

@@ -12,7 +12,7 @@ import type {
 import type { CheckEntry, CheckKind, CheckRequestKind } from './checks.ts';
 import type { Combat } from './combat.ts';
 import type { Area } from './area-schema.ts';
-import type { CritChoice, RollChoice, RollEdge } from './roll-choice.ts';
+import type { D20Mode, RollAsk, RollChoice, RollEdge } from './roll-choice.ts';
 import type { Condition } from './spell-schema.ts';
 import type { CompendiumDrop, SheetArea } from './sheet-drops.ts';
 import type { Ability, Currency, DamageType, Edition } from './stats-schema.ts';
@@ -185,9 +185,14 @@ export type ClientMessage =
       versus?: CheckKind;
     }
   /** Rolls a creature's check: on the request card `card`, or on its own; `edge`: the roller's own advantage or disadvantage. */
-  | { t: 'rollCheck'; token: string; ability: Ability; skill?: string; card?: string; edge?: RollEdge }
+  | ({ t: 'rollCheck'; token: string; ability: Ability; skill?: string; card?: string } & Pick<
+      RollChoice,
+      'edge' | 'd20' | 'situational'
+    >)
+  /** Asks how the d20 of a roll would be rolled as things stand, for the roll dialog; answered with `rollDefaults`. */
+  | { t: 'rollDefaults'; ref: string; roll: RollAsk }
   /** `targets` has one entry per target or beam; `point` aims areas, teleports and summons. */
-  | {
+  | ({
       t: 'cast';
       caster: string;
       spell: string;
@@ -209,10 +214,8 @@ export type ClientMessage =
       choice?: string;
       /** The monster a shape-shifting spell turns its targets into (polymorph). */
       form?: string;
-      /** The caster's own advantage or disadvantage on the spell attack, and a critical forced or held back. */
-      edge?: RollEdge;
-      crit?: CritChoice;
-    }
+      /** The caster's own pick for the spell attack, its damage and what the cast spends (`RollChoice`). */
+    } & RollChoice)
   /** `targets` and `point` aim features used like spells (bardic inspiration, turn undead). */
   | ({
       t: 'feature';
@@ -307,4 +310,6 @@ export type ServerMessage =
   | { t: 'reactionOffer'; offer: ReactionOffer }
   | { t: 'reactionGone'; id: string }
   /** The roll pick you sent with `rollPick` was used: it is back to normal. */
-  | { t: 'pickSpent' };
+  | { t: 'pickSpent' }
+  /** The answer to your `rollDefaults`: how the d20 would be rolled as things stand. */
+  | { t: 'rollDefaults'; ref: string; d20: D20Mode };

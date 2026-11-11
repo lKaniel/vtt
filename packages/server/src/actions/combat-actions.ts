@@ -22,10 +22,8 @@ import {
   offHandCost,
   offHandProblem,
   resolveWeaponAttack,
-  type CritChoice,
   pickNotes,
   type RollChoice,
-  type RollEdge,
   smiteProblem,
   startCombat,
   tickEffects,
@@ -42,12 +40,12 @@ import { afterAttack, readiedFinisher, rollInitiative, turnEnds } from '../play/
 import { compelled, riseInAura } from '../play/turn-start.ts';
 import { anotherTurn, breakTimeStop } from '../play/time-stop.ts';
 import { legendaryAction, type TurnMessage } from './legendary-actions.ts';
-import { pickedEdge } from '../play/roll-picks.ts';
+import { pickedEdge, rollPickOf } from '../play/roll-picks.ts';
 import { breakSanctuary, loseImage, passSanctuary } from '../play/spell-wards.ts';
 import { recharge } from '../play/recharge.ts';
 import { flanked } from '../play/flanking.ts';
 import { type Surprise, surprisedTurn, surpriseOf, withSurprise } from '../play/surprise.ts';
-import { Refusal, requireGm, type Cost, type Fighter, type Table } from '../play/table.ts';
+import { Refusal, requireGm, spendAs, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 /** An attack that has been rolled but not yet landed: its target may still react (shield). */
 export interface PendingHit {
@@ -61,15 +59,13 @@ export interface PendingHit {
   outcome: WeaponAttackOutcome;
 }
 
-export interface AttackRequest {
+/** With the attacker's own roll pick: the d20, a critical, a modifier, the damage, what it spends. */
+export interface AttackRequest extends RollChoice {
   attacker: string;
   target: string;
   attack: string;
   smite?: number;
   finisher?: string;
-  /** The attacker's own advantage or disadvantage, and a critical forced or held back. */
-  edge?: RollEdge;
-  crit?: CritChoice;
 }
 
 /** An attack as a player asks for it: at a creature, or at empty ground (`point`). */
@@ -311,7 +307,7 @@ export class CombatActions {
     if (!canSee(req.target)) throw new Refusal('No such target');
     const target = this.table.fighter(req.target);
     const attack = this.attackOf(attacker, req);
-    const cost = this.attackCost(attacker, attack);
+    const cost = spendAs(this.attackCost(attacker, attack), req.spend);
     this.table.check(attacker.token, cost);
     const feet = this.distance(attacker.token, target.token);
     const range = attackRange(attack, feet);
@@ -323,11 +319,8 @@ export class CombatActions {
     this.table.pay(attacker.token, cost, attacker.sheet.attacksPerAction);
     if (lightAttack(attack)) this.markUsed(attacker.token, 'light-attack');
     if (attack.offHand && cost === 'free') this.markUsed(attacker.token, 'nick');
-    const pick = { edge: req.edge, crit: req.crit };
-    this.resolve(
-      { attacker, target, attack, range },
-      { smite: req.smite, finisher: req.finisher, reaction: false, pick },
-    );
+    const how = { smite: req.smite, finisher: req.finisher, reaction: false, pick: rollPickOf(req) };
+    this.resolve({ attacker, target, attack, range }, how);
   }
 
   /** An attack at empty ground: it costs what an attack costs and hits nothing. */

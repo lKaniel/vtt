@@ -64,7 +64,7 @@ function rollOnCard(
   table: Table,
   cards: CheckCards,
   { token, sheet }: Fighter,
-  { card: id, edge }: Pick<RollMessage, 'card' | 'edge'>,
+  { card: id, edge, d20, situational }: RollMessage,
 ): void {
   const before = cards.all.find((m) => m.id === id);
   const asked = before?.check;
@@ -72,7 +72,7 @@ function rollOnCard(
   if (!before || !asked || at < 0) throw new Refusal(`${token.name} wasn't asked for that check`);
   if (asked.entries[at]!.total !== undefined) throw new Refusal(`${token.name} has already rolled`);
   const kind = asked.kind === 'contest' && at === 1 && asked.versus ? asked.versus : asked;
-  const { used, ...rolled } = rollCheck(token, sheet, { ...kind, dc: asked.dc, edge }, table.rng);
+  const { used, ...rolled } = rollCheck(token, sheet, { ...kind, dc: asked.dc, edge, d20, situational }, table.rng);
   useUp(table, token.id, used);
   const entries = asked.entries.map((e, i) => (i === at ? { ...e, ...rolled } : e));
   const outcome = checkOutcome(asked.kind, entries);

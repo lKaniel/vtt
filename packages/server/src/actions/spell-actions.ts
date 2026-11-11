@@ -31,7 +31,7 @@ import { breakTimeStop } from '../play/time-stop.ts';
 import { SpellTargets } from '../play/spell-targets.ts';
 import { stepAside } from '../play/pool-guards.ts';
 import { castsFree, paidTargets, type Payment, payment, paymentNotes, spendPayment } from '../play/feature-paid.ts';
-import { Refusal, type Cost, type Fighter, type Table } from '../play/table.ts';
+import { Refusal, spent, type Cost, type Fighter, type Table } from '../play/table.ts';
 
 /** `edge` and `crit`: the caster's own pick for the spell attack. */
 export interface CastRequest extends RollChoice {
@@ -134,7 +134,7 @@ export class SpellActions {
     const actor = this.table.actor(player, asked.caster);
     const known = this.table.content(actor.token).spells.get(asked.spell);
     if (!known) throw new Refusal(`There is no spell called ${asked.spell}`);
-    const { caster, plan, reader } = this.prepare(actor, known, asked);
+    const { caster, plan, reader } = spent(this.prepare(actor, known, asked), asked.spend);
     const req = { ...asked, targets: paidTargets(caster, plan.paid, asked.targets) };
     const picked = chosen(caster, known, req.choice, plan.again);
     this.table.check(caster.token, plan.cost);

@@ -8,7 +8,14 @@ import {
   RoleSchema,
   ROLL_MODES,
 } from '@vtt/shared';
-import { ABILITIES, ConditionSchema, CurrencySchema, EditionSchema, RollChoiceSchema } from '@vtt/system-dnd5e';
+import {
+  ABILITIES,
+  ConditionSchema,
+  CurrencySchema,
+  EditionSchema,
+  RollAskSchema,
+  RollChoiceSchema,
+} from '@vtt/system-dnd5e';
 import type { RawData } from 'ws';
 import { z } from 'zod';
 
@@ -168,8 +175,10 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     token: z.string(),
     ...checkKind,
     card: z.string().optional(),
-    edge: RollChoiceSchema.shape.edge,
+    ...RollChoiceSchema.pick({ edge: true, d20: true, situational: true }).shape,
   }),
+  /** The roll dialog asks how a roll's d20 would be rolled as things stand. */
+  z.object({ t: z.literal('rollDefaults'), ref: z.string().max(40), roll: RollAskSchema }),
   z.object({
     t: z.literal('carry'),
     token: z.string(),

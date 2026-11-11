@@ -12,7 +12,7 @@ import type { Player, Point } from '@vtt/shared';
 import type { SpellActions } from '../actions/spell-actions.ts';
 import { afterSpellFinisher } from './momentum-keeper.ts';
 import { rollPickOf } from './roll-picks.ts';
-import { Refusal, type Cost, type Fighter, type Table } from './table.ts';
+import { Refusal, spendAs, type Fighter, type Table } from './table.ts';
 
 /** `edge` and `crit`: the user's roll pick for the feature's attack. */
 export interface FeatureRequest extends RollChoice {
@@ -58,7 +58,7 @@ export function castFeature(
   const problem = featureProblem(caster.sheet, req.feature);
   if (problem) throw new Refusal(`${caster.token.name} ${problem}`);
   const feature = caster.sheet.features.find((f) => f.id === req.feature)!;
-  const cost: Cost = feature.action ?? 'free';
+  const cost = spendAs(feature.action ?? 'free', req.spend);
   table.check(caster.token, cost);
   let spell = chosen(poolSpell(featureSpell(feature), feature, caster.sheet), req.choice);
   const aim = { ...req, caster: req.token, spell: spell.id, slot: 0, targets: req.targets ?? [] };

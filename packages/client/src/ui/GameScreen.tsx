@@ -26,6 +26,7 @@ import { PartyBar } from './PartyBar.tsx';
 import { ObserveBanner } from './ObserveBanner.tsx';
 import { PauseBanner, PauseButton } from './PauseBanner.tsx';
 import { ReactionPrompt } from './ReactionPrompt.tsx';
+import { RollDialog } from './RollDialog.tsx';
 import { LevelPrompt } from './LevelPrompt.tsx';
 import { TileQuestion } from './TileQuestion.tsx';
 import { SceneNav } from './SceneNav.tsx';
@@ -75,6 +76,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <InspectCard session={session} />
       <DiceOverlay session={session} />
       <ReactionPrompt session={session} />
+      <RollDialog session={session} />
       <LevelPrompt session={session} />
       <TileQuestion session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
