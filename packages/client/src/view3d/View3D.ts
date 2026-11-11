@@ -137,18 +137,21 @@ export class View3D {
       const start = session.world?.start ?? map.cam.center;
       return [start[0], start[1], this.floor()];
     });
-    this.play = new Play3D({
-      map,
-      session,
-      floor: () => this.floor(),
-      groundAt: ([x, y]) => this.terrains.heightAt(x, y) ?? this.floor(),
-      surfaceAt: (p) => this.underfoot.at(p, this.floor(), 6 * this.px()),
-      px: () => this.px(),
-      grid: () => this.grid(),
-      target: () => [this.orbit.target[0], this.orbit.target[1]],
-      copiesOf: (key) => this.models.copiesOf(key),
-      indoors: () => !!this.seeIn.peek?.room,
-    });
+    this.play = new Play3D(
+      {
+        map,
+        session,
+        floor: () => this.floor(),
+        groundAt: ([x, y]) => this.terrains.heightAt(x, y) ?? this.floor(),
+        surfaceAt: (p) => this.underfoot.at(p, this.floor(), 6 * this.px()),
+        px: () => this.px(),
+        grid: () => this.grid(),
+        target: () => [this.orbit.target[0], this.orbit.target[1]],
+        copiesOf: (key) => this.models.copiesOf(key),
+        indoors: () => !!this.seeIn.peek?.room,
+      },
+      this.quality.lights,
+    );
     this.ground = new Ground(map.app.canvas);
     this.bridge = new PixiBridge(map, (x, y) => this.pick(x, y), this.quality.groundPixels);
     this.feed = new GroundFeed(this.bridge, this.ground, {

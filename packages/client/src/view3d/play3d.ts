@@ -19,7 +19,7 @@ import { doorBoxes, type DoorBox, type FloorSpan } from './walls3d.ts';
 // heights of those flying (flight3d.ts), and the scene's lights lighting
 // the models round them (lamps3d.ts).
 
-/** How many lights shine in 3D at once. */
+/** How many lights shine in 3D at once, unless the graphics setting says (quality3d.ts `lights`). */
 const LAMPS = 8;
 
 /** What play in 3D needs of the 3D view. */
@@ -57,7 +57,7 @@ export class Play3D {
   private fx: Effects3D;
   private flight = new FlightMarks();
   private triggers = new TriggerMarks();
-  private lamps = new Lamps(LAMPS);
+  private lamps: Lamps;
   private leaves = new Leaves();
   private modelDoors = new ModelDoors();
   private leafBoxes: DoorBox[] = [];
@@ -68,7 +68,11 @@ export class Play3D {
   /** The creatures as the last frame stood them. */
   private stood = new Map<string, Standing>();
 
-  constructor(private readonly host: Play3DHost) {
+  constructor(
+    private readonly host: Play3DHost,
+    lamps = LAMPS,
+  ) {
+    this.lamps = new Lamps(lamps);
     this.fx = new Effects3D({
       body: (id) => this.body(id),
       groundAt: (p) => host.groundAt(p),

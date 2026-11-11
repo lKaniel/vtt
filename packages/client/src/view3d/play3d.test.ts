@@ -41,6 +41,16 @@ const chestTile = {
 } as unknown as DrawnTile;
 
 describe('play in 3D', () => {
+  it('shines as many scene lights at once as the graphics setting allows', () => {
+    const lightsIn = (play: Play3D) => {
+      let n = 0;
+      play.group.traverse((o) => (n += o instanceof THREE.PointLight ? 1 : 0));
+      return n;
+    };
+    expect(lightsIn(new Play3D(host([]), 2))).toBe(2);
+    expect(lightsIn(new Play3D(host([]), 12))).toBe(12);
+  });
+
   it('hangs leaves on plain doors only, leaving the doors a model moves to the model', () => {
     const walls = [wall('front', 'closed'), wall('lid', 'closed'), wall('plain')];
     const play = new Play3D(host(walls));
