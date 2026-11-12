@@ -31,26 +31,27 @@ name.
 
 ## Tools
 
-| Tool                             | What it does                                                                        |
-| -------------------------------- | ----------------------------------------------------------------------------------- |
-| `guide`                          | The game format (docs/game-format.md), to read first                                |
-| `list_games`                     | Your games and your role in each                                                    |
-| `look`                           | Scene, tokens (pixels, HP for those you may see), combat, players, document counts  |
-| `read_chat`                      | The last chat messages and roll cards                                               |
-| `list_documents`, `get_document` | Read any document you may read (`actors`, `journals`, `<scene>/walls`...)           |
-| `edit_documents`                 | Create, update or delete documents, all or nothing, as one undo step                |
-| `say`                            | Chat as you, including `/r` rolls                                                   |
-| `move_token`                     | Walk a token to a point                                                             |
-| `override_turn`                  | GM or trusted: set a turn's action, bonus action, reaction, movement, extra actions |
-| `undo`                           | Undo your last step                                                                 |
-| `send`                           | Any other message a browser sends (start combat, run a macro...)                    |
-| `create_scene`                   | A new scene, with a ground tile of a given size                                     |
-| `build_scene`                    | Rooms, walls, doors, lights, floors, creatures, regions... from a blueprint         |
-| `describe_scene`                 | A scene's settings and every item on it, by collection                              |
-| `render_scene`                   | A top-down picture of a scene (or part of it), with a legend                        |
-| `clear_area`                     | Deletes what lies inside a box                                                      |
-| `go_to_scene`                    | Takes your view, or the whole game, to a scene                                      |
-| `list_assets`                    | The pictures, sounds, videos and 3D models the game may use                         |
+| Tool                             | What it does                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------ |
+| `guide`                          | The game format (docs/game-format.md), to read first                                 |
+| `list_games`                     | Your games and your role in each                                                     |
+| `look`                           | Scene, tokens (pixels, HP for those you may see), combat, players, document counts   |
+| `read_chat`                      | The last chat messages and roll cards                                                |
+| `list_documents`, `get_document` | Read any document you may read (`actors`, `journals`, `<scene>/walls`...)            |
+| `edit_documents`                 | Create, update or delete documents, all or nothing, as one undo step                 |
+| `say`                            | Chat as you, including `/r` rolls                                                    |
+| `move_token`                     | Walk a token to a point                                                              |
+| `override_turn`                  | GM or trusted: set a turn's action, bonus action, reaction, movement, extra actions  |
+| `undo`                           | Undo your last step                                                                  |
+| `send`                           | Any other message a browser sends (start combat, run a macro...)                     |
+| `create_scene`                   | A new scene, with a ground tile of a given size                                      |
+| `build_scene`                    | Rooms, walls, doors, lights, floors, creatures, regions... from a blueprint          |
+| `describe_scene`                 | A scene's settings and every item on it, by collection                               |
+| `render_scene`                   | A top-down picture of a scene (or part of it), with a legend                         |
+| `clear_area`                     | Deletes what lies inside a box                                                       |
+| `go_to_scene`                    | Takes your view, or the whole game, to a scene                                       |
+| `list_assets`                    | The pictures, sounds, videos and 3D models the game may use                          |
+| `find_assets`                    | Map pieces from the asset catalogs of the game's packs, by words, with sizes in feet |
 
 ## Building scenes
 
@@ -96,12 +97,27 @@ and a locked vault") and it builds it with the scene tools, all as the GM:
      are the walls, `background: false` when they are the floor). A creature's figure is its actor's `model`
      (`{ "src" }`), set with `edit_documents`.
 
+   - Map pieces from the asset catalogs (a pack's `catalog.json`, see
+     packs.md; Baileywiki's lists every tile, tileable texture and model with
+     its size in feet). Claude always dresses scenes from them when the game
+     has one: `create_scene`'s `ground` and a room's `floor` take a catalog
+     texture first, laid as a repeated picture at its own size (a rect tile's
+     `pattern`). In the blueprint, `props` place one piece by id or words
+     (`asset`, `x`, `y`, `rotation`, `scale`) at its real size, `scatter`
+     fills a box with pieces (`assets`, `count`, `spacing`, `avoid` boxes,
+     `scale` range, `seed`: the same seed builds the same forest; nothing
+     wider than half the box unless `maxFeet` says), and `grounds` lay
+     patches of a texture (`texture`, box, `edge`, `tint`). On a 3D scene
+     each piece is the pack's model, on a flat one its picture; either falls
+     back to the other when the catalog has none. `find_assets` searches the
+     catalog by words (`kind` tile, texture or model, `minFeet`, `maxFeet`).
+
 3. `render_scene` draws what was built (`level`: one floor), so Claude can look and fix it;
    `describe_scene` lists the ids, which `edit_documents` (`<scene>/walls`)
    changes and `clear_area` removes.
 
-The code is `scene-tools.ts`, `scene-blueprint.ts` and `room-walls.ts`
-(blueprints), `asset-tools.ts`, `scene-picture.ts`, `raster.ts` and `png.ts` (the picture) in
+The code is `scene-tools.ts`, `scene-blueprint.ts`, `blueprint-assets.ts` (catalog
+pieces) and `room-walls.ts` (blueprints), `asset-tools.ts`, `scene-picture.ts`, `raster.ts` and `png.ts` (the picture) in
 `server/src/mcp/`.
 
 Every tool takes an optional `game` (from `list_games`). Without one it uses

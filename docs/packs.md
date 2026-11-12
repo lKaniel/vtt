@@ -304,6 +304,34 @@ too. The pack is paid content: it lives in the gitignored `data/` and is
 never committed or shared. `VTT_BAILEYWIKI_URL` points the server at
 another content server (the tests' stand-in).
 
+## Asset catalogs
+
+A pack may carry a `catalog.json`: every map piece in it with its size, for
+Claude's map tools (`find_assets`, `build_scene` props, scatter and grounds,
+see claude-bridge.md) and the GM's search (`findAssets`, GM only). Each
+asset has an `id`, its `src` in the pack, a `kind` (`tile`: a picture laid
+on the map; `texture`: a tileable picture for ground and floors; `model`: a
+glTF model), a `name`, `tags`, its size `w` and `h` in feet, a model's
+`height`, a `thumb` and `overhead` (tree crowns, roofs). The schema is
+`AssetCatalogSchema` in `core/asset-catalog.ts`.
+
+`pnpm build-asset-catalog <pack folder>` writes it from the pack's `media/`:
+picture sizes come from the file headers at 150 px a 5 ft square (Baileywiki's
+own scale; a file named `200dpi` uses 200), model sizes from the glTF
+bounds at 5 ft a unit. It leaves out icons, thumbnails, tokens, PBR maps and
+side-on art, and folds a model's preview picture into the model. Options:
+`--px-per-square`, `--feet-per-unit`, `--include <regex>`, `--top <folders>`
+(`baileywiki-*` for every folder starting so), `--media` and `--prefix` to
+read files from elsewhere (Foundry's `Data/modules`), `--usage <file>` (px a
+square per file or folder, measured from scenes that use them) and `--out`.
+A `media-index.json` beside `pack.json` adds its tags and previews.
+
+For the Baileywiki pack (`pnpm import-baileywiki` puts its modules in
+`media/modules/`): `pnpm build-asset-catalog data/packs/baileywiki --media
+data/packs/baileywiki/media/modules --prefix media/modules/ --top
+'baileywiki-*'` (about 22,000 tiles, 640 textures and 5,000 models, a
+minute).
+
 ## Not done yet
 
 - Foundry actors and items in a pack's compendia (a world import reads

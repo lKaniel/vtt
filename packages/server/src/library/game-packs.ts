@@ -1,6 +1,9 @@
 import {
   type ArtIndex,
+  type AssetQuery,
   enabledPacks,
+  findAssets,
+  type PackAsset,
   mergeArt,
   type PackCompendium,
   type PackInfo,
@@ -48,6 +51,26 @@ export function packInfos(store: PackStore | undefined, game: GamePacks, system:
     .filter((p) => p.system === null || p.system === system.id)
     .map((p): PackInfo => ({ ...p, enabled: on.has(p.id) }));
   return [...builtin, ...installed];
+}
+
+/** The asset catalogs of the installed packs a game uses, in game.json order. */
+async function gameAssets(store: PackStore | undefined, game: GamePacks): Promise<PackAsset[]> {
+  if (!store) return [];
+  const lists = await Promise.all(packIds(store, game).map((id) => store.catalog(id)));
+  return lists.flat();
+}
+
+/** Per query, how many of the game's catalogued assets match and the first `limit` of them, best first. */
+export async function findGameAssets(
+  store: Pick<GameStore, 'packs' | 'campaign'>,
+  queries: readonly AssetQuery[],
+  limit: number,
+): Promise<{ total: number; assets: PackAsset[] }[]> {
+  const all = await gameAssets(store.packs, store.campaign);
+  return queries.map((q) => {
+    const found = findAssets(all, q);
+    return { total: found.length, assets: found.slice(0, limit) };
+  });
 }
 
 interface Cached {

@@ -172,7 +172,7 @@ describe('the inspector', () => {
     const rect: Doc = { id: 't', type: 'tile', rev: 1, kind: 'rect', x: 0, y: 0, w: 1, h: 1, color: '#000' };
     const image: Doc = { id: 'i', type: 'tile', rev: 1, kind: 'image', x: 0, y: 0, w: 1, h: 1, src: 'a.png' };
     const both = ['name', 'description', 'x', 'y', 'w', 'h', 'background', 'locked', 'level'];
-    expect(fieldsFor([rect]).map((f) => f.key)).toEqual([...both, 'color', 'texture']);
+    expect(fieldsFor([rect]).map((f) => f.key)).toEqual([...both, 'color', 'texture', 'pattern', 'textureScale']);
     expect(fieldsFor([image]).map((f) => f.key)).toEqual([
       ...both,
       'src',

@@ -113,6 +113,8 @@ const TILE_FIELDS: Field[] = [
   LEVEL,
   plain('color', 'Colour', 'color', { when: isRect }),
   plain('texture', 'Texture', 'select', { options: options('', ...TileTextureSchema.options), when: isRect }),
+  media('pattern', 'Repeated picture', 'image', { when: isRect }),
+  plain('textureScale', 'Squares a repeat', 'number', { when: isRect }),
   media('src', 'Picture', 'image', { when: isImage }),
   flag('overhead', 'Roof (over creatures)', { when: isImage }),
   plain('occludedAlpha', 'Opacity under it (0-1)', 'number', { when: (d) => isImage(d) && d.overhead === true }),

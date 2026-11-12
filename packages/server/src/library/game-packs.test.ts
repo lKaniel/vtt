@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { dnd5e } from '@vtt/system-dnd5e';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { contentCompendia, gameArt, gamePackIssues, packInfos } from './game-packs.ts';
+import { contentCompendia, findGameAssets, gameArt, gamePackIssues, packInfos } from './game-packs.ts';
 import { PackStore } from './pack-store.ts';
 
 let packs: PackStore;
@@ -28,6 +28,16 @@ beforeAll(async () => {
   await put(dir, 'goblins/lairs.json', [{ id: 'cave' }]);
   await put(dir, 'forest/pack.json', { id: 'forest', name: 'Forest' });
   await put(dir, 'forest/media/spells/Fireball.webp', 'x');
+  const tree = (id: string) => ({
+    id,
+    src: `media/trees/${id}.webp`,
+    kind: 'tile',
+    name: id,
+    tags: ['trees'],
+    w: 20,
+    h: 20,
+  });
+  await put(dir, 'forest/catalog.json', { format: 1, assets: [tree('oak'), tree('pine')] });
   await put(dir, 'icons/pack.json', { id: 'icons', name: 'Icons', art: 'art.json' });
   await put(dir, 'icons/art.json', { spell: { fireball: 'media/fire.webp' }, item: { rope: 'media/rope.webp' } });
   await put(dir, 'icons/media/svg/chest.svg', 'x');
@@ -103,5 +113,18 @@ describe('a pack on in every game', () => {
     expect(packInfos(store, game(), dnd5e).find((p) => p.id === 'house')?.enabled).toBe(true);
     expect(contentCompendia(store, game(), dnd5e).map((c) => `${c.pack}/${c.id}`)).toEqual(['house/classes']);
     expect(contentCompendia(store, game(['house']), dnd5e)).toHaveLength(1);
+  });
+});
+
+describe('the asset catalogs of a game', () => {
+  it('finds map pieces only in the packs the game uses, with how many matched', async () => {
+    const asked = [{ search: 'tree' }, { search: 'oak' }];
+    const results = await findGameAssets({ packs, campaign: game(['forest']) as never }, asked, 1);
+    expect(results.map((r) => [r.total, r.assets.map((a) => a.src)])).toEqual([
+      [2, ['pack://forest/media/trees/oak.webp']],
+      [1, ['pack://forest/media/trees/oak.webp']],
+    ]);
+    const off = await findGameAssets({ packs, campaign: game([]) as never }, asked, 1);
+    expect(off.map((r) => r.total)).toEqual([0, 0]);
   });
 });

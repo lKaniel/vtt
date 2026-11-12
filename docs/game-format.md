@@ -301,7 +301,9 @@ pixels.
   `sand`, `stone`, `cobble`, `wood`, `water`, `rock`, tinted by `color` (pick
   the lightest shade you want). `textureScale` is how many squares one repeat
   covers (default 2). Grass, dirt, sand, water and rock get natural wobbly
-  edges; set `"edge": "straight"` or `"rough"` to choose. `image` tiles load from
+  edges; set `"edge": "straight"` or `"rough"` to choose. Instead, `"pattern"`
+  repeats a tileable picture (`pack://baileywiki/...`), tinted by `color`
+  (`#ffffff` for none), one repeat every `textureScale` squares. `image` tiles load from
   `assets/`.
 - `"hidden": true` keeps a tile from players (the GM sees it faintly) until a
   trigger shows it.

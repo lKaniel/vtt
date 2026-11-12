@@ -1,6 +1,8 @@
 import { readdir } from 'node:fs/promises';
 import { join, normalize, sep } from 'node:path';
 import {
+  AssetCatalogSchema,
+  type PackAsset,
   artFromFile,
   ArtFileSchema,
   type ArtIndex,
@@ -52,6 +54,7 @@ function mediaFolder(m: PackManifest): string {
 export class PackStore {
   private packs = new Map<string, Installed>();
   private listed = new Map<string, MediaEntry[]>();
+  private catalogs = new Map<string, Promise<PackAsset[]>>();
   /** What load() could not read, one line each. */
   problems: string[] = [];
   /** Goes up on every load, so what is worked out from the packs can be cached until then. */
@@ -70,6 +73,7 @@ export class PackStore {
     }
     this.packs = packs;
     this.listed = listed;
+    this.catalogs = new Map();
     this.problems = problems;
     this.revision++;
   }
@@ -128,6 +132,21 @@ export class PackStore {
     return this.packs.get(pack)?.art ?? {};
   }
 
+  /**
+   * A pack's asset catalog (its catalog.json, core/asset-catalog.ts), with
+   * pack srcs; empty without one. Read when first asked for after a load.
+   */
+  catalog(pack: string): Promise<PackAsset[]> {
+    const installed = this.packs.get(pack);
+    if (!installed) return Promise.resolve([]);
+    let got = this.catalogs.get(pack);
+    if (!got) {
+      got = readCatalog(installed, this.problems);
+      this.catalogs.set(pack, got);
+    }
+    return got;
+  }
+
   /** The file a `pack://<pack>/<path>` names, if it is in the pack's media folder. */
   mediaFile(pack: string, path: string): string | undefined {
     const installed = this.packs.get(pack);
@@ -154,6 +173,23 @@ async function readIndex(folder: string): Promise<unknown[] | undefined> {
 async function readMediaIndex({ manifest, dir }: Pick<Installed, 'manifest' | 'dir'>): Promise<MediaIndex> {
   if (!manifest.mediaIndex) return {};
   return MediaIndexSchema.safeParse(await readJson(join(dir, manifest.mediaIndex))).data ?? {};
+}
+
+async function readCatalog({ manifest, dir }: Pick<Installed, 'manifest' | 'dir'>, problems: string[]) {
+  const file = await readJson(join(dir, 'catalog.json'));
+  if (file === undefined) return [];
+  const parsed = AssetCatalogSchema.safeParse(file);
+  if (!parsed.success) {
+    problems.push(`${manifest.id}/catalog.json: not an asset catalog`);
+    return [];
+  }
+  const ref = (p: string) => packRef(manifest.id, p);
+  return parsed.data.assets.map((a): PackAsset => ({
+    ...a,
+    src: ref(a.src),
+    ...(a.thumb && { thumb: ref(a.thumb) }),
+    pack: manifest.id,
+  }));
 }
 
 async function listMedia(installed: Pick<Installed, 'manifest' | 'dir'>): Promise<MediaEntry[]> {

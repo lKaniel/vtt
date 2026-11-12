@@ -10,3 +10,4 @@ export * from './system.ts';
 export * from './packs.ts';
 export * from './pack-art.ts';
 export * from './plugins.ts';
+export * from './asset-catalog.ts';

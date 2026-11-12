@@ -4,7 +4,7 @@ import { enabledPacks, freeId, mediaEntry, type MediaEntry, mediaKind, slugify, 
 import { isGm, type Player } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 import type { ClientMessage } from './client-messages.ts';
-import { gamePackIssues, packInfos } from '../library/game-packs.ts';
+import { findGameAssets, gamePackIssues, packInfos } from '../library/game-packs.ts';
 import { gamePluginIssues, pluginInfos } from '../library/game-plugins.ts';
 import type { GameStore } from '../store/game-store.ts';
 import { filesUnder } from '../library/pack-store.ts';
@@ -18,9 +18,18 @@ import { Refusal } from '../play/table.ts';
 
 type PackMessage = Extract<
   ClientMessage,
-  { t: 'packs' | 'plugins' | 'media' | 'compendium' | 'compendiumDoc' | 'upload' | 'uploadUrl' }
+  { t: 'packs' | 'plugins' | 'media' | 'compendium' | 'compendiumDoc' | 'findAssets' | 'upload' | 'uploadUrl' }
 >;
-const KINDS = new Set(['packs', 'plugins', 'media', 'compendium', 'compendiumDoc', 'upload', 'uploadUrl']);
+const KINDS = new Set([
+  'packs',
+  'plugins',
+  'media',
+  'compendium',
+  'compendiumDoc',
+  'findAssets',
+  'upload',
+  'uploadUrl',
+]);
 
 export const isPackMessage = (msg: ClientMessage): msg is PackMessage => KINDS.has(msg.t);
 
@@ -52,6 +61,8 @@ export class PackActions {
         return { t: 'compendium', pack: msg.pack, compendium: msg.compendium, docs: this.docs(msg) };
       case 'compendiumDoc':
         return { ...msg, doc: await this.doc(msg) };
+      case 'findAssets':
+        return { t: 'assets', results: await findGameAssets(this.store, msg.queries, msg.limit ?? 100) };
       case 'upload':
       case 'uploadUrl':
         return this.uploaded(msg, () => this.media());
