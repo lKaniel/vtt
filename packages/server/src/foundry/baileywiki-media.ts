@@ -81,11 +81,75 @@ const decoded = (path: string) => {
   }
 };
 
-/** The `pack://` reference of a Foundry data path (modules/<module>/...), if the pack has the file. */
+/** Extensions a module update may have turned a file into: pictures into webp, sounds into ogg. */
+const SWAPS: Record<string, string[]> = {
+  png: ['webp'],
+  jpg: ['webp'],
+  jpeg: ['webp'],
+  webp: ['png', 'jpg'],
+  mp3: ['ogg'],
+  wav: ['ogg'],
+  ogg: ['mp3'],
+};
+
+const split = (path: string) => {
+  const m = /^modules\/([^/]+)\/(.*)$/.exec(path);
+  return m ? { module: m[1]!, rel: m[2]! } : undefined;
+};
+const base = (rel: string) => rel.replace(/^.*\//, '').replace(/\.[^.]+$/, '');
+
+/** The path, and the same path with the extensions a module update may have given it. */
+function withSwaps(path: string): string[] {
+  const ext = /\.([^./]+)$/.exec(path)?.[1]?.toLowerCase() ?? '';
+  const stem = path.slice(0, path.length - ext.length);
+  return [path, ...(SWAPS[ext] ?? []).map((e) => stem + e)];
+}
+
+/**
+ * Where a file a scene names went when the module was updated since: the
+ * same name with a newer extension, the same path in another Baileywiki
+ * module, or the one file of that name elsewhere in the module.
+ */
+function movedTo(have: ReadonlySet<string>) {
+  let byName: Map<string, string[]> | undefined;
+  let bw: string[] | undefined;
+  const modules = () => (bw ??= [...new Set([...have].flatMap((p) => split(p)?.module ?? []))]);
+  const named = (module: string, rel: string) => {
+    byName ??= indexByName(have);
+    const found = byName.get(`${module}/${base(rel).toLowerCase()}`) ?? [];
+    return found.length === 1 ? found[0] : undefined;
+  };
+  return (path: string): string | undefined => {
+    const found = withSwaps(path).find((p) => have.has(p));
+    const at = split(path);
+    if (found || !at) return found;
+    const elsewhere = modules()
+      .filter((m) => m !== at.module && m.startsWith('baileywiki'))
+      .flatMap((m) => withSwaps(`modules/${m}/${at.rel}`))
+      .find((p) => have.has(p));
+    return elsewhere ?? named(at.module, at.rel);
+  };
+}
+
+/** Every file by its module and its name without folder or extension. */
+function indexByName(have: ReadonlySet<string>): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const path of have) {
+    const at = split(path);
+    if (!at) continue;
+    const key = `${at.module}/${base(at.rel).toLowerCase()}`;
+    out.set(key, [...(out.get(key) ?? []), path]);
+  }
+  return out;
+}
+
+/** The `pack://` reference of a Foundry data path (modules/<module>/...), if the pack has the file (or where it moved). */
 export function mediaLookup(run: Pick<MediaRun, 'have' | 'pack'>, missing?: Set<string>) {
+  const moved = movedTo(run.have);
   return (foundryPath: string): string | undefined => {
     const path = decoded(foundryPath.replace(/^\/+/, '').split('?')[0]!);
-    if (run.have.has(path)) return packRef(run.pack, `media/${path}`);
+    const found = moved(path);
+    if (found) return packRef(run.pack, `media/${found}`);
     missing?.add(path);
     return undefined;
   };
