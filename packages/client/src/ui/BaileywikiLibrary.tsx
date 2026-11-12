@@ -50,13 +50,13 @@ export function BaileywikiLibrary({ session }: Readonly<{ session: Session }>) {
 }
 
 function Library({ session, compendia }: Readonly<{ session: Session; compendia: Compendium[] }>) {
-  const [shown, setShown] = useState(compendia[0]!.id);
+  const [shown, setShown] = useState((compendia.find((c) => c.type === 'prefab') ?? compendia[0]!).id);
   const compendium = compendia.find((c) => c.id === shown) ?? compendia[0]!;
   return (
-    <section className="flex min-h-0 flex-col gap-2" aria-label={t('bwLibrary.title')}>
+    <section className="flex shrink-0 flex-col gap-2" aria-label={t('bwLibrary.title')}>
       <ToggleGroup
         type="single"
-        className="w-full flex-wrap"
+        className="w-full shrink-0 flex-wrap"
         value={compendium.id}
         onValueChange={(v) => v && setShown(v)}
       >

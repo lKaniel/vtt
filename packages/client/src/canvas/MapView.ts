@@ -184,6 +184,8 @@ export class MapView {
     });
     this.unsubscribe.push(listenToWheel(this.app.canvas, this.cam, this.app.screen, () => (this.dirty = true)));
     listenToDrops(this.app.canvas, this.session, (x, y) => this.screenToWorld(x, y));
+    // Off the map (or onto a panel over it), the GM's pointer peeks under no roof.
+    this.app.canvas.addEventListener('pointerleave', () => (this.session.pointer = undefined));
     this.app.renderer.on('resize', () => {
       this.vision?.resize();
       this.dirty = this.visionDirty = true;

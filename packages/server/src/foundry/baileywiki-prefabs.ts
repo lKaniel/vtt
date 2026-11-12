@@ -138,6 +138,14 @@ function tokenProps(tokens: FoundryDoc[], media: MediaLookup, grid: number) {
   };
 }
 
+/** The preset's picture for the browser: its own, else its first flat picture. */
+function thumbOf(p: Preset, tiles: readonly Tile[], media: MediaLookup): { thumb?: string } {
+  const own = p.img ? media(p.img) : undefined;
+  const first = tiles.find((t) => t.kind === 'image' && !t.model);
+  const thumb = own ?? (first?.kind === 'image' ? first.src : undefined);
+  return thumb ? { thumb } : {};
+}
+
 /** One preset as a prefab (without its id); undefined when nothing in it can be placed. */
 export function prefabOf(p: Preset, media: MediaLookup, gridSize = p.gridSize ?? GRID): Omit<Prefab, 'id'> | undefined {
   const lists = listsOf(p);
@@ -156,7 +164,7 @@ export function prefabOf(p: Preset, media: MediaLookup, gridSize = p.gridSize ??
   const prefab = {
     name: p.name,
     ...(p.tags.length ? { tags: p.tags } : {}),
-    ...(p.img && media(p.img) ? { thumb: media(p.img) } : {}),
+    ...thumbOf(p, scene.tiles, media),
     tiles: [...scene.tiles, ...props.tiles],
     walls: scene.walls,
     lights: [...scene.lights, ...props.lights],
