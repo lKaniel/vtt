@@ -37,7 +37,7 @@ import type { WorldClock } from '../play/world-clock.ts';
 
 /** Messages Game handles before the table: no undo step, or no step at all. */
 type Outside = 'ops' | 'undo' | 'redo' | 'pause' | 'ruler' | 'cursor' | 'ping' | 'target' | 'rollMode';
-type Packs = 'packs' | 'plugins' | 'media' | 'compendium' | 'upload' | 'uploadUrl';
+type Packs = 'packs' | 'plugins' | 'media' | 'compendium' | 'compendiumDoc' | 'upload' | 'uploadUrl';
 type Kind = Exclude<ClientMessage['t'], Outside | Packs>;
 type Message<K extends Kind> = Extract<ClientMessage, { t: K }>;
 /** A message that is a step of the game. */

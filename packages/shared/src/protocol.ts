@@ -119,6 +119,8 @@ export type EngineClientMessage =
   | { t: 'media' }
   /** GM: one compendium's documents, to copy into the game (answered with `compendium`). */
   | { t: 'compendium'; pack: string; compendium: string }
+  /** GM: one whole document of a compendium (a split one lists only stubs), answered with `compendiumDoc`. */
+  | { t: 'compendiumDoc'; pack: string; compendium: string; id: string }
   /** GM: a file for the game's assets/uploads/, base64 (answered with `media`). */
   /** `ref` comes back with the answer, so the asker learns where the file went. */
   | { t: 'upload'; name: string; data: string; ref?: string }
@@ -205,6 +207,7 @@ export type EngineServerMessage =
   /** The media list; after an upload, where the file was saved (`ref` from the upload). */
   | { t: 'media'; entries: MediaEntry[]; uploaded?: { ref?: string; src: string } }
   | { t: 'compendium'; pack: string; compendium: string; docs: unknown[] }
+  | { t: 'compendiumDoc'; pack: string; compendium: string; id: string; doc: unknown }
   /** The GM shows you a journal entry: open it (at `page`). */
   | { t: 'showJournal'; entry: string; page?: string }
   /** The GM shows you a picture. */

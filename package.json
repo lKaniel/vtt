@@ -20,7 +20,8 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm quality && pnpm check-game",
     "import-foundry": "pnpm --filter @vtt/server import-foundry",
     "import-foundry-world": "pnpm --filter @vtt/server import-foundry-world",
-    "import-foundry-art": "pnpm --filter @vtt/server import-foundry-art"
+    "import-foundry-art": "pnpm --filter @vtt/server import-foundry-art",
+    "import-baileywiki": "pnpm --filter @vtt/server import-baileywiki"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

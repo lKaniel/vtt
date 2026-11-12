@@ -16,8 +16,11 @@ import { Refusal } from '../play/table.ts';
 // game's assets/uploads/. Turning a pack on or off is an op on game.json
 // (`packs`), so it undoes like any edit.
 
-type PackMessage = Extract<ClientMessage, { t: 'packs' | 'plugins' | 'media' | 'compendium' | 'upload' | 'uploadUrl' }>;
-const KINDS = new Set(['packs', 'plugins', 'media', 'compendium', 'upload', 'uploadUrl']);
+type PackMessage = Extract<
+  ClientMessage,
+  { t: 'packs' | 'plugins' | 'media' | 'compendium' | 'compendiumDoc' | 'upload' | 'uploadUrl' }
+>;
+const KINDS = new Set(['packs', 'plugins', 'media', 'compendium', 'compendiumDoc', 'upload', 'uploadUrl']);
 
 export const isPackMessage = (msg: ClientMessage): msg is PackMessage => KINDS.has(msg.t);
 
@@ -47,6 +50,8 @@ export class PackActions {
         return { t: 'media', entries: await this.media() };
       case 'compendium':
         return { t: 'compendium', pack: msg.pack, compendium: msg.compendium, docs: this.docs(msg) };
+      case 'compendiumDoc':
+        return { ...msg, doc: await this.doc(msg) };
       case 'upload':
       case 'uploadUrl':
         return this.uploaded(msg, () => this.media());
@@ -110,6 +115,17 @@ export class PackActions {
     const found = usable ? this.store.packs?.compendium(pack, compendium) : undefined;
     if (!found) throw new Refusal(`No compendium "${compendium}" in pack "${pack}"`);
     return found.docs;
+  }
+
+  /** One whole document of a compendium; a split one's is read from its file. */
+  private async doc({ pack, compendium, id }: { pack: string; compendium: string; id: string }): Promise<unknown> {
+    const listed = this.docs({ pack, compendium });
+    const own = this.store.system.packs?.some((p) => p.manifest.id === pack);
+    const doc = own
+      ? listed.find((d) => (d as { id?: unknown }).id === id)
+      : await this.store.packs?.compendiumDoc(pack, compendium, id);
+    if (doc === undefined) throw new Refusal(`No "${id}" in compendium "${compendium}"`);
+    return doc;
   }
 
   /** Saves an uploaded file as assets/uploads/<name>, numbered if the name is taken; its path in the game. */

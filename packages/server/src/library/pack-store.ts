@@ -6,6 +6,9 @@ import {
   type ArtIndex,
   mediaEntry,
   type MediaEntry,
+  CompendiumStubSchema,
+  type MediaIndex,
+  MediaIndexSchema,
   type PackCompendium,
   type PackManifest,
   PackManifestSchema,
@@ -76,7 +79,7 @@ export class PackStore {
     const where = `${manifest.id}/pack.json`;
     const compendia: PackCompendium[] = [];
     for (const info of manifest.compendia) {
-      const docs = await readJson(join(dir, info.path));
+      const docs = info.split ? await readIndex(join(dir, info.path)) : await readJson(join(dir, info.path));
       if (Array.isArray(docs)) compendia.push({ ...info, pack: manifest.id, docs });
       else problems.push(`${where}: compendium "${info.id}" has no readable list in ${info.path}`);
     }
@@ -98,6 +101,16 @@ export class PackStore {
 
   compendium(pack: string, id: string): PackCompendium | undefined {
     return this.compendia(pack).find((c) => c.id === id);
+  }
+
+  /** One document of a compendium by id: a split compendium's is read from its file. */
+  async compendiumDoc(pack: string, compendium: string, id: string): Promise<unknown> {
+    const c = this.compendium(pack, compendium);
+    const dir = this.packs.get(pack)?.dir;
+    if (!c || !dir) return undefined;
+    if (!c.split) return c.docs.find((d) => (d as { id?: unknown }).id === id);
+    if (!SAFE_ID.test(id) || !c.docs.some((d) => (d as { id: string }).id === id)) return undefined;
+    return readJson(join(dir, c.path, `${id}.json`));
   }
 
   /** The pictures, sounds and videos in a pack's media folder, tagged with their folders. */
@@ -125,10 +138,43 @@ export class PackStore {
   }
 }
 
-async function listMedia({ manifest, dir }: Pick<Installed, 'manifest' | 'dir'>): Promise<MediaEntry[]> {
+/** A document id that names a file in a split compendium's folder. */
+const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+
+/** A split compendium's index, as stubs; undefined when it can't be read. */
+async function readIndex(folder: string): Promise<unknown[] | undefined> {
+  const raw = await readJson(join(folder, 'index.json'));
+  if (!Array.isArray(raw)) return undefined;
+  return raw.flatMap((entry) => {
+    const parsed = CompendiumStubSchema.safeParse(entry);
+    return parsed.success ? [{ ...parsed.data, stub: true }] : [];
+  });
+}
+
+async function readMediaIndex({ manifest, dir }: Pick<Installed, 'manifest' | 'dir'>): Promise<MediaIndex> {
+  if (!manifest.mediaIndex) return {};
+  return MediaIndexSchema.safeParse(await readJson(join(dir, manifest.mediaIndex))).data ?? {};
+}
+
+async function listMedia(installed: Pick<Installed, 'manifest' | 'dir'>): Promise<MediaEntry[]> {
+  const { manifest, dir } = installed;
   const folder = mediaFolder(manifest);
   const files = await filesUnder(join(dir, folder));
-  return files.flatMap((rel) => mediaEntry(packRef(manifest.id, `${folder}/${rel}`), rel, manifest.id) ?? []);
+  const index = await readMediaIndex(installed);
+  const thumbs = new Set(Object.values(index).flatMap((e) => (e.thumb ? [e.thumb] : [])));
+  const ref = (rel: string) => packRef(manifest.id, `${folder}/${rel}`);
+  return files.flatMap((rel) => {
+    if (thumbs.has(rel)) return [];
+    const entry = mediaEntry(ref(rel), rel, manifest.id);
+    return entry ? [indexed(entry, index[rel], ref)] : [];
+  });
+}
+
+/** A media entry with what the pack's media index says about it. */
+function indexed(entry: MediaEntry, extra: MediaIndex[string] | undefined, ref: (rel: string) => string): MediaEntry {
+  if (!extra) return entry;
+  const tags = [...new Set([...entry.tags, ...(extra.tags ?? [])])];
+  return { ...entry, tags, ...(extra.thumb ? { thumb: ref(extra.thumb) } : {}) };
 }
 
 /** A pack's art file as pack srcs; one that can't be read is reported. */

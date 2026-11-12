@@ -258,7 +258,7 @@ describe('the GM’s asset browser', () => {
     expect(session.error?.message).toMatch(/can't be imported/);
   });
 
-  it('places a tile prefab in the middle of the screen, on whole squares as a paste is', () => {
+  it('places a prefab in the middle of the screen, on whole squares as a paste is, its tiles grouped', () => {
     ws.receive(gmWelcome());
     session.editor.viewRect = { x: 1000, y: 1000, w: 400, h: 400 };
     session.packs.importPrefab({
@@ -268,15 +268,37 @@ describe('the GM’s asset browser', () => {
         { id: 'bed', kind: 'rect', x: 0, y: 0, w: 200, h: 100, color: '#8a5a2a' },
         { id: 'wheel', kind: 'rect', x: 0, y: 100, w: 100, h: 100, color: '#333333' },
       ],
+      lights: [{ id: 'lamp', x: 50, y: 50, bright: 10 }],
     });
     expect(sent()).toMatchObject({
       t: 'ops',
       label: 'prefab',
       ops: [
-        { op: 'create', coll: 'main/tiles', doc: { id: 'bed', x: 1200, y: 1200 } },
-        { op: 'create', coll: 'main/tiles', doc: { id: 'wheel', x: 1200, y: 1300 } },
+        { op: 'create', coll: 'main/tiles', doc: { id: 'cart-group', kind: 'group', name: 'Cart' } },
+        { op: 'create', coll: 'main/tiles', doc: { id: 'bed', x: 1200, y: 1200, parent: 'cart-group' } },
+        { op: 'create', coll: 'main/tiles', doc: { id: 'wheel', x: 1200, y: 1300, parent: 'cart-group' } },
+        { op: 'create', coll: 'main/lights', doc: { id: 'lamp', x: 1250, y: 1250, tile: 'cart-group' } },
       ],
     });
+  });
+
+  it('asks the server for a split compendium’s document before using it', async () => {
+    ws.receive(gmWelcome());
+    const stub = { id: 'docks', name: 'Docks', stub: true };
+    const got = session.packs.wholeDoc('bw', 'scenes', stub);
+    void session.packs.wholeDoc('bw', 'scenes', stub);
+    expect(ws.sent.filter((m) => (m as { t: string }).t === 'compendiumDoc')).toEqual([
+      { t: 'compendiumDoc', pack: 'bw', compendium: 'scenes', id: 'docks' },
+    ]);
+    ws.receive({
+      t: 'compendiumDoc',
+      pack: 'bw',
+      compendium: 'scenes',
+      id: 'docks',
+      doc: { id: 'docks', name: 'Docks', tiles: [] },
+    });
+    expect(await got).toEqual({ id: 'docks', name: 'Docks', tiles: [] });
+    expect(await session.packs.wholeDoc('bw', 'scenes', { id: 'x', name: 'X' })).toEqual({ id: 'x', name: 'X' });
   });
 });
 

@@ -1,9 +1,10 @@
 import { mkdir, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { freeId, mediaKind, type PackManifest, packRef, slugify } from '@vtt/core';
+import { freeId, mediaKind, packRef, slugify } from '@vtt/core';
 import type { BaileywikiImportReport, BaileywikiScene, SceneEntry } from '@vtt/shared';
 import { z } from 'zod';
 import { type BaileywikiClient, baileywikiPath } from './baileywiki-client.ts';
+import { mergeBaileywikiManifest } from './baileywiki-pack.ts';
 import { foundryScene } from './foundry-scene.ts';
 import { lossLine } from './import-losses.ts';
 import { readJson, writeJson } from '../store/json-files.ts';
@@ -173,18 +174,7 @@ function place(state: PackState, key: string, scene: Omit<SceneEntry, 'id'>): Sc
 async function writeState(dir: string, state: PackState): Promise<void> {
   await writeJson(join(dir, 'compendia/scenes.json'), state.scenes);
   await writeJson(join(dir, 'sources.json'), state.sources);
-  const manifest: PackManifest = {
-    id: PACK,
-    name: 'Baileywiki',
-    version: '1.0.0',
-    system: null,
-    compendia: [{ id: 'scenes', name: 'Scenes', type: 'scene', path: 'compendia/scenes.json' }],
-    media: 'media/',
-    source: 'baileywiki',
-    author: 'Baileywiki',
-    description: "Scenes downloaded with this server's Baileywiki sign-in. Private: never share or commit it.",
-  };
-  await writeJson(join(dir, 'pack.json'), manifest);
+  await mergeBaileywikiManifest(dir, [{ id: 'scenes', name: 'Scenes', type: 'scene', path: 'compendia/scenes.json' }]);
 }
 
 /** Imports the picked scenes into the Baileywiki pack in `packsDir`. */

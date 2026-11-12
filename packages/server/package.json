@@ -12,7 +12,8 @@
     "migrate-world": "tsx src/migrate/migrate-cli.ts",
     "import-foundry": "tsx src/foundry/foundry-cli.ts",
     "import-foundry-world": "tsx src/foundry/foundry-world-cli.ts",
-    "import-foundry-art": "tsx src/foundry/foundry-art-cli.ts"
+    "import-foundry-art": "tsx src/foundry/foundry-art-cli.ts",
+    "import-baileywiki": "tsx src/foundry/baileywiki-modules-cli.ts"
   },
   "dependencies": {
     "@vtt/core": "workspace:*",

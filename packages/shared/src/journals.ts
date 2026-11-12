@@ -1,6 +1,6 @@
 import { OwnershipSchema } from '@vtt/core';
 import { z } from 'zod';
-import { IdSchema as id, TileSchema } from './schema.ts';
+import { IdSchema as id } from './schema.ts';
 
 // The game's sidebar documents beyond actors: journal entries (handouts and
 // the GM's notes, which map notes open), roll tables, playlists, macros and
@@ -165,14 +165,6 @@ export const CardStackSchema = z.object({
   cards: z.array(CardSchema).default([]),
 });
 export type CardStack = z.infer<typeof CardStackSchema>;
-
-/** A compendium's tile prefab: tiles drawn together (a cart, a market stall), placed as one. */
-export const PrefabSchema = z.object({
-  id,
-  name: z.string().min(1),
-  tiles: z.array(TileSchema).min(1),
-});
-export type Prefab = z.infer<typeof PrefabSchema>;
 
 /** The sidebar documents a compendium may hold, by compendium type, with the collection they go in. */
 export const ENTRY_TYPES = {
