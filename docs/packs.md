@@ -57,8 +57,20 @@ admin can upload or delete packs (`/api/packs`, `server/src/http/pack-api.ts`).
 | `description`, `author`, `license`, `source` | Shown in the Packs list. The Foundry import sets `source`.                                     |
 
 The schema is `PackManifestSchema` in `packages/core/src/packs.ts`.
-`pnpm check-game` reports packs it can't read and documents a game's packs
-have that its system can't.
+
+Two more fields are for very big packs (Baileywiki's):
+
+- A compendium with `"split": true` is a folder, not a file: `index.json`
+  lists each document's `id`, `name` and optional `thumb` and `tags`, and
+  each document is `<id>.json` beside it. The server keeps only the index
+  and the GM's Assets tab lists it; a document is read when it is used
+  (`compendiumDoc`).
+- `"mediaIndex": "media-index.json"` adds search tags and a thumbnail to
+  media files, by their path in the media folder:
+  `{ "models/wall.glb": { "tags": ["3d-model"], "thumb": "models/wall.webp" } }`.
+  A file named as another's thumbnail leaves the media list.
+  `pnpm check-game` reports packs it can't read and documents a game's packs
+  have that its system can't.
 
 ## Referring to pack files
 
@@ -70,15 +82,15 @@ install. A game's own files stay `/assets/<path>` (uploads go in
 
 ## Compendium types
 
-| Type                               | What happens with it                                                                                                                                                                                                                                                                                                           |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `scene`                            | Copied into the game as a new scene (Assets tab, Packs, Import): a `scene.json` with `tiles`, `walls`, `lights` in it (`SceneEntrySchema`, `shared/scene-entry.ts`).                                                                                                                                                           |
-| `actor`                            | Added to the Actors list (the system's actor schema).                                                                                                                                                                                                                                                                          |
-| `journal`, `rolltable`, `playlist` | Added to the Journal, Tables or Music tab, under a free id (`ENTRY_TYPES`, `shared/journals.ts`).                                                                                                                                                                                                                              |
-| `prefab`                           | Tiles placed together, their middle in the middle of the screen: `{ "id", "name", "tiles": [...] }` (`PrefabSchema`).                                                                                                                                                                                                          |
-| `monster`, `item`, `spell`         | D&D rules content: while the pack is on, tokens can use them like SRD ones (`"monster": "<id>"`), and they appear in the Compendium tab.                                                                                                                                                                                       |
-| `class`                            | A whole class (the Jaeger): the character creator offers it. Its automation can live in `class-automation.json` under its id, so the pack keeps only text.                                                                                                                                                                     |
-| `subclass`, `classFeature`         | A subclass or a feature (a pact boon, an invocation) for a class the game already has: each doc names its `"class"` and joins that class, replacing any of the same id. Their automation is in `class-automation.json`: a subclass's under the class's `subclasses`, a feature's under `packFeatures` (`pack-class-parts.ts`). |
+| Type                               | What happens with it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scene`                            | Copied into the game as a new scene (Assets tab, Packs, Import): a `scene.json` with `tiles`, `walls`, `lights` in it (`SceneEntrySchema`, `shared/scene-entry.ts`).                                                                                                                                                                                                                                                                                                                                       |
+| `actor`                            | Added to the Actors list (the system's actor schema).                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `journal`, `rolltable`, `playlist` | Added to the Journal, Tables or Music tab, under a free id (`ENTRY_TYPES`, `shared/journals.ts`).                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `prefab`                           | Things placed together, their middle in the middle of the screen, as one undo step: `{ "id", "name", "tiles", "walls", "lights", "sounds", "drawings", "notes" }` (`PrefabSchema`, `shared/prefabs.ts`). Two or more tiles go in a group named after it, and its walls and lights are fastened to it. `pick: "one"` is a brush (one of its tiles at random), `vary` a random `scale`, `rotation`, `tint` or picture each time, `fill` covers the scene's ground. Optional `tags` and `thumb` for browsing. |
+| `monster`, `item`, `spell`         | D&D rules content: while the pack is on, tokens can use them like SRD ones (`"monster": "<id>"`), and they appear in the Compendium tab.                                                                                                                                                                                                                                                                                                                                                                   |
+| `class`                            | A whole class (the Jaeger): the character creator offers it. Its automation can live in `class-automation.json` under its id, so the pack keeps only text.                                                                                                                                                                                                                                                                                                                                                 |
+| `subclass`, `classFeature`         | A subclass or a feature (a pact boon, an invocation) for a class the game already has: each doc names its `"class"` and joins that class, replacing any of the same id. Their automation is in `class-automation.json`: a subclass's under the class's `subclasses`, a feature's under `packFeatures` (`pack-class-parts.ts`).                                                                                                                                                                             |
 
 Other types are listed but not used yet.
 
@@ -232,6 +244,41 @@ game instead: see [foundry.md](foundry.md).
 
 ## Baileywiki
 
+### The modules installed in Foundry
+
+```
+pnpm import-baileywiki "<Foundry data>/Data/modules" [--module <id>]... [--with <id>]... [--link]
+```
+
+Brings every Baileywiki module installed in Foundry (each `baileywiki-*`
+folder, or only the `--module` ones) into the pack `baileywiki`, the way
+Baileywiki's own modules work in Foundry:
+
+- **Files**: each module's pictures, sounds, videos and 3D models (with
+  their glTF buffers) go to `media/modules/<module>/<path>`, the path
+  Foundry gives them, so a scene or prefab of one module finds another's
+  files. Running it again copies only new or changed files; `--link`
+  hard-links them instead when the pack is on the same drive. `--with`
+  adds another module their scenes use (`canvas3dcompendium`).
+- **Asset tags**: the tags Baileywiki put on its files in Mass Edit's
+  virtual directory (`mass_edit_cache.json`) and each 3D model's thumbnail
+  picture become the pack's media index, so the Assets tab finds
+  "3d-model", "trees" or "lighting" and shows models by their picture.
+- **Scenes**: every scene of the modules' compendia, split into
+  `bw-scenes-2d` and `bw-scenes-3d`, with the thumbnail and tags of
+  Baileywiki's 2D and 3D scene browsers.
+- **Prefabs**: Baileywiki's Mass Edit presets (lampposts with their light,
+  tents with their walls, brushes of stalagmites, overlays that cover the
+  scene, 3D buildings made of Token Attacher pieces), in `bw-prefabs-2d`
+  and `bw-prefabs-3d`, tagged with their folders and Baileywiki's tags.
+  Placing one puts down everything in it as one group.
+
+It prints the files the scenes name that no imported module has, by the
+module they would come from. The pack is paid content: it stays in
+`data/packs/`, never in the repo.
+
+### Downloading with a Baileywiki sign-in
+
 Setup has a **Baileywiki** box for the server's admin. "Open the
 Baileywiki sign-in" opens content.baileywiki.com (Patreon, Discord or a
 Baileywiki account); paste the code it shows and the server checks it
@@ -261,6 +308,6 @@ another content server (the tests' stand-in).
 
 - Foundry actors and items in a pack's compendia (a world import reads
   them, see [foundry.md](foundry.md)).
-- Baileywiki prefabs (Mass Edit presets) and their tile sets.
+- Mass Edit presets' spawn scripts other than "cover the scene", and Monk's Active Tiles on prefab tiles.
 - Installing a pack from the browser (zip upload) and per-pack permissions.
 - Art: picking a template's texture by hand in the inspector.

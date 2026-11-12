@@ -99,3 +99,52 @@ describe('the packs installed on a server', () => {
     expect(packs.problems).toEqual(['forest/pack.json: its art file art.json is not a list of pack files by kind']);
   });
 });
+
+describe('big packs (Baileywiki)', () => {
+  beforeEach(async () => {
+    await put('bw/pack.json', {
+      id: 'bw',
+      name: 'Baileywiki',
+      compendia: [{ id: 'scenes', type: 'scene', path: 'compendia/scenes', split: true }],
+      mediaIndex: 'media-index.json',
+    });
+    await put('bw/compendia/scenes/index.json', [
+      { id: 'docks', name: 'Docks', tags: ['town'], thumb: 'pack://bw/media/t.webp' },
+    ]);
+    await put('bw/compendia/scenes/docks.json', { id: 'docks', name: 'Docks', tiles: [] });
+    await put('bw/media/models/wall.glb', 'x');
+    await put('bw/media/models/wall.webp', 'x');
+    await put('bw/media/models/wall.bin', 'x');
+    await put('bw/media-index.json', {
+      'models/wall.glb': { tags: ['3d-model', 'dungeon'], thumb: 'models/wall.webp' },
+    });
+  });
+
+  it('keeps only the index of a split compendium, and reads one document when asked', async () => {
+    const packs = new PackStore(dir);
+    await packs.load();
+    expect(packs.compendium('bw', 'scenes')?.docs).toEqual([
+      { id: 'docks', name: 'Docks', tags: ['town'], thumb: 'pack://bw/media/t.webp', stub: true },
+    ]);
+    expect(await packs.compendiumDoc('bw', 'scenes', 'docks')).toEqual({ id: 'docks', name: 'Docks', tiles: [] });
+    expect(await packs.compendiumDoc('bw', 'scenes', 'missing')).toBeUndefined();
+    expect(await packs.compendiumDoc('bw', 'scenes', '../pack')).toBeUndefined();
+    expect(packs.problems).toEqual([]);
+  });
+
+  it('adds the media index’s tags and thumbnails, and leaves the thumbnails out of the list', async () => {
+    const packs = new PackStore(dir);
+    await packs.load();
+    const media = packs.listedMedia('bw');
+    expect(media).toEqual([
+      {
+        src: 'pack://bw/media/models/wall.glb',
+        name: 'wall',
+        kind: 'model',
+        tags: ['models', '3d-model', 'dungeon'],
+        pack: 'bw',
+        thumb: 'pack://bw/media/models/wall.webp',
+      },
+    ]);
+  });
+});

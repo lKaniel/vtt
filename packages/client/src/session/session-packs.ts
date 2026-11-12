@@ -2,6 +2,7 @@ import type { SessionPart } from './session-part.ts';
 import {
   type Doc,
   type DocRef,
+  isStub,
   type DocStore,
   type MediaEntry,
   mediaKind,
@@ -17,6 +18,7 @@ import {
   importSceneOps,
   pasteAt,
   pasteOffsetTo,
+  prefabClip,
   PrefabSchema,
   type Point,
   type Rect,
@@ -43,7 +45,7 @@ export interface PackHost {
   readonly scene: string;
   send(msg: ClientMessage): void;
   readonly edits: { sendChanges(label: string, ops: readonly Op[]): void };
-  readonly editor: { viewCentre(): Point };
+  readonly editor: { viewCentre(): Point; viewRect?: Rect };
   readonly requests: { saveActor(actor: Actor): void };
   readonly draw: { create(draft: { mode: 'sounds'; data: Record<string, unknown> }): void };
   showError(message: string): void;
@@ -74,6 +76,8 @@ export class Packs implements SessionPart {
   private compendia = new Map<string, unknown[]>();
   /** Uploads waiting for the server to say where it saved them, by their ref. */
   private pending = new Map<string, { resolve(src: string): void; reject(e: Error): void }>();
+  /** Whole documents asked for (a split compendium's), by pack/compendium/id. */
+  private fetching = new Map<string, ((doc: unknown) => void)[]>();
   private uploads = 0;
 
   constructor(
@@ -101,6 +105,17 @@ export class Packs implements SessionPart {
   /** A compendium's documents, if they have arrived. */
   compendiumDocs(pack: string, compendium: string): unknown[] | undefined {
     return this.compendia.get(key(pack, compendium));
+  }
+
+  /** A compendium document whole: a split compendium lists stubs, so the document is asked of the server. */
+  wholeDoc(pack: string, compendium: string, doc: unknown): Promise<unknown> {
+    if (!isStub(doc)) return Promise.resolve(doc);
+    const k = `${key(pack, compendium)}/${doc.id}`;
+    return new Promise((resolve) => {
+      const waiting = this.fetching.get(k);
+      this.fetching.set(k, [...(waiting ?? []), resolve]);
+      if (!waiting) this.s.send({ t: 'compendiumDoc', pack, compendium, id: doc.id });
+    });
   }
 
   /** Turns an installed pack on or off for this game (game.json `packs`). */
@@ -208,16 +223,34 @@ export class Packs implements SessionPart {
     this.s.showNotice(`Imported "${data.name}"`);
   }
 
-  /** A tile prefab from a compendium, placed with its middle in the middle of the screen. */
-  importPrefab(entry: unknown): void {
+  /**
+   * A prefab from a compendium, placed with its middle at `at` (the middle
+   * of the screen) as one undo step: its tiles grouped, its walls and lights
+   * fastened, one tile of a brush, varied as it says; one that fills the
+   * scene stretched over the map's ground.
+   */
+  importPrefab(entry: unknown, at?: Point): void {
     const parsed = PrefabSchema.safeParse(entry);
     if (!parsed.success) {
       this.s.showError(`That prefab can't be placed: ${parsed.error.issues[0]?.message ?? 'broken'}`);
       return;
     }
-    const clip = { docs: parsed.data.tiles.map((t) => ({ ...t, type: 'tile', rev: 0 })) };
-    const offset = pasteOffsetTo(clip, this.s.editor.viewCentre(), this.on.gridSize());
+    const scene = this.groundRect();
+    const clip = prefabClip(parsed.data, { random: Math.random, ...(scene ? { scene } : {}) });
+    const offset: Point =
+      parsed.data.fill && scene ? [0, 0] : pasteOffsetTo(clip, at ?? this.s.editor.viewCentre(), this.on.gridSize());
     this.s.edits.sendChanges('prefab', pasteAt(this.s.docs, clip, { scene: this.s.scene, offset }).ops);
+  }
+
+  /** The map's ground: the box round its background tiles, else what is on screen. */
+  private groundRect(): Rect | undefined {
+    const ground = this.s.docs.all(`${this.s.scene}/tiles`).filter((t) => t.background === true) as unknown as Rect[];
+    if (!ground.length) return this.s.editor.viewRect;
+    const x = Math.min(...ground.map((g) => g.x));
+    const y = Math.min(...ground.map((g) => g.y));
+    const w = Math.max(...ground.map((g) => g.x + g.w)) - x;
+    const h = Math.max(...ground.map((g) => g.y + g.h)) - y;
+    return { x, y, w, h };
   }
 
   /** A message for the packs: whether the screen changed, or undefined when it is someone else's. */
@@ -244,6 +277,12 @@ export class Packs implements SessionPart {
       case 'compendium':
         this.compendia.set(key(msg.pack, msg.compendium), msg.docs);
         return true;
+      case 'compendiumDoc': {
+        const k = `${key(msg.pack, msg.compendium)}/${msg.id}`;
+        for (const resolve of this.fetching.get(k) ?? []) resolve(msg.doc);
+        this.fetching.delete(k);
+        return false;
+      }
       default:
         return undefined;
     }

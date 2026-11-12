@@ -25,8 +25,15 @@ export const CompendiumInfoSchema = z.object({
   name: z.string().optional(),
   /** What its documents are: "scene" and "actor" go into a game; a system adds its own (D&D: monster, item, spell). */
   type: z.string().min(1),
-  /** A JSON file holding an array of documents. */
+  /** A JSON file holding an array of documents; with `split`, a folder of them. */
   path: innerPath,
+  /**
+   * For compendia too big to send whole (Baileywiki's hundreds of scenes):
+   * `path` is a folder with `index.json`, an array of each document's
+   * `id`, `name`, `thumb` and `tags`, and each document in `<id>.json`.
+   * The GM gets the index and asks for a document when it is used.
+   */
+  split: z.boolean().optional(),
   /** The rules edition its documents are for; missing = every edition. */
   rules: z.string().optional(),
 });
@@ -51,6 +58,12 @@ export const PackManifestSchema = z.object({
   compendia: z.array(CompendiumInfoSchema).default([]),
   /** The folder of its media, inside the pack. */
   media: innerPath.default('media/'),
+  /**
+   * A JSON file of search tags and thumbnails for media files, by their path
+   * in the media folder: `{ "models/wall.glb": { "tags": [...], "thumb": "models/wall.webp" } }`.
+   * A file named as another's thumbnail leaves the media list.
+   */
+  mediaIndex: innerPath.optional(),
   /** Where it came from, e.g. "foundry:module". */
   source: z.string().optional(),
   /** A JSON file naming its pictures and animations for a system's content (see pack-art.ts). */
@@ -68,11 +81,31 @@ export interface PackInfo extends PackManifest {
   enabled: boolean;
 }
 
-/** One compendium's documents, loaded. */
+/** One compendium's documents, loaded; a split compendium's are its index's stubs. */
 export interface PackCompendium extends CompendiumInfo {
   pack: string;
   docs: unknown[];
 }
+
+/** A split compendium's index entry: enough to list and search it. The document itself is fetched when used. */
+export const CompendiumStubSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  thumb: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+export type CompendiumStub = z.infer<typeof CompendiumStubSchema> & { stub: true };
+
+/** Whether a compendium document is only its index entry, to be fetched whole before use. */
+export const isStub = (doc: unknown): doc is CompendiumStub =>
+  typeof doc === 'object' && doc !== null && (doc as { stub?: unknown }).stub === true;
+
+/** A media index entry (pack.json `mediaIndex`): more tags, and a thumbnail, by path in the media folder. */
+export const MediaIndexSchema = z.record(
+  z.string(),
+  z.object({ tags: z.array(z.string()).optional(), thumb: z.string().optional() }),
+);
+export type MediaIndex = z.infer<typeof MediaIndexSchema>;
 
 const SCHEME = 'pack://';
 

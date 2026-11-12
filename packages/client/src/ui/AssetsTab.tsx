@@ -359,7 +359,10 @@ function CompendiumView({
     const where = pack.enabled ? 'In the Compendium tab.' : 'Turn the pack on to use it.';
     return <p className="lib-sub">{`${label}: ${where}`}</p>;
   }
-  const add = (doc: unknown) => importDoc(session, compendium.type, doc, pack.name);
+  const add = (doc: unknown) =>
+    void session.packs
+      .wholeDoc(pack.id, compendium.id, doc)
+      .then((whole) => importDoc(session, compendium.type, whole, pack.name));
   return (
     <details className="lib-folder" open={open}>
       <summary
@@ -376,7 +379,7 @@ function CompendiumView({
           <li key={i} className="lib-row">
             <span className="lib-name">{nameOf(doc)}</span>
             <Button variant="outline" size="sm" onClick={() => add(doc)}>
-              {compendium.type === 'scene' ? 'Import' : 'Add to Actors'}
+              {ADD_LABEL[compendium.type] ?? 'Add to Actors'}
             </Button>
           </li>
         ))}
@@ -384,6 +387,8 @@ function CompendiumView({
     </details>
   );
 }
+
+const ADD_LABEL: Record<string, string> = { scene: 'Import', prefab: 'Place' };
 
 /** Copies one compendium document into the game, as its type goes in. */
 function importDoc(session: Session, type: string, doc: unknown, folder: string): void {

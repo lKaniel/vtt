@@ -163,6 +163,31 @@ describe('the GM browsing packs', () => {
     expect(errors).toEqual([{ t: 'error', message: 'No compendium "nope" in pack "goblins"' }]);
   });
 
+  it('gets one document of a compendium, the whole of it from a split one', async () => {
+    await put(packDir, 'goblins/compendia/big/index.json', [{ id: 'docks', name: 'Docks' }]);
+    await put(packDir, 'goblins/compendia/big/docks.json', { id: 'docks', name: 'Docks', tiles: [] });
+    const manifest = JSON.parse(await readFile(join(packDir, 'goblins/pack.json'), 'utf8')) as { compendia: object[] };
+    manifest.compendia.push({ id: 'big', type: 'scene', path: 'compendia/big', split: true });
+    await put(packDir, 'goblins/pack.json', manifest);
+    await start(['goblins']);
+    const gm = seat('gm');
+    gm.receive({ t: 'compendium', pack: 'goblins', compendium: 'big' });
+    gm.receive({ t: 'compendiumDoc', pack: 'goblins', compendium: 'big', id: 'docks' });
+    gm.receive({ t: 'compendiumDoc', pack: 'goblins', compendium: 'lairs', id: 'cave' });
+    gm.receive({ t: 'compendiumDoc', pack: 'goblins', compendium: 'big', id: 'gone' });
+    await settle();
+    const errors = gm.sent.filter((m) => m.t === 'error');
+    const docs = gm.sent.flatMap((m) => (m.t === 'compendiumDoc' ? [m.doc] : []));
+    expect(gm.take('compendium')[0]!.docs).toEqual([{ id: 'docks', name: 'Docks', stub: true }]);
+    expect(docs).toEqual(
+      expect.arrayContaining([
+        { id: 'docks', name: 'Docks', tiles: [] },
+        { id: 'cave', name: 'Cave' },
+      ]),
+    );
+    expect(errors).toEqual([{ t: 'error', message: 'No "gone" in compendium "big"' }]);
+  });
+
   it('keeps all of it from the players', async () => {
     await start(['goblins']);
     const ana = seat('ana');
