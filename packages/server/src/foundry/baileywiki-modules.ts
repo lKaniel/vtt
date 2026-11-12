@@ -1,4 +1,4 @@
-import { mkdir, readdir, rm } from 'node:fs/promises';
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { type CompendiumInfo, freeId, type MediaIndex, slugify } from '@vtt/core';
 import type { Prefab, SceneEntry, Tile } from '@vtt/shared';
@@ -41,6 +41,8 @@ export interface ModulesReport {
   scenes: number;
   prefabs: number;
   skipped: string[];
+  /** Every file the scenes and prefabs name that no imported module has (also in the pack's missing-files.txt). */
+  missing: string[];
 }
 
 interface FoundryPack {
@@ -299,5 +301,8 @@ export async function importBaileywikiModules(
   await writeJson(join(dir, 'media-index.json'), index);
   await mergeBaileywikiManifest(dir, compendia, { mediaIndex: 'media-index.json' });
   const skipped = [...missingLines(run.missing), ...run.skipped];
-  return { pack: PACK, dir, modules: modules.map((m) => m.id), media, copied: run.copied, scenes, prefabs, skipped };
+  const missing = [...run.missing].sort((a, b) => a.localeCompare(b));
+  await writeFile(join(dir, 'missing-files.txt'), missing.map((m) => `${m}\n`).join(''));
+  const counts = { media, copied: run.copied, scenes, prefabs };
+  return { pack: PACK, dir, modules: modules.map((m) => m.id), ...counts, skipped, missing };
 }

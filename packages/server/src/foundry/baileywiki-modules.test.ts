@@ -223,5 +223,9 @@ describe('importing the installed Baileywiki modules', () => {
   it('says which files the scenes and prefabs name that no module has', async () => {
     const report = await importBaileywikiModules(modules, packsDir);
     expect(report.skipped).toContain('1 file(s) from jb2a_patreon are not in the pack');
+    expect(report.missing).toEqual(['modules/jb2a_patreon/fire.webm']);
+    expect(await readFile(join(packsDir, 'baileywiki/missing-files.txt'), 'utf8')).toBe(
+      'modules/jb2a_patreon/fire.webm\n',
+    );
   });
 });

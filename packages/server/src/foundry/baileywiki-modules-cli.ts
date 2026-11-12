@@ -31,6 +31,7 @@ try {
     `Imported ${report.modules.length} modules into ${report.dir}: ${report.media} media files (${report.copied} new), ${report.scenes} scenes, ${report.prefabs} prefabs.`,
   );
   for (const line of report.skipped) console.log(`  left out: ${line}`);
+  if (report.missing.length) console.log(`The missing files are listed in ${report.dir}/missing-files.txt.`);
 } catch (e) {
   console.error((e as Error).message);
   process.exit(1);
