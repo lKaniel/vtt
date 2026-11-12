@@ -5,7 +5,7 @@
 import { EN_BOOK } from './en-book.ts';
 import { EN_COMPENDIUM } from './en-compendium.ts';
 import { EN_EDITOR } from './en-editor.ts';
-import { EN_BAILEYWIKI, EN_OFFSITE, EN_PACKS } from './en-lobby.ts';
+import { EN_BAILEYWIKI, EN_BW_LIBRARY, EN_OFFSITE, EN_PACKS } from './en-lobby.ts';
 import { EN_FOUNDRY } from './en-foundry.ts';
 import { EN_ITEMS } from './en-items.ts';
 import { EN_JOURNEY } from './en-journey.ts';
@@ -361,6 +361,7 @@ export const EN = {
   ...EN_PLAYERS,
   ...EN_FOUNDRY,
   ...EN_BAILEYWIKI,
+  ...EN_BW_LIBRARY,
   ...EN_OFFSITE,
   ...EN_PACKS,
   ...EN_MAP,

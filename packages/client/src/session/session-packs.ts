@@ -12,6 +12,7 @@ import {
   type PluginInfo,
 } from '@vtt/core';
 import { SOUND_FT } from '../editor/shape-tools.ts';
+import type { PrefabRef } from '../play/drops.ts';
 import {
   ENTRY_TYPES,
   type EntryType,
@@ -240,6 +241,14 @@ export class Packs implements SessionPart {
     const offset: Point =
       parsed.data.fill && scene ? [0, 0] : pasteOffsetTo(clip, at ?? this.s.editor.viewCentre(), this.on.gridSize());
     this.s.edits.sendChanges('prefab', pasteAt(this.s.docs, clip, { scene: this.s.scene, offset }).ops);
+  }
+
+  /** A prefab of a pack's compendium placed with its middle at `at`, fetched whole first when the compendium lists stubs. */
+  placePrefab({ pack, compendium, id }: PrefabRef, at: Point): void {
+    const listed = this.compendiumDocs(pack, compendium)?.find((d) => (d as { id?: unknown }).id === id);
+    void this.wholeDoc(pack, compendium, listed ?? { id, name: id, stub: true }).then((doc) =>
+      this.importPrefab(doc, at),
+    );
   }
 
   /** The map's ground: the box round its background tiles, else what is on screen. */

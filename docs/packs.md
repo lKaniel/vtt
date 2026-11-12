@@ -265,13 +265,20 @@ Baileywiki's own modules work in Foundry:
   picture become the pack's media index, so the Assets tab finds
   "3d-model", "trees" or "lighting" and shows models by their picture.
 - **Scenes**: every scene of the modules' compendia, split into
-  `bw-scenes-2d` and `bw-scenes-3d`, with the thumbnail and tags of
-  Baileywiki's 2D and 3D scene browsers.
+  `bw-scenes-2d` and `bw-scenes-3d` as Baileywiki's own 2D and 3D scene
+  browsers list them (else 3D when 3D Canvas opens the scene in 3D), with
+  those browsers' thumbnails and tags.
 - **Prefabs**: Baileywiki's Mass Edit presets (lampposts with their light,
   tents with their walls, brushes of stalagmites, overlays that cover the
   scene, 3D buildings made of Token Attacher pieces), in `bw-prefabs-2d`
-  and `bw-prefabs-3d`, tagged with their folders and Baileywiki's tags.
-  Placing one puts down everything in it as one group.
+  and `bw-prefabs-3d` (those with a model, or filed under a "3D" folder),
+  tagged with their folders and Baileywiki's tags. Placing one puts down
+  everything in it as one group.
+
+The GM finds them in **Assets > Baileywiki**: the library shows each of the
+pack's prefab and scene compendia as thumbnails, searched by words and
+narrowed by tag chips. Click a prefab to place it in the middle of the view
+or drag it onto the map; click a scene to import it.
 
 It prints the files the scenes name that no imported module has, by the
 module they would come from. The pack is paid content: it stays in

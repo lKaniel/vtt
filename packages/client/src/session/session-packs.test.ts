@@ -282,6 +282,28 @@ describe('the GM’s asset browser', () => {
     });
   });
 
+  it('places a prefab dragged from a split compendium where it was let go, once the server sends it', async () => {
+    ws.receive(gmWelcome());
+    session.packs.placePrefab({ pack: 'bw', compendium: 'prefabs', id: 'crate' }, [500, 500]);
+    expect(sent()).toEqual({ t: 'compendiumDoc', pack: 'bw', compendium: 'prefabs', id: 'crate' });
+    ws.receive({
+      t: 'compendiumDoc',
+      pack: 'bw',
+      compendium: 'prefabs',
+      id: 'crate',
+      doc: {
+        id: 'crate',
+        name: 'Crate',
+        tiles: [{ id: 'box', kind: 'rect', x: 0, y: 0, w: 100, h: 100, color: '#8a5a2a' }],
+      },
+    });
+    await Promise.resolve();
+    expect(sent()).toMatchObject({
+      label: 'prefab',
+      ops: [{ op: 'create', coll: 'main/tiles', doc: { id: 'box', x: 500, y: 500 } }],
+    });
+  });
+
   it('asks the server for a split compendium’s document before using it', async () => {
     ws.receive(gmWelcome());
     const stub = { id: 'docks', name: 'Docks', stub: true };

@@ -30,7 +30,16 @@ export type DragPayload =
   /** A playlist: becomes a sound on the map. */
   | { kind: 'playlist'; id: string }
   /** A picture from the Assets tab, placed as a tile; `w` and `h` are its size in pixels when known. */
-  | { kind: 'media'; src: string; w?: number; h?: number };
+  | { kind: 'media'; src: string; w?: number; h?: number }
+  /** A prefab from a pack's compendium (the Baileywiki library), placed where it is let go. */
+  | ({ kind: 'prefab' } & PrefabRef);
+
+/** Where a prefab lives: a pack's compendium, by its id. */
+export interface PrefabRef {
+  pack: string;
+  compendium: string;
+  id: string;
+}
 
 /** Starts dragging `payload` from a list or sheet. */
 export function startDrag(e: React.DragEvent, payload: DragPayload): void {
@@ -39,7 +48,7 @@ export function startDrag(e: React.DragEvent, payload: DragPayload): void {
 }
 
 /** Drops the session makes into tiles, notes and sounds itself (session-drops.ts). */
-type Placed = { kind: 'media' } | { kind: 'journal' } | { kind: 'table' } | { kind: 'playlist' };
+type Placed = { kind: 'media' } | { kind: 'journal' } | { kind: 'table' } | { kind: 'playlist' } | { kind: 'prefab' };
 
 /** What the server places or hands out on the map. */
 export type MapDrop = Exclude<DragPayload, Placed>;
@@ -108,6 +117,7 @@ const ON_MAP: Partial<Record<DragPayload['kind'], string>> = {
   table: 'Drop roll tables on the map',
   playlist: 'Drop playlists on the map',
   media: 'Drop pictures on the map',
+  prefab: 'Drop prefabs on the map',
 };
 
 /** A carried item dropped on the ground (a new pile there) or into a pile (see system-dnd5e piles.ts). */

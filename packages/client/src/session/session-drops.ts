@@ -1,7 +1,7 @@
 import type { Actor, ClientMessage, SheetArea, SpawnSource, TokenView } from '@vtt/system-dnd5e';
 import type { Playlist, Point, WorldInfo } from '@vtt/shared';
 import { type Draft, SOUND_FT } from '../editor/shape-tools.ts';
-import { dropMessage, type DragPayload, sheetDropMessage } from '../play/drops.ts';
+import { dropMessage, type DragPayload, type PrefabRef, sheetDropMessage } from '../play/drops.ts';
 import type { SheetTarget } from './session-sheets.ts';
 
 // What the session does with a drop: pictures become tiles, journal entries
@@ -17,6 +17,8 @@ export interface DropHost {
   readonly docs: { get(coll: string, id: string): object | undefined };
   readonly draw: { create(draft: Draft): void };
   readonly requests: { saveActor(actor: Actor): void };
+  /** A prefab let go on the map is placed there (see session-packs.ts). */
+  readonly packs: { placePrefab(ref: PrefabRef, at: Point): void };
   send(msg: ClientMessage): void;
   showError(message: string): void;
 }
@@ -65,6 +67,10 @@ export class Drops {
       return s.draw.create({ mode: 'notes', data });
     }
     if (payload.kind === 'playlist') return this.placePlaylist(payload.id, p);
+    if (payload.kind === 'prefab') {
+      const { pack, compendium, id } = payload;
+      return s.packs.placePrefab({ pack, compendium, id }, p);
+    }
     const ctx = { tokens: [...s.tokens.values()], gridSize: s.world.gridSize, hidden: this.hidden };
     this.send(dropMessage(payload, p, ctx));
   }

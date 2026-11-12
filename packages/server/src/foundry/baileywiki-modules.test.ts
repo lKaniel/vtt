@@ -73,6 +73,26 @@ beforeEach(async () => {
       tiles: [{ texture: { src: 'modules/jb2a_patreon/fire.webm' }, x: 0, y: 0, width: 100, height: 100 }],
       walls: [],
     },
+    '!scenes!S2': {
+      _id: 'S2',
+      name: 'Market With A Statue',
+      width: 1000,
+      height: 800,
+      padding: 0,
+      grid: { size: 100, type: 1, distance: 5 },
+      background: { src: 'modules/baileywiki-maps/maps/docks.webp' },
+      tiles: [
+        {
+          x: 0,
+          y: 0,
+          width: 50,
+          height: 50,
+          texture: { src: 'modules/levels-3d-preview/assets/blank.webp' },
+          flags: { 'levels-3d-preview': { model3d: 'modules/baileywiki-maps/models/crate.glb' } },
+        },
+      ],
+      walls: [],
+    },
   });
   await writeLevelDb(join(modules, 'baileywiki-maps/packs/prefabs'), {
     '!folders!F1': { _id: 'F1', name: 'Lighting', type: 'JournalEntry' },
@@ -83,6 +103,15 @@ beforeEach(async () => {
       data: [{ texture: { src: 'modules/baileywiki-maps/maps/lamp.webp' }, x: 100, y: 100, width: 100, height: 100 }],
       attached: [{ documentName: 'AmbientLight', data: { x: 150, y: 150, config: { bright: 10, dim: 20 } } }],
     }),
+    '!folders!F2': { _id: 'F2', name: 'Baileywiki 3D Prefabs', type: 'JournalEntry' },
+    '!journal!P3': {
+      ...preset('P3', {
+        name: '3DFX Smoke',
+        documentName: 'Tile',
+        data: [{ texture: { src: 'modules/baileywiki-maps/maps/lamp.webp' }, x: 0, y: 0, width: 100, height: 100 }],
+      }),
+      folder: 'F2',
+    },
     '!journal!P2': preset('P2', {
       name: 'Crate',
       documentName: 'Tile',
@@ -132,15 +161,13 @@ describe('importing the installed Baileywiki modules', () => {
     const packs = new PackStore(packsDir);
     await packs.load();
     expect(packs.problems).toEqual([]);
-    expect(packs.compendium('baileywiki', 'bw-scenes-2d')?.docs).toEqual([
-      {
-        id: 'gray-harbor-docks',
-        name: 'Gray Harbor Docks',
-        thumb: 'pack://baileywiki/media/modules/baileywiki-nuts-and-bolts/scenes/thumbs/S1.webp',
-        tags: ['maps', 'settlement', 'docks'],
-        stub: true,
-      },
-    ]);
+    expect(packs.compendium('baileywiki', 'bw-scenes-2d')?.docs[0]).toEqual({
+      id: 'gray-harbor-docks',
+      name: 'Gray Harbor Docks',
+      thumb: 'pack://baileywiki/media/modules/baileywiki-nuts-and-bolts/scenes/thumbs/S1.webp',
+      tags: ['maps', 'settlement', 'docks'],
+      stub: true,
+    });
     const scene = SceneEntrySchema.parse(await packs.compendiumDoc('baileywiki', 'bw-scenes-2d', 'gray-harbor-docks'));
     expect(scene.tiles[0]).toMatchObject({ src: 'pack://baileywiki/media/modules/baileywiki-maps/maps/docks.webp' });
     const lamp = PrefabSchema.parse(await packs.compendiumDoc('baileywiki', 'bw-prefabs-2d', 'street-lamp'));
@@ -150,6 +177,16 @@ describe('importing the installed Baileywiki modules', () => {
     expect(crate.tiles[0]).toMatchObject({
       model: { src: 'pack://baileywiki/media/modules/baileywiki-maps/models/crate.glb' },
     });
+  });
+
+  it('files scenes and prefabs as 3D only when 3D Canvas opens them so or Baileywiki files them so', async () => {
+    await importBaileywikiModules(modules, packsDir);
+    const packs = new PackStore(packsDir);
+    await packs.load();
+    const ids = (c: string) => packs.compendium('baileywiki', c)?.docs.map((d) => (d as { id: string }).id);
+    expect(ids('bw-scenes-2d')).toContain('market-with-a-statue');
+    expect(ids('bw-scenes-3d') ?? []).not.toContain('market-with-a-statue');
+    expect(ids('bw-prefabs-3d')).toEqual(['3dfx-smoke', 'crate']);
   });
 
   it('tags the media with Baileywiki’s own tags and gives 3D models their thumbnails', async () => {
