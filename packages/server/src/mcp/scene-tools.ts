@@ -181,8 +181,8 @@ const keyOf = (q: { search: string; kind?: string }) => `${q.kind ?? ''}:${q.sea
  */
 async function catalogOf(b: Bridge, s: Seat, queries: (AssetQuery & { search: string })[]) {
   if (!queries.length) return undefined;
-  const other = (k?: string) => (k === 'tile' ? 'model' : 'tile');
-  const all = queries.flatMap((q) => (q.kind === 'texture' ? [q] : [q, { ...q, kind: other(q.kind) } as typeof q]));
+  const other = (k?: string): 'tile' | 'model' => (k === 'tile' ? 'model' : 'tile');
+  const all = queries.flatMap((q) => (q.kind === 'texture' ? [q] : [q, { ...q, kind: other(q.kind) }]));
   const found = await b.find(s, all);
   if (found.every((list) => !list.length)) return undefined;
   const byKey = new Map(all.map((q, i) => [keyOf(q), found[i] ?? []]));

@@ -105,10 +105,14 @@ describe('building a catalog', () => {
     });
     const catalog = await buildCatalog(join(dir, 'media'), { prefix: 'media/', pxPerSquare: 150, feetPerUnit: 5 });
     const byId = Object.fromEntries(catalog.assets.map((a) => [a.id, a]));
-    expect(Object.keys(byId).sort()).toEqual(['bw-forest-01-4k-tileable', 'bw-tree-oak-01', 'oak']);
+    expect(Object.keys(byId).toSorted((a, b) => a.localeCompare(b))).toEqual([
+      'bw-forest-01-4k-tileable',
+      'bw-tree-oak-01',
+      'oak',
+    ]);
     expect(byId['bw-tree-oak-01']).toMatchObject({ kind: 'tile', w: 30, h: 25, overhead: true });
     expect(byId['bw-forest-01-4k-tileable']).toMatchObject({ kind: 'texture', w: 135, h: 135 });
-    expect(byId['oak']).toMatchObject({
+    expect(byId.oak).toMatchObject({
       kind: 'model',
       src: 'media/models/trees/oak.glb',
       w: 10,
@@ -116,7 +120,7 @@ describe('building a catalog', () => {
       height: 20,
       thumb: 'media/models/trees/oak.webp',
     });
-    expect(byId['oak']!.tags).toContain('trees');
+    expect(byId.oak!.tags).toContain('trees');
   });
 
   it('gives a second file of the same name its folder in its id, and takes tags from an index', async () => {

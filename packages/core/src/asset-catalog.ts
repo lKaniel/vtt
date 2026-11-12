@@ -102,7 +102,7 @@ export function findAssets<T extends CatalogAsset>(assets: readonly T[], q: Asse
     const s = words.length ? score(a, words) : 1;
     if (s > 0) scored.push({ a, s, i });
   });
-  return scored.sort((x, y) => y.s - x.s || x.i - y.i).map((x) => x.a);
+  return scored.toSorted((x, y) => y.s - x.s || x.i - y.i).map((x) => x.a);
 }
 
 /** A number from 0 to 1 that a seed always gives. */
@@ -121,7 +121,10 @@ export function pickAsset<T extends CatalogAsset>(
 ): T | undefined {
   const found = findAssets(assets, { ...opts, search: what });
   if (found.length <= 1) return found[0];
-  const words = what.toLowerCase().split(/[\s,]+/).filter(Boolean);
+  const words = what
+    .toLowerCase()
+    .split(/[\s,]+/)
+    .filter(Boolean);
   const best = score(found[0]!, words);
   const top = found.filter((a) => score(a, words) === best);
   return top[Math.floor(seeded(opts.seed ?? 0) * top.length)];

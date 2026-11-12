@@ -76,7 +76,9 @@ describe('the packs installed on a server', () => {
     await put('forest/catalog.json', { format: 1, assets: [oak] });
     const packs = new PackStore(dir);
     await packs.load();
-    expect(await packs.catalog('forest')).toEqual([{ ...oak, src: 'pack://forest/media/Trees/oak.webp', pack: 'forest' }]);
+    expect(await packs.catalog('forest')).toEqual([
+      { ...oak, src: 'pack://forest/media/Trees/oak.webp', pack: 'forest' },
+    ]);
     expect(await packs.catalog('nope')).toEqual([]);
   });
 

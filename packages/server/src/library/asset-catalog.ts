@@ -46,7 +46,8 @@ function pngSize(b: Buffer): Size | undefined {
 }
 
 function webpSize(b: Buffer): Size | undefined {
-  if (b.toString('latin1', 0, 4) !== 'RIFF' || b.toString('latin1', 8, 12) !== 'WEBP' || b.length < 30) return undefined;
+  if (b.toString('latin1', 0, 4) !== 'RIFF' || b.toString('latin1', 8, 12) !== 'WEBP' || b.length < 30)
+    return undefined;
   const chunk = b.toString('latin1', 12, 16);
   if (chunk === 'VP8X') return { w: b.readUIntLE(24, 3) + 1, h: b.readUIntLE(27, 3) + 1 };
   if (chunk === 'VP8L') {
@@ -149,21 +150,32 @@ class Bounds {
   }
 }
 
-function walkNode(g: Gltf, i: number, parent: Mat, box: Bounds, depth = 0): void {
-  const n = g.nodes?.[i];
+/** A model being measured: its glTF and the box grown so far. */
+interface Walk {
+  g: Gltf;
+  box: Bounds;
+}
+
+function addMesh(w: Walk, mesh: number | undefined, m: Mat): void {
+  if (mesh === undefined) return;
+  for (const prim of w.g.meshes?.[mesh]?.primitives ?? []) {
+    const acc = w.g.accessors?.[prim.attributes?.POSITION ?? -1];
+    if (acc?.min && acc.max) w.box.addBox(m, acc.min, acc.max);
+  }
+}
+
+function walkNode(w: Walk, i: number, parent: Mat, depth = 0): void {
+  const n = w.g.nodes?.[i];
   if (!n || depth > 64) return;
   const m = mul(parent, matOf(n));
-  for (const prim of n.mesh === undefined ? [] : (g.meshes?.[n.mesh]?.primitives ?? [])) {
-    const acc = g.accessors?.[prim.attributes?.POSITION ?? -1];
-    if (acc?.min && acc.max) box.addBox(m, acc.min, acc.max);
-  }
-  for (const c of n.children ?? []) walkNode(g, c, m, box, depth + 1);
+  addMesh(w, n.mesh, m);
+  for (const c of n.children ?? []) walkNode(w, c, m, depth + 1);
 }
 
 /** The JSON of a .glb (its first chunk) or of a .gltf. */
 function gltfJson(b: Buffer): Gltf | undefined {
   try {
-    if (b.toString('latin1', 0, 4) !== 'glTF') return JSON.parse(b.toString('utf8').replace(/^﻿/, '')) as Gltf;
+    if (b.toString('latin1', 0, 4) !== 'glTF') return JSON.parse(b.toString('utf8').replace(/^\uFEFF/, '')) as Gltf;
     const length = b.readUInt32LE(12);
     return JSON.parse(b.toString('utf8', 20, 20 + length)) as Gltf;
   } catch {
@@ -177,7 +189,7 @@ export function glbBounds(b: Buffer): { min: Vec; max: Vec } | undefined {
   if (!g) return undefined;
   const roots = g.scenes?.[g.scene ?? 0]?.nodes ?? (g.nodes ?? []).map((_, i) => i);
   const box = new Bounds();
-  for (const i of roots) walkNode(g, i, IDENTITY, box);
+  for (const i of roots) walkNode({ g, box }, i, IDENTITY);
   if (!Number.isFinite(box.min[0])) return undefined;
   const round = (v: Vec) => v.map((x) => Math.round(x * 1000) / 1000 + 0) as Vec;
   return { min: round(box.min), max: round(box.max) };
@@ -201,14 +213,37 @@ async function head(path: string): Promise<Buffer> {
   }
 }
 
-/** Folders and names that are never map pieces. */
-const SKIP =
-  /(^|\/)(thumbs?|thumbnails?|icons?|tokens?|fonts|banners|reference|logos?|bw-logos|scripts|lang|height-?maps?[^/]*)(\/|$)|_thumb\.|-thumb\.|thumbnail/i;
+/** Folders that never hold map pieces. */
+const SKIP_FOLDERS = new Set(
+  'thumb thumbs thumbnail thumbnails icon icons token tokens fonts banners reference logo logos bw-logos scripts lang'.split(
+    ' ',
+  ),
+);
+const HEIGHT_MAPS = /^height-?maps?/;
+const THUMB = /[_-]thumb\.|thumbnail/;
+
+/** Is a file in a folder of no map pieces, or a thumbnail? */
+function skipped(rel: string): boolean {
+  const parts = rel.toLowerCase().split('/');
+  const name = parts.pop()!;
+  return THUMB.test(name) || parts.some((p) => SKIP_FOLDERS.has(p) || HEIGHT_MAPS.test(p));
+}
 /** Folders of pictures that are not seen from above: model textures, illustrations, side-on scenery. */
 const NOT_MAP = /(^|\/)(models|artwork|scenescapes?|scenescape-demo|prefab-icons)(\/|$)/i;
 /** File names of a material's extra maps and masks, not pictures to draw. */
-const NOT_PICTURE =
-  /(^|[._-])(normal(gl|dx)?|roughness|displacement|metal(lic|ness)?|ao|opacity|specular|splatmap|heightmap|icon|greyscale)([._-]|$)|[._-](n|r|m|o|h|orm)\.[a-z0-9]+$/i;
+const MAP_WORDS = new Set(
+  'normal normalgl normaldx roughness displacement metal metallic metalness ao opacity specular splatmap heightmap icon greyscale'.split(
+    ' ',
+  ),
+);
+/** Short endings of a material's maps: `rock_n.png`, `rock-orm.png`. */
+const MAP_ENDINGS = new Set(['n', 'r', 'm', 'o', 'h', 'orm']);
+
+/** Is a file name one of a material's extra maps or masks, not a picture to draw? */
+function notPicture(name: string): boolean {
+  const words = noExt(name.toLowerCase()).split(/[._-]/);
+  return words.some((w) => MAP_WORDS.has(w)) || (words.length > 1 && MAP_ENDINGS.has(words.at(-1)!));
+}
 const TEXTURE = /tileable|seamless|pattern|unlimited|infinite|splatmap|(^|\/)textures\//i;
 const OVERHEAD = /tree|canop|roof|awning|overhang/i;
 
@@ -224,8 +259,8 @@ interface Found {
 function candidates(files: string[], include?: RegExp): Found[] {
   return files.flatMap((rel): Found[] => {
     const kind = mediaKind(rel);
-    if ((kind !== 'image' && kind !== 'model') || SKIP.test(rel) || (include && !include.test(rel))) return [];
-    if (kind === 'image' && (NOT_MAP.test(rel) || NOT_PICTURE.test(rel.split('/').at(-1)!))) return [];
+    if ((kind !== 'image' && kind !== 'model') || skipped(rel) || (include && !include.test(rel))) return [];
+    if (kind === 'image' && (NOT_MAP.test(rel) || notPicture(rel.split('/').at(-1)!))) return [];
     if (rel.toLowerCase().endsWith('.svg')) return [];
     return [{ rel, kind }];
   });
@@ -236,9 +271,13 @@ function idFor(rel: string, taken: Set<string>): string {
   const parts = noExt(rel).split('/');
   const name = slugify(parts.at(-1)!) || 'asset';
   const folder = slugify(parts.at(-2) ?? '');
-  let id = name;
-  if (taken.has(id) && folder) id = `${folder}-${name}`;
-  for (let n = 2; taken.has(id); n++) id = `${folder ? `${folder}-` : ''}${name}-${n}`;
+  const longer = folder ? `${folder}-${name}` : name;
+  let id = taken.has(name) ? longer : name;
+  let n = 2;
+  while (taken.has(id)) {
+    id = `${longer}-${n}`;
+    n++;
+  }
   taken.add(id);
   return id;
 }
@@ -281,7 +320,7 @@ async function measure(root: string, f: Found, o: Scale) {
 
 async function measureAll(root: string, found: Found[], o: CatalogOptions): Promise<Measured[]> {
   const opts = { pxPerSquare: o.pxPerSquare ?? 150, feetPerUnit: o.feetPerUnit ?? 5, usage: o.usage };
-  const out: Measured[] = new Array(found.length);
+  const out: Measured[] = [];
   let next = 0;
   const worker = async () => {
     while (next < found.length) {
@@ -293,12 +332,31 @@ async function measureAll(root: string, found: Found[], o: CatalogOptions): Prom
   return out;
 }
 
-function assetOf(m: Measured, path: string, id: string, thumb: string | undefined, o: CatalogOptions): CatalogAsset {
+const kindOf = (m: Measured): CatalogAsset['kind'] => {
+  if (m.kind === 'model') return 'model';
+  return TEXTURE.test(m.rel) ? 'texture' : 'tile';
+};
+
+/** A preview's path in the pack: one beside the model, else the media index's. */
+function previewOf(thumb: string | undefined, extra: { thumb?: string } | undefined, prefix: string) {
+  const preview = thumb ?? extra?.thumb;
+  if (!preview) return undefined;
+  return preview.startsWith(prefix) ? preview : `${prefix}${preview}`;
+}
+
+/** Where a measured file sits in the pack, its id and its preview beside it. */
+interface Placed {
+  path: string;
+  id: string;
+  thumb?: string;
+}
+
+function assetOf(m: Measured, { path, id, thumb }: Placed, o: CatalogOptions): CatalogAsset {
   const extra = o.index?.[path] ?? o.index?.[path.replace(/^media\//, '')];
   const tags = [...new Set([...wordsOf(m.rel), ...(extra?.tags ?? []).flatMap((t) => wordsOf(t))])];
-  const kind = m.kind === 'model' ? 'model' : TEXTURE.test(m.rel) ? 'texture' : 'tile';
+  const kind = kindOf(m);
   const name = noExt(m.rel.split('/').at(-1)!).replace(/[_-]+/g, ' ');
-  const preview = thumb ?? extra?.thumb;
+  const preview = previewOf(thumb, extra, o.prefix ?? '');
   return {
     id,
     src: path,
@@ -308,7 +366,7 @@ function assetOf(m: Measured, path: string, id: string, thumb: string | undefine
     w: Math.max(m.size!.w, 0.1),
     h: Math.max(m.size!.h, 0.1),
     ...(m.height !== undefined && { height: m.height }),
-    ...(preview && { thumb: preview.startsWith(o.prefix ?? '') ? preview : `${o.prefix ?? ''}${preview}` }),
+    ...(preview && { thumb: preview }),
     ...(kind === 'tile' && OVERHEAD.test(m.rel) && { overhead: true }),
   };
 }
@@ -318,7 +376,7 @@ async function filesIn(root: string, top?: (folder: string) => boolean): Promise
   if (!top) return filesUnder(root);
   const entries = await readdir(root, { withFileTypes: true });
   const folders = entries.filter((e) => e.isDirectory() && top(e.name)).map((e) => e.name);
-  const lists = await Promise.all(folders.sort().map((f) => filesUnder(root, f)));
+  const lists = await Promise.all(folders.toSorted((a, b) => a.localeCompare(b)).map((f) => filesUnder(root, f)));
   return lists.flat();
 }
 
@@ -343,7 +401,7 @@ export async function buildCatalog(root: string, o: CatalogOptions = {}): Promis
     const same = `${m.rel.split('/').at(-1)!.toLowerCase()}|${m.size.w}|${m.size.h}|${m.height ?? ''}`;
     if (seen.has(same)) return [];
     seen.add(same);
-    return [assetOf(m, `${prefix}${m.rel}`, idFor(m.rel, taken), thumbOf.get(noExt(m.rel)), o)];
+    return [assetOf(m, { path: `${prefix}${m.rel}`, id: idFor(m.rel, taken), thumb: thumbOf.get(noExt(m.rel)) }, o)];
   });
   return { format: 1, ...(o.source && { source: o.source }), assets };
 }

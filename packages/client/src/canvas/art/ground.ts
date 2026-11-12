@@ -52,25 +52,33 @@ export function rectTile(tile: RectTile, ctx: GroundContext): RectView {
 
 function bodyOf(tile: RectTile, m: number, ctx: GroundContext): { body: Container; loaded?: Promise<void> } {
   if (tile.pattern) return patternRect(tile, tile.pattern, m, ctx);
-  if (tile.texture) return { body: texturedRect(tile, groundTexture(tile.texture), SIZE, m, ctx) };
+  if (tile.texture) return { body: texturedRect(tile, { tex: groundTexture(tile.texture), size: SIZE }, m, ctx) };
   return { body: new Graphics().rect(tile.x - m, tile.y - m, tile.w + 2 * m, tile.h + 2 * m).fill(tile.color) };
 }
 
 /** A rect repeating a picture, drawn in its colour until the picture is in. */
 function patternRect(tile: RectTile, src: string, m: number, ctx: GroundContext) {
   const body = new Container();
-  const fill = body.addChild(new Graphics().rect(tile.x - m, tile.y - m, tile.w + 2 * m, tile.h + 2 * m).fill(tile.color));
-  const loaded = (Assets.load(assetUrl(src)) as Promise<Texture>)
+  const fill = body.addChild(
+    new Graphics().rect(tile.x - m, tile.y - m, tile.w + 2 * m, tile.h + 2 * m).fill(tile.color),
+  );
+  const loaded = Assets.load<Texture>(assetUrl(src))
     .then((tex) => {
       if (body.destroyed) return;
-      body.addChild(texturedRect(tile, tex, tex.width, m, ctx));
+      body.addChild(texturedRect(tile, { tex, size: tex.width }, m, ctx));
       fill.destroy();
     })
     .catch(() => console.warn(`Missing pattern ${src}`));
   return { body, loaded };
 }
 
-function texturedRect(tile: RectTile, tex: Texture, size: number, m: number, ctx: GroundContext): TilingSprite {
+/** `size`: the texture's width in pixels, which `textureScale` squares cover. */
+function texturedRect(
+  tile: RectTile,
+  { tex, size }: { tex: Texture; size: number },
+  m: number,
+  ctx: GroundContext,
+): TilingSprite {
   const sprite = new TilingSprite({ texture: tex, width: tile.w + 2 * m, height: tile.h + 2 * m });
   sprite.position.set(tile.x - m, tile.y - m);
   sprite.tileScale.set(((tile.textureScale ?? 2) * ctx.gridSize) / size);

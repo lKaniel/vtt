@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AssetCatalogSchema, type CatalogAsset, findAssets, pickAsset, wordsOf } from './index.ts';
 
-const asset = (id: string, path: string, kind: CatalogAsset['kind'] = 'tile', w = 10, h = 10): CatalogAsset => ({
+const asset = (id: string, path: string, kind: CatalogAsset['kind'] = 'tile', [w, h] = [10, 10]): CatalogAsset => ({
   id,
   src: `media/${path}`,
   kind,
@@ -12,12 +12,12 @@ const asset = (id: string, path: string, kind: CatalogAsset['kind'] = 'tile', w 
 });
 
 const catalog = [
-  asset('oak-01', 'wilderness/trees/bw_tree_oak_01.webp', 'tile', 30, 30),
-  asset('oak-02', 'wilderness/trees/bw_tree_oak_02.webp', 'tile', 25, 25),
-  asset('pine-01', 'wilderness/trees/bw_tree_pine_01.webp', 'tile', 20, 20),
-  asset('boulder-01', 'wilderness/boulders/bw_desert_boulder_224.webp', 'tile', 5, 5),
-  asset('forest-01', 'wilderness/forest/bw-forest-01-4k-tileable.webp', 'texture', 135, 135),
-  asset('oak-3d', 'props-natural/trees/mar24-tree-oak-14.glb', 'model', 20, 20),
+  asset('oak-01', 'wilderness/trees/bw_tree_oak_01.webp', 'tile', [30, 30]),
+  asset('oak-02', 'wilderness/trees/bw_tree_oak_02.webp', 'tile', [25, 25]),
+  asset('pine-01', 'wilderness/trees/bw_tree_pine_01.webp', 'tile', [20, 20]),
+  asset('boulder-01', 'wilderness/boulders/bw_desert_boulder_224.webp', 'tile', [5, 5]),
+  asset('forest-01', 'wilderness/forest/bw-forest-01-4k-tileable.webp', 'texture', [135, 135]),
+  asset('oak-3d', 'props-natural/trees/mar24-tree-oak-14.glb', 'model', [20, 20]),
 ];
 
 describe('a catalog file', () => {
@@ -82,7 +82,9 @@ describe('picking an asset', () => {
     const a = pickAsset(catalog, 'tree', { kind: 'tile', seed: 1 });
     const b = pickAsset(catalog, 'tree', { kind: 'tile', seed: 1 });
     expect(a).toEqual(b);
-    const seen = new Set([1, 2, 3, 4, 5, 6, 7, 8].map((seed) => pickAsset(catalog, 'tree', { kind: 'tile', seed })!.id));
+    const seen = new Set(
+      [1, 2, 3, 4, 5, 6, 7, 8].map((seed) => pickAsset(catalog, 'tree', { kind: 'tile', seed })!.id),
+    );
     expect(seen.size).toBeGreaterThan(1);
   });
 

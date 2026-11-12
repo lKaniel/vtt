@@ -1,4 +1,14 @@
-import type { ArtIndex, AssetQuery, Doc, MediaEntry, Op, PackAsset, PackCompendium, PackInfo, PluginInfo } from '@vtt/core';
+import type {
+  ArtIndex,
+  AssetQuery,
+  Doc,
+  MediaEntry,
+  Op,
+  PackAsset,
+  PackCompendium,
+  PackInfo,
+  PluginInfo,
+} from '@vtt/core';
 import type { Roll } from './dice.ts';
 import type { ClockAction } from './clock.ts';
 import type { Weather } from './weather.ts';

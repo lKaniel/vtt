@@ -184,9 +184,12 @@ async function readCatalog({ manifest, dir }: Pick<Installed, 'manifest' | 'dir'
     return [];
   }
   const ref = (p: string) => packRef(manifest.id, p);
-  return parsed.data.assets.map(
-    (a): PackAsset => ({ ...a, src: ref(a.src), ...(a.thumb && { thumb: ref(a.thumb) }), pack: manifest.id }),
-  );
+  return parsed.data.assets.map((a): PackAsset => ({
+    ...a,
+    src: ref(a.src),
+    ...(a.thumb && { thumb: ref(a.thumb) }),
+    pack: manifest.id,
+  }));
 }
 
 async function listMedia(installed: Pick<Installed, 'manifest' | 'dir'>): Promise<MediaEntry[]> {

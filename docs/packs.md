@@ -326,8 +326,11 @@ read files from elsewhere (Foundry's `Data/modules`), `--usage <file>` (px a
 square per file or folder, measured from scenes that use them) and `--out`.
 A `media-index.json` beside `pack.json` adds its tags and previews.
 
-For Baileywiki: `pnpm build-asset-catalog data/packs/baileywiki --top
-'baileywiki-*'` (about 22,000 tiles, 640 textures and 5,000 models, a minute).
+For the Baileywiki pack (`pnpm import-baileywiki` puts its modules in
+`media/modules/`): `pnpm build-asset-catalog data/packs/baileywiki --media
+data/packs/baileywiki/media/modules --prefix media/modules/ --top
+'baileywiki-*'` (about 22,000 tiles, 640 textures and 5,000 models, a
+minute).
 
 ## Not done yet
 

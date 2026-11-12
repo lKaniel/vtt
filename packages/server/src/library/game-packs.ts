@@ -54,7 +54,7 @@ export function packInfos(store: PackStore | undefined, game: GamePacks, system:
 }
 
 /** The asset catalogs of the installed packs a game uses, in game.json order. */
-export async function gameAssets(store: PackStore | undefined, game: GamePacks): Promise<PackAsset[]> {
+async function gameAssets(store: PackStore | undefined, game: GamePacks): Promise<PackAsset[]> {
   if (!store) return [];
   const lists = await Promise.all(packIds(store, game).map((id) => store.catalog(id)));
   return lists.flat();

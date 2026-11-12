@@ -7,7 +7,7 @@ import { BlueprintSchema, blueprintBuild, type BlueprintContext } from './scene-
 // wagon placed by name at its real size, a stretch of forest scattered with
 // them, and ground and floors in the pack's tileable textures.
 
-const asset = (id: string, kind: PackAsset['kind'], w: number, h: number, extra: Partial<PackAsset> = {}) => ({
+const asset = (id: string, kind: PackAsset['kind'], [w, h]: [number, number], extra: Partial<PackAsset> = {}) => ({
   id,
   src: `pack://bw/media/${id}.${kind === 'model' ? 'glb' : 'webp'}`,
   kind,
@@ -20,12 +20,12 @@ const asset = (id: string, kind: PackAsset['kind'], w: number, h: number, extra:
 });
 
 const ASSETS: PackAsset[] = [
-  asset('oak-tree-01', 'tile', 30, 30, { overhead: true }),
-  asset('oak-tree-02', 'tile', 25, 25, { overhead: true }),
-  asset('wagon-cart', 'tile', 10, 15),
-  asset('grass-tileable', 'texture', 135, 135),
-  asset('wood-floor-tileable', 'texture', 50, 50),
-  asset('oak-tree-3d', 'model', 20, 20, { height: 40 }),
+  asset('oak-tree-01', 'tile', [30, 30], { overhead: true }),
+  asset('oak-tree-02', 'tile', [25, 25], { overhead: true }),
+  asset('wagon-cart', 'tile', [10, 15]),
+  asset('grass-tileable', 'texture', [135, 135]),
+  asset('wood-floor-tileable', 'texture', [50, 50]),
+  asset('oak-tree-3d', 'model', [20, 20], { height: 40 }),
 ];
 
 const find = ({ search, kind }: { search: string; kind?: PackAsset['kind'] }) =>
@@ -58,7 +58,14 @@ describe('props from the catalog', () => {
       }).ops,
     );
     // 10 x 15 ft is 2 x 3 squares, its middle on the middle of square (2, 2).
-    expect(cart).toMatchObject({ kind: 'image', src: 'pack://bw/media/wagon-cart.webp', x: 150, y: 100, w: 200, h: 300 });
+    expect(cart).toMatchObject({
+      kind: 'image',
+      src: 'pack://bw/media/wagon-cart.webp',
+      x: 150,
+      y: 100,
+      w: 200,
+      h: 300,
+    });
     expect(cart).toMatchObject({ rotation: 90, name: 'wagon cart' });
     expect(oak).toMatchObject({ kind: 'image', overhead: true });
   });
@@ -79,7 +86,7 @@ describe('scattering', () => {
 
   it('fills an area with the assets found, kept apart, the same every time for a seed', () => {
     const first = tiles(build({ scatter: [forest] }).ops);
-    expect(first.length).toBe(12);
+    expect(first).toHaveLength(12);
     expect(new Set(first.map((t) => t.src)).size).toBe(2);
     for (const t of first) {
       const [cx, cy] = [(t.x as number) + (t.w as number) / 2, (t.y as number) + (t.h as number) / 2];
@@ -92,7 +99,7 @@ describe('scattering', () => {
   });
 
   it('leaves out pieces too big for the area, like a whole set of stones', () => {
-    const grove = asset('oak-tree-grove', 'tile', 120, 120);
+    const grove = asset('oak-tree-grove', 'tile', [120, 120]);
     const placed = tiles(build({ scatter: [forest] }, { assets: (q) => [...find(q), grove] }).ops);
     expect(placed.map((t) => t.src)).not.toContain(grove.src);
   });
@@ -114,8 +121,12 @@ describe('ground and floors from the catalog', () => {
 
   it('floors rooms with the pack’s texture when it has one, else paints them', () => {
     const [wood, sand] = tiles(
-      build({ rooms: [{ name: 'Hall', x: 0, y: 0, w: 4, h: 4, floor: 'wood' }, { name: 'Pit', x: 5, y: 0, w: 2, h: 2, floor: 'sand' }] })
-        .ops,
+      build({
+        rooms: [
+          { name: 'Hall', x: 0, y: 0, w: 4, h: 4, floor: 'wood' },
+          { name: 'Pit', x: 5, y: 0, w: 2, h: 2, floor: 'sand' },
+        ],
+      }).ops,
     );
     expect(wood).toMatchObject({ kind: 'rect', pattern: 'pack://bw/media/wood-floor-tileable.webp', textureScale: 10 });
     expect(sand).toMatchObject({ kind: 'rect', texture: 'sand' });

@@ -20,7 +20,16 @@ type PackMessage = Extract<
   ClientMessage,
   { t: 'packs' | 'plugins' | 'media' | 'compendium' | 'compendiumDoc' | 'findAssets' | 'upload' | 'uploadUrl' }
 >;
-const KINDS = new Set(['packs', 'plugins', 'media', 'compendium', 'compendiumDoc', 'findAssets', 'upload', 'uploadUrl']);
+const KINDS = new Set([
+  'packs',
+  'plugins',
+  'media',
+  'compendium',
+  'compendiumDoc',
+  'findAssets',
+  'upload',
+  'uploadUrl',
+]);
 
 export const isPackMessage = (msg: ClientMessage): msg is PackMessage => KINDS.has(msg.t);
 

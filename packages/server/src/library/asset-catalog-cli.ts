@@ -33,10 +33,11 @@ function topFolders(list: string): (folder: string) => boolean {
 }
 
 const [packArg] = positionals;
-if (!packArg) usage('pnpm build-asset-catalog <pack folder> [--px-per-square 150] [--feet-per-unit 5] [--include <regex>]');
+if (!packArg)
+  usage('pnpm build-asset-catalog <pack folder> [--px-per-square 150] [--feet-per-unit 5] [--include <regex>]');
 const pack = typedPath(packArg);
 const index = (await readJson(join(pack, 'media-index.json'))) as Record<string, { tags?: string[] }> | undefined;
-const usage = values.usage ? ((await readJson(typedPath(values.usage))) as Record<string, number>) : undefined;
+const pxUsage = values.usage ? ((await readJson(typedPath(values.usage))) as Record<string, number>) : undefined;
 const started = Date.now();
 const catalog = await buildCatalog(values.media ? typedPath(values.media) : join(pack, 'media'), {
   prefix: values.prefix ?? 'media/',
@@ -45,7 +46,7 @@ const catalog = await buildCatalog(values.media ? typedPath(values.media) : join
   ...(values.include && { include: new RegExp(values.include) }),
   ...(values.top && { top: topFolders(values.top) }),
   ...(index && typeof index === 'object' && { index }),
-  ...(usage && typeof usage === 'object' && { usage }),
+  ...(pxUsage && typeof pxUsage === 'object' && { usage: pxUsage }),
   source: values.source ?? 'baileywiki',
 });
 const out = values.out ? typedPath(values.out) : join(pack, 'catalog.json');

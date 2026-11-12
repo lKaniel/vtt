@@ -64,9 +64,15 @@ export function assetQueries(bp: Blueprint, prefer: Kind): (AssetQuery & { searc
   for (const p of bp.props) ask(p.asset, p.kind ?? prefer);
   for (const s of bp.scatter) for (const a of s.assets) ask(a, s.kind ?? prefer);
   for (const g of bp.grounds) ask(g.texture, 'texture');
-  for (const r of bp.rooms) if (r.floor && !r.floor.startsWith('#')) ask(r.floor, 'texture');
-  for (const t of bp.tiles) if (typeof t.texture === 'string' && !t.src) ask(t.texture, 'texture');
+  for (const texture of texturesOf(bp)) ask(texture, 'texture');
   return [...out.values()];
+}
+
+/** The ground textures a blueprint's rooms and painted tiles name, which a catalog texture may stand for. */
+function texturesOf(bp: Blueprint): string[] {
+  const floors = bp.rooms.flatMap((r) => (r.floor && !r.floor.startsWith('#') ? [r.floor] : []));
+  const painted = bp.tiles.flatMap((t) => (typeof t.texture === 'string' && !t.src ? [t.texture] : []));
+  return [...floors, ...painted];
 }
 
 /** One of the assets words find, by seed; the other kind (tile or model) when the one asked for has none. */
@@ -108,7 +114,15 @@ function placedDoc(b: Builder, p: Placing): Record<string, unknown> {
     return { name, ...p.extra, kind: 'image', src: '/art/ui/blank.svg', ...box, model };
   }
   const roof = p.asset.overhead && p.extra.overhead === undefined ? { overhead: true } : {};
-  return { name, ...roof, ...p.extra, kind: 'image', src: p.asset.src, ...box, ...(p.rotation && { rotation: p.rotation }) };
+  return {
+    name,
+    ...roof,
+    ...p.extra,
+    kind: 'image',
+    src: p.asset.src,
+    ...box,
+    ...(p.rotation && { rotation: p.rotation }),
+  };
 }
 
 const PROP_KEYS = ['asset', 'x', 'y', 'kind', 'rotation', 'scale', 'seed', 'id'];
@@ -146,7 +160,7 @@ function addScatter(b: Builder, bp: Blueprint, find: FindAssets, prefer: Kind): 
   for (const s of bp.scatter) {
     // Without a size limit, nothing wider than half the area's long side (a whole set of stones, a grove in one picture).
     const maxFeet = s.maxFeet ?? (Math.max(s.w, s.h) * 5) / 2;
-    const sized = (a: PackAsset) => (s.minFeet && Math.max(a.w, a.h) < s.minFeet) || Math.max(a.w, a.h) > maxFeet;
+    const sized = (a: PackAsset) => Math.max(a.w, a.h) < (s.minFeet ?? 0) || Math.max(a.w, a.h) > maxFeet;
     const kindOf = s.kind ?? prefer;
     const pool = s.assets.map((what) => {
       const found = find({ search: what, kind: kindOf });
@@ -180,7 +194,14 @@ function addGrounds(b: Builder, bp: Blueprint, find: FindAssets): void {
     const asset = need(chooseAsset(find, g.texture, 'texture', g.seed ?? i), g.texture);
     const box = { x: b.len(g.x), y: b.len(g.y), w: b.len(g.w), h: b.len(g.h) };
     const floor = { ...(g.level && { level: g.level }), ...(g.levels && { levels: g.levels }) };
-    const doc = { kind: 'rect', name: asset.name, ...box, ...patternLook(asset, g.repeat, g.tint), edge: g.edge, ...floor };
+    const doc = {
+      kind: 'rect',
+      name: asset.name,
+      ...box,
+      ...patternLook(asset, g.repeat, g.tint),
+      edge: g.edge,
+      ...floor,
+    };
     b.add('tiles', `${asset.id}-ground`, doc, true);
   });
 }

@@ -97,8 +97,7 @@ describe('building from the asset catalog', () => {
     const flat = store.docs.all('flat/tiles');
     expect(flat).toContainEqual(expect.objectContaining({ src: 'pack://bw/media/oak-tree.webp', overhead: true }));
     expect(flat).toContainEqual(expect.objectContaining({ pattern: 'pack://bw/media/wood-floor-tileable.webp' }));
-    expect(store.docs.all('deep/tiles')).toContainEqual(
-      expect.objectContaining({ model: expect.objectContaining({ src: 'pack://bw/media/oak-tree-3d.glb' }) }),
-    );
+    const models = store.docs.all('deep/tiles').map((t) => (t.model as { src?: string } | undefined)?.src);
+    expect(models).toContain('pack://bw/media/oak-tree-3d.glb');
   });
 });

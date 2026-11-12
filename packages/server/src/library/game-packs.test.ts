@@ -28,7 +28,15 @@ beforeAll(async () => {
   await put(dir, 'goblins/lairs.json', [{ id: 'cave' }]);
   await put(dir, 'forest/pack.json', { id: 'forest', name: 'Forest' });
   await put(dir, 'forest/media/spells/Fireball.webp', 'x');
-  const tree = (id: string) => ({ id, src: `media/trees/${id}.webp`, kind: 'tile', name: id, tags: ['trees'], w: 20, h: 20 });
+  const tree = (id: string) => ({
+    id,
+    src: `media/trees/${id}.webp`,
+    kind: 'tile',
+    name: id,
+    tags: ['trees'],
+    w: 20,
+    h: 20,
+  });
   await put(dir, 'forest/catalog.json', { format: 1, assets: [tree('oak'), tree('pine')] });
   await put(dir, 'icons/pack.json', { id: 'icons', name: 'Icons', art: 'art.json' });
   await put(dir, 'icons/art.json', { spell: { fireball: 'media/fire.webp' }, item: { rope: 'media/rope.webp' } });

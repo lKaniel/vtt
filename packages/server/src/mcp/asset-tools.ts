@@ -29,7 +29,11 @@ function matches(e: MediaEntry, a: List): boolean {
 const FindSchema = z.object({
   game: ListSchema.shape.game,
   ...AssetQuerySchema.shape,
-  search: z.string().max(200).optional().describe('Words that must all match ("oak tree", "cobblestone", "wagon"), or an id'),
+  search: z
+    .string()
+    .max(200)
+    .optional()
+    .describe('Words that must all match ("oak tree", "cobblestone", "wagon"), or an id'),
   limit: z.number().int().min(1).max(200).default(30),
 });
 type Find = z.infer<typeof FindSchema>;
