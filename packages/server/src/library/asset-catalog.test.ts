@@ -35,6 +35,14 @@ function webpExtended(w: number, h: number): Buffer {
   return b;
 }
 
+/** A JPEG start: an APP0 segment, a Huffman table (DHT, not a frame) and then a baseline frame header. */
+function jpeg(w: number, h: number): Buffer {
+  const app0 = [0xff, 0xe0, 0x00, 0x04, 0x00, 0x00];
+  const dht = [0xff, 0xc4, 0x00, 0x04, 0x00, 0x00];
+  const sof = [0xff, 0xc0, 0x00, 0x0b, 0x08, h >> 8, h & 0xff, w >> 8, w & 0xff, 0x01, 0x00, 0x00];
+  return Buffer.from([0xff, 0xd8, ...app0, ...dht, ...sof, 0, 0, 0]);
+}
+
 /** A .glb whose one mesh spans the box, moved by its node. */
 function glb(min: number[], max: number[], translation = [0, 0, 0]): Buffer {
   const json = {
@@ -61,6 +69,11 @@ describe('reading sizes', () => {
     expect(imageSize(webpLossless(4096, 2048))).toEqual({ w: 4096, h: 2048 });
     expect(imageSize(webpExtended(450, 600))).toEqual({ w: 450, h: 600 });
     expect(imageSize(Buffer.from('not a picture'))).toBeUndefined();
+  });
+
+  it('reads a JPEG size from its frame header, past other segments', () => {
+    expect(imageSize(jpeg(640, 480))).toEqual({ w: 640, h: 480 });
+    expect(imageSize(jpeg(640, 480).subarray(0, 12))).toBeUndefined();
   });
 
   it('reads a model’s bounds through its nodes', () => {
