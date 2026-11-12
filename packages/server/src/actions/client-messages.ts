@@ -1,4 +1,4 @@
-import { OpSchema } from '@vtt/core';
+import { AssetQuerySchema, OpSchema } from '@vtt/core';
 import {
   ClockActionSchema,
   DoorStateSchema,
@@ -331,6 +331,11 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     pack: z.string().max(80),
     compendium: z.string().max(80),
     id: z.string().max(120),
+  }),
+  z.object({
+    t: z.literal('findAssets'),
+    queries: z.array(AssetQuerySchema).min(1).max(200),
+    limit: z.number().int().min(1).max(1000).optional(),
   }),
   z.object({
     t: z.literal('upload'),

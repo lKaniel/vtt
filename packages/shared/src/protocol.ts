@@ -1,4 +1,4 @@
-import type { ArtIndex, Doc, MediaEntry, Op, PackCompendium, PackInfo, PluginInfo } from '@vtt/core';
+import type { ArtIndex, AssetQuery, Doc, MediaEntry, Op, PackAsset, PackCompendium, PackInfo, PluginInfo } from '@vtt/core';
 import type { Roll } from './dice.ts';
 import type { ClockAction } from './clock.ts';
 import type { Weather } from './weather.ts';
@@ -121,6 +121,8 @@ export type EngineClientMessage =
   | { t: 'compendium'; pack: string; compendium: string }
   /** GM: one whole document of a compendium (a split one lists only stubs), answered with `compendiumDoc`. */
   | { t: 'compendiumDoc'; pack: string; compendium: string; id: string }
+  /** GM: map pieces from the asset catalogs of the game's packs, best first, `limit` per query (answered with `assets`). */
+  | { t: 'findAssets'; queries: AssetQuery[]; limit?: number }
   /** GM: a file for the game's assets/uploads/, base64 (answered with `media`). */
   /** `ref` comes back with the answer, so the asker learns where the file went. */
   | { t: 'upload'; name: string; data: string; ref?: string }
@@ -208,6 +210,8 @@ export type EngineServerMessage =
   | { t: 'media'; entries: MediaEntry[]; uploaded?: { ref?: string; src: string } }
   | { t: 'compendium'; pack: string; compendium: string; docs: unknown[] }
   | { t: 'compendiumDoc'; pack: string; compendium: string; id: string; doc: unknown }
+  /** What `findAssets` found: per query, how many matched and the first of them. */
+  | { t: 'assets'; results: { total: number; assets: PackAsset[] }[] }
   /** The GM shows you a journal entry: open it (at `page`). */
   | { t: 'showJournal'; entry: string; page?: string }
   /** The GM shows you a picture. */

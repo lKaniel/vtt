@@ -1,4 +1,4 @@
-import type { Doc, Op } from '@vtt/core';
+import { type AssetQuery, type Doc, type Op, type PackAsset } from '@vtt/core';
 import {
   newSceneOps,
   onLevel,
@@ -14,7 +14,8 @@ import { type ClientMessage, toEdition } from '@vtt/system-dnd5e';
 import { z } from 'zod';
 import type { Game } from '../game.ts';
 import type { McpContent, McpTool } from './mcp-protocol.ts';
-import { act, look, outcome, type Welcome } from './mcp-seat.ts';
+import { act, ask, look, outcome, type Welcome } from './mcp-seat.ts';
+import { assetQueries, chooseAsset, type FindAssets, patternLook } from './blueprint-assets.ts';
 import type { BridgeTable } from './mcp-tools.ts';
 import { BlueprintSchema, blueprintBuild, groundOf, type Spawn } from './scene-blueprint.ts';
 import { type Box, sceneSketch } from './scene-picture.ts';
@@ -101,9 +102,10 @@ const CreateSchema = z.object({
 });
 type Create = z.infer<typeof CreateSchema>;
 
-function groundTile(scene: string, a: Create, grid: number): Op[] {
+function groundTile(scene: string, a: Create, grid: number, texture?: PackAsset): Op[] {
   if (!a.ground || !a.width || !a.height) return [];
-  const look = { ...groundOf(a.ground, undefined), ...(!a.ground.startsWith('#') && { edge: 'straight' }) };
+  const painted = { ...groundOf(a.ground, undefined), ...(!a.ground.startsWith('#') && { edge: 'straight' }) };
+  const look = texture ? { ...patternLook(texture), edge: 'straight' } : painted;
   const size = { x: 0, y: 0, w: a.width * grid, h: a.height * grid };
   const doc = {
     type: 'tile',
@@ -119,7 +121,7 @@ function groundTile(scene: string, a: Create, grid: number): Op[] {
   return [{ op: 'create', coll: `${scene}/tiles`, doc }];
 }
 
-function createOps(w: Welcome, a: Create): { id: string; ops: Op[] } {
+function createOps(w: Welcome, a: Create, texture?: PackAsset): { id: string; ops: Op[] } {
   const { id, ops } = newSceneOps(sourceOf(w), a.name);
   const grid = a.gridSize ?? 100;
   const doc = (ops[0] as Extract<Op, { op: 'create' }>).doc;
@@ -134,7 +136,7 @@ function createOps(w: Welcome, a: Create): { id: string; ops: Op[] } {
     ...(a.view && { view: a.view }),
     ...(a.view3d && { view3d: a.view3d }),
   });
-  return { id, ops: [...ops, ...groundTile(id, a, grid)] };
+  return { id, ops: [...ops, ...groundTile(id, a, grid, texture)] };
 }
 
 /** Whether a document lies wholly inside the box. */
@@ -166,18 +168,41 @@ function summary(ops: readonly Op[], spawns: readonly Spawn[]): string {
 interface Bridge {
   seat: (a: { game?: string; scene?: string }) => Promise<Seat>;
   send: (s: Seat, msgs: unknown[]) => Promise<string>;
+  /** The game's catalog matches for each query, best first. */
+  find: (s: Seat, queries: AssetQuery[]) => Promise<PackAsset[][]>;
+}
+
+const keyOf = (q: { search: string; kind?: string }) => `${q.kind ?? ''}:${q.search}`;
+
+/**
+ * The catalog searches a build needs, asked once: each tile or model search
+ * also as the other kind, for when a scene's preferred kind has none. None
+ * when the game has no catalog at all.
+ */
+async function catalogOf(b: Bridge, s: Seat, queries: (AssetQuery & { search: string })[]) {
+  if (!queries.length) return undefined;
+  const other = (k?: string) => (k === 'tile' ? 'model' : 'tile');
+  const all = queries.flatMap((q) => (q.kind === 'texture' ? [q] : [q, { ...q, kind: other(q.kind) } as typeof q]));
+  const found = await b.find(s, all);
+  if (found.every((list) => !list.length)) return undefined;
+  const byKey = new Map(all.map((q, i) => [keyOf(q), found[i] ?? []]));
+  const find: FindAssets = (q) => byKey.get(keyOf(q)) ?? [];
+  return find;
 }
 
 function createScene(b: Bridge): McpTool {
   return {
     name: 'create_scene',
     description:
-      'Makes a new, empty scene (GM). With width, height and ground it gets a ground tile that size; ' +
+      'Makes a new, empty scene (GM). With width, height and ground it gets a ground tile that size, in the ' +
+      'game’s catalog texture for that word when it has one (a Baileywiki pack: "grass", "forest", "cave"); ' +
       'then build on it with build_scene. Returns its id.',
     input: CreateSchema,
     run: async (a: Create) => {
       const s = await b.seat({ game: a.game });
-      const { id, ops } = createOps(s.welcome, a);
+      const ground = a.ground && !a.ground.startsWith('#') ? { search: a.ground, kind: 'texture' as const } : undefined;
+      const find = ground && (await catalogOf(b, s, [ground]));
+      const { id, ops } = createOps(s.welcome, a, find ? chooseAsset(find, ground.search, 'texture', 0) : undefined);
       await b.send(s, [{ t: 'ops', txn: `claude-scene-${id}`, label: 'new scene', ops }]);
       if (a.show) await b.send(s, [{ t: 'viewScene', scene: id }]);
       return JSON.stringify({ scene: id });
@@ -193,7 +218,11 @@ function buildScene(b: Bridge): McpTool {
       'windows, arches cut in, a floor and a light), wall paths, lights (presets torch, candle, campfire, lamp, ' +
       'lantern, magic, darkness), tiles (rect with texture/color, or image with src), creatures (monster SRD id ' +
       'or actor id, count), regions (x,y,w,h or points, with behaviors), sounds and notes. Units are squares ' +
-      'by default: walls and boxes run on grid lines, points sit on the square centre. Any other field is ' +
+      'by default: walls and boxes run on grid lines, points sit on the square centre. ' +
+      'ALWAYS dress the map from the game’s asset catalog (a Baileywiki pack; search it with find_assets): ' +
+      '`grounds` lay its tileable textures, `scatter` fills areas with its trees, rocks and clutter, `props` ' +
+      'place one asset (a wagon, a well, a house) at its real size; room floors and tile textures take its ' +
+      'texture for the word. On a 3D scene props and scatter are 3D models. Any other field is ' +
       'stored as given (see guide), e.g. hidden, trigger. Floors: give rooms and items `level` (or `levels` for ' +
       'several); stairs are a region with behaviors [{"type":"stairs","between":["ground","upper"]}], a lift ' +
       '[{"type":"elevator"}].',
@@ -201,8 +230,12 @@ function buildScene(b: Bridge): McpTool {
     run: async (a: z.infer<typeof BlueprintSchema> & { game?: string; scene?: string; label?: string }) => {
       const s = await b.seat(a);
       const taken = (coll: string, id: string) => !!sourceOf(s.welcome).get(coll, id);
-      const ctx = { scene: s.scene, gridSize: gridOf(s), rules: toEdition(s.welcome.world.rules), taken };
-      const { ops, spawns } = blueprintBuild(BlueprintSchema.parse(a), ctx);
+      const bp = BlueprintSchema.parse(a);
+      const prefer = sourceOf(s.welcome).get('scenes', s.scene)?.view === '3d' ? 'model' : 'tile';
+      const assets = await catalogOf(b, s, assetQueries(bp, prefer));
+      const rules = toEdition(s.welcome.world.rules);
+      const ctx = { scene: s.scene, gridSize: gridOf(s), rules, taken, prefer, ...(assets && { assets }) } as const;
+      const { ops, spawns } = blueprintBuild(bp, ctx);
       await b.send(s, [{ t: 'build', scene: s.scene, label: a.label ?? 'Claude build', ops, spawns }]);
       return summary(ops, spawns);
     },
@@ -336,7 +369,11 @@ export function sceneTools(table: BridgeTable): McpTool[] {
     return { game, player, welcome, scene: a.scene ?? welcome.scene };
   };
   const send = async (s: Seat, msgs: unknown[]) => outcome(await act(s.game, s.player, msgs as ClientMessage[]));
-  const bridge = { seat, send };
+  const find = async (s: Seat, queries: AssetQuery[]) => {
+    const answer = await ask(s.game, s.player, { t: 'findAssets', queries, limit: 60 }, 'assets');
+    return answer.results.map((r) => r.assets);
+  };
+  const bridge = { seat, send, find };
   return [
     createScene(bridge),
     buildScene(bridge),

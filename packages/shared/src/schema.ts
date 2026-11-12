@@ -199,7 +199,9 @@ const RectTileSchema = z.object({
   ...tileBase,
   color: z.string(),
   texture: TileTextureSchema.optional(),
-  /** Squares one repeat of the texture covers; default 2. */
+  /** A tileable picture repeated across the tile instead of painted ground (a pack's grass or flagstones), tinted by `color`. */
+  pattern: z.string().min(1).optional(),
+  /** Squares one repeat of the texture or pattern covers; default 2. */
   textureScale: z.number().positive().optional(),
   /** "rough" wobbles the edges (the default for grass, dirt, sand, water and rock); "straight" keeps them crisp. */
   edge: z.enum(['rough', 'straight']).optional(),

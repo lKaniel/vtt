@@ -71,6 +71,23 @@ describe('the packs installed on a server', () => {
     expect(await packs.media('nope')).toEqual([]);
   });
 
+  it('reads a pack’s asset catalog, with srcs as pack references', async () => {
+    const oak = { id: 'oak', src: 'media/Trees/oak.webp', kind: 'tile', name: 'oak', tags: ['trees'], w: 20, h: 20 };
+    await put('forest/catalog.json', { format: 1, assets: [oak] });
+    const packs = new PackStore(dir);
+    await packs.load();
+    expect(await packs.catalog('forest')).toEqual([{ ...oak, src: 'pack://forest/media/Trees/oak.webp', pack: 'forest' }]);
+    expect(await packs.catalog('nope')).toEqual([]);
+  });
+
+  it('reports a catalog it cannot read', async () => {
+    await put('forest/catalog.json', { format: 1, assets: [{ id: 'Bad id' }] });
+    const packs = new PackStore(dir);
+    await packs.load();
+    expect(await packs.catalog('forest')).toEqual([]);
+    expect(packs.problems).toEqual(['forest/catalog.json: not an asset catalog']);
+  });
+
   it('serves only files in a pack’s media folder', async () => {
     const packs = new PackStore(dir);
     await packs.load();

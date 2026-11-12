@@ -1,4 +1,4 @@
-import type { MediaEntry } from '@vtt/core';
+import { AssetQuerySchema, type MediaEntry, type PackAsset } from '@vtt/core';
 import { z } from 'zod';
 import type { McpTool } from './mcp-protocol.ts';
 import { ask } from './mcp-seat.ts';
@@ -26,8 +26,51 @@ function matches(e: MediaEntry, a: List): boolean {
     .every((w) => text.includes(w));
 }
 
+const FindSchema = z.object({
+  game: ListSchema.shape.game,
+  ...AssetQuerySchema.shape,
+  search: z.string().max(200).optional().describe('Words that must all match ("oak tree", "cobblestone", "wagon"), or an id'),
+  limit: z.number().int().min(1).max(200).default(30),
+});
+type Find = z.infer<typeof FindSchema>;
+
+/** An asset as Claude needs it to place it: what it is and how big. */
+const brief = (a: PackAsset) => ({
+  id: a.id,
+  name: a.name,
+  kind: a.kind,
+  w: a.w,
+  h: a.h,
+  ...(a.height !== undefined && { height: a.height }),
+  ...(a.overhead && { overhead: true }),
+  src: a.src,
+  ...(a.thumb && { thumb: a.thumb }),
+  tags: a.tags.slice(0, 12),
+});
+
+function findAssetsTool(table: BridgeTable): McpTool {
+  return {
+    name: 'find_assets',
+    description:
+      'Map pieces in the asset catalogs of the game’s packs (GM), best first: tiles (2D pictures seen from ' +
+      'above: trees, rocks, wagons, buildings), textures (tileable ground and floors) and models (3D). Sizes ' +
+      'are feet (w across, h down, height). Use their ids, or the same words, in build_scene props, scatter ' +
+      'and grounds. Search with plain words: "pine tree", "boulder", "market stall", "cobblestone", "cave".',
+    input: FindSchema,
+    run: async (a: Find) => {
+      const { game, player } = await table.seat(a.game);
+      const { limit, game: _, ...query } = a;
+      const answer = await ask(game, player, { t: 'findAssets', queries: [query], limit }, 'assets');
+      const found = answer.results[0] ?? { total: 0, assets: [] };
+      if (!found.total) return JSON.stringify({ total: 0, note: 'Nothing: try fewer or other words, or another kind' });
+      return JSON.stringify({ total: found.total, assets: found.assets.map(brief) });
+    },
+  };
+}
+
 export function assetTools(table: BridgeTable): McpTool[] {
   return [
+    findAssetsTool(table),
     {
       name: 'list_assets',
       description:

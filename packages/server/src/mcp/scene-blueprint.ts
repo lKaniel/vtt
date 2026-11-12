@@ -2,6 +2,16 @@ import { freeId, type Op, slugify } from '@vtt/core';
 import { Model3DSchema, type Point } from '@vtt/shared';
 import { z } from 'zod';
 import { roomWalls, type Opening, type Side } from './room-walls.ts';
+import {
+  addCatalogGrounds,
+  addCatalogPieces,
+  chooseAsset,
+  type FindAssets,
+  GroundSchema,
+  patternLook,
+  PropSchema,
+  ScatterSchema,
+} from './blueprint-assets.ts';
 
 // A scene the way Claude describes one: rooms with doors, a path of wall,
 // a torch here and three goblins there, in squares or pixels. It becomes the
@@ -129,6 +139,18 @@ export const BlueprintSchema = z.object({
     .array(ModelSchema)
     .default([])
     .describe('3D models (glTF .glb/.gltf, find them with list_assets) over boxes; height and elevation in feet'),
+  props: z
+    .array(PropSchema)
+    .default([])
+    .describe('Catalog assets (find_assets) placed by id or words at their real size, middle on the point'),
+  scatter: z
+    .array(ScatterSchema)
+    .default([])
+    .describe('Areas filled with catalog assets (trees, rocks, bushes, clutter), kept apart, the same for a seed'),
+  grounds: z
+    .array(GroundSchema)
+    .default([])
+    .describe('Patches of a catalog texture (grass, dirt, forest floor, cobbles), under everything, rough-edged'),
 });
 export type Blueprint = z.infer<typeof BlueprintSchema>;
 
@@ -145,6 +167,10 @@ export interface BlueprintContext {
   rules: string;
   /** Whether a scene collection ("<scene>/walls") already has this id. */
   taken: (coll: string, id: string) => boolean;
+  /** The game's asset catalogs (blueprint-assets.ts); none: no props, scatter or grounds, floors painted. */
+  assets?: FindAssets;
+  /** What props and scatter are when they don't say: 2D pictures, or models on a 3D scene. */
+  prefer?: 'tile' | 'model';
 }
 
 const TYPES = {
@@ -158,7 +184,7 @@ const TYPES = {
 type Coll = keyof typeof TYPES;
 
 /** Turns a blueprint into documents, giving each a free id and pixel coordinates. */
-class Builder {
+export class Builder {
   readonly ops: Op[] = [];
   readonly spawns: Spawn[] = [];
   private made = new Set<string>();
@@ -170,6 +196,13 @@ class Builder {
 
   get grid(): number {
     return this.ctx.gridSize;
+  }
+
+  /** A rect tile's look: a catalog texture when one matches `floor`, else painted ground or a colour. */
+  look(floor: string | undefined, color: string | undefined): Record<string, unknown> {
+    const find = this.ctx.assets;
+    const asset = find && floor && !floor.startsWith('#') ? chooseAsset(find, floor, 'texture', 0) : undefined;
+    return asset ? { ...patternLook(asset, undefined, color), edge: 'straight' } : groundOf(floor, color);
   }
 
   /** A length or a grid-line coordinate in pixels. */
@@ -212,7 +245,7 @@ function addRooms(b: Builder, bp: Blueprint): void {
     const owner = room.name ?? room.id ?? `room-${i + 1}`;
     const [x, y, w, h] = [b.len(room.x), b.len(room.y), b.len(room.w), b.len(room.h)];
     if (room.floor || room.floorColor) {
-      const ground = groundOf(room.floor, room.floorColor);
+      const ground = b.look(room.floor, room.floorColor);
       b.add('tiles', `${owner}-floor`, { kind: 'rect', name: `${owner} floor`, x, y, w, h, ...ground, ...lvl(room) });
     }
     if (room.light)
@@ -312,7 +345,7 @@ function addModels(b: Builder, bp: Blueprint): void {
 function addTiles(b: Builder, bp: Blueprint): void {
   for (const tile of bp.tiles) {
     const src = tile.src as string | undefined;
-    const look = src ? { kind: 'image' } : { kind: 'rect', ...groundOf(tile.texture, tile.color) };
+    const look = src ? { kind: 'image' } : { kind: 'rect', ...b.look(tile.texture, tile.color) };
     const place = { x: b.len(tile.x), y: b.len(tile.y), w: b.len(tile.w), h: b.len(tile.h) };
     const base = tile.id ?? tile.name ?? (src ? 'image' : (tile.texture ?? 'tile'));
     b.add('tiles', base, { ...strip(tile, ['id', 'x', 'y', 'w', 'h', 'texture', 'color']), ...look, ...place });
@@ -359,9 +392,11 @@ function addPlaced(b: Builder, coll: 'sounds' | 'notes', items: Blueprint['sound
 /** The documents and creatures a blueprint makes. */
 export function blueprintBuild(bp: Blueprint, ctx: BlueprintContext): { ops: Op[]; spawns: Spawn[] } {
   const b = new Builder(ctx, bp.units === 'squares');
+  addCatalogGrounds(b, bp, ctx.assets);
   addTiles(b, bp);
   addModels(b, bp);
   addRooms(b, bp);
+  addCatalogPieces(b, bp, ctx.assets, ctx.prefer ?? 'tile');
   addWalls(b, bp);
   addLights(b, bp);
   addRegions(b, bp);

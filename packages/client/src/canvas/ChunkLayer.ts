@@ -286,7 +286,7 @@ function drawTiles(
     byId: new Map(),
   };
   chunk.tiles.forEach((tile, i) => {
-    const drawn: TileView = tile.kind === 'rect' ? { root: rectTile(tile, ctx) } : imageTile(tile);
+    const drawn: TileView = tile.kind === 'rect' ? rectTile(tile, ctx) : imageTile(tile);
     out.byId.set(tile.id, drawn);
     const z = tile.z ?? i;
     drawn.root.zIndex = z;

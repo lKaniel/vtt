@@ -21,7 +21,8 @@
     "import-foundry": "pnpm --filter @vtt/server import-foundry",
     "import-foundry-world": "pnpm --filter @vtt/server import-foundry-world",
     "import-foundry-art": "pnpm --filter @vtt/server import-foundry-art",
-    "import-baileywiki": "pnpm --filter @vtt/server import-baileywiki"
+    "import-baileywiki": "pnpm --filter @vtt/server import-baileywiki",
+    "build-asset-catalog": "pnpm --filter @vtt/server build-asset-catalog"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
