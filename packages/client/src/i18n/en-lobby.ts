@@ -23,6 +23,22 @@ export const EN_BAILEYWIKI = {
   'baileywiki.private': 'Paid content: the pack stays on this server, never share it.',
 } as const;
 
+// The Baileywiki library in the GM's Assets tab (BaileywikiLibrary.tsx).
+export const EN_BW_LIBRARY = {
+  'bwLibrary.title': 'Baileywiki library',
+  'bwLibrary.noPack':
+    'No Baileywiki pack on this server yet. Import the modules installed in Foundry with pnpm import-baileywiki, or sign in below to download scenes.',
+  'bwLibrary.off': 'The Baileywiki pack is off for this game.',
+  'bwLibrary.turnOn': 'Turn the Baileywiki pack on',
+  'bwLibrary.empty': 'The Baileywiki pack has no prefabs or scenes yet.',
+  'bwLibrary.search': 'Search by name or tag…',
+  'bwLibrary.loading': 'Loading…',
+  'bwLibrary.more': '{n} more: type or pick tags to narrow the list.',
+  'bwLibrary.none': 'Nothing matches.',
+  'bwLibrary.prefabHint': 'Click a prefab to place it in the middle of the view, or drag it onto the map.',
+  'bwLibrary.sceneHint': 'Click a scene to import it into this game’s Scenes.',
+} as const;
+
 // Setup's nightly backups off the server.
 export const EN_OFFSITE = {
   'offsite.title': 'Backups off the server',

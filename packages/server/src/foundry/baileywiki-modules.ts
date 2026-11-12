@@ -1,7 +1,7 @@
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { type CompendiumInfo, freeId, type MediaIndex, slugify } from '@vtt/core';
-import type { Prefab, Tile } from '@vtt/shared';
+import type { Prefab, SceneEntry, Tile } from '@vtt/shared';
 import { type FoundryDoc, readFoundryDb } from './foundry-db.ts';
 import { foundryScene } from './foundry-scene.ts';
 import { lossLine } from './import-losses.ts';
@@ -92,14 +92,31 @@ async function packDocs(m: Module, type: string, log?: (l: string) => void): Pro
 interface Browser {
   tags: string[];
   thumb?: string;
+  /** Which of Baileywiki's scene browsers lists it (me-scenes-2d or me-scenes-3d). */
+  view?: '2d' | '3d';
 }
 
+/** A Mass Edit preset with the names of its folders and of the compendium it is in. */
+interface Found {
+  p: Preset;
+  folders: string[];
+  pack: string;
+}
+
+/** The view a Baileywiki scene browser's compendium name gives: me-scenes-3d is 3D. */
+const viewOf = (pack: string): Browser['view'] => {
+  if (/3d/i.test(pack)) return '3d';
+  return /2d/i.test(pack) ? '2d' : undefined;
+};
+
 /** What Baileywiki's scene browsers say of each scene (FauxScene presets), by the scene's uuid. */
-function sceneBrowser(presets: Preset[]): Map<string, Browser> {
+function sceneBrowser(found: Found[]): Map<string, Browser> {
   const out = new Map<string, Browser>();
-  for (const p of presets.filter((x) => x.documentName === 'FauxScene'))
-    for (const d of p.data)
-      if (typeof d.uuid === 'string') out.set(d.uuid, { tags: p.tags, ...(p.img ? { thumb: p.img } : {}) });
+  for (const { p, pack } of found.filter((x) => x.p.documentName === 'FauxScene')) {
+    const view = viewOf(pack);
+    const seen: Browser = { tags: p.tags, ...(p.img ? { thumb: p.img } : {}), ...(view ? { view } : {}) };
+    for (const d of p.data) if (typeof d.uuid === 'string') out.set(d.uuid, seen);
+  }
   return out;
 }
 
@@ -148,8 +165,13 @@ class SplitWriter {
   }
 }
 
-const is3d = (entry: { view3d?: unknown; tiles: readonly Tile[] }) =>
-  !!entry.view3d || entry.tiles.some((t) => t.kind === 'image' && !!t.model);
+/** A scene is 3D when Baileywiki's 3D scene browser lists it, else when 3D Canvas opens it in 3D. */
+const scene3d = (scene: Pick<SceneEntry, 'view'>, seen?: Browser) =>
+  seen?.view ? seen.view === '3d' : scene.view === '3d';
+
+/** A prefab is 3D when it has a model, or Baileywiki files it among its 3D ones (3DFX particles). */
+const prefab3d = (prefab: { tiles: readonly Tile[]; tags?: readonly string[] }) =>
+  prefab.tiles.some((t) => t.kind === 'image' && !!t.model) || (prefab.tags ?? []).some((t) => /\b3d\b/i.test(t));
 
 interface Run extends MediaRun {
   log?: (line: string) => void;
@@ -171,7 +193,7 @@ async function importScene(run: Run, doc: FoundryDoc, uuid: string, module: stri
   const seen = run.browser.get(uuid);
   const thumb = (seen?.thumb ? media(seen.thumb) : undefined) ?? scene.thumb;
   const tags = [module.replace(/^baileywiki-/, ''), ...(seen?.tags ?? [])];
-  await run.out[is3d(scene) ? 'scenes3d' : 'scenes2d'].add({ ...scene, tags, ...(thumb ? { thumb } : {}) });
+  await run.out[scene3d(scene, seen) ? 'scenes3d' : 'scenes2d'].add({ ...scene, tags, ...(thumb ? { thumb } : {}) });
 }
 
 async function importScenes(run: Run, m: Module): Promise<number> {
@@ -184,34 +206,34 @@ async function importScenes(run: Run, m: Module): Promise<number> {
   return n;
 }
 
-async function importPrefabs(run: Run, presets: [Preset, string[]][]): Promise<number> {
+async function importPrefabs(run: Run, presets: Found[]): Promise<number> {
   const media = mediaLookup(run, run.missing);
   let n = 0;
-  for (const [p, folders] of presets) {
+  for (const { p, folders } of presets) {
     const prefab = prefabOf(p, media);
     if (!prefab) continue;
     const tags = [...new Set([...folders, ...(prefab.tags ?? [])])];
     const doc: Omit<Prefab, 'id'> = { ...prefab, ...(tags.length ? { tags } : {}) };
-    await run.out[is3d(doc) ? 'prefabs3d' : 'prefabs2d'].add(doc);
+    await run.out[prefab3d(doc) ? 'prefabs3d' : 'prefabs2d'].add(doc);
     n++;
   }
   return n;
 }
 
 /** A journal compendium's Mass Edit presets, with their folder names. */
-function presetsIn(docs: FoundryDoc[]): [Preset, string[]][] {
+function presetsIn(docs: FoundryDoc[], pack: string): Found[] {
   const folders = foldersIn(docs);
-  return docs.flatMap((d): [Preset, string[]][] => {
+  return docs.flatMap((d): Found[] => {
     const p = presetOf(d);
-    return p ? [[p, folderTags(d, folders)]] : [];
+    return p ? [{ p, folders: folderTags(d, folders), pack }] : [];
   });
 }
 
 /** Every Mass Edit preset of the modules' journal compendia, with its folder names. */
-async function readPresets(run: Run, modules: Module[]): Promise<[Preset, string[]][]> {
-  const out: [Preset, string[]][] = [];
+async function readPresets(run: Run, modules: Module[]): Promise<Found[]> {
+  const out: Found[] = [];
   for (const m of modules)
-    for (const [, docs] of await packDocs(m, 'JournalEntry', run.log)) out.push(...presetsIn(docs));
+    for (const [p, docs] of await packDocs(m, 'JournalEntry', run.log)) out.push(...presetsIn(docs, p.name));
   return out;
 }
 
@@ -269,7 +291,7 @@ export async function importBaileywikiModules(
   }
   for (const w of Object.values(run.out)) await w.start();
   const presets = await readPresets(run, modules);
-  run.browser = sceneBrowser(presets.map(([p]) => p));
+  run.browser = sceneBrowser(presets);
   let scenes = 0;
   for (const m of modules) scenes += await importScenes(run, m);
   const prefabs = await importPrefabs(run, presets);

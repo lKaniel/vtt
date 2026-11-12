@@ -2,6 +2,7 @@ import type { Doc } from '@vtt/core';
 import { HOUR, TileTextureSchema, TOKEN_FILTERS, WALL_PRESETS, type WallRules, wallPreset } from '@vtt/shared';
 import { describe, type Field, type FieldValue, flag, LEVEL, media, MIXED, options, plain } from './field-kit.ts';
 import { MODEL_FIELDS } from './model-fields.ts';
+import { REPEAT_FIELDS } from './repeat-fields.ts';
 import { ITEM_FIELDS } from './item-fields.ts';
 import { doorFields, presetPatch, wallRuleFields } from './wall-fields.ts';
 
@@ -120,6 +121,7 @@ const TILE_FIELDS: Field[] = [
   plain('occludedAlpha', 'Opacity under it (0-1)', 'number', { when: (d) => isImage(d) && d.overhead === true }),
   scrollField('x', 'Scrolls across (px/s)'),
   scrollField('y', 'Scrolls down (px/s)'),
+  ...REPEAT_FIELDS,
   plain('tint', 'Tint', 'color', { when: isFlat }),
   plain('rotation', 'Rotation (degrees)', 'number', { when: isImage }),
   flag('flipX', 'Mirrored left to right', { when: isFlat }),

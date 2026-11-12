@@ -28,7 +28,9 @@ function drops(playlist: object = inn) {
   const errors: string[] = [];
   const drafts: Draft[] = [];
   const asked: unknown[] = [];
+  const placed: unknown[] = [];
   const host = {
+    packs: { placePrefab: (...a: unknown[]) => placed.push(a) },
     world: { gridSize: 100 },
     tokens: new Map([
       ['hero', hero],
@@ -43,10 +45,17 @@ function drops(playlist: object = inn) {
     showError: (e: string) => errors.push(e),
   } as unknown as DropHost;
   const d = new Drops(host, { changed: () => undefined, placeMedia: () => undefined });
-  return { drops: d, sent, errors, drafts, asked };
+  return { drops: d, sent, errors, drafts, asked, placed };
 }
 
 describe('Drops', () => {
+  it('places a prefab from the Baileywiki library where it was let go', () => {
+    const { drops: d, placed, sent } = drops();
+    d.onMap({ kind: 'prefab', pack: 'bw', compendium: 'prefabs', id: 'crate' }, [300, 400]);
+    expect(placed).toEqual([[{ pack: 'bw', compendium: 'prefabs', id: 'crate' }, [300, 400]]]);
+    expect(sent).toEqual([]);
+  });
+
   it('drops a carried stack on the open ground as a pile, looking the carrier up among the live tokens', () => {
     const { drops: d, sent, errors } = drops();
     d.onMap({ kind: 'carried', from: 'hero', item: 'dagger' }, [900, 900]);

@@ -8,7 +8,7 @@ import { foundryList, sourceOf } from './foundry-lists.ts';
 import { type Floors, foundryFloors } from './foundry-levels.ts';
 import { foundryPlaceables } from './foundry-placeables.ts';
 import { FoundryLight, foundryLights } from './foundry-lights.ts';
-import { activeTilesNote, FoundryTile, isOverhead, lookOf, roofOf, topLeftOf } from './foundry-tiles.ts';
+import { activeTilesNote, FoundryTile, isOverhead, lookOf, repeatOf, roofOf, topLeftOf } from './foundry-tiles.ts';
 import { FoundryWall, wallOf } from './foundry-walls.ts';
 import { doorWallOf, tileDoorOf } from './foundry-doors3d.ts';
 import { is3dScene, type MergedCopy, mergedCopiesOf, scene3dOf, tileModelOf, tileSolidOf } from './foundry-3d.ts';
@@ -462,6 +462,7 @@ function tilesOf(s: FoundryScene, c: TileContext): Tile[] {
         ...roofOf(t, fg, c.above(t)),
         ...on(t),
         ...flatOnly(t, c.grid),
+        ...repeatOf(sourceOf(t), find),
       };
       out.push(madeFrom(tile, sourceOf(t)));
     } else missing.push(path ?? '(none)');

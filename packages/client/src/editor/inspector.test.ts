@@ -179,6 +179,7 @@ describe('the inspector', () => {
       'overhead',
       'scroll.x',
       'scroll.y',
+      'repeat',
       'tint',
       'rotation',
       'flipX',
@@ -227,6 +228,20 @@ describe('the inspector', () => {
     expect(field([roof], 'scroll.y').patch('-10', roof)).toEqual({ scroll: { x: 5, y: -10 } });
     expect(field([roof], 'scroll.x').patch('0', { ...roof, scroll: { x: 5, y: 0 } })).toEqual({ scroll: null });
     expect(commonValue([image], field([image], 'scroll.x'))).toBe(0);
+  });
+
+  it('repeats a picture across its tile as endless ground, sized, shifted and turned', () => {
+    const image: Doc = { id: 'i', type: 'tile', rev: 1, kind: 'image', x: 0, y: 0, w: 1, h: 1, src: 'a.png' };
+    expect(field([image], 'repeat').patch(true)).toEqual({ repeat: {} });
+    expect(field([image], 'repeat').patch(false)).toEqual({ repeat: null });
+    const ground = { ...image, repeat: { scale: 2 } };
+    expect(fieldsFor([ground]).map((f) => f.key)).toEqual(
+      expect.arrayContaining(['repeat.src', 'repeat.scale', 'repeat.x', 'repeat.y', 'repeat.rotation']),
+    );
+    expect(field([ground], 'repeat.src')).toMatchObject({ kind: 'media', media: 'image' });
+    expect(field([ground], 'repeat.rotation').patch('45', ground)).toEqual({ repeat: { scale: 2, rotation: 45 } });
+    expect(field([ground], 'repeat.scale').patch('', ground)).toEqual({ repeat: {} });
+    expect(commonValue([ground], field([ground], 'repeat.scale'))).toBe(2);
   });
 
   it('tints a picture and gives it a drop shadow, then sizes the shadow', () => {
