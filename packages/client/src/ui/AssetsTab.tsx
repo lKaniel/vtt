@@ -1,5 +1,5 @@
-import { type MediaEntry, type MediaKind, type PackInfo, searchMedia, topTags } from '@vtt/core';
-import { EyeIcon, MapIcon } from 'lucide-react';
+import { type MediaEntry, type MediaKind, mediaEntry, type PackInfo, searchMedia } from '@vtt/core';
+import { ChevronRightIcon, EyeIcon, FolderIcon, MapIcon } from 'lucide-react';
 import { t } from '../i18n/index.ts';
 import { useEffect, useState } from 'react';
 import { assetUrl } from '../assets.ts';
@@ -8,6 +8,9 @@ import { startDrag } from '../play/drops.ts';
 import { BaileywikiView } from './BaileywikiView.tsx';
 import { PluginsView } from './PluginsView.tsx';
 import { readBase64 } from './read-file.ts';
+import { AssetPicture } from './AssetPicture.tsx';
+import { browse, type Folder, within } from './asset-folders.ts';
+import type { StampAsset } from '../editor/stamp.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Toggle } from './kit/toggle.tsx';
@@ -25,7 +28,6 @@ import { FileInput } from './kit/file-input.tsx';
 type View = 'media' | 'packs' | 'plugins' | 'baileywiki';
 /** Thumbnails shown at once; typing narrows the rest. */
 const SHOWN = 150;
-const TAGS = 14;
 const KIND_LABEL: Record<MediaKind, string> = {
   image: 'Pictures',
   audio: 'Sounds',
@@ -88,25 +90,21 @@ function MediaFilters({
   setQuery,
   kind,
   setKind,
-  source,
-  setSource,
 }: Readonly<{
   session: Session;
   query: string;
   setQuery: (q: string) => void;
   kind: MediaKind | '';
   setKind: (k: MediaKind | '') => void;
-  source: string | undefined;
-  setSource: (s: string | undefined) => void;
 }>) {
-  const packs = session.packs.list.filter((p) => p.enabled && !p.builtin);
   return (
     <div className="lib-filter">
       <Input
         className="lib-search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search media…"
+        placeholder={t('assets.search')}
+        aria-label={t('assets.search')}
       />
       <SelectField
         value={kind}
@@ -117,64 +115,108 @@ function MediaFilters({
           ...(Object.keys(KIND_LABEL) as MediaKind[]).map((k) => ({ value: k, label: KIND_LABEL[k] })),
         ]}
       />
-      <SelectField
-        value={source ?? '*'}
-        onValueChange={(s) => setSource(s === '*' ? undefined : s)}
-        aria-label="From"
-        options={[
-          { value: '*', label: 'Everywhere' },
-          { value: '', label: 'This game' },
-          ...packs.map((p) => ({ value: p.id, label: p.name })),
-        ]}
-      />
       <UploadButton session={session} />
     </div>
+  );
+}
+
+/** A folder's name on screen: the game's own files, a pack by its name, or the folder's own name. */
+function folderName(session: Session, path: readonly string[]): string {
+  if (path.length > 1) return path.at(-1)!.replace(/[_-]+/g, ' ');
+  if (path[0] === '') return t('assets.thisGame');
+  return session.packs.list.find((p) => p.id === path[0])?.name ?? path[0]!;
+}
+
+/** Where you are: the top, then each folder down to this one, each a button back up. */
+function Crumbs({ session, at, open }: Readonly<{ session: Session; at: string[]; open: (path: string[]) => void }>) {
+  return (
+    <nav className="flex flex-wrap items-center gap-0.5 pb-1 text-xs" aria-label={t('assets.where')}>
+      <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => open([])}>
+        {t('assets.top')}
+      </Button>
+      {at.map((_, i) => (
+        <span key={i} className="flex items-center gap-0.5">
+          <ChevronRightIcon className="size-3 opacity-50" />
+          <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => open(at.slice(0, i + 1))}>
+            {folderName(session, at.slice(0, i + 1))}
+          </Button>
+        </span>
+      ))}
+    </nav>
+  );
+}
+
+/** What was stamped lately: a click picks it up again. */
+function Recent({ session }: Readonly<{ session: Session }>) {
+  const recent = session.editor.stamp.recent;
+  if (!recent.length) return null;
+  return (
+    <div className="flex gap-1 overflow-x-auto pb-1" role="list" aria-label={t('assets.recent')}>
+      {recent.map((r) => {
+        const media = mediaEntry(r.src, r.src.split('/').at(-1) ?? r.src);
+        if (!media) return null;
+        return (
+          <Pressable
+            key={r.src}
+            role="listitem"
+            className={`asset-thumb w-14 shrink-0 ${session.editor.stamp.asset?.src === r.src && session.editor.stamp.armed ? 'on' : ''}`}
+            title={t('assets.pickUp', { name: media.name })}
+            onClick={() => session.editor.stamp.arm(r)}
+          >
+            <AssetPicture media={media} className="h-10 w-full object-contain" />
+          </Pressable>
+        );
+      })}
+    </div>
+  );
+}
+
+function FolderTile({ session, folder, open }: Readonly<{ session: Session; folder: Folder; open: () => void }>) {
+  const name = folderName(session, folder.path);
+  return (
+    <li className="asset-thumb asset-folder" title={name}>
+      <Pressable
+        className="flex w-full flex-col items-center"
+        onClick={open}
+        aria-label={t('assets.openFolder', { name })}
+      >
+        <FolderIcon className="h-[60px] w-10 opacity-70" />
+        <span className="asset-name">{name}</span>
+        <span className="asset-name">{folder.count}</span>
+      </Pressable>
+    </li>
   );
 }
 
 function MediaView({ session }: Readonly<{ session: Session }>) {
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState<MediaKind | ''>('');
-  const [source, setSource] = useState<string>();
-  const [tag, setTag] = useState<string>();
+  const [folder, setFolder] = useState<string[]>([]);
   // Fresh each time: packs may have been turned on, or files added, since.
   useEffect(() => {
     session.packs.requestMedia();
   }, [session]);
-  const base = searchMedia(session.packs.media, {
-    query,
-    ...(kind ? { kind } : {}),
-    ...(source === undefined ? {} : { pack: source }),
-  });
-  const list = tag ? base.filter((m) => m.tags.includes(tag)) : base;
+  const media = kind ? session.packs.media.filter((m) => m.kind === kind) : session.packs.media;
+  const searching = query.trim() !== '';
+  const here = browse(media, folder);
+  const files = searching ? searchMedia(within(media, folder), { query }) : here.files;
+  const folders = searching ? [] : here.folders;
   return (
     <>
-      <MediaFilters {...{ session, query, setQuery, kind, setKind, source, setSource }} />
-      <div className="asset-tags">
-        {topTags(base, TAGS).map((t) => (
-          <Toggle
-            key={t}
-            className="h-6 px-2 text-xs"
-            pressed={t === tag}
-            onPressedChange={(on) => setTag(on ? t : undefined)}
-          >
-            {t}
-          </Toggle>
-        ))}
-      </div>
+      <MediaFilters {...{ session, query, setQuery, kind, setKind }} />
+      <Recent session={session} />
+      <Crumbs session={session} at={here.at} open={setFolder} />
       <ul className="asset-grid lib-scroll">
-        {list.slice(0, SHOWN).map((m) => (
+        {folders.map((f) => (
+          <FolderTile key={f.path.join('/')} session={session} folder={f} open={() => setFolder(f.path)} />
+        ))}
+        {files.slice(0, SHOWN).map((m) => (
           <MediaTile key={m.src} session={session} media={m} />
         ))}
-        {list.length > SHOWN && (
-          <li className="muted lib-hint">{list.length - SHOWN} more: type to narrow the list.</li>
-        )}
-        {list.length === 0 && <li className="muted lib-hint">Nothing here. Upload files, or turn packs on.</li>}
+        {files.length > SHOWN && <li className="muted lib-hint">{t('assets.more', { n: files.length - SHOWN })}</li>}
+        {files.length + folders.length === 0 && <li className="muted lib-hint">{t('assets.none')}</li>}
       </ul>
-      <p className="muted lib-hint">
-        Drag a picture or 3D model onto the map to place it as a tile, or click it to place it in view. The map button
-        makes a picture the scene's map.
-      </p>
+      <p className="muted lib-hint">{t('assets.hint')}</p>
     </>
   );
 }
@@ -190,15 +232,24 @@ function MediaTile({ session, media }: Readonly<{ session: Session; media: Media
       </li>
     );
   }
+  const held = session.editor.stamp.armed && session.editor.stamp.asset?.src === media.src;
   return (
     <li
-      className="asset-thumb relative"
-      title={title}
+      className={`asset-thumb relative ${held ? 'on' : ''}`}
+      title={`${title}\n${t('assets.pickUpHint')}`}
+      aria-label={media.name}
+      aria-pressed={held}
       draggable
       onDragStart={(e) => startDrag(e, { kind: 'media', src: media.src, ...size })}
-      onClick={() => session.packs.placeMedia(media.src, session.editor.viewCentre(), size)}
+      onClick={() =>
+        session.editor.stamp.arm({
+          src: media.src,
+          kind: media.kind as StampAsset['kind'],
+          ...(size && { size: [size.w, size.h] }),
+        })
+      }
     >
-      <Preview media={media} onSize={setSize} />
+      <AssetPicture media={media} onSize={setSize} />
       <span className="asset-name">{media.name}</span>
       {media.kind === 'image' && (
         <Button
@@ -231,49 +282,6 @@ function MediaTile({ session, media }: Readonly<{ session: Session; media: Media
         </Button>
       )}
     </li>
-  );
-}
-
-/**
- * A picture, or a video's thumbnail (a JB2A pack ships one per video) or
- * first frame, which plays while the pointer is over it.
- */
-function Preview({ media, onSize }: Readonly<{ media: MediaEntry; onSize: (size: { w: number; h: number }) => void }>) {
-  const [hover, setHover] = useState(false);
-  const still = media.kind === 'image' ? media.src : media.thumb;
-  if (still && !(media.kind === 'video' && hover)) {
-    return (
-      <img
-        src={assetUrl(still)}
-        alt={media.name}
-        loading="lazy"
-        onMouseEnter={() => setHover(true)}
-        onLoad={(e) =>
-          media.kind === 'image' && onSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
-        }
-      />
-    );
-  }
-  return (
-    <video
-      src={assetUrl(media.src)}
-      muted
-      loop
-      playsInline
-      preload="metadata"
-      autoPlay={hover}
-      aria-label={media.name}
-      className="h-[72px] w-full bg-black/40 object-contain"
-      onMouseEnter={(e) => {
-        setHover(true);
-        e.currentTarget.play().catch(() => undefined);
-      }}
-      onMouseLeave={(e) => {
-        setHover(false);
-        e.currentTarget.pause();
-      }}
-      onLoadedMetadata={(e) => onSize({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
-    />
   );
 }
 

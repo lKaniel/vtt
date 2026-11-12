@@ -136,6 +136,24 @@ describe('the game keys', () => {
     }
   });
 
+  it('turns and sizes what the stamp brush holds with Q, E, - and =; E edits a sheet once it is put down', () => {
+    const gm = welcome([token('hero')]);
+    ws.receive({ ...gm, you: { ...(gm as { you: object }).you, role: 'gm' } } as never);
+    session.editor.stamp.arm({ src: '/assets/barrel.webp', kind: 'image', size: [100, 100] });
+    const turn = session.editor.stamp.look.turn;
+    gameKey(session, press('e'));
+    gameKey(session, press('e'));
+    gameKey(session, press('q'));
+    expect(session.editor.stamp.look.turn).toBe((turn + 15) % 360);
+    const scale = session.editor.stamp.look.scale;
+    gameKey(session, press('='));
+    expect(session.editor.stamp.look.scale).toBeGreaterThan(scale);
+    session.editor.setTool('select');
+    const e = press('e');
+    gameKey(session, e);
+    expect(session.editor.stamp.look.turn).toBe((turn + 15) % 360);
+  });
+
   it('uses the selected creature’s action bar tile with its number key', () => {
     const spell = srdFor('2014').spells.get('magic-missile')!;
     const sheet = { effects: [], caster: { level: 5, spells: [spell] } };

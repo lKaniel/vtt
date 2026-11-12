@@ -15,6 +15,7 @@ import {
 import { SeeIn } from './peek3d.ts';
 import { Picker } from './pick3d.ts';
 import { Overlay3D, type OverlayHost } from './overlay3d.ts';
+import { stampGhost } from './stamp3d.ts';
 import { Solids } from './solids3d.ts';
 import { Surface } from './surface3d.ts';
 import type { PathPreview } from '../canvas/PathPreview.ts';
@@ -76,6 +77,8 @@ export class View3D {
   private walls = new Walls();
   private standees = new Standees();
   private models = new Models();
+  /** The stamp brush's model, see-through under the pointer (stamp3d.ts); never picked. */
+  private ghost = new Models();
   private solids = new Solids();
   private tileSolids: SolidShown[] = [];
   private terrains = new Terrains();
@@ -174,6 +177,7 @@ export class View3D {
       this.walls.group,
       this.standees.group,
       this.models.group,
+      this.ghost.group,
       this.solids.group,
       this.terrains.group,
       this.overlay.marks.group,
@@ -214,11 +218,7 @@ export class View3D {
       // A new scene: the camera starts at its start, until it finds your creature.
       this.session.on('welcome', () => (this.homed = false)),
     );
-    const poke = (e: Event) => (e.type === 'pointermove' ? this.feed.hover() : this.feed.poke());
-    for (const type of ['pointermove', 'pointerdown', 'pointerup', 'wheel']) {
-      this.surface.addEventListener(type, poke, { passive: true });
-      this.off.push(() => this.surface.removeEventListener(type, poke));
-    }
+    this.off.push(this.feed.listen(this.surface));
     // After the 2D map has drawn the frame (its render runs at LOW priority).
     this.map.app.ticker.add(this.tick, undefined, -50);
   }
@@ -313,7 +313,7 @@ export class View3D {
     this.overlay.frame(dt, this.frames);
     // The walk's marker pulses until the walker gets there.
     if (this.overlay.marks.destination.visible) this.feed.touch();
-    const view = `${JSON.stringify(this.orbit)}:${this.models.stood}:${this.session.inspect.hover?.id}`;
+    const view = `${JSON.stringify(this.orbit)}:${this.models.stood}:${this.ghost.stood}:${this.session.inspect.hover?.id}`;
     if (this.feed.due(view, dt)) this.renderer.render(this.scene, this.camera);
   }
 
@@ -430,6 +430,7 @@ export class View3D {
     const all = [...this.tileModels, ...figures(this.session.tokens.values(), this.table(), placeOf)];
     const ground = { grid: this.grid(), feet: 5, floor: this.level()?.bottom ?? 0 };
     this.models.show(all, ground, floor);
+    this.ghost.show(stampGhost(this.session.editor.stamp, this.session.pointer), ground, floor);
     this.models.cull(this.camera.position, this.grid(), this.quality.tiny);
     const hover = this.session.inspect.hover;
     this.models.glow(this.play.glowOf(hover));

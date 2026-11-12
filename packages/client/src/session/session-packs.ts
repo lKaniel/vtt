@@ -57,8 +57,8 @@ export interface PackEvents {
   /** Sends field patches as one undo step. */
   updates(label: string, updates: readonly { ref: DocRef; patch: Patch }[]): void;
   gridSize(): number;
-  /** Places a picture as a tile. */
-  createImageTile(r: Rect, src: string): void;
+  /** Places a picture or 3D model as a tile at its own size, centred on `at` (session.editor.stamp.drop). */
+  dropMedia(src: string, at: [number, number], size?: { w: number; h: number }): void;
 }
 
 /** The game's packs, plugins, media and compendia, as `session.packs`. */
@@ -169,7 +169,7 @@ export class Packs implements SessionPart {
     this.pending.delete(ref);
   }
 
-  /** A picture placed as a tile, centred on `at` (`size` defaults to two squares); an audio file as a sound there. */
+  /** A picture or 3D model placed as a tile, centred on `at`, at its own size; an audio file as a sound there. */
   placeMedia(src: string, at: [number, number], size?: { w: number; h: number }): void {
     if (mediaKind(src) === 'audio') {
       this.s.draw.create({
@@ -178,10 +178,7 @@ export class Packs implements SessionPart {
       });
       return;
     }
-    const side = this.on.gridSize() * 2;
-    const { w, h } = size ?? { w: side, h: side };
-    const rect: Rect = { x: Math.round(at[0] - w / 2), y: Math.round(at[1] - h / 2), w, h };
-    this.on.createImageTile(rect, src);
+    this.on.dropMedia(src, at, size);
   }
 
   /** A scene from a pack's compendium becomes a new scene of the game. */

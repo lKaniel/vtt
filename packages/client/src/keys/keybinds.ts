@@ -19,7 +19,7 @@ const HOTBAR = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
 export const KEY_ACTIONS: readonly KeyAction[] = [
   { id: 'sheet', group: 'Table', key: 'c' },
-  { id: 'editSheet', group: 'Table', key: 'e' },
+  { id: 'editSheet', group: 'Table', key: 'e', shares: ['stamp-right'] },
   { id: 'journal', group: 'Table', key: 'j' },
   { id: 'endTurn', group: 'Table', key: 'space' },
   { id: 'target', group: 'Table', key: 't', shares: ['mode-tokens'] },
@@ -32,6 +32,11 @@ export const KEY_ACTIONS: readonly KeyAction[] = [
   { id: 'mode-notes', group: 'Map tools', key: 'n' },
   { id: 'mode-templates', group: 'Map tools', key: 'm' },
   { id: 'mode-ruler', group: 'Map tools', key: 'r' },
+  // With a picture or model on the stamp brush (tiles mode), before E edits a sheet.
+  { id: 'stamp-left', group: 'Map tools', key: 'q' },
+  { id: 'stamp-right', group: 'Map tools', key: 'e', shares: ['editSheet'] },
+  { id: 'stamp-smaller', group: 'Map tools', key: '-' },
+  { id: 'stamp-bigger', group: 'Map tools', key: '=' },
   { id: 'step-up', group: 'Walking', key: 'arrowup' },
   { id: 'step-down', group: 'Walking', key: 'arrowdown' },
   { id: 'step-left', group: 'Walking', key: 'arrowleft' },

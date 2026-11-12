@@ -73,7 +73,7 @@ export function drawLight(g: Graphics, l: Doc, { px, gridSize }: DrawCtx): void 
   g.circle(x, y, 5 * px).fill(color);
 }
 
-const MODEL_COLOR = 0x4fc3b8;
+export const MODEL_COLOR = 0x4fc3b8;
 
 /** A 3D model's tile in the flat map's tiles mode: a teal box with a cross, so it can be found and picked. */
 export function drawModel(g: Graphics, t: Doc, { px }: DrawCtx): void {

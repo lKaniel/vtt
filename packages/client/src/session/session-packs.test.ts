@@ -1,6 +1,6 @@
 import { type ServerMessage, srdFor } from '@vtt/system-dnd5e';
 import { spellArt } from '../icon-art.ts';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { assetUrl } from '../assets.ts';
 import { compendium } from '../content/compendium.ts';
 import { gameContent } from '../content/content.ts';
@@ -184,9 +184,10 @@ describe('the GM’s asset browser', () => {
     });
   });
 
-  it('places a 3D model as a model tile two squares across', () => {
+  it('places a 3D model as a model tile, two squares across when it can’t be measured', async () => {
     ws.receive(gmWelcome());
     session.drops.onMap({ kind: 'media', src: 'pack://forest/models/oak tree.glb' }, [500, 500]);
+    await vi.waitFor(() => expect((sent() as { t: string }).t).toBe('ops'), { timeout: 10_000 });
     expect(sent()).toMatchObject({
       ops: [
         {

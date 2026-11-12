@@ -7,6 +7,7 @@ import {
   moveIntoEdit,
   nestEdit,
   pickUnit,
+  placeNewTile,
   reorderEdit,
   scaleGroupEdit,
   tileBounds,
@@ -128,6 +129,14 @@ describe('containers', () => {
 
   it('a tile staying in its container changes nothing', () => {
     expect(nestEdit(tiles, ['room']).updates).toEqual([]);
+  });
+
+  it('a new tile goes inside the container it lands on, unless that one may not hold it', () => {
+    const chair = rect('chair', [400, 400, 50, 50]);
+    expect(placeNewTile(tiles, chair).parent).toBe('house');
+    const loose = placeNewTile(tiles, chair, (t) => t.id !== 'house');
+    expect(loose.parent).toBeUndefined();
+    expect(ids(tileOrder([...tiles, loose])).at(-1)).toBe('chair');
   });
 });
 

@@ -1,14 +1,4 @@
-import {
-  attachedTo,
-  type Doc,
-  type DocRef,
-  type DocStore,
-  freeId,
-  mediaKind,
-  type Op,
-  type Patch,
-  slugify,
-} from '@vtt/core';
+import { attachedTo, type Doc, type DocRef, type DocStore, freeId, type Op, type Patch, slugify } from '@vtt/core';
 import {
   applyPatch,
   applyTileEdit,
@@ -38,6 +28,7 @@ import {
 } from '@vtt/shared';
 import { refOf } from '../editor/selection.ts';
 import { TILE_PRESETS } from '../play/map-tools.ts';
+import type { StampDoc } from '../editor/stamp.ts';
 
 // The tiles mode's commands, like Figma's layers: moving a group moves what
 // is in it, a tile dropped on another goes inside it, and group, ungroup,
@@ -45,11 +36,11 @@ import { TILE_PRESETS } from '../play/map-tools.ts';
 // shared/tiles.ts; this turns them into one transaction per command.
 // Reached as `session.tiles`; the editor hands it moves in the tiles mode.
 
-/** The picture under a 3D model: the flat map shows nothing of it. */
-const BLANK = '/art/ui/blank.svg';
-
 /** A scene's map: a ground picture at the top of the tile tree. */
 const isMap = (t: Doc) => t.background === true && t.kind === 'image' && t.parent === undefined;
+
+/** A model tile is a prop, never a container. */
+const notModel = (t: Doc) => !t.model;
 
 /** Only the fields a patch really changes. */
 function changed(doc: Doc, patch: Patch): Patch {
@@ -230,16 +221,27 @@ export class Tiles {
     this.s.editor.setSelection(this.tileKeys([id]));
   }
 
-  /** A picture tile (or a 3D model's, on a blank picture); it goes inside a container tile it lands on, like a drawn one. */
-  createImage(r: Rect, src: string): void {
-    const tiles = this.all();
-    const file = src.split('/').at(-1) ?? '';
-    const name = slugify(file.replace(/\.[^.]*$/, '')) || 'image';
-    const id = freeId(/^[a-z0-9]/.test(name) ? name : 'image', (i) => tiles.some((t) => t.id === i), { bare: true });
-    const look = mediaKind(src) === 'model' ? { src: BLANK, model: { src } } : { src };
-    const doc = placeNewTile(tiles, { id, type: 'tile', rev: 0, kind: 'image', ...look, ...r, ...this.onFloor });
-    this.sendTileEdit('place', { creates: [doc], updates: [], deletes: [] });
-    this.s.editor.setSelection(this.tileKeys([id]));
+  /**
+   * Picture and model tiles from the stamp brush (editor/stamp.ts), as one
+   * undo step: each named after its file, inside a container it lands on
+   * (never a model: a prop on a prop stays loose), on the floor shown. The
+   * selection stays as it is, so the inspector doesn't open over the map
+   * while stamping.
+   */
+  stamp(stamps: readonly StampDoc[], label = 'stamp'): void {
+    let tiles = this.all();
+    const ids: string[] = [];
+    for (const look of stamps) {
+      const file = (look.model?.src ?? look.src).split('/').at(-1) ?? '';
+      const name = slugify(file.replace(/\.[^.]*$/, '')) || 'image';
+      const base = /^[a-z0-9]/.test(name) ? name : 'image';
+      const id = freeId(base, (i) => tiles.some((t) => t.id === i), { bare: true });
+      const doc = placeNewTile(tiles, { id, type: 'tile', rev: 0, kind: 'image', ...look, ...this.onFloor }, notModel);
+      tiles = [...tiles, doc];
+      ids.push(id);
+    }
+    if (!ids.length) return;
+    this.sendTileEdit(label, { creates: tiles.slice(-ids.length), updates: [], deletes: [] });
   }
 
   /**
