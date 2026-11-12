@@ -1,9 +1,18 @@
 import type { Doc, DocRef, Patch } from '@vtt/core';
-import { type EditorMode, type MapEdit, type Point, type WallRules, wallPreset, type ZOrder } from '@vtt/shared';
+import {
+  type EditorMode,
+  type MapEdit,
+  type Point,
+  type TileRepeat,
+  type WallRules,
+  wallPreset,
+  type ZOrder,
+} from '@vtt/shared';
 import type { TokenView } from '@vtt/system-dnd5e';
 import { LIGHT_PRESETS, type LightPreset } from '../play/map-tools.ts';
 import type { Draft } from './shape-tools.ts';
 import { presetPatch } from './wall-fields.ts';
+import { shuffledRepeat } from './repeat-fields.ts';
 
 // Right-click menus. Each kind of thing registers the entries it adds, so a
 // new placeable (or a game system) brings its own without touching the
@@ -260,8 +269,20 @@ registerMenu('tile', (t, api) => {
     },
     showTileEntry(t, api),
     fitGridEntry(t, api),
+    shuffleEntry(t, api),
   ];
 });
+
+/** A picture that repeats across its tile gets a new shift, size and turn (Unlimited Terrain's randomise). */
+function shuffleEntry(t: MenuTarget, api: MenuApi): Entry {
+  const repeat = t.docs.length === 1 ? (t.docs[0]!.doc.repeat as TileRepeat | undefined) : undefined;
+  return (
+    !!repeat && {
+      label: 'Shuffle the pattern',
+      run: () => api.editor.editSelection({ repeat: shuffledRepeat(repeat) }),
+    }
+  );
+}
 
 /** Squares of 20 px or more, the two ways within 2% of each other. */
 const MIN_SQUARE = 20;

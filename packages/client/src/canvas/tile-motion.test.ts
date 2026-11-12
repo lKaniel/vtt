@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { easeAlpha, roofAlpha, roofsOver, roofWatchers, scrollOffset, tileMedia } from './tile-motion.ts';
+import { easeAlpha, repeatPose, roofAlpha, roofsOver, roofWatchers, scrollOffset, tileMedia } from './tile-motion.ts';
 
 const roof = { x: 0, y: 0, w: 400, h: 300, overhead: true };
 
@@ -66,5 +66,20 @@ describe('roofs over a building', () => {
     expect(roofAlpha(flag, [[600, 400]], covers)).toBe(0);
     // A tree only partly over the house stays.
     expect(roofAlpha(tree, [[600, 400]], covers)).toBe(1);
+  });
+});
+
+describe('repeating pictures (Unlimited Terrain)', () => {
+  it('centres one copy on the tile at its own size, as a plain repeat', () => {
+    expect(repeatPose({}, [1024, 512], [4000, 3000])).toEqual({ position: [1488, 1244], scale: 1, rotation: 0 });
+  });
+
+  it('grows the copies, shifts them by copies and turns them about the tile’s middle', () => {
+    const pose = repeatPose({ scale: 2, x: 0.25, y: 0, rotation: 90 }, [100, 100], [1000, 1000]);
+    expect(pose.scale).toBe(2);
+    expect(pose.rotation).toBeCloseTo(Math.PI / 2);
+    // The texel at (75, 50) sits on the middle: turned a quarter clockwise, (150, 100) becomes (-100, 150).
+    expect(pose.position[0]).toBeCloseTo(600);
+    expect(pose.position[1]).toBeCloseTo(350);
   });
 });

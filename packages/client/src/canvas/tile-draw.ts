@@ -2,7 +2,7 @@ import type { Chunk } from '@vtt/shared';
 import { Assets, BlurFilter, ColorMatrixFilter, Container, Sprite, type Texture, TilingSprite } from 'pixi.js';
 import { type GifSource, GifSprite } from 'pixi.js/gif';
 import { assetUrl } from '../assets.ts';
-import { easeAlpha, roofAlpha, type RoofSight, scrollOffset, tileMedia } from './tile-motion.ts';
+import { easeAlpha, repeatPose, roofAlpha, type RoofSight, scrollOffset, tileMedia } from './tile-motion.ts';
 import { tilePose } from './tile-pose.ts';
 
 // One picture tile on the map: a still picture, an animated GIF or a looping
@@ -25,15 +25,44 @@ export interface TileView {
 /** Videos loop and stay quiet; `preload` must be set, or Pixi's loader trips over it. */
 const VIDEO = { autoPlay: true, loop: true, muted: true, preload: false };
 
-function load(tile: ImageTile): Promise<Texture | GifSource> {
-  const src = assetUrl(tile.src);
-  const media = tileMedia(tile.src);
+function load(path: string): Promise<Texture | GifSource> {
+  const src = assetUrl(path);
+  const media = tileMedia(path);
   return Assets.load(media === 'video' ? { src, data: VIDEO } : src);
+}
+
+/** A picture repeated across the tile, as its `repeat` lays it (Unlimited Terrain). */
+function repeatView(tile: ImageTile, pattern: Texture): TilingSprite {
+  const view = new TilingSprite({ texture: pattern, width: tile.w, height: tile.h });
+  const pose = repeatPose(tile.repeat ?? {}, [pattern.width, pattern.height], [tile.w, tile.h]);
+  view.tilePosition.set(...pose.position);
+  view.tileScale.set(pose.scale, pose.scale);
+  view.tileRotation = pose.rotation;
+  return view;
+}
+
+/**
+ * The tile's picture as drawn: repeating when it does, and a picture that
+ * repeats another one shows it over itself, cut to its own shape.
+ */
+async function pictureOf(tile: ImageTile, root: Container): Promise<Texture | GifSource> {
+  const own = await load(tile.src);
+  if (!tile.repeat?.src || 'frames' in own) return own;
+  const pattern = await load(tile.repeat.src);
+  if (root.destroyed || 'frames' in pattern) return own;
+  const shape = new Sprite(own);
+  shape.setSize(tile.w, tile.h);
+  const over = repeatView(tile, pattern);
+  // By its alpha: Baileywiki's shapes are black.
+  over.setMask({ mask: shape, channel: 'alpha' });
+  root.addChild(new Sprite({ texture: own, width: tile.w, height: tile.h }), shape, over);
+  return pattern;
 }
 
 /** The view that shows a loaded picture: a sprite, a GIF, or a tiling sprite for a scrolling one. */
 function viewOf(tile: ImageTile, picture: Texture | GifSource): Sprite | TilingSprite | GifSprite {
   if ('frames' in picture) return new GifSprite({ source: picture, autoPlay: true, loop: true });
+  if (tile.repeat) return repeatView(tile, picture);
   if (!tile.scroll) return new Sprite(picture);
   const tiling = new TilingSprite({ texture: picture, width: tile.w, height: tile.h });
   tiling.tileScale.set(tile.w / picture.width, tile.h / picture.height);
@@ -104,9 +133,9 @@ export function imageTile(tile: ImageTile): TileView {
   let view: Sprite | TilingSprite | GifSprite | undefined;
   let picture: Texture | GifSource | undefined;
   const glow = glowSwitch(tile, root, () => picture);
-  const loaded = load(tile)
+  const loaded = pictureOf(tile, root)
     .then((got) => {
-      if (root.destroyed) return;
+      if (root.destroyed || tile.repeat?.src) return;
       picture = got;
       view = sizedView(tile, got);
       const shadow = shadowView(tile, got);

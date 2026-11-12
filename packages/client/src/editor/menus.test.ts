@@ -258,6 +258,26 @@ describe('context menus', () => {
       );
     });
 
+    it('shuffles a repeating picture as Unlimited Terrain does: a new shift, size and turn', () => {
+      const a = api();
+      expect(labels(onTiles(tile('p', { kind: 'image', src: '/assets/grass.png' })), a)).not.toContain(
+        'Shuffle the pattern',
+      );
+      pick(
+        onTiles(tile('p', { kind: 'image', src: 'g.png', repeat: { src: 'grass.png' } })),
+        a,
+        'Shuffle the pattern',
+      ).run();
+      const patch = a.editor.editSelection.mock.calls[0]![0] as { repeat: Record<string, number | string> };
+      expect(patch.repeat.src).toBe('grass.png');
+      const { x, y, scale, rotation } = patch.repeat as Record<string, number>;
+      expect(Math.abs(x!)).toBeLessThanOrEqual(1);
+      expect(Math.abs(y!)).toBeLessThanOrEqual(1);
+      expect(scale).toBeGreaterThanOrEqual(0.4);
+      expect(scale).toBeLessThanOrEqual(2);
+      expect(rotation! % 5).toBe(0);
+    });
+
     it('a group ungroups; locked ground unlocks and becomes an object', () => {
       const a = api();
       expect(labels(onTiles({ id: 'g', type: 'tile', rev: 1, kind: 'group' }), a)).toContain('Ungroup');

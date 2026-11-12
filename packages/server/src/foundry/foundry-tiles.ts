@@ -119,3 +119,4 @@ export function topLeftOf(t: FoundryTileData, anchored: boolean): { x: number; y
   const round = (n: number) => Math.round(n * 100) / 100;
   return { x: round(cx - t.width / 2), y: round(cy - t.height / 2) };
 }
+export { repeatOf } from './foundry-repeat.ts';

@@ -103,3 +103,29 @@ export function scrollOffset(scroll: { x: number; y: number }, seconds: number, 
   const wrap = (v: number, size: number) => ((v % size) + size) % size;
   return [wrap(scroll.x * seconds, w), wrap(scroll.y * seconds, h)];
 }
+
+/** How a repeating picture lies in its tile: where its first copy starts, how big and how turned. */
+export interface RepeatPose {
+  position: Point;
+  scale: number;
+  /** Radians, clockwise. */
+  rotation: number;
+}
+
+/**
+ * Where a tile's repeating picture (`repeat`, Unlimited Terrain) lies, for
+ * a picture `size` pixels big on a tile `tile` big: the picture's texel
+ * (0.5 + x, 0.5 + y) copies in sits on the tile's middle, the copies
+ * `scale` times the picture's size and turned about that middle.
+ */
+export function repeatPose(
+  repeat: { scale?: number; x?: number; y?: number; rotation?: number },
+  size: Point,
+  tile: Point,
+): RepeatPose {
+  const scale = repeat.scale ?? 1;
+  const rotation = ((repeat.rotation ?? 0) * Math.PI) / 180;
+  const [cx, cy] = [size[0] * (0.5 + (repeat.x ?? 0)) * scale, size[1] * (0.5 + (repeat.y ?? 0)) * scale];
+  const [cos, sin] = [Math.cos(rotation), Math.sin(rotation)];
+  return { position: [tile[0] / 2 - (cx * cos - cy * sin), tile[1] / 2 - (cx * sin + cy * cos)], scale, rotation };
+}

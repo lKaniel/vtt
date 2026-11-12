@@ -194,6 +194,22 @@ export type TileDoor = z.infer<typeof TileDoorSchema>;
 export const TileTextureSchema = z.enum(['grass', 'dirt', 'sand', 'stone', 'cobble', 'wood', 'water', 'rock']);
 export type TileTexture = z.infer<typeof TileTextureSchema>;
 
+/**
+ * A picture repeated endlessly across a tile, as Baileywiki's Unlimited
+ * Terrain draws ground: `src` (else the tile's own picture; with its own,
+ * only inside the shape of the tile's picture, over it), each copy `scale`
+ * times its own size in pixels, shifted `x` and `y` copies and turned
+ * `rotation` degrees clockwise about the tile's middle.
+ */
+export const TileRepeatSchema = z.object({
+  src: z.string().min(1).optional(),
+  scale: z.number().positive().optional(),
+  x: z.number().optional(),
+  y: z.number().optional(),
+  rotation: z.number().optional(),
+});
+export type TileRepeat = z.infer<typeof TileRepeatSchema>;
+
 const RectTileSchema = z.object({
   kind: z.literal('rect'),
   ...tileBase,
@@ -213,6 +229,8 @@ const ImageTileSchema = z.object({
   overhead: z.boolean().optional(),
   /** How opaque an overhead tile gets while a creature of yours is under it: 0 (gone, the default) to 1. */
   occludedAlpha: z.number().min(0).max(1).optional(),
+  /** The picture repeats across the tile (`TileRepeatSchema`): endless ground you pan, zoom and turn. */
+  repeat: TileRepeatSchema.optional(),
   /** Pixels a second the picture slides by inside the tile (running water, clouds). */
   scroll: z.object({ x: z.number(), y: z.number() }).optional(),
   /** A soft shadow under the picture (trees, roofs): `offset` pixels down and right, blurred `blur` pixels. */

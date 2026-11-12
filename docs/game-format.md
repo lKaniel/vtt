@@ -339,6 +339,15 @@ pixels.
   `.m4v`, `.ogv`), which loops without sound. `"scroll": { "x": 20, "y": 0 }`
   slides the picture inside the tile, in pixels a second (running water,
   drifting clouds).
+- `"repeat": {}` repeats an image tile's picture endlessly across the tile at
+  its own size (Baileywiki's Unlimited Terrain): a field of grass, a sea.
+  `{ "src": "/assets/grass.webp", "scale": 2, "x": 0.5, "y": 0, "rotation":
+45 }` repeats another picture instead, only inside the shape of the
+  tile's own picture (a blob of beach on the sea), each copy `scale` times
+  its size, shifted `x`/`y` copies and turned `rotation` degrees clockwise
+  about the tile's middle. The inspector has these fields, and the tile's
+  menu **Shuffle the pattern** picks a new shift, size and turn. The Foundry
+  importer brings Token Magic FX's repeating sprite filter over as this.
 - `"overhead": true` makes an image tile a roof or a canopy: it draws over
   the creatures, and goes see-through while one of yours stands under it (the
   GM's: the selected token). `occludedAlpha` is how opaque it stays then, 0

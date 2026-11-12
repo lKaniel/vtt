@@ -70,3 +70,45 @@ describe('Foundry tiles keep their look', () => {
     expect(tilesOf([tile({ texture: { anchorX: 0.5, anchorY: 0.5 } })])[0]).toMatchObject({ x: 100, y: 200 });
   });
 });
+
+describe('Token Magic FX sprite tiles (Baileywiki’s Unlimited Terrain)', () => {
+  const sprite = (params: object) => ({
+    flags: {
+      tokenmagic: {
+        filters: [{ tmFilters: { tmFilterType: 'sprite', tmParams: { filterType: 'sprite', ...params } } }],
+      },
+    },
+  });
+
+  it('repeats the filter’s picture across the tile, sized, shifted and turned as Token Magic draws it', () => {
+    const [ground] = tilesOf([
+      tile(
+        sprite({
+          imagePath: 'modules/town/grass_tileable.webp',
+          repeat: true,
+          maintainScale: true,
+          scaleX: 2,
+          scaleY: 2,
+          translationX: -1,
+          translationY: 0.25,
+          rotation: 120,
+        }),
+      ),
+    ]);
+    expect(ground).toMatchObject({
+      repeat: { src: 'pack://town/modules/town/grass_tileable.webp', scale: 2, x: -1, y: 0.25, rotation: 120 },
+    });
+  });
+
+  it('leaves a tile alone when its sprite doesn’t repeat or its picture is missing', () => {
+    const lookup = (p: string) => (p.includes('gone') ? undefined : `pack://town/${p}`);
+    const tiles = foundryScene(
+      scene([
+        tile(sprite({ imagePath: 'modules/town/a.webp', repeat: false })),
+        tile(sprite({ imagePath: 'modules/town/gone.webp', repeat: true })),
+      ]),
+      lookup,
+    ).scene.tiles;
+    expect(tiles.map((t) => 'repeat' in t)).toEqual([false, false]);
+  });
+});
