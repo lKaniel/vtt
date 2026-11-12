@@ -37,6 +37,7 @@
           "packages/client/src/view3d/models3d.ts",
           "packages/client/src/view3d/overlay3d.ts",
           "packages/client/src/view3d/light3d.ts",
+          "packages/client/src/view3d/thumb-render.ts",
         ],
         "maxCrap": 160,
       },

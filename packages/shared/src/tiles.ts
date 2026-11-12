@@ -142,13 +142,18 @@ const holds = (r: Rect, [x, y]: Point): boolean => x >= r.x && y >= r.y && x <= 
 /** Tiles that take tiles dropped on them: not groups, not ground. */
 const canContain = (doc: Doc): boolean => !isGroup(doc) && doc.background !== true;
 
-/** The topmost container under `p`, leaving out `exclude` and what is in it. */
-export function containerAt(tiles: readonly Doc[], p: Point, exclude: ReadonlySet<string>): string | undefined {
+/** The topmost container under `p` that `mayHold` allows, leaving out `exclude` and what is in it. */
+export function containerAt(
+  tiles: readonly Doc[],
+  p: Point,
+  exclude: ReadonlySet<string>,
+  mayHold: (t: Doc) => boolean = () => true,
+): string | undefined {
   const out = new Set(withDescendants(tiles, [...exclude]));
   const order = tileOrder(tiles);
   for (let i = order.length - 1; i >= 0; i--) {
     const t = order[i]!;
-    if (!out.has(t.id) && canContain(t) && holds(ownRect(t), p)) return t.id;
+    if (!out.has(t.id) && canContain(t) && mayHold(t) && holds(ownRect(t), p)) return t.id;
   }
   return undefined;
 }
@@ -353,10 +358,11 @@ export function nestEdit(tiles: readonly Doc[], ids: readonly string[]): TileEdi
   return { creates: [], updates: merge(updates), deletes: [] };
 }
 
-/** Where a new tile goes: into the container under its middle, on top. */
-export function placeNewTile(tiles: readonly Doc[], doc: Doc): Doc {
+/** Where a new tile goes: into the container under its middle (one `mayHold` allows), on top. */
+export function placeNewTile(tiles: readonly Doc[], doc: Doc, mayHold?: (t: Doc) => boolean): Doc {
   const r = ownRect(doc);
-  const into = doc.background === true ? undefined : containerAt(tiles, [r.x + r.w / 2, r.y + r.h / 2], new Set());
+  const into =
+    doc.background === true ? undefined : containerAt(tiles, [r.x + r.w / 2, r.y + r.h / 2], new Set(), mayHold);
   const order = insertInto(tiles, into, [doc], doc.background === true ? 0 : Infinity);
   const keys = keysFor(order, new Set([doc.id]));
   return { ...doc, ...(into ? { parent: into } : {}), sort: keys.get(doc.id)! };

@@ -193,8 +193,41 @@ describe('drawing tiles', () => {
     session.levels.setView('loft');
     session.tiles.create({ x: 2500, y: 2500, w: 100, h: 100 });
     expect(lastOps()?.ops?.[0]?.doc).toMatchObject({ level: 'loft' });
-    session.tiles.createImage({ x: 0, y: 0, w: 100, h: 100 }, '/assets/bed.png');
+    session.tiles.stamp([{ x: 0, y: 0, w: 100, h: 100, src: '/assets/bed.png' }]);
     expect(lastOps()?.ops?.[0]?.doc).toMatchObject({ kind: 'image', level: 'loft' });
+  });
+
+  it('stamps several tiles as one undo step, each its own id, leaving the selection alone', () => {
+    ws.receive(gmWelcome());
+    session.tiles.stamp([
+      { x: 2400, y: 2400, w: 100, h: 100, src: 'pack://bw/props/barrel.webp', rotation: 30 },
+      { x: 2500, y: 2400, w: 100, h: 100, src: 'pack://bw/props/barrel.webp' },
+      { x: 2600, y: 2400, w: 200, h: 100, src: '/art/ui/blank.svg', model: { src: '/assets/wagon.glb', height: 5 } },
+    ]);
+    const ops = lastOps()?.ops ?? [];
+    expect(ops.map((o) => o.doc?.id)).toEqual(['barrel', 'barrel-2', 'wagon']);
+    expect(ops[0]?.doc).toMatchObject({ kind: 'image', rotation: 30, x: 2400 });
+    expect(ops[2]?.doc).toMatchObject({ model: { src: '/assets/wagon.glb', height: 5 } });
+    expect(new Set(ops.map((o) => o.doc?.sort)).size).toBe(3);
+    expect(session.editor.selection).toEqual([]);
+  });
+
+  it('stamps into a container it lands on, but never into a model', () => {
+    ws.receive(gmWelcome());
+    session.tiles.stamp([
+      { x: 1100, y: 1100, w: 100, h: 100, src: '/art/ui/blank.svg', model: { src: '/assets/bed.glb' } },
+    ]);
+    expect(lastOps()?.ops?.[0]?.doc?.parent).toBe('house');
+    const base = gmWelcome() as Extract<ServerMessage, { t: 'welcome' }>;
+    const bush = {
+      ...rect('bush', [2400, 2400, 200, 200], { sort: 'E' }),
+      kind: 'image',
+      src: '/a.webp',
+      model: { src: '/b.glb' },
+    };
+    ws.receive({ ...base, docs: { ...base.docs, 'main/tiles': [...base.docs!['main/tiles']!, bush] } });
+    session.tiles.stamp([{ x: 2450, y: 2450, w: 100, h: 100, src: '/assets/flower.webp' }]);
+    expect(lastOps()?.ops?.[0]?.doc?.parent).toBeUndefined();
   });
 
   it('makes a picture the map: a new ground picture at its own size, or the old one changed', () => {

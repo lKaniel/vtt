@@ -179,8 +179,21 @@ export function gameKey(session: Session, e: Key): void {
   if (e.defaultPrevented || isTyping(e.target)) return;
   if (runEditKey(session, e) || e.ctrlKey || e.metaKey) return;
   if (e.key === 'Escape' && backOutOfEditor(session)) return;
-  if (targetKey(session, e) || runEditorKey(session, e)) return;
+  if (targetKey(session, e) || stampKey(session, e) || runEditorKey(session, e)) return;
   if (!windowKey(session, e)) handleGameKey(session, e);
+}
+
+const STAMP_KEYS = ['stamp-left', 'stamp-right', 'stamp-smaller', 'stamp-bigger'];
+
+/** With the stamp brush in hand: Q and E turn what it stamps, - and = size it. */
+function stampKey(session: Session, e: Key): boolean {
+  const key = session.editor.stamp.armed ? actionOf(e, currentKeys(), STAMP_KEYS) : undefined;
+  if (!key) return false;
+  e.preventDefault();
+  if (key === 'stamp-left') session.editor.stamp.turnBy(-15);
+  else if (key === 'stamp-right') session.editor.stamp.turnBy(15);
+  else session.editor.stamp.sizeBy(key === 'stamp-bigger' ? 1.1 : 1 / 1.1);
+  return true;
 }
 
 /** C opens the sheet, E edits it, J opens the adventure book; true when the key was one of them. */

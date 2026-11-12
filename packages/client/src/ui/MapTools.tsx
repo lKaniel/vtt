@@ -20,6 +20,7 @@ import { EVERY_LEVEL } from '../session/session-levels.ts';
 import { t } from '../i18n/index.ts';
 import type { EditorTool } from '../session/session-editor.ts';
 import { LayersPanel } from './LayersPanel.tsx';
+import { StampTools } from './StampTools.tsx';
 import { Button } from './kit/button.tsx';
 import { Toggle } from './kit/toggle.tsx';
 import { SelectField } from './kit/select.tsx';
@@ -96,6 +97,7 @@ const TOOLS: Partial<Record<EditorMode, { tool: EditorTool; label: string; hint:
       label: 'Draw',
       hint: 'Drag a box to draw the tile picked below; on another tile it goes inside it. Shift: no snapping',
     },
+    { tool: 'stamp', label: t('stamp.title'), hint: t('stamp.hint') },
   ],
   walls: [
     SELECT,
@@ -181,7 +183,8 @@ function ModeTools({ session, sceneTools }: Readonly<{ session: Session; sceneTo
         </div>
       )}
       {session.editor.mode === 'lights' && <LightPresets session={session} />}
-      {session.editor.mode === 'tiles' && <TilePresets session={session} />}
+      {session.editor.mode === 'tiles' && session.editor.tool === 'stamp' && <StampTools session={session} />}
+      {session.editor.mode === 'tiles' && session.editor.tool !== 'stamp' && <TilePresets session={session} />}
       {session.editor.mode === 'tiles' && <LayersPanel session={session} />}
       {session.editor.mode === 'drawings' && <DrawStyle session={session} />}
       {gm && <LevelPicker session={session} />}

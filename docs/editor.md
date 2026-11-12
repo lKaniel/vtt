@@ -10,7 +10,7 @@ they drew.
 | Mode    | Key      | Tools                                               | Handles                                                                                    |
 | ------- | -------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Tokens  | T        | select                                              | none (drag a token to walk it)                                                             |
-| Tiles   | Shift+T  | select, draw                                        | 8 resize handles                                                                           |
+| Tiles   | Shift+T  | select, draw, stamp                                 | 8 resize handles                                                                           |
 | Walls   | W        | select, wall, door, window                          | both ends                                                                                  |
 | Lights  | L        | select, place                                       | bright ring, dim ring                                                                      |
 | Draw    | D        | select, box, ellipse, polygon, line, freehand, text | box: 8; polygon and line: each point, and the middle of each side (drag it to add a point) |
@@ -153,12 +153,32 @@ Tiles work like Figma's layers (rules in `shared/tiles.ts`, format in
 - Locked tiles (and what is in them) let clicks and marquees through.
 - The Draw tool drags out a rect tile of the preset picked under it: ground
   presets go under everything, the rest into the container under them.
-- From the Assets tab, a picture dragged (or clicked) onto the map becomes an
-  image tile at its own size; a 3D model becomes a model tile (a blank picture
-  with `model`), two squares across, drawn in the tiles mode as a teal box
-  with a cross so it can be found on the flat map. A picture's map button
-  makes it the scene's map (on the floor shown). An audio file becomes a
-  sound where it is let go (30 ft reach, on the floor shown).
+- The Assets tab browses the game's files and each pack's folder by folder
+  (`ui/asset-folders.ts`; a folder holding one folder opens straight
+  through it, Baileywiki's `zz-` texture folders are left out), and the
+  search looks through the folder you are in. 3D models show a picture of
+  themselves, drawn in the browser the first time they scroll into view
+  (`view3d/model-thumbs.ts`, kept in IndexedDB), unless their pack ships one.
+- A click on a picture or 3D model picks it up on the stamp brush (the
+  tiles mode's Stamp tool, `session.stamp`, maths in `editor/stamp.ts`): a
+  see-through ghost follows the pointer (in 3D, the model itself), every
+  click puts one down (on half squares; Shift: free) and a drag scatters
+  them along the way, one every width times Spacing, all in one undo step.
+  Q and E turn it 15°, - and = size it; Any turn and Mixed sizes turn and
+  size each one at random. Stamps don't change the selection, and never go
+  inside a model tile (a prop on a prop stays loose). What was stamped
+  lately sits at the top of the Assets tab.
+- Pictures come out as big as they are drawn for 100 px squares (Baileywiki's
+  and Foundry's), scaled to the scene's squares. 3D models stand at their
+  real size, one model unit 5 ft (Baileywiki's and 3D Canvas's scale), with
+  their height; Size scales both. A model tile turns its model and itself,
+  and its picture is the model seen from straight above
+  (`session/model-plans.ts`: drawn once, saved in the game's uploads as
+  `plan-<name>-<hash>.webp`), so a map built from models reads on the flat
+  map too. A file dragged onto the map is placed the same way, unturned.
+  An audio file becomes a sound where it is let go (30 ft reach, on the
+  floor shown). A picture's map button makes it the scene's map (on the
+  floor shown).
 - A map picture named with its size in squares the way map makers name
   them (`Tavern_30x20.webp`, `cave [24x18].jpg`) has "Match the grid to this
   map" in its menu: the scene's squares become the picture's (4200 px across

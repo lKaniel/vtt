@@ -18,6 +18,7 @@ import type { LightPreset } from '../play/map-tools.ts';
 import type { ItemTool } from '../editor/shape-tools.ts';
 import { mayUseMode } from './authorship.ts';
 import type { Tiles } from './session-tiles.ts';
+import { type Stamp, tableStamp } from './session-stamp.ts';
 
 // The map editor's state: which mode and tool, what is selected, and the open
 // context menu, as `session.editor`. Every change it makes goes out as
@@ -25,7 +26,7 @@ import type { Tiles } from './session-tiles.ts';
 // apply as for any edit.
 
 /** What a press does in the current mode: select (and move, reshape), draw, or measure with the ruler. */
-export type EditorTool = 'select' | 'tile' | 'wall' | 'door' | 'window' | 'place' | 'ruler' | ItemTool;
+export type EditorTool = 'select' | 'tile' | 'stamp' | 'wall' | 'door' | 'window' | 'place' | 'ruler' | ItemTool;
 
 /** A context menu on screen. */
 export interface OpenMenu {
@@ -41,6 +42,7 @@ export interface EditorHost {
   readonly you?: Player;
   readonly tokens: ReadonlyMap<string, TokenView>;
   readonly tiles: Tiles;
+  readonly packs: { readonly media: readonly { src: string }[]; upload(name: string, data: string): Promise<string> };
   canControl(token: TokenView): boolean;
   moveGrid(): MoveGrid;
 }
@@ -73,11 +75,16 @@ export class Editor {
   menu?: OpenMenu;
   /** The part of the map on screen, kept up to date by the map. */
   viewRect?: Rect;
+  /** The Stamp tool's brush: a picture or 3D model picked up in the Assets tab (session-stamp.ts). */
+  readonly stamp: Stamp;
 
   constructor(
     private readonly s: EditorHost,
     private readonly on: EditorEvents,
-  ) {}
+  ) {
+    const changed = () => on.editorChanged();
+    this.stamp = tableStamp({ editor: this, tiles: s.tiles, packs: s.packs, gridSize: () => on.gridSize(), changed });
+  }
 
   /** The centre of the screen, where Compendium buttons and pastes without a pointer place things. */
   viewCentre(): Point {

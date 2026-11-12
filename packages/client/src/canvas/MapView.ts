@@ -18,7 +18,7 @@ import { ChunkLayer } from './ChunkLayer.ts';
 import { CameraMotion } from './camera-motion.ts';
 import { EffectsLayer } from './EffectsLayer.ts';
 import { chunksInView, drawGrid } from './grid.ts';
-import { FogBrush } from './FogBrush.ts';
+import { MapBrushes } from './MapBrushes.ts';
 import { ItemLayer } from './ItemLayer.ts';
 import { dropToken, listenToDrops, openNote } from './sidebar-drops.ts';
 import { clickGround } from '../play/interact.ts';
@@ -58,7 +58,7 @@ export class MapView {
   /** The walk, attack and spell previews; the 3D view draws them again (view3d/overlay3d.ts). */
   readonly preview = new PathPreview();
   readonly editor: MapEditor;
-  private fogBrush: FogBrush;
+  private brushes: MapBrushes;
   private items: ItemLayer;
   private rulers: RulerLayer;
   private presence: PresenceLayer;
@@ -102,7 +102,7 @@ export class MapView {
     };
     this.editor = new MapEditor(session, (id) => this.tokens.placeOf(id));
     this.effects = new EffectsLayer(this.tokens, () => session.world?.gridSize ?? 100);
-    this.fogBrush = new FogBrush(session);
+    this.brushes = new MapBrushes(session);
     this.items = new ItemLayer(session);
     this.rulers = new RulerLayer(session);
     this.presence = new PresenceLayer(session, (id) => this.tokens.placeOf(id));
@@ -127,7 +127,7 @@ export class MapView {
     host.appendChild(this.app.canvas);
     this.ground.addChild(this.chunks.ground, this.grid, this.items.container, this.chunks.walls);
     this.camera.addChild(this.ground, this.tokens.container, this.chunks.roofs, this.effects.container);
-    this.overhead.addChild(this.preview.container, this.effects.labels, this.editor.container, this.fogBrush.container);
+    this.overhead.addChild(this.preview.container, this.effects.labels, this.editor.container, this.brushes.container);
     this.overhead.addChild(this.rulers.container, this.presence.container);
     // Previews are drawn over tokens; clicks must still reach the tokens below.
     this.overhead.eventMode = 'none';
@@ -178,7 +178,7 @@ export class MapView {
     stage.on('pointerup', (e) => this.onPointerUp(e));
     stage.on('pointerupoutside', (e) => {
       // Let go over a panel or off the window: a drag in the editor still lands where the pointer is.
-      if (this.touch?.up(e) || this.presence.up() || this.fogBrush.up()) return;
+      if (this.touch?.up(e) || this.presence.up() || this.brushes.up()) return;
       this.editor.pointerUp({ at: this.screenToWorld(e.global.x, e.global.y), button: e.button, mods: modsOf(e) });
       this.drag = undefined;
     });
@@ -256,7 +256,7 @@ export class MapView {
 
   /** Outside the tokens mode, clicks go to the editor instead of tokens and doors. */
   private onEditor(): void {
-    const editing = this.editor.active || this.fogBrush.active;
+    const editing = this.editor.active || this.brushes.active;
     this.tokens.container.eventMode = editing ? 'none' : 'passive';
     this.chunks.walls.eventMode = editing ? 'none' : 'passive';
     this.chunks.ground.eventMode = editing ? 'none' : 'passive';
@@ -342,7 +342,7 @@ export class MapView {
     drawGrid(this.grid, this.session.world!, view, this.zoom);
     this.editor.setZoom(this.zoom);
     this.items.setZoom(this.zoom);
-    this.fogBrush.setZoom(this.zoom);
+    this.brushes.setZoom(this.zoom);
     this.rulers.setZoom(this.zoom);
     this.presence.setZoom(this.zoom);
     this.tokens.showLabels(this.zoom >= LOD.labels);
@@ -373,7 +373,7 @@ export class MapView {
 
   private onPointerDown(e: FederatedPointerEvent): void {
     // A finger on open ground drags the map, and is the press it stands for if it lifts where it landed.
-    if (!this.touch?.pansFrom(e) || this.editor.active || this.fogBrush.active) return this.press(e);
+    if (!this.touch?.pansFrom(e) || this.editor.active || this.brushes.active) return this.press(e);
     this.session.editor.closeMenu();
     this.drag = pressAt([e.global.x, e.global.y], 0, { tap: true });
     this.cam.hold();
@@ -387,7 +387,7 @@ export class MapView {
     this.presence.down(p, at, e);
     // An aimed spell or readied attack keeps the left click for itself.
     const acting = !!(this.session.actions.armed ?? this.session.actions.aiming) && !this.editor.active;
-    if (!acting && this.fogBrush.down(at, e.button)) return;
+    if (!acting && this.brushes.down(at, e.button, e.shiftKey)) return;
     if (!acting && e.button === 0 && openNote(this.session, this.items, at)) return;
     if (!acting && this.editor.pointerDown({ at, button: e.button, mods: modsOf(e) })) return;
     this.drag = pressAt(p, e.button);
@@ -411,7 +411,7 @@ export class MapView {
     this.session.pointer = this.hoverPoint;
     this.presence.move(p, this.hoverPoint);
     this.editor.pointerMove(this.hoverPoint, modsOf(e));
-    this.fogBrush.move(this.hoverPoint);
+    this.brushes.move(this.hoverPoint, e.shiftKey);
     this.updatePreview(false);
   }
 
@@ -419,7 +419,7 @@ export class MapView {
     if (this.touch?.up(e)) return;
     if (this.drag?.tap && !this.drag.moved) this.press(e);
     const at = this.screenToWorld(e.global.x, e.global.y);
-    if (this.fogBrush.up()) return;
+    if (this.brushes.up()) return;
     this.editor.pointerUp({ at, button: e.button, mods: modsOf(e) });
     const drag = this.drag;
     this.drag = undefined;
@@ -441,7 +441,8 @@ export class MapView {
    * pointer (or of the ground).
    */
   private rightClick(onScreen: Point, at: Point): void {
-    if (this.editor.finish() || this.editor.cancel() || this.session.actions.cancelAction()) return;
+    if (this.editor.finish() || this.editor.cancel() || this.brushes.putDown() || this.session.actions.cancelAction())
+      return;
     const target = { ...this.editor.menuTarget(at), screen: onScreen };
     this.session.editor.openMenu(onScreen, menuFor(target, this.session));
   }

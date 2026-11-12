@@ -38,7 +38,7 @@ describe('key bindings', () => {
     expect(actionOf(press('T', true), {})).toBe('mode-tiles');
     expect(actionOf(press('R', true), {})).toBe('mode-ruler');
     expect(actionOf(press('3'), {})).toBe('hotbar-3');
-    expect(actionOf(press('q'), {})).toBeUndefined();
+    expect(actionOf(press('k'), {})).toBeUndefined();
   });
 
   it('follow the player’s own keys, and drop the default they replaced', () => {

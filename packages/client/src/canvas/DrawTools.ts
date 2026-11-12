@@ -23,7 +23,7 @@ export class DrawTools {
 
   get drawing(): boolean {
     const tool = this.session.editor.tool;
-    return this.session.editor.mode !== 'tokens' && tool !== 'select' && tool !== 'ruler';
+    return this.session.editor.mode !== 'tokens' && tool !== 'select' && tool !== 'ruler' && tool !== 'stamp';
   }
 
   /** A wall, tile or shape is half drawn. */

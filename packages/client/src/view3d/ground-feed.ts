@@ -47,6 +47,16 @@ export class GroundFeed {
     this.hovered = this.changed = true;
   }
 
+  /** Pokes the feed from the pointer on `surface` (a move only hovers); returns the way to stop. */
+  listen(surface: HTMLElement): () => void {
+    const poke = (e: Event) => (e.type === 'pointermove' ? this.hover() : this.poke());
+    const types = ['pointermove', 'pointerdown', 'pointerup', 'wheel'];
+    for (const type of types) surface.addEventListener(type, poke, { passive: true });
+    return () => {
+      for (const type of types) surface.removeEventListener(type, poke);
+    };
+  }
+
   /** Something in the 3D view changed (its size, the walls): it is drawn again. */
   touch(): void {
     this.changed = true;

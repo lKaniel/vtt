@@ -63,4 +63,18 @@ describe('when the 3D view draws', () => {
     f.ask(need);
     expect(asks).toEqual(['frame', 'redraw']);
   });
+
+  it('hears the pointer on the 3D view: a move draws the view, a press or the wheel the ground too, until let go', () => {
+    const { f } = feed();
+    const surface = new EventTarget() as HTMLElement;
+    const off = f.listen(surface);
+    f.due('a', 0.016);
+    surface.dispatchEvent(new Event('pointermove'));
+    expect(f.due('a', 0.016)).toBe(true);
+    surface.dispatchEvent(new Event('wheel'));
+    expect(f.due('a', 0.016)).toBe(true);
+    off();
+    surface.dispatchEvent(new Event('pointerdown'));
+    expect(f.due('a', 0.016)).toBe(false);
+  });
 });

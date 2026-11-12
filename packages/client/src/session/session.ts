@@ -121,7 +121,6 @@ export class Session {
     runScript: (doc, token) => this.scripts.run(doc, token),
     heard: (src, volume) => this.emit('sound', src, volume),
     reseat: (you) => (this.you = you),
-    createImageTile: (r, src) => this.tiles.createImage(r, src),
     selectionChanged: () => this.selectionChanged(),
     startPoint: () => this.world?.start ?? [0, 0],
     mayEdit: (refs) => mayEditRefs(this.you, this.docs, refs),
@@ -129,6 +128,7 @@ export class Session {
     editTargets: () => this.editTargets(),
     notice: (message) => this.showNotice(message),
     placeMedia: (src, at, size) => this.packs.placeMedia(src, at, size),
+    dropMedia: (src, at, size) => this.editor.stamp.drop(src, at, size),
   };
   /** Copy, paste, delete, undo and redo, and the edits shown before the server confirms them. */
   readonly edits: Edits = new Edits(this, this.ev);
