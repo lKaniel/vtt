@@ -1,4 +1,4 @@
-import { mkdir, readdir, rm } from 'node:fs/promises';
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { type CompendiumInfo, freeId, type MediaIndex, slugify } from '@vtt/core';
 import type { Prefab, SceneEntry, Tile } from '@vtt/shared';
@@ -8,6 +8,7 @@ import { lossLine } from './import-losses.ts';
 import { prefabOf, type Preset, presetOf } from './baileywiki-prefabs.ts';
 import { copyModuleMedia, type MediaRun, mediaLookup, readMassEditCache } from './baileywiki-media.ts';
 import { mergeBaileywikiManifest } from './baileywiki-pack.ts';
+import { terrainPicker, withTerrain } from './baileywiki-terrain.ts';
 import { readJson, writeJson } from '../store/json-files.ts';
 
 // The Baileywiki modules installed in a Foundry data folder, as the
@@ -41,6 +42,8 @@ export interface ModulesReport {
   scenes: number;
   prefabs: number;
   skipped: string[];
+  /** Every file the scenes and prefabs name that no imported module has (also in the pack's missing-files.txt). */
+  missing: string[];
 }
 
 interface FoundryPack {
@@ -206,11 +209,29 @@ async function importScenes(run: Run, m: Module): Promise<number> {
   return n;
 }
 
+/** One of each preset: Baileywiki ships some in two compendia, so a copy adds only its folders and tags. */
+function uniquePresets(found: Found[]): Found[] {
+  const byId = new Map<string, Found>();
+  for (const f of found) {
+    const seen = byId.get(f.p.id);
+    const tags = (a: string[], b: string[]) => [...new Set([...a, ...b])];
+    if (!seen) byId.set(f.p.id, f);
+    else
+      byId.set(f.p.id, {
+        ...seen,
+        p: { ...seen.p, tags: tags(seen.p.tags, f.p.tags) },
+        folders: tags(seen.folders, f.folders),
+      });
+  }
+  return [...byId.values()];
+}
+
 async function importPrefabs(run: Run, presets: Found[]): Promise<number> {
   const media = mediaLookup(run, run.missing);
+  const terrain = terrainPicker(run.have);
   let n = 0;
-  for (const { p, folders } of presets) {
-    const prefab = prefabOf(p, media);
+  for (const { p, folders } of uniquePresets(presets)) {
+    const prefab = withTerrain(prefabOf(p, media), terrain, media);
     if (!prefab) continue;
     const tags = [...new Set([...folders, ...(prefab.tags ?? [])])];
     const doc: Omit<Prefab, 'id'> = { ...prefab, ...(tags.length ? { tags } : {}) };
@@ -299,5 +320,8 @@ export async function importBaileywikiModules(
   await writeJson(join(dir, 'media-index.json'), index);
   await mergeBaileywikiManifest(dir, compendia, { mediaIndex: 'media-index.json' });
   const skipped = [...missingLines(run.missing), ...run.skipped];
-  return { pack: PACK, dir, modules: modules.map((m) => m.id), media, copied: run.copied, scenes, prefabs, skipped };
+  const missing = [...run.missing].sort((a, b) => a.localeCompare(b));
+  await writeFile(join(dir, 'missing-files.txt'), missing.map((m) => `${m}\n`).join(''));
+  const counts = { media, copied: run.copied, scenes, prefabs };
+  return { pack: PACK, dir, modules: modules.map((m) => m.id), ...counts, skipped, missing };
 }

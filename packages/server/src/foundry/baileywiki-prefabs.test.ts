@@ -58,6 +58,12 @@ describe('Mass Edit presets as prefabs', () => {
     expect(p.sounds).toEqual([expect.objectContaining({ src: 'pack://baileywiki/media/modules/bw/sounds/hum.ogg' })]);
   });
 
+  it('shows its first picture when it has no thumbnail of its own', () => {
+    const { img: _img, ...bare } = lamppost.flags['multi-token-edit'].preset as Record<string, unknown>;
+    const p = prefabOf(presetOf(journal(bare))!, media);
+    expect(p?.thumb).toBe('pack://baileywiki/media/modules/bw/maps/lamp-base.webp');
+  });
+
   it('makes a brush of a preset that spawns one of its tiles at random, and keeps how it varies', () => {
     const brush = journal({
       name: 'Brush: Stalagmites',

@@ -33,6 +33,7 @@ async function withBaileywikiPack(dir: string): Promise<void> {
     name: 'Baileywiki',
     license: 'private',
     compendia: [
+      { id: 'bw-scenes-2d', name: 'Baileywiki 2D scenes', type: 'scene', path: 'compendia/bw-scenes-2d', split: true },
       {
         id: 'bw-prefabs-2d',
         name: 'Baileywiki 2D prefabs',
@@ -43,10 +44,13 @@ async function withBaileywikiPack(dir: string): Promise<void> {
     ],
   });
   await put(join(pack, 'media/lamp.svg'), LAMP);
+  const crates = Array.from({ length: 40 }, (_, i) => prefab(`crate-${i}`, `Crate ${i}`, ['storage']));
   const lamps = [
     prefab('street-lamp', 'Street Lamp', ['lighting', 'town']),
     prefab('camp-fire', 'Camp Fire', ['camp']),
+    ...crates,
   ];
+  await put(join(pack, 'compendia/bw-scenes-2d/index.json'), []);
   await put(
     join(pack, 'compendia/bw-prefabs-2d/index.json'),
     lamps.map((p) => ({ id: p.id, name: p.name, tags: p.tags, thumb: 'pack://baileywiki/media/lamp.svg' })),
@@ -69,6 +73,10 @@ test('the GM finds a Baileywiki prefab by tag and places it, its light with it',
   await page.getByRole('button', { name: 'Turn the Baileywiki pack on' }).click();
   const library = page.getByRole('region', { name: 'Baileywiki library' });
   await expect(library.getByRole('button', { name: 'Camp Fire' })).toBeVisible();
+  // The prefabs show first, and a long list never squeezes the switch to the scenes away.
+  const prefabs = library.getByRole('radio', { name: '2D prefabs' });
+  await expect(prefabs).toBeChecked();
+  expect((await prefabs.boundingBox())!.height).toBeGreaterThan(12);
 
   await library.getByRole('button', { name: 'town', exact: true }).click();
   await expect(library.getByRole('button', { name: 'Camp Fire' })).toBeHidden();

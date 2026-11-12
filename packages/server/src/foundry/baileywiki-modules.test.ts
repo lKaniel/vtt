@@ -112,6 +112,15 @@ beforeEach(async () => {
       }),
       folder: 'F2',
     },
+    '!journal!P1copy': {
+      ...preset('P1', {
+        name: 'Street Lamp',
+        documentName: 'Tile',
+        tags: ['bw'],
+        data: [{ texture: { src: 'modules/baileywiki-maps/maps/lamp.webp' }, x: 100, y: 100, width: 100, height: 100 }],
+      }),
+      _id: 'P1copy',
+    },
     '!journal!P2': preset('P2', {
       name: 'Crate',
       documentName: 'Tile',
@@ -171,7 +180,10 @@ describe('importing the installed Baileywiki modules', () => {
     const scene = SceneEntrySchema.parse(await packs.compendiumDoc('baileywiki', 'bw-scenes-2d', 'gray-harbor-docks'));
     expect(scene.tiles[0]).toMatchObject({ src: 'pack://baileywiki/media/modules/baileywiki-maps/maps/docks.webp' });
     const lamp = PrefabSchema.parse(await packs.compendiumDoc('baileywiki', 'bw-prefabs-2d', 'street-lamp'));
-    expect(lamp.tags).toEqual(['lighting', 'town']);
+    expect(lamp.tags).toEqual(['lighting', 'town', 'bw']);
+    expect(packs.compendium('baileywiki', 'bw-prefabs-2d')?.docs.map((d) => (d as { id: string }).id)).toEqual([
+      'street-lamp',
+    ]);
     expect(lamp.lights).toHaveLength(1);
     const crate = PrefabSchema.parse(await packs.compendiumDoc('baileywiki', 'bw-prefabs-3d', 'crate'));
     expect(crate.tiles[0]).toMatchObject({
@@ -223,5 +235,9 @@ describe('importing the installed Baileywiki modules', () => {
   it('says which files the scenes and prefabs name that no module has', async () => {
     const report = await importBaileywikiModules(modules, packsDir);
     expect(report.skipped).toContain('1 file(s) from jb2a_patreon are not in the pack');
+    expect(report.missing).toEqual(['modules/jb2a_patreon/fire.webm']);
+    expect(await readFile(join(packsDir, 'baileywiki/missing-files.txt'), 'utf8')).toBe(
+      'modules/jb2a_patreon/fire.webm\n',
+    );
   });
 });
