@@ -1,6 +1,8 @@
-import { TOOLS } from '@vtt/system-dnd5e';
+import { contentWith, gameCompendia, TOOLS } from '@vtt/system-dnd5e';
 import { describe, expect, it } from 'vitest';
-import { askedOf, CHECK_OPTIONS, checkNamed, checkOf, checkValue } from './check-text.ts';
+import { askedOf, checkNamed, checkOf, checkOptions, checkValue } from './check-text.ts';
+
+const CHECK_OPTIONS = checkOptions();
 
 describe('check choices', () => {
   it('lists the six abilities, every skill under its ability, then the saving throws', () => {
@@ -49,5 +51,22 @@ describe('check choices', () => {
         () => true,
       ).map((t) => t.id),
     ).toEqual(['a', 'b']);
+  });
+});
+
+describe("the game's own skills", () => {
+  const psychic = { id: 'psychic-resistance', kind: 'skill', name: 'Psychic Resistance' };
+  const content = contentWith('2014', gameCompendia({}, [], [psychic]));
+
+  it('can be asked for, with Wisdom by default', () => {
+    expect(checkOptions(content)).toContainEqual({
+      value: 'wis:psychic-resistance',
+      label: 'Psychic Resistance (Wis)',
+    });
+  });
+
+  it('are found by name in text', () => {
+    expect(checkNamed('psychic resistance', content)).toEqual({ ability: 'wis', skill: 'psychic-resistance' });
+    expect(checkNamed('psychic resistance')).toBeUndefined();
   });
 });

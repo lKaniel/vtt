@@ -1,3 +1,4 @@
+import type { SkillDef } from './game-skills.ts';
 import type { GameSettings } from './game-settings.ts';
 import { z } from 'zod';
 import classAutomation from '../content/srd/class-automation.json' with { type: 'json' };
@@ -29,6 +30,8 @@ export interface Content {
   monsters: ReadonlyMap<string, Monster>;
   spells: ReadonlyMap<string, Spell>;
   classes: ReadonlyMap<string, Class>;
+  /** Skills the game adds to the 18 (game-skills.ts); missing: none. */
+  skills?: ReadonlyMap<string, SkillDef>;
   /** The game's settings (game-settings.ts); missing: the defaults. */
   settings?: GameSettings;
 }
