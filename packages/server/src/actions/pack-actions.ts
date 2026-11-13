@@ -9,6 +9,7 @@ import { gamePluginIssues, pluginInfos } from '../library/game-plugins.ts';
 import type { GameStore } from '../store/game-store.ts';
 import { filesUnder } from '../library/pack-store.ts';
 import { fetchPicture } from '../library/url-media.ts';
+import { saveBakeFile } from '../library/scene-bakes.ts';
 import { Refusal } from '../play/table.ts';
 
 // The GM's asset browser: the packs a game may use, the media of the game
@@ -18,7 +19,18 @@ import { Refusal } from '../play/table.ts';
 
 type PackMessage = Extract<
   ClientMessage,
-  { t: 'packs' | 'plugins' | 'media' | 'compendium' | 'compendiumDoc' | 'findAssets' | 'upload' | 'uploadUrl' }
+  {
+    t:
+      | 'packs'
+      | 'plugins'
+      | 'media'
+      | 'compendium'
+      | 'compendiumDoc'
+      | 'findAssets'
+      | 'upload'
+      | 'uploadUrl'
+      | 'bakeBlock';
+  }
 >;
 const KINDS = new Set([
   'packs',
@@ -29,6 +41,7 @@ const KINDS = new Set([
   'findAssets',
   'upload',
   'uploadUrl',
+  'bakeBlock',
 ]);
 
 export const isPackMessage = (msg: ClientMessage): msg is PackMessage => KINDS.has(msg.t);
@@ -66,6 +79,9 @@ export class PackActions {
       case 'upload':
       case 'uploadUrl':
         return this.uploaded(msg, () => this.media());
+      case 'bakeBlock':
+        await saveBakeFile(this.store, msg);
+        return { t: 'bakeSaved', ref: msg.ref };
     }
   }
 
@@ -74,6 +90,7 @@ export class PackActions {
    * and isn't shown the game's files in the answer.
    */
   private playerUpload(player: Player, msg: PackMessage): Promise<ServerMessage> {
+    if (msg.t === 'bakeBlock') throw new Refusal('Only the GM can optimise a scene');
     if (msg.t !== 'upload' && msg.t !== 'uploadUrl') throw new Refusal('Only the GM can browse packs');
     if (player.role === 'observer') throw new Refusal('An observer seat only watches');
     if (msg.t === 'upload' && !PICTURE.test(msg.name))
@@ -161,11 +178,13 @@ const PICTURE = /\.(png|jpe?g|webp|gif|avif)$/i;
 const FAILURES: Partial<Record<PackMessage['t'], string>> = {
   uploadUrl: 'Could not download that picture',
   upload: 'Could not save the file',
+  bakeBlock: 'Could not save the optimised scene',
 };
 const failure = (kind: PackMessage['t']) => FAILURES[kind] ?? 'Could not read the packs';
 
 export async function gameMedia(store: GameStore): Promise<MediaEntry[]> {
-  const own = await filesUnder(join(store.dir, 'assets'));
+  // An optimised scene's picture blocks (scene-bakes.ts) are no media to pick.
+  const own = await filesUnder(join(store.dir, 'assets'), '', ['baked']);
   const entries = own.flatMap((rel) => mediaEntry(`/assets/${rel}`, rel) ?? []);
   const packs = store.packs;
   if (!packs) return withThumbnails(entries);

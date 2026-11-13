@@ -140,6 +140,8 @@ export type EngineClientMessage =
   | { t: 'upload'; name: string; data: string; ref?: string }
   /** GM: the server downloads a picture from the web into the game's uploads. */
   | { t: 'uploadUrl'; url: string; ref?: string }
+  /** GM: one file of a scene's bake (scene-bake.ts): a block of its picture pyramid, or the manifest last. */
+  | { t: 'bakeBlock'; scene: string; bake: string; path: string; data: string; ref: string }
   /** Roll on a roll table into chat (players: tables shared with them); `gmOnly` whispers the result to the GM. */
   | { t: 'rollTable'; table: string; gmOnly?: boolean }
   /** Run a macro you may see: its chat lines are posted as if you typed them, said by `token` when you control it. */
@@ -220,6 +222,8 @@ export type EngineServerMessage =
   | { t: 'plugins'; plugins: PluginInfo[]; problems: string[] }
   /** The media list; after an upload, where the file was saved (`ref` from the upload). */
   | { t: 'media'; entries: MediaEntry[]; uploaded?: { ref?: string; src: string } }
+  /** GM: a file of a scene's bake was saved (`ref` from the `bakeBlock`). */
+  | { t: 'bakeSaved'; ref: string }
   | { t: 'compendium'; pack: string; compendium: string; docs: unknown[] }
   | { t: 'compendiumDoc'; pack: string; compendium: string; id: string; doc: unknown }
   /** What `findAssets` found: per query, how many matched and the first of them. */

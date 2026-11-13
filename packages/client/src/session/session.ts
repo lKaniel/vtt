@@ -1,4 +1,4 @@
-import { type DocRef, DocStore, type PluginLoad } from '@vtt/core';
+import { DocStore, type PluginLoad } from '@vtt/core';
 import {
   canControl,
   canEdit,
@@ -41,7 +41,7 @@ import { TileAsks } from './session-asks.ts';
 import { View3DSwitch } from './session-view3d.ts';
 import { ThroughWalls } from './session-through-walls.ts';
 import { Editor, type EditorEvents } from './session-editor.ts';
-import { mayEditRefs } from './authorship.ts';
+import { editTargets, mayEditRefs } from './authorship.ts';
 import { Requests } from './session-requests.ts';
 import { type EditEvents, Edits } from './session-edits.ts';
 import { WorldTime } from './session-time.ts';
@@ -58,6 +58,7 @@ import { Piles } from './session-piles.ts';
 import { Inspecting } from './session-inspect.ts';
 import { Cards } from './session-cards.ts';
 import { Folders } from './session-folders.ts';
+import { SceneBake } from './session-bake.ts';
 import { ScriptHost } from '../scripting/script-api.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
@@ -125,7 +126,7 @@ export class Session {
     startPoint: () => this.world?.start ?? [0, 0],
     mayEdit: (refs) => mayEditRefs(this.you, this.docs, refs),
     docsChanged: () => this.editor.docsChanged(),
-    editTargets: () => this.editTargets(),
+    editTargets: () => editTargets(this),
     notice: (message) => this.showNotice(message),
     placeMedia: (src, at, size) => this.packs.placeMedia(src, at, size),
     dropMedia: (src, at, size) => this.editor.stamp.drop(src, at, size),
@@ -163,6 +164,8 @@ export class Session {
   /** The character creator or level up, open over the table. */
   readonly builder = new Builder(this.ev);
   readonly tiles: Tiles = new Tiles(this, this.ev);
+  /** The GM's Optimise and Edit for a 2D scene; the bake everyone draws (session-bake.ts). */
+  readonly bake: SceneBake = new SceneBake(this, this.ev);
   readonly editor: Editor = new Editor(this, this.ev);
   /** The parts that take messages, the welcome and departures. */
   private readonly parts: SessionPart[] = [
@@ -179,6 +182,7 @@ export class Session {
     this.asks,
     this.actions.pick,
     this.actions.rolls,
+    this.bake,
   ];
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;
@@ -320,14 +324,6 @@ export class Session {
     return !!this.you && canControl(token, this.you);
   }
 
-  private editTargets(): DocRef[] {
-    if (this.editor.selection.length) return this.editor.selection.map(refOf);
-    if (this.selected) return [{ coll: `${this.scene}/tokens`, id: this.selected }];
-    const sheet = this.sheets.current;
-    if (sheet?.kind === 'actor') return [{ coll: 'actors', id: sheet.id }];
-    return [];
-  }
-
   private gridSize = (): number => this.world?.gridSize ?? 100;
 
   moveGrid = (): MoveGrid => (this.world && sceneLattice(this.world)) ?? this.gridSize();
@@ -391,6 +387,7 @@ export class Session {
         return true;
       case 'error':
         if (msg.ref) this.packs.failed(msg.ref, msg.message);
+        this.bake.receive(msg);
         this.showError(msg.message);
         return false;
       case 'reactionOffer':

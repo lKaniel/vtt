@@ -125,6 +125,12 @@ shown, and new tiles, walls, lights, drawings, notes, regions and sounds go
 on it (`session.levels.placing`); the inspector's Level moves them. Scenes aren't in `EDIT_KINDS`: a scene isn't a placeable, and the
 list's buttons build their own ops.
 
+On a flat scene the top bar's Optimise bakes the still tiles into a
+picture pyramid per floor and shows that instead (`session/session-bake.ts`;
+drawing in `canvas/scene-bake-job.ts`, which tiles go in
+`canvas/bake-plan.ts`, showing in `canvas/BakedGround.ts`); Edit goes back
+to every tile drawn. See "Optimised scenes" in game-format.md.
+
 ## Fog of war
 
 The GM's Fog row (bottom left, on scenes with fog of war) has Reveal and

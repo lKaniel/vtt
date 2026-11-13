@@ -32,13 +32,13 @@ interface Installed {
   art: ArtIndex;
 }
 
-/** Every file under `dir`, as paths relative to it with forward slashes. */
-export async function filesUnder(dir: string, prefix = ''): Promise<string[]> {
+/** Every file under `dir`, as paths relative to it with forward slashes; folders named in `skip` (relative paths) are left out. */
+export async function filesUnder(dir: string, prefix = '', skip: readonly string[] = []): Promise<string[]> {
   const entries = await readdir(join(dir, prefix), { withFileTypes: true }).catch(() => []);
   const out: string[] = [];
   for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     const rel = prefix ? `${prefix}/${e.name}` : e.name;
-    if (e.isDirectory()) out.push(...(await filesUnder(dir, rel)));
+    if (e.isDirectory()) out.push(...(skip.includes(rel) ? [] : await filesUnder(dir, rel, skip)));
     else if (e.isFile()) out.push(rel);
   }
   return out;

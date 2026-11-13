@@ -79,7 +79,9 @@ export function duplicateSceneOps(src: Source, from: string): { id: string; ops:
   const scene = src.get(SCENES, from);
   if (!scene) return { id: from, ops: [] };
   const id = freeSceneId(src, `${from}-copy`);
-  const copy: Doc = { ...scene, id, rev: 0, name: `${nameOf(scene)} (copy)`, sort: lastKey(src) };
+  // A bake's pictures are the original's: the copy starts unoptimised.
+  const { bake: _bake, optimised: _optimised, ...settings } = scene;
+  const copy: Doc = { ...settings, id, rev: 0, name: `${nameOf(scene)} (copy)`, sort: lastKey(src) };
   const refs: DocRef[] = SCENE_COLLECTIONS.flatMap((coll) =>
     src.all(`${from}/${coll}`).map((d) => ({ coll: `${from}/${coll}`, id: d.id })),
   );

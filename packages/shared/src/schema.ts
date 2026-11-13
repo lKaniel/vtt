@@ -127,6 +127,13 @@ export const SceneSettingsSchema = z.object({
   view: z.enum(['2d', '3d']).optional(),
   /** How a 3D scene looks in the 3D view (docs/view3d.md). */
   view3d: View3DSettingsSchema.optional(),
+  /** The scene's last bake: its still tiles drawn into a picture pyramid in assets/baked/<scene>/<bake>/ (scene-bake.ts). */
+  bake: z
+    .string()
+    .regex(/^[a-z0-9-]{1,40}$/)
+    .optional(),
+  /** The map shows the bake instead of the tiles in it (the GM's Optimise); missing or false: edit mode, every tile drawn. */
+  optimised: z.boolean().optional(),
 });
 
 /** The table settings the rules and the client use: the game's, plus those of the scene being played. */

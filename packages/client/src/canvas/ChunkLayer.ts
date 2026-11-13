@@ -18,8 +18,9 @@ import { imageTile, type TileView } from './tile-draw.ts';
 import { ObjectGlow } from './object-glow.ts';
 import { type RoofEyes, roofsOver, roofWatchers } from './tile-motion.ts';
 import { flatUnder3d } from '../view3d/content3d.ts';
-import { bakeRuns, roofStill, tileBounds, tileStill } from './tile-bake.ts';
+import { bakeRuns, roofStill, tileBounds, tilePad, tileStill } from './tile-bake.ts';
 import { TileBaker } from './TileBaker.ts';
+import { BakedGround } from './BakedGround.ts';
 
 const DOOR_COLORS = { closed: 0xd08a3a, open: 0x7ac06a, locked: 0xd04a4a } as const;
 const DOOR_HANDLE_RADIUS = 11;
@@ -59,8 +60,6 @@ interface ChunkView {
 
 /** Wall shadows draw over every tile. */
 const SHADOW_Z = 1e9;
-/** How far past its rectangle a tile may draw (rough edges, see art/ground.ts). */
-const EDGE_PAD = 24;
 
 /** Draws the tiles, walls and doors of every loaded chunk. */
 export class ChunkLayer {
@@ -74,6 +73,8 @@ export class ChunkLayer {
   private views = new Map<string, ChunkView>();
   private baker = new TileBaker();
   private roofBaker = new TileBaker();
+  /** An optimised scene's floor pictures, in place of the tiles in them. */
+  private readonly baked: BakedGround;
   /** Tiles came or went since the floor was last stacked. */
   private restack = false;
   /** A roof started or stopped fading. */
@@ -85,6 +86,7 @@ export class ChunkLayer {
     private placeOf: (id: string) => { at: Point } | undefined,
   ) {
     this.walls.addChild(this.glow.outline);
+    this.baked = new BakedGround(session);
   }
 
   /** The floors last drawn, to draw again when another is shown. */
@@ -102,9 +104,10 @@ export class ChunkLayer {
       tileView: (id) => this.tileView(id),
     });
     const { shown, current } = this.session.levels;
-    const floor = `${current ?? ''}|${shown?.join(' ') ?? ''}|${this.session.view3d.on}`;
+    const floor = `${current ?? ''}|${shown?.join(' ') ?? ''}|${this.session.view3d.on}|${this.session.bake.version}`;
     if (floor !== this.floor) {
       this.floor = floor;
+      this.baked.sync();
       for (const [key, chunk] of this.session.chunks) this.draw(key, chunk);
       floorShown();
     }
@@ -113,12 +116,14 @@ export class ChunkLayer {
     if (this.restackRoofs) this.stackRoofs();
     this.baker.tick();
     this.roofBaker.tick();
+    this.baked.tick();
   }
 
   /** The part of the map on screen, `zoom` its screen pixels per map pixel (before the device's). */
   setView(view: Rect, zoom: number, renderer: Renderer): void {
     this.baker.setView(view, zoom * renderer.resolution, renderer);
     this.roofBaker.setView(view, zoom * renderer.resolution, renderer);
+    this.baked.setView(view, zoom * renderer.resolution);
   }
 
   /** A roof that starts fading comes out of the bake; one fully drawn again goes back in. */
@@ -140,7 +145,7 @@ export class ChunkLayer {
     stackInto(
       this.ground,
       this.baker,
-      [...this.views.values()].flatMap((v) => v.tiles),
+      [...this.views.values()].flatMap((v): GroundTile[] => v.tiles).concat(this.baked.entries()),
     );
   }
 
@@ -156,6 +161,7 @@ export class ChunkLayer {
   destroy(): void {
     this.baker.destroy();
     this.roofBaker.destroy();
+    this.baked.destroy();
   }
 
   private eyes(): RoofEyes {
@@ -187,6 +193,11 @@ export class ChunkLayer {
     return { ...chunk, tiles, walls: chunk.walls.filter((w) => onLevel(w, current)) };
   }
 
+  /** On an optimised scene, the chunk without the tiles its floor pictures show. */
+  private unbaked(chunk: Chunk): Chunk {
+    return { ...chunk, tiles: chunk.tiles.filter((t) => !this.baked.covers(t)) };
+  }
+
   /** Under the 3D view, the chunk without what stands in 3D (view3d/content3d.ts). */
   private flat(chunk: Chunk): Chunk {
     if (!this.session.view3d.on) return chunk;
@@ -195,7 +206,7 @@ export class ChunkLayer {
 
   draw(key: string, whole: Chunk): void {
     this.remove(key);
-    const chunk = this.flat(this.onFloor(whole));
+    const chunk = this.unbaked(this.flat(this.onFloor(whole)));
     const world = this.session.world;
     const ctx = { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 };
     const gm = this.session.isGm();
@@ -292,18 +303,12 @@ function drawTiles(
     drawn.root.zIndex = z;
     dress(drawn.root, tile);
     if (drawn.tick) out.moving.push(drawn);
-    const bounds = tileBounds(tile, padOf(tile));
+    const bounds = tileBounds(tile, tilePad(tile));
     const placed = { id: tile.id, z, root: drawn.root, bounds, loaded: drawn.loaded };
     if (tile.kind === 'image' && tile.overhead) out.roofs.push({ ...placed, tile, still: roofStill(tile, gm, 1) });
     else out.tiles.push({ ...placed, still: tileStill(tile, gm) });
   });
   return out;
-}
-
-/** How far past its rectangle a tile draws: rough edges, and its drop shadow. */
-function padOf(tile: ChunkTile): number {
-  const shadow = tile.kind === 'image' ? tile.shadow : undefined;
-  return EDGE_PAD + (shadow ? shadow.offset + shadow.blur * 3 : 0);
 }
 
 /** Stacks tiles into `layer` in draw order: runs of still ones baked by `baker`, live ones between them. */
