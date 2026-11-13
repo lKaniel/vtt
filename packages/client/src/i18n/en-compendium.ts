@@ -51,4 +51,11 @@ export const EN_COMPENDIUM = {
   'compendium.addToActors': 'Add to Actors',
   'compendium.giveTo': 'Give to {name}',
   'compendium.selectToGive': 'Select a creature to give it',
+  'compendium.skills': 'Campaign skills',
+  'compendium.skillName': 'New skill name',
+  'compendium.skillAbility': 'Ability',
+  'compendium.newSkill': 'New skill',
+  'compendium.noSkills': 'No campaign skills yet. Every character sheet in this game lists them after the 18.',
+  'compendium.skillAbilityOf': 'Ability {name} uses',
+  'compendium.deleteSkill': 'Delete {name}',
 } as const;

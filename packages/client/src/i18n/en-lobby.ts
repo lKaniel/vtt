@@ -26,8 +26,13 @@ export const EN_BAILEYWIKI = {
 // The Baileywiki library in the GM's Assets tab (BaileywikiLibrary.tsx).
 export const EN_BW_LIBRARY = {
   'bwLibrary.title': 'Baileywiki library',
-  'bwLibrary.noPack':
-    'No Baileywiki pack on this server yet. Import the modules installed in Foundry with pnpm import-baileywiki, or sign in below to download scenes.',
+  'bwLibrary.get':
+    'Baileywiki’s prefabs and tiles aren’t on this server yet. Download their library: about 10,000 prefabs, 2D and 3D, found by tags. Each picture comes from Baileywiki the first time it is used.',
+  'bwLibrary.download': 'Download Baileywiki’s library',
+  'bwLibrary.downloading': 'Downloading the library (a minute or two)…',
+  'bwLibrary.got': 'Got {n} prefabs.',
+  'bwLibrary.signInFirst': 'Sign in to Baileywiki below first.',
+  'bwLibrary.account': 'Account and online scenes',
   'bwLibrary.off': 'The Baileywiki pack is off for this game.',
   'bwLibrary.turnOn': 'Turn the Baileywiki pack on',
   'bwLibrary.empty': 'The Baileywiki pack has no prefabs or scenes yet.',

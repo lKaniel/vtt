@@ -101,8 +101,11 @@ export type Track = z.infer<typeof TrackSchema>;
 
 export const PlaylistSchema = z.object({
   ...sidebar,
-  /** sequence: one track after another; shuffle: in a random order; together: every track at once (ambience). */
-  mode: z.enum(['sequence', 'shuffle', 'together']).default('sequence'),
+  /**
+   * sequence: one track after another; shuffle: in a random order; together: every track at once (ambience);
+   * board: a soundboard, never played as a whole, each track plays once for everyone when the GM presses it.
+   */
+  mode: z.enum(['sequence', 'shuffle', 'together', 'board']).default('sequence'),
   /** 0 to 1, times each track's volume; default 1. */
   volume: z.number().min(0).max(1).optional(),
   tracks: z.array(TrackSchema).default([]),

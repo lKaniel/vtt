@@ -707,7 +707,10 @@ A roll table has `results` (`text`, `weight` default 1, `drawn`), and
 has `mode` (`"sequence"`, `"shuffle"`, `"together"`), `volume`, and
 `tracks` (`id`, `name`, `src`, `volume`, `repeat`, `playing`); players are
 sent the playlists that are playing, and the GM's client moves on to the
-next track when one ends.
+next track when one ends. A playlist with `mode: "board"` is a soundboard
+(Foundry's "soundboard only"): it never plays as a whole; the GM presses one
+of its tracks and the server sends that sound once to every seat, on every
+scene (`playSound`). Sounds uploaded from the board go to `assets/uploads/`.
 
 A macro (`macros/<id>.json`) is a `kind` (`"chat"`) and a `command`: chat
 lines, one per line, posted as if typed, so `/r 1d20+5 stealth` rolls. It may
@@ -1085,6 +1088,17 @@ feature's sheet row. With `atCast` any spell that fits is picked as it is
 cast (a 2024 cleric's Divine Intervention); `noReactions` leaves out
 reaction spells. Mystic Arcanum, Spell Mastery, Signature Spells, 2024
 Natural Recovery and 2024 Divine Intervention use it.
+
+**Campaign skills.** A homebrew file with `"kind": "skill"` adds a skill to
+the 18 for this game only (a campaign's Psychic Resistance):
+`{ "id": "psychic-resistance", "kind": "skill", "name": "Psychic Resistance", "ability": "wis", "ownership": { "default": "observer" } }`.
+`ability` is the one it rolls with (Wisdom when missing). Every sheet lists
+it after the 18 with its bonus and passive score, a character is trained in
+it like any skill (its id in `stats.skills` or `stats.expertise`), and the
+GM's Request check and journal check links know it. The GM makes them in
+the Compendium tab (Homebrew, Campaign skills); shared ones reach the
+players' sheets. A pack's `skill` compendium adds skills the same way
+(`game-skills.ts`).
 
 **Homebrew items and spells.** A homebrew file with `"kind": "spell"` has
 the fields of an SRD spell; one with `"kind": "item"` keeps the item's own

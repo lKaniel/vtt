@@ -2,7 +2,7 @@ import { isGm, type Player, type Point, type RollMode } from '@vtt/shared';
 import type { ServerMessage } from '@vtt/system-dnd5e';
 
 // Where everyone is at the table, live: rulers (shared/ruler.ts), cursors and
-// pings, and the tokens each player targets. None of it is a document: a client sends it as the pointer moves
+// pings, the tokens each player targets, and the GM's soundboard sounds. None of it is a document: a client sends it as the pointer moves
 // and the others on its scene are shown it straight away. Nothing is saved
 // and nothing can be undone. A ruler or cursor goes when its player puts it
 // away, leaves, or is moved to another scene. Targets are only shown to
@@ -30,9 +30,10 @@ export type PresenceMessage =
   | { t: 'cursor'; at: Point | null }
   | { t: 'ping'; at: Point; pull?: boolean }
   | { t: 'target'; tokens: string[] }
-  | { t: 'rollMode'; mode: RollMode };
+  | { t: 'rollMode'; mode: RollMode }
+  | { t: 'playSound'; src: string; volume?: number };
 
-const KINDS = new Set(['ruler', 'cursor', 'ping', 'target', 'rollMode']);
+const KINDS = new Set(['ruler', 'cursor', 'ping', 'target', 'rollMode', 'playSound']);
 
 export function isPresenceMessage(msg: { t: string }): msg is PresenceMessage {
   return KINDS.has(msg.t);
@@ -48,6 +49,7 @@ export class Presence<C extends PresenceSeat> {
     if (msg.t === 'ruler') return this.lay(c, msg.points);
     if (msg.t === 'cursor') return this.point(c, msg.at);
     if (msg.t === 'target') return this.target(c, msg.tokens);
+    if (msg.t === 'playSound') return this.sound(c, msg.src, msg.volume);
     if (msg.t === 'rollMode') {
       c.rollMode = msg.mode;
       return;
@@ -92,6 +94,12 @@ export class Presence<C extends PresenceSeat> {
   private ping(c: C, at: Point, pull?: boolean): void {
     if (pull && !isGm(c.player)) return this.send(c, { t: 'error', message: 'Only the GM can pull everyone’s view.' });
     this.tell(c, c.scene, { t: 'ping', ...who(c.player), at, ...(pull ? { pull: true } : {}) });
+  }
+
+  /** The GM's soundboard: everyone at the table, the GM too, on any scene, hears `src` once. */
+  private sound(c: C, src: string, volume?: number): void {
+    if (!isGm(c.player)) return this.send(c, { t: 'error', message: 'Only the GM plays the soundboard.' });
+    for (const other of this.clients()) this.send(other, { t: 'sound', src, ...(volume !== undefined && { volume }) });
   }
 
   /** Shows everyone else on `scene` what `c` did. */

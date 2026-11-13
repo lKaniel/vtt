@@ -48,4 +48,11 @@ describe('finding the files a Baileywiki scene names', () => {
     expect(missing).toContain('modules/jb2a_patreon/fire.webm');
     expect(missing).not.toContain('modules/baileywiki-maps-premium-towns/sounds/aura1.mp3');
   });
+
+  it('names a file it hasn’t got when the server can fetch it', () => {
+    const online = mediaLookup({ have, pack: 'baileywiki' }, new Set(), (p) => p.startsWith('modules/baileywiki-'));
+    expect(online('modules/baileywiki-maps/maps/new.webp')).toBe(ref('modules/baileywiki-maps/maps/new.webp'));
+    expect(online('modules/baileywiki-maps/maps/docks.webp')).toBe(ref('modules/baileywiki-maps/maps/docks.webp'));
+    expect(online('modules/jb2a_patreon/fire.webm')).toBeUndefined();
+  });
 });

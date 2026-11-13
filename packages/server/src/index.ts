@@ -1,10 +1,14 @@
-import { createServer } from 'node:http';
-import { join, resolve } from 'node:path';
+import { createServer, type IncomingMessage } from 'node:http';
+import { dirname, join, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
 import { apiHandler } from './http/api.ts';
 import { CharacterStore } from './library/characters.ts';
 import { GameHub } from './library/game-hub.ts';
 import { httpHandler } from './http/http.ts';
+import { sessionToken } from './http/http-json.ts';
+import { BaileywikiAccount } from './foundry/baileywiki-account.ts';
+import { BAILEYWIKI_URL } from './foundry/baileywiki-client.ts';
+import { BaileywikiFiles } from './foundry/baileywiki-files.ts';
 import { OffsiteBackups } from './library/offsite-backups.ts';
 import { offsiteFromEnv } from './library/offsite-config.ts';
 import { migrateAccounts } from './migrate/migrate-accounts.ts';
@@ -54,9 +58,22 @@ const assetsDir = (game?: string) => {
   return dir && join(dir, 'assets');
 };
 
+const baileywikiAccount = new BaileywikiAccount(
+  dirname(hub.packs.dir),
+  process.env.VTT_BAILEYWIKI_URL ?? BAILEYWIKI_URL,
+);
+const baileywikiFiles = new BaileywikiFiles(baileywikiAccount, hub.packs.dir);
+/** Baileywiki's files are fetched only for someone at a table or in Setup, never a passer-by. */
+const packFetch = (pack: string, path: string, req: IncomingMessage) => {
+  const session = sessions.get(sessionToken(req));
+  const known = !!session && (session.admin || Object.keys(session.seats).length > 0);
+  return known ? baileywikiFiles.fetch(pack, path) : Promise.resolve(undefined);
+};
+
 const handleRequest = httpHandler({
   assetsDir,
   packFile: (pack, path) => hub.packs.mediaFile(pack, path),
+  packFetch,
   pluginFile: (plugin, path) => hub.plugins.file(plugin, path),
   clientDir: clientDist,
   api: apiHandler({
@@ -65,6 +82,8 @@ const handleRequest = httpHandler({
     hub,
     mcpKey: process.env.VTT_MCP_KEY,
     baileywiki: process.env.VTT_BAILEYWIKI_URL,
+    baileywikiModule: process.env.VTT_BAILEYWIKI_MODULE,
+    baileywikiAccount,
     offsite,
   }),
 });

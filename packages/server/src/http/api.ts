@@ -17,6 +17,7 @@ import { LobbyRoutes } from './lobby-api.ts';
 import { PackRoutes } from './pack-api.ts';
 import { PackUploadError } from '../library/pack-uploads.ts';
 import { BaileywikiError } from '../foundry/baileywiki-client.ts';
+import type { BaileywikiAccount } from '../foundry/baileywiki-account.ts';
 import { mcpHandler } from '../mcp/mcp-http.ts';
 import { BackupError } from '../library/backups.ts';
 import { OffsiteError, type OffsiteBackups } from '../library/offsite-backups.ts';
@@ -37,6 +38,10 @@ export interface ApiDeps {
   mcpKey?: string;
   /** Baileywiki's content server; content.baileywiki.com unless a test runs its own. */
   baileywiki?: string;
+  /** The Content Module's manifest; foundrymods.com's unless a test serves its own. */
+  baileywikiModule?: string;
+  /** The server's Baileywiki sign-in, when the server shares it with the pack files (index.ts). */
+  baileywikiAccount?: BaileywikiAccount;
   /** Nightly backups off the server, when it has backup storage. */
   offsite?: OffsiteBackups;
 }

@@ -105,6 +105,9 @@ export const api = {
   /** Downloads picked scenes into the server's Baileywiki pack; hands them back for a game to add. */
   baileywikiImport: (scenes: { compendium: string; id: string }[], game?: string) =>
     call<BaileywikiImportReport>('POST', bw('/import', game), { scenes }),
+  /** Downloads Baileywiki's library (their Content Module's prefabs and scene browsers) into the pack. */
+  baileywikiLibrary: (game?: string) =>
+    call<{ prefabs: number; scenes: number; skipped: string[] }>('POST', bw('/library', game)),
   /** Admin: a new game from an exported zip. */
   importZip: async (file: Blob) => (await call<{ game: GameSummary }>('POST', '/api/games/import-zip', file)).game,
 

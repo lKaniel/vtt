@@ -1,4 +1,12 @@
-import { ABILITIES, type Ability, abilityName, type CheckKind, SKILLS, skillName, TOOLS } from '@vtt/system-dnd5e';
+import {
+  ABILITIES,
+  type Ability,
+  abilityName,
+  type CheckKind,
+  type Content,
+  gameSkills,
+  TOOLS,
+} from '@vtt/system-dnd5e';
 
 // How the check pickers name and encode a check: "dex" for an ability
 // check, "dex:stealth" for a skill check, "dex:tool:thieves-tools" for a
@@ -6,18 +14,26 @@ import { ABILITIES, type Ability, abilityName, type CheckKind, SKILLS, skillName
 
 const short = (a: Ability) => a.charAt(0).toUpperCase() + a.slice(1);
 
-export const CHECK_OPTIONS: readonly { value: string; label: string }[] = [
-  ...ABILITIES.map((a) => ({ value: a, label: abilityName(a) })),
-  ...Object.entries(SKILLS).map(([skill, a]) => ({
-    value: `${a}:${skill}`,
-    label: `${skillName(skill)} (${short(a)})`,
-  })),
-  ...Object.entries(TOOLS).map(([tool, { name, ability }]) => ({
-    value: `${ability}:tool:${tool}`,
-    label: `${name} (${short(ability)})`,
-  })),
-  ...ABILITIES.map((a) => ({ value: `${a}:save`, label: `${abilityName(a)} save` })),
-];
+interface Option {
+  value: string;
+  label: string;
+}
+
+/** Every check the GM can ask for: abilities, the 18 skills and the game's own, tools, saves. */
+export function checkOptions(content: Pick<Content, 'skills'> = {}): Option[] {
+  return [
+    ...ABILITIES.map((a) => ({ value: a, label: abilityName(a) })),
+    ...gameSkills(content).map(({ id, name, ability }) => ({
+      value: `${ability}:${id}`,
+      label: `${name} (${short(ability)})`,
+    })),
+    ...Object.entries(TOOLS).map(([tool, { name, ability }]) => ({
+      value: `${ability}:tool:${tool}`,
+      label: `${name} (${short(ability)})`,
+    })),
+    ...ABILITIES.map((a) => ({ value: `${a}:save`, label: `${abilityName(a)} save` })),
+  ];
+}
 
 export function checkOf(value: string): CheckKind {
   const [ability, skill, tool] = value.split(':') as [Ability, string | undefined, string | undefined];
@@ -34,11 +50,11 @@ export function checkValue(check: CheckKind): string {
 
 const ABILITY_NAMES = new Map(ABILITIES.map((a) => [abilityName(a).toLowerCase(), a]));
 
-/** A check by its name as written in text: "perception", "dex" or "dexterity". */
-export function checkNamed(name: string): CheckKind | undefined {
+/** A check by its name as written in text: "perception", "dex" or "dexterity" (or a skill the game adds). */
+export function checkNamed(name: string, content: Pick<Content, 'skills'> = {}): CheckKind | undefined {
   const key = name.toLowerCase();
-  const skill = Object.entries(SKILLS).find(([s]) => s === key || skillName(s).toLowerCase() === key);
-  if (skill) return { ability: skill[1], skill: skill[0] };
+  const skill = gameSkills(content).find((s) => s.id === key || s.name.toLowerCase() === key);
+  if (skill) return { ability: skill.ability, skill: skill.id };
   const ability = (ABILITIES as readonly string[]).includes(key) ? (key as Ability) : ABILITY_NAMES.get(key);
   return ability && { ability };
 }

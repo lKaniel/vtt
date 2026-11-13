@@ -101,6 +101,8 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('ping'), at: PointSchema, pull: z.boolean().optional() }),
   z.object({ t: z.literal('target'), tokens: z.array(z.string()).max(MAX_TARGETS) }),
   z.object({ t: z.literal('rollMode'), mode: z.enum(ROLL_MODES) }),
+  /** GM: the soundboard plays a sound once for everyone at the table. */
+  z.object({ t: z.literal('playSound'), src: z.string().min(1).max(500), volume: z.number().min(0).max(1).optional() }),
   z.object({ t: z.literal('door'), chunk: z.string(), wall: z.string(), state: DoorStateSchema }),
   z.object({ t: z.literal('trigger'), tile: z.string(), token: z.string().optional() }),
   z.object({ t: z.literal('triggerChoice'), id: z.string().max(64), option: z.number().int().min(0).max(7) }),

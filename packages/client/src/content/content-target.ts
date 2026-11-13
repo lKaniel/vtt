@@ -60,7 +60,7 @@ export const rollClick = (session: Session, command: string) => () => session.re
 
 /** An inline check: the GM asks it of the selected creatures or the party; a player rolls it for theirs. */
 export function checkClick(session: Session, ref: CheckRef): (() => void) | undefined {
-  const check = checkNamed(ref.name);
+  const check = checkNamed(ref.name, gameContent(toEdition(session.world?.rules)));
   if (!check) return undefined;
   if (session.isGm()) {
     const all = [...session.tokens.values()].filter((t) => t.sheet !== undefined);

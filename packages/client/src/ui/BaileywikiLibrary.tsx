@@ -34,7 +34,7 @@ const entriesOf = (docs: unknown[] | undefined): LibraryEntry[] =>
 
 export function BaileywikiLibrary({ session }: Readonly<{ session: Session }>) {
   const pack = session.packs.list.find((p) => p.id === PACK);
-  if (!pack) return <p className="muted text-sm">{t('bwLibrary.noPack')}</p>;
+  if (!pack) return null;
   if (!pack.enabled)
     return (
       <div className="flex flex-col items-start gap-2">

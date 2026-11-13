@@ -29,6 +29,11 @@ beforeAll(async () => {
       pack === 'forest' && path.startsWith('media/') ? join(dir, 'packs', pack, path) : undefined,
     // The home game is "home"; "other" is a game made in the lobby.
     assetsDir: (game) => ({ other: join(dir, 'other', 'assets'), home: join(dir, 'assets') })[game ?? 'home'],
+    packFetch: async (pack, path, req) => {
+      if (pack !== 'forest' || req.headers.cookie !== 'vtt=ok') return undefined;
+      await writeFile(join(dir, 'packs', pack, path), `fetched ${path}`);
+      return join(dir, 'packs', pack, path);
+    },
     pluginFile: (plugin, path) => (plugin === 'turn-alert' && path === 'main.js' ? join(dir, 'main.js') : undefined),
     clientDir: join(dir, 'client'),
   });
@@ -42,6 +47,13 @@ afterAll(() => {
 });
 
 describe('httpHandler', () => {
+  it('fetches a pack file it hasn’t got, when the pack fetches files and the request may have them', async () => {
+    expect(await (await fetch(`${base}/packs/forest/media/far.webp`)).text()).toBe('<h1>vtt</h1>');
+    const asked = await fetch(`${base}/packs/forest/media/near.webp`, { headers: { cookie: 'vtt=ok' } });
+    expect(asked.headers.get('content-type')).toBe('image/webp');
+    expect(await asked.text()).toBe('fetched media/near.webp');
+  });
+
   it('serves assets with their type', async () => {
     const res = await fetch(`${base}/assets/map.png`);
     expect(res.headers.get('content-type')).toBe('image/png');

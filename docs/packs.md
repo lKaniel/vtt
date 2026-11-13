@@ -91,6 +91,7 @@ install. A game's own files stay `/assets/<path>` (uploads go in
 | `monster`, `item`, `spell`         | D&D rules content: while the pack is on, tokens can use them like SRD ones (`"monster": "<id>"`), and they appear in the Compendium tab.                                                                                                                                                                                                                                                                                                                                                                   |
 | `class`                            | A whole class (the Jaeger): the character creator offers it. Its automation can live in `class-automation.json` under its id, so the pack keeps only text.                                                                                                                                                                                                                                                                                                                                                 |
 | `subclass`, `classFeature`         | A subclass or a feature (a pact boon, an invocation) for a class the game already has: each doc names its `"class"` and joins that class, replacing any of the same id. Their automation is in `class-automation.json`: a subclass's under the class's `subclasses`, a feature's under `packFeatures` (`pack-class-parts.ts`).                                                                                                                                                                             |
+| `skill`                            | A skill the game adds to the 18: `{ "id", "name", "ability" }` (Wisdom when missing), listed on every sheet after them (`game-skills.ts`).                                                                                                                                                                                                                                                                                                                                                                 |
 
 Other types are listed but not used yet.
 
@@ -112,7 +113,7 @@ are left out. A system's own packs are always on: D&D ships the SRD as
 `dnd5e-srd-2014` (SRD 5.1) and `dnd5e-srd-2024` (SRD 5.2).
 
 The rules read a game's content as the SRD of an edition plus the
-`monster`, `item`, `spell`, `class`, `subclass` and `classFeature` compendia
+`monster`, `item`, `spell`, `class`, `subclass`, `classFeature` and `skill` compendia
 of the packs it uses (`contentWith(edition, compendia)` in `system-dnd5e/src/packs.ts`). The
 server sends that content to every client when it joins (`packContent`),
 so sheets, tooltips and the Compendium know pack monsters too.
@@ -244,6 +245,31 @@ game instead: see [foundry.md](foundry.md).
 
 ## Baileywiki
 
+### Baileywiki's library on a server without Foundry
+
+In **Assets > Baileywiki**, "Download Baileywiki's library" (once the
+server is signed in, see below) does what Baileywiki's Content Module does
+in Foundry: the server downloads the module itself (the public download
+foundrymods.com gives Foundry, about 90 MB, into
+`data/baileywiki-module/`, its code left out) and imports its compendia
+into the pack `baileywiki` like the modules below: its Mass Edit presets as
+`bw-prefabs-2d` and `bw-prefabs-3d` (about 10,000), its scene browsers'
+thumbnails and Mass Edit's tags for Baileywiki's files, and an asset
+catalog for Claude's map tools made from the prefabs: every picture and
+model they place, at the prefab's size (`baileywiki-catalog.ts`; a catalog
+measured from the files with `pnpm build-asset-catalog` stays). The module's own
+pictures come with it. Every other Baileywiki file the prefabs name stays
+on Baileywiki's server and is fetched the first time someone asks for it
+(`baileywiki-files.ts`): the request for `/packs/baileywiki/media/<path>`
+downloads it with the server's sign-in into the pack, which serves it from
+then on. Only a browser at a table or in Setup can make the server fetch
+one, and Baileywiki decides what the membership may have; a file it turns
+down isn't asked for again for ten minutes. `VTT_BAILEYWIKI_MODULE` points
+at another module manifest (the tests' stand-in).
+
+The sign-in and the list of Baileywiki's online scenes sit under
+"Account and online scenes", below the library.
+
 ### The modules installed in Foundry
 
 ```
@@ -291,7 +317,8 @@ Baileywiki sign-in" opens content.baileywiki.com (Patreon, Discord or a
 Baileywiki account); paste the code it shows and the server checks it
 there and keeps it in `data/baileywiki.json`, never sending it to a
 browser. "Show scenes" lists the scenes of Baileywiki's online compendia
-(their 2D and 3D scene browsers) with their public previews; tick some and
+(their 2D and 3D scene browsers) with their previews (from the Content
+Module, so they show once the library is downloaded); tick some and
 "Import" downloads each scene and the Baileywiki files it uses into a pack
 `baileywiki` in `data/packs/`, keeping Baileywiki's paths, so a file shared
 by many scenes comes down once. Importing a scene again replaces it in

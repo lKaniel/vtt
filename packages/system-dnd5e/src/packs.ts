@@ -5,6 +5,7 @@ import { type Class, ClassSchema, SpellSchema } from './spell-schema.ts';
 import { MonsterSchema } from './monster-schema.ts';
 import type { Edition } from './stats-schema.ts';
 import { ItemSchema } from './item-schema.ts';
+import { type SkillDef, SkillDefSchema } from './game-skills.ts';
 import { PackClassFeatureSchema, PackSubclassSchema, withClassParts } from './pack-class-parts.ts';
 
 // D&D content in asset packs. The bundled SRD is two packs the system ships
@@ -23,6 +24,7 @@ const CONTENT_SCHEMAS = {
   class: ClassSchema,
   subclass: PackSubclassSchema,
   classFeature: PackClassFeatureSchema,
+  skill: SkillDefSchema,
 } as const;
 type ContentType = keyof typeof CONTENT_SCHEMAS;
 export const CONTENT_TYPES = Object.keys(CONTENT_SCHEMAS) as ContentType[];
@@ -95,6 +97,7 @@ export function contentWith(edition: Edition, compendia: readonly PackCompendium
     items: add('item', srd.items),
     spells: add('spell', srd.spells),
     classes: withClassParts(add('class', srd.classes) as Map<string, Class>, mine, edition),
+    skills: add('skill', new Map()) as Map<string, SkillDef>,
   } as Content;
   cache.set(compendia, { ...known, [edition]: content });
   return content;

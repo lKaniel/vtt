@@ -122,3 +122,17 @@ test('the GM edits a carried weapon from its attack row, typing the dice on a Uk
   // Strength +3 on top of the d10, read the way it rolls.
   await expect(attacks.getByRole('listitem', { name: 'Longsword' })).toContainText('1d10+3');
 });
+
+test("the GM adds a campaign skill and it rolls from every sheet's skills", async ({ page }) => {
+  await atTable(page, GM);
+  await page.getByRole('tab', { name: 'Compendium' }).click();
+  await page.getByRole('button', { name: 'Homebrew' }).click();
+  await page.getByRole('textbox', { name: 'New skill name' }).fill('Psychic Resistance');
+  await page.getByRole('button', { name: 'New skill' }).click();
+  await expect(page.getByRole('combobox', { name: 'Ability Psychic Resistance uses' })).toHaveText('Wisdom');
+
+  const sheet = await openBram(page);
+  await sheet.getByRole('tab', { name: 'Details' }).click();
+  await sheet.getByRole('button', { name: /^Psychic Resistance/ }).click();
+  await expect(chatLog(page)).toContainText('Psychic Resistance');
+});

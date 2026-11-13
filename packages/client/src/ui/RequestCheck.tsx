@@ -1,7 +1,9 @@
 import { isParty } from '@vtt/shared';
 import type { CheckRequestKind } from '@vtt/system-dnd5e';
 import { useState } from 'react';
-import { askedOf, CHECK_OPTIONS, checkOf } from '../text/check-text.ts';
+import { toEdition } from '@vtt/system-dnd5e';
+import { gameContent } from '../content/content.ts';
+import { askedOf, checkOf, checkOptions } from '../text/check-text.ts';
 import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { NumberField } from './kit/number-field.tsx';
@@ -41,6 +43,7 @@ function RequestCheck({ session }: Readonly<{ session: Session }>) {
   const all = [...session.tokens.values()].filter((t) => t.sheet !== undefined);
   const who = askedOf(all, (id) => session.editor.isSelected(id), isParty);
   const contest = kind === 'contest';
+  const options = checkOptions(gameContent(toEdition(session.world?.rules)));
   const ready = contest ? who.length === 2 : who.length > 0;
   const send = () =>
     session.requests.requestCheck({
@@ -52,7 +55,7 @@ function RequestCheck({ session }: Readonly<{ session: Session }>) {
     });
   return (
     <>
-      <SelectField value={check} onValueChange={setCheck} options={CHECK_OPTIONS} aria-label="Check" />
+      <SelectField value={check} onValueChange={setCheck} options={options} aria-label="Check" />
       <ToggleGroup type="single" value={kind} onValueChange={(v) => v && setKind(v as CheckRequestKind)}>
         {KINDS.map((k) => (
           <ToggleGroupItem key={k.value} value={k.value} title={k.title}>
@@ -61,7 +64,7 @@ function RequestCheck({ session }: Readonly<{ session: Session }>) {
         ))}
       </ToggleGroup>
       {contest ? (
-        <SelectField value={versus} onValueChange={setVersus} options={CHECK_OPTIONS} aria-label="Against" />
+        <SelectField value={versus} onValueChange={setVersus} options={options} aria-label="Against" />
       ) : (
         <label className="flex items-center gap-2 text-sm">
           DC (0: none)

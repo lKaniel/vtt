@@ -84,7 +84,10 @@ function serverEnv(options: ServerOptions, root: string, port: number): NodeJS.P
   };
   if (options.adminPassword) env.VTT_ADMIN_PASSWORD = options.adminPassword;
   if (options.mcpKey) env.VTT_MCP_KEY = options.mcpKey;
-  if (options.baileywiki) env.VTT_BAILEYWIKI_URL = options.baileywiki;
+  if (options.baileywiki) {
+    env.VTT_BAILEYWIKI_URL = options.baileywiki;
+    env.VTT_BAILEYWIKI_MODULE = `${options.baileywiki}/module/manifest`;
+  }
   if (options.offsite) env.VTT_BACKUP_DIR = join(root, 'offsite');
   return env;
 }
