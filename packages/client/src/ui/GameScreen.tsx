@@ -37,6 +37,7 @@ import { SettingsMenu } from './SettingsMenu.tsx';
 import { ClaudeKey } from './ClaudeKey.tsx';
 import { Button } from './kit/button.tsx';
 import { exposeApi } from '../scripting/script-api.ts';
+import { OptimiseButton } from './OptimiseButton.tsx';
 
 export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLeave: () => void }>) {
   const [session] = useState(() => new Session(gameId));
@@ -113,6 +114,7 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
       <UndoButtons session={session} />
       <ThroughWallsButton session={session} />
       <View3DButton session={session} />
+      <OptimiseButton session={session} />
       {session.gameId && <ClaudeKey game={session.gameId} />}
       <SettingsMenu session={session} />
       <Button variant="ghost" size="icon-sm" onClick={onLeave} title={t('table.leave')} aria-label={t('table.leave')}>

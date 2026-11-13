@@ -1,5 +1,6 @@
 import type { Clip, DocRef, DocStore } from '@vtt/core';
 import { isGm, type Player } from '@vtt/shared';
+import { refOf } from '../editor/selection.ts';
 
 // What players may make and change themselves on the map. Players draw and
 // place templates of their own: those carry their id as `author`, and they
@@ -35,4 +36,18 @@ export function mayUseMode(you: Player | undefined, mode: string): boolean {
 /** Players sign what they make. */
 export function signature(you: Player | undefined, type: string): Record<string, unknown> {
   return !gm(you) && you && AUTHORED.has(type) ? { author: you.id } : {};
+}
+
+/** What the inspector and edit keys work on: the editor's selection, else the selected creature, else the open actor's sheet. */
+export function editTargets(s: {
+  readonly editor: { readonly selection: readonly string[] };
+  readonly selected?: string;
+  readonly scene: string;
+  readonly sheets: { readonly current?: { kind: string; id: string } };
+}): DocRef[] {
+  if (s.editor.selection.length) return s.editor.selection.map(refOf);
+  if (s.selected) return [{ coll: `${s.scene}/tokens`, id: s.selected }];
+  const sheet = s.sheets.current;
+  if (sheet?.kind === 'actor') return [{ coll: 'actors', id: sheet.id }];
+  return [];
 }

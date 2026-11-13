@@ -61,6 +61,15 @@ describe('scenes', () => {
     expect(tokens[0]).toMatchObject({ id: 'hero-1', actor: 'hero', x: 50 });
   });
 
+  it('copies a scene unoptimised: its bake is the original’s pictures', () => {
+    const docs = store();
+    docs.apply([{ op: 'update', coll: 'scenes', id: 'main', patch: { bake: 'b1', optimised: true } }]);
+    const { id, ops } = duplicateSceneOps(docs, 'main');
+    docs.apply(ops);
+    expect(docs.get('scenes', id)).not.toHaveProperty('bake');
+    expect(docs.get('scenes', id)).not.toHaveProperty('optimised');
+  });
+
   it('changes the square size with a chunk size that is a whole number of squares', () => {
     expect(gridSizePatch(75)).toEqual({ gridSize: 75, chunkSize: 2025 });
     expect(gridSizePatch(140)).toEqual({ gridSize: 140, chunkSize: 1960 });

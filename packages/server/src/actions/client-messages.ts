@@ -347,6 +347,15 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   }),
   /** GM: the server downloads a picture from the web into the game's uploads. */
   z.object({ t: z.literal('uploadUrl'), url: z.string().min(1).max(2000), ref: z.string().max(40).optional() }),
+  /** GM: one file of a scene's bake (a block of its picture pyramid, or the manifest last), see scene-bake.ts. */
+  z.object({
+    t: z.literal('bakeBlock'),
+    scene: z.string().min(1).max(120),
+    bake: z.string().regex(/^[a-z0-9-]{1,40}$/),
+    path: z.string().max(60),
+    data: z.string().max(MAX_UPLOAD_BASE64),
+    ref: z.string().max(40),
+  }),
 ]);
 
 export type ClientMessage = z.infer<typeof ClientMessageSchema>;

@@ -14,6 +14,8 @@ beforeAll(async () => {
   await mkdir(join(dir, 'assets'));
   await mkdir(join(dir, 'client'));
   await writeFile(join(dir, 'assets', 'map.png'), 'png');
+  await mkdir(join(dir, 'assets', 'baked', 'cave', 'b1', '0', '0'), { recursive: true });
+  await writeFile(join(dir, 'assets', 'baked', 'cave', 'b1', '0', '0', '0_0.webp'), 'block');
   await mkdir(join(dir, 'other', 'assets'), { recursive: true });
   await writeFile(join(dir, 'other', 'assets', 'map.png'), 'other png');
   await writeFile(join(dir, 'client', 'index.html'), '<h1>vtt</h1>');
@@ -58,6 +60,12 @@ describe('httpHandler', () => {
     const res = await fetch(`${base}/assets/map.png`);
     expect(res.headers.get('content-type')).toBe('image/png');
     expect(await res.text()).toBe('png');
+  });
+
+  it('lets browsers keep an optimised scene’s blocks, which never change', async () => {
+    const res = await fetch(`${base}/assets/baked/cave/b1/0/0/0_0.webp`);
+    expect(res.headers.get('cache-control')).toMatch(/immutable/);
+    expect((await fetch(`${base}/assets/map.png`)).headers.get('cache-control')).toBeNull();
   });
 
   it('serves each game its own assets', async () => {

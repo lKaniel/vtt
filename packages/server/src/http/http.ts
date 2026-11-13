@@ -58,10 +58,16 @@ async function serveFile(res: ServerResponse, root: string, urlPath: string): Pr
   return servePath(res, path);
 }
 
+/** An optimised scene's blocks never change (a new bake is a new folder), so browsers keep them. */
+const KEEP_BAKED = /[\\/]baked[\\/][^\\/]+[\\/][^\\/]+[\\/]\d+[\\/]/;
+
 async function servePath(res: ServerResponse, path: string): Promise<boolean> {
   const info = await stat(path).catch(() => undefined);
   if (!info?.isFile()) return false;
-  res.writeHead(200, { 'content-type': TYPES[extname(path).toLowerCase()] ?? 'application/octet-stream' });
+  res.writeHead(200, {
+    'content-type': TYPES[extname(path).toLowerCase()] ?? 'application/octet-stream',
+    ...(KEEP_BAKED.test(path) && { 'cache-control': 'public, max-age=31536000, immutable' }),
+  });
   createReadStream(path).pipe(res);
   return true;
 }

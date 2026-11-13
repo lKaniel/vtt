@@ -225,6 +225,29 @@ skipping time, or undoing it, changes it too:
 }
 ```
 
+### Optimised scenes
+
+A big flat map can be drawn as pictures instead of tiles, so it runs well
+on a slow computer. The GM's **Optimise** button in the top bar draws the
+scene's still tiles, floor by floor, into one picture each, cut into a
+pyramid of 512 px blocks like a web map (zoom 0 the sharpest, each zoom
+after it half as sharp, the last one block for the whole floor). The blocks
+go in the game's `assets/baked/<scene>/<bake>/` with a `manifest.json`
+(`shared/scene-bake.ts`), and scene.json gets `"bake": "<bake>"` and
+`"optimised": true`. Everyone on the scene then loads only the blocks on
+screen, at the zoom the screen needs, instead of every tile's picture.
+**Edit** sets `optimised` off: every tile is drawn again, and the bake is
+kept until the next Optimise. Leave `assets/baked/` alone; it is the
+server's and the Assets tab doesn't list it.
+
+What looks different as the game goes on stays a live tile, never baked:
+roofs (`overhead`, they fade), doors, tiles with a trigger or a
+description, tiles hidden from players, videos, GIFs and scrolling
+pictures, and a tile on several floors. A still tile drawn over one of
+those stays live too, so the order on the map holds. A baked tile changed
+after the bake is drawn as it is now, over the picture, and the GM's
+top bar offers to optimise again.
+
 ### The 3D view
 
 A scene is a flat map or a 3D scene, and says which: `"view": "3d"` makes

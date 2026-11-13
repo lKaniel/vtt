@@ -54,6 +54,15 @@ export function tileBounds(tile: Posed, pad: number): Rect {
   return { x, y, w: Math.max(...xs) + pad - x, h: Math.max(...ys) + pad - y };
 }
 
+/** How far past its rectangle a tile may draw (rough edges, see art/ground.ts). */
+const EDGE_PAD = 24;
+
+/** How far past its rectangle a tile draws: rough edges, and its drop shadow. */
+export function tilePad(tile: Chunk['tiles'][number]): number {
+  const shadow = tile.kind === 'image' ? tile.shadow : undefined;
+  return EDGE_PAD + (shadow ? shadow.offset + shadow.blur * 3 : 0);
+}
+
 /** Whether a tile looks the same every frame, so it can be baked: not a roof, video, GIF, scrolling picture or click target. */
 export function tileStill(tile: Chunk['tiles'][number], gm: boolean): boolean {
   if (tileClickable(tile, gm) || tile.description) return false;
