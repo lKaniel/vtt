@@ -1,14 +1,23 @@
-import { type DamageType, type Edition, editionOf, toEdition } from '@vtt/system-dnd5e';
+import {
+  ABILITIES,
+  type Ability,
+  abilityName,
+  type DamageType,
+  type Edition,
+  editionOf,
+  toEdition,
+} from '@vtt/system-dnd5e';
 import { cn } from '@/lib/utils';
 import { gameContent } from '../../content/content.ts';
 import { t } from '../../i18n/index.ts';
 import type { MessageKey } from '../../i18n/en.ts';
-import { cycleSkill, listText, parseList, setStat } from '../../play/token-edit.ts';
-import { signed, skillRows } from '../../text/sheet-text.ts';
+import { cycleSkill, listText, parseList, setSkillAbility, setSkillValue, setStat } from '../../play/token-edit.ts';
+import { signed, type SkillRow, skillRows } from '../../text/sheet-text.ts';
 import { Field, TextInput } from '../EditorFields.tsx';
 import { Badge } from '../kit/badge.tsx';
 import { Button } from '../kit/button.tsx';
 import { Input } from '../kit/input.tsx';
+import { NumberField } from '../kit/number-field.tsx';
 import { SelectField } from '../kit/select.tsx';
 import { withKey } from '../sheet-model.ts';
 import { ClassesEdit } from './ClassesEdit.tsx';
@@ -44,52 +53,101 @@ function Heading({ children }: Readonly<{ children: React.ReactNode }>) {
 }
 
 function Skills(props: Readonly<SheetProps>) {
-  const { session, value, update, sheet, edit } = props;
-  const roll = canAct(props);
-  const toggle = (skill: string) => update((d) => cycleSkill(d, skill), true);
+  const { session, value, sheet } = props;
   const content = gameContent(editionOf(value, session.world ?? {}));
   return (
     <section aria-label={t('sheet.skills')}>
       <Heading>{t('sheet.skills')}</Heading>
       <ul className="m-0 list-none p-0">
         {skillRows(value, sheet, content).map((r) => (
-          <li key={r.skill} className="flex h-7 items-center gap-2 border-b border-white/5 text-sm">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="size-5 disabled:opacity-100"
-              disabled={!edit}
-              aria-label={t('sheet.toggleSkill', { skill: r.name })}
-              aria-pressed={r.proficient}
-              onClick={() => toggle(r.skill)}
-            >
-              <span
-                title={r.expert ? t('sheet.expertise') : undefined}
-                className={cn(
-                  'size-2 rounded-full border border-gold',
-                  r.proficient && 'bg-gold-bright',
-                  r.expert && 'ring-2 ring-gold/60',
-                )}
-              />
-            </Button>
-            <span className="w-8 text-xs text-muted-foreground uppercase">{r.ability}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 flex-1 justify-between px-1.5 font-body text-sm text-foreground disabled:opacity-100"
-              disabled={!roll}
-              onClick={() => session.requests.rollCheck(value.id, { ability: r.ability, skill: r.skill })}
-            >
-              <span>{r.name}</span>
-              <span className="font-display text-gold-bright">{signed(r.bonus)}</span>
-            </Button>
-            <span className="w-9 text-right text-xs text-muted-foreground" title={t('sheet.passive', { n: r.passive })}>
-              {r.passive}
-            </span>
-          </li>
+          <SkillLine key={r.skill} {...props} row={r} />
         ))}
       </ul>
     </section>
+  );
+}
+
+/** One skill: proficiency (or a free skill's typed bonus in edit mode), its roll button and passive score. */
+function SkillLine(props: Readonly<SheetProps & { row: SkillRow }>) {
+  const { session, value, row: r } = props;
+  return (
+    <li className="flex h-7 items-center gap-2 border-b border-white/5 text-sm">
+      {r.free ? <FreeValue {...props} /> : <ProficiencyDot {...props} />}
+      {r.campaign && props.edit ? (
+        <AbilityPick {...props} />
+      ) : (
+        <span className="w-8 text-xs text-muted-foreground uppercase">{r.free ? '—' : r.ability}</span>
+      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 flex-1 justify-between px-1.5 font-body text-sm text-foreground disabled:opacity-100"
+        disabled={!canAct(props)}
+        onClick={() => session.requests.rollCheck(value.id, r.check)}
+      >
+        <span>{r.name}</span>
+        <span className="font-display text-gold-bright">{signed(r.bonus)}</span>
+      </Button>
+      <span className="w-9 text-right text-xs text-muted-foreground" title={t('sheet.passive', { n: r.passive })}>
+        {r.passive}
+      </span>
+    </li>
+  );
+}
+
+function ProficiencyDot({ update, edit, row: r }: Readonly<SheetProps & { row: SkillRow }>) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      className="size-5 disabled:opacity-100"
+      disabled={!edit}
+      aria-label={t('sheet.toggleSkill', { skill: r.name })}
+      aria-pressed={r.proficient}
+      onClick={() => update((d) => cycleSkill(d, r.skill), true)}
+    >
+      <span
+        title={r.expert ? t('sheet.expertise') : undefined}
+        className={cn(
+          'size-2 rounded-full border border-gold',
+          r.proficient && 'bg-gold-bright',
+          r.expert && 'ring-2 ring-gold/60',
+        )}
+      />
+    </Button>
+  );
+}
+
+/** A campaign skill's ability for this character (its usual one first), or "Typed" for a bonus typed beside it. */
+function AbilityPick({ update, row: r }: Readonly<SheetProps & { row: SkillRow }>) {
+  const options = [...ABILITIES, 'none' as const].map((a) => ({
+    value: a,
+    label: a === 'none' ? t('sheet.typedBonus') : abilityName(a),
+    ...(a === r.usual && { hint: t('sheet.usualAbility') }),
+  }));
+  return (
+    <SelectField
+      className="h-6 w-24 text-xs"
+      value={r.ability}
+      options={options}
+      aria-label={t('sheet.skillAbility', { skill: r.name })}
+      onValueChange={(a) => update((d) => setSkillAbility(d, r.skill, a as Ability | 'none', r.usual), true)}
+    />
+  );
+}
+
+/** A campaign skill with no ability: its bonus is typed here in edit mode. */
+function FreeValue({ update, edit, row: r }: Readonly<SheetProps & { row: SkillRow }>) {
+  if (!edit) return <span className="size-5" title={t('sheet.freeSkill')} />;
+  return (
+    <NumberField
+      className="w-24"
+      value={r.bonus}
+      min={-20}
+      max={40}
+      aria-label={t('sheet.skillValue', { skill: r.name })}
+      onValueChange={(n) => update((d) => setSkillValue(d, r.skill, n), true)}
+    />
   );
 }
 

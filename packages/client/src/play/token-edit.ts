@@ -53,6 +53,20 @@ export function cycleSkill<D extends Draft>(draft: D, skill: string): D {
   return setStat(dropped, 'expertise', orNone(expertise.filter((s) => s !== skill)));
 }
 
+/** A free campaign skill's typed bonus (`stats.skillValues`); 0 removes it. */
+export function setSkillValue<D extends Draft>(draft: D, skill: string, value: number): D {
+  const { [skill]: _old, ...rest } = draft.stats?.skillValues ?? {};
+  const values = value ? { ...rest, [skill]: value } : rest;
+  return setStat(draft, 'skillValues', Object.keys(values).length ? values : undefined);
+}
+
+/** A character's own ability for a campaign skill (`stats.skillAbilities`); the skill's `usual` one takes the pick away. */
+export function setSkillAbility<D extends Draft>(draft: D, skill: string, ability: Ability | 'none', usual: string): D {
+  const { [skill]: _old, ...rest } = draft.stats?.skillAbilities ?? {};
+  const picks = ability === usual ? rest : { ...rest, [skill]: ability };
+  return setStat(draft, 'skillAbilities', Object.keys(picks).length ? picks : undefined);
+}
+
 export interface ClassRow {
   class: string;
   level: number;

@@ -1092,9 +1092,14 @@ Natural Recovery and 2024 Divine Intervention use it.
 **Campaign skills.** A homebrew file with `"kind": "skill"` adds a skill to
 the 18 for this game only (a campaign's Psychic Resistance):
 `{ "id": "psychic-resistance", "kind": "skill", "name": "Psychic Resistance", "ability": "wis", "ownership": { "default": "observer" } }`.
-`ability` is the one it rolls with (Wisdom when missing). Every sheet lists
-it after the 18 with its bonus and passive score, a character is trained in
-it like any skill (its id in `stats.skills` or `stats.expertise`), and the
+`ability` is the one it rolls with by default (Wisdom when missing), or
+`"none"`: no ability, each character types its own bonus. A character may
+pick another in edit mode, kept in `stats.skillAbilities`
+(`{ "psychic-resistance": "cha" }`, or `"none"`), and a typed bonus in
+`stats.skillValues` (`{ "psychic-resistance": 4 }`: the whole bonus, no
+ability or proficiency). Every sheet lists it after the 18 with its bonus
+and passive score, a character is trained in it like any skill (its id in
+`stats.skills` or `stats.expertise`), and the
 GM's Request check and journal check links know it. The GM makes them in
 the Compendium tab (Homebrew, Campaign skills); shared ones reach the
 players' sheets. A pack's `skill` compendium adds skills the same way

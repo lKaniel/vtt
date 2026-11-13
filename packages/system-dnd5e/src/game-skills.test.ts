@@ -3,6 +3,8 @@ import { gameCompendia } from './homebrew.ts';
 import { gameSkills, skillAbility } from './game-skills.ts';
 import { contentWith } from './packs.ts';
 import { srdFor } from './content.ts';
+import { checkBonus } from './checks.ts';
+import { skillCheck } from './game-skills.ts';
 
 // A campaign's own skills (Psychic Resistance, Wisdom): a homebrew document
 // of kind "skill" or a pack's `skill` compendium, listed after the 18.
@@ -41,5 +43,40 @@ describe('game skills', () => {
       docs: [{ id: 'psychic-resistance', name: 'Psychic Resistance' }],
     };
     expect(gameSkills(contentWith('2014', [compendium])).map((s) => s.id)).toContain('psychic-resistance');
+  });
+});
+
+describe('a skill with no ability', () => {
+  const free = { id: 'psychic-resistance', kind: 'skill', name: 'Psychic Resistance', ability: 'none' };
+  const content = contentWith('2014', gameCompendia({}, [], [free]));
+  const sheet = {
+    abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 18, cha: 10 },
+    proficiency: 3,
+    saves: {},
+  } as never;
+
+  it('is listed as free', () => {
+    expect(gameSkills(content).at(-1)).toMatchObject({ id: 'psychic-resistance', ability: 'none' });
+    expect(skillAbility(content, 'psychic-resistance')).toBe('none');
+  });
+
+  it("rolls the character's typed bonus, not an ability and proficiency", () => {
+    const check = skillCheck(gameSkills(content).at(-1)!);
+    const token = { stats: { skills: ['psychic-resistance'], skillValues: { 'psychic-resistance': 7 } } };
+    expect(checkBonus(token, sheet, check)).toBe(7);
+    expect(checkBonus({ stats: {} }, sheet, check)).toBe(0);
+  });
+});
+
+describe("a character's own ability for a campaign skill", () => {
+  const def = { id: 'psychic-resistance', name: 'Psychic Resistance', ability: 'wis' as const };
+
+  it('replaces the default one', () => {
+    expect(skillCheck(def, { skillAbilities: { 'psychic-resistance': 'cha' } })).toEqual({
+      ability: 'cha',
+      skill: 'psychic-resistance',
+    });
+    expect(skillCheck(def, { skillAbilities: { 'psychic-resistance': 'none' } })).toMatchObject({ free: true });
+    expect(skillCheck(def, {})).toEqual({ ability: 'wis', skill: 'psychic-resistance' });
   });
 });

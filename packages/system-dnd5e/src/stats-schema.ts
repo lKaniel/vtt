@@ -194,6 +194,10 @@ export const StatsSchema = z.object({
   skills: z.array(id).optional(),
   /** Skills with expertise: their proficiency bonus counts twice. */
   expertise: z.array(id).optional(),
+  /** The character's own ability for a campaign skill (game-skills.ts), or "none" for a typed bonus, by skill id. */
+  skillAbilities: z.record(id, z.enum([...ABILITIES, 'none'])).optional(),
+  /** Typed bonuses for skills that use no ability (a campaign's own, game-skills.ts), by skill id. */
+  skillValues: z.record(id, z.number().int().min(-20).max(40)).optional(),
   /** Armor, weapons, tools and languages by id (proficiency-catalog.ts); older ones may be words. */
   proficiencies: z.array(z.string().trim().min(1).max(60)).max(80).optional(),
   /**

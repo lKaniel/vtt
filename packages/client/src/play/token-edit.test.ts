@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   classRows,
   cycleSkill,
+  setSkillAbility,
+  setSkillValue,
   listText,
   parseList,
   setAbility,
@@ -90,5 +92,23 @@ describe('cycleSkill', () => {
     const two = cycleSkill(one, 'stealth');
     expect(two.stats).toEqual({ skills: ['stealth'], expertise: ['stealth'] });
     expect(cycleSkill(two, 'stealth').stats).toBeUndefined();
+  });
+});
+
+describe('setSkillValue', () => {
+  it("types a free skill's bonus, and 0 takes it away", () => {
+    const blank: Parameters<typeof setStat>[0] = {};
+    const set = setSkillValue(blank, 'psychic-resistance', 5);
+    expect(set.stats).toEqual({ skillValues: { 'psychic-resistance': 5 } });
+    expect(setSkillValue(set, 'psychic-resistance', 0).stats).toBeUndefined();
+  });
+});
+
+describe('setSkillAbility', () => {
+  it("picks a character's own ability for a skill; its default takes the pick away", () => {
+    const blank: Parameters<typeof setStat>[0] = {};
+    const set = setSkillAbility(blank, 'psychic-resistance', 'none', 'wis');
+    expect(set.stats).toEqual({ skillAbilities: { 'psychic-resistance': 'none' } });
+    expect(setSkillAbility(set, 'psychic-resistance', 'wis', 'wis').stats).toBeUndefined();
   });
 });

@@ -28,6 +28,7 @@ const MAX_UPLOAD_BASE64 = Math.ceil((20 * 1024 * 1024 * 4) / 3) + 4;
 const checkKind = {
   ability: z.enum(ABILITIES),
   skill: z.string().max(40).optional(),
+  free: z.boolean().optional(),
   save: z.boolean().optional(),
   tool: z.string().max(40).optional(),
 };

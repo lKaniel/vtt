@@ -3,11 +3,14 @@ import {
   type CasterSheet,
   characterLevel,
   checkBonus,
+  type CheckKind,
   type Content,
   type Creature,
   type Edition,
   type FeatureSheet,
   gameSkills,
+  skillCheck,
+  SKILLS,
   type InventoryEntry,
   type Item,
   nextLevelXp,
@@ -28,7 +31,16 @@ export const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 export interface SkillRow {
   skill: string;
   name: string;
-  ability: Ability;
+  /** "none": a campaign skill whose bonus each character types (`free`). */
+  ability: Ability | 'none';
+  /** A skill the game adds (not one of the 18): each character may pick its ability. */
+  campaign: boolean;
+  /** The skill's own ability, before the character's pick. */
+  usual: Ability | 'none';
+  /** What clicking the skill rolls. */
+  check: CheckKind;
+  /** The bonus is typed on the sheet (`stats.skillValues`), with no ability or proficiency. */
+  free: boolean;
   bonus: number;
   passive: number;
   proficient: boolean;
@@ -44,12 +56,19 @@ export function skillRows(
 ): SkillRow[] {
   const has = (list: string[] | undefined, more: string[] | undefined, skill: string) =>
     [...(list ?? []), ...(more ?? [])].includes(skill);
-  return gameSkills(content).map(({ id: skill, name, ability }) => {
-    const bonus = checkBonus(token, sheet, { ability, skill });
+  return gameSkills(content).map((def) => {
+    const { id: skill, name } = def;
+    const check = skillCheck(def, token.stats);
+    const ability = check.free ? 'none' : check.ability;
+    const bonus = checkBonus(token, sheet, check);
     return {
       skill,
       name,
       ability,
+      campaign: !(skill in SKILLS),
+      usual: def.ability,
+      check,
+      free: ability === 'none',
       bonus,
       passive: 10 + bonus,
       proficient: has(token.stats?.skills, sheet.skills, skill),

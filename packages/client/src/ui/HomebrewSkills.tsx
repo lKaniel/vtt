@@ -11,9 +11,13 @@ import { SelectField } from './kit/select.tsx';
 
 // The game's own skills (Psychic Resistance, Wisdom), in the Compendium's
 // Homebrew: each is a homebrew document of kind "skill", shared so every
-// sheet in the game lists it after the 18 skills.
+// sheet in the game lists it after the 18 skills. Its ability is the
+// default: each character may pick another, or a typed bonus.
 
-const ABILITY_OPTIONS = ABILITIES.map((a) => ({ value: a, label: abilityName(a) }));
+const ABILITY_OPTIONS = [
+  ...ABILITIES.map((a) => ({ value: a, label: abilityName(a) })),
+  { value: 'none', label: t('sheet.typedBonus') },
+];
 const nameOf = (doc: Doc) => (typeof doc.name === 'string' ? doc.name : doc.id);
 const abilityOf = (doc: Doc) => (typeof doc.ability === 'string' ? doc.ability : 'wis');
 
