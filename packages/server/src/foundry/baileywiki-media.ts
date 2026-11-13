@@ -143,12 +143,20 @@ function indexByName(have: ReadonlySet<string>): Map<string, string[]> {
   return out;
 }
 
-/** The `pack://` reference of a Foundry data path (modules/<module>/...), if the pack has the file (or where it moved). */
-export function mediaLookup(run: Pick<MediaRun, 'have' | 'pack'>, missing?: Set<string>) {
+/**
+ * The `pack://` reference of a Foundry data path (modules/<module>/...), if
+ * the pack has the file (or where it moved), or if `fetchable` says the
+ * server can fetch it when first asked (Baileywiki's online files).
+ */
+export function mediaLookup(
+  run: Pick<MediaRun, 'have' | 'pack'>,
+  missing?: Set<string>,
+  fetchable?: (path: string) => boolean,
+) {
   const moved = movedTo(run.have);
   return (foundryPath: string): string | undefined => {
     const path = decoded(foundryPath.replace(/^\/+/, '').split('?')[0]!);
-    const found = moved(path);
+    const found = moved(path) ?? (fetchable?.(path) ? path : undefined);
     if (found) return packRef(run.pack, `media/${found}`);
     missing?.add(path);
     return undefined;
@@ -176,17 +184,22 @@ function entryOf(f: NonNullable<CacheDir['files']>[number], here: string): Media
   return { ...(tags.length ? { tags } : {}), ...(thumb ? { thumb } : {}) };
 }
 
-function walk(node: CacheDir, at: string, out: MediaIndex): void {
+function walk(node: CacheDir, at: string, out: MediaIndex, all?: Set<string>): void {
   const here = joined(at, node.dir);
   for (const f of node.files ?? []) {
-    const entry = f.name ? entryOf(f, here) : undefined;
+    if (!f.name) continue;
+    all?.add(`${here}/${f.name}`);
+    const entry = entryOf(f, here);
     if (entry) out[`${here}/${f.name}`] = entry;
   }
-  for (const d of node.dirs ?? []) walk(d, here, out);
+  for (const d of node.dirs ?? []) walk(d, here, out, all);
 }
 
-/** The tags and thumbnails of a module's Mass Edit cache (by path from the data folder); empty without one. */
-export async function readMassEditCache(moduleDir: string): Promise<MediaIndex> {
+/**
+ * The tags and thumbnails of a module's Mass Edit cache (by path from the
+ * data folder); empty without one. `all` collects every file it lists.
+ */
+export async function readMassEditCache(moduleDir: string, all?: Set<string>): Promise<MediaIndex> {
   const raw = await readFile(join(moduleDir, 'mass_edit_cache.json')).catch(() => undefined);
   if (!raw) return {};
   let parsed: unknown;
@@ -198,6 +211,6 @@ export async function readMassEditCache(moduleDir: string): Promise<MediaIndex> 
   }
   const out: MediaIndex = {};
   for (const source of Array.isArray(parsed) ? (parsed as { index?: CacheDir[] }[]) : [])
-    for (const root of source.index ?? []) walk(root, '', out);
+    for (const root of source.index ?? []) walk(root, '', out, all);
   return out;
 }

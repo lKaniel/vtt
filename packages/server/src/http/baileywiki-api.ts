@@ -3,6 +3,7 @@ import { isGm } from '@vtt/shared';
 import { z } from 'zod';
 import { BaileywikiAccount } from '../foundry/baileywiki-account.ts';
 import { BAILEYWIKI_URL } from '../foundry/baileywiki-client.ts';
+import { installBaileywikiLibrary } from '../foundry/baileywiki-online.ts';
 import { baileywikiScenes, COMPENDIA, importBaileywiki } from '../foundry/baileywiki-import.ts';
 import type { GameHub } from '../library/game-hub.ts';
 import { HttpError, parseBody, send, type Call, type Routes } from './http-json.ts';
@@ -12,6 +13,7 @@ import type { SessionStore } from './sessions.ts';
 // code from content.baileywiki.com (GET status, POST sign-in, DELETE signs
 // out), lists the scenes of Baileywiki's online compendia (GET scenes) and
 // imports picked ones into the private "baileywiki" pack (POST import),
+// or downloads Baileywiki's whole prefab library (POST library),
 // which games then turn on like any pack. A game's GM may do the same from
 // the game's Assets tab (`?game=<id>`), and adds the scenes it hands back.
 
@@ -19,6 +21,10 @@ export interface BaileywikiDeps {
   sessions: SessionStore;
   hub: GameHub;
   baileywiki?: string;
+  /** The Content Module's manifest; foundrymods.com's unless a test serves its own. */
+  baileywikiModule?: string;
+  /** The server's sign-in, shared with the files fetched on first view (baileywiki-files.ts). */
+  baileywikiAccount?: BaileywikiAccount;
 }
 
 const SignInInput = z.object({ code: z.string().min(1).max(4000) });
@@ -33,7 +39,8 @@ export class BaileywikiRoutes implements Routes {
   private account: BaileywikiAccount;
 
   constructor(private deps: BaileywikiDeps) {
-    this.account = new BaileywikiAccount(dirname(deps.hub.packs.dir), deps.baileywiki ?? BAILEYWIKI_URL);
+    this.account =
+      deps.baileywikiAccount ?? new BaileywikiAccount(dirname(deps.hub.packs.dir), deps.baileywiki ?? BAILEYWIKI_URL);
   }
 
   handles(route: string | undefined): boolean {
@@ -67,6 +74,8 @@ export class BaileywikiRoutes implements Routes {
         return { scenes: await baileywikiScenes(await this.account.client(), this.packsDir) };
       case 'POST import':
         return this.import(call);
+      case 'POST library':
+        return this.library();
       default:
         throw new HttpError(405, 'Method not allowed.');
     }
@@ -74,6 +83,16 @@ export class BaileywikiRoutes implements Routes {
 
   private get packsDir(): string {
     return this.deps.hub.packs.dir;
+  }
+
+  /** Downloads Baileywiki's Content Module: its prefabs and scene browsers, their files fetched on first view. */
+  private async library(): Promise<unknown> {
+    await this.account.client();
+    const { prefabs, scenes, skipped } = await installBaileywikiLibrary(this.packsDir, {
+      manifest: this.deps.baileywikiModule,
+    });
+    await this.deps.hub.packs.load();
+    return { prefabs, scenes, skipped: skipped.slice(0, 50) };
   }
 
   private async import(call: Call): Promise<unknown> {

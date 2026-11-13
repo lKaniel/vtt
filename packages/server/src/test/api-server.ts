@@ -50,7 +50,15 @@ export async function startApi(
   const offsite = opts.offsite
     ? new OffsiteBackups({ store: new FolderStore(await mkdtemp(join(tmpdir(), 'vtt-offsite-'))), hub, dataDir })
     : undefined;
-  const api = apiHandler({ sessions, characters, hub, mcpKey: opts.mcpKey, baileywiki: opts.baileywiki, offsite });
+  const api = apiHandler({
+    sessions,
+    characters,
+    hub,
+    mcpKey: opts.mcpKey,
+    baileywiki: opts.baileywiki,
+    baileywikiModule: opts.baileywiki && `${opts.baileywiki}/module/manifest`,
+    offsite,
+  });
   const server: Server = createServer((req, res) => {
     void api(req, res).then((handled) => {
       if (!handled) res.writeHead(404).end();

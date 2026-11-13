@@ -40,6 +40,11 @@ export interface HttpOptions {
   clientDir: string;
   /** The file of an installed pack's media (`/packs/<pack>/<path>`), or undefined if it has none there. */
   packFile?: (pack: string, path: string) => string | undefined;
+  /**
+   * A pack file it hasn't got, fetched for the request (Baileywiki's media,
+   * baileywiki-files.ts); undefined when it can't be had.
+   */
+  packFetch?: (pack: string, path: string, req: IncomingMessage) => Promise<string | undefined>;
   /** The file of an installed plugin (`/plugins/<plugin>/<path>`), or undefined if it has none there. */
   pluginFile?: (plugin: string, path: string) => string | undefined;
   /** The /api/ routes; answers true when it handled the request. */
@@ -73,11 +78,15 @@ async function serveAsset(res: ServerResponse, opts: HttpOptions, path: string):
 type Lookup = ((id: string, path: string) => string | undefined) | undefined;
 
 /** /packs/<pack>/<path> (media of an installed pack, pack-store.ts) and /plugins/<plugin>/<path> (plugin-store.ts). */
-async function serveInstalled(res: ServerResponse, opts: HttpOptions, path: string): Promise<boolean> {
+async function serveInstalled(req: IncomingMessage, res: ServerResponse, opts: HttpOptions, path: string) {
   const match = /^\/(packs|plugins)\/([a-z0-9-]+)\/(.+)$/.exec(path);
-  const lookup: Lookup = match?.[1] === 'packs' ? opts.packFile : opts.pluginFile;
-  const file = match && lookup?.(match[2]!, decodeURIComponent(match[3]!));
-  return !!file && servePath(res, file);
+  if (!match) return false;
+  const [, kind, id, rest] = match as unknown as [string, string, string, string];
+  const lookup: Lookup = kind === 'packs' ? opts.packFile : opts.pluginFile;
+  const file = lookup?.(id, decodeURIComponent(rest));
+  if (file && (await servePath(res, file))) return true;
+  const fetched = kind === 'packs' && (await opts.packFetch?.(id, decodeURIComponent(rest), req));
+  return !!fetched && servePath(res, fetched);
 }
 
 /** Plain HTTP: the API, game assets and the built client. */
@@ -87,7 +96,7 @@ export function httpHandler(opts: HttpOptions): (req: IncomingMessage, res: Serv
     if (opts.api && (await opts.api(req, res))) return;
     const served =
       (await serveAsset(res, opts, url.pathname)) ||
-      (await serveInstalled(res, opts, url.pathname)) ||
+      (await serveInstalled(req, res, opts, url.pathname)) ||
       (await serveFile(res, opts.clientDir, url.pathname)) ||
       (await serveFile(res, opts.clientDir, 'index.html'));
     if (!served) res.writeHead(404).end('Not found. In development, open the Vite dev server instead.');

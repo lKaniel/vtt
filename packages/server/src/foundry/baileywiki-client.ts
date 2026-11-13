@@ -1,3 +1,4 @@
+import { mediaKind } from '@vtt/core';
 import { z } from 'zod';
 
 // Talks to Baileywiki's content server (content.baileywiki.com) the way
@@ -53,6 +54,13 @@ export function baileywikiPath(src: string): string {
   }
 }
 
+/** Files that come from Baileywiki (the rest, core icons or other modules', aren't theirs to give). */
+const isBaileywikiFile = (path: string) => /^(bw-content-releases\/|modules\/baileywiki-)/.test(path);
+const safe = (path: string) => !path.split('/').some((part) => part === '..' || part === '' || part === '.');
+
+/** A picture, sound, video or model Baileywiki's server hands out (a Baileywiki path, see baileywikiPath). */
+export const isBaileywikiMedia = (path: string) => !!mediaKind(path) && isBaileywikiFile(path) && safe(path);
+
 export class BaileywikiClient {
   constructor(
     readonly base: string,
@@ -99,10 +107,5 @@ export class BaileywikiClient {
 
   async bytes(path: string): Promise<Buffer> {
     return Buffer.from(await (await this.download(path)).arrayBuffer());
-  }
-
-  /** The public preview picture of a file. */
-  thumb(path: string): string {
-    return `${this.base}/api/files/thumbnail?file_path=${encodeURIComponent(baileywikiPath(path))}`;
   }
 }
