@@ -1,11 +1,13 @@
+import { diceFormula } from '@vtt/shared';
 import { DamageTypeSchema, type Item, ItemSchema, WeaponPropertySchema } from '@vtt/system-dnd5e';
+import { t } from '../../i18n/index.ts';
 import { Checkbox } from '../kit/checkbox.tsx';
 import { Input } from '../kit/input.tsx';
 import { NumberField } from '../kit/number-field.tsx';
 import { SelectField } from '../kit/select.tsx';
 import { Textarea } from '../kit/textarea.tsx';
 import { Toggle } from '../kit/toggle.tsx';
-import { choices, Field, Problem, useChecked, NameField } from './fields.tsx';
+import { type Checks, choices, Field, Problem, useChecked, NameField } from './fields.tsx';
 
 type Weapon = Extract<Item, { type: 'weapon' }>;
 type Armor = Extract<Item, { type: 'armor' }>;
@@ -27,9 +29,39 @@ function retype(item: Item, type: Item['type']): Item {
   return { ...base, type: 'gear' };
 }
 
+/** Why `dice` can't be rolled, or undefined when it can. */
+const diceProblem = (what: string, dice: string | undefined) =>
+  dice === undefined || diceFormula(dice) ? undefined : t('item.form.badDice', { what, dice });
+
+/** The item's dice, tidied the way they roll ("1В10 + 3" is saved as "1d10+3"). */
+function tidyDice(item: Item): Item {
+  if (item.type === 'weapon') return { ...item, damage: { ...item.damage, dice: diceFormula(item.damage.dice)! } };
+  const heal = item.type === 'gear' ? item.use?.heal : undefined;
+  return heal && item.type === 'gear' ? { ...item, use: { ...item.use!, heal: diceFormula(heal)! } } : item;
+}
+
+/** Why the item's damage or healing dice can't be rolled, if they can't. */
+function itemDiceProblem(item: Item): string | undefined {
+  if (item.type === 'weapon') return diceProblem(t('item.form.damage'), item.damage.dice);
+  if (item.type === 'gear') return diceProblem(t('item.form.healing'), item.use?.heal);
+  return undefined;
+}
+
+/** ItemSchema, and dice that roll: a typo'd damage is shown, not saved. */
+const itemChecks: Checks<Item> = {
+  safeParse(value) {
+    const item = value as Item;
+    const problem = itemDiceProblem(item);
+    if (problem) return { success: false, error: { issues: [{ message: problem }] } };
+    const parsed = ItemSchema.safeParse(item);
+    if (parsed.success) return { success: true, data: tidyDice(parsed.data) };
+    return { success: false, error: { issues: parsed.error.issues } };
+  },
+};
+
 /** A homemade item: what it is, and what it does as gear, a weapon or armour. */
 export function ItemForm({ item, onSave }: Readonly<{ item: Item; onSave: (item: Item) => void }>) {
-  const { draft, change, replace, problem } = useChecked<Item>(item, ItemSchema, onSave);
+  const { draft, change, replace, problem } = useChecked<Item>(item, itemChecks, onSave);
   return (
     <div className="grid grid-cols-2 gap-3">
       <NameField name={draft.name} onChange={(name) => change({ name })} />
@@ -93,9 +125,10 @@ function WeaponFields({ weapon, change }: Readonly<{ weapon: Weapon; change: (p:
     });
   return (
     <>
-      <Field label="Damage">
+      <Field label={t('item.form.damageDice')}>
         <Input
           value={weapon.damage.dice}
+          placeholder="e.g. 1d10"
           onChange={(e) => change({ damage: { ...weapon.damage, dice: e.target.value } })}
         />
       </Field>
@@ -120,6 +153,16 @@ function WeaponFields({ weapon, change }: Readonly<{ weapon: Weapon; change: (p:
           options={choices(['melee', 'ranged'])}
         />
       </Field>
+      <Field label={t('item.form.magicBonus')}>
+        <NumberField
+          value={weapon.plus ?? 0}
+          min={0}
+          max={3}
+          onValueChange={(plus) => change({ plus: plus || undefined })}
+        />
+      </Field>
+      {weapon.kind === 'ranged' && <RangeFields weapon={weapon} change={change} />}
+      <p className="col-span-2 text-xs text-muted-foreground">{t('item.form.weaponNote')}</p>
       <Field label="Properties" wide>
         <div className="flex flex-wrap gap-1.5">
           {WeaponPropertySchema.options.map((p) => (
@@ -128,6 +171,20 @@ function WeaponFields({ weapon, change }: Readonly<{ weapon: Weapon; change: (p:
             </Toggle>
           ))}
         </div>
+      </Field>
+    </>
+  );
+}
+
+function RangeFields({ weapon, change }: Readonly<{ weapon: Weapon; change: (p: Partial<Weapon>) => void }>) {
+  const [near, far] = weapon.range ?? [80, 320];
+  return (
+    <>
+      <Field label={t('item.form.range')}>
+        <NumberField value={near} min={5} step={5} onValueChange={(n) => change({ range: [n, Math.max(n, far)] })} />
+      </Field>
+      <Field label={t('item.form.longRange')}>
+        <NumberField value={far} min={near} step={5} onValueChange={(n) => change({ range: [near, n] })} />
       </Field>
     </>
   );

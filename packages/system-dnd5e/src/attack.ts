@@ -1,5 +1,5 @@
 import type { Creature } from './creature.ts';
-import { type GridKind, type Lattice, latticeOf, type Rng, roll, type Roll } from '@vtt/shared';
+import { diceText, type GridKind, type Lattice, latticeOf, type Rng, roll, type Roll } from '@vtt/shared';
 import { d20Formula } from './effects.ts';
 import {
   chosenCrit,
@@ -44,7 +44,9 @@ export interface AttackRoll {
 
 /** Doubles every die in a damage formula for a critical hit: "1d8+3" becomes "2d8+3". */
 export function critDice(formula: string): string {
-  const terms = formula.replace(/\s+/g, '').split(/(?=[+-])/);
+  const terms = diceText(formula)
+    .replace(/\s+/g, '')
+    .split(/(?=[+-])/);
   return terms.map(doubleTerm).join('');
 }
 

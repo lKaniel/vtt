@@ -7,6 +7,7 @@ import {
   type InventoryEntry,
   type Item,
   MAX_ATTUNED,
+  ownCopy,
   SPELL_SCROLL,
 } from '@vtt/system-dnd5e';
 import { ShieldIcon, SparklesIcon, SwordsIcon, WandSparklesIcon } from 'lucide-react';
@@ -60,12 +61,19 @@ export function InventoryTab(props: Readonly<SheetProps>) {
     .map((s) => ({ ...s, indexes: s.indexes.filter((i) => matches(look(i).name, query)) }))
     .filter((s) => s.container !== undefined || s.indexes.length);
   const attacks = sheet.attacks.filter((a) => matches(a.name, query));
+  // An item from a compendium is copied onto the sheet first, so the change is this sheet's alone.
+  const openItem = (id: string) => {
+    const item = contentFor(value, sheet.edition).items.get(id);
+    if (!item) return;
+    if (!isOwn(value, 'item', id)) update((d) => ownCopy(d, item), true);
+    own.open('item', id);
+  };
   return (
     <>
       <SheetSearch value={query} onChange={setQuery} />
-      {attacks.length > 0 && <Attacks {...props} attacks={attacks} />}
+      {attacks.length > 0 && <Attacks {...props} attacks={attacks} onOpen={openItem} />}
       {sections.map((s) => (
-        <GearSection key={s.id} {...props} section={s} onOpen={(id) => own.open('item', id)} />
+        <GearSection key={s.id} {...props} section={s} onOpen={openItem} />
       ))}
       {!list.length && <Empty>{t('sheet.emptyHanded')}</Empty>}
       {query && !attacks.length && !sections.length && <Empty>{t('sheet.nothingFound', { query })}</Empty>}
@@ -76,11 +84,22 @@ export function InventoryTab(props: Readonly<SheetProps>) {
   );
 }
 
-function Attacks(props: Readonly<SheetProps & { attacks: Attack[] }>) {
+/** Whether the viewer may change this sheet (its owner or the GM), edit mode or not. */
+const editable = ({ session, value, kind }: Readonly<SheetProps>) => session.canEdit(value.id, kind);
+
+/** The carried weapon an attack is made with, found by its name. */
+function weaponOf({ value, sheet }: Readonly<SheetProps>, attack: Attack): string | undefined {
+  if (!attack.weapon) return undefined;
+  const items = contentFor(value, sheet.edition).items;
+  return (value.inventory ?? []).find((e) => items.get(e.item)?.name === attack.name)?.item;
+}
+
+function Attacks(props: Readonly<SheetProps & { attacks: Attack[]; onOpen: (item: string) => void }>) {
   const act = canAct(props);
+  const canEdit = editable(props);
   const columns = attackColumns();
   return (
-    <ListSection title={t('sheet.attacks')} columns={columns}>
+    <ListSection title={t('sheet.attacks')} label={t('sheet.attacks')} columns={columns}>
       {props.attacks.map((a) => (
         <ListRow
           key={a.name}
@@ -90,19 +109,27 @@ function Attacks(props: Readonly<SheetProps & { attacks: Attack[] }>) {
           columns={columns}
           cells={[signed(a.toHit), a.damage.map((d) => d.dice).join(' + '), attackRange(a)]}
           onDragStart={(e) => dragTile(e, { ref: `attack:${a.name}` })}
-          controls={
-            act && (
-              <RowButton
-                label={t('sheet.use', { name: a.name })}
-                onClick={() => actFromSheet(props, `attack:${a.name}`)}
-              >
-                <SwordsIcon />
-              </RowButton>
-            )
-          }
+          controls={<AttackControls {...props} attack={a} act={act} canEdit={canEdit} />}
         />
       ))}
     </ListSection>
+  );
+}
+
+function AttackControls(
+  p: Readonly<SheetProps & { attack: Attack; act: boolean; canEdit: boolean; onOpen: (item: string) => void }>,
+) {
+  const { attack: a } = p;
+  const weapon = p.canEdit ? weaponOf(p, a) : undefined;
+  return (
+    <>
+      {p.act && (
+        <RowButton label={t('sheet.use', { name: a.name })} onClick={() => actFromSheet(p, `attack:${a.name}`)}>
+          <SwordsIcon />
+        </RowButton>
+      )}
+      {weapon && <EditButton name={a.name} onClick={() => p.onOpen(weapon)} />}
+    </>
   );
 }
 
@@ -231,7 +258,7 @@ function QtyField(p: Readonly<RowProps>) {
   );
 }
 
-/** Use (a potion, a scroll), equip and attune; in edit mode also edit and remove. */
+/** Use (a potion, a scroll), equip, attune and edit (whoever may change the sheet); in edit mode also remove. */
 type ControlProps = RowProps & { entry: InventoryEntry; refName: string; name: string };
 
 function GearControls(p: Readonly<ControlProps>) {
@@ -246,10 +273,15 @@ function GearControls(p: Readonly<ControlProps>) {
       )}
       {item?.attunement && <AttuneButton {...p} />}
       {wearable(item) && <EquipButton {...p} />}
+      {canEditItem(p, item) && <EditButton name={p.name} onClick={() => p.onOpen(p.entry.item)} />}
       {p.edit && <EditControls {...p} />}
     </>
   );
 }
+
+/** Whether the viewer may open this item in the editor (a spell scroll is its spell, not an item to change). */
+const canEditItem = (p: Readonly<ControlProps>, item: Item | undefined) =>
+  !!item && item.id !== SPELL_SCROLL && editable(p);
 
 /** Gear an owner changes through the server at the table, and the sheet's editor in the draft. */
 const liveGear = (p: Readonly<ControlProps>) => canCarry(p) && !p.edit;
@@ -293,18 +325,13 @@ function EquipButton(p: Readonly<ControlProps>) {
   );
 }
 
-/** Edit mode: open an item made on this sheet, and take anything off it. */
+/** Edit mode: take anything off the sheet. */
 function EditControls(p: Readonly<ControlProps>) {
   const { value, update, entry, index } = p;
   const mine = isOwn(value, 'item', entry.item);
   const remove = () =>
     mine ? update((d) => dropOwn(d, 'item', entry.item), true) : setList(p)(dropEntry(value.inventory ?? [], index));
-  return (
-    <>
-      {mine && <EditButton name={p.name} onClick={() => p.onOpen(entry.item)} />}
-      <RemoveButton onClick={remove} />
-    </>
-  );
+  return <RemoveButton onClick={remove} />;
 }
 
 /** Coins, carried weight and attunement, at the foot of the tab. */

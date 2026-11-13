@@ -110,6 +110,16 @@ export function changeOwn<T extends EditableSheet, K extends OwnKind>(sheet: T, 
   );
 }
 
+/**
+ * `sheet` with its own copy of `item` (same id, so it stands in for the
+ * compendium's on this sheet only), to change there; as it was if it has one.
+ */
+export function ownCopy<T extends EditableSheet>(sheet: T, item: Item): T {
+  const list = sheet.own?.items ?? [];
+  if (list.some((x) => x.id === item.id)) return sheet;
+  return withList(sheet, 'item', [...list, structuredClone(item)]);
+}
+
 /** `sheet` without its own `id`; an item also leaves the bag. */
 export function dropOwn<T extends EditableSheet>(sheet: T, kind: OwnKind, id: string): T {
   const list = (sheet.own?.[`${kind}s`] ?? []) as { id: string }[];

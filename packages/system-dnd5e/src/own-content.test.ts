@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { srdFor } from './content.ts';
 import { resolveCreature } from './creature.ts';
-import { blankOwn, changeOwn, dropOwn, makeOwn, withOwn } from './own-content.ts';
+import { blankOwn, changeOwn, dropOwn, makeOwn, ownCopy, withOwn } from './own-content.ts';
 import { castProblem } from './spells.ts';
 import { FeatureSchema, SpellSchema } from './spell-schema.ts';
 import { ItemSchema } from './item-schema.ts';
@@ -118,5 +118,17 @@ describe('making, changing and dropping own entries', () => {
     expect(left.own?.items?.map((i) => i.id)).toEqual(['new-item-2']);
     expect(left.inventory?.map((e) => e.item)).toEqual(['new-item-2']);
     expect(dropOwn(dropOwn(left, 'item', 'new-item-2'), 'item', 'x').own).toBeUndefined();
+  });
+
+  it('copies a compendium item onto the sheet to change it there; the copy wins for this sheet only', () => {
+    const longsword = book.items.get('longsword')!;
+    const carrying = { ...bare, inventory: [{ item: 'longsword', qty: 1, equipped: true }] };
+    const copied = ownCopy(carrying, longsword);
+    expect(copied.own?.items?.map((i) => i.id)).toEqual(['longsword']);
+    expect(copied.inventory).toEqual(carrying.inventory);
+    const heavier = changeOwn(copied, 'item', { ...copied.own!.items![0]!, name: 'Heirloom Longsword' });
+    expect(withOwn(book, heavier).items.get('longsword')?.name).toBe('Heirloom Longsword');
+    expect(book.items.get('longsword')?.name).toBe('Longsword');
+    expect(ownCopy(heavier, longsword)).toBe(heavier);
   });
 });

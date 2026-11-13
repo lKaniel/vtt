@@ -110,3 +110,15 @@ test('the GM gives heroic inspiration and takes it back', async ({ page }) => {
   await inspiration.click();
   await expect(inspiration).toHaveAttribute('aria-pressed', 'false');
 });
+
+test('the GM edits a carried weapon from its attack row, typing the dice on a Ukrainian layout', async ({ page }) => {
+  await atTable(page, GM);
+  const sheet = await openBram(page);
+  const attacks = sheet.getByRole('region', { name: 'Attacks' });
+  await attacks.getByRole('button', { name: 'Edit Longsword' }).click();
+  const editor = page.getByRole('dialog', { name: /Longsword/ });
+  await editor.getByLabel('Damage dice').fill('1в10');
+  await editor.getByRole('button', { name: 'Close' }).click();
+  // Strength +3 on top of the d10, read the way it rolls.
+  await expect(attacks.getByRole('listitem', { name: 'Longsword' })).toContainText('1d10+3');
+});

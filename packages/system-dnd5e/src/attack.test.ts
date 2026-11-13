@@ -54,6 +54,9 @@ describe('critDice', () => {
     expect(critDice('2d6 + 1d4 - 1')).toBe('4d6+2d4-1');
     expect(critDice('3')).toBe('3');
   });
+  it('doubles dice typed on a Cyrillic layout too', () => {
+    expect(critDice('1в10+3')).toBe('2d10+3');
+  });
 });
 
 describe('rollAttack', () => {
@@ -61,6 +64,13 @@ describe('rollAttack', () => {
     const r = rollAttack(sword, target(), {}, d20s(10));
     expect(r).toMatchObject({ total: 15, hit: true, crit: false });
     expect(r.damage[0]!.roll.formula).toBe('1d8+3');
+  });
+
+  it('rolls a weapon whose damage was typed on a Ukrainian layout ("1в10+3")', () => {
+    const scythe = { ...sword, damage: [{ dice: '1в10+3', type: 'slashing' as const }] };
+    const r = rollAttack(scythe, target(), {}, d20s(10));
+    expect(r.hit).toBe(true);
+    expect(r.damage[0]!.roll.formula).toBe('1d10+3');
   });
 
   it('multiplies a damage part by its `times`, rounded down', () => {

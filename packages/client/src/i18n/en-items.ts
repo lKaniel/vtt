@@ -1,6 +1,15 @@
 // Words for items: what a magic item does, shown in its tooltip and the Compendium.
 
 export const EN_ITEMS = {
+  'item.form.damageDice': 'Damage dice',
+  'item.form.magicBonus': 'Magic bonus (+ to hit and damage)',
+  'item.form.range': 'Range (ft)',
+  'item.form.longRange': 'Long range (ft)',
+  'item.form.weaponNote':
+    'The sheet adds Strength or Dexterity (and proficiency to hit) by itself; the reach property makes it 10 ft.',
+  'item.form.badDice': '{what} "{dice}" can\'t be rolled; write it like 1d10+3',
+  'item.form.damage': 'Damage',
+  'item.form.healing': 'Healing',
   'compendium.facet.rarity': 'rarity',
   'item.plus': '{n} to attack and damage',
   'item.hit': '{dice} {type} on a hit',
