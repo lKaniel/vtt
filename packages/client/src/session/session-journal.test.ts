@@ -42,10 +42,20 @@ const inn: Doc = {
   ],
 };
 
+const fx: Doc = {
+  id: 'fx',
+  type: 'playlist',
+  rev: 1,
+  name: 'Effects',
+  mode: 'board',
+  volume: 0.5,
+  tracks: [{ id: 'roar', name: 'Roar', src: '/assets/uploads/roar.ogg', volume: 0.8 }],
+};
+
 function joinAs(role: 'gm' | 'player'): void {
   const base = welcome([]) as Extract<ServerMessage, { t: 'welcome' }>;
   const you = role === 'gm' ? { id: 'gm', name: 'GM', role, color: '#fc0' } : base.you;
-  ws.receive({ ...base, you, docs: { journals: [lore], tables: [loot], playlists: [inn] } });
+  ws.receive({ ...base, you, docs: { journals: [lore], tables: [loot], playlists: [inn, fx] } });
 }
 
 const last = () => ws.sent.at(-1) as Record<string, unknown>;
@@ -87,6 +97,22 @@ describe('the sidebar documents in the session', () => {
     expect(last()).toMatchObject({ ops: [{ patch: { tracks: [{ id: 'lute' }, { id: 'harp', playing: true }] } }] });
     session.journal.stopPlaylist('inn');
     expect(last()).toMatchObject({ label: 'stop music' });
+  });
+
+  it('play a soundboard sound once for the table, at its volume times the board’s', () => {
+    joinAs('gm');
+    session.journal.playSound('fx', 'roar');
+    expect(last()).toEqual({ t: 'playSound', src: '/assets/uploads/roar.ogg', volume: 0.4 });
+  });
+
+  it('add a track by its file and take one out', () => {
+    joinAs('gm');
+    session.journal.addTrack('inn', '/assets/uploads/rain-on-roof.ogg');
+    expect(last()).toMatchObject({
+      ops: [{ patch: { tracks: [{ id: 'lute' }, { id: 'harp' }, { id: 'rain-on-roof', name: 'rain on roof' }] } }],
+    });
+    session.journal.removeTrack('inn', 'lute');
+    expect(last()).toMatchObject({ ops: [{ patch: { tracks: [{ id: 'harp' }, { id: 'rain-on-roof' }] } }] });
   });
 
   it('make new entries, tables and playlists for the GM', () => {

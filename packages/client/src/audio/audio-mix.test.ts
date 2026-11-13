@@ -27,6 +27,11 @@ describe('the audio mix', () => {
     ]);
   });
 
+  it('never plays a soundboard on its own: its sounds play once, when the GM presses them', () => {
+    const board = { ...inn, id: 'board', mode: 'board' };
+    expect(audioMix({ ...base, playlists: [board], sounds: [], listener: undefined })).toEqual([]);
+  });
+
   it('plays ambient sounds by how near the listener is, and none without one', () => {
     expect(audioMix({ ...base, playlists: [], sounds: [brook], listener: [100, 0] })).toEqual([
       { key: 'sound:brook', src: 'brook.ogg', volume: 0.5, loop: true },

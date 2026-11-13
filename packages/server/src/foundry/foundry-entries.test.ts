@@ -46,6 +46,7 @@ describe('Foundry sidebar documents', () => {
             { name: 'Gone', path: 'music/gone.ogg' },
           ],
         },
+        { name: 'Effects', mode: -1, sounds: [{ name: 'Roar', path: 'music/inn.ogg' }] },
       ],
     },
     media,
@@ -114,6 +115,13 @@ describe('Foundry sidebar documents', () => {
         name: 'Inn',
         mode: 'shuffle',
         tracks: [{ id: 'lute', name: 'Lute', src: 'pack://m/media/music/inn.ogg', volume: 0.5, repeat: true }],
+      },
+      // Foundry's "soundboard only" playlist
+      {
+        id: 'effects',
+        name: 'Effects',
+        mode: 'board',
+        tracks: [{ id: 'roar', name: 'Roar', src: 'pack://m/media/music/inn.ogg' }],
       },
     ]);
     for (const p of out.playlists) PlaylistSchema.parse(p);

@@ -2,6 +2,7 @@ import type { Doc } from '@vtt/core';
 import { useState } from 'react';
 import type { Session } from '../session/session.ts';
 import {
+  AudioLinesIcon,
   ListOrderedIcon,
   MusicIcon,
   PencilIcon,
@@ -10,14 +11,16 @@ import {
   SquareIcon,
   Trash2Icon,
   Volume2Icon,
+  XIcon,
 } from 'lucide-react';
 import { t } from '../i18n/index.ts';
 import { startDrag } from '../play/drops.ts';
+import { AddTrack } from './AddTrack.tsx';
 import { Directory, type DirItem } from './directory/Directory.tsx';
 import { Button } from './kit/button.tsx';
 import { Dialog, DialogContent, DialogTitle } from './kit/dialog.tsx';
-import { Input } from './kit/input.tsx';
 import { SelectField } from './kit/select.tsx';
+import { SoundboardEditor } from './SoundboardEditor.tsx';
 
 interface Track {
   id: string;
@@ -32,8 +35,45 @@ const nameOf = (doc: Doc) => (typeof doc.name === 'string' ? doc.name : doc.id);
 const tracksOf = (doc: Doc) => (doc.tracks as Track[] | undefined) ?? [];
 
 const MODES = ['sequence', 'shuffle', 'together'] as const;
+const isBoard = (doc: Doc) => doc.mode === 'board';
+
+/** A soundboard in the list: a click opens its buttons. */
+function boardItem(session: Session, doc: Doc, edit: (id: string) => void): DirItem {
+  return {
+    key: doc.id,
+    ref: { coll: 'playlists', id: doc.id },
+    name: nameOf(doc),
+    folder: typeof doc.folder === 'string' ? doc.folder : undefined,
+    tags: { playing: 'no' },
+    search: tracksOf(doc)
+      .map((tr) => tr.name)
+      .join(' '),
+    look: {
+      picture: (
+        <span className="flex items-center justify-center text-gold">
+          <AudioLinesIcon className="size-4" />
+        </span>
+      ),
+      sub: t(tracksOf(doc).length === 1 ? 'board.sound' : 'board.sounds', { n: tracksOf(doc).length }),
+    },
+    open: () => edit(doc.id),
+    openTwice: () => edit(doc.id),
+    title: t('board.clickHint'),
+    menu: [
+      { label: t('board.open'), icon: AudioLinesIcon, run: () => edit(doc.id) },
+      'separator',
+      {
+        label: t('list.delete'),
+        icon: Trash2Icon,
+        danger: true,
+        run: () => session.journal.deleteEntry('playlists', doc.id),
+      },
+    ],
+  };
+}
 
 function playlistItem(session: Session, doc: Doc, edit: (id: string) => void): DirItem {
+  if (isBoard(doc)) return boardItem(session, doc, edit);
   const tracks = tracksOf(doc);
   const playing = tracks.some((tr) => tr.playing);
   const mode = typeof doc.mode === 'string' ? doc.mode : 'sequence';
@@ -93,7 +133,10 @@ function playlistItem(session: Session, doc: Doc, edit: (id: string) => void): D
   };
 }
 
-/** GM: playlists, in folders. Play one (every player hears it), pick a track, stop; add tracks by their file. */
+/**
+ * GM: playlists and soundboards, in folders. Play a playlist (every player hears it), pick a track, stop;
+ * press a soundboard's button to play its sound once. Tracks and sounds are added by their file or uploaded.
+ */
 export function PlaylistsTab({ session }: Readonly<{ session: Session }>) {
   const [editing, setEditing] = useState<string>();
   const items = session.docs.all('playlists').map((doc) => playlistItem(session, doc, setEditing));
@@ -117,10 +160,20 @@ export function PlaylistsTab({ session }: Readonly<{ session: Session }>) {
           },
         ]}
         actions={
-          <Button variant="outline" size="sm" onClick={() => session.journal.createEntry('playlist')}>
-            <PlusIcon />
-            {t('music.new')}
-          </Button>
+          <>
+            <Button variant="outline" size="sm" onClick={() => session.journal.createEntry('playlist')}>
+              <PlusIcon />
+              {t('music.new')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => session.journal.createEntry('playlist', { name: t('board.newName'), mode: 'board' })}
+            >
+              <AudioLinesIcon />
+              {t('board.new')}
+            </Button>
+          </>
         }
         empty={t('music.none')}
         hint={t('music.hint')}
@@ -129,7 +182,11 @@ export function PlaylistsTab({ session }: Readonly<{ session: Session }>) {
         {open && (
           <DialogContent>
             <DialogTitle>{nameOf(open)}</DialogTitle>
-            <PlaylistEditor session={session} doc={open} />
+            {isBoard(open) ? (
+              <SoundboardEditor session={session} doc={open} />
+            ) : (
+              <PlaylistEditor session={session} doc={open} />
+            )}
           </DialogContent>
         )}
       </Dialog>
@@ -171,36 +228,19 @@ function PlaylistEditor({ session, doc }: Readonly<{ session: Session; doc: Doc 
             >
               <PlayIcon />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t('music.removeTrack', { track: tr.name })}
+              title={t('music.removeTrack', { track: tr.name })}
+              onClick={() => session.journal.removeTrack(doc.id, tr.id)}
+            >
+              <XIcon />
+            </Button>
           </li>
         ))}
       </ul>
       <AddTrack session={session} doc={doc} />
     </div>
-  );
-}
-
-function AddTrack({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
-  const [src, setSrc] = useState('');
-  const add = (e: React.SubmitEvent) => {
-    e.preventDefault();
-    const file = src.trim();
-    if (!file) return;
-    const tracks = tracksOf(doc);
-    const name =
-      file
-        .split('/')
-        .at(-1)
-        ?.replace(/\.[^.]*$/, '') ?? 'Track';
-    const id = `track-${tracks.length + 1}`;
-    session.journal.patchEntry('playlists', doc.id, { tracks: [...tracks, { id, name, src: file }] });
-    setSrc('');
-  };
-  return (
-    <form className="scene-new" onSubmit={add}>
-      <Input value={src} onChange={(e) => setSrc(e.target.value)} placeholder="/assets/music/inn.ogg or pack://…" />
-      <Button variant="outline" size="sm" disabled={!src.trim()}>
-        Add
-      </Button>
-    </form>
   );
 }

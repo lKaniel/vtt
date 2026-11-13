@@ -83,6 +83,8 @@ export type EngineClientMessage =
   | { t: 'target'; tokens: string[] }
   /** Who sees your rolls and the cards of your actions from now on (see roll-modes.ts). */
   | { t: 'rollMode'; mode: RollMode }
+  /** GM: the soundboard plays a sound once for everyone at the table (each is sent `sound`). */
+  | { t: 'playSound'; src: string; volume?: number }
   | { t: 'door'; chunk: string; wall: string; state: DoorState }
   /** Click a tile that has a trigger, with one of your creatures for the actions that move one (see triggers.ts). */
   | { t: 'trigger'; tile: string; token?: string }
@@ -190,7 +192,7 @@ export type EngineServerMessage =
   | { t: 'lighting'; darkness: number }
   /** The scene's weather changed (by hand, or with the time): no need to start over. */
   | { t: 'weather'; weather: Weather[] }
-  /** A trigger plays a sound once for everyone on the scene. */
+  /** A sound to play once: a trigger's, for everyone on the scene, or the GM's soundboard, for the whole table. */
   | { t: 'sound'; src: string; volume?: number }
   /** Your creature stepped into an elevator: pick one of these levels (answer with `changeLevel`). */
   | { t: 'levelChoice'; token: string; levels: string[] }
