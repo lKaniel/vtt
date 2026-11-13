@@ -43,7 +43,7 @@ describe('characterOnMap', () => {
       ownership: { default: 'limited', dee: 'owner', 'gm-friend': 'owner' },
       hotbar: ['spell:fire-bolt'],
     });
-    const after = characterOnMap({ ...vex, name: 'Vex the Bold', level: 2 }, before, [0, 0]);
+    const after = characterOnMap({ ...vex, name: 'Vex the Bold', level: 2 }, before, [0, 0], vex);
     expect(after).toMatchObject({
       name: 'Vex the Bold',
       x: 900,

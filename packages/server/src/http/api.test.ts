@@ -72,6 +72,36 @@ describe('characters', () => {
     expect((await bo('POST', '/api/games/test/bring', { character: id })).status).toBe(404);
   });
 
+  it("keep the GM's edits to their token when the player enters the game again", async () => {
+    const ana = await api.joined('test', 'ana');
+    const id = ((await ana('POST', base, sorcerer)).json.character as Json).id as string;
+    await ana('POST', '/api/games/test/bring', { character: id });
+    const look = { name: 'Vex the Red', img: '/assets/uploads/vex.png', size: 2, color: '#aa2222', speed: 40 };
+    store.setToken({ ...store.tokens.get(id)!, ...look });
+    expect((await ana('POST', '/api/games/test/bring', { character: id })).status).toBe(200);
+    expect(store.tokens.get(id)).toMatchObject(look);
+    expect(store.actors.get(id)).toMatchObject(look);
+  });
+
+  it('come back as their actor stands when their token left the map', async () => {
+    const ana = await api.joined('test', 'ana');
+    const id = ((await ana('POST', base, sorcerer)).json.character as Json).id as string;
+    await ana('POST', '/api/games/test/bring', { character: id });
+    store.setToken({ ...store.tokens.get(id)!, name: 'Vex the Red', img: '/assets/uploads/vex.png', hp: 2 });
+    store.removeToken(id);
+    await ana('POST', '/api/games/test/bring', { character: id });
+    expect(store.tokens.get(id)).toMatchObject({ name: 'Vex the Red', img: '/assets/uploads/vex.png', hp: 2 });
+  });
+
+  it("keep the token's look when levelling up, unless the player changed it", async () => {
+    const ana = await api.joined('test', 'ana');
+    const id = ((await ana('POST', base, sorcerer)).json.character as Json).id as string;
+    await ana('POST', '/api/games/test/bring', { character: id });
+    store.setToken({ ...store.tokens.get(id)!, img: '/assets/uploads/vex.png', size: 2 });
+    await ana('PUT', `${base}/${id}`, { ...sorcerer, name: 'Vex Prime', level: 2, hpRolls: [4] });
+    expect(store.tokens.get(id)).toMatchObject({ name: 'Vex Prime', img: '/assets/uploads/vex.png', size: 2 });
+  });
+
   it('level the token up with them, keeping its wounds and position', async () => {
     const ana = await api.joined('test', 'ana');
     const id = ((await ana('POST', base, sorcerer)).json.character as Json).id as string;

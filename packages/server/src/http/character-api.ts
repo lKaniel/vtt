@@ -1,5 +1,13 @@
 import { randomBytes } from 'node:crypto';
-import { type Character, characterIssues, characterOnMap, CharacterSchema, freeSquare } from '@vtt/system-dnd5e';
+import {
+  type Character,
+  characterBack,
+  characterIssues,
+  characterOnMap,
+  CharacterSchema,
+  freeSquare,
+  resolveToken,
+} from '@vtt/system-dnd5e';
 import { ownersOf, type Player, type Point, uniqueId } from '@vtt/shared';
 import { z } from 'zod';
 import type { CharacterStore } from '../library/characters.ts';
@@ -69,7 +77,7 @@ export class CharacterRoutes {
     if (call.method === 'POST' && !id) return this.save(g, this.newId());
     const owned = id && this.deps.characters.owned(id, info.id, seat.id);
     if (!owned) throw new HttpError(404, 'No such character.');
-    if (call.method === 'PUT') return this.save(g, owned.id);
+    if (call.method === 'PUT') return this.save(g, owned.id, owned);
     if (call.method !== 'DELETE') throw new HttpError(405, 'Method not allowed.');
     await this.deps.characters.remove(owned.id);
     send(call.res, 200, {});
@@ -83,7 +91,7 @@ export class CharacterRoutes {
     return (name) => uniqueId(`${name} ${suffix}`, taken);
   }
 
-  private async save(g: Seated, id: string | ((name: string) => string)): Promise<void> {
+  private async save(g: Seated, id: string | ((name: string) => string), previous?: Character): Promise<void> {
     const input = await parseBody(g.call.req, CharacterInput);
     const store = await this.store(g);
     const built: Character = {
@@ -96,7 +104,7 @@ export class CharacterRoutes {
     const issues = characterIssues(character);
     if (issues.length) throw new HttpError(400, issues[0]!, issues);
     await this.deps.characters.save(character);
-    updateOnMap(store, character);
+    updateOnMap(store, character, previous);
     send(g.call.res, 200, { character });
   }
 
@@ -127,23 +135,33 @@ export class CharacterRoutes {
   }
 }
 
-/** A saved (or levelled-up) character's tokens take its new build, keeping their play state. */
-function updateOnMap(store: GameStore, character: Character): void {
+/** A saved (or levelled-up) character's tokens take its new build, keeping their play state and look. */
+function updateOnMap(store: GameStore, character: Character, previous: Character | undefined): void {
   for (const scene of store.sceneIds()) {
     store.inScene(scene, () => {
       const token = store.tokens.get(character.id);
-      if (token) store.setToken(characterOnMap(character, token, [token.x, token.y]));
+      if (token) store.setToken(characterOnMap(character, token, [token.x, token.y], previous));
     });
   }
 }
 
-/** Puts a character on the map as a linked actor the player owns, or updates the one there. */
+/**
+ * Puts a character on the map as a linked actor the player owns. A token already there, or the actor
+ * when its token left this scene, is kept as the table made it (the GM's edits survive the player
+ * entering again); saving the character is what updates it.
+ */
 function place(store: GameStore, c: Character): void {
   const existing = store.tokens.get(c.id);
   if (existing && !ownersOf(existing).includes(c.owner)) {
     throw new HttpError(409, 'A creature on the map already uses that name.');
   }
+  if (existing) {
+    store.setToken(characterBack(c, existing));
+    return;
+  }
   const taken: Point[] = [...store.tokens.values()].map((t) => [t.x, t.y]);
   const at = freeSquare(store.world.start, taken, store.world.gridSize);
-  store.setToken(characterOnMap(c, existing, at));
+  const actor = store.actors.get(c.id);
+  const fromActor = actor && resolveToken({ id: c.id, x: at[0], y: at[1], actor: c.id, linked: true }, actor).token;
+  store.setToken(fromActor ? characterBack(c, fromActor) : characterOnMap(c, undefined, at));
 }

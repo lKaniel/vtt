@@ -29,12 +29,25 @@ function ringSquares(col: number, row: number, ring: number): [number, number][]
   return out.sort((a, b) => Math.abs(a[1] - row) - Math.abs(b[1] - row));
 }
 
+/** What the GM may dress a token in: kept on the map unless the player changes it on the character. */
+const LOOK = ['name', 'color', 'img', 'size'] as const;
+type Look = Pick<Token, (typeof LOOK)[number]>;
+
+/** The look fields the character changed since `previous` (none without one). */
+function lookChanges(c: Character, previous: Character | undefined): Partial<Look> {
+  if (!previous) return {};
+  const now = characterToken(c);
+  const was = characterToken(previous);
+  return Object.fromEntries(LOOK.filter((k) => now[k] !== was[k]).map((k) => [k, now[k]]));
+}
+
 /**
  * The character's token, linked to an actor of the same id: a new one at `at`, or `existing` with its build
- * (name, stats, speed, senses) refreshed. Play state stays as it is:
- * position, hit points, inventory, effects, spent slots, hotbar.
+ * (stats, speed, senses) refreshed. Play state stays as it is: position, hit points, inventory, effects,
+ * spent slots, hotbar. So does its look (name, picture, colour, size), which the GM may have edited,
+ * except what the player changed on the character since `previous`.
  */
-export function characterOnMap(c: Character, existing: Token | undefined, at: Point): Token {
+export function characterOnMap(c: Character, existing: Token | undefined, at: Point, previous?: Character): Token {
   const { inventory, ownership, ...build } = characterToken(c);
   if (!existing) {
     return TokenSchema.parse({
@@ -48,11 +61,19 @@ export function characterOnMap(c: Character, existing: Token | undefined, at: Po
       linked: true,
     });
   }
+  const look: Look = { name: existing.name, color: existing.color, img: existing.img, size: existing.size };
   return TokenSchema.parse({
     ...existing,
     ...build,
+    ...look,
+    ...lookChanges(c, previous),
     hidden: existing.hidden,
     ownership: withLevel(existing.ownership, c.owner, 'owner'),
     stats: { ...existing.stats, ...build.stats },
   });
+}
+
+/** The character's token on the map again: it stays as it is, only made sure to be the player's. */
+export function characterBack(c: Character, existing: Token): Token {
+  return { ...existing, ownership: withLevel(existing.ownership, c.owner, 'owner') };
 }
