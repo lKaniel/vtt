@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { easeAlpha, repeatPose, roofAlpha, roofsOver, roofWatchers, scrollOffset, tileMedia } from './tile-motion.ts';
+import {
+  easeAlpha,
+  pointerOnMap,
+  repeatPose,
+  roofAlpha,
+  roofsOver,
+  roofWatchers,
+  scrollOffset,
+  tileMedia,
+} from './tile-motion.ts';
 
 const roof = { x: 0, y: 0, w: 400, h: 300, overhead: true };
 
@@ -45,6 +54,15 @@ describe('roofs', () => {
     expect(roofWatchers({ gm: true, yours: [], selected: [], pointer: [5, 6] }, placeOf)).toEqual([[5, 6]]);
     expect(roofWatchers({ gm: true, yours: [], selected: ['b'], pointer: [5, 6] }, placeOf)).toEqual([[20, 20]]);
     expect(roofWatchers({ gm: false, yours: [], selected: [], pointer: [5, 6] }, placeOf)).toEqual([]);
+  });
+
+  it('take the pointer only while it is on the map itself, not on a panel or window over it', () => {
+    const [canvas, panel] = [{}, {}];
+    expect(pointerOnMap(canvas, canvas, false)).toBe(true);
+    expect(pointerOnMap(panel, canvas, false)).toBe(false);
+    expect(pointerOnMap(null, canvas, false)).toBe(false);
+    // The 3D view lies over the map's canvas.
+    expect(pointerOnMap(panel, canvas, true)).toBe(true);
   });
 });
 

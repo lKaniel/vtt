@@ -15,6 +15,7 @@ import type { EditorTool } from '../session/session-editor.ts';
 import { cuesOf } from '../feedback.ts';
 import { currentMotion } from '../play/animations.ts';
 import { ChunkLayer } from './ChunkLayer.ts';
+import { pointerOnMap } from './tile-motion.ts';
 import { CameraMotion } from './camera-motion.ts';
 import { EffectsLayer } from './EffectsLayer.ts';
 import { chunksInView, drawGrid } from './grid.ts';
@@ -410,7 +411,8 @@ export class MapView {
     const p: Point = [e.global.x, e.global.y];
     if (this.drag && dragTo(this.drag, p, this.cam)) this.dirty = true;
     this.hoverPoint = this.screenToWorld(p[0], p[1]);
-    this.session.pointer = this.hoverPoint;
+    const onMap = pointerOnMap(e.nativeEvent.target, this.app.canvas, this.session.view3d.on);
+    this.session.pointer = onMap ? this.hoverPoint : undefined;
     this.presence.move(p, this.hoverPoint);
     this.editor.pointerMove(this.hoverPoint, modsOf(e));
     this.brushes.move(this.hoverPoint, e.shiftKey);

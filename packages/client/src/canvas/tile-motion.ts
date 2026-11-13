@@ -98,6 +98,15 @@ export function roofWatchers(eyes: RoofEyes, placeOf: (id: string) => { at: Poin
   });
 }
 
+/**
+ * Whether a pointer move is on the map itself. The map hears moves anywhere on
+ * the page, so one over a panel or window (`target` is not the map's `canvas`)
+ * is not a point on the map. The 3D view lies over the canvas and keeps its pointer.
+ */
+export function pointerOnMap(target: unknown, canvas: unknown, view3d: boolean): boolean {
+  return view3d || target === canvas;
+}
+
 /** How far a scrolling picture has slid after `seconds`, wrapped to one repeat. */
 export function scrollOffset(scroll: { x: number; y: number }, seconds: number, w: number, h: number): Point {
   const wrap = (v: number, size: number) => ((v % size) + size) % size;
