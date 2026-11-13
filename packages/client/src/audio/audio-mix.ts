@@ -30,20 +30,23 @@ export interface MixInput {
 const round = (v: number) => Math.round(v * 1000) / 1000;
 
 function music(playlists: readonly Doc[]): Channel[] {
-  return playlists.flatMap((p) => {
-    const tracks = (p.tracks as Track[] | undefined) ?? [];
-    const gain = (p.volume as number | undefined) ?? 1;
-    return tracks
-      .filter((t) => t.playing)
-      .map((t) => ({
-        key: `music:${p.id}:${t.id}`,
-        src: t.src,
-        volume: round((t.volume ?? 1) * gain),
-        loop: p.mode === 'together' || !!t.repeat,
-        playlist: p.id,
-        track: t.id,
-      }));
-  });
+  // A soundboard's sounds play once, through the GM's `playSound`.
+  return playlists
+    .filter((p) => p.mode !== 'board')
+    .flatMap((p) => {
+      const tracks = (p.tracks as Track[] | undefined) ?? [];
+      const gain = (p.volume as number | undefined) ?? 1;
+      return tracks
+        .filter((t) => t.playing)
+        .map((t) => ({
+          key: `music:${p.id}:${t.id}`,
+          src: t.src,
+          volume: round((t.volume ?? 1) * gain),
+          loop: p.mode === 'together' || !!t.repeat,
+          playlist: p.id,
+          track: t.id,
+        }));
+    });
 }
 
 function ambient(input: MixInput): Channel[] {

@@ -80,3 +80,23 @@ describe('cursors', () => {
     expect(gm.take('cursor')).toEqual([expect.objectContaining({ player: 'bo', at: null })]);
   });
 });
+
+describe('the soundboard', () => {
+  it('plays the GM’s sound once for everyone at the table, on every scene, and is not an edit', () => {
+    const [a, bo, gm] = [seat('ana'), seat('bo'), seat('gm')];
+    gm.receive({ t: 'sendPlayer', player: 'bo', scene: 'cellar' });
+    gm.receive({ t: 'playSound', src: '/assets/uploads/roar.ogg', volume: 0.5 });
+    const roar = { t: 'sound', src: '/assets/uploads/roar.ogg', volume: 0.5 };
+    expect(a.take('sound')).toEqual([roar]);
+    expect(bo.take('sound')).toEqual([roar]);
+    expect(gm.take('sound')).toEqual([roar]);
+    expect(gm.take('history')).toEqual([]);
+  });
+
+  it('is the GM’s alone', () => {
+    const [a, bo] = [seat('ana'), seat('bo')];
+    a.receive({ t: 'playSound', src: '/assets/uploads/roar.ogg' });
+    expect(bo.take('sound')).toEqual([]);
+    expect(a.take('error')).toHaveLength(1);
+  });
+});

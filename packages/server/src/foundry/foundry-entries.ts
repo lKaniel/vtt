@@ -213,6 +213,8 @@ function tableOf(t: z.infer<typeof FoundryTable>, id: string, maps: Maps): RollT
 }
 
 const MODES: Playlist['mode'][] = ['sequence', 'shuffle', 'together'];
+/** Foundry's playlist mode -1: "soundboard only". */
+const modeOf = (mode = 0): Playlist['mode'] => (mode === -1 ? 'board' : (MODES[mode] ?? 'sequence'));
 
 function playlistOf(p: z.infer<typeof FoundryPlaylist>, id: string, media: MediaLookup, maps: Maps): Playlist {
   const trackId = ids();
@@ -230,7 +232,7 @@ function playlistOf(p: z.infer<typeof FoundryPlaylist>, id: string, media: Media
       place: p.name,
     });
   if (p._id) maps.playlists.set(p._id, id);
-  return { id, name: p.name, ...inFolder(maps.folderOf, p.folder), mode: MODES[p.mode ?? 0] ?? 'sequence', tracks };
+  return { id, name: p.name, ...inFolder(maps.folderOf, p.folder), mode: modeOf(p.mode), tracks };
 }
 
 const ENTRY_LINK = /@UUID\[JournalEntry\.(\w+)(?:\.JournalEntryPage\.(\w+))?\]|@JournalEntry\[(\w+)\]/g;

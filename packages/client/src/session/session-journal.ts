@@ -1,5 +1,5 @@
 import type { SessionPart } from './session-part.ts';
-import { type Doc, type DocRef, type DocStore, freeId, type Op, type Patch } from '@vtt/core';
+import { type Doc, type DocRef, type DocStore, freeId, type Op, type Patch, slugify } from '@vtt/core';
 import {
   ENTRY_TYPES,
   isScriptMacro,
@@ -33,6 +33,13 @@ const NEW: Record<EntryType, Record<string, unknown>> = {
   macro: { name: 'New macro', kind: 'chat', command: '' },
   cards: { name: 'New deck', kind: 'deck', cards: [] },
 };
+
+/** A track's name from its file: "/assets/uploads/rain-on-roof.ogg" is "rain on roof". */
+const nameOfFile = (src: string) =>
+  (src.split('/').at(-1) ?? '')
+    .replace(/\.[^.]*$/, '')
+    .replaceAll(/[-_]+/g, ' ')
+    .trim() || 'Track';
 
 /** A picture the GM showed. */
 export interface ShownImage {
@@ -114,6 +121,28 @@ export class Journal implements SessionPart {
   playPlaylist(id: string, track?: string): void {
     const p = this.s.docs.get('playlists', id);
     if (p) this.patchEntry('playlists', id, playPatch(p as unknown as Playlist, track), 'music');
+  }
+
+  /** GM: a soundboard's sound plays once for everyone at the table, at its volume times the board's. */
+  playSound(board: string, track: string): void {
+    const p = this.s.docs.get('playlists', board) as unknown as Playlist | undefined;
+    const sound = p?.tracks.find((tr) => tr.id === track);
+    if (!p || !sound) return;
+    const volume = (sound.volume ?? 1) * (p.volume ?? 1);
+    this.s.send({ t: 'playSound', src: sound.src, ...(volume !== 1 && { volume }) });
+  }
+
+  /** GM: adds a track (a soundboard's sound) by its file; `name` defaults to the file's. */
+  addTrack(playlist: string, src: string, name = nameOfFile(src)): void {
+    const p = this.s.docs.get('playlists', playlist) as unknown as Playlist | undefined;
+    if (!p) return;
+    const id = freeId(slugify(name) || 'track', (x) => p.tracks.some((tr) => tr.id === x), { bare: true });
+    this.patchEntry('playlists', playlist, { tracks: [...p.tracks, { id, name, src }] }, 'add track');
+  }
+
+  removeTrack(playlist: string, track: string): void {
+    const p = this.s.docs.get('playlists', playlist) as unknown as Playlist | undefined;
+    if (p) this.patchEntry('playlists', playlist, { tracks: p.tracks.filter((tr) => tr.id !== track) }, 'remove track');
   }
 
   stopPlaylist(id: string): void {

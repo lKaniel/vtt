@@ -707,7 +707,10 @@ A roll table has `results` (`text`, `weight` default 1, `drawn`), and
 has `mode` (`"sequence"`, `"shuffle"`, `"together"`), `volume`, and
 `tracks` (`id`, `name`, `src`, `volume`, `repeat`, `playing`); players are
 sent the playlists that are playing, and the GM's client moves on to the
-next track when one ends.
+next track when one ends. A playlist with `mode: "board"` is a soundboard
+(Foundry's "soundboard only"): it never plays as a whole; the GM presses one
+of its tracks and the server sends that sound once to every seat, on every
+scene (`playSound`). Sounds uploaded from the board go to `assets/uploads/`.
 
 A macro (`macros/<id>.json`) is a `kind` (`"chat"`) and a `command`: chat
 lines, one per line, posted as if typed, so `/r 1d20+5 stealth` rolls. It may

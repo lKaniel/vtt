@@ -36,7 +36,7 @@ import type { WorldClock } from '../play/world-clock.ts';
 // can't be added to client-messages.ts without saying who handles it.
 
 /** Messages Game handles before the table: no undo step, or no step at all. */
-type Outside = 'ops' | 'undo' | 'redo' | 'pause' | 'ruler' | 'cursor' | 'ping' | 'target' | 'rollMode';
+type Outside = 'ops' | 'undo' | 'redo' | 'pause' | 'ruler' | 'cursor' | 'ping' | 'target' | 'rollMode' | 'playSound';
 type Packs = 'packs' | 'plugins' | 'media' | 'compendium' | 'compendiumDoc' | 'findAssets' | 'upload' | 'uploadUrl';
 type Kind = Exclude<ClientMessage['t'], Outside | Packs>;
 type Message<K extends Kind> = Extract<ClientMessage, { t: K }>;
