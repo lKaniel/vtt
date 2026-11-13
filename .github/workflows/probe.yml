@@ -1,0 +1,17 @@
+name: probe
+on:
+  push:
+    branches: [claude/project-thread-e92bl1]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sSL https://foundrymods.com/api/manifest/baileywiki-content -o m.json -w "%{http_code}\n"; head -c 600 m.json; echo
+          URL=$(python3 -c "import json;print(json.load(open('m.json'))['download'])")
+          echo "$URL"
+          curl -sSL "$URL" -o c.zip -w "%{http_code} %{content_type} %{size_download}\n"
+          file c.zip; unzip -l c.zip | grep -c "packs/" ; unzip -l c.zip | grep "bwprefabs-01" | head -5; unzip -l c.zip | tail -1
+          unzip -l c.zip | grep -i "mass_edit_cache\|module.json"
+          curl -sS -o t.webp -w "thumb %{http_code} %{content_type} %{size_download}\n" "https://content.baileywiki.com/api/files/thumbnail?file_path=modules%2Fbaileywiki-maps-premium-towns%2Fmaps%2Factive-tiles%2Factive-tile-2x2.webp"
+          curl -sS -w "\nfd %{http_code}\n" -X POST -H 'content-type: application/json' -d '{"file_path":"bw-content-releases/Compendium/baileywiki-content.maps.json"}' https://content.baileywiki.com/api/files/file-details | head -c 400
