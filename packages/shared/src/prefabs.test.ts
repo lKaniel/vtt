@@ -126,6 +126,44 @@ describe('placing a prefab', () => {
     expect(l).toMatchObject({ bright: 20, dim: 40 });
   });
 
+  it('is made as big as the scene it lands on asks: a prefab made at 150 px a square on a 100 px one', () => {
+    const hut = PrefabSchema.parse({
+      id: 'hut',
+      name: 'Hut',
+      grid: 150,
+      tiles: [{ ...tile, w: 300, h: 150 }],
+      walls: [{ id: 'w', a: [0, 0], b: [300, 0] }],
+    });
+    const docs = prefabClip(hut, { random: fixed, grid: 100 }).docs;
+    expect(docs.find((d) => d.type === 'tile')).toMatchObject({ x: 50, y: 25, w: 200, h: 100 });
+    expect(docs.find((d) => d.type === 'wall')).toMatchObject({ a: [50, 25], b: [250, 25] });
+    // A prefab that doesn't say stays as it was made.
+    const plain = prefabClip({ ...hut, grid: undefined }, { random: fixed, grid: 100 }).docs;
+    expect(plain.find((d) => d.type === 'tile')).toMatchObject({ w: 300, h: 150 });
+  });
+
+  it('is put with its middle where the one placing it says', () => {
+    const hut = PrefabSchema.parse({
+      id: 'hut',
+      name: 'Hut',
+      grid: 150,
+      tiles: [{ ...tile, x: 600, y: 300, w: 300, h: 150 }],
+      walls: [{ id: 'w', a: [600, 300], b: [900, 300] }],
+    });
+    const docs = prefabClip(hut, { random: fixed, grid: 100, at: [1000, 500] }).docs;
+    expect(docs.find((d) => d.type === 'tile')).toMatchObject({ x: 900, y: 450, w: 200, h: 100 });
+    expect(docs.find((d) => d.type === 'wall')).toMatchObject({ a: [900, 450], b: [1100, 450] });
+  });
+
+  it('is turned and sized as the one placing it asks', () => {
+    const docs = prefabClip(lamp, { random: fixed, turn: 90, scale: 2 }).docs;
+    const tiles = docs.filter((d) => d.type === 'tile' && d.kind === 'image');
+    expect(tiles[0]).toMatchObject({ x: -50, y: -50, w: 200, h: 200, rotation: 90 });
+    const w = docs.find((d) => d.type === 'wall')!;
+    expect((w.a as number[]).map(Math.round)).toEqual([150, -50]);
+    expect((w.b as number[]).map(Math.round)).toEqual([150, 150]);
+  });
+
   it('stretches over the scene when it fills it', () => {
     const fog = PrefabSchema.parse({ id: 'fog', name: 'Fog', tiles: [tile], fill: true });
     const docs = prefabClip(fog, { random: fixed, scene: { x: 0, y: 0, w: 3000, h: 2000 } }).docs;

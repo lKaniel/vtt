@@ -5,6 +5,7 @@ import type { Game } from '../game.ts';
 import type { McpTool } from './mcp-protocol.ts';
 import { act, look, outcome, type Welcome } from './mcp-seat.ts';
 import { assetTools } from './asset-tools.ts';
+import { prefabTools } from './prefab-tools.ts';
 import { sceneTools } from './scene-tools.ts';
 
 // The tools Claude gets over the bridge (mcp-http.ts): look at a live game
@@ -181,5 +182,5 @@ function actTools(table: BridgeTable): McpTool[] {
 }
 
 export function mcpTools(table: BridgeTable): McpTool[] {
-  return [...lookTools(table), ...actTools(table), ...sceneTools(table), ...assetTools(table)];
+  return [...lookTools(table), ...actTools(table), ...sceneTools(table), ...assetTools(table), ...prefabTools(table)];
 }

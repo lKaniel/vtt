@@ -234,9 +234,10 @@ export class Packs implements SessionPart {
       return;
     }
     const scene = this.groundRect();
-    const clip = prefabClip(parsed.data, { random: Math.random, ...(scene ? { scene } : {}) });
+    const grid = this.on.gridSize();
+    const clip = prefabClip(parsed.data, { random: Math.random, grid, ...(scene ? { scene } : {}) });
     const offset: Point =
-      parsed.data.fill && scene ? [0, 0] : pasteOffsetTo(clip, at ?? this.s.editor.viewCentre(), this.on.gridSize());
+      parsed.data.fill && scene ? [0, 0] : pasteOffsetTo(clip, at ?? this.s.editor.viewCentre(), grid);
     this.s.edits.sendChanges('prefab', pasteAt(this.s.docs, clip, { scene: this.s.scene, offset }).ops);
   }
 

@@ -9,6 +9,7 @@ import { sessionToken } from './http/http-json.ts';
 import { BaileywikiAccount } from './foundry/baileywiki-account.ts';
 import { BAILEYWIKI_URL } from './foundry/baileywiki-client.ts';
 import { BaileywikiFiles } from './foundry/baileywiki-files.ts';
+import { refreshBaileywikiLibrary } from './foundry/baileywiki-online.ts';
 import { OffsiteBackups } from './library/offsite-backups.ts';
 import { offsiteFromEnv } from './library/offsite-config.ts';
 import { migrateAccounts } from './migrate/migrate-accounts.ts';
@@ -63,6 +64,11 @@ const baileywikiAccount = new BaileywikiAccount(
   process.env.VTT_BAILEYWIKI_URL ?? BAILEYWIKI_URL,
 );
 const baileywikiFiles = new BaileywikiFiles(baileywikiAccount, hub.packs.dir);
+// A library an older server imported is made again from the module on disk, in the background.
+refreshBaileywikiLibrary(hub.packs.dir, (line) => console.log(`[baileywiki] ${line}`))
+  .then((report) => report && hub.packs.load())
+  .catch((e: unknown) => console.error('[baileywiki] refreshing the library failed:', e));
+
 /** Baileywiki's files are fetched only for someone at a table or in Setup, never a passer-by. */
 const packFetch = (pack: string, path: string, req: IncomingMessage) => {
   const session = sessions.get(sessionToken(req));

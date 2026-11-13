@@ -174,6 +174,7 @@ export function prefabOf(p: Preset, media: MediaLookup, gridSize = p.gridSize ??
     ...(p.spawnRandom ? { pick: 'one' as const } : {}),
     ...(varyOf(p, media) ? { vary: varyOf(p, media) } : {}),
     ...(fillsScene(p) ? { fill: true } : {}),
+    grid: gridSize,
   };
   const things = prefab.tiles.length + prefab.walls.length + prefab.lights.length + prefab.sounds.length;
   return things + prefab.drawings.length + prefab.notes.length > 0 ? prefab : undefined;
