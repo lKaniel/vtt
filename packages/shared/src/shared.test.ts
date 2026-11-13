@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chunksInRect, findPath, roll, segmentsIntersect, type Wall } from './index.ts';
+import { chunksInRect, diceFormula, findPath, roll, segmentsIntersect, type Wall } from './index.ts';
 
 const G = 100;
 
@@ -61,6 +61,25 @@ describe('roll', () => {
   it('rejects junk', () => {
     expect(() => roll('fireball')).toThrow();
     expect(() => roll('1d20 5')).toThrow();
+  });
+  it('reads dice typed on a Ukrainian or Russian layout, or in capitals', () => {
+    // "в" sits on the d key; "л" on k, "р" on h, "д" on l.
+    expect(roll('1в10+3', seq(12)).formula).toBe('1d10+3');
+    expect(roll('2В6', seq(1, 1)).total).toBe(2);
+    expect(roll('1D20 + 5', seq(12)).total).toBe(17);
+    expect(roll('2в20лр1', seq(4, 15)).total).toBe(15);
+    expect(roll('2в20лд1', seq(4, 15)).total).toBe(4);
+  });
+});
+
+describe('diceFormula', () => {
+  it('tidies a formula into the form roll() writes, or says it cannot be read', () => {
+    expect(diceFormula(' 1в10 + 3 ')).toBe('1d10+3');
+    expect(diceFormula('1D8')).toBe('1d8');
+    expect(diceFormula('5')).toBe('5');
+    expect(diceFormula('fireball')).toBeUndefined();
+    expect(diceFormula('')).toBeUndefined();
+    expect(diceFormula('1d0')).toBeUndefined();
   });
 });
 

@@ -20,9 +20,34 @@ const TERM = /^([+-]?) *(?:(\d*)d(\d+)(?:(kh|kl)(\d+))?|(\d+))$/;
 const MAX_DICE = 100;
 const MAX_FACES = 1000;
 
+/**
+ * Letters typed with a Ukrainian or Russian keyboard layout still on, read as
+ * the Latin key they share: "1в10" is "1d10", "2в20лр1" is "2d20kh1".
+ */
+const LAYOUT: Readonly<Record<string, string>> = { в: 'd', л: 'k', р: 'h', д: 'l' };
+
+/** `formula` trimmed and lower-cased, with Cyrillic layout letters read as their Latin keys. */
+export function diceText(formula: string): string {
+  return formula
+    .trim()
+    .toLowerCase()
+    .replace(/[влрд]/gu, (c) => LAYOUT[c] ?? c);
+}
+
+/** `formula` as roll() reads it, without spaces ("1в10 + 3" is "1d10+3"); undefined when it can't be rolled. */
+export function diceFormula(formula: string): string | undefined {
+  const text = diceText(formula).replace(/\s+/g, '');
+  try {
+    roll(text, () => 0);
+    return text;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Rolls a formula like "1d20+5", "2d20kh1 + 3" or "4d6kh3". Throws on bad input. */
 export function roll(formula: string, rng: Rng = Math.random): Roll {
-  const src = formula.trim().toLowerCase();
+  const src = diceText(formula);
   if (!src) throw new Error('Empty formula');
   // Split before every sign, so "1d20 + 5 - 1" becomes "1d20 ", "+ 5 ", "- 1".
   const terms = src.split(/(?=[+-])/).map((part) => parseTerm(part.trim(), rng));
