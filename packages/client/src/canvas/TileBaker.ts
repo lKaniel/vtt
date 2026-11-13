@@ -213,9 +213,15 @@ export class TileBaker {
       run.cells.set(key, cell);
     }
     const area = cellRect(cx, cy);
-    for (const p of run.pieces) p.root.visible = overlaps(p.bounds, area);
+    // A piece that was live on the map may come with the map's culling on it, which nothing here would lift.
+    for (const p of run.pieces) {
+      p.root.culled = false;
+      p.root.visible = overlaps(p.bounds, area);
+    }
     const transform = new Matrix(scale, 0, 0, scale, -area.x * scale, -area.y * scale);
     this.renderer!.render({ container: run.source, target: cell.texture, clear: true, transform });
+    // Shown again, so a piece that goes live (a roof starting to fade) is seen on the map.
+    for (const p of run.pieces) p.root.visible = true;
     cell.stale = false;
     return cell;
   }
