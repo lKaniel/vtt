@@ -47,6 +47,18 @@ describe('turns', () => {
     expect(session.turns.movementLeft('goblin')).toBe(30);
   });
 
+  it('gives a creature joining the turn its full speed', () => {
+    ws.receive(welcome([token('goblin'), { ...mage, speed: 25 }]));
+    const order = [
+      { token: 'goblin', initiative: 20 },
+      { token: 'mage', initiative: 5 },
+      { token: 'gone', initiative: 1 },
+    ];
+    ws.receive({ t: 'combat', combat: { ...fight(0), order, group: ['mage', 'gone'] } });
+    expect(session.turns.movementLeft('mage')).toBe(25);
+    expect(session.turns.movementLeft('gone')).toBe(0);
+  });
+
   it('ends only the selected creature’s turn on a shared turn', () => {
     ws.receive(welcome([token('hero'), mage]));
     const combat = {
