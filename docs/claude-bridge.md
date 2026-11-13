@@ -52,6 +52,7 @@ name.
 | `go_to_scene`                    | Takes your view, or the whole game, to a scene                                       |
 | `list_assets`                    | The pictures, sounds, videos and 3D models the game may use                          |
 | `find_assets`                    | Map pieces from the asset catalogs of the game's packs, by words, with sizes in feet |
+| `upload_asset`                   | Puts a picture, sound or video of Claude's own into the game's uploads               |
 | `find_prefabs`                   | Whole prefabs of the game's packs (a house with walls, doors, windows and a roof)    |
 
 ## Building scenes

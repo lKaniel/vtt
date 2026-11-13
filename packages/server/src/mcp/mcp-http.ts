@@ -67,6 +67,9 @@ function tableFor(hub: GameHub, caller: Caller): BridgeTable {
   return { games, seat, guide: () => readFile(GUIDE, 'utf8') };
 }
 
+/** A call may carry a picture for the game's uploads (upload_asset), as large as a browser may send one. */
+const MAX_CALL = 28 * 1024 * 1024;
+
 /** Handles /mcp; answers true when it handled the request. */
 export function mcpHandler(deps: McpDeps): (req: IncomingMessage, res: ServerResponse) => Promise<boolean> {
   return async (req, res) => {
@@ -80,7 +83,8 @@ export function mcpHandler(deps: McpDeps): (req: IncomingMessage, res: ServerRes
       return true;
     }
     try {
-      const answer = await answerRpc(await parseBody(req, z.unknown()), mcpTools(tableFor(deps.hub, caller)));
+      const body = await parseBody(req, z.unknown(), MAX_CALL);
+      const answer = await answerRpc(body, mcpTools(tableFor(deps.hub, caller)));
       if (answer) send(res, 200, answer);
       else res.writeHead(202).end();
     } catch (e) {

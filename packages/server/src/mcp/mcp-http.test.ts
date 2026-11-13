@@ -62,6 +62,17 @@ describe('the MCP endpoint', () => {
     expect(toolText(await rpc('local-secret', 'tools/call', { name: 'guide' }))).toContain('# ');
   });
 
+  it('takes a picture far bigger than other requests and puts it in the game’s uploads', async () => {
+    const data = Buffer.alloc(400_000, 7).toString('base64');
+    const args = { name: 'Wheat Field.webp', data };
+    const said = toolText(await rpc('local-secret', 'tools/call', { name: 'upload_asset', arguments: args }));
+    expect(JSON.parse(said)).toEqual({ src: '/assets/uploads/wheat-field.webp' });
+    const listed = toolText(
+      await rpc('local-secret', 'tools/call', { name: 'list_assets', arguments: { search: 'wheat' } }),
+    );
+    expect(listed).toContain('/assets/uploads/wheat-field.webp');
+  });
+
   it('answers a notification with 202 and nothing else', async () => {
     const res = await fetch(`${api.base}/mcp`, {
       method: 'POST',

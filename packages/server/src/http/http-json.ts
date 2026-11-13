@@ -59,8 +59,8 @@ export async function readRaw(req: IncomingMessage, max: number): Promise<Buffer
   return Buffer.concat(chunks);
 }
 
-async function readBody(req: IncomingMessage): Promise<unknown> {
-  const text = (await readRaw(req, MAX_BODY)).toString('utf8');
+async function readBody(req: IncomingMessage, max: number): Promise<unknown> {
+  const text = (await readRaw(req, max)).toString('utf8');
   try {
     return text ? (JSON.parse(text) as unknown) : {};
   } catch {
@@ -68,8 +68,9 @@ async function readBody(req: IncomingMessage): Promise<unknown> {
   }
 }
 
-export async function parseBody<T>(req: IncomingMessage, schema: z.ZodType<T>): Promise<T> {
-  const parsed = schema.safeParse(await readBody(req));
+/** The request's JSON, checked; `max` bytes for the few routes that take more than a form's worth. */
+export async function parseBody<T>(req: IncomingMessage, schema: z.ZodType<T>, max = MAX_BODY): Promise<T> {
+  const parsed = schema.safeParse(await readBody(req, max));
   if (!parsed.success) throw new HttpError(400, parsed.error.issues.map((i) => i.message).join('; '));
   return parsed.data;
 }
