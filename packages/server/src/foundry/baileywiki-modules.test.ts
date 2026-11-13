@@ -259,5 +259,21 @@ describe('importing the installed Baileywiki modules', () => {
     const barrel = PrefabSchema.parse(await packs.compendiumDoc('baileywiki', 'bw-prefabs-2d', 'barrel'));
     expect(barrel.tiles[0]).toMatchObject({ src: 'pack://baileywiki/media/modules/baileywiki-3d/maps/barrel.webp' });
     expect(report.missing).toEqual([]);
+    const catalog = JSON.parse(await readFile(join(packsDir, 'baileywiki/catalog.json'), 'utf8')) as {
+      assets: { src: string }[];
+    };
+    expect(catalog.assets.map((a) => a.src)).toContain('media/modules/baileywiki-3d/maps/barrel.webp');
+  });
+
+  it('online, keeps an asset catalog measured from the files', async () => {
+    await mkdir(join(packsDir, 'baileywiki'), { recursive: true });
+    await writeFile(
+      join(packsDir, 'baileywiki/catalog.json'),
+      JSON.stringify({ format: 1, source: 'baileywiki', assets: [] }),
+    );
+    await importBaileywikiModules(modules, packsDir, { online: true });
+    expect(JSON.parse(await readFile(join(packsDir, 'baileywiki/catalog.json'), 'utf8'))).toMatchObject({
+      source: 'baileywiki',
+    });
   });
 });

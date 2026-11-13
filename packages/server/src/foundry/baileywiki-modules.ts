@@ -9,6 +9,7 @@ import { prefabOf, type Preset, presetOf } from './baileywiki-prefabs.ts';
 import { copyModuleMedia, type MediaRun, mediaLookup, readMassEditCache } from './baileywiki-media.ts';
 import { mergeBaileywikiManifest } from './baileywiki-pack.ts';
 import { terrainPicker, withTerrain } from './baileywiki-terrain.ts';
+import { type GriddedPrefab, prefabCatalog } from './baileywiki-catalog.ts';
 import { isBaileywikiMedia } from './baileywiki-client.ts';
 import { readJson, writeJson } from '../store/json-files.ts';
 
@@ -186,6 +187,8 @@ const prefab3d = (prefab: { tiles: readonly Tile[]; tags?: readonly string[] }) 
 interface Run extends MediaRun {
   /** Files missing here the server fetches when first asked. */
   fetchable?: (path: string) => boolean;
+  /** Online, the prefabs for the pack's asset catalog (baileywiki-catalog.ts). */
+  placed?: GriddedPrefab[];
   log?: (line: string) => void;
   skipped: string[];
   missing: Set<string>;
@@ -245,6 +248,7 @@ async function importPrefabs(run: Run, presets: Found[]): Promise<number> {
     const tags = [...new Set([...folders, ...(prefab.tags ?? [])])];
     const doc: Omit<Prefab, 'id'> = { ...prefab, ...(tags.length ? { tags } : {}) };
     await run.out[prefab3d(doc) ? 'prefabs3d' : 'prefabs2d'].add(doc);
+    run.placed?.push({ prefab: doc, grid: p.gridSize ?? 100 });
     n++;
   }
   return n;
@@ -291,6 +295,17 @@ function missingLines(missing: Set<string>): string[] {
   return [...byModule].map(([from, n]) => `${n} file(s) from ${from} are not in the pack`);
 }
 
+/**
+ * The pack's asset catalog made from its prefabs, in place of one made
+ * before the same way; one measured from the files on disk
+ * (`pnpm build-asset-catalog`) is better and stays.
+ */
+async function writeCatalog(dir: string, placed: GriddedPrefab[]): Promise<void> {
+  const old = (await readJson(join(dir, 'catalog.json'))) as { source?: unknown } | undefined;
+  if (old && old.source !== 'baileywiki-prefabs') return;
+  await writeJson(join(dir, 'catalog.json'), prefabCatalog(placed));
+}
+
 /** Imports the Baileywiki modules of a Foundry `modules` folder into the `baileywiki` pack in `packsDir`. */
 export async function importBaileywikiModules(
   modulesDir: string,
@@ -311,7 +326,7 @@ export async function importBaileywikiModules(
     missing: new Set(),
     browser: new Map(),
     out: writers(dir),
-    ...(opts.online ? { fetchable: isBaileywikiMedia } : {}),
+    ...(opts.online ? { fetchable: isBaileywikiMedia, placed: [] } : {}),
   };
   const index: MediaIndex = {};
   let media = 0;
@@ -328,6 +343,7 @@ export async function importBaileywikiModules(
   const prefabs = await importPrefabs(run, presets);
   const compendia = (await Promise.all(Object.values(run.out).map((w) => w.finish()))).filter((c) => !!c);
   await writeJson(join(dir, 'media-index.json'), index);
+  if (run.placed) await writeCatalog(dir, run.placed);
   await mergeBaileywikiManifest(dir, compendia, { mediaIndex: 'media-index.json' });
   const skipped = [...missingLines(run.missing), ...run.skipped];
   const missing = [...run.missing].sort((a, b) => a.localeCompare(b));

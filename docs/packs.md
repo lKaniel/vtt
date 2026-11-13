@@ -253,7 +253,10 @@ foundrymods.com gives Foundry, about 90 MB, into
 `data/baileywiki-module/`, its code left out) and imports its compendia
 into the pack `baileywiki` like the modules below: its Mass Edit presets as
 `bw-prefabs-2d` and `bw-prefabs-3d` (about 10,000), its scene browsers'
-thumbnails and Mass Edit's tags for Baileywiki's files. The module's own
+thumbnails and Mass Edit's tags for Baileywiki's files, and an asset
+catalog for Claude's map tools made from the prefabs: every picture and
+model they place, at the prefab's size (`baileywiki-catalog.ts`; a catalog
+measured from the files with `pnpm build-asset-catalog` stays). The module's own
 pictures come with it. Every other Baileywiki file the prefabs name stays
 on Baileywiki's server and is fetched the first time someone asks for it
 (`baileywiki-files.ts`): the request for `/packs/baileywiki/media/<path>`
