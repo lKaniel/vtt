@@ -3,14 +3,15 @@ import { z } from 'zod';
 import { ClassSchema, SpellSchema } from './spell-schema.ts';
 import { ItemSchema } from './item-schema.ts';
 import { withClassAutomation } from './content.ts';
+import { SkillDefSchema } from './game-skills.ts';
 
 // A game's own rules content, made in the app: documents in its homebrew
 // collection (homebrew/<id>.json), each with a `kind`. They join the game's
 // content like a pack's compendia, so tokens use them like SRD ones:
-// classes, items and spells. An item keeps its own fields in `item` (a
+// classes, items, spells and skills. An item keeps its own fields in `item` (a
 // weapon has a `kind` of its own).
 
-const KINDS = { class: ClassSchema, item: ItemSchema, spell: SpellSchema } as const;
+const KINDS = { class: ClassSchema, item: ItemSchema, spell: SpellSchema, skill: SkillDefSchema } as const;
 type Kind = keyof typeof KINDS;
 
 /** The compendium entry a homebrew document stands for. */

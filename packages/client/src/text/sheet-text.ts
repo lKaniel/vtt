@@ -3,17 +3,15 @@ import {
   type CasterSheet,
   characterLevel,
   checkBonus,
+  type Content,
   type Creature,
   type Edition,
   type FeatureSheet,
+  gameSkills,
   type InventoryEntry,
   type Item,
   nextLevelXp,
   type Own,
-  passiveScore,
-  type Skill,
-  SKILLS,
-  skillName,
   type Spell,
   type Stats,
   type Token,
@@ -28,7 +26,7 @@ import { t } from '../i18n/index.ts';
 export const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
 export interface SkillRow {
-  skill: Skill;
+  skill: string;
   name: string;
   ability: Ability;
   bonus: number;
@@ -38,17 +36,26 @@ export interface SkillRow {
   expert: boolean;
 }
 
-/** All 18 skills by name, with the creature's bonus and passive score in each. */
-export function skillRows(token: Pick<Token, 'stats'>, sheet: Creature): SkillRow[] {
-  return (Object.keys(SKILLS) as Skill[]).map((skill) => ({
-    skill,
-    name: skillName(skill),
-    ability: SKILLS[skill],
-    bonus: checkBonus(token, sheet, { ability: SKILLS[skill], skill }),
-    passive: passiveScore(token, sheet, skill),
-    proficient: [...(token.stats?.skills ?? []), ...(sheet.skills ?? [])].includes(skill),
-    expert: [...(token.stats?.expertise ?? []), ...(sheet.expertise ?? [])].includes(skill),
-  }));
+/** The 18 skills and the game's own (gameSkills), with the creature's bonus and passive score in each. */
+export function skillRows(
+  token: Pick<Token, 'stats'>,
+  sheet: Creature,
+  content: Pick<Content, 'skills'> = {},
+): SkillRow[] {
+  const has = (list: string[] | undefined, more: string[] | undefined, skill: string) =>
+    [...(list ?? []), ...(more ?? [])].includes(skill);
+  return gameSkills(content).map(({ id: skill, name, ability }) => {
+    const bonus = checkBonus(token, sheet, { ability, skill });
+    return {
+      skill,
+      name,
+      ability,
+      bonus,
+      passive: 10 + bonus,
+      proficient: has(token.stats?.skills, sheet.skills, skill),
+      expert: has(token.stats?.expertise, sheet.expertise, skill),
+    };
+  });
 }
 
 export interface XpProgress {

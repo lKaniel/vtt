@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { blankClass } from '../content/homebrew-edit.ts';
 import type { Session } from '../session/session.ts';
 import { ClassEditor } from './ClassEditor.tsx';
+import { HomebrewSkills } from './HomebrewSkills.tsx';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 
 // The GM's homebrew classes, in the Compendium tab: make one, open it in the
-// editor, and share it so the players' sheets can read it.
+// editor, and share it so the players' sheets can read it; then the game's own skills.
 
 const nameOf = (doc: Doc) => (typeof doc.name === 'string' ? doc.name : doc.id);
 const shared = (doc: Doc) => (doc.ownership as { default?: string } | undefined)?.default === 'observer';
@@ -67,6 +68,7 @@ export function HomebrewPanel({ session }: Readonly<{ session: Session }>) {
       <p className="muted lib-hint">
         A character takes a homebrew class by its id in the sheet’s Details, like an SRD class.
       </p>
+      <HomebrewSkills session={session} />
       {editing && <ClassEditor key={editing.id} session={session} doc={editing} onClose={() => setOpen(undefined)} />}
     </div>
   );

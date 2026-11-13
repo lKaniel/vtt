@@ -1,4 +1,4 @@
-import { type DamageType, type Edition, editionOf, type Skill, toEdition } from '@vtt/system-dnd5e';
+import { type DamageType, type Edition, editionOf, toEdition } from '@vtt/system-dnd5e';
 import { cn } from '@/lib/utils';
 import { gameContent } from '../../content/content.ts';
 import { t } from '../../i18n/index.ts';
@@ -16,7 +16,7 @@ import { ProficiencyAdder, ProficiencyList } from '../creator/ProficiencyParts.t
 import { canAct, type SheetProps } from './sheet-props.ts';
 import { StatBlockLines } from './StatBlock.tsx';
 
-// The Details tab: the 18 skills (click one to roll it), senses,
+// The Details tab: the 18 skills and the game's own (click one to roll it), senses,
 // proficiencies (click a tool to roll with it) and damage defences; in edit mode also which rules build the creature: its stat
 // block, rules edition and classes.
 
@@ -46,12 +46,13 @@ function Heading({ children }: Readonly<{ children: React.ReactNode }>) {
 function Skills(props: Readonly<SheetProps>) {
   const { session, value, update, sheet, edit } = props;
   const roll = canAct(props);
-  const toggle = (skill: Skill) => update((d) => cycleSkill(d, skill), true);
+  const toggle = (skill: string) => update((d) => cycleSkill(d, skill), true);
+  const content = gameContent(editionOf(value, session.world ?? {}));
   return (
     <section aria-label={t('sheet.skills')}>
       <Heading>{t('sheet.skills')}</Heading>
       <ul className="m-0 list-none p-0">
-        {skillRows(value, sheet).map((r) => (
+        {skillRows(value, sheet, content).map((r) => (
           <li key={r.skill} className="flex h-7 items-center gap-2 border-b border-white/5 text-sm">
             <Button
               variant="ghost"

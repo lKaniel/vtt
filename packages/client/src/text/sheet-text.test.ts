@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveCreature, srdFor, TokenSchema } from '@vtt/system-dnd5e';
+import { contentWith, gameCompendia, resolveCreature, srdFor, TokenSchema } from '@vtt/system-dnd5e';
 import { featureSections, inventorySections, matches, skillRows, spellColumns, xpProgress } from './sheet-text.ts';
 
 const book = srdFor('2014');
@@ -27,6 +27,22 @@ describe('the skills list', () => {
     expect(rows[0]?.name).toBe('Acrobatics');
     expect(rows.find((r) => r.skill === 'stealth')).toMatchObject({ ability: 'dex', bonus: 6, proficient: true });
     expect(rows.find((r) => r.skill === 'perception')).toMatchObject({ bonus: 2, passive: 12, proficient: false });
+  });
+
+  it("lists the game's own skills after the 18, with their ability", () => {
+    const psychic = { id: 'psychic-resistance', kind: 'skill', name: 'Psychic Resistance', ability: 'wis' };
+    const content = contentWith('2014', gameCompendia({}, [], [psychic]));
+    const trained = { ...rogue, stats: { ...rogue.stats, skills: ['psychic-resistance'] } };
+    const rows = skillRows(trained, sheet, content);
+    expect(rows).toHaveLength(19);
+    // Wis 14 (+2) and proficiency +3 at level 5.
+    expect(rows.at(-1)).toMatchObject({
+      name: 'Psychic Resistance',
+      ability: 'wis',
+      bonus: 5,
+      passive: 15,
+      proficient: true,
+    });
   });
 });
 

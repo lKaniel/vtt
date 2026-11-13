@@ -91,6 +91,7 @@ install. A game's own files stay `/assets/<path>` (uploads go in
 | `monster`, `item`, `spell`         | D&D rules content: while the pack is on, tokens can use them like SRD ones (`"monster": "<id>"`), and they appear in the Compendium tab.                                                                                                                                                                                                                                                                                                                                                                   |
 | `class`                            | A whole class (the Jaeger): the character creator offers it. Its automation can live in `class-automation.json` under its id, so the pack keeps only text.                                                                                                                                                                                                                                                                                                                                                 |
 | `subclass`, `classFeature`         | A subclass or a feature (a pact boon, an invocation) for a class the game already has: each doc names its `"class"` and joins that class, replacing any of the same id. Their automation is in `class-automation.json`: a subclass's under the class's `subclasses`, a feature's under `packFeatures` (`pack-class-parts.ts`).                                                                                                                                                                             |
+| `skill`                            | A skill the game adds to the 18: `{ "id", "name", "ability" }` (Wisdom when missing), listed on every sheet after them (`game-skills.ts`).                                                                                                                                                                                                                                                                                                                                                                 |
 
 Other types are listed but not used yet.
 
@@ -112,7 +113,7 @@ are left out. A system's own packs are always on: D&D ships the SRD as
 `dnd5e-srd-2014` (SRD 5.1) and `dnd5e-srd-2024` (SRD 5.2).
 
 The rules read a game's content as the SRD of an edition plus the
-`monster`, `item`, `spell`, `class`, `subclass` and `classFeature` compendia
+`monster`, `item`, `spell`, `class`, `subclass`, `classFeature` and `skill` compendia
 of the packs it uses (`contentWith(edition, compendia)` in `system-dnd5e/src/packs.ts`). The
 server sends that content to every client when it joins (`packContent`),
 so sheets, tooltips and the Compendium know pack monsters too.
