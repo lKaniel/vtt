@@ -136,9 +136,19 @@ export class Table {
   // ---- Turn budgets -------------------------------------------------------
 
   /** Whose budget `token` spends: "left" on its own turn, else its id in `side` on its leader's turn. Throws when it's neither. */
+  /** Whether `token` may act now: its turn, a turn it shares, or its leader's. */
+  private acts(combat: Combat, token: Token): boolean {
+    return actsNow(combat, token.id) || (!!token.leader && actsNow(combat, token.leader));
+  }
+
+  /** Whether the fight holds `token` back now: it is in the fight and it isn't its turn. */
+  waits(token: Token): boolean {
+    const combat = this.store.combat;
+    return !!combat && this.joins(combat, token) && !this.acts(combat, token);
+  }
+
   private budgetKey(combat: Combat, token: Token): string {
-    const acts = actsNow(combat, token.id) || (!!token.leader && actsNow(combat, token.leader));
-    if (!acts) throw new Refusal(`It's not ${token.name}'s turn`);
+    if (!this.acts(combat, token)) throw new Refusal(`It's not ${token.name}'s turn`);
     return currentTurn(combat) === token.id ? 'left' : token.id;
   }
 

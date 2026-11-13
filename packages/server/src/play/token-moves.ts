@@ -106,7 +106,7 @@ export class TokenMoves {
     if (path.points.length < 2) return;
     this.rules.barriers(token, path.points);
     const dragged = this.dragged(token);
-    const walker = combat.move(token, path.feet * dragCost(token, dragged));
+    const walker = combat.move(token, path.feet * dragCost(token, dragged), isGm(player));
     this.store.setToken({ ...walker, x, y, ...climb }, path.points);
     // Zones, reactions and regions look at every step of the way.
     const steps = densify(path.points, g / 4);

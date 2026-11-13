@@ -35,6 +35,18 @@ describe('turns', () => {
     expect(session.turns.mine()).toBe(false);
   });
 
+  it('gives the GM free movement for a creature waiting for its turn', () => {
+    const gm = welcome([token('goblin'), mage]);
+    ws.receive({ ...gm, you: { id: 'gm', name: 'GM', role: 'gm', color: '#f00' } } as typeof gm);
+    const order = [
+      { token: 'goblin', initiative: 20 },
+      { token: 'mage', initiative: 5 },
+    ];
+    ws.receive({ t: 'combat', combat: { ...fight(0), order } });
+    expect(session.turns.movementLeft('mage')).toBe(Infinity);
+    expect(session.turns.movementLeft('goblin')).toBe(30);
+  });
+
   it('ends only the selected creature’s turn on a shared turn', () => {
     ws.receive(welcome([token('hero'), mage]));
     const combat = {

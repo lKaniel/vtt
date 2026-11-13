@@ -90,10 +90,33 @@ describe('starting and ending combat', () => {
 });
 
 describe('turns', () => {
-  it('refuses to move a creature out of turn', () => {
+  it('lets the GM move a creature out of turn without spending its movement', () => {
     const { gm } = fight();
     gm.receive({ t: 'move', token: 'goblin', to: [250, 250] });
-    expect(gm.take('error')[0]!.message).toMatch(/not Goblin's turn/);
+    expect(gm.take('error').map((e) => e.message)).toEqual([]);
+    expect(store.tokens.get('goblin')).toMatchObject({ x: 250, y: 250 });
+    expect(store.combat!.side.goblin).toBeUndefined();
+    expect(store.combat!.left.move).toBe(30);
+  });
+
+  it('lets the GM move a creature in turn-based mode out of turn', () => {
+    const gm = join_('gm');
+    gm.receive({ t: 'turnBased', on: true, tokens: ['hero', 'goblin'] });
+    const first = store.combat!.order[0]!.token;
+    const other = first === 'hero' ? 'goblin' : 'hero';
+    const { x, y } = store.tokens.get(other) as { x: number; y: number };
+    gm.receive({ t: 'move', token: other, to: [x, y + 100] });
+    expect(gm.take('error').map((e) => e.message)).toEqual([]);
+    expect(store.tokens.get(other)).toMatchObject({ x, y: y + 100 });
+  });
+
+  it('lets the GM walk a creature on its turn past its movement, using up what is left', () => {
+    const { gm } = fight();
+    store.combat = { ...store.combat!, left: { ...store.combat!.left, move: 2 } };
+    gm.receive({ t: 'move', token: 'hero', to: [150, 250] });
+    expect(gm.take('error').map((e) => e.message)).toEqual([]);
+    expect(store.tokens.get('hero')).toMatchObject({ x: 150, y: 250 });
+    expect(store.combat).toMatchObject({ left: { move: 0 } });
   });
 
   it('spends movement and refuses to walk further than is left', () => {

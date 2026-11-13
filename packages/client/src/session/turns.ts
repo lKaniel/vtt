@@ -7,6 +7,7 @@ export interface TurnHost {
   readonly combat: Combat | null;
   readonly tokens: ReadonlyMap<string, TokenView>;
   canControl(token: TokenView): boolean;
+  isGm(): boolean;
 }
 
 /** Whose turn it is, as `session.turns`. */
@@ -54,13 +55,21 @@ export class Turns {
     });
   }
 
-  /** Feet the token may still walk: unlimited outside a fight, nothing when it's not its turn. */
+  /**
+   * Feet the token may still walk: unlimited outside a fight, nothing when
+   * it's not its turn (unlimited for the GM, who moves it freely then).
+   */
   movementLeft(id: string): number {
     const combat = this.s.combat;
     if (!combat?.order.some((e) => e.token === id)) return Infinity;
-    if (!actsNow(combat, id)) return 0;
+    if (!actsNow(combat, id)) return this.s.isGm() ? Infinity : 0;
     if (currentTurn(combat) === id) return combat.left.move;
+    return combat.side[id]?.move ?? this.speed(id);
+  }
+
+  /** A creature's full walk for a turn. */
+  private speed(id: string): number {
     const token = this.s.tokens.get(id);
-    return combat.side[id]?.move ?? token?.sheet?.speed ?? token?.speed ?? 0;
+    return token?.sheet?.speed ?? token?.speed ?? 0;
   }
 }

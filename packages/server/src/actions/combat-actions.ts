@@ -291,17 +291,23 @@ export class CombatActions {
   }
 
   /** Checks that `token` may walk `feet` now, and spends the movement in a fight. Standing up costs half its speed. */
-  move(token: Token, feet: number): Token {
+  /**
+   * Spends the movement a walk of `feet` takes (standing up first when prone).
+   * The GM's say goes: they move a creature out of its turn without spending
+   * anything, and on its turn past what it has left, using that up.
+   */
+  move(token: Token, feet: number, gm = false): Token {
+    if (gm && this.table.waits(token)) return token;
     const sheet = this.table.sheetOf(token);
     const prone = token.effects?.filter((e) => e.conditions?.includes('prone')) ?? [];
     const standing = prone.length && sheet ? Math.ceil(sheet.speed / 2) : 0;
     const stood = prone.length ? { ...token, effects: token.effects!.filter((e) => !prone.includes(e)) } : token;
     const left = this.table.budget(token);
     if (!left) return stood;
-    if (feet + standing > left.move) {
+    if (feet + standing > left.move && !gm) {
       throw new Refusal(`${token.name} has only ${left.move - standing} ft of movement left`);
     }
-    this.table.setBudget(token, { ...left, move: left.move - feet - standing });
+    this.table.setBudget(token, { ...left, move: Math.max(0, left.move - feet - standing) });
     return stood;
   }
 
