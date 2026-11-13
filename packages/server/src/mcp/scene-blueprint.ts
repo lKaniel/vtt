@@ -171,6 +171,8 @@ export interface BlueprintContext {
   assets?: FindAssets;
   /** What props and scatter are when they don't say: 2D pictures, or models on a 3D scene. */
   prefer?: 'tile' | 'model';
+  /** Whole prefabs already turned into documents (prefab-tools.ts): laid over the rooms, under props and scatter. */
+  prefabs?: readonly Op[];
 }
 
 const TYPES = {
@@ -396,6 +398,7 @@ export function blueprintBuild(bp: Blueprint, ctx: BlueprintContext): { ops: Op[
   addTiles(b, bp);
   addModels(b, bp);
   addRooms(b, bp);
+  b.ops.push(...(ctx.prefabs ?? []));
   addCatalogPieces(b, bp, ctx.assets, ctx.prefer ?? 'tile');
   addWalls(b, bp);
   addLights(b, bp);

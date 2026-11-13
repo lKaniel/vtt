@@ -72,9 +72,31 @@ function findAssetsTool(table: BridgeTable): McpTool {
   };
 }
 
+const UploadSchema = z.object({
+  game: ListSchema.shape.game,
+  name: z.string().min(1).max(200).describe('The file name with its extension ("wheat-field.webp")'),
+  data: z.string().min(1).describe('The file, base64'),
+});
+
+function uploadTool(table: BridgeTable): McpTool {
+  return {
+    name: 'upload_asset',
+    description:
+      'Puts a picture, sound or video of your own into the game’s uploads (GM; a player: a picture), as the ' +
+      'asset browser’s upload does. Answers its src (/assets/uploads/<name>) for tiles, patterns and tokens.',
+    input: UploadSchema,
+    run: async (a: z.infer<typeof UploadSchema>) => {
+      const { game, player } = await table.seat(a.game);
+      const media = await ask(game, player, { t: 'upload', name: a.name, data: a.data }, 'media');
+      return JSON.stringify({ src: media.uploaded?.src });
+    },
+  };
+}
+
 export function assetTools(table: BridgeTable): McpTool[] {
   return [
     findAssetsTool(table),
+    uploadTool(table),
     {
       name: 'list_assets',
       description:

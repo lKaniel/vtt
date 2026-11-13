@@ -1,9 +1,9 @@
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PrefabSchema } from '@vtt/shared';
-import { installBaileywikiLibrary } from './baileywiki-online.ts';
+import { installBaileywikiLibrary, refreshBaileywikiLibrary } from './baileywiki-online.ts';
 import { PackStore } from '../library/pack-store.ts';
 import { contentModuleZip } from '../test/fake-content-module.ts';
 
@@ -55,5 +55,30 @@ describe("Baileywiki's library from the Content Module", () => {
     await expect(
       installBaileywikiLibrary(packsDir, { manifest: 'https://mods.test/manifest', get: down }),
     ).rejects.toThrow(/503/);
+  });
+
+  describe('after the server is updated', () => {
+    const install = () => installBaileywikiLibrary(packsDir, { manifest: 'https://mods.test/manifest', get });
+    const lamp = join('baileywiki/compendia/bw-prefabs-2d/street-lamp.json');
+
+    it('leaves a library its own importer made alone', async () => {
+      await install();
+      expect(await refreshBaileywikiLibrary(packsDir)).toBeUndefined();
+    });
+
+    it('imports the downloaded module again when an older importer made the library', async () => {
+      await install();
+      await writeFile(join(packsDir, 'baileywiki/import.json'), JSON.stringify({ importer: 0 }));
+      await rm(join(packsDir, lamp));
+      const report = await refreshBaileywikiLibrary(packsDir);
+      expect(report?.prefabs).toBe(1);
+      expect(asked).toHaveLength(2);
+      expect(PrefabSchema.parse(JSON.parse(await readFile(join(packsDir, lamp), 'utf8'))).grid).toBe(100);
+      expect(await refreshBaileywikiLibrary(packsDir)).toBeUndefined();
+    });
+
+    it('does nothing where the module was never downloaded', async () => {
+      expect(await refreshBaileywikiLibrary(packsDir)).toBeUndefined();
+    });
   });
 });

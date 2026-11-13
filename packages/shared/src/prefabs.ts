@@ -43,6 +43,8 @@ export const PrefabSchema = z
     vary: PrefabVarySchema.optional(),
     /** It covers the whole scene when placed (fog, weather, terrain overlays). */
     fill: z.boolean().optional(),
+    /** Pixels per square of the scene it was made on; placing makes it the same size in squares on any scene. */
+    grid: z.number().positive().optional(),
   })
   .refine(
     (p) => p.tiles.length + p.walls.length + p.lights.length + p.sounds.length + p.drawings.length + p.notes.length > 0,
@@ -57,6 +59,14 @@ export interface PlaceOptions {
   random: () => number;
   /** The scene's area, for a prefab that fills it. */
   scene?: { x: number; y: number; w: number; h: number };
+  /** Pixels per square of the scene it lands on, for a prefab that says the `grid` it was made at. */
+  grid?: number;
+  /** Degrees to turn it clockwise, on top of what it varies by. */
+  turn?: number;
+  /** Times its size, on top of what it varies by. */
+  scale?: number;
+  /** Where its middle goes; left out, it stays where it was made. */
+  at?: readonly [number, number];
 }
 
 type Pt = [number, number];
@@ -83,27 +93,41 @@ function boundsOf(p: Prefab): Box {
   return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
 }
 
-/** How one placing moves points: scaled by `k` and turned `deg` clockwise about `c`. */
-function transform(c: Pt, k: number, deg: number) {
+/** How one placing moves points: scaled by `k` and turned `deg` clockwise about `c`, which goes to `to`. */
+function transform(c: Pt, { px: k, deg }: { px: number; deg: number }, to: readonly [number, number] = c) {
   const rad = (deg * Math.PI) / 180;
   const [cos, sin] = [Math.cos(rad), Math.sin(rad)];
   return ([x, y]: Pt): Pt => {
     const [dx, dy] = [(x - c[0]) * k, (y - c[1]) * k];
-    return [c[0] + dx * cos - dy * sin, c[1] + dx * sin + dy * cos];
+    return [to[0] + dx * cos - dy * sin, to[1] + dx * sin + dy * cos];
+  };
+}
+
+/** What each placing varies by: a size, a turn, a tint and a picture, from the prefab's ranges. */
+function varied(vary: PrefabVary | undefined, random: () => number) {
+  return {
+    scale: vary?.scale ? within(vary.scale, random()) : 1,
+    turn: vary?.rotation ? Math.round(within(vary.rotation, random())) : 0,
+    tint: vary?.tint ? oneOf(vary.tint, random()) : undefined,
+    picture: vary?.pictures ? oneOf(vary.pictures, random()) : undefined,
   };
 }
 
 /** What a placing picks: one tile of a brush, a size, a turn, a tint and a picture. */
-function picks(p: Prefab, random: () => number) {
+function picks(p: Prefab, { random, grid, turn = 0, scale = 1 }: PlaceOptions) {
   const tiles = p.pick === 'one' && p.tiles.length ? [oneOf(p.tiles, random())] : p.tiles;
-  const { vary } = p;
+  const own = varied(p.vary, random);
+  const k = own.scale * scale;
   return {
     tiles,
     rest: p.pick === 'one',
-    k: vary?.scale ? within(vary.scale, random()) : 1,
-    deg: vary?.rotation ? Math.round(within(vary.rotation, random())) : 0,
-    tint: vary?.tint ? oneOf(vary.tint, random()) : undefined,
-    picture: vary?.pictures ? oneOf(vary.pictures, random()) : undefined,
+    /** Times its size: what is measured in feet (a light's reach, a model's height) grows by it. */
+    k,
+    /** Times its pixels: its size, and the squares of this scene over those of the one it was made on. */
+    px: k * (p.grid && grid ? grid / p.grid : 1),
+    deg: own.turn + turn,
+    tint: own.tint,
+    picture: own.picture,
   };
 }
 
@@ -113,7 +137,7 @@ type Move = (p: Pt) => Pt;
 function placeTile(t: Prefab['tiles'][number], move: Move, pick: Picked): Record<string, unknown> {
   if (t.kind === 'group') return { ...t };
   const [cx, cy] = move([t.x + t.w / 2, t.y + t.h / 2]);
-  const [w, h] = [t.w * pick.k, t.h * pick.k];
+  const [w, h] = [t.w * pick.px, t.h * pick.px];
   return { ...t, x: cx - w / 2, y: cy - h / 2, w, h, ...(t.kind === 'image' ? lookOf(t, pick) : {}) };
 }
 
@@ -164,9 +188,9 @@ export function prefabClip(
   o: PlaceOptions,
 ): { docs: (Record<string, unknown> & { id: string; type: string; rev: number })[] } {
   if (p.fill && o.scene) return { docs: fillDocs(p, o.scene) };
-  const pick = picks(p, o.random);
+  const pick = picks(p, o);
   const b = boundsOf({ ...p, tiles: pick.tiles });
-  const move = transform([b.x + b.w / 2, b.y + b.h / 2], pick.k, pick.deg);
+  const move = transform([b.x + b.w / 2, b.y + b.h / 2], pick, o.at);
   const loose = pick.tiles.filter((t) => !t.parent);
   const group = loose.length > 1 ? `${p.id}-group` : undefined;
   const holder = group ?? loose[0]?.id;

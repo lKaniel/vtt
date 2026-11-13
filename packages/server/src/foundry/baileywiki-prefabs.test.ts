@@ -58,6 +58,15 @@ describe('Mass Edit presets as prefabs', () => {
     expect(p.sounds).toEqual([expect.objectContaining({ src: 'pack://baileywiki/media/modules/bw/sounds/hum.ogg' })]);
   });
 
+  it('says the squares it was made on, so a placing can fit it to another scene', () => {
+    expect(prefabOf(presetOf(lamppost)!, media)?.grid).toBe(100);
+    const big = presetOf({
+      ...lamppost,
+      flags: { 'multi-token-edit': { preset: { ...lamppost.flags['multi-token-edit'].preset, gridSize: 150 } } },
+    });
+    expect(prefabOf(big!, media)?.grid).toBe(150);
+  });
+
   it('shows its first picture when it has no thumbnail of its own', () => {
     const { img: _img, ...bare } = lamppost.flags['multi-token-edit'].preset as Record<string, unknown>;
     const p = prefabOf(presetOf(journal(bare))!, media);

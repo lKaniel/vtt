@@ -52,6 +52,8 @@ name.
 | `go_to_scene`                    | Takes your view, or the whole game, to a scene                                       |
 | `list_assets`                    | The pictures, sounds, videos and 3D models the game may use                          |
 | `find_assets`                    | Map pieces from the asset catalogs of the game's packs, by words, with sizes in feet |
+| `upload_asset`                   | Puts a picture, sound or video of Claude's own into the game's uploads               |
+| `find_prefabs`                   | Whole prefabs of the game's packs (a house with walls, doors, windows and a roof)    |
 
 ## Building scenes
 
@@ -111,6 +113,14 @@ and a locked vault") and it builds it with the scene tools, all as the GM:
      each piece is the pack's model, on a flat one its picture; either falls
      back to the other when the catalog has none. `find_assets` searches the
      catalog by words (`kind` tile, texture or model, `minFeet`, `maxFeet`).
+   - Whole prefabs (`prefabs`: `prefab`, `x`, `y`, `rotation`, `scale`,
+     `seed`): a building is never a lone floor picture. A Baileywiki house
+     is a prefab with its floor, walls, doors, windows, lights and overhead
+     roof, and `find_prefabs` lists them by words with their size in
+     squares and what each brings. A prefab lands with its middle on the
+     point (squares count along grid lines), sized to the scene's squares
+     (`grid` on the prefab is the pixels a square it was made at), over the
+     build's rooms and under its props, so the same call furnishes it.
 
 3. `render_scene` draws what was built (`level`: one floor), so Claude can look and fix it;
    `describe_scene` lists the ids, which `edit_documents` (`<scene>/walls`)

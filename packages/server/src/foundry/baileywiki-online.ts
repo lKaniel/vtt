@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { z } from 'zod';
 import { BaileywikiError } from './baileywiki-client.ts';
@@ -52,9 +52,47 @@ async function downloadModule(modulesDir: string, opts: OnlineOptions): Promise<
   }
 }
 
+/**
+ * Which importer made the library, kept in the pack's `import.json`. Raise
+ * it when prefabs or scenes gain something a library made before lacks, and
+ * the server imports the downloaded module again when it next starts.
+ */
+const IMPORTER = 2;
+const marker = (packsDir: string) => join(packsDir, 'baileywiki', 'import.json');
+
+async function readText(file: string): Promise<string | undefined> {
+  return readFile(file, 'utf8').catch(() => undefined);
+}
+
+async function importDownloaded(packsDir: string, log?: (line: string) => void): Promise<ModulesReport> {
+  const modulesDir = join(dirname(packsDir), 'baileywiki-module');
+  const report = await importBaileywikiModules(modulesDir, packsDir, {
+    modules: [MODULE],
+    online: true,
+    link: true,
+    log,
+  });
+  await writeFile(marker(packsDir), JSON.stringify({ importer: IMPORTER }));
+  return report;
+}
+
 /** Downloads Baileywiki's Content Module and imports its prefabs and scenes into the pack in `packsDir`. */
 export async function installBaileywikiLibrary(packsDir: string, opts: OnlineOptions = {}): Promise<ModulesReport> {
-  const modulesDir = join(dirname(packsDir), 'baileywiki-module');
-  await downloadModule(modulesDir, opts);
-  return importBaileywikiModules(modulesDir, packsDir, { modules: [MODULE], online: true, link: true, log: opts.log });
+  await downloadModule(join(dirname(packsDir), 'baileywiki-module'), opts);
+  return importDownloaded(packsDir, opts.log);
+}
+
+/**
+ * Imports the module downloaded earlier again when an older importer made
+ * the library, with nothing downloaded; undefined when there is nothing to do.
+ */
+export async function refreshBaileywikiLibrary(
+  packsDir: string,
+  log?: (line: string) => void,
+): Promise<ModulesReport | undefined> {
+  const downloaded = await readText(join(dirname(packsDir), 'baileywiki-module', MODULE, 'module.json'));
+  if (!downloaded) return undefined;
+  const made = z.object({ importer: z.number() }).safeParse(JSON.parse((await readText(marker(packsDir))) ?? '{}'));
+  if (made.success && made.data.importer >= IMPORTER) return undefined;
+  return importDownloaded(packsDir, log);
 }

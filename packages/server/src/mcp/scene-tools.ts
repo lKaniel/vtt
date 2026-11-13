@@ -17,6 +17,7 @@ import type { McpContent, McpTool } from './mcp-protocol.ts';
 import { act, ask, look, outcome, type Welcome } from './mcp-seat.ts';
 import { assetQueries, chooseAsset, type FindAssets, patternLook } from './blueprint-assets.ts';
 import type { BridgeTable } from './mcp-tools.ts';
+import { PrefabPlacingSchema, prefabOps } from './prefab-tools.ts';
 import { BlueprintSchema, blueprintBuild, groundOf, type Spawn } from './scene-blueprint.ts';
 import { type Box, sceneSketch } from './scene-picture.ts';
 
@@ -210,6 +211,17 @@ function createScene(b: Bridge): McpTool {
   };
 }
 
+const BuildSchema = z.object({
+  ...ON,
+  label: z.string().max(40).optional(),
+  ...BlueprintSchema.shape,
+  prefabs: z
+    .array(PrefabPlacingSchema)
+    .max(400)
+    .default([])
+    .describe('Whole prefabs (find_prefabs) by id, middle on x, y: buildings with their walls, doors and roofs'),
+});
+
 function buildScene(b: Bridge): McpTool {
   return {
     name: 'build_scene',
@@ -221,21 +233,27 @@ function buildScene(b: Bridge): McpTool {
       'by default: walls and boxes run on grid lines, points sit on the square centre. ' +
       'ALWAYS dress the map from the game’s asset catalog (a Baileywiki pack; search it with find_assets): ' +
       '`grounds` lay its tileable textures, `scatter` fills areas with its trees, rocks and clutter, `props` ' +
-      'place one asset (a wagon, a well, a house) at its real size; room floors and tile textures take its ' +
-      'texture for the word. On a 3D scene props and scatter are 3D models. Any other field is ' +
+      'place one asset (a wagon, a well, a crate) at its real size; room floors and tile textures take its ' +
+      'texture for the word. On a 3D scene props and scatter are 3D models. A BUILDING is a whole prefab ' +
+      '(`prefabs`, ids from find_prefabs): it comes with its walls, doors, windows, lights and an overhead ' +
+      'roof, laid over rooms and under props, so furnish it with props in the same call. Any other field is ' +
       'stored as given (see guide), e.g. hidden, trigger. Floors: give rooms and items `level` (or `levels` for ' +
       'several); stairs are a region with behaviors [{"type":"stairs","between":["ground","upper"]}], a lift ' +
       '[{"type":"elevator"}].',
-    input: z.object({ ...ON, label: z.string().max(40).optional(), ...BlueprintSchema.shape }),
-    run: async (a: z.infer<typeof BlueprintSchema> & { game?: string; scene?: string; label?: string }) => {
+    input: BuildSchema,
+    run: async (a: z.infer<typeof BuildSchema>) => {
       const s = await b.seat(a);
-      const taken = (coll: string, id: string) => !!sourceOf(s.welcome).get(coll, id);
+      const docs = sourceOf(s.welcome);
       const bp = BlueprintSchema.parse(a);
-      const prefer = sourceOf(s.welcome).get('scenes', s.scene)?.view === '3d' ? 'model' : 'tile';
+      const gridSize = gridOf(s);
+      const site = { scene: s.scene, grid: gridSize, squares: bp.units === 'squares', docs };
+      const prefabs = await prefabOps(s, a.prefabs, site);
+      const taken = (coll: string, id: string) => !!docs.get(coll, id) || prefabs.has(coll, id);
+      const prefer = docs.get('scenes', s.scene)?.view === '3d' ? 'model' : 'tile';
       const assets = await catalogOf(b, s, assetQueries(bp, prefer));
       const rules = toEdition(s.welcome.world.rules);
-      const ctx = { scene: s.scene, gridSize: gridOf(s), rules, taken, prefer, ...(assets && { assets }) } as const;
-      const { ops, spawns } = blueprintBuild(bp, ctx);
+      const made = { prefabs: prefabs.ops, ...(assets && { assets }) };
+      const { ops, spawns } = blueprintBuild(bp, { scene: s.scene, gridSize, rules, taken, prefer, ...made });
       await b.send(s, [{ t: 'build', scene: s.scene, label: a.label ?? 'Claude build', ops, spawns }]);
       return summary(ops, spawns);
     },
