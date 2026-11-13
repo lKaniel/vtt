@@ -17,6 +17,8 @@ export interface CheckKind {
   skill?: string;
   /** A saving throw in `ability` instead of a check. */
   save?: boolean;
+  /** A skill with no ability (a campaign's): its bonus is the creature's typed `stats.skillValues` value, nothing else. */
+  free?: boolean;
   /** A check with a tool (thieves' tools): proficiency is added when the creature is trained with it. */
   tool?: string;
 }
@@ -48,6 +50,7 @@ function proficiencyFor(token: Pick<Token, 'stats'>, sheet: CheckSheet, check: C
 /** The check's bonus: the ability modifier, plus proficiency in the skill; a save's bonus from the sheet. */
 export function checkBonus(token: Pick<Token, 'stats'>, sheet: CheckSheet, check: CheckKind): number {
   if (check.save) return sheet.saves[check.ability];
+  if (check.free && check.skill) return token.stats?.skillValues?.[check.skill] ?? 0;
   return abilityMod(sheet.abilities[check.ability]) + proficiencyFor(token, sheet, check);
 }
 

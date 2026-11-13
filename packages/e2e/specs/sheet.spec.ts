@@ -135,4 +135,12 @@ test("the GM adds a campaign skill and it rolls from every sheet's skills", asyn
   await sheet.getByRole('tab', { name: 'Details' }).click();
   await sheet.getByRole('button', { name: /^Psychic Resistance/ }).click();
   await expect(chatLog(page)).toContainText('Psychic Resistance');
+
+  // This character rolls it with a typed bonus instead of Wisdom.
+  await sheet.getByRole('switch', { name: 'Edit mode (E)' }).click();
+  await sheet.getByRole('combobox', { name: 'Ability for Psychic Resistance' }).click();
+  await page.getByRole('option', { name: 'Typed bonus' }).click();
+  await sheet.getByRole('textbox', { name: 'Psychic Resistance bonus' }).fill('7');
+  await sheet.getByRole('textbox', { name: 'Psychic Resistance bonus' }).press('Tab');
+  await expect(sheet.getByRole('button', { name: /^Psychic Resistance\s*\+7/ })).toBeVisible();
 });

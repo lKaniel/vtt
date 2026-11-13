@@ -46,6 +46,37 @@ describe('the skills list', () => {
   });
 });
 
+describe('a campaign skill with no ability', () => {
+  it("shows the character's typed bonus and no proficiency", () => {
+    const free = { id: 'psychic-resistance', kind: 'skill', name: 'Psychic Resistance', ability: 'none' };
+    const content = contentWith('2014', gameCompendia({}, [], [free]));
+    const typed = { ...rogue, stats: { ...rogue.stats, skillValues: { 'psychic-resistance': 4 } } };
+    expect(skillRows(typed, sheet, content).at(-1)).toMatchObject({
+      ability: 'none',
+      free: true,
+      bonus: 4,
+      passive: 14,
+      check: { ability: 'wis', skill: 'psychic-resistance', free: true },
+    });
+  });
+});
+
+describe("a character's own ability for a campaign skill", () => {
+  it('rolls the skill with it, and says the skill can be switched', () => {
+    const psychic = { id: 'psychic-resistance', kind: 'skill', name: 'Psychic Resistance', ability: 'wis' };
+    const content = contentWith('2014', gameCompendia({}, [], [psychic]));
+    const own = { ...rogue, stats: { ...rogue.stats, skillAbilities: { 'psychic-resistance': 'dex' as const } } };
+    // Dex 16 (+3), untrained.
+    expect(skillRows(own, sheet, content).at(-1)).toMatchObject({
+      ability: 'dex',
+      bonus: 3,
+      campaign: true,
+      usual: 'wis',
+    });
+    expect(skillRows(own, sheet, content)[0]).toMatchObject({ campaign: false });
+  });
+});
+
 describe('experience', () => {
   it('fills the bar from this level to the next', () => {
     // Level 5 starts at 6500 XP, level 6 at 14000.

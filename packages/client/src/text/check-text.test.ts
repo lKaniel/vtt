@@ -70,3 +70,19 @@ describe("the game's own skills", () => {
     expect(checkNamed('psychic resistance')).toBeUndefined();
   });
 });
+
+describe('a campaign skill with no ability', () => {
+  const free = { id: 'psychic-resistance', kind: 'skill', name: 'Psychic Resistance', ability: 'none' };
+  const content = contentWith('2014', gameCompendia({}, [], [free]));
+
+  it('is asked for as a free check', () => {
+    expect(checkOptions(content)).toContainEqual({ value: 'wis:psychic-resistance:free', label: 'Psychic Resistance' });
+    expect(checkOf('wis:psychic-resistance:free')).toEqual({ ability: 'wis', skill: 'psychic-resistance', free: true });
+    expect(checkValue({ ability: 'wis', skill: 'psychic-resistance', free: true })).toBe('wis:psychic-resistance:free');
+    expect(checkNamed('psychic resistance', content)).toEqual({
+      ability: 'wis',
+      skill: 'psychic-resistance',
+      free: true,
+    });
+  });
+});
