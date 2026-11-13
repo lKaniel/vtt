@@ -16,18 +16,29 @@ export function OptimiseButton({ session }: Readonly<{ session: Session }>) {
   if (bake.running) return <Running session={session} />;
   if (!bake.optimised) {
     return (
-      <Button variant="ghost" size="sm" onClick={() => void bake.optimise()} title={t('bake.optimiseHint')}>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={() => void bake.optimise()}
+        title={t('bake.optimiseHint')}
+        aria-label={t('bake.optimise')}
+      >
         <GaugeIcon />
-        {t('bake.optimise')}
       </Button>
     );
   }
   const changed = bake.changedSince();
   return (
     <span className="flex items-center">
-      <Button variant="ghost" size="sm" onClick={() => bake.edit()} title={t('bake.editHint')}>
+      <Button
+        variant="default"
+        size="icon-sm"
+        aria-pressed
+        onClick={() => bake.edit()}
+        title={t('bake.editHint')}
+        aria-label={t('bake.edit')}
+      >
         <PencilIcon />
-        {t('bake.edit')}
       </Button>
       {changed > 0 && (
         <Button
@@ -47,10 +58,11 @@ export function OptimiseButton({ session }: Readonly<{ session: Session }>) {
 function Running({ session }: Readonly<{ session: Session }>) {
   const { step, done, total } = session.bake.running!;
   const pct = total ? Math.floor((done / total) * 100) : 0;
+  const label = `${t(step === 'load' ? 'bake.loading' : 'bake.drawing', { pct })}. ${t('bake.stop')}`;
   return (
-    <Button variant="ghost" size="sm" onClick={() => session.bake.cancel()} title={t('bake.stop')}>
+    <Button variant="ghost" size="sm" onClick={() => session.bake.cancel()} title={label} aria-label={label}>
       <LoaderIcon className="animate-spin" />
-      {t(step === 'load' ? 'bake.loading' : 'bake.drawing', { pct })}
+      {pct}%
     </Button>
   );
 }
