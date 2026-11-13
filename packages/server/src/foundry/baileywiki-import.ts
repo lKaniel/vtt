@@ -1,9 +1,9 @@
 import { mkdir, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { freeId, mediaKind, packRef, slugify } from '@vtt/core';
+import { freeId, packRef, slugify } from '@vtt/core';
 import type { BaileywikiImportReport, BaileywikiScene, SceneEntry } from '@vtt/shared';
 import { z } from 'zod';
-import { type BaileywikiClient, baileywikiPath } from './baileywiki-client.ts';
+import { type BaileywikiClient, baileywikiPath, isBaileywikiMedia } from './baileywiki-client.ts';
 import { mergeBaileywikiManifest } from './baileywiki-pack.ts';
 import { foundryScene } from './foundry-scene.ts';
 import { lossLine } from './import-losses.ts';
@@ -36,17 +36,13 @@ const metaPath = (compendium: string) => `bw-content-releases/Compendium/${compe
 const docPath = (m: Meta, id: string) =>
   `bw-content-releases/Compendium/${m.packageName}/${m.name}/${m.type}/${id}.json`;
 
-/** Files that come from Baileywiki (the rest, core icons or other modules', aren't theirs to give). */
-const isBaileywikiFile = (path: string) => /^(bw-content-releases\/|modules\/baileywiki-)/.test(path);
-const safe = (path: string) => !path.split('/').some((part) => part === '..' || part === '');
-
 /** Every Baileywiki media file a Foundry document names, as Baileywiki paths. */
 export function baileywikiFiles(doc: unknown): string[] {
   const found = new Set<string>();
   const walk = (value: unknown): void => {
     if (typeof value === 'string') {
       const path = baileywikiPath(value);
-      if (mediaKind(path) && isBaileywikiFile(path) && safe(path)) found.add(path);
+      if (isBaileywikiMedia(path)) found.add(path);
     } else if (value && typeof value === 'object') Object.values(value).forEach(walk);
   };
   walk(doc);
@@ -75,6 +71,14 @@ async function readMeta(client: BaileywikiClient, compendium: string): Promise<M
   }
 }
 
+/**
+ * A scene's thumbnail: a picture of the Content Module, which the pack has
+ * once Baileywiki's library is installed (baileywiki-online.ts), else the
+ * server fetches it (baileywiki-files.ts).
+ */
+const thumbUrl = (path: string) =>
+  `/packs/${PACK}/media/${baileywikiPath(path).split('/').map(encodeURIComponent).join('/')}`;
+
 /** The scenes of the online compendia the account can read. */
 export async function baileywikiScenes(client: BaileywikiClient, packsDir: string): Promise<BaileywikiScene[]> {
   const sources = await readSources(join(packsDir, PACK));
@@ -88,7 +92,7 @@ export async function baileywikiScenes(client: BaileywikiClient, packsDir: strin
         id: entry._id,
         name: entry.name,
         group: meta.label ?? meta.name,
-        ...(entry.thumb ? { thumb: client.thumb(entry.thumb) } : {}),
+        ...(entry.thumb ? { thumb: thumbUrl(entry.thumb) } : {}),
         imported: sourceKey(meta.id, entry._id) in sources,
       });
   }

@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { startApi, type ApiServer } from '../test/api-server.ts';
+import { contentModuleZip } from '../test/fake-content-module.ts';
 import { GOOD_CODE, startFakeBaileywiki, townCompendium, type FakeBaileywiki } from '../test/fake-baileywiki.ts';
 
 // The admin signs the server in to Baileywiki with the code
@@ -53,7 +54,7 @@ describe('signing in to Baileywiki', () => {
 });
 
 describe('Baileywiki scenes', () => {
-  it('lists the online compendia once signed in, with public previews', async () => {
+  it('lists the online compendia once signed in, with previews from the pack', async () => {
     const admin = await api.admin();
     expect((await admin('GET', '/api/baileywiki/scenes')).status).toBe(400);
     await admin('POST', '/api/baileywiki/sign-in', { code: GOOD_CODE });
@@ -64,7 +65,7 @@ describe('Baileywiki scenes', () => {
         id: 'town00000000001',
         name: 'Town Square',
         group: 'Baileywiki 2D Scenes',
-        thumb: `${bw.base}/api/files/thumbnail?file_path=${encodeURIComponent('modules/baileywiki-maps-premium/thumbs/town.webp')}`,
+        thumb: '/packs/baileywiki/media/modules/baileywiki-maps-premium/thumbs/town.webp',
         imported: false,
       },
     ]);
@@ -110,6 +111,18 @@ describe('Baileywiki scenes', () => {
     });
     expect(res.json).toMatchObject({ scenes: 1, media: 1 });
     expect((res.json.skipped as string[]).join('\n')).toContain('modules/baileywiki-maps-premium/maps/town.webp');
+  });
+});
+
+describe("Baileywiki's library", () => {
+  it('downloads the Content Module once signed in, its prefabs into the pack', async () => {
+    bw.files.set('module.zip', await contentModuleZip());
+    const admin = await api.admin();
+    expect((await admin('POST', '/api/baileywiki/library')).status).toBe(400);
+    await admin('POST', '/api/baileywiki/sign-in', { code: GOOD_CODE });
+    const res = await admin('POST', '/api/baileywiki/library');
+    expect(res.json).toMatchObject({ prefabs: 1 });
+    expect(api.hub.packs.compendium('baileywiki', 'bw-prefabs-2d')?.docs).toHaveLength(1);
   });
 });
 

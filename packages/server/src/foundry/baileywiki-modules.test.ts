@@ -240,4 +240,24 @@ describe('importing the installed Baileywiki modules', () => {
       'modules/jb2a_patreon/fire.webm\n',
     );
   });
+
+  it('online, names the Baileywiki files no module has, which the server fetches when first asked', async () => {
+    await put('baileywiki-content/module.json', {
+      id: 'baileywiki-content',
+      packs: [{ name: 'prefabs-01', type: 'JournalEntry', path: 'packs/prefabs-01' }],
+    });
+    await writeLevelDb(join(modules, 'baileywiki-content/packs/prefabs-01'), {
+      '!journal!P9': preset('P9', {
+        name: 'Barrel',
+        documentName: 'Tile',
+        data: [{ texture: { src: 'modules/baileywiki-3d/maps/barrel.webp' }, x: 0, y: 0, width: 50, height: 50 }],
+      }),
+    });
+    const report = await importBaileywikiModules(modules, packsDir, { modules: ['baileywiki-content'], online: true });
+    const packs = new PackStore(packsDir);
+    await packs.load();
+    const barrel = PrefabSchema.parse(await packs.compendiumDoc('baileywiki', 'bw-prefabs-2d', 'barrel'));
+    expect(barrel.tiles[0]).toMatchObject({ src: 'pack://baileywiki/media/modules/baileywiki-3d/maps/barrel.webp' });
+    expect(report.missing).toEqual([]);
+  });
 });

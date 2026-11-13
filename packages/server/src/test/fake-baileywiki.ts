@@ -4,7 +4,9 @@ import type { AddressInfo } from 'node:net';
 // A stand-in for content.baileywiki.com in tests: the sign-in check
 // (auth-refresh), file details that hand out a download address for files
 // the account may have, and the downloads themselves. Files are given by
-// their Baileywiki path; JSON values are served as JSON.
+// their Baileywiki path; JSON values are served as JSON. It also hands out
+// the Content Module (/module/manifest, the zip set as file "module.zip"),
+// as foundrymods.com does.
 
 export const GOOD_CODE = 'good-code';
 /** The PocketBase role id of Baileywiki's standard (basic1) tier. */
@@ -69,6 +71,8 @@ async function answer(state: FakeState, req: IncomingMessage): Promise<Answer> {
   if (route === 'POST /api/collections/users/auth-refresh') return refresh(state, req);
   if (route === 'POST /api/files/file-details') return details(state, req);
   if (route.startsWith('GET /download/')) return download(state, url.pathname.slice('/download/'.length));
+  if (route === 'GET /module/manifest') return { status: 200, body: { download: `${state.base}/module/bcm.zip` } };
+  if (route === 'GET /module/bcm.zip') return download(state, 'module.zip');
   return { status: 404, body: {} };
 }
 
