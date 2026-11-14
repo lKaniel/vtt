@@ -11,6 +11,7 @@ import { EffectBadges, Face, HpBar } from '../Portrait.tsx';
 import { Button } from '../kit/button.tsx';
 import { withKey } from '../sheet-model.ts';
 import type { SheetProps } from './sheet-props.ts';
+import { ResourceMeter } from './ResourceMeter.tsx';
 
 // The left of the sheet: the portrait with its armour class, hit points, hit
 // dice, death saves, exhaustion and heroic inspiration, and initiative, speed and proficiency.
@@ -131,8 +132,8 @@ function SmallField({ label, children }: Readonly<{ label: string; children: Rea
   );
 }
 
-/** Hit dice left; an owner spends one on a short rest, outside fights. */
-function HitDice({ session, value, kind, sheet }: Readonly<SheetProps>) {
+/** Hit dice left; an owner spends one on a short rest, outside fights, and edit mode sets them. */
+function HitDice({ session, value, kind, sheet, edit, update }: Readonly<SheetProps>) {
   const dice = hitDiceOf(value, sheet);
   if (!dice) return null;
   const mine = kind === 'token' && session.canControl(value as TokenView);
@@ -141,9 +142,17 @@ function HitDice({ session, value, kind, sheet }: Readonly<SheetProps>) {
     <section className="flex items-center justify-between gap-2">
       <div>
         <Label>{t('sheet.hitDice')}</Label>
-        <span className="text-sm">{hitDiceText(dice)}</span>
+        {edit ? (
+          <ResourceMeter
+            resource={{ key: { kind: 'hitDice' }, name: t('sheet.hitDice'), left: dice.left, total: dice.total }}
+            edit={edit}
+            update={update}
+          />
+        ) : (
+          <span className="text-sm">{hitDiceText(dice)}</span>
+        )}
       </div>
-      {mine && (
+      {mine && !edit && (
         <Button
           variant="outline"
           size="sm"

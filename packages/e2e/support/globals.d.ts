@@ -13,7 +13,9 @@ interface E2eToken {
   img?: string;
   /** The look it wears (a disguise), told only to its owners and the GM. */
   look?: string;
-  inventory?: { item: string; qty: number; spell?: string }[];
+  inventory?: { item: string; qty: number; spell?: string; spent?: number }[];
+  /** Slots, feature uses, hit dice and pool points used since its last rest. */
+  spent?: { slots?: number[]; uses?: Record<string, number>; hitDice?: number; pool?: number };
   hotbar?: (string | null)[];
   stats?: { species?: string };
 }

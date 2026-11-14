@@ -1,7 +1,9 @@
-import { omitKey, type Spell, type Token } from '@vtt/system-dnd5e';
+import { type InventoryEntry, omitKey, type Spell, type Token } from '@vtt/system-dnd5e';
 
-// Spell slots and feature charges: which slot levels a spell can use, and
-// turning clicks on the sheet's pips back into what the token has spent.
+// Everything a creature spends and gets back (spell slots, feature uses,
+// legendary actions, a class's point pool, hit dice, an item's charges):
+// which slot levels a spell can use, and turning what the sheet sets as
+// left back into what the token has spent, the same way for all of them.
 
 type Spent = Token['spent'];
 
@@ -27,10 +29,14 @@ export function pipLeft(k: number, left: number): number {
 
 /** Drops empty parts so a fully rested token has no `spent` at all. */
 function tidy(spent: NonNullable<Spent>): Spent {
-  const slots = spent.slots?.some((n) => n > 0) ? spent.slots : undefined;
-  const uses = spent.uses && Object.keys(spent.uses).length ? spent.uses : undefined;
-  if (!slots && !uses) return undefined;
-  return { ...(slots && { slots }), ...(uses && { uses }) };
+  const { slots, uses, pool, hitDice } = spent;
+  const out = {
+    ...(slots?.some((n) => n > 0) && { slots }),
+    ...(uses && Object.keys(uses).length && { uses }),
+    ...(pool && { pool }),
+    ...(hitDice && { hitDice }),
+  };
+  return Object.keys(out).length ? out : undefined;
 }
 
 /** `spent` with `left` of the `total` slots of `level` still unspent. */
@@ -45,4 +51,60 @@ export function withSlotsLeft(spent: Spent, { level, left, total }: SlotChoice):
 export function withUsesLeft(spent: Spent, { id, left, max }: { id: string; left: number; max: number }): Spent {
   const rest = omitKey({ ...spent?.uses }, id);
   return tidy({ ...spent, uses: left >= max ? rest : { ...rest, [id]: max - left } });
+}
+
+/** Which of the creature's resources: they are all set the same way, as so many left of a total. */
+export type ResourceKey =
+  | { kind: 'slot'; level: number }
+  /** A feature's uses, legendary actions ("legendary") and resistance ("legendary-resistance"). */
+  | { kind: 'use'; id: string }
+  /** A class's point pool; `full` is its size before reserved points come off. */
+  | { kind: 'pool'; full: number }
+  | { kind: 'hitDice' }
+  /** A magic item's charges, at its inventory index. */
+  | { kind: 'charges'; index: number };
+
+interface Spender {
+  spent?: NonNullable<Spent>;
+  inventory?: InventoryEntry[];
+}
+
+/** `left` of `total`, kept between none and all. */
+export interface Amount {
+  left: number;
+  total: number;
+}
+
+const within = ({ left, total }: Amount) => Math.min(total, Math.max(0, left));
+
+const withSpent = <T extends Spender>(d: T, spent: Spent): T => (spent ? { ...d, spent } : omitKey(d, 'spent'));
+
+function withCount(spent: Spent, key: 'pool' | 'hitDice', n: number): Spent {
+  return tidy({ ...spent, [key]: n > 0 ? n : undefined });
+}
+
+const withUsed = (e: InventoryEntry, used: number): InventoryEntry =>
+  used > 0 ? { ...e, spent: used } : omitKey(e, 'spent');
+
+function withCharges<T extends Spender>(d: T, index: number, used: number): T {
+  const inventory = (d.inventory ?? []).map((e, i) => (i === index ? withUsed(e, used) : e));
+  return { ...d, inventory };
+}
+
+/** The creature with `left` of the resource's `total` unspent. */
+export function withResourceLeft<T extends Spender>(d: T, key: ResourceKey, amount: Amount): T {
+  const left = within(amount);
+  const { total } = amount;
+  switch (key.kind) {
+    case 'slot':
+      return withSpent(d, withSlotsLeft(d.spent, { level: key.level, left, total }));
+    case 'use':
+      return withSpent(d, withUsesLeft(d.spent, { id: key.id, left, max: total }));
+    case 'pool':
+      return withSpent(d, withCount(d.spent, 'pool', key.full - left));
+    case 'hitDice':
+      return withSpent(d, withCount(d.spent, 'hitDice', total - left));
+    case 'charges':
+      return withCharges(d, key.index, total - left);
+  }
 }

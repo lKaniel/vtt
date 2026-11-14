@@ -27,6 +27,7 @@ import { EditButton, isOwn, NewButton, useOwnEditor } from '../own/OwnEditor.tsx
 import { attuned, canCarry, InSelect, Load, Purse } from './CarryParts.tsx';
 import { type Column, Empty, ListRow, ListSection, RowButton, SheetSearch } from './SheetList.tsx';
 import { actFromSheet, canAct, type SheetProps } from './sheet-props.ts';
+import { ResourceMeter } from './ResourceMeter.tsx';
 
 // The Inventory tab, Foundry style: the attacks, then gear by kind and each
 // container with what is packed in it, and the coins, carried weight and
@@ -214,6 +215,7 @@ function GearRow(p: Readonly<RowProps>) {
       icon={look.icon}
       name={look.name}
       tip={look.tip}
+      after={<ItemCharges {...p} />}
       columns={columns}
       cells={cells}
       faded={!edit && wearable(itemOf(p, index)) && !entry.equipped}
@@ -223,6 +225,21 @@ function GearRow(p: Readonly<RowProps>) {
         dragTile(e, { ref: look.ref });
       }}
       controls={<GearControls {...p} entry={entry} refName={look.ref} name={look.name} />}
+    />
+  );
+}
+
+/** A magic item's charges left (a wand's), set in edit mode like any other resource. */
+function ItemCharges(p: Readonly<RowProps>) {
+  const max = itemOf(p, p.index)?.charges?.max;
+  if (!max) return null;
+  const spent = p.value.inventory![p.index]!.spent ?? 0;
+  const name = t('sheet.charges', { name: itemOf(p, p.index)!.name });
+  return (
+    <ResourceMeter
+      resource={{ key: { kind: 'charges', index: p.index }, name, left: Math.max(0, max - spent), total: max }}
+      edit={p.edit}
+      update={p.update}
     />
   );
 }
