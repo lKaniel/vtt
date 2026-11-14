@@ -16,7 +16,7 @@ function api(gm = true) {
       deleteSelected: vi.fn(),
     },
     sheets: { open: vi.fn() },
-    requests: { move: vi.fn(), editMap: vi.fn() },
+    requests: { move: vi.fn(), editMap: vi.fn(), relinkToken: vi.fn() },
     tiles: { group: vi.fn(), ungroup: vi.fn(), reorder: vi.fn(), toggleLock: vi.fn() },
     editor: { canEditSelection: () => gm, editSelection: vi.fn(), selectAll: vi.fn(), lightPreset: 'torch' as const },
     targets: { mine: new Set<string>(), toggle: vi.fn() },
@@ -128,6 +128,27 @@ describe('context menus', () => {
       uses,
     };
     expect(labels(pile, api(false))).toEqual(['Inspect', 'Open', 'Target']);
+  });
+
+  it('the GM links a token to its actor, unlinks it, or makes it an actor', () => {
+    const a = api();
+    const at = (token: Partial<TokenView>): MenuTarget => ({
+      ...on({ id: 'k', type: 'token', rev: 1 }),
+      mode: 'tokens',
+      token: { id: 'k', name: 'Kara', ...token } as TokenView,
+    });
+    pick(at({ actor: 'kara', linked: true }), a, 'Unlink from actor').run();
+    pick(at({ actor: 'kara', linked: false }), a, 'Link to actor').run();
+    pick(at({ actor: 'kara', linked: false }), a, 'Link, its state becoming the actor’s').run();
+    pick(at({}), a, 'Make it an actor (linked)').run();
+    expect(a.requests.relinkToken.mock.calls).toEqual([
+      ['k', 'unlink'],
+      ['k', 'link'],
+      ['k', 'keep'],
+      ['k', 'new'],
+    ]);
+    expect(labels(at({ actor: 'kara', linked: true }), api(false))).not.toContain('Unlink from actor');
+    expect(labels(at({ pile: { kind: 'loot' } as TokenView['pile'] }), a)).not.toContain('Make it an actor (linked)');
   });
 
   it('the GM shows a token’s art or a picture tile to the players', () => {

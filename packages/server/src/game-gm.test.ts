@@ -167,6 +167,21 @@ describe('linking tokens to actors', () => {
     expect(gm.take('error')).toEqual([]);
   });
 
+  it('links a copy keeping its wounds, and makes a token without an actor into one', () => {
+    const gm = seat('gm');
+    gm.receive({ t: 'relinkToken', token: 'hero', how: 'unlink' });
+    gm.receive({ t: 'editToken', token: 'hero', patch: { hp: 2 } });
+    gm.receive({ t: 'relinkToken', token: 'hero', how: 'keep' });
+    expect(store.tokens.get('hero')).toMatchObject({ linked: true, hp: 2 });
+    expect(store.actors.get('hero')!.hp).toBe(2);
+    store.setToken(TokenSchema.parse({ id: 'rock', name: 'Rock', x: 0, y: 0, hp: 4 }));
+    gm.receive({ t: 'relinkToken', token: 'rock', how: 'new' });
+    expect(store.tokens.get('rock')).toMatchObject({ actor: 'rock', linked: true, hp: 4 });
+    expect(store.actors.get('rock')).toMatchObject({ name: 'Rock', hp: 4 });
+    gm.receive({ t: 'relinkToken', token: 'hero', how: 'new' });
+    expect(gm.take('error').map((e) => e.message)).toEqual(['Hero already has an actor']);
+  });
+
   it('refuses what makes no sense, and players', () => {
     const gm = seat('gm');
     const ana = seat('ana');

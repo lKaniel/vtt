@@ -133,13 +133,17 @@ export class GmActions {
     }
   }
 
-  /** Links a token to its actor, unlinks it, or saves or resets an unlinked copy's changes. */
+  /** Links a token to its actor, unlinks it, saves or resets a copy's changes, or makes it an actor (see Relink). */
   relink(player: Player, id: string, how: Relink): void {
     requireGm(player);
     const token = this.store.tokens.get(id);
     if (!token) throw new Refusal('No such token');
-    if (!token.actor || !this.store.actors.has(token.actor)) throw new Refusal(`${token.name} has no actor`);
-    if (token.linked && (how === 'save' || how === 'reset')) {
+    if (how === 'new') {
+      if (token.actor) throw new Refusal(`${token.name} already has an actor`);
+    } else if (!token.actor || !this.store.actors.has(token.actor)) {
+      throw new Refusal(`${token.name} has no actor`);
+    }
+    if (token.linked && (how === 'save' || how === 'reset' || how === 'keep')) {
       throw new Refusal(`${token.name} is linked: its changes are already its actor’s`);
     }
     this.store.relinkToken(id, how);

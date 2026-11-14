@@ -197,15 +197,33 @@ export function splitToken(token: Token, entry: TokenEntry | undefined, actor: A
   return { entry: entryOf(placement, delta), ...(sameJson(next, actor) ? {} : { actor: next }) };
 }
 
-/** The token as a copy of its actor: the same, but its own from now on. */
-export function unlinkToken(entry: TokenEntry): TokenEntry {
-  return { ...entry, linked: false };
+/**
+ * The token as a copy of its actor: the same, but its own from now on. Its
+ * wounds, effects and spent uses are written into its delta, so hurting the
+ * actor later doesn't hurt the copy; its stats still follow the actor.
+ */
+export function unlinkToken(entry: TokenEntry, actor: Actor): TokenEntry {
+  const sheet = sheetOf(actor);
+  const state = Object.fromEntries(INSTANCE.filter((k) => k !== 'name').map((k) => [k, sheet[k] ?? null]));
+  return { ...entry, linked: false, delta: { ...state, ...entry.delta } };
 }
 
 /** The token linked to its actor again: it takes the actor's state, dropping its own. */
 export function linkToken(entry: TokenEntry): TokenEntry {
   const { delta: _delta, ...rest } = entry;
   return { ...rest, linked: true };
+}
+
+/** The copy linked to its actor, its state (wounds, stats, gear) becoming the actor's; a numbered name goes. */
+export function linkKeepingToken(entry: TokenEntry, actor: Actor): { entry: TokenEntry; actor: Actor } {
+  const kept = only(entry.delta ?? {}, (k) => k !== 'name');
+  return { entry: linkToken(entry), actor: ActorSchema.parse({ ...applyDelta(actor, kept), id: actor.id }) };
+}
+
+/** A token without an actor made into actor `id`, which it is linked to from now on. */
+export function newActorFor(token: Token, id: string): { entry: TokenEntry; actor: Actor } {
+  const split = splitToken({ ...token, actor: id, linked: true }, undefined, undefined);
+  return { entry: split.entry, actor: split.actor! };
 }
 
 /** Saves a copy's changes (stats, gear, looks) to its actor; its wounds, effects and name stay its own. */

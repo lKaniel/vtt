@@ -1,7 +1,7 @@
 import type { Actor, CarryChange, CheckKind, ClientMessage, ReactionOffer } from '@vtt/system-dnd5e';
 import type { RollPick } from './session-pick.ts';
 import type { Climb } from './session-view3d.ts';
-import type { ClockAction, DoorState, MapEdit, Point, Role } from '@vtt/shared';
+import type { ClockAction, DoorState, MapEdit, Point, Relink, Role } from '@vtt/shared';
 
 /**
  * The plain requests a client sends the server, each one message, reached
@@ -217,8 +217,8 @@ export class Requests {
     this.s.send({ t: 'deleteActor', actor: id });
   }
 
-  /** GM: link a token to its actor, unlink it, or save or reset an unlinked copy's changes. */
-  relinkToken(token: string, how: 'link' | 'unlink' | 'save' | 'reset'): void {
+  /** GM: link a token to its actor, unlink it, save or reset a copy, or make a token an actor (see Relink). */
+  relinkToken(token: string, how: Relink): void {
     this.s.send({ t: 'relinkToken', token, how });
   }
 }

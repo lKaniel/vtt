@@ -37,6 +37,7 @@ export function SheetButtons(props: Readonly<SheetProps & { controls: SheetContr
   const editable = session.canEdit(value.id, kind);
   return (
     <div className="flex items-center gap-2">
+      {kind === 'token' && session.isGm() && !value.pile && <LinkSwitch {...props} />}
       {editable && (
         <label
           className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
@@ -60,6 +61,25 @@ export function SheetButtons(props: Readonly<SheetProps & { controls: SheetContr
         <Button variant="close" onClick={controls.close} aria-label={t('sheet.close')} title={t('sheet.close')} />
       )}
     </div>
+  );
+}
+
+/**
+ * GM: the token's tie to its actor, as Foundry's "Link actor data". On, it
+ * shares its actor's hit points and effects (a token without an actor gets a
+ * new one); off, it is a copy with its own, starting as the actor is.
+ */
+function LinkSwitch({ session, value }: Readonly<SheetProps>) {
+  const linked = !!value.actor && value.linked === true;
+  const off = value.actor ? 'sheet.unlinkedHint' : 'sheet.noActorHint';
+  const hint = t(linked ? 'sheet.linkedHint' : off);
+  const on = value.actor ? 'link' : 'new';
+  const toggle = (checked: boolean) => session.requests.relinkToken(value.id, checked ? on : 'unlink');
+  return (
+    <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground" title={hint}>
+      {t('sheet.linked')}
+      <Switch checked={linked} onCheckedChange={toggle} aria-label={t('sheet.linkedLabel')} />
+    </label>
   );
 }
 

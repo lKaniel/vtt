@@ -1,7 +1,9 @@
 import type { Doc, DocStore, Op } from '@vtt/core';
 import {
   type Actor,
+  linkKeepingToken,
   linkToken,
+  newActorFor,
   resetToken,
   resolveToken,
   saveTokenToActor,
@@ -11,7 +13,7 @@ import {
   type TokenEntry,
   unlinkToken,
 } from '@vtt/system-dnd5e';
-import type { Chunk, ChunkChange } from '@vtt/shared';
+import { type Chunk, type ChunkChange, type Relink, uniqueId } from '@vtt/shared';
 import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
 import { ACTORS, MAP, TYPE } from './store-colls.ts';
 
@@ -19,8 +21,8 @@ import { ACTORS, MAP, TYPE } from './store-colls.ts';
 // a changed token is split into its entry and, for linked tokens, its actor.
 // Also the ops for map edits given as whole chunks.
 
-/** What the GM can do to a token's tie to its actor. */
-export type Relink = 'link' | 'unlink' | 'save' | 'reset';
+/** What the GM can do to a token's tie to its actor (see protocol.ts). */
+export type { Relink } from '@vtt/shared';
 
 /** Ops that create `doc`, or update it to match; none when it is already so. */
 export function putOps(docs: DocStore, coll: string, doc: Doc): Op[] {
@@ -43,9 +45,19 @@ export function tokenOps(docs: DocStore, coll: string, token: Token, actors: Rea
   return saveOps(docs, coll, split.entry, split.actor);
 }
 
-const RELINK = { link: linkToken, unlink: unlinkToken, reset: resetToken };
+interface Relinked {
+  entry: TokenEntry;
+  actor?: Actor;
+}
+const RELINK: Record<Exclude<Relink, 'new'>, (entry: TokenEntry, actor: Actor) => Relinked> = {
+  link: (entry) => ({ entry: linkToken(entry) }),
+  unlink: (entry, actor) => ({ entry: unlinkToken(entry, actor) }),
+  reset: (entry) => ({ entry: resetToken(entry) }),
+  save: saveTokenToActor,
+  keep: linkKeepingToken,
+};
 
-/** Ops that change a token's tie to its actor; none when it has no actor. */
+/** Ops that change a token's tie to its actor, or (`new`) give a token without one a new actor. */
 export function relinkOps(
   docs: DocStore,
   coll: string,
@@ -53,11 +65,22 @@ export function relinkOps(
   actors: ReadonlyMap<string, Actor>,
 ): Op[] {
   const entry = entryOf(docs, coll, id);
+  if (entry && how === 'new') return newActorOps(docs, coll, entry, actors);
   const actor = entry?.actor ? actors.get(entry.actor) : undefined;
-  if (!entry || !actor) return [];
-  if (how !== 'save') return saveOps(docs, coll, RELINK[how](entry), undefined);
-  const saved = saveTokenToActor(entry, actor);
-  return saveOps(docs, coll, saved.entry, saved.actor);
+  if (!entry || !actor || how === 'new') return [];
+  const next = RELINK[how](entry, actor);
+  return saveOps(docs, coll, next.entry, next.actor);
+}
+
+/** Ops that make a token without an actor into a new actor, named after it and linked to it. */
+function newActorOps(docs: DocStore, coll: string, entry: TokenEntry, actors: ReadonlyMap<string, Actor>): Op[] {
+  const { token } = resolveToken(entry, undefined);
+  if (!token || entry.actor) return [];
+  const made = newActorFor(
+    token,
+    uniqueId(token.name, (x) => actors.has(x)),
+  );
+  return saveOps(docs, coll, made.entry, made.actor);
 }
 
 /** Ops that make every token of actor `id`, on each of `scenes`, carry the actor's sheet itself. */
