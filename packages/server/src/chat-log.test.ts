@@ -20,3 +20,18 @@ describe('chat log', () => {
     expect(log.all).toHaveLength(2);
   });
 });
+
+describe('chat log and disguises', () => {
+  it('names a creature in disguise by the name it goes by', () => {
+    const sent: ServerMessage[] = [];
+    const seat = { player: { id: 'bo', name: 'Bo', color: '#fff', role: 'player' as const } };
+    const bram = { name: 'Bram', looks: [{ id: 'm', label: 'Merchant', name: 'Old Tobin' }], look: 'm' };
+    const log = new ChatLog(
+      () => [seat],
+      (_, msg) => sent.push(msg),
+      () => [bram],
+    );
+    log.post({ ...card('Bram hits the goblin'), from: 'Bram' });
+    expect(log.all[0]).toMatchObject({ text: 'Old Tobin hits the goblin', from: 'Old Tobin' });
+  });
+});

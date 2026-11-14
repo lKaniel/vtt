@@ -1,5 +1,5 @@
 import { canObserve, displays, isGm, isParty, ownersOf, type Point, tokenLevel, type TokenLook } from '@vtt/shared';
-import { actsNow, hasCondition, type Health, type TokenView } from '@vtt/system-dnd5e';
+import { actsNow, type Health, type TokenView } from '@vtt/system-dnd5e';
 import {
   Assets,
   Container,
@@ -12,6 +12,7 @@ import {
 import { BarTween } from '../play/bar-tween.ts';
 import { clickSelect, modsOf } from '../editor/selection.ts';
 import { cutoutOf, portraitOf } from '../icon-art.ts';
+import { tokenLabel } from './token-label.ts';
 import { clickToken } from '../play/map-clicks.ts';
 import type { Session } from '../session/session.ts';
 import { applyTokenFilter, drawTokenRing, faceScale, onlookerOf } from './token-face.ts';
@@ -98,7 +99,7 @@ export class TokenLayer {
     showTexture(view.face, portraitOf(token), cutout ? box : r * 2, token);
     view.face.alpha = this.facesShown ? 1 : 0;
     applyTokenFilter(view.face, token.filter);
-    const { label, faint } = describe(token);
+    const { label, faint } = tokenLabel(token);
     view.label.text = label;
     view.label.position.set(0, r * 1.15);
     this.refreshLook(view);
@@ -340,20 +341,6 @@ export class TokenLayer {
 }
 
 const DOUBLE_CLICK_MS = 350;
-
-/**
- * The name under a token, with notes for the GM, and whether it is drawn
- * faintly: hidden tokens, and invisible ones seen anyway (by their own side,
- * the GM, or truesight).
- */
-function describe(token: TokenView): { label: string; faint: boolean } {
-  const invisible = hasCondition(token, 'invisible');
-  const notes = [token.hidden && 'hidden', invisible && 'invisible', token.visibleTo && 'illusion'].filter(Boolean);
-  return {
-    label: notes.length ? `${token.name} (${notes.join(', ')})` : token.name,
-    faint: token.hidden || invisible,
-  };
-}
 
 /**
  * Shows a picture once it has loaded, scaled to fit a `size` square without

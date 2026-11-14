@@ -7,6 +7,7 @@ import { ColorInput } from '../kit/color-input.tsx';
 import { SelectField } from '../kit/select.tsx';
 import { withKey, type Draft, type Update } from '../sheet-model.ts';
 import { LookFields } from './SheetLook.tsx';
+import { LooksFields } from './SheetLooks.tsx';
 import type { SheetProps } from './sheet-props.ts';
 
 // The Token tab, in edit mode: how the creature stands on the map (picture,
@@ -35,6 +36,7 @@ export function TokenTab(props: Readonly<SheetProps>) {
       <div className="ed-col">
         <LookFields value={props.value} update={props.update} />
       </div>
+      <LooksFields session={props.session} value={props.value} update={props.update} />
     </div>
   );
 }

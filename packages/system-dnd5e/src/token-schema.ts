@@ -49,6 +49,21 @@ export const PileSchema = z.object({
 });
 export type Pile = z.infer<typeof PileSchema>;
 
+/**
+ * Another way the creature can look (a disguise): its picture and, if set, the
+ * name others know it by. The token's `look` names the one it wears now.
+ */
+export const LookSchema = z.object({
+  id,
+  /** What its owner calls it in the list ("Merchant"); blank while being typed. */
+  label: z.string().max(60),
+  /** The name others see while it's worn; missing: its own name. */
+  name: z.string().min(1).max(80).optional(),
+  /** Its token picture and portrait; missing: its own picture. */
+  img: z.string().optional(),
+});
+export type Look = z.infer<typeof LookSchema>;
+
 export const TokenSchema = z.object({
   id,
   name: z.string().min(1),
@@ -61,6 +76,9 @@ export const TokenSchema = z.object({
   size: z.number().positive().default(1),
   color: z.string().default('#b04a3a'),
   img: z.string().optional(),
+  /** Other looks it can wear (disguises), and the one it wears now: others see only that one. */
+  looks: z.array(LookSchema).max(40).optional(),
+  look: id.optional(),
   /** When its name and bars show, picture scale, mirroring and ring (see token-look.ts in shared). */
   ...TokenLookSchema,
   /** Walking speed in feet. */
