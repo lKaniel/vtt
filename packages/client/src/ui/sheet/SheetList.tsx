@@ -2,10 +2,8 @@ import { type ReactNode, useState } from 'react';
 import { SearchIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '../../i18n/index.ts';
-import { pipLeft } from '../../play/charges.ts';
 import type { Icon } from '../../icons.ts';
 import type { Tip } from '../../text/tooltip.ts';
-import { NumberInput } from '../EditorFields.tsx';
 import { IconFace } from '../Icon.tsx';
 import { Badge } from '../kit/badge.tsx';
 import { Button } from '../kit/button.tsx';
@@ -60,6 +58,8 @@ interface RowProps {
   name: string;
   /** Small marks after the name: equipped, concentration, quantity. */
   tags?: ReactNode;
+  /** Beside the name, outside its button: something to set, like an item's charges. */
+  after?: ReactNode;
   columns: readonly Column[];
   cells: readonly ReactNode[];
   controls?: ReactNode;
@@ -70,7 +70,18 @@ interface RowProps {
   faded?: boolean;
 }
 
-export function ListRow({ icon, name, tags, columns, cells, controls, tip, onDragStart, faded }: Readonly<RowProps>) {
+export function ListRow({
+  icon,
+  name,
+  tags,
+  after,
+  columns,
+  cells,
+  controls,
+  tip,
+  onDragStart,
+  faded,
+}: Readonly<RowProps>) {
   const [open, setOpen] = useState(false);
   return (
     <li
@@ -99,6 +110,7 @@ export function ListRow({ icon, name, tags, columns, cells, controls, tip, onDra
           <span className="truncate">{name}</span>
           {tags}
         </Button>
+        {after}
         {cells.map((cell, i) => (
           <span key={columns[i]?.label ?? i} className={cn('shrink-0 text-center text-sm', columns[i]?.className)}>
             {cell}
@@ -177,63 +189,6 @@ export function RowButton({
     >
       {children}
     </Button>
-  );
-}
-
-const MAX_PIPS = 10;
-
-interface PipProps {
-  name: string;
-  left: number;
-  total: number;
-  onChange?: (left: number) => void;
-  /** A feature's uses (gold) rather than spell slots (blue). */
-  feature?: boolean;
-}
-
-/** Charges left: pips, or a number for big pools; given `onChange`, they spend and restore. */
-export function Pips(props: Readonly<PipProps>) {
-  const { name, left, total, onChange, feature } = props;
-  if (total > MAX_PIPS) return <PoolLeft {...props} />;
-  const cls = (k: number) => cn('pip', feature && 'feature', k >= left && 'used');
-  return (
-    <span className="charge-row" title={`${name}: ${left}/${total}`}>
-      {Array.from({ length: total }, (_, k) =>
-        onChange ? (
-          <Button
-            key={k}
-            variant="ghost"
-            className={cn(cls(k), 'size-3 rounded-none p-0')}
-            aria-label={`${name} ${k + 1}`}
-            onClick={() => onChange(pipLeft(k, left))}
-          />
-        ) : (
-          <span key={k} className={cls(k)} />
-        ),
-      )}
-    </span>
-  );
-}
-
-function PoolLeft({ name, left, total, onChange }: Readonly<PipProps>) {
-  if (!onChange)
-    return (
-      <span className="text-sm">
-        {left}/{total}
-      </span>
-    );
-  return (
-    <span className="charge-row">
-      <NumberInput
-        className="pool-left"
-        value={left}
-        min={0}
-        onChange={(v) => onChange(Math.min(total, Math.max(0, v ?? total)))}
-      />
-      <span className="text-muted-foreground" aria-label={`${name} uses`}>
-        /{total}
-      </span>
-    </span>
   );
 }
 

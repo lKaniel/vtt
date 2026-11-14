@@ -5,7 +5,6 @@ import { t } from '../../i18n/index.ts';
 import type { MessageKey } from '../../i18n/en.ts';
 import { featureArt } from '../../icon-art.ts';
 import { featureIcon } from '../../icons.ts';
-import { withUsesLeft } from '../../play/charges.ts';
 import { dragTile } from '../../play/hotbar.ts';
 import { setStat } from '../../play/token-edit.ts';
 import { rechargeText } from '../../text/monster-text.ts';
@@ -14,12 +13,12 @@ import { featureTip } from '../../text/tooltip.ts';
 import { Badge } from '../kit/badge.tsx';
 import { RemoveButton } from '../RemoveButton.tsx';
 import { EditButton, isOwn, NewButton, useOwnEditor } from '../own/OwnEditor.tsx';
-import { withKey } from '../sheet-model.ts';
 import { LegendaryPanel } from './LegendaryPanel.tsx';
 import { MonsterTraits } from './StatBlock.tsx';
 import { PoolPanel } from './PoolPanel.tsx';
 import { SpellPicksButton } from './SpellPicksButton.tsx';
-import { type Column, Empty, ListRow, ListSection, Pips, RowButton, SheetSearch } from './SheetList.tsx';
+import { type Column, Empty, ListRow, ListSection, RowButton, SheetSearch } from './SheetList.tsx';
+import { ResourceMeter } from './ResourceMeter.tsx';
 import { actFromSheet, canAct, type SheetProps } from './sheet-props.ts';
 
 // The Features tab: a homebrew class's numbers, then the features used as
@@ -83,11 +82,13 @@ const recovery = (f: FeatureSheet) =>
 
 function FeatureRow(props: Readonly<RowProps>) {
   const { edit, update, feature: f } = props;
-  const setUses = (left: number) =>
-    update((d) => withKey(d, 'spent', withUsesLeft(d.spent, { id: f.id, left, max: f.max! })), true);
   const limited = f.max !== undefined;
   const uses = limited && (
-    <Pips name={f.name} feature left={f.left ?? 0} total={f.max!} onChange={edit ? setUses : undefined} />
+    <ResourceMeter
+      resource={{ key: { kind: 'use', id: f.id }, name: f.name, left: f.left ?? 0, total: f.max! }}
+      edit={edit}
+      update={update}
+    />
   );
   return (
     <ListRow

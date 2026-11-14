@@ -87,6 +87,7 @@ export const EN_SHEET = {
   'sheet.heal': 'Heal',
   'sheet.hit': 'Hit',
   'sheet.hitDice': 'Hit dice',
+  'sheet.charges': '{name} charges',
   'sheet.spendHitDie': 'Spend a hit die: roll it plus Constitution and heal that much',
   'sheet.spend': 'Spend',
   'sheet.deathSaves': 'Death saves',

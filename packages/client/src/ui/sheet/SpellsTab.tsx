@@ -3,7 +3,6 @@ import { ABILITIES, type CasterSheet, dropOwn, type Edition, knownSpellIds, type
 import { WandSparklesIcon } from 'lucide-react';
 import { contentFor } from '../../content/content.ts';
 import { t } from '../../i18n/index.ts';
-import { withSlotsLeft } from '../../play/charges.ts';
 import { dragTile } from '../../play/hotbar.ts';
 import { setStat } from '../../play/token-edit.ts';
 import { spellArt } from '../../icon-art.ts';
@@ -15,9 +14,9 @@ import { Badge } from '../kit/badge.tsx';
 import { SelectField } from '../kit/select.tsx';
 import { RemoveButton } from '../RemoveButton.tsx';
 import { EditButton, isOwn, NewButton, useOwnEditor } from '../own/OwnEditor.tsx';
-import { withKey } from '../sheet-model.ts';
 import { abilityName } from './AbilityRow.tsx';
-import { type Column, Empty, ListRow, ListSection, Pips, RowButton, SheetSearch } from './SheetList.tsx';
+import { type Column, Empty, ListRow, ListSection, RowButton, SheetSearch } from './SheetList.tsx';
+import { ResourceMeter } from './ResourceMeter.tsx';
 import { actFromSheet, canAct, type SheetProps } from './sheet-props.ts';
 
 // The Spells tab: how the creature casts (ability, attack, save DC), then
@@ -132,20 +131,19 @@ function HomemadeCasting({
   );
 }
 
-/** A level's slots left; the GM spends and restores them in edit mode. */
+/** A level's slots left; spent and restored in edit mode. */
 function SlotPips({ sheet, edit, update, level }: Readonly<Props & { level: number }>) {
   const caster = sheet.caster;
   const total = caster?.slots[level - 1] ?? 0;
   if (!caster || !total) return null;
-  const set = (left: number) =>
-    update((d) => withKey(d, 'spent', withSlotsLeft(d.spent, { level, left, total })), true);
+  const left = caster.left[level - 1] ?? 0;
+  const name = t('sheet.slots', { level: ORDINAL[level]!, left, total });
   return (
     <span className="font-body text-xs tracking-normal">
-      <Pips
-        name={t('sheet.slots', { level: ORDINAL[level]!, left: caster.left[level - 1] ?? 0, total })}
-        left={caster.left[level - 1] ?? 0}
-        total={total}
-        onChange={edit ? set : undefined}
+      <ResourceMeter
+        resource={{ key: { kind: 'slot', level }, name, left, total, tone: 'slot' }}
+        edit={edit}
+        update={update}
       />
     </span>
   );

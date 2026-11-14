@@ -1,6 +1,7 @@
 import { currentTurn } from '@vtt/system-dnd5e';
 import type { SheetProps } from './sheet-props.ts';
 import { Button } from '../kit/button.tsx';
+import { ResourceMeter } from './ResourceMeter.tsx';
 
 // A legendary creature's pool of legendary actions, its legendary resistance
 // and its lair actions, under its features. The GM spends legendary actions
@@ -14,9 +15,18 @@ export function LegendaryPanel(props: Readonly<SheetProps>) {
     <div className="mt-3 flex flex-col gap-2">
       <LegendaryActions {...props} />
       {sheet.legendaryResistance && (
-        <p className="text-sm">
-          <span className="font-display text-gold">Legendary resistance</span> {sheet.legendaryResistance.left}/
-          {sheet.legendaryResistance.total} today
+        <p className="flex items-center gap-1 text-sm">
+          <span className="font-display text-gold">Legendary resistance</span>
+          <ResourceMeter
+            resource={{
+              key: { kind: 'use', id: 'legendary-resistance' },
+              name: 'Legendary resistance',
+              ...sheet.legendaryResistance,
+            }}
+            edit={props.edit}
+            update={props.update}
+          />
+          today
         </p>
       )}
       <LairActions {...props} />
@@ -33,8 +43,18 @@ function LegendaryActions(props: Readonly<SheetProps>) {
   const act = canAct(props);
   return (
     <section>
-      <h4 className="font-display text-sm text-gold">
-        Legendary actions {legendary.left}/{legendary.actions}
+      <h4 className="flex items-center gap-1 font-display text-sm text-gold">
+        Legendary actions
+        <ResourceMeter
+          resource={{
+            key: { kind: 'use', id: 'legendary' },
+            name: 'Legendary actions',
+            left: legendary.left,
+            total: legendary.actions,
+          }}
+          edit={props.edit}
+          update={props.update}
+        />
       </h4>
       <ul className="m-0 flex list-none flex-wrap gap-1 p-0">
         {legendary.options.map((o) => (
