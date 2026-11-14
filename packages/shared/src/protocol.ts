@@ -62,6 +62,9 @@ export interface HistoryState {
 }
 
 /** What any client may send, whatever system its game plays. */
+/** What the GM can do to a token's tie to its actor (see relinkToken). */
+export type Relink = 'link' | 'unlink' | 'save' | 'reset' | 'keep' | 'new';
+
 export type EngineClientMessage =
   /** The chunks this client's camera can see; the server streams them. */
   | { t: 'view'; chunks: string[] }
@@ -96,8 +99,12 @@ export type EngineClientMessage =
   /** Change token fields; `null` removes one (e.g. `hp: null` heals fully). The GM may edit any token, a trusted player the ones they own. */
   | { t: 'editToken'; token: string; patch: Record<string, unknown> }
   | { t: 'deleteToken'; token: string }
-  /** GM: link a token to its actor, unlink it, or save or reset an unlinked copy's changes. */
-  | { t: 'relinkToken'; token: string; how: 'link' | 'unlink' | 'save' | 'reset' }
+  /**
+   * GM: link a token to its actor (`keep`: its state becoming the actor's),
+   * unlink it, save or reset an unlinked copy's changes, or make a token
+   * without an actor into one it is linked to (`new`).
+   */
+  | { t: 'relinkToken'; token: string; how: Relink }
   /** GM: change what a seat may do at the table. */
   | { t: 'setRole'; player: string; role: Role }
   | { t: 'setPlays'; player: string; actor: string; plays: boolean }

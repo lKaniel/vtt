@@ -3,6 +3,7 @@ import {
   type EditorMode,
   type MapEdit,
   type Point,
+  type Relink,
   type TileRepeat,
   type WallRules,
   wallPreset,
@@ -42,7 +43,11 @@ export interface MenuApi {
   };
   readonly sheets: { open(target: { kind: 'token'; id: string }, edit?: boolean): void };
   /** Plain requests to the server (see session-requests.ts). */
-  readonly requests: { move(token: string, to: Point): void; editMap(edit: MapEdit): void };
+  readonly requests: {
+    move(token: string, to: Point): void;
+    editMap(edit: MapEdit): void;
+    relinkToken(token: string, how: Relink): void;
+  };
   /** The tiles mode's commands (see session-tiles.ts). */
   readonly tiles: { group(): void; ungroup(): void; reorder(how: ZOrder): void; toggleLock(): void };
   /** The editor's selection and tools (see session-editor.ts). */
@@ -154,8 +159,26 @@ registerMenu('token', (t, api) => {
     api.isGm() && observeEntry(id, api),
     artEntry(t.token, api),
     ...(api.isGm() ? pileEntries(t.token?.pile, api) : []),
+    ...(api.isGm() ? linkEntries(t.token, api) : []),
   ];
 });
+
+/**
+ * GM: a token's tie to its actor, as Foundry's "Link actor data". A linked
+ * token shares its actor's hit points and effects; unlinking makes it a copy
+ * with its own. A copy links back taking the actor's state, or giving it its
+ * own; a token without an actor becomes a new one, linked.
+ */
+function linkEntries(token: TokenView | undefined, api: MenuApi): MenuItem[] {
+  if (!token || token.pile) return [];
+  const relink = (how: Relink) => () => api.requests.relinkToken(token.id, how);
+  if (!token.actor) return [{ label: 'Make it an actor (linked)', run: relink('new') }];
+  if (token.linked) return [{ label: 'Unlink from actor', run: relink('unlink') }];
+  return [
+    { label: 'Link to actor', run: relink('link') },
+    { label: 'Link, its state becoming the actor’s', run: relink('keep') },
+  ];
+}
 
 /** A creature's sheet, or a pile's window. */
 const openEntry = (token: TokenView | undefined, id: string, api: MenuApi): MenuItem =>

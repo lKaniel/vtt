@@ -3,7 +3,9 @@ import {
   type Actor,
   ActorSchema,
   deltaOf,
+  linkKeepingToken,
   linkToken,
+  newActorFor,
   resetToken,
   resolveToken,
   saveTokenToActor,
@@ -166,9 +168,30 @@ describe('linking and unlinking', () => {
   const hurtBram = entry({ id: 'bram', actor: 'bram', linked: true });
 
   it('unlinks a token into a copy that starts as the actor is', () => {
-    const e = unlinkToken(hurtBram);
+    const e = unlinkToken(hurtBram, bram);
     expect(e.linked).toBe(false);
     expect(resolved(e, bram)).toMatchObject({ hp: 20, linked: false });
+  });
+
+  it('keeps an unlinked copy’s wounds its own when the actor is hurt later', () => {
+    const e = unlinkToken(hurtBram, bram);
+    expect(resolved(e, { ...bram, hp: 3 })).toMatchObject({ hp: 20 });
+    expect(resolved(e, { ...bram, stats: { ...bram.stats!, maxHp: 30 } }).stats?.maxHp).toBe(30);
+  });
+
+  it('links a copy, keeping its state on the actor (its numbered name goes)', () => {
+    const e = entry({ actor: 'goblin', linked: false, delta: { name: 'Goblin 2', hp: 1, size: 2 } });
+    const out = linkKeepingToken(e, goblin);
+    expect(out.entry).toEqual({ id: 't', x: 50, y: 150, actor: 'goblin', linked: true });
+    expect(out.actor).toMatchObject({ id: 'goblin', name: 'Goblin', hp: 1, size: 2, folder: 'Monsters' });
+  });
+
+  it('makes a token without an actor into a new actor it is linked to', () => {
+    const rock = resolved(entry({ id: 'rock', name: 'Rock', hp: 4 }));
+    const out = newActorFor(rock, 'rock-2');
+    expect(out.entry).toEqual({ id: 'rock', x: 50, y: 150, actor: 'rock-2', linked: true });
+    expect(out.actor).toMatchObject({ id: 'rock-2', name: 'Rock', hp: 4 });
+    expect(resolved(out.entry, out.actor)).toMatchObject({ name: 'Rock', hp: 4, linked: true });
   });
 
   it('links a token back, dropping its own changes', () => {

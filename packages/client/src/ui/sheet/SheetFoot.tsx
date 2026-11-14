@@ -1,5 +1,5 @@
 import { actorFromToken } from '@vtt/system-dnd5e';
-import { uniqueId } from '@vtt/shared';
+import { type Relink, uniqueId } from '@vtt/shared';
 import { useState } from 'react';
 import { t } from '../../i18n/index.ts';
 import type { Session } from '../../session/session.ts';
@@ -20,48 +20,22 @@ export function SheetFoot(props: Readonly<SheetProps>) {
 /**
  * A token's tie to its actor: a linked token shares the actor's hit points
  * and effects; an unlinked copy has its own, and can save its changes to the
- * actor or start over from it.
+ * actor, start over from it, or link back (dropping its own state, or giving
+ * it to the actor).
  */
 function ActorLinkButtons({ session, id, linked }: Readonly<{ session: Session; id: string; linked: boolean }>) {
-  const relink = (how: 'link' | 'unlink' | 'save' | 'reset') => session.requests.relinkToken(id, how);
-  if (linked) {
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => relink('unlink')}
-        title="Shares its actor's hit points and effects; unlink to make it a copy with its own"
-      >
-        Unlink
-      </Button>
-    );
-  }
+  const button = (how: Relink, label: string, hint: string) => (
+    <Button key={how} variant="outline" size="sm" onClick={() => session.requests.relinkToken(id, how)} title={hint}>
+      {label}
+    </Button>
+  );
+  if (linked) return button('unlink', t('sheet.unlink'), t('sheet.linkedHint'));
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => relink('save')}
-        title="Save this copy's stats, gear and looks to its actor (its wounds and name stay its own)"
-      >
-        Save to actor
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => relink('reset')}
-        title="Start over from the actor, keeping only its name"
-      >
-        Reset
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => relink('link')}
-        title="Share the actor's hit points and effects from now on"
-      >
-        Link
-      </Button>
+      {button('save', t('sheet.saveToActor'), t('sheet.saveToActorHint'))}
+      {button('reset', t('sheet.reset'), t('sheet.resetHint'))}
+      {button('link', t('sheet.link'), t('sheet.linkHint'))}
+      {button('keep', t('sheet.linkKeeping'), t('sheet.linkKeepingHint'))}
     </>
   );
 }
