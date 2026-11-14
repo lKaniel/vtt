@@ -24,14 +24,15 @@ import { type InventorySection, inventorySections, matches, signed } from '../..
 import { NumberInput } from '../EditorFields.tsx';
 import { RemoveButton } from '../RemoveButton.tsx';
 import { EditButton, isOwn, NewButton, useOwnEditor } from '../own/OwnEditor.tsx';
-import { attuned, canCarry, InSelect, Load, Purse } from './CarryParts.tsx';
+import { attuned, canCarry, InSelect, Load } from './CarryParts.tsx';
+import { PurseBar } from './PurseBar.tsx';
 import { type Column, Empty, ListRow, ListSection, RowButton, SheetSearch } from './SheetList.tsx';
 import { actFromSheet, canAct, type SheetProps } from './sheet-props.ts';
 import { ResourceMeter } from './ResourceMeter.tsx';
 
 // The Inventory tab, Foundry style: the attacks, then gear by kind and each
-// container with what is packed in it, and the coins, carried weight and
-// attunement at the foot. An owner packs gear by dragging it onto a
+// container with what is packed in it, the coins on top and the carried weight
+// and attunement at the foot. An owner packs gear by dragging it onto a
 // container (or back out), equips and attunes with the row buttons; in edit
 // mode quantities and containers become fields and things can be removed.
 
@@ -71,6 +72,7 @@ export function InventoryTab(props: Readonly<SheetProps>) {
   };
   return (
     <>
+      <PurseBar {...props} />
       <SheetSearch value={query} onChange={setQuery} />
       {attacks.length > 0 && <Attacks {...props} attacks={attacks} onOpen={openItem} />}
       {sections.map((s) => (
@@ -351,7 +353,7 @@ function EditControls(p: Readonly<ControlProps>) {
   return <RemoveButton onClick={remove} />;
 }
 
-/** Coins, carried weight and attunement, at the foot of the tab. */
+/** Carried weight and attunement, at the foot of the tab. */
 function InventoryFoot(props: Readonly<SheetProps>) {
   const { value } = props;
   const needs = (value.inventory ?? []).some(
@@ -359,9 +361,6 @@ function InventoryFoot(props: Readonly<SheetProps>) {
   );
   return (
     <footer className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-gold-dim/50 pt-2">
-      <div className="min-w-48 flex-1">
-        <Purse {...props} />
-      </div>
       {needs && (
         <span className="text-sm text-muted-foreground">
           {t('sheet.attuned', { n: attunedCount(value), max: MAX_ATTUNED })}

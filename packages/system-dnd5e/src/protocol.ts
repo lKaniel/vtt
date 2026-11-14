@@ -124,6 +124,9 @@ export interface ReactionOffer {
 /** A change to what a creature carries; `item` and `into` are inventory indexes. */
 export type CarryChange =
   | { kind: 'coins'; currency: Currency }
+  /** Pay or take this much, in mixed coins: change is made and the purse tidied (`purse.ts`). */
+  | { kind: 'pay'; coins: Currency }
+  | { kind: 'gain'; coins: Currency }
   | { kind: 'stow'; item: number; into: number | null }
   | { kind: 'attune'; item: number; on: boolean };
 
