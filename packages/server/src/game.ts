@@ -53,6 +53,7 @@ export class Game {
   private chat = new ChatLog<Client>(
     () => this.clients,
     (c, msg) => this.send(c, msg),
+    () => this.table.store.tokens.values(),
   );
   private combat: CombatActions;
   readonly spells: SpellActions;

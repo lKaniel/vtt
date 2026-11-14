@@ -11,6 +11,8 @@ interface E2eToken {
   hidden?: boolean;
   elevation?: number;
   img?: string;
+  /** The look it wears (a disguise), told only to its owners and the GM. */
+  look?: string;
   inventory?: { item: string; qty: number; spell?: string }[];
   hotbar?: (string | null)[];
   stats?: { species?: string };

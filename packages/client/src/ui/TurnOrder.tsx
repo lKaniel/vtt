@@ -1,4 +1,4 @@
-import { actsNow, currentTurn, isLairTurn, type TokenView } from '@vtt/system-dnd5e';
+import { actsNow, currentTurn, isLairTurn, shownName, type TokenView } from '@vtt/system-dnd5e';
 import { isParty } from '@vtt/shared';
 import { MoonIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -63,12 +63,13 @@ function Portrait({
   const combat = session.combat!;
   const down = (t.sheet?.hp ?? 1) <= 0 || t.health === 'down';
   const ended = combat.done?.includes(e.token);
+  const name = shownName(t);
   const cls = ['turn', actsNow(combat, e.token) && 'current', (down || ended) && 'down', isParty(t) ? 'ally' : 'foe'];
   return (
     <button
       className={cls.filter(Boolean).join(' ')}
-      title={`${t.name}: initiative ${e.initiative}`}
-      aria-label={`${t.name}: initiative ${e.initiative}`}
+      title={`${name}: initiative ${e.initiative}`}
+      aria-label={`${name}: initiative ${e.initiative}`}
       onClick={() => session.focus([t.x, t.y])}
       onContextMenu={
         onMenu &&
@@ -80,7 +81,7 @@ function Portrait({
     >
       <Face token={t} />
       <HpBar token={t} showLabel={false} />
-      <span className="turn-name">{t.name}</span>
+      <span className="turn-name">{name}</span>
     </button>
   );
 }

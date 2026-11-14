@@ -4,6 +4,7 @@ import { canObserve, type Player, type Senses } from '@vtt/shared';
 import type { Token } from './token-schema.ts';
 import { sensesOf } from './perception.ts';
 import { type AuraRing, auraRings } from './auras.ts';
+import { disguised } from './disguise.ts';
 
 /** How hurt a creature looks to someone who can't see its hit points. */
 export type Health = 'unhurt' | 'hurt' | 'bloodied' | 'down';
@@ -30,21 +31,33 @@ export function healthOf(hp: number, maxHp: number): Health {
   return hp <= maxHp / 2 ? 'bloodied' : 'hurt';
 }
 
-/** What `player` may know about `token`: its sheet if they control it, else just how hurt it looks. */
+/** What `player` may know about `token`: its sheet if they control it, else just how hurt it looks and the look it wears. */
 export function viewToken(token: Token, player: Player, content: Content): TokenView {
+  if (canObserve(token, player)) return fullView(token, content);
+  return disguised(outsideView(token, content));
+}
+
+function fullView(token: Token, content: Content): TokenView {
   const sheet = resolveCreature(token, content);
-  if (token.pile?.locked && !canObserve(token, player)) {
+  if (!sheet) return token;
+  const senses = sheet.senses ?? sensesOf(token, token.monster ? content.monsters.get(token.monster) : undefined);
+  return { ...token, ...lookOf(token, sheet, content), sheet, senses };
+}
+
+/** The monster's painted token and the auras it gives off, which everyone who sees it sees. */
+function lookOf(token: Token, sheet: Creature, content: Content) {
+  const art = token.monster ? content.monsters.get(token.monster)?.img : undefined;
+  const auras = auraRings({ token, sheet });
+  return { ...(art && { art }), ...(auras.length && { auras }) };
+}
+
+function outsideView(token: Token, content: Content): TokenView {
+  const sheet = resolveCreature(token, content);
+  if (token.pile?.locked) {
     const { inventory: _i, currency: _c, ...shut } = token;
     return shut;
   }
   if (!sheet) return token;
-  const art = token.monster ? content.monsters.get(token.monster)?.img : undefined;
-  const auras = auraRings({ token, sheet });
-  const look = { ...(art && { art }), ...(auras.length && { auras }) };
-  if (canObserve(token, player)) {
-    const senses = sheet.senses ?? sensesOf(token, token.monster ? content.monsters.get(token.monster) : undefined);
-    return { ...token, ...look, sheet, senses };
-  }
   const {
     monster: _m,
     stats: _s,
@@ -56,5 +69,5 @@ export function viewToken(token: Token, player: Player, content: Content): Token
     biography: _b,
     ...visible
   } = token;
-  return { ...visible, ...look, health: healthOf(sheet.hp, sheet.maxHp) };
+  return { ...visible, ...lookOf(token, sheet, content), health: healthOf(sheet.hp, sheet.maxHp) };
 }

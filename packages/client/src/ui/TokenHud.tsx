@@ -9,13 +9,16 @@ import { NumberField } from './kit/number-field.tsx';
 import { Toggle } from './kit/toggle.tsx';
 import { SelectField } from './kit/select.tsx';
 import { t } from '../i18n/index.ts';
+import { wearPatch } from '../play/looks.ts';
+import { lookOptions } from './sheet/SheetLooks.tsx';
 
 // The token HUD (session-hud.ts): beside one creature you control, its
 // conditions, hit points and elevation; for the GM also whether players see
-// it and whether it is in the fight.
+// it and whether it is in the fight. A creature with other looks switches
+// between them here.
 
 const WIDTH = 300;
-const HEIGHT = 370;
+const HEIGHT = 410;
 
 /** The HUD the map's menu opened. A click elsewhere or Esc closes it. */
 export function TokenHud({ session }: Readonly<{ session: Session }>) {
@@ -57,6 +60,7 @@ export function TokenHud({ session }: Readonly<{ session: Session }>) {
         </Button>
       </div>
       <Numbers session={session} token={token} />
+      {!!token.looks?.length && <LookPick session={session} token={token} />}
       {session.isGm() && <GmToggles session={session} token={token} />}
       {session.isGm() && <ColourFilter session={session} token={token} />}
       <Conditions session={session} token={token} />
@@ -97,6 +101,21 @@ function Numbers({ session, token }: Props) {
         value={token.elevation ?? 0}
         step={5}
         onValueChange={(elevation) => edit({ elevation })}
+      />
+    </div>
+  );
+}
+
+/** Which look it wears (a disguise), switched at once. */
+function LookPick({ session, token }: Props) {
+  return (
+    <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
+      <Label>{t('looks.hud')}</Label>
+      <SelectField
+        aria-label={t('looks.wearing')}
+        value={token.look ?? ''}
+        onValueChange={(id) => session.requests.editToken(token.id, wearPatch(id))}
+        options={lookOptions(token.looks ?? [])}
       />
     </div>
   );
