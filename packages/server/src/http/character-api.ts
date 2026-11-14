@@ -7,12 +7,14 @@ import {
   CharacterSchema,
   freeSquare,
   resolveToken,
+  type Token,
 } from '@vtt/system-dnd5e';
 import { ownersOf, type Player, type Point, uniqueId } from '@vtt/shared';
 import { z } from 'zod';
 import type { CharacterStore } from '../library/characters.ts';
 import type { GameHub } from '../library/game-hub.ts';
 import type { GameStore } from '../store/game-store.ts';
+import { sceneOf } from '../actions/scene-actions.ts';
 import { HttpError, parseBody, send } from './http-json.ts';
 import type { GameCall } from './lobby-api.ts';
 import { homebrewFor, withCurrentHomebrew } from '../library/roster-homebrew.ts';
@@ -114,7 +116,8 @@ export class CharacterRoutes {
     const { character: cid } = await parseBody(g.call.req, BringInput);
     const character = this.deps.characters.owned(cid, g.info.id, g.seat.id);
     if (!character) throw new HttpError(404, 'No such character.');
-    place(await this.store(g), character);
+    const store = await this.store(g);
+    store.inScene(seatScene(store, g.seat), () => place(store, character));
     send(g.call.res, 200, {});
   }
 
@@ -139,19 +142,32 @@ export class CharacterRoutes {
 function updateOnMap(store: GameStore, character: Character, previous: Character | undefined): void {
   for (const scene of store.sceneIds()) {
     store.inScene(scene, () => {
-      const token = store.tokens.get(character.id);
+      const token = tokenOfCharacter(store, character.id);
       if (token) store.setToken(characterOnMap(character, token, [token.x, token.y], previous));
     });
   }
 }
 
+/** The scene the player's seat is on now (the GM may have sent it to one of its own). */
+function seatScene(store: GameStore, seat: Player): string {
+  return sceneOf(store.world.players.find((p) => p.id === seat.id) ?? seat, store);
+}
+
+/** The character's token on this scene: the one with its id, else one of its actor (linked first). */
+function tokenOfCharacter(store: GameStore, id: string): Token | undefined {
+  const tokens = store.tokens;
+  const ofActor = [...tokens.values()].filter((t) => t.actor === id);
+  return tokens.get(id) ?? ofActor.find((t) => t.linked) ?? ofActor[0];
+}
+
 /**
- * Puts a character on the map as a linked actor the player owns. A token already there, or the actor
- * when its token left this scene, is kept as the table made it (the GM's edits survive the player
- * entering again); saving the character is what updates it.
+ * Puts a character on the map as a linked actor the player owns. A token already there (by its id, or
+ * any token of its actor, as when it was dragged from the Actors tab), or the actor when its token left
+ * this scene, is kept as the table made it (the GM's edits survive the player entering again); saving
+ * the character is what updates it.
  */
 function place(store: GameStore, c: Character): void {
-  const existing = store.tokens.get(c.id);
+  const existing = tokenOfCharacter(store, c.id);
   if (existing && !ownersOf(existing).includes(c.owner)) {
     throw new HttpError(409, 'A creature on the map already uses that name.');
   }

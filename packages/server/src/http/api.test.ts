@@ -93,6 +93,36 @@ describe('characters', () => {
     expect(store.tokens.get(id)).toMatchObject({ name: 'Vex the Red', img: '/assets/uploads/vex.png', hp: 2 });
   });
 
+  it('reuse their token on the map when it has an id of its own (dragged from the Actors tab)', async () => {
+    const ana = await api.joined('test', 'ana');
+    const id = ((await ana('POST', base, sorcerer)).json.character as Json).id as string;
+    await ana('POST', '/api/games/test/bring', { character: id });
+    const placed = { ...store.tokens.get(id)!, id: 'vex', x: 425, hp: 3 };
+    store.removeToken(id);
+    store.setToken(placed);
+    await ana('POST', '/api/games/test/bring', { character: id });
+    const mine = [...store.tokens.values()].filter((t) => t.actor === id);
+    expect(mine).toHaveLength(1);
+    expect(mine[0]).toMatchObject({ id: 'vex', x: 425, hp: 3 });
+  });
+
+  it('come onto the scene their seat is on, reusing their token there', async () => {
+    const ana = await api.joined('test', 'ana');
+    const id = ((await ana('POST', base, sorcerer)).json.character as Json).id as string;
+    store.applyOps([
+      {
+        op: 'create',
+        coll: 'scenes',
+        doc: { type: 'scene', id: 'attic', rev: 0, name: 'Attic', gridSize: 50, chunkSize: 1000 },
+      },
+    ]);
+    store.setGame({ players: store.world.players.map((p) => (p.id === 'ana' ? { ...p, scene: 'attic' } : p)) });
+    await ana('POST', '/api/games/test/bring', { character: id });
+    await ana('POST', '/api/games/test/bring', { character: id });
+    expect(store.tokens.has(id)).toBe(false);
+    expect(store.inScene('attic', () => [...store.tokens.values()].filter((t) => t.actor === id))).toHaveLength(1);
+  });
+
   it("keep the token's look when levelling up, unless the player changed it", async () => {
     const ana = await api.joined('test', 'ana');
     const id = ((await ana('POST', base, sorcerer)).json.character as Json).id as string;
