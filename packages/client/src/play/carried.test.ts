@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bagLayout, carriedDrag, carriedLook, loadText, loadTip, purseText } from './carried.ts';
+import { bagLayout, carriedDrag, carriedLook, loadText, loadTip, purseAfter, purseText, worthText } from './carried.ts';
 
 describe('what a creature carries, on its sheet', () => {
   it('names a scroll after its spell and drags it as a scroll', () => {
@@ -53,6 +53,14 @@ describe('how the bag is laid out', () => {
     expect(purseText({ gp: 12, sp: 3, cp: 0 })).toBe('12 gp · 3 sp');
     expect(purseText(undefined)).toBe('No coins');
     expect(loadText({ weight: 45.5, capacity: 150, over: false, level: 'none' })).toBe('45.5 / 150 lb');
+  });
+
+  it('works out the purse after paying, adding or counting coins', () => {
+    expect(purseAfter('pay', { gp: 5 }, { sp: 3, cp: 2 })).toEqual({ gp: 4, sp: 6, cp: 8 });
+    expect(purseAfter('pay', { sp: 1 }, { gp: 1 })).toBeUndefined();
+    expect(purseAfter('gain', { cp: 9 }, { cp: 1 })).toEqual({ sp: 1 });
+    expect(purseAfter('set', { gp: 5 }, { sp: 12, cp: 0 })).toEqual({ sp: 12 });
+    expect(worthText({ gp: 4, sp: 6, cp: 8 })).toBe('4.68 gp');
   });
 
   it('says what the load does by the game’s encumbrance rule', () => {

@@ -2,11 +2,14 @@ import {
   COINS,
   containerLoad,
   type Currency,
+  gainCoins,
   type Edition,
   type Encumbrance,
   type InventoryEntry,
   type Own,
+  payCoins,
   SPELL_SCROLL,
+  totalGp,
 } from '@vtt/system-dnd5e';
 import { contentFor, gameContent } from '../content/content.ts';
 import type { DragPayload } from './drops.ts';
@@ -85,6 +88,21 @@ export function bagLayout(
 export function purseText(currency: Currency | undefined): string {
   const parts = COINS.filter((c) => (currency?.[c] ?? 0) > 0).map((c) => `${currency![c]} ${c}`);
   return parts.length ? parts.join(' · ') : 'No coins';
+}
+
+/** How the sheet changes a purse: pay an amount, add one, or count it exactly. */
+export type PurseMove = 'pay' | 'gain' | 'set';
+
+/** The purse after a move (`purse.ts` makes change and tidies); undefined when it can't pay. */
+export function purseAfter(move: PurseMove, purse: Currency | undefined, coins: Currency): Currency | undefined {
+  if (move === 'pay') return payCoins(purse, coins);
+  if (move === 'gain') return gainCoins(purse, coins);
+  return Object.fromEntries(COINS.flatMap((c) => (coins[c] ? [[c, coins[c]]] : [])));
+}
+
+/** What the coins are worth, in gold pieces. */
+export function worthText(currency: Currency | undefined): string {
+  return `${Math.round(totalGp(currency) * 100) / 100} gp`;
 }
 
 const LOAD_TIPS: Record<Encumbrance['level'], string> = {

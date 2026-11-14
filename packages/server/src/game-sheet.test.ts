@@ -46,6 +46,26 @@ describe('what a player carries', () => {
     expect(hero().currency).toEqual({ gp: 12, sp: 3 });
   });
 
+  it('pays from the purse, making change from bigger coins', () => {
+    const ana = join_('ana');
+    ana.receive({ t: 'carry', token: 'hero', change: { kind: 'coins', currency: { gp: 5 } } });
+    ana.receive({ t: 'carry', token: 'hero', change: { kind: 'pay', coins: { sp: 3, cp: 2 } } });
+    expect(hero().currency).toEqual({ gp: 4, sp: 6, cp: 8 });
+  });
+
+  it("won't pay more than the purse holds", () => {
+    const ana = join_('ana');
+    ana.receive({ t: 'carry', token: 'hero', change: { kind: 'pay', coins: { gp: 1 } } });
+    expect(ana.take('error')[0]?.message).toMatch(/enough/);
+  });
+
+  it('adds coins to the purse, gathering small change', () => {
+    const ana = join_('ana');
+    ana.receive({ t: 'carry', token: 'hero', change: { kind: 'coins', currency: { cp: 9 } } });
+    ana.receive({ t: 'carry', token: 'hero', change: { kind: 'gain', coins: { gp: 2, cp: 1 } } });
+    expect(hero().currency).toEqual({ gp: 2, sp: 1 });
+  });
+
   it('stows gear in a container and takes it out again', () => {
     const ana = join_('ana');
     ana.receive({ t: 'carry', token: 'hero', change: { kind: 'stow', item: 1, into: 0 } });

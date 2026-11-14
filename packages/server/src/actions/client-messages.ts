@@ -187,6 +187,8 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     token: z.string(),
     change: z.discriminatedUnion('kind', [
       z.object({ kind: z.literal('coins'), currency: CurrencySchema }),
+      z.object({ kind: z.literal('pay'), coins: CurrencySchema }),
+      z.object({ kind: z.literal('gain'), coins: CurrencySchema }),
       z.object({ kind: z.literal('stow'), item: index, into: index.nullable() }),
       z.object({ kind: z.literal('attune'), item: index, on: z.boolean() }),
     ]),

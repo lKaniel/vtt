@@ -144,3 +144,20 @@ test("the GM adds a campaign skill and it rolls from every sheet's skills", asyn
   await sheet.getByRole('textbox', { name: 'Psychic Resistance bonus' }).press('Tab');
   await expect(sheet.getByRole('button', { name: /^Psychic Resistance\s*\+7/ })).toBeVisible();
 });
+
+test('a player adds coins and pays a price in silver out of gold, getting change', async ({ page }) => {
+  await atTable(page, PLAYER_2);
+  const sheet = await openBram(page);
+  const purse = sheet.getByRole('region', { name: 'Coins' });
+  await purse.getByRole('button', { name: 'Add' }).click();
+  await page.getByRole('textbox', { name: 'Gold pieces' }).fill('5');
+  await page.getByRole('form', { name: 'Add coins' }).getByRole('button', { name: 'Add' }).click();
+  await expect(purse.getByRole('listitem', { name: 'Gold pieces' })).toContainText('5');
+  await purse.getByRole('button', { name: 'Pay' }).click();
+  await page.getByRole('textbox', { name: 'Silver pieces' }).fill('3');
+  await page.getByRole('textbox', { name: 'Copper pieces' }).fill('2');
+  await expect(page.getByRole('form', { name: 'Pay coins' })).toContainText('Purse after: 4 gp · 6 sp · 8 cp');
+  await page.getByRole('form', { name: 'Pay coins' }).getByRole('button', { name: 'Pay' }).click();
+  await expect(purse).toContainText('4.68 gp');
+  await expect(purse.getByRole('listitem', { name: 'Copper pieces' })).toContainText('8');
+});

@@ -5,6 +5,9 @@ import {
   gainXp,
   levelForXp,
   type CarryChange,
+  type Currency,
+  gainCoins,
+  payCoins,
   hitDieProblem,
   putInside,
   spendHitDie,
@@ -42,6 +45,7 @@ function changed(
   change: CarryChange | { kind: 'equip'; item: number; on: boolean },
 ): Token {
   if (change.kind === 'coins') return { ...token, currency: change.currency };
+  if (change.kind === 'pay' || change.kind === 'gain') return { ...token, currency: purseAfter(token, change) };
   const list = token.inventory ?? [];
   if (!list[change.item]) throw new Refusal(`${token.name} has no such item`);
   if (change.kind === 'stow') return { ...token, inventory: stowed(table, token, change.item, change.into) };
@@ -49,6 +53,14 @@ function changed(
   const problem = change.on ? attuneProblem(token, change.item, table.content(token)) : undefined;
   if (problem) throw new Refusal(problem);
   return { ...token, inventory: withFlag(list, change.item, 'attuned', change.on) };
+}
+
+/** The purse after paying or taking coins; paying more than it holds is refused. */
+function purseAfter(token: Token, change: { kind: 'pay' | 'gain'; coins: Currency }): Currency {
+  if (change.kind === 'gain') return gainCoins(token.currency, change.coins);
+  const left = payCoins(token.currency, change.coins);
+  if (!left) throw new Refusal(`${token.name} hasn't enough coins`);
+  return left;
 }
 
 /** The entry at `index` equipped or attuned; an unattuned entry drops the flag. */
