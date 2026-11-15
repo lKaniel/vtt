@@ -4,12 +4,14 @@ import { Container, Graphics, Text } from 'pixi.js';
 import type { Session } from '../session/session.ts';
 import { drawItem } from './item-draw.ts';
 import { TemplateLooks } from './template-looks.ts';
+import { laid } from '../session/laid-docs.ts';
 
 // Drawings, templates and map notes for everyone; regions and sounds for the
 // GM, in their modes (players are sent regions they should see, which are
 // drawn too). Text drawings and note labels are Pixi text, kept per item.
 
 const ALWAYS = ['regions', 'templates', 'drawings', 'notes'] as const;
+type ItemColl = (typeof ALWAYS)[number];
 const LABEL_PX = 13;
 
 export class ItemLayer {
@@ -33,9 +35,7 @@ export class ItemLayer {
   noteAt(at: Point): { entry?: string; page?: string; table?: string } | undefined {
     const s = this.session;
     const ctx = { px: 1 / this.zoom, gridSize: s.world?.gridSize ?? 100 };
-    const notes = s.docs
-      .all(`${s.scene}/notes`)
-      .filter((n) => typeof n.entry === 'string' || typeof n.table === 'string');
+    const notes = laid(s, 'notes').filter((n) => typeof n.entry === 'string' || typeof n.table === 'string');
     const id = hitTest(
       notes.map((n) => ({ key: n.id, shape: shapeOf(n, ctx) })),
       at,
@@ -50,10 +50,12 @@ export class ItemLayer {
   /** The items to draw, bottom up: regions, templates, drawings, notes, then sounds (GM, in their mode). */
   private shown(): Doc[] {
     const s = this.session;
-    const colls: string[] = [...ALWAYS];
+    const colls: (ItemColl | 'sounds')[] = [...ALWAYS];
     if (s.isGm() && s.editor.mode === 'sounds') colls.push('sounds');
     const level = s.levels.current;
-    return colls.flatMap((c) => s.docs.all(`${s.scene}/${c}`)).filter((d) => onLevel(d as { level?: string }, level));
+    return colls
+      .flatMap((c) => (c === 'templates' ? s.docs.all(`${s.scene}/${c}`) : laid(s, c)))
+      .filter((d) => onLevel(d as { level?: string }, level));
   }
 
   redraw(): void {

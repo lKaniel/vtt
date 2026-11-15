@@ -1,5 +1,7 @@
 import {
   canObserve,
+  homeOf,
+  laidDocs,
   levelBelow,
   levelChoices,
   onLevel,
@@ -21,7 +23,7 @@ import { fallRules, springTrap, type Token, TrapRulesSchema } from '@vtt/system-
 import { fogPlace } from '../store/fog-store.ts';
 import { fromDoc } from '../store/doc-sync.ts';
 import { Refusal, type Table } from '../play/table.ts';
-import type { TriggerActions } from './trigger-actions.ts';
+import type { TriggerActions, TriggerContext } from './trigger-actions.ts';
 
 // Regions at work (see regions.ts in shared): walking into one runs its
 // behaviours in order. Difficult ground is the path's business (`cost`).
@@ -30,6 +32,9 @@ import type { TriggerActions } from './trigger-actions.ts';
 
 /** Behaviours that take a creature to another floor where its walk ends. */
 const FLOOR_WAYS = new Set<RegionBehavior['type']>(['level', 'stairs', 'elevator']);
+
+/** A region as it lies on the scene: on a combined scene, maybe one of a part. */
+type Laid = Region & { part?: string };
 
 export class RegionActions {
   constructor(
@@ -49,10 +54,11 @@ export class RegionActions {
     return this.table.store;
   }
 
-  /** The working regions of the scene the store reads now. */
-  private regions(): Region[] {
-    const docs = this.store.docs.all(`${this.store.currentScene}/regions`);
-    return docs.map((d) => fromDoc<Region>(d)).filter((r) => regionWorks(r, this.store.world.darkness));
+  /** The working regions of the scene the store reads now, its parts' where they lie. */
+  private regions(): Laid[] {
+    const scene = { id: this.store.currentScene, parts: this.store.world.parts };
+    const all = (coll: string) => this.store.docs.all(coll).map((d) => fromDoc<Laid>(d));
+    return laidDocs(scene, 'regions', all).filter((r) => regionWorks(r, this.store.world.darkness));
   }
 
   /** What each square costs to walk into, by the difficult ground on this scene. */
@@ -76,7 +82,7 @@ export class RegionActions {
   }
 
   /** Runs a region's behaviours for a token that stepped in at `at` (`stays`: and ended its walk there); true when it was taken away. */
-  private runRegion(id: string, region: Region, at: Point, stays: boolean): boolean {
+  private runRegion(id: string, region: Laid, at: Point, stays: boolean): boolean {
     for (const b of region.behaviors) {
       const token = this.store.tokens.get(id);
       if (!token || !this.onTokenLevel(region, token)) return false;
@@ -110,7 +116,7 @@ export class RegionActions {
   }
 
   /** Runs one behaviour (`at`: where the token stepped in); true when the token was taken away (a teleport, a fall). */
-  private run(token: Token, region: Region, b: RegionBehavior, at: Point): boolean {
+  private run(token: Token, region: Laid, b: RegionBehavior, at: Point): boolean {
     switch (b.type) {
       case 'difficult':
         return false;
@@ -126,15 +132,20 @@ export class RegionActions {
         this.reveal(token, region);
         return false;
       default:
-        return this.triggers.run(b, { token });
+        return this.triggers.run(b, this.ctx(token, region));
     }
   }
 
-  private trap(token: Token, region: Region, b: Extract<RegionBehavior, { type: 'trap' }>): void {
+  /** What a region's actions run with: the creature, and on a combined scene the part the region is of. */
+  private ctx(token: Token, region: Laid): TriggerContext {
+    const part = this.triggers.partOf(region.part);
+    return { token, ...(part && { part }) };
+  }
+
+  private trap(token: Token, region: Laid, b: Extract<RegionBehavior, { type: 'trap' }>): void {
+    const home = homeOf(this.store.currentScene, region);
     if (b.once)
-      this.store.applyOps([
-        { op: 'update', coll: `${this.store.currentScene}/regions`, id: region.id, patch: { disabled: true } },
-      ]);
+      this.store.applyOps([{ op: 'update', coll: `${home.scene}/regions`, id: home.id, patch: { disabled: true } }]);
     const rules = TrapRulesSchema.safeParse(b.system ?? {});
     const sheet = this.table.sheetOf(token);
     const lead = b.message ? `${b.message} ` : '';

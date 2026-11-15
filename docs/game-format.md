@@ -267,17 +267,25 @@ city of quarters. List them in scene.json:
 `x`, `y` is where the part's corner (its 0, 0) lies, in pixels. The scene is
 played as one map: the server lays every part's tiles, walls and lights on
 it, after the scene's own (so a part draws over the scene's ground, and a
-later part over an earlier one). Tokens, fog, drawings, notes, regions and
-sounds are the combined scene's own; put them in its files. A part stays a
-scene: change its tiles, walls and lights in its own files (or in the game,
-Scenes > Settings > Parts > Edit), and the combined scene follows at once.
-A door opened on the combined scene is saved in its part.
+later part over an earlier one). Tokens, fog and spell templates are the
+combined scene's own. A part stays a scene: change its tiles, walls and
+lights in its own files (or in the game, Scenes > Settings > Parts > Edit),
+and the combined scene follows at once. A door opened on the combined scene
+is saved in its part.
+
+A part brings its regions, notes, sounds and drawings too: they stay in the
+part's files and work, sound and show on the combined scene where the part
+lies (the combined scene may have its own as well, in its files). A part's
+tile triggers and region behaviours run there, and what they name is the
+part's: `"wall": "door"` is the part's door, a teleport's `to` a place of
+the part. A teleport to another part's `scene` keeps the creature on the
+combined scene, at that place of that part. A trap sprung once or a lever
+pulled is saved in the part. Level ids are the combined scene's: give the
+parts the same `levels` ids.
 
 A part must be another scene of the game with the same `gridSize`, laid
 once, with no parts of its own; `check-game` names the ones that are not.
-Its ids on the combined scene are `<part>--<id>`. Not yet carried over: a
-part's tile triggers, regions, sounds, notes and drawings act only when the
-part is played by itself.
+Its ids on the combined scene are `<part>--<id>`.
 
 **Optimise** on a combined scene bakes each part into its own
 `assets/baked/<part>/`, skipping the parts unchanged since their last bake,

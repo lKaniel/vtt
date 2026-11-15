@@ -1,9 +1,11 @@
+import type { Doc } from '@vtt/core';
 import { type Attack, type Spell, type TokenView } from '@vtt/system-dnd5e';
 import { gridKind, type Point, type Region, regionCost, type Wall, wallsOnFloor, type WorldInfo } from '@vtt/shared';
 import type { Session } from '../session/session.ts';
 import { t } from '../i18n/index.ts';
 import { attackGoal, type CloseIn, closeIn, type CloseInScene, type RangeGoal, spellGoal } from './close-in.ts';
 import { walkOptions } from './walking.ts';
+import { laid } from '../session/laid-docs.ts';
 
 // The table side of close-in.ts: before an attack or a cast goes to the
 // server, the creature you act with walks into range if it must (a `move`
@@ -15,7 +17,7 @@ export interface RangeHost {
   readonly tokens: ReadonlyMap<string, TokenView>;
   readonly world?: WorldInfo;
   readonly chunks: ReadonlyMap<string, { walls: readonly Wall[] }>;
-  readonly docs: { all(collection: string): unknown[] };
+  readonly docs: { all(collection: string): readonly Doc[] };
   readonly scene: string;
   readonly turns: { movementLeft(id: string): number };
   readonly requests: { move(token: string, to: Point): void };
@@ -78,7 +80,7 @@ function goalFor(s: RangeHost, aim: RangeAim, scene: CloseInScene): RangeGoal | 
 function closeInScene(s: RangeHost, token: TokenView): CloseInScene | undefined {
   const world = s.world;
   if (!world) return undefined;
-  const regions = s.docs.all(`${s.scene}/regions`) as Region[];
+  const regions = laid(s, 'regions') as unknown as Region[];
   const walls = [...s.chunks.values()].flatMap((c) => c.walls);
   return {
     gridSize: world.gridSize,

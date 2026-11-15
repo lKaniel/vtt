@@ -6,7 +6,9 @@ import type { Chunk, ScenePart } from './schema.ts';
 // own, edited and optimised by itself; the whole is played as one map. The
 // server lays each part's tiles, walls and lights on the whole (`intoWhole`:
 // moved to the part's place, under an id no other part has, marked `part`)
-// and saves a change to one of them back in its part (`intoPart`).
+// and saves a change to one of them back in its part (`intoPart`). The
+// part's regions, notes, sounds and drawings are read on the whole the same
+// way (`laidDocs`), and stay documents of the part.
 
 /** What the id of a part's item is on the whole scene. */
 export const partId = (part: string, id: string): string => `${part}--${id}`;
@@ -53,6 +55,43 @@ export function intoPart<C extends MapCollection>(coll: C, item: Item<C>, part: 
   const cut = part.scene.length + 2;
   const { part: _part, ...own } = mapped(coll, item, [-part.x, -part.y], (id) => id.slice(cut));
   return own as unknown as Item<C>;
+}
+
+/** The id a part keeps an item of the whole scene under. */
+export const homeId = (part: string, id: string): string => id.slice(part.length + 2);
+
+/** Where an item of scene `scene` is kept: in the scene itself, or in the part it came from. */
+export function homeOf(scene: string, item: { id: string; part?: string }): { scene: string; id: string } {
+  return item.part ? { scene: item.part, id: homeId(item.part, item.id) } : { scene, id: item.id };
+}
+
+type Pt = readonly [number, number];
+
+/**
+ * A part's region, note, sound or drawing as it lies on the whole scene:
+ * moved by its points or its place, under an id no other part has, marked
+ * `part`. What it names (a wall, a tile) stays its part's (`homeOf`).
+ */
+export function docIntoWhole<D extends { id: string }>(doc: D, part: ScenePart): D & { part: string } {
+  const { points, x, y } = doc as { points?: Pt[]; x?: number; y?: number };
+  const moved = points
+    ? { points: points.map(([px, py]) => [px + part.x, py + part.y]) }
+    : { x: (x ?? 0) + part.x, y: (y ?? 0) + part.y };
+  return { ...doc, id: partId(part.scene, doc.id), part: part.scene, ...moved };
+}
+
+/**
+ * Collection `name` (regions, notes, sounds, drawings) of a scene as it is
+ * played: its own documents, then each part's laid on it. `all`: the
+ * documents of a collection ("<scene>/<name>").
+ */
+export function laidDocs<D extends { id: string }>(
+  scene: { id: string; parts: readonly ScenePart[] | undefined },
+  name: string,
+  all: (coll: string) => readonly D[],
+): D[] {
+  const parts = (scene.parts ?? []).flatMap((p) => all(`${p.scene}/${name}`).map((d) => docIntoWhole(d, p)));
+  return [...all(`${scene.id}/${name}`), ...parts];
 }
 
 interface PartScene {

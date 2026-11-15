@@ -4,6 +4,7 @@ import { audioMix, type Channel } from './audio-mix.ts';
 import { DoorSounds } from './door-sounds.ts';
 import { playDoor } from './door-synth.ts';
 import type { Session } from '../session/session.ts';
+import { laid } from '../session/laid-docs.ts';
 
 // Plays what audio-mix.ts says this client should hear, with one <audio>
 // per channel. When a track that doesn't repeat ends, the GM's client starts
@@ -60,7 +61,7 @@ export class SoundScape {
     const walls = this.walls();
     const mix = audioMix({
       playlists: s.docs.all('playlists'),
-      sounds: s.docs.all(`${s.scene}/sounds`),
+      sounds: laid(s, 'sounds'),
       listener: this.listener(),
       gridSize: s.world?.gridSize ?? 100,
       darkness: s.world?.darkness ?? 0,

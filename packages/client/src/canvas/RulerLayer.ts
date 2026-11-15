@@ -3,6 +3,7 @@ import { Container, Graphics } from 'pixi.js';
 import { rulerLabels } from '../session/rulers.ts';
 import type { Session } from '../session/session.ts';
 import { LabelPool } from './label-pool.ts';
+import { laid } from '../session/laid-docs.ts';
 
 const OUTLINE = 0x000000;
 const TEXT_COLOR = 0xffffff;
@@ -48,7 +49,7 @@ export class RulerLayer {
   private drawRuler(points: Point[], color: string, name?: string): void {
     if (points.length < 2) return;
     const world = this.session.world!;
-    const regions = this.session.docs.all(`${this.session.scene}/regions`) as unknown as Region[];
+    const regions = laid(this.session, 'regions') as unknown as Region[];
     const m = measureRuler(points, {
       gridSize: world.gridSize,
       gridless: isGridless(world),
