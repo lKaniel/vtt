@@ -14,6 +14,7 @@ import {
   type Game,
   type Indoors,
   indoorsOn,
+  intoWhole,
   groupChunks,
   isGroup,
   type LightSource,
@@ -22,6 +23,7 @@ import {
   type Rect,
   type Scene,
   type SceneCollection,
+  type ScenePart,
   type Wall,
   type Weather,
   weatherAt,
@@ -72,6 +74,8 @@ export class SceneState {
   private clock?: { doc: Doc | undefined; clock: Clock };
   /** Each floor's indoors, worked out when first asked for after the map changed. */
   private rooms = new Map<string, Indoors | undefined>();
+  /** The scenes laid on this one (a combined scene, scene-parts.ts): those of scene.json `parts` that can be. */
+  parts: ScenePart[] = [];
 
   constructor(
     readonly id: string,
@@ -81,6 +85,18 @@ export class SceneState {
   ) {
     this.scene = fromDoc<Scene>(docs.get('scenes', id)!, false);
     this.base = worldOf(fromDoc<Game>(docs.all('game')[0]!), this.scene);
+    this.parts = this.laidParts();
+  }
+
+  /** The parts that can be laid: other scenes of the game, each once, none made of parts itself. */
+  private laidParts(): ScenePart[] {
+    const seen = new Set([this.id]);
+    return (this.scene.parts ?? []).filter((p) => {
+      const part = this.docs.get('scenes', p.scene);
+      const fits = !!part && !seen.has(p.scene) && !fromDoc<Scene>(part, false).parts?.length;
+      seen.add(p.scene);
+      return fits;
+    });
   }
 
   /**
@@ -113,13 +129,14 @@ export class SceneState {
     return `${this.id}/${name}`;
   }
 
-  /** Takes new settings; true when the chunks had to be cut again (a new chunk size). */
+  /** Takes new settings; true when the chunks had to be cut again (a new chunk size, other parts). */
   settle(game: Game): boolean {
-    const before = this.world.chunkSize;
+    const before = JSON.stringify([this.world.chunkSize, this.parts]);
     this.scene = fromDoc<Scene>(this.docs.get('scenes', this.id)!, false);
     this.base = worldOf(game, this.scene);
+    this.parts = this.laidParts();
     this.rooms.clear();
-    if (before === this.world.chunkSize) return false;
+    if (before === JSON.stringify([this.world.chunkSize, this.parts])) return false;
     this.refreshChunks(undefined, false);
     return true;
   }
@@ -190,17 +207,27 @@ export class SceneState {
     else if (this.tokens.delete(id)) this.events.tokenGone(id);
   }
 
-  /** The chunks a map item was in and is in now. */
+  /** The chunks a map item was in and is in now: one of the scene's own, or of a scene laid on it. */
   chunkKeys(t: Touched, keys: Set<string>): void {
-    const coll = MAP.find((c) => t.coll === this.coll(c));
-    if (!coll) return;
+    const [scene, name] = t.coll.split('/');
+    const coll = MAP.find((c) => c === name);
+    const part = scene === this.id ? undefined : this.parts.find((p) => p.scene === scene);
+    if (!coll || (scene !== this.id) === !part) return;
     const now = this.docs.get(t.coll, t.id);
     for (const doc of [t.before, now]) {
-      if (doc && !isGroup(doc)) keys.add(anchorChunk(coll, fromDoc(doc), this.world.chunkSize));
+      if (doc && !isGroup(doc)) keys.add(this.anchor(coll, doc, part));
     }
-    if (coll === 'tiles' && reordersTiles(t.before, now)) {
-      for (const [key, chunk] of this.chunks) if (chunk.tiles.length) keys.add(key);
-    }
+    if (coll === 'tiles' && reordersTiles(t.before, now)) this.tileKeys(keys);
+  }
+
+  /** Every chunk with tiles: their place in the draw order moved. */
+  private tileKeys(keys: Set<string>): void {
+    for (const [key, chunk] of this.chunks) if (chunk.tiles.length) keys.add(key);
+  }
+
+  private anchor(coll: MapCollection, doc: Doc, part: ScenePart | undefined): string {
+    const item = fromDoc<Chunk[typeof coll][number]>(doc);
+    return anchorChunk(coll, part ? intoWhole(coll, item, part) : item, this.world.chunkSize);
   }
 
   refreshChunks(keys: ReadonlySet<string> | undefined, live: boolean): void {
@@ -224,14 +251,28 @@ export class SceneState {
     return token;
   }
 
+  /** The scene's map: its own, then each part's laid at its place, drawn over what came before. */
   private map(): Chunk {
-    const items = (coll: MapCollection) => this.docs.all(this.coll(coll)).map((d) => fromDoc(d));
-    return {
-      tiles: drawnTiles(this.docs.all(this.coll('tiles'))),
-      walls: items('walls') as Wall[],
-      lights: items('lights') as Chunk['lights'],
-    };
+    const map = mapOf(this.docs, this.id);
+    for (const part of this.parts) {
+      const laid = mapOf(this.docs, part.scene);
+      const under = map.tiles.length;
+      map.tiles.push(...laid.tiles.map((t) => ({ ...intoWhole('tiles', t, part), z: under + (t.z ?? 0) })));
+      map.walls.push(...laid.walls.map((w) => intoWhole('walls', w, part)));
+      map.lights.push(...laid.lights.map((l) => intoWhole('lights', l, part)));
+    }
+    return map;
   }
+}
+
+/** One scene's own map, as its files hold it. */
+function mapOf(docs: DocStore, scene: string): Chunk {
+  const items = (coll: MapCollection) => docs.all(`${scene}/${coll}`).map((d) => fromDoc(d));
+  return {
+    tiles: drawnTiles(docs.all(`${scene}/tiles`)),
+    walls: items('walls') as Wall[],
+    lights: items('lights') as Chunk['lights'],
+  };
 }
 
 /** True when two scenes' settings differ in nothing but the time of day and the weather (the game's own settings aside). */
