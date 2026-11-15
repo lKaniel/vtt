@@ -24,7 +24,21 @@ export const EN_EDITOR = {
   'floors.sees': 'Looks down on:',
   'floors.remove': 'Remove {name}',
   'floors.removeHint': 'Take this floor away; what is on it goes on every floor (Ctrl+Z undoes)',
+  'parts.title': 'Parts',
+  'parts.none':
+    'A scene can be made of other scenes laid side by side: a city of quarters. It is played as one map, and each part is edited and optimised as the scene it is.',
+  'parts.hint':
+    "Where each part lies, in squares from this scene's corner. Tokens, fog and everything drawn here belong to this scene; a part's tiles, walls and lights are changed in the part.",
+  'parts.add': 'Add a part',
+  'parts.noneFree': 'No scene with this grid is free to add',
+  'parts.across': 'Squares across',
+  'parts.down': 'Squares down',
+  'parts.edit': 'Edit',
+  'parts.editHint': 'Go to this part to change its tiles, walls and lights',
+  'parts.remove': 'Remove',
+  'parts.removeHint': 'Take this part off the scene; the part itself stays (Ctrl+Z undoes)',
   'sceneSettings.general': 'Scene',
+  'sceneSettings.parts': 'Parts',
   'sceneSettings.floors': 'Floors',
   'sceneSettings.map': 'Map picture',
   'sceneSettings.mapHint':

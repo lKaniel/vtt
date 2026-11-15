@@ -48,10 +48,6 @@ export function intoPart<C extends MapCollection>(coll: C, item: Item<C>, part: 
   return own as unknown as Item<C>;
 }
 
-export function partsChanged(before: readonly ScenePart[] | undefined, now: readonly ScenePart[] | undefined): boolean {
-  return JSON.stringify(before ?? []) !== JSON.stringify(now ?? []);
-}
-
 interface PartScene {
   gridSize?: number;
   parts?: readonly ScenePart[];
@@ -76,4 +72,11 @@ function onePart(id: string, whole: PartScene, name: string, scenes: ReadonlyMap
   if (part.gridSize !== whole.gridSize)
     return [`part "${name}" has a grid of ${part.gridSize} px, the scene ${whole.gridSize} px`];
   return [];
+}
+
+/** Whether scene `part` can be added to the parts of scene `id`: another scene with its grid, not laid on it yet, with no parts of its own. */
+export function canBePart(id: string, part: string, scenes: ReadonlyMap<string, PartScene>): boolean {
+  const whole = scenes.get(id);
+  const laid = whole?.parts?.some((p) => p.scene === part) ?? false;
+  return !!whole && !laid && onePart(id, whole, part, scenes).length === 0;
 }

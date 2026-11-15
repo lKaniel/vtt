@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Chunk, Wall } from './schema.ts';
-import { intoPart, intoWhole, partErrors, partId, partsChanged } from './scene-parts.ts';
+import { canBePart, intoPart, intoWhole, partErrors, partId } from './scene-parts.ts';
 
 const part = { scene: 'market', x: 3000, y: -1500 };
 
@@ -32,10 +32,15 @@ describe('scene parts', () => {
     expect(intoWhole('lights', light, part)).toMatchObject({ id: 'market--lamp', x: 3010, y: -1480 });
   });
 
-  it('tells when the parts of a scene changed', () => {
-    expect(partsChanged(undefined, [])).toBe(false);
-    expect(partsChanged([part], [{ ...part }])).toBe(false);
-    expect(partsChanged([part], [{ ...part, x: 0 }])).toBe(true);
+  it('tells which scenes can be laid on a scene', () => {
+    const scenes = new Map([
+      ['city', { gridSize: 150, parts: [part] }],
+      ['market', { gridSize: 150 }],
+      ['docks', { gridSize: 150 }],
+      ['cave', { gridSize: 100 }],
+      ['town', { gridSize: 150, parts: [{ scene: 'docks', x: 0, y: 0 }] }],
+    ]);
+    expect([...scenes.keys()].filter((id) => canBePart('city', id, scenes))).toEqual(['docks']);
   });
 
   it('names what is wrong with the parts of a scene', () => {
