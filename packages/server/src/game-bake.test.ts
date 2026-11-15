@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Game } from './game.ts';
 import { GameStore } from './store/game-store.ts';
-import { FakeSocket, makeWorld } from './test/fixtures.ts';
+import { FakeSocket, makeCombined, makeWorld } from './test/fixtures.ts';
 
 // An optimised scene's picture pyramid: the GM's browser draws the blocks
 // and sends them one by one into the game's assets/baked/<scene>/<bake>/;
@@ -75,5 +75,21 @@ describe('saving a bake', () => {
         .at(-1)!
         .entries.some((m) => m.src.includes('baked')),
     ).toBe(false);
+  });
+});
+
+describe('a combined scene', () => {
+  it('tells everyone on it the bake of each part, again when a part is optimised anew', async () => {
+    const whole = new GameStore(await makeCombined());
+    await whole.load();
+    whole.setGame({ scene: 'city' });
+    const table = new Game(whole);
+    const ana = new FakeSocket();
+    table.connect(ana.asWebSocket, table.findPlayer('ana')!);
+    expect(ana.take('welcome')[0]!.world.partBakes).toEqual({});
+    const rev = whole.docs.get('scenes', 'main')!.rev;
+    whole.applyOps([{ op: 'update', coll: 'scenes', id: 'main', rev, patch: { bake: 'b7', optimised: true } }]);
+    expect(ana.take('welcome')[0]!.world.partBakes).toEqual({ main: 'b7' });
+    await whole.flush();
   });
 });

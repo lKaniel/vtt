@@ -21,8 +21,12 @@ import type { RollMode } from './roll-modes.ts';
 // undo. A game system adds its own messages (attacks, spells, sheets) on top;
 // D&D's full ClientMessage and ServerMessage are in system-dnd5e/protocol.ts.
 
-/** World settings a client needs; the player list is replaced by `you`. */
-export type WorldInfo = Omit<World, 'players'>;
+/**
+ * World settings a client needs; the player list is replaced by `you`. On a
+ * combined scene, `partBakes` is the last bake of each part that has one
+ * (scene-parts.ts): the map draws their pictures too.
+ */
+export type WorldInfo = Omit<World, 'players'> & { partBakes?: Record<string, string> };
 
 /** A chat line: text or a dice roll. Systems add their own cards (an attack, a spell). */
 export interface ChatEntry {
