@@ -1,7 +1,7 @@
 // The GM's Optimise on a 2D scene (session-bake.ts): the still tiles are
 // drawn into one picture per floor, cut into a pyramid of blocks saved in
 // the game's assets, and the map shows those instead; Edit goes back to
-// every tile drawn. A roof stays out of the picture, since it fades.
+// every tile drawn. The roofs get a picture of their own, which fades as one.
 
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -9,18 +9,18 @@ import type { Page } from '@playwright/test';
 import { expect, test } from '../support/fixtures.ts';
 import { GM, atTable } from '../support/table.ts';
 
-/** A roof over the crossroads' inn, to stay live. */
+/** A roof over the crossroads' inn, for the roof picture. */
 async function addRoof(dir: string): Promise<void> {
   const file = join(dir, 'scenes', 'crossroads', 'tiles.json');
   const tiles = JSON.parse(await readFile(file, 'utf8')) as object[];
   const roof = {
     id: 'inn-roof',
     kind: 'image',
-    src: '/art/tokens/goblin.svg',
-    x: 0,
-    y: 0,
-    w: 300,
-    h: 300,
+    src: '/assets/tokens/goblin.svg',
+    x: 400,
+    y: 200,
+    w: 500,
+    h: 600,
     overhead: true,
   };
   await writeFile(file, JSON.stringify([...tiles, roof], null, 2));
@@ -44,14 +44,22 @@ test('the GM optimises a scene into pictures, and goes back to edit it', async (
   expect(optimised).toBe(true);
   const folder = join(server.gameDir, 'assets', 'baked', 'crossroads', bake!);
   const manifest = JSON.parse(await readFile(join(folder, 'manifest.json'), 'utf8')) as {
-    groups: { tiles: Record<string, string>; blocks: string[][] }[];
+    groups: { roof?: boolean; tiles: Record<string, string>; blocks: string[][] }[];
   };
   const baked = Object.keys(manifest.groups[0]!.tiles);
   expect(baked.length).toBeGreaterThan(5);
   expect(baked).not.toContain('inn-roof');
   expect(manifest.groups[0]!.blocks[0]!.length).toBeGreaterThan(0);
   expect((await readdir(join(folder, '0'))).length).toBeGreaterThan(0);
-  await page.screenshot({ path: test.info().outputPath('2-optimised.png') });
+  const roofs = manifest.groups.find((g) => g.roof)!;
+  expect(Object.keys(roofs.tiles)).toEqual(['inn-roof']);
+  expect((await readdir(join(folder, String(manifest.groups.indexOf(roofs))))).length).toBeGreaterThan(0);
+  // The roof picture hides the party; the GM's pointer on a roof lifts every roof in it.
+  await page.mouse.move(300, 450);
+  const roofed = await page.screenshot({ path: test.info().outputPath('2-optimised.png') });
+  await page.mouse.move(302, 165);
+  await expect.poll(async () => (await page.screenshot()).equals(roofed)).toBe(false);
+  await page.screenshot({ path: test.info().outputPath('3-roofs-lifted.png') });
 
   await page.getByRole('button', { name: 'Edit', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Optimise', exact: true })).toBeVisible();

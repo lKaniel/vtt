@@ -240,11 +240,17 @@ screen, at the zoom the screen needs, instead of every tile's picture.
 kept until the next Optimise. Leave `assets/baked/` alone; it is the
 server's and the Assets tab doesn't list it.
 
+Roofs (`overhead`) get a picture of their own, one per floor (and one for
+the roofs with no floor, over them all). The roof pictures fade as one:
+while a creature you watch stands under any roof in them, every roof is
+lifted. A floor's roof picture lies on top of that floor, so a roof with a
+live tile drawn over it stays live.
+
 What looks different as the game goes on stays a live tile, never baked:
-roofs (`overhead`, they fade), doors, tiles with a trigger or a
-description, tiles hidden from players, videos, GIFs and scrolling
-pictures, and a tile on several floors. A still tile drawn over one of
-those stays live too, so the order on the map holds. A baked tile changed
+doors, tiles with a trigger or a description, tiles hidden from players,
+videos, GIFs and scrolling pictures, and a tile on several floors. A still
+tile drawn over one of those stays live too, so the order on the map
+holds. A baked tile changed
 after the bake is drawn as it is now, over the picture, and the GM's
 top bar offers to optimise again.
 

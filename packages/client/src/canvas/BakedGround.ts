@@ -1,14 +1,19 @@
-import { type BakeGroup, bakeSpan, type Chunk, type Rect, tilesOnFloor } from '@vtt/shared';
+import { type BakeGroup, bakeSpan, type Chunk, type Rect } from '@vtt/shared';
 import { Assets, Container, Sprite, type Texture } from 'pixi.js';
 import { assetUrl } from '../assets.ts';
 import type { Session } from '../session/session.ts';
 import { blocksToShow } from './bake-blocks.ts';
+import { bakePlace } from './bake-plan.ts';
+import { easeAlpha } from './tile-motion.ts';
 
 // An optimised scene's floor pictures on the map (session-bake.ts): each
 // floor's picture pyramid shown in place of the tiles baked into it, blocks
 // of the zoom the screen needs loaded as the camera moves and let go when
 // too many are held. A floor's picture lies under every live tile of its
 // floor; a floor seen from below (drawn as roofs) shows its tiles instead.
+// A floor's roof picture lies over its roofs, with the roofs over the
+// creatures, and the roof pictures fade as one: under one roof, every roof
+// is lifted.
 
 /** Blocks a floor may hold before those out of view are let go (512² each: about 1 MB). */
 const MAX_BLOCKS = 160;
@@ -127,6 +132,7 @@ export class BakedGround {
   private version = -1;
   private view?: Rect;
   private screenPerMap = 1;
+  private roofAlpha = 1;
 
   constructor(private readonly session: Session) {}
 
@@ -150,17 +156,35 @@ export class BakedGround {
 
   /** The floor pictures shown flat on the floors in view, at the bottom of their floor's tiles; the others come off the map. */
   entries(): BakedEntry[] {
+    return this.placed(false);
+  }
+
+  /** The roof pictures over the floor shown, on top of their floor's roofs; the others come off the map. */
+  roofEntries(): BakedEntry[] {
+    return this.placed(true);
+  }
+
+  private placed(roof: boolean): BakedEntry[] {
     const { shown, current } = this.session.levels;
-    const levels = this.session.world?.levels;
+    const floors = { levels: this.session.world?.levels, shown, current };
     return this.floors.flatMap((f, i) => {
+      if (!!f.group.roof !== roof) return [];
       f.root.removeFromParent();
-      const probe = { kind: 'image', id: `bake-${i}`, src: '', x: 0, y: 0, w: 1, h: 1, z: -0.5 } as ChunkTile;
-      const level = f.group.level && { level: f.group.level };
-      const [placed] = tilesOnFloor([{ ...probe, ...level }], levels, shown, current);
-      // Seen from below, its tiles are drawn as roofs instead (they no longer match the bake).
-      if (!placed || (placed.kind === 'image' && placed.overhead)) return [];
-      return [{ id: probe.id, z: placed.z! + f.at.z, still: false as const, root: f.root, bounds: f.bounds }];
+      // Seen the other way (a floor from below, its roofs from the floor itself), its tiles are drawn instead.
+      const place = bakePlace(f.group, f.at.z, floors);
+      if (!place) return [];
+      return [{ id: `bake-${i}`, z: place.z, still: false as const, root: f.root, bounds: f.bounds }];
     });
+  }
+
+  /** Fades every roof picture out while someone you watch is `under` a roof in one, and back in after. */
+  fadeRoofs(under: boolean, dt: number): void {
+    this.roofAlpha = easeAlpha(this.roofAlpha, under ? 0 : 1, dt);
+    for (const f of this.floors) {
+      if (!f.group.roof) continue;
+      f.root.alpha = this.roofAlpha;
+      f.root.visible = this.roofAlpha > 0;
+    }
   }
 
   setView(view: Rect, screenPerMap: number): void {

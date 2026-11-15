@@ -115,7 +115,14 @@ class GroupBake {
       if (this.job.cancelled()) return undefined;
       const tiles = Object.fromEntries(group.tiles.map((t) => [t.id, tilePrint(t)]));
       const blocks = this.blocks.map((set) => [...set]);
-      return { ...(group.level && { level: group.level }), ...this.area, zooms: this.zooms, tiles, blocks };
+      return {
+        ...(group.level && { level: group.level }),
+        ...(group.roof && { roof: true }),
+        ...this.area,
+        zooms: this.zooms,
+        tiles,
+        blocks,
+      };
     } finally {
       this.stage.destroy({ children: true });
       this.target.destroy(true);
