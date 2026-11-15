@@ -5,7 +5,8 @@ import type { Rect } from './chunks.ts';
 // drawn once, floor by floor, into one picture, cut into a pyramid of square
 // blocks like a web map. Zoom 0 is the sharpest (`scale` texels per map
 // pixel); each zoom after it is half as sharp, until the last holds the
-// whole floor in one block. The map shows the blocks of the zoom the screen
+// whole floor in one block; a floor's still roofs get a picture of their
+// own. The map shows the blocks of the zoom the screen
 // needs instead of the tiles, so a big map costs a weak computer a few
 // pictures instead of thousands. The files live in the game's
 // assets/baked/<scene>/<bake>/: manifest.json, and <group>/<zoom>/<x>_<y>.<ext>.
@@ -18,9 +19,11 @@ const MAX_TOP_BLOCKS = 1600;
 const MAX_SCALE = 1;
 const MIN_SCALE = 1 / 64;
 
-/** One floor's picture (or the tiles on every floor's: no `level`). */
+/** One floor's picture (or the tiles on every floor's: no `level`), or the picture of its roofs. */
 export const BakeGroupSchema = z.object({
   level: z.string().optional(),
+  /** Its roofs (`overhead` tiles): drawn over the creatures, and they fade as one. */
+  roof: z.boolean().optional(),
   /** The part of the map it covers; block [0, 0] starts at its corner. */
   x: z.number(),
   y: z.number(),

@@ -50,6 +50,8 @@ interface ChunkView {
   shadows: Graphics;
   /** Its overhead tiles (roofs), stacked in `roofs`: baked while fully drawn, live while they fade. */
   roofs: Roof[];
+  /** Its roofs that an optimised scene's roof pictures show. */
+  pictured: RoofTile[];
   /** Tiles that move: scrolling pictures and fading roofs. */
   moving: TileView[];
   /** Every tile as drawn, by id (to light the one under the pointer). */
@@ -57,6 +59,8 @@ interface ChunkView {
   walls: Container;
   doors: Graphics[];
 }
+
+type DrawnTiles = Pick<ChunkView, 'tiles' | 'roofs' | 'moving' | 'byId'>;
 
 /** Wall shadows draw over every tile. */
 const SHADOW_Z = 1e9;
@@ -98,6 +102,8 @@ export class ChunkLayer {
     const roofs = [...this.views.values()].flatMap((v) => v.roofs.map((r) => r.tile as RoofTile));
     const sight = { watchers, covers: roofsOver(roofs, watchers) };
     for (const v of this.views.values()) for (const t of v.moving) t.tick?.(dt, sight);
+    const pictured = [...this.views.values()].flatMap((v) => v.pictured);
+    this.baked.fadeRoofs(roofsOver(pictured, watchers).length > 0, dt);
     this.glow.update({
       chunks: this.session.chunks,
       hover: this.session.inspect.hover,
@@ -154,7 +160,7 @@ export class ChunkLayer {
     stackInto(
       this.roofs,
       this.roofBaker,
-      [...this.views.values()].flatMap((v) => v.roofs),
+      [...this.views.values()].flatMap((v): GroundTile[] => v.roofs).concat(this.baked.roofEntries()),
     );
   }
 
@@ -193,9 +199,11 @@ export class ChunkLayer {
     return { ...chunk, tiles, walls: chunk.walls.filter((w) => onLevel(w, current)) };
   }
 
-  /** On an optimised scene, the chunk without the tiles its floor pictures show. */
-  private unbaked(chunk: Chunk): Chunk {
-    return { ...chunk, tiles: chunk.tiles.filter((t) => !this.baked.covers(t)) };
+  /** On an optimised scene, the chunk without the tiles its pictures show, and the roofs among those. */
+  private unbaked(chunk: Chunk): { chunk: Chunk; pictured: RoofTile[] } {
+    const pictured = chunk.tiles.filter((t) => this.baked.covers(t));
+    const tiles = pictured.length ? chunk.tiles.filter((t) => !pictured.includes(t)) : chunk.tiles;
+    return { chunk: { ...chunk, tiles }, pictured: pictured.filter(isRoof) };
   }
 
   /** Under the 3D view, the chunk without what stands in 3D (view3d/content3d.ts). */
@@ -206,7 +214,7 @@ export class ChunkLayer {
 
   draw(key: string, whole: Chunk): void {
     this.remove(key);
-    const chunk = this.unbaked(this.flat(this.onFloor(whole)));
+    const { chunk, pictured } = this.unbaked(this.flat(this.onFloor(whole)));
     const world = this.session.world;
     const ctx = { gridSize: world?.gridSize ?? 100, chunkSize: world?.chunkSize ?? 2000 };
     const gm = this.session.isGm();
@@ -215,7 +223,7 @@ export class ChunkLayer {
     const shadows = shadowsOf(drawn);
     shadows.zIndex = SHADOW_Z;
     shadows.cullable = true;
-    const view: ChunkView = { ...tiles, shadows, walls: new Container(), doors: [] };
+    const view: ChunkView = { ...tiles, pictured, shadows, walls: new Container(), doors: [] };
     view.walls.cullable = true;
     view.walls.addChild(wallsOf(drawn));
     for (const wall of chunk.walls) {
@@ -283,14 +291,16 @@ export class ChunkLayer {
   }
 }
 
+const isRoof = (tile: ChunkTile): tile is RoofTile => tile.kind === 'image' && !!tile.overhead;
+
 /** The chunk's tiles at their places in the scene's draw order: floor tiles (still or live), roofs, and those that move; `dress` makes triggers clickable. */
 function drawTiles(
   chunk: Chunk,
   ctx: GroundContext,
   gm: boolean,
   dress: (root: Container, tile: ChunkTile) => void,
-): Pick<ChunkView, 'tiles' | 'roofs' | 'moving' | 'byId'> {
-  const out: Pick<ChunkView, 'tiles' | 'roofs' | 'moving' | 'byId'> = {
+): DrawnTiles {
+  const out: DrawnTiles = {
     tiles: [],
     roofs: [],
     moving: [],
@@ -305,7 +315,7 @@ function drawTiles(
     if (drawn.tick) out.moving.push(drawn);
     const bounds = tileBounds(tile, tilePad(tile));
     const placed = { id: tile.id, z, root: drawn.root, bounds, loaded: drawn.loaded };
-    if (tile.kind === 'image' && tile.overhead) out.roofs.push({ ...placed, tile, still: roofStill(tile, gm, 1) });
+    if (isRoof(tile)) out.roofs.push({ ...placed, tile, still: roofStill(tile, gm, 1) });
     else out.tiles.push({ ...placed, still: tileStill(tile, gm) });
   });
   return out;
