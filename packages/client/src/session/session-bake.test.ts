@@ -141,7 +141,7 @@ describe('a combined scene', () => {
     await flush();
     expect(read.mock.calls).toEqual([['market', 'm1']]);
     expect(bake.optimised).toBe(true);
-    expect(bake.shown).toEqual([{ manifest, folder: '/assets/baked/market/m1', x: 1000, y: 500 }]);
+    expect(bake.shown).toEqual([{ manifest, folder: '/assets/baked/market/m1', x: 1000, y: 500, z: 1_000_000 }]);
     const laid = { ...tile, id: 'market--floor', part: 'market', x: 1000, y: 500, z: 3 };
     expect(bake.baked(laid)).toBe(true);
     expect(bake.baked({ ...laid, tint: '#ff0000' })).toBe(false);

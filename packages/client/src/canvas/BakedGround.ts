@@ -44,7 +44,7 @@ class FloorPicture {
     readonly group: BakeGroup,
     private readonly url: (key: string) => string,
     private readonly scale: number,
-    private readonly at: { x: number; y: number },
+    readonly at: { x: number; y: number; z: number },
   ) {
     this.root.position.set(at.x, at.y);
   }
@@ -140,10 +140,10 @@ export class BakedGround {
     if (this.version === this.session.bake.version) return;
     this.version = this.session.bake.version;
     for (const f of this.floors) f.destroy();
-    this.floors = this.session.bake.shown.flatMap(({ manifest, folder, x, y }) =>
+    this.floors = this.session.bake.shown.flatMap(({ manifest, folder, x, y, z }) =>
       manifest.groups.map((group, i) => {
         const url = (key: string) => assetUrl(`${folder}/${i}/${key}.${manifest.ext}`);
-        return new FloorPicture(group, url, manifest.scale, { x, y });
+        return new FloorPicture(group, url, manifest.scale, { x, y, z });
       }),
     );
   }
@@ -159,7 +159,7 @@ export class BakedGround {
       const [placed] = tilesOnFloor([{ ...probe, ...level }], levels, shown, current);
       // Seen from below, its tiles are drawn as roofs instead (they no longer match the bake).
       if (!placed || (placed.kind === 'image' && placed.overhead)) return [];
-      return [{ id: probe.id, z: placed.z!, still: false as const, root: f.root, bounds: f.bounds }];
+      return [{ id: probe.id, z: placed.z! + f.at.z, still: false as const, root: f.root, bounds: f.bounds }];
     });
   }
 

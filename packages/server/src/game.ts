@@ -272,7 +272,7 @@ export class Game {
         lights: this.store.lights(),
         wallsBetween: (a, b) => this.store.wallsBetween(a, b),
         levels: this.store.world.levels,
-        indoors: (level) => (p) => isIndoors(this.store.indoors(level), p),
+        indoors: (level) => (p) => this.store.indoors(level).some((area) => isIndoors(area, p)),
         perceiver: (t) => this.store.system.perceiver(t, this.store.world.rules, packContent(this.store)),
       }),
     );

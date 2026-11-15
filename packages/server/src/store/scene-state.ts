@@ -15,6 +15,7 @@ import {
   type Indoors,
   indoorsOn,
   intoWhole,
+  partZ,
   groupChunks,
   isGroup,
   type LightSource,
@@ -72,8 +73,10 @@ export class SceneState {
   /** The game's settings and this scene's, with the darkness the scene has set. */
   private base: World;
   private clock?: { doc: Doc | undefined; clock: Clock };
-  /** Each floor's indoors, worked out when first asked for after the map changed. */
+  /** The indoors of each scene laid here ("<scene>|<floor>"), worked out when first asked for after its map changed. */
   private rooms = new Map<string, Indoors | undefined>();
+  /** The map of the scene and of each part as it lies here, kept until one of its items changes. */
+  private laid = new Map<string, Chunk>();
   /** The scenes laid on this one (a combined scene, scene-parts.ts): those of scene.json `parts` that can be. */
   parts: ScenePart[] = [];
 
@@ -171,14 +174,14 @@ export class SceneState {
     });
   }
 
-  /** Where floor `level` is indoors (see indoors.ts), out of reach of the sky's light. */
-  indoors(level: string | undefined): Indoors | undefined {
-    const key = level ?? '';
-    if (!this.rooms.has(key)) {
-      const { tiles, walls } = this.map();
-      this.rooms.set(key, indoorsOn({ tiles, walls }, this.world.levels, level, this.world.gridSize));
-    }
-    return this.rooms.get(key);
+  /** Where floor `level` is indoors (see indoors.ts), out of reach of the sky's light: the scene's own rooms, and each part's. */
+  indoors(level: string | undefined): Indoors[] {
+    const { levels, gridSize } = this.world;
+    return [this.id, ...this.parts.map((p) => p.scene)].flatMap((scene) => {
+      const key = `${scene}|${level ?? ''}`;
+      if (!this.rooms.has(key)) this.rooms.set(key, indoorsOn(this.mapOf(scene), levels, level, gridSize));
+      return this.rooms.get(key) ?? [];
+    });
   }
 
   /** Every light shining on the scene: placed ones in their darkness band, and those tokens carry or their effects give (on the token's level). */
@@ -213,16 +216,23 @@ export class SceneState {
     const coll = MAP.find((c) => c === name);
     const part = scene === this.id ? undefined : this.parts.find((p) => p.scene === scene);
     if (!coll || (scene !== this.id) === !part) return;
+    this.forget(scene!);
     const now = this.docs.get(t.coll, t.id);
     for (const doc of [t.before, now]) {
       if (doc && !isGroup(doc)) keys.add(this.anchor(coll, doc, part));
     }
-    if (coll === 'tiles' && reordersTiles(t.before, now)) this.tileKeys(keys);
+    if (coll === 'tiles' && reordersTiles(t.before, now)) this.tileKeys(part?.scene, keys);
   }
 
-  /** Every chunk with tiles: their place in the draw order moved. */
-  private tileKeys(keys: Set<string>): void {
-    for (const [key, chunk] of this.chunks) if (chunk.tiles.length) keys.add(key);
+  /** Every chunk with tiles of the scene itself or of one part: their place in the draw order moved. */
+  private tileKeys(part: string | undefined, keys: Set<string>): void {
+    for (const [key, chunk] of this.chunks) if (chunk.tiles.some((t) => t.part === part)) keys.add(key);
+  }
+
+  /** A scene's map changed: what was worked out from it is worked out again when asked for. */
+  private forget(scene: string): void {
+    this.laid.delete(scene);
+    for (const key of [...this.rooms.keys()]) if (key.startsWith(`${scene}|`)) this.rooms.delete(key);
   }
 
   private anchor(coll: MapCollection, doc: Doc, part: ScenePart | undefined): string {
@@ -231,8 +241,11 @@ export class SceneState {
   }
 
   refreshChunks(keys: ReadonlySet<string> | undefined, live: boolean): void {
-    this.rooms.clear();
-    if (!keys) this.chunks.clear();
+    if (!keys) {
+      this.chunks.clear();
+      this.rooms.clear();
+      this.laid.clear();
+    }
     for (const [key, chunk] of groupChunks(this.map(), this.world.chunkSize, keys)) {
       const empty = !chunk.tiles.length && !chunk.walls.length && !chunk.lights.length;
       const had = this.chunks.has(key);
@@ -253,20 +266,37 @@ export class SceneState {
 
   /** The scene's map: its own, then each part's laid at its place, drawn over what came before. */
   private map(): Chunk {
-    const map = mapOf(this.docs, this.id);
-    for (const part of this.parts) {
-      const laid = mapOf(this.docs, part.scene);
-      const under = map.tiles.length;
-      map.tiles.push(...laid.tiles.map((t) => ({ ...intoWhole('tiles', t, part), z: under + (t.z ?? 0) })));
-      map.walls.push(...laid.walls.map((w) => intoWhole('walls', w, part)));
-      map.lights.push(...laid.lights.map((l) => intoWhole('lights', l, part)));
-    }
+    const maps = [this.id, ...this.parts.map((p) => p.scene)].map((scene) => this.mapOf(scene));
+    return {
+      tiles: maps.flatMap((m) => m.tiles),
+      walls: maps.flatMap((m) => m.walls),
+      lights: maps.flatMap((m) => m.lights),
+    };
+  }
+
+  /** The map of the scene itself, or of one of its parts as it lies here. */
+  private mapOf(scene: string): Chunk {
+    const kept = this.laid.get(scene);
+    if (kept) return kept;
+    const part = this.parts.find((p) => p.scene === scene);
+    const own = ownMap(this.docs, scene);
+    const map = part ? partMap(own, part, partZ((this.scene.parts ?? []).indexOf(part))) : own;
+    this.laid.set(scene, map);
     return map;
   }
 }
 
+/** A part's map as it lies on the whole: moved to its place, its tiles drawn from `z` up. */
+function partMap(own: Chunk, part: ScenePart, z: number): Chunk {
+  return {
+    tiles: own.tiles.map((t) => ({ ...intoWhole('tiles', t, part), z: z + (t.z ?? 0) })),
+    walls: own.walls.map((w) => intoWhole('walls', w, part)),
+    lights: own.lights.map((l) => intoWhole('lights', l, part)),
+  };
+}
+
 /** One scene's own map, as its files hold it. */
-function mapOf(docs: DocStore, scene: string): Chunk {
+function ownMap(docs: DocStore, scene: string): Chunk {
   const items = (coll: MapCollection) => docs.all(`${scene}/${coll}`).map((d) => fromDoc(d));
   return {
     tiles: drawnTiles(docs.all(`${scene}/tiles`)),

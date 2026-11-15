@@ -6,6 +6,7 @@ import {
   type Chunk,
   intoPart,
   isGroup,
+  partZ,
   type SceneLevel,
   type ScenePart,
   tileOrder,
@@ -113,7 +114,8 @@ export class SceneBake implements SessionPart {
   get shown(): ShownBake[] {
     if (this.s.view3d.on || this.s.world?.view === '3d') return [];
     return this.layers.map(({ scene, bake, part, manifest }) => {
-      return { manifest, folder: `/assets/${bakeFolder(scene, bake)}`, x: part?.x ?? 0, y: part?.y ?? 0 };
+      const z = part ? partZ((this.s.world?.parts ?? []).findIndex((p) => p.scene === scene)) : 0;
+      return { manifest, folder: `/assets/${bakeFolder(scene, bake)}`, x: part?.x ?? 0, y: part?.y ?? 0, z };
     });
   }
 
@@ -305,6 +307,8 @@ export interface ShownBake {
   folder: string;
   x: number;
   y: number;
+  /** Where its scene's tiles start in the draw order: the picture lies just under them. */
+  z: number;
 }
 
 interface Switch {

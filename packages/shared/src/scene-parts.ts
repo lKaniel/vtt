@@ -11,6 +11,13 @@ import type { Chunk, ScenePart } from './schema.ts';
 /** What the id of a part's item is on the whole scene. */
 export const partId = (part: string, id: string): string => `${part}--${id}`;
 
+/**
+ * Where a part's tiles start in the whole scene's draw order: the scene's own
+ * tiles draw first, then each part's in the order of `parts`, so a change in
+ * one part moves no other's (`index`: the part's place in scene.json `parts`).
+ */
+export const partZ = (index: number): number => (index + 1) * 1_000_000;
+
 type Item<C extends MapCollection> = Chunk[C][number];
 type Loose = Record<string, unknown> & { id: string };
 

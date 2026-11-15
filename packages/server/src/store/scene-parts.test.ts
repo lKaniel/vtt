@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { Chunk } from '@vtt/shared';
+import { type Chunk, isIndoors } from '@vtt/shared';
 import { describe, expect, it } from 'vitest';
 import { makeCombined } from '../test/fixtures.ts';
 import { GameStore } from './game-store.ts';
@@ -59,6 +59,34 @@ describe('a combined scene', () => {
     await store.flush();
     const saved = JSON.parse(await readFile(join(dir, 'scenes/main/walls.json'), 'utf8')) as Chunk['walls'];
     expect(saved.find((w) => w.id === 'door')).toEqual({ id: 'door', a: [300, 100], b: [300, 200], door: 'open' });
+  });
+
+  it('knows the rooms of its parts, and draws each part over the one before', async () => {
+    const { store } = await city();
+    const tile = (id: string) => ({
+      id,
+      type: 'tile',
+      rev: 0,
+      kind: 'image',
+      src: '/a.webp',
+      x: -50,
+      y: -50,
+      w: 400,
+      h: 400,
+    });
+    store.applyOps([
+      { op: 'create', coll: 'main/tiles', doc: { ...tile('roof'), overhead: true } },
+      { op: 'create', coll: 'cellar/tiles', doc: tile('rug') },
+      { op: 'create', coll: 'city/tiles', doc: tile('square') },
+    ]);
+    store.inScene('city', () => {
+      const inside = (p: [number, number]) => store.indoors(undefined).some((area) => isIndoors(area, p));
+      expect(inside([4150, 150])).toBe(true);
+      expect(inside([150, 150])).toBe(false);
+      const z = new Map([...store.chunks.values()].flatMap((c) => c.tiles.map((t) => [t.id, t.z!])));
+      expect(z.get('square')!).toBeLessThan(z.get('main--roof')!);
+      expect(z.get('main--roof')!).toBeLessThan(z.get('cellar--rug')!);
+    });
   });
 
   it('follows its list of parts', async () => {
