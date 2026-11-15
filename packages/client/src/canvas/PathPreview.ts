@@ -33,6 +33,7 @@ import { t } from '../i18n/index.ts';
 import { snapFor } from '../play/interact.ts';
 import { interactSpot, type Snap } from '../play/snapping.ts';
 import { hoverAim, rangePlan } from '../play/walk-in-range.ts';
+import { laid } from '../session/laid-docs.ts';
 
 /** What the walk preview needs besides the scene: who and what the player knows of, and the movement left. */
 type WalkContext = Omit<WalkPlan, 'mover' | 'path' | 'gridSize' | 'grid'>;
@@ -287,7 +288,7 @@ export function showPreview(
   const world = session.world;
   if (!world) return preview.clear();
   const { token, hover } = at;
-  const regions = session.docs.all(`${session.scene}/regions`) as unknown as Region[];
+  const regions = laid(session, 'regions') as unknown as Region[];
   const ctx = {
     gridSize: world.gridSize,
     grid: gridKind(world),

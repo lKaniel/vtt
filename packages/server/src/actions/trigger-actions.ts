@@ -1,6 +1,8 @@
 import {
   canControl,
   doorAfter,
+  homeOf,
+  partId,
   type DrawnTile,
   type EngineServerMessage,
   isGm,
@@ -8,12 +10,12 @@ import {
   nextImage,
   type Player,
   type Point,
+  type ScenePart,
   tilesEntered,
   tileWorks,
   type TriggerAction,
 } from '@vtt/shared';
 import type { Token } from '@vtt/system-dnd5e';
-import { fromDoc } from '../store/doc-sync.ts';
 import { shareEntry } from './entry-actions.ts';
 import { moveSeats, sceneOf } from './scene-actions.ts';
 import { Refusal, type Table } from '../play/table.ts';
@@ -22,7 +24,9 @@ import { askedOf, TriggerChoices, userNear } from './trigger-asks.ts';
 // Tile triggers at work, like Monk's Active Tiles (triggers.ts in shared):
 // clicking a tile, or walking onto one, runs its actions in order. Regions
 // run the same actions as behaviours (region-actions.ts). A teleport takes
-// the token away, so the actions after it wait.
+// the token away, so the actions after it wait. On a combined scene
+// (scene-parts.ts) a part's tile works where it lies, and what its actions
+// name (a wall, a tile, a place) is its part's: `home` while they run.
 
 /** What triggers send out: chat, a sound for the scene, a journal entry opened for the players. */
 export interface TriggerOut {
@@ -41,12 +45,16 @@ export interface TriggerContext {
   token?: Token;
   /** The player who clicked it. */
   player?: string;
+  /** On a combined scene, the part the tile or region is of: its actions name that scene's things. */
+  part?: ScenePart;
 }
 
 type Act<T extends TriggerAction['type']> = (a: Extract<TriggerAction, { type: T }>, ctx: TriggerContext) => boolean;
 
 export class TriggerActions {
   private choices = new TriggerChoices<TriggerContext>();
+  /** The part whose actions run now. */
+  private home: ScenePart | undefined;
 
   constructor(
     private table: Table,
@@ -58,15 +66,17 @@ export class TriggerActions {
   }
 
   private coll(name: string): string {
-    return `${this.store.currentScene}/${name}`;
+    return `${this.home?.scene ?? this.store.currentScene}/${name}`;
   }
 
-  /** The tiles with a picture on the scene the store reads now. */
+  /** The part of the scene the store reads now that is scene `scene`. */
+  partOf(scene: string | undefined): ScenePart | undefined {
+    return scene ? this.store.world.parts?.find((p) => p.scene === scene) : undefined;
+  }
+
+  /** The tiles with a picture on the scene the store reads now, its parts' among them. */
   private tiles(): DrawnTile[] {
-    return this.store.docs
-      .all(this.coll('tiles'))
-      .map((d) => fromDoc<DrawnTile>(d))
-      .filter((t) => (t.kind as string) !== 'group');
+    return [...this.store.chunks.values()].flatMap((c) => c.tiles);
   }
 
   /** Someone clicked a tile, with one of their creatures (`token`) for the actions that move one. */
@@ -107,20 +117,33 @@ export class TriggerActions {
 
   private fire(tile: DrawnTile, token: Token | undefined, player?: string): boolean {
     const trigger = tile.trigger!;
+    const home = homeOf(this.store.currentScene, tile);
     if (trigger.once) {
       const patch = { trigger: { ...trigger, disabled: true } };
-      this.store.applyOps([{ op: 'update', coll: this.coll('tiles'), id: tile.id, patch }]);
+      this.store.applyOps([{ op: 'update', coll: `${home.scene}/tiles`, id: home.id, patch }]);
     }
-    return trigger.actions.some((a) => this.run(a, { tile: tile.id, token, ...(player && { player }) }));
+    const part = this.partOf(tile.part);
+    const ctx = { tile: home.id, token, ...(part && { part }), ...(player && { player }) };
+    return trigger.actions.some((a) => this.run(a, ctx));
   }
 
-  /** Runs one action; true when the token was taken away (a teleport). */
+  /** Runs one action, on the things of the part it is of; true when the token was taken away (a teleport). */
   run(action: TriggerAction, ctx: TriggerContext): boolean {
+    const before = this.home;
+    this.home = ctx.part;
+    try {
+      return this.act(action, ctx);
+    } finally {
+      this.home = before;
+    }
+  }
+
+  private act(action: TriggerAction, ctx: TriggerContext): boolean {
     const acts: { [T in TriggerAction['type']]: Act<T> } = {
       image: (a, c) => this.image(a.tile ?? c.tile, a.images),
       visibility: (a) => this.visibility(a.target, a.to),
       sound: (a) => this.sound(a.src, a.volume),
-      teleport: (a, c) => !!c.token && this.teleport(this.now(c.token), a.to, a.scene, a.level),
+      teleport: (a, c) => !!c.token && this.teleport(this.now(c.token), ...this.place(a.to, a.scene), a.level),
       level: (a, c) => !!c.token && this.ladder(this.now(c.token), a.to),
       stairs: (a, c) => !!c.token && this.stairs(this.now(c.token), a.between),
       door: (a) => this.door(a.wall, a.to),
@@ -134,6 +157,12 @@ export class TriggerActions {
       choice: (a, c) => this.ask(a, c),
     };
     return (acts[action.type] as Act<TriggerAction['type']>)(action, ctx);
+  }
+
+  /** Where a teleport leads: a place of a part is that place on the scene the part lies on. */
+  private place(to: Point, scene: string | undefined): [Point, string | undefined] {
+    const part = scene ? this.partOf(scene) : this.home;
+    return part ? [[to[0] + part.x, to[1] + part.y], undefined] : [to, scene];
   }
 
   /** The creature as it stands now: an earlier action may have moved it. */
@@ -222,16 +251,17 @@ export class TriggerActions {
 
   /** A lift: the tile (its model, when it has one) goes up or down, and the creatures standing on it with it. */
   private raiseTile(id: string, next: (now: number) => number): false {
-    const tile = this.tiles().find((t) => t.id === id);
-    const doc = this.store.docs.get(this.coll('tiles'), id);
-    if (tile && doc) this.lift(tile, doc.model as { elevation?: number } | undefined, next);
+    const laid = this.home ? partId(this.home.scene, id) : id;
+    const tile = this.tiles().find((t) => t.id === laid);
+    if (tile) this.lift(tile, id, next);
     return false;
   }
 
-  private lift(tile: DrawnTile, model: { elevation?: number } | undefined, next: (now: number) => number): void {
+  private lift(tile: DrawnTile, id: string, next: (now: number) => number): void {
+    const model = (tile as { model?: { elevation?: number } }).model;
     const was = model?.elevation ?? (tile as { elevation?: number }).elevation ?? 0;
     const to = next(was);
-    this.update('tiles', tile.id, model ? { model: { ...model, elevation: to } } : { elevation: to });
+    this.update('tiles', id, model ? { model: { ...model, elevation: to } } : { elevation: to });
     for (const t of [...this.store.tokens.values()].filter((t) => standsOn(t, tile, was)))
       this.store.setToken({ ...t, elevation: (t.elevation ?? 0) + to - was });
   }

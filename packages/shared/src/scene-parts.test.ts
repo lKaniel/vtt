@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Chunk, Wall } from './schema.ts';
-import { canBePart, intoPart, intoWhole, partErrors, partId } from './scene-parts.ts';
+import { canBePart, docIntoWhole, homeOf, intoPart, intoWhole, laidDocs, partErrors, partId } from './scene-parts.ts';
 
 const part = { scene: 'market', x: 3000, y: -1500 };
 
@@ -66,5 +66,57 @@ describe('scene parts', () => {
     ]);
     expect(partErrors('outer', scenes)).toEqual(['part "nest" is made of parts itself', 'part "nest" is placed twice']);
     expect(partErrors('market', scenes)).toEqual([]);
+  });
+});
+
+describe('the rest of a part: regions, notes, sounds and drawings', () => {
+  it('lays a document by its points or its place, under an id of its own', () => {
+    const region = {
+      id: 'mud',
+      points: [
+        [0, 0],
+        [100, 0],
+        [100, 100],
+      ],
+      behaviors: [],
+    };
+    expect(docIntoWhole(region, part)).toEqual({
+      id: 'market--mud',
+      part: 'market',
+      points: [
+        [3000, -1500],
+        [3100, -1500],
+        [3100, -1400],
+      ],
+      behaviors: [],
+    });
+    expect(docIntoWhole({ id: 'pin', x: 10, y: 20, label: 'Inn' }, part)).toEqual({
+      id: 'market--pin',
+      part: 'market',
+      x: 3010,
+      y: -1480,
+      label: 'Inn',
+    });
+  });
+
+  it('lists a collection of the whole scene: its own, then each part’s', () => {
+    const colls: Record<string, { id: string; x: number; y: number }[]> = {
+      'city/notes': [{ id: 'gate', x: 1, y: 2 }],
+      'market/notes': [{ id: 'pin', x: 10, y: 20 }],
+    };
+    const laid = laidDocs(
+      { id: 'city', parts: [part, { scene: 'docks', x: 0, y: 0 }] },
+      'notes',
+      (c) => colls[c] ?? [],
+    );
+    expect(laid).toEqual([
+      { id: 'gate', x: 1, y: 2 },
+      { id: 'market--pin', part: 'market', x: 3010, y: -1480 },
+    ]);
+  });
+
+  it('knows where an item of the whole scene is kept', () => {
+    expect(homeOf('city', { id: 'gate' })).toEqual({ scene: 'city', id: 'gate' });
+    expect(homeOf('city', { id: 'market--pin', part: 'market' })).toEqual({ scene: 'market', id: 'pin' });
   });
 });

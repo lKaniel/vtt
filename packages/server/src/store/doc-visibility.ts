@@ -22,7 +22,7 @@ import type { DocAccess, OwnedDoc } from './store-access.ts';
 // tables and chat macros shared with them (and their own macros; script macros are the GM's alone), the
 // card stacks they may see (limited: how many cards), the playlists playing now, and on the scene they
 // are on, what is drawn there for them: drawings, templates, notes, sounds
-// and the regions the GM shows (and every way between floors). Everyone gets the game clock, and the
+// and the regions the GM shows (and every way between floors), on a combined scene those of its parts too. Everyone gets the game clock, and the
 // folders that hold something they get.
 
 export interface Viewer {
@@ -92,7 +92,14 @@ export function sendsTo(v: Viewer, access: DocAccess, coll: string, doc: Doc): b
   if (coll.endsWith('/tokens')) return observed(v, access.owned(coll, doc));
   const at = sceneCollOf(coll);
   const rule = at && SCENE_RULES[at.name];
-  return !!rule && at.scene === v.scene && rule(v, access, doc);
+  return !!rule && onScene(v, access, at.scene) && rule(v, access, doc);
+}
+
+/** Whether `scene` is the scene the player is on, or a part laid on it (scene-parts.ts). */
+function onScene(v: Viewer, access: DocAccess, scene: string): boolean {
+  if (scene === v.scene) return true;
+  const parts = access.get('scenes', v.scene)?.parts as { scene: string }[] | undefined;
+  return !!parts?.some((p) => p.scene === scene);
 }
 
 /**

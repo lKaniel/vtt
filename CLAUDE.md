@@ -77,6 +77,9 @@ with `pnpm check-game data/games/<id>`.
   marked `part`), `chunkOps` saves a changed one back in its part
   (`intoPart`); tokens and fog are the whole scene's. Read a map item through
   `store.chunks`, never `docs.get` of the current scene, or parts are missed.
+  A part's regions, notes, sounds and drawings stay its documents and are
+  read through `laidDocs` (client: `laid()` in `session/laid-docs.ts`);
+  trigger actions run on their part's things (`TriggerContext.part`).
 - Explored fog of war is not a document: `fog-store.ts` keeps it per scene
   and player (bitmaps from `shared/fog.ts`), `fog-keeper.ts` explores after
   anything changes what a player sees, and GM fog edits join undo steps.
