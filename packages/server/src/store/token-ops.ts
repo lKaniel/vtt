@@ -13,7 +13,15 @@ import {
   type TokenEntry,
   unlinkToken,
 } from '@vtt/system-dnd5e';
-import { type Chunk, type ChunkChange, type Relink, uniqueId } from '@vtt/shared';
+import {
+  type Chunk,
+  type ChunkChange,
+  intoPart,
+  type MapCollection,
+  type Relink,
+  type ScenePart,
+  uniqueId,
+} from '@vtt/shared';
 import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
 import { ACTORS, MAP, TYPE } from './store-colls.ts';
 
@@ -109,26 +117,50 @@ export function actorDeleteOps(
   );
 }
 
-/** Ops that save map edits given as whole chunks on `scene`: items that left them are deleted. */
+/** Where a scene's map is saved: its own collections, and those of the scenes laid on it (scene-parts.ts). */
+export interface MapHome {
+  id: string;
+  parts: readonly ScenePart[];
+}
+
+interface MapItem {
+  id: string;
+  z?: number;
+  part?: string;
+}
+
+/** The collection an item of a scene's map is saved in, and the item as saved there: a part's item goes back to its part. */
+function savedIn(
+  scene: MapHome,
+  coll: MapCollection,
+  { z: _z, ...item }: MapItem,
+): { name: string; item: { id: string } } {
+  const part = item.part === undefined ? undefined : scene.parts.find((p) => p.scene === item.part);
+  if (part) return { name: `${part.scene}/${coll}`, item: intoPart(coll, item as never, part) };
+  const { part: _part, ...own } = item;
+  return { name: `${scene.id}/${coll}`, item: own };
+}
+
+/**
+ * The ops that save map edits given as whole chunks: every item of the new
+ * chunks is put, and those the old chunks held that are gone are deleted.
+ */
 export function chunkOps(
   docs: DocStore,
-  scene: string,
+  scene: MapHome,
   changes: readonly ChunkChange[],
   chunks: ReadonlyMap<string, Chunk>,
 ): Op[] {
   return MAP.flatMap((coll) => {
-    const name = `${scene}/${coll}`;
-    const items = (chunk: Chunk | undefined): { id: string }[] => chunk?.[coll] ?? [];
+    const items = (chunk: Chunk | undefined): MapItem[] => chunk?.[coll] ?? [];
     // `z` is where a tile draws, worked out when the scene is streamed: not saved.
-    const wanted = changes
-      .flatMap((c) => items(c.chunk))
-      .map(({ z: _z, ...item }: { id: string; z?: number }) => toDoc(TYPE[coll], item));
-    const ids = new Set(wanted.map((d) => d.id));
-    const current = changes.flatMap((c) => items(chunks.get(c.key))).map((item) => item.id);
-    const gone = current.filter((id) => !ids.has(id) && docs.get(name, id));
+    const wanted = changes.flatMap((c) => items(c.chunk)).map((item) => savedIn(scene, coll, item));
+    const kept = new Set(wanted.map((w) => `${w.name}\u0000${w.item.id}`));
+    const current = changes.flatMap((c) => items(chunks.get(c.key))).map((item) => savedIn(scene, coll, item));
+    const gone = current.filter((c) => !kept.has(`${c.name}\u0000${c.item.id}`) && docs.get(c.name, c.item.id));
     return [
-      ...wanted.flatMap((doc) => putOps(docs, name, doc)),
-      ...gone.map((id): Op => ({ op: 'delete', coll: name, id })),
+      ...wanted.flatMap((w) => putOps(docs, w.name, toDoc(TYPE[coll], w.item))),
+      ...gone.map((c): Op => ({ op: 'delete', coll: c.name, id: c.item.id })),
     ];
   });
 }

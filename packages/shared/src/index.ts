@@ -56,3 +56,4 @@ export * from './walking.ts';
 export * from './roll-modes.ts';
 export * from './folders.ts';
 export * from './scene-bake.ts';
+export * from './scene-parts.ts';

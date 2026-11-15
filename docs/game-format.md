@@ -248,6 +248,42 @@ those stays live too, so the order on the map holds. A baked tile changed
 after the bake is drawn as it is now, over the picture, and the GM's
 top bar offers to optimise again.
 
+### Combined scenes
+
+A scene can be made of other scenes laid on it, each at its own place: a
+city of quarters. List them in scene.json:
+
+```json
+{
+  "name": "Sunshade Heaven",
+  "gridSize": 150,
+  "parts": [
+    { "scene": "market-quarter", "x": 0, "y": 0 },
+    { "scene": "holy-quarter", "x": 0, "y": -30000 }
+  ]
+}
+```
+
+`x`, `y` is where the part's corner (its 0, 0) lies, in pixels. The scene is
+played as one map: the server lays every part's tiles, walls and lights on
+it, after the scene's own (so a part draws over the scene's ground, and a
+later part over an earlier one). Tokens, fog, drawings, notes, regions and
+sounds are the combined scene's own; put them in its files. A part stays a
+scene: change its tiles, walls and lights in its own files (or in the game,
+Scenes > Settings > Parts > Edit), and the combined scene follows at once.
+A door opened on the combined scene is saved in its part.
+
+A part must be another scene of the game with the same `gridSize`, laid
+once, with no parts of its own; `check-game` names the ones that are not.
+Its ids on the combined scene are `<part>--<id>`. Not yet carried over: a
+part's tile triggers, regions, sounds, notes and drawings act only when the
+part is played by itself.
+
+**Optimise** on a combined scene bakes each part into its own
+`assets/baked/<part>/`, skipping the parts unchanged since their last bake,
+and the map draws those pictures side by side: every part keeps its full
+sharpness however big the whole is.
+
 ### The 3D view
 
 A scene is a flat map or a 3D scene, and says which: `"view": "3d"` makes

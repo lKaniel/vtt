@@ -71,6 +71,12 @@ with `pnpm check-game data/games/<id>`.
   the game's. `Game` runs each client message inside `inScene(client.scene)`,
   so rules code never takes a scene argument. Seats sit on a scene
   (`sceneOf` in `scene-actions.ts`).
+- Combined scenes (`shared/scene-parts.ts`, "Combined scenes" in the format
+  doc): a scene's `parts` lay other scenes on it. `SceneState.map()` merges
+  each part's tiles, walls and lights (`intoWhole`: moved, id `<part>--<id>`,
+  marked `part`), `chunkOps` saves a changed one back in its part
+  (`intoPart`); tokens and fog are the whole scene's. Read a map item through
+  `store.chunks`, never `docs.get` of the current scene, or parts are missed.
 - Explored fog of war is not a document: `fog-store.ts` keeps it per scene
   and player (bitmaps from `shared/fog.ts`), `fog-keeper.ts` explores after
   anything changes what a player sees, and GM fog edits join undo steps.

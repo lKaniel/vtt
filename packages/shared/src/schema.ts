@@ -67,6 +67,13 @@ export const DarknessBandSchema = z.tuple([z.number().min(0).max(1), z.number().
 /** The scene level a map item is on (scene.json `levels`), or the several it is on; neither = on every level. */
 export const OnLevelShape = { level: id.optional(), levels: z.array(id).optional() };
 
+/** On a combined scene, the part (a scene) an item streamed to clients comes from; set by the server, never saved (scene-parts.ts). */
+const fromPart = { part: id.optional() };
+
+/** A scene laid on another as one of its parts, its corner at `x`, `y` (scene-parts.ts). */
+export const ScenePartSchema = z.object({ scene: id, x: z.number(), y: z.number() });
+export type ScenePart = z.infer<typeof ScenePartSchema>;
+
 /** How the 3D view shows a scene. */
 export const View3DSettingsSchema = z.object({
   /** A picture of the sky all round (equirectangular, like a panorama). */
@@ -134,6 +141,8 @@ export const SceneSettingsSchema = z.object({
     .optional(),
   /** The map shows the bake instead of the tiles in it (the GM's Optimise); missing or false: edit mode, every tile drawn. */
   optimised: z.boolean().optional(),
+  /** A combined scene: other scenes laid on this one, played as one map and each edited by itself (scene-parts.ts). */
+  parts: z.array(ScenePartSchema).optional(),
 });
 
 /** The table settings the rules and the client use: the game's, plus those of the scene being played. */
@@ -161,6 +170,7 @@ const tileTree = {
   /** Clicks and marquees pass through it; select it in the layers panel. */
   locked: z.boolean().optional(),
   ...OnLevelShape,
+  ...fromPart,
 };
 
 const tileBase = {
@@ -343,6 +353,7 @@ export const WallSchema = z.preprocess(
     height: z.object({ bottom: z.number().optional(), top: z.number().optional() }).optional(),
     ...onTile,
     ...OnLevelShape,
+    ...fromPart,
   }),
 );
 export type Wall = z.infer<typeof WallSchema>;
@@ -384,6 +395,7 @@ export const PlacedLightSchema = LightSchema.extend({
   y: z.number(),
   ...onTile,
   ...OnLevelShape,
+  ...fromPart,
   /** Shines only while the scene's darkness is in this band ("only at night"). */
   activeAt: DarknessBandSchema.optional(),
   /** Put out: it doesn't shine until a trigger (or the GM) lights it again. */

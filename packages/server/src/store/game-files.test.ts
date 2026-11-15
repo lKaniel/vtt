@@ -98,6 +98,14 @@ describe('crossCheck', () => {
     ]);
   });
 
+  it('names the parts of a combined scene that cannot be laid on it', () => {
+    const base = state([]);
+    const city = { ...base.scenes.get('main')!, scene: SceneSchema.parse({ parts: [{ scene: 'gone', x: 0, y: 0 }] }) };
+    expect(crossCheck({ ...base, scenes: new Map([...base.scenes, ['city', city]]) }, dnd5e)).toEqual([
+      { file: 'scenes/city/scene.json', message: 'part "gone" is not a scene of this game' },
+    ]);
+  });
+
   it('names a player whose character is not an actor', () => {
     const base = state([]).game;
     const game = {

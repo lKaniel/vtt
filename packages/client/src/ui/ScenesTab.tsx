@@ -19,6 +19,7 @@ import { WeatherFields } from './WeatherFields.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './kit/tabs.tsx';
 import { MediaInput } from './MediaPicker.tsx';
 import { SceneFloors } from './SceneFloors.tsx';
+import { SceneParts } from './SceneParts.tsx';
 
 /**
  * GM: the game's scenes, in folders. A click views one (to prepare it)
@@ -65,12 +66,16 @@ export function ScenesTab({ session }: Readonly<{ session: Session }>) {
               <TabsList>
                 <TabsTrigger value="general">{t('sceneSettings.general')}</TabsTrigger>
                 <TabsTrigger value="floors">{t('sceneSettings.floors')}</TabsTrigger>
+                <TabsTrigger value="parts">{t('sceneSettings.parts')}</TabsTrigger>
               </TabsList>
               <TabsContent value="general">
                 <SceneSettings session={session} doc={open} />
               </TabsContent>
               <TabsContent value="floors">
                 <SceneFloors session={session} doc={open} />
+              </TabsContent>
+              <TabsContent value="parts">
+                <SceneParts session={session} doc={open} />
               </TabsContent>
             </Tabs>
           </DialogContent>

@@ -1,4 +1,4 @@
-import { DocStore } from '@vtt/core';
+import { DocStore, type Op } from '@vtt/core';
 import type { BakeManifest, WorldInfo } from '@vtt/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { tilePrint } from '../canvas/bake-plan.ts';
@@ -18,11 +18,12 @@ const manifest: BakeManifest = {
   groups: [{ x: 0, y: 0, w: 100, h: 100, zooms: 1, tiles: { floor: tilePrint({ ...tile, z: 0 }) }, blocks: [['0_0']] }],
 };
 
-function setup(world: Partial<WorldInfo> = {}, gm = true) {
+function setup(world: Partial<WorldInfo> = {}, gm = true, more: readonly Op[] = []) {
   const docs = new DocStore();
   docs.apply([
     { op: 'create', coll: 'cave/tiles', doc: { ...tile, type: 'tile', rev: 0 } },
     { op: 'create', coll: 'scenes', doc: { id: 'cave', type: 'scene', rev: 0 } },
+    ...more,
   ]);
   const sent: unknown[] = [];
   const errors: string[] = [];
@@ -121,5 +122,48 @@ describe('optimise and edit', () => {
     expect(setup().bake.canOptimise).toBe(true);
     expect(setup({}, false).bake.canOptimise).toBe(false);
     expect(setup({ view: '3d' }).bake.canOptimise).toBe(false);
+  });
+});
+
+/** A scene with the one tile, to lay on the cave as a part. */
+const partScene = (id: string, bake?: string): Op[] => [
+  { op: 'create', coll: `${id}/tiles`, doc: { ...tile, type: 'tile', rev: 0 } },
+  { op: 'create', coll: 'scenes', doc: { id, type: 'scene', rev: 0, ...(bake && { bake }) } },
+];
+const market = { scene: 'market', x: 1000, y: 500 };
+const docks = { scene: 'docks', x: 0, y: 3000 };
+
+describe('a combined scene', () => {
+  it('draws the pictures of its parts where they lie', async () => {
+    const world = { optimised: true, parts: [market, docks], partBakes: { market: 'm1' } };
+    const { bake, read } = setup(world, true, [...partScene('market', 'm1'), ...partScene('docks')]);
+    bake.welcome();
+    await flush();
+    expect(read.mock.calls).toEqual([['market', 'm1']]);
+    expect(bake.optimised).toBe(true);
+    expect(bake.shown).toEqual([{ manifest, folder: '/assets/baked/market/m1', x: 1000, y: 500, z: 1_000_000 }]);
+    const laid = { ...tile, id: 'market--floor', part: 'market', x: 1000, y: 500, z: 3 };
+    expect(bake.baked(laid)).toBe(true);
+    expect(bake.baked({ ...laid, tint: '#ff0000' })).toBe(false);
+    expect(bake.baked({ ...tile, id: 'docks--floor', part: 'docks', x: 0, y: 3000, z: 4 })).toBe(false);
+    expect(bake.baked({ ...tile, z: 0 })).toBe(false);
+  });
+
+  it('optimises the parts that changed since their bake, and leaves the others', async () => {
+    const world = { parts: [market, docks], partBakes: { docks: 'd1' } };
+    const { bake, sent, updates, run } = setup(world, true, [...partScene('market'), ...partScene('docks', 'd1')]);
+    const done = bake.optimise();
+    for (let i = 0; i < 2; i++) {
+      await flush();
+      bake.receive({ t: 'bakeSaved', ref: (sent[i] as { ref: string }).ref });
+    }
+    await done;
+    expect((sent as { scene: string }[]).map((m) => m.scene)).toEqual(['cave', 'market']);
+    expect(run).toHaveBeenCalledTimes(2);
+    const id = (i: number) => (sent[i] as { bake: string }).bake;
+    expect(updates).toHaveBeenCalledWith('optimise scene', [
+      { ref: { coll: 'scenes', id: 'cave' }, patch: { optimised: true, bake: id(0) } },
+      { ref: { coll: 'scenes', id: 'market' }, patch: { optimised: true, bake: id(1) } },
+    ]);
   });
 });

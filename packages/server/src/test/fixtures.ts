@@ -105,3 +105,21 @@ export async function savedToken(dir: string, id: string): Promise<Token | undef
   const actor = raw.actor ? ActorSchema.parse(await read(`actors/${raw.actor}.json`)) : undefined;
   return resolveToken(raw, actor).token;
 }
+
+/**
+ * The two-scene game with a third scene, "city", made of the other two:
+ * "main" laid 4000 px to the east and "cellar" 4000 px to the south, plus a
+ * wall and a guard of its own.
+ */
+export async function makeCombined(): Promise<string> {
+  const parts = [
+    { scene: 'main', x: 4000, y: 0 },
+    { scene: 'cellar', x: 0, y: 4000 },
+  ];
+  const city = {
+    'scenes/city/scene.json': { name: 'City', darkness: 0, parts },
+    'scenes/city/walls.json': [{ id: 'own', a: [0, 0], b: [100, 0] }],
+    'scenes/city/tokens.json': [{ id: 'guard', name: 'Guard', x: 4150, y: 150 }],
+  };
+  return folder(city, await makeTwoScenes());
+}

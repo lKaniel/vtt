@@ -39,14 +39,25 @@ class FloorPicture {
   private loading = 0;
   private frame = 0;
 
+  /** `at`: where the bake's scene lies on the map (a part of a combined scene), else its corner. */
   constructor(
     readonly group: BakeGroup,
     private readonly url: (key: string) => string,
     private readonly scale: number,
-  ) {}
+    readonly at: { x: number; y: number; z: number },
+  ) {
+    this.root.position.set(at.x, at.y);
+  }
 
-  show(view: Rect, screenPerMap: number): void {
+  /** The part of the map the picture covers. */
+  get bounds(): Rect {
+    const { x, y, w, h } = this.group;
+    return { x: x + this.at.x, y: y + this.at.y, w, h };
+  }
+
+  show(seen: Rect, screenPerMap: number): void {
     this.frame++;
+    const view = { ...seen, x: seen.x - this.at.x, y: seen.y - this.at.y };
     const loaded = (key: string) => !!this.blocks.get(key)?.texture;
     const { want, show } = blocksToShow(this.group, { scale: this.scale, screenPerMap, view }, loaded);
     for (const key of want) this.fetch(key);
@@ -129,14 +140,11 @@ export class BakedGround {
     if (this.version === this.session.bake.version) return;
     this.version = this.session.bake.version;
     for (const f of this.floors) f.destroy();
-    const shown = this.session.bake.shown;
-    if (!shown) {
-      this.floors = [];
-      return;
-    }
-    const { manifest, folder } = shown;
-    this.floors = manifest.groups.map(
-      (group, i) => new FloorPicture(group, (key) => assetUrl(`${folder}/${i}/${key}.${manifest.ext}`), manifest.scale),
+    this.floors = this.session.bake.shown.flatMap(({ manifest, folder, x, y, z }) =>
+      manifest.groups.map((group, i) => {
+        const url = (key: string) => assetUrl(`${folder}/${i}/${key}.${manifest.ext}`);
+        return new FloorPicture(group, url, manifest.scale, { x, y, z });
+      }),
     );
   }
 
@@ -151,8 +159,7 @@ export class BakedGround {
       const [placed] = tilesOnFloor([{ ...probe, ...level }], levels, shown, current);
       // Seen from below, its tiles are drawn as roofs instead (they no longer match the bake).
       if (!placed || (placed.kind === 'image' && placed.overhead)) return [];
-      const { x, y, w, h } = f.group;
-      return [{ id: probe.id, z: placed.z!, still: false as const, root: f.root, bounds: { x, y, w, h } }];
+      return [{ id: probe.id, z: placed.z! + f.at.z, still: false as const, root: f.root, bounds: f.bounds }];
     });
   }
 

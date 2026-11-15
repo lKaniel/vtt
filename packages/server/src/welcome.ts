@@ -1,4 +1,4 @@
-import { chatFor, type HistoryState, isGm, type Player, type WorldInfo } from '@vtt/shared';
+import { chatFor, type HistoryState, isGm, type Player, type ScenePart, type WorldInfo } from '@vtt/shared';
 import type { ChatMessage, ServerMessage, Token, TokenView } from '@vtt/system-dnd5e';
 import type { DocFeed } from './store/doc-feed.ts';
 import type { GameStore } from './store/game-store.ts';
@@ -29,12 +29,24 @@ export function startOf(store: GameStore, c: Joining): string {
     store.activeScene,
     withoutSettings(c.player),
     world,
+    partBakes(store, world.parts),
     store.sceneName(c.scene),
     seats,
     store.campaign.packs,
     store.campaign.plugins,
   ];
   return JSON.stringify(parts);
+}
+
+/** The last bake of each scene laid on a combined scene, by the part's id; undefined on a scene without parts. */
+function partBakes(store: GameStore, parts: readonly ScenePart[] | undefined): Record<string, string> | undefined {
+  if (!parts?.length) return undefined;
+  const out: Record<string, string> = {};
+  for (const { scene } of parts) {
+    const bake = store.docs.get('scenes', scene)?.bake;
+    if (typeof bake === 'string') out[scene] = bake;
+  }
+  return out;
 }
 
 export interface WelcomeParts {
@@ -49,7 +61,8 @@ export interface WelcomeParts {
 /** The welcome, then the rules content of the game's packs. */
 export function welcomeOf(store: GameStore, c: Joining, parts: WelcomeParts): ServerMessage[] {
   const { players: _players, ...world } = store.inScene(c.scene, () => store.world);
-  const info: WorldInfo = world;
+  const bakes = partBakes(store, world.parts);
+  const info: WorldInfo = bakes ? { ...world, partBakes: bakes } : world;
   const player = c.player;
   const gm = isGm(player);
   const tokens = store.inScene(c.scene, () => [...c.visible].map((id) => store.tokens.get(id)!));

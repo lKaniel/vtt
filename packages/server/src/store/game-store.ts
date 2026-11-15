@@ -322,7 +322,7 @@ export class GameStore extends EventEmitter<StoreEvents> {
 
   /** Saves map edits given as whole chunks (see applyMapEdit): items that left them are deleted. */
   setChunks(changes: readonly ChunkChange[]): void {
-    this.commit(chunkOps(this.docs, this.here.id, changes, this.here.chunks));
+    this.commit(chunkOps(this.docs, this.here, changes, this.here.chunks));
   }
 
   /**
@@ -415,9 +415,10 @@ export class GameStore extends EventEmitter<StoreEvents> {
     const [scene, coll] = t.coll.split('/') as [string, string];
     const state = this.states.get(scene);
     if (!state) return;
-    const add = (map: Map<string, Set<string>>) => map.get(scene) ?? map.set(scene, new Set()).get(scene)!;
-    if (coll === 'tokens') add(into.moved).add(t.id);
-    else state.chunkKeys(t, add(into.keys));
+    const add = (map: Map<string, Set<string>>, id: string) => map.get(id) ?? map.set(id, new Set()).get(id)!;
+    if (coll === 'tokens') add(into.moved, scene).add(t.id);
+    // A scene it is a part of shows a map change too (chunkKeys leaves out what isn't on the scene).
+    else for (const s of this.states.values()) s.chunkKeys(t, add(into.keys, s.id));
   }
 
   private projectActor(id: string): void {

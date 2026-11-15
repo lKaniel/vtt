@@ -41,6 +41,7 @@ import {
   type World,
   worldOf,
   type Player,
+  partErrors,
 } from '@vtt/shared';
 import type { z } from 'zod';
 import { toDoc } from './doc-sync.ts';
@@ -325,10 +326,12 @@ export function crossCheck(state: GameState, system = SYSTEMS.get(state.game.sys
   const active = scenes.get(game.scene);
   if (!active) out.push({ file: 'game.json', message: `scene "${game.scene}" has no folder in scenes/` });
   const players = new Set(game.players.map((p) => p.id));
+  const parts = new Map([...scenes].map(([id, s]) => [id, s.scene]));
   for (const [id, s] of scenes) {
     const refs = { players, world: worldOf(game, s.scene), system, content };
     out.push(...sceneTokenIssues(id, s, state, refs), ...sceneTileIssues(id, s.tiles), ...fastenedIssues(id, s));
     out.push(...sceneItemIssues(id, s as never, sceneRefs(state, s.scene)));
+    out.push(...partErrors(id, parts).map((message) => ({ file: `scenes/${id}/scene.json`, message })));
   }
   const refs = { players, world: worldOf(game, active?.scene ?? SceneSchema.parse({})), system, content };
   for (const a of actors.values()) {
