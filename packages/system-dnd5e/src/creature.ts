@@ -402,9 +402,11 @@ function creatureAttacks(
     training,
   }: { abilities: Abilities; proficiency: number; ammo: number; training: Training },
 ): Attack[] {
-  const fromWeapons = weapons.map((w) =>
-    withWeaponMagic(weaponAttack(w, abilities, trainedWithWeapon(training, w) ? proficiency : 0), w, ammo),
-  );
+  const level = characterLevel(stats) ?? 0;
+  const fromWeapons = weapons.map((w) => {
+    const trained = trainedWithWeapon(training, w) ? proficiency : 0;
+    return withWeaponMagic(weaponAttack(w, { abilities, proficiency: trained, level }), w, ammo);
+  });
   const natural = monster?.attacks ?? (fromWeapons.length ? [] : [unarmedStrike(abilities, proficiency)]);
   return [...natural, ...fromWeapons, ...offHandAttacks(fromWeapons, abilities), ...(stats.attacks ?? [])];
 }

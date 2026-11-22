@@ -1,7 +1,8 @@
 import { LightSchema } from '@vtt/shared';
 import { z } from 'zod';
 import { AbilitySchema, EffectTemplateSchema } from './spell-schema.ts';
-import { DamageSchema, RangeSchema, WeaponPropertySchema, WeaponRiderSchema } from './stats-schema.ts';
+import { DamageSchema, OnHitSchema, RangeSchema, WeaponPropertySchema, WeaponRiderSchema } from './stats-schema.ts';
+import { weaponFormulaProblem } from './weapon-formula.ts';
 
 // Weapons, armor and gear, mundane and magic. The SRD's are generated into
 // content/srd/items-5.x.json (import-srd) with hand automation from
@@ -26,6 +27,24 @@ export const ItemCastSchema = z.object({
   daily: z.boolean().optional(),
 });
 export type ItemCast = z.infer<typeof ItemCastSchema>;
+
+/** A formula the weapon rolls by, checked as it is read: `kind` says whether dice belong in it. */
+const formula = (kind: 'damage' | 'hit') =>
+  z
+    .string()
+    .trim()
+    .min(1)
+    .max(200)
+    .refine((src) => !weaponFormulaProblem(src, kind), {
+      error: (issue) => weaponFormulaProblem(String(issue.input), kind) ?? 'Unreadable formula',
+    });
+
+/**
+ * A weapon that rolls by its own formulas instead of the usual ability
+ * modifier and proficiency (weapon-formula.ts): `damage` like
+ * "1d10 psychic + 1d6 fire + 2*dex + prof", `hit` like "dex + prof + 1".
+ */
+export const WeaponFormulaSchema = z.object({ damage: formula('damage').optional(), hit: formula('hit').optional() });
 
 const itemBase = {
   id,
@@ -103,6 +122,10 @@ export const ItemSchema = z.discriminatedUnion('type', [
     hitDamage: z.array(WeaponRiderSchema).optional(),
     /** The weapon it is made from (a longsword for a flame tongue longsword). */
     base: id.optional(),
+    /** Its own damage and attack formulas, in place of the ability modifier and proficiency. */
+    formula: WeaponFormulaSchema.optional(),
+    /** What rides on its hit: a save, more damage, conditions (a venomous blade). */
+    onHit: OnHitSchema.optional(),
   }),
   z.object({
     type: z.literal('armor'),

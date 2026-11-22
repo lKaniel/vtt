@@ -1,15 +1,15 @@
 import { diceFormula } from '@vtt/shared';
-import { DamageTypeSchema, type Item, ItemSchema, WeaponPropertySchema } from '@vtt/system-dnd5e';
+import { type Item, ItemSchema, RaritySchema } from '@vtt/system-dnd5e';
 import { t } from '../../i18n/index.ts';
 import { Checkbox } from '../kit/checkbox.tsx';
 import { Input } from '../kit/input.tsx';
 import { NumberField } from '../kit/number-field.tsx';
 import { SelectField } from '../kit/select.tsx';
 import { Textarea } from '../kit/textarea.tsx';
-import { Toggle } from '../kit/toggle.tsx';
+import { ChangeRows } from './ChangeRows.tsx';
 import { type Checks, choices, Field, Problem, useChecked, NameField } from './fields.tsx';
+import { WeaponFields } from './WeaponForm.tsx';
 
-type Weapon = Extract<Item, { type: 'weapon' }>;
 type Armor = Extract<Item, { type: 'armor' }>;
 type Gear = Extract<Item, { type: 'gear' }>;
 
@@ -82,6 +82,7 @@ export function ItemForm({ item, onSave }: Readonly<{ item: Item; onSave: (item:
       {draft.type === 'gear' && <GearFields gear={draft} change={change} />}
       {draft.type === 'weapon' && <WeaponFields weapon={draft} change={change} />}
       {draft.type === 'armor' && <ArmorFields armor={draft} change={change} />}
+      <MagicFields item={draft} change={change} />
       <div className="col-span-2">
         <Problem text={problem} />
       </div>
@@ -107,85 +108,6 @@ function GearFields({ gear, change }: Readonly<{ gear: Gear; change: (p: Partial
           onCheckedChange={(on) => change({ use: { ...use, potion: on === true } })}
         />
       </Field>
-      <Field label="Description" wide>
-        <Textarea
-          rows={4}
-          value={gear.description ?? ''}
-          onChange={(e) => change({ description: e.target.value || undefined })}
-        />
-      </Field>
-    </>
-  );
-}
-
-function WeaponFields({ weapon, change }: Readonly<{ weapon: Weapon; change: (p: Partial<Weapon>) => void }>) {
-  const toggle = (p: Weapon['properties'][number]) =>
-    change({
-      properties: weapon.properties.includes(p) ? weapon.properties.filter((x) => x !== p) : [...weapon.properties, p],
-    });
-  return (
-    <>
-      <Field label={t('item.form.damageDice')}>
-        <Input
-          value={weapon.damage.dice}
-          placeholder="e.g. 1d10"
-          onChange={(e) => change({ damage: { ...weapon.damage, dice: e.target.value } })}
-        />
-      </Field>
-      <Field label="Damage type">
-        <SelectField
-          value={weapon.damage.type}
-          onValueChange={(t) => change({ damage: { ...weapon.damage, type: t as Weapon['damage']['type'] } })}
-          options={choices(DamageTypeSchema.options)}
-        />
-      </Field>
-      <Field label="Category">
-        <SelectField
-          value={weapon.category}
-          onValueChange={(c) => change({ category: c as Weapon['category'] })}
-          options={choices(['simple', 'martial'])}
-        />
-      </Field>
-      <Field label="Melee or ranged">
-        <SelectField
-          value={weapon.kind}
-          onValueChange={(k) => change({ kind: k as Weapon['kind'], range: k === 'ranged' ? [80, 320] : undefined })}
-          options={choices(['melee', 'ranged'])}
-        />
-      </Field>
-      <Field label={t('item.form.magicBonus')}>
-        <NumberField
-          value={weapon.plus ?? 0}
-          min={0}
-          max={3}
-          onValueChange={(plus) => change({ plus: plus || undefined })}
-        />
-      </Field>
-      {weapon.kind === 'ranged' && <RangeFields weapon={weapon} change={change} />}
-      <p className="col-span-2 text-xs text-muted-foreground">{t('item.form.weaponNote')}</p>
-      <Field label="Properties" wide>
-        <div className="flex flex-wrap gap-1.5">
-          {WeaponPropertySchema.options.map((p) => (
-            <Toggle key={p} pressed={weapon.properties.includes(p)} onPressedChange={() => toggle(p)}>
-              {p}
-            </Toggle>
-          ))}
-        </div>
-      </Field>
-    </>
-  );
-}
-
-function RangeFields({ weapon, change }: Readonly<{ weapon: Weapon; change: (p: Partial<Weapon>) => void }>) {
-  const [near, far] = weapon.range ?? [80, 320];
-  return (
-    <>
-      <Field label={t('item.form.range')}>
-        <NumberField value={near} min={5} step={5} onValueChange={(n) => change({ range: [n, Math.max(n, far)] })} />
-      </Field>
-      <Field label={t('item.form.longRange')}>
-        <NumberField value={far} min={near} step={5} onValueChange={(n) => change({ range: [near, n] })} />
-      </Field>
     </>
   );
 }
@@ -207,6 +129,45 @@ function ArmorFields({ armor, change }: Readonly<{ armor: Armor; change: (p: Par
         <Checkbox
           checked={armor.stealthDisadvantage}
           onCheckedChange={(on) => change({ stealthDisadvantage: on === true })}
+        />
+      </Field>
+    </>
+  );
+}
+
+/** What every item may be: described, magic, rare, attuned, and what it does while equipped. */
+function MagicFields({ item, change }: Readonly<{ item: Item; change: (p: Partial<Item>) => void }>) {
+  const changes = item.effect?.changes ?? [];
+  const setChanges = (next: typeof changes) => {
+    const effect = { ...item.effect, changes: next.length ? next : undefined };
+    change({ effect: Object.values(effect).some((v) => v !== undefined) ? effect : undefined });
+  };
+  return (
+    <>
+      <Field label={t('item.form.rarity')}>
+        <SelectField
+          value={item.rarity ?? ''}
+          onValueChange={(r) => change({ rarity: (r || undefined) as Item['rarity'] })}
+          options={[{ value: '', label: t('item.form.noRarity') }, ...choices(RaritySchema.options)]}
+        />
+      </Field>
+      <Field label={t('item.form.magic')}>
+        <Checkbox checked={item.magic === true} onCheckedChange={(on) => change({ magic: on === true || undefined })} />
+      </Field>
+      <Field label={t('item.form.attunement')}>
+        <Checkbox
+          checked={item.attunement === true}
+          onCheckedChange={(on) => change({ attunement: on === true || undefined })}
+        />
+      </Field>
+      <Field label={t('item.form.whileEquipped')} wide>
+        <ChangeRows changes={changes} onChange={setChanges} />
+      </Field>
+      <Field label={t('item.form.description')} wide>
+        <Textarea
+          rows={4}
+          value={item.description ?? ''}
+          onChange={(e) => change({ description: e.target.value || undefined })}
         />
       </Field>
     </>

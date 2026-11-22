@@ -1188,6 +1188,16 @@ They join the game's content like a pack's: sheets carry them by id and
 the Compendium lists them under Homebrew. The Foundry import makes them
 from the world's Items sidebar.
 
+**Weapons by formula.** A weapon may roll by its own formulas instead of
+the usual ability modifier and proficiency: `"formula": { "damage": "1d10
+psychic + 1d6 fire + 2*dex + prof", "hit": "dex + prof + 1" }`. Each typed
+die is its own damage part; numbers and untyped dice go with the first, in
+the weapon's `damage.type`. Names: `str` ... `cha` (modifiers), `mod` (the
+attack's ability), `prof` (0 when not trained), `level`; `+ - * /` and
+brackets. A magic `plus` still adds on top. `onHit` (as on a monster
+attack: `save`, `damage`, `half`, `conditions`, `rounds`, `repeatSave`)
+rides on its hits (`weapon-formula.ts`, `gear-attacks.ts`).
+
 **Encounters and experience.** The GM's Encounter button (beside Start
 combat) weighs the monsters on the scene against the party: the
 player-owned characters with class levels. In 2014 rules the monsters' XP

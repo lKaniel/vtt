@@ -123,6 +123,21 @@ test('the GM edits a carried weapon from its attack row, typing the dice on a Uk
   await expect(attacks.getByRole('listitem', { name: 'Longsword' })).toContainText('1d10+3');
 });
 
+test('the GM gives a weapon a damage formula with two damage types and an attack formula', async ({ page }) => {
+  await atTable(page, GM);
+  const sheet = await openBram(page);
+  const attacks = sheet.getByRole('region', { name: 'Attacks' });
+  await attacks.getByRole('button', { name: 'Edit Longsword' }).click();
+  const editor = page.getByRole('dialog', { name: /Longsword/ });
+  await editor.getByLabel('Damage formula').fill('1d8 slashing + 1d6 fire + str + 1');
+  await editor.getByLabel('Attack formula').fill('str + prof + 2');
+  await editor.getByRole('button', { name: 'Close' }).click();
+  // Strength +3 and 1 on the slashing die, the fire die on its own; +3 + 2 proficiency + 2 to hit.
+  const row = attacks.getByRole('listitem', { name: 'Longsword' });
+  await expect(row).toContainText('1d8+4 + 1d6');
+  await expect(row).toContainText('+7');
+});
+
 test("the GM adds a campaign skill and it rolls from every sheet's skills", async ({ page }) => {
   await atTable(page, GM);
   await page.getByRole('tab', { name: 'Compendium' }).click();
