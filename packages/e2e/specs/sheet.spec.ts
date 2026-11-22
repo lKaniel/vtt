@@ -177,7 +177,7 @@ test('a player adds coins and pays a price in silver out of gold, getting change
   await expect(purse.getByRole('listitem', { name: 'Copper pieces' })).toContainText('8');
 });
 
-test('typing past an ability score keeps the sheet open, and the score stays within 30', async ({ page }) => {
+test('an ability score takes any number, and typing past it keeps the sheet open', async ({ page }) => {
   await atTable(page, GM);
   const sheet = await openBram(page);
   await sheet.getByRole('switch', { name: 'Edit mode (E)' }).click();
@@ -186,10 +186,11 @@ test('typing past an ability score keeps the sheet open, and the score stays wit
   await page.keyboard.press('End');
   await page.keyboard.type('5');
   await expect(sheet).toBeVisible();
-  await expect(strength).toHaveValue('30');
-  // Saved: out of edit mode the score reads as the server keeps it.
+  await expect(strength).toHaveValue('165');
+  // Saved: out of edit mode the score reads as the server keeps it, with its modifier.
   await sheet.getByRole('switch', { name: 'Edit mode (E)' }).click();
-  await expect(sheet.getByLabel('Score').first()).toHaveText('30');
+  await expect(sheet.getByLabel('Score').first()).toHaveText('165');
+  await expect(sheet.getByRole('button', { name: /Strength check/ })).toHaveText('+77');
 });
 
 test("a player takes back a level from their character's sheet", async ({ page }) => {

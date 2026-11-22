@@ -18,10 +18,11 @@ describe('resolveCreature', () => {
     expect(resolveCreature(token({}), srdFor('2024'))).toBeUndefined();
   });
 
-  it('keeps a half-typed ability score out of range within 1 to 30 instead of failing', () => {
-    const raw = { id: 't', name: 'T', x: 0, y: 0, stats: { abilities: { str: 158, dex: 0, con: 12.5 } } };
+  it('takes any whole ability score, huge or negative, and never fails on a stray one', () => {
+    const raw = { id: 't', name: 'T', x: 0, y: 0, stats: { abilities: { str: 158, dex: -4, con: 12.5 } } };
     const c = resolveCreature(raw as never, srdFor('2024'))!;
-    expect(c.abilities).toMatchObject({ str: 30, dex: 1, con: 12 });
+    expect(c.abilities).toMatchObject({ str: 158, dex: -4, con: 12 });
+    expect(c.initiative).toBe(-7);
   });
 
   it('reads a monster stat block from the SRD', () => {
