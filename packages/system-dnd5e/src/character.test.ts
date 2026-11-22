@@ -13,6 +13,7 @@ import {
 } from './character.ts';
 import { characterIssues, issuesByStep, levelUp } from './character-check.ts';
 import type { KitStep } from './origins.ts';
+import { levelDown } from './level-down.ts';
 
 /** A valid level 1 2014 hill dwarf cleric. */
 function cleric(over: Partial<Character> = {}): Character {
@@ -206,6 +207,43 @@ describe('levelUp', () => {
 
   it('takes the subclass at its level', () => {
     expect(levelUp(wizard({ level: 2, hpRolls: [4] }), { hp: 4, subclass: 'evoker' }).subclass).toBe('evoker');
+  });
+});
+
+describe('levelDown', () => {
+  it('takes the last level back with its hit points, improvement and the spells it allowed', () => {
+    const four = levelUp(cleric({ level: 3, hpRolls: [5, 5] }), {
+      hp: 6,
+      improvement: { wis: 2 },
+      spells: [...cleric().spells, 'thaumaturgy', 'shield-of-faith', 'sanctuary', 'aid', 'lesser-restoration'],
+    });
+    const three = levelDown(four, 'cleric');
+    expect(three).toMatchObject({ level: 3, hpRolls: [5, 5], improvements: [] });
+    expect(characterIssues(three)).toEqual([]);
+    const one = levelDown(levelDown(three, 'cleric'), 'cleric');
+    expect(one.level).toBe(1);
+    expect(characterIssues(one)).toEqual([]);
+  });
+
+  it('drops a subclass taken at a level it no longer has', () => {
+    const three = levelUp(wizard({ level: 2, hpRolls: [4] }), { hp: 4, subclass: 'evoker' });
+    expect(levelDown(three, 'wizard').subclass).toBeUndefined();
+  });
+
+  it('leaves a class taken later, with the options it brought', () => {
+    const c = levelUp(cleric({ level: 3, hpRolls: [5, 5] }), {
+      hp: 6,
+      class: 'fighter',
+      features: ['fighter/defense'],
+    });
+    const back = levelDown(c, 'fighter');
+    expect(back).toMatchObject({ level: 3, multiclass: [], features: [], hpRolls: [5, 5] });
+    expect(characterIssues(back)).toEqual([]);
+  });
+
+  it('refuses to go below 1st level or into a class it lacks', () => {
+    expect(() => levelDown(cleric(), 'cleric')).toThrow(/1st level/);
+    expect(() => levelDown(cleric({ level: 3, hpRolls: [5, 5] }), 'bard')).toThrow(/no levels in bard/);
   });
 });
 

@@ -18,7 +18,7 @@ import {
 import { grantedFeatures } from './class-options.ts';
 import { type ArmorWeight, withFightingStyles } from './class-styles.ts';
 import { bloodiedPassives } from './chapters.ts';
-import { abilityMod, proficiencyForLevel } from './creature-math.ts';
+import { abilityMod, fitScores, proficiencyForLevel } from './creature-math.ts';
 import type { Affected } from './effects.ts';
 import { changed, changedBase, changedList } from './effect-changes.ts';
 import { legendaryParts, type LegendaryParts } from './legendary.ts';
@@ -114,7 +114,7 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
   const levels = classLevels(token, content);
   const cls = levels[0]?.cls;
   const { abilities, proficiency } = changedScores(token, levels, content, {
-    abilities: AbilitiesSchema.parse({ ...monster?.abilities, ...stats.abilities }),
+    abilities: AbilitiesSchema.parse(fitScores({ ...monster?.abilities, ...stats.abilities })),
     proficiency: defaultProficiency(stats, monster),
   });
   const gear = equippedItems(token, content);

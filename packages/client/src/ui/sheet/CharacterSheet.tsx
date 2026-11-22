@@ -134,7 +134,8 @@ function SheetWindow({
     else session.requests.saveActor(draft);
   });
   const rules = editionOf(value, session.world ?? {});
-  const sheet = sheetOf(session, target, live, previewSheet(value, rules));
+  // A change the rules can't build on (a half-typed number) shows the sheet as it was, never none at all.
+  const sheet = sheetOf(session, target, live, previewSheet(value, rules) ?? previewSheet(live, rules));
   if (!sheet) return null;
   const props: SheetProps = { session, kind: target.kind, value, update, sheet, edit: target.edit };
   const label = t('sheet.label', { name: value.name });

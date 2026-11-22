@@ -79,7 +79,7 @@ describe('the GM tools', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'setRole', player: 'ana', role: 'trusted' });
   });
 
-  it("sends the GM's picks of what a seat plays, and a level up", () => {
+  it("sends the GM's picks of what a seat plays, and a level up and down", () => {
     ws.receive(gmWelcome());
     session.requests.setPlays('ana', 'hero', true);
     expect(ws.sent.at(-1)).toEqual({ t: 'setPlays', player: 'ana', actor: 'hero', plays: true });
@@ -87,6 +87,8 @@ describe('the GM tools', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'setPlays', player: 'ana', actor: 'hero', plays: false });
     session.requests.levelUp({ token: 'hero', class: 'fighter', hp: 'roll' });
     expect(ws.sent.at(-1)).toEqual({ t: 'levelUp', token: 'hero', class: 'fighter', hp: 'roll' });
+    session.requests.levelDown({ token: 'hero', class: 'fighter' });
+    expect(ws.sent.at(-1)).toEqual({ t: 'levelDown', token: 'hero', class: 'fighter' });
   });
 
   it('saves a hotbar layout', () => {

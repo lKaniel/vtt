@@ -68,3 +68,24 @@ describe('levelling up from the sheet', () => {
     expect(store.actors.get('mira')!.stats!.classes).toEqual([{ class: 'cleric', level: 2 }]);
   });
 });
+
+describe('levelling down from the sheet', () => {
+  it('takes a level back for the owner and tells the table', () => {
+    const gm = seat('gm');
+    const ana = seat('ana');
+    ana.receive({ t: 'levelDown', token: 'hero', class: 'fighter' });
+    expect(errors(ana)).toEqual([]);
+    expect(store.actors.get('hero')!.stats!.classes).toEqual([{ class: 'fighter', level: 2 }]);
+    expect(JSON.stringify(gm.take('chat'))).toMatch(/Hero goes back to level 2 \(fighter 2\)/i);
+  });
+
+  it("refuses someone else's character and a level below 1st", () => {
+    const bo = seat('bo');
+    const gm = seat('gm');
+    bo.receive({ t: 'levelDown', token: 'hero', class: 'fighter' });
+    expect(errors(bo)).toEqual(['No such creature']);
+    gm.receive({ t: 'editToken', token: 'hero', patch: { stats: { class: 'fighter', level: 1 } } });
+    gm.receive({ t: 'levelDown', token: 'hero', class: 'fighter' });
+    expect(errors(gm)).toEqual(['The character is already 1st level']);
+  });
+});

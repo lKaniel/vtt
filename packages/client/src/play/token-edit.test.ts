@@ -29,6 +29,11 @@ describe('the GM token editor', () => {
     expect(setAbility({}, 'dex', 14)).toEqual({ stats: { abilities: { dex: 14 } } });
   });
 
+  it('keeps a typed ability score within 1 to 30, so a stray digit never breaks the sheet', () => {
+    expect(setAbility({}, 'str', 158)).toEqual({ stats: { abilities: { str: 30 } } });
+    expect(setAbility({}, 'str', 0)).toEqual({ stats: { abilities: { str: 1 } } });
+  });
+
   it('reads damage type lists typed with commas, keeping only real types', () => {
     expect(parseList('Fire, cold ,  , banana')).toEqual(['fire', 'cold']);
     expect(listText(['fire', 'cold'])).toBe('fire, cold');

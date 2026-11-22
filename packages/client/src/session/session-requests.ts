@@ -166,6 +166,11 @@ export class Requests {
     this.s.send({ t: 'levelUp', ...msg });
   }
 
+  /** One level less in a class, for a character that is only an actor. */
+  levelDown(msg: Omit<Extract<ClientMessage, { t: 'levelDown' }>, 't'>): void {
+    this.s.send({ t: 'levelDown', ...msg });
+  }
+
   /** Spends one of the creature's hit dice to heal. */
   spendHitDie(token: string): void {
     this.s.send({ t: 'hitDie', token });

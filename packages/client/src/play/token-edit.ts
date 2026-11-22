@@ -1,4 +1,4 @@
-import { type Ability, type DamageType, DamageTypeSchema, omitKey, type Stats } from '@vtt/system-dnd5e';
+import { type Ability, type DamageType, DamageTypeSchema, fitScore, omitKey, type Stats } from '@vtt/system-dnd5e';
 import { type Level, type Ownership, withLevel } from '@vtt/shared';
 
 // The GM's token editor works on a draft copy of the token; these helpers
@@ -96,7 +96,7 @@ export function toggleFeature<D extends Draft>(draft: D, ref: string): D {
 }
 
 export function setAbility<D extends Draft>(draft: D, ability: Ability, score: number | undefined): D {
-  const abilities = withField(draft.stats?.abilities ?? {}, ability, score);
+  const abilities = withField(draft.stats?.abilities ?? {}, ability, score === undefined ? undefined : fitScore(score));
   return setStat(draft, 'abilities', Object.keys(abilities).length ? abilities : undefined);
 }
 

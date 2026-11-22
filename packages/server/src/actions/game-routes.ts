@@ -23,7 +23,7 @@ import type { MapActions } from './map-actions.ts';
 import type { Reactions } from '../play/reactions.ts';
 import type { SceneActions } from './scene-actions.ts';
 import { checkAction, sheetAction } from './sheet-actions.ts';
-import { levelUp } from './level-actions.ts';
+import { levelDown, levelUp } from './level-actions.ts';
 import type { SpellActions } from './spell-actions.ts';
 import type { Table } from '../play/table.ts';
 import type { TokenMoves } from '../play/token-moves.ts';
@@ -137,6 +137,7 @@ function sheetRoutes(p: GameParts) {
       sheetAction(p.table, s.player, m),
     ),
     levelUp: (s, m) => levelUp(p.table, s.player, m),
+    levelDown: (s, m) => levelDown(p.table, s.player, m),
     ...each(['requestCheck', 'rollCheck'], (s, m) => checkAction(p.table, p.chat, s.player, m)),
     ...each(['drop', 'give', 'trade'], (s, m) => p.gm.drops.handle(s.player, s.canSee, m)),
   } satisfies Partial<Routes>;

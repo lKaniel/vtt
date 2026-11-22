@@ -161,3 +161,31 @@ test('a player adds coins and pays a price in silver out of gold, getting change
   await expect(purse).toContainText('4.68 gp');
   await expect(purse.getByRole('listitem', { name: 'Copper pieces' })).toContainText('8');
 });
+
+test('typing past an ability score keeps the sheet open, and the score stays within 30', async ({ page }) => {
+  await atTable(page, GM);
+  const sheet = await openBram(page);
+  await sheet.getByRole('switch', { name: 'Edit mode (E)' }).click();
+  const strength = sheet.getByRole('spinbutton').first();
+  await strength.click();
+  await page.keyboard.press('End');
+  await page.keyboard.type('5');
+  await expect(sheet).toBeVisible();
+  await expect(strength).toHaveValue('30');
+  // Saved: out of edit mode the score reads as the server keeps it.
+  await sheet.getByRole('switch', { name: 'Edit mode (E)' }).click();
+  await expect(sheet.getByLabel('Score').first()).toHaveText('30');
+});
+
+test("a player takes back a level from their character's sheet", async ({ page }) => {
+  await atTable(page, PLAYER_2);
+  const sheet = await openBram(page);
+  await expect(sheet).toContainText('Level 3 Fighter');
+  await sheet.getByRole('button', { name: 'Level down' }).click();
+  await page
+    .getByRole('dialog', { name: 'Bram: level down' })
+    .getByRole('button', { name: 'Go back to level 2' })
+    .click();
+  await expect(sheet).toContainText('Level 2 Fighter');
+  await expect(chatLog(page)).toContainText('Bram goes back to level 2');
+});
