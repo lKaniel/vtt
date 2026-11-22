@@ -47,8 +47,6 @@ function AbilityBox(props: Readonly<SheetProps & { ability: Ability }>) {
         <NumberInput
           className="h-6 w-14 text-center text-xs"
           value={value.stats?.abilities?.[a]}
-          min={1}
-          max={30}
           placeholder={sheet.abilities[a]}
           onChange={(v) => update((d) => setAbility(d, a, v))}
         />

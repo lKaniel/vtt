@@ -13,7 +13,8 @@ export type Edition = z.infer<typeof EditionSchema>;
 export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const;
 export type Ability = (typeof ABILITIES)[number];
 
-const score = z.number().int().min(1).max(30).default(10);
+/** An ability score: any whole number, as high or low as a GM's table needs. */
+const score = z.number().int().default(10);
 export const AbilitiesSchema = z.object({ str: score, dex: score, con: score, int: score, wis: score, cha: score });
 export type Abilities = z.infer<typeof AbilitiesSchema>;
 
