@@ -12,6 +12,8 @@ import { afterArt, doubleMomentum } from './chapters.ts';
 import { removeEffects, rollSave, type SaveRoll } from './effects.ts';
 import type { Token } from './token-schema.ts';
 import { type Effect, type Spell, SpellSchema } from './spell-schema.ts';
+import { abilityMod } from './creature-math.ts';
+import type { Ability } from './stats-schema.ts';
 
 // Using class features (second wind, action surge, rage), resting, and the
 // saves creatures repeat at the end of their turns.
@@ -35,7 +37,25 @@ export function featureProblem(sheet: Creature, id: string): string | undefined 
   const feature = sheet.features.find((f) => f.id === id);
   if (!feature?.action) return "doesn't have that feature";
   if (feature.left === 0) return `has no uses left of ${feature.name}`;
-  return undefined;
+  return costProblem(sheet, feature) ?? missingEffects(sheet, feature);
+}
+
+/** The uses one use of the feature spends: 1, or its `usesCost`. */
+export const usesCost = (feature: FeatureSheet): number => feature.usesCost ?? 1;
+
+/** A feature that spends several uses at once and has fewer left. */
+function costProblem(sheet: Creature, feature: FeatureSheet): string | undefined {
+  if (!feature.usesCost || (feature.left ?? 0) >= feature.usesCost) return undefined;
+  const pool = sheet.features.find((f) => f.id === feature.usesFrom)?.name ?? 'uses';
+  return `needs ${feature.usesCost} ${pool.toLowerCase()} for ${feature.name}`;
+}
+
+/** A feature that needs other features' effects going (body of the astral self: the arms and visage). */
+function missingEffects(sheet: Creature, feature: FeatureSheet): string | undefined {
+  const missing = (feature.needsEffects ?? []).filter((id) => !sheet.effects.some((e) => e.id.startsWith(`${id}-`)));
+  if (!missing.length) return undefined;
+  const names = missing.map((id) => sheet.features.find((f) => f.id === id)?.name ?? id);
+  return `needs ${names.join(' and ')} going for ${feature.name}`;
 }
 
 export interface FeatureUse {
@@ -68,12 +88,13 @@ export function spendUse(token: Token, feature: FeatureSheet, amount = 1, sheet?
 const featureLevel = (token: Token, feature: FeatureSheet): number =>
   feature.classLevel ?? characterLevel(token.stats) ?? 1;
 
-function featureEffect(token: Token, feature: FeatureSheet): Effect | undefined {
+/** The effect a feature puts on its user, its "{wis}" and the like filled in with the ability modifiers. */
+export function featureEffect(token: Token, feature: FeatureSheet, sheet: Creature): Effect | undefined {
   if (!feature.effect) return undefined;
   const level = featureLevel(token, feature);
   const meleeDamage = feature.meleeDamage ? levelValue(feature.meleeDamage, level) : feature.effect.meleeDamage;
   return {
-    ...feature.effect,
+    ...withModifiers(feature.effect, sheet),
     id: `${feature.id}-${token.id}`,
     name: feature.effect.name ?? feature.name,
     source: token.id,
@@ -85,13 +106,13 @@ function featureEffect(token: Token, feature: FeatureSheet): Effect | undefined 
 export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng = Math.random): FeatureUse {
   const feature = sheet.features.find((f) => f.id === id)!;
   const finish = actionFinisher(feature, { token, sheet });
-  let next = spendUse(token, feature, 1, sheet);
+  let next = spendUse(token, feature, usesCost(feature), sheet);
   if (feature.grantsMomentum) next = gainMomentum(next, sheet, feature.grantsMomentum);
   if (feature.doublesMomentum) next = doubleMomentum(next, sheet);
   const { token: healedToken, healed } = healFrom(next, sheet, feature, rng);
   next = healedToken;
   const rolled = featureCheck(token, sheet, feature, rng);
-  const made = featureEffect(token, feature) ?? finish.effect;
+  const made = featureEffect(token, feature, sheet) ?? finish.effect;
   const effect = made?.hides && rolled.check ? { ...made, hidden: rolled.check.total } : made;
   if (effect) next = { ...next, effects: [...(next.effects ?? []).filter((e) => e.id !== effect.id), effect] };
   return {
@@ -104,6 +125,16 @@ export function useFeature(token: Token, sheet: Creature, id: string, rng: Rng =
     grantAttacks: finish.grantAttacks ?? feature.grantAttacks,
     ...rolled,
   };
+}
+
+/** The template with each "{wis}" (any ability) as that modifier: "1d10+{wis}" becomes "1d10+4". */
+function withModifiers<T extends object>(template: T, sheet: Creature): T {
+  const text = JSON.stringify(template);
+  if (!text.includes('{')) return template;
+  const filled = text.replace(/\{(str|dex|con|int|wis|cha)\}/g, (_, a: Ability) =>
+    String(abilityMod(sheet.abilities[a])),
+  );
+  return JSON.parse(filled.replace(/\+-/g, '-')) as T;
 }
 
 /** The check a feature rolls when used, named by its skill or ability. */

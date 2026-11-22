@@ -1,5 +1,5 @@
 import { inArea, isLinked, scaledSpell, type Spell, tokenDistance } from '@vtt/system-dnd5e';
-import { gridKind, type Point, sceneLattice } from '@vtt/shared';
+import { gridKind, isParty, type Point, sceneLattice } from '@vtt/shared';
 import { Refusal, type Fighter, type Table } from './table.ts';
 
 // Who and where a spell is aimed at: the creatures picked (in range, in
@@ -95,6 +95,7 @@ export class SpellTargets {
     return [...this.store.tokens.values()]
       .filter((t) => inArea(area, { caster: caster.token, aim, token: t, gridSize: this.grid, lattice }))
       .filter((t) => this.table.clearShot(origin, [t.x, t.y]))
+      .filter((t) => spell.spares !== 'allies' || isParty(t) !== isParty(caster.token))
       .flatMap((t) => {
         const sheet = this.table.sheetOf(t);
         return sheet ? [{ token: t, sheet }] : [];

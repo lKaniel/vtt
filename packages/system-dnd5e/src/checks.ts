@@ -1,5 +1,4 @@
 import { type Rng, roll, type Roll } from '@vtt/shared';
-import { abilityMod } from './creature-math.ts';
 import type { Creature } from './creature.ts';
 import { d20Formula, type SaveRoll, saveModifiers } from './effects.ts';
 import { type RollChoice, withPick } from './roll-choice.ts';
@@ -7,6 +6,7 @@ import type { Effect } from './spell-schema.ts';
 import type { Ability } from './stats-schema.ts';
 import type { Token } from './token-schema.ts';
 import { type Skill, SKILLS } from './origins.ts';
+import { checkAbilityMod } from './unarmed.ts';
 
 // Ability checks and skill checks: rolled from the sheet, asked for by the
 // GM (each creature for itself, as a group, or as a contest between two).
@@ -27,7 +27,7 @@ export interface CheckKind {
 type CheckRolled = CheckKind & { dc?: number } & Pick<RollChoice, 'edge' | 'd20' | 'situational'>;
 
 type CheckSheet = Pick<Creature, 'abilities' | 'proficiency' | 'saves'> &
-  Partial<Pick<Creature, 'features' | 'proficiencies' | 'skills' | 'expertise'>>;
+  Partial<Pick<Creature, 'features' | 'proficiencies' | 'skills' | 'expertise' | 'effects'>>;
 
 /** Proficiency in the skill (twice with expertise) or the tool, if the creature has it. */
 function trainedBonus(token: Pick<Token, 'stats'>, sheet: CheckSheet, { skill, tool }: CheckKind): number | undefined {
@@ -51,7 +51,7 @@ function proficiencyFor(token: Pick<Token, 'stats'>, sheet: CheckSheet, check: C
 export function checkBonus(token: Pick<Token, 'stats'>, sheet: CheckSheet, check: CheckKind): number {
   if (check.save) return sheet.saves[check.ability];
   if (check.free && check.skill) return token.stats?.skillValues?.[check.skill] ?? 0;
-  return abilityMod(sheet.abilities[check.ability]) + proficiencyFor(token, sheet, check);
+  return checkAbilityMod(sheet, check.ability) + proficiencyFor(token, sheet, check);
 }
 
 /** A passive score (passive Perception): 10 plus the skill's bonus. */

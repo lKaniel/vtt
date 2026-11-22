@@ -1153,6 +1153,25 @@ pays for that spell with the pool's points instead of a use, so the points
 cast spells like slots: `{ "spell": "silent-image", "cost": "2 * level" }`.
 A class with no spellcasting casts them with the pool's ability.
 
+**Subclasses for a class the game has.** A homebrew file with `"kind":
+"subclass"` and a `"class"` adds a subclass to that class (an SRD monk's),
+like a pack's `subclass` compendium: `{ "id": "way-of-the-astral-self",
+"kind": "subclass", "class": "monk", "name": "...", "features": [{ "id",
+"name", "level", "description" }], "ownership": { "default": "observer" } }`.
+Its features get the automation `class-automation.json` keeps under the
+class's `subclasses.<id>`, so the book's text stays in the game and only the
+mechanics are in the repo. `"kind": "classFeature"` adds one feature (an
+invocation) the same way. Fields such automation uses: a feature's
+`martialArts` (the unarmed strike's die by level, with the better of Str and
+Dex, even with a weapon in hand), `usesCost` (uses spent at once),
+`needsEffects` (features whose effects must be going), and "{wis}" (any
+ability) in its effect, filled with the modifier; an effect's
+`unarmedAttack` (`{ "name", "ability", "type", "reach" }`: an attack made
+from the unarmed strike), `unarmedOnceDie` (one more of its die on the first
+hit each turn) and `abilityInPlace` (`{ "of": "str", "use": "wis" }` for
+checks and saves); an aimed feature's `effect` goes on its user too, and an
+area's `"spares": "allies"` leaves the caster's side out.
+
 **Spells picked for a feature.** A feature's `spellPicks` lets the player
 pick spells it casts without a slot, each at its own level: `from` the
 `class`'s list or the spells the character `known`s, one per `choices`

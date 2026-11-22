@@ -391,7 +391,8 @@ export class CombatActions {
     { smite, finisher, reaction, pick }: Resolving,
   ): void {
     // Out of its turn a creature has no budget; its sneak attack is still unused.
-    const sneakUsed = !reaction && !!this.table.budget(attacker.token)?.used.includes('sneak-attack');
+    const used = reaction ? undefined : this.table.budget(attacker.token)?.used;
+    const sneakUsed = !!used?.includes('sneak-attack');
     const outcome = resolveWeaponAttack(
       {
         attacker,
@@ -403,6 +404,7 @@ export class CombatActions {
         allyNearTarget: this.allyNear(attacker.token, target.token),
         flanked: flanked(this.table, attacker.token, target.token),
         sneakUsed,
+        onceUsed: reaction || !!used?.includes('once-damage'),
         smite,
         finisher: readiedFinisher(attacker, attack, finisher),
         pick,
@@ -411,6 +413,7 @@ export class CombatActions {
     );
     outcome.notes.push(...pickNotes(pick));
     if (outcome.sneak && !reaction) this.markUsed(attacker.token, 'sneak-attack');
+    if (outcome.once) this.markUsed(attacker.token, 'once-damage');
     breakSanctuary(this.table, attacker.token.id);
     const hit = { attacker, target, attack, range, smite, finisher, outcome };
     if (!outcome.roll.hit || !this.onHit(hit)) this.land(hit);

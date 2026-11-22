@@ -9,6 +9,7 @@ import { classFields, LevelTableSchema, momentumEffectFields } from './class-fie
 import { ConditionSchema } from './condition-schema.ts';
 import { PoolSchema, powerEffectFields, powerFeatureFields, powerSpellFields } from './power-schema.ts';
 import { ClassTrainingSchema } from './proficiency-grants.ts';
+import { unarmedEffectFields, unarmedFeatureFields } from './unarmed-schema.ts';
 
 // Spells, class features and the effects they leave on creatures. Spells and
 // classes are data in packages/system-dnd5e/content; the engine in spells.ts,
@@ -182,6 +183,7 @@ const modifiers = {
   /** The bearer's speed is 0 (hypnotic pattern). */
   immobile: z.boolean().optional(),
   ...momentumEffectFields,
+  ...unarmedEffectFields,
 };
 
 /**
@@ -369,6 +371,8 @@ export const SpellSchema = z.object({
   /** How many creatures it targets; areas hit everyone inside instead. */
   targets: z.number().int().nonnegative().default(1),
   area: AreaSchema.optional(),
+  /** "allies": the area leaves the caster's side alone (creatures of the caster's choice: astral arms). */
+  spares: z.enum(['allies']).optional(),
   /**
    * What a lasting area puts on the map while it lasts: a light as wide as the
    * area (darkness, daylight), or walls — a line `area.size` long across the
@@ -622,6 +626,7 @@ export const FeatureSchema = z.object({
   /** Why the GM runs it by hand: what it does that the engine doesn't (yet). */
   manual: z.string().optional(),
   ...classFields(EffectTemplateSchema),
+  ...unarmedFeatureFields,
   ...powerFeatureFields,
 });
 export type Feature = z.infer<typeof FeatureSchema>;

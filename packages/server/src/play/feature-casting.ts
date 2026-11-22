@@ -1,11 +1,14 @@
 import {
   type Spell,
+  featureEffect,
   featureProblem,
   type FeatureSheet,
   featureSpell,
   poolSpell,
   spendUse,
+  usesCost,
   type RollChoice,
+  type Token,
   withChoice,
 } from '@vtt/system-dnd5e';
 import type { Player, Point } from '@vtt/shared';
@@ -64,13 +67,22 @@ export function castFeature(
   const aim = { ...req, caster: req.token, spell: spell.id, slot: 0, targets: req.targets ?? [] };
   const targets = spells.targets(caster, spell, aim, canSee);
   if (spell.save?.grapple) fitsInHands(caster, targets);
-  const spend = feature.healPool ? poolHealing(feature, targets) : 1;
+  const spend = feature.healPool ? poolHealing(feature, targets) : usesCost(feature);
   if (feature.healPool) spell = { ...spell, heal: String(spend) };
   table.pay(caster.token, cost, caster.sheet.attacksPerAction);
-  table.store.setToken(spendUse(table.store.tokens.get(caster.token.id)!, feature, spend, caster.sheet));
+  table.store.setToken(
+    withOwnEffect(spendUse(table.store.tokens.get(caster.token.id)!, feature, spend, caster.sheet), caster, feature),
+  );
   const before = hpOf(table, targets);
   spells.strike(caster.token.id, { spell, slot: 0, point: req.point, ...rollPickOf(req) }, targets);
   if (feature.finisher) afterSpellFinisher(table, { caster, feature, targets, before });
+}
+
+/** The feature's effect on its user as well (astral arms: the arms, then the burst around them). */
+function withOwnEffect(token: Token, user: Fighter, feature: FeatureSheet): Token {
+  const effect = featureEffect(token, feature, user.sheet);
+  if (!effect) return token;
+  return { ...token, effects: [...(token.effects ?? []).filter((e) => e.id !== effect.id), effect] };
 }
 
 const hpOf = (table: Table, targets: readonly Fighter[]) =>
