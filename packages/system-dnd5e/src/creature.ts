@@ -30,6 +30,7 @@ import { sensesOf } from './perception.ts';
 import { type Form, formOf, shapeToken, withoutForm } from './forms.ts';
 import { armorEffects, trainedWithWeapon, type Training, trainingOf } from './training.ts';
 import { unarmedStrike, weaponAttack } from './gear-attacks.ts';
+import { withUnarmed } from './unarmed.ts';
 import type { Token } from './token-schema.ts';
 import type { Class, Condition, Effect } from './spell-schema.ts';
 import {
@@ -167,7 +168,10 @@ export function resolveCreature(raw: Token, books: Content): Creature | undefine
     ),
   };
   const trained = { ...base, effects: [...base.effects, ...armorEffects(training, gear.armor)] };
-  const styled = withFightingStyles(applyEffects(withItemBonuses(trained, token, content)), armorWeight(gear.armor));
+  const styled = withFightingStyles(
+    withUnarmed(applyEffects(withItemBonuses(trained, token, content))),
+    armorWeight(gear.armor),
+  );
   const carrying = withCarrying(styled, token, { monster, content });
   return { ...carrying, speeds: withMonsterSpeeds(carrying.speeds, monster) };
 }

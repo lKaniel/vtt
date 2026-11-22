@@ -30,6 +30,8 @@ export interface WeaponAttackInput {
   smite?: number;
   /** Sneak attack was already used this turn. */
   sneakUsed: boolean;
+  /** The attack's `onceDamage` was already dealt this turn (or it isn't the attacker's turn). */
+  onceUsed?: boolean;
   /** Extra damage a finisher adds if the attack hits (finishers.ts); the server spends the dice. */
   finisher?: Damage;
   /** The roller's own advantage or disadvantage, and a critical forced or held back. */
@@ -40,6 +42,8 @@ export interface WeaponAttackOutcome {
   roll: AttackRoll;
   /** Sneak attack dice were added. */
   sneak: boolean;
+  /** The attack's once-a-turn damage was added (empowered arms). */
+  once?: boolean;
   /** Divine Smite landed, so its slot is spent. */
   smote: boolean;
   /** Damage a grazing weapon deals on a miss. */
@@ -162,13 +166,14 @@ export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.ra
   const mods = rolledModifiers(input, within5);
   const { disadvantage } = mods;
   const sneak = canSneak(input, mods.advantage, disadvantage);
+  const once = onceDamage(input, attack);
   const rolled = rollAttack(
     attack,
     target.sheet,
     {
       ...mods,
       critRange: critRangeOf(attacker.sheet),
-      extraDamage: [...extraDamage({ ...input, attack }, sneak), ...styleDamage(attacker.sheet, attack)],
+      extraDamage: [...extraDamage({ ...input, attack }, sneak), ...styleDamage(attacker.sheet, attack), ...once],
     },
     rng,
   );
@@ -177,7 +182,7 @@ export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.ra
   const riders = result.hit ? hitRiders({ id: attacker.token.id, sheet: attacker.sheet }, 'force').used : [];
   return {
     roll: { ...result, damage: setDamage(result.damage, input.pick) },
-    sneak: sneak && result.hit,
+    ...landedExtras(sneak, once, result.hit),
     smote: !!input.smite && result.hit && attack.kind === 'melee',
     graze: result.hit || decoy ? undefined : grazeDamage(input),
     push: result.hit ? pushOnHit(input) : undefined,
@@ -187,6 +192,19 @@ export function resolveWeaponAttack(input: WeaponAttackInput, rng: Rng = Math.ra
     notes: outcomeNotes(sneak && result.hit, [...mastery.notes, ...rider.notes], decoy),
   };
 }
+
+/** Which extra damage a hit dealt: sneak attack, the once-a-turn damage. */
+function landedExtras(
+  sneak: boolean,
+  once: readonly Damage[],
+  hit: boolean,
+): Pick<WeaponAttackOutcome, 'sneak' | 'once'> {
+  return { sneak: sneak && hit, ...(once.length > 0 && hit && { once: true }) };
+}
+
+/** The attack's once-a-turn damage, unless it was dealt this turn (empowered arms). */
+const onceDamage = (input: WeaponAttackInput, attack: Attack): Damage[] =>
+  input.onceUsed ? [] : (attack.onceDamage ?? []);
 
 function outcomeNotes(sneak: boolean, mastery: string[], decoy: 'hit' | 'missed' | undefined): string[] {
   return [...(sneak ? ['sneak attack'] : []), ...mastery, ...(decoy ? [DECOY_NOTES[decoy]] : [])];

@@ -1818,6 +1818,126 @@
               "manual": "Fire from your monk weapons sets targets alight (Wisdom-modifier fire each turn until doused). During Dance of Fire add fire immunity and bludgeoning, piercing and slashing resistance to its effect."
             }
           }
+        },
+        "way-of-the-astral-self": {
+          "features": {
+            "arms-of-the-astral-self": {
+              "action": "bonus",
+              "dcFrom": ["wis"],
+              "spell": {
+                "range": 0,
+                "targets": 0,
+                "area": {
+                  "shape": "emanation",
+                  "size": 10
+                },
+                "spares": "allies",
+                "save": {
+                  "ability": "dex",
+                  "onSave": "none"
+                },
+                "damage": [
+                  {
+                    "dice": "2d{die}",
+                    "type": "force"
+                  }
+                ]
+              },
+              "effect": {
+                "name": "Arms of the Astral Self",
+                "rounds": 100,
+                "unarmedAttack": {
+                  "name": "Astral Arms",
+                  "ability": "wis",
+                  "type": "force",
+                  "reach": 5
+                },
+                "abilityInPlace": {
+                  "of": "str",
+                  "use": "wis"
+                }
+              },
+              "manual": "The arms' extra 5 ft of reach is meant for your own turn; on an opportunity attack use your normal unarmed strike. It ends early if you are incapacitated or die: remove it on the Effects tab."
+            },
+            "visage-of-the-astral-self": {
+              "action": "bonus",
+              "effect": {
+                "name": "Visage of the Astral Self",
+                "rounds": 100,
+                "senses": {
+                  "darkvision": 120,
+                  "devilsSight": 120
+                },
+                "checkAdvantageFor": ["insight", "intimidation"]
+              },
+              "manual": "Word of the Spirit (speak to one creature within 60 ft only, or be heard up to 600 ft away) is played by hand. It ends early if you are incapacitated or die: remove it on the Effects tab."
+            },
+            "body-of-the-astral-self": {
+              "action": "free",
+              "needsEffects": ["arms-of-the-astral-self", "visage-of-the-astral-self"],
+              "effect": {
+                "name": "Body of the Astral Self",
+                "rounds": 100,
+                "ward": {
+                  "dice": "1d10+{wis}",
+                  "types": ["acid", "cold", "fire", "force", "lightning", "thunder"]
+                },
+                "unarmedOnceDie": true
+              },
+              "manual": "Turn it on once the arms and visage are both out. Deflect Energy takes 1d10 + Wisdom off the first acid, cold, fire, force, lightning or thunder damage each turn; Empowered Arms adds a martial arts die to the first hit with the arms each turn. It ends with the arms or visage: remove it then."
+            },
+            "awakened-astral-self": {
+              "action": "bonus",
+              "usesCost": 5,
+              "dcFrom": ["wis"],
+              "spell": {
+                "range": 0,
+                "targets": 0,
+                "area": {
+                  "shape": "emanation",
+                  "size": 10
+                },
+                "spares": "allies",
+                "save": {
+                  "ability": "dex",
+                  "onSave": "none"
+                },
+                "damage": [
+                  {
+                    "dice": "2d{die}",
+                    "type": "force"
+                  }
+                ]
+              },
+              "effect": {
+                "name": "Awakened Astral Self",
+                "rounds": 100,
+                "unarmedAttack": {
+                  "name": "Astral Arms",
+                  "ability": "wis",
+                  "type": "force",
+                  "reach": 5
+                },
+                "abilityInPlace": {
+                  "of": "str",
+                  "use": "wis"
+                },
+                "senses": {
+                  "darkvision": 120,
+                  "devilsSight": 120
+                },
+                "checkAdvantageFor": ["insight", "intimidation"],
+                "ward": {
+                  "dice": "1d10+{wis}",
+                  "types": ["acid", "cold", "fire", "force", "lightning", "thunder"]
+                },
+                "unarmedOnceDie": true,
+                "ac": 2,
+                "actionAttacks": 3
+              },
+              "manual": "Three attacks per Attack action are only for attacks with the arms. It ends early if you are incapacitated or die: remove it on the Effects tab."
+            }
+          }
         }
       }
     },
@@ -1829,7 +1949,13 @@
         },
         "martial-arts": {
           "action": "bonus",
-          "grantAttacks": 1
+          "grantAttacks": 1,
+          "martialArts": [
+            [1, 4],
+            [5, 6],
+            [11, 8],
+            [17, 10]
+          ]
         },
         "flurry-of-blows": {
           "name": "Flurry of Blows",
@@ -1959,6 +2085,31 @@
               "manual": "When an unarmed strike hits, spend 3 ki to set vibrations that last days equal to your monk level. Later, as an action, end them: the target makes a Constitution save or drops to 0 hit points, taking 10d10 necrotic damage on a success."
             }
           }
+        },
+        "way-of-the-astral-self": {
+          "features": {
+            "arms-of-the-astral-self": {
+              "usesFrom": "ki",
+              "die": [
+                [1, 4],
+                [5, 6],
+                [11, 8],
+                [17, 10]
+              ]
+            },
+            "visage-of-the-astral-self": {
+              "usesFrom": "ki"
+            },
+            "awakened-astral-self": {
+              "usesFrom": "ki",
+              "die": [
+                [1, 4],
+                [5, 6],
+                [11, 8],
+                [17, 10]
+              ]
+            }
+          }
         }
       },
       "proficiencies": {
@@ -1983,7 +2134,13 @@
         },
         "martial-arts": {
           "action": "bonus",
-          "grantAttacks": 1
+          "grantAttacks": 1,
+          "martialArts": [
+            [1, 6],
+            [5, 8],
+            [11, 10],
+            [17, 12]
+          ]
         },
         "flurry-of-blows": {
           "name": "Flurry of Blows",
@@ -2124,6 +2281,31 @@
             },
             "quivering-palm": {
               "manual": "When an unarmed strike hits, spend 4 focus points to set vibrations that last days equal to your monk level. Later, in place of an attack, end them: the target makes a Constitution save, taking 10d12 force damage, or half on a success."
+            }
+          }
+        },
+        "way-of-the-astral-self": {
+          "features": {
+            "arms-of-the-astral-self": {
+              "usesFrom": "monks-focus",
+              "die": [
+                [1, 6],
+                [5, 8],
+                [11, 10],
+                [17, 12]
+              ]
+            },
+            "visage-of-the-astral-self": {
+              "usesFrom": "monks-focus"
+            },
+            "awakened-astral-self": {
+              "usesFrom": "monks-focus",
+              "die": [
+                [1, 6],
+                [5, 8],
+                [11, 10],
+                [17, 12]
+              ]
             }
           }
         }

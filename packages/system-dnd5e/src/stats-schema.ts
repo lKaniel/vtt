@@ -114,6 +114,8 @@ export const AttackSchema = z.object({
   /** The bonus attack of two-weapon fighting: no ability modifier to damage. */
   offHand: z.boolean().optional(),
   onHit: OnHitSchema.optional(),
+  /** Damage added to its first hit on each of the attacker's turns (empowered arms). */
+  onceDamage: z.array(DamageSchema).optional(),
 });
 export type Attack = z.infer<typeof AttackSchema>;
 
