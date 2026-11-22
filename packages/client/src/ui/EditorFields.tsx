@@ -42,12 +42,14 @@ export function NumberInput({
   onChange,
   placeholder,
   min,
+  max,
   className,
 }: Readonly<{
   value: number | undefined;
   onChange: (v: number | undefined) => void;
   placeholder?: string | number;
   min?: number;
+  max?: number;
   className?: string;
 }>) {
   return (
@@ -56,6 +58,7 @@ export function NumberInput({
       className={className}
       value={value ?? ''}
       min={min}
+      max={max}
       placeholder={placeholder === undefined ? '' : String(placeholder)}
       onChange={(e) => onChange(numberOrUndefined(e.target.value))}
     />

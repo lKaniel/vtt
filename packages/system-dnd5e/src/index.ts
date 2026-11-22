@@ -61,6 +61,7 @@ export * from './character-token.ts';
 export * from './character-custom.ts';
 export * from './player-character.ts';
 export * from './actor-level-up.ts';
+export * from './level-down.ts';
 export * from './token-link.ts';
 export * from './packs.ts';
 export * from './homebrew.ts';

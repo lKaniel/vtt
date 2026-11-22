@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { actorLevelPlan, levelUpActor } from './actor-level-up.ts';
 import { srdFor } from './content.ts';
+import { levelDownActor } from './level-down.ts';
 import type { Stats } from './stats-schema.ts';
 
 // Levelling up a character that lives only as an actor (imported from
@@ -80,5 +81,33 @@ describe('levelling up an actor', () => {
     ).toThrow(/above 20/);
     expect(up({ class: 'ranger', hp: 'average', subclass: 'champion' })).toThrow(/subclass/);
     expect(up({ class: 'ranger', hp: 'average' }, { class: 'ranger', level: 20 })).toThrow(/20th/);
+  });
+});
+
+describe('levelling down an actor', () => {
+  it('takes a level from the class, its average hit points from a written maximum', () => {
+    const ranger: Stats = { classes: [{ class: 'ranger', level: 4 }], maxHp: 36, abilities: scores };
+    expect(levelDownActor(ranger, 'ranger', srd)).toMatchObject({
+      classes: [{ class: 'ranger', level: 3 }],
+      maxHp: 28,
+    });
+    expect(levelDownActor(lory, 'ranger', srd).classes).toEqual([{ class: 'ranger', level: 2 }]);
+  });
+
+  it('drops a subclass below its level, and a class at no levels', () => {
+    const champ: Stats = { classes: [{ class: 'fighter', level: 3, subclass: 'champion' }], abilities: scores };
+    expect(levelDownActor(champ, 'fighter', srd).classes).toEqual([{ class: 'fighter', level: 2 }]);
+    const both: Stats = {
+      classes: [
+        { class: 'fighter', level: 3, subclass: 'champion' },
+        { class: 'wizard', level: 1 },
+      ],
+    };
+    expect(levelDownActor(both, 'wizard', srd).classes).toEqual([{ class: 'fighter', level: 3, subclass: 'champion' }]);
+  });
+
+  it('refuses to go below 1st level or into a class it lacks', () => {
+    expect(() => levelDownActor({ class: 'Ranger', level: 1 }, 'ranger', srd)).toThrow(/1st level/);
+    expect(() => levelDownActor(lory, 'wizard', srd)).toThrow(/no levels in wizard/);
   });
 });

@@ -58,6 +58,13 @@ export const EN_PLAYERS = {
   'levelUp.spellsHint': 'New spells and features: drag them from the Compendium onto the sheet.',
   'levelUp.cancel': 'Cancel',
   'levelUp.confirm': 'Reach level {level}',
+  'levelDown.button': 'Level down',
+  'levelDown.title': '{name}: level down',
+  'levelDown.goesTo': 'From level {from} back to level {to}.',
+  'levelDown.built':
+    'The level’s hit points, ability score improvement and the class options, subclass and spells it allowed go with it.',
+  'levelDown.actor': 'The level’s average hit points go with it. Take off by hand anything else it brought.',
+  'levelDown.confirm': 'Go back to level {level}',
   'builder.create': 'New character',
   'builder.createHint': 'Make a character with the character creator',
   'builder.edit': 'Edit build',

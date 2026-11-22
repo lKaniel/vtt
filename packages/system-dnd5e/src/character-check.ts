@@ -133,7 +133,7 @@ function customSkillIssues(c: Character, p: Parts): string[] {
 }
 
 /** Ability score improvements the classes give at their levels. */
-function improvementsDue(c: Character): number {
+export function improvementsDue(c: Character): number {
   return characterClasses(c).reduce(
     (n, k) => n + Array.from({ length: k.level }, (_, i) => i + 1).filter((l) => isImprovementLevel(k.class, l)).length,
     0,
@@ -196,7 +196,7 @@ function multiclassIssues(c: Character, p: Parts): string[] {
 }
 
 /** Spell limits of each class at its level; a multiclassed caster picks from each list. */
-function classSpellLimits(c: Character, p: Parts): { classId: string; limits: SpellLimits }[] {
+export function classSpellLimits(c: Character, p: Parts): { classId: string; limits: SpellLimits }[] {
   const scores = abilityScores(c, p);
   return characterClasses(c).map((k) => {
     const casting = classCasting(p.book.content.classes.get(k.class), k.subclass);

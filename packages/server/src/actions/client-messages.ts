@@ -160,6 +160,13 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
     hp: z.union([z.literal('average'), z.literal('roll')]),
     improvement: z.partialRecord(z.enum(ABILITIES), z.number().int().min(0).max(2)).optional(),
   }),
+  /** One level less in `class`, for a character that is only an actor (one made with the creator saves its build). */
+  z.object({
+    t: z.literal('levelDown'),
+    token: z.string().optional(),
+    actor: z.string().optional(),
+    class: z.string().min(1).max(60),
+  }),
   z.object({
     t: z.literal('awardXp'),
     tokens: z.array(z.string()).min(1).max(20),

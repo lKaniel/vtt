@@ -1,22 +1,24 @@
 import { type Character, isCharacter } from '@vtt/system-dnd5e';
 import { canControl } from '@vtt/shared';
-import { ArrowBigUpDashIcon } from 'lucide-react';
+import { ArrowBigDownDashIcon, ArrowBigUpDashIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { t } from '../../i18n/index.ts';
 import { Button } from '../kit/button.tsx';
 import { useBuiltCharacters } from '../creator/BuilderWindow.tsx';
+import { LevelDownDialog } from './LevelDownDialog.tsx';
 import { LevelUpDialog } from './LevelUpDialog.tsx';
 import type { SheetProps } from './sheet-props.ts';
 
 /**
- * The sheet's Level up, for the character's owner and the GM: a character
+ * The sheet's Level up (and Level down), for the character's owner and the GM: a character
  * made with the creator levels up through its build (the level up window),
  * any other (imported from Foundry, made on its sheet) here on the sheet.
  */
 export function LevelUpButton(props: Readonly<SheetProps>) {
   const { session, kind, value, edit } = props;
   const [open, setOpen] = useState(false);
-  const built = useBuiltCharacters(session).list;
+  const [down, setDown] = useState(false);
+  const { list: built, reload } = useBuiltCharacters(session);
   const you = session.you;
   const allowed = !edit && !!you && isCharacter(value) && canControl(value, you);
   const id = kind === 'token' ? (value.actor ?? value.id) : value.id;
@@ -34,7 +36,17 @@ export function LevelUpButton(props: Readonly<SheetProps>) {
         <ArrowBigUpDashIcon />
         {t('levelUp.button')}
       </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label={t('levelDown.button')}
+        title={t('levelDown.button')}
+        onClick={() => setDown(true)}
+      >
+        <ArrowBigDownDashIcon />
+      </Button>
       {(open || asked) && <LevelUpDialog {...props} initial={asked} onClose={close} />}
+      {down && <LevelDownDialog {...props} build={build} onSaved={reload} onClose={() => setDown(false)} />}
     </>
   );
 }

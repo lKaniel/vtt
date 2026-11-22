@@ -186,6 +186,8 @@ export type ClientMessage =
       hp: 'average' | 'roll';
       improvement?: Partial<Record<Ability, number>>;
     }
+  /** One level less in `class`, for a character that is only an actor. */
+  | { t: 'levelDown'; token?: string; actor?: string; class: string }
   /** GM: asks these creatures for a check: each for itself, as a group, or two in a contest. */
   | {
       t: 'requestCheck';
