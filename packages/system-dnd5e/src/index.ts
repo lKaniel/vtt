@@ -46,6 +46,7 @@ export * from './counterspell.ts';
 export * from './gravity.ts';
 export * from './two-weapon.ts';
 export * from './weapon-attack.ts';
+export * from './weapon-formula.ts';
 export * from './wards.ts';
 export * from './forms.ts';
 export * from './spell-creatures.ts';

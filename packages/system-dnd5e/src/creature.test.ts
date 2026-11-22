@@ -56,6 +56,38 @@ describe('resolveCreature', () => {
     ]);
   });
 
+  it('attacks with a homemade weapon written as formulas, its magic bonus on top', () => {
+    const blade = {
+      type: 'weapon',
+      id: 'mind-blade',
+      name: 'Mind Blade',
+      category: 'martial',
+      kind: 'melee',
+      damage: { dice: '1d10', type: 'psychic' },
+      plus: 1,
+      formula: { damage: '1d10 psychic + 1d6 fire + 2*dex + level', hit: 'cha + prof' },
+    };
+    const c = resolveCreature(
+      token({
+        stats: { level: 5, abilities: { str: 10, dex: 14, cha: 18 } },
+        own: { items: [blade] },
+        inventory: [{ item: 'mind-blade', equipped: true }],
+      }),
+      srdFor('2024'),
+    )!;
+    // Cha +4 and proficiency +3, then +1 magic; 2 × Dex +2 and level 5, then +1 magic.
+    expect(c.attacks).toMatchObject([
+      {
+        name: 'Mind Blade',
+        toHit: 8,
+        damage: [
+          { dice: '1d10+10', type: 'psychic' },
+          { dice: '1d6', type: 'fire' },
+        ],
+      },
+    ]);
+  });
+
   it('uses the better of str and dex for finesse weapons and dex for ranged ones', () => {
     const c = resolveCreature(
       token({
