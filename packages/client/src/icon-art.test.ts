@@ -1,7 +1,14 @@
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { type Attack, type FeatureSheet, srdFor, type TokenView } from '@vtt/system-dnd5e';
 import { afterEach, describe, expect, it } from 'vitest';
+import manifest from './icon-art.json';
 import {
   attackArt,
+  CARD_BACK,
+  cardBackFor,
+  concentrationArt,
   diceArt,
   effectArt,
   featureArt,
@@ -12,6 +19,9 @@ import {
   spellArt,
 } from './icon-art.ts';
 import { packAnimation, setPackArt } from './content/pack-art.ts';
+
+const PUBLIC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
+const ICONS_DIR = resolve(PUBLIC_DIR, 'art/icons');
 
 const spell = (id: string) => srdFor('2014').spells.get(id)!;
 const attack = (kind: Attack['kind']): Attack => ({
@@ -24,9 +34,21 @@ const feature = (id: string) => ({ id }) as FeatureSheet;
 const item = (id: string) => srdFor('2014').items.get(id);
 
 describe('painted icon art', () => {
+  it('matches icon-art.json exactly against the files in public/art/icons', () => {
+    for (const kind of ['spells', 'features', 'items', 'conditions', 'actions'] as const) {
+      const files = readdirSync(resolve(ICONS_DIR, kind))
+        .filter((f) => f.endsWith('.webp'))
+        .map((f) => f.slice(0, -'.webp'.length))
+        .sort((a, b) => a.localeCompare(b));
+      const listed = (manifest as Record<string, string[]>)[kind];
+      expect(listed, `${kind} in icon-art.json`).toEqual(files);
+    }
+  });
+
   it('finds a spell painting by id', () => {
     expect(spellArt(spell('fireball'))).toBe('/art/icons/spells/fireball.webp');
-    expect(spellArt(spell('wish'))).toBeUndefined();
+    expect(spellArt(spell('wish'))).toBe('/art/icons/spells/wish.webp');
+    expect(spellArt({ id: 'no-such-spell', name: 'No Such Spell' })).toBeUndefined();
   });
 
   it('paints attacks as melee or ranged', () => {
@@ -36,7 +58,8 @@ describe('painted icon art', () => {
 
   it('finds class features by id', () => {
     expect(featureArt(feature('second-wind'))).toBe('/art/icons/features/second-wind.webp');
-    expect(featureArt(feature('arcane-recovery'))).toBeUndefined();
+    expect(featureArt(feature('arcane-recovery'))).toBe('/art/icons/features/arcane-recovery.webp');
+    expect(featureArt(feature('no-such-feature'))).toBeUndefined();
   });
 
   it('paints basic actions and their bonus-action versions with the action icons', () => {
@@ -55,15 +78,55 @@ describe('painted icon art', () => {
     expect(featureArt(feature('paladins-smite'))).toBe('/art/icons/features/divine-smite.webp');
   });
 
-  it('finds weapons, armour and gear by item id', () => {
+  it('finds weapons, armour and gear by item id, falling back to base', () => {
     expect(itemArt(item('longsword'))).toBe('/art/icons/items/longsword.webp');
     expect(itemArt(item('potion-of-healing'))).toBe('/art/icons/items/potion-of-healing.webp');
+    expect(itemArt({ id: 'custom-flame-longsword', name: 'Custom Flame Longsword', base: 'longsword' })).toBe(
+      '/art/icons/items/longsword.webp',
+    );
+    expect(itemArt({ id: 'custom-thing', name: 'Custom Thing', base: 'no-such-base' })).toBeUndefined();
     expect(itemArt(undefined)).toBeUndefined();
   });
 
-  it('paints each die, with percentile dice shown as a d10', () => {
+  it('paints bundled condition and concentration icons', () => {
+    expect(effectArt({ conditions: ['poisoned'] })).toBe('/art/icons/conditions/poisoned.webp');
+    expect(concentrationArt()).toBe('/art/icons/conditions/concentrating.webp');
+  });
+
+  it('paints each die including percentile dice', () => {
     expect(diceArt('d20')).toBe('/art/icons/dice/d20.webp');
-    expect(diceArt('d100')).toBe('/art/icons/dice/d10.webp');
+    expect(diceArt('d100')).toBe('/art/icons/dice/d100.webp');
+  });
+
+  it('shows the painted card back for face-down stacks and non-empty decks', () => {
+    expect(CARD_BACK).toBe('/art/ui/cards/card-back.webp');
+    expect(existsSync(resolve(PUBLIC_DIR, 'art/ui/cards/card-back.webp'))).toBe(true);
+    expect(cardBackFor({ kind: 'deck', count: 52, cards: [] })).toBe(CARD_BACK);
+    expect(cardBackFor({ kind: 'deck', count: 52, cards: [{}] })).toBe(CARD_BACK);
+    expect(cardBackFor({ kind: 'hand', count: 3, cards: [] })).toBe(CARD_BACK);
+    expect(cardBackFor({ kind: 'hand', count: 3, cards: [{}] })).toBeUndefined();
+    expect(cardBackFor({ kind: 'pile', count: 2, cards: [{}] })).toBeUndefined();
+    expect(cardBackFor({ kind: 'deck', count: 0, cards: [] })).toBeUndefined();
+  });
+
+  it('links the bundled favicons in index.html', () => {
+    const html = readFileSync(resolve(PUBLIC_DIR, '../index.html'), 'utf8');
+    expect(html).toContain('sizes="32x32" href="/favicon-32.png"');
+    expect(html).toContain('sizes="512x512" href="/favicon.png"');
+    expect(html).toContain('rel="apple-touch-icon" href="/favicon.png"');
+    expect(existsSync(resolve(PUBLIC_DIR, 'favicon-32.png'))).toBe(true);
+    expect(existsSync(resolve(PUBLIC_DIR, 'favicon.png'))).toBe(true);
+  });
+
+  it('keeps zone-art.json in sync with public/art/textures/zones', () => {
+    const files = readdirSync(resolve(PUBLIC_DIR, 'art/textures/zones'))
+      .filter((f) => f.endsWith('.webp'))
+      .map((f) => f.slice(0, -'.webp'.length))
+      .sort((a, b) => a.localeCompare(b));
+    const listed = JSON.parse(
+      readFileSync(resolve(PUBLIC_DIR, '../../system-dnd5e/content/zone-art.json'), 'utf8'),
+    ) as string[];
+    expect(listed).toEqual(files);
   });
 
   it("shows a token's own picture, or a hooded stranger when it has none", () => {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { changeText, type Effect } from '@vtt/system-dnd5e';
 import { auraText, newEffect, removeEffect, setEffect } from '../../content/effect-edit.ts';
 import { effectIcon } from '../../icons.ts';
-import { effectArt } from '../../icon-art.ts';
+import { concentrationArt, effectArt } from '../../icon-art.ts';
 import { effectLeft } from '../../session/session-time.ts';
 import { PlusIcon } from 'lucide-react';
 import { t } from '../../i18n/index.ts';
@@ -100,7 +100,7 @@ function Concentration({ session, value, kind }: Readonly<SheetProps>) {
   return (
     <ListSection title={t('sheet.concentration')} columns={[]}>
       <ListRow
-        icon={{ glyph: 'eye', tint: 'arcane' }}
+        icon={{ glyph: 'eye', tint: 'arcane', art: concentrationArt() }}
         name={t('sheet.concentrating', { spell: value.concentration!.name })}
         columns={[]}
         cells={[]}

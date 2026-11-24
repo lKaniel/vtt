@@ -58,11 +58,20 @@ export function featureArt(feature: Pick<FeatureSheet, 'id'> & { name?: string }
 export const attackArt = (attack: Pick<Attack, 'name' | 'kind'>) =>
   packPicture('item', undefined, attack.name) ??
   art('actions', attack.kind === 'ranged' ? 'ranged-attack' : 'melee-attack');
-export const itemArt = (item: Pick<Item, 'id' | 'name'> | undefined) =>
-  item ? (packPicture('item', item.id, item.name) ?? art('items', item.id)) : undefined;
+export function itemArt(item: (Pick<Item, 'id' | 'name'> & { base?: string }) | undefined): string | undefined {
+  if (!item) return undefined;
+  return (
+    packPicture('item', item.id, item.name) ??
+    art('items', item.id) ??
+    (item.base ? art('items', item.base) : undefined)
+  );
+}
 
-/** A condition's picture from the packs. */
-const conditionArt = (condition: Condition) => packPicture('condition', condition);
+/** A condition's picture: pack art first, else the bundled painting. */
+const conditionArt = (condition: Condition) => packPicture('condition', condition) ?? art('conditions', condition);
+
+/** The concentration picture: pack art first, else the bundled painting. */
+export const concentrationArt = () => packPicture('condition', 'concentrating') ?? art('conditions', 'concentrating');
 
 /** An effect's picture: its first condition's, else that of the spell, feature or condition it is named for. */
 export function effectArt(effect: Pick<EffectTemplate, 'conditions' | 'name'>): string | undefined {
@@ -81,8 +90,8 @@ export function effectArt(effect: Pick<EffectTemplate, 'conditions' | 'name'>): 
 export const monsterArt = (monster: Pick<Monster, 'id' | 'img'>) =>
   packPicture('monster', monster.id) ?? (monster.img && assetUrl(monster.img));
 
-/** A painted die for the quick-roll buttons; there is no d100, so it borrows the d10. */
-export const diceArt = (die: string) => `/art/icons/dice/${die === 'd100' ? 'd10' : die}.webp`;
+/** A painted die for the quick-roll buttons. */
+export const diceArt = (die: string) => `/art/icons/dice/${die}.webp`;
 
 /** The picture it wears (a disguise's, else its own), else its monster's painted token, if it has either. A wildcard pattern no token picked from yet isn't a picture. */
 export const cutoutOf = (token: TokenView): string | undefined => {
@@ -92,3 +101,10 @@ export const cutoutOf = (token: TokenView): string | undefined => {
 
 /** The picture to show for a token, or a hooded stranger for creatures without one. */
 export const portraitOf = (token: TokenView) => cutoutOf(token) ?? '/art/ui/portrait-default.webp';
+
+/** The painted back of a face-down playing card or deck. */
+export const CARD_BACK = '/art/ui/cards/card-back.webp';
+
+/** The card-back picture when a stack is face down or is a non-empty deck, else none. */
+export const cardBackFor = (stack: { kind: 'deck' | 'hand' | 'pile'; count: number; cards: readonly unknown[] }) =>
+  stack.count > 0 && (stack.cards.length === 0 || stack.kind === 'deck') ? CARD_BACK : undefined;

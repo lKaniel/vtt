@@ -1,6 +1,7 @@
 import { type Card, cardKey } from '@vtt/shared';
 import { useState } from 'react';
 import { assetUrl } from '../assets.ts';
+import { CARD_BACK, cardBackFor } from '../icon-art.ts';
 import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
 import type { CardStackView } from '../session/session-cards.ts';
@@ -57,6 +58,7 @@ const KIND_ICON = { deck: LayersIcon, hand: HandIcon, pile: SpadeIcon } as const
 
 function stackItem(session: Session, stack: CardStackView, open: (id: string) => void): DirItem {
   const Icon = KIND_ICON[stack.kind];
+  const back = cardBackFor(stack);
   return {
     key: stack.id,
     ref: { coll: 'cards', id: stack.id },
@@ -64,7 +66,9 @@ function stackItem(session: Session, stack: CardStackView, open: (id: string) =>
     folder: typeof stack.doc.folder === 'string' ? stack.doc.folder : undefined,
     tags: { kind: stack.kind },
     look: {
-      picture: (
+      picture: back ? (
+        <img src={back} alt="" className="size-full object-cover" draggable={false} />
+      ) : (
         <span className="flex items-center justify-center text-gold">
           <Icon className="size-4" />
         </span>
@@ -152,11 +156,12 @@ function StackCards({
   const holds = session.isGm() || session.cards.hands().some((h) => h.id === stack.id);
   const toggle = (key: string) => setPicked(picked.includes(key) ? picked.filter((k) => k !== key) : [...picked, key]);
   const present = picked.filter((k) => stack.cards.some((c) => cardKey(c) === k));
+  const hidden = stack.count ? <FaceDownStack count={stack.count} /> : <p className="muted">{t('cards.empty')}</p>;
   return (
     <div className="flex w-full flex-col gap-1.5">
       {session.isGm() && stack.kind === 'deck' && <DealCards session={session} deck={stack} stacks={stacks} />}
       {stack.cards.length === 0 ? (
-        <p className="muted">{t(stack.count ? 'cards.faceDown' : 'cards.empty')}</p>
+        hidden
       ) : (
         <div className="flex flex-wrap gap-1">
           {stack.cards.map((c) => (
@@ -234,6 +239,24 @@ function DealCards({
 }
 
 const RED = new Set(['♥', '♦']);
+
+/** A stack whose cards are face down: the painted card back alongside its label and count. */
+function FaceDownStack({ count }: Readonly<{ count: number }>) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <img
+        src={CARD_BACK}
+        alt=""
+        className="h-16 w-11 flex-none rounded-[3px] border border-gold-dim/60 object-cover"
+        draggable={false}
+      />
+      <div className="flex flex-col">
+        <p className="muted">{t('cards.faceDown')}</p>
+        <p className="text-xs text-muted-foreground">{t('cards.count', { n: count })}</p>
+      </div>
+    </div>
+  );
+}
 
 /** A card's face: its picture, or its value and suit. */
 function PlayingCard({ card, picked, onClick }: Readonly<{ card: Card; picked: boolean; onClick?: () => void }>) {
