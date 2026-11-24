@@ -13,7 +13,7 @@ const media: MediaEntry[] = [
   pack('models/zz-textures/wood.webp'),
   own('foundry/modules/baileywiki-3d/models/tent.glb'),
   own('foundry/modules/baileywiki-3d/models/chair.glb'),
-  own('tokens/bram.svg'),
+  own('tokens/bram.webp'),
 ];
 
 describe('folderOf', () => {

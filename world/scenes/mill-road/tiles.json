@@ -110,7 +110,7 @@
     "y": 650,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/mill-wheel.svg"
+    "src": "/assets/tiles/mill-wheel.webp"
   },
   {
     "kind": "group",
@@ -126,7 +126,7 @@
     "y": 248,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 228
   },
   {
@@ -137,7 +137,7 @@
     "y": 1293,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 134
   },
   {
@@ -148,7 +148,7 @@
     "y": 88,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 168
   },
   {
@@ -159,7 +159,7 @@
     "y": 668,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 165
   },
   {
@@ -170,7 +170,7 @@
     "y": 78,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 17
   },
   {
@@ -181,7 +181,7 @@
     "y": 16,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 111
   },
   {
@@ -192,7 +192,7 @@
     "y": 83,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 93
   },
   {
@@ -203,7 +203,7 @@
     "y": 1653,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 171
   },
   {
@@ -214,7 +214,7 @@
     "y": 397,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 42
   },
   {
@@ -225,7 +225,7 @@
     "y": 1080,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 142
   },
   {
@@ -236,7 +236,7 @@
     "y": 192,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 335
   },
   {
@@ -247,7 +247,7 @@
     "y": 1107,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 127
   },
   {
@@ -258,7 +258,7 @@
     "y": 1316,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 2
   },
   {
@@ -269,7 +269,7 @@
     "y": 344,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 135
   },
   {
@@ -280,7 +280,7 @@
     "y": 1551,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 73
   },
   {
@@ -291,7 +291,7 @@
     "y": 1831,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 300
   },
   {
@@ -302,7 +302,7 @@
     "y": 700,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 201
   },
   {
@@ -313,7 +313,7 @@
     "y": 468,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 153
   },
   {
@@ -324,7 +324,7 @@
     "y": 554,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 322
   },
   {
@@ -335,7 +335,7 @@
     "y": 663,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 43
   },
   {
@@ -346,7 +346,7 @@
     "y": 257,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 270
   },
   {
@@ -357,7 +357,7 @@
     "y": 660,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 336
   },
   {
@@ -368,7 +368,7 @@
     "y": 1831,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 305
   },
   {
@@ -379,7 +379,7 @@
     "y": 1308,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 166
   },
   {
@@ -390,7 +390,7 @@
     "y": 1712,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 253
   },
   {
@@ -401,7 +401,7 @@
     "y": 1396,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 145
   },
   {
@@ -412,7 +412,7 @@
     "y": 1245,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 316
   },
   {
@@ -423,7 +423,7 @@
     "y": 1736,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 74
   },
   {
@@ -434,7 +434,7 @@
     "y": 670,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 262
   },
   {
@@ -445,7 +445,7 @@
     "y": 1846,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 219
   },
   {
@@ -456,7 +456,7 @@
     "y": 1171,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 358
   },
   {
@@ -467,7 +467,7 @@
     "y": 366,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 71
   },
   {
@@ -478,7 +478,7 @@
     "y": 1432,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 258
   },
   {
@@ -489,7 +489,7 @@
     "y": 1730,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 8
   },
   {
@@ -500,7 +500,7 @@
     "y": 229,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 299
   },
   {
@@ -511,7 +511,7 @@
     "y": 218,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 349
   },
   {
@@ -522,7 +522,7 @@
     "y": 177,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 329
   },
   {
@@ -533,7 +533,7 @@
     "y": 70,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 43
   },
   {
@@ -544,7 +544,7 @@
     "y": 1557,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 21
   },
   {
@@ -555,7 +555,7 @@
     "y": 1751,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 326
   },
   {
@@ -566,7 +566,7 @@
     "y": -60,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 53
   },
   {
@@ -577,7 +577,7 @@
     "y": -5,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 231
   },
   {
@@ -588,7 +588,7 @@
     "y": 376,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 25
   },
   {
@@ -599,7 +599,7 @@
     "y": 1565,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 9
   },
   {
@@ -610,7 +610,7 @@
     "y": 1417,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 272
   },
   {
@@ -621,7 +621,7 @@
     "y": 450,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 125
   },
   {
@@ -632,7 +632,7 @@
     "y": 1420,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 135
   },
   {
@@ -643,7 +643,7 @@
     "y": 1651,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 233
   },
   {
@@ -654,7 +654,7 @@
     "y": 559,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 257
   },
   {
@@ -665,7 +665,7 @@
     "y": 1121,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 47
   },
   {
@@ -676,7 +676,7 @@
     "y": 1067,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 269
   },
   {
@@ -687,7 +687,7 @@
     "y": 1378,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 242
   },
   {
@@ -698,7 +698,7 @@
     "y": 1869,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 38
   },
   {
@@ -709,7 +709,7 @@
     "y": 592,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 120
   },
   {
@@ -720,7 +720,7 @@
     "y": 1467,
     "w": 240,
     "h": 240,
-    "src": "/assets/tiles/oak.svg",
+    "src": "/assets/tiles/oak.webp",
     "rotation": 105
   },
   {
@@ -731,7 +731,7 @@
     "y": 415,
     "w": 160,
     "h": 160,
-    "src": "/assets/tiles/pine.svg",
+    "src": "/assets/tiles/pine.webp",
     "rotation": 332
   },
   {
@@ -742,7 +742,7 @@
     "y": 1854,
     "w": 200,
     "h": 200,
-    "src": "/assets/tiles/birch.svg",
+    "src": "/assets/tiles/birch.webp",
     "rotation": 252
   }
 ]

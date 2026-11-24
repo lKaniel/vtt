@@ -16,7 +16,7 @@ async function addRoof(dir: string): Promise<void> {
   const roof = {
     id: 'inn-roof',
     kind: 'image',
-    src: '/assets/tokens/goblin.svg',
+    src: '/assets/tokens/bram.webp',
     x: 400,
     y: 200,
     w: 500,

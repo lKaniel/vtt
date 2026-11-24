@@ -1,7 +1,6 @@
 {
   "id": "goblin",
   "name": "Goblin",
-  "img": "/assets/tokens/goblin.svg",
   "color": "#4a7a30",
   "monster": "goblin"
 }

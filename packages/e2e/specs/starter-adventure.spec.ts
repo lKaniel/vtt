@@ -22,7 +22,7 @@ test.use({ serverOptions: { prepare: onMillRoad } });
 test('walking into the ambush brings the bandits out of the trees', async ({ page }) => {
   await atTable(page, PLAYER_2);
   await expect.poll(() => idsSeen(page)).toContain('bram');
-  expect(await page.evaluate(() => vtt.token('bram')?.img)).toBe('/assets/tokens/bram.svg');
+  expect(await page.evaluate(() => vtt.token('bram')?.img)).toBe('/assets/tokens/bram.webp');
   for (const id of FOES) expect(await idsSeen(page)).not.toContain(id);
 
   await page.evaluate(() => vtt.move('bram', 1250, 950));
