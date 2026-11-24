@@ -50,10 +50,40 @@ export function rectTile(tile: RectTile, ctx: GroundContext): RectView {
   return { root: holder, loaded };
 }
 
+/** The bundled picture for a kind of ground texture. */
+export const groundArtUrl = (kind: TileTexture): string => `/art/textures/ground/${kind}.webp`;
+
+/**
+ * Full-colour ground paintings shouldn't be double-tinted by the preset's colour,
+ * but darker tiles (woods vs meadow) keep a gentle shade shift.
+ */
+export function groundTint(color: string): number {
+  const hex = parseColor(color, 0xffffff);
+  const luma = (0.299 * ((hex >> 16) & 255) + 0.587 * ((hex >> 8) & 255) + 0.114 * (hex & 255)) / 255;
+  const scale = Math.min(1, Math.max(0.65, luma / 0.5));
+  const v = Math.round(scale * 255);
+  return (v << 16) | (v << 8) | v;
+}
+
 function bodyOf(tile: RectTile, m: number, ctx: GroundContext): { body: Container; loaded?: Promise<void> } {
   if (tile.pattern) return patternRect(tile, tile.pattern, m, ctx);
-  if (tile.texture) return { body: texturedRect(tile, { tex: groundTexture(tile.texture), size: SIZE }, m, ctx) };
+  if (tile.texture) return groundRect(tile, tile.texture, m, ctx);
   return { body: new Graphics().rect(tile.x - m, tile.y - m, tile.w + 2 * m, tile.h + 2 * m).fill(tile.color) };
+}
+
+/** A rect wearing a bundled ground picture, showing the code-painted fallback until it loads (or if it fails). */
+function groundRect(tile: RectTile, kind: TileTexture, m: number, ctx: GroundContext) {
+  const body = new Container();
+  const fallback = body.addChild(texturedRect(tile, { tex: groundTexture(kind), size: SIZE }, m, ctx));
+  const src = groundArtUrl(kind);
+  const loaded = Assets.load<Texture>(assetUrl(src))
+    .then((tex) => {
+      if (body.destroyed) return;
+      body.addChild(texturedRect(tile, { tex, size: tex.width, tint: groundTint(tile.color) }, m, ctx));
+      fallback.destroy();
+    })
+    .catch(() => console.warn(`Missing ground texture ${src}`));
+  return { body, loaded };
 }
 
 /** A rect repeating a picture, drawn in its colour until the picture is in. */
@@ -75,7 +105,7 @@ function patternRect(tile: RectTile, src: string, m: number, ctx: GroundContext)
 /** `size`: the texture's width in pixels, which `textureScale` squares cover. */
 function texturedRect(
   tile: RectTile,
-  { tex, size }: { tex: Texture; size: number },
+  { tex, size, tint }: { tex: Texture; size: number; tint?: number },
   m: number,
   ctx: GroundContext,
 ): TilingSprite {
@@ -84,6 +114,6 @@ function texturedRect(
   sprite.tileScale.set(((tile.textureScale ?? 2) * ctx.gridSize) / size);
   // Line the texture up with the map's origin, so neighbouring tiles continue it.
   sprite.tilePosition.set(-(tile.x - m), -(tile.y - m));
-  sprite.tint = parseColor(tile.color, 0xffffff);
+  sprite.tint = tint ?? parseColor(tile.color, 0xffffff);
   return sprite;
 }
