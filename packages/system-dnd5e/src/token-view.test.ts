@@ -69,10 +69,12 @@ describe('viewToken', () => {
   it("shows everyone the monster's painted token without telling them which monster it is", () => {
     const srd = srdFor('2024');
     const painted = { ...srd.monsters.get('goblin-warrior')!, img: '/art/tokens/goblin.webp' };
+    const unpainted = { ...srd.monsters.get('goblin-warrior')!, img: undefined };
     const content = { ...srd, monsters: new Map([['goblin-warrior', painted]]) };
+    const plain = { ...srd, monsters: new Map([['goblin-warrior', unpainted]]) };
     expect(viewToken(goblin, ana, content)).toMatchObject({ art: '/art/tokens/goblin.webp' });
     expect(viewToken(goblin, gm, content)).toMatchObject({ art: '/art/tokens/goblin.webp' });
-    expect(viewToken(goblin, ana, srd)).not.toHaveProperty('art');
+    expect(viewToken(goblin, ana, plain)).not.toHaveProperty('art');
   });
 
   it('shows what is in a pile to everyone, unless it is locked', () => {

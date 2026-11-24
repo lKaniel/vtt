@@ -59,8 +59,8 @@ describe('SRD content', () => {
 });
 
 describe('monster token art', () => {
-  const goblin = srdFor('2014').monsters.get('goblin')!;
-  const warrior = srdFor('2024').monsters.get('goblin-warrior')!;
+  const goblin = { ...srdFor('2014').monsters.get('goblin')!, img: undefined };
+  const warrior = { ...srdFor('2024').monsters.get('goblin-warrior')!, img: undefined };
 
   it('points monsters at their painted token, sharing one picture between names', () => {
     const art = { goblin: 'goblin', 'goblin-warrior': 'goblin' };

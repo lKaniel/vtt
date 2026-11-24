@@ -69,8 +69,11 @@ describe('the Compendium', () => {
     const odd = compendium('features', '2014', 'timeless body')[0]!;
     expect(odd.icon.art).toBeUndefined();
     expect(odd.icon.glyph).toBeTruthy();
-    // A monster without a painted token is drawn as a claw.
-    expect(compendium('monsters', '2014', 'goblin')[0]!.icon).toMatchObject({ glyph: 'claw', art: undefined });
+    // A painted monster gets its token art alongside its claw fallback glyph.
+    expect(compendium('monsters', '2014', 'goblin')[0]!.icon).toMatchObject({
+      glyph: 'claw',
+      art: '/art/tokens/goblin.webp',
+    });
   });
 
   it('filters spells by level, school and class', () => {
