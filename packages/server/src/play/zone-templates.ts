@@ -1,6 +1,6 @@
 import { artOf, type Doc, type Op } from '@vtt/core';
 import type { Template } from '@vtt/shared';
-import { withChoice, type ZoneHit, zonesOf, zoneTemplate } from '@vtt/system-dnd5e';
+import { withChoice, zoneArtUrl, type ZoneHit, zonesOf, zoneTemplate } from '@vtt/system-dnd5e';
 import type { Table } from './table.ts';
 import { packArtOf } from '../library/game-packs.ts';
 
@@ -52,7 +52,8 @@ export class ZoneTemplates {
     const shape = spell && !spell.places?.wall && zoneTemplate(z, spell);
     if (!shape) return [];
     const effect: Owner = { token: z.bearer.id, id: z.effect.id };
-    const texture = artOf(packArtOf(this.store), 'animation', `zone:${z.effect.zone.spell}`)?.[0];
+    const texture =
+      artOf(packArtOf(this.store), 'animation', `zone:${z.effect.zone.spell}`)?.[0] ?? zoneArtUrl(z.effect.zone.spell);
     const doc = { id: idOf(z), type: 'template', rev: 0, ...shape, effect, ...(texture && { texture }) } as Doc;
     return [{ op: 'create', coll: this.coll, doc }];
   }

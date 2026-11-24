@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { textureFrame } from './template-looks.ts';
+import { textureFrame, textureStyle } from './template-looks.ts';
 
 const base = { x: 100, y: 200, distance: 20 };
 
@@ -24,5 +24,20 @@ describe('where a template’s picture or loop lies', () => {
 
   it('turns a square with it', () => {
     expect(textureFrame({ ...base, shape: 'square', direction: 45 }, 100)).toMatchObject({ w: 400, h: 400 });
+  });
+});
+
+describe('how a template’s texture blends', () => {
+  it('blends bundled zone paintings additively on black', () => {
+    expect(textureStyle('/art/textures/zones/web.webp')).toEqual({ blendMode: 'add', alpha: 0.85 });
+    expect(textureStyle('/art/textures/zones/fog-cloud.webp')).toEqual({ blendMode: 'add', alpha: 0.85 });
+  });
+
+  it('keeps Wall of Stone opaque with normal blending', () => {
+    expect(textureStyle('/art/textures/zones/wall-of-stone.webp')).toEqual({ blendMode: 'normal', alpha: 1 });
+  });
+
+  it('leaves pack textures unchanged with normal blending', () => {
+    expect(textureStyle('pack://jb2a/web.webm')).toEqual({ blendMode: 'normal', alpha: 1 });
   });
 });

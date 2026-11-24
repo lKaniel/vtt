@@ -35,6 +35,7 @@ export * from './spell-picks.ts';
 export * from './items.ts';
 export * from './basic-actions.ts';
 export * from './zones.ts';
+export * from './zone-art.ts';
 export * from './deaths.ts';
 export * from './reactions.ts';
 export * from './hit-reactions.ts';

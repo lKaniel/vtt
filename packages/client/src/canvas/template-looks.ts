@@ -31,6 +31,21 @@ export function textureFrame(t: Placed, gridSize: number): Frame {
   return { x: t.x, y: t.y, w: size, h: across, anchor: [0, 0.5], rotation };
 }
 
+export interface TextureStyle {
+  blendMode: 'normal' | 'add';
+  alpha: number;
+}
+
+const OPAQUE_ZONES = new Set(['/art/textures/zones/wall-of-stone.webp']);
+
+/** Bundled zone paintings sit on black and blend additively, except opaque ones; pack art stays normal. */
+export function textureStyle(texture: string): TextureStyle {
+  if (texture.startsWith('/art/textures/zones/') && !OPAQUE_ZONES.has(texture)) {
+    return { blendMode: 'add', alpha: 0.85 };
+  }
+  return { blendMode: 'normal', alpha: 1 };
+}
+
 const VIDEO = { autoPlay: true, loop: true, muted: true, preload: false };
 
 function load(texture: string): Promise<Texture> {
@@ -48,11 +63,14 @@ function look(t: Doc & Placed & { texture: string }, gridSize: number): Containe
     .then((texture) => {
       if (root.destroyed) return;
       const f = textureFrame(t, gridSize);
+      const style = textureStyle(t.texture);
       const sprite = new Sprite(texture);
       sprite.anchor.set(...f.anchor);
       sprite.position.set(f.x, f.y);
       sprite.rotation = f.rotation;
       sprite.setSize(f.w, f.h);
+      sprite.blendMode = style.blendMode;
+      sprite.alpha = style.alpha;
       root.addChild(sprite);
     })
     .catch(() => console.warn(`Missing template texture ${t.texture}`));

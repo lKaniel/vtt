@@ -26,7 +26,13 @@ beforeEach(async () => {
       x: 50,
       y: 50,
       darkvision: 60,
-      stats: { class: 'cleric', level: 5, maxHp: 30, abilities: { wis: 16 }, spells: ['spirit-guardians', 'moonbeam'] },
+      stats: {
+        class: 'cleric',
+        level: 5,
+        maxHp: 30,
+        abilities: { wis: 16 },
+        spells: ['spirit-guardians', 'moonbeam', 'web'],
+      },
     }),
   );
   store.setToken(TokenSchema.parse({ ...store.tokens.get('goblin'), x: 250, y: 250, monster: 'goblin' }));
@@ -86,5 +92,11 @@ describe('lasting zones as templates', () => {
     expect(templates()).toHaveLength(1);
     seat('gm').receive({ t: 'undo' });
     expect(templates()).toEqual([]);
+  });
+
+  it('gives a Web zone its bundled texture when no pack provides one', () => {
+    const { ana } = fight();
+    ana.receive({ t: 'cast', caster: 'hero', spell: 'web', slot: 2, targets: [], point: [150, 250] });
+    expect(templates()).toMatchObject([{ texture: '/art/textures/zones/web.webp' }]);
   });
 });
