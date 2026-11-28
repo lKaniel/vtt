@@ -6,6 +6,7 @@ import { EN_OWN } from './en-own.ts';
 import { EN_CLOCK } from './en-clock.ts';
 import { EN_GM } from './en-gm.ts';
 import { EN_SHEET_BITS } from './en-sheet-bits.ts';
+import { EN_REST } from './en-rest.ts';
 import { EN_BITS } from './en-bits.ts';
 import { EN_BOOK } from './en-book.ts';
 import { EN_COMPENDIUM } from './en-compendium.ts';
@@ -397,6 +398,7 @@ export const EN = {
   ...EN_TABLE,
   ...EN_JOURNEY,
   ...EN_BITS,
+  ...EN_REST,
   ...EN_SHEET_BITS,
   ...EN_GM,
   ...EN_CLOCK,

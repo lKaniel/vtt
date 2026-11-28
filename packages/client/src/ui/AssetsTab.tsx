@@ -109,7 +109,7 @@ function MediaFilters({
       <SelectField
         value={kind}
         onValueChange={(k) => setKind(k as MediaKind | '')}
-        aria-label="Kind"
+        aria-label={t('assetsTab.kind')}
         options={[
           { value: '', label: 'All' },
           ...(Object.keys(KIND_LABEL) as MediaKind[]).map((k) => ({ value: k, label: KIND_LABEL[k] })),
@@ -257,7 +257,7 @@ function MediaTile({ session, media }: Readonly<{ session: Session; media: Media
           size="icon-sm"
           className="absolute top-1 right-1 bg-black/60"
           aria-label={`Show ${media.name} to players`}
-          title="Show to players"
+          title={t('assetsTab.showToPlayers')}
           onClick={(e) => {
             e.stopPropagation();
             session.journal.showImage(media.src, media.name);
@@ -335,7 +335,7 @@ function PackDetail({ session, pack }: Readonly<{ session: Session; pack: PackIn
   return (
     <div className="lib-detail">
       {pack.description && <p className="lib-body">{pack.description}</p>}
-      {pack.compendia.length === 0 && <p className="muted">Media only.</p>}
+      {pack.compendia.length === 0 && <p className="muted">{t('assetsTab.mediaOnly')}</p>}
       {pack.compendia.map((c) => (
         <CompendiumView key={c.id} session={session} pack={pack} compendium={c} />
       ))}
@@ -364,7 +364,7 @@ function CompendiumView({
   };
   const label = `${compendium.name ?? compendium.id} (${compendium.type})`;
   if (!IMPORTED.has(compendium.type)) {
-    const where = pack.enabled ? 'In the Compendium tab.' : 'Turn the pack on to use it.';
+    const where = pack.enabled ? t('assetsTab.inTheCompendiumTab') : t('assetsTab.turnThePackOn');
     return <p className="lib-sub">{`${label}: ${where}`}</p>;
   }
   const add = (doc: unknown) =>

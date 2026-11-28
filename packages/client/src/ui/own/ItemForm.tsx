@@ -65,7 +65,7 @@ export function ItemForm({ item, onSave }: Readonly<{ item: Item; onSave: (item:
   return (
     <div className="grid grid-cols-2 gap-3">
       <NameField name={draft.name} onChange={(name) => change({ name })} />
-      <Field label="Kind">
+      <Field label={t('itemForm.kind')}>
         <SelectField
           value={draft.type}
           onValueChange={(t) => replace(retype(draft, t as Item['type']))}
@@ -76,7 +76,7 @@ export function ItemForm({ item, onSave }: Readonly<{ item: Item; onSave: (item:
           ]}
         />
       </Field>
-      <Field label="Weight (lb)">
+      <Field label={t('itemForm.weightLb')}>
         <NumberField value={draft.weight} min={0} onValueChange={(weight) => change({ weight })} />
       </Field>
       {draft.type === 'gear' && <GearFields gear={draft} change={change} />}
@@ -94,14 +94,14 @@ function GearFields({ gear, change }: Readonly<{ gear: Gear; change: (p: Partial
   const use = gear.use ?? { potion: false };
   return (
     <>
-      <Field label="Heals when used (dice)">
+      <Field label={t('itemForm.healsWhenUsedDice')}>
         <Input
           value={use.heal ?? ''}
           placeholder="e.g. 2d4+2"
           onChange={(e) => change({ use: e.target.value ? { ...use, heal: e.target.value } : undefined })}
         />
       </Field>
-      <Field label="A potion">
+      <Field label={t('itemForm.aPotion')}>
         <Checkbox
           checked={use.potion}
           disabled={!use.heal}
@@ -115,7 +115,7 @@ function GearFields({ gear, change }: Readonly<{ gear: Gear; change: (p: Partial
 function ArmorFields({ armor, change }: Readonly<{ armor: Armor; change: (p: Partial<Armor>) => void }>) {
   return (
     <>
-      <Field label="Category">
+      <Field label={t('itemForm.category')}>
         <SelectField
           value={armor.category}
           onValueChange={(c) => change({ category: c as Armor['category'] })}
@@ -125,7 +125,7 @@ function ArmorFields({ armor, change }: Readonly<{ armor: Armor; change: (p: Par
       <Field label={armor.category === 'shield' ? 'AC bonus' : 'Base AC'}>
         <NumberField value={armor.ac} min={0} max={30} onValueChange={(ac) => change({ ac })} />
       </Field>
-      <Field label="Stealth disadvantage">
+      <Field label={t('itemForm.stealthDisadvantage')}>
         <Checkbox
           checked={armor.stealthDisadvantage}
           onCheckedChange={(on) => change({ stealthDisadvantage: on === true })}

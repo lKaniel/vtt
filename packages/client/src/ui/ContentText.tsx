@@ -6,6 +6,7 @@ import type { Session } from '../session/session.ts';
 import type { Tip } from '../text/tooltip.ts';
 import { Button } from './kit/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
+import { t } from '../i18n/index.ts';
 
 // Journal text with its links and inline rolls live: an entry, sheet or
 // scene link opens it, rules content shows its card, a roll rolls in chat
@@ -104,7 +105,7 @@ function CheckSpan({ session, check, label }: Readonly<{ session: Session; check
       className={INLINE}
       data-slot="inline-check"
       disabled={!ready}
-      title={gm ? 'Ask the selected creatures, or the party, for this check' : 'Roll it for your selected creature'}
+      title={gm ? t('contentText.askTheSelectedCreatures') : t('contentText.rollItForYour')}
       onClick={click}
     >
       {label} check

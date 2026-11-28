@@ -153,7 +153,7 @@ function NewGameForm({ systems, onMade }: Readonly<{ systems: SystemInfo[]; onMa
       <h2 className="lobby-heading">{t('setup.newGame')}</h2>
       <label className="auth-field">
         <span>Name</span>
-        <Input value={name} placeholder="The Lost Mine" onChange={(e) => setName(e.target.value)} />
+        <Input value={name} placeholder={t('lobbyScreens.theLostMine')} onChange={(e) => setName(e.target.value)} />
       </label>
       <label className="auth-field">
         <span>System</span>

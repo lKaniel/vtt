@@ -60,8 +60,8 @@ function GmFootButtons({ session, kind, value }: Readonly<SheetProps>) {
   const tokenButtons = value.actor ? (
     <ActorLinkButtons session={session} id={value.id} linked={value.linked === true} />
   ) : (
-    <Button variant="outline" size="sm" onClick={saveAsActor} title="Keep a copy in the Actors list">
-      Save as actor
+    <Button variant="outline" size="sm" onClick={saveAsActor} title={t('sheetFoot.keepACopyIn')}>
+      {t('sheetFoot.saveAsActor')}
     </Button>
   );
   return (
@@ -74,7 +74,7 @@ function GmFootButtons({ session, kind, value }: Readonly<SheetProps>) {
           size="sm"
           onClick={() => session.drops.spawn({ kind: 'actor', id: value.id }, session.editor.viewCentre())}
         >
-          Place on map
+          {t('sheetFoot.placeOnMap')}
         </Button>
       )}
       <Button variant={confirm ? 'destructive' : 'outline'} size="sm" onClick={remove} onBlur={() => setConfirm(false)}>

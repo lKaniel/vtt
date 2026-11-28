@@ -96,7 +96,7 @@ export function ClassStep({ c, set, homebrew = [] }: Readonly<StepProps>) {
   return (
     <div className="cc-split">
       <div>
-        <StepHead title="Class" hint="Your calling: what you do best in a fight and out of it." />
+        <StepHead title={t('originSteps.class')} hint={t('originSteps.yourCallingWhatYou')} />
         <div className="cc-grid">
           {classes.map((cls) => (
             <OptionCard
@@ -135,7 +135,7 @@ function ClassDetail({ c, set }: Readonly<StepProps>) {
         </p>
       </Detail>
       {c.level >= options.subclassLevel && options.subclasses.length > 0 && (
-        <Detail title="Subclass">
+        <Detail title={t('originSteps.subclass')}>
           <Chips
             options={options.subclasses.map((s) => ({ id: s.id, label: s.name }))}
             value={c.subclass}
@@ -158,7 +158,7 @@ export function BackgroundStep({ c, set }: Readonly<StepProps>) {
   return (
     <div className="cc-split">
       <div>
-        <StepHead title="Background" hint="Where you come from, and what you learned before adventuring." />
+        <StepHead title={t('originSteps.background')} hint={t('originSteps.whereYouComeFrom')} />
         <div className="cc-grid">
           {p.book.origins.backgrounds.map((b) => (
             <OptionCard

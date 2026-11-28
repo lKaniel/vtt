@@ -39,12 +39,12 @@ export function TurnOrder({ session }: Readonly<{ session: Session }>) {
       {gm && <AddFighters session={session} />}
       {gm && peaceful && (
         <Button variant="outline" size="sm" onClick={() => session.requests.setTurnBased(false)}>
-          Real time
+          {t('turnOrder.realTime')}
         </Button>
       )}
       {gm && !peaceful && (
         <Button variant="outline" size="sm" onClick={() => session.requests.endCombat()}>
-          End combat
+          {t('turnOrder.endCombat')}
         </Button>
       )}
     </div>
@@ -109,7 +109,7 @@ function LairTurn({ current }: Readonly<{ current: boolean }>) {
   return (
     <span
       className={`turn foe grid place-items-center font-display text-xs text-gold ${current ? 'current' : ''}`}
-      title="Lair actions: initiative 20"
+      title={t('turnOrder.lairActionsInitiative20')}
     >
       Lair
     </span>

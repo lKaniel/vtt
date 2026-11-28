@@ -30,7 +30,7 @@ export function ReactionPrompt({ session }: Readonly<{ session: Session }>) {
   if (!offer) return null;
   const name = (id: string) => session.tokens.get(id)?.name ?? 'Someone';
   return (
-    <div className="aiming frame reaction-prompt" role="dialog" aria-label="Reaction">
+    <div className="aiming frame reaction-prompt" role="dialog" aria-label={t('reactionPrompt.reaction')}>
       <span className="aiming-name">{question(offer, name)}</span>
       <span className="slot-choices">
         {offer.choices.map((choice) => (
@@ -44,7 +44,7 @@ export function ReactionPrompt({ session }: Readonly<{ session: Session }>) {
           </Button>
         ))}
         <Button variant="outline" size="sm" onClick={() => session.requests.takeReaction(offer.id)}>
-          {offer.kind === 'hit' ? 'Take the hit' : 'Let it go'}
+          {offer.kind === 'hit' ? t('reactionPrompt.takeTheHit') : t('reactionPrompt.letItGo')}
         </Button>
       </span>
     </div>
