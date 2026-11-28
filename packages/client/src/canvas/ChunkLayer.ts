@@ -16,7 +16,7 @@ import type { Session } from '../session/session.ts';
 import { clickTile, openDoor } from '../play/interact.ts';
 import { imageTile, type TileView } from './tile-draw.ts';
 import { ObjectGlow } from './object-glow.ts';
-import { type RoofEyes, roofsOver, roofWatchers } from './tile-motion.ts';
+import { pointerLifts, type RoofEyes, roofsOver, roofWatchers } from './tile-motion.ts';
 import { flatUnder3d } from '../view3d/content3d.ts';
 import { bakeRuns, roofStill, tileBounds, tilePad, tileStill } from './tile-bake.ts';
 import { TileBaker } from './TileBaker.ts';
@@ -79,6 +79,8 @@ export class ChunkLayer {
   private roofBaker = new TileBaker();
   /** An optimised scene's floor pictures, in place of the tiles in them. */
   private readonly baked: BakedGround;
+  /** Screen pixels per map pixel (before the device's). */
+  private zoom = 1;
   /** Tiles came or went since the floor was last stacked. */
   private restack = false;
   /** A roof started or stopped fading. */
@@ -127,6 +129,7 @@ export class ChunkLayer {
 
   /** The part of the map on screen, `zoom` its screen pixels per map pixel (before the device's). */
   setView(view: Rect, zoom: number, renderer: Renderer): void {
+    this.zoom = zoom;
     this.baker.setView(view, zoom * renderer.resolution, renderer);
     this.roofBaker.setView(view, zoom * renderer.resolution, renderer);
     this.baked.setView(view, zoom * renderer.resolution);
@@ -174,7 +177,8 @@ export class ChunkLayer {
     const { you, selected } = this.session;
     const gm = !you || isGm(you);
     const yours = gm ? [] : [...this.session.tokens.values()].filter((t) => canObserve(t, you)).map((t) => t.id);
-    const pointer = gm && !selected && !this.session.view3d.on ? this.session.pointer : undefined;
+    const near = pointerLifts(this.zoom, this.session.world?.gridSize ?? 100);
+    const pointer = gm && !selected && near && !this.session.view3d.on ? this.session.pointer : undefined;
     return { gm, yours, selected: selected ? [selected] : [], ...(pointer && { pointer }) };
   }
 
