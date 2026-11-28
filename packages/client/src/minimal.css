@@ -103,13 +103,27 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-/* Too narrow for both in one row: the fight controls take a row of their own, right of the party. */
+/*
+ * The fight controls take a row of their own, right of the party: always in
+ * a fight (beside the top bar the portraits got what little was left, four
+ * at 1500 px), and out of one when the screen is too narrow for both.
+ */
 @media (min-width: 801px) and (max-width: 1499px) {
   .top-strip {
     flex-wrap: wrap;
     row-gap: 6px;
   }
   .top-strip .turn-order {
+    flex-basis: calc(100% - 180px);
+    margin-left: 180px;
+  }
+}
+@media (min-width: 801px) {
+  .top-strip:has(> .turn-order:not(.idle)) {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .top-strip > .turn-order:not(.idle) {
     flex-basis: calc(100% - 180px);
     margin-left: 180px;
   }
@@ -460,6 +474,26 @@
   font-size: 11px;
   line-height: 1;
   color: var(--muted);
+}
+
+/* ---------- A crowded turn order ----------
+   Past ten creatures the portraits shrink, so a big fight fits on a laptop. */
+.turns.crowded {
+  gap: 7px;
+}
+.turns.crowded .turn {
+  width: 36px;
+}
+.turns.crowded .turn .face {
+  width: 36px;
+  height: 43px;
+}
+.turns.crowded .turn.current,
+.turns.crowded .turn.current .face {
+  width: 46px;
+}
+.turns.crowded .turn.current .face {
+  height: 55px;
 }
 
 /* ---------- Initiative names ----------

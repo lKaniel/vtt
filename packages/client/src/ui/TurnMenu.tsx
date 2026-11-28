@@ -1,5 +1,13 @@
 import { actsNow, currentTurn, type TokenView } from '@vtt/system-dnd5e';
-import { ChevronLeftIcon, ChevronRightIcon, PlayIcon, RotateCcwIcon, SquareIcon, UserMinusIcon } from 'lucide-react';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DicesIcon,
+  PlayIcon,
+  RotateCcwIcon,
+  SquareIcon,
+  UserMinusIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
@@ -13,7 +21,8 @@ import { TurnOverrideFields } from './TurnOverrideControls.tsx';
 // or by a right click, for whoever may bend that creature's turns: its
 // initiative set by hand, what its turn has left, and for the GM the whole
 // fight by hand: the turn given to it now (or started over), its turn ended
-// for it, its place in the order, and the creature taken out of the fight.
+// for it, its place in the order, its initiative rolled again, and the
+// creature taken out of the fight.
 
 type Props = Readonly<{ session: Session; token: TokenView; initiative: number }>;
 type MenuProps = Props & Readonly<{ open: boolean; onOpenChange: (open: boolean) => void }>;
@@ -129,6 +138,14 @@ function GmControls({ session, token, close }: GmProps) {
           </Button>
         </span>
       </div>
+      <Button
+        variant="outline"
+        size="sm"
+        title={t('fight.rerollHint', { name })}
+        onClick={then(() => session.hud.rerollInitiative([token.id]))}
+      >
+        <DicesIcon /> {t('fight.reroll')}
+      </Button>
       <Button variant="ghost" size="sm" onClick={then(() => session.hud.setCombatant(token.id, false))}>
         <UserMinusIcon /> {t('fight.remove')}
       </Button>

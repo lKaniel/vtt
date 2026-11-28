@@ -263,8 +263,10 @@ export type ClientMessage =
   | { t: 'turnBack' }
   /** GM: the fight's round, set by hand. */
   | { t: 'round'; value: number }
-  /** GM: a creature one place earlier (-1) or later (1) in the order. */
-  | { t: 'orderMove'; token: string; by: -1 | 1 }
+  /** GM: a creature `by` places earlier (negative) or later (positive) in the order. */
+  | { t: 'orderMove'; token: string; by: number }
+  /** GM: initiative rolled again for these creatures (none named: everyone in the fight). */
+  | { t: 'reroll'; tokens?: string[] }
   /** GM or trusted player: what a creature has left of its turn, set by hand (true: has it). */
   | {
       t: 'turnOverride';

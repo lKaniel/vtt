@@ -4,6 +4,7 @@
 
 import type { Page } from '@playwright/test';
 import { expect, test } from '../support/fixtures.ts';
+import { addTokens } from '../support/files.ts';
 import { screenOf } from '../support/map.ts';
 import { GM, PLAYER_2, atTable } from '../support/table.ts';
 
@@ -73,6 +74,23 @@ for (const { viewport, parts } of [
     await expect(page.locator('.turn-order .turn-name', { hasText: 'Bram' })).toBeVisible();
   });
 }
+
+test.describe('a big fight on a 1500 px screen', () => {
+  test.use({ serverOptions: { prepare: (dir: string) => addTokens(dir, 'goblin', 5, [2450, 1850]) } });
+
+  test('the turn order shows every portrait of twelve without scrolling', async ({ page }) => {
+    await page.setViewportSize({ width: 1500, height: 860 });
+    await atTable(page, GM);
+    await page.getByRole('button', { name: 'Start combat' }).click();
+    await page.getByRole('button', { name: 'All', exact: true }).click();
+    await page.getByRole('button', { name: /^Roll initiative/ }).click();
+    const portraits = page.getByRole('button', { name: /: initiative -?\d+$/ });
+    await expect(portraits).toHaveCount(12);
+    const fits = await page.locator('.turns').evaluate((el) => el.scrollWidth <= el.clientWidth);
+    expect(fits).toBe(true);
+    expect(await overlaps(page, FRAME)).toEqual([]);
+  });
+});
 
 test("the GM's fog and daylight tools stay folded until asked for", async ({ page }) => {
   await atTable(page, GM);
