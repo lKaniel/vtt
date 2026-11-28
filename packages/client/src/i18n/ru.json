@@ -1912,5 +1912,18 @@
   "classParts.chosenAt": "Выбирается на уровне",
   "classParts.subclassName": "Название подкласса",
   "classParts.subclassDescription": "Описание подкласса",
-  "classParts.addSubclass": "Добавить подкласс"
+  "classParts.addSubclass": "Добавить подкласс",
+  "settings.layout": "Раскладка экрана",
+  "settings.layout.auto": "По экрану",
+  "settings.layout.on": "Телефон",
+  "settings.layout.off": "Стол",
+  "settings.layoutHint": "Раскладка для телефона показывает карту, ваш лист или журнал по одному, на выбор во вкладках внизу.",
+  "phone.tabs": "Вкладки телефона",
+  "phone.map": "Карта",
+  "phone.sheet": "Лист",
+  "phone.log": "Журнал",
+  "phone.hint.attack": "Коснитесь цели для {name} · коснитесь плитки ещё раз для отмены",
+  "phone.hint.point": "Коснитесь места для {name} · коснитесь плитки ещё раз для отмены",
+  "phone.hint.targets": "Коснитесь ещё {count} целей для {name} · коснитесь плитки ещё раз для отмены",
+  "phone.hint.select": "Коснитесь одного из своих персонажей, чтобы выбрать его"
 }

@@ -1912,5 +1912,18 @@
   "classParts.chosenAt": "Обирається на рівні",
   "classParts.subclassName": "Назва підкласу",
   "classParts.subclassDescription": "Опис підкласу",
-  "classParts.addSubclass": "Додати підклас"
+  "classParts.addSubclass": "Додати підклас",
+  "settings.layout": "Розкладка екрана",
+  "settings.layout.auto": "За екраном",
+  "settings.layout.on": "Телефон",
+  "settings.layout.off": "Стіл",
+  "settings.layoutHint": "Розкладка для телефона показує мапу, ваш аркуш або журнал по одному, на вибір у вкладках унизу.",
+  "phone.tabs": "Вкладки телефона",
+  "phone.map": "Мапа",
+  "phone.sheet": "Аркуш",
+  "phone.log": "Журнал",
+  "phone.hint.attack": "Торкніться цілі для {name} · торкніться плитки ще раз, щоб скасувати",
+  "phone.hint.point": "Торкніться місця для {name} · торкніться плитки ще раз, щоб скасувати",
+  "phone.hint.targets": "Торкніться ще {count} цілей для {name} · торкніться плитки ще раз, щоб скасувати",
+  "phone.hint.select": "Торкніться одного зі своїх персонажів, щоб вибрати його"
 }
