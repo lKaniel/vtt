@@ -138,6 +138,17 @@ export const LegendarySchema = z.object({
       attack: z.string().optional(),
       /** A save action run like a breath weapon (Wing Attack): spell fields such as targets, range, area, save, damage, effect. */
       spell: z.record(z.string(), z.unknown()).optional(),
+      /** A spell it casts (a 2024 dragon's Frightful Presence): at a level, with its own save DC, or on itself only. */
+      casts: z
+        .object({
+          spell: id,
+          level: z.number().int().min(1).max(9).optional(),
+          dc: z.number().int().positive().optional(),
+          self: z.boolean().optional(),
+        })
+        .optional(),
+      /** It can't be taken again until the start of the creature's next turn. */
+      oncePerRound: z.boolean().optional(),
       description: z.string().optional(),
     }),
   ),

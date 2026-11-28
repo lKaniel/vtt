@@ -476,6 +476,8 @@ export const SpellSchema = z.object({
   teleport: z.number().positive().optional(),
   /** Feet each creature hit (or failing its save) is moved: positive pushes away from the caster, negative pulls closer. */
   push: z.number().int().optional(),
+  /** Exhaustion levels a target gains when it lands (a sphinx's Weight of Years). */
+  exhaustion: z.number().int().min(1).max(6).optional(),
   /**
    * The damage isn't dealt on casting but rides on later hits: "self" on the
    * caster's weapon hits (divine favor, smites), "mark" on the caster's attacks

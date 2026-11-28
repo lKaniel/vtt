@@ -182,7 +182,14 @@ describe('spells picked for a feature', () => {
     });
     expect(errors(ana)).toEqual([]);
     expect(tok('hero').spent).toEqual({ uses: { 'mystic-arcanum/eyebite': 1 } });
-    ana.receive({ t: 'cast', caster: 'hero', spell: 'eyebite', slot: 6, targets: ['goblin'], paidBy: 'mystic-arcanum' });
+    ana.receive({
+      t: 'cast',
+      caster: 'hero',
+      spell: 'eyebite',
+      slot: 6,
+      targets: ['goblin'],
+      paidBy: 'mystic-arcanum',
+    });
     expect(errors(ana)[0]).toMatch(/already cast Eyebite with Mystic Arcanum/);
   });
 

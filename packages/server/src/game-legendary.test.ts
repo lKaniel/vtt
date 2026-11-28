@@ -121,3 +121,56 @@ describe('legendary resistance', () => {
     expect(dragon().spent?.uses?.['legendary-resistance']).toBe(1);
   });
 });
+
+describe('2024 legendary actions that cast a spell or use an action', () => {
+  /** The 2024 adult red dragon in place of the black one. */
+  function redFight(): FakeSocket {
+    store.setWorld({ ...store.world, rules: '2024' });
+    store.setToken({ ...dragon(), monster: 'adult-red-dragon', stats: undefined });
+    return fight().gm;
+  }
+
+  it('casts the spell out of turn with the stat block’s DC, then not again that round', () => {
+    const gm = redFight();
+    // The hero's Wisdom save fails against Command.
+    dice = [d20(2)];
+    gm.receive({ t: 'legendary', token: 'goblin', option: 'commanding-presence', target: 'hero' });
+    const said = chat(gm).join('\n');
+    expect(said).toContain('legendary action, Commanding Presence');
+    expect(said).toMatch(/"spell":"Command".*"slot":2.*"dc":20,"total":9,"success":false/);
+    expect(dragon().spent?.uses).toEqual({ legendary: 1, 'legendary:commanding-presence': 1 });
+    gm.receive({ t: 'legendary', token: 'goblin', option: 'commanding-presence', target: 'hero' });
+    expect(gm.take('error')[0]?.message).toMatch(/again until the start of its next turn/);
+  });
+
+  it('needs a target for a spell that aims at creatures', () => {
+    const gm = redFight();
+    gm.receive({ t: 'legendary', token: 'goblin', option: 'fiery-rays' });
+    expect(gm.take('error')[0]?.message).toMatch(/Target/);
+    expect(dragon().spent?.uses).toBeUndefined();
+  });
+});
+
+describe('a 2024 legendary spell with its own DC', () => {
+  it("casts the white dragon's Fear at DC 14 though it has no Spellcasting", () => {
+    store.setWorld({ ...store.world, rules: '2024' });
+    store.setToken({ ...dragon(), monster: 'adult-white-dragon', stats: undefined });
+    const { gm } = fight();
+    dice = [d20(2)];
+    gm.receive({ t: 'legendary', token: 'goblin', option: 'frightful-presence', target: 'hero' });
+    expect(chat(gm).join('\n')).toMatch(/"spell":"Fear".*"dc":14/);
+    expect(store.tokens.get('hero')!.effects?.some((e) => e.conditions?.includes('frightened'))).toBe(true);
+  });
+});
+
+describe('legendary save actions that tire or hold still', () => {
+  it("adds a level of exhaustion with a 2024 sphinx's Weight of Years", () => {
+    store.setWorld({ ...store.world, rules: '2024' });
+    store.setToken({ ...dragon(), monster: 'sphinx-of-lore', stats: undefined });
+    const { gm } = fight();
+    dice = [d20(2)];
+    gm.receive({ t: 'legendary', token: 'goblin', option: 'weight-of-years', target: 'hero' });
+    expect(gm.take('error')).toEqual([]);
+    expect(store.tokens.get('hero')!.exhaustion).toBe(1);
+  });
+});

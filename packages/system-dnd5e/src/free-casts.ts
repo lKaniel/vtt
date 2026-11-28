@@ -62,7 +62,11 @@ function featureCast(sheet: Payer, f: FeatureSheet, spell: Pick<Spell, 'id' | 'l
   if (cast.cost !== undefined) return { ...paid, cost: evaluate(cast.cost, { level }), pool: sheet.pool?.name ?? '' };
   const own = ownUse(f, spell.id);
   if (own) return { ...paid, ...own };
-  return { ...paid, ...(f.max !== undefined && { left: f.left ?? 0, max: f.max }), ...(cast.uses && { uses: cast.uses }) };
+  return {
+    ...paid,
+    ...(f.max !== undefined && { left: f.left ?? 0, max: f.max }),
+    ...(cast.uses && { uses: cast.uses }),
+  };
 }
 
 /** The features of `sheet` that can cast `spell` without a slot, spent ones too (with `left` 0). */
@@ -98,15 +102,14 @@ export function featureCastProblem(
   if (cast.beforeCombat && fighting) return `casts ${spell.name} before the fight, not during it`;
   const cost = featureCast(sheet, feature, spell)?.cost;
   if (cost !== undefined) return poolProblem(sheet, spell, cost);
-  const own = ownUse(feature, spell.id);
-  if (own?.left === 0) return `has already cast ${spell.name} with ${feature.name}`;
-  if (own) return undefined;
-  if (feature.left === 0) return `has no uses left of ${feature.name}`;
   return usesProblem(sheet, feature, spell, cast.uses);
 }
 
-/** A cast that spends several uses (`uses`) and has fewer left. */
-function usesProblem(sheet: Payer, f: FeatureSheet, spell: Pick<Spell, 'name'>, uses = 1): string | undefined {
+/** A cast with no use left: its picked spell's own, or the feature's (several, with `uses`). */
+function usesProblem(sheet: Payer, f: FeatureSheet, spell: Pick<Spell, 'id' | 'name'>, uses = 1): string | undefined {
+  const own = ownUse(f, spell.id);
+  if (own) return own.left === 0 ? `has already cast ${spell.name} with ${f.name}` : undefined;
+  if (f.left === 0) return `has no uses left of ${f.name}`;
   if (f.left === undefined || f.left >= uses) return undefined;
   const pool = sheet.features.find((s) => s.id === f.usesFrom)?.name ?? f.name;
   return `needs ${uses} ${pool.toLowerCase()} for ${spell.name}`;

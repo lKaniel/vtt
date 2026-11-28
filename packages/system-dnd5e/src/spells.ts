@@ -139,6 +139,8 @@ export interface CastResult {
   killed?: boolean;
   /** Feet the target is pushed away from the caster (negative: pulled closer). */
   push?: number;
+  /** Exhaustion levels it gains. */
+  exhaustion?: number;
   /** The target's ward (2024 resistance) took some of the damage and is used for this turn. */
   warded?: string;
   /** More effects it gets, besides `effect` (a crowd's fear). */
@@ -339,7 +341,12 @@ function rolled(cast: Cast, target: CastSide, base: Base, { attack, save, landed
     ...(attack && { attack: attack.attack, hit: attack.hit, crit: attack.crit }),
     save,
     ...damaged,
-    ...(landed && { effect: effectFor(cast), push: spell.push, cured: spell.cures && cured(spell, target.token) }),
+    ...(landed && {
+      effect: effectFor(cast),
+      push: spell.push,
+      cured: spell.cures && cured(spell, target.token),
+      exhaustion: spell.exhaustion,
+    }),
   };
 }
 

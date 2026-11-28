@@ -38,7 +38,9 @@ describe('spells picked for a feature', () => {
     const [eyebite, finger] = [spell(warlock, 'eyebite'), spell(warlock, 'finger-of-death')];
     const paid = featureCasts(sheet(warlock), eyebite)[0]!;
     const after = payWithFeature(warlock, sheet(warlock), paid);
-    expect(featureCastProblem(sheet(after), eyebite, 'mystic-arcanum')).toBe('has already cast Eyebite with Mystic Arcanum');
+    expect(featureCastProblem(sheet(after), eyebite, 'mystic-arcanum')).toBe(
+      'has already cast Eyebite with Mystic Arcanum',
+    );
     expect(featureCastProblem(sheet(after), finger, 'mystic-arcanum')).toBeUndefined();
     expect(featureCasts(sheet(after), finger)[0]).toMatchObject({ left: 1, max: 1 });
     expect(featureCasts(sheet(after), eyebite)[0]).toMatchObject({ left: 0, max: 1 });

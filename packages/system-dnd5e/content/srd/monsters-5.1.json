@@ -15235,6 +15235,21 @@
           "id": "lightning-storm-legendary",
           "name": "Lightning Storm",
           "cost": 2,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "save": {
+              "ability": "dex",
+              "dc": 23,
+              "onSave": "half"
+            },
+            "damage": [
+              {
+                "dice": "4d10",
+                "type": "lightning"
+              }
+            ]
+          },
           "description": "The kraken uses Lightning Storm."
         },
         {
