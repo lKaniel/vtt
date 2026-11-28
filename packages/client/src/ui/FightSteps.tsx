@@ -1,4 +1,4 @@
-import { SkipBackIcon, SkipForwardIcon } from 'lucide-react';
+import { DicesIcon, SkipBackIcon, SkipForwardIcon } from 'lucide-react';
 import { useState } from 'react';
 import { t } from '../i18n/index.ts';
 import type { Session } from '../session/session.ts';
@@ -8,7 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 import { Pressable } from './kit/pressable.tsx';
 
 // The GM's hand on the fight as a whole, in the turn order bar: the round
-// badge opens the round to set, and two buttons step the turn back or on.
+// badge opens the round to set (and everyone's initiative rolled again), and
+// two buttons step the turn back or on.
 
 type Props = Readonly<{ session: Session }>;
 
@@ -37,8 +38,16 @@ export function RoundBadge({ session }: Props) {
           {badge}
         </Pressable>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[200px]" data-slot="round-edit">
+      <PopoverContent align="start" className="flex w-[220px] flex-col gap-2" data-slot="round-edit">
         <RoundForm key={combat.round} session={session} round={combat.round} />
+        <Button
+          variant="outline"
+          size="sm"
+          title={t('fight.rerollAllHint')}
+          onClick={() => session.hud.rerollInitiative()}
+        >
+          <DicesIcon /> {t('fight.rerollAll')}
+        </Button>
       </PopoverContent>
     </Popover>
   );

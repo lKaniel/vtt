@@ -255,8 +255,10 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('turnBack') }),
   /** GM: the fight's round, set by hand. */
   z.object({ t: z.literal('round'), value: z.number().int().min(1).max(9999) }),
-  /** GM: a creature one place earlier (-1) or later (1) in the order. */
-  z.object({ t: z.literal('orderMove'), token: z.string(), by: z.union([z.literal(-1), z.literal(1)]) }),
+  /** GM: a creature `by` places earlier (negative) or later (positive) in the order. */
+  z.object({ t: z.literal('orderMove'), token: z.string(), by: z.number().int().min(-999).max(999) }),
+  /** GM: initiative rolled again for these creatures (none named: everyone in the fight). */
+  z.object({ t: z.literal('reroll'), tokens: z.array(z.string()).max(500).optional() }),
   z.object({ t: z.literal('pause'), on: z.boolean() }),
   z.object({
     t: z.literal('applyDamage'),

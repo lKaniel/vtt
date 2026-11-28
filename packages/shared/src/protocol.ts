@@ -17,6 +17,7 @@ import type { FogEdit } from './fog-edit.ts';
 import type { MapEdit } from './map-edit.ts';
 import type { RollMode } from './roll-modes.ts';
 import type { ErrorEntry } from './error-log.ts';
+import type { PartFloors } from './part-floors.ts';
 
 // The engine's half of the wire protocol: scenes, maps, fog, documents and
 // undo. A game system adds its own messages (attacks, spells, sheets) on top;
@@ -25,9 +26,14 @@ import type { ErrorEntry } from './error-log.ts';
 /**
  * World settings a client needs; the player list is replaced by `you`. On a
  * combined scene, `partBakes` is the last bake of each part that has one
- * (scene-parts.ts): the map draws their pictures too.
+ * (scene-parts.ts): the map draws their pictures too; `partFloors`, how the
+ * floors of each part that names them otherwise map onto the scene's
+ * (part-floors.ts).
  */
-export type WorldInfo = Omit<World, 'players'> & { partBakes?: Record<string, string> };
+export type WorldInfo = Omit<World, 'players'> & {
+  partBakes?: Record<string, string>;
+  partFloors?: Record<string, PartFloors>;
+};
 
 /** A chat line: text or a dice roll. Systems add their own cards (an attack, a spell). */
 export interface ChatEntry {

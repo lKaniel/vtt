@@ -110,6 +110,14 @@ describe('the GM setting the round and the order', () => {
     expect(currentTurn(store.combat!)).toBe('hero');
   });
 
+  it('moves a creature several places at once (a drag in the turn order)', () => {
+    const gm = seat('gm');
+    fight(gm);
+    gm.receive({ t: 'orderMove', token: 'hero', by: 3 });
+    expect(store.combat!.order.map((e) => e.token)).toEqual(['goblin', 'hero']);
+    expect(currentTurn(store.combat!)).toBe('hero');
+  });
+
   it('refuses players, and when no fight is on', () => {
     const [gm, ana] = [seat('gm'), seat('ana')];
     gm.receive({ t: 'round', value: 3 });
@@ -117,7 +125,37 @@ describe('the GM setting the round and the order', () => {
     fight(gm);
     ana.receive({ t: 'round', value: 3 });
     ana.receive({ t: 'orderMove', token: 'hero', by: 1 });
-    expect(ana.take('error')).toHaveLength(2);
+    ana.receive({ t: 'reroll' });
+    expect(ana.take('error')).toHaveLength(3);
+  });
+});
+
+describe('the GM rerolling initiative', () => {
+  it('rolls one creature again, re-sorts the order and says so', () => {
+    const gm = seat('gm');
+    fight(gm);
+    gm.receive({ t: 'reroll', tokens: ['goblin'] });
+    const goblin = store.combat!.order.find((e) => e.token === 'goblin')!;
+    expect(goblin.initiative).not.toBe(10);
+    expect(store.combat!.order.find((e) => e.token === 'hero')!.initiative).toBe(20);
+    expect(currentTurn(store.combat!)).toBe('hero');
+    expect(gm.take('chat').at(-1)?.message.text).toMatch(/rerolls initiative: Goblin \d+/);
+  });
+
+  it('rolls everyone in the fight again when no creature is named', () => {
+    const gm = seat('gm');
+    fight(gm);
+    gm.receive({ t: 'reroll' });
+    expect(store.combat!.order.every((e) => e.initiative !== 20 && e.initiative !== 10)).toBe(true);
+    expect(store.combat!.round).toBe(1);
+  });
+
+  it('refuses a creature not in the fight', () => {
+    const gm = seat('gm');
+    fight(gm);
+    gm.receive({ t: 'combatant', token: 'goblin', on: false });
+    gm.receive({ t: 'reroll', tokens: ['goblin'] });
+    expect(gm.take('error')[0]!.message).toMatch(/not in the fight/);
   });
 });
 

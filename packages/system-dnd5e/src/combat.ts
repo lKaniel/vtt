@@ -236,14 +236,33 @@ export function setRound(combat: Combat, round: number): Combat {
   return { ...combat, round };
 }
 
-/** Moves a creature one place earlier (-1) or later (1), taking the initiative of the one it passes; the turn stays with whoever has it. */
-export function moveInOrder(combat: Combat, token: string, by: -1 | 1): Combat {
+/**
+ * Moves a creature `by` places earlier (negative) or later (positive), as far
+ * as the ends allow, taking the initiative of the last one it passes; the
+ * turn stays with whoever has it.
+ */
+export function moveInOrder(combat: Combat, token: string, by: number): Combat {
   const from = combat.order.findIndex((e) => e.token === token);
-  const passed = combat.order[from + by];
-  if (from < 0 || !passed) return combat;
+  const to = Math.min(Math.max(from + by, 0), combat.order.length - 1);
+  if (from < 0 || to === from) return combat;
+  const passed = combat.order[to]!;
   const current = currentTurn(combat);
-  const order = [...combat.order];
-  order[from] = passed;
-  order[from + by] = { token, initiative: passed.initiative };
+  const order = combat.order.filter((e) => e.token !== token);
+  order.splice(to, 0, { token, initiative: passed.initiative });
+  return { ...combat, order, turn: order.findIndex((e) => e.token === current) };
+}
+
+/** New initiative rolls for `fighters` (those in the fight), the order sorted again; the turn stays with whoever has it. */
+export function rerollInitiative(combat: Combat, fighters: readonly Combatant[], rng: Rng = Math.random): Combat {
+  const rolled = new Map(
+    fighters
+      .filter((f) => combat.order.some((e) => e.token === f.token))
+      .map((f) => [f.token, roll(d20Formula(f.bonus, [], f), rng).total]),
+  );
+  if (!rolled.size) return combat;
+  const current = currentTurn(combat);
+  const order = combat.order
+    .map((e) => ({ token: e.token, initiative: rolled.get(e.token) ?? e.initiative }))
+    .sort((a, b) => b.initiative - a.initiative);
   return { ...combat, order, turn: order.findIndex((e) => e.token === current) };
 }
