@@ -15,7 +15,7 @@ import { EN_BAILEYWIKI, EN_BW_LIBRARY, EN_OFFSITE, EN_PACKS } from './en-lobby.t
 import { EN_FOUNDRY } from './en-foundry.ts';
 import { EN_ITEMS } from './en-items.ts';
 import { EN_JOURNEY } from './en-journey.ts';
-import { EN_MAP } from './en-map.ts';
+import { EN_MAP, EN_PHONE } from './en-map.ts';
 import { EN_PLAYERS } from './en-players.ts';
 import { EN_SHEET } from './en-sheet.ts';
 import { EN_TABLE } from './en-table.ts';
@@ -41,20 +41,6 @@ export const EN = {
   'settings.motion.full': 'Full',
   'settings.motion.reduced': 'Reduced',
   'settings.motion.off': 'Numbers only',
-  'settings.layout': 'Screen layout',
-  'settings.layout.auto': 'By screen',
-  'settings.layout.on': 'Phone',
-  'settings.layout.off': 'Table',
-  'settings.layoutHint':
-    'The phone layout shows the map, your sheet or the log one at a time, picked from tabs along the bottom.',
-  'phone.tabs': 'Phone tabs',
-  'phone.map': 'Map',
-  'phone.sheet': 'Sheet',
-  'phone.log': 'Log',
-  'phone.hint.attack': 'Tap a target for {name} · tap the tile again to cancel',
-  'phone.hint.point': 'Tap where {name} goes · tap the tile again to cancel',
-  'phone.hint.targets': 'Tap {count} more target(s) for {name} · tap the tile again to cancel',
-  'phone.hint.select': 'Tap one of your characters to select them',
   'settings.dice': '3D dice',
   'settings.dice.on': 'Throw them',
   'settings.dice.off': 'Off',
@@ -427,6 +413,7 @@ export const EN = {
   ...EN_GM,
   ...EN_CLOCK,
   ...EN_OWN,
+  ...EN_PHONE,
 } as const;
 
 export type MessageKey = keyof typeof EN;

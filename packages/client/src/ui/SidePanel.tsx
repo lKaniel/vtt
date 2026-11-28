@@ -112,7 +112,7 @@ function PhonePanel({ session, phone }: Readonly<{ session: Session; phone: OnPh
   return (
     <aside className="chat frame fixed! inset-x-0 top-(--phone-top) bottom-(--phone-nav) z-[140] h-auto! w-auto! px-4 pb-6">
       <header className="chat-head">{t(`panel.${shown}`)}</header>
-      <PanelTabs tabs={tabs} shown={shown} onPick={pick} />
+      <PanelTabs tabs={tabs} shown={shown} onPick={pick} news={{ Errors: session.errors.unseen }} />
       <PanelPage tab={shown} session={session} />
     </aside>
   );
