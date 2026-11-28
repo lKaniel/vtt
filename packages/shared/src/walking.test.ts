@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { tangent, wallCorners } from './any-angle.ts';
-import { densify, trailBehind, isGridless, latticeOf, segmentsIntersect, type Wall, walkPath } from './index.ts';
+import {
+  densify,
+  distToSegment,
+  trailBehind,
+  isGridless,
+  latticeOf,
+  segmentsIntersect,
+  type Wall,
+  walkPath,
+} from './index.ts';
 
 const G = 100;
 const free = { gridSize: G, gridless: true, radius: 50, bodies: [] };
@@ -122,6 +131,50 @@ describe('walkPath without a grid', () => {
     for (let i = 1; i < p.points.length; i++) {
       for (const w of walls) expect(segmentsIntersect(p.points[i - 1]!, p.points[i]!, w.a, w.b)).toBe(false);
     }
+  });
+
+  describe('a big creature', () => {
+    // A Large creature: two squares across.
+    const large = { ...free, radius: 100 };
+    const nearest = (q: [number, number], w: Wall) => distToSegment(q, w.a, w.b);
+
+    it('keeps its whole body off a wall as it rounds the end', () => {
+      const wall: Wall = { id: 'w', a: [300, -400], b: [300, 300] };
+      const p = walkPath([50, 0], [550, 0], [wall], large)!;
+      expect(p.points.at(-1)).toEqual([550, 0]);
+      for (const q of densify(p.points, 5)) expect(nearest(q, wall)).toBeGreaterThan(30);
+    });
+
+    it("can't stop with its body inside a wall", () => {
+      const wall: Wall = { id: 'w', a: [300, -400], b: [300, 400] };
+      expect(walkPath([0, 0], [280, 0], [wall], large)).toBeNull();
+      expect(walkPath([0, 0], [280, 0], [wall], free)).not.toBeNull();
+    });
+
+    it("can't squeeze through a gap narrower than a Medium creature", () => {
+      const walls: Wall[] = [
+        { id: 'a', a: [300, -1000], b: [300, 0] },
+        { id: 'b', a: [300, 50], b: [300, 1000] },
+      ];
+      // The only other way is round the far ends of the walls, 10 squares off.
+      expect(walkPath([100, 25], [500, 25], walls, large)!.feet).toBeGreaterThan(90);
+      expect(walkPath([100, 25], [500, 25], walls, free)!.feet).toBe(20);
+    });
+
+    it('squeezes through a 5 ft doorway', () => {
+      const walls: Wall[] = [
+        { id: 'a', a: [300, -1000], b: [300, 0] },
+        { id: 'b', a: [300, 100], b: [300, 1000] },
+      ];
+      const p = walkPath([50, 300], [550, 300], walls, large)!;
+      expect(p).not.toBeNull();
+      expect(p.feet).toBeLessThan(40);
+    });
+
+    it('may step away from a wall it already stands against', () => {
+      const wall: Wall = { id: 'w', a: [300, -400], b: [300, 400] };
+      expect(walkPath([250, 0], [0, 0], [wall], large)).not.toBeNull();
+    });
   });
 
   it('pays double on difficult ground', () => {

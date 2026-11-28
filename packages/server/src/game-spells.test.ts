@@ -333,13 +333,14 @@ describe('summons', () => {
       spell: 'find-familiar',
       slot: 1,
       targets: [],
-      point: [150, 50],
+      point: [143, 162],
       summon: 'owl',
     });
     const owl = [...store.tokens.values()].find((t) => t.monster === 'owl')!;
+    // No grid: on the exact point aimed at.
     expect(owl).toMatchObject({
-      x: 150,
-      y: 50,
+      x: 143,
+      y: 162,
       ownership: { default: 'limited', ana: 'owner' },
       summon: { by: 'hero', spell: 'find-familiar' },
     });

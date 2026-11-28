@@ -1,6 +1,13 @@
 import { type Disc, type Ground, TangentSearch, wallCorners } from './any-angle.ts';
 import { CellIndex } from './cell-index.ts';
-import { blocksMovement, distToSegment, passesOneWay, segmentsIntersect, wallsInRect } from './geometry.ts';
+import {
+  blocksMovement,
+  distToSegment,
+  passesOneWay,
+  segmentsDist,
+  segmentsIntersect,
+  wallsInRect,
+} from './geometry.ts';
 import { gridKind } from './grid.ts';
 import { MinHeap } from './min-heap.ts';
 import { findPath, type Path, type PathOptions } from './pathfinding.ts';
@@ -34,6 +41,19 @@ const EPS = 0.5;
 /** Whether a scene is played without a grid: always, unless it asks for squares or hexes. */
 export function isGridless(scene: { grid?: string }): boolean {
   return gridKind(scene) === 'none';
+}
+
+/** How much of a square a creature squeezing past a wall may tuck in, beyond a Medium one's half square. */
+const SQUEEZE = 0.1;
+
+/**
+ * How near a wall a walker's centre may come, in pixels. A creature bigger
+ * than Medium keeps its body off walls, though it may squeeze through a
+ * space one size smaller (a Large one through a 5 ft door). Medium and
+ * smaller creatures only keep their centre on the right side.
+ */
+export function wallClearance(radius: number, gridSize: number): number {
+  return Math.max(0, radius - gridSize / 2 - SQUEEZE * gridSize);
 }
 
 /** The footprint of a token `size` squares across standing at x, y. */
@@ -79,7 +99,7 @@ const CORNER = 0.15;
  * the start or goal that it couldn't be gone round was left out.
  */
 function anyAngle(walker: Walker, [from, to]: [Point, Point], walls: readonly Wall[], opts: WalkOptions) {
-  const r = CORNER * opts.gridSize;
+  const r = Math.max(CORNER * opts.gridSize, wallClearance(opts.radius, opts.gridSize) + 1);
   const corners = wallCorners(walls, r);
   const kept = corners.filter((d) => dist(d.c, from) > r + EPS && dist(d.c, to) > r + EPS);
   const search = new TangentSearch([...walker.discs(), ...kept], from, to, walker.ground());
@@ -119,6 +139,9 @@ function dist(a: Point, b: Point): number {
 class Walker {
   private bodies: Body[];
   private index: CellIndex<{ wall: Wall } | { body: number }>;
+  /** How near walls the centre may come; walls it already stands that near only stop it crossing them. */
+  private clearance: number;
+  private against = new Set<Wall>();
 
   constructor(
     from: Point,
@@ -128,19 +151,22 @@ class Walker {
     // A creature stuck inside another may still step out of it.
     this.bodies = opts.bodies.filter((b) => this.free(from, b));
     this.index = new CellIndex(opts.gridSize * 2);
-    for (const wall of walls) {
-      if (!blocksMovement(wall)) continue;
-      const [a, b] = [wall.a, wall.b];
-      this.index.add(
-        { wall },
-        [Math.min(a[0], b[0]), Math.min(a[1], b[1])],
-        [Math.max(a[0], b[0]), Math.max(a[1], b[1])],
-      );
-    }
+    this.clearance = wallClearance(opts.radius, opts.gridSize);
+    for (const wall of walls) if (blocksMovement(wall)) this.addWall(wall, from);
     this.bodies.forEach((b, body) => {
       const r = b.r + opts.radius;
       this.index.add({ body }, [b.x - r, b.y - r], [b.x + r, b.y + r]);
     });
+  }
+
+  private addWall(wall: Wall, from: Point): void {
+    const [a, b, c] = [wall.a, wall.b, this.clearance];
+    if (c > 0 && distToSegment(from, a, b) < c) this.against.add(wall);
+    this.index.add(
+      { wall },
+      [Math.min(a[0], b[0]) - c, Math.min(a[1], b[1]) - c],
+      [Math.max(a[0], b[0]) + c, Math.max(a[1], b[1]) + c],
+    );
   }
 
   canStand(p: Point): boolean {
@@ -155,7 +181,9 @@ class Walker {
   }
 
   private wallBlocks(wall: Wall, a: Point, b: Point): boolean {
-    return !passesOneWay(wall, a) && segmentsIntersect(a, b, wall.a, wall.b);
+    if (passesOneWay(wall, a)) return false;
+    if (this.clearance === 0 || this.against.has(wall)) return segmentsIntersect(a, b, wall.a, wall.b);
+    return segmentsDist(a, b, wall.a, wall.b) < this.clearance - EPS;
   }
 
   private bodyBlocks(i: number, a: Point, b: Point, hug: number | undefined): boolean {
