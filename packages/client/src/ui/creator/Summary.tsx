@@ -13,6 +13,7 @@ import { StepHead } from './Parts.tsx';
 import type { StepProps } from './OriginSteps.tsx';
 import { Input } from '../kit/input.tsx';
 import { t } from '../../i18n/index.ts';
+import { Pressable } from '../kit/pressable.tsx';
 
 const SWATCHES = ['#c0603a', '#5a9be0', '#5ac08a', '#b48cff', '#e0b040', '#d0d0d0', '#9b3b5a', '#3aa6a0'];
 
@@ -28,7 +29,7 @@ export function IdentityStep({ c, set }: Readonly<StepProps>) {
         <span>{t('identity.colour')}</span>
         <div className="cc-swatches">
           {SWATCHES.map((s) => (
-            <button
+            <Pressable
               key={s}
               className={s === c.color ? 'cc-swatch on' : 'cc-swatch'}
               style={{ background: s }}

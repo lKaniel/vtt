@@ -21,6 +21,7 @@ import { Detail, RichText, StepHead } from './Parts.tsx';
 import { CustomProficiencies } from './CustomSteps.tsx';
 import { ProficiencySection } from './ProficiencyStep.tsx';
 import { t } from '../../i18n/index.ts';
+import { Pressable } from '../kit/pressable.tsx';
 
 function skillSource(fixed: boolean, offered: boolean): string {
   if (fixed) return t('skills.fromBackground');
@@ -51,7 +52,7 @@ export function SkillsStep({ c, set }: Readonly<StepProps>) {
             const offered = from.includes(s) && !fixed;
             const bonus = abilityMod(scores[SKILLS[s]]) + (known.includes(s) ? prof : 0) * (expert(s) ? 2 : 1);
             return (
-              <button
+              <Pressable
                 key={s}
                 className={`cc-skill${known.includes(s) ? ' on' : ''}${fixed ? ' given' : ''}`}
                 disabled={!offered}
@@ -61,7 +62,7 @@ export function SkillsStep({ c, set }: Readonly<StepProps>) {
                 <span className="cc-skill-name">{skillName(s)}</span>
                 <span className="cc-skill-ability">{abilityName(SKILLS[s]).slice(0, 3)}</span>
                 <span className="cc-skill-bonus">{bonus >= 0 ? `+${bonus}` : bonus}</span>
-              </button>
+              </Pressable>
             );
           })}
         </div>
@@ -140,7 +141,7 @@ function SpellGrid({
       <h3>{title}</h3>
       <div className="cc-spell-grid">
         {list.map((s) => (
-          <button
+          <Pressable
             key={s.id}
             className={c.spells.includes(s.id) ? 'cc-spell on' : 'cc-spell'}
             onClick={() => set(toggleSpell(c, s.id, level, classId))}
@@ -150,7 +151,7 @@ function SpellGrid({
             <IconFace icon={{ ...spellIcon(s), art: spellArt(s) }} size={20} />
             <span>{s.name}</span>
             {s.level > 0 && <span className="cc-spell-level">{s.level}</span>}
-          </button>
+          </Pressable>
         ))}
       </div>
     </section>

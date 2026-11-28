@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 const SRC = join(import.meta.dirname, '..', '..');
 const KIT = join(SRC, 'ui', 'kit');
-const BARE = /<(button|input|select|textarea)[\s>]/;
+const BARE = /<(button|input|select|textarea)([\s>]|$)/;
 
 function screens(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

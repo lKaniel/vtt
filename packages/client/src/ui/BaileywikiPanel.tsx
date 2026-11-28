@@ -4,7 +4,7 @@ import { t } from '../i18n/index.ts';
 import { api } from '../server-api.ts';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
-import { Card } from './kit/card.tsx';
+import { Card, CardTitle } from './kit/card.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 import { Input } from './kit/input.tsx';
 
@@ -185,8 +185,8 @@ export function BaileywikiBrowser({ game, onImported }: Readonly<Picking>) {
 /** The admin's box in Setup. */
 export function BaileywikiPanel() {
   return (
-    <section className="auth frame lobby-form" aria-label={t('baileywiki.title')}>
-      <h2 className="lobby-heading">{t('baileywiki.title')}</h2>
+    <section className="auth frame px-[22px] py-5" aria-label={t('baileywiki.title')}>
+      <CardTitle>{t('baileywiki.title')}</CardTitle>
       <p className="menu-note">{t('baileywiki.intro')}</p>
       <BaileywikiBrowser />
     </section>

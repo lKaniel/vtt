@@ -6,6 +6,7 @@ import { api } from '../server-api.ts';
 import { Button } from './kit/button.tsx';
 import { FileInput } from './kit/file-input.tsx';
 import { useLoad } from './useLoad.ts';
+import { CardTitle } from './kit/card.tsx';
 
 // Setup: the asset packs on this server, uploading a pack's folder file by
 // file (content/pack-upload.ts) and deleting one.
@@ -36,8 +37,8 @@ export function PacksPanel() {
     if (picked.length) void act(() => upload(picked, setStatus));
   };
   return (
-    <div className="auth frame lobby-form" data-slot="packs">
-      <h2 className="lobby-heading">{t('packs.title')}</h2>
+    <div className="auth frame px-[22px] py-5" data-slot="packs">
+      <CardTitle>{t('packs.title')}</CardTitle>
       <p className="menu-note">{t('packs.intro')}</p>
       {data && <PackList packs={data.packs} pending={data.pending} busy={busy} act={act} />}
       <Button asChild variant="outline" size="sm" disabled={busy}>

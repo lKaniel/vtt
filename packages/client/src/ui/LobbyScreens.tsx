@@ -17,6 +17,7 @@ import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Pressable } from './kit/pressable.tsx';
+import { CardTitle } from './kit/card.tsx';
 
 // Setup, Foundry style: behind the server's admin password, the games on
 // this server with making, importing and deleting them, and the admin
@@ -89,14 +90,14 @@ function SetupBody({ info, refresh, go }: Readonly<{ info: SessionInfo; refresh:
       </LobbyHead>
       {!info.adminPassword && <p className="menu-error">{t('setup.noPassword')}</p>}
       {error && <p className="menu-error">{error}</p>}
-      <div className="lobby-body">
+      <div className="grid grid-cols-[minmax(0,1fr)_340px] items-start gap-[22px] max-[860px]:grid-cols-1">
         <div className="roster lobby-games">
           {data?.games.map((g) => (
             <GameCard key={g.id} g={g} now={now} onOpen={() => open(g.id)} />
           ))}
           {data && !data.games.length && <p className="account-empty">{t('setup.noGames')}</p>}
         </div>
-        <aside className="lobby-side">
+        <aside className="grid gap-[18px]">
           {data && <NewGameForm systems={data.systems} onMade={open} />}
           <ImportZip onMade={open} />
           <FoundryImportForm games={data?.games} onMade={open} />
@@ -117,13 +118,13 @@ function standing(g: GameSummary): string {
 
 export function GameCard({ g, now, onOpen }: Readonly<{ g: GameSummary; now: number; onOpen: () => void }>) {
   return (
-    <Pressable className="roster-card lobby-card" onClick={onOpen}>
+    <Pressable className="roster-card lobby-card min-h-[170px] content-start" onClick={onOpen}>
       <span className="roster-name">{g.name}</span>
       <span className="roster-line">{systemLine(g)}</span>
       <span className="roster-stats">
         <span>{standing(g)}</span>
         <span>{t(g.members === 1 ? 'lobby.player' : 'lobby.players', { n: g.members })}</span>
-        {g.online > 0 && <span className="lobby-online">{t('lobby.online', { n: g.online })}</span>}
+        {g.online > 0 && <span className="text-[#7cc47c]">{t('lobby.online', { n: g.online })}</span>}
       </span>
       <span className="menu-note">{lastPlayedText(g.lastPlayed, now)}</span>
       {g.home && <span className="roster-rules">{t('lobby.home')}</span>}
@@ -149,8 +150,8 @@ function NewGameForm({ systems, onMade }: Readonly<{ systems: SystemInfo[]; onMa
   };
 
   return (
-    <form className="auth frame lobby-form" onSubmit={(e) => void create(e)}>
-      <h2 className="lobby-heading">{t('setup.newGame')}</h2>
+    <form className="auth frame px-[22px] py-5" onSubmit={(e) => void create(e)}>
+      <CardTitle>{t('setup.newGame')}</CardTitle>
       <label className="auth-field">
         <span>Name</span>
         <Input value={name} placeholder={t('lobbyScreens.theLostMine')} onChange={(e) => setName(e.target.value)} />

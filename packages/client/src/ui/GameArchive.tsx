@@ -2,6 +2,7 @@ import type { BackupInfo, GameDetail } from '@vtt/shared';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../server-api.ts';
 import { Button } from './kit/button.tsx';
+import { CardTitle } from './kit/card.tsx';
 import { FileInput } from './kit/file-input.tsx';
 import { type MessageKey, t } from '../i18n/index.ts';
 
@@ -42,8 +43,8 @@ export function BackupsPanel({ game, onRestored }: Readonly<{ game: GameDetail; 
     }
   };
   return (
-    <div className="auth frame lobby-form" data-slot="backups">
-      <h2 className="lobby-heading">{t('backups.title')}</h2>
+    <div className="auth frame px-[22px] py-5" data-slot="backups">
+      <CardTitle>{t('backups.title')}</CardTitle>
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" onClick={() => void run(() => api.backUp(game.id), t('backups.done'))}>
           {t('backups.now')}
@@ -103,8 +104,8 @@ export function ImportZip({ onMade }: Readonly<{ onMade: (id: string) => void }>
     }
   };
   return (
-    <div className="auth frame lobby-form" data-slot="import-zip">
-      <h2 className="lobby-heading">{t('importZip.title')}</h2>
+    <div className="auth frame px-[22px] py-5" data-slot="import-zip">
+      <CardTitle>{t('importZip.title')}</CardTitle>
       <p className="menu-note">{t('importZip.hint')}</p>
       <Button asChild variant="outline" disabled={busy}>
         <label>

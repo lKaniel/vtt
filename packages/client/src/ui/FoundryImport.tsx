@@ -5,7 +5,7 @@ import { importSummary, keptSummary, leftOutDetail } from '../foundry-report.ts'
 import { t, useLanguage } from '../i18n/index.ts';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
-import { Card } from './kit/card.tsx';
+import { Card, CardTitle } from './kit/card.tsx';
 import { Input } from './kit/input.tsx';
 import { SelectField } from './kit/select.tsx';
 
@@ -162,8 +162,8 @@ export function FoundryImportForm({
   };
 
   return (
-    <form className="auth frame lobby-form" onSubmit={(e) => void start(e)}>
-      <h2 className="lobby-heading">{t('foundry.title')}</h2>
+    <form className="auth frame px-[22px] py-5" onSubmit={(e) => void start(e)}>
+      <CardTitle>{t('foundry.title')}</CardTitle>
       {done ? (
         <ImportDone report={done.report} onOpen={() => onMade(done.id)} />
       ) : (

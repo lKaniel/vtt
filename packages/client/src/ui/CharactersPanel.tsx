@@ -6,6 +6,7 @@ import type { Route } from '../route.ts';
 import { api } from '../server-api.ts';
 import { Button } from './kit/button.tsx';
 import { Pressable } from './kit/pressable.tsx';
+import { CardTitle } from './kit/card.tsx';
 
 /** Your characters at a game, on its page: made with the creator, levelled up, deleted. */
 export function CharactersPanel({
@@ -24,8 +25,8 @@ export function CharactersPanel({
   };
 
   return (
-    <section className="frame lobby-members" data-slot="characters">
-      <h2 className="lobby-heading">{t('characters.title')}</h2>
+    <section className="frame grid gap-3 px-[22px] py-5" data-slot="characters">
+      <CardTitle>{t('characters.title')}</CardTitle>
       <div className="roster">
         {characters.map((c) => (
           <RosterCard key={c.id} c={c} on={c.id === chosen?.id} onPick={() => setPicked(c.id)} />
