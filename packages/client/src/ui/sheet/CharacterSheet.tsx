@@ -223,13 +223,18 @@ function SheetBody(props: Readonly<SheetProps & { rules: Edition }>) {
       value={shown}
       onValueChange={(v) => setTab(v as Tab)}
       orientation="vertical"
-      className="min-h-0 flex-1 flex-row gap-0"
+      // On a phone it is one column that scrolls as a whole: the sidebar, the tab icons in a row, the tab.
+      className="min-h-0 flex-1 flex-row gap-0 phone:flex-col phone:overflow-y-auto"
     >
       <SheetSidebar {...props} />
-      <div className="min-w-0 flex-1 overflow-y-auto px-5 py-3" data-area={AREA[shown]} role="tabpanel">
+      <div
+        className="min-w-0 flex-1 overflow-y-auto px-5 py-3 phone:order-3 phone:flex-none phone:overflow-visible phone:px-3"
+        data-area={AREA[shown]}
+        role="tabpanel"
+      >
         <TabPage {...props} tab={shown} />
       </div>
-      <TabsList className="h-auto w-11 shrink-0 flex-col items-stretch justify-start gap-1 border-b-0 border-l border-gold-dim/40 py-2">
+      <TabsList className="h-auto w-11 shrink-0 flex-col items-stretch justify-start gap-1 border-b-0 border-l border-gold-dim/40 py-2 phone:sticky phone:top-0 phone:z-10 phone:order-2 phone:w-full phone:flex-row phone:justify-around phone:border-y phone:border-l-0 phone:bg-background phone:py-0">
         {tabs.map((tab) => (
           <TabIcon key={tab} tab={tab} onDragEnter={() => AREA[tab] && setTab(tab)} />
         ))}
@@ -247,7 +252,7 @@ function TabIcon({ tab, onDragEnter }: Readonly<{ tab: Tab; onDragEnter: () => v
       title={tabLabel(tab)}
       data-area={AREA[tab]}
       onDragEnter={onDragEnter}
-      className="mb-0 -ml-px flex-none border-b-0 border-l-2 px-0 py-2.5 data-[state=active]:border-gold data-[state=active]:bg-gold/10 [&_svg]:size-[18px]"
+      className="mb-0 -ml-px flex-none border-b-0 border-l-2 px-0 py-2.5 phone:ml-0 phone:flex-1 phone:border-b-2 phone:border-l-0 data-[state=active]:border-gold data-[state=active]:bg-gold/10 [&_svg]:size-[18px]"
     >
       <Icon />
     </TabsTrigger>

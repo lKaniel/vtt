@@ -33,6 +33,9 @@ import { Glyph, IconFace } from './Icon.tsx';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 import { TipCard } from './Tip.tsx';
 import { Pressable } from './kit/pressable.tsx';
+import { usePhone } from './usePhone.ts';
+import { barHint, IDLE_HINT, phoneHint } from '../play/bar-hint.ts';
+import { cn } from '@/lib/utils';
 
 const TAB_GLYPH: Record<Tab, GlyphName> = { all: 'star', attacks: 'sword', spells: 'flame', features: 'fist' };
 const TAB_LABEL: Record<Tab, string> = {
@@ -45,16 +48,21 @@ const TAB_LABEL: Record<Tab, string> = {
 /** BG3-style bar along the bottom: portrait, resources, action tiles and end turn. */
 export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onSheet: () => void }>) {
   const token = session.selected ? session.tokens.get(session.selected) : undefined;
-  const [size, setSize] = useState<BarSize>(loadBarSize);
+  const [chosen, setSize] = useState<BarSize>(loadBarSize);
+  const phone = usePhone();
+  // A phone has room for the compact bar only.
+  const size = phone ? 'compact' : chosen;
   const resize = (next: BarSize) => {
     setSize(next);
     saveBarSize(next);
   };
-  const tip = hint(session, token);
+  const tip = phone ? phoneHint(session, token) : barHint(session, token);
   return (
     // The footer is as wide as its widest row; the map beside the narrower
     // rows (around the hint and the aiming panel) must still take clicks.
-    <footer className={`actionbar-wrap ${size} pointer-events-none *:pointer-events-auto`}>
+    <footer
+      className={`actionbar-wrap ${size} pointer-events-none *:pointer-events-auto phone:inset-x-1 phone:bottom-[calc(var(--phone-nav)+4px)] phone:w-auto phone:transform-none phone:items-stretch`}
+    >
       {/* The how-to line only floats over the map while it asks for a click;
           the rest of the time it is the bar's help mark. */}
       {(!token || tip !== IDLE_HINT) && <div className="hint">{tip}</div>}
@@ -87,17 +95,17 @@ function Bar({ session, token, onSheet, size, onSize }: BarProps) {
     setRow(0);
   };
   return (
-    <div className={compact ? 'actionbar compact' : 'actionbar'}>
+    <div className={cn(compact ? 'actionbar compact' : 'actionbar', 'phone:w-full phone:gap-1 phone:px-1')}>
       <Portrait token={token} onSheet={onSheet} />
-      <div className="ab-tray">
-        <div className="ab-top">
+      <div className="ab-tray phone:min-w-0 phone:flex-1 phone:grid-cols-[minmax(0,1fr)]">
+        <div className="ab-top phone:flex-wrap phone:gap-x-2 phone:gap-y-1">
           <Who session={session} token={token} />
           <Resources token={token} budget={budget} reaction={turn?.reaction} />
           <TurnOverrideButton session={session} token={token} />
           <RollPickButton session={session} />
           <BarButtons size={size} onSize={onSize} help={IDLE_HINT} />
         </div>
-        <div className="ab-body">
+        <div className="ab-body phone:min-w-0">
           <Tabs tab={tab} onTab={pickTab} />
           <Grid session={session} token={token} tab={tab} budget={budget} row={compact ? row : undefined} />
           {compact && <RowPager session={session} token={token} tab={tab} row={row} onRow={setRow} />}
@@ -110,7 +118,12 @@ function Bar({ session, token, onSheet, size, onSize }: BarProps) {
 
 function Portrait({ token, onSheet }: Readonly<{ token: TokenView; onSheet: () => void }>) {
   return (
-    <Pressable className="ab-portrait" onClick={onSheet} title={t('actionBar.characterSheetC')} disabled={!token.sheet}>
+    <Pressable
+      className="ab-portrait phone:hidden"
+      onClick={onSheet}
+      title={t('actionBar.characterSheetC')}
+      disabled={!token.sheet}
+    >
       <Face token={token} />
       {token.sheet && (
         <span className="ab-ac" title={t('actionBar.armorClass')}>
@@ -191,7 +204,7 @@ function Grid({ session, token, tab, budget, row }: GridProps) {
   const all = tabSlots(session, token, tab);
   const shown = row === undefined ? all : barRow(all, row);
   return (
-    <div className="ab-grid">
+    <div className={GRID}>
       {shown.map((tile, i) =>
         tile ? (
           <Tile key={`${tile.kind}-${tile.name}`} session={session} token={token} tile={tile} budget={budget} />
@@ -202,6 +215,10 @@ function Grid({ session, token, tab, budget, row }: GridProps) {
     </div>
   );
 }
+
+/** On a phone a row of ten is two rows of five, as wide as the screen allows. */
+const GRID =
+  'ab-grid phone:min-w-0 phone:flex-1 phone:auto-rows-auto! phone:portrait:grid-cols-5! phone:landscape:grid-cols-[repeat(10,minmax(0,52px))]! phone:[&_.tile]:aspect-square phone:[&_.tile]:h-auto phone:[&_.tile]:w-full';
 
 /** Slots without the empty ones at the end, as saved on the token. */
 function trimmed(slots: Slots): Slots {
@@ -249,7 +266,7 @@ function Hotbar({
   const first = row === undefined ? 0 : wrapRow(row, rows) * ROW_TILES;
   const shown = row === undefined ? all : barRow(all, row);
   return (
-    <div className="ab-grid">
+    <div className={GRID}>
       {shown.map((tile, at) => {
         const i = first + at;
         return (
@@ -394,10 +411,10 @@ function ReactionPip({ unused }: Readonly<{ unused: boolean | undefined }>) {
 
 function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenView }>) {
   const combat = session.combat;
-  if (!combat) return <div className="ab-end" />;
+  if (!combat) return <div className="ab-end phone:hidden" />;
   const mine = session.turns.mine() && (actsNow(combat, token.id) || !!combat.side[token.id]);
   return (
-    <div className="ab-end">
+    <div className="ab-end phone:w-auto">
       <Pressable
         className="end-turn"
         disabled={!mine}
@@ -408,16 +425,3 @@ function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenVi
     </div>
   );
 }
-
-function hint(session: Session, token: TokenView | undefined): string {
-  if (session.actions.armed) return `Click a target for ${session.actions.armed} · right click or Esc to cancel`;
-  const aiming = session.actions.aiming;
-  if (aiming?.mode === 'point') return `Click where ${aiming.spell.name} goes · right click or Esc to cancel`;
-  if (aiming)
-    return `Click ${aiming.need - aiming.picks.length} more target(s) for ${aiming.spell.name} · right click or Esc to cancel`;
-  if (!token) return t('actionBar.clickOneOfYour');
-  return IDLE_HINT;
-}
-
-const IDLE_HINT =
-  'Click the ground to walk · Right click for more · 1–0 for actions · C for the sheet · Space ends your turn';

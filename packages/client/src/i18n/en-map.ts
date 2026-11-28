@@ -68,3 +68,21 @@ export const EN_MAP = {
   'object.state.merchant': 'Merchant',
   'object.state.off': 'Turned off',
 } as const;
+
+/** The phone layout and its setting. */
+export const EN_PHONE = {
+  'settings.layout': 'Screen layout',
+  'settings.layout.auto': 'By screen',
+  'settings.layout.on': 'Phone',
+  'settings.layout.off': 'Table',
+  'settings.layoutHint':
+    'The phone layout shows the map, your sheet or the log one at a time, picked from tabs along the bottom.',
+  'phone.tabs': 'Phone tabs',
+  'phone.map': 'Map',
+  'phone.sheet': 'Sheet',
+  'phone.log': 'Log',
+  'phone.hint.attack': 'Tap a target for {name} · tap the tile again to cancel',
+  'phone.hint.point': 'Tap where {name} goes · tap the tile again to cancel',
+  'phone.hint.targets': 'Tap {count} more target(s) for {name} · tap the tile again to cancel',
+  'phone.hint.select': 'Tap one of your characters to select them',
+};

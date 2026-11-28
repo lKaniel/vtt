@@ -55,6 +55,8 @@ function Window({
       style={frame.style}
       className={cn(
         'art-panel fixed flex max-h-[calc(100vh-16px)] min-w-[220px] flex-col font-body text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.7)] outline-none data-[collapsed]:h-auto!',
+        // On a phone a window fills the screen above the phone's tabs, where it can't be dragged.
+        'phone:inset-x-0! phone:top-(--phone-top)! phone:bottom-(--phone-nav)! phone:h-auto! phone:max-h-none phone:w-auto! phone:min-w-0 phone:[&>[data-slot=window-header]]:cursor-default',
         className,
       )}
       {...props}

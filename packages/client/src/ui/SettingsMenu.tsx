@@ -15,6 +15,8 @@ import { KeysDialog } from './KeysDialog.tsx';
 import { ProfileRow } from './ProfileRow.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 import { Separator } from './kit/separator.tsx';
+import { PHONE_LAYOUTS, type PhoneLayout } from '../play/phone.ts';
+import { currentPhoneLayout, setPhoneLayout } from './usePhone.ts';
 import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
 
 /** A choice and its words, as keys into the string tables (i18n/en.ts). */
@@ -100,6 +102,7 @@ export function SettingsMenu({ session }: Readonly<{ session: Session }>) {
         {session.isGm() && <GameSettingsSection session={session} />}
         <Separator />
         <MotionRow />
+        <LayoutRow />
         <DiceRow />
         <CursorsRow />
         <GraphicsRow />
@@ -130,6 +133,33 @@ function MotionRow() {
         ))}
       </ToggleGroup>
       <span className="muted text-xs font-normal">{t('settings.animationsHint')}</span>
+    </Label>
+  );
+}
+
+/** The table's layout in this browser: the phone one (one thing at a time) or the table one, or by the screen's size. */
+function LayoutRow() {
+  const [layout, choose] = useState(currentPhoneLayout);
+  const set = (l: PhoneLayout) => {
+    setPhoneLayout(l);
+    choose(l);
+  };
+  return (
+    <Label className="flex-col items-stretch gap-1">
+      {t('settings.layout')}
+      <ToggleGroup
+        type="single"
+        aria-label={t('settings.layout')}
+        value={layout}
+        onValueChange={(v) => v && set(v as PhoneLayout)}
+      >
+        {PHONE_LAYOUTS.map((l) => (
+          <ToggleGroupItem key={l} value={l}>
+            {t(`settings.layout.${l}`)}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+      <span className="muted text-xs font-normal">{t('settings.layoutHint')}</span>
     </Label>
   );
 }

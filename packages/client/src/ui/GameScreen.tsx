@@ -38,11 +38,14 @@ import { ClaudeKey } from './ClaudeKey.tsx';
 import { Button } from './kit/button.tsx';
 import { exposeApi } from '../scripting/script-api.ts';
 import { OptimiseButton } from './OptimiseButton.tsx';
+import { PhoneScreens } from './PhoneNav.tsx';
+import { usePhoneRoot } from './usePhone.ts';
 
 export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLeave: () => void }>) {
   const [session] = useState(() => new Session(gameId));
   const host = useRef<HTMLDivElement>(null);
   useSession(session);
+  const phone = usePhoneRoot();
 
   useEffect(() => openMap(session, host.current!), [session]);
 
@@ -61,7 +64,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
     <div className="game has-[[data-slot=scene-nav]]:[&_.party]:top-[94px]!">
       <div className="map" ref={host} />
       {/* The top bar and the fight controls share one row, so neither can lie over the other. */}
-      <div className="top-strip">
+      <div className="top-strip phone:right-2 phone:left-2 phone:flex-wrap phone:gap-1.5">
         <TopBar session={session} onLeave={onLeave} />
         <TurnOrder session={session} />
       </div>
@@ -82,7 +85,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <TileQuestion session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <Sheets session={session} />
-      <SidePanel session={session} />
+      {phone ? <PhoneScreens session={session} /> : <SidePanel session={session} />}
       <Toast session={session} />
       <ContextMenu session={session} />
       <TokenHud session={session} />
@@ -96,17 +99,17 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
 /** The bar across the top: connection, game and scene, clock, you, pause, undo, Claude, settings, leave. */
 function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () => void }>) {
   return (
-    <header className="topbar frame">
+    <header className="topbar frame phone:w-full phone:gap-1 phone:px-2">
       <span
         className={`status status-${session.status}`}
         title={session.status === 'open' ? 'Connected' : session.status}
       />
-      <strong className="world-name" title={session.world?.name}>
+      <strong className="world-name phone:hidden" title={session.world?.name}>
         {session.world?.name ?? 'Connecting…'}
       </strong>
-      {session.scenes.name && <span className="scene-name">{session.scenes.name}</span>}
+      {session.scenes.name && <span className="scene-name phone:hidden">{session.scenes.name}</span>}
       <ClockBar session={session} />
-      <span className="you" style={{ color: session.you?.color }}>
+      <span className="you phone:mr-auto phone:truncate" style={{ color: session.you?.color }}>
         {session.you?.name}
       </span>
       <PauseButton session={session} />
@@ -115,7 +118,11 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
       <ThroughWallsButton session={session} />
       <View3DButton session={session} />
       <OptimiseButton session={session} />
-      {session.gameId && <ClaudeKey game={session.gameId} />}
+      {session.gameId && (
+        <span className="contents phone:hidden">
+          <ClaudeKey game={session.gameId} />
+        </span>
+      )}
       <SettingsMenu session={session} />
       <Button variant="ghost" size="icon-sm" onClick={onLeave} title={t('table.leave')} aria-label={t('table.leave')}>
         <LogOutIcon />
@@ -182,7 +189,7 @@ function ThroughWallsButton({ session }: Readonly<{ session: Session }>) {
 function UndoButtons({ session }: Readonly<{ session: Session }>) {
   const { undo, redo } = session.edits.history;
   return (
-    <span className="undo-buttons">
+    <span className="undo-buttons phone:hidden">
       <Button
         variant="ghost"
         size="icon-sm"

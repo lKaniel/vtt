@@ -24,7 +24,7 @@ export function TurnOrder({ session }: Readonly<{ session: Session }>) {
   if (!combat) return gm ? <IdleBar session={session} /> : null;
   const peaceful = combat.peaceful === true;
   return (
-    <div className={`turn-order${peaceful ? ' peaceful' : ''}`}>
+    <div className={`turn-order${peaceful ? ' peaceful' : ''} phone:w-full phone:overflow-x-auto`}>
       <RoundBadge session={session} />
       {gm && <TurnSteps session={session} />}
       <Turns session={session} />

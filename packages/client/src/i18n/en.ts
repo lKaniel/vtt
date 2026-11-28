@@ -15,7 +15,7 @@ import { EN_BAILEYWIKI, EN_BW_LIBRARY, EN_OFFSITE, EN_PACKS } from './en-lobby.t
 import { EN_FOUNDRY } from './en-foundry.ts';
 import { EN_ITEMS } from './en-items.ts';
 import { EN_JOURNEY } from './en-journey.ts';
-import { EN_MAP } from './en-map.ts';
+import { EN_MAP, EN_PHONE } from './en-map.ts';
 import { EN_PLAYERS } from './en-players.ts';
 import { EN_SHEET } from './en-sheet.ts';
 import { EN_TABLE } from './en-table.ts';
@@ -413,6 +413,7 @@ export const EN = {
   ...EN_GM,
   ...EN_CLOCK,
   ...EN_OWN,
+  ...EN_PHONE,
 } as const;
 
 export type MessageKey = keyof typeof EN;

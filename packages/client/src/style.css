@@ -1123,14 +1123,6 @@ h4 {
   .member-info {
     display: none;
   }
-  .ab-who,
-  .ab-end {
-    display: none;
-  }
-  .ab-grid {
-    grid-template-columns: repeat(6, 44px);
-    grid-auto-rows: 44px;
-  }
 }
 
 /* ---------- Painted frames ----------
