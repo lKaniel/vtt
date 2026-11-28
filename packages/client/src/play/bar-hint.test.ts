@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 import type { Session } from '../session/session.ts';
 import { barHint, IDLE_HINT, phoneHint } from './bar-hint.ts';
 
-interface Actions { armed?: string; aiming?: { mode?: string; spell: { name: string }; need: number; picks: unknown[] } }
+interface Actions {
+  armed?: string;
+  aiming?: { mode?: string; spell: { name: string }; need: number; picks: unknown[] };
+}
 const at = (actions: Actions) => ({ actions }) as unknown as Session;
 const token = { id: 'orrin' } as TokenView;
 const missile = { spell: { name: 'Magic Missile' }, need: 3, picks: [1] };
