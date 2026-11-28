@@ -5,6 +5,7 @@ import { api } from '../server-api.ts';
 import { Button } from './kit/button.tsx';
 import { SelectField } from './kit/select.tsx';
 import { useLoad } from './useLoad.ts';
+import { CardTitle } from './kit/card.tsx';
 
 // Setup: the nightly copies of every game off the server (the server's
 // offsite-backups.ts): where they go, when the last one was made, making
@@ -44,8 +45,8 @@ export function OffsitePanel({ games }: Readonly<{ games: readonly GameSummary[]
     });
   const working = busy || !!data?.status.running;
   return (
-    <div className="auth frame lobby-form" data-slot="offsite-backups">
-      <h2 className="lobby-heading">{t('offsite.title')}</h2>
+    <div className="auth frame px-[22px] py-5" data-slot="offsite-backups">
+      <CardTitle>{t('offsite.title')}</CardTitle>
       {data && <StatusLines status={data.status} />}
       {data?.status.target && (
         <>

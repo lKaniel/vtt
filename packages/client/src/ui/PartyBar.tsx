@@ -1,6 +1,7 @@
 import { canObserve, isGm, isParty } from '@vtt/shared';
 import type { Session } from '../session/session.ts';
 import { EffectBadges, Face, HpBar } from './Portrait.tsx';
+import { Pressable } from './kit/pressable.tsx';
 
 /** Portraits of your party down the left edge. Click to select, double-click to jump to them. */
 export function PartyBar({ session }: Readonly<{ session: Session }>) {
@@ -16,7 +17,7 @@ export function PartyBar({ session }: Readonly<{ session: Session }>) {
       {mine.map((t) => {
         const cls = ['member', session.selected === t.id && 'selected', turn === t.id && 'acting'];
         return (
-          <button
+          <Pressable
             key={t.id}
             className={cls.filter(Boolean).join(' ')}
             title={`${t.name}: click to select, double-click to find`}
@@ -29,7 +30,7 @@ export function PartyBar({ session }: Readonly<{ session: Session }>) {
               <HpBar token={t} />
               <EffectBadges token={t} at={{ now: session.time.now(), fighting: !!session.combat }} />
             </span>
-          </button>
+          </Pressable>
         );
       })}
     </nav>

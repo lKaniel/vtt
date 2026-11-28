@@ -8,6 +8,7 @@ import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 import { SelectField } from './kit/select.tsx';
+import { CardTitle } from './kit/card.tsx';
 
 // Who gets in: a game's players (added by its GM, each with an optional
 // password asked for on the join screen) and the server's admin password,
@@ -178,14 +179,14 @@ export function AdminPasswordForm({ has, onSaved }: Readonly<{ has: boolean; onS
   };
   return (
     <form
-      className="auth frame lobby-form"
+      className="auth frame px-[22px] py-5"
       onSubmit={(e) => {
         e.preventDefault();
         void save(password);
       }}
       data-slot="admin-password"
     >
-      <h2 className="lobby-heading">{t('setup.adminPassword')}</h2>
+      <CardTitle>{t('setup.adminPassword')}</CardTitle>
       <p className="menu-note">{t(has ? 'setup.changeHint' : 'setup.setHint')}</p>
       <Input
         type="password"

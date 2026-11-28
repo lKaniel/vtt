@@ -902,17 +902,6 @@ h4 {
 .row .tip {
   left: 30%;
 }
-.spell-level {
-  margin-bottom: 8px;
-}
-.spell-level-name {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 12px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
 
 /* ---------- Adventure log ---------- */
 
@@ -1703,11 +1692,6 @@ h4 {
   color: var(--gold);
   letter-spacing: 0.06em;
 }
-.lib-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 .lib-hint {
   margin: 4px 2px;
   font-size: 12px;
@@ -1760,13 +1744,6 @@ h4 {
   border: 0;
   cursor: inherit;
 }
-.lib-face {
-  flex: none;
-  width: 30px;
-  height: 30px;
-  border: 1px solid var(--gold-dim);
-  border-radius: 50%;
-}
 .lib-text {
   display: grid;
   gap: 1px;
@@ -1788,14 +1765,6 @@ h4 {
 }
 .lib-text .hpbar {
   height: 5px;
-}
-.lib-tag {
-  margin-left: 6px;
-  padding: 0 5px;
-  font-size: 11px;
-  color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: 8px;
 }
 
 .lib-folder summary {
@@ -1881,24 +1850,6 @@ h4 {
   margin: 4px 0;
   cursor: pointer;
 }
-.ed-list .row {
-  padding: 3px 6px;
-  font-size: 13px;
-  font-weight: 400;
-}
-.ed-bad .row-name {
-  color: var(--bad);
-}
-.ed-qty {
-  width: 52px;
-}
-.ed-equip {
-  display: flex;
-  gap: 2px;
-  align-items: center;
-  font-size: 11px;
-  color: var(--muted);
-}
 .ed-remove {
   width: 22px;
   height: 22px;
@@ -1909,9 +1860,6 @@ h4 {
 }
 .ed-remove:hover {
   color: var(--bad);
-}
-.ed-spacer {
-  flex: 1;
 }
 .ab-edit {
   padding: 0;
@@ -2000,9 +1948,6 @@ button.pip {
 button.pip:hover {
   outline: 1px solid var(--gold-bright);
   outline-offset: 1px;
-}
-.pool-left {
-  width: 52px;
 }
 
 /* ---- A tile in the air ------------------------------------------------- */
@@ -2237,7 +2182,6 @@ body:has(> #root > :is(.menu, .account, .cc, .levelup)) {
 }
 .auth-field input,
 .auth-field select,
-.lobby-member select,
 .cc-abilities input,
 .cc-abilities select {
   padding: 9px 12px;
@@ -2390,87 +2334,6 @@ body:has(> #root > :is(.menu, .account, .cc, .levelup)) {
 }
 .chosen-who .chosen-warn {
   color: var(--warn);
-}
-
-/* Lobby: your games and one game's page (LobbyScreens.tsx). */
-.lobby {
-  padding-bottom: 40px;
-}
-.lobby-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  align-items: start;
-  gap: 22px;
-}
-@media (max-width: 860px) {
-  .lobby-body {
-    grid-template-columns: 1fr;
-  }
-}
-.lobby-side {
-  display: grid;
-  gap: 18px;
-}
-.lobby-form {
-  padding: 20px 22px;
-}
-.lobby-heading {
-  margin: 0;
-  font-family: var(--display);
-  font-size: 22px;
-  font-weight: 400;
-  color: var(--gold-bright);
-}
-.lobby-card {
-  align-content: start;
-  min-height: 170px;
-}
-.lobby-online {
-  color: var(--ok, #7cc47c);
-}
-.lobby-members {
-  display: grid;
-  gap: 12px;
-  padding: 20px 22px;
-}
-.lobby-member-list {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.lobby-member {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 10px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(168, 138, 94, 0.25);
-  border-radius: 4px;
-}
-.lobby-member-name {
-  flex: 1;
-  font-family: var(--display);
-  font-size: 18px;
-}
-.lobby-member select {
-  padding: 5px 8px;
-  font-size: 14px;
-}
-.lobby-dot {
-  width: 10px;
-  height: 10px;
-  background: #555;
-  border-radius: 50%;
-}
-.lobby-dot.on {
-  background: #7cc47c;
-  box-shadow: 0 0 6px #7cc47c;
-}
-.lobby-danger {
-  display: grid;
-  justify-items: end;
 }
 
 /* Character creator: steps | choices | sheet, with a footer bar. */
@@ -3170,22 +3033,6 @@ body:has(> #root > :is(.menu, .account, .cc, .levelup)) {
   color: var(--gold-dim);
 }
 
-/* GM Scenes tab: the game's scenes, who is on each, and their settings. */
-.scenes-tab {
-  padding: 8px 10px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.scene-new {
-  display: flex;
-  gap: 6px;
-}
-.scene-new input {
-  flex: 1;
-  min-width: 0;
-}
 .scene-row {
   min-width: 0;
   display: flex;
@@ -3200,38 +3047,6 @@ body:has(> #root > :is(.menu, .account, .cc, .levelup)) {
   border-color: var(--gold);
   box-shadow: 0 0 8px rgba(232, 211, 166, 0.25);
 }
-.scene-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.scene-head .row-name {
-  font-family: var(--display);
-  color: var(--gold-bright);
-}
-.scene-badge {
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 8px;
-  color: #1c150f;
-  background: var(--gold);
-}
-.scene-badge.you {
-  background: #7fb0e0;
-}
-.scene-seats,
-.scene-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.seat-chip {
-  font-size: 12px;
-  padding: 1px 6px;
-  border: 1px solid;
-  border-radius: 8px;
-}
-.scene-actions select,
 .scene-settings select,
 .scene-settings input:not([type='checkbox']) {
   font: inherit;
@@ -3295,21 +3110,6 @@ body:has(> #root > :is(.menu, .account, .cc, .levelup)) {
 }
 .assets .lib-filter .lib-search {
   flex-basis: 100%;
-}
-.asset-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 0 0 6px;
-}
-.asset-tags .lib-tag {
-  margin: 0;
-  cursor: pointer;
-  background: none;
-}
-.asset-tags .lib-tag.on {
-  color: var(--gold-bright);
-  border-color: var(--gold-bright);
 }
 .asset-grid {
   display: grid;

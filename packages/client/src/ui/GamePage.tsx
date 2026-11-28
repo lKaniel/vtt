@@ -13,8 +13,10 @@ import { CopyInvite, InviteBox } from './InviteLinks.tsx';
 import { LobbyHead, systemLine } from './LobbyScreens.tsx';
 import { useLoad } from './useLoad.ts';
 import { ROLE_NAMES } from './role-names.ts';
+import { cn } from '@/lib/utils';
 import { Button } from './kit/button.tsx';
 import { SelectField } from './kit/select.tsx';
+import { CardTitle } from './kit/card.tsx';
 
 // One game's page: the door to the table with your characters there, and
 // for its GM (or the server's admin) its players, backups and files.
@@ -59,12 +61,12 @@ function GameBody({
   const characters = useLoad(loadCharacters);
   const list = characters.data ?? [];
   return (
-    <div className="lobby-body">
+    <div className="grid grid-cols-[minmax(0,1fr)_340px] items-start gap-[22px] max-[860px]:grid-cols-1">
       <div className={`flex min-w-0 flex-1 gap-4 ${game.manage ? 'flex-col-reverse justify-end' : 'flex-col'}`}>
         {me && <CharactersPanel game={id} characters={list} go={go} refresh={characters.reload} />}
         <Players game={game} onChanged={onChanged} />
       </div>
-      <aside className="lobby-side">
+      <aside className="grid gap-[18px]">
         {me ? (
           <EnterGame key={list.map((c) => c.id).join()} game={game} characters={list} go={go} />
         ) : (
@@ -101,10 +103,10 @@ function Players({ game, onChanged }: Readonly<{ game: GameDetail; onChanged: ()
   };
   const gms = game.players.filter((p) => p.role === 'gm').length;
   return (
-    <section className="frame lobby-members" data-slot="players">
-      <h2 className="lobby-heading">{t('players.title')}</h2>
+    <section className="frame grid gap-3 px-[22px] py-5" data-slot="players">
+      <CardTitle>{t('players.title')}</CardTitle>
       {game.manage && <InviteBox game={game.id} />}
-      <ul className="lobby-member-list">
+      <ul className="m-0 grid list-none gap-2 p-0">
         {game.players.map((p) => (
           <PlayerRow
             key={p.id}
@@ -144,12 +146,12 @@ function PlayerRow({
     if (confirm(t('players.removeAsk', { name: p.name }))) onRemove();
   };
   return (
-    <li className="lobby-member">
+    <li className="flex items-center gap-3 rounded-[4px] border border-[rgba(168,138,94,0.25)] bg-black/30 px-2.5 py-2">
       <span
-        className={p.online ? 'lobby-dot on' : 'lobby-dot'}
+        className={cn('size-2.5 rounded-full bg-[#555]', p.online && 'bg-[#7cc47c] shadow-[0_0_6px_#7cc47c]')}
         title={t(p.online ? 'players.online' : 'players.away')}
       />
-      <span className="lobby-member-name" style={{ color: p.color }}>
+      <span className="flex-1 font-display text-lg" style={{ color: p.color }}>
         {p.name}
         {self && ` ${t('players.you')}`}
       </span>
@@ -199,8 +201,8 @@ function EnterGame({ game, characters, go }: Readonly<{ game: GameDetail; charac
     }
   };
   return (
-    <div className="auth frame lobby-form" data-slot="enter-game">
-      <h2 className="lobby-heading">{t('game.enterAs', { name: me?.name ?? '' })}</h2>
+    <div className="auth frame px-[22px] py-5" data-slot="enter-game">
+      <CardTitle>{t('game.enterAs', { name: me?.name ?? '' })}</CardTitle>
       <label className="auth-field">
         <span>{t('game.bring')}</span>
         <SelectField
@@ -236,7 +238,7 @@ function DeleteGame({ game, onDeleted }: Readonly<{ game: GameDetail; onDeleted:
     }
   };
   return (
-    <div className="lobby-danger">
+    <div className="grid justify-items-end">
       <Button variant="destructive" onClick={() => void remove()}>
         {t('game.delete')}
       </Button>

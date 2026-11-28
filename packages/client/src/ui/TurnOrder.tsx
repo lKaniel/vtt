@@ -15,6 +15,7 @@ import { AddFighters, StartCombat, StartTurns } from './StartCombat.tsx';
 import { TurnHelper } from './TurnHelper.tsx';
 import { TurnSlot, useTurnDrag } from './TurnDrag.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
+import { Pressable } from './kit/pressable.tsx';
 
 /** Initiative order across the top of the screen, plus the GM's fight controls. */
 export function TurnOrder({ session }: Readonly<{ session: Session }>) {
@@ -89,7 +90,7 @@ function Portrait({
   const name = shownName(t);
   const cls = ['turn', actsNow(combat, e.token) && 'current', (down || ended) && 'down', isParty(t) ? 'ally' : 'foe'];
   return (
-    <button
+    <Pressable
       className={cls.filter(Boolean).join(' ')}
       title={`${name}: initiative ${e.initiative}`}
       aria-label={`${name}: initiative ${e.initiative}`}
@@ -105,7 +106,7 @@ function Portrait({
       <Face token={t} />
       <HpBar token={t} showLabel={false} />
       <span className="turn-name">{name}</span>
-    </button>
+    </Pressable>
   );
 }
 
