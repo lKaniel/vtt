@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import automation from '../content/srd/species-automation.json' with { type: 'json' };
 import { characterLevel } from './multiclass.ts';
-import { type Feature, FeatureSchema } from './spell-schema.ts';
-import type { Edition } from './stats-schema.ts';
+import { AbilitySchema, type Feature, FeatureSchema } from './spell-schema.ts';
+import type { Ability, Edition } from './stats-schema.ts';
 import type { Token } from './token-schema.ts';
 
 // Spells a character's species or lineage gives (species-automation.json):
@@ -14,6 +14,8 @@ const ByEdition = z.partialRecord(z.enum(['2014', '2024']), z.array(FeatureSchem
 const SpeciesAutomationSchema = z.object({
   species: z.record(z.string(), ByEdition),
   lineages: z.record(z.string(), ByEdition),
+  /** The ability a species' or lineage's spells are cast with, by edition, where the rules name one. */
+  abilities: z.record(z.string(), z.partialRecord(z.enum(['2014', '2024']), AbilitySchema)),
 });
 
 const AUTOMATION = SpeciesAutomationSchema.parse(automation);
@@ -26,4 +28,17 @@ export function speciesFeatures(token: Pick<Token, 'stats'>, edition: Edition): 
     (key ? group[key]?.[edition] : undefined) ?? [];
   const all = [...of(AUTOMATION.species, species), ...of(AUTOMATION.lineages, lineage)];
   return all.filter((f) => f.level <= level);
+}
+
+const MENTAL = ['int', 'wis', 'cha'] as const;
+
+/**
+ * The ability the token's species spells are cast with: the one the rules name (a 2014 tiefling's
+ * Charisma), the one the character picked (`stats.speciesAbility`), else its best of Int, Wis and Cha.
+ */
+export function speciesAbility(token: Pick<Token, 'stats'>, edition: Edition): Ability {
+  const { species, lineage, speciesAbility: picked, abilities = {} } = token.stats ?? {};
+  const named = (key: string | undefined) => (key ? AUTOMATION.abilities[key]?.[edition] : undefined);
+  const best = MENTAL.reduce((top, k) => ((abilities[k] ?? 10) > (abilities[top] ?? 10) ? k : top));
+  return named(lineage) ?? named(species) ?? picked ?? best;
 }

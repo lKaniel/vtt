@@ -304,7 +304,70 @@ describe('legendary actions behind a save', () => {
     expect(clap.spell).toMatchObject({ range: 90, area: { shape: 'sphere', size: 20 }, save: { dc: 17 } });
   });
 
+  it('reads a 2024 one that adds exhaustion, or holds its targets still', () => {
+    const years = legendaryOf(
+      { save: 'con', saveDc: 16 },
+      '*Constitution Saving Throw:* DC 16, one creature the sphinx can see within 120 feet. *Failure:* The target gains 1 Exhaustion level.',
+    );
+    expect(years.spell).toMatchObject({ targets: 1, range: 120, save: { dc: 16 }, exhaustion: 1 });
+    const burst = legendaryOf(
+      { save: 'con', saveDc: 14, damage: '2d6', damageType: 'cold', areaShape: 'sphere', areaSize: 30 },
+      "*Constitution Saving Throw:* DC 14, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 120 feet. *Failure:* 7 (2d6) Cold damage, and the target's Speed is 0 until the end of the target's next turn.",
+    );
+    expect(burst.spell).toMatchObject({ rounds: 1, effect: { immobile: true } });
+  });
+
   it('leaves one it cannot run as words', () => {
     expect(legendaryOf({}, 'The dragon makes a Wisdom (Perception) check.')).not.toHaveProperty('spell');
+  });
+});
+
+describe('legendary actions that cast a spell or use another action', () => {
+  const optionOf = (description: string, more: Entry[] = []) => {
+    const option = action('option', { kind: 'legendary' });
+    const monster: Entry = {
+      id: 'monsters.dragon',
+      type: 'monster',
+      fields: { entries: [option.id, ...refsOf(more)], legendaryActions: 3 },
+    };
+    const p = pack([monster, option, ...more], {
+      'monsters.dragon.option.name': 'Option',
+      'monsters.dragon.option.description': description,
+      'monsters.dragon.lightning-strike.name': 'Lightning Strike',
+    });
+    return (convertMonster(p, monster) as { legendary: { options: Record<string, unknown>[] } }).legendary.options[0]!;
+  };
+
+  it('casts a spell of its Spellcasting at a level, once until its next turn', () => {
+    const option = optionOf(
+      "The dragon uses Spellcasting to cast Command (level 2 version). The dragon can't take this action again until the start of its next turn.",
+    );
+    expect(option).toMatchObject({ casts: { spell: 'command', level: 2 }, oncePerRound: true });
+  });
+
+  it('casts a spell with its own save DC, or on itself', () => {
+    expect(
+      optionOf(
+        'The dragon casts *Fear*, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 14).',
+      ).casts,
+    ).toEqual({ spell: 'fear', dc: 14 });
+    expect(
+      optionOf('The dragon uses Spellcasting to cast Invisibility on itself, and it can fly up to half its Fly Speed.')
+        .casts,
+    ).toEqual({ spell: 'invisibility', self: true });
+  });
+
+  it('runs another of its actions behind a save', () => {
+    const strike = action('lightning-strike', {
+      kind: 'action',
+      save: 'dex',
+      saveDc: 23,
+      damage: '6d10',
+      damageType: 'lightning',
+      saveEffect: 'half',
+    });
+    const option = optionOf('The kraken uses Lightning Strike.', [strike]);
+    expect(option.spell).toMatchObject({ save: { ability: 'dex', dc: 23, onSave: 'half' } });
+    expect(option).not.toHaveProperty('casts');
   });
 });

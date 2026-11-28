@@ -181,6 +181,31 @@ describe('spells picked for a feature', () => {
       paidBy: 'mystic-arcanum',
     });
     expect(errors(ana)).toEqual([]);
-    expect(tok('hero').spent).toEqual({ uses: { 'mystic-arcanum': 1 } });
+    expect(tok('hero').spent).toEqual({ uses: { 'mystic-arcanum/eyebite': 1 } });
+    ana.receive({
+      t: 'cast',
+      caster: 'hero',
+      spell: 'eyebite',
+      slot: 6,
+      targets: ['goblin'],
+      paidBy: 'mystic-arcanum',
+    });
+    expect(errors(ana)[0]).toMatch(/already cast Eyebite with Mystic Arcanum/);
+  });
+
+  it("casts astral projection on a 2014 monk for 8 ki with Empty Body, whoever's aimed at", () => {
+    const stats = { class: 'monk', level: 18, maxHp: 90, abilities: { wis: 16, dex: 16 } };
+    put({ ...tok('hero'), stats, spent: undefined });
+    const ana = join('ana');
+    ana.receive({
+      t: 'cast',
+      caster: 'hero',
+      spell: 'astral-projection',
+      slot: 9,
+      targets: ['goblin'],
+      paidBy: 'empty-body',
+    });
+    expect(errors(ana)).toEqual([]);
+    expect(tok('hero').spent).toEqual({ uses: { ki: 8 } });
   });
 });

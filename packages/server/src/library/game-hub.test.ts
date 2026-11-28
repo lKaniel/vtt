@@ -135,3 +135,32 @@ describe('the games on a server', () => {
     expect(await exists(join(home, 'game.json'))).toBe(true);
   });
 });
+
+describe('the error log of each game', () => {
+  it('is kept in the data folder, and lasts while the game is closed', async () => {
+    const running = await hub.open('test');
+    running.errors.add({ source: 'browser', message: 'boom' });
+    await hub.close();
+    hub = await startHub();
+    const again = await hub.open('test');
+    expect(again.errors.entries).toEqual([expect.objectContaining({ message: 'boom' })]);
+    expect(await exists(join(dataDir, 'errors', 'test.json'))).toBe(true);
+  });
+
+  it('gets the errors of the server itself, in every game that is open', async () => {
+    const running = await hub.open('test');
+    hub.serverError('a request for /api/games', new Error('disk full'));
+    expect(running.errors.entries).toEqual([
+      expect.objectContaining({ source: 'server', message: 'Error: disk full', where: 'a request for /api/games' }),
+    ]);
+  });
+
+  it('goes with its game', async () => {
+    const id = await hub.create({ name: 'Short Lived', system: 'dnd5e', rules: '2014' }, kaniel);
+    (await hub.open(id)).errors.add({ source: 'server', message: 'x' });
+    await hub.close();
+    hub = await startHub();
+    await hub.remove(id);
+    expect(await exists(join(dataDir, 'errors', `${id}.json`))).toBe(false);
+  });
+});

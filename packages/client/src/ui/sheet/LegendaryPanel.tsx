@@ -63,7 +63,7 @@ function LegendaryActions(props: Readonly<SheetProps>) {
             <Button
               variant="outline"
               size="sm"
-              disabled={!act || o.cost > legendary.left}
+              disabled={!act || o.cost > legendary.left || legendary.taken?.includes(o.id)}
               title={o.description ?? (o.attack ? t('legendary.attacks') : o.name)}
               onClick={() => session.requests.legendary(value.id, o.id, session.targets.only())}
             >

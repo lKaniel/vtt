@@ -25,7 +25,7 @@ export function legendaryAction(table: Table, player: Player, msg: LegendaryMess
   if (problem) throw new Refusal(problem);
   const option = sheet.legendary!.options.find((o) => o.id === msg.option)!;
   if (option.attack && !msg.target) throw new Refusal(`Target a creature for ${option.name} first`);
-  table.store.setToken(spendLegendary(token, option.cost));
+  table.store.setToken(spendLegendary(token, option.cost, option.oncePerRound ? option.id : undefined));
   table.note(`${token.name} takes a legendary action, ${option.name}${option.attack ? '' : said(option.description)}`);
   if (option.attack)
     attack({ token: table.store.tokens.get(token.id)!, sheet }, msg.target!, option.attack, rollPickOf(msg));

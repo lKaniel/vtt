@@ -42,6 +42,8 @@ import { WorldClock } from './play/world-clock.ts';
 import { isPresenceMessage, Presence } from './play/presence.ts';
 import { askMovers, chunkMessage, type Client, viewFor, visibilityChanges } from './game-client.ts';
 import { gameRoutes, route, type Routes, type Step } from './actions/game-routes.ts';
+import { ErrorActions, isErrorMessage } from './actions/error-actions.ts';
+import { ErrorLog } from './library/error-log.ts';
 
 /**
  * The live game. Clients send intents ("move here", "open this door"); the
@@ -83,12 +85,24 @@ export class Game {
   private acting?: Client;
   /** Where each message goes (game-routes.ts). */
   private routes: Routes;
+  /** The GM's error log (error-actions.ts). */
+  private errors: ErrorActions;
 
-  /** `now`: the server's time in ms, which the game clock runs by. */
+  /** `now`: the server's time in ms, which the game clock runs by; `errors`: where the game's error log is kept. */
   constructor(
     private store: GameStore,
-    { rng = Math.random, now = Date.now }: { rng?: Rng; now?: () => number } = {},
+    {
+      rng = Math.random,
+      now = Date.now,
+      errors = new ErrorLog(undefined, now),
+    }: { rng?: Rng; now?: () => number; errors?: ErrorLog } = {},
   ) {
+    this.errors = new ErrorActions(
+      errors,
+      () => [...this.clients].filter((c) => isGm(c.player)),
+      (c, msg) => this.send(c, msg),
+      now,
+    );
     const table = new Table(store, rng, (text) => this.narrate({ text }));
     this.table = table;
     table.picks.spent = (who) => this.clients.forEach((c) => c.player.id === who && this.send(c, { t: 'pickSpent' }));
@@ -259,6 +273,7 @@ export class Game {
     };
     for (const msg of welcomeOf(this.store, c, parts)) this.send(c, msg);
     this.presence.greet(c);
+    this.errors.greet(c);
     this.store.inScene(c.scene, () => {
       this.fog.explore(player);
       for (const fog of this.fog.snapshot(player)) this.send(c, { t: 'fog', ...fog, full: true });
@@ -314,11 +329,19 @@ export class Game {
     for (const c of this.on(scene)) if (c.player.id === player || isGm(c.player)) this.send(c, msg);
   }
 
-  /** Runs a message on the scene the client is on. */
+  /**
+   * Runs a message on the scene the client is on. A refusal is told to the
+   * sender; anything else that goes wrong joins the GM's error log, and the
+   * game goes on.
+   */
   private handle(c: Client, msg: ClientMessage): void {
     this.acting = c;
     try {
       this.store.inScene(c.scene, () => this.handleHere(c, msg));
+    } catch (e) {
+      if (e instanceof Refusal) return this.fail(c, e.message);
+      this.errors.failed(msg.t, e, c);
+      this.fail(c, 'Something went wrong on the server. The GM can see it in the error log.');
     } finally {
       this.acting = undefined;
     }
@@ -327,6 +350,7 @@ export class Game {
   private handleHere(c: Client, msg: ClientMessage): void {
     if (msg.t === 'ops') return this.onOps(c, msg);
     if (isPresenceMessage(msg)) return this.presence.handle(c, msg);
+    if (isErrorMessage(msg)) return this.errors.handle(c, msg);
     if (isPackMessage(msg)) return this.packs.handle(c.player, msg, (reply) => this.send(c, reply));
     try {
       this.pause.check(c.player, msg);
@@ -350,7 +374,11 @@ export class Game {
   private timePasses(fn: () => void): void {
     const gm = this.store.world.players.find(isGm)!;
     const label = { label: 'time passing', action: true };
-    if (this.history.step(gm, label, () => this.settle(fn))) this.sendHistory();
+    try {
+      if (this.history.step(gm, label, () => this.settle(fn))) this.sendHistory();
+    } catch (e) {
+      this.errors.failed('time passing', e);
+    }
   }
 
   /** Stops the clock's tick (the game is unloaded). */

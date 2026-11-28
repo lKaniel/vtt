@@ -1,9 +1,9 @@
 import { CheckIcon, LinkIcon } from 'lucide-react';
-import { useState } from 'react';
 import { t } from '../i18n/index.ts';
 import { inviteLink } from '../lobby.ts';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
+import { useCopy } from './use-copy.ts';
 
 // Invite links: the address a GM sends so a player lands on the game's join
 // screen (with their name picked, for a player's own link). The way remote
@@ -11,36 +11,6 @@ import { Input } from './kit/input.tsx';
 
 /** This page's address without its #screen: where the server is, as the players reach it. */
 const here = () => `${location.origin}${location.pathname}`;
-
-/** The old way to copy, for pages over plain http (a LAN address), where the clipboard API is missing. */
-function copyByHand(text: string): Promise<void> {
-  const box = document.createElement('textarea');
-  box.value = text;
-  box.style.position = 'fixed';
-  box.style.opacity = '0';
-  document.body.append(box);
-  box.select();
-  // eslint-disable-next-line sonarjs/deprecation, @typescript-eslint/no-deprecated -- the only way to copy outside a secure context
-  const ok = document.execCommand('copy');
-  box.remove();
-  return ok ? Promise.resolve() : Promise.reject(new Error('copy refused'));
-}
-
-/** Copies `text`, and says so for a moment; `false` when the browser won't. */
-function useCopy(): [boolean | undefined, (text: string) => void] {
-  const [copied, setCopied] = useState<boolean>();
-  const copy = (text: string) => {
-    const done = window.isSecureContext ? navigator.clipboard.writeText(text) : copyByHand(text);
-    done.then(
-      () => {
-        setCopied(true);
-        setTimeout(() => setCopied(undefined), 2000);
-      },
-      () => setCopied(false),
-    );
-  };
-  return [copied, copy];
-}
 
 /** The game's invite link, to read, select or copy. */
 export function InviteBox({ game }: Readonly<{ game: string }>) {

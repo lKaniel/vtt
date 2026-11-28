@@ -266,6 +266,34 @@ describe('foundrySheet', () => {
       skipped: [{ what: 'Sheets of a kind we have no match for', count: 1, examples: ['vehicle'] }],
     });
   });
+
+  describe('species', () => {
+    const hero = (race: object, rules: '2014' | '2024' = '2014') =>
+      sheet(
+        { name: 'Ash', type: 'character', system: { abilities: abilities(10, 10, 10, 10, 10, 16) }, items: [race] },
+        rules,
+      ).sheet.stats;
+
+    it('reads the species from its race item, by identifier or name', () => {
+      expect(hero({ name: 'Tiefling', type: 'race', system: {} })).toMatchObject({ species: 'tiefling' });
+      expect(hero({ name: 'Elfo', type: 'race', system: { identifier: 'elf' } })).toMatchObject({ species: 'elf' });
+    });
+
+    it('reads a subrace or lineage as the species and its lineage', () => {
+      expect(hero({ name: 'High Elf', type: 'race', system: {} })).toMatchObject({
+        species: 'elf',
+        lineage: 'high-elf',
+      });
+      expect(hero({ name: 'Wood Elf', type: 'race', system: {} }, '2024')).toMatchObject({
+        species: 'elf',
+        lineage: 'wood-elf',
+      });
+    });
+
+    it('leaves out a species the book lacks', () => {
+      expect(hero({ name: 'Tabaxi', type: 'race', system: {} })).not.toHaveProperty('species');
+    });
+  });
 });
 
 describe('an Item Piles actor', () => {

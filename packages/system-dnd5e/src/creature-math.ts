@@ -1,4 +1,4 @@
-import type { Ability } from './stats-schema.ts';
+import type { Abilities, Ability } from './stats-schema.ts';
 
 const ABILITY_NAMES: Record<Ability, string> = {
   str: 'Strength',
@@ -32,4 +32,14 @@ export const fitScore = (score: number): number => Math.trunc(score);
 export function fitScores<T extends Partial<Record<Ability, number>>>(scores: T): T {
   const fit = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? fitScore(v) : undefined);
   return Object.fromEntries(Object.entries(scores).map(([a, v]) => [a, fit(v)])) as T;
+}
+
+/** How much more (or less) a spell cast with another ability than the caster's own (`spellAbilities`) rolls with. */
+export function spellAbilityShift(
+  sheet: { abilities: Abilities; caster?: { ability: Ability; spellAbilities?: Partial<Record<string, Ability>> } },
+  spell: string,
+): number {
+  const book = sheet.caster;
+  const other = book?.spellAbilities?.[spell];
+  return book && other ? abilityMod(sheet.abilities[other]) - abilityMod(sheet.abilities[book.ability]) : 0;
 }

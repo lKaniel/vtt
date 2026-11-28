@@ -60,6 +60,7 @@ import { Cards } from './session-cards.ts';
 import { Folders } from './session-folders.ts';
 import { SceneBake } from './session-bake.ts';
 import { ScriptHost } from '../scripting/script-api.ts';
+import { ErrorReports } from './session-errors.ts';
 
 type Status = 'connecting' | 'open' | 'closed';
 type PartEvents = EditEvents &
@@ -167,6 +168,8 @@ export class Session {
   /** The GM's Optimise and Edit for a 2D scene; the bake everyone draws (session-bake.ts). */
   readonly bake: SceneBake = new SceneBake(this, this.ev);
   readonly editor: Editor = new Editor(this, this.ev);
+  /** This browser's errors to the server; the GM's error log (session-errors.ts). */
+  readonly errors: ErrorReports = new ErrorReports(this, this.ev);
   /** The parts that take messages, the welcome and departures. */
   private readonly parts: SessionPart[] = [
     this.edits,
@@ -183,6 +186,7 @@ export class Session {
     this.actions.pick,
     this.actions.rolls,
     this.bake,
+    this.errors,
   ];
   /** The GM paused the game: players can't act until it resumes. */
   paused = false;

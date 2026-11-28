@@ -53,6 +53,18 @@ describe('legendary actions', () => {
     );
   });
 
+  it('take one marked once a round only once until the start of its next turn', () => {
+    const red = TokenSchema.parse({ id: 'd', name: 'Dragon', x: 50, y: 50, monster: 'adult-red-dragon' });
+    const red24 = (t: typeof red) => resolveCreature(t, srdFor('2024'))!;
+    const combat = { ...startCombat([], () => 0), ...fight };
+    const once = spendLegendary(red, 1, 'fiery-rays');
+    expect(legendaryProblem(once, red24(once), combat, 'fiery-rays')).toBe(
+      "Dragon can't take Fiery Rays again until the start of its next turn",
+    );
+    expect(legendaryProblem(once, red24(once), combat, 'pounce')).toBeUndefined();
+    expect(refreshLegendary(once).spent).toBeUndefined();
+  });
+
   it('come back at the start of its turn', () => {
     expect(refreshLegendary(spendLegendary(dragon(), 2)).spent).toBeUndefined();
   });

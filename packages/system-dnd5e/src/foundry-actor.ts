@@ -6,7 +6,8 @@ import { attackOf, byName, GEAR_TYPES, gearOf, ownItem } from './foundry-gear.ts
 import { ownSpell } from './foundry-spells.ts';
 import { stateOf } from './foundry-state.ts';
 import { foundryProficiencies } from './foundry-proficiencies.ts';
-import { ABILITIES, type Abilities, DamageTypeSchema, type Stats } from './stats-schema.ts';
+import { ABILITIES, type Abilities, DamageTypeSchema, type Edition, type Stats } from './stats-schema.ts';
+import { originsFor } from './origins.ts';
 import type { Feature, Spell } from './spell-schema.ts';
 import type { Actor } from './token-schema.ts';
 
@@ -207,6 +208,18 @@ interface Read {
   srd: Content;
 }
 
+/** The species (and lineage) of a character's race item, when the book has it: "Tiefling", "High Elf". */
+function speciesOf(items: Loose[], edition: Edition): Partial<Stats> {
+  const race = items.find((i) => i.type === 'race');
+  const keys = [str(obj(race?.system).identifier), str(race?.name)].flatMap((k) => (k ? [slugify(k)] : []));
+  for (const species of originsFor(edition).species) {
+    if (keys.includes(species.id)) return { species: species.id };
+    const sub = species.subspecies.find((s) => keys.includes(s.id));
+    if (sub) return { species: species.id, lineage: sub.id };
+  }
+  return {};
+}
+
 /** The numbers of a creature read from its sheet. */
 function statsOf({ sys, items, npc, srd }: Read, classes: Classes, spells: string[]): Stats {
   const abilities = abilitiesOf(sys);
@@ -219,6 +232,7 @@ function statsOf({ sys, items, npc, srd }: Read, classes: Classes, spells: strin
     ...opt('maxHp', maxHp !== undefined && maxHp > 0 && Math.round(maxHp)),
     ...opt('ac', acOf(sys)),
     ...classes.stats,
+    ...(npc ? {} : speciesOf(items, srd.edition)),
     ...(npc && !classes.stats.level && !classes.stats.classes ? { proficiency: prof } : {}),
     ...defensesOf(sys),
     ...opt('skills', skills.length > 0 && skills),
