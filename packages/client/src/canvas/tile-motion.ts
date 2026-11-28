@@ -88,6 +88,14 @@ export interface RoofEyes {
   pointer?: Point;
 }
 
+/** Screen pixels a grid square needs before the GM's pointer lifts roofs: farther out, a sweep would flicker the whole city's roofs. */
+const POINTER_LIFT_SQUARE = 10;
+
+/** Whether the GM's pointer lifts the roofs under it at `zoom` (screen per map pixel) on a grid of `gridSize`. */
+export function pointerLifts(zoom: number, gridSize: number): boolean {
+  return zoom * gridSize >= POINTER_LIFT_SQUARE;
+}
+
 /** Where a roof fades: under your creatures, or for the GM the selected ones, else the GM's pointer. */
 export function roofWatchers(eyes: RoofEyes, placeOf: (id: string) => { at: Point } | undefined): Point[] {
   if (eyes.gm && !eyes.selected.length) return eyes.pointer ? [eyes.pointer] : [];
