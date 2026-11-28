@@ -1,6 +1,7 @@
 import {
   ArmchairIcon,
   BookOpenIcon,
+  BugIcon,
   DicesIcon,
   ImageIcon,
   LibraryIcon,
@@ -13,7 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-/** The side panel has tabs, like a VTT sidebar: the log, journal, Actors (their own creatures) and macros for everyone, and cards once some are shared; for the GM the scenes, Actors, Compendium, tables, music, assets and packs, and the seats; the Compendium for trusted players. */
+/** The side panel has tabs, like a VTT sidebar: the log, journal, Actors (their own creatures) and macros for everyone, and cards once some are shared; for the GM the scenes, Actors, Compendium, tables, music, assets and packs, the seats and the error log; the Compendium for trusted players. */
 export const TABS = [
   'Adventure log',
   'Journal',
@@ -26,6 +27,7 @@ export const TABS = [
   'Music',
   'Assets',
   'Players',
+  'Errors',
 ] as const;
 export type Tab = (typeof TABS)[number];
 export const PLAYER_TABS: readonly Tab[] = ['Adventure log', 'Journal', 'Actors', 'Macros'];
@@ -43,4 +45,5 @@ export const TAB_ICONS: Record<Tab, LucideIcon> = {
   Music: MusicIcon,
   Assets: ImageIcon,
   Players: ArmchairIcon,
+  Errors: BugIcon,
 };

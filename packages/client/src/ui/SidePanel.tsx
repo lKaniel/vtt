@@ -65,7 +65,12 @@ export function SidePanel({ session }: Readonly<{ session: Session }>) {
         ) : (
           fold
         )}
-        <PanelTabs tabs={tabs} shown={open ? shown : undefined} onPick={pick} />
+        <PanelTabs
+          tabs={tabs}
+          shown={open ? shown : undefined}
+          onPick={pick}
+          news={{ Errors: session.errors.unseen }}
+        />
         {open && <PanelPage tab={shown} session={session} />}
       </aside>
       {popped
@@ -139,24 +144,35 @@ function PanelTabs({
   tabs,
   shown,
   onPick,
-}: Readonly<{ tabs: readonly Tab[]; shown?: Tab; onPick: (tab: Tab) => void }>) {
+  news,
+}: Readonly<{ tabs: readonly Tab[]; shown?: Tab; onPick: (tab: Tab) => void; news: Partial<Record<Tab, number>> }>) {
   return (
     <Tabs value={shown ?? ''} onValueChange={(v) => onPick(v as Tab)} orientation={shown ? 'horizontal' : 'vertical'}>
       <TabsList className={shown ? 'mb-1.5' : 'h-auto flex-col items-stretch gap-1 border-b-0 pt-1'}>
         {tabs.map((id) => (
-          <TabIcon key={id} id={id} />
+          <TabIcon key={id} id={id} news={id === shown ? 0 : (news[id] ?? 0)} />
         ))}
       </TabsList>
     </Tabs>
   );
 }
 
-function TabIcon({ id }: Readonly<{ id: Tab }>) {
+/** A tab's icon; `news`: how many new things wait in it (a dot with the count). */
+function TabIcon({ id, news }: Readonly<{ id: Tab; news: number }>) {
   const Icon = TAB_ICONS[id];
-  const name = t(`panel.${id}`);
+  const title = t(`panel.${id}`);
+  const name = news ? `${title}: ${t('errors.new', { count: news })}` : title;
   return (
-    <TabsTrigger value={id} title={name} aria-label={name} className="px-1 pt-0.5 pb-1.5 [&_svg]:size-4">
+    <TabsTrigger value={id} title={name} aria-label={name} className="relative px-1 pt-0.5 pb-1.5 [&_svg]:size-4">
       <Icon />
+      {news > 0 && (
+        <span
+          aria-hidden
+          className="absolute -top-0.5 -right-0.5 min-w-3.5 rounded-full bg-[#b3412f] px-1 text-center text-[9px] leading-3.5 text-white"
+        >
+          {news > 99 ? '99+' : news}
+        </span>
+      )}
     </TabsTrigger>
   );
 }

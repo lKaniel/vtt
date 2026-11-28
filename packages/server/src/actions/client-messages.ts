@@ -2,6 +2,7 @@ import { AssetQuerySchema, OpSchema } from '@vtt/core';
 import {
   ClockActionSchema,
   DoorStateSchema,
+  ERROR_TEXT,
   FogEditSchema,
   MapEditSchema,
   PointSchema,
@@ -340,6 +341,23 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('fog'), edit: FogEditSchema }),
   z.object({ t: z.literal('undo'), card: z.string().optional() }),
   z.object({ t: z.literal('redo') }),
+  z.object({
+    t: z.literal('reportError'),
+    message: z.string().max(ERROR_TEXT.message * 4),
+    stack: z
+      .string()
+      .max(ERROR_TEXT.stack * 4)
+      .optional(),
+    where: z
+      .string()
+      .max(ERROR_TEXT.where * 4)
+      .optional(),
+    browser: z
+      .string()
+      .max(ERROR_TEXT.browser * 4)
+      .optional(),
+  }),
+  z.object({ t: z.literal('clearErrors') }),
   z.object({ t: z.literal('packs') }),
   z.object({ t: z.literal('plugins') }),
   z.object({ t: z.literal('media') }),

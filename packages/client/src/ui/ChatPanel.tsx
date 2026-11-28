@@ -14,6 +14,7 @@ import { PlaylistsTab } from './PlaylistsTab.tsx';
 import { TablesTab } from './TablesTab.tsx';
 import { MacrosTab } from './MacrosTab.tsx';
 import { PlayersTab } from './PlayersTab.tsx';
+import { ErrorsTab } from './ErrorsTab.tsx';
 import { ScenesTab } from './ScenesTab.tsx';
 import { diceArt } from '../icon-art.ts';
 import { t } from '../i18n/index.ts';
@@ -49,6 +50,7 @@ function Library({ tab, session }: Readonly<{ tab: Exclude<Tab, 'Adventure log'>
     Compendium: CompendiumTab,
     Assets: AssetsTab,
     Players: PlayersTab,
+    Errors: ErrorsTab,
   }[tab];
   return <Panel session={session} />;
 }

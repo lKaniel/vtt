@@ -94,9 +94,22 @@ const handleRequest = httpHandler({
   }),
 });
 
+// What goes wrong outside a game joins the error log of every open game, for its GMs to see.
+process.on('unhandledRejection', (e: unknown) => {
+  console.error('[server] unhandled rejection:', e);
+  hub.serverError('the server, in the background', e);
+});
+process.on('uncaughtException', (e: Error) => {
+  console.error('[server] uncaught exception, stopping:', e);
+  hub.serverError('the server, which stopped on it', e);
+  hub.flushErrorsNow();
+  process.exit(1);
+});
+
 const server = createServer((req, res) => {
   handleRequest(req, res).catch((e: unknown) => {
     console.error('[server] request failed:', e);
+    hub.serverError(`a request for ${new URL(req.url ?? '/', 'http://localhost').pathname}`, e);
     if (!res.headersSent) res.writeHead(500);
     res.end();
   });

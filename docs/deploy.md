@@ -128,3 +128,10 @@ cd /opt/vtt
 docker compose ps            # both running, vtt healthy
 docker compose logs -f vtt   # the server's log
 ```
+
+The GM doesn't need ssh to see what went wrong: the Errors tab of the side
+panel (GM only) lists errors from the players' browsers and from the server,
+kept per game in `data/errors/<game>.json` (the newest 200, repeats counted).
+An error while the server handles a message is logged there and the game goes
+on; only an uncaught one outside a game still stops the server (Docker starts
+it again).
