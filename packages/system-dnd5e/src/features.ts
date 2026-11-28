@@ -13,6 +13,7 @@ import { removeEffects, rollSave, type SaveRoll } from './effects.ts';
 import type { Token } from './token-schema.ts';
 import { type Effect, type Spell, SpellSchema } from './spell-schema.ts';
 import { abilityMod } from './creature-math.ts';
+import { keyFeature } from './spell-picks.ts';
 import type { Ability } from './stats-schema.ts';
 
 // Using class features (second wind, action surge, rage), resting, and the
@@ -158,12 +159,13 @@ function dashOf(feature: FeatureSheet, speed: number): number | undefined {
   return feature.halfDash ? Math.floor(speed / 2) : undefined;
 }
 
+/** What a short rest leaves spent: long-rest uses (picked spells' own ones too), all but one of a short-one feature's. */
 function restUses(token: Token, sheet: Creature): Record<string, number> | undefined {
   const out: Record<string, number> = {};
-  for (const f of sheet.features) {
-    const spent = token.spent?.uses?.[f.id] ?? 0;
-    if (f.recharge === 'short-one' && spent > 1) out[f.id] = spent - 1;
-    else if (f.recharge === 'long' && spent > 0) out[f.id] = spent;
+  for (const [key, spent] of Object.entries(token.spent?.uses ?? {})) {
+    const f = sheet.features.find((s) => s.id === keyFeature(key));
+    if (f?.recharge === 'short-one' && spent > 1) out[key] = spent - 1;
+    else if (f?.recharge === 'long' && spent > 0) out[key] = spent;
   }
   return Object.keys(out).length ? out : undefined;
 }
