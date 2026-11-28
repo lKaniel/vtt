@@ -7,6 +7,7 @@ import type { Session } from '../session/session.ts';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
 import { CalendarMonth } from './kit/calendar.tsx';
+import { t } from '../i18n/index.ts';
 
 // The Journal tab's other views: the quest log (quests by status, with
 // their progress) and the calendar with the notes dated to each day.
@@ -24,17 +25,20 @@ function EntryLink({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
 export function QuestLog({ session }: Readonly<{ session: Session }>) {
   const groups = questsBy(session.docs.all('journals'));
   const create = () =>
-    session.journal.createEntry('journal', { name: 'New quest', quest: { status: 'active', objectives: [] } });
+    session.journal.createEntry('journal', {
+      name: t('journal.newQuest'),
+      quest: { status: 'active', objectives: [] },
+    });
   return (
     <div className="flex flex-col gap-2" data-slot="quest-log">
       {session.isGm() && (
         <Button variant="outline" size="sm" onClick={create}>
-          New quest
+          {t('journal.newQuest')}
         </Button>
       )}
       {groups.map((g) => (
         <section key={g.status}>
-          <h4 className="font-display text-sm text-gold">{g.label}</h4>
+          <h4 className="font-display text-sm text-gold">{t(`quest.${g.status}`)}</h4>
           <ul className="rows">
             {g.quests.map(({ doc, quest }) => {
               const { done, total } = questProgress(quest);
@@ -48,7 +52,7 @@ export function QuestLog({ session }: Readonly<{ session: Session }>) {
           </ul>
         </section>
       ))}
-      {!groups.length && <p className="muted">No quests yet.</p>}
+      {!groups.length && <p className="muted">{t('journal.noQuests')}</p>}
     </div>
   );
 }
@@ -102,7 +106,7 @@ export function CalendarNotes({ session }: Readonly<{ session: Session }>) {
   const notes = session.docs.all('journals');
   const list = day ? (notesByDay(calendar, notes, day).get(day.day) ?? []) : [];
   const create = (d: DayRef) =>
-    session.journal.createEntry('journal', { name: 'New note', date: secondsOf(calendar, d) });
+    session.journal.createEntry('journal', { name: t('journal.newNote'), date: secondsOf(calendar, d) });
   return (
     <div className="flex flex-col gap-2" data-slot="calendar-notes">
       <MonthPicker
@@ -124,10 +128,10 @@ export function CalendarNotes({ session }: Readonly<{ session: Session }>) {
               </li>
             ))}
           </ul>
-          {!list.length && <p className="muted">Nothing noted on this day.</p>}
+          {!list.length && <p className="muted">{t('journal.noNotes')}</p>}
           {session.isGm() && (
             <Button variant="outline" size="sm" onClick={() => create(day)}>
-              Note on this day
+              {t('journal.noteDay')}
             </Button>
           )}
         </>

@@ -5,6 +5,7 @@ import { SelectField } from '../kit/select.tsx';
 import { Textarea } from '../kit/textarea.tsx';
 import { ChangeRows } from './ChangeRows.tsx';
 import { Field, Problem, useChecked, NameField } from './fields.tsx';
+import { t } from '../../i18n/index.ts';
 
 /** A homemade feature: what it says, how often it can be used, and what using it costs. */
 export function FeatureForm({ feature, onSave }: Readonly<{ feature: Feature; onSave: (f: Feature) => void }>) {
@@ -13,47 +14,47 @@ export function FeatureForm({ feature, onSave }: Readonly<{ feature: Feature; on
   return (
     <div className="grid grid-cols-2 gap-3">
       <NameField name={draft.name} onChange={(name) => change({ name })} />
-      <Field label="Uses (0: unlimited)">
+      <Field label={t('own.feature.uses')}>
         <NumberField value={uses} min={0} max={20} onValueChange={(n) => change({ uses: n ? [[1, n]] : undefined })} />
       </Field>
-      <Field label="Comes back on">
+      <Field label={t('own.feature.recharge')}>
         <SelectField
           value={draft.recharge}
           disabled={!uses}
           onValueChange={(r) => change({ recharge: r as Feature['recharge'] })}
           options={[
-            { value: 'short', label: 'A short or long rest' },
-            { value: 'long', label: 'A long rest' },
+            { value: 'short', label: t('own.feature.short') },
+            { value: 'long', label: t('own.feature.long') },
           ]}
         />
       </Field>
-      <Field label="Using it takes">
+      <Field label={t('own.feature.takes')}>
         <SelectField
           value={draft.action ?? ''}
           onValueChange={(a) => change({ action: (a || undefined) as Feature['action'] })}
           options={[
-            { value: '', label: 'Nothing (passive)' },
-            { value: 'action', label: 'An action' },
-            { value: 'bonus', label: 'A bonus action' },
-            { value: 'attack', label: 'One attack of the Attack action' },
-            { value: 'free', label: 'No action' },
+            { value: '', label: t('own.feature.passive') },
+            { value: 'action', label: t('own.feature.action') },
+            { value: 'bonus', label: t('own.feature.bonus') },
+            { value: 'attack', label: t('own.feature.attack') },
+            { value: 'free', label: t('own.feature.free') },
           ]}
         />
       </Field>
-      <Field label="Heals on use (dice)">
+      <Field label={t('own.feature.heal')}>
         <Input
           value={draft.heal ?? ''}
-          placeholder="e.g. 1d10+level"
+          placeholder={t('own.feature.healHint')}
           onChange={(e) => change({ heal: e.target.value || undefined })}
         />
       </Field>
-      <Field label="Always-on changes" wide>
+      <Field label={t('own.feature.alwaysOn')} wide>
         <ChangeRows
           changes={draft.passive?.changes ?? []}
           onChange={(changes) => change({ passive: passiveWith(draft.passive, changes) })}
         />
       </Field>
-      <Field label="Description" wide>
+      <Field label={t('own.description')} wide>
         <Textarea rows={5} value={draft.description} onChange={(e) => change({ description: e.target.value })} />
       </Field>
       <div className="col-span-2">

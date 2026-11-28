@@ -7,6 +7,7 @@ import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 import { Toggle } from './kit/toggle.tsx';
+import { t } from '../i18n/index.ts';
 
 // The GM's encounter builder: how hard the monsters on the scene are for
 // the party (by the world's rules), and the XP to award once they're beaten.
@@ -17,8 +18,8 @@ export function EncounterButton({ session }: Readonly<{ session: Session }>) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" title="How hard the monsters here are for the party, and their XP">
-          Encounter
+        <Button variant="outline" size="sm" title={t('encounter.buttonTitle')}>
+          {t('encounter.button')}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="flex w-[340px] flex-col gap-2" data-slot="encounter">
@@ -44,11 +45,13 @@ function EncounterPanel({ session }: Readonly<{ session: Session }>) {
   return (
     <>
       <div className="flex items-center justify-between">
-        <span className="font-display text-sm text-gold">Encounter ({edition} rules)</span>
+        <span className="font-display text-sm text-gold">{t('encounter.title', { edition })}</span>
         <Badge variant={WARN.has(rating.difficulty) ? 'warn' : 'default'}>{rating.difficulty}</Badge>
       </div>
       <p className="text-xs text-muted-foreground">
-        Party: {party.map((p) => `${p.name} (${p.level})`).join(', ') || 'no characters on the scene'}
+        {t('encounter.party', {
+          names: party.map((p) => `${p.name} (${p.level})`).join(', ') || t('encounter.noParty'),
+        })}
       </p>
       <div className="flex flex-wrap gap-1">
         {foes.map((f) => (
@@ -56,7 +59,7 @@ function EncounterPanel({ session }: Readonly<{ session: Session }>) {
             {f.name} · CR {crText(f.cr)}
           </Toggle>
         ))}
-        {!foes.length && <span className="text-xs text-muted-foreground">No monsters on the scene.</span>}
+        {!foes.length && <span className="text-xs text-muted-foreground">{t('encounter.noFoes')}</span>}
       </div>
       <p className="text-xs">
         {Object.entries(rating.thresholds)
@@ -64,7 +67,9 @@ function EncounterPanel({ session }: Readonly<{ session: Session }>) {
           .join(' · ')}
       </p>
       <p className="text-sm">
-        {rating.xp} XP{rating.adjusted !== rating.xp && ` (counts as ${rating.adjusted})`}, {share} each
+        {t('encounter.xp', { xp: rating.xp })}
+        {rating.adjusted !== rating.xp && ` ${t('encounter.adjusted', { xp: rating.adjusted })}`}
+        {t('encounter.share', { xp: share })}
       </p>
       <Button
         size="sm"
@@ -76,7 +81,7 @@ function EncounterPanel({ session }: Readonly<{ session: Session }>) {
           )
         }
       >
-        Award {share} XP each
+        {t('encounter.award', { xp: share })}
       </Button>
     </>
   );

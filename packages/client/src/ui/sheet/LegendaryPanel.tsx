@@ -2,6 +2,7 @@ import { currentTurn } from '@vtt/system-dnd5e';
 import type { SheetProps } from './sheet-props.ts';
 import { Button } from '../kit/button.tsx';
 import { ResourceMeter } from './ResourceMeter.tsx';
+import { t } from '../../i18n/index.ts';
 
 // A legendary creature's pool of legendary actions, its legendary resistance
 // and its lair actions, under its features. The GM spends legendary actions
@@ -16,17 +17,17 @@ export function LegendaryPanel(props: Readonly<SheetProps>) {
       <LegendaryActions {...props} />
       {sheet.legendaryResistance && (
         <p className="flex items-center gap-1 text-sm">
-          <span className="font-display text-gold">Legendary resistance</span>
+          <span className="font-display text-gold">{t('legendary.resistance')}</span>
           <ResourceMeter
             resource={{
               key: { kind: 'use', id: 'legendary-resistance' },
-              name: 'Legendary resistance',
+              name: t('legendary.resistance'),
               ...sheet.legendaryResistance,
             }}
             edit={props.edit}
             update={props.update}
           />
-          today
+          {t('legendary.today')}
         </p>
       )}
       <LairActions {...props} />
@@ -44,11 +45,11 @@ function LegendaryActions(props: Readonly<SheetProps>) {
   return (
     <section>
       <h4 className="flex items-center gap-1 font-display text-sm text-gold">
-        Legendary actions
+        {t('legendary.actions')}
         <ResourceMeter
           resource={{
             key: { kind: 'use', id: 'legendary' },
-            name: 'Legendary actions',
+            name: t('legendary.actions'),
             left: legendary.left,
             total: legendary.actions,
           }}
@@ -63,7 +64,7 @@ function LegendaryActions(props: Readonly<SheetProps>) {
               variant="outline"
               size="sm"
               disabled={!act || o.cost > legendary.left}
-              title={o.description ?? (o.attack ? 'Attacks your one target' : o.name)}
+              title={o.description ?? (o.attack ? t('legendary.attacks') : o.name)}
               onClick={() => session.requests.legendary(value.id, o.id, session.targets.only())}
             >
               {o.name}
@@ -83,7 +84,7 @@ function LairActions(props: Readonly<SheetProps>) {
   const lairTurn = !!combat && currentTurn(combat) === `lair:${value.id}`;
   return (
     <section>
-      <h4 className="font-display text-sm text-gold">Lair actions</h4>
+      <h4 className="font-display text-sm text-gold">{t('legendary.lair')}</h4>
       <ul className="m-0 flex list-none flex-wrap gap-1 p-0">
         {sheet.lair.actions.map((a) => (
           <li key={a.id}>
@@ -91,7 +92,7 @@ function LairActions(props: Readonly<SheetProps>) {
               variant="outline"
               size="sm"
               disabled={!canAct(props) || !lairTurn}
-              title={a.description ?? 'On initiative 20'}
+              title={a.description ?? t('legendary.lairTitle')}
               onClick={() => session.requests.lairAction(value.id, a.id)}
             >
               {a.name}

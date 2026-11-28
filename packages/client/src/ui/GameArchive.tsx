@@ -3,17 +3,18 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../server-api.ts';
 import { Button } from './kit/button.tsx';
 import { FileInput } from './kit/file-input.tsx';
+import { type MessageKey, t } from '../i18n/index.ts';
 
 // Keeping a game safe, in the lobby: the GM's backups (made when the game
 // loads, every 15 minutes of play if it changed, and by hand) with restore,
 // the game as a zip download, and anyone making a new game from such a zip.
 
-const REASONS: Record<BackupInfo['reason'], string> = {
-  load: 'when it loaded',
-  timer: 'during play',
-  manual: 'by hand',
-  restore: 'before a restore',
-  reimport: 'before a Foundry re-import',
+const REASONS: Record<BackupInfo['reason'], MessageKey> = {
+  load: 'backups.load',
+  timer: 'backups.timer',
+  manual: 'backups.manual',
+  restore: 'backups.restore',
+  reimport: 'backups.reimport',
 };
 
 const when = (at: number) => new Date(at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
@@ -42,14 +43,14 @@ export function BackupsPanel({ game, onRestored }: Readonly<{ game: GameDetail; 
   };
   return (
     <div className="auth frame lobby-form" data-slot="backups">
-      <h2 className="lobby-heading">Backups</h2>
+      <h2 className="lobby-heading">{t('backups.title')}</h2>
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={() => void run(() => api.backUp(game.id), 'Backed up.')}>
-          Back up now
+        <Button variant="outline" size="sm" onClick={() => void run(() => api.backUp(game.id), t('backups.done'))}>
+          {t('backups.now')}
         </Button>
         <Button asChild variant="outline" size="sm">
           <a href={api.exportUrl(game.id)} download={`${game.id}.zip`}>
-            Download as zip
+            {t('backups.zip')}
           </a>
         </Button>
       </div>
@@ -57,22 +58,26 @@ export function BackupsPanel({ game, onRestored }: Readonly<{ game: GameDetail; 
         {backups.map((b) => (
           <li key={b.id} className="flex items-center gap-2 text-sm">
             <span className="grow">
-              {when(b.at)} <span className="menu-note">{REASONS[b.reason]}</span>
+              {when(b.at)} <span className="menu-note">{t(REASONS[b.reason])}</span>
             </span>
             <Button
               variant="outline"
               size="sm"
-              title="Puts the game back as it was then (the game as it is now is backed up first)"
+              title={t('backups.restoreTitle')}
               onClick={() =>
-                void run(() => api.restoreBackup(game.id, b.id), `Restored the game to ${when(b.at)}.`, onRestored)
+                void run(
+                  () => api.restoreBackup(game.id, b.id),
+                  t('backups.restored', { when: when(b.at) }),
+                  onRestored,
+                )
               }
             >
-              Restore
+              {t('backups.restoreButton')}
             </Button>
           </li>
         ))}
       </ul>
-      {!backups.length && <p className="menu-note">No backups yet: one is made when the game loads.</p>}
+      {!backups.length && <p className="menu-note">{t('backups.none')}</p>}
       {note && <p className="menu-note">{note}</p>}
       {error && <p className="menu-error">{error}</p>}
     </div>
@@ -99,11 +104,11 @@ export function ImportZip({ onMade }: Readonly<{ onMade: (id: string) => void }>
   };
   return (
     <div className="auth frame lobby-form" data-slot="import-zip">
-      <h2 className="lobby-heading">Import a game</h2>
-      <p className="menu-note">A game downloaded as a zip from its page here becomes a new game, players and all.</p>
+      <h2 className="lobby-heading">{t('importZip.title')}</h2>
+      <p className="menu-note">{t('importZip.hint')}</p>
       <Button asChild variant="outline" disabled={busy}>
         <label>
-          {busy ? 'Importing…' : 'Pick a zip'}
+          {busy ? t('importZip.busy') : t('importZip.pick')}
           <FileInput accept=".zip,application/zip" disabled={busy} onChange={(e) => void onPick(e)} />
         </label>
       </Button>

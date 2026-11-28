@@ -11,6 +11,7 @@ import { Input } from './kit/input.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
 import { MonthPicker } from './JournalViews.tsx';
+import { t } from '../i18n/index.ts';
 
 // What sits above a journal entry's pages: the day a calendar note is dated
 // to, and a quest's status and objectives. The GM changes them; players read.
@@ -32,10 +33,10 @@ export function EntryTools({ session, doc }: Readonly<PartProps>) {
       <Button
         variant="ghost"
         size="sm"
-        title={quest ? 'Take it out of the quest log' : 'Put it in the quest log'}
+        title={quest ? t('journal.unquestTitle') : t('journal.questTitle')}
         onClick={() => patch(session, doc, { quest: quest ? null : { status: 'active', objectives: [] } })}
       >
-        {quest ? 'Not a quest' : 'Quest'}
+        {quest ? t('journal.unquest') : t('journal.quest')}
       </Button>
     </>
   );
@@ -48,8 +49,8 @@ function DateButton({ session, doc }: Readonly<PartProps>) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" title="Date it on the calendar">
-          <CalendarIcon /> Date
+        <Button variant="ghost" size="sm" title={t('journal.dateTitle')}>
+          <CalendarIcon /> {t('journal.date')}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="flex w-[320px] flex-col gap-2">
@@ -61,7 +62,7 @@ function DateButton({ session, doc }: Readonly<PartProps>) {
         />
         {date && (
           <Button variant="outline" size="sm" onClick={() => patch(session, doc, { date: null })}>
-            Remove the date
+            {t('journal.undate')}
           </Button>
         )}
       </PopoverContent>
@@ -90,7 +91,7 @@ function QuestPanel({ session, doc, quest }: Readonly<PartProps & { quest: Quest
   const gm = session.isGm();
   const [draft, setDraft] = useState('');
   const set = (next: Quest) => patch(session, doc, { quest: next });
-  const label = QUEST_STATUS.find((s) => s.status === quest.status)!.label;
+  const label = t(`quest.${quest.status}`);
   return (
     <section className="mb-2 flex flex-col gap-1.5 border-b border-border pb-2" data-slot="quest">
       {gm ? (
@@ -101,7 +102,7 @@ function QuestPanel({ session, doc, quest }: Readonly<PartProps & { quest: Quest
         >
           {QUEST_STATUS.map((s) => (
             <ToggleGroupItem key={s.status} value={s.status}>
-              {s.label}
+              {t(`quest.${s.status}`)}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
@@ -123,7 +124,7 @@ function QuestPanel({ session, doc, quest }: Readonly<PartProps & { quest: Quest
                 variant="ghost"
                 size="icon-sm"
                 className="ml-auto"
-                title="Remove"
+                title={t('bits.remove')}
                 onClick={() => set(removeObjective(quest, i))}
               >
                 <XIcon />
@@ -135,8 +136,8 @@ function QuestPanel({ session, doc, quest }: Readonly<PartProps & { quest: Quest
       {gm && (
         <Input
           value={draft}
-          placeholder="New objective, then Enter"
-          aria-label="New objective"
+          placeholder={t('journal.objectiveHint')}
+          aria-label={t('journal.objective')}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key !== 'Enter') return;

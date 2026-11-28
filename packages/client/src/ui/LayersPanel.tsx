@@ -6,6 +6,7 @@ import { clickSelect, keyOf, modsOf, refOf } from '../editor/selection.ts';
 import type { Session } from '../session/session.ts';
 import { Input } from './kit/input.tsx';
 import { Button } from './kit/button.tsx';
+import { t } from '../i18n/index.ts';
 
 const DRAG = 'application/x-vtt-layers';
 
@@ -53,9 +54,9 @@ export function LayersPanel({ session }: Readonly<{ session: Session }>) {
     if (place) session.tiles.move(ids, place.parent, place.index);
   };
 
-  if (!rows.length) return <p className="layers-empty">No tiles yet: pick Draw and drag a box on the map.</p>;
+  if (!rows.length) return <p className="layers-empty">{t('layers.empty')}</p>;
   return (
-    <div className="layers" role="tree" aria-label="Layers">
+    <div className="layers" role="tree" aria-label={t('layers.label')}>
       {rows.map((row) => (
         <div
           key={row.id}
@@ -104,7 +105,7 @@ function RowBody({ session, row, renaming, onRename, onFold }: Readonly<RowProps
         variant="ghost"
         size="icon-sm"
         className="layer-fold size-5"
-        aria-label={row.open ? 'Fold' : 'Unfold'}
+        aria-label={row.open ? t('layers.fold') : t('layers.unfold')}
         disabled={!row.parent}
         onClick={(e) => {
           e.stopPropagation();
@@ -123,7 +124,7 @@ function RowBody({ session, row, renaming, onRename, onFold }: Readonly<RowProps
           }}
         />
       ) : (
-        <span className="layer-name" onDoubleClick={() => onRename(true)} title="Double click to rename">
+        <span className="layer-name" onDoubleClick={() => onRename(true)} title={t('layers.rename')}>
           {row.label}
         </span>
       )}
@@ -131,8 +132,8 @@ function RowBody({ session, row, renaming, onRename, onFold }: Readonly<RowProps
         variant="ghost"
         size="icon-sm"
         className={cn('layer-lock size-6', row.locked && 'text-gold-bright')}
-        title={row.locked ? 'Unlock' : 'Lock: clicks and boxes on the map pass through it'}
-        aria-label={row.locked ? 'Unlock' : 'Lock'}
+        title={row.locked ? t('layers.unlock') : t('layers.lockTitle')}
+        aria-label={row.locked ? t('layers.unlock') : t('layers.lock')}
         onClick={(e) => {
           e.stopPropagation();
           session.tiles.edit([row.id], { locked: lock }, row.locked ? 'unlock' : 'lock');

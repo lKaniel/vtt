@@ -12,14 +12,25 @@ import { CalendarEditor } from './CalendarEditor.tsx';
 import { ClockControls } from './ClockControls.tsx';
 import { DatePicker } from './DatePicker.tsx';
 import { SkyDial } from './SkyDial.tsx';
+import { type MessageKey, t } from '../../i18n/index.ts';
 
 type Look = 'running' | 'stopped' | 'turns' | 'fight';
 
-const LOOKS: Record<Look, { title: string; badge: string; dot: string; variant: 'good' | 'muted' | 'warn' }> = {
-  running: { title: 'Time runs', badge: 'Running', dot: 'bg-gold-bright shadow-[0_0_6px_#e8d3a6]', variant: 'good' },
-  stopped: { title: 'Time stands still', badge: 'Stopped', dot: 'bg-muted-foreground/60', variant: 'muted' },
-  turns: { title: 'Turn-based: 6 seconds a round', badge: 'Turn-based', dot: 'bg-[#e7b670]', variant: 'warn' },
-  fight: { title: 'A fight: 6 seconds a round', badge: 'In a fight', dot: 'bg-destructive', variant: 'warn' },
+const LOOKS: Record<Look, { title: MessageKey; badge: MessageKey; dot: string; variant: 'good' | 'muted' | 'warn' }> = {
+  running: {
+    title: 'clockBar.running',
+    badge: 'clockBar.runningBadge',
+    dot: 'bg-gold-bright shadow-[0_0_6px_#e8d3a6]',
+    variant: 'good',
+  },
+  stopped: {
+    title: 'clockBar.stopped',
+    badge: 'clockBar.stoppedBadge',
+    dot: 'bg-muted-foreground/60',
+    variant: 'muted',
+  },
+  turns: { title: 'clockBar.turns', badge: 'clockBar.turnsBadge', dot: 'bg-[#e7b670]', variant: 'warn' },
+  fight: { title: 'clockBar.fight', badge: 'clockBar.fightBadge', dot: 'bg-destructive', variant: 'warn' },
 };
 
 /** Running, standing still, or counting rounds (turn-based mode or a fight). */
@@ -50,7 +61,7 @@ export function ClockBar({ session }: Readonly<{ session: Session }>) {
       {shortDate(session.time.clock().calendar, session.time.now())}
     </>
   );
-  const title = `${session.time.dateText()}. ${LOOKS[look].title}`;
+  const title = `${session.time.dateText()}. ${t(LOOKS[look].title)}`;
   if (!session.isGm()) {
     return (
       <span className="inline-flex items-center gap-1.5 whitespace-nowrap" title={title}>
@@ -72,8 +83,8 @@ export function ClockBar({ session }: Readonly<{ session: Session }>) {
         <Separator />
         <Tabs defaultValue="date">
           <TabsList>
-            <TabsTrigger value="date">Set the date</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="date">{t('clockBar.setDate')}</TabsTrigger>
+            <TabsTrigger value="calendar">{t('clockBar.calendar')}</TabsTrigger>
           </TabsList>
           <TabsContent value="date">
             <DatePicker key={session.time.clock().time} session={session} />
@@ -111,7 +122,7 @@ function ClockHeader({ session, look }: Readonly<{ session: Session; look: Look 
         </span>
       </div>
       <Badge variant={LOOKS[look].variant} className="self-start">
-        {LOOKS[look].badge}
+        {t(LOOKS[look].badge)}
       </Badge>
     </div>
   );

@@ -5,6 +5,7 @@ import { type PileRow, pileRows } from '../text/pile-view.ts';
 import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './kit/dialog.tsx';
+import { t } from '../i18n/index.ts';
 
 // A pile of loot's or a merchant's window, like the Item Piles module's:
 // what it holds with a Take (Buy) button each, its coins, and the trader's
@@ -19,7 +20,7 @@ export function PileWindow({ session }: Readonly<{ session: Session }>) {
         <DialogTitle>{pile.name}</DialogTitle>
         <DialogDescription>{describe(pile.pile)}</DialogDescription>
         {pile.pile.locked && !session.isGm() ? (
-          <p className="muted">It is locked.</p>
+          <p className="muted">{t('pile.locked')}</p>
         ) : (
           <Contents session={session} pile={pile} kind={pile.pile} />
         )}
@@ -29,8 +30,8 @@ export function PileWindow({ session }: Readonly<{ session: Session }>) {
 }
 
 function describe(pile: Pile): string {
-  if (pile.kind === 'loot') return pile.locked ? 'Loot (locked)' : 'Loot: take what you like.';
-  return `Merchant: sells at ×${pile.buy} the book price, buys at ×${pile.sell}.`;
+  if (pile.kind === 'loot') return pile.locked ? t('pile.lootLocked') : t('pile.loot');
+  return t('pile.merchant', { buy: pile.buy, sell: pile.sell });
 }
 
 interface ContentsProps {
@@ -47,12 +48,12 @@ function Contents({ session, pile, kind }: Readonly<ContentsProps>) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">
-        {trader ? `Trading as ${trader.name}.` : 'Select a creature of yours to trade with.'}
+        {trader ? t('pile.tradingAs', { name: trader.name }) : t('pile.pickTrader')}
       </p>
       <Rows
         rows={goods}
-        empty={merchant ? 'Sold out.' : 'Nothing left.'}
-        action={merchant ? 'Buy' : 'Take'}
+        empty={merchant ? t('pile.soldOut') : t('pile.empty')}
+        action={merchant ? t('pile.buy') : t('pile.take')}
         priced={merchant}
         onRow={trader && ((row) => session.piles.trade('take', row.index, merchant ? 1 : undefined))}
       />
@@ -65,7 +66,7 @@ function Contents({ session, pile, kind }: Readonly<ContentsProps>) {
             disabled={!trader}
             onClick={() => session.piles.takeCoins(pile.currency ?? {})}
           >
-            Take coins
+            {t('pile.takeCoins')}
           </Button>
         </div>
       )}
@@ -81,11 +82,11 @@ function Yours({ session, trader, kind }: Readonly<{ session: Session; trader: T
   const rows = pileRows(trader, merchant ? kind.sell : undefined, contentFor(trader, rules));
   return (
     <>
-      <h4>{trader.name}’s gear</h4>
+      <h4>{t('pile.gear', { name: trader.name })}</h4>
       <Rows
         rows={rows}
-        empty="Empty-handed."
-        action={merchant ? 'Sell' : 'Put in'}
+        empty={t('pile.emptyHanded')}
+        action={merchant ? t('pile.sell') : t('pile.put')}
         priced={merchant}
         onRow={(row) => session.piles.trade('put', row.index, merchant ? 1 : undefined)}
       />
@@ -110,7 +111,9 @@ function Rows({ rows, empty, action, onRow, priced }: Readonly<RowsProps>) {
         <li key={row.index} className="flex items-center gap-2 text-sm">
           <span className="flex-1">
             {row.qty > 1 ? `${row.qty} × ${row.name}` : row.name}
-            {row.inside.length > 0 && <span className="text-muted-foreground"> (with {row.inside.join(', ')})</span>}
+            {row.inside.length > 0 && (
+              <span className="text-muted-foreground"> {t('pile.with', { list: row.inside.join(', ') })}</span>
+            )}
           </span>
           {row.price && <span className="text-muted-foreground">{row.price}</span>}
           <Button variant="outline" size="sm" disabled={!onRow || (priced && !row.price)} onClick={() => onRow?.(row)}>
