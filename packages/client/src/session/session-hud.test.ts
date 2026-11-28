@@ -39,7 +39,7 @@ describe('Token HUD', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'editToken', token: 'hero', patch: { elevation: 10 } });
   });
 
-  it('sends the GM’s fight controls: whose turn, a step back, the round, the order, the turn passed on', () => {
+  it('sends the GM’s fight controls: whose turn, a step back, the round, the order, rerolls, the turn passed on', () => {
     ws.receive({ ...welcome([token('hero'), token('goblin')]), combat: fight(1, 25) } as never);
     session.hud.giveTurn('goblin');
     expect(ws.sent.at(-1)).toEqual({ t: 'turnTo', token: 'goblin' });
@@ -49,6 +49,12 @@ describe('Token HUD', () => {
     expect(ws.sent.at(-1)).toEqual({ t: 'round', value: 4 });
     session.hud.moveInOrder('goblin', -1);
     expect(ws.sent.at(-1)).toEqual({ t: 'orderMove', token: 'goblin', by: -1 });
+    session.hud.moveInOrder('goblin', 3);
+    expect(ws.sent.at(-1)).toEqual({ t: 'orderMove', token: 'goblin', by: 3 });
+    session.hud.rerollInitiative(['goblin']);
+    expect(ws.sent.at(-1)).toEqual({ t: 'reroll', tokens: ['goblin'] });
+    session.hud.rerollInitiative();
+    expect(ws.sent.at(-1)).toEqual({ t: 'reroll' });
     session.hud.passTurn();
     expect(ws.sent.at(-1)).toEqual({ t: 'endTurn', token: session.combat!.order[session.combat!.turn]!.token });
   });

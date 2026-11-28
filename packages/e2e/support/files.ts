@@ -23,6 +23,18 @@ export function placeToken(gameDir: string, id: string, x: number, y: number): P
   return editSceneList(gameDir, 'tokens', (tokens) => tokens.map((t) => (t.id === id ? { ...t, x, y } : t)));
 }
 
+/** Adds `count` more unlinked copies of actor `actor` to the crossroads, in a row from [x, y]. */
+export function addTokens(gameDir: string, actor: string, count: number, [x, y]: [number, number]): Promise<void> {
+  const more = Array.from({ length: count }, (_, i) => ({
+    id: `${actor}-extra-${i + 1}`,
+    x: x + i * 100,
+    y,
+    actor,
+    linked: false,
+  }));
+  return editSceneList(gameDir, 'tokens', (tokens) => [...tokens, ...more]);
+}
+
 /** Changes actor `id`'s file (`actors/<id>.json`). */
 export async function editActor(
   gameDir: string,

@@ -126,9 +126,14 @@ export class Hud implements SessionPart {
     this.s.send({ t: 'round', value });
   }
 
-  /** GM: a creature one place earlier (-1) or later (1) in the order. */
-  moveInOrder(token: string, by: -1 | 1): void {
-    this.s.send({ t: 'orderMove', token, by });
+  /** GM: a creature `by` places earlier (negative) or later (positive) in the order. */
+  moveInOrder(token: string, by: number): void {
+    if (by) this.s.send({ t: 'orderMove', token, by });
+  }
+
+  /** GM: initiative rolled again for these creatures, or for everyone in the fight. */
+  rerollInitiative(tokens?: string[]): void {
+    this.s.send(tokens ? { t: 'reroll', tokens } : { t: 'reroll' });
   }
 
   /** A token is gone: close its HUD and stop seeing through its eyes. */

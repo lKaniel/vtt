@@ -7,6 +7,7 @@ import {
   leaveCombat,
   nextTurn,
   moveInOrder,
+  rerollInitiative,
   previousTurn,
   setInitiative,
   setRound,
@@ -247,8 +248,60 @@ describe('the GM running the order by hand', () => {
     expect(currentTurn(down)).toBe('b');
   });
 
+  it('moveInOrder moves a creature several places, taking the initiative of the last one it passes', () => {
+    const top = moveInOrder(base, 'c', -2);
+    expect(top.order).toEqual([
+      { token: 'c', initiative: 18 },
+      { token: 'a', initiative: 18 },
+      { token: 'b', initiative: 12 },
+    ]);
+    expect(currentTurn(top)).toBe('b');
+    expect(moveInOrder(base, 'a', 5).order.map((e) => e.token)).toEqual(['b', 'c', 'a']);
+  });
+
   it('moveInOrder stops at the ends', () => {
     expect(moveInOrder(base, 'a', -1)).toBe(base);
     expect(moveInOrder(base, 'c', 1)).toBe(base);
+  });
+});
+
+describe('rerollInitiative', () => {
+  const base: Combat = {
+    round: 2,
+    turn: 1,
+    order: [
+      { token: 'a', initiative: 18 },
+      { token: 'b', initiative: 12 },
+      { token: 'c', initiative: 5 },
+    ],
+    left: { move: 30, action: true, bonus: true, attacks: 0, used: [] },
+    reacted: [],
+    side: {},
+  };
+
+  it('rolls the creatures named again, re-sorts the order and keeps the turn with whoever has it', () => {
+    const after = rerollInitiative(base, [{ token: 'c', bonus: 2, speed: 30 }], d20s(19));
+    expect(after.order).toEqual([
+      { token: 'c', initiative: 21 },
+      { token: 'a', initiative: 18 },
+      { token: 'b', initiative: 12 },
+    ]);
+    expect(currentTurn(after)).toBe('b');
+    expect(after.round).toBe(2);
+  });
+
+  it('rolls everyone again in one go', () => {
+    const all = ['a', 'b', 'c'].map((token) => ({ token, bonus: 0, speed: 30 }));
+    const after = rerollInitiative(base, all, d20s(2, 15, 9));
+    expect(after.order).toEqual([
+      { token: 'b', initiative: 15 },
+      { token: 'c', initiative: 9 },
+      { token: 'a', initiative: 2 },
+    ]);
+    expect(currentTurn(after)).toBe('b');
+  });
+
+  it('leaves creatures not in the fight out', () => {
+    expect(rerollInitiative(base, [{ token: 'zz', bonus: 0, speed: 30 }], d20s(20))).toEqual(base);
   });
 });

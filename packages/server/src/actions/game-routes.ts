@@ -103,7 +103,7 @@ function tableRoutes(p: GameParts) {
     ),
     applyDamage: (s, m) => p.damage.apply(s.player, s.canSee, m),
     ...each(['condition', 'combatant', 'initiative', 'turnOverride'], (s, m) => p.hud.handle(s.player, s.canSee, m)),
-    ...each(['turnTo', 'turnBack', 'round', 'orderMove'], (s, m) => p.fight.handle(s.player, m)),
+    ...each(['turnTo', 'turnBack', 'round', 'orderMove', 'reroll'], (s, m) => p.fight.handle(s.player, m)),
   } satisfies Partial<Routes>;
 }
 
