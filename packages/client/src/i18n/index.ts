@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { EN, type MessageKey } from './en.ts';
+import { offerBundled } from './bundled.ts';
 import { I18n } from './i18n.ts';
 
 // The page's translations: `t` for the table's own words (typed keys),
@@ -7,6 +8,7 @@ import { I18n } from './i18n.ts';
 // screen when the language changes.
 
 export const i18n = new I18n(EN);
+offerBundled(i18n);
 
 export type { MessageKey };
 
