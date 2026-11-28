@@ -11,6 +11,19 @@
 @import './minimal.css' layer(legacy);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
+/* The phone layout (ui/usePhone.ts): `phone:` styles apply inside a table laid out for a phone. */
+@custom-variant phone (&:where(.phone, .phone *));
+/* The room the phone layout keeps: above the windows, and under them for the tabs along the bottom. */
+.phone {
+  --phone-top: 8px;
+  --phone-nav: calc(60px + env(safe-area-inset-bottom));
+}
+@media (orientation: landscape) {
+  .phone {
+    --phone-nav: calc(46px + env(safe-area-inset-bottom));
+  }
+}
+
 /* Tailwind scans these for class names. */
 @source '../src';
 

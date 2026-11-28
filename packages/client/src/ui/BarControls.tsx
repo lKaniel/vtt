@@ -29,6 +29,7 @@ export function BarButtons({
       <Button
         variant="ghost"
         size="icon-sm"
+        className="phone:hidden"
         title={label}
         aria-label={label}
         onClick={() => onSize(compact ? 'full' : 'compact')}

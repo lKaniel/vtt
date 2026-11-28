@@ -38,11 +38,15 @@ import { ClaudeKey } from './ClaudeKey.tsx';
 import { Button } from './kit/button.tsx';
 import { exposeApi } from '../scripting/script-api.ts';
 import { OptimiseButton } from './OptimiseButton.tsx';
+import { PhoneNav } from './PhoneNav.tsx';
+import { usePhone } from './usePhone.ts';
 
 export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLeave: () => void }>) {
   const [session] = useState(() => new Session(gameId));
   const host = useRef<HTMLDivElement>(null);
   useSession(session);
+  const phone = usePhone();
+  const [log, setLog] = usePhoneLog(session);
 
   useEffect(() => openMap(session, host.current!), [session]);
 
@@ -51,6 +55,11 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
   useEffect(() => listenToClipboard(session), [session]);
   useEffect(() => exposeApi(session.scripts.vtt), [session]);
   useEffect(() => blockNativeMenu(document), []);
+  // On the page's root, so dialogs and menus (drawn on the body) follow the layout too.
+  useEffect(() => {
+    document.documentElement.classList.toggle('phone', phone);
+    return () => document.documentElement.classList.remove('phone');
+  }, [phone]);
   useEffect(() => {
     const sound = new SoundScape(session);
     return () => sound.destroy();
@@ -61,7 +70,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
     <div className="game has-[[data-slot=scene-nav]]:[&_.party]:top-[94px]!">
       <div className="map" ref={host} />
       {/* The top bar and the fight controls share one row, so neither can lie over the other. */}
-      <div className="top-strip">
+      <div className="top-strip phone:right-2 phone:left-2 phone:flex-wrap phone:gap-1.5">
         <TopBar session={session} onLeave={onLeave} />
         <TurnOrder session={session} />
       </div>
@@ -82,7 +91,8 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <TileQuestion session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <Sheets session={session} />
-      <SidePanel session={session} />
+      <SidePanel session={session} phone={phone ? { shown: log, onShow: () => setLog(true) } : undefined} />
+      {phone && <PhoneNav session={session} log={log} onLog={setLog} />}
       <Toast session={session} />
       <ContextMenu session={session} />
       <TokenHud session={session} />
@@ -93,20 +103,31 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
   );
 }
 
+/**
+ * Whether a phone shows the side panel: from a tap on Log until a sheet
+ * opens over it (one opened from the panel's lists shows at once).
+ */
+function usePhoneLog(session: Session): [boolean, (open: boolean) => void] {
+  // The number of sheets open when the log was shown; unset while it isn't.
+  const [at, setAt] = useState<number>();
+  const open = session.sheets.list.length;
+  return [at !== undefined && open <= at, (show) => setAt(show ? open : undefined)];
+}
+
 /** The bar across the top: connection, game and scene, clock, you, pause, undo, Claude, settings, leave. */
 function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () => void }>) {
   return (
-    <header className="topbar frame">
+    <header className="topbar frame phone:w-full phone:gap-1 phone:px-2">
       <span
         className={`status status-${session.status}`}
         title={session.status === 'open' ? 'Connected' : session.status}
       />
-      <strong className="world-name" title={session.world?.name}>
+      <strong className="world-name phone:hidden" title={session.world?.name}>
         {session.world?.name ?? 'Connecting…'}
       </strong>
-      {session.scenes.name && <span className="scene-name">{session.scenes.name}</span>}
+      {session.scenes.name && <span className="scene-name phone:hidden">{session.scenes.name}</span>}
       <ClockBar session={session} />
-      <span className="you" style={{ color: session.you?.color }}>
+      <span className="you phone:mr-auto phone:truncate" style={{ color: session.you?.color }}>
         {session.you?.name}
       </span>
       <PauseButton session={session} />
@@ -115,7 +136,11 @@ function TopBar({ session, onLeave }: Readonly<{ session: Session; onLeave: () =
       <ThroughWallsButton session={session} />
       <View3DButton session={session} />
       <OptimiseButton session={session} />
-      {session.gameId && <ClaudeKey game={session.gameId} />}
+      {session.gameId && (
+        <span className="contents phone:hidden">
+          <ClaudeKey game={session.gameId} />
+        </span>
+      )}
       <SettingsMenu session={session} />
       <Button variant="ghost" size="icon-sm" onClick={onLeave} title={t('table.leave')} aria-label={t('table.leave')}>
         <LogOutIcon />
@@ -182,7 +207,7 @@ function ThroughWallsButton({ session }: Readonly<{ session: Session }>) {
 function UndoButtons({ session }: Readonly<{ session: Session }>) {
   const { undo, redo } = session.edits.history;
   return (
-    <span className="undo-buttons">
+    <span className="undo-buttons phone:hidden">
       <Button
         variant="ghost"
         size="icon-sm"
