@@ -31,12 +31,24 @@ import type { WorldClock } from '../play/world-clock.ts';
 
 // Where each client message goes. Game (game.ts) runs every message that is
 // a step of the game through this table, inside one undo step; the few it
-// handles itself (document ops, undo and redo, pause, presence, packs) are
+// handles itself (document ops, undo and redo, pause, presence, packs, the error log) are
 // left out. The table names every other message kind, so a new message
 // can't be added to client-messages.ts without saying who handles it.
 
 /** Messages Game handles before the table: no undo step, or no step at all. */
-type Outside = 'ops' | 'undo' | 'redo' | 'pause' | 'ruler' | 'cursor' | 'ping' | 'target' | 'rollMode' | 'playSound';
+type Outside =
+  | 'ops'
+  | 'undo'
+  | 'redo'
+  | 'pause'
+  | 'ruler'
+  | 'cursor'
+  | 'ping'
+  | 'target'
+  | 'rollMode'
+  | 'playSound'
+  | 'reportError'
+  | 'clearErrors';
 type Packs =
   'packs' | 'plugins' | 'media' | 'compendium' | 'compendiumDoc' | 'findAssets' | 'upload' | 'uploadUrl' | 'bakeBlock';
 type Kind = Exclude<ClientMessage['t'], Outside | Packs>;

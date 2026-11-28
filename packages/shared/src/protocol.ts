@@ -16,6 +16,7 @@ import type { Chunk, DoorState, Player, Point, Role, World } from './schema.ts';
 import type { FogEdit } from './fog-edit.ts';
 import type { MapEdit } from './map-edit.ts';
 import type { RollMode } from './roll-modes.ts';
+import type { ErrorEntry } from './error-log.ts';
 
 // The engine's half of the wire protocol: scenes, maps, fog, documents and
 // undo. A game system adds its own messages (attacks, spells, sheets) on top;
@@ -92,6 +93,10 @@ export type EngineClientMessage =
   | { t: 'rollMode'; mode: RollMode }
   /** GM: the soundboard plays a sound once for everyone at the table (each is sent `sound`). */
   | { t: 'playSound'; src: string; volume?: number }
+  /** Something went wrong in this browser: it joins the GM's error log (error-log.ts). */
+  | { t: 'reportError'; message: string; stack?: string; where?: string; browser?: string }
+  /** GM: empties the error log. */
+  | { t: 'clearErrors' }
   | { t: 'door'; chunk: string; wall: string; state: DoorState }
   /** Click a tile that has a trigger, with one of your creatures for the actions that move one (see triggers.ts). */
   | { t: 'trigger'; tile: string; token?: string }
@@ -201,6 +206,10 @@ export type EngineServerMessage =
   | { t: 'targets'; player: string; name: string; color: string; tokens: string[] }
   /** The GM paused the game, or let it go on. */
   | { t: 'paused'; on: boolean }
+  /** GM only: the game's error log (error-log.ts), whole: on joining and when it is cleared. */
+  | { t: 'errors'; entries: ErrorEntry[] }
+  /** GM only: an error was logged, or one already there happened again (same id). */
+  | { t: 'errorLogged'; entry: ErrorEntry }
   /** The time of day changed. */
   | { t: 'lighting'; darkness: number }
   /** The scene's weather changed (by hand, or with the time): no need to start over. */

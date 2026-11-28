@@ -15,6 +15,7 @@ import { type BackupInfo, type BackupReason, Backups } from './backups.ts';
 import { foundryWorldTitle, importFoundryWorld, type WorldReport } from '../foundry/foundry-world.ts';
 import { readManifest, reimportFoundryWorld } from '../foundry/foundry-reimport.ts';
 import { Game } from '../game.ts';
+import { describeError, ErrorLog } from './error-log.ts';
 import { GameAccess } from './game-access.ts';
 import { unzipGame, writeGame, zipGame } from './game-archive.ts';
 import { GameIndex } from './game-index.ts';
@@ -47,6 +48,8 @@ export interface HubOptions {
 export interface Running {
   store: GameStore;
   game: Game;
+  /** What went wrong in it (error-log.ts), for its GMs. */
+  errors: ErrorLog;
   /** Who is connected. */
   /** Each connection's player, and the browser session it came from. */
   sockets: Map<WebSocket, { player: Player; session?: string }>;
@@ -172,7 +175,7 @@ export class GameHub {
     }
     const dir = this.dirs.get(id);
     if (!dir) throw new HubError('No such game.');
-    const loading = this.loading.get(id) ?? this.start(dir);
+    const loading = this.loading.get(id) ?? this.start(dir, id);
     this.loading.set(id, loading);
     try {
       const running = await loading;
@@ -185,7 +188,7 @@ export class GameHub {
     }
   }
 
-  private async start(dir: string): Promise<Running> {
+  private async start(dir: string, id?: string): Promise<Running> {
     const file = await readGameFile(dir);
     if (file) await this.backups.snapshot(file.id, dir, 'load');
     const system = SYSTEMS.get(file?.system ?? DEFAULT_SYSTEM);
@@ -194,7 +197,25 @@ export class GameHub {
     store.plugins = this.plugins;
     await store.load();
     if (this.opts.watch !== false) store.watch();
-    return { store, game: new Game(store), sockets: new Map() };
+    const errors = new ErrorLog(this.errorsFile(id ?? store.campaign.id));
+    await errors.load();
+    return { store, game: new Game(store, { errors }), errors, sockets: new Map() };
+  }
+
+  /** Where a game's error log is kept: the data folder's errors/, never the game folder. */
+  private errorsFile(id: string): string {
+    return join(this.opts.dataDir, 'errors', `${id}.json`);
+  }
+
+  /** Something went wrong on the server outside a game (`doing`): every open game's GMs are shown it. */
+  serverError(doing: string, e: unknown): void {
+    for (const running of this.live.values())
+      running.errors.add({ source: 'server', ...describeError(e), where: doing });
+  }
+
+  /** Writes every open game's error log at once: the server is stopping on an error. */
+  flushErrorsNow(): void {
+    for (const running of this.live.values()) running.errors.flushNow();
   }
 
   /** Unloads the game after a while if nobody is connected (and keeps it while someone is). */
@@ -215,6 +236,7 @@ export class GameHub {
     running.game.close();
     running.store.close();
     await running.store.flush();
+    await running.errors.flush();
   }
 
   private keepBackingUp(id: string): void {
@@ -402,6 +424,7 @@ export class GameHub {
     this.dirs.delete(id);
     await this.index.remove(id);
     await rm(dir, { recursive: true, force: true });
+    await rm(this.errorsFile(id), { force: true });
   }
 
   /** Replaces the players; a removed one is sent away, their fog deleted and their password dropped. */

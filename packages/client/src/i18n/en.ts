@@ -117,6 +117,16 @@ export const EN = {
   'panel.Assets': 'Assets',
   'panel.Players': 'Players',
   'panel.Cards': 'Cards',
+  'panel.Errors': 'Errors',
+  'errors.none':
+    'No errors so far. When something goes wrong in a player’s browser or on the server, it shows up here.',
+  'errors.copy': 'Copy all',
+  'errors.copied': 'Copied',
+  'errors.clear': 'Clear',
+  'errors.stack': 'Where in the code',
+  'errors.browser': 'Browser',
+  'errors.server': 'Server',
+  'errors.new': '{count} new errors',
 
   'actors.list': 'Actors',
   'actors.onMap': 'On the map',
