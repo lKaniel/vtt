@@ -32,6 +32,7 @@ import type { GameStore } from './store/game-store.ts';
 import { History } from './store/undo.ts';
 import { SceneActions, sceneOf } from './actions/scene-actions.ts';
 import { FogKeeper } from './play/fog-keeper.ts';
+import { SessionLog } from './play/session-log.ts';
 import { actedBy, ChatLog, gameCard } from './chat-log.ts';
 import { tokenMoves, type TokenMoves } from './play/token-moves.ts';
 import { isPackMessage, PackActions } from './actions/pack-actions.ts';
@@ -68,6 +69,7 @@ export class Game {
   private fog: FogKeeper;
   private moves: TokenMoves;
   private history: History;
+  private log: SessionLog;
   private packs: PackActions;
   private entries: EntryActions;
   private damage: DamageActions;
@@ -130,7 +132,9 @@ export class Game {
       ask: (token, msg) => askMovers(this.on(store.currentScene), token, msg, (c, m) => this.send(c, m)),
       tell: (who, msg) => [...this.clients].filter((c) => c.player.id === who).forEach((c) => this.send(c, msg)),
     });
-    this.history = new History(store, (ids, undone) => this.chat.undone(ids, undone));
+    this.history = new History(store, (ids, undone) => this.undone(ids, undone));
+    const playing = () => [...this.clients].some((c) => !isGm(c.player));
+    this.log = new SessionLog(store, now, (id) => this.history.noteMark(id), playing);
     this.clock = new WorldClock(table, { now, step: (fn) => this.timePasses(fn), say });
     this.packs = new PackActions(store);
     this.damage = new DamageActions(table, () => this.chat.all);
@@ -321,6 +325,7 @@ export class Game {
       this.store.inScene(c.scene, () => this.handleHere(c, msg));
     } finally {
       this.acting = undefined;
+      this.log.flush();
     }
   }
 
@@ -341,9 +346,14 @@ export class Game {
 
   /** Runs a step, then brings what follows from it (the clock, zone templates, auras) in line, in the same undo step. */
   private settle(step: () => void): void {
-    step();
-    this.clock.settle();
-    this.after.sync();
+    const begun = this.log.begin();
+    try {
+      step();
+      this.clock.settle();
+      this.after.sync();
+    } finally {
+      this.log.end(begun);
+    }
   }
 
   /** The clock ran on: what ran out ends, as a step the GM can undo. */
@@ -351,6 +361,7 @@ export class Game {
     const gm = this.store.world.players.find(isGm)!;
     const label = { label: 'time passing', action: true };
     if (this.history.step(gm, label, () => this.settle(fn))) this.sendHistory();
+    this.log.flush();
   }
 
   /** Stops the clock's tick (the game is unloaded). */
@@ -377,6 +388,15 @@ export class Game {
       // A refused undo still drops the step that can't be undone.
       this.sendHistory();
     }
+  }
+
+  /** A step was undone or redone: its chat cards and session log lines follow. */
+  private undone(ids: string[], undone: boolean): void {
+    this.chat.undone(
+      ids.filter((id) => !id.startsWith('log-')),
+      undone,
+    );
+    this.log.undone(ids, undone);
   }
 
   private sendHistory(): void {
@@ -406,6 +426,7 @@ export class Game {
   private narrate(content: Pick<ChatMessage, 'text' | 'attack' | 'spell'>): void {
     const card = actedBy({ ...gameCard(content.text ?? ''), ...content }, this.acting);
     this.history.noteCard(card.id);
+    this.log.card(card);
     this.chat.post(card);
   }
 

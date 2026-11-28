@@ -50,6 +50,8 @@ export const JournalSchema = z.object({
   book: z.enum(['map', 'log']).optional(),
   /** The player who wrote it: their own note, which they may change and remove. */
   author: z.string().optional(),
+  /** A session log page the server keeps: when that evening's play began and last had news (ms). */
+  session: z.object({ start: z.number(), end: z.number() }).optional(),
 });
 export type Journal = z.infer<typeof JournalSchema>;
 

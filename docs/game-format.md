@@ -775,6 +775,34 @@ or calendar notes. The Foundry importer brings Simple Quest's pages along:
 each quest page becomes a quest (its list items the objectives), map pages
 go under Map, and entries in its party folder under the party log.
 
+The server keeps a session log (`server/src/play/session-log.ts`): while a
+player is at the table, what happens goes as a line into a dated entry
+under the party log, one per evening of play (`session-2026-11-28`,
+"Session of 28 November 2026"). Fights started and over, who went down or
+was killed and by whom, critical hits and natural 1s, coins, items and
+levels the party gains, the party arriving somewhere, and quests the
+players can see appearing, ticking off objectives, done or failed. The
+entry has `session` (`start` and `end`, ms) and its lines are the text of
+its `events` page; it is the GM's until they share it. Four hours without
+news start a new entry the next time. The GM may write on the page (lines
+are added at the end); undoing a step takes back the line it wrote.
+
+```json
+{
+  "id": "session-2026-11-28",
+  "name": "Session of 28 November 2026",
+  "book": "log",
+  "session": { "start": 1795887000000, "end": 1795897800000 },
+  "pages": [
+    {
+      "id": "events",
+      "name": "What happened",
+      "text": "- **Fight:** Bram, Ilse against Goblin ×3\n- Bram killed Goblin 2"
+    }
+  ]
+}
+```
+
 A roll table has `results` (`text`, `weight` default 1, `drawn`), and
 `replacement: false` draws each result once until it is reset. A playlist
 has `mode` (`"sequence"`, `"shuffle"`, `"together"`), `volume`, and

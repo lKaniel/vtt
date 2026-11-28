@@ -23,6 +23,8 @@ interface Step {
   fog: FogChange[];
   /** Chat cards the step posted, marked "undone" while it is. */
   cards: string[];
+  /** Other things the step wrote outside the documents (session log lines), told of its undo with the cards. */
+  marks: string[];
 }
 
 const LIMIT = 100;
@@ -112,6 +114,7 @@ export class History {
   private actions: Step[] = [];
   private seq = 0;
   private cards?: string[];
+  private marks?: string[];
 
   constructor(
     private store: GameStore,
@@ -133,6 +136,7 @@ export class History {
     let error: Error | undefined;
     let fog: FogChange[] = [];
     this.cards = [];
+    this.marks = [];
     const changes = this.store.record(player.id, () => {
       fog = this.store.fog.record(() => {
         try {
@@ -142,11 +146,11 @@ export class History {
         }
       });
     });
-    const cards = this.cards;
-    this.cards = undefined;
+    const { cards, marks } = this;
+    this.cards = this.marks = undefined;
     // A message refused half way still keeps what it did before that.
     const changed = changes.length > 0 || fog.length > 0;
-    if (changed) this.push(player.id, { seq: ++this.seq, ...kind, changes, fog, cards }, true);
+    if (changed) this.push(player.id, { seq: ++this.seq, ...kind, changes, fog, cards, marks }, true);
     if (error) throw error;
     return changed;
   }
@@ -156,6 +160,11 @@ export class History {
     this.cards?.push(id);
   }
 
+  /** Something else the step being recorded made (a session log line). */
+  noteMark(id: string): void {
+    this.marks?.push(id);
+  }
+
   /** Undoes your latest step (the GM's: or the latest action; `card`: the action that card reports). */
   undo(player: Player, card?: string): string {
     const step = card ? this.cardStep(player, card) : this.nextUndo(player);
@@ -163,7 +172,7 @@ export class History {
     this.remove(player.id, step);
     const changes = this.revert(player, step, 'undo');
     this.list(this.redos, player.id).push({ ...step, changes });
-    if (step.cards.length) this.cardsUndone(step.cards, true);
+    this.told(step, true);
     return step.label;
   }
 
@@ -172,8 +181,13 @@ export class History {
     if (!step) throw new Refusal('Nothing to redo');
     const changes = this.revert(player, step, 'redo');
     this.push(player.id, { ...step, seq: ++this.seq, changes }, false);
-    if (step.cards.length) this.cardsUndone(step.cards, false);
+    this.told(step, false);
     return step.label;
+  }
+
+  private told(step: Step, undone: boolean): void {
+    const ids = [...step.cards, ...step.marks];
+    if (ids.length) this.cardsUndone(ids, undone);
   }
 
   /** What undo and redo would do for `player` now. */
