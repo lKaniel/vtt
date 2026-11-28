@@ -266,8 +266,16 @@ export function enabledPacks<P extends PackManifest>(
 
 /** The `n` tags most media carry, commonest first (then by name). */
 export function topTags(media: readonly MediaEntry[], n: number): string[] {
+  return commonestTags(
+    media.map((m) => m.tags),
+    n,
+  );
+}
+
+/** The `n` tags the most of these lists hold (each counted once per list), commonest first, then by name. */
+export function commonestTags(lists: readonly (readonly string[])[], n: number): string[] {
   const counts = new Map<string, number>();
-  for (const m of media) for (const t of m.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+  for (const tags of lists) for (const t of new Set(tags)) counts.set(t, (counts.get(t) ?? 0) + 1);
   return [...counts]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, n)

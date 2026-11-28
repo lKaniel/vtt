@@ -19,7 +19,7 @@ import { ResourceMeter } from './ResourceMeter.tsx';
 export function SheetSidebar(props: Readonly<SheetProps>) {
   const { value, sheet } = props;
   return (
-    <div className="flex w-[236px] shrink-0 flex-col gap-3 overflow-y-auto border-r border-gold-dim/40 px-4 py-3">
+    <div className="flex w-[236px] shrink-0 flex-col gap-3 overflow-y-auto border-r border-gold-dim/40 px-4 py-3 phone:w-full phone:overflow-visible phone:border-r-0">
       <div className="relative mx-auto mt-1 w-[184px]">
         <Face token={{ x: 0, y: 0, ...value }} className="hero-face block h-[212px]" />
         <ArmourClass {...props} />
