@@ -38,15 +38,14 @@ import { ClaudeKey } from './ClaudeKey.tsx';
 import { Button } from './kit/button.tsx';
 import { exposeApi } from '../scripting/script-api.ts';
 import { OptimiseButton } from './OptimiseButton.tsx';
-import { PhoneNav } from './PhoneNav.tsx';
-import { usePhone } from './usePhone.ts';
+import { PhoneScreens } from './PhoneNav.tsx';
+import { usePhoneRoot } from './usePhone.ts';
 
 export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLeave: () => void }>) {
   const [session] = useState(() => new Session(gameId));
   const host = useRef<HTMLDivElement>(null);
   useSession(session);
-  const phone = usePhone();
-  const [log, setLog] = usePhoneLog(session);
+  const phone = usePhoneRoot();
 
   useEffect(() => openMap(session, host.current!), [session]);
 
@@ -55,11 +54,6 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
   useEffect(() => listenToClipboard(session), [session]);
   useEffect(() => exposeApi(session.scripts.vtt), [session]);
   useEffect(() => blockNativeMenu(document), []);
-  // On the page's root, so dialogs and menus (drawn on the body) follow the layout too.
-  useEffect(() => {
-    document.documentElement.classList.toggle('phone', phone);
-    return () => document.documentElement.classList.remove('phone');
-  }, [phone]);
   useEffect(() => {
     const sound = new SoundScape(session);
     return () => sound.destroy();
@@ -91,8 +85,7 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <TileQuestion session={session} />
       <ActionBar session={session} onSheet={() => toggleSheet(session)} />
       <Sheets session={session} />
-      <SidePanel session={session} phone={phone ? { shown: log, onShow: () => setLog(true) } : undefined} />
-      {phone && <PhoneNav session={session} log={log} onLog={setLog} />}
+      {phone ? <PhoneScreens session={session} /> : <SidePanel session={session} />}
       <Toast session={session} />
       <ContextMenu session={session} />
       <TokenHud session={session} />
@@ -101,17 +94,6 @@ export function GameScreen({ gameId, onLeave }: Readonly<{ gameId?: string; onLe
       <TableReady key={session.scene} session={session} />
     </div>
   );
-}
-
-/**
- * Whether a phone shows the side panel: from a tap on Log until a sheet
- * opens over it (one opened from the panel's lists shows at once).
- */
-function usePhoneLog(session: Session): [boolean, (open: boolean) => void] {
-  // The number of sheets open when the log was shown; unset while it isn't.
-  const [at, setAt] = useState<number>();
-  const open = session.sheets.list.length;
-  return [at !== undefined && open <= at, (show) => setAt(show ? open : undefined)];
 }
 
 /** The bar across the top: connection, game and scene, clock, you, pause, undo, Claude, settings, leave. */

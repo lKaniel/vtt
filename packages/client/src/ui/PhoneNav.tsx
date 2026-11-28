@@ -1,9 +1,10 @@
 import { MapIcon, MessageSquareTextIcon, ScrollTextIcon } from 'lucide-react';
-import type { ComponentType } from 'react';
+import { type ComponentType, useState } from 'react';
 import { t } from '../i18n/index.ts';
 import { type PhoneTab, phoneTab } from '../play/phone.ts';
 import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
+import { SidePanel } from './SidePanel.tsx';
 
 // The tabs along the bottom of a phone: the map with the action bar, your
 // sheet, or the log and lists of the side panel, one at a time.
@@ -27,7 +28,29 @@ function closeSheets(session: Session): void {
   for (const sheet of session.sheets.list) session.sheets.shut(sheet);
 }
 
-export function PhoneNav({
+/**
+ * Whether a phone shows the side panel: from a tap on Log until a sheet
+ * opens over it (one opened from the panel's lists shows at once).
+ */
+function usePhoneLog(session: Session): [boolean, (open: boolean) => void] {
+  // The number of sheets open when the log was shown; unset while it isn't.
+  const [at, setAt] = useState<number>();
+  const open = session.sheets.list.length;
+  return [at !== undefined && open <= at, (show) => setAt(show ? open : undefined)];
+}
+
+/** On a phone: the side panel while Log is picked, and the tabs. */
+export function PhoneScreens({ session }: Readonly<{ session: Session }>) {
+  const [log, setLog] = usePhoneLog(session);
+  return (
+    <>
+      <SidePanel session={session} phone={{ shown: log, onShow: () => setLog(true) }} />
+      <PhoneNav session={session} log={log} onLog={setLog} />
+    </>
+  );
+}
+
+function PhoneNav({
   session,
   log,
   onLog,

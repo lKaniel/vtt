@@ -47,22 +47,28 @@ interface OnPhone {
 
 /** The side panel down the right edge, top to bottom (as Foundry's sidebar); folded, it is a strip of its tab icons. */
 export function SidePanel({ session, phone }: Readonly<{ session: Session; phone?: OnPhone }>) {
-  const [tab, setTab, folding, setOpen] = usePanelState();
-  const open = phone ? phone.shown : folding;
-  const [popped, setPopped] = useState<readonly Tab[]>([]);
+  return phone ? <PhonePanel session={session} phone={phone} /> : <DeskPanel session={session} />;
+}
+
+/** The tab shown, the tabs there are, and picking one (here or from elsewhere: a `panel` event), which `onOpen` follows. */
+function usePanelTabs(session: Session, tab: Tab, setTab: (tab: Tab) => void, onOpen: () => void) {
   const tabs = session.isGm() ? TABS : playerTabs(session);
   const shown = tabs.includes(tab) ? tab : 'Adventure log';
-  const fold = <FoldButton open={open} onClick={() => setOpen(!open)} />;
   const pick = (id: Tab) => {
     setTab(id);
-    if (phone) phone.onShow();
-    else setOpen(true);
+    onOpen();
   };
   // Every render: `pick` and `tabs` are new each time, and a listener costs nothing to swap.
   useEffect(() => session.on('panel', (id) => tabs.includes(id as Tab) && pick(id as Tab)));
+  return { tabs, shown, pick };
+}
+
+function DeskPanel({ session }: Readonly<{ session: Session }>) {
+  const [tab, setTab, open, setOpen] = usePanelState();
+  const [popped, setPopped] = useState<readonly Tab[]>([]);
+  const { tabs, shown, pick } = usePanelTabs(session, tab, setTab, () => setOpen(true));
+  const fold = <FoldButton open={open} onClick={() => setOpen(!open)} />;
   const popOut = () => !popped.includes(shown) && setPopped([...popped, shown]);
-  if (phone && !phone.shown) return null;
-  if (phone) return <PhonePanel tabs={tabs} shown={shown} onPick={pick} session={session} />;
   return (
     <>
       <aside className={`chat frame${open ? '' : ' closed'}`}>
@@ -94,16 +100,14 @@ export function SidePanel({ session, phone }: Readonly<{ session: Session; phone
 }
 
 /** The panel on a phone: the whole screen above the phone's tabs, without folding or popping out. */
-function PhonePanel({
-  tabs,
-  shown,
-  onPick,
-  session,
-}: Readonly<{ tabs: readonly Tab[]; shown: Tab; onPick: (tab: Tab) => void; session: Session }>) {
+function PhonePanel({ session, phone }: Readonly<{ session: Session; phone: OnPhone }>) {
+  const [tab, setTab] = usePanelState();
+  const { tabs, shown, pick } = usePanelTabs(session, tab, setTab, phone.onShow);
+  if (!phone.shown) return null;
   return (
     <aside className="chat frame fixed! inset-x-0 top-(--phone-top) bottom-(--phone-nav) z-[140] h-auto! w-auto! px-4 pb-6">
       <header className="chat-head">{t(`panel.${shown}`)}</header>
-      <PanelTabs tabs={tabs} shown={shown} onPick={onPick} />
+      <PanelTabs tabs={tabs} shown={shown} onPick={pick} />
       <PanelPage tab={shown} session={session} />
     </aside>
   );

@@ -57,6 +57,15 @@ const SpawnSchema = z.object({
 /** Creatures one build may place. */
 const MAX_SPAWNS = 500;
 
+/** What a turn override may set: action, bonus action and reaction unused or not, feet of movement and extra attacks left. */
+export const TURN_OVERRIDE = {
+  action: z.boolean().optional(),
+  bonus: z.boolean().optional(),
+  reaction: z.boolean().optional(),
+  move: z.number().int().min(0).max(9999).optional(),
+  extra: z.number().int().min(0).max(9).optional(),
+};
+
 const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({
     t: z.literal('drawCards'),
@@ -239,15 +248,7 @@ const ClientMessageSchema = z.discriminatedUnion('t', [
   z.object({ t: z.literal('combatant'), token: z.string(), on: z.boolean() }),
   z.object({ t: z.literal('initiative'), token: z.string(), value: z.number().int().min(-99).max(99) }),
   /** GM or trusted player: a turn's action, bonus action, reaction and feet of movement left, set by hand. */
-  z.object({
-    t: z.literal('turnOverride'),
-    token: z.string(),
-    action: z.boolean().optional(),
-    bonus: z.boolean().optional(),
-    reaction: z.boolean().optional(),
-    move: z.number().int().min(0).max(9999).optional(),
-    extra: z.number().int().min(0).max(9).optional(),
-  }),
+  z.object({ t: z.literal('turnOverride'), token: z.string(), ...TURN_OVERRIDE }),
   /** GM: it is this creature's turn now, started afresh. */
   z.object({ t: z.literal('turnTo'), token: z.string() }),
   /** GM: back to the turn before this one. */

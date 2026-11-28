@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { PHONE_LAYOUTS, type PhoneLayout, usesPhoneLayout } from '../play/phone.ts';
 import { readPref, writePref } from '../prefs.ts';
 
@@ -34,4 +34,14 @@ function subscribe(changed: () => void): () => void {
 
 export function usePhone(): boolean {
   return useSyncExternalStore(subscribe, phoneNow);
+}
+
+/** usePhone, also marking the page's root, so dialogs and menus (drawn on the body) follow the layout too. */
+export function usePhoneRoot(): boolean {
+  const phone = usePhone();
+  useEffect(() => {
+    document.documentElement.classList.toggle('phone', phone);
+    return () => document.documentElement.classList.remove('phone');
+  }, [phone]);
+  return phone;
 }

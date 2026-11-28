@@ -1,6 +1,7 @@
 import type { Player } from '@vtt/shared';
 import type { ClientMessage, TokenView } from '@vtt/system-dnd5e';
 import { z } from 'zod';
+import { TURN_OVERRIDE } from '../actions/client-messages.ts';
 import type { Game } from '../game.ts';
 import type { McpTool } from './mcp-protocol.ts';
 import { act, look, outcome, type Welcome } from './mcp-seat.ts';
@@ -117,15 +118,6 @@ const OpSchema = z.union([
   z.object({ op: z.literal('update'), coll: z.string(), id: z.string(), patch: z.record(z.string(), z.unknown()) }),
   z.object({ op: z.literal('delete'), coll: z.string(), id: z.string() }),
 ]);
-
-/** What a turn override may set (turnOverride in client-messages.ts). */
-const TURN_OVERRIDE = {
-  action: z.boolean().optional(),
-  bonus: z.boolean().optional(),
-  reaction: z.boolean().optional(),
-  move: z.number().int().min(0).max(9999).optional(),
-  extra: z.number().int().min(0).max(9).optional(),
-};
 
 function actTools(table: BridgeTable): McpTool[] {
   const send = async (id: string | undefined, msgs: unknown[]) => {
