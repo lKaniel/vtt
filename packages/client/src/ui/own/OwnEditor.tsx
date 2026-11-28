@@ -8,6 +8,7 @@ import { FeatureForm } from './FeatureForm.tsx';
 import { ItemForm } from './ItemForm.tsx';
 import { SpellForm } from './SpellForm.tsx';
 import type { Draft } from '../sheet-model.ts';
+import { t } from '../../i18n/index.ts';
 
 /** Which own entry is open in the editor. */
 interface Editing {
@@ -15,7 +16,7 @@ interface Editing {
   id: string;
 }
 
-const TITLES = { item: 'Item', spell: 'Spell', feature: 'Feature' };
+const TITLES = { item: 'own.item', spell: 'own.spell', feature: 'own.feature' } as const;
 
 /** The window that edits something made on this sheet; every change saves itself. */
 function OwnEditor({
@@ -29,10 +30,8 @@ function OwnEditor({
     <Dialog open={!!entry} onOpenChange={(open) => !open && onClose()}>
       {editing && entry && (
         <DialogContent>
-          <DialogTitle>
-            {TITLES[editing.kind]}: {entry.name}
-          </DialogTitle>
-          <DialogDescription>Made on this sheet. Changes save as you type.</DialogDescription>
+          <DialogTitle>{t('own.editTitle', { kind: t(TITLES[editing.kind]), name: entry.name })}</DialogTitle>
+          <DialogDescription>{t('own.editHint')}</DialogDescription>
           <OwnForm editing={editing} entry={entry} update={update} />
         </DialogContent>
       )}
@@ -76,7 +75,7 @@ export function NewButton({ label, onClick }: Readonly<{ label: string; onClick:
       <Button variant="outline" size="sm" onClick={onClick}>
         <PlusIcon /> {label}
       </Button>
-      <span className="muted text-xs">Existing ones: drag from the Compendium.</span>
+      <span className="muted text-xs">{t('own.existing')}</span>
     </div>
   );
 }
@@ -87,8 +86,8 @@ export function EditButton({ name, onClick }: Readonly<{ name: string; onClick: 
     <Button
       variant="ghost"
       size="icon-sm"
-      aria-label={`Edit ${name}`}
-      title="Edit"
+      aria-label={t('own.editName', { name })}
+      title={t('own.edit')}
       onClick={(e) => {
         e.stopPropagation();
         onClick();

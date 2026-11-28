@@ -16,17 +16,18 @@ import {
 } from '@vtt/shared';
 import type { Combat, Effect } from '@vtt/system-dnd5e';
 import type { SessionPart, Welcome } from './session-part.ts';
+import type { MessageKey } from '../i18n/index.ts';
 
 // World time in the client: what the clock bar offers, and how long an
 // effect has left (rounds in a fight, game time out of one).
 
 /** The GM's quick skips. */
-export const quickSkips: { label: string; seconds: number }[] = [
-  { label: '+1 min', seconds: MINUTE },
-  { label: '+10 min', seconds: 10 * MINUTE },
-  { label: '+1 h', seconds: HOUR },
-  { label: '+8 h', seconds: 8 * HOUR },
-  { label: '+1 day', seconds: DAY },
+export const quickSkips: { label: MessageKey; seconds: number }[] = [
+  { label: 'clock.skip1m', seconds: MINUTE },
+  { label: 'clock.skip10m', seconds: 10 * MINUTE },
+  { label: 'clock.skip1h', seconds: HOUR },
+  { label: 'clock.skip8h', seconds: 8 * HOUR },
+  { label: 'clock.skip1d', seconds: DAY },
 ];
 
 /** "free": the clock runs (or stands) by itself; "fight": a fight is on; "turns": turn-based mode outside one. */

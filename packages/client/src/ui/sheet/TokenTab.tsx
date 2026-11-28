@@ -9,17 +9,18 @@ import { withKey, type Draft, type Update } from '../sheet-model.ts';
 import { LookFields } from './SheetLook.tsx';
 import { LooksFields } from './SheetLooks.tsx';
 import type { SheetProps } from './sheet-props.ts';
+import { type MessageKey, t } from '../../i18n/index.ts';
 
 // The Token tab, in edit mode: how the creature stands on the map (picture,
 // colour, its look); for the GM and trusted players its size, vision and
 // light; for the GM whether it hides and who owns it.
 
 const SIZES = [
-  [0.5, 'Tiny'],
-  [1, 'Small / Medium'],
-  [2, 'Large'],
-  [3, 'Huge'],
-  [4, 'Gargantuan'],
+  [0.5, 'tokenTab.tiny'],
+  [1, 'tokenTab.medium'],
+  [2, 'tokenTab.large'],
+  [3, 'tokenTab.huge'],
+  [4, 'tokenTab.gargantuan'],
 ] as const;
 
 /** Sets one field of the draft; `now` saves at once. */
@@ -45,29 +46,29 @@ function Identity({ session, value, update }: Readonly<SheetProps>) {
   const set = setter(update);
   return (
     <div className="ed-col">
-      <h4>Token</h4>
+      <h4>{t('tokenTab.title')}</h4>
       {/* Not a <label> like Field: the upload button inside is one. */}
       <div className="ed-field wide">
-        <span>Picture</span>
+        <span>{t('tokenTab.picture')}</span>
         <MediaInput
           key={value.img ?? ''}
           session={session}
           kind="image"
           value={value.img ?? ''}
           onChange={(src) => set('img', true)(src || undefined)}
-          placeholder="Default portrait: upload, pick, or paste a web address"
-          label="Picture"
+          placeholder={t('tokenTab.pictureHint')}
+          label={t('tokenTab.picture')}
         />
       </div>
       <div className="ed-grid">
-        <Field label="Colour">
+        <Field label={t('tokenTab.colour')}>
           <ColorInput value={value.color} onChange={(e) => set('color')(e.target.value)} />
         </Field>
         {trusted(session) && <BuildFields value={value} update={update} />}
       </div>
       {session.isGm() && (
         <>
-          <Check label="Hidden from players" checked={value.hidden} onChange={set('hidden', true)} />
+          <Check label={t('tokenTab.hidden')} checked={value.hidden} onChange={set('hidden', true)} />
           <OwnershipFields session={session} value={value} update={update} />
         </>
       )}
@@ -83,14 +84,14 @@ function BuildFields({ value, update }: Readonly<{ value: Draft; update: Update 
   const set = setter(update);
   return (
     <>
-      <Field label="Size">
+      <Field label={t('tokenTab.size')}>
         <SelectField
           value={String(value.size)}
           onValueChange={(n) => set('size', true)(Number(n))}
-          options={SIZES.map(([n, label]) => ({ value: String(n), label }))}
+          options={SIZES.map(([n, label]) => ({ value: String(n), label: t(label) }))}
         />
       </Field>
-      <Field label="Darkvision (ft)">
+      <Field label={t('tokenTab.darkvision')}>
         <NumberInput value={value.darkvision} min={0} onChange={(v) => set('darkvision')(v ?? 0)} />
       </Field>
       <LightFields value={value} update={update} />
@@ -103,31 +104,31 @@ function LightFields({ value, update }: Readonly<{ value: Draft; update: Update 
     update((d) => withKey(d, 'light', bright || dim ? { bright: bright ?? 0, dim: dim ?? 0 } : undefined));
   return (
     <>
-      <Field label="Light, bright (ft)">
+      <Field label={t('tokenTab.bright')}>
         <NumberInput
           value={value.light?.bright}
           min={0}
           onChange={(v) => setLight(v, value.light?.dim)}
-          placeholder="none"
+          placeholder={t('classes.none')}
         />
       </Field>
-      <Field label="Light, dim (ft)">
+      <Field label={t('tokenTab.dim')}>
         <NumberInput
           value={value.light?.dim}
           min={0}
           onChange={(v) => setLight(value.light?.bright, v)}
-          placeholder="none"
+          placeholder={t('classes.none')}
         />
       </Field>
     </>
   );
 }
 
-const LEVELS: readonly [Level, string][] = [
-  ['none', 'None'],
-  ['limited', 'Limited'],
-  ['observer', 'Observer'],
-  ['owner', 'Owner'],
+const LEVELS: readonly [Level, MessageKey][] = [
+  ['none', 'tokenTab.none'],
+  ['limited', 'tokenTab.limited'],
+  ['observer', 'tokenTab.observer'],
+  ['owner', 'tokenTab.owner'],
 ];
 
 /**
@@ -141,21 +142,21 @@ function OwnershipFields({ session, value, update }: Readonly<Pick<SheetProps, '
   if (!players.length) return null;
   const ownership = value.ownership;
   const rows: { id: string; name: string; level: Level; observer?: boolean }[] = [
-    { id: 'default', name: 'Everyone', level: ownership?.default ?? 'limited' },
+    { id: 'default', name: t('tokenTab.everyone'), level: ownership?.default ?? 'limited' },
     ...players.map((p) => ({ id: p.id, name: p.name, level: levelOf(value, p), observer: p.role === 'observer' })),
   ];
   return (
     <>
-      <h4>Ownership</h4>
+      <h4>{t('tokenTab.ownership')}</h4>
       <div className="ed-grid">
         {rows.map((p) => (
           <Field key={p.id} label={p.name}>
             <SelectField
               value={p.level}
               disabled={p.observer}
-              title={p.observer ? 'An observer seat only watches' : undefined}
+              title={p.observer ? t('tokenTab.observerSeat') : undefined}
               onValueChange={(v) => update((d) => setOwnership(d, p.id, v as Level), true)}
-              options={LEVELS.map(([v, label]) => ({ value: v, label }))}
+              options={LEVELS.map(([v, label]) => ({ value: v, label: t(label) }))}
             />
           </Field>
         ))}

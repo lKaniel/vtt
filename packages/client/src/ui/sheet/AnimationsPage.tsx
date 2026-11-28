@@ -8,8 +8,12 @@ import { Button } from '../kit/button.tsx';
 import { Input } from '../kit/input.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../kit/popover.tsx';
 import { SelectField } from '../kit/select.tsx';
+import { t } from '../../i18n/index.ts';
 
-const LIBRARY = [{ value: '', label: 'Default' }, ...ANIMATION_IDS.map((id) => ({ value: id, label: ANIMATIONS[id] }))];
+const library = () => [
+  { value: '', label: t('animations.default') },
+  ...ANIMATION_IDS.map((id) => ({ value: id, label: ANIMATIONS[id] })),
+];
 const fileName = (src: string) => decodeURIComponent(src.split('/').at(-1) ?? src);
 
 /**
@@ -33,7 +37,7 @@ export function AnimationsPage({ session, kind, value, update, sheet }: Readonly
     ...sheet.attacks.map((a) => ({ ref: animationRef('attack', a.name), name: a.name })),
     ...(sheet.caster?.spells ?? []).map((s) => ({ ref: animationRef('spell', s.id), name: s.name })),
   ];
-  if (!rows.length) return <p className="muted">{value.name} has no attacks or spells to animate.</p>;
+  if (!rows.length) return <p className="muted">{t('animations.none', { name: value.name })}</p>;
   return (
     <ul className="rows" data-slot="animation-picks">
       {rows.map((r) => {
@@ -48,11 +52,11 @@ export function AnimationsPage({ session, kind, value, update, sheet }: Readonly
               </span>
             )}
             <SelectField
-              aria-label={`Animation for ${r.name}`}
+              aria-label={t('animations.for', { name: r.name })}
               className="w-40"
               value={current}
               onValueChange={(v) => pick(r.ref, v)}
-              options={video ? [{ value: current, label: 'Video' }, ...LIBRARY] : LIBRARY}
+              options={video ? [{ value: current, label: t('animations.video') }, ...library()] : library()}
             />
             {session.isGm() && <VideoPicker session={session} name={r.name} onPick={(src) => pick(r.ref, src)} />}
           </li>
@@ -77,20 +81,18 @@ function VideoPicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" title={`A video for ${name}`}>
-          Video…
+        <Button variant="outline" size="sm" title={t('animations.videoFor', { name })}>
+          {t('animations.pickVideo')}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="flex w-[380px] flex-col gap-2" data-slot="video-picker">
         <Input
           autoFocus
-          placeholder="Search videos: fire bolt, impact…"
+          placeholder={t('animations.search')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        {!found.length && (
-          <span className="muted text-xs">No videos match. Add a pack with .webm files (a JB2A pack).</span>
-        )}
+        {!found.length && <span className="muted text-xs">{t('animations.noVideos')}</span>}
         <ul className="flex max-h-72 flex-col overflow-y-auto">
           {found.map((m) => (
             <li key={m.src}>

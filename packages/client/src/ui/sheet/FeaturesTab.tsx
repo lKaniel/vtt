@@ -63,7 +63,7 @@ export function FeaturesTab(props: Readonly<SheetProps>) {
           {!query && (edit ? t('sheet.noFeaturesEdit') : t('sheet.noFeatures'))}
         </Empty>
       )}
-      {edit && <NewButton label="New feature" onClick={() => own.create('feature')} />}
+      {edit && <NewButton label={t('featuresTab.newFeature')} onClick={() => own.create('feature')} />}
       {own.dialog}
       <LegendaryPanel {...props} />
       <MonsterTraits {...props} />

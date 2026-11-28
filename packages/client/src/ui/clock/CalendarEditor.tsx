@@ -8,6 +8,7 @@ import { Label } from '../kit/label.tsx';
 import { NumberField } from '../kit/number-field.tsx';
 import { Slider } from '../kit/slider.tsx';
 import { MonthRows, WeekdayRows } from './CalendarRows.tsx';
+import { t } from '../../i18n/index.ts';
 
 /** The GM's calendar: its name and era, its months and weekdays, when the sun rises and sets, how dark night is. */
 export function CalendarEditor({ session }: Readonly<{ session: Session }>) {
@@ -19,36 +20,39 @@ export function CalendarEditor({ session }: Readonly<{ session: Session }>) {
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-[1fr_7rem_5rem] gap-2">
         <Label className="flex-col items-start gap-1">
-          Name
+          {t('calendar.name')}
           <Input className="w-full" value={draft.name} onChange={(e) => set({ name: e.target.value })} />
         </Label>
         <Label className="flex-col items-start gap-1">
-          First year
+          {t('calendar.firstYear')}
           <NumberField value={draft.epochYear} onValueChange={(epochYear) => set({ epochYear })} />
         </Label>
         <Label className="flex-col items-start gap-1">
-          Era
+          {t('calendar.era')}
           <Input
             className="w-full"
             value={draft.era ?? ''}
-            placeholder="DR"
+            placeholder={t('calendar.eraHint')}
             onChange={(e) => set({ era: e.target.value })}
           />
         </Label>
       </div>
-      <Section title="Months" note={`${draft.months.reduce((n, m) => n + m.days, 0)} days a year`}>
+      <Section
+        title={t('calendar.months')}
+        note={t('calendar.yearDays', { n: draft.months.reduce((n, m) => n + m.days, 0) })}
+      >
         <MonthRows months={draft.months} onChange={(months) => set({ months })} />
       </Section>
-      <Section title="Weekdays" note={`${draft.weekdays.length} days a week`}>
+      <Section title={t('calendar.weekdays')} note={t('calendar.weekDays', { n: draft.weekdays.length })}>
         <WeekdayRows weekdays={draft.weekdays} onChange={(weekdays) => set({ weekdays })} />
       </Section>
       <SunFields draft={draft} set={set} />
       <div className="flex justify-end gap-2">
         <Button variant="ghost" disabled={!changed} onClick={() => setDraft(saved)}>
-          Undo changes
+          {t('calendar.undo')}
         </Button>
         <Button disabled={!changed} onClick={() => session.requests.clockAction({ do: 'calendar', calendar: draft })}>
-          Save calendar
+          {t('calendar.save')}
         </Button>
       </div>
     </div>
@@ -76,13 +80,13 @@ function SunFields({ draft, set }: Readonly<{ draft: Calendar; set: (c: Partial<
     <Card className="flex flex-col gap-3 p-3">
       <div className="flex flex-col gap-1.5">
         <div className="flex justify-between text-xs">
-          <Label>Daylight</Label>
+          <Label>{t('calendar.daylight')}</Label>
           <span className="tabular-nums text-foreground/85">
-            Sunrise {hhmm(draft.sunrise)} · Sunset {hhmm(draft.sunset)}
+            {t('calendar.sun', { rise: hhmm(draft.sunrise), set: hhmm(draft.sunset) })}
           </span>
         </div>
         <Slider
-          aria-label="Sunrise and sunset"
+          aria-label={t('calendar.sunLabel')}
           min={0}
           max={24}
           step={0.25}
@@ -92,23 +96,23 @@ function SunFields({ draft, set }: Readonly<{ draft: Calendar; set: (c: Partial<
         />
       </div>
       <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-3">
-        <Label>Twilight</Label>
+        <Label>{t('calendar.twilight')}</Label>
         <div className="flex items-center gap-2">
           <NumberField
             className="w-28"
-            aria-label="Twilight hours"
+            aria-label={t('calendar.twilightHours')}
             value={draft.twilight}
             min={0}
             max={12}
             step={0.5}
             onValueChange={(twilight) => set({ twilight })}
           />
-          <span className="text-xs text-muted-foreground">hours of dawn and dusk</span>
+          <span className="text-xs text-muted-foreground">{t('calendar.twilightHint')}</span>
         </div>
-        <Label>Night</Label>
+        <Label>{t('calendar.night')}</Label>
         <div className="flex items-center gap-3">
           <Slider
-            aria-label="Darkness at night"
+            aria-label={t('calendar.nightLabel')}
             min={0}
             max={1}
             step={0.05}
@@ -116,7 +120,7 @@ function SunFields({ draft, set }: Readonly<{ draft: Calendar; set: (c: Partial<
             onValueChange={([night]) => set({ night })}
           />
           <span className="w-20 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-            {Math.round(draft.night * 100)}% dark
+            {t('calendar.dark', { n: Math.round(draft.night * 100) })}
           </span>
         </div>
       </div>

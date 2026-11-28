@@ -286,8 +286,15 @@ tile triggers and region behaviours run there, and what they name is the
 part's: `"wall": "door"` is the part's door, a teleport's `to` a place of
 the part. A teleport to another part's `scene` keeps the creature on the
 combined scene, at that place of that part. A trap sprung once or a lever
-pulled is saved in the part. Level ids are the combined scene's: give the
-parts the same `levels` ids.
+pulled is saved in the part.
+
+A part's floors are played on the combined scene's floors: each of the
+part's `levels` goes to the combined scene's level with the same id, else
+the same name, else the one its `bottom` lies in (else the nearest), so a
+quarter made with floors `f0` and `f1` lies on a city's `ground` and
+`upper` by itself. Its tiles, walls, lights and the rest keep their own
+floor ids in the part's files. A combined scene with no `levels` keeps the
+parts' ids as they are.
 
 A part must be another scene of the game with the same `gridSize`, laid
 once, with no parts of its own; `check-game` names the ones that are not.

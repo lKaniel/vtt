@@ -6,6 +6,7 @@ import { Button } from '../kit/button.tsx';
 import { CalendarMonth } from '../kit/calendar.tsx';
 import { Label } from '../kit/label.tsx';
 import { NumberField } from '../kit/number-field.tsx';
+import { t } from '../../i18n/index.ts';
 
 type Draft = Pick<CalendarDate, 'year' | 'month' | 'day' | 'hour' | 'minute'>;
 const draftOf = ({ year, month, day, hour, minute }: CalendarDate): Draft => ({ year, month, day, hour, minute });
@@ -34,10 +35,10 @@ export function DatePicker({ session }: Readonly<{ session: Session }>) {
       />
       <div className="flex items-end gap-2">
         <Label className="flex-col items-start gap-1">
-          Hour
+          {t('date.hour')}
           <NumberField
             className="w-24"
-            aria-label="Hour"
+            aria-label={t('date.hour')}
             value={draft.hour}
             min={0}
             max={23}
@@ -47,10 +48,10 @@ export function DatePicker({ session }: Readonly<{ session: Session }>) {
         </Label>
         <span className="pb-1.5 text-lg text-muted-foreground">:</span>
         <Label className="flex-col items-start gap-1">
-          Minute
+          {t('date.minute')}
           <NumberField
             className="w-24"
-            aria-label="Minute"
+            aria-label={t('date.minute')}
             value={draft.minute}
             min={0}
             max={59}
@@ -62,7 +63,7 @@ export function DatePicker({ session }: Readonly<{ session: Session }>) {
           className="ml-auto"
           onClick={() => session.requests.clockAction({ do: 'set', time: secondsOf(calendar, draft) })}
         >
-          Set date &amp; time
+          {t('date.set')}
         </Button>
       </div>
     </div>

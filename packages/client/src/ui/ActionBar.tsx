@@ -110,10 +110,10 @@ function Bar({ session, token, onSheet, size, onSize }: BarProps) {
 
 function Portrait({ token, onSheet }: Readonly<{ token: TokenView; onSheet: () => void }>) {
   return (
-    <Pressable className="ab-portrait" onClick={onSheet} title="Character sheet (C)" disabled={!token.sheet}>
+    <Pressable className="ab-portrait" onClick={onSheet} title={t('actionBar.characterSheetC')} disabled={!token.sheet}>
       <Face token={token} />
       {token.sheet && (
-        <span className="ab-ac" title="Armor class">
+        <span className="ab-ac" title={t('actionBar.armorClass')}>
           {token.sheet.ac}
         </span>
       )}
@@ -127,7 +127,7 @@ function Who({ session, token }: Readonly<{ session: Session; token: TokenView }
       {session.canEdit(token.id) ? (
         <Pressable
           className="ab-name ab-edit"
-          title="Edit sheet (E)"
+          title={t('actionBar.editSheetE')}
           onClick={() => session.sheets.open({ kind: 'token', id: token.id }, true)}
         >
           {token.name} ✎
@@ -352,11 +352,17 @@ function Resources({ token, budget, reaction }: ResourcesProps) {
   const speed = token.sheet?.speed ?? token.speed;
   return (
     <div className="ab-resources">
-      <span className={budget && !budget.action ? 'res res-action used' : 'res res-action'} title="Action" />
-      <span className={budget && !budget.bonus ? 'res res-bonus used' : 'res res-bonus'} title="Bonus action" />
+      <span
+        className={budget && !budget.action ? 'res res-action used' : 'res res-action'}
+        title={t('actionBar.action')}
+      />
+      <span
+        className={budget && !budget.bonus ? 'res res-bonus used' : 'res res-bonus'}
+        title={t('actionBar.bonusAction')}
+      />
       <ReactionPip unused={reaction} />
-      <span className="res-move-icon" title="Movement left" />
-      <span className="res-move" title="Movement left">
+      <span className="res-move-icon" title={t('actionBar.movementLeft')} />
+      <span className="res-move" title={t('actionBar.movementLeft')}>
         <span
           className="res-move-fill"
           style={{ width: `${budget ? (budget.move / Math.max(1, speed)) * 100 : 100}%` }}
@@ -396,8 +402,8 @@ function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenVi
         className="end-turn"
         disabled={!mine}
         onClick={() => session.requests.endTurn(session.turns.ending(token.id))}
-        title={mine ? 'End turn (Space)' : 'Waiting for your turn'}
-        aria-label={mine ? 'End turn' : 'Waiting for your turn'}
+        title={mine ? t('actionBar.endTurnSpace') : t('actionBar.waitingForYourTurn')}
+        aria-label={mine ? t('actionBar.endTurn') : t('actionBar.waitingForYourTurn')}
       />
     </div>
   );
@@ -409,7 +415,7 @@ function hint(session: Session, token: TokenView | undefined): string {
   if (aiming?.mode === 'point') return `Click where ${aiming.spell.name} goes · right click or Esc to cancel`;
   if (aiming)
     return `Click ${aiming.need - aiming.picks.length} more target(s) for ${aiming.spell.name} · right click or Esc to cancel`;
-  if (!token) return 'Click one of your characters to select them';
+  if (!token) return t('actionBar.clickOneOfYour');
   return IDLE_HINT;
 }
 

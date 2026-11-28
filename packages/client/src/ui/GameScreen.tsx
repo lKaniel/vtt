@@ -188,8 +188,8 @@ function UndoButtons({ session }: Readonly<{ session: Session }>) {
         size="icon-sm"
         disabled={!undo}
         onClick={() => session.edits.undo()}
-        title={undo ? `Undo the ${undo} (Ctrl+Z)` : 'Nothing to undo'}
-        aria-label="Undo"
+        title={undo ? t('gameScreen.undoThe', { what: undo }) : t('gameScreen.nothingToUndo')}
+        aria-label={t('gameScreen.undo')}
       >
         <Undo2Icon />
       </Button>
@@ -198,8 +198,8 @@ function UndoButtons({ session }: Readonly<{ session: Session }>) {
         size="icon-sm"
         disabled={!redo}
         onClick={() => session.edits.redo()}
-        title={redo ? `Redo the ${redo} (Ctrl+Shift+Z)` : 'Nothing to redo'}
-        aria-label="Redo"
+        title={redo ? t('gameScreen.redoThe', { what: redo }) : t('gameScreen.nothingToRedo')}
+        aria-label={t('gameScreen.redo')}
       >
         <Redo2Icon />
       </Button>

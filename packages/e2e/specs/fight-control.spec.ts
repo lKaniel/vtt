@@ -53,3 +53,26 @@ test('the GM runs the fight by hand from the turn order', async ({ page }) => {
   await page.getByRole('button', { name: 'Set', exact: true }).click();
   await expect(page.locator('.round-number')).toHaveText('7');
 });
+
+test('the GM drags a portrait to a new place and rerolls initiative', async ({ page }) => {
+  await atTable(page, GM);
+  await page.getByRole('button', { name: 'Start combat' }).click();
+  await page.getByRole('button', { name: /^Roll initiative/ }).click();
+  const order = page.getByRole('button', { name: /: initiative -?\d+$/ });
+  await expect(page.locator('.turn.current')).toHaveCount(1);
+  const nameOf = async (at: number) => (await order.nth(at).getAttribute('aria-label'))!.split(':')[0]!.trim();
+  const last = await nameOf((await order.count()) - 1);
+
+  // Dropped on the left half of the first portrait, the last one goes to the front.
+  const first = (await order.first().boundingBox())!;
+  await order.last().dragTo(order.first(), { targetPosition: { x: 4, y: first.height / 2 } });
+  await expect(order.first()).toHaveAttribute('aria-label', new RegExp(`^${last}:`));
+
+  // One creature rolled again from its menu, then everyone from the round badge.
+  await order.first().click({ button: 'right' });
+  await page.locator('[data-slot="initiative-edit"]').getByRole('button', { name: 'Reroll initiative' }).click();
+  await expect(chatLog(page).getByText(new RegExp(`The GM rerolls initiative: ${last} -?\\d+$`))).toBeVisible();
+  await page.getByRole('button', { name: 'Change the round' }).click();
+  await page.getByRole('button', { name: 'Reroll everyone' }).click();
+  await expect(chatLog(page).getByText(/The GM rerolls initiative: \w+ -?\d+, /)).toBeVisible();
+});

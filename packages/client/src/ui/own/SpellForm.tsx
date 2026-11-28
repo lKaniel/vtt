@@ -5,6 +5,7 @@ import { NumberField } from '../kit/number-field.tsx';
 import { SelectField } from '../kit/select.tsx';
 import { Textarea } from '../kit/textarea.tsx';
 import { choices, Field, Problem, useChecked, NameField } from './fields.tsx';
+import { t } from '../../i18n/index.ts';
 
 const SCHOOLS = [
   'abjuration',
@@ -16,7 +17,13 @@ const SCHOOLS = [
   'necromancy',
   'transmutation',
 ];
-const CASTING = { action: 'Action', bonus: 'Bonus action', reaction: 'Reaction', minute: '1 minute', hour: '1 hour' };
+const CASTING = {
+  action: 'spellForm.action',
+  bonus: 'spellForm.bonus',
+  reaction: 'spellForm.reaction',
+  minute: 'spellForm.minute',
+  hour: 'spellForm.hour',
+} as const;
 
 /** A homemade spell: its level and casting, and what it does (an attack or save, damage or healing). */
 export function SpellForm({ spell, onSave }: Readonly<{ spell: Spell; onSave: (spell: Spell) => void }>) {
@@ -24,30 +31,30 @@ export function SpellForm({ spell, onSave }: Readonly<{ spell: Spell; onSave: (s
   return (
     <div className="grid grid-cols-2 gap-3">
       <NameField name={draft.name} onChange={(name) => change({ name })} />
-      <Field label="Level (0: cantrip)">
+      <Field label={t('spellForm.level')}>
         <NumberField value={draft.level} min={0} max={9} onValueChange={(level) => change({ level })} />
       </Field>
-      <Field label="School">
+      <Field label={t('spellForm.school')}>
         <SelectField value={draft.school} onValueChange={(school) => change({ school })} options={choices(SCHOOLS)} />
       </Field>
-      <Field label="Casting time">
+      <Field label={t('spellForm.casting')}>
         <SelectField
           value={draft.castingTime}
-          onValueChange={(t) => change({ castingTime: t as Spell['castingTime'] })}
-          options={CastingTimeSchema.options.map((t) => ({ value: t, label: CASTING[t] }))}
+          onValueChange={(v) => change({ castingTime: v as Spell['castingTime'] })}
+          options={CastingTimeSchema.options.map((c) => ({ value: c, label: t(CASTING[c]) }))}
         />
       </Field>
-      <Field label="Range (ft, 0: self)">
+      <Field label={t('spellForm.range')}>
         <NumberField value={draft.range} min={0} step={5} onValueChange={(range) => change({ range })} />
       </Field>
-      <Field label="Duration">
+      <Field label={t('spellForm.duration')}>
         <Input value={draft.duration} onChange={(e) => change({ duration: e.target.value })} />
       </Field>
-      <Field label="Concentration">
+      <Field label={t('spellForm.concentration')}>
         <Checkbox checked={draft.concentration} onCheckedChange={(on) => change({ concentration: on === true })} />
       </Field>
       <SpellEffectFields spell={draft} change={change} />
-      <Field label="Description" wide>
+      <Field label={t('own.description')} wide>
         <Textarea rows={4} value={draft.description} onChange={(e) => change({ description: e.target.value })} />
       </Field>
       <div className="col-span-2">
@@ -75,39 +82,42 @@ function SpellEffectFields({ spell, change }: Readonly<{ spell: Spell; change: (
   const hit = spell.damage[0];
   return (
     <>
-      <Field label="Lands with" wide>
+      <Field label={t('spellForm.lands')} wide>
         <SelectField
           value={roll}
           onValueChange={setRoll}
           options={[
-            { value: '', label: 'Always (no roll)' },
-            { value: 'attack-melee', label: 'Melee spell attack' },
-            { value: 'attack-ranged', label: 'Ranged spell attack' },
-            ...AbilitySchema.options.map((a) => ({ value: `save-${a}`, label: `${a.toUpperCase()} saving throw` })),
+            { value: '', label: t('spellForm.always') },
+            { value: 'attack-melee', label: t('spellForm.melee') },
+            { value: 'attack-ranged', label: t('spellForm.ranged') },
+            ...AbilitySchema.options.map((a) => ({
+              value: `save-${a}`,
+              label: t('spellForm.save', { ability: a.toUpperCase() }),
+            })),
           ]}
         />
       </Field>
-      <Field label="Damage (dice)">
+      <Field label={t('spellForm.damage')}>
         <Input
           value={hit?.dice ?? ''}
-          placeholder="e.g. 2d8"
+          placeholder={t('spellForm.damageHint')}
           onChange={(e) =>
             change({ damage: e.target.value ? [{ dice: e.target.value, type: hit?.type ?? 'force' }] : [] })
           }
         />
       </Field>
-      <Field label="Damage type">
+      <Field label={t('spellForm.damageType')}>
         <SelectField
           value={hit?.type ?? 'force'}
           disabled={!hit}
-          onValueChange={(t) => hit && change({ damage: [{ ...hit, type: t as typeof hit.type }] })}
+          onValueChange={(v) => hit && change({ damage: [{ ...hit, type: v as typeof hit.type }] })}
           options={choices(DamageTypeSchema.options)}
         />
       </Field>
-      <Field label="Heals (dice)" wide>
+      <Field label={t('spellForm.heal')} wide>
         <Input
           value={spell.heal ?? ''}
-          placeholder="e.g. 1d8"
+          placeholder={t('spellForm.healHint')}
           onChange={(e) => change({ heal: e.target.value || undefined })}
         />
       </Field>

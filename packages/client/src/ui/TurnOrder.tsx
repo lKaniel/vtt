@@ -13,6 +13,7 @@ import { EncounterButton } from './EncounterPanel.tsx';
 import { RequestCheckButton } from './RequestCheck.tsx';
 import { AddFighters, StartCombat, StartTurns } from './StartCombat.tsx';
 import { TurnHelper } from './TurnHelper.tsx';
+import { TurnSlot, useTurnDrag } from './TurnDrag.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 
 /** Initiative order across the top of the screen, plus the GM's fight controls. */
@@ -20,33 +21,55 @@ export function TurnOrder({ session }: Readonly<{ session: Session }>) {
   const combat = session.combat;
   const gm = session.isGm();
   if (!combat) return gm ? <IdleBar session={session} /> : null;
-  const current = currentTurn(combat);
   const peaceful = combat.peaceful === true;
   return (
     <div className={`turn-order${peaceful ? ' peaceful' : ''}`}>
       <RoundBadge session={session} />
       {gm && <TurnSteps session={session} />}
-      <div className="turns">
-        {combat.order.map((e) =>
-          isLairTurn(e.token) ? (
-            <LairTurn key={e.token} current={e.token === current} />
-          ) : (
-            <Turn key={e.token} session={session} entry={e} />
-          ),
-        )}
-      </div>
+      <Turns session={session} />
       {gm && <TurnHelper session={session} />}
-      {gm && <AddFighters session={session} />}
-      {gm && peaceful && (
+      {gm && <FightButtons session={session} peaceful={peaceful} />}
+    </div>
+  );
+}
+
+/** GM: more creatures into the order, and the fight (or turn-based mode) ended; one above the other, leaving the portraits room. */
+function FightButtons({ session, peaceful }: Readonly<{ session: Session; peaceful: boolean }>) {
+  return (
+    <span className="flex flex-none flex-col items-stretch gap-1">
+      <AddFighters session={session} />
+      {peaceful ? (
         <Button variant="outline" size="sm" onClick={() => session.requests.setTurnBased(false)}>
-          Real time
+          {t('turnOrder.realTime')}
         </Button>
-      )}
-      {gm && !peaceful && (
+      ) : (
         <Button variant="outline" size="sm" onClick={() => session.requests.endCombat()}>
-          End combat
+          {t('turnOrder.endCombat')}
         </Button>
       )}
+    </span>
+  );
+}
+
+/** More creatures than this in the order: smaller portraits, so a big fight still fits. */
+const CROWDED = 10;
+
+/** The portraits in order; the GM drags one to give it a new place. */
+function Turns({ session }: Readonly<{ session: Session }>) {
+  const combat = session.combat!;
+  const gm = session.isGm();
+  const slot = useTurnDrag(session);
+  const current = currentTurn(combat);
+  return (
+    <div
+      className={`turns${combat.order.length > CROWDED ? ' crowded' : ''}`}
+      title={gm ? t('fight.dragHint') : undefined}
+    >
+      {combat.order.map((e, i) => (
+        <TurnSlot key={e.token} slot={gm ? slot(i, !isLairTurn(e.token)) : undefined}>
+          {isLairTurn(e.token) ? <LairTurn current={e.token === current} /> : <Turn session={session} entry={e} />}
+        </TurnSlot>
+      ))}
     </div>
   );
 }
@@ -109,7 +132,7 @@ function LairTurn({ current }: Readonly<{ current: boolean }>) {
   return (
     <span
       className={`turn foe grid place-items-center font-display text-xs text-gold ${current ? 'current' : ''}`}
-      title="Lair actions: initiative 20"
+      title={t('turnOrder.lairActionsInitiative20')}
     >
       Lair
     </span>

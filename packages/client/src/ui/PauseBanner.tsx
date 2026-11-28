@@ -1,6 +1,7 @@
 import { PauseIcon, PlayIcon } from 'lucide-react';
 import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
+import { t } from '../i18n/index.ts';
 
 /** Told to everyone while the GM has the game paused. */
 export function PauseBanner({ session }: Readonly<{ session: Session }>) {
@@ -24,8 +25,8 @@ export function PauseButton({ session }: Readonly<{ session: Session }>) {
     <Button
       variant="ghost"
       size="icon-sm"
-      aria-label={paused ? 'Resume the game' : 'Pause the game'}
-      title={paused ? 'Resume the game' : 'Pause the game: players can’t act'}
+      aria-label={paused ? t('pauseBanner.resumeTheGame') : t('pauseBanner.pauseTheGame')}
+      title={paused ? t('pauseBanner.resumeTheGame') : t('pauseBanner.pauseTheGamePlayers')}
       onClick={() => session.requests.setPaused(!paused)}
     >
       {paused ? <PlayIcon /> : <PauseIcon />}

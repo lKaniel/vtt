@@ -101,12 +101,12 @@ function Log({ session }: Readonly<{ session: Session }>) {
           className="min-w-0 flex-1"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Message or /r 1d20"
+          placeholder={t('chatPanel.messageOrR1d20')}
         />
         <SelectField
           className="w-[7.25rem] flex-none"
-          aria-label="Who sees your rolls"
-          title="Who sees your rolls and the results of your attacks and spells"
+          aria-label={t('chatPanel.whoSeesYourRolls')}
+          title={t('chatPanel.whoSeesYourRolls2')}
           value={session.actions.rollMode}
           onValueChange={(m) => session.actions.setRollMode(m as RollMode)}
           options={ROLL_MODE_OPTIONS}
@@ -149,12 +149,7 @@ function Message({ m, session, onApply, onUndo }: Readonly<MessageProps>) {
         {modeNote(m) && <span className="muted"> ({modeNote(m)})</span>}
         {m.undone && <span className="muted"> (undone)</span>}
         {onUndo && (
-          <Button
-            variant="link"
-            className="msg-undo"
-            onClick={onUndo}
-            title="Undo this action (the dice are not rolled again)"
-          >
+          <Button variant="link" className="msg-undo" onClick={onUndo} title={t('chatPanel.undoThisActionThe')}>
             Undo
           </Button>
         )}
@@ -185,17 +180,17 @@ function RollLine({ roll, label }: Readonly<{ roll: NonNullable<ChatMessage['rol
   );
 }
 
-const APPLY: { how: ApplyHow; label: string; title: string }[] = [
-  { how: 'full', label: 'Apply', title: 'Deal it to your targets, or the selected creatures' },
-  { how: 'half', label: '½', title: 'Deal half (a save for half)' },
-  { how: 'double', label: '×2', title: 'Deal double' },
-  { how: 'heal', label: 'Heal', title: 'Heal them by it' },
+const apply = (): { how: ApplyHow; label: string; title: string }[] => [
+  { how: 'full', label: t('chatPanel.apply'), title: t('chatPanel.applyTitle') },
+  { how: 'half', label: '½', title: t('chatPanel.halfTitle') },
+  { how: 'double', label: '×2', title: t('chatPanel.doubleTitle') },
+  { how: 'heal', label: t('chatPanel.heal'), title: t('chatPanel.healTitle') },
 ];
 
 function ApplyButtons({ onApply }: Readonly<{ onApply: (how: ApplyHow) => void }>) {
   return (
     <span className="mt-1 flex gap-1" data-slot="apply-roll">
-      {APPLY.map((a) => (
+      {apply().map((a) => (
         <Button
           key={a.how}
           variant="outline"
