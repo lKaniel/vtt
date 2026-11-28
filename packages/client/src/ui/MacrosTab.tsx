@@ -183,7 +183,7 @@ function MacroEditor({ session, doc, onDeleted }: Readonly<{ session: Session; d
       />
       <Input
         value={img}
-        aria-label="Picture"
+        aria-label={t('macrosTab.picture')}
         placeholder={t('macros.picture')}
         onChange={(e) => setImg(e.target.value)}
         onBlur={() => patch({ img: img.trim() || null })}

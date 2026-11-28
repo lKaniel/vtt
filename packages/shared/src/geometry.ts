@@ -52,6 +52,12 @@ export function passesOneWay(wall: Wall, from: Point): boolean {
   return side !== undefined && side !== wall.dir;
 }
 
+/** How near two segments come: 0 when they cross. */
+export function segmentsDist(a: Point, b: Point, c: Point, d: Point): number {
+  if (segmentsIntersect(a, b, c, d)) return 0;
+  return Math.min(distToSegment(a, c, d), distToSegment(b, c, d), distToSegment(c, a, b), distToSegment(d, a, b));
+}
+
 export function blocksMovement(wall: Wall): boolean {
   return wall.door !== 'open' && wall.move !== 'none';
 }

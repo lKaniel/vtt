@@ -240,7 +240,7 @@ function Defenses({ value, update, sheet, edit }: Readonly<SheetProps>) {
 function MonsterField({ value, update, rules }: Readonly<Pick<SheetProps, 'value' | 'update'> & { rules: Edition }>) {
   return (
     <>
-      <Field label="Monster stat block" wide>
+      <Field label={t('detailsTab.monsterStatBlock')} wide>
         <TextInput
           value={value.monster}
           onChange={(v) => update((d) => withKey(d, 'monster', v))}

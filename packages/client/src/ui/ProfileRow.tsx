@@ -5,6 +5,7 @@ import { Button } from './kit/button.tsx';
 import { ColorInput } from './kit/color-input.tsx';
 import { Input } from './kit/input.tsx';
 import { Label } from './kit/label.tsx';
+import { t } from '../i18n/index.ts';
 
 /** Your seat's colour (chat, cursor, targets) and picture (beside your chat). */
 export function ProfileRow({ session }: Readonly<{ session: Session }>) {
@@ -18,15 +19,15 @@ export function ProfileRow({ session }: Readonly<{ session: Session }>) {
   return (
     <div className="flex flex-col gap-2" data-slot="profile">
       <Label className="justify-between">
-        Your colour
+        {t('profile.colour')}
         <ColorInput
-          aria-label="Your colour"
+          aria-label={t('profile.colour')}
           defaultValue={you.color}
           onBlur={(e) => e.target.value !== you.color && session.scenes.setProfile({ color: e.target.value })}
         />
       </Label>
       <Label className="flex-col items-stretch gap-1">
-        Your picture
+        {t('profile.picture')}
         <span className="flex items-center gap-2">
           {you.avatar && (
             <img
@@ -36,17 +37,17 @@ export function ProfileRow({ session }: Readonly<{ session: Session }>) {
             />
           )}
           <Input
-            aria-label="Your picture"
+            aria-label={t('profile.picture')}
             placeholder="/assets/… or pack://…"
             value={avatar}
             onChange={(e) => setAvatar(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && save()}
           />
           <Button variant="outline" size="sm" onClick={save}>
-            Set
+            {t('profile.set')}
           </Button>
         </span>
-        <span className="muted text-xs font-normal">Shown beside your chat. Upload pictures in the Assets tab.</span>
+        <span className="muted text-xs font-normal">{t('profile.hint')}</span>
       </Label>
     </div>
   );

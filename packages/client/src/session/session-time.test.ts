@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Session } from './session.ts';
 import { closeSession, fight, openSession, welcome, type FakeWebSocket } from './session.fixtures.ts';
 import { effectBadge, effectLeft, parseMonths, quickSkips, shortDate, turnMode } from './session-time.ts';
+import { t } from '../i18n/index.ts';
 
 let session: Session;
 let ws: FakeWebSocket;
@@ -83,7 +84,7 @@ describe('how long an effect has left', () => {
   });
 
   it('offers the skips a GM wants most', () => {
-    expect(quickSkips.map((s) => s.label)).toEqual(['+1 min', '+10 min', '+1 h', '+8 h', '+1 day']);
+    expect(quickSkips.map((s) => t(s.label))).toEqual(['+1 min', '+10 min', '+1 h', '+8 h', '+1 day']);
   });
 });
 

@@ -15,16 +15,17 @@ import { NumberField } from '../kit/number-field.tsx';
 import { SelectField } from '../kit/select.tsx';
 import { RemoveButton } from '../RemoveButton.tsx';
 import { choices } from './fields.tsx';
+import { type MessageKey, t } from '../../i18n/index.ts';
 
 const KEY_OPTIONS = CHANGE_KEYS.map((k) => ({ value: k, label: keyName(k) }));
-const MODE_LABELS: Record<ChangeMode, string> = {
-  add: 'Add',
-  multiply: 'Multiply by',
-  downgrade: 'At most',
-  upgrade: 'At least',
-  override: 'Set to',
+const MODE_LABELS: Record<ChangeMode, MessageKey> = {
+  add: 'change.add',
+  multiply: 'change.multiply',
+  downgrade: 'change.downgrade',
+  upgrade: 'change.upgrade',
+  override: 'change.override',
 };
-const MODE_OPTIONS = CHANGE_MODES.map((m) => ({ value: m, label: MODE_LABELS[m] }));
+const modeOptions = () => CHANGE_MODES.map((m) => ({ value: m, label: t(MODE_LABELS[m]) }));
 const TYPE_OPTIONS = choices(DamageTypeSchema.options);
 const isList = (key: ChangeKey) => (LIST_KEYS as readonly string[]).includes(key);
 
@@ -39,14 +40,14 @@ function ChangeRow({ change, onChange }: Readonly<{ change: EffectChange; onChan
   return (
     <>
       <SelectField
-        aria-label="Changes"
+        aria-label={t('change.key')}
         value={change.key}
         onValueChange={(k) => onChange(rekeyed(change, k as ChangeKey))}
         options={KEY_OPTIONS}
       />
       {list ? (
         <SelectField
-          aria-label="Damage type"
+          aria-label={t('change.type')}
           className="col-span-2"
           value={String(change.value)}
           onValueChange={(value) => onChange({ ...change, value })}
@@ -55,13 +56,13 @@ function ChangeRow({ change, onChange }: Readonly<{ change: EffectChange; onChan
       ) : (
         <>
           <SelectField
-            aria-label="How"
+            aria-label={t('change.how')}
             value={change.mode}
             onValueChange={(m) => onChange({ ...change, mode: m as ChangeMode })}
-            options={MODE_OPTIONS}
+            options={modeOptions()}
           />
           <NumberField
-            aria-label="By"
+            aria-label={t('change.by')}
             value={Number(change.value)}
             min={-99}
             max={99}
@@ -94,7 +95,7 @@ export function ChangeRows({
       )}
       <div>
         <Button variant="outline" size="sm" onClick={() => onChange([...changes, blankChange()])}>
-          <PlusIcon /> Add a change
+          <PlusIcon /> {t('change.new')}
         </Button>
       </div>
     </div>

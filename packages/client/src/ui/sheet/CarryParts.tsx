@@ -3,6 +3,7 @@ import { contentFor } from '../../content/content.ts';
 import { bagLayout, loadText, loadTip } from '../../play/carried.ts';
 import type { SheetProps } from './sheet-props.ts';
 import { SelectField } from '../kit/select.tsx';
+import { t } from '../../i18n/index.ts';
 
 // Carried weight, attunement and which container gear is packed in.
 
@@ -53,9 +54,12 @@ export function InSelect({ value, sheet, index, setList }: Readonly<InSelectProp
   return (
     <SelectField
       className="ed-in w-28"
-      aria-label="Carried in"
+      aria-label={t('carry.in')}
       value={current ? String(current.index) : ''}
-      options={[{ value: '', label: 'Loose' }, ...boxes.map((b) => ({ value: String(b.index), label: b.name }))]}
+      options={[
+        { value: '', label: t('carry.loose') },
+        ...boxes.map((b) => ({ value: String(b.index), label: b.name })),
+      ]}
       onValueChange={(v) => setList(putInside(list, index, v === '' ? undefined : Number(v)))}
     />
   );

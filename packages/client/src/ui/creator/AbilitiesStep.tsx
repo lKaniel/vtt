@@ -29,11 +29,11 @@ import { Toggle } from '../kit/toggle.tsx';
 import { SelectField } from '../kit/select.tsx';
 
 type Method = Character['method'];
-const METHODS: { id: Method; label: string }[] = [
-  { id: 'point-buy', label: 'Point buy' },
-  { id: 'standard', label: 'Standard array' },
-  { id: 'roll', label: 'Roll 4d6' },
-  { id: 'manual', label: 'Manual' },
+const methods = (): { id: Method; label: string }[] => [
+  { id: 'point-buy', label: t('abilitiesStep.pointBuy') },
+  { id: 'standard', label: t('abilitiesStep.standard') },
+  { id: 'roll', label: t('abilitiesStep.roll') },
+  { id: 'manual', label: t('abilitiesStep.manual') },
 ];
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : String(n));
@@ -57,11 +57,11 @@ export function AbilitiesStep({ c, set }: Readonly<StepProps>) {
     <div className="cc-split">
       <div>
         <StepHead
-          title="Abilities"
-          hint="Your six ability scores, before and after bonuses."
+          title={t('abilitiesStep.abilities')}
+          hint={t('abilitiesStep.yourSixAbilityScores')}
           right={<MethodExtra c={c} set={set} />}
         />
-        <Chips options={METHODS} value={c.method} onPick={(m) => set(withMethod(c, m))} />
+        <Chips options={methods()} value={c.method} onPick={(m) => set(withMethod(c, m))} />
         <table className="cc-abilities">
           <thead>
             <tr>
@@ -126,7 +126,7 @@ function MethodExtra({ c, set }: Readonly<StepProps>) {
   if (c.method !== 'roll') return null;
   return (
     <Button variant="outline" size="sm" onClick={() => set(withMethod(c, 'roll'))}>
-      Roll again
+      {t('abilitiesStep.rollAgain')}
     </Button>
   );
 }
@@ -177,7 +177,7 @@ function BonusPicker({ c, set }: Readonly<StepProps>) {
   if (c.rules === '2024') return <BackgroundBonus c={c} set={set} />;
   if (flexibleBonusAbilities(c)) {
     return (
-      <Detail title="Bonuses">
+      <Detail title={t('abilitiesStep.bonuses')}>
         <p className="cc-facts">{t('creator.freeBonusHere')}</p>
       </Detail>
     );
@@ -185,8 +185,8 @@ function BonusPicker({ c, set }: Readonly<StepProps>) {
   const choice = p.species?.bonusChoice;
   if (!choice) {
     return (
-      <Detail title="Bonuses">
-        <p className="cc-facts">Your race sets your ability bonuses.</p>
+      <Detail title={t('abilitiesStep.bonuses')}>
+        <p className="cc-facts">{t('abilitiesStep.yourRaceSetsYour')}</p>
       </Detail>
     );
   }

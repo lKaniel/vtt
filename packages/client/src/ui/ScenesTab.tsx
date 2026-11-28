@@ -209,14 +209,14 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
         />
       </label>
       <label>
-        <span>Grid colour</span>
+        <span>{t('scenesTab.gridColour')}</span>
         <ColorInput
           defaultValue={str(doc, 'gridColor', '#000000')}
           onBlur={(e) => edit({ gridColor: e.target.value })}
         />
       </label>
       <label>
-        <span>Grid opacity</span>
+        <span>{t('scenesTab.gridOpacity')}</span>
         <Amount value={num(doc, 'gridOpacity', 0.16)} onDone={(v) => edit({ gridOpacity: v })} />
       </label>
       <label>
@@ -234,10 +234,10 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
       <NavFields session={session} doc={doc} edit={edit} />
       <SightFields doc={doc} edit={edit} />
       <Check
-        label="Darkness follows the clock"
+        label={t('scenesTab.darknessFollowsTheClock')}
         value={flag(doc, 'darknessFollowsClock', false)}
         onChange={(v) => edit({ darknessFollowsClock: v })}
-        title="The darkness is the time of day on the game clock"
+        title={t('scenesTab.theDarknessIsThe')}
       />
     </div>
   );
@@ -247,15 +247,15 @@ function SceneSettings({ session, doc }: Readonly<{ session: Session; doc: Doc }
 function SightFields({ doc, edit }: Readonly<{ doc: Doc; edit: (patch: Patch) => void }>) {
   return (
     <>
-      <Check label="Fog of war" value={flag(doc, 'vision', true)} onChange={(v) => edit({ vision: v })} />
+      <Check label={t('scenesTab.fogOfWar')} value={flag(doc, 'vision', true)} onChange={(v) => edit({ vision: v })} />
       <Check
-        label="Draw walls"
+        label={t('scenesTab.drawWalls')}
         value={flag(doc, 'wallArt', false)}
         onChange={(v) => edit({ wallArt: v })}
-        title="Walls as stone and doors that swing, for a map made of plain tiles; off, walls only block"
+        title={t('scenesTab.wallsAsStoneAnd')}
       />
       <Check
-        label="Remember explored ground"
+        label={t('scenesTab.rememberExploredGround')}
         value={flag(doc, 'exploration', true)}
         onChange={(v) => edit({ exploration: v })}
       />
@@ -323,12 +323,12 @@ function NavFields({ session, doc, edit }: Readonly<{ session: Session; doc: Doc
   return (
     <>
       <Check
-        label="In the navigation bar"
+        label={t('scenesTab.inTheNavigationBar')}
         value={flag(doc, 'navigation', false)}
         onChange={(v) => edit({ navigation: v || null })}
       />
       <label>
-        <span>Name in the bar</span>
+        <span>{t('scenesTab.nameInTheBar')}</span>
         <Input defaultValue={str(doc, 'navName', '')} placeholder={nameOf(doc)} onBlur={text('navName')} />
       </label>
       <label>

@@ -34,6 +34,7 @@ import { EffectBadges, Face, HpBar } from './Portrait.tsx';
 import { TipCard } from './Tip.tsx';
 import { Pressable } from './kit/pressable.tsx';
 import { usePhone } from './usePhone.ts';
+import { barHint, IDLE_HINT, phoneHint } from '../play/bar-hint.ts';
 import { cn } from '@/lib/utils';
 
 const TAB_GLYPH: Record<Tab, GlyphName> = { all: 'star', attacks: 'sword', spells: 'flame', features: 'fist' };
@@ -55,7 +56,7 @@ export function ActionBar({ session, onSheet }: Readonly<{ session: Session; onS
     setSize(next);
     saveBarSize(next);
   };
-  const tip = phone ? phoneHint(session, token) : hint(session, token);
+  const tip = phone ? phoneHint(session, token) : barHint(session, token);
   return (
     // The footer is as wide as its widest row; the map beside the narrower
     // rows (around the hint and the aiming panel) must still take clicks.
@@ -120,12 +121,12 @@ function Portrait({ token, onSheet }: Readonly<{ token: TokenView; onSheet: () =
     <Pressable
       className="ab-portrait phone:hidden"
       onClick={onSheet}
-      title="Character sheet (C)"
+      title={t('actionBar.characterSheetC')}
       disabled={!token.sheet}
     >
       <Face token={token} />
       {token.sheet && (
-        <span className="ab-ac" title="Armor class">
+        <span className="ab-ac" title={t('actionBar.armorClass')}>
           {token.sheet.ac}
         </span>
       )}
@@ -139,7 +140,7 @@ function Who({ session, token }: Readonly<{ session: Session; token: TokenView }
       {session.canEdit(token.id) ? (
         <Pressable
           className="ab-name ab-edit"
-          title="Edit sheet (E)"
+          title={t('actionBar.editSheetE')}
           onClick={() => session.sheets.open({ kind: 'token', id: token.id }, true)}
         >
           {token.name} ✎
@@ -368,11 +369,17 @@ function Resources({ token, budget, reaction }: ResourcesProps) {
   const speed = token.sheet?.speed ?? token.speed;
   return (
     <div className="ab-resources">
-      <span className={budget && !budget.action ? 'res res-action used' : 'res res-action'} title="Action" />
-      <span className={budget && !budget.bonus ? 'res res-bonus used' : 'res res-bonus'} title="Bonus action" />
+      <span
+        className={budget && !budget.action ? 'res res-action used' : 'res res-action'}
+        title={t('actionBar.action')}
+      />
+      <span
+        className={budget && !budget.bonus ? 'res res-bonus used' : 'res res-bonus'}
+        title={t('actionBar.bonusAction')}
+      />
       <ReactionPip unused={reaction} />
-      <span className="res-move-icon" title="Movement left" />
-      <span className="res-move" title="Movement left">
+      <span className="res-move-icon" title={t('actionBar.movementLeft')} />
+      <span className="res-move" title={t('actionBar.movementLeft')}>
         <span
           className="res-move-fill"
           style={{ width: `${budget ? (budget.move / Math.max(1, speed)) * 100 : 100}%` }}
@@ -412,31 +419,9 @@ function EndTurn({ session, token }: Readonly<{ session: Session; token: TokenVi
         className="end-turn"
         disabled={!mine}
         onClick={() => session.requests.endTurn(session.turns.ending(token.id))}
-        title={mine ? 'End turn (Space)' : 'Waiting for your turn'}
-        aria-label={mine ? 'End turn' : 'Waiting for your turn'}
+        title={mine ? t('actionBar.endTurnSpace') : t('actionBar.waitingForYourTurn')}
+        aria-label={mine ? t('actionBar.endTurn') : t('actionBar.waitingForYourTurn')}
       />
     </div>
   );
 }
-
-function hint(session: Session, token: TokenView | undefined): string {
-  if (session.actions.armed) return `Click a target for ${session.actions.armed} · right click or Esc to cancel`;
-  const aiming = session.actions.aiming;
-  if (aiming?.mode === 'point') return `Click where ${aiming.spell.name} goes · right click or Esc to cancel`;
-  if (aiming)
-    return `Click ${aiming.need - aiming.picks.length} more target(s) for ${aiming.spell.name} · right click or Esc to cancel`;
-  if (!token) return 'Click one of your characters to select them';
-  return IDLE_HINT;
-}
-
-/** The same asks for a finger: tap, and tap the tile again to let go of it. */
-function phoneHint(session: Session, token: TokenView | undefined): string {
-  if (session.actions.armed) return t('phone.hint.attack', { name: session.actions.armed });
-  const aiming = session.actions.aiming;
-  if (aiming?.mode === 'point') return t('phone.hint.point', { name: aiming.spell.name });
-  if (aiming) return t('phone.hint.targets', { count: aiming.need - aiming.picks.length, name: aiming.spell.name });
-  return token ? IDLE_HINT : t('phone.hint.select');
-}
-
-const IDLE_HINT =
-  'Click the ground to walk · Right click for more · 1–0 for actions · C for the sheet · Space ends your turn';

@@ -11,6 +11,7 @@ import { Button } from './kit/button.tsx';
 import { Tabs, TabsList, TabsTrigger } from './kit/tabs.tsx';
 import { Window } from './kit/window.tsx';
 import type { Size } from './kit/window-stack.ts';
+import { t } from '../i18n/index.ts';
 
 export interface Page {
   id: string;
@@ -36,7 +37,7 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
   const setPages = (next: Page[]) => session.journal.patchEntry('journals', doc.id, { pages: next });
   const addPage = () => {
     const id = `page-${pages.length + 1}`;
-    setPages([...pages, { id, name: `Page ${pages.length + 1}`, kind: 'text', text: '' }]);
+    setPages([...pages, { id, name: t('journal.page', { n: pages.length + 1 }), kind: 'text', text: '' }]);
     setPageId(id);
   };
   return (
@@ -57,7 +58,7 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
           <>
             <EntryTools session={session} doc={doc} />
             <Button variant="ghost" size="sm" onClick={addPage}>
-              <PlusIcon /> Page
+              <PlusIcon /> {t('journal.addPage')}
             </Button>
           </>
         )}
@@ -71,7 +72,7 @@ function Entry({ session, doc, start }: Readonly<{ session: Session; doc: Doc; s
           onChange={(p) => setPages(pages.map((x) => (x.id === p.id ? p : x)))}
         />
       ) : (
-        <p className="muted">{gm ? 'Add a page.' : 'You may know of this, but not what it says.'}</p>
+        <p className="muted">{gm ? t('journal.noPages') : t('journal.unread')}</p>
       )}
     </Window>
   );
@@ -121,7 +122,7 @@ export function PageView({ session, page, onChange, editable = session.isGm() }:
     <>
       {editing ? <PageEditor page={page} onChange={onChange} /> : text}
       <Button variant="ghost" size="sm" className="self-start" onClick={() => setEditing(!editing)}>
-        {editing ? 'Done' : 'Edit text'}
+        {editing ? t('journal.done') : t('journal.edit')}
       </Button>
     </>
   );
@@ -135,8 +136,8 @@ function PageEditor({ page, onChange }: Readonly<Pick<PageProps, 'page' | 'onCha
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => draft !== page.text && onChange({ ...page, text: draft })}
-      aria-label="Page text"
-      placeholder="Links: @journal[id]{label}, @actor[id], @spell[fireball]. Rolls: [[/r 2d6]], [[/check perception 15]]."
+      aria-label={t('journal.pageText')}
+      placeholder={t('journal.pageHint')}
     />
   );
 }

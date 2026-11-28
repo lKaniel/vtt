@@ -71,7 +71,7 @@ export function SpellsTab(props: Readonly<Props>) {
       {edit && unknown.length > 0 && (
         <p className="text-sm text-destructive">{t('sheet.notInRules', { rules, ids: unknown.join(', ') })}</p>
       )}
-      {edit && <NewButton label="New spell" onClick={() => own.create('spell')} />}
+      {edit && <NewButton label={t('spellsTab.newSpell')} onClick={() => own.create('spell')} />}
       {own.dialog}
     </>
   );

@@ -8,6 +8,7 @@ import { Input } from './kit/input.tsx';
 import { NumberField } from './kit/number-field.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Textarea } from './kit/textarea.tsx';
+import { t } from '../i18n/index.ts';
 
 // The lists in the class editor: named rows with a level table (scale values,
 // choices), features by level, and subclasses with their own features.
@@ -58,7 +59,7 @@ function TableInput({
   return (
     <Input
       value={text}
-      placeholder="1: 2, 5: 3"
+      placeholder={t('classParts.tableHint')}
       aria-label={label}
       title={label}
       onChange={(e) => setText(e.target.value)}
@@ -86,7 +87,7 @@ export function NamedRows({
           <Input
             className="w-36"
             value={r.name}
-            aria-label="Name"
+            aria-label={t('own.name')}
             onChange={(e) => onChange(withAt(rows, i, { ...r, name: e.target.value }))}
           />
           <TableInput
@@ -94,29 +95,29 @@ export function NamedRows({
             label={tableLabel}
             onCommit={(table) => onChange(withAt(rows, i, { ...r, table }))}
           />
-          <RemoveButton label={`Remove ${r.name}`} onClick={() => onChange(withoutAt(rows, i))} />
+          <RemoveButton label={t('classParts.remove', { name: r.name })} onClick={() => onChange(withoutAt(rows, i))} />
         </div>
       ))}
       <AddRow
         placeholder={placeholder}
-        label="Add"
+        label={t('classParts.add')}
         onAdd={(name) => onChange([...rows, { id: freshId(name, rows), name, table: '1: 1' }])}
       />
     </div>
   );
 }
 
-const RECHARGE = [
-  { value: 'long', label: 'Long rest' },
-  { value: 'short', label: 'Short rest' },
-  { value: 'short-one', label: 'One back on a short rest' },
+const recharges = () => [
+  { value: 'long', label: t('classParts.long') },
+  { value: 'short', label: t('classParts.short') },
+  { value: 'short-one', label: t('classParts.shortOne') },
 ];
-const ACTIONS = [
-  { value: '', label: 'Passive' },
-  { value: 'action', label: 'Action' },
-  { value: 'bonus', label: 'Bonus action' },
-  { value: 'attack', label: 'One attack' },
-  { value: 'free', label: 'Free' },
+const actions = () => [
+  { value: '', label: t('classParts.passive') },
+  { value: 'action', label: t('classParts.action') },
+  { value: 'bonus', label: t('classParts.bonus') },
+  { value: 'attack', label: t('classParts.attack') },
+  { value: 'free', label: t('classParts.free') },
 ];
 
 interface FeatureListProps {
@@ -140,8 +141,8 @@ export function FeatureList({ features, choices, onChange }: Readonly<FeatureLis
         />
       ))}
       <AddRow
-        placeholder="Feature name"
-        label="Add feature"
+        placeholder={t('classParts.featureName')}
+        label={t('classParts.addFeature')}
         onAdd={(name) =>
           onChange([...features, { id: freshId(name, features), name, level: 1, description: '', recharge: 'long' }])
         }
@@ -161,24 +162,24 @@ function FeatureRow({ feature, choices, onChange, onRemove }: Readonly<FeatureRo
   const [open, setOpen] = useState(false);
   const set = (patch: Partial<Feature>) => onChange({ ...feature, ...patch });
   const options = [
-    { value: '', label: 'Always' },
-    ...choices.map((c) => ({ value: c.id, label: `Option: ${c.name}` })),
+    { value: '', label: t('classParts.always') },
+    ...choices.map((c) => ({ value: c.id, label: t('classParts.option', { name: c.name }) })),
   ];
   return (
     <div className="flex flex-col gap-1 rounded-md border border-border p-1.5">
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon-sm" aria-label="Details" onClick={() => setOpen(!open)}>
+        <Button variant="ghost" size="icon-sm" aria-label={t('classParts.details')} onClick={() => setOpen(!open)}>
           {open ? <ChevronDownIcon /> : <ChevronRightIcon />}
         </Button>
         <Input
           className="flex-1"
           value={feature.name}
-          aria-label="Feature name"
+          aria-label={t('classParts.featureName')}
           onChange={(e) => set({ name: e.target.value })}
         />
         <NumberField
           className="w-28"
-          aria-label="Level"
+          aria-label={t('classes.level')}
           value={feature.level}
           min={1}
           max={20}
@@ -190,11 +191,11 @@ function FeatureRow({ feature, choices, onChange, onRemove }: Readonly<FeatureRo
               value={feature.choice ?? ''}
               onValueChange={(c) => set({ choice: c || undefined })}
               options={options}
-              aria-label="Given"
+              aria-label={t('classParts.given')}
             />
           </div>
         )}
-        <RemoveButton label={`Remove ${feature.name}`} onClick={onRemove} />
+        <RemoveButton label={t('classParts.remove', { name: feature.name })} onClick={onRemove} />
       </div>
       {open && <FeatureDetails feature={feature} set={set} />}
     </div>
@@ -204,30 +205,30 @@ function FeatureRow({ feature, choices, onChange, onRemove }: Readonly<FeatureRo
 function FeatureDetails({ feature, set }: Readonly<{ feature: Feature; set: (patch: Partial<Feature>) => void }>) {
   return (
     <div className="ed-grid items-end">
-      <Field label="Description" wide>
+      <Field label={t('own.description')} wide>
         <Textarea value={feature.description} onChange={(e) => set({ description: e.target.value })} />
       </Field>
-      <Field label="Uses by level">
+      <Field label={t('classParts.uses')}>
         <TableInput
           value={levelTableText(feature.uses)}
-          label="Uses by level"
+          label={t('classParts.uses')}
           onCommit={(text) => set({ uses: text ? parseLevelTable(text) : undefined })}
         />
       </Field>
-      <Field label="Comes back">
+      <Field label={t('classParts.comesBack')}>
         <SelectField
           value={feature.recharge}
           onValueChange={(r) => set({ recharge: r as Feature['recharge'] })}
-          options={RECHARGE}
-          aria-label="Comes back"
+          options={recharges()}
+          aria-label={t('classParts.comesBack')}
         />
       </Field>
-      <Field label="Takes">
+      <Field label={t('classParts.takes')}>
         <SelectField
           value={feature.action ?? ''}
           onValueChange={(a) => set({ action: (a || undefined) as Feature['action'] })}
-          options={ACTIONS}
-          aria-label="Takes"
+          options={actions()}
+          aria-label={t('classParts.takes')}
         />
       </Field>
     </div>
@@ -239,11 +240,11 @@ export function SubclassList({ draft, set }: Readonly<{ draft: Class; set: (patc
   const change = (next: Subclass[]) => set({ subclasses: next.length ? next : undefined });
   return (
     <div className="flex flex-col gap-2" data-slot="subclasses">
-      <Field label="Chosen at level">
+      <Field label={t('classParts.chosenAt')}>
         <NumberInput
           value={draft.subclassLevel}
           min={1}
-          placeholder="none"
+          placeholder={t('classes.none')}
           onChange={(subclassLevel) => set({ subclassLevel })}
         />
       </Field>
@@ -253,14 +254,17 @@ export function SubclassList({ draft, set }: Readonly<{ draft: Class; set: (patc
             <Input
               className="flex-1"
               value={s.name}
-              aria-label="Subclass name"
+              aria-label={t('classParts.subclassName')}
               onChange={(e) => change(withAt(subclasses, i, { ...s, name: e.target.value }))}
             />
-            <RemoveButton label={`Remove ${s.name}`} onClick={() => change(withoutAt(subclasses, i))} />
+            <RemoveButton
+              label={t('classParts.remove', { name: s.name })}
+              onClick={() => change(withoutAt(subclasses, i))}
+            />
           </div>
           <Textarea
             value={s.description}
-            aria-label="Subclass description"
+            aria-label={t('classParts.subclassDescription')}
             onChange={(e) => change(withAt(subclasses, i, { ...s, description: e.target.value }))}
           />
           <FeatureList
@@ -271,8 +275,8 @@ export function SubclassList({ draft, set }: Readonly<{ draft: Class; set: (patc
         </section>
       ))}
       <AddRow
-        placeholder="Subclass name"
-        label="Add subclass"
+        placeholder={t('classParts.subclassName')}
+        label={t('classParts.addSubclass')}
         onAdd={(name) =>
           change([...subclasses, { id: freshId(name, subclasses), name, description: '', features: [] }])
         }

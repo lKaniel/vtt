@@ -24,7 +24,8 @@ import {
   type Rect,
   type Scene,
   type SceneCollection,
-  type ScenePart,
+  type LaidPart,
+  partFloors,
   type Wall,
   type Weather,
   weatherAt,
@@ -78,7 +79,7 @@ export class SceneState {
   /** The map of the scene and of each part as it lies here, kept until one of its items changes. */
   private laid = new Map<string, Chunk>();
   /** The scenes laid on this one (a combined scene, scene-parts.ts): those of scene.json `parts` that can be. */
-  parts: ScenePart[] = [];
+  parts: LaidPart[] = [];
 
   constructor(
     readonly id: string,
@@ -91,14 +92,17 @@ export class SceneState {
     this.parts = this.laidParts();
   }
 
-  /** The parts that can be laid: other scenes of the game, each once, none made of parts itself. */
-  private laidParts(): ScenePart[] {
+  /** The parts that can be laid (other scenes of the game, each once, none made of parts itself), each with how its floors map onto this scene's. */
+  private laidParts(): LaidPart[] {
     const seen = new Set([this.id]);
-    return (this.scene.parts ?? []).filter((p) => {
-      const part = this.docs.get('scenes', p.scene);
-      const fits = !!part && !seen.has(p.scene) && !fromDoc<Scene>(part, false).parts?.length;
+    return (this.scene.parts ?? []).flatMap((p) => {
+      const doc = this.docs.get('scenes', p.scene);
+      const part = doc && fromDoc<Scene>(doc, false);
+      const fits = !!part && !seen.has(p.scene) && !part.parts?.length;
       seen.add(p.scene);
-      return fits;
+      if (!fits) return [];
+      const floors = partFloors(part.levels, this.scene.levels);
+      return [floors ? { ...p, floors } : p];
     });
   }
 
@@ -235,7 +239,7 @@ export class SceneState {
     for (const key of [...this.rooms.keys()]) if (key.startsWith(`${scene}|`)) this.rooms.delete(key);
   }
 
-  private anchor(coll: MapCollection, doc: Doc, part: ScenePart | undefined): string {
+  private anchor(coll: MapCollection, doc: Doc, part: LaidPart | undefined): string {
     const item = fromDoc<Chunk[typeof coll][number]>(doc);
     return anchorChunk(coll, part ? intoWhole(coll, item, part) : item, this.world.chunkSize);
   }
@@ -280,14 +284,14 @@ export class SceneState {
     if (kept) return kept;
     const part = this.parts.find((p) => p.scene === scene);
     const own = ownMap(this.docs, scene);
-    const map = part ? partMap(own, part, partZ((this.scene.parts ?? []).indexOf(part))) : own;
+    const map = part ? partMap(own, part, partZ((this.scene.parts ?? []).findIndex((p) => p.scene === scene))) : own;
     this.laid.set(scene, map);
     return map;
   }
 }
 
 /** A part's map as it lies on the whole: moved to its place, its tiles drawn from `z` up. */
-function partMap(own: Chunk, part: ScenePart, z: number): Chunk {
+function partMap(own: Chunk, part: LaidPart, z: number): Chunk {
   return {
     tiles: own.tiles.map((t) => ({ ...intoWhole('tiles', t, part), z: z + (t.z ?? 0) })),
     walls: own.walls.map((w) => intoWhole('walls', w, part)),

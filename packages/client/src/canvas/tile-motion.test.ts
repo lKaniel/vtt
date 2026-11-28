@@ -5,6 +5,7 @@ import {
   repeatPose,
   roofAlpha,
   roofsOver,
+  pointerLifts,
   roofWatchers,
   scrollOffset,
   tileMedia,
@@ -54,6 +55,13 @@ describe('roofs', () => {
     expect(roofWatchers({ gm: true, yours: [], selected: [], pointer: [5, 6] }, placeOf)).toEqual([[5, 6]]);
     expect(roofWatchers({ gm: true, yours: [], selected: ['b'], pointer: [5, 6] }, placeOf)).toEqual([[20, 20]]);
     expect(roofWatchers({ gm: false, yours: [], selected: [], pointer: [5, 6] }, placeOf)).toEqual([]);
+  });
+
+  it("lift under the GM's pointer only while the map is near enough to see into a building", () => {
+    expect(pointerLifts(0.5, 150)).toBe(true);
+    expect(pointerLifts(0.08, 150)).toBe(true);
+    expect(pointerLifts(0.05, 150)).toBe(false);
+    expect(pointerLifts(0.01, 150)).toBe(false);
   });
 
   it('take the pointer only while it is on the map itself, not on a panel or window over it', () => {

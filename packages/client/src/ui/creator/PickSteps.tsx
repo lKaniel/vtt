@@ -20,10 +20,11 @@ import type { StepProps } from './OriginSteps.tsx';
 import { Detail, RichText, StepHead } from './Parts.tsx';
 import { CustomProficiencies } from './CustomSteps.tsx';
 import { ProficiencySection } from './ProficiencyStep.tsx';
+import { t } from '../../i18n/index.ts';
 
 function skillSource(fixed: boolean, offered: boolean): string {
-  if (fixed) return 'From your background';
-  return offered ? 'From your class list' : 'Not on your class list';
+  if (fixed) return t('skills.fromBackground');
+  return offered ? t('skills.fromClass') : t('skills.notClass');
 }
 
 export function SkillsStep({ c, set }: Readonly<StepProps>) {
@@ -34,15 +35,15 @@ export function SkillsStep({ c, set }: Readonly<StepProps>) {
   const prof = proficiencyForLevel(c.level);
   const known = characterSkills(c);
   const expert = (s: string) => c.expertise.includes(s);
-  const names = fromBackground.map(skillName).join(' and ');
-  const given = fromBackground.length ? `Your background gives ${names}. ` : '';
+  const names = fromBackground.map(skillName).join(t('skills.and'));
+  const given = fromBackground.length ? `${t('skills.given', { names })} ` : '';
   return (
     <div className="cc-split">
       <div>
         <StepHead
-          title="Skills"
-          hint={`${given}Pick ${pick} from your class list.`}
-          right={<span className="cc-counter">{pick - c.skills.length} left</span>}
+          title={t('skills.title')}
+          hint={`${given}${t('skills.pick', { n: pick })}`}
+          right={<span className="cc-counter">{t('skills.left', { n: pick - c.skills.length })}</span>}
         />
         <div className="cc-skills">
           {(Object.keys(SKILLS) as Skill[]).map((s) => {
@@ -83,34 +84,40 @@ export function SpellPicker({
   const { limits, cantrips, spells } = spellChoices(c, level, classId);
   const [focus, setFocus] = useState<Spell>();
   const count = (list: Spell[]) => c.spells.filter((id) => list.some((s) => s.id === id)).length;
-  const verb = c.rules === '2014' && classId === 'wizard' ? 'in your spellbook' : 'known or prepared';
+  const verb = c.rules === '2014' && classId === 'wizard' ? t('spells.inBook') : t('spells.known');
   const grid = { c, set, level, classId, onFocus: setFocus };
   return (
     <div className="cc-split">
       <div>
         <StepHead
-          title="Spells"
-          hint={`Spells up to ${ORDINAL[limits.maxLevel]} level, ${verb}.`}
+          title={t('spells.title')}
+          hint={t('spells.hint', { level: ORDINAL[limits.maxLevel] ?? limits.maxLevel, verb })}
           right={
             <span className="cc-counter">
-              Cantrips {count(cantrips)}/{limits.cantrips} · Spells {count(spells)}/{limits.spells}
+              {t('spells.counter', {
+                cantrips: count(cantrips),
+                maxCantrips: limits.cantrips,
+                spells: count(spells),
+                maxSpells: limits.spells,
+              })}
             </span>
           }
         />
-        {limits.cantrips > 0 && <SpellGrid title="Cantrips" list={cantrips} {...grid} />}
-        <SpellGrid title="Spells" list={spells} {...grid} />
+        {limits.cantrips > 0 && <SpellGrid title={t('spells.cantrips')} list={cantrips} {...grid} />}
+        <SpellGrid title={t('spells.title')} list={spells} {...grid} />
       </div>
       <aside className="cc-aside">
         {focus ? (
           <Detail title={focus.name}>
             <p className="cc-facts">
-              {focus.level ? `${ORDINAL[focus.level]} level` : 'Cantrip'} {focus.school} · {focus.castingTime} ·{' '}
-              {focus.range ? `${focus.range} ft` : 'self'} · {focus.duration}
+              {focus.level ? t('spells.level', { level: ORDINAL[focus.level] ?? focus.level }) : t('spells.cantrip')}{' '}
+              {focus.school} · {focus.castingTime} ·{' '}
+              {focus.range ? t('summary.feet', { n: focus.range }) : t('spells.self')} · {focus.duration}
             </p>
             <RichText text={focus.description} className="rich small" />
           </Detail>
         ) : (
-          <p className="cc-note">Point at a spell to read it.</p>
+          <p className="cc-note">{t('spells.point')}</p>
         )}
       </aside>
     </div>

@@ -10,7 +10,7 @@ import {
   nextImage,
   type Player,
   type Point,
-  type ScenePart,
+  type LaidPart,
   tilesEntered,
   tileWorks,
   type TriggerAction,
@@ -46,7 +46,7 @@ export interface TriggerContext {
   /** The player who clicked it. */
   player?: string;
   /** On a combined scene, the part the tile or region is of: its actions name that scene's things. */
-  part?: ScenePart;
+  part?: LaidPart;
 }
 
 type Act<T extends TriggerAction['type']> = (a: Extract<TriggerAction, { type: T }>, ctx: TriggerContext) => boolean;
@@ -54,7 +54,7 @@ type Act<T extends TriggerAction['type']> = (a: Extract<TriggerAction, { type: T
 export class TriggerActions {
   private choices = new TriggerChoices<TriggerContext>();
   /** The part whose actions run now. */
-  private home: ScenePart | undefined;
+  private home: LaidPart | undefined;
 
   constructor(
     private table: Table,
@@ -70,8 +70,8 @@ export class TriggerActions {
   }
 
   /** The part of the scene the store reads now that is scene `scene`. */
-  partOf(scene: string | undefined): ScenePart | undefined {
-    return scene ? this.store.world.parts?.find((p) => p.scene === scene) : undefined;
+  partOf(scene: string | undefined): LaidPart | undefined {
+    return scene ? this.store.parts.find((p) => p.scene === scene) : undefined;
   }
 
   /** The tiles with a picture on the scene the store reads now, its parts' among them. */

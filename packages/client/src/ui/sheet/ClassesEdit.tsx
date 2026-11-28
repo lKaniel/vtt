@@ -7,6 +7,7 @@ import { Field, NumberInput, TextInput } from '../EditorFields.tsx';
 import { Button } from '../kit/button.tsx';
 import { SelectField } from '../kit/select.tsx';
 import { Toggle } from '../kit/toggle.tsx';
+import { t } from '../../i18n/index.ts';
 
 // The creature's classes in the sheet's Details editor: one row per class
 // with its levels, so a multiclassed character is "Fighter 3, Wizard 2";
@@ -26,17 +27,21 @@ export function ClassesEdit({ value, update, rules }: Props) {
         return (
           <div key={i} className="flex flex-col gap-1">
             <div className="ed-grid items-end">
-              <Field label={i ? 'Multiclass' : 'Class'}>
-                <TextInput value={r.class} onChange={(c) => change(i, { class: c ?? '' })} placeholder="none" />
+              <Field label={i ? t('classes.multiclass') : t('classes.class')}>
+                <TextInput
+                  value={r.class}
+                  onChange={(c) => change(i, { class: c ?? '' })}
+                  placeholder={t('classes.none')}
+                />
               </Field>
-              <Field label="Level">
+              <Field label={t('classes.level')}>
                 <div className="flex items-center gap-1">
                   <NumberInput value={r.level} min={1} onChange={(l) => change(i, { level: l ?? 1 })} />
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Remove class"
-                    title="Remove class"
+                    aria-label={t('classes.remove')}
+                    title={t('classes.remove')}
                     onClick={() => set(rows.filter((_, j) => j !== i))}
                   >
                     <XIcon />
@@ -52,7 +57,7 @@ export function ClassesEdit({ value, update, rules }: Props) {
         );
       })}
       <Button variant="link" size="sm" className="self-start" onClick={() => set([...rows, { class: '', level: 1 }])}>
-        {rows.length ? 'Add a class (multiclass)' : 'Add a class'}
+        {rows.length ? t('classes.addMulti') : t('classes.add')}
       </Button>
     </div>
   );
@@ -64,16 +69,16 @@ function SubclassField({
   onChange,
 }: Readonly<{ cls: Class; value?: string; onChange: (subclass: string | undefined) => void }>) {
   const options = [
-    { value: '', label: 'None' },
+    { value: '', label: t('classes.noSubclass') },
     ...(cls.subclasses ?? []).map((s) => ({ value: s.id, label: s.name })),
   ];
   return (
-    <Field label="Subclass">
+    <Field label={t('classes.subclass')}>
       <SelectField
         value={value ?? ''}
         onValueChange={(s) => onChange(s || undefined)}
         options={options}
-        aria-label="Subclass"
+        aria-label={t('classes.subclass')}
       />
     </Field>
   );
@@ -91,7 +96,7 @@ function ClassOptions({
   return due.map((c) => (
     <div key={c.id} className="flex flex-wrap items-center gap-1" data-slot="class-options">
       <span className="text-sm text-muted-foreground">
-        {c.name} ({c.picked.length} of {c.count})
+        {t('classes.picked', { name: c.name, picked: c.picked.length, count: c.count })}
       </span>
       {c.options.map((o) => (
         <Toggle

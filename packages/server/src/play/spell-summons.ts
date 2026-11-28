@@ -1,4 +1,15 @@
-import { gridKind, type Lattice, placeToken, type Point, sceneLattice } from '@vtt/shared';
+import {
+  bodyOf,
+  freePlaces,
+  gridKind,
+  isGridless,
+  type Lattice,
+  placeToken,
+  type Point,
+  sameFloor,
+  sceneLattice,
+  wallsOnFloor,
+} from '@vtt/shared';
 import {
   abilityMod,
   joinCombat,
@@ -12,8 +23,9 @@ import {
 import type { CastRequest } from '../actions/spell-actions.ts';
 import { Refusal, type Fighter, type Table } from './table.ts';
 
-// Summoning spells: the creatures appear on free squares around the aimed
-// point, on the caster's side, and join the fight when they get their own turn.
+// Summoning spells: the creatures appear around the aimed point (without a
+// grid on it and right beside each other, on a grid on free squares), on the
+// caster's side, and join the fight when they get their own turn.
 
 /** Brings what the spell summons next to the aimed point, in the fight when they get their own turn. */
 export function summon(
@@ -30,7 +42,9 @@ export function summon(
   const monster = built ?? table.content(caster.token).monsters.get(choice.monster);
   if (!monster) throw new Refusal(`There is no ${choice.monster} in the bestiary`);
   const count = summonCount(choice, cast);
-  const spots = freeSpots(table, placeToken(req.point!, monster.size, table.store.world), monster.size, count);
+  const spots = isGridless(table.store.world)
+    ? placesNear(table, caster.token, req.point!, { size: monster.size, count })
+    : freeSpots(table, placeToken(req.point!, monster.size, table.store.world), monster.size, count);
   const tokens = spots.map(([x, y], i) =>
     TokenSchema.parse({
       id: freeId(table, choice.monster, i),
@@ -73,6 +87,25 @@ function freeId(table: Table, base: string, from: number): string {
   let n = from + 1;
   while (table.store.tokens.has(`${base}-${n}`)) n++;
   return `${base}-${n}`;
+}
+
+/** How far round the aimed point summons may appear, in squares. */
+const REACH = 8;
+
+/** `count` places for creatures `size` squares across near `at` without a grid, on the caster's floor. */
+function placesNear(table: Table, caster: Token, at: Point, { size, count }: { size: number; count: number }): Point[] {
+  const { world } = table.store;
+  const g = world.gridSize;
+  const m = REACH * g;
+  const walls = wallsOnFloor(
+    table.store.wallsIn({ x: at[0] - m, y: at[1] - m, w: 2 * m, h: 2 * m }),
+    world.levels,
+    caster,
+  );
+  const bodies = [...table.store.tokens.values()]
+    .filter((t) => sameFloor(world.levels, caster, t))
+    .map((t) => bodyOf(t, g));
+  return freePlaces(at, (size * g) / 2, count, { gridSize: g, walls, bodies });
 }
 
 /** `count` spots around `start` with no token on them, nearest first: squares, or hexes on a hex grid. */

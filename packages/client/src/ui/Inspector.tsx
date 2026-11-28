@@ -11,6 +11,7 @@ import { MediaInput } from './MediaPicker.tsx';
 import { TriggerDialog } from './TriggerDialog.tsx';
 import { Window } from './kit/window.tsx';
 import type { Size } from './kit/window-stack.ts';
+import { t } from '../i18n/index.ts';
 
 /** High on the right, just left of the side panel (336 px) and clear of the action bar, until moved. */
 const inspectorPlace = (view: Size) => ({ x: Math.max(8, view.width - 336 - 268), y: 110 });
@@ -24,18 +25,18 @@ function withChoices(field: Field, session: Session): Field {
     const entries = session.docs
       .all('journals')
       .map((j) => ({ value: j.id, label: typeof j.name === 'string' ? j.name : j.id }));
-    return { ...field, options: [{ value: '', label: 'none' }, ...entries] };
+    return { ...field, options: [{ value: '', label: t('inspector.none') }, ...entries] };
   }
   if (field.choices === 'tiles') {
     const tiles = session.docs
       .all(`${session.scene}/tiles`)
-      .filter((t) => t.kind !== 'group' && t.background !== true)
-      .map((t) => ({ value: t.id, label: typeof t.name === 'string' ? t.name : t.id }));
-    return { ...field, options: [{ value: '', label: 'none' }, ...tiles] };
+      .filter((tile) => tile.kind !== 'group' && tile.background !== true)
+      .map((tile) => ({ value: tile.id, label: typeof tile.name === 'string' ? tile.name : tile.id }));
+    return { ...field, options: [{ value: '', label: t('inspector.none') }, ...tiles] };
   }
   if (field.choices === 'levels') {
     const levels = (session.world?.levels ?? []).map((l) => ({ value: l.id, label: l.name }));
-    return { ...field, options: [{ value: '', label: 'every level' }, ...levels] };
+    return { ...field, options: [{ value: '', label: t('inspector.everyLevel') }, ...levels] };
   }
   return field;
 }
@@ -64,13 +65,13 @@ export function Inspector({ session }: Readonly<{ session: Session }>) {
       initial={inspectorPlace}
       title={
         <>
-          {count === 1 ? (docs[0]?.id ?? '') : `${count} selected`}
+          {count === 1 ? (docs[0]?.id ?? '') : t('inspector.selected', { n: count })}
           <span className="inspector-type ml-2">{docs[0]?.type}</span>
         </>
       }
-      label="Inspector"
+      label={t('inspector.title')}
       onClose={() => session.editor.setSelection([])}
-      closeLabel="Deselect"
+      closeLabel={t('inspector.deselect')}
       className="inspector w-[260px]"
       bodyClassName="gap-1.5 px-3 py-2"
     >
@@ -88,7 +89,7 @@ export function Inspector({ session }: Readonly<{ session: Session }>) {
           />
         );
       })}
-      {!fields.length && <p className="inspector-note">Nothing to edit together here.</p>}
+      {!fields.length && <p className="inspector-note">{t('inspector.nothing')}</p>}
       {session.isGm() && count === 1 && triggerable(docs[0]!) && <TriggerButton session={session} doc={docs[0]!} />}
     </Window>
   );
@@ -99,8 +100,8 @@ const triggerable = (doc: Doc) => doc.type === 'region' || (doc.type === 'tile' 
 
 function TriggerButton({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
   const [open, setOpen] = useState(false);
-  const verb = doc.trigger ? 'Edit' : 'Add';
-  const label = doc.type === 'region' ? 'Behaviours…' : `${verb} trigger…`;
+  const trigger = doc.trigger ? t('inspector.editTrigger') : t('inspector.addTrigger');
+  const label = doc.type === 'region' ? t('inspector.behaviours') : trigger;
   return (
     <>
       <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => setOpen(true)}>
@@ -137,10 +138,17 @@ function FieldInput({ session, field, value, onChange }: Readonly<FieldProps>) {
     );
   }
   if (field.kind === 'select') {
-    return <SelectField value={shown} onValueChange={onChange} placeholder="Mixed" options={field.options ?? []} />;
+    return (
+      <SelectField
+        value={shown}
+        onValueChange={onChange}
+        placeholder={t('inspector.mixed')}
+        options={field.options ?? []}
+      />
+    );
   }
   if (field.kind === 'media') {
-    const placeholder = mixed ? 'Mixed' : undefined;
+    const placeholder = mixed ? t('inspector.mixed') : undefined;
     const kind = field.media ?? 'image';
     return <MediaInput {...{ session, kind, value: shown, placeholder, onChange }} label={field.label} />;
   }
@@ -159,7 +167,7 @@ function LongTextInput({
     <Textarea
       value={text}
       rows={3}
-      placeholder={mixed ? 'Mixed' : undefined}
+      placeholder={mixed ? t('inspector.mixed') : undefined}
       onChange={(e) => setText(e.target.value)}
       onBlur={() => text !== value && onChange(text)}
     />
@@ -181,7 +189,7 @@ function TextInput({
     <Input
       type={field.kind === 'number' ? 'number' : 'text'}
       value={text}
-      placeholder={mixed ? 'Mixed' : undefined}
+      placeholder={mixed ? t('inspector.mixed') : undefined}
       onChange={(e) => setText(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {

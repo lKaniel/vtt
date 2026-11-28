@@ -15,6 +15,7 @@ import { NumberField } from './kit/number-field.tsx';
 import { SelectField } from './kit/select.tsx';
 import { Slider } from './kit/slider.tsx';
 import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
+import { type MessageKey, t } from '../i18n/index.ts';
 
 // GM: a scene's weather in its settings: a preset to add (rain, a storm...)
 // and each layer's thickness and wind, or a cross to take it away; or the
@@ -24,6 +25,21 @@ const layersOf = (value: unknown): Weather[] =>
   Array.isArray(value) ? value.flatMap((w) => WeatherSchema.safeParse(w).data ?? []) : [];
 
 type Edit = (patch: Patch) => void;
+
+const NAMES: Record<string, MessageKey> = {
+  clear: 'weather.clear',
+  rain: 'weather.rain',
+  snow: 'weather.snow',
+  clouds: 'weather.clouds',
+  fog: 'weather.fog',
+  embers: 'weather.embers',
+  birds: 'weather.birds',
+  storm: 'weather.storm',
+  blizzard: 'weather.blizzard',
+  wildfire: 'weather.wildfire',
+};
+/** A weather's name in the language in use; `fallback` for one the table doesn't know. */
+const weatherName = (id: string, fallback: string) => (NAMES[id] ? t(NAMES[id]) : fallback);
 
 export function WeatherFields({ value, cycle, edit }: Readonly<{ value: unknown; cycle: unknown; edit: Edit }>) {
   if (cycleWeathers(cycle).length) return <CycleFields cycle={cycle} edit={edit} />;
@@ -44,20 +60,20 @@ function CycleFields({ cycle, edit }: Readonly<{ cycle: unknown; edit: Edit }>) 
     if (changed) edit({ weatherCycle: toggleCycleWeather(cycle, changed) });
   };
   return (
-    <div className="flex flex-col gap-1.5" title="The weather turns between these as world time passes">
-      <span>Weather changes with time</span>
+    <div className="flex flex-col gap-1.5" title={t('weather.cycleTitle')}>
+      <span>{t('weather.cycle')}</span>
       <ToggleGroup type="multiple" className="flex-wrap justify-start" value={picked} onValueChange={toggle}>
         {CYCLE_CHOICES.map((c) => (
           <ToggleGroupItem key={c.value} value={c.value}>
-            {c.label}
+            {weatherName(c.value, c.label)}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
       {picked.length > 0 && (
         <label className="flex items-center gap-2 text-xs">
-          <span>Every (hours)</span>
+          <span>{t('weather.every')}</span>
           <NumberField
-            aria-label="Hours each weather lasts"
+            aria-label={t('weather.everyLabel')}
             value={every}
             min={1}
             max={72}
@@ -73,7 +89,7 @@ function LayerFields({ value, edit }: Readonly<{ value: unknown; edit: Edit }>) 
   const layers = layersOf(value);
   return (
     <div className="flex flex-col gap-1.5">
-      <span>Weather</span>
+      <span>{t('weather.title')}</span>
       {layers.map((w, i) => (
         <Layer
           key={`${w.kind}-${i}`}
@@ -84,11 +100,11 @@ function LayerFields({ value, edit }: Readonly<{ value: unknown; edit: Edit }>) 
       ))}
       <SelectField
         value=""
-        aria-label="Add weather"
-        placeholder="Add weather…"
+        aria-label={t('weather.add')}
+        placeholder={t('weather.addHint')}
         className="h-8 text-xs"
         onValueChange={(preset) => edit({ weather: addWeather(layers, preset) })}
-        options={WEATHER_PRESETS.map((p) => ({ value: p.id, label: p.label }))}
+        options={WEATHER_PRESETS.map((p) => ({ value: p.id, label: weatherName(p.id, p.label) }))}
       />
     </div>
   );
@@ -102,12 +118,12 @@ interface LayerProps {
 
 function Layer({ weather, onChange, onRemove }: Readonly<LayerProps>) {
   return (
-    <div className="flex items-center gap-2 text-xs" aria-label={`${weather.kind} weather`}>
-      <span className="w-14 capitalize">{weather.kind}</span>
+    <div className="flex items-center gap-2 text-xs" aria-label={t('weather.layer', { kind: weather.kind })}>
+      <span className="w-14 capitalize">{weatherName(weather.kind, weather.kind)}</span>
       <Slider
         className="w-20"
-        aria-label="Thickness"
-        title="Thickness"
+        aria-label={t('weather.thickness')}
+        title={t('weather.thickness')}
         min={0}
         max={1}
         step={0.05}
@@ -116,15 +132,15 @@ function Layer({ weather, onChange, onRemove }: Readonly<LayerProps>) {
       />
       <Slider
         className="w-20"
-        aria-label="Wind"
-        title="Wind (left to right)"
+        aria-label={t('weather.wind')}
+        title={t('weather.windTitle')}
         min={-1}
         max={1}
         step={0.1}
         defaultValue={[weather.wind ?? 0]}
         onValueCommit={([n]) => onChange({ wind: n! })}
       />
-      <Button variant="ghost" size="icon-sm" aria-label="Remove" onClick={onRemove}>
+      <Button variant="ghost" size="icon-sm" aria-label={t('bits.remove')} onClick={onRemove}>
         <XIcon />
       </Button>
     </div>

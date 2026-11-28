@@ -6,16 +6,17 @@ import { NumberField } from '../kit/number-field.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../kit/toggle-group.tsx';
 import { ChangeRows } from './ChangeRows.tsx';
 import { Field, Problem, useChecked } from './fields.tsx';
+import { t } from '../../i18n/index.ts';
 
 /** An effect made by hand: its name, how long it lasts, conditions, and changes to any statistic. */
 export function EffectForm({ effect, onSave }: Readonly<{ effect: Effect; onSave: (e: Effect) => void }>) {
   const { draft, change, problem } = useChecked<Effect>(effect, EffectSchema, onSave);
   return (
     <div className="grid grid-cols-2 gap-3">
-      <Field label="Name">
+      <Field label={t('own.name')}>
         <Input value={draft.name} onChange={(e) => change({ name: e.target.value })} />
       </Field>
-      <Field label="Rounds (0: until removed)">
+      <Field label={t('own.effect.rounds')}>
         <NumberField
           value={draft.rounds ?? 0}
           min={0}
@@ -23,7 +24,7 @@ export function EffectForm({ effect, onSave }: Readonly<{ effect: Effect; onSave
           onValueChange={(n) => change({ rounds: n || undefined })}
         />
       </Field>
-      <Field label="Conditions" wide>
+      <Field label={t('own.effect.conditions')} wide>
         <ToggleGroup
           type="multiple"
           className="flex-wrap justify-start"
@@ -37,7 +38,7 @@ export function EffectForm({ effect, onSave }: Readonly<{ effect: Effect; onSave
           ))}
         </ToggleGroup>
       </Field>
-      <Field label="Aura (ft, 0: none)">
+      <Field label={t('own.effect.aura')}>
         <NumberField
           value={draft.aura?.radius ?? 0}
           min={0}
@@ -47,7 +48,7 @@ export function EffectForm({ effect, onSave }: Readonly<{ effect: Effect; onSave
         />
       </Field>
       {draft.aura && (
-        <Field label="Aura reaches">
+        <Field label={t('own.effect.auraWho')}>
           <SelectField
             value={draft.aura.who}
             onValueChange={(who) => change({ aura: setAura(draft, { who: who as 'allies' }).aura })}
@@ -55,7 +56,7 @@ export function EffectForm({ effect, onSave }: Readonly<{ effect: Effect; onSave
           />
         </Field>
       )}
-      <Field label="Changes" wide>
+      <Field label={t('own.effect.changes')} wide>
         <ChangeRows changes={draft.changes ?? []} onChange={(changes) => change({ changes })} />
       </Field>
       <div className="col-span-2">

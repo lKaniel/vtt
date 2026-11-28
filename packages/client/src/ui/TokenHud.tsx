@@ -55,7 +55,7 @@ export function TokenHud({ session }: Readonly<{ session: Session }>) {
     >
       <div className="flex items-center justify-between">
         <strong className="font-display text-sm text-gold-bright">{token.name}</strong>
-        <Button variant="ghost" size="icon-sm" aria-label="Close" onClick={() => session.hud.close()}>
+        <Button variant="ghost" size="icon-sm" aria-label={t('tokenHud.close')} onClick={() => session.hud.close()}>
           <XIcon />
         </Button>
       </div>
@@ -80,24 +80,24 @@ function Numbers({ session, token }: Props) {
         <>
           <Label>HP / {sheet.maxHp}</Label>
           <NumberField
-            aria-label="Hit points"
+            aria-label={t('tokenHud.hitPoints')}
             value={Math.min(sheet.hp, sheet.maxHp)}
             min={0}
             max={sheet.maxHp}
             onValueChange={(hp) => edit({ hp })}
           />
-          <Label>Temp HP</Label>
+          <Label>{t('tokenHud.tempHp')}</Label>
           <NumberField
-            aria-label="Temporary hit points"
+            aria-label={t('tokenHud.temporaryHitPoints')}
             value={sheet.tempHp}
             min={0}
             onValueChange={(tempHp) => edit({ tempHp })}
           />
         </>
       )}
-      <Label>Elevation (ft)</Label>
+      <Label>{t('tokenHud.elevationFt')}</Label>
       <NumberField
-        aria-label="Elevation"
+        aria-label={t('tokenHud.elevation')}
         value={token.elevation ?? 0}
         step={5}
         onValueChange={(elevation) => edit({ elevation })}
@@ -138,7 +138,7 @@ function GmToggles({ session, token }: Props) {
         pressed={fighting === true}
         onPressedChange={(on) => session.hud.setCombatant(token.id, on)}
       >
-        In combat
+        {t('tokenHud.inCombat')}
       </Toggle>
     </div>
   );
@@ -167,7 +167,7 @@ const nameOf = (c: Condition) => c[0]!.toUpperCase() + c.slice(1);
 function Conditions({ session, token }: Props) {
   const has = new Set(token.sheet?.conditions ?? []);
   return (
-    <div className="flex flex-wrap gap-1" aria-label="Conditions">
+    <div className="flex flex-wrap gap-1" aria-label={t('tokenHud.conditions')}>
       {ConditionSchema.options.map((c) => (
         <Toggle
           key={c}

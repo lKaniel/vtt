@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { assetUrl } from '../assets.ts';
 import type { Session } from '../session/session.ts';
 import { Button } from './kit/button.tsx';
+import { t } from '../i18n/index.ts';
 
 /**
  * GM: the scene navigation bar under the top bar. It holds the scenes marked
@@ -19,13 +20,13 @@ export function SceneNav({ session }: Readonly<{ session: Session }>) {
   return (
     <nav
       data-slot="scene-nav"
-      aria-label="Scenes"
+      aria-label={t('sceneNav.label')}
       className="absolute top-[58px] left-2 z-20 flex max-w-[60vw] items-center gap-1"
     >
       <Button
         size="icon-sm"
         variant="ghost"
-        aria-label={open ? 'Hide the scene bar' : 'Show the scene bar'}
+        aria-label={open ? t('sceneNav.hide') : t('sceneNav.show')}
         onClick={() => setOpen(!open)}
       >
         {open ? <ChevronLeftIcon /> : <ChevronRightIcon />}
@@ -51,7 +52,7 @@ function SceneChip({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
         size="sm"
         variant={here ? 'default' : 'outline'}
         aria-pressed={here}
-        title={active ? 'The game is here' : 'Look at this scene; the players stay where they are'}
+        title={active ? t('sceneNav.here') : t('sceneNav.look')}
         onClick={() => session.scenes.view(doc.id)}
       >
         {thumb && <img src={assetUrl(thumb)} alt="" className="h-5 w-8 rounded-sm object-cover" />}
@@ -62,8 +63,8 @@ function SceneChip({ session, doc }: Readonly<{ session: Session; doc: Doc }>) {
         <Button
           size="icon-sm"
           variant="ghost"
-          aria-label="Play here"
-          title="Move the game and everyone here"
+          aria-label={t('sceneNav.play')}
+          title={t('sceneNav.playTitle')}
           onClick={() => session.scenes.activate(doc.id)}
         >
           <PlayIcon />

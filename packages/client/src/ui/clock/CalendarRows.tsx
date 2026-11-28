@@ -3,6 +3,7 @@ import type { Calendar } from '@vtt/shared';
 import { Button } from '../kit/button.tsx';
 import { Input } from '../kit/input.tsx';
 import { NumberField } from '../kit/number-field.tsx';
+import { t } from '../../i18n/index.ts';
 
 type Month = Calendar['months'][number];
 
@@ -38,27 +39,27 @@ export function MonthRows({ months, onChange }: Readonly<{ months: Month[]; onCh
           <span className="w-5 text-right text-xs lining-nums tabular-nums text-muted-foreground">{i + 1}</span>
           <Input
             className="w-full"
-            aria-label={`Month ${i + 1}`}
+            aria-label={t('calendar.month', { n: i + 1 })}
             value={m.name}
             onChange={(e) => onChange(replaced(months, i, { ...m, name: e.target.value }))}
           />
           <NumberField
             className="w-24 shrink-0"
-            aria-label={`Days in month ${i + 1}`}
+            aria-label={t('calendar.monthDays', { n: i + 1 })}
             value={m.days}
             min={1}
             onValueChange={(days) => onChange(replaced(months, i, { ...m, days }))}
           />
           <RemoveButton
-            label="Remove month"
+            label={t('calendar.removeMonth')}
             disabled={months.length < 2}
             onClick={() => onChange(without(months, i))}
           />
         </div>
       ))}
       <AddButton
-        label="Add a month"
-        onClick={() => onChange([...months, { name: `Month ${months.length + 1}`, days: 30 }])}
+        label={t('calendar.addMonth')}
+        onClick={() => onChange([...months, { name: t('calendar.month', { n: months.length + 1 }), days: 30 }])}
       />
     </div>
   );
@@ -73,19 +74,22 @@ export function WeekdayRows({ weekdays, onChange }: Readonly<{ weekdays: string[
           <div key={i} className="flex items-center gap-1">
             <Input
               className="w-full"
-              aria-label={`Weekday ${i + 1}`}
+              aria-label={t('calendar.weekday', { n: i + 1 })}
               value={w}
               onChange={(e) => onChange(replaced(weekdays, i, e.target.value))}
             />
             <RemoveButton
-              label="Remove weekday"
+              label={t('calendar.removeWeekday')}
               disabled={weekdays.length < 2}
               onClick={() => onChange(without(weekdays, i))}
             />
           </div>
         ))}
       </div>
-      <AddButton label="Add a weekday" onClick={() => onChange([...weekdays, `Day ${weekdays.length + 1}`])} />
+      <AddButton
+        label={t('calendar.addWeekday')}
+        onClick={() => onChange([...weekdays, t('calendar.day', { n: weekdays.length + 1 })])}
+      />
     </div>
   );
 }

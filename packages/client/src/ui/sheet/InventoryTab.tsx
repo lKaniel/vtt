@@ -80,7 +80,7 @@ export function InventoryTab(props: Readonly<SheetProps>) {
       ))}
       {!list.length && <Empty>{t('sheet.emptyHanded')}</Empty>}
       {query && !attacks.length && !sections.length && <Empty>{t('sheet.nothingFound', { query })}</Empty>}
-      {edit && <NewButton label="New item" onClick={() => own.create('item')} />}
+      {edit && <NewButton label={t('inventoryTab.newItem')} onClick={() => own.create('item')} />}
       {own.dialog}
       <InventoryFoot {...props} />
     </>
