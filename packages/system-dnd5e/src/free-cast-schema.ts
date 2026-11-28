@@ -33,7 +33,13 @@ export const SpellPicksSchema = z.object({
   class: z.string().optional(),
   choices: z
     .array(
-      z.object({ at: z.number().int().min(1).max(20).default(1), level: level.optional(), maxLevel: level.optional() }),
+      z.object({
+        at: z.number().int().min(1).max(20).default(1),
+        level: level.optional(),
+        maxLevel: level.optional(),
+        /** A cantrip, not a leveled spell (a 2014 high elf's wizard cantrip). */
+        cantrip: z.boolean().optional(),
+      }),
     )
     .min(1),
   atCast: z.boolean().optional(),

@@ -1,6 +1,7 @@
 import type { Content } from './content.ts';
 import { knownSpellIds } from './own-content.ts';
-import { featureSpellIds, levelFeatures } from './class-options.ts';
+import { featureSpellIds, levelFeatures, speciesSpellIds } from './class-options.ts';
+import { speciesAbility } from './species-spells.ts';
 import { abilityMod, proficiencyForLevel } from './creature-math.ts';
 import { pickUses } from './spell-picks.ts';
 import { type PowerLevel, powerAt } from './powers.ts';
@@ -122,6 +123,8 @@ export interface CasterSheet {
   spells: Spell[];
   /** Spells cast at their own level without a slot: a non-caster's homemade ones. */
   atWill?: string[];
+  /** Spells cast with another ability than `ability`, by id (a tiefling wizard's infernal legacy: Charisma). */
+  spellAbilities?: Record<string, Ability>;
 }
 
 interface Basics {
@@ -199,7 +202,15 @@ export function casterSheet(
       .map((id) => content.spells.get(id))
       .filter((s): s is Spell => !!s),
     ...(casting.atWill && { atWill: token.own?.spells?.map((s) => s.id) ?? [] }),
+    ...speciesAbilities(token, content, casting.ability),
   };
+}
+
+/** The species spells cast with another ability than the class's (a tiefling wizard's infernal legacy: Charisma). */
+function speciesAbilities(token: Token, content: Content, ability: Ability): Pick<CasterSheet, 'spellAbilities'> {
+  const own = speciesAbility(token, content.edition);
+  const ids = own === ability ? [] : speciesSpellIds(token, content);
+  return ids.length ? { spellAbilities: Object.fromEntries(ids.map((id) => [id, own])) } : {};
 }
 
 /** A class feature as the character sheet shows it. */

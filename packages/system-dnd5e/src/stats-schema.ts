@@ -198,6 +198,8 @@ export const StatsSchema = z.object({
    */
   species: id.optional(),
   lineage: id.optional(),
+  /** The ability a 2024 species' spells are cast with (Intelligence, Wisdom or Charisma); missing: the best of them. */
+  speciesAbility: z.enum(['int', 'wis', 'cha']).optional(),
   /** Spells picked for a feature to cast without a slot (Mystic Arcanum), by feature id. */
   spellPicks: z.record(id, z.array(id).max(10)).optional(),
   /** Spells the character knows or has prepared, by id. */

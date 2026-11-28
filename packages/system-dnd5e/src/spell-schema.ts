@@ -4,6 +4,7 @@ import { ABILITIES, AbilitiesSchema, DamageSchema, DamageTypeSchema, OtherSpeeds
 import { EffectChangeSchema } from './effect-changes.ts';
 import { WeaponSpellSchema } from './weapon-spell-schema.ts';
 import { AreaSchema } from './area-schema.ts';
+import { spellOutcomeFields } from './spell-outcome-fields.ts';
 import { FreeCastSchema, SpellPicksSchema } from './free-cast-schema.ts';
 import { classFields, LevelTableSchema, momentumEffectFields } from './class-fields.ts';
 import { ConditionSchema } from './condition-schema.ts';
@@ -470,14 +471,7 @@ export const SpellSchema = z.object({
       keepMind: z.boolean().optional(),
     })
     .optional(),
-  /** Opens the locked door nearest the point (knock), or locks a closed one (arcane lock). */
-  door: z.enum(['unlock', 'lock']).optional(),
-  /** Moves the caster up to this many feet to a point they can see (misty step). */
-  teleport: z.number().positive().optional(),
-  /** Feet each creature hit (or failing its save) is moved: positive pushes away from the caster, negative pulls closer. */
-  push: z.number().int().optional(),
-  /** Exhaustion levels a target gains when it lands (a sphinx's Weight of Years). */
-  exhaustion: z.number().int().min(1).max(6).optional(),
+  ...spellOutcomeFields,
   /**
    * The damage isn't dealt on casting but rides on later hits: "self" on the
    * caster's weapon hits (divine favor, smites), "mark" on the caster's attacks

@@ -348,7 +348,7 @@ function wordsFields(text: string): Fields | undefined {
 function legendarySpell(f: Fields, text: string): object | undefined {
   if (f.spell) return undefined;
   const fields = f.save && f.saveDc ? f : wordsFields(text);
-  const does = fields && (fields.damage || conditions(fields).length || exhaustionOf(text));
+  const does = fields && (fields.damage ?? (conditions(fields).length || exhaustionOf(text)));
   return does ? saveSpell(fields, text) : undefined;
 }
 

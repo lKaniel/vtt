@@ -41,7 +41,7 @@ type Payer = Pick<Creature, 'features'> & Partial<Pick<Creature, 'pool'>>;
 /** How `f` casts `spell` without a slot: one of its free casts, or a spell picked for it (spell-picks.ts). */
 function castOf(f: FeatureSheet, spell: Pick<Spell, 'id' | 'level'> & Partial<Spell>): HowCast | undefined {
   const free = f.freeCasts?.find((c) => c.spell === spell.id);
-  if (free || !spell.classes || !spell.castingTime) return free;
+  if (free || !spell.classes || !spell.castingTime || spell.level === 0) return free;
   if (!castsPicked(f, { ...spell, classes: spell.classes, castingTime: spell.castingTime })) return undefined;
   return { spell: spell.id, ...(f.spellPicks?.atCast && { atCast: true }) };
 }

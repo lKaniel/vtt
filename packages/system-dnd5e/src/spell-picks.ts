@@ -32,7 +32,8 @@ export const openChoices = (picks: SpellPicks, level: number): Choice[] => picks
 
 /** Whether `spell` fits `choice`: its level, the class's list, and no reaction when those are left out. */
 export function fitsChoice(picks: SpellPicks, choice: Choice, spell: Fitting): boolean {
-  if (spell.level === 0 || (choice.level !== undefined && spell.level !== choice.level)) return false;
+  if ((spell.level === 0) !== !!choice.cantrip) return false;
+  if (choice.level !== undefined && spell.level !== choice.level) return false;
   if (choice.maxLevel !== undefined && spell.level > choice.maxLevel) return false;
   if (picks.noReactions && spell.castingTime === 'reaction') return false;
   return picks.from !== 'class' || !picks.class || spell.classes.includes(picks.class);
