@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { srdFor } from './content.ts';
 import { resolveCreature } from './creature.ts';
-import { featureCasts } from './free-casts.ts';
+import { rest } from './features.ts';
+import { featureCastProblem, featureCasts, payWithFeature } from './free-casts.ts';
 import { pickOptions } from './spell-picks.ts';
 import type { Edition } from './stats-schema.ts';
 import { type Token, TokenSchema } from './token-schema.ts';
@@ -26,9 +27,36 @@ describe('spells picked for a feature', () => {
     const warlock = pc('2014', ['warlock', 11], { spellPicks: { 'mystic-arcanum': ['eyebite'] } });
     expect(sheet(warlock).caster?.spells.map((s) => s.id)).toContain('eyebite');
     expect(featureCasts(sheet(warlock), spell(warlock, 'eyebite'))).toEqual([
-      { feature: 'mystic-arcanum', name: 'Mystic Arcanum', level: 6, self: false, left: 1, max: 1 },
+      { feature: 'mystic-arcanum', name: 'Mystic Arcanum', level: 6, self: false, left: 1, max: 1, spell: 'eyebite' },
     ]);
     expect(featureCasts(sheet(warlock), spell(warlock, 'mass-suggestion'))).toEqual([]);
+  });
+
+  it('gives each Mystic Arcanum its own use a long rest', () => {
+    const picks = { 'mystic-arcanum': ['eyebite', 'finger-of-death'] };
+    const warlock = pc('2014', ['warlock', 13], { spellPicks: picks });
+    const [eyebite, finger] = [spell(warlock, 'eyebite'), spell(warlock, 'finger-of-death')];
+    const paid = featureCasts(sheet(warlock), eyebite)[0]!;
+    const after = payWithFeature(warlock, sheet(warlock), paid);
+    expect(featureCastProblem(sheet(after), eyebite, 'mystic-arcanum')).toBe(
+      'has already cast Eyebite with Mystic Arcanum',
+    );
+    expect(featureCastProblem(sheet(after), finger, 'mystic-arcanum')).toBeUndefined();
+    expect(featureCasts(sheet(after), finger)[0]).toMatchObject({ left: 1, max: 1 });
+    expect(featureCasts(sheet(after), eyebite)[0]).toMatchObject({ left: 0, max: 1 });
+    const rested = rest(after, sheet(after), 'short');
+    expect(featureCasts(sheet(rested), eyebite)[0]).toMatchObject({ left: 0 });
+    expect(featureCasts(sheet(rest(after, sheet(after), 'long')), eyebite)[0]).toMatchObject({ left: 1 });
+  });
+
+  it('gives each Signature Spell its own use a short rest', () => {
+    const spells = ['fireball', 'counterspell'];
+    const wizard = pc('2014', ['wizard', 20], { spells, spellPicks: { 'signature-spells': spells } });
+    const [fireball, counter] = [spell(wizard, 'fireball'), spell(wizard, 'counterspell')];
+    const after = payWithFeature(wizard, sheet(wizard), featureCasts(sheet(wizard), fireball)[0]!);
+    expect(featureCasts(sheet(after), fireball)[0]).toMatchObject({ left: 0 });
+    expect(featureCasts(sheet(after), counter)[0]).toMatchObject({ left: 1 });
+    expect(featureCasts(sheet(rest(after, sheet(after), 'short')), fireball)[0]).toMatchObject({ left: 1 });
   });
 
   it("ignores a pick that doesn't fit: a 7th-level spell before 13th level", () => {

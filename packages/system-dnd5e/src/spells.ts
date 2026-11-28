@@ -2,7 +2,7 @@ import { applyDamage, critDice, tokenDistance } from './attack.ts';
 import { chosenCrit, type RollChoice, setDamage, withDamageExtra, withPick } from './roll-choice.ts';
 import { spellHealBonus } from './class-styles.ts';
 import type { Creature } from './creature.ts';
-import { abilityMod } from './creature-math.ts';
+import { abilityMod, spellAbilityShift } from './creature-math.ts';
 import { isDead, makesDeathSaves } from './deaths.ts';
 import { markDamage } from './riders.ts';
 import { type GridKind, type Rng, roll, type Roll } from '@vtt/shared';
@@ -139,6 +139,8 @@ export interface CastResult {
   killed?: boolean;
   /** Feet the target is pushed away from the caster (negative: pulled closer). */
   push?: number;
+  /** Exhaustion levels it gains. */
+  exhaustion?: number;
   /** The target's ward (2024 resistance) took some of the damage and is used for this turn. */
   warded?: string;
   /** More effects it gets, besides `effect` (a crowd's fear). */
@@ -339,9 +341,17 @@ function rolled(cast: Cast, target: CastSide, base: Base, { attack, save, landed
     ...(attack && { attack: attack.attack, hit: attack.hit, crit: attack.crit }),
     save,
     ...damaged,
-    ...(landed && { effect: effectFor(cast), push: spell.push, cured: spell.cures && cured(spell, target.token) }),
+    ...(landed && landedParts(cast, target)),
   };
 }
+
+/** What a spell that lands leaves besides damage: its effect, a push, cured conditions, exhaustion. */
+const landedParts = ({ spell, ...cast }: Cast, target: CastSide): Partial<CastResult> => ({
+  effect: effectFor({ spell, ...cast }),
+  push: spell.push,
+  cured: spell.cures && cured(spell, target.token),
+  exhaustion: spell.exhaustion,
+});
 
 type Landing = ReturnType<typeof landing>;
 type Base = Pick<CastResult, 'target' | 'damage' | 'parts' | 'hp'>;
@@ -425,14 +435,15 @@ function castOf(input: CastInput, rng: Rng): Cast {
   const { caster, slot, gridSize, grid } = input;
   const book = caster.sheet.caster;
   const level = book?.level ?? 1;
+  const shift = spellAbilityShift(caster.sheet, input.spell.id);
   return {
     spell: scaledSpell(input.spell, slot, level),
     slot,
     caster,
-    dc: input.dc ?? book?.dc ?? 10,
+    dc: input.dc ?? (book ? book.dc + shift : 10),
     tier: 1 + CANTRIP_TIERS.filter((l) => level >= l).length,
-    attackBonus: input.attackBonus ?? book?.attack ?? 0,
-    mod: input.mod ?? (book ? abilityMod(caster.sheet.abilities[book.ability]) : 0),
+    attackBonus: input.attackBonus ?? (book ? book.attack + shift : 0),
+    mod: input.mod ?? (book ? abilityMod(caster.sheet.abilities[book.ability]) + shift : 0),
     gridSize,
     grid,
     rng,

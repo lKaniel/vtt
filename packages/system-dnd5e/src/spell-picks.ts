@@ -10,12 +10,30 @@ import type { Spell } from './spell-schema.ts';
 type Choice = SpellPicks['choices'][number];
 type Fitting = Pick<Spell, 'id' | 'level' | 'classes' | 'castingTime'>;
 
+/** The key in `spent.uses` of a spell picked for a feature whose picks each have a use (`each`). */
+export const pickKey = (feature: string, spell: string): string => `${feature}/${spell}`;
+
+/** The feature a `spent.uses` key belongs to: itself, or the one a picked spell's key names. */
+export const keyFeature = (key: string): string => key.split('/')[0]!;
+
+/** The picks of an `each` feature that are spent, and the uses it has left. */
+export function pickUses(
+  f: { id: string; spellPicks?: SpellPicks; max?: number; left?: number },
+  picked: readonly string[],
+  spent: Readonly<Record<string, number>>,
+): { pickedSpent?: string[]; left?: number } {
+  if (!f.spellPicks?.each) return {};
+  const pickedSpent = picked.filter((s) => (spent[pickKey(f.id, s)] ?? 0) > 0);
+  return { pickedSpent, ...(f.max !== undefined && { left: Math.max(0, f.max - pickedSpent.length) }) };
+}
+
 /** The choices open at this class level. */
 export const openChoices = (picks: SpellPicks, level: number): Choice[] => picks.choices.filter((c) => c.at <= level);
 
 /** Whether `spell` fits `choice`: its level, the class's list, and no reaction when those are left out. */
 export function fitsChoice(picks: SpellPicks, choice: Choice, spell: Fitting): boolean {
-  if (spell.level === 0 || (choice.level !== undefined && spell.level !== choice.level)) return false;
+  if ((spell.level === 0) !== !!choice.cantrip) return false;
+  if (choice.level !== undefined && spell.level !== choice.level) return false;
   if (choice.maxLevel !== undefined && spell.level > choice.maxLevel) return false;
   if (picks.noReactions && spell.castingTime === 'reaction') return false;
   return picks.from !== 'class' || !picks.class || spell.classes.includes(picks.class);

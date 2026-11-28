@@ -1,5 +1,5 @@
 {
-  "$comment": "Spells a species or lineage gives (species-spells.ts), by edition: cantrips from 1st level, the rest once a long rest without a slot from the character level on (2024: also always prepared). Characters cast them with their best mental ability, or their class's.",
+  "$comment": "Spells a species or lineage gives (species-spells.ts), by edition: cantrips from 1st level, the rest once a long rest without a slot from the character level on (2024: also always prepared). They are cast with the ability in `abilities` (2014: Charisma for a tiefling, Intelligence for a high elf), or the one the character picked for a 2024 species (`stats.speciesAbility`), else its best of Intelligence, Wisdom and Charisma.",
   "species": {
     "tiefling": {
       "2014": [
@@ -83,6 +83,22 @@
       ]
     },
     "high-elf": {
+      "2014": [
+        {
+          "id": "high-elf-cantrip",
+          "name": "High Elf: Cantrip",
+          "level": 1,
+          "spellPicks": {
+            "from": "class",
+            "class": "wizard",
+            "choices": [
+              {
+                "cantrip": true
+              }
+            ]
+          }
+        }
+      ],
       "2024": [
         {
           "id": "high-elf-lineage-cantrip",
@@ -303,6 +319,14 @@
           "grantsSpells": [[5, "darkness"]]
         }
       ]
+    }
+  },
+  "abilities": {
+    "tiefling": {
+      "2014": "cha"
+    },
+    "high-elf": {
+      "2014": "int"
     }
   }
 }

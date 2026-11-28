@@ -61,8 +61,14 @@ export function featureSpellIds(token: Token, content: Content): string[] {
     const level = levels.find((l) => l.id === ref.split('/')[0])?.level ?? total;
     return f ? spellsAt(f, level, picks) : [];
   });
-  const species = speciesFeatures(token, content.edition).flatMap((f) => spellsAt(f, total));
-  return [...new Set([...fromClasses, ...picked, ...species])];
+  return [...new Set([...fromClasses, ...picked, ...speciesSpellIds(token, content)])];
+}
+
+/** The spells the token's species and lineage give (known, or cast free), picked ones too. */
+export function speciesSpellIds(token: Token, content: Content): string[] {
+  const total = characterLevel(token.stats) ?? 1;
+  const picks = { picked: token.stats?.spellPicks, spells: content.spells };
+  return speciesFeatures(token, content.edition).flatMap((f) => spellsAt(f, total, picks));
 }
 
 export interface ChoiceDue {

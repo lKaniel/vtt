@@ -32,6 +32,8 @@ import { SpellTargets } from '../play/spell-targets.ts';
 import { stepAside } from '../play/pool-guards.ts';
 import { castsFree, paidTargets, type Payment, payment, paymentNotes, spendPayment } from '../play/feature-paid.ts';
 import { Refusal, spent, type Cost, type Fighter, type Table } from '../play/table.ts';
+import { legendaryPlan } from '../play/legendary-casting.ts';
+import { tire } from '../play/spell-tires.ts';
 
 /** `edge` and `crit`: the caster's own pick for the spell attack. */
 export interface CastRequest extends RollChoice {
@@ -52,6 +54,8 @@ export interface CastRequest extends RollChoice {
   choice?: string;
   /** The monster a shape-shifting spell turns its targets into (polymorph). */
   form?: string;
+  /** Cast as this legendary option (a 2024 dragon's Fiery Rays): out of turn, no slot, the option's DC. */
+  legendary?: string;
 }
 
 /** A cast about to take effect, which others may still stop. */
@@ -81,6 +85,13 @@ interface Plan extends Payment {
   again: boolean;
   /** The DC it was handed on with (dragon's breath): the original caster's. */
   dc?: number;
+}
+
+/** Who casts, how it is paid, and the scroll or item read from. */
+interface Prepared {
+  caster: Fighter;
+  plan: Plan;
+  reader?: CasterSheet;
 }
 
 const COST: Record<CastingTime, Cost> = {
@@ -238,12 +249,9 @@ export class SpellActions {
   }
 
   /** Who casts and how: with their own spellcasting, or reading a scroll with its numbers. */
-  private prepare(
-    actor: Fighter,
-    spell: Spell,
-    req: CastRequest,
-  ): { caster: Fighter; plan: Plan; reader?: CasterSheet } {
+  private prepare(actor: Fighter, spell: Spell, req: CastRequest): Prepared {
     if (req.item !== undefined) return this.fromItem(actor, spell, req);
+    if (req.legendary) return { caster: actor, plan: legendaryPlan(actor, spell, req.legendary) };
     if (!req.scroll) return { caster: actor, plan: this.plan(actor, spell, req) };
     const reader = scrollReader(actor, spell, this.table.content(actor.token));
     const caster = { ...actor, sheet: { ...actor.sheet, caster: reader } };
@@ -251,11 +259,7 @@ export class SpellActions {
   }
 
   /** A spell from a magic item: its charges pay instead of a slot, with its DC when it has one. */
-  private fromItem(
-    actor: Fighter,
-    spell: Spell,
-    req: CastRequest,
-  ): { caster: Fighter; plan: Plan; reader: CasterSheet } {
+  private fromItem(actor: Fighter, spell: Spell, req: CastRequest): Required<Prepared> {
     const content = this.table.content(actor.token);
     const { pick, reader } = itemCasting(content, actor, spell, { item: req.item!, slot: req.slot });
     const plan = { ...this.scrollPlan(actor, spell), slot: pick.slot };
@@ -334,6 +338,7 @@ export class SpellActions {
     if (r.revived) this.revive(r.target, r.hp);
     if (r.killed) this.kill(r.target);
     if (r.save?.legendary) this.resist(r.target);
+    if (r.exhaustion) tire(this.store, r.target, r.exhaustion);
   }
 
   /** The target turned a failed save into a success: one legendary resistance is gone. */

@@ -11,6 +11,8 @@ export const FreeCastSchema = z.object({
   self: z.boolean().optional(),
   /** Cast before a fight, never in one: its effect is already in the stat block (mage armor in its AC). */
   beforeCombat: z.boolean().optional(),
+  /** Uses of the feature (or its `usesFrom`) one cast spends, 1 when left out: Empty Body's astral projection, 8 ki. */
+  uses: z.number().int().min(1).optional(),
   /** Points from the class's pool it costs instead of a use of the feature: a formula in `level`, the level it is cast at. */
   cost: z.string().max(200).optional(),
 });
@@ -31,10 +33,18 @@ export const SpellPicksSchema = z.object({
   class: z.string().optional(),
   choices: z
     .array(
-      z.object({ at: z.number().int().min(1).max(20).default(1), level: level.optional(), maxLevel: level.optional() }),
+      z.object({
+        at: z.number().int().min(1).max(20).default(1),
+        level: level.optional(),
+        maxLevel: level.optional(),
+        /** A cantrip, not a leveled spell (a 2014 high elf's wizard cantrip). */
+        cantrip: z.boolean().optional(),
+      }),
     )
     .min(1),
   atCast: z.boolean().optional(),
+  /** Each picked spell has a use of its own (Mystic Arcanum, Signature Spells), not one shared by them all. */
+  each: z.boolean().optional(),
   /** Spells cast as a reaction don't fit. */
   noReactions: z.boolean().optional(),
 });

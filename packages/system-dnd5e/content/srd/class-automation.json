@@ -2041,6 +2041,15 @@
         },
         "empty-body": {
           "action": "action",
+          "usesFrom": "ki",
+          "usesCost": 4,
+          "freeCasts": [
+            {
+              "spell": "astral-projection",
+              "self": true,
+              "uses": 8
+            }
+          ],
           "effect": {
             "name": "Empty Body",
             "rounds": 10,
@@ -2059,8 +2068,7 @@
               "slashing",
               "thunder"
             ]
-          },
-          "manual": "Costs 4 ki points: take them off on the sheet. For 8 ki you can cast astral projection on yourself instead."
+          }
         },
         "perfect-self": {
           "manual": "When you roll initiative with no ki left you regain 4 points: set them on the sheet."
@@ -3774,6 +3782,7 @@
           ],
           "recharge": "long",
           "spellPicks": {
+            "each": true,
             "from": "class",
             "class": "warlock",
             "choices": [
@@ -3794,8 +3803,7 @@
                 "level": 9
               }
             ]
-          },
-          "manual": "Each picked spell once per long rest; the engine shares one use per picked level among them."
+          }
         }
       },
       "subclasses": {
@@ -4437,6 +4445,7 @@
           "uses": [[20, 2]],
           "recharge": "short",
           "spellPicks": {
+            "each": true,
             "from": "known",
             "choices": [
               {

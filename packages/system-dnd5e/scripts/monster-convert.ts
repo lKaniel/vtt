@@ -107,20 +107,35 @@ function reach(text: string): { targets: number; range: number } {
   return { targets: /\beach (creature|enemy|target)/i.test(text) ? 20 : 1, range: feet };
 }
 
+/** Exhaustion levels a failed save adds (a sphinx's Weight of Years). */
+const exhaustionOf = (text: string): number | undefined => {
+  const n = /gains (\d) Exhaustion levels?/i.exec(text)?.[1];
+  return n ? Number(n) : undefined;
+};
+
+/** A failed save holds the target still until its next turn ends (a white dragon's Freezing Burst). */
+const stills = (text: string): boolean => /\bSpeed is 0 until the end of the target's next turn/i.test(text);
+
+/** The effect a failed save leaves: its conditions, or a target held still. */
+function failEffect(held: string[], text: string): object {
+  if (held.length) return { effect: { conditions: held, ...(/repeat/i.test(text) && { repeatSave: true }) } };
+  return stills(text) ? { effect: { immobile: true } } : {};
+}
+
 function saveSpell(f: Fields, text: string): object {
   const zone = area(f);
   const held = conditions(f);
+  const tired = exhaustionOf(text);
   const emanation = (zone as { shape?: string } | undefined)?.shape === 'emanation';
   const aim = zone ? { targets: 1, range: emanation || !/\bpoint\b/i.test(text) ? 0 : reach(text).range } : reach(text);
   return {
     ...aim,
     ...(zone && { area: zone }),
-    ...(held.length > 0 && { rounds: rounds(text) }),
+    ...((held.length > 0 || stills(text)) && { rounds: held.length ? rounds(text) : 1 }),
     save: { ability: f.save, dc: f.saveDc, onSave: f.saveEffect === 'half' ? 'half' : 'none' },
     damage: saveDamage(f),
-    ...(held.length > 0 && {
-      effect: { conditions: held, ...(/repeat/i.test(text) && { repeatSave: true }) },
-    }),
+    ...(tired && { exhaustion: tired }),
+    ...failEffect(held, text),
   };
 }
 
@@ -333,22 +348,59 @@ function wordsFields(text: string): Fields | undefined {
 function legendarySpell(f: Fields, text: string): object | undefined {
   if (f.spell) return undefined;
   const fields = f.save && f.saveDc ? f : wordsFields(text);
-  return fields && (fields.damage || conditions(fields).length) ? saveSpell(fields, text) : undefined;
+  const does = fields && (fields.damage ?? (conditions(fields).length || exhaustionOf(text)));
+  return does ? saveSpell(fields, text) : undefined;
 }
 
-function legendaryOption(pack: Pack, ref: string): object | undefined {
+const CASTS = /\bcasts? \*?([A-Z][A-Za-z' ]*?)\*?(?= \(level| on itself|[,.])/;
+
+/** The spell a legendary action casts (a 2024 dragon's Frightful Presence): its level version, own DC, on itself. */
+function legendaryCast(text: string): object | undefined {
+  const name = CASTS.exec(text)?.[1];
+  if (!name) return undefined;
+  const level = /\(level (\d) version\)/.exec(text)?.[1];
+  const dc = /spell save DC (\d+)/.exec(text)?.[1];
+  return {
+    spell: name.toLowerCase().replace(/'/g, '').replace(/ +/g, '-'),
+    ...(level && { level: Number(level) }),
+    ...(dc && { dc: Number(dc) }),
+    ...(/ on itself\b/.test(text) && { self: true }),
+  };
+}
+
+/** The save action another of the monster's actions is, when a legendary action just uses it ("uses Lightning Strike"). */
+function usedAction(pack: Pack, refs: readonly string[], text: string): object | undefined {
+  const used = /\buses ([A-Z][A-Za-z' ]*?)\./.exec(text)?.[1];
+  if (!used || used === 'Spellcasting') return undefined;
+  const named = (r: string) => pack.text[`${r}.name`]?.replace(/ \(.*\)$/, '') === used;
+  const ref = refs.find((r) => named(r) && pack.entries.get(r)?.fields?.kind !== 'legendary');
+  const f = ref ? pack.entries.get(ref)?.fields : undefined;
+  return f?.save && f.saveDc ? saveSpell(f, textOf(pack, ref!)) : undefined;
+}
+
+/** What a legendary action does: an attack, a spell it casts, or a save action of its own or of another action. */
+function legendaryDoes(pack: Pack, action: Entry, refs: readonly string[], text: string): object {
+  const attack = legendaryAttack(pack, action);
+  if (attack) return { attack };
+  const casts = legendaryCast(text);
+  if (casts) return { casts };
+  const spell = legendarySpell(action.fields ?? {}, text) ?? usedAction(pack, refs, text);
+  return spell ? { spell } : {};
+}
+
+function legendaryOption(pack: Pack, ref: string, refs: readonly string[]): object | undefined {
   const action = pack.entries.get(ref);
   if (action?.fields?.kind !== 'legendary') return undefined;
   const name = (pack.text[`${ref}.name`] ?? bare(ref)).replace(/ ?\(Costs? \d+ Actions?\)/i, '');
   const description = pack.text[`${ref}.description`];
-  const attack = legendaryAttack(pack, action);
-  const spell = attack ? undefined : legendarySpell(action.fields, description ?? '');
   return {
     id: ref.split('.').at(-1),
     name,
     cost: num(action.fields.legendaryCost) ?? 1,
-    ...(attack && { attack }),
-    ...(spell && { spell }),
+    ...legendaryDoes(pack, action, refs, description ?? ''),
+    ...(description?.includes("can't take this action again until the start of its next turn") && {
+      oncePerRound: true,
+    }),
     ...(description && { description }),
   };
 }
@@ -356,7 +408,7 @@ function legendaryOption(pack: Pack, ref: string): object | undefined {
 /** Legendary actions per round and their options, and legendary resistance per day. */
 function legendaryParts(pack: Pack, f: Fields, refs: readonly string[]): object {
   const actions = num(f.legendaryActions);
-  const options = refs.flatMap((r) => legendaryOption(pack, r) ?? []);
+  const options = refs.flatMap((r) => legendaryOption(pack, r, refs) ?? []);
   const resist = refs.map((r) => pack.entries.get(r)).find((e) => e?.id.endsWith('.legendary-resistance'));
   const perDay = num(resist?.fields?.perDay);
   return {

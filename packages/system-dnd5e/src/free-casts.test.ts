@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { srdFor } from './content.ts';
 import { resolveCreature } from './creature.ts';
 import { castProblem } from './spells.ts';
+import { useFeature } from './features.ts';
 import { featureCastProblem, featureCasts, payWithFeature } from './free-casts.ts';
 import { type Token, TokenSchema } from './token-schema.ts';
 import type { Edition } from './stats-schema.ts';
@@ -73,6 +74,24 @@ describe('casting with a feature instead of a slot', () => {
     expect(featureCasts(sheet(druid), familiar)[0]).toMatchObject({ feature: 'wild-companion', left: 2 });
     const after = payWithFeature(druid, sheet(druid), { feature: 'wild-companion' });
     expect(after.spent?.uses).toEqual({ 'wild-shape': 1 });
+  });
+});
+
+describe('ki paying for a spell', () => {
+  const monk = character('monk', '2014', { level: 18, abilities: { wis: 16, dex: 16 } });
+  const projection = spell(monk, 'astral-projection');
+
+  it('casts astral projection on the monk for 8 ki with Empty Body', () => {
+    expect(featureCasts(sheet(monk), projection)).toEqual([
+      { feature: 'empty-body', name: 'Empty Body', level: 9, self: true, left: 18, max: 18, uses: 8 },
+    ]);
+    expect(payWithFeature(monk, sheet(monk), featureCasts(sheet(monk), projection)[0]!).spent?.uses).toEqual({ ki: 8 });
+  });
+
+  it('refuses it with fewer than 8 ki left, and spends 4 ki to turn invisible', () => {
+    const tired = { ...monk, spent: { uses: { ki: 11 } } };
+    expect(featureCastProblem(sheet(tired), projection, 'empty-body')).toBe('needs 8 ki for Astral Projection');
+    expect(useFeature(monk, sheet(monk), 'empty-body').token.spent?.uses).toEqual({ ki: 4 });
   });
 });
 

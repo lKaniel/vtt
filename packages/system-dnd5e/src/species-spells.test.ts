@@ -3,6 +3,7 @@ import { characterToken, newCharacter } from './character.ts';
 import { srdFor } from './content.ts';
 import { resolveCreature } from './creature.ts';
 import { featureCasts } from './free-casts.ts';
+import { resolveCast } from './spells.ts';
 import type { Edition } from './stats-schema.ts';
 import { type Token, TokenSchema } from './token-schema.ts';
 
@@ -50,5 +51,43 @@ describe('species spells', () => {
       subspecies: 'infernal',
     };
     expect(characterToken(c).stats).toMatchObject({ species: 'tiefling', lineage: 'infernal' });
+  });
+});
+
+describe('the ability species spells are cast with', () => {
+  const save = (caster: Token, id: string) => {
+    const target = TokenSchema.parse({ id: 'g', name: 'Goblin', x: 80, y: 50, monster: 'goblin' });
+    const goblin = resolveCreature(target, srdFor(caster.stats?.rules ?? '2014'))!;
+    const cast = { spell: spell(caster, id), slot: spell(caster, id).level, gridSize: 50 };
+    const targets = [{ token: target, sheet: goblin }];
+    return resolveCast({ ...cast, caster: { token: caster, sheet: sheet(caster) }, targets }, () => 0.5).results[0]!
+      .save!.dc;
+  };
+
+  it("casts a 2014 tiefling wizard's infernal legacy with Charisma, not Intelligence", () => {
+    const wizard = pc('2014', ['wizard', 3], 'tiefling');
+    expect(sheet(wizard).caster?.spellAbilities).toEqual({
+      thaumaturgy: 'cha',
+      'hellish-rebuke': 'cha',
+    });
+    // Charisma 16 (+3), proficiency +2; the wizard's own Intelligence 12 would make it 11.
+    expect(save(wizard, 'hellish-rebuke')).toBe(13);
+  });
+
+  it("casts a 2024 lineage's spells with the ability picked for them, else the best of Int, Wis and Cha", () => {
+    const fighter = pc('2024', ['fighter', 3], 'tiefling', 'abyssal');
+    expect(sheet(fighter).caster?.ability).toBe('cha');
+    const picked = { ...fighter, stats: { ...fighter.stats, speciesAbility: 'int' as const } };
+    expect(sheet(picked).caster?.spellAbilities?.['ray-of-sickness']).toBe('int');
+  });
+
+  it('lets a 2014 high elf pick a wizard cantrip, known and cast with Intelligence', () => {
+    const elf = pc('2014', ['cleric', 1], 'elf', 'high-elf');
+    expect(sheet(elf).features.find((f) => f.id === 'high-elf-cantrip')?.spellPicks).toBeDefined();
+    const picked = { ...elf, stats: { ...elf.stats, spellPicks: { 'high-elf-cantrip': ['fire-bolt'] } } };
+    expect(known(picked)).toContain('fire-bolt');
+    expect(sheet(picked).caster?.spellAbilities?.['fire-bolt']).toBe('int');
+    const wrong = { ...elf, stats: { ...elf.stats, spellPicks: { 'high-elf-cantrip': ['sacred-flame'] } } };
+    expect(known(wrong)).not.toContain('sacred-flame');
   });
 });

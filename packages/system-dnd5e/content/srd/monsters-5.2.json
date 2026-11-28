@@ -197,12 +197,17 @@
               }
             ]
           },
+          "oncePerRound": true,
           "description": "*Dexterity Saving Throw:* DC 17, one creature the dragon can see within 120 feet. *Failure:* 22 (4d10) Poison damage, and the target has Disadvantage on saving throws to maintain Concentration until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "frightful-presence",
           "name": "Frightful Presence",
           "cost": 1,
+          "casts": {
+            "spell": "fear"
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Fear. The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -363,12 +368,21 @@
           "id": "cloaked-flight",
           "name": "Cloaked Flight",
           "cost": 1,
+          "casts": {
+            "spell": "invisibility",
+            "self": true
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Invisibility on itself, and it can fly up to half its Fly Speed. The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "sonic-boom",
           "name": "Sonic Boom",
           "cost": 1,
+          "casts": {
+            "spell": "shatter"
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Shatter. The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -526,6 +540,9 @@
           "id": "blazing-light",
           "name": "Blazing Light",
           "cost": 1,
+          "casts": {
+            "spell": "scorching-ray"
+          },
           "description": "The dragon uses Spellcasting to cast Scorching Ray."
         },
         {
@@ -553,6 +570,7 @@
               }
             ]
           },
+          "oncePerRound": true,
           "description": "*Dexterity Saving Throw:* DC 16, one creature the dragon can see within 120 feet. *Failure:* 27 (6d8) Fire damage, and the target's Speed is halved until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         }
       ]
@@ -741,6 +759,10 @@
           "id": "guiding-light",
           "name": "Guiding Light",
           "cost": 1,
+          "casts": {
+            "spell": "guiding-bolt",
+            "level": 2
+          },
           "description": "The dragon uses Spellcasting to cast Guiding Bolt (level 2 version)."
         },
         {
@@ -984,12 +1006,18 @@
               }
             ]
           },
+          "oncePerRound": true,
           "description": "*Charisma Saving Throw:* DC 17, one creature the dragon can see within 90 feet. *Failure:* 24 (7d6) Psychic damage. Until the end of its next turn, the target rolls 1d6 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "mind-jolt",
           "name": "Mind Jolt",
           "cost": 1,
+          "casts": {
+            "spell": "mind-spike",
+            "level": 4
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Mind Spike (level 4 version). The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -1188,12 +1216,17 @@
               "conditions": ["incapacitated"]
             }
           },
+          "oncePerRound": true,
           "description": "*Charisma Saving Throw:* DC 21, one creature the dragon can see within 120 feet. *Failure:* 10 (3d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it reappears in an unoccupied space of the dragon's choice within 120 feet of the dragon. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "guiding-light",
           "name": "Guiding Light",
           "cost": 1,
+          "casts": {
+            "spell": "guiding-bolt",
+            "level": 2
+          },
           "description": "The dragon uses Spellcasting to cast Guiding Bolt (level 2 version)."
         },
         {
@@ -1374,6 +1407,10 @@
           "id": "mind-invasion",
           "name": "Mind Invasion",
           "cost": 1,
+          "casts": {
+            "spell": "mind-spike",
+            "level": 3
+          },
           "description": "The dragon uses Spellcasting to cast Mind Spike (level 3 version)."
         },
         {
@@ -1399,6 +1436,7 @@
               }
             ]
           },
+          "oncePerRound": true,
           "description": "*Constitution Saving Throw:* DC 17, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 90 feet. *Failure:* 7 (2d6) Poison damage, and the target takes a -2 penalty to AC until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -1542,12 +1580,21 @@
           "id": "commanding-presence",
           "name": "Commanding Presence",
           "cost": 1,
+          "casts": {
+            "spell": "command",
+            "level": 2
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Command (level 2 version). The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "fiery-rays",
           "name": "Fiery Rays",
           "cost": 1,
+          "casts": {
+            "spell": "scorching-ray"
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Scorching Ray. The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -1691,6 +1738,10 @@
           "id": "chill",
           "name": "Chill",
           "cost": 1,
+          "casts": {
+            "spell": "hold-monster"
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Hold Monster. The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -1717,6 +1768,7 @@
               }
             ]
           },
+          "oncePerRound": true,
           "description": "*Dexterity Saving Throw:* DC 19, each creature in a 60-foot-long, 10-foot-wide Line. *Failure:* 14 (4d6) Cold damage, and the target is pushed up to 30 feet straight away from the dragon. *Success:* Half damage only. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -1907,6 +1959,7 @@
               "shape": "sphere",
               "size": 30
             },
+            "rounds": 1,
             "save": {
               "ability": "con",
               "dc": 14,
@@ -1917,14 +1970,23 @@
                 "dice": "2d6",
                 "type": "cold"
               }
-            ]
+            ],
+            "effect": {
+              "immobile": true
+            }
           },
+          "oncePerRound": true,
           "description": "*Constitution Saving Throw:* DC 14, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 120 feet. *Failure:* 7 (2d6) Cold damage, and the target's Speed is 0 until the end of the target's next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "frightful-presence",
           "name": "Frightful Presence",
           "cost": 1,
+          "casts": {
+            "spell": "fear",
+            "dc": 14
+          },
+          "oncePerRound": true,
           "description": "The dragon casts *Fear*, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 14). The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -2181,12 +2243,17 @@
               }
             ]
           },
+          "oncePerRound": true,
           "description": "*Dexterity Saving Throw:* DC 21, one creature the dragon can see within 120 feet. *Failure:* 33 (6d10) Poison damage, and the target has Disadvantage on saving throws to maintain Concentration until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "frightful-presence",
           "name": "Frightful Presence",
           "cost": 1,
+          "casts": {
+            "spell": "fear"
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Fear. The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -2360,12 +2427,22 @@
           "id": "cloaked-flight",
           "name": "Cloaked Flight",
           "cost": 1,
+          "casts": {
+            "spell": "invisibility",
+            "self": true
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Invisibility on itself, and it can fly up to half its Fly Speed. The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "sonic-boom",
           "name": "Sonic Boom",
           "cost": 1,
+          "casts": {
+            "spell": "shatter",
+            "level": 3
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Shatter (level 3 version). The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -2524,6 +2601,10 @@
           "id": "blazing-light",
           "name": "Blazing Light",
           "cost": 1,
+          "casts": {
+            "spell": "scorching-ray",
+            "level": 3
+          },
           "description": "The dragon uses Spellcasting to cast Scorching Ray (level 3 version)."
         },
         {
@@ -2551,6 +2632,7 @@
               }
             ]
           },
+          "oncePerRound": true,
           "description": "*Dexterity Saving Throw:* DC 20, one creature the dragon can see within 120 feet. *Failure:* 36 (8d8) Fire damage, and the target's Speed is halved until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         }
       ]
@@ -2740,6 +2822,10 @@
           "id": "guiding-light",
           "name": "Guiding Light",
           "cost": 1,
+          "casts": {
+            "spell": "guiding-bolt",
+            "level": 2
+          },
           "description": "The dragon uses Spellcasting to cast Guiding Bolt (level 2 version)."
         },
         {
@@ -3009,12 +3095,18 @@
               }
             ]
           },
+          "oncePerRound": true,
           "description": "*Charisma Saving Throw:* DC 21, one creature the dragon can see within 120 feet. *Failure:* 31 (9d6) Psychic damage. Until the end of its next turn, the target rolls 1d8 whenever it makes an ability check or attack roll and subtracts the number rolled from the D20 Test. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "mind-jolt",
           "name": "Mind Jolt",
           "cost": 1,
+          "casts": {
+            "spell": "mind-spike",
+            "level": 5
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Mind Spike (level 5 version). The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -3233,12 +3325,17 @@
               "conditions": ["incapacitated"]
             }
           },
+          "oncePerRound": true,
           "description": "*Charisma Saving Throw:* DC 24, one creature the dragon can see within 120 feet. *Failure:* 24 (7d6) Force damage, and the target has the Incapacitated condition and is transported to a harmless demiplane until the start of the dragon's next turn, at which point it reappears in an unoccupied space of the dragon's choice within 120 feet of the dragon. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "guiding-light",
           "name": "Guiding Light",
           "cost": 1,
+          "casts": {
+            "spell": "guiding-bolt",
+            "level": 4
+          },
           "description": "The dragon uses Spellcasting to cast Guiding Bolt (level 4 version)."
         },
         {
@@ -3432,6 +3529,10 @@
           "id": "mind-invasion",
           "name": "Mind Invasion",
           "cost": 1,
+          "casts": {
+            "spell": "mind-spike",
+            "level": 5
+          },
           "description": "The dragon uses Spellcasting to cast Mind Spike (level 5 version)."
         },
         {
@@ -3457,6 +3558,7 @@
               }
             ]
           },
+          "oncePerRound": true,
           "description": "*Constitution Saving Throw:* DC 21, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 90 feet. *Failure:* 17 (5d6) Poison damage, and the target takes a -2 penalty to AC until the end of its next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -3612,12 +3714,22 @@
           "id": "commanding-presence",
           "name": "Commanding Presence",
           "cost": 1,
+          "casts": {
+            "spell": "command",
+            "level": 2
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Command (level 2 version). The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "fiery-rays",
           "name": "Fiery Rays",
           "cost": 1,
+          "casts": {
+            "spell": "scorching-ray",
+            "level": 3
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Scorching Ray (level 3 version). The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -3775,6 +3887,10 @@
           "id": "chill",
           "name": "Chill",
           "cost": 1,
+          "casts": {
+            "spell": "hold-monster"
+          },
+          "oncePerRound": true,
           "description": "The dragon uses Spellcasting to cast Hold Monster. The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -3801,6 +3917,7 @@
               }
             ]
           },
+          "oncePerRound": true,
           "description": "*Dexterity Saving Throw:* DC 23, each creature in a 60-foot-long, 10-foot-wide Line. *Failure:* 14 (4d6) Cold damage, and the target is pushed up to 30 feet straight away from the dragon. *Success:* Half damage only. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -4025,6 +4142,7 @@
               "shape": "sphere",
               "size": 30
             },
+            "rounds": 1,
             "save": {
               "ability": "con",
               "dc": 20,
@@ -4035,14 +4153,23 @@
                 "dice": "4d6",
                 "type": "cold"
               }
-            ]
+            ],
+            "effect": {
+              "immobile": true
+            }
           },
+          "oncePerRound": true,
           "description": "*Constitution Saving Throw:* DC 20, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 120 feet. *Failure:* 14 (4d6) Cold damage, and the target's Speed is 0 until the end of the target's next turn. *Failure or Success:* The dragon can't take this action again until the start of its next turn."
         },
         {
           "id": "frightful-presence",
           "name": "Frightful Presence",
           "cost": 1,
+          "casts": {
+            "spell": "fear",
+            "dc": 18
+          },
+          "oncePerRound": true,
           "description": "The dragon casts *Fear*, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18). The dragon can't take this action again until the start of its next turn."
         },
         {
@@ -15545,6 +15672,21 @@
           "id": "storm-bolt",
           "name": "Storm Bolt",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "save": {
+              "ability": "dex",
+              "dc": 23,
+              "onSave": "half"
+            },
+            "damage": [
+              {
+                "dice": "6d10",
+                "type": "lightning"
+              }
+            ]
+          },
           "description": "The kraken uses Lightning Strike."
         },
         {
@@ -15569,6 +15711,7 @@
               "conditions": ["blinded", "poisoned"]
             }
           },
+          "oncePerRound": true,
           "description": "*Constitution Saving Throw:* DC 23, each creature in a 15-foot Emanation originating from the kraken while it is underwater. *Failure:* The target has the Blinded and Poisoned conditions until the end of the kraken's next turn. The kraken then moves up to its Speed. *Failure or Success:* The kraken can't take this action again until the start of its next turn."
         }
       ]
@@ -15953,12 +16096,17 @@
               }
             ]
           },
+          "oncePerRound": true,
           "description": "*Constitution Saving Throw:* DC 20, each creature that isn't an Undead in a 20-foot Emanation originating from the lich. *Failure:* 31 (9d6) Necrotic damage. *Success:* Half damage. *Failure or Success:* The lich can't take this action again until the start of its next turn."
         },
         {
           "id": "frightening-gaze",
           "name": "Frightening Gaze",
           "cost": 1,
+          "casts": {
+            "spell": "fear"
+          },
+          "oncePerRound": true,
           "description": "The lich casts *Fear*, using the same spellcasting ability as Spellcasting. The lich can't take this action again until the start of its next turn."
         }
       ]
@@ -17415,12 +17563,37 @@
           "id": "dread-command",
           "name": "Dread Command",
           "cost": 1,
+          "casts": {
+            "spell": "command",
+            "level": 2
+          },
+          "oncePerRound": true,
           "description": "The mummy casts *Command* (level 2 version), using the same spellcasting ability as Spellcasting. The mummy can't take this action again until the start of its next turn."
         },
         {
           "id": "glare",
           "name": "Glare",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 60,
+            "rounds": 1,
+            "save": {
+              "ability": "wis",
+              "dc": 17,
+              "onSave": "none"
+            },
+            "damage": [
+              {
+                "dice": "6d6+4",
+                "type": "psychic"
+              }
+            ],
+            "effect": {
+              "conditions": ["paralyzed"]
+            }
+          },
+          "oncePerRound": true,
           "description": "The mummy uses Dreadful Glare. The mummy can't take this action again until the start of its next turn."
         },
         {
@@ -21432,6 +21605,7 @@
               "conditions": ["blinded"]
             }
           },
+          "oncePerRound": true,
           "description": "*Constitution Saving Throw:* DC 25, one creature the solar can see within 120 feet. *Failure:* The target has the Blinded condition for 1 minute. *Failure or Success:* The solar can't take this action again until the start of its next turn."
         },
         {
@@ -21695,6 +21869,18 @@
           "id": "weight-of-years",
           "name": "Weight of Years",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "save": {
+              "ability": "con",
+              "dc": 16,
+              "onSave": "none"
+            },
+            "damage": [],
+            "exhaustion": 1
+          },
+          "oncePerRound": true,
           "description": "*Constitution Saving Throw:* DC 16, one creature the sphinx can see within 120 feet. *Failure:* The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. *Failure or Success:* The sphinx can't take this action again until the start of its next turn."
         }
       ]
@@ -21917,6 +22103,18 @@
           "id": "weight-of-years",
           "name": "Weight of Years",
           "cost": 1,
+          "spell": {
+            "targets": 1,
+            "range": 120,
+            "save": {
+              "ability": "con",
+              "dc": 16,
+              "onSave": "none"
+            },
+            "damage": [],
+            "exhaustion": 1
+          },
+          "oncePerRound": true,
           "description": "*Constitution Saving Throw:* DC 16, one creature the sphinx can see within 120 feet. *Failure:* The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. *Failure or Success:* The sphinx can't take this action again until the start of its next turn."
         }
       ]
@@ -23541,6 +23739,7 @@
           "id": "world-shaking-movement",
           "name": "World-Shaking Movement",
           "cost": 1,
+          "oncePerRound": true,
           "description": "The tarrasque moves up to its Speed. At the end of this movement, the tarrasque creates an instantaneous shock wave in a 60-foot Emanation originating from itself. Creatures in that area lose Concentration and, if Medium or smaller, have the Prone condition. The tarrasque can't take this action again until the start of its next turn."
         }
       ]
@@ -24127,6 +24326,7 @@
           "id": "shimmering-shield",
           "name": "Shimmering Shield",
           "cost": 1,
+          "oncePerRound": true,
           "description": "The unicorn targets itself or one creature it can see within 60 feet of itself. The target gains 10 (3d6) Temporary Hit Points, and its AC increases by 2 until the end of the unicorn's next turn. The unicorn can't take this action again until the start of its next turn."
         }
       ]
@@ -24289,6 +24489,11 @@
           "id": "beguile",
           "name": "Beguile",
           "cost": 1,
+          "casts": {
+            "spell": "command",
+            "dc": 17
+          },
+          "oncePerRound": true,
           "description": "The vampire casts *Command*, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 17). The vampire can't take this action again until the start of its next turn."
         },
         {
