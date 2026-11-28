@@ -7,6 +7,7 @@ import { act, look, outcome, type Welcome } from './mcp-seat.ts';
 import { assetTools } from './asset-tools.ts';
 import { prefabTools } from './prefab-tools.ts';
 import { sceneTools } from './scene-tools.ts';
+import { sessionTools } from './session-tools.ts';
 
 // The tools Claude gets over the bridge (mcp-http.ts): look at a live game
 // as the caller's seat, read and change its documents, talk and roll in
@@ -182,5 +183,12 @@ function actTools(table: BridgeTable): McpTool[] {
 }
 
 export function mcpTools(table: BridgeTable): McpTool[] {
-  return [...lookTools(table), ...actTools(table), ...sceneTools(table), ...assetTools(table), ...prefabTools(table)];
+  return [
+    ...lookTools(table),
+    ...actTools(table),
+    ...sceneTools(table),
+    ...assetTools(table),
+    ...prefabTools(table),
+    ...sessionTools(table),
+  ];
 }

@@ -54,6 +54,17 @@ name.
 | `find_assets`                    | Map pieces from the asset catalogs of the game's packs, by words, with sizes in feet |
 | `upload_asset`                   | Puts a picture, sound or video of Claude's own into the game's uploads               |
 | `find_prefabs`                   | Whole prefabs of the game's packs (a house with walls, doors, windows and a roof)    |
+| `read_session`                   | A session log page (one evening of play, see game-format.md), newest unless named    |
+| `write_recap`                    | Writes a "Previously on..." recap as that page's first page                          |
+
+## Session recaps
+
+The game keeps each evening of play as a log page in the adventure book
+(fights, kills, loot, levels, quests, places, big rolls). Ask Claude to
+"write the recap for last session": it reads the page with `read_session`
+(which also gives the recap before it, to carry the story on) and writes
+a short recap with `write_recap`. The page stays the GM's until they
+share it with the players.
 
 ## Building scenes
 
