@@ -1,11 +1,11 @@
 import type { Doc } from '@vtt/core';
-import { laidDocs, type ScenePart } from '@vtt/shared';
+import { laidDocs, laidPartsOf, type WorldInfo } from '@vtt/shared';
 
 /** What reading the scene's placed things takes of the session. */
 export interface LaidHost {
   docs: { all(coll: string): readonly Doc[] };
   scene: string;
-  world?: { parts?: readonly ScenePart[] };
+  world?: Pick<WorldInfo, 'parts' | 'partFloors'>;
 }
 
 /**
@@ -14,5 +14,5 @@ export interface LaidHost {
  * them, each where its part lies; they are edited on the part's own scene.
  */
 export function laid(s: LaidHost, name: 'regions' | 'notes' | 'sounds' | 'drawings'): Doc[] {
-  return laidDocs({ id: s.scene, parts: s.world?.parts }, name, (coll) => s.docs.all(coll));
+  return laidDocs({ id: s.scene, parts: laidPartsOf(s.world) }, name, (coll) => s.docs.all(coll));
 }

@@ -6,6 +6,7 @@ import {
   type ChunkChange,
   type DocChange,
   type Game,
+  type LaidPart,
   type LightSource,
   type Player,
   type Point,
@@ -191,6 +192,11 @@ export class GameStore extends EventEmitter<StoreEvents> {
   /** The settings of the current scene, merged with the game's. */
   get world(): World {
     return this.here.world;
+  }
+
+  /** The scenes laid on the current scene (a combined scene), each with how its floors map onto the scene's. */
+  get parts(): readonly LaidPart[] {
+    return this.here.parts;
   }
 
   /** The current scene's map, cut into streaming chunks. */

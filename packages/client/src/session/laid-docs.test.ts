@@ -19,6 +19,13 @@ describe('what is laid on the scene you are on', () => {
     ]);
   });
 
+  it('puts a part’s things on the scene’s floors', () => {
+    const inn = { ...doc('inn', 0), level: 'f1' };
+    const on = { docs: { all: (coll: string) => (coll === 'market/notes' ? [inn] : []) }, scene: 'city' };
+    const world = { parts: [{ scene: 'market', x: 0, y: 0 }], partFloors: { market: { f1: 'upper' } } };
+    expect(laid({ ...on, world }, 'notes').map((d) => d.level)).toEqual(['upper']);
+  });
+
   it('is the scene’s own on a scene with no parts', () => {
     expect(laid({ docs, scene: 'docks', world: {} }, 'notes').map((d) => d.id)).toEqual(['pier']);
   });
