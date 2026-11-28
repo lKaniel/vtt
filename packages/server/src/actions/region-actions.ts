@@ -56,7 +56,7 @@ export class RegionActions {
 
   /** The working regions of the scene the store reads now, its parts' where they lie. */
   private regions(): Laid[] {
-    const scene = { id: this.store.currentScene, parts: this.store.world.parts };
+    const scene = { id: this.store.currentScene, parts: this.store.parts };
     const all = (coll: string) => this.store.docs.all(coll).map((d) => fromDoc<Laid>(d));
     return laidDocs(scene, 'regions', all).filter((r) => regionWorks(r, this.store.world.darkness));
   }

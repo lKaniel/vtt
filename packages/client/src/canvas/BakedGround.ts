@@ -1,4 +1,4 @@
-import { type BakeGroup, bakeSpan, type Chunk, type Rect } from '@vtt/shared';
+import { type BakeGroup, bakeSpan, type Chunk, floorsOnWhole, type Rect } from '@vtt/shared';
 import { Assets, Container, Sprite, type Texture } from 'pixi.js';
 import { assetUrl } from '../assets.ts';
 import type { Session } from '../session/session.ts';
@@ -146,10 +146,10 @@ export class BakedGround {
     if (this.version === this.session.bake.version) return;
     this.version = this.session.bake.version;
     for (const f of this.floors) f.destroy();
-    this.floors = this.session.bake.shown.flatMap(({ manifest, folder, x, y, z }) =>
+    this.floors = this.session.bake.shown.flatMap(({ manifest, folder, x, y, z, floors }) =>
       manifest.groups.map((group, i) => {
         const url = (key: string) => assetUrl(`${folder}/${i}/${key}.${manifest.ext}`);
-        return new FloorPicture(group, url, manifest.scale, { x, y, z });
+        return new FloorPicture(floorsOnWhole(group, floors), url, manifest.scale, { x, y, z });
       }),
     );
   }

@@ -19,7 +19,7 @@ import {
   intoPart,
   type MapCollection,
   type Relink,
-  type ScenePart,
+  type LaidPart,
   uniqueId,
 } from '@vtt/shared';
 import { diffOps, fromDoc, toDoc } from './doc-sync.ts';
@@ -120,7 +120,7 @@ export function actorDeleteOps(
 /** Where a scene's map is saved: its own collections, and those of the scenes laid on it (scene-parts.ts). */
 export interface MapHome {
   id: string;
-  parts: readonly ScenePart[];
+  parts: readonly LaidPart[];
 }
 
 interface MapItem {

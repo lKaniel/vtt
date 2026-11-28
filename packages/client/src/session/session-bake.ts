@@ -6,9 +6,11 @@ import {
   type Chunk,
   intoPart,
   isGroup,
+  type LaidPart,
+  laidPartsOf,
+  type PartFloors,
   partZ,
   type SceneLevel,
-  type ScenePart,
   tileOrder,
   type WorldInfo,
 } from '@vtt/shared';
@@ -98,7 +100,7 @@ export class SceneBake implements SessionPart {
     const world = this.s.world;
     if (!world?.optimised) return [];
     const own = world.bake ? [{ scene: this.s.scene, bake: world.bake }] : [];
-    const parts = (world.parts ?? []).flatMap((part) => {
+    const parts = laidPartsOf(world).flatMap((part) => {
       const bake = world.partBakes?.[part.scene];
       return bake ? [{ scene: part.scene, bake, part }] : [];
     });
@@ -115,7 +117,8 @@ export class SceneBake implements SessionPart {
     if (this.s.view3d.on || this.s.world?.view === '3d') return [];
     return this.layers.map(({ scene, bake, part, manifest }) => {
       const z = part ? partZ((this.s.world?.parts ?? []).findIndex((p) => p.scene === scene)) : 0;
-      return { manifest, folder: `/assets/${bakeFolder(scene, bake)}`, x: part?.x ?? 0, y: part?.y ?? 0, z };
+      const at = { x: part?.x ?? 0, y: part?.y ?? 0, z, floors: part?.floors };
+      return { manifest, folder: `/assets/${bakeFolder(scene, bake)}`, ...at };
     });
   }
 
@@ -292,7 +295,7 @@ export class SceneBake implements SessionPart {
 interface Wanted {
   scene: string;
   bake: string;
-  part?: ScenePart;
+  part?: LaidPart;
 }
 
 interface Layer extends Wanted {
@@ -309,6 +312,8 @@ export interface ShownBake {
   y: number;
   /** Where its scene's tiles start in the draw order: the picture lies just under them. */
   z: number;
+  /** A part's floors as the scene names them, when it names them otherwise. */
+  floors?: PartFloors;
 }
 
 interface Switch {

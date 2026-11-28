@@ -149,6 +149,30 @@ describe('a combined scene', () => {
     expect(bake.baked({ ...tile, z: 0 })).toBe(false);
   });
 
+  it('draws a part’s floors as the scene names them', async () => {
+    const upper = { ...tile, level: 'f1' };
+    const floorManifest = {
+      ...manifest,
+      groups: [{ ...manifest.groups[0]!, level: 'f1', tiles: { floor: tilePrint({ ...upper, z: 0 }) } }],
+    };
+    const world = {
+      optimised: true,
+      parts: [market],
+      partBakes: { market: 'm1' },
+      partFloors: { market: { f1: 'upper' } },
+    };
+    const { bake, read } = setup(world, true, [
+      { op: 'create', coll: 'market/tiles', doc: { ...upper, type: 'tile', rev: 0 } },
+      { op: 'create', coll: 'scenes', doc: { id: 'market', type: 'scene', rev: 0, bake: 'm1' } },
+    ]);
+    read.mockResolvedValue(floorManifest);
+    bake.welcome();
+    await flush();
+    expect(bake.shown[0]!.floors).toEqual({ f1: 'upper' });
+    const laid = { ...upper, id: 'market--floor', part: 'market', x: 1000, y: 500, z: 3, level: 'upper' };
+    expect(bake.baked(laid)).toBe(true);
+  });
+
   it('optimises the parts that changed since their bake, and leaves the others', async () => {
     const world = { parts: [market, docks], partBakes: { docks: 'd1' } };
     const { bake, sent, updates, run } = setup(world, true, [...partScene('market'), ...partScene('docks', 'd1')]);

@@ -1,4 +1,5 @@
 import type { MapCollection } from './chunks.ts';
+import { floorsHome, floorsOnWhole, type PartFloors } from './part-floors.ts';
 import type { Chunk, ScenePart } from './schema.ts';
 
 // A combined scene (scene.json `parts`) is made of other scenes laid on it,
@@ -9,6 +10,21 @@ import type { Chunk, ScenePart } from './schema.ts';
 // and saves a change to one of them back in its part (`intoPart`). The
 // part's regions, notes, sounds and drawings are read on the whole the same
 // way (`laidDocs`), and stay documents of the part.
+
+/** A part as it is laid: where, and (when they differ) how its floors map onto the whole's (part-floors.ts). */
+export interface LaidPart extends ScenePart {
+  floors?: PartFloors;
+}
+
+/** The parts of the scene a client is on, as laid: scene.json `parts` with the floor maps the welcome tells (`partFloors`). */
+export function laidPartsOf(
+  world: { parts?: readonly ScenePart[]; partFloors?: Readonly<Record<string, PartFloors>> } | undefined,
+): LaidPart[] {
+  return (world?.parts ?? []).map((p) => {
+    const floors = world?.partFloors?.[p.scene];
+    return floors ? { ...p, floors } : p;
+  });
+}
 
 /** What the id of a part's item is on the whole scene. */
 export const partId = (part: string, id: string): string => `${part}--${id}`;
@@ -45,15 +61,19 @@ function mapped(
 }
 
 /** A part's item as it lies on the whole scene. */
-export function intoWhole<C extends MapCollection>(coll: C, item: Item<C>, part: ScenePart): Item<C> {
-  const placed = mapped(coll, item, [part.x, part.y], (id) => partId(part.scene, id));
+export function intoWhole<C extends MapCollection>(coll: C, item: Item<C>, part: LaidPart): Item<C> {
+  const placed = floorsOnWhole(
+    mapped(coll, item, [part.x, part.y], (id) => partId(part.scene, id)),
+    part.floors,
+  );
   return { ...placed, part: part.scene } as unknown as Item<C>;
 }
 
 /** An item of the whole scene as its part keeps it. */
-export function intoPart<C extends MapCollection>(coll: C, item: Item<C>, part: ScenePart): Item<C> {
+export function intoPart<C extends MapCollection>(coll: C, item: Item<C>, part: LaidPart): Item<C> {
   const cut = part.scene.length + 2;
-  const { part: _part, ...own } = mapped(coll, item, [-part.x, -part.y], (id) => id.slice(cut));
+  const moved = mapped(coll, item, [-part.x, -part.y], (id) => id.slice(cut));
+  const { part: _part, ...own } = floorsHome(moved, part.floors);
   return own as unknown as Item<C>;
 }
 
@@ -72,12 +92,12 @@ type Pt = readonly [number, number];
  * moved by its points or its place, under an id no other part has, marked
  * `part`. What it names (a wall, a tile) stays its part's (`homeOf`).
  */
-export function docIntoWhole<D extends { id: string }>(doc: D, part: ScenePart): D & { part: string } {
+export function docIntoWhole<D extends { id: string }>(doc: D, part: LaidPart): D & { part: string } {
   const { points, x, y } = doc as { points?: Pt[]; x?: number; y?: number };
   const moved = points
     ? { points: points.map(([px, py]) => [px + part.x, py + part.y]) }
     : { x: (x ?? 0) + part.x, y: (y ?? 0) + part.y };
-  return { ...doc, id: partId(part.scene, doc.id), part: part.scene, ...moved };
+  return floorsOnWhole({ ...doc, id: partId(part.scene, doc.id), part: part.scene, ...moved }, part.floors);
 }
 
 /**
@@ -86,7 +106,7 @@ export function docIntoWhole<D extends { id: string }>(doc: D, part: ScenePart):
  * documents of a collection ("<scene>/<name>").
  */
 export function laidDocs<D extends { id: string }>(
-  scene: { id: string; parts: readonly ScenePart[] | undefined },
+  scene: { id: string; parts: readonly LaidPart[] | undefined },
   name: string,
   all: (coll: string) => readonly D[],
 ): D[] {
