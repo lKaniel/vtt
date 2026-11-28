@@ -21,6 +21,7 @@ import { LevelUpProficiencies } from './creator/LevelUpProficiencies.tsx';
 import { Chips, Detail, RichText, TraitList } from './creator/Parts.tsx';
 import { Button } from './kit/button.tsx';
 import { Toggle } from './kit/toggle.tsx';
+import { t } from '../i18n/index.ts';
 
 type Bonus = Partial<Record<Ability, number>>;
 
@@ -62,9 +63,7 @@ export function LevelUpScreen({
   return (
     <div className="levelup">
       <header className="cc-head">
-        <h1 className="menu-title">
-          {c.name} reaches level {plan.level}
-        </h1>
+        <h1 className="menu-title">{t('levelUpScreen.title', { name: c.name, level: plan.level })}</h1>
         <p className="cc-line">{characterSummary(next)}</p>
       </header>
       <div className="levelup-body">
@@ -130,12 +129,12 @@ function LevelUpFooter({
   return (
     <footer className="cc-foot">
       <Button variant="outline" onClick={onCancel}>
-        Cancel
+        {t('levelUp.cancel')}
       </Button>
       {message && <span className="menu-error">{message}</span>}
       <span className="cc-foot-space" />
       <Button disabled={disabled} onClick={onConfirm}>
-        Level up
+        {t('levelUpScreen.confirm')}
       </Button>
     </footer>
   );
@@ -163,10 +162,10 @@ function ChoicesColumn(p: Readonly<ChoicesProps>) {
   return (
     <section className="frame levelup-col">
       <ClassPicker c={c} homebrew={homebrew} value={classId} onPick={pickClass} />
-      <Detail title="Hit points">
+      <Detail title={t('summary.hp')}>
         <HitPoints die={plan.hitDie} average={plan.average} hp={hp} setHp={setHp} />
         <p className="cc-facts">
-          Maximum hit points: {characterMaxHp(c)} → <strong>{characterMaxHp(next)}</strong>
+          {t('levelUpScreen.maxHp', { hp: characterMaxHp(c) })} <strong>{characterMaxHp(next)}</strong>
         </p>
       </Detail>
       {plan.improvement && <Improvement c={c} value={improvement} onChange={setImprovement} />}
@@ -185,13 +184,12 @@ function ClassPicker({
 }: Readonly<{ c: Character; homebrew: readonly Class[]; value: string; onPick: (id: string) => void }>) {
   const taken = new Map(characterClasses(c).map((k) => [k.class, k.level]));
   const classes = classesToPick(partsOf(c).book.content.classes.values(), homebrew);
-  const label = (id: string, name: string) => (taken.has(id) ? `${name} ${taken.get(id)}` : `${name} (new)`);
+  const label = (id: string, name: string) =>
+    taken.has(id) ? `${name} ${taken.get(id)}` : t('levelUpScreen.newClass', { name });
   return (
-    <Detail title="Class">
+    <Detail title={t('kit.class')}>
       <Chips options={classes.map((k) => ({ id: k.id, label: label(k.id, k.name) }))} value={value} onPick={onPick} />
-      {!taken.has(value) && (
-        <p className="cc-facts">Multiclassing needs 13 in this class's main abilities and your current classes'.</p>
-      )}
+      {!taken.has(value) && <p className="cc-facts">{t('levelUpScreen.multiclass')}</p>}
     </Detail>
   );
 }
@@ -204,7 +202,7 @@ function SubclassPicker({
 }: Readonly<{ c: Character; classId: string; value: string | undefined; onPick: (id: string) => void }>) {
   const options = partsOf(c).book.origins.classes.find((o) => o.id === classId)?.subclasses ?? [];
   return (
-    <Detail title="Subclass">
+    <Detail title={t('classes.subclass')}>
       <Chips options={options.map((s) => ({ id: s.id, label: s.name }))} value={value} onPick={onPick} />
       <RichText text={options.find((s) => s.id === value)?.description ?? ''} className="rich small" />
     </Detail>
@@ -214,12 +212,8 @@ function SubclassPicker({
 function NewFeatures({ c, classId, level }: Readonly<{ c: Character; classId: string; level: number }>) {
   const features = (partsOf(c).book.content.classes.get(classId)?.features ?? []).filter((f) => f.level === level);
   return (
-    <Detail title={features.length ? 'New features' : 'Features'}>
-      {features.length ? (
-        <TraitList traits={features} />
-      ) : (
-        <p className="cc-facts">No new class features at this level.</p>
-      )}
+    <Detail title={features.length ? t('levelUpScreen.newFeatures') : t('classEditor.features')}>
+      {features.length ? <TraitList traits={features} /> : <p className="cc-facts">{t('levelUpScreen.noFeatures')}</p>}
     </Detail>
   );
 }
@@ -233,12 +227,12 @@ function HitPoints({
   return (
     <div className="levelup-hp">
       <Button variant="outline" onClick={() => setHp(average)}>
-        Take {average}
+        {t('levelUpScreen.take', { n: average })}
       </Button>
       <Button variant="outline" onClick={() => setHp(Math.floor(Math.random() * die) + 1)}>
-        Roll d{die}
+        {t('levelUpScreen.roll', { die })}
       </Button>
-      <span className="levelup-roll">+{hp} and your Constitution modifier</span>
+      <span className="levelup-roll">{t('levelUpScreen.con', { hp })}</span>
     </div>
   );
 }
@@ -255,7 +249,7 @@ function Improvement({ c, value, onChange }: Readonly<{ c: Character; value: Bon
     );
   };
   return (
-    <Detail title={`Ability score improvement (${2 - spent} left)`}>
+    <Detail title={t('levelUpScreen.asi', { n: 2 - spent })}>
       <div className="cc-chips">
         {ABILITIES.map((a) => (
           <Toggle key={a} pressed={!!value[a]} onPressedChange={() => bump(a)}>
@@ -265,7 +259,7 @@ function Improvement({ c, value, onChange }: Readonly<{ c: Character; value: Bon
         ))}
       </div>
       <Button variant="link" onClick={() => onChange({})}>
-        Clear
+        {t('levelUpScreen.clear')}
       </Button>
     </Detail>
   );

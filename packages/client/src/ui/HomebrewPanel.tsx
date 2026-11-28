@@ -7,6 +7,7 @@ import { ClassEditor } from './ClassEditor.tsx';
 import { HomebrewSkills } from './HomebrewSkills.tsx';
 import { Button } from './kit/button.tsx';
 import { Input } from './kit/input.tsx';
+import { t } from '../i18n/index.ts';
 
 // The GM's homebrew classes, in the Compendium tab: make one, open it in the
 // editor, and share it so the players' sheets can read it; then the game's own skills.
@@ -32,13 +33,13 @@ export function HomebrewPanel({ session }: Readonly<{ session: Session }>) {
       <div className="flex gap-1">
         <Input
           value={name}
-          placeholder="New class name"
-          aria-label="New class name"
+          placeholder={t('homebrew.newName')}
+          aria-label={t('homebrew.newName')}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && create()}
         />
         <Button variant="outline" size="sm" disabled={!slugify(name) || taken(slugify(name))} onClick={create}>
-          New class
+          {t('homebrew.new')}
         </Button>
       </div>
       <ul className="rows">
@@ -51,23 +52,21 @@ export function HomebrewPanel({ session }: Readonly<{ session: Session }>) {
               <Button
                 variant="outline"
                 size="sm"
-                title={shared(doc) ? 'Players’ sheets can read it: hide it again' : 'Let the players’ sheets read it'}
+                title={shared(doc) ? t('homebrew.unshareTitle') : t('homebrew.shareTitle')}
                 onClick={() =>
                   session.journal.patchEntry('homebrew', doc.id, {
                     ownership: shared(doc) ? null : { default: 'observer' },
                   })
                 }
               >
-                {shared(doc) ? 'Shared' : 'Share'}
+                {shared(doc) ? t('homebrew.shared') : t('homebrew.share')}
               </Button>
             </span>
           </li>
         ))}
       </ul>
-      {!docs.length && <p className="muted">No homebrew classes yet. Name one to start.</p>}
-      <p className="muted lib-hint">
-        A character takes a homebrew class by its id in the sheet’s Details, like an SRD class.
-      </p>
+      {!docs.length && <p className="muted">{t('homebrew.none')}</p>}
+      <p className="muted lib-hint">{t('homebrew.hint')}</p>
       <HomebrewSkills session={session} />
       {editing && <ClassEditor key={editing.id} session={session} doc={editing} onClose={() => setOpen(undefined)} />}
     </div>

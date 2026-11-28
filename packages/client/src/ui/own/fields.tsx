@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { Input } from '../kit/input.tsx';
 import { Label } from '../kit/label.tsx';
+import { t } from '../../i18n/index.ts';
 
 /** What useChecked needs of a schema (zod's safeParse), without the client importing zod. */
 export interface Checks<T> {
@@ -40,13 +41,13 @@ export function useChecked<T>(start: T, schema: Checks<T>, onSave: (value: T) =>
 
 /** Why the last change wasn't saved, under the fields. */
 export function Problem({ text }: Readonly<{ text?: string }>) {
-  return text ? <p className="text-xs text-[#e2766e]">Not saved yet: {text}</p> : null;
+  return text ? <p className="text-xs text-[#e2766e]">{t('own.notSaved', { text })}</p> : null;
 }
 
 /** The name, across the top of every editor. */
 export function NameField({ name, onChange }: Readonly<{ name: string; onChange: (name: string) => void }>) {
   return (
-    <Field label="Name" wide>
+    <Field label={t('own.name')} wide>
       <Input value={name} onChange={(e) => onChange(e.target.value)} />
     </Field>
   );

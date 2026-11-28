@@ -85,7 +85,7 @@ function StepInput({
         value={String(value ?? '')}
         onValueChange={set}
         options={options}
-        placeholder="Pick one"
+        placeholder={t('triggerDialog.pickOne')}
       />
     );
   }
@@ -113,14 +113,20 @@ function StepRow({ session, step, types, onChange, onRemove, onUp }: Readonly<Ro
     <li className="art-slot flex flex-col gap-2 p-2" data-slot="trigger-step">
       <div className="flex items-center gap-2">
         <SelectField
-          aria-label="Action"
+          aria-label={t('triggerDialog.action')}
           className="flex-1"
           value={step.type}
           onValueChange={(t) => onChange(blankStep(t))}
           options={types.map((t) => ({ value: t, label: t }))}
         />
         {onUp && (
-          <Button variant="ghost" size="icon-sm" aria-label="Move up" title="Move up" onClick={onUp}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t('triggerDialog.moveUp')}
+            title={t('triggerDialog.moveUp')}
+            onClick={onUp}
+          >
             <ArrowUpIcon />
           </Button>
         )}
@@ -162,28 +168,28 @@ function StepList({
         ))}
       </ol>
       <Button variant="outline" size="sm" onClick={() => onChange([...steps, blankStep(types[0]!)])}>
-        <PlusIcon /> Add action
+        <PlusIcon /> {t('triggerDialog.addAction')}
       </Button>
     </>
   );
 }
 
 const TRIGGER_FLAGS = [
-  ['once', 'Runs once'],
-  ['gmOnly', 'GM only'],
-  ['disabled', 'Turned off'],
+  ['once', 'triggerDialog.once'],
+  ['gmOnly', 'triggerDialog.gmOnly'],
+  ['disabled', 'triggerDialog.disabled'],
 ] as const;
 
 function TriggerOptions({ trigger, onChange }: Readonly<{ trigger: Trigger; onChange: (t: Trigger) => void }>) {
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm">
       <SelectField
-        aria-label="When"
+        aria-label={t('triggerDialog.when')}
         value={trigger.on ?? 'click'}
         onValueChange={(on) => onChange({ ...trigger, on })}
         options={[
-          { value: 'click', label: 'When clicked' },
-          { value: 'enter', label: 'When walked onto' },
+          { value: 'click', label: t('triggerDialog.whenClicked') },
+          { value: 'enter', label: t('triggerDialog.whenWalkedOnto') },
         ]}
       />
       {TRIGGER_FLAGS.map(([key, label]) => (
@@ -192,7 +198,7 @@ function TriggerOptions({ trigger, onChange }: Readonly<{ trigger: Trigger; onCh
             checked={trigger[key] === true}
             onCheckedChange={(v) => onChange({ ...trigger, [key]: v === true || undefined })}
           />
-          {label}
+          {t(label)}
         </label>
       ))}
       <NearOption trigger={trigger} onChange={onChange} />
@@ -247,7 +253,9 @@ export function TriggerDialog({
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
-        <DialogTitle>{on === 'tile' ? 'Tile trigger' : 'Region behaviours'}</DialogTitle>
+        <DialogTitle>
+          {on === 'tile' ? t('triggerDialog.tileTrigger') : t('triggerDialog.regionBehaviours')}
+        </DialogTitle>
         <DialogDescription>
           {on === 'tile'
             ? 'What happens, in order, when the tile is used.'
@@ -259,7 +267,7 @@ export function TriggerDialog({
         <div className="flex justify-end gap-2">
           {on === 'tile' && !!doc.trigger && (
             <Button variant="ghost" onClick={() => save({ trigger: null })}>
-              Remove trigger
+              {t('triggerDialog.removeTrigger')}
             </Button>
           )}
           <Button disabled={!!problem} onClick={() => save(patchOf(on, trigger, steps))}>

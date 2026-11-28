@@ -73,7 +73,7 @@ function SpellOptions({ session, aiming }: Readonly<{ session: Session; aiming: 
       {spell.summon && (
         <SelectField
           value={aiming.summon ?? ''}
-          aria-label="What to summon"
+          aria-label={t('aimingControls.whatToSummon')}
           onValueChange={(m) => session.actions.chooseSummon(m)}
           options={spell.summon.options.map((o) => ({ value: o.monster, label: summonLabel(o) }))}
         />
@@ -97,7 +97,7 @@ function FormChoice({ session, aiming, token }: Readonly<{ session: Session; aim
   return (
     <SelectField
       value={aiming.form ?? ''}
-      aria-label="Form"
+      aria-label={t('aimingControls.form')}
       onValueChange={(m) => session.actions.chooseForm(m)}
       options={forms.map((m) => ({ value: m.id, label: `${m.name} (CR ${m.cr})` }))}
     />

@@ -10,22 +10,23 @@ import { NumberField } from './kit/number-field.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './kit/popover.tsx';
 import { SelectField } from './kit/select.tsx';
 import { ToggleGroup, ToggleGroupItem } from './kit/toggle-group.tsx';
+import { type MessageKey, t } from '../i18n/index.ts';
 
 // The GM asks for a check: from the selected creatures (else the party),
 // each for itself, as a group (half must pass), or two in a contest.
 
-const KINDS: { value: CheckRequestKind; label: string; title: string }[] = [
-  { value: 'each', label: 'Each', title: 'Everyone rolls for themselves' },
-  { value: 'group', label: 'Group', title: 'The group passes when at least half pass' },
-  { value: 'contest', label: 'Contest', title: 'Two creatures, the higher total wins' },
+const KINDS: { value: CheckRequestKind; label: MessageKey; title: MessageKey }[] = [
+  { value: 'each', label: 'askCheck.each', title: 'askCheck.eachTitle' },
+  { value: 'group', label: 'askCheck.group', title: 'askCheck.groupTitle' },
+  { value: 'contest', label: 'askCheck.contest', title: 'askCheck.contestTitle' },
 ];
 
 export function RequestCheckButton({ session }: Readonly<{ session: Session }>) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" title="Ask the selected creatures (or the party) for a check">
-          Request check
+        <Button variant="outline" size="sm" title={t('askCheck.buttonTitle')}>
+          {t('askCheck.button')}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="flex w-[320px] flex-col gap-2" data-slot="request-check">
@@ -55,28 +56,28 @@ function RequestCheck({ session }: Readonly<{ session: Session }>) {
     });
   return (
     <>
-      <SelectField value={check} onValueChange={setCheck} options={options} aria-label="Check" />
+      <SelectField value={check} onValueChange={setCheck} options={options} aria-label={t('askCheck.check')} />
       <ToggleGroup type="single" value={kind} onValueChange={(v) => v && setKind(v as CheckRequestKind)}>
         {KINDS.map((k) => (
-          <ToggleGroupItem key={k.value} value={k.value} title={k.title}>
-            {k.label}
+          <ToggleGroupItem key={k.value} value={k.value} title={t(k.title)}>
+            {t(k.label)}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
       {contest ? (
-        <SelectField value={versus} onValueChange={setVersus} options={options} aria-label="Against" />
+        <SelectField value={versus} onValueChange={setVersus} options={options} aria-label={t('askCheck.against')} />
       ) : (
         <label className="flex items-center gap-2 text-sm">
-          DC (0: none)
-          <NumberField value={dc} min={0} max={40} onValueChange={setDc} aria-label="DC" />
+          {t('askCheck.dc')}
+          <NumberField value={dc} min={0} max={40} onValueChange={setDc} aria-label={t('askCheck.dcLabel')} />
         </label>
       )}
       <p className="text-xs text-muted-foreground">
-        {who.map((t) => t.name).join(', ') || 'Select creatures, or put the party on the scene.'}
-        {contest && who.length !== 2 && ' A contest needs exactly two selected creatures.'}
+        {who.map((t) => t.name).join(', ') || t('askCheck.nobody')}
+        {contest && who.length !== 2 && ` ${t('askCheck.needTwo')}`}
       </p>
       <Button size="sm" disabled={!ready} onClick={send}>
-        Ask for the check
+        {t('askCheck.send')}
       </Button>
     </>
   );

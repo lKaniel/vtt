@@ -148,7 +148,12 @@ function TableEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
           session.journal.patchEntry('tables', doc.id, { name: name.trim() })
         }
       />
-      <Textarea value={text} onChange={(e) => setText(e.target.value)} onBlur={save} aria-label="Results" />
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={save}
+        aria-label={t('tablesTab.results')}
+      />
       <label className="map-tools-check">
         <Checkbox
           checked={doc.replacement === false}
@@ -156,7 +161,7 @@ function TableEditor({ session, doc }: Readonly<{ session: Session; doc: Doc }>)
             session.journal.patchEntry('tables', doc.id, { replacement: on === true ? false : null })
           }
         />
-        Each result once (until reset)
+        {t('tablesTab.eachResultOnceUntil')}
       </label>
       <p className="muted">One result per line; "3: Gold" makes it three times as likely.</p>
     </div>

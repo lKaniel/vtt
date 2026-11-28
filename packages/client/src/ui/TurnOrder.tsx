@@ -40,11 +40,11 @@ function FightButtons({ session, peaceful }: Readonly<{ session: Session; peacef
       <AddFighters session={session} />
       {peaceful ? (
         <Button variant="outline" size="sm" onClick={() => session.requests.setTurnBased(false)}>
-          Real time
+          {t('turnOrder.realTime')}
         </Button>
       ) : (
         <Button variant="outline" size="sm" onClick={() => session.requests.endCombat()}>
-          End combat
+          {t('turnOrder.endCombat')}
         </Button>
       )}
     </span>
@@ -132,7 +132,7 @@ function LairTurn({ current }: Readonly<{ current: boolean }>) {
   return (
     <span
       className={`turn foe grid place-items-center font-display text-xs text-gold ${current ? 'current' : ''}`}
-      title="Lair actions: initiative 20"
+      title={t('turnOrder.lairActionsInitiative20')}
     >
       Lair
     </span>

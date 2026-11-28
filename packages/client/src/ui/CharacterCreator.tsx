@@ -61,7 +61,9 @@ export function CharacterCreator({
   return (
     <div className="cc">
       <header className="cc-head">
-        <h1 className="menu-title">{initial ? `Edit ${initial.name}` : 'Create your hero'}</h1>
+        <h1 className="menu-title">
+          {initial ? t('characterCreator.edit', { name: initial.name }) : t('characterCreator.createYourHero')}
+        </h1>
         <EditionPicker c={c} set={set} />
       </header>
       <StepNav steps={steps} current={step.id} onPick={setStep} />
@@ -105,7 +107,7 @@ function ToFinish({ steps, onPick }: Readonly<{ steps: readonly StepInfo[]; onPi
 
 function EditionPicker({ c, set }: Readonly<StepProps>) {
   return (
-    <div className="cc-edition" title="Which rules this character follows">
+    <div className="cc-edition" title={t('characterCreator.whichRulesThisCharacter')}>
       {(['2014', '2024'] as const).map((r) => (
         <Toggle key={r} pressed={c.rules === r} onPressedChange={() => r !== c.rules && set(setEdition(c, r))}>
           {r} rules
@@ -171,7 +173,7 @@ function CreatorFoot({
         <Button onClick={() => setStep(steps[index + 1]!.id)}>Next</Button>
       ) : (
         <Button disabled={saving || problems.length > 0} title={problems.join(' ')} onClick={onSave}>
-          {editing ? 'Save changes' : 'Create character'}
+          {editing ? t('characterCreator.saveChanges') : t('characterCreator.createCharacter')}
         </Button>
       )}
     </footer>

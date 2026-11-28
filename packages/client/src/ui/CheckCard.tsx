@@ -2,6 +2,7 @@ import type { ChatMessage, CheckLog } from '@vtt/system-dnd5e';
 import type { Session } from '../session/session.ts';
 import { Badge } from './kit/badge.tsx';
 import { Button } from './kit/button.tsx';
+import { t } from '../i18n/index.ts';
 
 // A check card in chat: each creature asked, with its total once rolled or
 // a Roll button for the creatures you control, and how a group check or a
@@ -19,14 +20,14 @@ export function CheckLine({ m, session }: Readonly<{ m: ChatMessage & { check: C
             <span className="flex-1">{e.name}</span>
             {e.total !== undefined && <strong className="roll-total">{e.total}</strong>}
             {e.success !== undefined && (
-              <Badge variant={e.success ? 'good' : 'warn'}>{e.success ? 'success' : 'failure'}</Badge>
+              <Badge variant={e.success ? 'good' : 'warn'}>{e.success ? t('check.success') : t('check.failure')}</Badge>
             )}
             {e.total === undefined && mine && (
               <Button variant="outline" size="sm" onClick={() => session.requests.rollCheck(e.token, check, m.id)}>
-                Roll
+                {t('check.roll')}
               </Button>
             )}
-            {e.total === undefined && !mine && <span className="muted text-xs">waiting</span>}
+            {e.total === undefined && !mine && <span className="muted text-xs">{t('check.waiting')}</span>}
           </span>
         );
       })}

@@ -28,107 +28,145 @@ import { Slider } from './kit/slider.tsx';
 import { ColorInput } from './kit/color-input.tsx';
 import { Checkbox } from './kit/checkbox.tsx';
 
-const MODES: { mode: EditorMode; label: string; key: string; hint: string; icon: LucideIcon }[] = [
-  { mode: 'tokens', label: 'Tokens', key: 'T', hint: 'Select, move and act with creatures', icon: MousePointer2Icon },
+const modeList = (): { mode: EditorMode; label: string; key: string; hint: string; icon: LucideIcon }[] => [
+  {
+    mode: 'tokens',
+    label: t('mapTools.label.tokens'),
+    key: 'T',
+    hint: t('mapTools.hint.selectMoveAndAct'),
+    icon: MousePointer2Icon,
+  },
   {
     mode: 'tiles',
-    label: 'Tiles',
+    label: t('mapTools.label.tiles'),
     key: 'Shift+T',
-    hint: 'Draw, select, move, resize and group tiles',
+    hint: t('mapTools.hint.drawSelectMoveResize'),
     icon: LayoutGridIcon,
   },
   {
     mode: 'walls',
-    label: 'Walls',
+    label: t('mapTools.label.walls'),
     key: 'W',
-    hint: 'Select, move and reshape walls, doors and windows',
+    hint: t('mapTools.hint.selectMoveAndReshape'),
     icon: BrickWallIcon,
   },
-  { mode: 'lights', label: 'Lights', key: 'L', hint: 'Select, move and resize lights', icon: LightbulbIcon },
-  { mode: 'drawings', label: 'Draw', key: 'D', hint: 'Shapes, lines, freehand and text on the map', icon: PencilIcon },
-  { mode: 'notes', label: 'Notes', key: 'N', hint: 'Pins that open journal entries', icon: StickyNoteIcon },
+  {
+    mode: 'lights',
+    label: t('mapTools.label.lights'),
+    key: 'L',
+    hint: t('mapTools.hint.selectMoveAndResize'),
+    icon: LightbulbIcon,
+  },
+  {
+    mode: 'drawings',
+    label: t('mapTools.label.draw'),
+    key: 'D',
+    hint: t('mapTools.hint.shapesLinesFreehandAnd'),
+    icon: PencilIcon,
+  },
+  {
+    mode: 'notes',
+    label: t('mapTools.label.notes'),
+    key: 'N',
+    hint: t('mapTools.hint.pinsThatOpenJournal'),
+    icon: StickyNoteIcon,
+  },
   {
     mode: 'templates',
-    label: 'Measure',
+    label: t('mapTools.label.measure'),
     key: 'M',
-    hint: 'The ruler (R), and spell areas: circles, cones, lines and squares',
+    hint: t('mapTools.hint.theRulerRAnd'),
     icon: RulerIcon,
   },
   {
     mode: 'regions',
-    label: 'Regions',
+    label: t('mapTools.label.regions'),
     key: '',
-    hint: 'Areas that do something when a token walks in',
+    hint: t('mapTools.hint.areasThatDoSomething'),
     icon: SquareDashedIcon,
   },
-  { mode: 'sounds', label: 'Sounds', key: '', hint: 'Ambient sound, louder the nearer you are', icon: Volume2Icon },
+  {
+    mode: 'sounds',
+    label: t('mapTools.label.sounds'),
+    key: '',
+    hint: t('mapTools.hint.ambientSoundLouderThe'),
+    icon: Volume2Icon,
+  },
 ];
 
-const ITEM_TOOL_INFO: Record<ItemTool, { label: string; hint: string }> = {
-  rect: { label: 'Box', hint: 'Drag a box. Shift: no snapping' },
-  ellipse: { label: 'Ellipse', hint: 'Drag the box it fills. Shift: no snapping' },
-  polygon: { label: 'Polygon', hint: 'Click corner to corner; click the first corner or right click to close' },
-  line: { label: 'Line', hint: 'Click point to point; right click ends it' },
-  freehand: { label: 'Freehand', hint: 'Drag to draw' },
-  text: { label: 'Text', hint: 'Drag the box the text goes in; change the words in the inspector' },
-  note: { label: 'Pin', hint: 'Click to put a note down; pick its journal entry in the inspector' },
-  sound: { label: 'Place', hint: 'Click to place a sound; pick its file in the inspector' },
-  circle: { label: 'Circle', hint: 'Drag out from the centre, in 5 ft steps' },
-  cone: { label: 'Cone', hint: 'Drag out from the tip' },
-  ray: { label: 'Line', hint: 'Drag out from the start' },
-  square: { label: 'Square', hint: 'Drag out from the centre' },
-  region: { label: 'Region', hint: 'Click corner to corner; click the first corner or right click to close' },
-};
+const itemToolInfo = (): Record<ItemTool, { label: string; hint: string }> => ({
+  rect: { label: t('mapTools.label.box'), hint: t('mapTools.hint.dragABoxShift') },
+  ellipse: { label: t('mapTools.label.ellipse'), hint: t('mapTools.hint.dragTheBoxIt') },
+  polygon: { label: t('mapTools.label.polygon'), hint: t('mapTools.hint.clickCornerToCorner') },
+  line: { label: t('mapTools.label.line'), hint: t('mapTools.hint.clickPointToPoint') },
+  freehand: { label: t('mapTools.label.freehand'), hint: t('mapTools.hint.dragToDraw') },
+  text: { label: t('mapTools.label.text'), hint: t('mapTools.hint.dragTheBoxThe') },
+  note: { label: t('mapTools.label.pin'), hint: t('mapTools.hint.clickToPutA') },
+  sound: { label: t('mapTools.label.place'), hint: t('mapTools.hint.clickToPlaceA') },
+  circle: { label: t('mapTools.label.circle'), hint: t('mapTools.hint.dragOutFromThe') },
+  cone: { label: t('mapTools.label.cone'), hint: t('mapTools.hint.dragOutFromThe2') },
+  ray: { label: t('mapTools.label.line'), hint: t('mapTools.hint.dragOutFromThe22') },
+  square: { label: t('mapTools.label.square'), hint: t('mapTools.hint.dragOutFromThe222') },
+  region: { label: t('mapTools.label.region'), hint: t('mapTools.hint.clickCornerToCorner') },
+});
 
-const itemTools = (mode: ItemMode) => [SELECT, ...ITEM_TOOLS[mode].map((tool) => ({ tool, ...ITEM_TOOL_INFO[tool] }))];
+const itemTools = (mode: ItemMode) => [
+  select(),
+  ...ITEM_TOOLS[mode].map((tool) => ({ tool, ...itemToolInfo()[tool] })),
+];
 
-const SELECT = {
+const select = () => ({
   tool: 'select' as const,
-  label: 'Select',
-  hint: 'Click or drag a box to select; drag to move; drag a handle to reshape',
-};
+  label: t('mapTools.label.select'),
+  hint: t('mapTools.hint.clickOrDragA'),
+});
 
 /** The tools of each mode, after Select. */
-const TOOLS: Partial<Record<EditorMode, { tool: EditorTool; label: string; hint: string }[]>> = {
+const toolList = (): Partial<Record<EditorMode, { tool: EditorTool; label: string; hint: string }[]>> => ({
   tiles: [
-    SELECT,
+    select(),
     {
       tool: 'tile',
-      label: 'Draw',
-      hint: 'Drag a box to draw the tile picked below; on another tile it goes inside it. Shift: no snapping',
+      label: t('mapTools.label.draw'),
+      hint: t('mapTools.hint.dragABoxTo'),
     },
     { tool: 'stamp', label: t('stamp.title'), hint: t('stamp.hint') },
   ],
   walls: [
-    SELECT,
-    { tool: 'wall', label: 'Wall', hint: 'Click corner to corner; right click or Esc stops. Shift: no snapping' },
-    { tool: 'door', label: 'Door', hint: 'Click both ends of the doorway' },
-    { tool: 'window', label: 'Window', hint: 'Like walls, but they let sight through' },
+    select(),
+    { tool: 'wall', label: t('mapTools.label.wall'), hint: t('mapTools.hint.clickCornerToCorner2') },
+    { tool: 'door', label: t('mapTools.label.door'), hint: t('mapTools.hint.clickBothEndsOf') },
+    { tool: 'window', label: t('mapTools.label.window'), hint: t('mapTools.hint.likeWallsButThey') },
   ],
-  lights: [SELECT, { tool: 'place', label: 'Place', hint: 'Click to place the light picked below' }],
+  lights: [select(), { tool: 'place', label: t('mapTools.label.place'), hint: t('mapTools.hint.clickToPlaceThe') }],
   drawings: itemTools('drawings'),
   notes: itemTools('notes'),
   templates: [
-    SELECT,
+    select(),
     {
       tool: 'ruler',
-      label: 'Ruler',
-      hint: 'Click to start (on a creature: from it), click for each waypoint; right click takes one back, Esc puts it away. Everyone sees it',
+      label: t('mapTools.label.ruler'),
+      hint: t('mapTools.hint.clickToStartOn'),
     },
     ...itemTools('templates').slice(1),
   ],
   regions: itemTools('regions'),
   sounds: itemTools('sounds'),
-};
+});
 
 /** The editor modes in a rail up the left edge (players: tokens, drawings and templates), each mode's tools beside it, and the GM's map settings. */
 export function MapTools({ session }: Readonly<{ session: Session }>) {
   const gm = session.isGm();
   const [sceneTools, setSceneTools] = useState(loadSceneTools);
-  const modes = MODES.filter((m) => session.editor.canUseMode(m.mode));
+  const modes = modeList().filter((m) => session.editor.canUseMode(m.mode));
   return (
     <div className="map-tools">
-      <div className="map-tools-rail frame" role="toolbar" aria-label="Editor mode" aria-orientation="vertical">
+      <div
+        className="map-tools-rail frame"
+        role="toolbar"
+        aria-label={t('mapTools.editorMode')}
+        aria-orientation="vertical"
+      >
         {modes.map(({ mode, label, key, hint, icon: Icon }) => (
           <Toggle
             key={mode}
@@ -165,11 +203,11 @@ export function MapTools({ session }: Readonly<{ session: Session }>) {
 /** Beside the rail: the mode's tools and settings, and the GM's floor, fog and daylight. */
 function ModeTools({ session, sceneTools }: Readonly<{ session: Session; sceneTools: boolean }>) {
   const gm = session.isGm();
-  const tools = TOOLS[session.editor.mode];
+  const tools = toolList()[session.editor.mode];
   return (
     <div className="map-tools-more frame">
       {tools && (
-        <div className="map-tools-row" role="toolbar" aria-label="Tool">
+        <div className="map-tools-row" role="toolbar" aria-label={t('mapTools.tool')}>
           {tools.map(({ tool, label, hint }) => (
             <Toggle
               key={tool}
@@ -212,9 +250,9 @@ function saveSceneTools(open: boolean): void {
   }
 }
 
-const BRUSHES = [
-  { brush: 'reveal' as const, label: 'Reveal', hint: 'Drag to show the players ground they have not explored' },
-  { brush: 'hide' as const, label: 'Hide', hint: 'Drag to hide explored ground from the players again' },
+const brushes = () => [
+  { brush: 'reveal' as const, label: t('mapTools.label.reveal'), hint: t('mapTools.hint.dragToShowThe') },
+  { brush: 'hide' as const, label: t('mapTools.label.hide'), hint: t('mapTools.hint.dragToHideExplored') },
 ];
 
 /**
@@ -226,9 +264,9 @@ function FogTools({ session }: Readonly<{ session: Session }>) {
   const seats = session.players.filter((p) => p.role !== 'gm');
   const picked = session.fog.players?.[0] ?? '';
   return (
-    <div className="map-tools-row fog-tools" role="toolbar" aria-label="Fog of war">
-      <span className="fog-label">Fog</span>
-      {BRUSHES.map(({ brush, label, hint }) => (
+    <div className="map-tools-row fog-tools" role="toolbar" aria-label={t('mapTools.fogOfWar')}>
+      <span className="fog-label">{t('mapTools.fog')}</span>
+      {brushes().map(({ brush, label, hint }) => (
         <Toggle
           key={brush}
           pressed={session.fog.brush === brush}
@@ -244,20 +282,23 @@ function FogTools({ session }: Readonly<{ session: Session }>) {
         max={10}
         value={[session.fog.brushSize]}
         title={`Brush: ${session.fog.brushSize} squares across each way`}
-        aria-label="Brush size"
+        aria-label={t('mapTools.brushSize')}
         onValueChange={([n]) => session.fog.setBrushSize(n!)}
       />
       <SelectField
         value={picked}
-        aria-label="Whose fog"
-        title="Whose fog the brushes and reset change, and the map shows"
+        aria-label={t('mapTools.whoseFog')}
+        title={t('mapTools.whoseFogTheBrushes')}
         onValueChange={(id) => session.fog.setPlayers(id ? [id] : undefined)}
-        options={[{ value: '', label: 'All players' }, ...seats.map((p) => ({ value: p.id, label: p.name }))]}
+        options={[
+          { value: '', label: t('mapTools.allPlayers') },
+          ...seats.map((p) => ({ value: p.id, label: p.name })),
+        ]}
       />
       <Button
         variant="outline"
         size="sm"
-        title="Forget what they explored here (Ctrl+Z undoes)"
+        title={t('mapTools.forgetWhatTheyExplored')}
         onClick={() => session.fog.reset()}
       >
         Reset
@@ -271,7 +312,7 @@ function LightPresets({ session }: Readonly<{ session: Session }>) {
     <SelectField
       value={session.editor.lightPreset}
       onValueChange={(id) => session.editor.setLightPreset(id as LightPreset)}
-      title="The light the Place tool and the menu put down"
+      title={t('mapTools.theLightThePlace')}
       options={Object.entries(LIGHT_PRESETS).map(([id, l]) => ({
         value: id,
         label: `${l.label} (${l.darkness ? l.bright : [l.bright, l.dim].join('/')} ft)`,
@@ -284,13 +325,13 @@ function LightPresets({ session }: Readonly<{ session: Session }>) {
 function Darkness({ session }: Readonly<{ session: Session }>) {
   const [value, setValue] = useState(session.world?.darkness ?? 0);
   const clock = session.docs.get('scenes', session.scene)?.darknessFollowsClock === true;
-  if (clock) return <span className="muted map-tools-darkness">Darkness follows the clock</span>;
+  if (clock) return <span className="muted map-tools-darkness">{t('mapTools.darknessFollowsTheClock')}</span>;
   return (
-    <label className="map-tools-darkness" title="Time of day: how dark unlit places are">
+    <label className="map-tools-darkness" title={t('mapTools.timeOfDayHow')}>
       <span>Day</span>
       <Slider
         className="w-32"
-        aria-label="Darkness"
+        aria-label={t('mapTools.darkness')}
         min={0}
         max={1}
         step={0.05}
@@ -308,10 +349,10 @@ function TilePresets({ session }: Readonly<{ session: Session }>) {
     <SelectField
       value={session.tiles.preset}
       onValueChange={(id) => session.tiles.setPreset(id as TileTexture)}
-      title="What the Draw tool paints: ground stays under everything and never holds tiles"
-      options={Object.entries(TILE_PRESETS).map(([id, t]) => ({
+      title={t('mapTools.whatTheDrawTool')}
+      options={Object.entries(TILE_PRESETS).map(([id, preset]) => ({
         value: id,
-        label: `${t.label}${t.background ? ' (ground)' : ''}`,
+        label: preset.background ? `${preset.label} ${t('mapTools.ground')}` : preset.label,
       }))}
     />
   );
@@ -333,21 +374,21 @@ const WIDTHS = [2, 4, 8, 16];
 function DrawStyle({ session }: Readonly<{ session: Session }>) {
   const style = session.draw.style;
   return (
-    <div className="map-tools-row" role="toolbar" aria-label="Drawing style">
+    <div className="map-tools-row" role="toolbar" aria-label={t('mapTools.drawingStyle')}>
       <ColorInput
         value={style.stroke}
-        title="Line colour"
-        aria-label="Line colour"
+        title={t('mapTools.lineColour')}
+        aria-label={t('mapTools.lineColour')}
         onChange={(e) => session.draw.setStyle({ stroke: e.target.value })}
       />
       <SelectField
         value={String(style.strokeWidth)}
-        title="Line width"
-        aria-label="Line width"
+        title={t('mapTools.lineWidth')}
+        aria-label={t('mapTools.lineWidth')}
         onValueChange={(w) => session.draw.setStyle({ strokeWidth: Number(w) })}
         options={WIDTHS.map((w) => ({ value: String(w), label: `${w} px` }))}
       />
-      <label className="map-tools-check" title="Fill boxes, ellipses and polygons">
+      <label className="map-tools-check" title={t('mapTools.fillBoxesEllipsesAnd')}>
         <Checkbox
           checked={!!style.fill}
           onCheckedChange={(on) =>

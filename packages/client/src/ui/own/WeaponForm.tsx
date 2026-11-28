@@ -30,14 +30,14 @@ export function WeaponFields({ weapon, change }: Readonly<{ weapon: Weapon; chan
     <>
       <DamageFields weapon={weapon} change={change} />
       <FormulaFields weapon={weapon} change={change} />
-      <Field label="Category">
+      <Field label={t('weaponForm.category')}>
         <SelectField
           value={weapon.category}
           onValueChange={(c) => change({ category: c as Weapon['category'] })}
           options={choices(['simple', 'martial'])}
         />
       </Field>
-      <Field label="Melee or ranged">
+      <Field label={t('weaponForm.meleeOrRanged')}>
         <SelectField
           value={weapon.kind}
           onValueChange={(k) => change({ kind: k as Weapon['kind'], range: k === 'ranged' ? [80, 320] : undefined })}
@@ -114,7 +114,7 @@ function Properties({ weapon, change }: Readonly<{ weapon: Weapon; change: Chang
       properties: weapon.properties.includes(p) ? weapon.properties.filter((x) => x !== p) : [...weapon.properties, p],
     });
   return (
-    <Field label="Properties" wide>
+    <Field label={t('weaponForm.properties')} wide>
       <div className="flex flex-wrap gap-1.5">
         {WeaponPropertySchema.options.map((p) => (
           <Toggle key={p} pressed={weapon.properties.includes(p)} onPressedChange={() => toggle(p)}>

@@ -139,7 +139,7 @@ function EffectEditor({ value, update, id, onClose }: Readonly<SheetProps & { id
       {effect && (
         <DialogContent>
           <DialogTitle>Effect: {effect.name}</DialogTitle>
-          <DialogDescription>Changes save as you make them.</DialogDescription>
+          <DialogDescription>{t('effectsTab.changesSaveAsYou')}</DialogDescription>
           <EffectForm key={effect.id} effect={effect} onSave={(e) => update((d) => setEffect(d, e), false)} />
         </DialogContent>
       )}
